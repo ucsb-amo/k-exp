@@ -1,0 +1,1 @@
+%windir%\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy ByPass -NoExit -Command "& 'C:\Users\jar jar binks\miniconda3\shell\condabin\conda-hook.ps1' ; conda activate Kartiq ; cd C:\Code\_GitClones\k-exp"
