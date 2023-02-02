@@ -1,4 +1,3 @@
-@echo on
-call "C:\Users\jar jar binks\miniconda3\Scripts\activate.bat" Kartiq
-cd C:\Code\_GitClones\k-exp
-artiq_dashboard
+start cmd /k call C:\Code\_GitClones\k-exp\bat\start_artiq_master_only.bat
+start cmd /k call C:\Code\_GitClones\k-exp\bat\start_artiq_dashboard_only.bat
+
