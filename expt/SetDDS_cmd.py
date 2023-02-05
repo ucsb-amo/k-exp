@@ -13,9 +13,9 @@ class SetDDS(EnvExperiment):
         self.dds_params = DDS(self.Urukul_idx,self.Channel,self.freq_MHz,self.att_dB)
 
         self.setattr_device("core")
-        self.setattr_device(self.dds_params.name())
+        self.setattr_device(self.dds_params.name)
 
-        self.dds = self.get_device(self.dds_params.name())
+        self.dds = self.get_device(self.dds_params.name)
 
     
     @kernel
