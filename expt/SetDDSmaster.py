@@ -14,7 +14,7 @@ class SetDDSmaster(EnvExperiment):
     def prep_default_DDS_list(self):
         ''' Preps a list of DDS states, defaulting to off. '''
 
-        DDS_list = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        DDS_list = [[None]*4]*3
         for urukul_idx in range(3):
             for ch in range(4):
                 DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,0,0)
