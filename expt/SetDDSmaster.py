@@ -14,11 +14,9 @@ class SetDDSmaster(EnvExperiment):
     def prep_default_DDS_lists(self):
         ''' Preps a list of DDS states, defaulting to off. '''
         DDS_list = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
-
         for urukul_idx in range(3):
             for ch in range(4):
                 DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,0,0)
-
         return DDS_list
 
     def get_dds(self,dds):
@@ -26,13 +24,6 @@ class SetDDSmaster(EnvExperiment):
         self.setattr_device(dds.name())
         dds.dds_device = self.get_device(dds.name())
         return dds
-
-    def get_dds_list(self, DDS_list):
-        '''Loop through the list of DDS names and store the device drivers in a list'''
-
-        DDS_list = [[self.get_dds(dds) for dds in dds_on_this_uru] for dds_on_this_uru in DDS_list]
-        
-        return DDS_list
 
     @kernel
     def set_dds(self,dds):
@@ -49,28 +40,21 @@ class SetDDSmaster(EnvExperiment):
             dds.dds_device.sw.off()
             dds.dds_device.power_down()
 
-    @kernel
-    def set_dds_list(self, DDS_list):
-        '''Set a list of dds devices to the corresponding parameters'''
-
-        [[self.set_dds(dds) for dds in dds_on_this_uru] for dds_on_this_uru in DDS_list]
-
     def build(self):
-        '''Prep lists, set parameters manually, get the devices, and set each dds.'''
+        '''Prep lists, set parameters manually, get the device drivers.'''
 
         self.setattr_device("core")
 
         self.DDS_list = self.prep_default_DDS_lists()
-
         self.DDS_list = self.specify_dds_settings(self.DDS_list)
 
-        self.DDS_list = self.get_dds_list(self.DDS_list)
+        self.DDS_list = [[self.get_dds(dds) for dds in dds_on_this_uru] for dds_on_this_uru in self.DDS_list]
     
     @kernel
     def run(self):
         '''Execute on the core device, set the DDS devices to the corresponding parameters'''
 
         self.core.reset()
-        self.set_dds_list(self.DDS_list)
+        [[self.set_dds(dds) for dds in dds_on_this_uru] for dds_on_this_uru in self.DDS_list]
 
         
