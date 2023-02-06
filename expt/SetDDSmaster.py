@@ -6,7 +6,7 @@ class SetDDSmaster(EnvExperiment):
     def specify_dds_settings(self, DDS_list):
         '''Manually specify channel parameters. Frequencies must be floats (end in a decimal)'''
 
-        DDS_list[0][0] = DDS(urukul_idx=0, ch=0, freq_Hz=0., att_dB=0)
+        DDS_list[0][0] = DDS(urukul_idx=0, ch=0, freq_MHz=0., att_dB=0)
         DDS_list[1][3] = DDS(1,3,100.,0)
 
         return DDS_list
