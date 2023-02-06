@@ -3,22 +3,32 @@ from DDS import DDS
 
 class SetDDSmaster(EnvExperiment):
 
-    def specify_dds_settings(self, DDS_list):
-        '''Manually specify channel parameters. Frequencies must be floats (end in a decimal)'''
+    '''
+    Run me in Terminal (Win key, type "Terminal", Enter) with:
+    artiq_run --device-db %db% %code%/k-exp/expt/SetDDSmaster.py
+    '''
 
-        DDS_list[0][0] = DDS(urukul_idx=0, ch=0, freq_MHz=0., att_dB=0)
-        DDS_list[1][3] = DDS(1,3,100.,0)
+    def specify_dds_settings(self, DDS_list):
+        '''
+        Manually specify channel parameters. All numbers must be floats (end in a decimal)
+        To add a DDS, add a line: 
+        DDS[urukul_index][channel_idx] = DDS(urukul_idx,ch,freq_MHz,att_dB)
+        The DDS puts out +10dBm with no attenuation. Reduce this with att_dB > 0
+        '''
+
+        # DDS_list[0][0] = DDS(urukul_idx=0, ch=0, freq_MHz=0., att_dB=0.)
+        # DDS_list[1][3] = DDS(1,3,125.4,0.)
 
         return DDS_list
 
     def prep_default_DDS_list(self):
         ''' Preps a list of DDS states, defaulting to off. '''
 
-        DDS_list = [[None]*4]*3
+        DDS_list = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
 
         for urukul_idx in range(len(DDS_list)):
             for ch in range(len(DDS_list[urukul_idx])):
-                DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch)
+                DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,freq_MHz=0.,att_dB=0.)
                 
         return DDS_list
 
@@ -36,7 +46,7 @@ class SetDDSmaster(EnvExperiment):
         dds.dds_device.cpld.init()
         dds.dds_device.init()
 
-        if dds.freq_MHz != 0:
+        if dds.freq_MHz != 0.:
             dds.dds_device.set(dds.freq_MHz * MHz, amplitude = 1.)
             dds.dds_device.set_att(dds.att_dB * dB)
             dds.dds_device.sw.on()

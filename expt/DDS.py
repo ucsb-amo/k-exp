@@ -1,7 +1,7 @@
 from artiq.experiment import *
 
 class DDS():
-   def __init__(self, urukul_idx, ch, freq_MHz=0., att_dB=0):
+   def __init__(self, urukul_idx, ch, freq_MHz=0., att_dB=0.):
       self.uidx = urukul_idx
       self.ch = ch
       self.freq_MHz = freq_MHz
