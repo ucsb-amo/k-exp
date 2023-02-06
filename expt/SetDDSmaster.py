@@ -4,10 +4,10 @@ from DDS import DDS
 class SetDDSmaster(EnvExperiment):
 
     def specify_dds_settings(self, DDS_list):
-        '''For now, DDS frequencies must be set in Hz (weird float error)'''
+        '''Manually specify channel parameters. Frequencies must be floats (end in a decimal)'''
 
-        DDS_list[0][0] = DDS(urukul_idx=0, ch=0, freq_Hz=0, att_dB=0)
-        DDS_list[1][3] = DDS(1,3,100000000,0)
+        DDS_list[0][0] = DDS(urukul_idx=0, ch=0, freq_MHz=0., att_dB=0)
+        DDS_list[1][3] = DDS(1,3,100.,0)
 
         return DDS_list
 
@@ -15,9 +15,11 @@ class SetDDSmaster(EnvExperiment):
         ''' Preps a list of DDS states, defaulting to off. '''
 
         DDS_list = [[None]*4]*3
-        for urukul_idx in range(3):
-            for ch in range(4):
-                DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,0,0)
+
+        for urukul_idx in range(len(DDS_list)):
+            for ch in range(len(DDS_list[urukul_idx])):
+                DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch)
+                
         return DDS_list
 
     def get_dds(self,dds):
@@ -29,13 +31,13 @@ class SetDDSmaster(EnvExperiment):
 
     @kernel
     def set_dds(self,dds):
-        '''Set a dds device. If freq_Hz = 0, turn it off'''
+        '''Set a dds device. If freq_MHz = 0, turn it off'''
 
         dds.dds_device.cpld.init()
         dds.dds_device.init()
 
-        if dds.freq_Hz != 0:
-            dds.dds_device.set(dds.freq_Hz * Hz, amplitude = 1.)
+        if dds.freq_MHz != 0:
+            dds.dds_device.set(dds.freq_MHz * MHz, amplitude = 1.)
             dds.dds_device.set_att(dds.att_dB * dB)
             dds.dds_device.sw.on()
         else:
