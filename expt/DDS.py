@@ -6,6 +6,7 @@ class DDS():
       self.ch = ch
       self.freq_Hz = freq_Hz
       self.att_dB = att_dB
+      self.dds_device = []
       
    def name(self) -> TStr:
       return f'urukul{self.uidx}_ch{self.ch}'
