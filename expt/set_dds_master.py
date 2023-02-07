@@ -1,11 +1,11 @@
 from artiq.experiment import *
 from DDS import DDS
 
-class SetDDSmaster(EnvExperiment):
+class set_dds_master(EnvExperiment):
 
     '''
     Run me in Terminal (Win key, type "Terminal", Enter) with:
-    artiq_run --device-db %db% %code%/k-exp/expt/SetDDSmaster.py
+    artiq_run --device-db %db% %code%/k-exp/expt/set_dds_master.py
     '''
 
     def specify_dds_settings(self, DDS_list):
