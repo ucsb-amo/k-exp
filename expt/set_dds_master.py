@@ -4,6 +4,10 @@ from DDS import DDS
 class set_dds_master(EnvExperiment):
 
     '''
+    set_dds_master
+
+    Sets all dds channels
+
     Run me in Terminal (Win key, type "Terminal", Enter) with:
     artiq_run --device-db %db% %code%/k-exp/expt/set_dds_master.py
     '''
