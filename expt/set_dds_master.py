@@ -21,8 +21,12 @@ class set_dds_master(EnvExperiment):
         '''
 
         # DDS_list[0][0] = DDS(urukul_idx=0, ch=0, freq_MHz=0., att_dB=0.)
+        DDS_list[0][0] = DDS(0,0,98.,14.5)
+        DDS_list[0][1] = DDS(0,1,98.,14.5)
+        DDS_list[0][2] = DDS(0,2,125.4,13.7)
         DDS_list[0][3] = DDS(0,3,98.,14.5)
         DDS_list[1][0] = DDS(1,0,125.4,13.7)
+        DDS_list[1][3] = DDS(1,3,20.,13.7)
 
         return DDS_list
 
