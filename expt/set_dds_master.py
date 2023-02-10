@@ -32,6 +32,7 @@ class set_dds_master(EnvExperiment):
         self.dds(0,3,98.,14.5)
         self.dds(1,0,125.4,13.7)
         self.dds(1,3,20.,13.7)
+        # self.dds(1,3,0.,13.7)
 
     def prep_default_DDS_list(self):
         ''' Preps a list of DDS states, defaulting to off. '''
