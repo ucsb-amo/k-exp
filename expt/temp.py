@@ -12,7 +12,7 @@ class set_dds_gui(EnvExperiment):
         self.dds(0,3,98.00,14.5)
         self.dds(1,0,125.40,13.7)
         self.dds(1,1,0.00,0.0)
-        self.dds(1,2,15.00,20.7)
+        self.dds(1,2,20.00,13.7)
         self.dds(1,3,5.00,13.7)
         self.dds(2,0,0.00,0.0)
         self.dds(2,1,0.00,0.0)

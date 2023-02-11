@@ -1,3 +1,3 @@
 call %kpy%
 cd %code%/k-exp
-python "C:\Users\jarjarbinks\code\k-exp\control\dds_gui\dds_gui.py"
+python %code%\wax\wax\tools\control\dds_gui.py
