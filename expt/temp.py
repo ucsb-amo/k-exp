@@ -1,36 +1,26 @@
+
 from artiq.experiment import *
 from DDS import DDS
 
-class set_dds_master(EnvExperiment):
-
-    '''
-    set_dds_master
-
-    Sets all dds channels
-
-    Run me in Terminal (Win key, type "Terminal", Enter) with:
-    artiq_run --device-db %db% C:/Users/jarjarbinks/code/k-exp/expt/set_dds_master.py
-    '''
+class set_dds_gui(EnvExperiment):
 
     def specify_dds_settings(self):
-        '''
-        Manually specify channel parameters. All numbers must be floats (end in a decimal)
-        To specify the parameters for a dds channel, add a line: 
-        dds(urukul_idx,ch,freq_MHz,att_dB)
-        The DDS puts out +10dBm with no attenuation. Reduce this with att_dB > 0
-        '''
 
-        # DDS_list[0][0] = DDS(urukul_idx=0, ch=0, freq_MHz=0., att_dB=0.)
-        self.dds(0,0,98.,14.5)
-        self.dds(0,1,98.,14.5)
-        self.dds(0,2,125.4,13.7)
-        self.dds(0,3,98.,14.5)
-        self.dds(1,0,125.4,13.7)
-        self.dds(1,2,20.,13.7)
-        self.dds(1,3,5.,13.7)
+        self.dds(0,0,98.00,14.5)
+        self.dds(0,1,98.00,14.5)
+        self.dds(0,2,125.40,13.7)
+        self.dds(0,3,98.00,14.5)
+        self.dds(1,0,125.40,13.7)
+        self.dds(1,1,0.00,0.0)
+        self.dds(1,2,15.00,20.7)
+        self.dds(1,3,5.00,13.7)
+        self.dds(2,0,0.00,0.0)
+        self.dds(2,1,0.00,0.0)
+        self.dds(2,2,0.00,0.0)
+        self.dds(2,3,0.00,0.0)
 
     def dds(self,urukul_idx,ch,freq_MHz,att_dB):
-        
+
         self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,freq_MHz,att_dB)
 
     def prep_default_DDS_list(self):
@@ -63,5 +53,3 @@ class set_dds_master(EnvExperiment):
         self.core.reset()
         [[dds.init_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.DDS_list]
         [[dds.set_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.DDS_list]
-
-        
