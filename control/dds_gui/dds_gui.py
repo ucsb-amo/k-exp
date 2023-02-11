@@ -9,8 +9,6 @@ class DDSSpinner(QWidget):
         super().__init__(parent=None)
 
         layout = QVBoxLayout()
-        flayout = QHBoxLayout()
-        attlayout = QHBoxLayout()
         labeltext = f'Urukul{urukul_idx}_Ch{ch_idx}'
 
         self.f = QDoubleSpinBox()
@@ -29,20 +27,12 @@ class DDSSpinner(QWidget):
 
         self.setLayout(layout)
 
-    #     self.fspin.returnPressed.connect(lambda: self.return_pressed())
-
-    # def return_pressed(self,exp_builder):
-    #     exp_builder.execute_expt()
-
 class SubmitButton(QToolButton):
     def __init__(self):
         super().__init__(parent=None)
 
         self.setText("Set")
         self.setToolTip("Submit the changes")
-        
-    # def set_clicked(self,exp_builder):
-    #     exp_builder.execute_expt()
 
 class MainWindow(QWidget):
     def __init__(self):
