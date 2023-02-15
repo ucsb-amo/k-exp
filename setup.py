@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name='kexp',
     version='0.0.1',
-    url='https://github.com/ucsb-amo/kexp',
+    url='https://github.com/ucsb-amo/k-exp',
     author='Jared Pagett',
     author_email='pagett.jared@gmail.com',
     description='Weld Lab K Experiment Repo',
