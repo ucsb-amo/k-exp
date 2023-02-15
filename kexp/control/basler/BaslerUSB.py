@@ -3,7 +3,7 @@ from pypylon import pylon
 class BaslerUSB():
     def __init__(self):
         self.tl_factory = pylon.TlFactory.GetInstance()
-        pass
+        self.init_camera()
 
     def init_camera(self):
         self.camera = pylon.InstantCamera()
