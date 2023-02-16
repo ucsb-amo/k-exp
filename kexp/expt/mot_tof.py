@@ -3,6 +3,8 @@ from artiq.experiment import delay, parallel
 from wax.devices.DDS import DDS
 from wax.config.config_dds import defaults as default_dds
 
+from kexp.control.basler.BaslerUSB import BaslerUSB
+
 class MOT_TOF(EnvExperiment):
 
     def read_dds_from_config(self):
@@ -22,6 +24,7 @@ class MOT_TOF(EnvExperiment):
         self.t_tof = 30*ms
         self.t_camera_trigger = 1*ms
         self.t_imaging_pulse = 5*us
+        self.t_light_only_image_delay = 10*ms
 
     def build(self):
 
@@ -88,13 +91,22 @@ class MOT_TOF(EnvExperiment):
 
         self.kill_mot()
         delay(self.t_mot_kill)
+
         self.load_mot()
         delay(self.t_mot_load)
+
         self.magnet_and_mot_off()
         delay(self.t_tof)
-        
         self.trigger_camera()
-        self.pulse_imaging() 
+        self.pulse_imaging()
+
+        delay(self.t_light_only_image_delay)
+        self.trigger_camera()
+        self.pulse_imaging()
+
+        delay(self.t_delay)
 
     def analyze(self):
-        
+        camera = BaslerUSB()
+        frames = camera.grab_frames(3)
+
