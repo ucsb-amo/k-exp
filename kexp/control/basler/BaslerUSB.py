@@ -9,10 +9,10 @@ class BaslerUSB():
         self.camera = pylon.InstantCamera()
         self.camera.Attach(self.tl_factory.CreateFirstDevice())
 
-    def grab_frames(self,N,timeout_ms):
+    def grab_frames(self,N,timeout_ms=2000):
         self.camera.Open()
         self.camera.StartGrabbing(N)
-        grab = self.camera.RetrieveResult(2000, pylon.TimeoutHandling_Return)
+        grab = self.camera.RetrieveResult(timeout_ms, pylon.TimeoutHandling_Return)
         if grab.GrabSucceeded():
             img = grab.GetArray()
             return img
