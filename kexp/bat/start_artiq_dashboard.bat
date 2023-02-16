@@ -1,4 +1,4 @@
-start cmd /k %code%/k-exp/bat/start_artiq_master_only.bat
-start cmd /k %code%/k-exp/bat/start_artiq_dashboard_only.bat
-start cmd /k %code%/k-exp/bat/start_moninj_proxy.bat
+start cmd /k %code%/k-exp/kexp/bat/start_artiq_master_only.bat
+start cmd /k %code%/k-exp/kexp/bat/start_artiq_dashboard_only.bat
+start cmd /k %code%/k-exp/kexp/bat/start_moninj_proxy.bat
 
