@@ -21,15 +21,18 @@ class MOT_TOF(EnvExperiment):
         self.t_mot_kill = 1*s
         self.t_mot_load = 5*s
         self.t_magnet_off_delay = 2*ms
-        self.t_tof = 30*ms
         self.t_camera_trigger = 1*ms
         self.t_imaging_pulse = 5*us
         self.t_light_only_image_delay = 10*ms
+
+        self.t_tof_list = [1,2,3,4]
 
     def build(self):
 
         self.setattr_argument("core")
         self.read_dds_from_config()
+
+        self.camera = BaslerUSB()
 
         self.dds_push = self.dds[0][0]
         self.dds_d2_2d_r = self.dds[0][1]
@@ -83,12 +86,7 @@ class MOT_TOF(EnvExperiment):
         self.dds_imaging.dds_device.sw.off()
 
     @kernel
-    def run(self):
-
-        self.core.reset()
-        [[dds.init_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
-        [[dds.set_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
-
+    def tof_expt(self,t_tof):
         self.kill_mot()
         delay(self.t_mot_kill)
 
@@ -96,7 +94,8 @@ class MOT_TOF(EnvExperiment):
         delay(self.t_mot_load)
 
         self.magnet_and_mot_off()
-        delay(self.t_tof)
+
+        delay(self.t_tof * ms)
         self.trigger_camera()
         self.pulse_imaging()
 
@@ -106,7 +105,21 @@ class MOT_TOF(EnvExperiment):
 
         delay(self.t_delay)
 
-    def analyze(self):
-        camera = BaslerUSB()
-        frames = camera.grab_frames(3)
+        self.trigger_camera()
+
+        frames = self.camera.grab_frames(3)
+        return frames
+
+    @kernel
+    def run(self):
+
+        self.core.reset()
+        [[dds.init_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
+        [[dds.set_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
+
+        idx = 0
+        for t in self.t_tof_list:
+            frames[idx] = self.tof_expt(t)
+            idx += 1
+        
 
