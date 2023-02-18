@@ -4,6 +4,7 @@ from wax.devices.DDS import DDS
 from wax.config.config_dds import defaults as default_dds
 
 from kexp.control.basler.BaslerUSB import BaslerUSB
+from kexp.analysis.absorption.process_absorption_images import compute_OD
 
 class MOT_TOF(EnvExperiment):
 
@@ -21,11 +22,11 @@ class MOT_TOF(EnvExperiment):
         self.t_mot_kill = 1*s
         self.t_mot_load = 5*s
         self.t_magnet_off_delay = 2*ms
-        self.t_camera_trigger = 1*ms
+        self.t_camera_trigger = 10*us
         self.t_imaging_pulse = 5*us
-        self.t_light_only_image_delay = 10*ms
+        self.t_light_only_image_delay = 100*us
 
-        self.t_tof_list = [1,2,3,4]
+        self.t_tof_list = [500,1000,1500]
 
     def build(self):
 
@@ -95,7 +96,7 @@ class MOT_TOF(EnvExperiment):
 
         self.magnet_and_mot_off()
 
-        delay(self.t_tof * ms)
+        delay(t_tof * us)
         self.trigger_camera()
         self.pulse_imaging()
 
@@ -107,9 +108,6 @@ class MOT_TOF(EnvExperiment):
 
         self.trigger_camera()
 
-        frames = self.camera.grab_frames(3)
-        return frames
-
     @kernel
     def run(self):
 
@@ -117,9 +115,18 @@ class MOT_TOF(EnvExperiment):
         [[dds.init_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
         [[dds.set_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
 
-        idx = 0
         for t in self.t_tof_list:
-            frames[idx] = self.tof_expt(t)
-            idx += 1
+            self.tof_expt(t)
+
+    def analyze(self):
+        images = self.camera.grab_N_images(3*len(self.t_tof_list))
+        ODs = compute_OD(images)
+
+        
+
+
+
+            
+
         
 
