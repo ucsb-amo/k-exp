@@ -43,7 +43,7 @@ class BaslerUSB(pylon.InstantCamera):
             grab.Release()
             if count >= N:
                 break
-        self.cam.Close()
+        self.Close()
         return images
         
         
