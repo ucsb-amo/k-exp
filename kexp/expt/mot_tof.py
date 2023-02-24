@@ -1,10 +1,12 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel
 from wax.config.config_dds import defaults as default_dds
-from wax.tools.util.params_to_dataset import params_to_dataset
+from wax.tools.util.ExptParams import ExptParams
 
 from kexp.control.basler.BaslerUSB import BaslerUSB
 from kexp.analysis.absorption.process_absorption_images import compute_OD
+
+import numpy as np
 
 class TOF_MOT(EnvExperiment):
 
@@ -15,16 +17,17 @@ class TOF_MOT(EnvExperiment):
             self.dds[dds0.urukul_idx][dds0.ch] = dds0
 
     def prepare(self):
-        self.params = dict()
-        self.params['t_mot_kill_s'] = 1
-        self.params['t_mot_load_s'] = 5
-        self.params['t_magnet_off_delay_ms'] = 2
-        self.params['t_camera_trigger_us'] = 1
-        self.params['t_imaging_pulse_us'] = 5
-        self.params['t_light_only_image_delay_ms'] = 50
-        self.params['t_dark_image_delay_ms'] = 1
+        self.params = ExptParams()
 
-        self.params['t_tof_list_us'] = [500,1000,1500]
+        self.params.t_mot_kill_s = 1
+        self.params.t_mot_load_s = 5
+        self.params.t_magnet_off_delay_ms = 2
+        self.params.t_camera_trigger_us = 1
+        self.params.t_imaging_pulse_us = 5
+        self.params.t_light_only_image_delay_ms = 50
+        self.params.t_dark_image_delay_ms = 1
+
+        self.params.t_tof_list_us = np.array([100,200,300])
 
     def build(self):
 
@@ -76,21 +79,21 @@ class TOF_MOT(EnvExperiment):
 
     @kernel
     def trigger_camera(self):
-        self.ttl_camera.pulse(self.params['t_camera_trigger_us'] * us)
+        self.ttl_camera.pulse(self.params.t_camera_trigger_us * us)
 
     @kernel
     def pulse_imaging(self):
         self.dds_imaging.dds_device.sw.on()
-        delay(self.params['t_imaging_pulse_us'] * us)
+        delay(self.params.t_imaging_pulse_us * us)
         self.dds_imaging.dds_device.sw.off()
 
     @kernel
     def tof_expt(self,t_tof_us):
         self.kill_mot()
-        delay(self.params['t_mot_kill_s'] * s)
+        delay(self.params.t_mot_kill_s * s)
 
         self.load_mot()
-        delay(self.params['t_mot_load_s'] * s)
+        delay(self.params.t_mot_load_s * s)
 
         self.magnet_and_mot_off()
 
@@ -98,11 +101,11 @@ class TOF_MOT(EnvExperiment):
         self.trigger_camera()
         self.pulse_imaging()
 
-        delay(self.params['t_light_only_image_delay_ms'] * ms)
+        delay(self.params.t_light_only_image_delay_ms * ms)
         self.trigger_camera()
         self.pulse_imaging()
 
-        delay(self.params['t_dark_image_delay_ms'] * ms)
+        delay(self.params.t_dark_image_delay_ms * ms)
 
         self.trigger_camera()
 
@@ -113,18 +116,18 @@ class TOF_MOT(EnvExperiment):
         [[dds.init_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
         [[dds.set_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
 
-        for t_us in self.params['t_tof_list_us']:
+        for t_us in self.params.t_tof_list_us:
             self.tof_expt(t_us)
 
     def analyze(self):
-        images = self.camera.grab_N_images(3*len(self.params['t_tof_list_us']))
+        images = self.camera.grab_N_images(3*len(self.params.t_tof_list_us))
         # ODs = compute_OD(images)
 
         self.set_dataset('img_atoms', images[0::3])
         self.set_dataset('img_light', images[1::3])
         self.set_dataset('img_dark', images[2::3])
 
-        params_to_dataset(self)
+        self.params.params_to_dataset(self)
 
         
 
