@@ -5,18 +5,30 @@ def compute_OD(images):
     idx = 0
     ODs = []
 
-    for idx in range(len(images)/3):
-        atom_img = images[3*idx + 0]
-        light_img = images[3*idx + 1]
-        dark_img = images[3*idx + 2]
-        
-        atoms = atom_img - dark_img
-        light = light_img - dark_img
+    img_atoms = images[0::3]
+    img_light = images[1::3]
+    img_dark = images[2::3]
 
-        this_OD = - np.log( np.divide(atoms,light) )
-        ODs.append(this_OD)
+    for idx in range(len(img_atoms)):
+        atoms = img_atoms[idx]
+        light = img_atoms[idx]
+        dark = img_atoms[idx]
+
+        atoms_only = atoms - dark
+        light_only = light - dark
+
+        atoms_only[atoms_only < 0] = 0
+        light_only[light_only < 0] = 0
+
+        OD = np.divide(atoms_only,light_only)
+
+        ODs.append(OD)
 
     return ODs
+
+        
+        
+        
 
     
 
