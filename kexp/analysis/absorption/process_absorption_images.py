@@ -20,7 +20,9 @@ def compute_OD(images):
         atoms_only[atoms_only < 0] = 0
         light_only[light_only < 0] = 0
 
-        OD = np.divide(atoms_only,light_only)
+        OD = np.divide(atoms_only, light_only, 
+                       out=np.zeros(atoms_only.shape, dtype=float), 
+                       where= light_only!=0)
 
         ODs.append(OD)
 
