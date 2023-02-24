@@ -6,7 +6,7 @@ from wax.config.config_dds import defaults as default_dds
 from kexp.control.basler.BaslerUSB import BaslerUSB
 from kexp.analysis.absorption.process_absorption_images import compute_OD
 
-class MOT_TOF(EnvExperiment):
+class TOF_MOT(EnvExperiment):
 
     def read_dds_from_config(self):
         N_uru = 3
@@ -19,14 +19,15 @@ class MOT_TOF(EnvExperiment):
                 self.dds[dds0.urukul_idx][dds0.ch] = dds0
 
     def prepare(self):
-        self.t_mot_kill = 1*s
-        self.t_mot_load = 5*s
-        self.t_magnet_off_delay = 2*ms
-        self.t_camera_trigger = 10*us
-        self.t_imaging_pulse = 5*us
-        self.t_light_only_image_delay = 100*us
+        self.t_mot_kill_s = 1
+        self.t_mot_load_s = 5
+        self.t_magnet_off_delay_ms = 2
+        self.t_camera_trigger_us = 1
+        self.t_imaging_pulse_us = 5
+        self.t_light_only_image_delay_ms = 50
+        self.t_dark_image_delay_ms = 1
 
-        self.t_tof_list = [500,1000,1500]
+        self.t_tof_list_us = [500,1000,1500]
 
     def build(self):
 
@@ -87,24 +88,24 @@ class MOT_TOF(EnvExperiment):
         self.dds_imaging.dds_device.sw.off()
 
     @kernel
-    def tof_expt(self,t_tof):
+    def tof_expt(self,t_tof_us):
         self.kill_mot()
-        delay(self.t_mot_kill)
+        delay(self.t_mot_kill_s * s)
 
         self.load_mot()
-        delay(self.t_mot_load)
+        delay(self.t_mot_load_s * s)
 
         self.magnet_and_mot_off()
 
-        delay(t_tof * us)
+        delay(t_tof_us * us)
         self.trigger_camera()
         self.pulse_imaging()
 
-        delay(self.t_light_only_image_delay)
+        delay(self.t_light_only_image_delay_ms * ms)
         self.trigger_camera()
         self.pulse_imaging()
 
-        delay(self.t_delay)
+        delay(self.t_dark_image_delay_ms * ms)
 
         self.trigger_camera()
 
@@ -115,15 +116,23 @@ class MOT_TOF(EnvExperiment):
         [[dds.init_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
         [[dds.set_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
 
-        for t in self.t_tof_list:
-            self.tof_expt(t)
+        for t_us in self.t_tof_list_us:
+            self.tof_expt(t_us)
 
     def analyze(self):
-        images = self.camera.grab_N_images(3*len(self.t_tof_list))
+        images = self.camera.grab_N_images(3*len(self.t_tof_list_us))
         ODs = compute_OD(images)
 
-        
+        self.set_dataset('img_atoms', images[0::3])
+        self.set_dataset('img_light', images[1::3])
+        self.set_dataset('img_dark', images[2::3])
 
+        self.set_dataset('t_tof_us',self.t_tof_list_us)
+        self.set_dataset('t_mot_kill_s',self.t_mot_kill_s)
+        self.set_dataset('t_magnet_off_delay_ms',self.t_magnet_off_delay_ms)
+        self.set_dataset('t_camera_trigger_us',self.t_camera_trigger_us)
+        self.set_dataset('t_imaging_pulse_us',self.t_light_only_image_delay_ms)
+        self.set_dataset('t_light_only_image_delay_ms',self.t_light_only_image_delay_ms)
 
 
             
