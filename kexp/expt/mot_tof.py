@@ -121,11 +121,12 @@ class TOF_MOT(EnvExperiment):
 
     def analyze(self):
         images = self.camera.grab_N_images(3*len(self.params.t_tof_list_us))
-        # ODs = compute_OD(images)
+        ODs = compute_OD(images)
 
         self.set_dataset('img_atoms', images[0::3])
         self.set_dataset('img_light', images[1::3])
         self.set_dataset('img_dark', images[2::3])
+        self.set_dataset('ODs', ODs)
 
         self.params.params_to_dataset(self)
 
