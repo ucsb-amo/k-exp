@@ -25,7 +25,7 @@ class TOF_MOT(EnvExperiment):
         while self.camera.IsGrabbing():
             grab = self.camera.RetrieveResult(1000000,py.TimeoutHandling_ThrowException)
             if grab.GrabSucceeded():
-                print('gotem')
+                print(f'gotem (img {count+1}/{self.p.N_img})')
                 img = grab.GetArray()
                 img_t = grab.TimeStamp
                 self.images.append(img)
@@ -146,14 +146,14 @@ class TOF_MOT(EnvExperiment):
         self.dds_imaging.dds_device.sw.off()
 
     @kernel
-    def tof_expt(self,t_tof_us):
+    def tof_expt(self,t_tof_s):
         # self.kill_mot() delay(self.p.t_mot_kill_s * s)
 
         self.load_mot(self.p.t_mot_load_s * s)
 
         self.magnet_and_mot_off()
 
-        delay(t_tof_us * us)
+        delay(t_tof_s * s)
         self.trigger_camera()
         self.pulse_imaging(self.p.t_imaging_pulse_s * s)
 
@@ -176,8 +176,8 @@ class TOF_MOT(EnvExperiment):
         
         self.core.break_realtime()
 
-        for t_us in self.p.t_tof_list_us:
-            self.tof_expt(t_us)
+        for t in self.p.t_tof_list_s:
+            self.tof_expt(t)
 
     def analyze(self):
 
