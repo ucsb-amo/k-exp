@@ -46,25 +46,25 @@ class TOF_MOT(EnvExperiment):
         self.p.t_mot_kill_s = 1
         self.p.t_mot_load_s = 0.1
         self.p.t_2D_mot_load_delay_s = 0.1
-        self.p.t_camera_trigger_us = 2
-        self.p.t_imaging_pulse_us = 10
-        self.p.t_cam_overlap_time_us = 20
-        self.p.t_light_only_image_delay_ms = 75
-        self.p.t_dark_image_delay_ms = 75
-        self.p.t_tof_list_us = np.array([0])
+        self.p.t_camera_trigger_s = 2.e-6
+        self.p.t_imaging_pulse_s = 10.e-6
+        self.p.t_cam_overlap_time_s = 20.e-6
+        self.p.t_light_only_image_delay_s = 75.e-3
+        self.p.t_dark_image_delay_s = 75.e-3
+        self.p.t_tof_list_s = np.array([0]) * 1.e-6
         
 
         # account for rolling shutter
-        t_row_delay_us = 9
+        t_row_delay_s = 9.e-6
         rows = self.camera.SensorHeight.GetValue()
-        self.p.t_total_row_delay_us = t_row_delay_us * (rows - 1)
-        self.p.t_cam_exposure_time = self.p.t_total_row_delay_us + self.p.t_cam_overlap_time_us
-        self.camera.ExposureTime = self.p.t_cam_exposure_time
+        self.p.t_total_row_delay_s = t_row_delay_s * (rows - 1)
+        self.p.t_cam_exposure_time_s = self.p.t_total_row_delay_s + self.p.t_cam_overlap_time_s
+        self.camera.ExposureTime = self.p.t_cam_exposure_time_s * 1.e6
 
-        self.p.t_exposure_delay_us = self.camera.BslExposureStartDelay.GetValue()
-        self.p.t_pretrigger_us = self.p.t_total_row_delay_us + self.p.t_exposure_delay_us
+        self.p.t_exposure_delay_s = self.camera.BslExposureStartDelay.GetValue() * 1.e-6
+        self.p.t_pretrigger_s = self.p.t_total_row_delay_s + self.p.t_exposure_delay_s
         
-        self.p.N_img = 3 * len(self.p.t_tof_list_us)
+        self.p.N_img = 3 * len(self.p.t_tof_list_s)
 
         ## Device setup
         self.setattr_device("core")
@@ -134,10 +134,10 @@ class TOF_MOT(EnvExperiment):
         exposing at the timeline position where this is called. Returns the
         timeline cursor to this position after pretrigger
         '''
-        delay(-self.p.t_pretrigger_us*us)
-        self.ttl_camera.pulse(self.p.t_camera_trigger_us * us)
-        t_adv = self.p.t_pretrigger_us - self.p.t_camera_trigger_us
-        delay(t_adv * us)
+        delay(-self.p.t_pretrigger_s * s)
+        self.ttl_camera.pulse(self.p.t_camera_trigger_s * s)
+        t_adv = self.p.t_pretrigger_s - self.p.t_camera_trigger_s
+        delay(t_adv * s)
 
     @kernel
     def pulse_imaging(self,t):
@@ -155,13 +155,13 @@ class TOF_MOT(EnvExperiment):
 
         delay(t_tof_us * us)
         self.trigger_camera()
-        self.pulse_imaging(self.p.t_imaging_pulse_us * us)
+        self.pulse_imaging(self.p.t_imaging_pulse_s * s)
 
-        delay(self.p.t_light_only_image_delay_ms * ms)
+        delay(self.p.t_light_only_image_delay_s * s)
         self.trigger_camera()
-        self.pulse_imaging(self.p.t_imaging_pulse_us * us)
+        self.pulse_imaging(self.p.t_imaging_pulse_s * s)
 
-        delay(self.p.t_dark_image_delay_ms * ms)
+        delay(self.p.t_dark_image_delay_s * s)
         self.trigger_camera()
 
     @kernel
