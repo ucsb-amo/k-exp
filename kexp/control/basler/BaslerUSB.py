@@ -1,4 +1,5 @@
 from pypylon import pylon
+from artiq.experiment import *
 from kexp.control.basler.TriggeredImage import TriggeredImage
 
 class BaslerUSB(pylon.InstantCamera):
@@ -32,33 +33,3 @@ class BaslerUSB(pylon.InstantCamera):
         if ExposureTime < self.ExposureTime.GetMin():
             ExposureTime = self.ExposureTime.GetMin()
         self.ExposureTime.SetValue(ExposureTime)
-
-    # def grab_N_images(self,N=1,timeout_us=5000):
-    #     '''Grabs N images from the camera, then closes the camera connection.
-        
-    #     Args:
-    #         N (int): the number of frames to be grabbed from the buffer. (default: 1)
-    #         timeout_us (int): The time in microseconds to wait before throwing a timeout exception. (default: 5000)
-    #     '''
-    #     images = []
-    #     self.StartGrabbing(pylon.GrabStrategy_OneByOne)
-    #     count = 0
-    #     while self.IsGrabbing():
-    #         grab = self.RetrieveResult(timeout_us,pylon.TimeoutHandling_ThrowException)
-    #         if grab.GrabSucceeded():
-    #             img = grab.GetArray()
-    #             images.append(img)
-    #             count += 1
-    #         grab.Release()
-    #         if count >= N:
-    #             break
-    #     self.Close()
-    #     return images
-    
-    # def clear_buffer(self,timeout=5000):
-    #     self.Open()
-    #     while self.NumReadyBuffers.GetValue() > 0:
-    #         self.RetrieveResult(timeout, pylon.TimeoutHandling_Return)
-    #     self.Close()
-        
-        
