@@ -8,6 +8,7 @@ from kexp.control.basler.TriggeredImage import TriggeredImage
 from kexp.analysis.absorption.process_absorption_images import compute_OD
 
 import numpy as np
+import pypylon.pylon as py
 
 class TOF_MOT(EnvExperiment):
 
@@ -17,30 +18,50 @@ class TOF_MOT(EnvExperiment):
             dds0.dds_device = self.get_device(dds0.name())
             self.dds[dds0.urukul_idx][dds0.ch] = dds0
 
-    def prepare(self):
-        self.params = ExptParams()
-
-        self.params.t_mot_kill_s = 1
-        self.params.t_mot_load_s = 5
-        self.params.t_2D_mot_load_delay_s = 2
-        self.params.t_camera_trigger_us = 6
-        self.params.t_imaging_pulse_us = 2
-        self.params.t_light_only_image_delay_ms = 50
-        self.params.t_dark_image_delay_ms = 50
-        self.params.t_cam_exposure_time_us = 12
-
-        self.params.t_tof_list_us = np.array([0])
-
-        self.params.V_mot_current_V = 0.7
-
     def build(self):
 
-        self.setattr_device("core")
-        self.read_dds_from_config()
-        
-        self.zotino = self.get_device("zotino0")
+        self.camera = BaslerUSB()
 
-        self.camera = BaslerUSB(ExposureTime=self.params.t_cam_exposure_time_us)
+        ## Parameters
+        self.p = ExptParams()
+
+        self.p.t_mot_kill_s = 1
+        self.p.t_mot_load_s = 0.1
+        self.p.t_2D_mot_load_delay_s = 0.1
+        self.p.t_camera_trigger_us = 2
+        self.p.t_imaging_pulse_us = 10
+        self.p.t_cam_exposure_time_us = 20
+        self.p.t_light_only_image_delay_ms = 50
+        self.p.t_dark_image_delay_ms = 50
+
+        t_row_delay_us = 9
+        rows = self.camera.SensorHeight.GetValue()
+        self.p.t_total_row_delay_us = t_row_delay_us * (rows - 1)
+        self.camera.ExposureTime = self.p.t_total_row_delay_us + self.p.t_cam_exposure_time_us
+
+        self.p.t_exposure_delay_us = self.camera.BslExposureStartDelay.GetValue()
+        self.p.t_pretrigger_us = self.p.t_total_row_delay_us + self.p.t_exposure_delay_us
+
+        self.p.t_tof_list_us = np.array([0,100])
+        self.p.N_img = 3 * len(self.p.t_tof_list_us)
+
+        self.p.V_mot_current_V = 0.7
+
+        ## Device setup
+        self.setattr_device("core")
+        self.zotino = self.get_device("zotino0")
+        self.read_dds_from_config()
+        self.ttl_camera = self.get_device("ttl4")
+        
+
+        
+
+        self.images = []
+        self.images_timestamps = []
+
+
+    def prepare(self):
+        
 
         self.dds_push = self.dds[0][0]
         self.dds_d2_2d_r = self.dds[0][1]
@@ -51,8 +72,21 @@ class TOF_MOT(EnvExperiment):
         # self.dds_d1_3d_c = self.dds[1][2]
         self.dds_imaging = self.dds[1][1]
 
-        self.ttl_camera = self.get_device("ttl4")
-        # self.ttl_3d_magnet_toggle = self.get_device("ttl5")
+    @rpc(flags={"async"})
+    def StartTriggeredGrab(self):
+        self.camera.StartGrabbingMax(self.p.N_img, py.GrabStrategy_LatestImages)
+        count = 0
+        while self.camera.IsGrabbing():
+            grab = self.camera.RetrieveResult(1000000,py.TimeoutHandling_ThrowException)
+            if grab.GrabSucceeded():
+                img = grab.GetArray()
+                img_t = grab.TimeStamp
+                self.images.append(img)
+                self.images_timestamps.append(img_t)
+                count += 1
+            if count >= self.p.N_img:
+                break
+        self.camera.Close()
 
     @kernel
     def kill_mot(self):
@@ -67,10 +101,10 @@ class TOF_MOT(EnvExperiment):
     def load_mot(self):
         self.dds_d2_2d_c.dds_device.sw.on()
         self.dds_d2_2d_r.dds_device.sw.on()
-        delay(self.params.t_2D_mot_load_delay_s * s)
+        delay(self.p.t_2D_mot_load_delay_s * s)
         with parallel:
             with sequential:
-                self.zotino.write_dac(0,self.params.V_mot_current_V)
+                self.zotino.write_dac(0,self.p.V_mot_current_V)
                 self.zotino.load()
             self.dds_push.dds_device.sw.on()
             self.dds_d2_3d_r.dds_device.sw.on()
@@ -93,35 +127,37 @@ class TOF_MOT(EnvExperiment):
 
     @kernel
     def trigger_camera(self):
-        self.ttl_camera.pulse(self.params.t_camera_trigger_us * us)
+        self.ttl_camera.pulse(self.p.t_camera_trigger_us * us)
 
     @kernel
     def pulse_imaging(self):
         self.dds_imaging.dds_device.sw.on()
-        delay(self.params.t_imaging_pulse_us * us)
+        delay(self.p.t_imaging_pulse_us * us)
         self.dds_imaging.dds_device.sw.off()
 
     @kernel
     def tof_expt(self,t_tof_us):
         # self.kill_mot()
-        # delay(self.params.t_mot_kill_s * s)
+        # delay(self.p.t_mot_kill_s * s)
 
         self.load_mot()
-        delay(self.params.t_mot_load_s * s)
+        delay(self.p.t_mot_load_s * s)
 
-        self.magnet_and_mot_off()
-
-        delay(t_tof_us * us)
         with parallel:
             self.trigger_camera()
-            self.pulse_imaging()
+            delay(self.p.t_pretrigger_us * us)
+        with parallel:
+            self.magnet_and_mot_off()
+            delay(t_tof_us * us)
+        self.pulse_imaging()
 
-        delay(self.params.t_light_only_image_delay_ms * ms)
+        delay(self.p.t_light_only_image_delay_ms * ms)
         with parallel:
             self.trigger_camera()
-            self.pulse_imaging()
+            delay(self.p.t_pretrigger_us * us)
+        self.pulse_imaging()
 
-        delay(self.params.t_dark_image_delay_ms * ms)
+        delay(self.p.t_dark_image_delay_ms * ms)
         self.trigger_camera()
 
     @kernel
@@ -131,26 +167,29 @@ class TOF_MOT(EnvExperiment):
         [[dds.init_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
         self.zotino.init()
 
-        # [[dds.set_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
-        # self.core.break_realtime()
-        # [[dds.dds_device.sw.off() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
+        self.StartTriggeredGrab()
+        delay(0.25*s)
+        
+        self.core.break_realtime()
 
-        for t_us in self.params.t_tof_list_us:
+        for t_us in self.p.t_tof_list_us:
             self.tof_expt(t_us)
 
-        # self.zotino.write_dac(0,self.params.V_mot_current_V)
-        # self.zotino.load()
-
     def analyze(self):
-        images = self.camera.grab_N_images(3*len(self.params.t_tof_list_us))
+        
+        images = self.images
+
         ODs = compute_OD(images)
+
+        self.set_dataset('img_all',images)
+        self.set_dataset('img_timestamps_ns',self.images_timestamps)
 
         self.set_dataset('img_atoms', images[0::3])
         self.set_dataset('img_light', images[1::3])
         self.set_dataset('img_dark', images[2::3])
         self.set_dataset('ODs', ODs)
 
-        self.params.params_to_dataset(self)
+        self.p.params_to_dataset(self)
 
         print("Done!")
 
