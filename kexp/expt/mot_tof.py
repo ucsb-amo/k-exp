@@ -43,17 +43,17 @@ class TOF_MOT(EnvExperiment):
         ## Parameters
         self.p = ExptParams()
         self.p.V_mot_current_V = 0.7 # 3.4A on 3D MOT coils
-        self.p.t_mot_kill_s = 1
-        self.p.t_mot_load_s = 3
-        self.p.t_2D_mot_load_delay_s = 3
+        self.p.t_mot_kill_s = 0.2
+        self.p.t_mot_load_s = 1
+        self.p.t_2D_mot_load_delay_s = 1
         self.p.t_pretrigger_motload_s = 0.5
         self.p.t_camera_trigger_s = 2.e-6
-        self.p.t_imaging_pulse_s = 10.e-6
-        self.p.t_cam_overlap_time_s = 20.e-6
-        self.p.t_imaging_delay_s = 3.e-6
+        self.p.t_imaging_pulse_s = 30.e-6
+        self.p.t_cam_overlap_time_s = 50.e-6
+        self.p.t_imaging_delay_s = 5.e-6
         self.p.t_light_only_image_delay_s = 75.e-3
         self.p.t_dark_image_delay_s = 75.e-3
-        self.p.t_tof_list_s = np.array([1000]) * 1.e-6
+        self.p.t_tof_list_s = np.array([0,1000,2000,5000,10000]) * 1.e-6
 
         # account for rolling shutter
         t_row_delay_s = 9.e-6
@@ -183,6 +183,8 @@ class TOF_MOT(EnvExperiment):
         delay(0.25*s)
         
         self.core.break_realtime()
+
+        
 
         for t in self.p.t_tof_list_s:
             self.tof_expt(t)
