@@ -44,15 +44,16 @@ class TOF_MOT(EnvExperiment):
         self.p = ExptParams()
         self.p.V_mot_current_V = 0.7 # 3.4A on 3D MOT coils
         self.p.t_mot_kill_s = 1
-        self.p.t_mot_load_s = 0.1
-        self.p.t_2D_mot_load_delay_s = 0.1
+        self.p.t_mot_load_s = 3
+        self.p.t_2D_mot_load_delay_s = 3
+        self.p.t_pretrigger_motload_s = 0.5
         self.p.t_camera_trigger_s = 2.e-6
         self.p.t_imaging_pulse_s = 10.e-6
         self.p.t_cam_overlap_time_s = 20.e-6
+        self.p.t_imaging_delay_s = 3.e-6
         self.p.t_light_only_image_delay_s = 75.e-3
         self.p.t_dark_image_delay_s = 75.e-3
-        self.p.t_tof_list_s = np.array([0]) * 1.e-6
-        
+        self.p.t_tof_list_s = np.array([1000]) * 1.e-6
 
         # account for rolling shutter
         t_row_delay_s = 9.e-6
@@ -64,7 +65,7 @@ class TOF_MOT(EnvExperiment):
         self.p.t_exposure_delay_s = self.camera.BslExposureStartDelay.GetValue() * 1.e-6
         self.p.t_pretrigger_s = self.p.t_total_row_delay_s + self.p.t_exposure_delay_s
         
-        self.p.N_img = 3 * len(self.p.t_tof_list_s)
+        self.p.N_img = 4 * len(self.p.t_tof_list_s)
 
         ## Device setup
         self.setattr_device("core")
@@ -86,19 +87,20 @@ class TOF_MOT(EnvExperiment):
         self.dac_ch_3Dmot_current_control = 0
         
     @kernel
-    def kill_mot(self):
+    def kill_mot(self,t):
         with parallel:
             self.dds_push.dds_device.sw.off()
             self.dds_d2_3d_r.dds_device.sw.off()
             self.dds_d2_3d_c.dds_device.sw.off()
             # self.dds_d1_3d_r.dds_device.sw.off()
             # self.dds_d1_3d_c.dds_device.sw.off()
+            delay(t)
 
     @kernel
-    def load_2D_mot(self):
+    def load_2D_mot(self,t):
         self.dds_d2_2d_c.dds_device.sw.on()
         self.dds_d2_2d_r.dds_device.sw.on()
-        delay(self.p.t_2D_mot_load_delay_s * s)
+        delay(t)
         
     @kernel
     def load_mot(self,t):
@@ -147,18 +149,24 @@ class TOF_MOT(EnvExperiment):
 
     @kernel
     def tof_expt(self,t_tof_s):
-        # self.kill_mot() delay(self.p.t_mot_kill_s * s)
-
+        self.kill_mot(self.p.t_mot_kill_s * s)
+        self.load_2D_mot(self.p.t_2D_mot_load_delay_s * s)
         self.load_mot(self.p.t_mot_load_s * s)
+
+        delay(-self.p.t_pretrigger_motload_s*s)
+        self.trigger_camera()
+        delay(self.p.t_pretrigger_motload_s*s)
 
         self.magnet_and_mot_off()
 
         delay(t_tof_s * s)
         self.trigger_camera()
+        delay(self.p.t_imaging_delay_s * s)
         self.pulse_imaging(self.p.t_imaging_pulse_s * s)
 
         delay(self.p.t_light_only_image_delay_s * s)
         self.trigger_camera()
+        delay(self.p.t_imaging_delay_s * s)
         self.pulse_imaging(self.p.t_imaging_pulse_s * s)
 
         delay(self.p.t_dark_image_delay_s * s)
@@ -178,6 +186,13 @@ class TOF_MOT(EnvExperiment):
 
         for t in self.p.t_tof_list_s:
             self.tof_expt(t)
+            self.core.break_realtime()
+
+        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
+                                      self.p.V_mot_current_V)
+        # delay(5*us)
+        self.zotino.load()
+        self.dds_imaging.dds_device.sw.off()
 
     def analyze(self):
 
@@ -185,15 +200,15 @@ class TOF_MOT(EnvExperiment):
         
         images = self.images
 
-        ODs = compute_OD(images)
+        # ODs = compute_OD(images)
 
         self.set_dataset('img_all',images)
         self.set_dataset('img_timestamps_ns',self.images_timestamps)
 
-        self.set_dataset('img_atoms', images[0::3])
-        self.set_dataset('img_light', images[1::3])
-        self.set_dataset('img_dark', images[2::3])
-        self.set_dataset('ODs', ODs)
+        # self.set_dataset('img_atoms', images[0::3])
+        # self.set_dataset('img_light', images[1::3])
+        # self.set_dataset('img_dark', images[2::3])
+        # self.set_dataset('ODs', ODs)
 
         self.p.params_to_dataset(self)
 
