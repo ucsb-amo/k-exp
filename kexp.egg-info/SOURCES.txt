@@ -5,12 +5,17 @@ kexp.egg-info/PKG-INFO
 kexp.egg-info/SOURCES.txt
 kexp.egg-info/dependency_links.txt
 kexp.egg-info/top_level.txt
+kexp/analysis/__init__.py
+kexp/analysis/absorption/__init__.py
+kexp/analysis/absorption/process_absorption_images.py
 kexp/bat/__init__.py
 kexp/control/__init__.py
 kexp/control/basler/BaslerUSB.py
+kexp/control/basler/TriggeredImage.py
 kexp/control/basler/__init__.py
 kexp/db/__init__.py
 kexp/db/device_db.py
 kexp/expt/__init__.py
+kexp/expt/img_test.py
 kexp/expt/mot_tof.py
 kexp/expt/set_dds_master.py
