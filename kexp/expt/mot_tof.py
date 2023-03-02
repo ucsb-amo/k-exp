@@ -44,12 +44,12 @@ class TOF_MOT(EnvExperiment):
         self.p = ExptParams()
         self.p.V_mot_current_V = 0.7 # 3.4A on 3D MOT coils
         self.p.t_mot_kill_s = 0.2
-        self.p.t_mot_load_s = 1
-        self.p.t_2D_mot_load_delay_s = 1
-        self.p.t_pretrigger_motload_s = 0.5
+        self.p.t_mot_load_s = 0.1
+        self.p.t_2D_mot_load_delay_s = 0.1
+        self.p.t_pretrigger_motload_s = 75.e-3
         self.p.t_camera_trigger_s = 2.e-6
-        self.p.t_imaging_pulse_s = 30.e-6
-        self.p.t_cam_overlap_time_s = 50.e-6
+        self.p.t_imaging_pulse_s = 10.e-6
+        self.p.t_cam_overlap_time_s = 20.e-6
         self.p.t_imaging_delay_s = 5.e-6
         self.p.t_light_only_image_delay_s = 75.e-3
         self.p.t_dark_image_delay_s = 75.e-3
@@ -85,6 +85,13 @@ class TOF_MOT(EnvExperiment):
         self.dds_imaging = self.dds[1][1]
 
         self.dac_ch_3Dmot_current_control = 0
+
+    @kernel
+    def set_and_turn_off_dds(self):
+        for dds_sublist in self.dds:
+            for dds in dds_sublist:
+                dds.set_dds()
+                dds.off()
         
     @kernel
     def kill_mot(self,t):
@@ -177,15 +184,14 @@ class TOF_MOT(EnvExperiment):
 
         self.core.reset()
         [[dds.init_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
+        self.set_and_turn_off_dds()
         self.zotino.init()
 
         self.StartTriggeredGrab()
         delay(0.25*s)
         
         self.core.break_realtime()
-
         
-
         for t in self.p.t_tof_list_s:
             self.tof_expt(t)
             self.core.break_realtime()
