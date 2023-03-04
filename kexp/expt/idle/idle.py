@@ -1,5 +1,4 @@
 from artiq.experiment import *
-import time
 
 class IdleKernel(EnvExperiment):
     def build(self):
@@ -7,9 +6,8 @@ class IdleKernel(EnvExperiment):
 
     @kernel
     def run(self):
-        start_time = now_mu() + self.core.seconds_to_mu(500*ms)
+        self.core.reset()
+        start_time = now_mu() + self.core.seconds_to_mu(20*s)
         while self.core.get_rtio_counter_mu() < start_time:
             pass
         self.core.reset()
-        delay(10*s)
-        
