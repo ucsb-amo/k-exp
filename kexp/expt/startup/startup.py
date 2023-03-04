@@ -15,7 +15,6 @@ class Startup(EnvExperiment):
         for dds_sublist in self.dds:
             for dds in dds_sublist:
                 dds.set_dds()
-                dds.on()
                 delay(10*us)
 
     @kernel
