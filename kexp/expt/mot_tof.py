@@ -44,11 +44,11 @@ class TOF_MOT(EnvExperiment):
         self.p = ExptParams()
         self.p.V_mot_current_V = 0.7 # 3.4A on 3D MOT coils
         self.p.t_mot_kill_s = 0.2
-        self.p.t_mot_load_s = 0.1
-        self.p.t_2D_mot_load_delay_s = 0.1
+        self.p.t_mot_load_s = 2
+        self.p.t_2D_mot_load_delay_s = 1
         self.p.t_camera_trigger_s = 2.e-6
         self.p.t_imaging_pulse_s = 10.e-6
-        self.p.t_imaging_delay_s = 5.e-6
+        # self.p.t_imaging_delay_s = 5.e-6
         self.p.t_light_only_image_delay_s = 75.e-3
         self.p.t_dark_image_delay_s = 75.e-3
         self.p.t_tof_list_s = np.array([0,1000,2000,5000,10000]) * 1.e-6
@@ -156,12 +156,12 @@ class TOF_MOT(EnvExperiment):
 
         delay(t_tof_s * s)
         self.trigger_camera()
-        delay(self.p.t_imaging_delay_s * s)
+        # delay(self.p.t_imaging_delay_s * s)
         self.pulse_imaging(self.p.t_imaging_pulse_s * s)
 
         delay(self.p.t_light_only_image_delay_s * s)
         self.trigger_camera()
-        delay(self.p.t_imaging_delay_s * s)
+        # delay(self.p.t_imaging_delay_s * s)
         self.pulse_imaging(self.p.t_imaging_pulse_s * s)
 
         delay(self.p.t_dark_image_delay_s * s)
