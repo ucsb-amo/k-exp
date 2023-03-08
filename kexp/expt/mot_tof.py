@@ -49,8 +49,8 @@ class TOF_MOT(EnvExperiment):
         self.p.t_camera_trigger_s = 2.e-6
         self.p.t_imaging_pulse_s = 5.e-6
         # self.p.t_imaging_delay_s = 5.e-6
-        self.p.t_light_only_image_delay_s = 75.e-3
-        self.p.t_dark_image_delay_s = 75.e-3
+        self.p.t_light_only_image_delay_s = 100.e-3
+        self.p.t_dark_image_delay_s = 10.e-3
         self.p.t_tof_list_s = np.linspace(0,1000,6) * 1.e-6
 
         self.p.t_exposure_delay_s = self.camera.BslExposureStartDelay.GetValue() * 1.e-6
