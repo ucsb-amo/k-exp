@@ -56,7 +56,7 @@ class TOF_MOT(EnvExperiment):
         self.p.t_exposure_delay_s = self.camera.BslExposureStartDelay.GetValue() * 1.e-6
         self.p.t_pretrigger_s = self.p.t_exposure_delay_s
         
-        self.p.N_img = 4 * len(self.p.t_tof_list_s)
+        self.p.N_img = 3 * len(self.p.t_tof_list_s)
 
         ## Device setup
         self.setattr_device("core")
@@ -72,8 +72,8 @@ class TOF_MOT(EnvExperiment):
         self.dds_d2_2d_c = self.dds[0][2]
         self.dds_d2_3d_r = self.dds[0][3]
         self.dds_d2_3d_c = self.dds[1][0]
-        self.dds_d1_3d_r = self.dds[1][1] 
-        self.dds_d1_3d_c = self.dds[1][2]
+        self.dds_d1_3d_r = self.dds[1][2] 
+        self.dds_d1_3d_c = self.dds[1][3]
         self.dds_imaging = self.dds[1][1]
 
         self.dac_ch_3Dmot_current_control = 0
@@ -84,6 +84,7 @@ class TOF_MOT(EnvExperiment):
             for dds in dds_sublist:
                 dds.set_dds()
                 dds.off()
+                delay(10*us)
         
     @kernel
     def kill_mot(self,t):
@@ -173,6 +174,7 @@ class TOF_MOT(EnvExperiment):
         self.core.reset()
         self.set_and_turn_off_dds()
         self.zotino.init()
+        self.core.break_realtime()
 
         self.StartTriggeredGrab()
         delay(0.25*s)
@@ -187,6 +189,8 @@ class TOF_MOT(EnvExperiment):
                                       self.p.V_mot_current_V)
         self.zotino.load()
         self.dds_imaging.dds_device.sw.off()
+        self.load_2D_mot(0)
+        self.load_mot(0)
 
     def analyze(self):
 
