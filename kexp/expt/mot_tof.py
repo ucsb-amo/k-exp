@@ -43,15 +43,15 @@ class TOF_MOT(EnvExperiment):
         ## Parameters
         self.p = ExptParams()
         self.p.V_mot_current_V = 0.7 # 3.4A on 3D MOT coils
-        self.p.t_mot_kill_s = 0.2
-        self.p.t_mot_load_s = 2
+        self.p.t_mot_kill_s = 0.5
+        self.p.t_mot_load_s = 0.2
         self.p.t_2D_mot_load_delay_s = 1
         self.p.t_camera_trigger_s = 2.e-6
-        self.p.t_imaging_pulse_s = 10.e-6
+        self.p.t_imaging_pulse_s = 5.e-6
         # self.p.t_imaging_delay_s = 5.e-6
         self.p.t_light_only_image_delay_s = 75.e-3
         self.p.t_dark_image_delay_s = 75.e-3
-        self.p.t_tof_list_s = np.array([0,1000,2000,5000,10000]) * 1.e-6
+        self.p.t_tof_list_s = np.linspace(0,1000,6) * 1.e-6
 
         self.p.t_exposure_delay_s = self.camera.BslExposureStartDelay.GetValue() * 1.e-6
         self.p.t_pretrigger_s = self.p.t_exposure_delay_s
@@ -92,8 +92,8 @@ class TOF_MOT(EnvExperiment):
             self.dds_push.dds_device.sw.off()
             self.dds_d2_3d_r.dds_device.sw.off()
             self.dds_d2_3d_c.dds_device.sw.off()
-            self.dds_d1_3d_r.dds_device.sw.off()
-            self.dds_d1_3d_c.dds_device.sw.off()
+            # self.dds_d1_3d_r.dds_device.sw.off()
+            # self.dds_d1_3d_c.dds_device.sw.off()
             delay(t)
 
     @kernel
@@ -112,8 +112,8 @@ class TOF_MOT(EnvExperiment):
             self.dds_push.dds_device.sw.on()
             self.dds_d2_3d_r.dds_device.sw.on()
             self.dds_d2_3d_c.dds_device.sw.on()
-            self.dds_d1_3d_r.dds_device.sw.on()
-            self.dds_d1_3d_c.dds_device.sw.on()
+            # self.dds_d1_3d_r.dds_device.sw.on()
+            # self.dds_d1_3d_c.dds_device.sw.on()
         delay(t)
         
     @kernel
@@ -189,8 +189,8 @@ class TOF_MOT(EnvExperiment):
                                       self.p.V_mot_current_V)
         self.zotino.load()
         self.dds_imaging.dds_device.sw.off()
-        self.load_2D_mot(0)
-        self.load_mot(0)
+        self.load_2D_mot(1*ms)
+        self.load_mot(1*ms)
 
     def analyze(self):
 
