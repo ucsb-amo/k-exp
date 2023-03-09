@@ -196,7 +196,7 @@ class TOF_MOT(EnvExperiment):
 
         self.camera.Close()
         
-        process_absorption_images(self.images,self.images_timestamps,expt=self)
+        analyze_and_save_absorption_images(self.images,self.images_timestamps,self)
 
         self.p.params_to_dataset(self)
 
