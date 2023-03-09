@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from wax.config.config_dds import defaults as default_dds
+from kexp.config.dds_state import defaults as default_dds
 
 class Startup(EnvExperiment):
 

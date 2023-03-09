@@ -3,11 +3,11 @@ from PyQt5.QtCore import *
 import sys
 import textwrap
 
-from wax.tools.helper.make_dds_expt import DDSGUIExptBuilder
-from wax.devices.DDS import DDS
-from wax.config import config_dds
+from kexp.util.guis.dds.dds_gui_ExptBuilder import DDSGUIExptBuilder
+from kexp.control.artiq.DDS import DDS
+from kexp.config import dds_state
 
-__config_path__ = config_dds.__file__
+__config_path__ = dds_state.__file__
 expt_builder = DDSGUIExptBuilder()
         
 class DDSSpinner(QWidget):
@@ -190,7 +190,7 @@ class MainWindow(QWidget):
         self.spinners[uru_idx][ch].att.setValue(att)
 
     def read_defaults(self):
-        for dds in config_dds.defaults:
+        for dds in dds_state.defaults:
             self.update_dds(dds)
             self.message.msg_loadedText()
 
