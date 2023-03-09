@@ -1,7 +1,7 @@
 import os
 import textwrap
 from subprocess import PIPE, run
-from wax.devices.DDS import DDS
+from kexp.control.artiq.DDS import DDS
 
 class DDSGUIExptBuilder():
 
@@ -20,7 +20,7 @@ class DDSGUIExptBuilder():
     def make_all_dds_on_expt(self,dds_setting_lines):
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from wax.devices.DDS import DDS
+        from kexp.control.artiq.DDS import DDS
 
         class set_all_dds_on(EnvExperiment):
 
@@ -79,7 +79,7 @@ class DDSGUIExptBuilder():
     def make_all_dds_off_expt(self):
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from wax.devices.DDS import DDS
+        from kexp.control.artiq.DDS import DDS
 
         class set_all_dds_off(EnvExperiment):
 
@@ -128,7 +128,7 @@ class DDSGUIExptBuilder():
     def make_single_dds_on_expt(self,dds_to_turn_on):
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from wax.devices.DDS import DDS
+        from kexp.control.artiq.DDS import DDS
 
         class set_single_dds_on(EnvExperiment):
 
@@ -154,7 +154,7 @@ class DDSGUIExptBuilder():
     def make_single_dds_off_expt(self,dds_to_turn_off):
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from wax.devices.DDS import DDS
+        from kexp.control.artiq.DDS import DDS
 
         class set_single_dds_off(EnvExperiment):
 
