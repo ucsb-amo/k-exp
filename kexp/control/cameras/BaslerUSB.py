@@ -1,6 +1,5 @@
 from pypylon import pylon
 from artiq.experiment import *
-from kexp.control.basler.TriggeredImage import TriggeredImage
 
 class BaslerUSB(pylon.InstantCamera):
     '''
