@@ -1,5 +1,5 @@
 
-from kexp.control.artiq import DDS
+from kexp.control.artiq.DDS import DDS
 
 defaults = [
     DDS(0,0,98.00,14.5),
