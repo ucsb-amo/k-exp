@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from wax.devices.DDS import DDS
+from kexp.control.artiq.DDS import DDS
 
 class set_dds_master(EnvExperiment):
 
