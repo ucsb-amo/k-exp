@@ -5,7 +5,7 @@ from wax.tools.util.ExptParams import ExptParams
 
 from kexp.control.basler.BaslerUSB import BaslerUSB
 from kexp.control.basler.TriggeredImage import TriggeredImage
-from kexp.analysis.absorption.process_absorption_images import compute_OD
+from kexp.analysis.absorption.process_absorption_images import *
 
 import numpy as np
 import pypylon.pylon as py
@@ -196,17 +196,7 @@ class TOF_MOT(EnvExperiment):
 
         self.camera.Close()
         
-        images = self.images
-
-        ODs = compute_OD(images)
-
-        self.set_dataset('img_all',images)
-        self.set_dataset('img_timestamps_ns',self.images_timestamps)
-
-        self.set_dataset('img_atoms', images[0::3])
-        self.set_dataset('img_light', images[1::3])
-        self.set_dataset('img_dark', images[2::3]) 
-        self.set_dataset('ODs', ODs)
+        process_absorption_images(self.images,self.images_timestamps,expt=self)
 
         self.p.params_to_dataset(self)
 
