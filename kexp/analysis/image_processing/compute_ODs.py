@@ -23,13 +23,19 @@ def analyze_and_save_absorption_images(images,timestamps_ns,expt,crop_type='mot'
         options: 'mot', 'cmot', 'gm', 'odt'.
     '''
 
-    ODraw, ODs, summedODx, summedODy = process_absorption_images(images,crop_type)
-    expt.set_dataset('img_all',images)
-    expt.set_dataset('img_timestamps_ns',timestamps_ns)
-    expt.set_dataset('img_atoms', images[0::3])
-    expt.set_dataset('img_light', images[1::3])
-    expt.set_dataset('img_dark', images[2::3])
-    expt.set_dataset('ODraw', ODraw)
+    ODraw, ODs, summedODx, summedODy, \
+        img_atoms, img_light, img_dark, \
+        img_atoms_tstamp_ns, img_light_tstamp_ns, img_dark_tstamp_ns \
+         = process_absorption_images(images,crop_type)
+    # expt.set_dataset('img_all',images)
+    # expt.set_dataset('img_timestamps_ns',timestamps_ns)
+    expt.set_dataset('img_atoms_tstamp_ns',img_atoms_tstamp_ns)
+    expt.set_dataset('img_light_tstamp_ns',img_light_tstamp_ns)
+    expt.set_dataset('img_dark_tstamp_ns',img_dark_tstamp_ns)
+    expt.set_dataset('img_atoms', img_atoms)
+    expt.set_dataset('img_light', img_light)
+    expt.set_dataset('img_dark', img_dark)
+    # expt.set_dataset('ODraw', ODraw)
     expt.set_dataset('OD',ODs)
     expt.set_dataset('summedODx',summedODx)
     expt.set_dataset('summedODy',summedODy)
@@ -52,15 +58,18 @@ def process_absorption_images(images,crop_type='mot'):
         Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
         options: 'mot', 'cmot', 'gm', 'odt'.
     '''
-    idx = 0
+    atom_img_idx = 0
+    light_img_idx = 1
+    dark_img_idx = 2
+
     ODsraw = []
     ODs = []
     summedODx = []
     summedODy = []
 
-    img_atoms = images[0::3]
-    img_light = images[1::3]
-    img_dark = images[2::3]
+    img_atoms = images[atom_img_idx::3]
+    img_light = images[light_img_idx::3]
+    img_dark = images[dark_img_idx::3]
 
     for idx in range(len(img_atoms)):
         atoms = img_atoms[idx]
