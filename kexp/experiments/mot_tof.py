@@ -1,10 +1,10 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 from kexp.config.dds_state import defaults as default_dds
-from kexp.util.artiq.ExptParams import ExptParams
+from kexp.util.artiq.expt_params import ExptParams
 
-from kexp.control.cameras.BaslerUSB import BaslerUSB
-from kexp.analysis.image_processing.process_absorption_images import *
+from kexp.control.cameras.basler_usb import BaslerUSB
+from kexp.analysis.image_processing.compute_ODs import *
 
 import numpy as np
 import pypylon.pylon as py
@@ -43,14 +43,13 @@ class TOF_MOT(EnvExperiment):
         self.p = ExptParams()
         self.p.V_mot_current_V = 0.7 # 3.4A on 3D MOT coils
         self.p.t_mot_kill_s = 0.5
-        self.p.t_mot_load_s = 0.2
+        self.p.t_mot_load_s = 1
         self.p.t_2D_mot_load_delay_s = 1
         self.p.t_camera_trigger_s = 2.e-6
         self.p.t_imaging_pulse_s = 5.e-6
-        # self.p.t_imaging_delay_s = 5.e-6
         self.p.t_light_only_image_delay_s = 100.e-3
         self.p.t_dark_image_delay_s = 10.e-3
-        self.p.t_tof_list_s = np.linspace(0,1000,6) * 1.e-6
+        self.p.t_tof_list_s = np.linspace(0,1000,3) * 1.e-6
 
         self.p.t_exposure_delay_s = self.camera.BslExposureStartDelay.GetValue() * 1.e-6
         self.p.t_pretrigger_s = self.p.t_exposure_delay_s
@@ -156,12 +155,10 @@ class TOF_MOT(EnvExperiment):
 
         delay(t_tof_s * s)
         self.trigger_camera()
-        # delay(self.p.t_imaging_delay_s * s)
         self.pulse_imaging(self.p.t_imaging_pulse_s * s)
 
         delay(self.p.t_light_only_image_delay_s * s)
         self.trigger_camera()
-        # delay(self.p.t_imaging_delay_s * s)
         self.pulse_imaging(self.p.t_imaging_pulse_s * s)
 
         delay(self.p.t_dark_image_delay_s * s)
@@ -193,9 +190,9 @@ class TOF_MOT(EnvExperiment):
 
     def analyze(self):
 
-        self.camera.Close()
+        self.camera.close()
         
-        analyze_and_save_absorption_images(self.images,self.images_timestamps,self)
+        _, summedODx, summedODy = analyze_and_save_absorption_images(self.images,self.images_timestamps,self)
 
         self.p.params_to_dataset(self)
 
