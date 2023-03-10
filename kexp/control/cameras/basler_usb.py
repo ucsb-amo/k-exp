@@ -34,6 +34,11 @@ class BaslerUSB(pylon.InstantCamera):
         self.ExposureTime.SetValue(ExposureTime)
 
     def close(self):
+        '''
+        An alternative to the base `Close` function, which also returns the
+        trigger mode to 'Off' so that the camera can immediately be viewed using
+        the Pylon program.
+        '''
         self.TriggerMode = 'Off'
         self.Close()
         
