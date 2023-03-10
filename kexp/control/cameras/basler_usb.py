@@ -32,3 +32,9 @@ class BaslerUSB(pylon.InstantCamera):
         if ExposureTime < self.ExposureTime.GetMin():
             ExposureTime = self.ExposureTime.GetMin()
         self.ExposureTime.SetValue(ExposureTime)
+
+    def close(self):
+        self.TriggerMode = 'Off'
+        self.Close()
+        
+
