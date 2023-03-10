@@ -28,7 +28,7 @@ def fit_gaussian_summedOD(summedODs):
     '''
     fits = []
     for sOD in summedODs:
-        xaxis = cam.pixel_size_m * np.arange(len(sOD))
+        xaxis = cam.pixel_size_m / cam.magnification * np.arange(len(sOD))
         fits.append(fit.GaussianFit(xaxis, sOD))
     return fits
 
