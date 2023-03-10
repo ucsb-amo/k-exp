@@ -5,6 +5,7 @@ class ExptParams():
         self.t_imaging_pulse_s = 5.e-6
         self.t_light_only_image_delay_s = 100.e-3
         self.t_dark_image_delay_s = 10.e-3
+        self.t_camera_exposure_s = 0. # camera init will default to min exposure
 
     def params_to_dataset(self,expt):
         try:
