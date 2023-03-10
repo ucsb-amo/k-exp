@@ -1,6 +1,6 @@
 import numpy as np
 import kexp.config.camera_params as cam
-import kexp.analysis.fitting.fit_gaussian_cloud as fit
+import kexp.analysis.fitting.fit_gaussian as fit
 
 def compute_gaussian_cloud_params(summedODx,summedODy):
     xfits = fit_gaussian_summedOD(summedODx)

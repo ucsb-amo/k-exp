@@ -2,11 +2,14 @@ import numpy as np
 from scipy.optimize import curve_fit
 
 class GaussianFit():
-    def __init__(self,amplitude,sigma,center,offset):
+    def __init__(self,amplitude,sigma,center,offset,xaxis,):
         self.amplitude = amplitude
         self.sigma = sigma
         self.center = center
         self.offset = offset
+        self.xaxis = xaxis
+
+    # def _fit_func()
 
 def _gauss(x, amplitude, sigma, x0, offset):
     return offset + amplitude * np.exp( -(x-x0)**2 / (2 * sigma**2) )
@@ -54,5 +57,5 @@ def gauss_fit(x,y):
     offset: float
     '''
     amplitude, sigma, x0, offset = _gauss_fit(x,y)
-    fit = GaussianFit(amplitude, sigma, x0, offset)
+    fit = GaussianFit(amplitude, sigma, x0, offset, xaxis=x)
     return fit
