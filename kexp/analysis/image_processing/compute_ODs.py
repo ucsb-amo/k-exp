@@ -57,6 +57,15 @@ def compute_ODs(images,crop_type='mot'):
     crop_type: str
         Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
         options: 'mot', 'cmot', 'gm', 'odt'.
+
+    Returns
+    -------
+    ODsraw: ArrayLike
+        The uncropped ODs
+    ODs: ArrayLike
+        The cropped ODs
+    summedODx: ArrayLike
+    summedODy: ArrayLike
     '''
     atom_img_idx = 0
     light_img_idx = 1
@@ -76,7 +85,7 @@ def compute_ODs(images,crop_type='mot'):
         light = img_light[idx]
         dark = img_dark[idx]
 
-        OD = cmopute_OD(atoms,light,dark)
+        OD = compute_OD(atoms,light,dark)
         ODsraw.append(OD)
 
         OD = roi.crop_OD(OD)
@@ -88,7 +97,7 @@ def compute_ODs(images,crop_type='mot'):
 
     return ODsraw, ODs, summedODx, summedODy
 
-def cmopute_OD(atoms,light,dark):
+def compute_OD(atoms,light,dark):
 
     atoms_only = atoms - dark
     light_only = light - dark
