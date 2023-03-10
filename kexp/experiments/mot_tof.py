@@ -43,13 +43,15 @@ class TOF_MOT(EnvExperiment):
         self.p = ExptParams()
         self.p.V_mot_current_V = 0.7 # 3.4A on 3D MOT coils
         self.p.t_mot_kill_s = 0.5
-        self.p.t_mot_load_s = 1
+        self.p.t_mot_load_s = 0.25
         self.p.t_2D_mot_load_delay_s = 1
         self.p.t_camera_trigger_s = 2.e-6
         self.p.t_imaging_pulse_s = 5.e-6
         self.p.t_light_only_image_delay_s = 100.e-3
         self.p.t_dark_image_delay_s = 10.e-3
-        self.p.t_tof_list_s = np.linspace(0,1000,3) * 1.e-6
+        self.p.t_tof_list_s = np.linspace(0,1000,7) * 1.e-6
+        # self.p.t_camera_exposure_s = 5000*1.e-6
+        # self.camera.set_exposure_time( self.p.t_camera_exposure_s )
 
         self.p.t_exposure_delay_s = self.camera.BslExposureStartDelay.GetValue() * 1.e-6
         self.p.t_pretrigger_s = self.p.t_exposure_delay_s
@@ -147,7 +149,7 @@ class TOF_MOT(EnvExperiment):
 
     @kernel
     def tof_expt(self,t_tof_s):
-        self.kill_mot(self.p.t_mot_kill_s * s)
+        # self.kill_mot(self.p.t_mot_kill_s * s)
         self.load_2D_mot(self.p.t_2D_mot_load_delay_s * s)
         self.load_mot(self.p.t_mot_load_s * s)
 
