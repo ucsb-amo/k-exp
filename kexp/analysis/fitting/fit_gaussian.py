@@ -6,7 +6,7 @@ class GaussianFit():
         self.xdata = xdata
         self.ydata = ydata
 
-        amplitude, sigma, x_center, y_offset = self.fit(xdata,ydata)
+        amplitude, sigma, x_center, y_offset = self._fit(xdata,ydata)
         self.amplitude = amplitude
         self.sigma = sigma
         self.x_center = x_center
@@ -43,26 +43,3 @@ class GaussianFit():
                                 p0=[amplitude_guess, sigma_guess, x_center_guess, y_offset_guess],
                                 bounds=((0,0,-np.inf,0),(np.inf,np.inf,np.inf,np.inf)))
         return popt
-
-    def fit(self,x,y):
-        '''
-        Returns the gaussian fit parameters for y(x).
-
-        Compared to `fit`, explicitly unpacks the output.
-
-        Fit equation: offset + amplitude * np.exp( -(x-x0)**2 / (2 * sigma**2) )
-
-        Parameters
-        ----------
-        x: ArrayLike
-        y: ArrayLike
-
-        Returns
-        -------
-        amplitude: float
-        sigma: float
-        x0: float
-        offset: float
-        '''
-        amplitude, sigma, x_center, y_offset = self._fit(x,y)
-        return amplitude, sigma, x_center, y_offset

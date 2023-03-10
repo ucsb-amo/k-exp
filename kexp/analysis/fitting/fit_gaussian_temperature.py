@@ -11,7 +11,7 @@ class GaussianTemperatureFit():
         if not sigma0:
             self.sigma0 = ydata[np.argmin(xdata)]
 
-        T = self.fit(xdata,ydata)
+        T = self._fit(xdata,ydata)
         self.T = T
         
         self.y_fitdata = self._fit_func(xdata,T)
@@ -22,19 +22,3 @@ class GaussianTemperatureFit():
     def _fit(self, x, y):
         popt, pcov = curve_fit(self._fit_func, x, y, p0=[0], bounds=(0,1))
         return popt
-    
-    def fit(self, x, y):
-        '''
-        Parameters
-        ----------
-        x: ArrayLike
-        y: ArrayLike
-        sigma0: float
-            The initial width of the cloud.
-
-        Returns
-        -------
-        T: float
-        '''
-        T = self._fit(x,y)
-        return T
