@@ -1,28 +1,59 @@
 import numpy as np
+import kexp.analysis.image_processing.roi_select as roi
 
-def analyze_and_save_absorption_images(images,timestamps_ns,expt):
+def analyze_and_save_absorption_images(images,timestamps_ns,expt,crop_type='mot'):
     '''
     Saves the images, image timestamps (in ns), computes ODs, and saves them to
     the dataset of the current experiment (expt)
+
+    Parameters
+    ----------
+    images: list 
+        An n x px x py list of images of n images, px x py pixels, ordered as
+        atoms, light, dark.
+
+    timestamps_ns: list
+        A list of timestamps for the images in `images`, in nanoseconds.
+
+    expt: EnvExperiment
+        The experiment object, called to save datasets.
+
+    crop_type: str
+        Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
+        options: 'mot', 'cmot', 'gm', 'odt'.
     '''
 
-    ODs, summedODx, summedODy = process_absorption_images(images)
+    ODraw, ODs, summedODx, summedODy = process_absorption_images(images,crop_type)
     expt.set_dataset('img_all',images)
     expt.set_dataset('img_timestamps_ns',timestamps_ns)
     expt.set_dataset('img_atoms', images[0::3])
     expt.set_dataset('img_light', images[1::3])
     expt.set_dataset('img_dark', images[2::3])
+    expt.set_dataset('ODraw', ODraw)
     expt.set_dataset('OD',ODs)
     expt.set_dataset('summedODx',summedODx)
     expt.set_dataset('summedODy',summedODy)
 
-def process_absorption_images(images):
+    return ODs, summedODx, summedODy
+
+def process_absorption_images(images,crop_type='mot'):
     '''
     From a list of images (length 3*n, where n is the number of runs), computes
     OD. Crops to a preset ROI based on in what stage of cooling the images were
     taken.
+
+    Parameters
+    ----------
+    images: list 
+        An n x px x py list of images of n images, px x py pixels, ordered as
+        atoms, light, dark.
+
+    crop_type: str
+        Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
+        options: 'mot', 'cmot', 'gm', 'odt'.
     '''
     idx = 0
+    ODsraw = []
     ODs = []
     summedODx = []
     summedODy = []
@@ -37,13 +68,16 @@ def process_absorption_images(images):
         dark = img_dark[idx]
 
         OD = compute_OD(atoms,light,dark)
+        ODsraw.append(OD)
+
+        OD = roi.crop_OD(OD)
         ODs.append(OD)
 
         this_summedODx, this_summedODy = compute_summedOD(OD)
         summedODx.append(this_summedODx)
         summedODy.append(this_summedODy)
 
-    return ODs, summedODx, summedODy
+    return ODsraw, ODs, summedODx, summedODy
 
 def compute_OD(atoms,light,dark):
 
