@@ -17,10 +17,10 @@ class GaussianTemperatureFit():
         self.y_fitdata = self._fit_func(xdata,T)
 
     def _fit_func(self, t, T):
-        return cam.pixel_size_m / cam.magnification * np.sqrt( c.kB * T / c.m_K * t**2 + self.sigma0**2 )
+        return np.sqrt( c.kB * T / c.m_K * t**2 + self.sigma0**2 )
 
     def _fit(self, x, y):
-        popt, pcov = curve_fit(self._fit_func, x, y, p0=[1.e-3], bounds=(0,1))
+        popt, pcov = curve_fit(self._fit_func, x, y, p0=[0], bounds=(0,1))
         return popt
     
     def fit(self, x, y):
