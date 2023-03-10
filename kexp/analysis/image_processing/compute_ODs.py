@@ -26,7 +26,7 @@ def analyze_and_save_absorption_images(images,timestamps_ns,expt,crop_type='mot'
     ODraw, ODs, summedODx, summedODy, \
         img_atoms, img_light, img_dark, \
         img_atoms_tstamp_ns, img_light_tstamp_ns, img_dark_tstamp_ns \
-         = process_absorption_images(images,crop_type)
+         = compute_ODs(images,crop_type)
     # expt.set_dataset('img_all',images)
     # expt.set_dataset('img_timestamps_ns',timestamps_ns)
     expt.set_dataset('img_atoms_tstamp_ns',img_atoms_tstamp_ns)
@@ -42,7 +42,7 @@ def analyze_and_save_absorption_images(images,timestamps_ns,expt,crop_type='mot'
 
     return ODs, summedODx, summedODy
 
-def process_absorption_images(images,crop_type='mot'):
+def compute_ODs(images,crop_type='mot'):
     '''
     From a list of images (length 3*n, where n is the number of runs), computes
     OD. Crops to a preset ROI based on in what stage of cooling the images were
@@ -76,7 +76,7 @@ def process_absorption_images(images,crop_type='mot'):
         light = img_light[idx]
         dark = img_dark[idx]
 
-        OD = compute_OD(atoms,light,dark)
+        OD = cmopute_OD(atoms,light,dark)
         ODsraw.append(OD)
 
         OD = roi.crop_OD(OD)
@@ -88,7 +88,7 @@ def process_absorption_images(images,crop_type='mot'):
 
     return ODsraw, ODs, summedODx, summedODy
 
-def compute_OD(atoms,light,dark):
+def cmopute_OD(atoms,light,dark):
 
     atoms_only = atoms - dark
     light_only = light - dark
