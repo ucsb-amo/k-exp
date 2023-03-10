@@ -7,7 +7,7 @@ class DDSGUIExptBuilder():
 
     def __init__(self):
         self.__code_path__ = os.environ.get('code')
-        self.__temp_exp_path__ = os.path.join(self.__code_path__,"k-exp","kexp","expt","dds_gui_expt.py")
+        self.__temp_exp_path__ = os.path.join(self.__code_path__,"k-exp","kexp","experiments","dds_gui_expt.py")
 
     def run_expt(self):
         expt_path = self.__temp_exp_path__
