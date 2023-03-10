@@ -39,7 +39,7 @@ class BaslerUSB(pylon.InstantCamera):
         trigger mode to 'Off' so that the camera can immediately be viewed using
         the Pylon program.
         '''
-        self.TriggerMode = 'Off'
+        # self.TriggerMode = 'Off'
         self.Close()
         
 
