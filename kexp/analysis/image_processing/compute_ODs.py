@@ -35,7 +35,7 @@ def analyze_and_save_absorption_images(images,timestamps_ns,expt,crop_type='mot'
     expt.set_dataset('img_atoms', img_atoms)
     expt.set_dataset('img_light', img_light)
     expt.set_dataset('img_dark', img_dark)
-    # expt.set_dataset('ODraw', ODraw)
+    expt.set_dataset('ODraw', ODraw)
     expt.set_dataset('OD',ODs)
     expt.set_dataset('summedODx',summedODx)
     expt.set_dataset('summedODy',summedODy)
