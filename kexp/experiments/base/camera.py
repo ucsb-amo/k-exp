@@ -33,7 +33,7 @@ def StartTriggeredGrab(expt, N, img_list, img_tstamp_list):
     expt.camera.StopGrabbing()
     expt.camera.Close()
 
-def prepare_camera(expt, params, N, img_list, img_tstamp_list):
+def prepare_camera(expt, params):
     expt.camera = BaslerUSB()
     params.t_exposure_delay = expt.camera.BslExposureStartDelay.GetValue() * 1.e-6
     params.t_pretrigger = params.t_exposure_delay
