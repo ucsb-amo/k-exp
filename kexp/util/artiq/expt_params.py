@@ -1,5 +1,6 @@
 class ExptParams():
     def __init__(self):
+        self.t_mot_kill = 0.5
         self.t_mot_load = 1
         self.t_2D_mot_load_delay = 1
         self.t_camera_trigger = 2.e-6
