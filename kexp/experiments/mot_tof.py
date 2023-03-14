@@ -17,15 +17,8 @@ class TOF_MOT(EnvExperiment):
 
         self.p = ExptParams()
         
-        self.p.V_mot_current = 0.7 # 3.4A on 3D MOT coils
         self.p.t_mot_load = 0.25
-        self.p.t_2D_mot_load_delay = 1
-        self.p.t_camera_trigger = 2.e-6
-        self.p.t_imaging_pulse = 5.e-6
-        self.p.t_light_only_image_delay = 100.e-3
-        self.p.t_dark_image_delay = 10.e-3
         self.p.t_tof_list = np.linspace(0,1000,7) * 1.e-6
-        
         self.p.N_img = 3 * len(self.p.t_tof_list)
 
         ## Device setup
