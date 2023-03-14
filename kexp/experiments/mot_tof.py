@@ -186,9 +186,8 @@ class TOF_MOT(EnvExperiment):
         self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
                                       self.p.V_mot_current_V)
         self.zotino.load()
+        [[dds.set_dds() for dds in dds_on_this_uru] for dds_on_this_uru in self.dds]
         self.dds_imaging.dds_device.sw.off()
-        self.load_2D_mot(1*ms)
-        self.load_mot(1*ms)
 
     def analyze(self):
 
