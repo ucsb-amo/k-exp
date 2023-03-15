@@ -1,8 +1,8 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
-from kexp.util.artiq.ExptParams import ExptParams
+from kexp.util.artiq.expt_params import ExptParams
 
-from kexp.control.cameras.BaslerUSB import BaslerUSB
+from kexp.control.cameras.basler_usb import BaslerUSB
 
 import numpy as np
 import pypylon.pylon as py
