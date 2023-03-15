@@ -25,9 +25,6 @@ class TOF_MOT(EnvExperiment, Base):
         self.p.t_tof_list = np.linspace(0,1000,7) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof_list)
 
-        self.images = []
-        self.image_timestamps = []
-
         ## Device setup
 
         self.prepare_devices()
@@ -64,7 +61,7 @@ class TOF_MOT(EnvExperiment, Base):
         self.core.break_realtime()
         
         for t in self.p.t_tof_list:
-            # self.tof_expt(t)
+            self.tof_expt(t)
             self.core.break_realtime()
 
         # return to mot load state
