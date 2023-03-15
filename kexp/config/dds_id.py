@@ -3,7 +3,7 @@ import numpy as np
 N_uru = 2
 N_ch = 4
 shape = (N_uru,N_ch)
-dds_list = np.zeros(shape)
+dds_list = [[None for _ in range(N_ch)] for _ in range(N_uru)]
 
 def dds_id(uru_idx,ch_idx):
     ids = dds_ids()

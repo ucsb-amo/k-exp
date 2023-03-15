@@ -24,12 +24,13 @@ def kill_mot(expt,t):
         expt.dds["d2_3d_c"].off()
         expt.dds["d1_3d_r"].off()
         expt.dds["d1_3d_c"].off()
-        delay(t)
+    delay(t)
 
 @kernel
 def load_2D_mot(expt,t):
-    expt.dds["d2_2d_c"].on()
-    expt.dds["d2_2d_r"].on()
+    with parallel:
+        expt.dds["d2_2d_c"].on()
+        expt.dds["d2_2d_r"].on()
     delay(t)
 
 @kernel
