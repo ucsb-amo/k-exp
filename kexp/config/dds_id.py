@@ -19,14 +19,14 @@ def dds_ids():
 
     dds_ids = [[{} for _ in range(N_ch)] for _ in range(N_uru)]
 
-    dds_ids[0][0] = {"names": "push", "aom_order": 1}
-    dds_ids[0][1] = {"names": "d2_2d_r", "aom_order": 1}
-    dds_ids[0][2] = {"names": "d2_2d_c", "aom_order": -1}
-    dds_ids[0][3] = {"names": "d2_3d_r", "aom_order": 1}
-    dds_ids[1][0] = {"names": "d2_3d_c", "aom_order": -1}
-    dds_ids[1][1] = {"names": "imaging", "aom_order": 1}
-    dds_ids[1][2] = {"names": "d1_3d_r", "aom_order": 1}
-    dds_ids[1][3] = {"names": "d1_3d_c", "aom_order": -1}
+    dds_ids[0][0] = {"name": "push", "aom_order": 1}
+    dds_ids[0][1] = {"name": "d2_2d_r", "aom_order": 1}
+    dds_ids[0][2] = {"name": "d2_2d_c", "aom_order": -1}
+    dds_ids[0][3] = {"name": "d2_3d_r", "aom_order": 1}
+    dds_ids[1][0] = {"name": "d2_3d_c", "aom_order": -1}
+    dds_ids[1][1] = {"name": "imaging", "aom_order": 1}
+    dds_ids[1][2] = {"name": "d1_3d_r", "aom_order": 1}
+    dds_ids[1][3] = {"name": "d1_3d_c", "aom_order": -1}
 
     return dds_ids
 
