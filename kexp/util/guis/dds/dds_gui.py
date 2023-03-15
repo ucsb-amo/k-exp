@@ -161,13 +161,13 @@ class MainWindow(QWidget):
 
     def spinners_to_param_list(self):
         '''Convert gui values into parameter list'''
-        param_list = []
+        param_list = dds_id.dds_list
         for uru_idx in range(self.N_urukul):
             for ch_idx in range(self.N_ch):
                 this_spinner = self.spinners[uru_idx][ch_idx]
                 freq = this_spinner.f.value()
                 att = this_spinner.att.value()
-                param_list.append(DDS(uru_idx,ch_idx,freq,att))
+                param_list[uru_idx][ch_idx] = DDS(uru_idx,ch_idx,freq,att)
         return param_list
 
     def submit_job(self):
@@ -192,9 +192,10 @@ class MainWindow(QWidget):
         self.spinners[uru_idx][ch].att.setValue(att)
 
     def read_defaults(self):
-        for dds in dds_state.defaults:
-            self.update_dds(dds)
-            self.message.msg_loadedText()
+        for dds_uru_list in dds_state.dds_state:
+            for dds in dds_uru_list:
+                self.update_dds(dds)
+                self.message.msg_loadedText()
 
     def write_defaults(self):
         dds_strings = self.make_write_defaults_line()
