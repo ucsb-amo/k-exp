@@ -4,9 +4,9 @@ from artiq.experiment import delay, parallel, sequential
 from kexp.util.artiq.expt_params import ExptParams
 from kexp.config.dds_state import defaults as default_dds
 
-def read_dds_from_config(expt):
+def read_dds_from_config(expt, dds_params=default_dds):
     expt.dds = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
-    for dds0 in default_dds:
+    for dds0 in dds_params:
         dds0.dds_device = expt.get_device(dds0.name())
         expt.dds[dds0.urukul_idx][dds0.ch] = dds0
 
