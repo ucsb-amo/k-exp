@@ -1,5 +1,6 @@
 from artiq.experiment import *
 from kexp.util.db.device_db import device_db
+from kexp.config.dds_id import dds_id
 
 class DDS():
    def __init__(self, urukul_idx, ch, freq_MHz=0., att_dB=0.):
@@ -7,11 +8,19 @@ class DDS():
       self.ch = ch
       self.freq_MHz = freq_MHz
       self.att_dB = att_dB
+      self.aom_order = []
+      self.varname = []
       self.dds_device = []
       self.cpld_name = []
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
+      self.get_id()
+      
+   def get_id(self):
+      varname, aom_order = dds_id()
+      self.varname = varname
+      self.aom_order = aom_order
       
    def name(self) -> TStr:
       return f'urukul{self.urukul_idx}_ch{self.ch}'
