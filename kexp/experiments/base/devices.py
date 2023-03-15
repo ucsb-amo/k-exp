@@ -33,9 +33,9 @@ def assign_channels(self,expt,dds_list):
     expt.dds_d2_2d_c = dds_list[0][2]
     expt.dds_d2_3d_r = dds_list[0][3]
     expt.dds_d2_3d_c = dds_list[1][0]
+    expt.dds_imaging = dds_list[1][1]
     expt.dds_d1_3d_r = dds_list[1][2] 
     expt.dds_d1_3d_c = dds_list[1][3]
-    expt.dds_imaging = dds_list[1][1]
 
     expt.dac_ch_3Dmot_current_control = 0
 
