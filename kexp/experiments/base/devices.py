@@ -4,28 +4,31 @@ from artiq.experiment import delay, parallel, sequential
 from kexp.util.artiq.expt_params import ExptParams
 from kexp.config.dds_state import defaults as default_dds
 
-@kernel
-def set_all_dds(expt, state=0):
-    for dds in expt.dds.values():
-        dds.set_dds()
-        if state == 0:
-            dds.off()
-        elif state == 1:
-            dds.on()
-        delay(10*us)
+class devices():
+    def __init__(self):
+        pass
 
-def prepare_devices(expt, dds_list=default_dds):
+    @kernel
+    def set_all_dds(self, state=0):
+        for dds in self.dds.values():
+            dds.set_dds()
+            if state == 0:
+                dds.off()
+            elif state == 1:
+                dds.on()
+            delay(10*us)
 
-    expt.core = expt.get_device("core")
-    expt.zotino = expt.get_device("zotino0")
+    def prepare_devices(self, dds_list = default_dds):
 
-    expt.dds = dict()
-    for dds in dds_list:
-        dds.dds_device = expt.get_device(dds.name())
-        expt.dds[dds.varname] = dds
+        self.core = self.get_device("core")
+        self.zotino = self.get_device("zotino0")
 
-    expt.dac_ch_3Dmot_current_control = 0
+        self.dds = dict()
+        for dds in dds_list:
+            dds.dds_device = self.get_device(dds.name())
+            self.dds[dds.varname] = dds
 
-    expt.ttl_camera = expt.get_device("ttl4")
+        self.dac_ch_3Dmot_current_control = 0
+
+        self.ttl_camera = self.get_device("ttl4")
     
-    return expt
