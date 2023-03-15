@@ -1,5 +1,10 @@
 import numpy as np
 
+N_uru = 2
+N_ch = 4
+shape = (N_uru,N_ch)
+dds_list = np.zeros(shape)
+
 def dds_id(uru_idx,ch_idx):
     ids = dds_ids()
     name = ids[uru_idx][ch_idx]["name"]
@@ -11,9 +16,6 @@ def dds_ids():
     Record the dds variable names (to be called in artiq experiments) and the
     aom order that is used for each AOM here.
     '''
-
-    N_uru = 2
-    N_ch = 4
 
     dds_ids = [[{} for _ in range(N_ch)] for _ in range(N_uru)]
 
