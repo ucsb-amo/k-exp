@@ -1,12 +1,12 @@
 import numpy as np
 
 def dds_id(uru_idx,ch_idx):
-    ids = define_dds_id()
+    ids = dds_ids()
     name = ids[uru_idx][ch_idx]["name"]
     aom_order = ids[uru_idx][ch_idx]["aom_order"]
     return name, aom_order
     
-def define_dds_id():
+def dds_ids():
     '''
     Record the dds variable names (to be called in artiq experiments) and the
     aom order that is used for each AOM here.
