@@ -9,7 +9,7 @@ class devices():
 
     @kernel
     def set_all_dds(self, state=0):
-        for dds in self.dds.values():
+        for dds in self.dds_list:
             dds.set_dds()
             if state == 0:
                 dds.off()
@@ -28,4 +28,6 @@ class devices():
         self.dac_ch_3Dmot_current_control = 0
 
         self.ttl_camera = self.get_device("ttl4")
+
+        self.dds_list = self.dds.dds_list()
     
