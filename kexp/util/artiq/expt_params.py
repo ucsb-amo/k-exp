@@ -1,3 +1,5 @@
+import kexp.config.camera_params as cam
+
 class ExptParams():
     def __init__(self):
         self.t_mot_load = 1
@@ -9,6 +11,8 @@ class ExptParams():
         self.t_camera_exposure = 0. # camera init will default to min exposure
 
         self.V_mot_current = 0.7 # 3.4A on 3D MOT coils
+
+        self.t_pretrigger = cam.exposure_delay
 
     def params_to_dataset(self,expt):
         try:
