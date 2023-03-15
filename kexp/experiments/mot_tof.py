@@ -34,8 +34,6 @@ class TOF_MOT(EnvExperiment, devices, mot, camera, image):
 
         self.prepare_devices()
 
-        # print(dir(self.dds["push"]))
-
     @kernel
     def tof_expt(self,t_tof):
         self.kill_mot(self, self.p.t_mot_kill * s)
@@ -62,9 +60,6 @@ class TOF_MOT(EnvExperiment, devices, mot, camera, image):
         self.core.reset()
         # self.set_all_dds(state=0)
         self.core.break_realtime()
-
-        x = self.dds
-        print(x["imaging"])
 
         # camera.StartTriggeredGrab(self, self.p.N_img, self.images, self.images_timestamps)
         delay(0.25*s)
