@@ -7,6 +7,8 @@ from kexp.util.guis.dds.dds_gui_ExptBuilder import DDSGUIExptBuilder
 from kexp.control.artiq.DDS import DDS
 from kexp.config import dds_state
 
+from kexp.config import dds_id
+
 __config_path__ = dds_state.__file__
 expt_builder = DDSGUIExptBuilder()
         
@@ -84,8 +86,8 @@ class MainWindow(QWidget):
         super().__init__()
         self.setFixedSize(300,540)
 
-        self.N_urukul = 3
-        self.N_ch = 4
+        self.N_urukul = dds_id.N_uru
+        self.N_ch = dds_id.N_ch
 
         self.grid = QGridLayout()
         self.setWindowTitle("DDS Control")
@@ -138,7 +140,7 @@ class MainWindow(QWidget):
     def add_dds_to_grid(self):
         '''Populate grid layout with dds channels'''
 
-        self.spinners = [[None,None,None,None],[None,None,None,None],[None,None,None,None]]
+        self.spinners = dds_id.dds_list
 
         for uru_idx in range(self.N_urukul):
             for ch_idx in range(self.N_ch):
@@ -229,7 +231,6 @@ class MainWindow(QWidget):
 
         if reply == qm.Yes:
             self.read_defaults()
-
 
 def main():
     app = QApplication([])
