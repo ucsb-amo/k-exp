@@ -6,11 +6,11 @@ class mot():
         pass
 
     @kernel
-    def load_mot(self,t,params):
+    def load_mot(self,t):
         with parallel:
             with sequential:
                 self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
-                                        params.V_mot_current_V)
+                                        self.params.V_mot_current_V)
                 self.zotino.load()
             self.dds.dds_push.on()
             self.dds.d2_3d_r.on()

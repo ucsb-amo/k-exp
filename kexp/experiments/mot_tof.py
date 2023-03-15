@@ -36,20 +36,20 @@ class TOF_MOT(EnvExperiment, Base):
     def tof_expt(self,t_tof):
         self.kill_mot(self, self.p.t_mot_kill * s)
         self.load_2D_mot(self, self.p.t_2D_mot_load_delay * s)
-        self.load_mot(self, self.p.t_mot_load * s, self.p)
+        self.load_mot(self, self.p.t_mot_load * s)
 
         self.magnet_and_mot_off(self)
 
         delay(t_tof * s)
-        self.trigger_camera(self, self.p)
+        self.trigger_camera(self)
         self.pulse_imaging_light(self, self.p.t_imaging_pulse * s)
 
         delay(self.p.t_light_only_image_delay * s)
-        self.trigger_camera(self, self.p)
+        self.trigger_camera(self)
         self.pulse_imaging_light(self, self.p.t_imaging_pulse * s)
 
         delay(self.p.t_dark_image_delay * s)
-        self.trigger_camera(self, self.p)
+        self.trigger_camera(self)
         delay(1*ms)
 
     @kernel
