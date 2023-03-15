@@ -201,9 +201,9 @@ class MainWindow(QWidget):
         dds_strings = self.make_write_defaults_line()
         default_py = textwrap.dedent(
             f"""
-            from wax.devices.DDS import DDS
+            from kexp.control.artiq.DDS import DDS
 
-            defaults = [{dds_strings}]
+            dds_state = [{dds_strings}]
             """
         )
         with open(__config_path__, 'w') as file:
@@ -212,11 +212,19 @@ class MainWindow(QWidget):
     def make_write_defaults_line(self):
         lines = ""
         for uru_idx in range(self.N_urukul):
+            lines += "["
             for ch in range(self.N_ch):
                 freq_MHz = self.spinners[uru_idx][ch].f.value()
                 att_dB = self.spinners[uru_idx][ch].att.value()
-                lines += f"""
-                DDS({uru_idx:d},{ch:d},{freq_MHz:.2f},{att_dB:.1f}),"""
+                linetoadd = f"""
+                DDS({uru_idx:d},{ch:d},{freq_MHz:.2f},{att_dB:.1f})"""
+                if ch != (self.N_ch-1):
+                    linetoadd += ","
+                lines += linetoadd
+            linetoadd = "]"
+            if uru_idx != (self.N_urukul - 1):
+                linetoadd += ","
+            lines += linetoadd
         return lines
 
     def write_config_button_pressed(self):
