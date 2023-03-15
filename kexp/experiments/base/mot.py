@@ -1,47 +1,50 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
-from kexp.util.artiq.expt_params import ExptParams
 
-@kernel
-def load_mot(expt,t,params):
-    with parallel:
-        with sequential:
-            expt.zotino.write_dac(expt.dac_ch_3Dmot_current_control,
-                                    params.V_mot_current_V)
-            expt.zotino.load()
-        expt.dds.get("dds_push").on()
-        expt.dds.get("d2_3d_r").on()
-        expt.dds.get("d2_3d_c").on()
-        expt.dds.get("d1_3d_r").on()
-        expt.dds.get("d1_3d_c").on()
-    delay(t)
+class mot():
+    def __init__(self):
+        pass
 
-@kernel
-def kill_mot(expt,t):
-    with parallel:
-        expt.dds.get("dds_push").off()
-        expt.dds.get("d2_3d_r").off()
-        expt.dds.get("d2_3d_c").off()
-        expt.dds.get("d1_3d_r").off()
-        expt.dds.get("d1_3d_c").off()
-    delay(t)
+    @kernel
+    def load_mot(self,t,params):
+        with parallel:
+            with sequential:
+                self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
+                                        params.V_mot_current_V)
+                self.zotino.load()
+            self.dds.get("dds_push").on()
+            self.dds.get("d2_3d_r").on()
+            self.dds.get("d2_3d_c").on()
+            self.dds.get("d1_3d_r").on()
+            self.dds.get("d1_3d_c").on()
+        delay(t)
 
-@kernel
-def load_2D_mot(expt,t):
-    with parallel:
-        expt.dds.get("d2_2d_c").on()
-        expt.dds.get("d2_2d_r").on()
-    delay(t)
+    @kernel
+    def kill_mot(self,t):
+        with parallel:
+            self.dds.get("dds_push").off()
+            self.dds.get("d2_3d_r").off()
+            self.dds.get("d2_3d_c").off()
+            self.dds.get("d1_3d_r").off()
+            self.dds.get("d1_3d_c").off()
+        delay(t)
 
-@kernel
-def magnet_and_mot_off(expt):
-    # magnets, 2D, 3D off
-    with parallel:
-        with sequential:
-            expt.zotino.write_dac(expt.dac_ch_3Dmot_current_control,0.)
-            expt.zotino.load()
-        expt.dds.get("d2_2d_c").off()
-        expt.dds.get("d2_2d_r").off()
-        expt.dds.get("push").off()
-        expt.dds.get("d2_3d_c").off()
-        expt.dds.get("d2_3d_r").off()
+    @kernel
+    def load_2D_mot(self,t):
+        with parallel:
+            self.dds.get("d2_2d_c").on()
+            self.dds.get("d2_2d_r").on()
+        delay(t)
+
+    @kernel
+    def magnet_and_mot_off(self):
+        # magnets, 2D, 3D off
+        with parallel:
+            with sequential:
+                self.zotino.write_dac(self.dac_ch_3Dmot_current_control,0.)
+                self.zotino.load()
+            self.dds.get("d2_2d_c").off()
+            self.dds.get("d2_2d_r").off()
+            self.dds.get("push").off()
+            self.dds.get("d2_3d_c").off()
+            self.dds.get("d2_3d_r").off()
