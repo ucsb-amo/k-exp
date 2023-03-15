@@ -11,7 +11,7 @@ from kexp.experiments.base.camera import camera
 from kexp.experiments.base.image import image
 
 class Base(devices, mot, image, camera):
-    def __init__(self):
+    def __init__():
         super().__init__()
 
         self.params = ExptParams()
