@@ -37,7 +37,7 @@ class set_dds_master(EnvExperiment):
     def prep_default_DDS_list(self):
         ''' Preps a list of DDS states, defaulting to off. '''
 
-        self.DDS_list = dds_id.dds_list
+        self.DDS_list = dds_id.dds_empty_frame
 
         for urukul_idx in range(len(self.DDS_list)):
             for ch in range(len(self.DDS_list[urukul_idx])):
