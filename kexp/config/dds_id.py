@@ -1,32 +1,55 @@
-import numpy as np
+from kexp.config.dds_state import dds_state
+from kexp.control.artiq.DDS import DDS
 
 N_uru = 2
 N_ch = 4
 shape = (N_uru,N_ch)
-dds_list = [[None for _ in range(N_ch)] for _ in range(N_uru)]
+dds_empty_frame = [[None for _ in range(N_ch)] for _ in range(N_uru)]
 
-def dds_id(uru_idx,ch_idx):
-    ids = dds_ids()
-    name = ids[uru_idx][ch_idx]["name"]
-    aom_order = ids[uru_idx][ch_idx]["aom_order"]
-    return name, aom_order
+class dds_frame():
+    '''
+    Associates each dds in the dds_state file with a variable to be referenced in
+    artiq experiments. Also, records the AOM order so that AOM frequencies can be
+    determined from detunings.
+    '''
+    def __init__(self, dds_state = dds_state):
+
+        self._N_uru = N_uru
+        self._N_ch = N_ch
+        self._shape = shape
+
+        self._dds_state = dds_state
+
+        self._aom_order = dds_empty_frame
+        self._aom_order[0][0] = 1
+        self._aom_order[0][1] = 1
+        self._aom_order[0][2] = -1
+        self._aom_order[0][3] = 1
+        self._aom_order[1][0] = -1
+        self._aom_order[1][1] = 1
+        self._aom_order[1][2] = 1
+        self._aom_order[1][3] = -1
+
+        self.push = self.dds_assign(0,0)
+        self.d2_2d_r = self.dds_assign(0,1)
+        self.d2_2d_c = self.dds_assign(0,2)
+        self.d2_3d_r = self.dds_assign(0,3)
+        self.d2_3d_c = self.dds_assign(1,0)
+        self.imaging = self.dds_assign(1,1)
+        self.d1_3d_r = self.dds_assign(1,2)
+        self.d1_3d_c = self.dds_assign(1,3)
+
+    def dds_assign(self, uru, ch):
+        dds0 = self._dds_state[uru][ch]
+        dds0.aom_order = self._aom_order[uru][ch]
+        return dds0
     
-def dds_ids():
-    '''
-    Record the dds variable names (to be called in artiq experiments) and the
-    aom order that is used for each AOM here.
-    '''
-
-    dds_ids = [[{} for _ in range(N_ch)] for _ in range(N_uru)]
-
-    dds_ids[0][0] = {"name": "push", "aom_order": 1}
-    dds_ids[0][1] = {"name": "d2_2d_r", "aom_order": 1}
-    dds_ids[0][2] = {"name": "d2_2d_c", "aom_order": -1}
-    dds_ids[0][3] = {"name": "d2_3d_r", "aom_order": 1}
-    dds_ids[1][0] = {"name": "d2_3d_c", "aom_order": -1}
-    dds_ids[1][1] = {"name": "imaging", "aom_order": 1}
-    dds_ids[1][2] = {"name": "d1_3d_r", "aom_order": 1}
-    dds_ids[1][3] = {"name": "d1_3d_c", "aom_order": -1}
-
-    return dds_ids
+    def dds_list(self):
+        '''
+        Returns a list of all dds objects in 
+        '''
+        return [dds.__dict__[key] for key in dds.__dict__.keys() if isinstance(dds.__dict__[key],DDS)]
+    
+dds = dds_frame(dds_state)
+        
 

@@ -1,6 +1,5 @@
 from artiq.experiment import *
 from kexp.util.db.device_db import device_db
-from kexp.config.dds_id import dds_id
 
 class DDS():
    def __init__(self, urukul_idx, ch, freq_MHz=0., att_dB=0.):
@@ -9,13 +8,11 @@ class DDS():
       self.freq_MHz = freq_MHz
       self.att_dB = att_dB
       self.aom_order = []
-      self.varname = []
       self.dds_device = []
       self.cpld_name = []
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
-      self.get_id()
 
    def set_detuning(self,detuning_linewidths):
       '''
@@ -29,11 +26,6 @@ class DDS():
       linewidth_MHz = 6
       detuning_MHz = detuning_linewidths * linewidth_MHz
       self.freq_MHz = ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2
-      
-   def get_id(self):
-      varname, aom_order = dds_id(self.urukul_idx,self.ch)
-      self.varname = varname
-      self.aom_order = aom_order
       
    def name(self) -> TStr:
       return f'urukul{self.urukul_idx}_ch{self.ch}'
