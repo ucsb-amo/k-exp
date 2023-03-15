@@ -16,6 +16,19 @@ class DDS():
       self.ftw_per_hz = 0
       self.read_db(device_db)
       self.get_id()
+
+   def set_detuning(self,detuning_linewidths):
+      '''
+      Sets the stored DDS frequency value based on a detuning given in units of
+      linewidths Gamma = 2 * pi * 6 MHz.
+
+      Note: only the value stored in software is updated. Use set_dds after this
+      to update the output.
+      '''
+      f_shift_to_resonance = 461.7 / 2 # half the crossover detuning. Value from T.G. Tiecke.
+      linewidth_MHz = 6
+      detuning_MHz = detuning_linewidths * linewidth_MHz
+      self.freq_MHz = ( self.aom_order * f_shift_to_resonance + detuning_linewidths ) / 2
       
    def get_id(self):
       varname, aom_order = dds_id()
