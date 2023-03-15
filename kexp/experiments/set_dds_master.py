@@ -1,5 +1,6 @@
 from artiq.experiment import *
 from kexp.control.artiq.DDS import DDS
+import kexp.config.dds_id as dds_id
 
 class set_dds_master(EnvExperiment):
 
@@ -36,7 +37,7 @@ class set_dds_master(EnvExperiment):
     def prep_default_DDS_list(self):
         ''' Preps a list of DDS states, defaulting to off. '''
 
-        self.DDS_list = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+        self.DDS_list = dds_id.dds_list
 
         for urukul_idx in range(len(self.DDS_list)):
             for ch in range(len(self.DDS_list[urukul_idx])):
