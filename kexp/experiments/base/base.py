@@ -7,11 +7,10 @@ import pypylon.pylon as py
 
 from kexp.experiments.base.devices import devices
 from kexp.experiments.base.mot import mot
-from kexp.experiments.base.camera import camera
 from kexp.experiments.base.image import image
 
-class Base(devices, mot, image, camera):
-    def __init__():
+class Base(devices, mot, image):
+    def __init__(self):
         super().__init__()
 
         self.params = ExptParams()
