@@ -23,9 +23,7 @@ class devices():
         self.zotino = self.get_device("zotino0")
 
         self.dds = dds_frame()
-
-        for dds in self.dds.dds_list():
-            dds.dds_device = self.get_device(dds.name())
+        self.dds.get_dds_devices()
 
         self.dac_ch_3Dmot_current_control = 0
 
