@@ -20,7 +20,7 @@ class DDS():
    def set_detuning(self,detuning_linewidths):
       '''
       Sets the stored DDS frequency value based on a detuning given in units of
-      linewidths Gamma = 2 * pi * 6 MHz.
+      the D1, D2 linewidths Gamma = 2 * pi * 6 MHz.
 
       Note: only the value stored in software is updated. Use set_dds after this
       to update the output.
