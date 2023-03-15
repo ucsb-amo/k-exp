@@ -1,15 +1,14 @@
 from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential
 
 import pypylon.pylon as py
 from kexp.control.cameras.basler_usb import BaslerUSB
 
-from kexp.util.artiq.expt_params import ExptParams
-from kexp.experiments.base import devices
-
 class camera():
     def __init__(self):
-        self.camera = BaslerUSB()
+        pass
+
+    def get_camera(self):
+        return BaslerUSB()
 
     @rpc(flags={"async"})
     def StartTriggeredGrab(self, N, img_list, img_tstamp_list):
