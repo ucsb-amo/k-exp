@@ -31,7 +31,7 @@ class DDS():
       self.freq_MHz = ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2
       
    def get_id(self):
-      varname, aom_order = dds_id()
+      varname, aom_order = dds_id(self.urukul_idx,self.ch)
       self.varname = varname
       self.aom_order = aom_order
       
