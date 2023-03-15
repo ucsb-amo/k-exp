@@ -1,8 +1,7 @@
 from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential
+from artiq.experiment import delay
 
-from kexp.util.artiq.expt_params import ExptParams
-from kexp.config.dds_state import defaults as default_dds
+from kexp.config.dds_id import dds_frame
 
 class devices():
     def __init__(self):
@@ -18,15 +17,15 @@ class devices():
                 dds.on()
             delay(10*us)
 
-    def prepare_devices(self, dds_list = default_dds):
+    def prepare_devices(self):
 
         self.core = self.get_device("core")
         self.zotino = self.get_device("zotino0")
 
-        self.dds = dict()
-        for dds in dds_list:
+        self.dds = dds_frame()
+
+        for dds in self.dds.dds_list():
             dds.dds_device = self.get_device(dds.name())
-            self.dds[dds.varname] = dds
 
         self.dac_ch_3Dmot_current_control = 0
 
