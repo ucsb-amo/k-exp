@@ -28,25 +28,27 @@ class TOF_MOT(EnvExperiment):
         self.images_timestamps = []
 
         camera.prepare_camera(self, self.p)
+        self = devices.prepare_devices(self)
 
     @kernel
     def tof_expt(self,t_tof):
-        mot.kill_mot(self.p.t_mot_kill * s)
-        mot.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-        mot.load_mot(self.p.t_mot_load * s)
+        mot.kill_mot(self, self.p.t_mot_kill * s)
+        mot.load_2D_mot(self, self.p.t_2D_mot_load_delay * s)
+        mot.load_mot(self, self.p.t_mot_load * s, self.p)
 
-        mot.magnet_and_mot_off()
+        mot.magnet_and_mot_off(self)
 
         delay(t_tof * s)
-        image.trigger_camera()
-        image.pulse_imaging_light(self.p.t_imaging_pulse * s)
+        image.trigger_camera(self, self.p)
+        image.pulse_imaging_light(self, self.p.t_imaging_pulse * s)
 
         delay(self.p.t_light_only_image_delay * s)
-        image.trigger_camera()
-        image.pulse_imaging_light(self.p.t_imaging_pulse * s)
+        image.trigger_camera(self, self.p)
+        image.pulse_imaging_light(self, self.p.t_imaging_pulse * s)
 
         delay(self.p.t_dark_image_delay * s)
-        image.trigger_camera()
+        image.trigger_camera(self, self.p)
+        delay(1*ms)
 
     @kernel
     def run(self):
@@ -55,7 +57,10 @@ class TOF_MOT(EnvExperiment):
         devices.set_all_dds(self,1)
         self.core.break_realtime()
 
-        camera.StartTriggeredGrab(self, self.p.N_img, self.images, self.images_timestamps)
+        x = self.dds
+        print(x)
+
+        # camera.StartTriggeredGrab(self, self.p.N_img, self.images, self.images_timestamps)
         delay(0.25*s)
         self.core.break_realtime()
         
@@ -65,15 +70,15 @@ class TOF_MOT(EnvExperiment):
 
         # return to mot load state
         devices.set_all_dds(self, state=1)
-        self.dds["imaging"].off()
+        self.dds.get("imaging").off()
 
     def analyze(self):
 
-        self.camera.close()
+        # self.camera.close()
         
-        _, summedODx, summedODy = analyze_and_save_absorption_images(self.images,self.images_timestamps,self)
+        # _, summedODx, summedODy = analyze_and_save_absorption_images(self.images,self.images_timestamps,self)
 
-        self.p.params_to_dataset(self)
+        # self.p.params_to_dataset(self)
 
         print("Done!")
 

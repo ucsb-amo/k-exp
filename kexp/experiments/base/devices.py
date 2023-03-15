@@ -17,7 +17,7 @@ def set_all_dds(expt, state=0):
 def prepare_devices(expt, dds_list=default_dds):
 
     expt.core = expt.get_device("core")
-    expt.zotino = expt.get_device("zotino")
+    expt.zotino = expt.get_device("zotino0")
 
     expt.dds = dict()
     for dds in dds_list:
@@ -27,3 +27,5 @@ def prepare_devices(expt, dds_list=default_dds):
     expt.dac_ch_3Dmot_current_control = 0
 
     expt.ttl_camera = expt.get_device("ttl4")
+    
+    return expt
