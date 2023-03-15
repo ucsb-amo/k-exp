@@ -4,7 +4,7 @@ from artiq.experiment import delay, parallel, sequential
 from kexp.analysis.image_processing.compute_ODs import *
 
 from kexp.util.artiq.expt_params import ExptParams
-from kexp.experiments.base import camera, devices, mot_load, image
+from kexp.experiments.base import camera, devices, mot, image
 
 import numpy as np
 import pypylon.pylon as py
@@ -16,6 +16,7 @@ class TOF_MOT(EnvExperiment):
         ## Parameters
 
         self.p = ExptParams()
+        self.p.t_mot_kill = 0.5
         
         self.p.t_mot_load = 0.25
         self.p.t_tof_list = np.linspace(0,1000,7) * 1.e-6
@@ -30,11 +31,11 @@ class TOF_MOT(EnvExperiment):
 
     @kernel
     def tof_expt(self,t_tof):
-        # self.kill_mot(self.p.t_mot_kill * s)
-        mot_load.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-        mot_load.load_mot(self.p.t_mot_load * s)
+        mot.kill_mot(self.p.t_mot_kill * s)
+        mot.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+        mot.load_mot(self.p.t_mot_load * s)
 
-        mot_load.magnet_and_mot_off()
+        mot.magnet_and_mot_off()
 
         delay(t_tof * s)
         image.trigger_camera()
@@ -63,8 +64,8 @@ class TOF_MOT(EnvExperiment):
             self.core.break_realtime()
 
         # return to mot load state
-        mot_load.load_2D_mot(0.1*s)
-        mot_load.load_mot(0.1*s)
+        mot.load_2D_mot(0.1*s)
+        mot.load_mot(0.1*s)
 
     def analyze(self):
 
