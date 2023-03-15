@@ -5,21 +5,19 @@ from kexp.analysis.image_processing.compute_ODs import *
 
 from kexp.util.artiq.expt_params import ExptParams
 
-from kexp.experiments.base.devices import devices
-from kexp.experiments.base.mot import mot
-from kexp.experiments.base.camera import camera
-from kexp.experiments.base.image import image
+from kexp.experiments.base.base import Base
 
 import numpy as np
 import pypylon.pylon as py
 
-class TOF_MOT(EnvExperiment, devices, mot, camera, image):
+class TOF_MOT(EnvExperiment, Base):
 
     def build(self):
+        Base.__init__(self)
 
         ## Parameters
 
-        self.p = ExptParams()
+        self.p = self.params
 
         self.p.t_mot_kill = 0.5
         
@@ -27,10 +25,10 @@ class TOF_MOT(EnvExperiment, devices, mot, camera, image):
         self.p.t_tof_list = np.linspace(0,1000,7) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof_list)
 
-        ## Device setup
-        
         self.images = []
-        self.images_timestamps = []
+        self.image_timestamps = []
+
+        ## Device setup
 
         self.prepare_devices()
 
@@ -58,10 +56,10 @@ class TOF_MOT(EnvExperiment, devices, mot, camera, image):
     def run(self):
 
         self.core.reset()
-        # self.set_all_dds(state=0)
+        self.set_all_dds(state=0)
         self.core.break_realtime()
 
-        # camera.StartTriggeredGrab(self, self.p.N_img, self.images, self.images_timestamps)
+        self.StartTriggeredGrab(self.p.N_img)
         delay(0.25*s)
         self.core.break_realtime()
         
@@ -70,15 +68,14 @@ class TOF_MOT(EnvExperiment, devices, mot, camera, image):
             self.core.break_realtime()
 
         # return to mot load state
-        # self.set_all_dds(state=1)
-        # print(self.dds.get("imaging"))
-        # self.dds.get("imaging").sw_off()
+        self.set_all_dds(state=1)
+        print(self.dds.imaging.off())
 
     def analyze(self):
 
         self.camera.close()
         
-        _, summedODx, summedODy = analyze_and_save_absorption_images(self.images,self.images_timestamps,self)
+        _, summedODx, summedODy = analyze_and_save_absorption_images(self.images,self.image_timestamps,self)
 
         self.p.params_to_dataset(self)
 

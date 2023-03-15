@@ -12,14 +12,14 @@ class image():
         self.dds.get("imaging").off()
 
     @kernel
-    def trigger_camera(self, params):
+    def trigger_camera(self):
         '''
         Written to pretrigger camera such that the camera exposure begins at the
         timeline cursor position where this is called. Returns the timeline
         cursor to this position after pretrigger.
         '''
-        delay(-params.t_pretrigger * s)
-        self.ttl_camera.pulse(params.t_camera_trigger * s)
-        t_adv = params.t_pretrigger - params.t_camera_trigger
+        delay(-self.params.t_pretrigger * s)
+        self.ttl_camera.pulse(self.params.t_camera_trigger * s)
+        t_adv = self.params.t_pretrigger - self.params.t_camera_trigger
         delay(t_adv * s)
 
