@@ -1,4 +1,3 @@
-
 from kexp.control.artiq.DDS import DDS
 
 defaults = [
