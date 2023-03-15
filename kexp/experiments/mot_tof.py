@@ -52,7 +52,7 @@ class TOF_MOT(EnvExperiment):
     def run(self):
 
         self.core.reset()
-        devices.set_all_dds(self)
+        devices.set_all_dds(self,1)
         self.core.break_realtime()
 
         camera.StartTriggeredGrab(self, self.p.N_img, self.images, self.images_timestamps)
@@ -64,8 +64,8 @@ class TOF_MOT(EnvExperiment):
             self.core.break_realtime()
 
         # return to mot load state
-        mot.load_2D_mot(0.1*s)
-        mot.load_mot(0.1*s)
+        devices.set_all_dds(self, state=1)
+        self.dds["imaging"].off()
 
     def analyze(self):
 

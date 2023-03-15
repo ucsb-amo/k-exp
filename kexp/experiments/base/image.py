@@ -3,9 +3,9 @@ from artiq.experiment import delay, parallel, sequential
 
 @kernel
 def pulse_imaging_light(expt,t):
-    expt.dds_imaging.dds_device.sw.on()
+    expt.dds["imaging"].on()
     delay(t)
-    expt.dds_imaging.dds_device.sw.off()
+    expt.dds["imaging"].off()
 
 @kernel
 def trigger_camera(expt, params):
