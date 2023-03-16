@@ -7,6 +7,8 @@ from kexp.util.guis.dds.dds_gui_ExptBuilder import DDSGUIExptBuilder
 from kexp.control.artiq.DDS import DDS
 from kexp.config import dds_state
 
+from kexp.config import dds_id
+
 __config_path__ = dds_state.__file__
 expt_builder = DDSGUIExptBuilder()
         
@@ -84,8 +86,8 @@ class MainWindow(QWidget):
         super().__init__()
         self.setFixedSize(300,540)
 
-        self.N_urukul = 3
-        self.N_ch = 4
+        self.N_urukul = dds_id.N_uru
+        self.N_ch = dds_id.N_ch
 
         self.grid = QGridLayout()
         self.setWindowTitle("DDS Control")
@@ -138,7 +140,7 @@ class MainWindow(QWidget):
     def add_dds_to_grid(self):
         '''Populate grid layout with dds channels'''
 
-        self.spinners = [[None,None,None,None],[None,None,None,None],[None,None,None,None]]
+        self.spinners = dds_id.dds_empty_frame
 
         for uru_idx in range(self.N_urukul):
             for ch_idx in range(self.N_ch):
@@ -159,13 +161,13 @@ class MainWindow(QWidget):
 
     def spinners_to_param_list(self):
         '''Convert gui values into parameter list'''
-        param_list = []
+        param_list = dds_id.dds_empty_frame
         for uru_idx in range(self.N_urukul):
             for ch_idx in range(self.N_ch):
                 this_spinner = self.spinners[uru_idx][ch_idx]
                 freq = this_spinner.f.value()
                 att = this_spinner.att.value()
-                param_list.append(DDS(uru_idx,ch_idx,freq,att))
+                param_list[uru_idx][ch_idx] = DDS(uru_idx,ch_idx,freq,att)
         return param_list
 
     def submit_job(self):
@@ -190,17 +192,18 @@ class MainWindow(QWidget):
         self.spinners[uru_idx][ch].att.setValue(att)
 
     def read_defaults(self):
-        for dds in dds_state.defaults:
-            self.update_dds(dds)
-            self.message.msg_loadedText()
+        for dds_uru_list in dds_state.dds_state:
+            for dds in dds_uru_list:
+                self.update_dds(dds)
+                self.message.msg_loadedText()
 
     def write_defaults(self):
         dds_strings = self.make_write_defaults_line()
         default_py = textwrap.dedent(
             f"""
-            from wax.devices.DDS import DDS
+            from kexp.control.artiq.DDS import DDS
 
-            defaults = [{dds_strings}]
+            dds_state = [{dds_strings}]
             """
         )
         with open(__config_path__, 'w') as file:
@@ -209,11 +212,19 @@ class MainWindow(QWidget):
     def make_write_defaults_line(self):
         lines = ""
         for uru_idx in range(self.N_urukul):
+            lines += "["
             for ch in range(self.N_ch):
                 freq_MHz = self.spinners[uru_idx][ch].f.value()
                 att_dB = self.spinners[uru_idx][ch].att.value()
-                lines += f"""
-                DDS({uru_idx:d},{ch:d},{freq_MHz:.2f},{att_dB:.1f}),"""
+                linetoadd = f"""
+                DDS({uru_idx:d},{ch:d},{freq_MHz:.2f},{att_dB:.1f})"""
+                if ch != (self.N_ch-1):
+                    linetoadd += ","
+                lines += linetoadd
+            linetoadd = "]"
+            if uru_idx != (self.N_urukul - 1):
+                linetoadd += ","
+            lines += linetoadd
         return lines
 
     def write_config_button_pressed(self):
@@ -229,7 +240,6 @@ class MainWindow(QWidget):
 
         if reply == qm.Yes:
             self.read_defaults()
-
 
 def main():
     app = QApplication([])

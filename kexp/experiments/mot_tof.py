@@ -1,61 +1,51 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
-
 from kexp.analysis.image_processing.compute_ODs import *
-
-from kexp.util.artiq.expt_params import ExptParams
-from kexp.experiments.base import camera, devices, mot, image
-
+from kexp.experiments.base.base import Base
 import numpy as np
-import pypylon.pylon as py
 
-class TOF_MOT(EnvExperiment):
+class TOF_MOT(EnvExperiment, Base):
 
     def build(self):
+        Base.__init__(self)
 
         ## Parameters
 
-        self.p = ExptParams()
+        self.p = self.params
+
         self.p.t_mot_kill = 0.5
         
         self.p.t_mot_load = 0.25
         self.p.t_tof_list = np.linspace(0,1000,7) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof_list)
 
-        ## Device setup
-        
-        self.images = []
-        self.images_timestamps = []
-
-        camera.prepare_camera(self, self.p)
-
     @kernel
     def tof_expt(self,t_tof):
-        mot.kill_mot(self.p.t_mot_kill * s)
-        mot.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-        mot.load_mot(self.p.t_mot_load * s)
+        self.kill_mot(self.p.t_mot_kill * s)
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+        self.load_mot(self.p.t_mot_load * s)
 
-        mot.magnet_and_mot_off()
+        self.magnet_and_mot_off()
 
         delay(t_tof * s)
-        image.trigger_camera()
-        image.pulse_imaging_light(self.p.t_imaging_pulse * s)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.p.t_imaging_pulse * s)
 
         delay(self.p.t_light_only_image_delay * s)
-        image.trigger_camera()
-        image.pulse_imaging_light(self.p.t_imaging_pulse * s)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.p.t_imaging_pulse * s)
 
         delay(self.p.t_dark_image_delay * s)
-        image.trigger_camera()
+        self.trigger_camera()
 
     @kernel
     def run(self):
 
         self.core.reset()
-        devices.set_all_dds(self)
+        self.set_all_dds(state=0)
         self.core.break_realtime()
 
-        camera.StartTriggeredGrab(self, self.p.N_img, self.images, self.images_timestamps)
+        self.StartTriggeredGrab(self.p.N_img)
         delay(0.25*s)
         self.core.break_realtime()
         
@@ -64,14 +54,14 @@ class TOF_MOT(EnvExperiment):
             self.core.break_realtime()
 
         # return to mot load state
-        mot.load_2D_mot(0.1*s)
-        mot.load_mot(0.1*s)
+        self.set_all_dds(state=1)
+        print(self.dds.imaging.off())
 
     def analyze(self):
 
-        self.camera.close()
+        self.camera.Close()
         
-        _, summedODx, summedODy = analyze_and_save_absorption_images(self.images,self.images_timestamps,self)
+        _, summedODx, summedODy = analyze_and_save_absorption_images(self.images,self.image_timestamps,self)
 
         self.p.params_to_dataset(self)
 
