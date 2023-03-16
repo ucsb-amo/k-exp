@@ -4,7 +4,7 @@ import kexp.analysis.image_processing.compute_ODs as compute_ODs
 from kexp.base.base import Base
 import numpy as np
 
-class TOF_MOT(EnvExperiment, Base):
+class mot_tof(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
