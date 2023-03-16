@@ -25,7 +25,7 @@ class TOF_MOT(EnvExperiment, Base):
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         self.load_mot(self.p.t_mot_load * s)
 
-        self.magnet_and_mot_off()
+        self.release_mot()
 
         delay(t_tof * s)
         self.trigger_camera()
