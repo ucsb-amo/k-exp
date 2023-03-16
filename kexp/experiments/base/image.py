@@ -1,15 +1,18 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
+from kexp.config.dds_id import dds_frame
+from kexp.util.artiq.expt_params import ExptParams
 
 class image():
-    def __init__():
-        pass
+    def __init__(self):
+        self.dds = dds_frame()
+        self.params = ExptParams()
 
     @kernel
     def pulse_imaging_light(self,t):
-        self.dds.get("imaging").on()
+        self.dds.imaging.on()
         delay(t)
-        self.dds.get("imaging").off()
+        self.dds.imaging.off()
 
     @kernel
     def trigger_camera(self):
