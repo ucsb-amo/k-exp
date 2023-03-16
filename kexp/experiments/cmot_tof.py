@@ -4,7 +4,7 @@ import kexp.analysis.image_processing.compute_ODs as compute_ODs
 from kexp.base.base import Base
 import numpy as np
 
-class gm_tof(EnvExperiment, Base):
+class cmot_tof(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -18,6 +18,9 @@ class gm_tof(EnvExperiment, Base):
         self.p.t_mot_load = 0.25
         self.p.t_tof_list = np.linspace(0,1000,7) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof_list)
+        
+        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-1.7)
+        self.p.f_d1_r_cmot = self.dds.d1_3d_r.detuning_to_frequency(3.5)
 
     @kernel
     def load_mot(self,t):
@@ -36,18 +39,14 @@ class gm_tof(EnvExperiment, Base):
 
     @kernel
     def load_2D_mot(self,t):
-        with parallel:
-            self.switch_d2_2d(1)
+        self.switch_d2_2d(1)
         delay(t)
 
     @kernel
-    def release_mot(self):
-        # magnets, 2D, 3D off
+    def cmot(self,t):
         with parallel:
-            self.switch_mot_magnet(0)
-            self.switch_d2_2d(0)
-            self.switch_d2_3d(0)
-            self.dds.push.off()
+
+
 
     @kernel
     def tof_expt(self,t_tof):
