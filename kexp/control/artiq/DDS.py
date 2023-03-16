@@ -57,13 +57,13 @@ class DDS():
 
       if freq_MHz == None:
          freq_MHz = self.freq_MHz
-      elif:
+      else:
          freq_MHz = float(freq_MHz)
          self.freq_MHz = freq_MHz
 
       if att_dB == None:
          att_dB = self.att_dB
-      elif:
+      else:
          att_dB = float(att_dB)
          self.att_dB = att_dB
 
