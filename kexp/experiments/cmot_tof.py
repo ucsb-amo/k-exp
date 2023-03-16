@@ -14,13 +14,14 @@ class cmot_tof(EnvExperiment, Base):
         self.p = self.params
 
         self.p.t_mot_kill = 0.5
-        
         self.p.t_mot_load = 0.25
+        self.p.t_cmot = 100.e-6
+
         self.p.t_tof_list = np.linspace(0,1000,7) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof_list)
         
-        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-1.7)
-        self.p.f_d1_r_cmot = self.dds.d1_3d_r.detuning_to_frequency(3.5)
+        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-2.7)
+        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(3.5)
 
     @kernel
     def load_mot(self,t):
@@ -45,8 +46,11 @@ class cmot_tof(EnvExperiment, Base):
     @kernel
     def cmot(self,t):
         with parallel:
-
-
+            self.dds.d2_3d_c.off()
+            self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot)
+            self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot)
+            self.dds.d1_3d_r.off()
+        delay(t)
 
     @kernel
     def tof_expt(self,t_tof):
@@ -54,7 +58,14 @@ class cmot_tof(EnvExperiment, Base):
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         self.load_mot(self.p.t_mot_load * s)
 
+        with parallel:
+            self.dds.push.off()
+            self.switch_d2_2d(0)
+
+        self.cmot(self.p.t_cmot * s)
+        
         delay(t_tof * s)
+
         self.trigger_camera()
         self.pulse_imaging_light(self.p.t_imaging_pulse * s)
 
