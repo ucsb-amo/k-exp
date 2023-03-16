@@ -6,10 +6,10 @@ from kexp.control.cameras.basler_usb import BaslerUSB
 import pypylon.pylon as py
 
 from kexp.base.sub.devices import devices
-from kexp.base.sub.mot import mot
+from kexp.base.sub.cooling import cooling
 from kexp.base.sub.image import image
 
-class Base(devices, mot, image):
+class Base(devices, cooling, image):
     def __init__(self):
         super().__init__()
 

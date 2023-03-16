@@ -20,6 +20,36 @@ class TOF_MOT(EnvExperiment, Base):
         self.p.N_img = 3 * len(self.p.t_tof_list)
 
     @kernel
+    def load_mot(self,t):
+        with parallel:
+            self.switch_mot_magnet(1)
+            self.switch_d2_3d(1)
+            self.dds.push.on()
+        delay(t)
+
+    @kernel
+    def kill_mot(self,t):
+        with parallel:
+            self.dds.push.off()
+            self.switch_d2_3d(0)
+        delay(t)
+
+    @kernel
+    def load_2D_mot(self,t):
+        with parallel:
+            self.switch_d2_2d(1)
+        delay(t)
+
+    @kernel
+    def release_mot(self):
+        # magnets, 2D, 3D off
+        with parallel:
+            self.switch_mot_magnet(0)
+            self.switch_d2_2d(0)
+            self.switch_d2_3d(0)
+            self.dds.push.off()
+
+    @kernel
     def tof_expt(self,t_tof):
         self.kill_mot(self.p.t_mot_kill * s)
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
