@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay
 
 from kexp.config.dds_id import dds_frame
+from kexp.control.artiq.DDS import DDS
 
 class devices():
     def __init__(self):

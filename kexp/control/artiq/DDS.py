@@ -33,7 +33,7 @@ class DDS():
       Returns
       -------
       float
-         The AOM frequency setting in MHz.
+         The corresponding AOM frequency setting in MHz.
       '''
       f_shift_to_resonance_MHz = 461.7 / 2 # half the crossover detuning. Value from T.G. Tiecke.
       linewidth_MHz = 6
