@@ -25,10 +25,6 @@ class TOF_MOT(EnvExperiment, Base):
         self.p.t_tof_list = np.linspace(0,1000,7) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof_list)
 
-        ## Device setup
-
-        self.prepare_devices()
-
     @kernel
     def tof_expt(self,t_tof):
         self.kill_mot(self, self.p.t_mot_kill * s)

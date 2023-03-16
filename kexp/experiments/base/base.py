@@ -19,6 +19,8 @@ class Base(devices, mot, image):
         self.images = []
         self.image_timestamps = []
 
+        self.prepare_devices()
+
     @rpc(flags={"async"})
     def StartTriggeredGrab(self, N):
         '''
