@@ -31,18 +31,19 @@ class Base(devices, mot, image):
         N: int
             Number of images to wait for.
         '''
-        self.camera.StartGrabbingMax(int(N), py.GrabStrategy_LatestImages)
+        Nimg = int(N)
+        self.camera.StartGrabbingMax(Nimg, py.GrabStrategy_LatestImages)
         count = 0
         while self.camera.IsGrabbing():
             grab = self.camera.RetrieveResult(1000000, py.TimeoutHandling_ThrowException)
             if grab.GrabSucceeded():
-                print(f'gotem (img {count+1}/{NoDefault})')
+                print(f'gotem (img {count+1}/{Nimg})')
                 img = grab.GetArray()
                 img_t = grab.TimeStamp
                 self.images.append(img)
                 self.image_timestamps.append(img_t)
                 count += 1
-            if count >= N:
+            if count >= Nimg:
                 break
         self.camera.StopGrabbing()
         self.camera.Close()

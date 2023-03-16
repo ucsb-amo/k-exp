@@ -59,7 +59,7 @@ class TOF_MOT(EnvExperiment, Base):
 
     def analyze(self):
 
-        self.camera.close()
+        self.camera.Close()
         
         _, summedODx, summedODy = analyze_and_save_absorption_images(self.images,self.image_timestamps,self)
 
