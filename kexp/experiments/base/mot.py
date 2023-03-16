@@ -10,9 +10,9 @@ class mot():
         with parallel:
             with sequential:
                 self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
-                                        self.params.V_mot_current_V)
+                                        self.params.V_mot_current)
                 self.zotino.load()
-            self.dds.dds_push.on()
+            self.dds.push.on()
             self.dds.d2_3d_r.on()
             self.dds.d2_3d_c.on()
             self.dds.d1_3d_r.on()
@@ -22,7 +22,7 @@ class mot():
     @kernel
     def kill_mot(self,t):
         with parallel:
-            self.dds.dds_push.off()
+            self.dds.push.off()
             self.dds.d2_3d_r.off()
             self.dds.d2_3d_c.off()
             self.dds.d1_3d_r.off()

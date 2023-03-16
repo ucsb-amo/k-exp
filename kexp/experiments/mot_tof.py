@@ -28,10 +28,10 @@ class TOF_MOT(EnvExperiment, Base):
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         self.load_mot(self.p.t_mot_load * s)
 
-        self.magnet_and_mot_off(self)
+        self.magnet_and_mot_off()
 
         delay(t_tof * s)
-        self.trigger_camera(self)
+        self.trigger_camera()
         self.pulse_imaging_light(self.p.t_imaging_pulse * s)
 
         delay(self.p.t_light_only_image_delay * s)
@@ -40,7 +40,6 @@ class TOF_MOT(EnvExperiment, Base):
 
         delay(self.p.t_dark_image_delay * s)
         self.trigger_camera()
-        delay(1*ms)
 
     @kernel
     def run(self):
