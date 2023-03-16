@@ -44,10 +44,10 @@ class cooling():
     ## Magnet functions
 
     @kernel
-    def switch_mot_magnet(self, state):
+    def switch_mot_magnet(self, state = 0):
         if state == 1:
             V = self.params.V_mot_current
-        elif state == 0:
+        else:
             V = 0.
         with sequential:
             self.zotino.write_dac(self.dac_ch_3Dmot_current_control,V)
