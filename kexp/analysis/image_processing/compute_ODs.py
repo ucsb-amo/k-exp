@@ -1,20 +1,13 @@
 import numpy as np
 import kexp.analysis.image_processing.roi_select as roi
 
-def analyze_and_save_absorption_images(images,timestamps_ns,expt,crop_type='mot'):
+def analyze_and_save_absorption_images(expt,crop_type='mot'):
     '''
     Saves the images, image timestamps (in ns), computes ODs, and saves them to
     the dataset of the current experiment (expt)
 
     Parameters
     ----------
-    images: list 
-        An n x px x py list of images of n images, px x py pixels, ordered as
-        atoms, light, dark.
-
-    timestamps_ns: list
-        A list of timestamps for the images in `images`, in nanoseconds.
-
     expt: EnvExperiment
         The experiment object, called to save datasets.
 
@@ -22,6 +15,9 @@ def analyze_and_save_absorption_images(images,timestamps_ns,expt,crop_type='mot'
         Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
         options: 'mot', 'cmot', 'gm', 'odt'.
     '''
+
+    images = expt.images
+    timestamps_ns = expt.image_timestamps
 
     ODraw, ODs, summedODx, summedODy, \
         img_atoms, img_light, img_dark, \

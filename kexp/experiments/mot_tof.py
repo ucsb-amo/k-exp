@@ -1,6 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
-from kexp.analysis.image_processing.compute_ODs import *
+import kexp.analysis.image_processing.compute_ODs as compute_ODs
 from kexp.base.base import Base
 import numpy as np
 
@@ -91,7 +91,7 @@ class TOF_MOT(EnvExperiment, Base):
 
         self.camera.Close()
         
-        _, summedODx, summedODy = analyze_and_save_absorption_images(self.images,self.image_timestamps,self)
+        _, summedODx, summedODy = compute_ODs.analyze_and_save_absorption_images(self)
 
         self.p.params_to_dataset(self)
 
