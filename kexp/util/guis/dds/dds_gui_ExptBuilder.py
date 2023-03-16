@@ -51,12 +51,14 @@ class DDSGUIExptBuilder():
                 for dds_sublist in self.DDS_list:
                     for dds in dds_sublist:
                         dds.set_dds()
+                        delay(1*us)
 
             @kernel
             def init_all_dds(self):
                 for dds_sublist in self.DDS_list:
                     for dds in dds_sublist:
                         dds.init_dds()
+                        delay(1*us)
 
             def build(self):
                 '''Prep lists, set parameters manually, get the device drivers.'''
@@ -178,15 +180,16 @@ class DDSGUIExptBuilder():
 
         dds_setting_lines = ""
 
-        for dds in dds_list:
+        for dds_slist in dds_list:
+            for dds in dds_slist:
 
-            uru_idx = dds.urukul_idx
-            ch = dds.ch
-            freq = dds.freq_MHz
-            att = dds.att_dB
+                uru_idx = dds.urukul_idx
+                ch = dds.ch
+                freq = dds.freq_MHz
+                att = dds.att_dB
 
-            dds_setting_lines += f"""
-                self.dds({uru_idx},{ch},{freq},{att})"""
+                dds_setting_lines += f"""
+                    self.dds({uru_idx},{ch},{freq},{att})"""
 
         return dds_setting_lines
     
