@@ -1,9 +1,10 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
+from kexp.config.dds_id import dds_frame
 
 class mot():
     def __init__(self):
-        pass
+        self.dds = dds_frame()
 
     @kernel
     def load_mot(self,t):
