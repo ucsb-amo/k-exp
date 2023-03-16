@@ -1,6 +1,6 @@
 from artiq.experiment import *
 
-from kexp.util.artiq.expt_params import ExptParams
+from kexp.config.expt_params import ExptParams
 
 from kexp.control.cameras.basler_usb import BaslerUSB
 import pypylon.pylon as py
