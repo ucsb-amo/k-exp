@@ -15,7 +15,7 @@ class DDS():
       self.ftw_per_hz = 0
       self.read_db(device_db)
 
-   def detuning_to_frequency(self,linewidths_detuned):
+   def detuning_to_frequency(self,linewidths_detuned,single_pass=False):
       '''
       Returns the DDS frequency value in MHz corresponding to detuning =
       linewidths_detuned * Gamma from the resonant D1, D2 transitions. Gamma = 2
@@ -38,7 +38,10 @@ class DDS():
       f_shift_to_resonance_MHz = 461.7 / 2 # half the crossover detuning. Value from T.G. Tiecke.
       linewidth_MHz = 6
       detuning_MHz = linewidths_detuned * linewidth_MHz
-      return np.abs( ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2 )
+      freq = np.abs( ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2 )
+      if single_pass:
+         freq = freq * 2
+      return freq
       
    def name(self) -> TStr:
       return f'urukul{self.urukul_idx}_ch{self.ch}'
