@@ -39,7 +39,15 @@ class dds_frame():
         self.d1_3d_r = self.dds_assign(1,2)
         self.d1_3d_c = self.dds_assign(1,3)
 
-    def dds_assign(self, uru, ch):
+    def dds_assign(self, uru, ch) -> DDS:
+        '''
+        Gets the DDS() object from the dds_state vector, sets the aom order, and
+        returns the DDS() object.
+
+        Returns
+        -------
+        DDS
+        '''
         dds0 = self._dds_state[uru][ch]
         dds0.aom_order = self._aom_order[uru][ch]
         return dds0
