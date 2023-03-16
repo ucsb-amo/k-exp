@@ -1,5 +1,6 @@
 from artiq.experiment import *
 from kexp.util.db.device_db import device_db
+import numpy as np
 
 class DDS():
    def __init__(self, urukul_idx, ch, freq_MHz=0., att_dB=0.):
@@ -14,15 +15,30 @@ class DDS():
       self.ftw_per_hz = 0
       self.read_db(device_db)
 
-   def freq_from_detuning(self,detuning_linewidths):
+   def detuning_to_frequency(self,linewidths_detuned):
       '''
-      Returns the DDS frequency value in MHz corresponding to N linewidth
-      detuning from the D1, D2 linewidths Gamma = 2 * pi * 6 MHz.
+      Returns the DDS frequency value in MHz corresponding to detuning =
+      linewidths_detuned * Gamma from the resonant D1, D2 transitions. Gamma = 2
+      * pi * 6 MHz.
+
+      D1 AOMs give detuning relative to |g> -> |F=2>.
+      D2 AOMs give detuning relative to |g> -> unresolved D2 peak (fine
+      structure center frequency).
+
+      Parameters
+      ----------
+      linewidths_detuned: float
+         Detuning in units of linewidth Gamma = 2 * pi * 6 MHz.
+
+      Returns
+      -------
+      float
+         The AOM frequency setting in MHz.
       '''
       f_shift_to_resonance_MHz = 461.7 / 2 # half the crossover detuning. Value from T.G. Tiecke.
       linewidth_MHz = 6
-      detuning_MHz = detuning_linewidths * linewidth_MHz
-      return ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2
+      detuning_MHz = linewidths_detuned * linewidth_MHz
+      return np.abs( ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2 )
       
    def name(self) -> TStr:
       return f'urukul{self.urukul_idx}_ch{self.ch}'
