@@ -4,7 +4,9 @@ from kexp.control.artiq.DDS import DDS
 N_uru = 2
 N_ch = 4
 shape = (N_uru,N_ch)
-dds_empty_frame = [[None for _ in range(N_ch)] for _ in range(N_uru)]
+
+def dds_empty_frame():
+    return [[None for _ in range(N_ch)] for _ in range(N_uru)]
 
 class dds_frame():
     '''

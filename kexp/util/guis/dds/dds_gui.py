@@ -140,7 +140,7 @@ class MainWindow(QWidget):
     def add_dds_to_grid(self):
         '''Populate grid layout with dds channels'''
 
-        self.spinners = dds_id.dds_empty_frame
+        self.spinners = dds_id.dds_empty_frame()
 
         for uru_idx in range(self.N_urukul):
             for ch_idx in range(self.N_ch):
@@ -161,7 +161,7 @@ class MainWindow(QWidget):
 
     def spinners_to_param_list(self):
         '''Convert gui values into parameter list'''
-        param_list = dds_id.dds_empty_frame
+        param_list = dds_id.dds_empty_frame()
         for uru_idx in range(self.N_urukul):
             for ch_idx in range(self.N_ch):
                 this_spinner = self.spinners[uru_idx][ch_idx]
