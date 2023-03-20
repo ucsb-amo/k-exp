@@ -95,7 +95,7 @@ def compute_ODs(img_atoms,img_light,img_dark,crop_type='mot'):
         OD = compute_OD(atoms,light,dark)
         ODsraw.append(OD)
 
-        OD = roi.crop_OD(OD)
+        OD = roi.crop_OD(OD,crop_type)
         ODs.append(OD)
 
         this_summedODx, this_summedODy = compute_summedOD(OD)

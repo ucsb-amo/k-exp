@@ -1,4 +1,4 @@
-def crop_OD(OD,crop_type='mot'):
+def crop_OD(OD,crop_type=''):
 
     if crop_type == 'mot':
         roix = [850,1450]
