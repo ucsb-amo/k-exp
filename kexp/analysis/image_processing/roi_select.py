@@ -1,3 +1,5 @@
+import numpy as np
+
 def crop_OD(OD,crop_type=''):
 
     if crop_type == 'mot':
