@@ -19,7 +19,8 @@ def analyze_and_save_absorption_images(expt,crop_type='mot'):
     images = expt.images
     timestamps_ns = expt.image_timestamps
 
-    img_atoms, img_light, img_dark, img_atoms_tstamp, img_light_tstamp, img_dark_tstamp = split_images(images,timestamps_ns)
+    img_atoms, img_light, img_dark, img_atoms_tstamp, img_light_tstamp, img_dark_tstamp = \
+        split_images(images,timestamps_ns)
 
     ODraw, ODs, summedODx, summedODy = compute_ODs(images,timestamps_ns,crop_type)
     expt.set_dataset('img_atoms_tstamp_ns',img_atoms_tstamp)
