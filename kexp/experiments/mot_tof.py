@@ -86,6 +86,7 @@ class mot_tof(EnvExperiment, Base):
         # return to mot load state
         self.set_all_dds(state=1)
         print(self.dds.imaging.off())
+        self.core.break_realtime()
         self.switch_mot_magnet(1)
 
     def analyze(self):
