@@ -19,13 +19,12 @@ def analyze_and_save_absorption_images(expt,crop_type='mot'):
     images = expt.images
     timestamps_ns = expt.image_timestamps
 
-    ODraw, ODs, summedODx, summedODy, \
-        img_atoms, img_light, img_dark, \
-        img_atoms_tstamp_ns, img_light_tstamp_ns, img_dark_tstamp_ns \
-         = compute_ODs(images,timestamps_ns,crop_type)
-    expt.set_dataset('img_atoms_tstamp_ns',img_atoms_tstamp_ns)
-    expt.set_dataset('img_light_tstamp_ns',img_light_tstamp_ns)
-    expt.set_dataset('img_dark_tstamp_ns',img_dark_tstamp_ns)
+    img_atoms, img_light, img_dark, img_atoms_tstamp, img_light_tstamp, img_dark_tstamp = split_images(images,timestamps_ns)
+
+    ODraw, ODs, summedODx, summedODy = compute_ODs(images,timestamps_ns,crop_type)
+    expt.set_dataset('img_atoms_tstamp_ns',img_atoms_tstamp)
+    expt.set_dataset('img_light_tstamp_ns',img_light_tstamp)
+    expt.set_dataset('img_dark_tstamp_ns',img_dark_tstamp)
     expt.set_dataset('img_atoms', img_atoms)
     expt.set_dataset('img_light', img_light)
     expt.set_dataset('img_dark', img_dark)
@@ -36,7 +35,23 @@ def analyze_and_save_absorption_images(expt,crop_type='mot'):
 
     return ODs, summedODx, summedODy
 
-def compute_ODs(images,timestamps_ns,crop_type='mot'):
+def split_images(images,timestamps_ns)
+    
+    atom_img_idx = 0
+    light_img_idx = 1
+    dark_img_idx = 2
+    
+    img_atoms = images[atom_img_idx::3]
+    img_light = images[light_img_idx::3]
+    img_dark = images[dark_img_idx::3]
+
+    img_atoms_tstamp = timestamps_ns[atom_img_idx::3]
+    img_light_tstamp = timestamps_ns[light_img_idx::3]
+    img_dark_tstamp = timestamps_ns[dark_img_idx::3]
+
+    return img_atoms, img_light, img_dark, img_atoms_tstamp, img_light_tstamp, img_dark_tstamp
+
+def compute_ODs(img_atoms,img_light,img_dark,crop_type='mot'):
     '''
     From a list of images (length 3*n, where n is the number of runs), computes
     OD. Crops to a preset ROI based on in what stage of cooling the images were
@@ -44,9 +59,14 @@ def compute_ODs(images,timestamps_ns,crop_type='mot'):
 
     Parameters
     ----------
-    images: list 
-        An n x px x py list of images of n images, px x py pixels, ordered as
-        atoms, light, dark.
+    img_atoms: list 
+        An n x px x py list of images of n images, px x py pixels. Images with atoms+light.
+
+    img_light: list 
+        An n x px x py list of images of n images, px x py pixels. Images with only light.
+
+    img_dark: list 
+        An n x px x py list of images of n images, px x py pixels. Images with no light, no atoms.
 
     crop_type: str
         Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
@@ -61,22 +81,12 @@ def compute_ODs(images,timestamps_ns,crop_type='mot'):
     summedODx: ArrayLike
     summedODy: ArrayLike
     '''
-    atom_img_idx = 0
-    light_img_idx = 1
-    dark_img_idx = 2
+    
 
     ODsraw = []
     ODs = []
     summedODx = []
     summedODy = []
-
-    img_atoms = images[atom_img_idx::3]
-    img_light = images[light_img_idx::3]
-    img_dark = images[dark_img_idx::3]
-
-    img_atoms_tstamp = timestamps_ns[atom_img_idx::3]
-    img_light_tstamp = timestamps_ns[light_img_idx::3]
-    img_dark_tstamp = timestamps_ns[dark_img_idx::3]
 
     for idx in range(len(img_atoms)):
         atoms = img_atoms[idx]
@@ -93,7 +103,7 @@ def compute_ODs(images,timestamps_ns,crop_type='mot'):
         summedODx.append(this_summedODx)
         summedODy.append(this_summedODy)
 
-    return ODsraw, ODs, summedODx, summedODy, img_atoms, img_light, img_dark, img_atoms_tstamp, img_light_tstamp, img_dark_tstamp
+    return ODsraw, ODs, summedODx, summedODy
 
 def compute_OD(atoms,light,dark):
 
