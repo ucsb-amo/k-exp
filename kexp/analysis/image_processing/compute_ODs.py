@@ -35,7 +35,7 @@ def analyze_and_save_absorption_images(expt,crop_type='mot'):
 
     return ODs, summedODx, summedODy
 
-def split_images(images,timestamps_ns)
+def split_images(images,timestamps_ns):
     
     atom_img_idx = 0
     light_img_idx = 1
