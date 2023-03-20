@@ -22,7 +22,7 @@ class dds_frame():
 
         self._dds_state = dds_state
 
-        self._aom_order = dds_empty_frame
+        self._aom_order = dds_empty_frame()
         # self._aom_order[urukul_idx][ch_idx] = order
         self._aom_order[0][0] = 1
         self._aom_order[0][1] = 1
