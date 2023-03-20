@@ -63,6 +63,8 @@ class cmot_tof(EnvExperiment, Base):
             self.switch_d2_2d(0)
 
         self.cmot(self.p.t_cmot * s)
+
+        self.switch_mot_magnet(0)
         
         delay(t_tof * s)
 
