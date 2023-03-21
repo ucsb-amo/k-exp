@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay_mu
+from artiq.experiment import delay_mu, delay
 from kexp.util.db.device_db import device_db
 from kexp.config.expt_params import ExptParams
 import numpy as np
@@ -85,7 +85,9 @@ class DDS():
    @kernel
    def init_dds(self):
       delay_mu(-self._t_rtio_mu)
-      self.dds_device.init()
+      # delay(-2*ms)
+      self.dds_device.init(blind=False)
+      # delay(2*ms)
       delay_mu(self._t_rtio_mu)
 
    def read_db(self,ddb):
