@@ -8,6 +8,7 @@ import pypylon.pylon as py
 from kexp.base.sub.devices import devices
 from kexp.base.sub.cooling import cooling
 from kexp.base.sub.image import image
+import numpy as np
 
 class Base(devices, cooling, image):
     def __init__(self):
@@ -38,7 +39,7 @@ class Base(devices, cooling, image):
             grab = self.camera.RetrieveResult(1000000, py.TimeoutHandling_ThrowException)
             if grab.GrabSucceeded():
                 print(f'gotem (img {count+1}/{Nimg})')
-                img = grab.GetArray()
+                img = np.uint8(grab.GetArray())
                 img_t = grab.TimeStamp
                 self.images.append(img)
                 self.image_timestamps.append(img_t)
