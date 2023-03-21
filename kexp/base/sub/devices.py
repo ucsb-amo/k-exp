@@ -1,11 +1,14 @@
 from artiq.experiment import *
-from artiq.experiment import delay, sequential, parallel
+from artiq.experiment import delay, delay_mu
 
 from kexp.config.dds_id import dds_frame
 from kexp.control.artiq.DDS import DDS
 from kexp.config.expt_params import ExptParams
 
+t_rtio_mu = ExptParams().t_rtio_mu
+
 class devices():
+
     def __init__(self):
         pass
 
@@ -23,6 +26,15 @@ class devices():
         self.ttl_camera = self.get_device("ttl4")
 
     @kernel
+    def init_kernel(self):
+        self.core.reset()
+        self.zotino.init()
+        delay_mu(t_rtio_mu)
+        self.init_all_cpld()
+        self.set_all_dds(0)
+        self.core.break_realtime()
+
+    @kernel
     def set_all_dds(self, state):
         for dds in self.dds_list:
             dds.set_dds()
@@ -30,11 +42,11 @@ class devices():
                 dds.off()
             elif state == 1:
                 dds.on()
-            delay(10*us)
+            delay_mu(t_rtio_mu)
 
     @kernel
-    def init_all_dds(self, state):
+    def init_all_cpld(self):
         for dds in self.dds_list:
-            dds.init_dds()
-            delay(10*us)
+            dds.dds_device.cpld.init()
+            delay(1*ms)
     

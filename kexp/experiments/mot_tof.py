@@ -71,9 +71,7 @@ class mot_tof(EnvExperiment, Base):
     @kernel
     def run(self):
 
-        self.core.reset()
-        self.set_all_dds(state=0)
-        self.core.break_realtime()
+        self.init_kernel()
 
         self.StartTriggeredGrab(self.p.N_img)
         delay(self.p.t_grab_start_wait*s)

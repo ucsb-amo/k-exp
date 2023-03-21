@@ -1,4 +1,5 @@
 from artiq.experiment import *
+from artiq.experiment import delay, delay_mu
 from kexp.config.dds_state import dds_state
 import kexp.config.dds_id as dds_id
 from kexp.config.expt_params import ExptParams
@@ -15,9 +16,9 @@ class Startup(EnvExperiment):
 
         self.setattr_device("zotino0")
 
-        self.dds_list = self.dds.dds_list()
-
         self.params = ExptParams()
+
+        self.dds_list = self.dds.dds_list()
 
     @kernel
     def run(self):
@@ -27,9 +28,11 @@ class Startup(EnvExperiment):
         self.core.reset()
         self.zotino0.init()
         for dds in self.dds_list:
-            dds.init_dds()
+            dds.dds_device.cpld.init()
+            delay(1*ms)
             dds.set_dds()
-        delay(1*us)
+            dds.on()
+        delay_mu(self.params.t_rtio_mu)
         self.zotino0.write_dac(0,self.params.V_mot_current)
         self.zotino0.load()
         

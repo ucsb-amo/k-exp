@@ -21,6 +21,7 @@ class DDSGUIExptBuilder():
         script = textwrap.dedent(f"""
         from artiq.experiment import *
         from kexp.control.artiq.DDS import DDS
+        from kexp.config.dds_id import dds_empty_frame
 
         class set_all_dds_on(EnvExperiment):
 
@@ -34,7 +35,7 @@ class DDSGUIExptBuilder():
             def prep_default_DDS_list(self):
                 ''' Preps a list of DDS states, defaulting to off. '''
 
-                self.DDS_list = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+                self.DDS_list = dds_empty_frame()
 
                 for urukul_idx in range(len(self.DDS_list)):
                     for ch in range(len(self.DDS_list[urukul_idx])):
@@ -52,13 +53,14 @@ class DDSGUIExptBuilder():
                     for dds in dds_sublist:
                         dds.set_dds()
                         delay(1*us)
+                        dds.on()
 
             @kernel
-            def init_all_dds(self):
+            def init_all_cpld(self):
                 for dds_sublist in self.DDS_list:
                     for dds in dds_sublist:
-                        dds.init_dds()
-                        delay(1*us)
+                        dds.dds_device.cpld.init()
+                        delay(1*ms)
 
             def build(self):
                 '''Prep lists, set parameters manually, get the device drivers.'''
@@ -73,7 +75,7 @@ class DDSGUIExptBuilder():
                 '''Execute on the core device, init then set the DDS devices to the corresponding parameters'''
 
                 self.core.reset()
-                self.init_all_dds()
+                self.init_all_cpld()
                 self.set_all_dds()
         """)
         return script
@@ -108,10 +110,11 @@ class DDSGUIExptBuilder():
                         dds.set_dds()
 
             @kernel
-            def init_all_dds(self):
+            def init_all_cpld(self):
                 for dds_sublist in self.DDS_list:
                     for dds in dds_sublist:
-                        dds.init_dds()
+                        dds.dds_device.cpld.init()
+                        delay(1*ms)
 
             def build(self):
                 '''Prep lists, set parameters manually, get the device drivers.'''
@@ -122,7 +125,7 @@ class DDSGUIExptBuilder():
             @kernel
             def run(self):
                 self.core.reset()
-                # self.init_all_dds()
+                self.init_all_cpld()
                 self.set_all_dds()
         """)
         return script
@@ -145,8 +148,10 @@ class DDSGUIExptBuilder():
                 '''Execute on the core device, init then set the DDS devices to the corresponding parameters'''
 
                 self.core.reset()
-                self.dds_device.init()
                 self.dds_device.cpld.init()
+                delay(1*ms)
+                self.dds_device.init()
+                delay_mu(8)
                 self.dds_device.set(frequency={dds_to_turn_on.freq_MHz}*MHz, amplitude=1.)
                 self.dds_device.set_att({dds_to_turn_on.att_dB}*dB)
                 self.dds_device.sw.on()
@@ -171,6 +176,8 @@ class DDSGUIExptBuilder():
                 '''Execute on the core device, init then set the DDS devices to the corresponding parameters'''
 
                 self.core.reset()
+                self.dds_device.init()
+                delay_mu(8)
                 self.dds_device.sw.off()
                 self.dds_device.power_down()
         """)

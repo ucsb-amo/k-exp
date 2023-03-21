@@ -1,4 +1,5 @@
 from artiq.experiment import *
+from artiq.experiment import delay_mu, delay
 
 from kexp.config.expt_params import ExptParams
 
