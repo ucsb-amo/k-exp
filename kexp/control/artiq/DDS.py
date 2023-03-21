@@ -68,8 +68,10 @@ class DDS():
          self.att_dB = att_dB
 
       if self.freq_MHz != 0.:
+         delay(-1*us)
          self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
          self.dds_device.set_att(self.att_dB * dB)
+         delay(1*us)
          self.dds_device.sw.on()
       else:
          self.dds_device.sw.off()
