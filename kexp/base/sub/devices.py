@@ -1,16 +1,14 @@
 from artiq.experiment import *
-from artiq.experiment import delay, delay_mu
+from artiq.experiment import delay_mu
 
 from kexp.config.dds_id import dds_frame
 from kexp.control.artiq.DDS import DDS
 from kexp.config.expt_params import ExptParams
 
-t_rtio_mu = ExptParams().t_rtio_mu
-
 class devices():
 
     def __init__(self):
-        pass
+        self.params = ExptParams()
 
     def prepare_devices(self):
 
@@ -28,8 +26,9 @@ class devices():
     @kernel
     def init_kernel(self):
         self.core.reset()
+        delay_mu(self.params.t_rtio_mu)
         self.zotino.init()
-        delay_mu(t_rtio_mu)
+        delay_mu(self.params.t_rtio_mu)
         self.init_all_cpld()
         self.set_all_dds(0)
         self.core.break_realtime()
@@ -42,11 +41,10 @@ class devices():
                 dds.off()
             elif state == 1:
                 dds.on()
-            delay_mu(t_rtio_mu)
+            delay_mu(self.params.t_rtio_mu)
 
     @kernel
     def init_all_cpld(self):
         for dds in self.dds_list:
             dds.dds_device.cpld.init()
-            delay(1*ms)
     
