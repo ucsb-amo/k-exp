@@ -17,7 +17,7 @@ class cmot_tof(EnvExperiment, Base):
         self.p.t_mot_load = 0.25
         self.p.t_cmot = 1.e-6
 
-        self.p.t_tof_list = np.linspace(0,1000,7) * 1.e-6
+        self.p.t_tof_list = np.linspace(10,1000,2) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof_list)
         
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-2.7)
