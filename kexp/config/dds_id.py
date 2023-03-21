@@ -40,8 +40,8 @@ class dds_frame():
         self.d2_3d_r = self.dds_assign(0,3)
         self.d2_3d_c = self.dds_assign(1,0)
         self.imaging = self.dds_assign(1,1)
-        self.d1_3d_r = self.dds_assign(1,2)
-        self.d1_3d_c = self.dds_assign(1,3)
+        self.d1_3d_c = self.dds_assign(1,2)
+        self.d1_3d_r = self.dds_assign(1,3)
 
     def dds_assign(self, uru, ch) -> DDS:
         '''
