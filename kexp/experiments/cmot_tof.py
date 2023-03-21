@@ -1,7 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 import kexp.analysis.image_processing.compute_ODs as compute_ODs
-from kexp.base.base import Base, delay_min
+from kexp.base.base import Base
 import numpy as np
 
 class cmot_tof(EnvExperiment, Base):
@@ -93,7 +93,6 @@ class cmot_tof(EnvExperiment, Base):
 
         self.core.reset()
         self.init_kernel()
-        self.core.break_realtime()
 
         self.StartTriggeredGrab(self.p.N_img)
         delay(self.p.t_grab_start_wait*s)
