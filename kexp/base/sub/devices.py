@@ -30,6 +30,7 @@ class devices():
         self.zotino.init()
         delay_mu(self.params.t_rtio_mu)
         self.init_all_cpld()
+        self.init_all_dds(self)
         self.set_all_dds(0)
         self.core.break_realtime()
 
@@ -44,7 +45,14 @@ class devices():
             delay_mu(self.params.t_rtio_mu)
 
     @kernel
+    def init_all_dds(self):
+        for dds in self.dds_list:
+            dds.init_dds()
+            delay(1*ms)
+
+    @kernel
     def init_all_cpld(self):
         for dds in self.dds_list:
             dds.dds_device.cpld.init()
+            delay(1*ms)
     
