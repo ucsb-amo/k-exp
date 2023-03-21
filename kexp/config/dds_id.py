@@ -30,8 +30,8 @@ class dds_frame():
         self._aom_order[0][3] = 1
         self._aom_order[1][0] = -1
         self._aom_order[1][1] = 1
-        self._aom_order[1][2] = 1
-        self._aom_order[1][3] = -1
+        self._aom_order[1][2] = -1
+        self._aom_order[1][3] = 1
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx)
         self.push = self.dds_assign(0,0)
