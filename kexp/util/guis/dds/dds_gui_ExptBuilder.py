@@ -21,6 +21,7 @@ class DDSGUIExptBuilder():
         script = textwrap.dedent(f"""
         from artiq.experiment import *
         from kexp.control.artiq.DDS import DDS
+        from kexp.config.dds_id import dds_empty_frame
 
         class set_all_dds_on(EnvExperiment):
 
@@ -34,7 +35,7 @@ class DDSGUIExptBuilder():
             def prep_default_DDS_list(self):
                 ''' Preps a list of DDS states, defaulting to off. '''
 
-                self.DDS_list = [[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+                self.DDS_list = dds_empty_frame()
 
                 for urukul_idx in range(len(self.DDS_list)):
                     for ch in range(len(self.DDS_list[urukul_idx])):
@@ -52,6 +53,7 @@ class DDSGUIExptBuilder():
                     for dds in dds_sublist:
                         dds.set_dds()
                         delay(1*us)
+                        dds.on()
 
             @kernel
             def init_all_cpld(self):
