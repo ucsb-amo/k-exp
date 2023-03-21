@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential
+from artiq.experiment import delay, delay_mu, parallel, sequential
 from kexp.config.dds_id import dds_frame
 from kexp.config.expt_params import ExptParams
 
@@ -13,33 +13,30 @@ class cooling():
 
     @kernel
     def switch_d2_2d(self,state):
-        with parallel:
-            if state == 1:
-                self.dds.d2_2d_c.on()
-                self.dds.d2_2d_r.on()
-            elif state == 0:
-                self.dds.d2_2d_c.off()
-                self.dds.d2_2d_r.off()
+        if state == 1:
+            self.dds.d2_2d_c.on()
+            self.dds.d2_2d_r.on()
+        elif state == 0:
+            self.dds.d2_2d_c.off()
+            self.dds.d2_2d_r.off()
 
     @kernel
     def switch_d2_3d(self,state):
-        with parallel:
-            if state == 1:
-                self.dds.d2_3d_c.on()
-                self.dds.d2_3d_r.on()
-            elif state == 0:
-                self.dds.d2_3d_c.off()
-                self.dds.d2_3d_r.off()
+        if state == 1:
+            self.dds.d2_3d_c.on()
+            self.dds.d2_3d_r.on()
+        elif state == 0:
+            self.dds.d2_3d_c.off()
+            self.dds.d2_3d_r.off()
 
     @kernel
     def switch_d1_3d(self,state):
-        with parallel:
-            if state == 1:
-                self.dds.d1_3d_c.on()
-                self.dds.d1_3d_r.on()
-            elif state == 0:
-                self.dds.d1_3d_c.off()
-                self.dds.d1_3d_r.off()
+        if state == 1:
+            self.dds.d1_3d_c.on()
+            self.dds.d1_3d_r.on()
+        elif state == 0:
+            self.dds.d1_3d_c.off()
+            self.dds.d1_3d_r.off()
 
     ## Magnet functions
 
