@@ -4,7 +4,9 @@ from kexp.control.artiq.DDS import DDS
 N_uru = 2
 N_ch = 4
 shape = (N_uru,N_ch)
-dds_empty_frame = [[None for _ in range(N_ch)] for _ in range(N_uru)]
+
+def dds_empty_frame():
+    return [[None for _ in range(N_ch)] for _ in range(N_uru)]
 
 class dds_frame():
     '''
@@ -20,7 +22,7 @@ class dds_frame():
 
         self._dds_state = dds_state
 
-        self._aom_order = dds_empty_frame
+        self._aom_order = dds_empty_frame()
         # self._aom_order[urukul_idx][ch_idx] = order
         self._aom_order[0][0] = 1
         self._aom_order[0][1] = 1

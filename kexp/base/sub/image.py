@@ -1,7 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 from kexp.config.dds_id import dds_frame
-from kexp.util.artiq.expt_params import ExptParams
+from kexp.config.expt_params import ExptParams
 
 class image():
     def __init__(self):

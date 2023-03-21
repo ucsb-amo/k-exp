@@ -1,11 +1,10 @@
-def crop_OD(OD,crop_type='mot'):
+import numpy as np
+
+def crop_OD(OD,crop_type=''):
 
     if crop_type == 'mot':
-        roix = [850,1450]
-        roiy = [250,1200]
-    elif crop_type == 'gm':
-        roix = [850,1450]
-        roiy = [250,1200]
+        roix = [600,1150]
+        roiy = [250,1150]
     else:
         roix = [0,np.shape(OD)[1]-1]
         roiy = [0,np.shape(OD)[0]-1]

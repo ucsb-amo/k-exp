@@ -31,4 +31,10 @@ class devices():
             elif state == 1:
                 dds.on()
             delay(10*us)
+
+    @kernel
+    def init_all_dds(self, state):
+        for dds in self.dds_list:
+            dds.init_dds()
+            delay(10*us)
     

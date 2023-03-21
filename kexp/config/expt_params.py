@@ -7,8 +7,9 @@ class ExptParams():
         self.t_camera_trigger = 2.e-6
         self.t_imaging_pulse = 5.e-6
         self.t_light_only_image_delay = 100.e-3
-        self.t_dark_image_delay = 10.e-3
+        self.t_dark_image_delay = 25.e-3
         self.t_camera_exposure = 0. # camera init will default to min exposure
+        self.t_grab_start_wait = 0.25
 
         self.V_mot_current = 0.7 # 3.4A on 3D MOT coils
 

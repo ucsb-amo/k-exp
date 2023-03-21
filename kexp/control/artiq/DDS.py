@@ -52,24 +52,26 @@ class DDS():
       self.dds_device.init()
 
    @kernel
-   def set_dds(self, freq_MHz = None, att_dB = None):
+   def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
       '''Set the dds device. If freq_MHz = 0, turn it off'''
 
-      if freq_MHz == None:
+      if freq_MHz < 0.:
          freq_MHz = self.freq_MHz
-      elif:
-         freq_MHz = float(freq_MHz)
+      else:
+         # freq_MHz = float(freq_MHz)
          self.freq_MHz = freq_MHz
 
-      if att_dB == None:
+      if att_dB < 0.:
          att_dB = self.att_dB
-      elif:
-         att_dB = float(att_dB)
+      else:
+         # att_dB = float(att_dB)
          self.att_dB = att_dB
 
       if self.freq_MHz != 0.:
+         delay(-1*us)
          self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
          self.dds_device.set_att(self.att_dB * dB)
+         delay(1*us)
          self.dds_device.sw.on()
       else:
          self.dds_device.sw.off()
