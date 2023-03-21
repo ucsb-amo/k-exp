@@ -1,4 +1,5 @@
 import kexp.config.camera_params as cam
+import numpy as np
 
 class ExptParams():
     def __init__(self):
@@ -15,7 +16,7 @@ class ExptParams():
 
         self.t_pretrigger = cam.exposure_delay
 
-        self.t_rtio_mu = 8 # get this by running core.ref_multiplier
+        self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
     def params_to_dataset(self,expt):
         try:

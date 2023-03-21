@@ -16,9 +16,9 @@ class Startup(EnvExperiment):
 
         self.setattr_device("zotino0")
 
-        self.dds_list = self.dds.dds_list()
-
         self.params = ExptParams()
+
+        self.dds_list = self.dds.dds_list()
 
     @kernel
     def run(self):
