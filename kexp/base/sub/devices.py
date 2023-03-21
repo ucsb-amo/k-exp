@@ -27,10 +27,12 @@ class devices():
 
     @kernel
     def init_kernel(self):
+        self.core.reset()
         self.zotino.init()
         delay_mu(t_rtio_mu)
         self.init_all_cpld()
         self.set_all_dds(0)
+        self.core.break_realtime()
 
     @kernel
     def set_all_dds(self, state):
