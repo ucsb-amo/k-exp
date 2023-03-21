@@ -1,7 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 import kexp.analysis.image_processing.compute_ODs as compute_ODs
-from kexp.base.base import Base
+from kexp.base.base import Base, delay_min
 import numpy as np
 
 class cmot_tof(EnvExperiment, Base):
@@ -92,6 +92,7 @@ class cmot_tof(EnvExperiment, Base):
     def run(self):
 
         self.core.reset()
+        self.init_all_dds()
         self.set_all_dds(state=0)
         self.core.break_realtime()
 

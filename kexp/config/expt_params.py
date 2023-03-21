@@ -15,6 +15,8 @@ class ExptParams():
 
         self.t_pretrigger = cam.exposure_delay
 
+        self.t_rtio_mu = 8 # get this by running core.ref_multiplier
+
     def params_to_dataset(self,expt):
         try:
             param_keys = list(vars(self))
