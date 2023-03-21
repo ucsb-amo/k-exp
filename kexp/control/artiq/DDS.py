@@ -1,10 +1,8 @@
 from artiq.experiment import *
-from artiq.experiment import delay_mu, delay
+from artiq.experiment import delay_mu
 from kexp.util.db.device_db import device_db
 from kexp.config.expt_params import ExptParams
 import numpy as np
-
-t_rtio_mu = ExptParams().t_rtio_mu
 
 class DDS():
 
@@ -19,7 +17,8 @@ class DDS():
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
-      self.is_on = False
+
+      self._t_rtio_mu = ExptParams().t_rtio_mu
 
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False):
       '''
@@ -72,25 +71,22 @@ class DDS():
          self.dds_device.set_att(self.att_dB * dB)
       else:
          self.dds_device.sw.off()
-         self.is_on = False
 
    @kernel
    def off(self):
       self.init_dds()
       self.dds_device.sw.off()
-      self.is_on = False
 
    @kernel
    def on(self):
       self.init_dds()
       self.dds_device.sw.on()
-      self.is_on = True
 
    @kernel
    def init_dds(self):
-      delay_mu(-t_rtio_mu)
+      delay_mu(-self._t_rtio_mu)
       self.dds_device.init()
-      delay_mu(t_rtio_mu)
+      delay_mu(self._t_rtio_mu)
 
    def read_db(self,ddb):
       '''read out info from ddb. ftw_per_hz comes from artiq.frontend.moninj, line 206-207'''
