@@ -15,7 +15,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 0.5
         self.p.t_mot_load = 0.25
-        self.p.t_cmot = 1.e-6
+        self.p.t_cmot = 10.e-6
 
         self.p.t_tof_list = np.linspace(20,500,4) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof_list)
@@ -45,13 +45,13 @@ class cmot_tof(EnvExperiment, Base):
 
     @kernel
     def cmot(self,t):
+        delay(-1*us)
+        self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot)
+        self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot)
+        delay(1*us)
         with parallel:
-            # self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot)
-            # self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot)
             self.dds.d2_3d_r.on()
-            self.dds.d1_3d_c.on()
-        delay(16*ns)
-        with parallel:
+            self.dds.d2_3d_c.on()
             self.dds.d2_3d_c.off()
             self.dds.d1_3d_r.off()
         delay(t)
@@ -77,7 +77,6 @@ class cmot_tof(EnvExperiment, Base):
         self.kill_cmot()
         
         delay(t_tof * s)
-
         self.trigger_camera()
         self.pulse_imaging_light(self.p.t_imaging_pulse * s)
 
@@ -90,13 +89,10 @@ class cmot_tof(EnvExperiment, Base):
 
     @kernel
     def run(self):
-
-        self.core.reset()
+        
         self.init_kernel()
-
         self.StartTriggeredGrab(self.p.N_img)
         delay(self.p.t_grab_start_wait*s)
-        self.core.break_realtime()
         
         for t in self.p.t_tof_list:
             self.tof_expt(t)
