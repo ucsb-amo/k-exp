@@ -11,10 +11,6 @@ from kexp.base.sub.cooling import cooling
 from kexp.base.sub.image import image
 import numpy as np
 
-@kernel
-def delay_min():
-    delay(ExptParams().t_rtio_mu)
-
 class Base(devices, cooling, image):
     def __init__(self):
         super().__init__()

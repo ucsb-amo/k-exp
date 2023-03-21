@@ -1,8 +1,13 @@
 from artiq.experiment import *
+from artiq.experiment import delay_mu, delay
 from kexp.util.db.device_db import device_db
+from kexp.config.expt_params import ExptParams
 import numpy as np
 
+t_rtio_mu = ExptParams().t_rtio_mu
+
 class DDS():
+
    def __init__(self, urukul_idx, ch, freq_MHz=0., att_dB=0.):
       self.urukul_idx = urukul_idx
       self.ch = ch
@@ -14,6 +19,7 @@ class DDS():
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
+      self.is_on = False
 
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False):
       '''
@@ -47,43 +53,38 @@ class DDS():
       return f'urukul{self.urukul_idx}_ch{self.ch}'
 
    @kernel
-   def init_dds(self):
-      self.dds_device.cpld.init()
-      self.dds_device.init()
-
-   @kernel
    def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
       '''Set the dds device. If freq_MHz = 0, turn it off'''
 
       if freq_MHz < 0.:
          freq_MHz = self.freq_MHz
       else:
-         # freq_MHz = float(freq_MHz)
          self.freq_MHz = freq_MHz
 
       if att_dB < 0.:
          att_dB = self.att_dB
       else:
-         # att_dB = float(att_dB)
          self.att_dB = att_dB
 
       if self.freq_MHz != 0.:
-         delay(-1*us)
+         delay_mu(-t_rtio_mu)
+         self.dds_device.init()
+         delay_mu(t_rtio_mu)
          self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
          self.dds_device.set_att(self.att_dB * dB)
-         delay(1*us)
-         self.dds_device.sw.on()
       else:
          self.dds_device.sw.off()
-         self.dds_device.power_down()
+         self.is_on = False
 
    @kernel
    def off(self):
       self.dds_device.sw.off()
+      self.is_on = False
 
    @kernel
    def on(self):
       self.dds_device.sw.on()
+      self.is_on = True
 
    def read_db(self,ddb):
       '''read out info from ddb. ftw_per_hz comes from artiq.frontend.moninj, line 206-207'''

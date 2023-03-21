@@ -92,8 +92,7 @@ class cmot_tof(EnvExperiment, Base):
     def run(self):
 
         self.core.reset()
-        self.init_all_dds()
-        self.set_all_dds(state=0)
+        self.init_kernel()
         self.core.break_realtime()
 
         self.StartTriggeredGrab(self.p.N_img)
