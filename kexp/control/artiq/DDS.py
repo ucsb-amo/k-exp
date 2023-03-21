@@ -66,10 +66,8 @@ class DDS():
       else:
          self.att_dB = att_dB
 
+      self.init_dds()
       if self.freq_MHz != 0.:
-         delay_mu(-t_rtio_mu)
-         self.dds_device.init()
-         delay_mu(t_rtio_mu)
          self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
          self.dds_device.set_att(self.att_dB * dB)
       else:
@@ -78,13 +76,21 @@ class DDS():
 
    @kernel
    def off(self):
+      self.init_dds()
       self.dds_device.sw.off()
       self.is_on = False
 
    @kernel
    def on(self):
+      self.init_dds()
       self.dds_device.sw.on()
       self.is_on = True
+
+   @kernel
+   def init_dds(self):
+      delay_mu(-t_rtio_mu)
+      self.dds_device.init()
+      delay_mu(t_rtio_mu)
 
    def read_db(self,ddb):
       '''read out info from ddb. ftw_per_hz comes from artiq.frontend.moninj, line 206-207'''
