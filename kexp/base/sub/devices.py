@@ -1,9 +1,11 @@
 from artiq.experiment import *
 from artiq.experiment import delay_mu
 
-from kexp.config.dds_id import dds_frame
+from kexp.config.dds_id import dds_frame, N_uru
 from kexp.control.artiq.DDS import DDS
 from kexp.config.expt_params import ExptParams
+
+import numpy as np
 
 class devices():
 
@@ -16,12 +18,17 @@ class devices():
         self.zotino = self.get_device("zotino0")
 
         self.dds = dds_frame()
-        self.dds.get_dds_devices(self)
+        self.get_dds_devices()
         self.dds_list = self.dds.dds_list()
 
         self.dac_ch_3Dmot_current_control = 0
 
         self.ttl_camera = self.get_device("ttl4")
+
+    def get_dds_devices(self):
+        for dds in self.dds.dds_list():
+            dds.dds_device = self.get_device(dds.name)
+            dds.cpld_device = self.get_device(dds.cpld_name)
 
     @kernel
     def init_kernel(self):
@@ -30,29 +37,25 @@ class devices():
         self.zotino.init()
         delay_mu(self.params.t_rtio_mu)
         self.init_all_cpld()
-        self.init_all_dds(self)
-        self.set_all_dds(0)
+        self.set_all_dds()
+        self.init_all_dds()
         self.core.break_realtime()
 
     @kernel
-    def set_all_dds(self, state):
+    def set_all_dds(self):
         for dds in self.dds_list:
             dds.set_dds()
-            if state == 0:
-                dds.off()
-            elif state == 1:
-                dds.on()
             delay_mu(self.params.t_rtio_mu)
 
     @kernel
     def init_all_dds(self):
         for dds in self.dds_list:
-            dds.init_dds()
+            dds.dds_device.init()
             delay(1*ms)
 
     @kernel
     def init_all_cpld(self):
         for dds in self.dds_list:
-            dds.dds_device.cpld.init()
+            dds.cpld_device.init()
             delay(1*ms)
-    
+

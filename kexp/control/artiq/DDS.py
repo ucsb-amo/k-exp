@@ -13,7 +13,9 @@ class DDS():
       self.att_dB = att_dB
       self.aom_order = []
       self.dds_device = []
+      self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
+      self.cpld_device = []
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
@@ -47,9 +49,6 @@ class DDS():
       if single_pass:
          freq = freq * 2
       return freq
-      
-   def name(self) -> TStr:
-      return f'urukul{self.urukul_idx}_ch{self.ch}'
 
    @kernel
    def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
@@ -65,34 +64,25 @@ class DDS():
       else:
          self.att_dB = att_dB
 
-      # self.init_dds()
+      # delay(-10*ns)
       if self.freq_MHz != 0.:
          self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
          self.dds_device.set_att(self.att_dB * dB)
       else:
          self.dds_device.sw.off()
+      delay_mu(self._t_rtio_mu)
 
    @kernel
    def off(self):
-      # self.init_dds()
       self.dds_device.sw.off()
 
    @kernel
    def on(self):
-      # self.init_dds()
       self.dds_device.sw.on()
-
-   @kernel
-   def init_dds(self):
-      # delay_mu(-self._t_rtio_mu)
-      # delay(-2*ms)
-      self.dds_device.init(blind=False)
-      # delay(2*ms)
-      # delay_mu(self._t_rtio_mu)
 
    def read_db(self,ddb):
       '''read out info from ddb. ftw_per_hz comes from artiq.frontend.moninj, line 206-207'''
-      v = device_db[self.name()]
+      v = device_db[self.name]
       self.cpld_name = v["arguments"]["cpld_device"]
       spi_dev = ddb[self.cpld_name]["arguments"]["spi_device"]
       self.bus_channel = ddb[spi_dev]["arguments"]["channel"]

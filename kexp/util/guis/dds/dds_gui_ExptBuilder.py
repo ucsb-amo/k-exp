@@ -44,7 +44,7 @@ class DDSGUIExptBuilder():
             def get_dds(self,dds):
                 '''Fetch a DDS device from its name in device-db.py'''
 
-                dds.dds_device = self.get_device(dds.name())
+                dds.dds_device = self.get_device(dds.name)
                 return dds
 
             @kernel
@@ -101,7 +101,7 @@ class DDSGUIExptBuilder():
 
             def get_dds(self,dds):
                 '''Fetch a DDS device from its name in device-db.py'''
-                dds.dds_device = self.get_device(dds.name())
+                dds.dds_device = self.get_device(dds.name)
                 return dds
 
             @kernel
@@ -143,7 +143,7 @@ class DDSGUIExptBuilder():
                 '''Prep lists, set parameters manually, get the device drivers.'''
 
                 self.setattr_device("core")
-                self.dds_device = self.get_device('{dds_to_turn_on.name()}')
+                self.dds_device = self.get_device('{dds_to_turn_on.name}')
 
             @kernel
             def run(self):
@@ -171,7 +171,7 @@ class DDSGUIExptBuilder():
                 '''Prep lists, set parameters manually, get the device drivers.'''
 
                 self.setattr_device("core")
-                self.dds_device = self.get_device('{dds_to_turn_off.name()}')
+                self.dds_device = self.get_device('{dds_to_turn_off.name}')
 
             @kernel
             def run(self):
@@ -220,14 +220,14 @@ class DDSGUIExptBuilder():
         return returncode
 
     def execute_single_dds_off(self,dds_to_turn_off):
-        print(dds_to_turn_off.name())
+        print(dds_to_turn_off.name)
         program = self.make_single_dds_off_expt(dds_to_turn_off)
         self.write_experiment_to_file(program)
         returncode = self.run_expt()
         return returncode
     
     def execute_single_dds_on(self,dds_to_turn_on):
-        print(dds_to_turn_on.name())
+        print(dds_to_turn_on.name)
         print(dds_to_turn_on.freq_MHz)
         print(dds_to_turn_on.att_dB)
         program = self.make_single_dds_on_expt(dds_to_turn_on)

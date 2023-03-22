@@ -61,9 +61,5 @@ class dds_frame():
         Returns a list of all dds objects in 
         '''
         return [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
-    
-    def get_dds_devices(self,expt):
-        for dds in self.dds_list():
-            dds.dds_device = expt.get_device(dds.name())
         
 
