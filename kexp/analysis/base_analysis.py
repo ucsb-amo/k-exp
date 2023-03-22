@@ -3,7 +3,11 @@ from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gau
 
 class atomdata():
     '''
-    All parameters of this 
+    Use to store and do basic analysis on data for every experiment.
+
+    Any attribute which does not start with '_' will be saved to the dataset in _save_data().
+
+    This class also handles saving parameters from expt.params to the dataset.
     '''
     def __init__(self, expt, crop_type='mot'):
         self._expt = expt
@@ -50,6 +54,12 @@ class atomdata():
         self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
     
     def _save_data(self):
+        '''
+        Any attribute which does not start with '_' will be saved to the dataset in _save_data().
+
+        This function also handles saving parameters from expt.params to the dataset.
+        '''
+        print("Saving data...")
         try:
             param_keys = list(vars(self))
             important_param_keys = [p for p in param_keys if not p.startswith("_")]
@@ -58,6 +68,11 @@ class atomdata():
                 self._expt.set_dataset(key, value)
         except Exception as e: 
             print(e)
+        print("Done saving data!")
+
+        print("Saving parameters...")
+        self._expt.params.params_to_dataset(self)
+        print("Done saving parameters!")
 
     def _split_images(self):
         

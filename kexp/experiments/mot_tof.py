@@ -1,6 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
-import kexp.analysis.image_processing.compute_ODs as compute_ODs
+from kexp.analysis.base_analysis import atomdata
 from kexp.base.base import Base
 import numpy as np
 
@@ -91,9 +91,7 @@ class mot_tof(EnvExperiment, Base):
 
         self.camera.Close()
         
-        compute_ODs.analyze_and_save_absorption_images(self)
-
-        self.p.params_to_dataset(self)
+        self.data = atomdata(self)
 
         print("Done!")
 
