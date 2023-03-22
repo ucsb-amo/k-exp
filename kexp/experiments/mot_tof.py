@@ -15,7 +15,7 @@ class mot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 0.5
         self.p.t_mot_load = 0.25
-        self.p.t_tof_list = np.linspace(0,1000,15) * 1.e-6
+        self.p.t_tof_list = np.linspace(0,1000,2) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof_list)
 
     @kernel
@@ -83,7 +83,7 @@ class mot_tof(EnvExperiment, Base):
 
         # return to mot load state
         self.set_all_dds(state=1)
-        print(self.dds.imaging.off())
+        self.dds.imaging.off()
         self.core.break_realtime()
         self.switch_mot_magnet(1)
 
