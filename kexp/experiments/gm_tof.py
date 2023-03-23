@@ -16,13 +16,14 @@ class gm_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 0.5
         self.p.t_mot_load = 0.25
-        self.p.t_gm = 15.e-6
+        self.p.t_gm = 100.e-6
 
-        self.p.t_tof = np.linspace(20,500,4) * 1.e-6
+        self.p.t_tof = np.linspace(20,500,10) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof)
         
-        # self.p.f_d1_r_gm = self.dds.d1_3d_r.detuning_to_frequency(3.5)
-        # self.p.f_d1_c_gm = self.dds.d1_3d_c.detuning_to_frequency(4.5)
+        Ngamma = -5
+        self.p.f_d1_r_gm = self.dds.d1_3d_r.detuning_to_frequency(Ngamma)
+        self.p.f_d1_c_gm = self.dds.d1_3d_c.detuning_to_frequency(Ngamma)
 
     @kernel
     def load_mot(self,t):
@@ -87,6 +88,12 @@ class gm_tof(EnvExperiment, Base):
     def run(self):
         
         self.init_kernel()
+        
+        self.dds.d1_3d_c.set_dds(freq_MHz=self.params.f_d1_c_gm)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d1_3d_c.set_dds(freq_MHz=self.params.f_d1_r_gm)
+        delay_mu(self.params.t_rtio_mu)
+
         self.StartTriggeredGrab(self.p.N_img)
         delay(self.p.t_grab_start_wait*s)
         
