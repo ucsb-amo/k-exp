@@ -51,7 +51,7 @@ class cmot_tof(EnvExperiment, Base):
         delay(1*us)
         with parallel:
             self.dds.d2_3d_r.on()
-            self.dds.d2_3d_c.on()
+            self.dds.d1_3d_c.on()
             self.dds.d2_3d_c.off()
             self.dds.d1_3d_r.off()
         delay(t)
