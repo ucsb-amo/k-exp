@@ -1,7 +1,8 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
-from kexp.analysis.base_analysis import atomdata
 from kexp.base.base import Base
+from kexp.analysis.base_analysis import atomdata
+from kexp.analysis.tof import tof
 import numpy as np
 
 class cmot_tof(EnvExperiment, Base):
@@ -102,7 +103,11 @@ class cmot_tof(EnvExperiment, Base):
 
         self.camera.Close()
         
-        self.data = atomdata(self)
+        data = atomdata(self)
+
+        data.T_x = tof(data).compute_T_x(t=self.params.t_tof)
+
+        data.save_data()
 
         print("Done!")
 

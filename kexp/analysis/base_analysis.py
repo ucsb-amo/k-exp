@@ -37,11 +37,9 @@ class atomdata():
 
         self._split_images()
 
-        self._analyze_and_save_absorption_images(crop_type)
+        self._analyze_absorption_images(crop_type)
 
-        self._save_data()
-
-    def _analyze_and_save_absorption_images(self,crop_type='mot'):
+    def _analyze_absorption_images(self,crop_type='mot'):
         '''
         Saves the images, image timestamps (in ns), computes ODs, and saves them to
         the dataset of the current experiment (expt)
@@ -60,7 +58,7 @@ class atomdata():
         self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
         self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
     
-    def _save_data(self):
+    def save_data(self):
         '''
         Any attribute which does not start with '_' will be saved to the dataset in _save_data().
 
