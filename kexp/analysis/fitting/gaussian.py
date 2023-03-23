@@ -1,32 +1,11 @@
 import numpy as np
 from scipy.optimize import curve_fit
-from scipy.signal import savgol_filter
 import kamo.constants as c
-import matplotlib.pyplot as plt
-
-class Fit():
-    def __init__(self,xdata,ydata):
-        self.xdata = xdata
-        self.ydata = ydata
-
-        self.y_fitdata = []
-
-    def _fit_func(self,x):
-        pass
-
-    def _fit(self,x,y):
-        pass
-
-    def plot_fit(self):
-        plt.figure()
-        plt.plot(self.xdata,self.ydata,'.k',markersize=2)
-        plt.plot(self.xdata,self.y_fitdata,'--k')
-        plt.legend(["Data","Fit"])
-        plt.show()
+from kexp.analysis.fitting.fit import Fit
 
 class GaussianFit(Fit):
     def __init__(self,xdata,ydata):
-        super().__init__(xdata,ydata)
+        super().__init__(xdata,ydata,savgol_window=20)
 
         amplitude, sigma, x_center, y_offset = self._fit(xdata,ydata)
         self.amplitude = amplitude
@@ -57,10 +36,9 @@ class GaussianFit(Fit):
         x0: float
         offset: float
         '''
-        smth_y = savgol_filter(y,10,3)
         amplitude_guess = np.max(y) - np.min(y)
         x_center_guess = x[np.argmax(y)]
-        sigma_guess = np.abs(x_center_guess - x[np.argmin(np.abs(smth_y - 0.65*np.max(y)))])
+        sigma_guess = np.abs(x_center_guess - x[np.argmin(np.abs(self.ydata_smoothed - 0.65*np.max(y)))])
         y_offset_guess = np.min(y)
         popt, pcov = curve_fit(self._fit_func, x, y,
                                 p0=[amplitude_guess, sigma_guess, x_center_guess, y_offset_guess],
@@ -69,7 +47,7 @@ class GaussianFit(Fit):
 
 class GaussianTemperatureFit(Fit):
     def __init__(self, xdata, ydata):
-        super().__init__(xdata,ydata)
+        super().__init__(xdata,ydata,savgol_window=2)
 
         T, sigma0 = self._fit(xdata,ydata)
         self.T = T
