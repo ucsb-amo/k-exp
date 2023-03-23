@@ -47,7 +47,7 @@ class GaussianFit(Fit):
 
 class GaussianTemperatureFit(Fit):
     def __init__(self, xdata, ydata):
-        super().__init__(xdata,ydata,savgol_window=2)
+        super().__init__(xdata,ydata,savgol_window=4,savgol_degree=2)
 
         T, sigma0 = self._fit(xdata,ydata)
         self.T = T
