@@ -28,6 +28,13 @@ class atomdata():
         self.cloudfit_x = []
         self.cloudfit_y = []
 
+        self.sd_x = [fit.sigma for fit in self.cloudfit_x]
+        self.sd_y = [fit.sigma for fit in self.cloudfit_y]
+        self.center_x = [fit.x_center for fit in self.cloudfit_x]
+        self.center_y = [fit.y_center for fit in self.cloudfit_y]
+        self.amp_x = [fit.amplitude for fit in self.cloudfit_x]
+        self.amp_y = [fit.amplitude for fit in self.cloudfit_y]
+
         self._split_images()
 
         self._analyze_and_save_absorption_images(crop_type)
