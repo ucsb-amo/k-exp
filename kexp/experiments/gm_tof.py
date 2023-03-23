@@ -62,7 +62,6 @@ class gm_tof(EnvExperiment, Base):
 
     @kernel
     def tof_expt(self,t_tof):
-        self.kill_mot(self.p.t_mot_kill * s)
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         self.load_mot(self.p.t_mot_load * s)
 
@@ -91,6 +90,7 @@ class gm_tof(EnvExperiment, Base):
         self.StartTriggeredGrab(self.p.N_img)
         delay(self.p.t_grab_start_wait*s)
         
+        self.kill_mot(self.p.t_mot_kill * s)
         for t in self.p.t_tof:
             self.tof_expt(t)
             self.core.break_realtime()
