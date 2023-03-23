@@ -2,7 +2,7 @@ import numpy as np
 import kexp.config.camera_params as cam
 import kexp.analysis.fitting.gaussian as gfit
 
-def fit_gaussian_sum_OD(sum_od):
+def fit_gaussian_sum_OD(sum_od) -> gfit.GaussianFit:
     '''
     Performs a guassian fit on each summedOD in the input list.
 
