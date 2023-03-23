@@ -6,7 +6,7 @@ class tof():
         self._ad = atomdata
 
     def compute_T_x(self,t):
-        self.T_x = g.GaussianTemperatureFit(t,self._ad.sd_x)
+        self.T_x = g.GaussianTemperatureFit(t,self._ad.fit_sd_x)
 
     def compute_T_y(self,t):
-        self.T_y = g.GaussianTemperatureFit(t,self._ad.sd_y)
+        self.T_y = g.GaussianTemperatureFit(t,self._ad.fit_sd_y)

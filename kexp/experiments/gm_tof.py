@@ -16,7 +16,7 @@ class gm_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 0.5
         self.p.t_mot_load = 0.25
-        self.p.t_gm = 10.e-6
+        self.p.t_gm = 15.e-6
 
         self.p.t_tof = np.linspace(20,500,4) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof)
@@ -105,7 +105,7 @@ class gm_tof(EnvExperiment, Base):
         
         data = atomdata(expt=self)
 
-        data.T_x = tof(data).compute_T_x(t=self.params.t_tof)
+        # data.T_x = tof(data).compute_T_x(t=self.params.t_tof)
 
         data.save_data()
 
