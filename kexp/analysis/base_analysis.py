@@ -9,35 +9,35 @@ class atomdata():
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, expt, crop_type='mot'):
-        self._expt = expt
+    def __init__(self, expt=[], crop_type='mot', img_atoms=[], img_light=[], img_dark=[]):
+        
+        if expt != []:
+            self._expt = expt
+            self._images = expt.images
+            self._img_timestamps = expt.image_timestamps
+            self._split_images()
+        else:
+            self.img_atoms = img_atoms
+            self.img_light = img_light
+            self.img_dark = img_dark
 
-        self._images = expt.images
-        self._img_timestamps = expt.image_timestamps
-
-        self.img_atoms_tstamp = []
-        self.img_light_tstamp = []
-        self.img_dark_tstamp = []
-        self.img_atoms = []
-        self.img_light = []
-        self.img_dark = []
         self.od_raw = []
         self.od = []
         self.sum_od_x = []
         self.sum_od_y = []
-        self.cloudfit_x = []
-        self.cloudfit_y = []
-
-        self.sd_x = [fit.sigma for fit in self.cloudfit_x]
-        self.sd_y = [fit.sigma for fit in self.cloudfit_y]
-        self.center_x = [fit.x_center for fit in self.cloudfit_x]
-        self.center_y = [fit.y_center for fit in self.cloudfit_y]
-        self.amp_x = [fit.amplitude for fit in self.cloudfit_x]
-        self.amp_y = [fit.amplitude for fit in self.cloudfit_y]
-
-        self._split_images()
+        self._cloudfit_x = []
+        self._cloudfit_y = []
 
         self._analyze_absorption_images(crop_type)
+
+        self.fit_sd_x = [fit.sigma for fit in self._cloudfit_x]
+        self.fit_sd_y = [fit.sigma for fit in self._cloudfit_y]
+        self.fit_center_x = [fit.x_center for fit in self._cloudfit_x]
+        self.fit_center_y = [fit.x_center for fit in self._cloudfit_y]
+        self.fit_amp_x = [fit.amplitude for fit in self._cloudfit_x]
+        self.fit_amp_y = [fit.amplitude for fit in self._cloudfit_y]
+        self.fit_offset_x = [fit.y_offset for fit in self._cloudfit_x]
+        self.fit_offset_y = [fit.y_offset for fit in self._cloudfit_y]
 
     def _analyze_absorption_images(self,crop_type='mot'):
         '''
@@ -55,8 +55,8 @@ class atomdata():
         '''
 
         self.od_raw, self.od, self.sum_od_x, self.sum_od_y = compute_ODs(self.img_atoms,self.img_light,self.img_dark,crop_type)
-        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
-        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
+        self._cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
+        self._cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
     
     def save_data(self):
         '''
@@ -76,7 +76,7 @@ class atomdata():
         print("Done saving data!")
 
         print("Saving parameters...")
-        self._expt.params.params_to_dataset(self)
+        self._expt.params.params_to_dataset(self._expt)
         print("Done saving parameters!")
 
     def _split_images(self):
