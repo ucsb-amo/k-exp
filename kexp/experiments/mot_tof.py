@@ -15,8 +15,8 @@ class mot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 0.5
         self.p.t_mot_load = 0.25
-        self.p.t_tof_list = np.linspace(0,1000,2) * 1.e-6
-        self.p.N_img = 3 * len(self.p.t_tof_list)
+        self.p.t_tof = np.linspace(0,1000,2) * 1.e-6
+        self.p.N_img = 3 * len(self.p.t_tof)
 
     @kernel
     def load_mot(self,t):
@@ -77,7 +77,7 @@ class mot_tof(EnvExperiment, Base):
         delay(self.p.t_grab_start_wait*s)
         self.core.break_realtime()
         
-        for t in self.p.t_tof_list:
+        for t in self.p.t_tof:
             self.tof_expt(t)
             self.core.break_realtime()
 

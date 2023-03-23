@@ -17,8 +17,8 @@ class cmot_tof(EnvExperiment, Base):
         self.p.t_mot_load = 0.25
         self.p.t_cmot = 10.e-6
 
-        self.p.t_tof_list = np.linspace(20,500,4) * 1.e-6
-        self.p.N_img = 3 * len(self.p.t_tof_list)
+        self.p.t_tof = np.linspace(20,500,4) * 1.e-6
+        self.p.N_img = 3 * len(self.p.t_tof)
         
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-1.7)
         self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(4.5)
@@ -94,7 +94,7 @@ class cmot_tof(EnvExperiment, Base):
         self.StartTriggeredGrab(self.p.N_img)
         delay(self.p.t_grab_start_wait*s)
         
-        for t in self.p.t_tof_list:
+        for t in self.p.t_tof:
             self.tof_expt(t)
             self.core.break_realtime()
 
