@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
+import copy
 
 class Fit():
     def __init__(self,xdata,ydata,savgol_window=5,savgol_degree=3):
@@ -29,7 +30,11 @@ class Fit():
         self.ydata = ydata
 
         self.y_fitdata = []
-        self.ydata_smoothed = savgol_filter(self.ydata,savgol_window,savgol_degree)
+        
+        try:
+            self.ydata_smoothed = savgol_filter(self.ydata,savgol_window,savgol_degree)
+        except:
+            self.ydata_smoothed = copy.deepcopy(ydata)
 
     def _fit_func(self,x):
         pass
