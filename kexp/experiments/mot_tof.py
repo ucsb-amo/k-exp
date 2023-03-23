@@ -83,7 +83,7 @@ class mot_tof(EnvExperiment, Base):
             self.core.break_realtime()
 
         # return to mot load state
-        self.set_all_dds(state=1)
+        self.switch_all_dds(state=1)
         self.dds.imaging.off()
         self.core.break_realtime()
         self.switch_mot_magnet(1)

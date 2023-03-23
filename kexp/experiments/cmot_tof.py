@@ -100,7 +100,7 @@ class cmot_tof(EnvExperiment, Base):
             self.core.break_realtime()
 
         # return to mot load state
-        self.set_all_dds(state=1)
+        self.switch_all_dds(state=1)
         self.dds.imaging.off()
 
     def analyze(self):

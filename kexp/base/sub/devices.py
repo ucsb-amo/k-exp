@@ -48,6 +48,15 @@ class devices():
             delay_mu(self.params.t_rtio_mu)
 
     @kernel
+    def switch_all_dds(self,state):
+        for dds in self.dds_list:
+            if state == 1:
+                dds.on()
+            elif state == 0:
+                dds.off()
+            delay_mu(self.params.t_rtio_mu)
+
+    @kernel
     def init_all_dds(self):
         for dds in self.dds_list:
             dds.dds_device.init()
