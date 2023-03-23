@@ -5,7 +5,7 @@ from kexp.analysis.base_analysis import atomdata
 from kexp.analysis.tof import tof
 import numpy as np
 
-class cmot_tof(EnvExperiment, Base):
+class gm_tof(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -16,7 +16,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 0.5
         self.p.t_mot_load = 0.25
-        self.p.t_cmot = 10.e-6
+        self.p.t_gm = 10.e-6
 
         self.p.t_tof = np.linspace(20,500,4) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof)
@@ -70,7 +70,7 @@ class cmot_tof(EnvExperiment, Base):
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-        self.gm(self.p.t_cmot * s)
+        self.gm(self.p.t_gm * s)
         self.kill_gm()
         
         delay(t_tof * s)
