@@ -26,8 +26,8 @@ class Fit():
         y_fitdata
         ydata_smoothed
         '''
-        self.xdata = xdata
-        self.ydata = ydata
+        self.xdata = np.array(xdata)
+        self.ydata = np.array(ydata)
 
         self.y_fitdata = []
         
