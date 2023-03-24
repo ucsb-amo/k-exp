@@ -16,7 +16,7 @@ class mot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 0.25
-        self.p.t_tof = np.linspace(0,1000,3) * 1.e-6
+        self.p.t_tof = np.linspace(0,1000,15) * 1.e-6
         self.p.N_img = 3 * len(self.p.t_tof)
 
     @kernel
