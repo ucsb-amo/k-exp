@@ -16,10 +16,12 @@ class atomdata():
             self._images = expt.images
             self._img_timestamps = expt.image_timestamps
             self._split_images()
-        else:
+        elif expt == []:
             self.img_atoms = img_atoms
             self.img_light = img_light
             self.img_dark = img_dark
+        else:
+            raise ValueError("No experiment object or image lists provided to initialize atomdata.")
 
         self.od_raw = []
         self.od = []
