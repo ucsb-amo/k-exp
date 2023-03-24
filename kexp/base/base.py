@@ -12,14 +12,15 @@ from kexp.base.sub.image import image
 import numpy as np
 
 class Base(devices, cooling, image):
-    def __init__(self):
+    def __init__(self,setup_camera=True):
         super().__init__()
 
         self.params = ExptParams()
 
-        self.camera = BaslerUSB()
-        self.images = []
-        self.image_timestamps = []
+        if setup_camera:
+            self.camera = BaslerUSB()
+            self.images = []
+            self.image_timestamps = []
 
         self.prepare_devices()
 
