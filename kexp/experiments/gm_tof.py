@@ -112,7 +112,7 @@ class gm_tof(EnvExperiment, Base):
         
         data = atomdata(expt=self)
 
-        # data.T_x = tof(data).compute_T_x(t=self.params.t_tof)
+        data.T_x = tof(data).compute_T_x(t=self.params.t_tof)
 
         data.save_data()
 
