@@ -47,18 +47,25 @@ class GaussianFit(Fit):
 
 class GaussianTemperatureFit(Fit):
     def __init__(self, xdata, ydata):
+
         super().__init__(xdata,ydata,savgol_window=4,savgol_degree=2)
 
-        T, sigma0 = self._fit(xdata,ydata)
-        self.T = T
-        self.sigma0 = sigma0
-        
-        self.y_fitdata = self._fit_func(xdata,T,sigma0)
+        # scales up small numbers
+        self._mult = 1.e6
 
-    def _fit_func(self, t, T, sigma0):
-        return np.sqrt( c.kB * T / c.m_K * t**2 + sigma0**2 )
+        self._xdata_sq = (self.xdata * self._mult)**2
+        self._ydata_sq = (self.ydata * self._mult)**2
+
+        T, sigma0_squared = self._fit(self._xdata_sq,self._ydata_sq)
+        self.T = T
+        self.sigma0 = np.sqrt(sigma0_squared) / self._mult
+        
+        self.y_fitdata = np.sqrt( self._fit_func(self._xdata_sq,T,sigma0_squared) ) / self._mult
+
+    def _fit_func(self, t_squared, T, sigma0_squared):
+        return c.kB * T / c.m_K * t_squared + sigma0_squared
 
     def _fit(self, x, y):
         sigma0_guess = self.ydata[np.argmin(self.xdata)]
-        popt, pcov = curve_fit(self._fit_func, x, y, p0=[0,sigma0_guess], bounds=((0,0),(1,np.inf)))
+        popt, pcov = curve_fit(self._fit_func, x, y, p0=[0.001,sigma0_guess**2], bounds=((0,0),(1,np.inf)))
         return popt
