@@ -181,7 +181,6 @@ class DDSGUIExptBuilder():
                 self.dds_device.init()
                 delay_mu(8)
                 self.dds_device.sw.off()
-                self.dds_device.power_down()
         """)
         return script
 
