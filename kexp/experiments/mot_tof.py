@@ -76,6 +76,8 @@ class mot_tof(EnvExperiment, Base):
         self.StartTriggeredGrab(self.p.N_img)
         delay(self.p.t_grab_start_wait*s)
         self.core.break_realtime()
+
+        self.switch_d1_3d(0)
         
         self.kill_mot(self.p.t_mot_kill * s)
         self.core.break_realtime()
