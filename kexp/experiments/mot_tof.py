@@ -16,8 +16,11 @@ class mot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 0.25
-        self.p.t_tof = np.linspace(0,1000,3) * 1.e-6
+        self.p.t_tof = np.linspace(0,500,10) * 1.e-6
+        self.p.t_tof = np.repeat(self.p.t_tof,5)
         self.p.N_img = 3 * len(self.p.t_tof)
+
+        self.p.V_mot_current = 1.5
 
     @kernel
     def load_mot(self,t):
@@ -90,6 +93,9 @@ class mot_tof(EnvExperiment, Base):
         self.dds.imaging.off()
         self.core.break_realtime()
         self.switch_mot_magnet(1)
+
+        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,0.7)
+        self.zotino.load()
 
     def analyze(self):
 
