@@ -32,14 +32,17 @@ class atomdata():
 
         self._analyze_absorption_images(crop_type)
 
-        self.fit_sd_x = [fit.sigma for fit in self._cloudfit_x]
-        self.fit_sd_y = [fit.sigma for fit in self._cloudfit_y]
-        self.fit_center_x = [fit.x_center for fit in self._cloudfit_x]
-        self.fit_center_y = [fit.x_center for fit in self._cloudfit_y]
-        self.fit_amp_x = [fit.amplitude for fit in self._cloudfit_x]
-        self.fit_amp_y = [fit.amplitude for fit in self._cloudfit_y]
-        self.fit_offset_x = [fit.y_offset for fit in self._cloudfit_x]
-        self.fit_offset_y = [fit.y_offset for fit in self._cloudfit_y]
+        try:
+            self.fit_sd_x = [fit.sigma for fit in self._cloudfit_x]
+            self.fit_sd_y = [fit.sigma for fit in self._cloudfit_y]
+            self.fit_center_x = [fit.x_center for fit in self._cloudfit_x]
+            self.fit_center_y = [fit.x_center for fit in self._cloudfit_y]
+            self.fit_amp_x = [fit.amplitude for fit in self._cloudfit_x]
+            self.fit_amp_y = [fit.amplitude for fit in self._cloudfit_y]
+            self.fit_offset_x = [fit.y_offset for fit in self._cloudfit_x]
+            self.fit_offset_y = [fit.y_offset for fit in self._cloudfit_y]
+        except:
+            print("Unable to extract fit parameters. The gaussian fit must have failed")
 
     def _analyze_absorption_images(self,crop_type='mot'):
         '''

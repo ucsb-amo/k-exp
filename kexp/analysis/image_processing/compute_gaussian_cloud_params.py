@@ -24,7 +24,11 @@ def fit_gaussian_sum_OD(sum_od) -> gfit.GaussianFit:
     fits = []
     for sOD in sum_od:
         xaxis = cam.pixel_size_m / cam.magnification * np.arange(len(sOD))
-        fits.append(gfit.GaussianFit(xaxis, sOD))
+        try:
+            fit = gfit.GaussianFit(xaxis, sOD)
+        except:
+            fit = []
+        fits.append(fit)
     return fits
 
 
