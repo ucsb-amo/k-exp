@@ -1,6 +1,6 @@
 from kexp.analysis.image_processing.compute_ODs import *
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_OD
-from kexp.util.data.data_vault import DataSaver as DS
+from kexp.util.data.data_vault import DataSaver
 
 class atomdata():
     '''
@@ -16,6 +16,9 @@ class atomdata():
         self.images = expt.images
         self.img_timestamps = expt.image_timestamps
         self._split_images()
+
+        self._ds = DataSaver()
+        self.run_id = self._ds._get_rid()
 
         self.params = self._expt.params
 
@@ -74,7 +77,6 @@ class atomdata():
         self.img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
 
     def save_data(self):
-        ds = DS()
-        ds.save_data(self)
+        self._ds.save_data(self)
 
     
