@@ -28,6 +28,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.N_img = 3 * len(self.p.t_tof)
         
+        self.p.att_d2_r_cmot = 13.50
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-1.7)
         self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(4.5)
 
@@ -55,7 +56,8 @@ class cmot_tof(EnvExperiment, Base):
     def cmot(self,t):
         delay(-10*us)
         with parallel:
-            self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot)
+            self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
+                                     att_dB=self.p.att_d2_r_cmot)
             self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot)
         delay(10*us)
         with parallel:
