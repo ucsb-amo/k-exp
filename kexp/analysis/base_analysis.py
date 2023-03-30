@@ -1,11 +1,6 @@
 from kexp.analysis.image_processing.compute_ODs import *
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_OD
-
-import time
-import os
-import pickle
-
-data_dir = os.getenv("data")
+from kexp.util.data.data_vault import DataSaver as DS
 
 class atomdata():
     '''
@@ -79,30 +74,7 @@ class atomdata():
         self.img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
 
     def save_data(self):
-        '''
-        Saves data to a pickle. All attributes which start with "_" are ignored.
-        '''
-        print("Saving data...")
+        ds = DS()
+        ds.save_data(self)
 
-        fpath = self._data_path()
-
-        attrs = list(vars(self))
-        keys_to_skip = [p for p in attrs if p.startswith("_")]
-        for key in keys_to_skip:
-            delattr(self,key)
-
-        with open(fpath, 'wb') as f:
-            pickle.dump(self, f)
-        print("Done saving parameters!")
-
-    def _data_path(self):
-        thedate = time.time()
-        thedate_local = time.localtime(thedate)
-        monthstr = time.strftime("%Y-%m-%d", thedate_local)
-        datestring = time.strftime("%Y-%m-%d_%H-%M-%S", thedate_local)
-        expt_class = self._expt.__class__.__name__
-        filename = "data_" + datestring + "_" + expt_class + ".pickle"
-        filepath = os.path.join(data_dir,monthstr,filename)
-        return filepath
-
-# class DataVault():
+    
