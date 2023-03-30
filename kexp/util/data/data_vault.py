@@ -35,9 +35,9 @@ class DataSaver():
 
     def _data_path(self,atomdata):
 
-        run_id_str = f"{str(atomdata.run_id).zfill(7)}"
+        run_id_str = f"{str(atomdata.run_info.run_id).zfill(7)}"
 
-        date = atomdata.run_info.run_time
+        date = atomdata.run_info.run_datetime
         monthstr = time.strftime("%Y-%m-%d", date)
         datestring = time.strftime("%Y-%m-%d_%H-%M-%S", date)
         
@@ -49,7 +49,7 @@ class DataSaver():
 
     def _update_run_id(self,atomdata):
         
-        line = f"{atomdata.run_id + 1}"
+        line = f"{atomdata.run_info.run_id + 1}"
         with open(run_id_path,'w') as f:
             f.write(line)
 
