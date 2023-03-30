@@ -81,17 +81,18 @@ class atomdata():
         Saves data to a pickle.
         '''
         print("Saving data...")
-        fpath = self._data_title(self)
+        fpath = self._data_path(self)
         with open(fpath, 'wb') as f:
             pickle.dump(self, f)
         print("Done saving parameters!")
 
     def _data_path(self):
         thedate = time.time()
+        monthstr = time.strftime("%Y-%m-%d", thedate)
         datestring = time.strftime("%Y-%m-%d-%H%M%S", thedate)
         expt_class = self._expt.__class__.__name__
         filename = "data_" + datestring + "_" + expt_class + ".pickle"
-        filepath = os.path.join(data_dir,filename)
+        filepath = os.path.join(data_dir,monthstr,filename)
         return filepath
 
 # class DataVault():
