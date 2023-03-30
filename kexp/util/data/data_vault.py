@@ -4,6 +4,10 @@ import os
 import pickle
 import glob
 
+data_dir = os.getenv("data")
+
+run_id_path = os.path.join(data_dir,"run_id.py")
+
 def load_atomdata(path = []):
     if path == []:
         folderpath=os.path.join(data_dir,'*','*.pickle')
@@ -20,10 +24,6 @@ def load_atomdata(path = []):
 
     return ad
 
-data_dir = os.getenv("data")
-
-run_id_path = os.path.join(data_dir,"run_id.py")
-
 class DataSaver():
     def __init__(self):
         pass
@@ -35,6 +35,7 @@ class DataSaver():
         print("Saving data...")
 
         fpath = self._data_path(atomdata)
+        atomdata.run_info.filepath = fpath
 
         attrs = list(vars(atomdata))
         keys_to_skip = [p for p in attrs if p.startswith("_")]
@@ -52,10 +53,9 @@ class DataSaver():
 
         run_id_str = f"{str(atomdata.run_id).zfill(7)}"
 
-        thedate = time.time()
-        thedate_local = time.localtime(thedate)
-        monthstr = time.strftime("%Y-%m-%d", thedate_local)
-        datestring = time.strftime("%Y-%m-%d_%H-%M-%S", thedate_local)
+        date = atomdata.run_info.run_time
+        monthstr = time.strftime("%Y-%m-%d", date)
+        datestring = time.strftime("%Y-%m-%d_%H-%M-%S", date)
         
         expt_class = atomdata._expt.__class__.__name__
 
@@ -74,4 +74,13 @@ class DataSaver():
             rid = f.read()
         return int(rid)
 
-    
+class DataVault():
+    def __init__(self,atomdata_list=[],datalist_path=[]):
+
+        if atomdata_list != []:
+            self.atomdata_list = atomdata_list
+
+        self.run_ids = [run_id for ad.run_info.run_id in atomdata_list]
+        self.data_filepaths = [fpath for ad.run_info.filepath in atomdata_list]
+        self.data_dates = [time.strftime('%Y-%m-%d',date) for ad.run_info.run_datetime in atomdata_list]
+
