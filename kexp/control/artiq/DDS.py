@@ -29,8 +29,7 @@ class DDS():
       * pi * 6 MHz.
 
       D1 AOMs give detuning relative to |g> -> |F=2>.
-      D2 AOMs give detuning relative to |g> -> unresolved D2 peak (fine
-      structure center frequency).
+      D2 AOMs give detuning relative to |g> -> unresolved D2 peak.
 
       Parameters
       ----------
