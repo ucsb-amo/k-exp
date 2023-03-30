@@ -18,6 +18,9 @@ class ExptParams():
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
+        self.N_shots = 2
+        self.N_repeats = 1
+
     def params_to_dataset(self,expt):
         try:
             param_keys = list(vars(self))
