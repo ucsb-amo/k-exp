@@ -14,11 +14,18 @@ class gm_tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_mot_kill = 0.5
-        self.p.t_mot_load = 0.25
+        self.p.t_mot_kill = 1
+        self.p.t_mot_load = 3
         self.p.t_gm = 100.e-6
 
-        self.p.t_tof = np.linspace(20,500,10) * 1.e-6
+        self.p.N_shots = 7
+        self.p.N_repeats = 3
+        self.p.t_tof = np.linspace(20,1000,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
+
+        # rng = np.random.default_rng()
+        # rng.shuffle(self.p.t_tof)
+
         self.p.N_img = 3 * len(self.p.t_tof)
         
         Ngamma = -5

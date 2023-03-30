@@ -19,7 +19,11 @@ class mot_tof(EnvExperiment, Base):
         self.p.N_shots = 7
         self.p.N_repeats = 3
         self.p.t_tof = np.linspace(0,1000,self.p.N_shots) * 1.e-6
-        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_shots)
+        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
+
+        # rng = np.random.default_rng()
+        # rng.shuffle(self.p.t_tof)
+
         self.p.N_img = 3 * len(self.p.t_tof)
 
         self.p.V_mot_current = 0.7

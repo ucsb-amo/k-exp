@@ -14,11 +14,18 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_mot_kill = 0.5
-        self.p.t_mot_load = 0.25
-        self.p.t_cmot = 10.e-6
+        self.p.t_mot_kill = 1
+        self.p.t_mot_load = 3
+        self.p.t_cmot = 1.e-6
 
-        self.p.t_tof = np.linspace(20,500,4) * 1.e-6
+        self.p.N_shots = 7
+        self.p.N_repeats = 1
+        self.p.t_tof = np.linspace(20,1000,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
+
+        # rng = np.random.default_rng()
+        # rng.shuffle(self.p.t_tof)
+
         self.p.N_img = 3 * len(self.p.t_tof)
         
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-1.7)
@@ -72,9 +79,12 @@ class cmot_tof(EnvExperiment, Base):
         with parallel:
             self.dds.push.off()
             self.switch_d2_2d(0)
-
-        self.cmot(self.p.t_cmot * s)
+            # self.switch_d2_3d(0)
+            # self.switch_mot_magnet(0)
+            self.cmot(self.p.t_cmot * s)
+        
         self.kill_cmot()
+        
         
         delay(t_tof * s)
         self.trigger_camera()
