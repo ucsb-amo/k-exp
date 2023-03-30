@@ -39,6 +39,7 @@ class devices():
         self.init_all_cpld()
         self.set_all_dds()
         self.init_all_dds()
+        self.switch_all_dds(0)
         self.core.break_realtime()
 
     @kernel
