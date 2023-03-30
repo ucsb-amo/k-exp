@@ -15,12 +15,14 @@ class mot_tof(EnvExperiment, Base):
         self.p = self.params
 
         self.p.t_mot_kill = 1
-        self.p.t_mot_load = 0.25
-        self.p.t_tof = np.linspace(0,500,10) * 1.e-6
-        self.p.t_tof = np.repeat(self.p.t_tof,5)
+        self.p.t_mot_load = 3
+        self.p.N_shots = 7
+        self.p.N_repeats = 3
+        self.p.t_tof = np.linspace(0,1000,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_shots)
         self.p.N_img = 3 * len(self.p.t_tof)
 
-        self.p.V_mot_current = 1.5
+        self.p.V_mot_current = 0.7
 
     @kernel
     def load_mot(self,t):
@@ -47,7 +49,7 @@ class mot_tof(EnvExperiment, Base):
     def release_mot(self):
         # magnets, 2D, 3D off
         self.switch_mot_magnet(0)
-        delay(16*ns)
+        # delay(16*ns)
         with parallel:
             self.switch_d2_2d(0)
             self.switch_d2_3d(0)
