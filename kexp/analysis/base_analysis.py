@@ -18,8 +18,8 @@ class atomdata():
     def __init__(self, expt=[], crop_type='mot'):
         
         self._expt = expt
-        self._images = expt.images
-        self._img_timestamps = expt.image_timestamps
+        self.images = expt.images
+        self.img_timestamps = expt.image_timestamps
         self._split_images()
 
         self.od_raw = []
@@ -59,8 +59,8 @@ class atomdata():
         '''
 
         self.od_raw, self.od, self.sum_od_x, self.sum_od_y = compute_ODs(self.img_atoms,self.img_light,self.img_dark,crop_type)
-        self._cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
-        self._cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
+        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
+        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
 
     def _split_images(self):
         
@@ -68,28 +68,36 @@ class atomdata():
         light_img_idx = 1
         dark_img_idx = 2
         
-        self.img_atoms = self._images[atom_img_idx::3]
-        self.img_light = self._images[light_img_idx::3]
-        self.img_dark = self._images[dark_img_idx::3]
+        self.img_atoms = self.images[atom_img_idx::3]
+        self.img_light = self.images[light_img_idx::3]
+        self.img_dark = self.images[dark_img_idx::3]
 
-        self.img_atoms_tstamp = self._img_timestamps[atom_img_idx::3]
-        self.img_light_tstamp = self._img_timestamps[light_img_idx::3]
-        self.img_dark_tstamp = self._img_timestamps[dark_img_idx::3]
+        self.img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
+        self.img_light_tstamp = self.img_timestamps[light_img_idx::3]
+        self.img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
 
     def save_data(self):
         '''
-        Saves data to a pickle.
+        Saves data to a pickle. All attributes which start with "_" are ignored.
         '''
         print("Saving data...")
-        fpath = self._data_path(self)
+
+        fpath = self._data_path()
+
+        attrs = list(vars(self))
+        keys_to_skip = [p for p in attrs if p.startswith("_")]
+        for key in keys_to_skip:
+            delattr(self,key)
+
         with open(fpath, 'wb') as f:
             pickle.dump(self, f)
         print("Done saving parameters!")
 
     def _data_path(self):
         thedate = time.time()
-        monthstr = time.strftime("%Y-%m-%d", thedate)
-        datestring = time.strftime("%Y-%m-%d-%H%M%S", thedate)
+        thedate_local = time.localtime(thedate)
+        monthstr = time.strftime("%Y-%m-%d", thedate_local)
+        datestring = time.strftime("%Y-%m-%d_%H-%M-%S", thedate_local)
         expt_class = self._expt.__class__.__name__
         filename = "data_" + datestring + "_" + expt_class + ".pickle"
         filepath = os.path.join(data_dir,monthstr,filename)
