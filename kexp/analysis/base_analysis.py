@@ -1,6 +1,7 @@
 from kexp.analysis.image_processing.compute_ODs import *
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_OD
 from kexp.util.data.data_vault import DataSaver
+from kexp.util.data.run_info import RunInfo
 
 class atomdata():
     '''
@@ -18,7 +19,7 @@ class atomdata():
         self._split_images()
 
         self._ds = DataSaver()
-        self.run_id = self._ds._get_rid()
+        self.run_info = RunInfo()
 
         self.params = self._expt.params
 
