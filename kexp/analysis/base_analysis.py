@@ -1,7 +1,10 @@
 from kexp.analysis.image_processing.compute_ODs import *
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_OD
 
+import time
 import os
+import pickle
+
 data_dir = os.getenv("data")
 
 class atomdata():
@@ -23,20 +26,20 @@ class atomdata():
         self.od = []
         self.sum_od_x = []
         self.sum_od_y = []
-        self._cloudfit_x = []
-        self._cloudfit_y = []
+        self.cloudfit_x = []
+        self.cloudfit_y = []
 
         self._analyze_absorption_images(crop_type)
 
         try:
-            self.fit_sd_x = [fit.sigma for fit in self._cloudfit_x]
-            self.fit_sd_y = [fit.sigma for fit in self._cloudfit_y]
-            self.fit_center_x = [fit.x_center for fit in self._cloudfit_x]
-            self.fit_center_y = [fit.x_center for fit in self._cloudfit_y]
-            self.fit_amp_x = [fit.amplitude for fit in self._cloudfit_x]
-            self.fit_amp_y = [fit.amplitude for fit in self._cloudfit_y]
-            self.fit_offset_x = [fit.y_offset for fit in self._cloudfit_x]
-            self.fit_offset_y = [fit.y_offset for fit in self._cloudfit_y]
+            self.fit_sd_x = [fit.sigma for fit in self.cloudfit_x]
+            self.fit_sd_y = [fit.sigma for fit in self.cloudfit_y]
+            self.fit_center_x = [fit.x_center for fit in self.cloudfit_x]
+            self.fit_center_y = [fit.x_center for fit in self.cloudfit_y]
+            self.fit_amp_x = [fit.amplitude for fit in self.cloudfit_x]
+            self.fit_amp_y = [fit.amplitude for fit in self.cloudfit_y]
+            self.fit_offset_x = [fit.y_offset for fit in self.cloudfit_x]
+            self.fit_offset_y = [fit.y_offset for fit in self.cloudfit_y]
         except:
             print("Unable to extract fit parameters. The gaussian fit must have failed")
 
@@ -58,16 +61,6 @@ class atomdata():
         self.od_raw, self.od, self.sum_od_x, self.sum_od_y = compute_ODs(self.img_atoms,self.img_light,self.img_dark,crop_type)
         self._cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
         self._cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
-    
-    def save_data(self):
-        '''
-        Any attribute which does not start with '_' will be saved to the dataset in _save_data().
-
-        This function also handles saving parameters from expt.params to the dataset.
-        '''
-        print("Saving data...")
-
-        print("Done saving parameters!")
 
     def _split_images(self):
         
@@ -82,5 +75,23 @@ class atomdata():
         self.img_atoms_tstamp = self._img_timestamps[atom_img_idx::3]
         self.img_light_tstamp = self._img_timestamps[light_img_idx::3]
         self.img_dark_tstamp = self._img_timestamps[dark_img_idx::3]
+
+    def save_data(self):
+        '''
+        Saves data to a pickle.
+        '''
+        print("Saving data...")
+        fpath = self._data_title(self)
+        with open(fpath, 'wb') as f:
+            pickle.dump(self, f)
+        print("Done saving parameters!")
+
+    def _data_path(self):
+        thedate = time.time()
+        datestring = time.strftime("%Y-%m-%d-%H%M%S", thedate)
+        expt_class = self._expt.__class__.__name__
+        filename = "data_" + datestring + "_" + expt_class + ".pickle"
+        filepath = os.path.join(data_dir,filename)
+        return filepath
 
 # class DataVault():
