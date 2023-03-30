@@ -1,5 +1,7 @@
 from kexp.analysis.image_processing.compute_ODs import *
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_OD
+from kexp.util.data.data_vault import DataSaver
+from kexp.util.data.run_info import RunInfo
 
 class atomdata():
     '''
@@ -9,38 +11,36 @@ class atomdata():
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, expt=[], crop_type='mot', img_atoms=[], img_light=[], img_dark=[]):
+    def __init__(self, expt=[], crop_type='mot'):
         
-        if expt != []:
-            self._expt = expt
-            self._images = expt.images
-            self._img_timestamps = expt.image_timestamps
-            self._split_images()
-        elif expt == []:
-            self.img_atoms = img_atoms
-            self.img_light = img_light
-            self.img_dark = img_dark
-        else:
-            raise ValueError("No experiment object or image lists provided to initialize atomdata.")
+        self._expt = expt
+        self.images = expt.images
+        self.img_timestamps = expt.image_timestamps
+        self._split_images()
+
+        self._ds = DataSaver()
+        self.run_info = RunInfo()
+
+        self.params = self._expt.params
 
         self.od_raw = []
         self.od = []
         self.sum_od_x = []
         self.sum_od_y = []
-        self._cloudfit_x = []
-        self._cloudfit_y = []
+        self.cloudfit_x = []
+        self.cloudfit_y = []
 
         self._analyze_absorption_images(crop_type)
 
         try:
-            self.fit_sd_x = [fit.sigma for fit in self._cloudfit_x]
-            self.fit_sd_y = [fit.sigma for fit in self._cloudfit_y]
-            self.fit_center_x = [fit.x_center for fit in self._cloudfit_x]
-            self.fit_center_y = [fit.x_center for fit in self._cloudfit_y]
-            self.fit_amp_x = [fit.amplitude for fit in self._cloudfit_x]
-            self.fit_amp_y = [fit.amplitude for fit in self._cloudfit_y]
-            self.fit_offset_x = [fit.y_offset for fit in self._cloudfit_x]
-            self.fit_offset_y = [fit.y_offset for fit in self._cloudfit_y]
+            self.fit_sd_x = [fit.sigma for fit in self.cloudfit_x]
+            self.fit_sd_y = [fit.sigma for fit in self.cloudfit_y]
+            self.fit_center_x = [fit.x_center for fit in self.cloudfit_x]
+            self.fit_center_y = [fit.x_center for fit in self.cloudfit_y]
+            self.fit_amp_x = [fit.amplitude for fit in self.cloudfit_x]
+            self.fit_amp_y = [fit.amplitude for fit in self.cloudfit_y]
+            self.fit_offset_x = [fit.y_offset for fit in self.cloudfit_x]
+            self.fit_offset_y = [fit.y_offset for fit in self.cloudfit_y]
         except:
             print("Unable to extract fit parameters. The gaussian fit must have failed")
 
@@ -60,29 +60,8 @@ class atomdata():
         '''
 
         self.od_raw, self.od, self.sum_od_x, self.sum_od_y = compute_ODs(self.img_atoms,self.img_light,self.img_dark,crop_type)
-        self._cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
-        self._cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
-    
-    def save_data(self):
-        '''
-        Any attribute which does not start with '_' will be saved to the dataset in _save_data().
-
-        This function also handles saving parameters from expt.params to the dataset.
-        '''
-        print("Saving data...")
-        try:
-            param_keys = list(vars(self))
-            important_param_keys = [p for p in param_keys if not p.startswith("_")]
-            for key in important_param_keys:
-                value = vars(self)[key]
-                self._expt.set_dataset(key, value)
-        except Exception as e: 
-            print(e)
-        print("Done saving data!")
-
-        print("Saving parameters...")
-        self._expt.params.params_to_dataset(self._expt)
-        print("Done saving parameters!")
+        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
+        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
 
     def _split_images(self):
         
@@ -90,10 +69,15 @@ class atomdata():
         light_img_idx = 1
         dark_img_idx = 2
         
-        self.img_atoms = self._images[atom_img_idx::3]
-        self.img_light = self._images[light_img_idx::3]
-        self.img_dark = self._images[dark_img_idx::3]
+        self.img_atoms = self.images[atom_img_idx::3]
+        self.img_light = self.images[light_img_idx::3]
+        self.img_dark = self.images[dark_img_idx::3]
 
-        self.img_atoms_tstamp = self._img_timestamps[atom_img_idx::3]
-        self.img_light_tstamp = self._img_timestamps[light_img_idx::3]
-        self.img_dark_tstamp = self._img_timestamps[dark_img_idx::3]
+        self.img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
+        self.img_light_tstamp = self.img_timestamps[light_img_idx::3]
+        self.img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
+
+    def save_data(self):
+        self._ds.save_data(self)
+
+    
