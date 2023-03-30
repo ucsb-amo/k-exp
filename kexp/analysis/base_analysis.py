@@ -22,6 +22,8 @@ class atomdata():
         self.img_timestamps = expt.image_timestamps
         self._split_images()
 
+        self.params = self._expt.params
+
         self.od_raw = []
         self.od = []
         self.sum_od_x = []
