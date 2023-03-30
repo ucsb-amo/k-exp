@@ -3,26 +3,10 @@ import numpy as np
 import os
 import pickle
 import glob
+import copy
 
 data_dir = os.getenv("data")
-
 run_id_path = os.path.join(data_dir,"run_id.py")
-
-def load_atomdata(path = []):
-    if path == []:
-        folderpath=os.path.join(data_dir,'*','*.pickle')
-        list_of_files = glob.glob(folderpath)
-        file = max(list_of_files, key=os.path.getmtime)
-    else:
-        if path.endswith('.pickle'):
-            file = path
-        else:
-            raise ValueError("The provided path is not a pickle file.")
-        
-    with open(file,'rb') as f:
-        ad = pickle.load(f)
-
-    return ad
 
 class DataSaver():
     def __init__(self):
@@ -46,8 +30,8 @@ class DataSaver():
 
         with open(fpath, 'wb') as f:
             pickle.dump(atomdata, f)
-            
-        print("Done saving parameters!")
+
+        print("Done saving data!")
 
     def _data_path(self,atomdata):
 
@@ -78,9 +62,27 @@ class DataVault():
     def __init__(self,atomdata_list=[],datalist_path=[]):
 
         if atomdata_list != []:
+            if ~isinstance(atomdata_list,list):
+                atomdata_list = [copy.deepcopy(atomdata_list)]
             self.atomdata_list = atomdata_list
 
-        self.run_ids = [run_id for ad.run_info.run_id in atomdata_list]
-        self.data_filepaths = [fpath for ad.run_info.filepath in atomdata_list]
-        self.data_dates = [time.strftime('%Y-%m-%d',date) for ad.run_info.run_datetime in atomdata_list]
+        self.run_ids = [ad.run_info.run_id for ad in atomdata_list]
+        self.data_filepaths = [ad.run_info.filepath for ad in atomdata_list]
+        self.data_dates = [time.strftime('%Y-%m-%d',ad.run_info.run_datetime) for ad in atomdata_list]
+
+def load_atomdata(path = []):
+    if path == []:
+        folderpath=os.path.join(data_dir,'*','*.pickle')
+        list_of_files = glob.glob(folderpath)
+        file = max(list_of_files, key=os.path.getmtime)
+    else:
+        if path.endswith('.pickle'):
+            file = path
+        else:
+            raise ValueError("The provided path is not a pickle file.")
+        
+    with open(file,'rb') as f:
+        ad = pickle.load(f)
+
+    return ad
 
