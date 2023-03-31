@@ -2,65 +2,36 @@ from kexp.analysis.image_processing.compute_ODs import *
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_OD
 from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
-import numpy as np
 
 class atomdata():
     '''
     Use to store and do basic analysis on data for every experiment.
 
-    xvarnames should be provided as a string indicating the params attribute
-    corresponding to the the independent variable(s). They should be provided in
-    the order over which they were looped, with the outermost loop first.
-
-    Any attribute which does not start with '_' will be saved to the dataset in
-    _save_data().
+    Any attribute which does not start with '_' will be saved to the dataset in _save_data().
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, xvarnames, expt, crop_type='mot'):
-
-        self._ds = DataSaver()
-        self.run_info = RunInfo()
+    def __init__(self, expt=[], crop_type='mot'):
         
         self._expt = expt
         self.images = expt.images
         self.img_timestamps = expt.image_timestamps
+        self._split_images()
+
+        self._ds = DataSaver()
+        self.run_info = RunInfo()
+
         self.params = self._expt.params
 
-        self.xvarnames = xvarnames
-        self.xvars = self._unpack_xvars()
+        self.od_raw = []
+        self.od = []
+        self.sum_od_x = []
+        self.sum_od_y = []
+        self.cloudfit_x = []
+        self.cloudfit_y = []
 
-        self._sort_images()
         self._analyze_absorption_images(crop_type)
-        # self._remap_fit_results()
 
-    ### Analysis
-
-    def _analyze_absorption_images(self,crop_type='mot'):
-        '''
-        Saves the images, image timestamps (in ns), computes ODs, summed ODs,
-        and gaussian fits to the OD profiles.
-
-        Parameters
-        ----------
-        expt: EnvExperiment
-            The experiment object, called to save datasets.
-
-        crop_type: str
-            Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-            options: 'mot'.
-        '''
-
-        self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
-            compute_ODs(self.img_atoms,
-                        self.img_light,
-                        self.img_dark,
-                        crop_type,
-                        Nvars=self.Nvars)
-        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
-        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
-
-    def _remap_fit_results(self):
         try:
             self.fit_sd_x = [fit.sigma for fit in self.cloudfit_x]
             self.fit_sd_y = [fit.sigma for fit in self.cloudfit_y]
@@ -73,79 +44,38 @@ class atomdata():
         except:
             print("Unable to extract fit parameters. The gaussian fit must have failed")
 
-    ### image handling, sorting by xvars
+    def _analyze_absorption_images(self,crop_type='mot'):
+        '''
+        Saves the images, image timestamps (in ns), computes ODs, and saves them to
+        the dataset of the current experiment (expt)
 
-    def _sort_images(self):
+        Parameters
+        ----------
+        expt: EnvExperiment
+            The experiment object, called to save datasets.
 
-        self._split_images()
+        crop_type: str
+            Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
+            options: 'mot'.
+        '''
 
-        # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
-        img_dims = np.shape(self.images[0])
-        sorted_img_dims = tuple(self._xvardims) + tuple(img_dims)
-        print(tuple(self._xvardims))
-        print(sorted_img_dims)
+        self.od_raw, self.od, self.sum_od_x, self.sum_od_y = compute_ODs(self.img_atoms,self.img_light,self.img_dark,crop_type)
+        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
+        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
 
-        self.img_atoms = np.zeros(sorted_img_dims)
-        self.img_light = np.zeros(sorted_img_dims)
-        self.img_dark = np.zeros(sorted_img_dims)
-        self.img_tstamps = np.empty(tuple(self._xvardims),dtype=list)
-
-        if self.Nvars == 1:
-            self.img_atoms = self._img_atoms
-            self.img_light = self._img_light
-            self.img_dark = self._img_dark
-            for i in range(self._xvardims[0]):
-                self.img_tstamps[i] = list([self._img_atoms_tstamp[i],
-                                    self._img_light_tstamp[i],
-                                    self._img_dark_tstamp[i]])
-        
-        if self.Nvars == 2:
-            n1 = self._xvardims[0]
-            n2 = self._xvardims[1]
-            for i1 in range(n1):
-                for i2 in range(n2):
-                    idx = i1*n2 + i2
-                    self.img_atoms[i1][i2] = self._img_atoms[idx]
-                    self.img_light[i1][i2] = self._img_light[idx]
-                    self.img_dark[i1][i2] = self._img_dark[idx]
-                    self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
-                                                     self._img_light_tstamp[idx],
-                                                     self._img_dark_tstamp[idx]]
-                    
     def _split_images(self):
         
         atom_img_idx = 0
         light_img_idx = 1
         dark_img_idx = 2
         
-        self._img_atoms = self.images[atom_img_idx::3]
-        self._img_light = self.images[light_img_idx::3]
-        self._img_dark = self.images[dark_img_idx::3]
+        self.img_atoms = self.images[atom_img_idx::3]
+        self.img_light = self.images[light_img_idx::3]
+        self.img_dark = self.images[dark_img_idx::3]
 
-        self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
-        self._img_light_tstamp = self.img_timestamps[light_img_idx::3]
-        self._img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
-    
-    def _unpack_xvars(self):
-        # fetch the arrays for each xvar from parameters
-        if not isinstance(self.xvarnames,list):
-            self.xvarnames = [self.xvarnames]
-
-        xvarnames = self.xvarnames
-
-        self.Nvars = len(xvarnames)
-        xvars = []
-        for i in range(self.Nvars):
-            xvars.append(vars(self.params)[xvarnames[i]])
-        
-        # figure out dimensions of each xvar
-        self._xvardims = np.zeros(self.Nvars,dtype=int)
-        for i in range(self.Nvars):
-            self._xvardims[i] = np.int32(len(xvars[i]))
-
-        return xvars
-
-    ### data saving
+        self.img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
+        self.img_light_tstamp = self.img_timestamps[light_img_idx::3]
+        self.img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
 
     def save_data(self):
         self._ds.save_data(self)
