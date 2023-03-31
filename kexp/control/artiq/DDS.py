@@ -69,7 +69,6 @@ class DDS():
          self.dds_device.set_att(self.att_dB * dB)
       else:
          self.dds_device.sw.off()
-      delay_mu(self._t_rtio_mu)
 
    @kernel
    def off(self):
