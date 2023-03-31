@@ -52,7 +52,11 @@ class atomdata():
         '''
 
         self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
-            compute_ODs(self.img_atoms,self.img_light,self.img_dark,crop_type)
+            compute_ODs(self.img_atoms,
+                        self.img_light,
+                        self.img_dark,
+                        crop_type,
+                        Nvars=self.Nvars)
         self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
         self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
 
