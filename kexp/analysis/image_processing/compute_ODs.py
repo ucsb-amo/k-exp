@@ -1,7 +1,7 @@
 import numpy as np
 import kexp.analysis.image_processing.roi_select as roi
 
-def compute_ODs(img_atoms,img_light,img_dark,crop_type='mot'):
+def compute_ODs(img_atoms,img_light,img_dark,crop_type='mot',Nvars=1):
     '''
     From a list of images (length 3*n, where n is the number of runs), computes
     OD. Crops to a preset ROI based on in what stage of cooling the images were
@@ -32,25 +32,15 @@ def compute_ODs(img_atoms,img_light,img_dark,crop_type='mot'):
     summedODy: ArrayLike
     '''
     
-    ODsraw = []
     ODs = []
     summedODx = []
     summedODy = []
 
-    for idx in range(len(img_atoms)):
-        atoms = img_atoms[idx]
-        light = img_light[idx]
-        dark = img_dark[idx]
+    ODsraw = compute_OD(img_atoms,img_light,img_dark)
+    # OD = roi.crop_OD(ODsraw,crop_type)
 
-        OD = compute_OD(atoms,light,dark)
-        ODsraw.append(OD)
-
-        OD = roi.crop_OD(OD,crop_type)
-        ODs.append(OD)
-
-        this_summedODx, this_summedODy = compute_summedOD(OD)
-        summedODx.append(this_summedODx)
-        summedODy.append(this_summedODy)
+    sum_od_y = np.sum(OD,Nvars+1)
+    sum_od_x = np.sum(OD,Nvars)
 
     return ODsraw, ODs, summedODx, summedODy
 
