@@ -22,7 +22,7 @@ class cmot_loop(EnvExperiment, Base):
         self.p.N = 1
         
         self.p.att_d2_r_cmot = 13.50
-        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-1.7)
+        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
         self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(4.5)
 
     @kernel
@@ -71,9 +71,14 @@ class cmot_loop(EnvExperiment, Base):
             self.load_mot(self.p.t_mot_load * s)
 
             with parallel:
-                self.dds.push.off()
-                self.switch_d2_2d(0)
+                # self.dds.push.off()
+                # self.switch_d2_2d(0)
                 self.cmot(self.p.t_cmot * s)
+
+        self.switch_all_dds(1)
+        self.dds.imaging.off()
+        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,0.7)
+        self.zotino.load()
 
     def analyze(self):
 
