@@ -17,7 +17,7 @@ class atomdata():
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, expt=[], xvarnames=[], crop_type='mot'):
+    def __init__(self, xvarnames, expt, crop_type='mot'):
 
         self._ds = DataSaver()
         self.run_info = RunInfo()
@@ -30,14 +30,7 @@ class atomdata():
         self.xvarnames = xvarnames
         self.xvars = self._unpack_xvars()
 
-        self.od_raw = []
-        self.od = []
-        self.sum_od_x = []
-        self.sum_od_y = []
-        self.cloudfit_x = []
-        self.cloudfit_y = []
-
-        self._split_images()
+        self._sort_images()
         self._analyze_absorption_images(crop_type)
         self._remap_fit_results()
 
@@ -58,7 +51,8 @@ class atomdata():
             options: 'mot'.
         '''
 
-        self.od_raw, self.od, self.sum_od_x, self.sum_od_y = compute_ODs(self.img_atoms,self.img_light,self.img_dark,crop_type)
+        self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
+            compute_ODs(self.img_atoms,self.img_light,self.img_dark,crop_type)
         self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
         self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
 
@@ -77,6 +71,42 @@ class atomdata():
 
     ### image handling, sorting by xvars
 
+    def _sort_images(self):
+
+        self._split_images()
+
+        # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
+        img_dims = np.shape(self.images[0])
+        sorted_img_dims = tuple(self._xvardims) + tuple(img_dims)
+        print(sorted_img_dims)
+
+        self.img_atoms = np.zeros(sorted_img_dims)
+        self.img_light = np.zeros(sorted_img_dims)
+        self.img_dark = np.zeros(sorted_img_dims)
+        self.img_tstamps = np.empty(sorted_img_dims,dtype=list)
+
+        if self.Nvars == 1:
+            self.img_atoms = self._img_atoms
+            self.img_light = self._img_light
+            self.img_dark = self._img_dark
+            for i in range(len(self._img_atoms_tstamp)):
+                self.img_tstamps[i] = [self._img_atoms_tstamp,
+                                    self._img_light_tstamp,
+                                    self._img_dark_tstamp]
+        
+        if self.Nvars == 2:
+            n1 = self._xvardims[0]
+            n2 = self._xvardims[1]
+            for i1 in range(n1):
+                for i2 in range(n2):
+                    idx = i1*n2 + i2
+                    self.img_atoms[i1][i2] = self._img_atoms[idx]
+                    self.img_light[i1][i2] = self._img_light[idx]
+                    self.img_dark[i1][i2] = self._img_dark[idx]
+                    self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
+                                                     self._img_light_tstamp[idx],
+                                                     self._img_dark_tstamp[idx]]
+                    
     def _split_images(self):
         
         atom_img_idx = 0
@@ -90,33 +120,12 @@ class atomdata():
         self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
         self._img_light_tstamp = self.img_timestamps[light_img_idx::3]
         self._img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
-
-    def _sort_images(self):
-
-        # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
-        img_dims = np.shape(self.images[0])
-        sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
-
-        self.img_atoms = np.zeros(sorted_img_dims)
-        self.img_light = np.zeros(sorted_img_dims)
-        self.img_dark = np.zeros(sorted_img_dims)
-        self.img_tstamps = np.zeros(sorted_img_dims)
-        
-        if self.Nvars == 2:
-            n1 = self.xvardims[0]
-            n2 = self.xvardims[1]
-            for i1 in range(n1):
-                for i2 in range(n2):
-                    idx = i1*n2 + i2
-                    self.img_atoms[i1][i2] = self._img_atoms[idx]
-                    self.img_light[i1][i2] = self._img_light[idx]
-                    self.img_dark[i1][i2] = self._img_dark[idx]
-                    self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
-                                                     self._img_light_tstamp[idx],
-                                                     self._img_dark_tstamp[idx]]
     
     def _unpack_xvars(self):
         # fetch the arrays for each xvar from parameters
+        if ~isinstance(self.xvarnames,list):
+            self.xvarnames = [self.xvarnames]
+
         xvarnames = self.xvarnames
 
         self.Nvars = len(xvarnames)
@@ -125,11 +134,13 @@ class atomdata():
             xvars.append(vars(self.params)[xvarnames[i]])
         
         # figure out dimensions of each xvar
-        self.xvardims = np.zeros(self.Nvars)
+        self._xvardims = np.zeros(self.Nvars)
         for i in range(self.Nvars):
-            self.xvardims[i] = len(xvars[i])
+            self._xvardims[i] = len(xvars[i])
 
         return xvars
+
+    ### data saving
 
     def save_data(self):
         self._ds.save_data(self)
