@@ -14,29 +14,35 @@ class cooling():
     @kernel
     def switch_d2_2d(self,state):
         if state == 1:
-            self.dds.d2_2d_c.on()
-            self.dds.d2_2d_r.on()
+            with parallel:
+                self.dds.d2_2d_c.on()
+                self.dds.d2_2d_r.on()
         elif state == 0:
-            self.dds.d2_2d_c.off()
-            self.dds.d2_2d_r.off()
+            with parallel:
+                self.dds.d2_2d_c.off()
+                self.dds.d2_2d_r.off()
 
     @kernel
     def switch_d2_3d(self,state):
         if state == 1:
-            self.dds.d2_3d_c.on()
-            self.dds.d2_3d_r.on()
+            with parallel:
+                self.dds.d2_3d_c.on()
+                self.dds.d2_3d_r.on()
         elif state == 0:
-            self.dds.d2_3d_c.off()
-            self.dds.d2_3d_r.off()
+            with parallel:
+                self.dds.d2_3d_c.off()
+                self.dds.d2_3d_r.off()
 
     @kernel
     def switch_d1_3d(self,state):
         if state == 1:
-            self.dds.d1_3d_c.on()
-            self.dds.d1_3d_r.on()
+            with parallel:
+                self.dds.d1_3d_c.on()
+                self.dds.d1_3d_r.on()
         elif state == 0:
-            self.dds.d1_3d_c.off()
-            self.dds.d1_3d_r.off()
+            with parallel:
+                self.dds.d1_3d_c.off()
+                self.dds.d1_3d_r.off()
 
     ## Magnet functions
 
