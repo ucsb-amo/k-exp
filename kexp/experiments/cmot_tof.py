@@ -16,11 +16,11 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
-        self.p.t_cmot = 1.e-6
+        self.p.t_cmot = 5.e-6
 
-        self.p.N_shots = 4
-        self.p.N_repeats = 1
-        self.p.t_tof = np.linspace(20,500,self.p.N_shots) * 1.e-6
+        self.p.N_shots = 5
+        self.p.N_repeats = 3
+        self.p.t_tof = np.linspace(20,400,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         # rng = np.random.default_rng()
@@ -28,8 +28,16 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.N_img = 3 * len(self.p.t_tof)
         
-        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-1.7)
-        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(4.5)
+        self.p.att_d2_r_cmot = 13.5
+        self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
+        self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
+        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
+        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(6.0)
+    
+    @kernel
+    def load_2D_mot(self,t):
+        self.switch_d2_2d(1)
+        delay(t)
 
     @kernel
     def load_mot(self,t):
