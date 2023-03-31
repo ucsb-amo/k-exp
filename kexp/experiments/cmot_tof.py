@@ -16,7 +16,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
-        self.p.t_cmot = .5e-6
+        self.p.t_cmot = 5.e-3
 
         self.p.N_shots = 5
         self.p.N_repeats = 3
@@ -30,8 +30,12 @@ class cmot_tof(EnvExperiment, Base):
         
         self.p.att_d2_r_cmot = 13.5
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
+
         self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
+        self.p.f_d2_c_mot = self.dds.d2_3d_c.detuning_to_frequency(-3.35)
+
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
+
         self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(6.5)
 
         self.p.V_cmot_current = 0.4
@@ -46,6 +50,7 @@ class cmot_tof(EnvExperiment, Base):
         delay(-10*us)
         self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_mot,
                                  att_dB=self.p.att_d2_r_mot)
+        self.dds.d2_3d_c.set_dds(freq_MHz=self.p.f_d2_c_mot)
         delay(10*us)
 
         with parallel:
@@ -83,20 +88,20 @@ class cmot_tof(EnvExperiment, Base):
     def kill_cmot(self):
         with parallel:
             self.switch_mot_magnet(0)
-            self.dds.d2_3d_r.off()
+            self.switch_d2_2d(0)
+            self.switch_d2_3d(0)
+            self.dds.push.off()
             self.dds.d1_3d_c.off()
-            self.dds.d2_3d_c.off()
-
-
+            
     @kernel
     def tof_expt(self,t_tof):
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         self.load_mot(self.p.t_mot_load * s)
 
-        #with parallel:
-            # self.dds.push.off()
-            # self.switch_d2_2d(0)
-            #self.cmot(self.p.t_cmot * s)
+        with parallel:
+             self.dds.push.off()
+             self.switch_d2_2d(0)
+             self.cmot(self.p.t_cmot * s)
         
         self.kill_cmot()
         
