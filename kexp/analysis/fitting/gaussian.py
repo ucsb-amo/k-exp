@@ -13,7 +13,7 @@ class GaussianFit(Fit):
         self.x_center = x_center
         self.y_offset = y_offset
 
-        self.y_fitdata = self._fit_func(xdata,amplitude,sigma,x_center,y_offset)
+        self.y_fitdata = self._fit_func(self.x_fitdata,amplitude,sigma,x_center,y_offset)
 
     def _fit_func(self, x, amplitude, sigma, x_center, y_offset):
         return y_offset + amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) )
@@ -60,7 +60,7 @@ class GaussianTemperatureFit(Fit):
         self.T = T
         self.sigma0 = np.sqrt(sigma0_squared) / self._mult
         
-        self.y_fitdata = np.sqrt( self._fit_func(self._xdata_sq,T,sigma0_squared) ) / self._mult
+        self.y_fitdata = np.sqrt( self._fit_func(self.x_fitdata**2,T,sigma0_squared) ) / self._mult
 
     def _fit_func(self, t_squared, T, sigma0_squared):
         return c.kB * T / c.m_K * t_squared + sigma0_squared
