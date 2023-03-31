@@ -32,7 +32,7 @@ class atomdata():
 
         self._sort_images()
         self._analyze_absorption_images(crop_type)
-        self._remap_fit_results()
+        # self._remap_fit_results()
 
     ### Analysis
 
@@ -78,21 +78,22 @@ class atomdata():
         # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
         img_dims = np.shape(self.images[0])
         sorted_img_dims = tuple(self._xvardims) + tuple(img_dims)
+        print(tuple(self._xvardims))
         print(sorted_img_dims)
 
         self.img_atoms = np.zeros(sorted_img_dims)
         self.img_light = np.zeros(sorted_img_dims)
         self.img_dark = np.zeros(sorted_img_dims)
-        self.img_tstamps = np.empty(sorted_img_dims,dtype=list)
+        self.img_tstamps = np.empty(tuple(self._xvardims),dtype=list)
 
         if self.Nvars == 1:
             self.img_atoms = self._img_atoms
             self.img_light = self._img_light
             self.img_dark = self._img_dark
-            for i in range(len(self._img_atoms_tstamp)):
-                self.img_tstamps[i] = [self._img_atoms_tstamp,
-                                    self._img_light_tstamp,
-                                    self._img_dark_tstamp]
+            for i in range(self._xvardims[0]):
+                self.img_tstamps[i] = list([self._img_atoms_tstamp[i],
+                                    self._img_light_tstamp[i],
+                                    self._img_dark_tstamp[i]])
         
         if self.Nvars == 2:
             n1 = self._xvardims[0]
@@ -123,7 +124,7 @@ class atomdata():
     
     def _unpack_xvars(self):
         # fetch the arrays for each xvar from parameters
-        if ~isinstance(self.xvarnames,list):
+        if not isinstance(self.xvarnames,list):
             self.xvarnames = [self.xvarnames]
 
         xvarnames = self.xvarnames
@@ -134,9 +135,9 @@ class atomdata():
             xvars.append(vars(self.params)[xvarnames[i]])
         
         # figure out dimensions of each xvar
-        self._xvardims = np.zeros(self.Nvars)
+        self._xvardims = np.zeros(self.Nvars,dtype=int)
         for i in range(self.Nvars):
-            self._xvardims[i] = len(xvars[i])
+            self._xvardims[i] = np.int32(len(xvars[i]))
 
         return xvars
 
