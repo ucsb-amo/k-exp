@@ -2,26 +2,32 @@ from kexp.analysis.image_processing.compute_ODs import *
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_OD
 from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
+import numpy as np
 
 class atomdata():
     '''
     Use to store and do basic analysis on data for every experiment.
 
-    Any attribute which does not start with '_' will be saved to the dataset in _save_data().
+    xvarnames should be provided as a string indicating the params attribute
+    corresponding to the the independent variable(s). They should be provided in
+    the order over which they were looped, with the outermost loop first.
+
+    Any attribute which does not start with '_' will be saved to the dataset in
+    _save_data().
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, expt=[], crop_type='mot'):
+    def __init__(self, expt=[], xvarnames=[], crop_type='mot'):
+
+        self._ds = DataSaver()
+        self.run_info = RunInfo()
         
         self._expt = expt
         self.images = expt.images
         self.img_timestamps = expt.image_timestamps
-        self._split_images()
-
-        self._ds = DataSaver()
-        self.run_info = RunInfo()
-
         self.params = self._expt.params
+
+        self.xvarnames = xvarnames
 
         self.od_raw = []
         self.od = []
@@ -30,6 +36,7 @@ class atomdata():
         self.cloudfit_x = []
         self.cloudfit_y = []
 
+        self._split_images()
         self._analyze_absorption_images(crop_type)
         self._remap_fit_results()
 
@@ -58,13 +65,52 @@ class atomdata():
         light_img_idx = 1
         dark_img_idx = 2
         
-        self.img_atoms = self.images[atom_img_idx::3]
-        self.img_light = self.images[light_img_idx::3]
-        self.img_dark = self.images[dark_img_idx::3]
+        self._img_atoms = self.images[atom_img_idx::3]
+        self._img_light = self.images[light_img_idx::3]
+        self._img_dark = self.images[dark_img_idx::3]
 
-        self.img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
-        self.img_light_tstamp = self.img_timestamps[light_img_idx::3]
-        self.img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
+        self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
+        self._img_light_tstamp = self.img_timestamps[light_img_idx::3]
+        self._img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
+
+    def _unpack_xvars(self):
+        # fetch the arrays for each xvar from parameters
+        xvarnames = self.xvarnames
+
+        self.Nvars = len(xvarnames)
+        xvars = []
+        for i in range(self.Nvars):
+            xvars.append(vars(self.params)[xvarnames[i]])
+        self.xvars = xvars
+        
+        # figure out dimensions of each xvar
+        self.xvardims = np.zeros(self.Nvars)
+        for i in range(self.Nvars):
+            self.xvardims[i] = len(xvars[i])
+
+    def _sort_images(self):
+
+        # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
+        img_dims = np.shape(self.images[0])
+        sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
+
+        self.img_atoms = np.zeros(sorted_img_dims)
+        self.img_light = np.zeros(sorted_img_dims)
+        self.img_dark = np.zeros(sorted_img_dims)
+        self.img_tstamps = np.zeros(sorted_img_dims)
+        
+        if self.Nvars == 2:
+            n1 = self.xvardims[0]
+            n2 = self.xvardims[1]
+            for i1 in range(n1):
+                for i2 in range(n2):
+                    idx = i1*n2 + i2
+                    self.img_atoms[i1][i2] = self._img_atoms[idx]
+                    self.img_light[i1][i2] = self._img_light[idx]
+                    self.img_dark[i1][i2] = self._img_dark[idx]
+                    self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
+                                                     self._img_light_tstamp[idx],
+                                                     self._img_dark_tstamp[idx]]
 
     def _remap_fit_results(self):
         try:
