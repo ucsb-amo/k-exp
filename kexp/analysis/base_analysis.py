@@ -38,8 +38,8 @@ class atomdata():
 
     def _analyze_absorption_images(self,crop_type='mot'):
         '''
-        Saves the images, image timestamps (in ns), computes ODs, and saves them to
-        the dataset of the current experiment (expt)
+        Saves the images, image timestamps (in ns), computes ODs, summed ODs,
+        and gaussian fits to the OD profiles.
 
         Parameters
         ----------
