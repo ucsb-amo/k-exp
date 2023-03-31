@@ -16,7 +16,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
-        self.p.t_cmot = 5.e-3
+        self.p.t_cmot = 5.e-6
 
         self.p.N_shots = 5
         self.p.N_repeats = 3
