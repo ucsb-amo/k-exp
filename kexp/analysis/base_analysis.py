@@ -31,8 +31,7 @@ class atomdata():
         self.cloudfit_y = []
 
         self._analyze_absorption_images(crop_type)
-
-        
+        self._remap_fit_results()
 
     def _analyze_absorption_images(self,crop_type='mot'):
         '''
