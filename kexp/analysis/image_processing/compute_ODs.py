@@ -31,18 +31,14 @@ def compute_ODs(img_atoms,img_light,img_dark,crop_type='mot',Nvars=1):
     summedODx: ArrayLike
     summedODy: ArrayLike
     '''
-    
-    ODs = []
-    summedODx = []
-    summedODy = []
 
     ODsraw = compute_OD(img_atoms,img_light,img_dark)
-    # OD = roi.crop_OD(ODsraw,crop_type)
+    ODs = roi.crop_OD(ODsraw,crop_type,Nvars)
 
-    sum_od_y = np.sum(OD,Nvars+1)
-    sum_od_x = np.sum(OD,Nvars)
+    sum_od_y = np.sum(ODs,Nvars+1)
+    sum_od_x = np.sum(ODs,Nvars)
 
-    return ODsraw, ODs, summedODx, summedODy
+    return ODsraw, ODs, sum_od_x, sum_od_y
 
 def compute_OD(atoms,light,dark):
 
