@@ -8,9 +8,6 @@ def crop_OD(OD,crop_type='',Nvars=1):
     if crop_type == 'mot':
         roix = [500, 1600]
         roiy = [50, 1050]
-    elif crop_type == 'test':
-        roix = [3,6]
-        roiy = [5,9]
     else:
         roix = [0,np.shape(OD)[1]-1]
         roiy = [0,np.shape(OD)[0]-1]
