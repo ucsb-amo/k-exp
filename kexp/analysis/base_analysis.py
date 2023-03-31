@@ -28,6 +28,7 @@ class atomdata():
         self.params = self._expt.params
 
         self.xvarnames = xvarnames
+        self.xvars = self._unpack_xvars()
 
         self.od_raw = []
         self.od = []
@@ -39,6 +40,8 @@ class atomdata():
         self._split_images()
         self._analyze_absorption_images(crop_type)
         self._remap_fit_results()
+
+    ### Analysis
 
     def _analyze_absorption_images(self,crop_type='mot'):
         '''
@@ -59,6 +62,21 @@ class atomdata():
         self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
         self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
 
+    def _remap_fit_results(self):
+        try:
+            self.fit_sd_x = [fit.sigma for fit in self.cloudfit_x]
+            self.fit_sd_y = [fit.sigma for fit in self.cloudfit_y]
+            self.fit_center_x = [fit.x_center for fit in self.cloudfit_x]
+            self.fit_center_y = [fit.x_center for fit in self.cloudfit_y]
+            self.fit_amp_x = [fit.amplitude for fit in self.cloudfit_x]
+            self.fit_amp_y = [fit.amplitude for fit in self.cloudfit_y]
+            self.fit_offset_x = [fit.y_offset for fit in self.cloudfit_x]
+            self.fit_offset_y = [fit.y_offset for fit in self.cloudfit_y]
+        except:
+            print("Unable to extract fit parameters. The gaussian fit must have failed")
+
+    ### image handling, sorting by xvars
+
     def _split_images(self):
         
         atom_img_idx = 0
@@ -72,21 +90,6 @@ class atomdata():
         self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
         self._img_light_tstamp = self.img_timestamps[light_img_idx::3]
         self._img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
-
-    def _unpack_xvars(self):
-        # fetch the arrays for each xvar from parameters
-        xvarnames = self.xvarnames
-
-        self.Nvars = len(xvarnames)
-        xvars = []
-        for i in range(self.Nvars):
-            xvars.append(vars(self.params)[xvarnames[i]])
-        self.xvars = xvars
-        
-        # figure out dimensions of each xvar
-        self.xvardims = np.zeros(self.Nvars)
-        for i in range(self.Nvars):
-            self.xvardims[i] = len(xvars[i])
 
     def _sort_images(self):
 
@@ -111,19 +114,22 @@ class atomdata():
                     self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
                                                      self._img_light_tstamp[idx],
                                                      self._img_dark_tstamp[idx]]
+    
+    def _unpack_xvars(self):
+        # fetch the arrays for each xvar from parameters
+        xvarnames = self.xvarnames
 
-    def _remap_fit_results(self):
-        try:
-            self.fit_sd_x = [fit.sigma for fit in self.cloudfit_x]
-            self.fit_sd_y = [fit.sigma for fit in self.cloudfit_y]
-            self.fit_center_x = [fit.x_center for fit in self.cloudfit_x]
-            self.fit_center_y = [fit.x_center for fit in self.cloudfit_y]
-            self.fit_amp_x = [fit.amplitude for fit in self.cloudfit_x]
-            self.fit_amp_y = [fit.amplitude for fit in self.cloudfit_y]
-            self.fit_offset_x = [fit.y_offset for fit in self.cloudfit_x]
-            self.fit_offset_y = [fit.y_offset for fit in self.cloudfit_y]
-        except:
-            print("Unable to extract fit parameters. The gaussian fit must have failed")
+        self.Nvars = len(xvarnames)
+        xvars = []
+        for i in range(self.Nvars):
+            xvars.append(vars(self.params)[xvarnames[i]])
+        
+        # figure out dimensions of each xvar
+        self.xvardims = np.zeros(self.Nvars)
+        for i in range(self.Nvars):
+            self.xvardims[i] = len(xvars[i])
+
+        return xvars
 
     def save_data(self):
         self._ds.save_data(self)
