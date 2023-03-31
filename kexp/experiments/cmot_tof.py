@@ -16,11 +16,11 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
-        self.p.t_cmot = 1.e-6
+        self.p.t_cmot = 5.e-6
 
-        self.p.N_shots = 4
-        self.p.N_repeats = 1
-        self.p.t_tof = np.linspace(20,500,self.p.N_shots) * 1.e-6
+        self.p.N_shots = 10
+        self.p.N_repeats = 5
+        self.p.t_tof = np.linspace(20,300,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         # rng = np.random.default_rng()
@@ -28,11 +28,24 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.N_img = 3 * len(self.p.t_tof)
         
-        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-1.7)
+        self.p.att_d2_r_cmot = 13.50
+        self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
+        self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
+        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
         self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(4.5)
+    
+    @kernel
+    def load_2D_mot(self,t):
+        self.switch_d2_2d(1)
+        delay(t)
 
     @kernel
     def load_mot(self,t):
+        delay(-10*us)
+        self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_mot,
+                                 att_dB=self.p.att_d2_r_mot)
+        delay(10*us)
+
         with parallel:
             self.switch_mot_magnet(1)
             self.switch_d2_3d(1)
@@ -47,15 +60,11 @@ class cmot_tof(EnvExperiment, Base):
         delay(t)
 
     @kernel
-    def load_2D_mot(self,t):
-        self.switch_d2_2d(1)
-        delay(t)
-
-    @kernel
     def cmot(self,t):
         delay(-10*us)
         with parallel:
-            self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot)
+            self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
+                                     att_dB=self.p.att_d2_r_cmot)
             self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot)
         delay(10*us)
         with parallel:
@@ -78,15 +87,13 @@ class cmot_tof(EnvExperiment, Base):
         self.load_mot(self.p.t_mot_load * s)
 
         with parallel:
-            self.dds.push.off()
-            self.switch_d2_2d(0)
-            # self.switch_d2_3d(0)
-            # self.switch_mot_magnet(0)
+            # self.dds.push.off()
+            # self.switch_d2_2d(0)
             self.cmot(self.p.t_cmot * s)
         
         self.kill_cmot()
         
-        
+        ### abs img
         delay(t_tof * s)
         self.trigger_camera()
         self.pulse_imaging_light(self.p.t_imaging_pulse * s)
@@ -113,6 +120,11 @@ class cmot_tof(EnvExperiment, Base):
         # return to mot load state
         self.switch_all_dds(state=1)
         self.dds.imaging.off()
+        self.core.break_realtime()
+        self.switch_mot_magnet(1)
+
+        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,0.7)
+        self.zotino.load()
 
     def analyze(self):
 

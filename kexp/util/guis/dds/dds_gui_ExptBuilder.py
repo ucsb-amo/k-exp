@@ -51,6 +51,8 @@ class DDSGUIExptBuilder():
             def set_all_dds(self):
                 for dds_sublist in self.DDS_list:
                     for dds in dds_sublist:
+                        dds.dds_device.init()
+                        delay(1*ms)
                         dds.set_dds()
                         delay(1*us)
                         dds.on()
@@ -76,6 +78,7 @@ class DDSGUIExptBuilder():
 
                 self.core.reset()
                 self.init_all_cpld()
+                self.core.break_realtime()
                 self.set_all_dds()
         """)
         return script
@@ -108,6 +111,8 @@ class DDSGUIExptBuilder():
             def set_all_dds(self):
                 for dds_sublist in self.DDS_list:
                     for dds in dds_sublist:
+                        dds.dds_device.init()
+                        delay(1*ms)
                         dds.set_dds()
                         delay(1*us)
 
@@ -128,6 +133,7 @@ class DDSGUIExptBuilder():
             def run(self):
                 self.core.reset()
                 self.init_all_cpld()
+                self.core.break_realtime()
                 self.set_all_dds()
         """)
         return script

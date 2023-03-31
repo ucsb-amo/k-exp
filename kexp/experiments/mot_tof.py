@@ -28,6 +28,9 @@ class mot_tof(EnvExperiment, Base):
 
         self.p.V_mot_current = 0.7
 
+        self.p.f_d2_3d_r = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
+        # self.p.f_d2_3d_c = self.dds.d2_3d_c.detuning_to_frequency(-3)
+
     @kernel
     def load_mot(self,t):
         with parallel:
@@ -87,6 +90,9 @@ class mot_tof(EnvExperiment, Base):
         self.core.break_realtime()
 
         self.switch_d1_3d(0)
+
+        self.dds.d2_3d_c.set_dds(freq_MHz=125.4)
+        self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_3d_r)
         
         self.kill_mot(self.p.t_mot_kill * s)
         self.core.break_realtime()
