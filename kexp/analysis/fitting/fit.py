@@ -29,6 +29,7 @@ class Fit():
         self.xdata = np.array(xdata)
         self.ydata = np.array(ydata)
 
+        self.x_fitdata = np.arange(self.xdata[0],self.xdata[-1],1000)
         self.y_fitdata = []
         
         try:
@@ -45,5 +46,5 @@ class Fit():
     def plot_fit(self):
         plt.figure()
         plt.plot(self.xdata,self.ydata,'.k',markersize=2)
-        plt.plot(self.xdata,self.y_fitdata,'--k')
+        plt.plot(self.x_fitdata,self.y_fitdata,'--k')
         plt.legend(["Data","Fit"])
