@@ -16,7 +16,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
-        self.p.t_cmot = 5.e-6
+        self.p.t_cmot = 10.e-6
 
         self.p.N_shots = 5
         self.p.N_repeats = 3
@@ -36,7 +36,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
 
-        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(6.5)
+        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(5.5)
 
         self.p.V_cmot_current = 0.4
     
