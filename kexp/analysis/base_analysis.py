@@ -62,16 +62,30 @@ class atomdata():
 
     def _remap_fit_results(self):
         try:
-            self.fit_sd_x = [fit.sigma for fit in self.cloudfit_x]
-            self.fit_sd_y = [fit.sigma for fit in self.cloudfit_y]
-            self.fit_center_x = [fit.x_center for fit in self.cloudfit_x]
-            self.fit_center_y = [fit.x_center for fit in self.cloudfit_y]
-            self.fit_amp_x = [fit.amplitude for fit in self.cloudfit_x]
-            self.fit_amp_y = [fit.amplitude for fit in self.cloudfit_y]
-            self.fit_offset_x = [fit.y_offset for fit in self.cloudfit_x]
-            self.fit_offset_y = [fit.y_offset for fit in self.cloudfit_y]
+            fits_x = self.cloudfit_x
+            self.fit_sd_x = self._extract_attr(self,fits_x,'sigma')
+            self.fit_center_x = self._extract_attr(self,fits_x,'x_center')
+            self.fit_amp_x = self._extract_attr(self,fits_x,'amplitude')
+            self.fit_offset_x = self._extract_attr(self,fits_x,'amplitude')
+
+            fits_y = self.cloudfit_y
+            self.fit_sd_y = self._extract_attr(self,fits_y,'sigma')
+            self.fit_center_y = self._extract_attr(self,fits_y,'x_center')
+            self.fit_amp_y = self._extract_attr(self,fits_y,'amplitude')
+            self.fit_offset_y = self._extract_attr(self,fits_y,'amplitude')
         except:
             print("Unable to extract fit parameters. The gaussian fit must have failed")
+
+    def _extract_attr(self,ndarray,attr):
+        dims = np.shape(ndarray)
+        frame = np.empty(dims,dtype=float)
+        if len(dims) == 1:
+            for i0, fit in np.ndenumerate(ndarray):
+                frame[i0] = vars(fit)[attr]
+        elif len(dims) == 2:
+            for (i0,i1), fit in np.ndenumerate(ndarray):
+                frame[i0][i1] = vars(fit)[attr]
+        return frame
 
     ### image handling, sorting by xvars
 
@@ -81,25 +95,25 @@ class atomdata():
 
         # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
         img_dims = np.shape(self.images[0])
-        sorted_img_dims = tuple(self._xvardims) + tuple(img_dims)
+        sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
 
         self.img_atoms = np.zeros(sorted_img_dims)
         self.img_light = np.zeros(sorted_img_dims)
         self.img_dark = np.zeros(sorted_img_dims)
-        self.img_tstamps = np.empty(tuple(self._xvardims),dtype=list)
+        self.img_tstamps = np.empty(tuple(self.xvardims),dtype=list)
 
         if self.Nvars == 1:
             self.img_atoms = self._img_atoms
             self.img_light = self._img_light
             self.img_dark = self._img_dark
-            for i in range(self._xvardims[0]):
+            for i in range(self.xvardims[0]):
                 self.img_tstamps[i] = list([self._img_atoms_tstamp[i],
                                     self._img_light_tstamp[i],
                                     self._img_dark_tstamp[i]])
         
         if self.Nvars == 2:
-            n1 = self._xvardims[0]
-            n2 = self._xvardims[1]
+            n1 = self.xvardims[0]
+            n2 = self.xvardims[1]
             for i1 in range(n1):
                 for i2 in range(n2):
                     idx = i1*n2 + i2
@@ -137,9 +151,9 @@ class atomdata():
             xvars.append(vars(self.params)[xvarnames[i]])
         
         # figure out dimensions of each xvar
-        self._xvardims = np.zeros(self.Nvars,dtype=int)
+        self.xvardims = np.zeros(self.Nvars,dtype=int)
         for i in range(self.Nvars):
-            self._xvardims[i] = np.int32(len(xvars[i]))
+            self.xvardims[i] = np.int32(len(xvars[i]))
 
         return xvars
 
@@ -147,5 +161,6 @@ class atomdata():
 
     def save_data(self):
         self._ds.save_data(self)
+
 
     
