@@ -32,7 +32,7 @@ class atomdata():
 
         self._sort_images()
         self._analyze_absorption_images(crop_type)
-        # self._remap_fit_results()
+        self._remap_fit_results()
 
     ### Analysis
 
@@ -56,9 +56,9 @@ class atomdata():
                         self.img_light,
                         self.img_dark,
                         crop_type,
-                        Nvars=self.Nvars)
-        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
-        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
+                        self.Nvars)
+        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x,self.Nvars)
+        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y,self.Nvars)
 
     def _remap_fit_results(self):
         try:
