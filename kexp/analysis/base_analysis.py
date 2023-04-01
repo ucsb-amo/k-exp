@@ -66,13 +66,13 @@ class atomdata():
             self.fit_sd_x = self._extract_attr(self,fits_x,'sigma')
             self.fit_center_x = self._extract_attr(self,fits_x,'x_center')
             self.fit_amp_x = self._extract_attr(self,fits_x,'amplitude')
-            self.fit_offset_x = self._extract_attr(self,fits_x,'amplitude')
+            self.fit_offset_x = self._extract_attr(self,fits_x,'y_offset')
 
             fits_y = self.cloudfit_y
             self.fit_sd_y = self._extract_attr(self,fits_y,'sigma')
             self.fit_center_y = self._extract_attr(self,fits_y,'x_center')
             self.fit_amp_y = self._extract_attr(self,fits_y,'amplitude')
-            self.fit_offset_y = self._extract_attr(self,fits_y,'amplitude')
+            self.fit_offset_y = self._extract_attr(self,fits_y,'y_offset')
         except:
             print("Unable to extract fit parameters. The gaussian fit must have failed")
 
