@@ -21,14 +21,29 @@ def fit_gaussian_sum_OD(sum_od) -> gfit.GaussianFit:
     fits: ArrayLike
         An array of GaussianFit objects.
     '''
-    fits = []
-    for sOD in sum_od:
-        xaxis = cam.pixel_size_m / cam.magnification * np.arange(len(sOD))
-        try:
-            fit = gfit.GaussianFit(xaxis, sOD)
-        except:
-            fit = []
-        fits.append(fit)
+    sh = sum_od.shape[:-1:]
+    fits = np.empty(sh,dtype=gfit.GaussianFit)
+
+    xaxis = cam.pixel_size_m / cam.magnification * np.arange(sum_od.shape[len(sh)])
+
+    if len(sh) == 1:
+        for i in range(sum_od.shape[0]):
+            try:
+                fit = gfit.GaussianFit(xaxis, sum_od[i])
+                fits[i] = fit
+            except:
+                pass
+    elif len(sh) == 2:
+        for ix in range(sum_od.shape[0]):
+            for iy in range(sum_od.shape[1]):
+                try:
+                    fit = gfit.GaussianFit(xaxis, sum_od[ix][iy])
+                    fits[ix][iy] = fit
+                except:
+                    pass
+    else:
+        print("The data is more than 2D -- update everthing to support 3D.")
+
     return fits
 
 

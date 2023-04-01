@@ -57,8 +57,8 @@ class atomdata():
                         self.img_dark,
                         crop_type,
                         self.Nvars)
-        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x,self.Nvars)
-        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y,self.Nvars)
+        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
+        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
 
     def _remap_fit_results(self):
         try:
@@ -82,8 +82,6 @@ class atomdata():
         # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
         img_dims = np.shape(self.images[0])
         sorted_img_dims = tuple(self._xvardims) + tuple(img_dims)
-        print(tuple(self._xvardims))
-        print(sorted_img_dims)
 
         self.img_atoms = np.zeros(sorted_img_dims)
         self.img_light = np.zeros(sorted_img_dims)
