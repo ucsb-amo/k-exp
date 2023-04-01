@@ -5,7 +5,7 @@ from kexp.analysis.tof import tof
 from kexp.base.base import Base
 import numpy as np
 
-class cmot_tof(EnvExperiment, Base):
+class alternate_cmot_tof(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -20,7 +20,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.N_shots = 5
         self.p.N_repeats = 3
-        self.p.t_tof = np.linspace(700,1200,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.linspace(500,1100,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         # rng = np.random.default_rng()
@@ -31,12 +31,15 @@ class cmot_tof(EnvExperiment, Base):
         self.p.att_d2_r_cmot = 13.5
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
 
+        self.p.att_d1_c_cmot = 9.4
+        self.p.att_d1_c_mot = self.dds.d1_3d_c.att_dB
+
         self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
         self.p.f_d2_c_mot = self.dds.d2_3d_c.detuning_to_frequency(-.9)
 
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
 
-        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(6.5)
+        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(7)
 
         self.p.V_cmot_current = 2.0
     
@@ -69,14 +72,14 @@ class cmot_tof(EnvExperiment, Base):
     @kernel
     def cmot(self,t):
         delay(-10*us)
-        with parallel:
-            self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
-                                     att_dB=self.p.att_d2_r_cmot)
-            self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot)
+        self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
+                                att_dB=self.p.att_d2_r_cmot)
+        self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot,
+                                att_dB=self.p.att_d1_c_cmot)
         delay(10*us)
         with parallel:
             self.dds.d2_3d_r.on()
-            #self.dds.d1_3d_c.on()
+            self.dds.d1_3d_c.on()
             #self.dds.d2_3d_c.off()
             self.dds.d1_3d_r.off()
             with sequential:
@@ -86,11 +89,11 @@ class cmot_tof(EnvExperiment, Base):
 
     @kernel
     def kill_cmot(self):
+        self.switch_d2_2d(0)
+        self.dds.push.off()
         with parallel:
             self.switch_mot_magnet(0)
-            self.switch_d2_2d(0)
             self.switch_d2_3d(0)
-            self.dds.push.off()
             self.dds.d1_3d_c.off()
             
     @kernel
@@ -142,7 +145,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.camera.Close()
         
-        data = atomdata(expt=self)
+        data = atomdata('t_tof',expt=self)
 
         # data.T_x = tof(data).compute_T_x(t=self.params.t_tof)
 

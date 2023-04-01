@@ -114,7 +114,7 @@ class mot_tof(EnvExperiment, Base):
 
         self.camera.Close()
         
-        data = atomdata(expt=self)
+        data = atomdata('t_tof',expt=self)
 
         # data.T_x = tof(data).compute_T_x(t=self.params.t_tof)
 

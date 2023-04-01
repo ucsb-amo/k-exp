@@ -16,7 +16,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
-        self.p.t_cmot = 10.e-6
+        self.p.t_cmot = 10.e-3
 
         self.p.N_shots = 5
         self.p.N_repeats = 3
@@ -32,13 +32,13 @@ class cmot_tof(EnvExperiment, Base):
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
 
         self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
-        self.p.f_d2_c_mot = self.dds.d2_3d_c.detuning_to_frequency(-3.35)
+        self.p.f_d2_c_mot = self.dds.d2_3d_c.detuning_to_frequency(-.9)
 
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
 
-        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(5.5)
+        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(6.5)
 
-        self.p.V_cmot_current = 0.4
+        self.p.V_cmot_current = .7
     
     @kernel
     def load_2D_mot(self,t):
@@ -69,10 +69,9 @@ class cmot_tof(EnvExperiment, Base):
     @kernel
     def cmot(self,t):
         delay(-10*us)
-        with parallel:
-            self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
-                                     att_dB=self.p.att_d2_r_cmot)
-            self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot)
+        self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
+                                att_dB=self.p.att_d2_r_cmot)
+        self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot)
         delay(10*us)
         with parallel:
             self.dds.d2_3d_r.on()
@@ -142,9 +141,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.camera.Close()
         
-        data = atomdata(expt=self)
-
-        # data.T_x = tof(data).compute_T_x(t=self.params.t_tof)
+        data = atomdata('t_tof',expt=self)
 
         data.save_data()
 
