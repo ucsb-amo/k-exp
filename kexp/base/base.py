@@ -28,6 +28,7 @@ class Base(devices, cooling, image):
 
         ds = DataSaver()
         self._rid = ds._get_rid()
+        self._ridstr = " Run ID: "+ str(self._rid)
 
     @rpc(flags={"async"})
     def StartTriggeredGrab(self, N):
