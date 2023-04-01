@@ -69,20 +69,3 @@ class DataVault():
         self.run_ids = [ad.run_info.run_id for ad in atomdata_list]
         self.data_filepaths = [ad.run_info.filepath for ad in atomdata_list]
         self.data_dates = [time.strftime('%Y-%m-%d',ad.run_info.run_datetime) for ad in atomdata_list]
-
-def load_atomdata(path = []):
-    if path == []:
-        folderpath=os.path.join(data_dir,'*','*.pickle')
-        list_of_files = glob.glob(folderpath)
-        file = max(list_of_files, key=os.path.getmtime)
-    else:
-        if path.endswith('.pickle'):
-            file = path
-        else:
-            raise ValueError("The provided path is not a pickle file.")
-        
-    with open(file,'rb') as f:
-        ad = pickle.load(f)
-
-    return ad
-
