@@ -32,6 +32,7 @@ class devices():
 
     @kernel
     def init_kernel(self):
+        print(self._rid)
         self.core.reset()
         delay_mu(self.params.t_rtio_mu)
         self.zotino.init()
