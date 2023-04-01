@@ -118,9 +118,9 @@ class atomdata():
         light_img_idx = 1
         dark_img_idx = 2
         
-        self._img_atoms = self.images[atom_img_idx::3]
-        self._img_light = self.images[light_img_idx::3]
-        self._img_dark = self.images[dark_img_idx::3]
+        self._img_atoms = np.array(self.images[atom_img_idx::3])
+        self._img_light = np.array(self.images[light_img_idx::3])
+        self._img_dark = np.array(self.images[dark_img_idx::3])
 
         self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
         self._img_light_tstamp = self.img_timestamps[light_img_idx::3]
