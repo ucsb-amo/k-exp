@@ -5,7 +5,7 @@ from kexp.analysis.tof import tof
 from kexp.base.base import Base
 import numpy as np
 
-class mot_tof(EnvExperiment, Base):
+class mot_current_optimize(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -17,21 +17,17 @@ class mot_tof(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
 
-        self.p.N_shots = 3
-        self.p.N_repeats = 1
+        self.p.N_shots = 5
+        self.p.N_repeats = 2
         self.p.t_tof = np.linspace(20,400,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
-        self.p.V_mot_current_list = np.arange(0.25,2.0,2)
+        self.p.V_mot_current_list = np.linspace(0.5,2.0,5)
 
         self.p.N_img = 3 * len(self.p.t_tof) * len(self.p.V_mot_current_list)
 
         self.p.f_d2_3d_r = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
         self.p.f_d2_3d_c = self.dds.d2_3d_c.detuning_to_frequency(-.9)
-
-    @kernel
-    def load_mot(self,t):
-        
 
     @kernel
     def kill_mot(self,t):
