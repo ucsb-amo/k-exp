@@ -18,7 +18,7 @@ class cmot_tof(EnvExperiment, Base):
         self.p.t_mot_load = 3
 
         self.p.t_cmot0 = 5.e-3
-        self.p.t_cmot = 7.e-3
+        self.p.t_cmot = 8.e-3
         self.p.t_gm = 1.5e-3
 
         self.p.N_shots = 5
@@ -35,19 +35,23 @@ class cmot_tof(EnvExperiment, Base):
         self.p.att_d2_r_cmot = 13.5
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
 
+        self.p.att_d1_c_gm = 9.7
+        self.p.att_d1_r_gm = 11.5
+
         #MOT detunings
         self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
         self.p.f_d2_c_mot = self.dds.d2_3d_c.detuning_to_frequency(-3.3)
 
         #CMOT detunings
-        self.p.f_d2_c_cmot0 = self.dds.d2_3d_c.detuning_to_frequency(-.9)
+        self.p.f_d2_c_cmot = self.dds.d2_3d_c.detuning_to_frequency(-.9)
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
 
-        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(6.96)
+        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(7)
 
         #GM Detunings
-        self.p.f_d1_c_gm = self.dds.d1_3d_c.detuning_to_frequency(6.96)
-        self.p.f_d1_r_gm = self.dds.d1_3d_c.detuning_to_frequency(6.96)
+        gm_f = 7
+        self.p.f_d1_c_gm = self.dds.d1_3d_c.detuning_to_frequency(gm_f)
+        self.p.f_d1_r_gm = self.dds.d1_3d_r.detuning_to_frequency(gm_f)
 
         #MOT current settings
         self.p.V_cmot0_current = 1.5
@@ -79,16 +83,21 @@ class cmot_tof(EnvExperiment, Base):
             self.switch_d2_3d(0)
         delay(t)
 
+    #compress MOT by changing D2 detunings and raising B field
     @kernel
     def cmot0(self,t):
         delay(-10*us)
         self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot)
-        self.dds.d2_3d_c.set_dds(freq_MHz=self.p.f_d2_c_cmot0)
+        self.dds.d2_3d_c.set_dds(freq_MHz=self.p.f_d2_c_cmot, att_dB=self.p.att_d1_c_gm)
         delay(10*us)
-        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,self.p.V_cmot0_current)
-        self.zotino.load()
+        with parallel:
+            self.switch_d2_3d(1)
+            with sequential:
+                self.zotino.write_dac(self.dac_ch_3Dmot_current_control,self.p.V_cmot0_current)
+                self.zotino.load()
         delay(t)
     
+    #hybrid compressed MOT with only D2 repump and D1 cooler, setting B field to lower value
     @kernel
     def cmot(self,t):
         delay(-10*us)
@@ -106,18 +115,17 @@ class cmot_tof(EnvExperiment, Base):
                 self.zotino.load()
         delay(t)
 
+    #GM with only D1, turning B field off
     @kernel
     def gm(self,t):
         delay(-10*us)
-        self.dds.d1_3d_r.set_dds(freq_MHz=self.p.f_d1_r_gm)
-        self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_gm)
+        self.dds.d1_3d_r.set_dds(freq_MHz=self.p.f_d1_r_gm, att_dB=self.p.att_d1_r_gm)
+        self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_gm, att_dB=self.p.att_d1_c_gm)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(0)
-            self.dds.d1_3d_r.on()
-            self.dds.d1_3d_c.on()
-            self.dds.d2_3d_c.off()
-            self.dds.d2_3d_r.off()
+            self.switch_d1_3d(1)
+            self.switch_d2_3d(0)
         delay(t)
 
     @kernel
@@ -137,7 +145,7 @@ class cmot_tof(EnvExperiment, Base):
 
         self.cmot0(self.p.t_cmot0 * s)
 
-        #self.cmot(self.p.t_cmot * s)
+        self.cmot(self.p.t_cmot * s)
 
         #self.gm(self.p.t_gm * s)
         
