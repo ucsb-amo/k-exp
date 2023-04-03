@@ -18,12 +18,12 @@ class cmot_tof(EnvExperiment, Base):
         self.p.t_mot_load = 3
 
         self.p.t_cmot0 = 5.e-3
-        self.p.t_cmot = 8.e-3
+        self.p.t_cmot = 7.e-3
         self.p.t_gm = 1.5e-3
 
         self.p.N_shots = 5
         self.p.N_repeats = 3
-        self.p.t_tof = np.linspace(20,800,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.linspace(20,900,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         # rng = np.random.default_rng()
@@ -32,24 +32,24 @@ class cmot_tof(EnvExperiment, Base):
         self.p.N_img = 3 * len(self.p.t_tof)
         
         #attentuation settings
-        self.p.att_d2_r_cmot = 13.5
+        self.p.att_d2_r_cmot = 12.5
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
 
-        self.p.att_d1_c_gm = 9.7
-        self.p.att_d1_r_gm = 11.5
+        self.p.att_d1_c_gm = 5.7
+        self.p.att_d1_r_gm = 8.5
 
         #MOT detunings
         self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
         self.p.f_d2_c_mot = self.dds.d2_3d_c.detuning_to_frequency(-3.3)
 
         #CMOT detunings
-        self.p.f_d2_c_cmot = self.dds.d2_3d_c.detuning_to_frequency(-.9)
         self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
+        self.p.f_d2_c_cmot = self.dds.d2_3d_c.detuning_to_frequency(-.9)
 
-        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(7)
+        self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(6.5)
 
         #GM Detunings
-        gm_f = 7
+        gm_f = 6.5
         self.p.f_d1_c_gm = self.dds.d1_3d_c.detuning_to_frequency(gm_f)
         self.p.f_d1_r_gm = self.dds.d1_3d_r.detuning_to_frequency(gm_f)
 
@@ -103,7 +103,7 @@ class cmot_tof(EnvExperiment, Base):
         delay(-10*us)
         self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
                                 att_dB=self.p.att_d2_r_cmot)
-        self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot)
+        self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot, att_dB=self.p.att_d1_c_gm)
         delay(10*us)
         with parallel:
             self.dds.d2_3d_r.on()
@@ -145,9 +145,9 @@ class cmot_tof(EnvExperiment, Base):
 
         self.cmot0(self.p.t_cmot0 * s)
 
-        self.cmot(self.p.t_cmot * s)
+        #self.cmot(self.p.t_cmot * s)
 
-        #self.gm(self.p.t_gm * s)
+        self.gm(self.p.t_gm * s)
         
         self.kill_cmot()
         
