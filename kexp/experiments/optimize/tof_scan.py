@@ -157,7 +157,7 @@ class tof_scan(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for att in self.p.att:
+        for delta in self.p.mot_detune_MHz:
             for t_tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
                 self.load_mot(self.p.t_mot_load * s)
@@ -165,11 +165,11 @@ class tof_scan(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                self.cmot_d2(self.p.t_cmot0 * s)
+                # self.cmot_d2(self.p.t_cmot0 * s)
 
                 #self.cmot(self.p.t_cmot * s)
 
-                self.gm(self.p.t_gm * s)
+                # self.gm(self.p.t_gm * s)
                 
                 self.kill_cmot()
                 
