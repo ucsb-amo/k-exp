@@ -22,7 +22,7 @@ class DDS():
 
       self._t_rtio_mu = ExptParams().t_rtio_mu
 
-   @portable
+   @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
       '''
       Returns the DDS frequency value in MHz corresponding to detuning =
@@ -57,7 +57,7 @@ class DDS():
 
       return freq
    
-   @kernel
+   @kernel(flags={"fast-math"})
    def set_dds_gamma(self, delta=-1000., att_dB=-0.1):
       '''
       Sets the DDS frequency and attenuation. Uses delta (detuning) in units of
