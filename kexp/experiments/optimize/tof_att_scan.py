@@ -5,7 +5,7 @@ from kexp.analysis.tof import tof
 from kexp.base.base import Base
 import numpy as np
 
-class tof_att_scan(EnvExperiment, Base):
+class tof_scan(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -85,7 +85,7 @@ class tof_att_scan(EnvExperiment, Base):
 
     #compress MOT by changing D2 detunings and raising B field
     @kernel
-    def cmot0(self,t):
+    def cmot_d2(self,t):
         delay(-10*us)
         self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot)
         self.dds.d2_3d_c.set_dds(freq_MHz=self.p.f_d2_c_cmot, att_dB=self.p.att_d1_c_gm)
@@ -99,7 +99,7 @@ class tof_att_scan(EnvExperiment, Base):
     
     #hybrid compressed MOT with only D2 repump and D1 cooler, setting B field to lower value
     @kernel
-    def cmot(self,t):
+    def cmot_d1(self,t):
         delay(-10*us)
         self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
                                 att_dB=self.p.att_d2_r_cmot)
@@ -156,27 +156,28 @@ class tof_att_scan(EnvExperiment, Base):
         delay(self.p.t_grab_start_wait*s)
         
         self.kill_mot(self.p.t_mot_kill * s)
-        
-        for t_tof in self.p.t_tof:
-            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-            self.load_mot(self.p.t_mot_load * s)
 
-            self.dds.push.off()
-            self.switch_d2_2d(0)
+        for att in self.p.att:
+            for t_tof in self.p.t_tof:
+                self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+                self.load_mot(self.p.t_mot_load * s)
 
-            self.cmot0(self.p.t_cmot0 * s)
+                self.dds.push.off()
+                self.switch_d2_2d(0)
 
-            #self.cmot(self.p.t_cmot * s)
+                self.cmot_d2(self.p.t_cmot0 * s)
 
-            self.gm(self.p.t_gm * s)
-            
-            self.kill_cmot()
-            
-            ### abs img
-            delay(t_tof * s)
-            self.abs_image()
+                #self.cmot(self.p.t_cmot * s)
 
-            self.core.break_realtime()
+                self.gm(self.p.t_gm * s)
+                
+                self.kill_cmot()
+                
+                ### abs img
+                delay(t_tof * s)
+                self.abs_image()
+
+                self.core.break_realtime()
 
         # return to mot load state
         self.switch_all_dds(state=1)
