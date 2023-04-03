@@ -22,7 +22,7 @@ class DDS():
 
       self._t_rtio_mu = ExptParams().t_rtio_mu
 
-   @kernel
+   @portable
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
       '''
       Returns the DDS frequency value in MHz corresponding to detuning =
