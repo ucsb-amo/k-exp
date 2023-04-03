@@ -5,7 +5,7 @@ from kexp.analysis.tof import tof
 from kexp.base.base import Base
 import numpy as np
 
-class cmot_tof_att_scan(EnvExperiment, Base):
+class tof_att_scan(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
