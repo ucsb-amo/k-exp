@@ -1,6 +1,6 @@
 import numpy as np
 import os
-import pickle
+import _pickle as pickle
 import glob
 from kexp.analysis.base_analysis import atomdata
 
