@@ -22,7 +22,8 @@ class DDS():
 
       self._t_rtio_mu = ExptParams().t_rtio_mu
 
-   def detuning_to_frequency(self,linewidths_detuned,single_pass=False):
+   @kernel
+   def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
       '''
       Returns the DDS frequency value in MHz corresponding to detuning =
       linewidths_detuned * Gamma from the resonant D1, D2 transitions. Gamma = 2
@@ -41,20 +42,42 @@ class DDS():
       float
          The corresponding AOM frequency setting in MHz.
       '''
+      linewidths_detuned=float(linewidths_detuned)
+
       f_shift_to_resonance_MHz = 461.7 / 2 # half the crossover detuning. Value from T.G. Tiecke.
       linewidth_MHz = 6
       detuning_MHz = linewidths_detuned * linewidth_MHz
-      freq = np.abs( ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2 )
+      freq = ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2
+
+      if freq < 0.:
+         freq = -freq
+
       if single_pass:
          freq = freq * 2
+
       return freq
    
    @kernel
-   def set_dds_gamma(self, linewidths_detuned=-1000., att_dB=-0.1):
-      if linewidths_detuned == -1000.:
+   def set_dds_gamma(self, delta=-1000., att_dB=-0.1):
+      '''
+      Sets the DDS frequency and attenuation. Uses delta (detuning) in units of
+      gamma, the linewidth of the D1 and D2 transition (Gamma = 2 * pi * 6 MHz).
+
+      Parameters:
+      -----------
+      delta: float
+         Detuning in units of linewidth Gamma = 2 * pi * 6 MHz. (default: use
+         stored self.freq_MHz)
+
+      att_dB: float
+         The attenuation in units of dB. (default: stored self.att_dB)
+      '''
+      delta = float(delta)
+
+      if delta == -1000.:
          freq_MHz = self.freq_MHz
       else:
-         freq_MHz = self.detuning_to_frequency(linewidths_detuned=linewidths_detuned)
+         freq_MHz = self.detuning_to_frequency(linewidths_detuned=delta)
          self.freq_MHz = freq_MHz
       
       if att_dB < 0.:
