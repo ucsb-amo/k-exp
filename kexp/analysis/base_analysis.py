@@ -80,7 +80,7 @@ class atomdata():
         dims = np.shape(ndarray)
         frame = np.empty(dims,dtype=float)
         if len(dims) == 1:
-            for i0, fit in np.ndenumerate(ndarray):
+            for (i0,), fit in np.ndenumerate(ndarray):
                 frame[i0] = vars(fit)[attr]
         elif len(dims) == 2:
             for (i0,i1), fit in np.ndenumerate(ndarray):
