@@ -48,6 +48,25 @@ class DDS():
       if single_pass:
          freq = freq * 2
       return freq
+   
+   @kernel
+   def set_dds_gamma(self, linewidths_detuned=-1000., att_dB=-0.1):
+      if linewidths_detuned == -1000.:
+         freq_MHz = self.freq_MHz
+      else:
+         freq_MHz = self.detuning_to_frequency(linewidths_detuned=linewidths_detuned)
+         self.freq_MHz = freq_MHz
+      
+      if att_dB < 0.:
+         att_dB = self.att_dB
+      else:
+         self.att_dB = att_dB
+
+      if self.freq_MHz != 0.:
+         self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
+         self.dds_device.set_att(self.att_dB * dB)
+      else:
+         self.dds_device.sw.off()
 
    @kernel
    def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
