@@ -32,19 +32,26 @@ class tof_scan(EnvExperiment, Base):
         self.p.N_img = 3 * len(self.p.t_tof)
         
         #attentuation settings
-        self.p.att_d2_r_cmot = 12.5
+        self.p.att_d2_c_mot = self.dds.d2_3d_c.att_dB
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
+
+        self.p.att_d2_c_cmot = self.dds.d2_3d_c.att_dB
+        self.p.att_d2_r_cmot = 12.5
 
         self.p.att_d1_c_gm = 5.7
         self.p.att_d1_r_gm = 8.5
 
         #MOT detunings
-        self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
-        self.p.f_d2_c_mot = self.dds.d2_3d_c.detuning_to_frequency(-3.3)
+
+        self.p.mot_detune_gamma = np.linspace(-0.9,-5,8)
+        self.p.mot_detune_relative_gamma = -1.4
+
+        # self.p.f_d2_c_mot = self.dds.d2_3d_c.detuning_to_frequency(-3.3)
+        # self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
 
         #CMOT detunings
-        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
         self.p.f_d2_c_cmot = self.dds.d2_3d_c.detuning_to_frequency(-.9)
+        self.p.f_d2_r_cmot = self.dds.d2_3d_r.detuning_to_frequency(-3.7)
 
         self.p.f_d1_c_cmot = self.dds.d1_3d_c.detuning_to_frequency(6.5)
 
@@ -64,11 +71,12 @@ class tof_scan(EnvExperiment, Base):
         delay(t)
 
     @kernel
-    def load_mot(self,t):
+    def load_mot(self,t,delta):
         delay(-10*us)
-        self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_mot,
+        self.dds.d2_3d_c.set_dds(freq_MHz=delta,
+                                 att_dB=self.p.att_d2_c_mot)
+        self.dds.d2_3d_r.set_dds(freq_MHz=delta + self.p.mot_detune_relative,
                                  att_dB=self.p.att_d2_r_mot)
-        self.dds.d2_3d_c.set_dds(freq_MHz=self.p.f_d2_c_mot)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(1)
@@ -87,8 +95,10 @@ class tof_scan(EnvExperiment, Base):
     @kernel
     def cmot_d2(self,t):
         delay(-10*us)
-        self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot)
-        self.dds.d2_3d_c.set_dds(freq_MHz=self.p.f_d2_c_cmot, att_dB=self.p.att_d1_c_gm)
+        self.dds.d2_3d_c.set_dds(freq_MHz=self.p.f_d2_c_cmot,
+                                att_dB=self.p.att_d1_c_gm)
+        self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
+                                 att_dB=self.p.att_d2_r_cmot)
         delay(10*us)
         with parallel:
             self.switch_d2_3d(1)
@@ -101,9 +111,10 @@ class tof_scan(EnvExperiment, Base):
     @kernel
     def cmot_d1(self,t):
         delay(-10*us)
+        self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot, 
+                                 att_dB=self.p.att_d1_c_gm)
         self.dds.d2_3d_r.set_dds(freq_MHz=self.p.f_d2_r_cmot,
                                 att_dB=self.p.att_d2_r_cmot)
-        self.dds.d1_3d_c.set_dds(freq_MHz=self.p.f_d1_c_cmot, att_dB=self.p.att_d1_c_gm)
         delay(10*us)
         with parallel:
             self.dds.d2_3d_r.on()
@@ -129,7 +140,7 @@ class tof_scan(EnvExperiment, Base):
         delay(t)
 
     @kernel
-    def kill_cmot(self):
+    def kill_trap(self):
         with parallel:
             self.switch_mot_magnet(0)
             self.switch_d2_3d(0)
@@ -160,7 +171,8 @@ class tof_scan(EnvExperiment, Base):
         for delta in self.p.mot_detune_MHz:
             for t_tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-                self.load_mot(self.p.t_mot_load * s)
+
+                self.load_mot(self.p.t_mot_load * s, delta)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
@@ -171,7 +183,7 @@ class tof_scan(EnvExperiment, Base):
 
                 # self.gm(self.p.t_gm * s)
                 
-                self.kill_cmot()
+                self.kill_trap()
                 
                 ### abs img
                 delay(t_tof * s)
