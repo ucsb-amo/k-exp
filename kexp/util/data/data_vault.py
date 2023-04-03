@@ -1,7 +1,7 @@
 import time
 import numpy as np
 import os
-import pickle
+import _pickle as pickle
 import glob
 import copy
 
@@ -29,7 +29,7 @@ class DataSaver():
         self._update_run_id(atomdata)
 
         with open(fpath, 'wb') as f:
-            pickle.dump(atomdata, f)
+            pickle.dump(atomdata, f, protocol=-1)
 
         print("Done saving data!")
 
