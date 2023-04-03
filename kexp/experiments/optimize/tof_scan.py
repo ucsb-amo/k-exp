@@ -1,7 +1,6 @@
 from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential
+from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.analysis.base_analysis import atomdata
-from kexp.analysis.tof import tof
 from kexp.base.base import Base
 import numpy as np
 
@@ -22,14 +21,9 @@ class tof_scan(EnvExperiment, Base):
         self.p.t_gm = 1.5e-3
 
         self.p.N_shots = 5
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
         self.p.t_tof = np.linspace(20,900,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
-
-        # rng = np.random.default_rng()
-        # rng.shuffle(self.p.t_tof)
-
-        self.p.N_img = 3 * len(self.p.t_tof)
         
         #attentuation settings
         self.p.att_d2_c_mot = self.dds.d2_3d_c.att_dB
@@ -43,8 +37,8 @@ class tof_scan(EnvExperiment, Base):
 
         #MOT detunings
 
-        self.p.detune_mot = np.linspace(-0.9,-5,8)
-        self.p.detune_mot_r_relative_c = -1.4
+        self.p.detune_d2_c_mot = np.linspace(-0.9,-5,8)
+        self.p.detune_d2_r_mot_relative_c = -1.4
 
         # self.p.f_d2_c_mot = self.dds.d2_3d_c.detuning_to_frequency(-3.3)
         # self.p.f_d2_r_mot = self.dds.d2_3d_r.detuning_to_frequency(-4.7)
@@ -63,6 +57,8 @@ class tof_scan(EnvExperiment, Base):
         #MOT current settings
         self.p.V_cmot0_current = 1.5
         self.p.V_cmot_current = .4
+
+        self.p.N_img = 3 * len(self.p.t_tof) * len(self.p.detune_d2_c_mot)
     
     @kernel
     def load_2D_mot(self,t):
@@ -75,12 +71,14 @@ class tof_scan(EnvExperiment, Base):
         delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=delta,
                                  att_dB=self.p.att_d2_c_mot)
-        self.dds.d2_3d_r.set_dds_gamma(delta=delta + self.p.detune_mot_r_relative_c,
+        delay_mu(self.p.t_rtio_mu)
+        self.dds.d2_3d_r.set_dds_gamma(delta=delta + self.p.detune_d2_r_mot_relative_c,
                                  att_dB=self.p.att_d2_r_mot)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(1)
             self.switch_d2_3d(1)
+            delay_mu(self.p.t_rtio_mu)
             self.dds.push.on()
         delay(t)
 
@@ -113,6 +111,7 @@ class tof_scan(EnvExperiment, Base):
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_cmot,
                                        att_dB=self.p.att_d1_c_gm)
+        delay_mu(self.p.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_cmot,
                                        att_dB=self.p.att_d2_r_cmot)
         delay(10*us)
@@ -132,6 +131,7 @@ class tof_scan(EnvExperiment, Base):
         delay(-10*us)
         self.dds.d1_3d_r.set_dds_gamma(delta=self.p.f_d1_r_gm, 
                                        att_dB=self.p.att_d1_r_gm)
+        delay_mu(self.p.t_rtio_mu)
         self.dds.d1_3d_c.set_dds_gamma(delta=self.p.f_d1_c_gm, 
                                        att_dB=self.p.att_d1_c_gm)
         delay(10*us)
@@ -170,7 +170,7 @@ class tof_scan(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for delta in self.p.mot_detune_MHz:
+        for delta in self.p.detune_d2_c_mot:
             for t_tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -206,7 +206,7 @@ class tof_scan(EnvExperiment, Base):
 
         self.camera.Close()
         
-        data = atomdata('t_tof',expt=self)
+        data = atomdata(xvarnames=['detune_d2_c_mot','t_tof'],expt=self)
 
         data.save_data()
 
