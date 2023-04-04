@@ -11,6 +11,7 @@ from kexp.base.sub.cooling import cooling
 from kexp.base.sub.image import image
 import numpy as np
 
+from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 
 class Base(devices, cooling, image):
@@ -30,6 +31,8 @@ class Base(devices, cooling, image):
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
         self.xvarnames = []
+
+        self.ds = DataSaver()
 
     @rpc(flags={"async"})
     def StartTriggeredGrab(self, N):
