@@ -12,6 +12,7 @@ class DDS():
       self.freq_MHz = freq_MHz
       self.att_dB = att_dB
       self.aom_order = []
+      self.transition = []
       self.dds_device = []
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
@@ -29,7 +30,7 @@ class DDS():
       linewidths_detuned * Gamma from the resonant D1, D2 transitions. Gamma = 2
       * pi * 6 MHz.
 
-      D1 AOMs give detuning relative to |g> -> |F=2>.
+      D1 AOMs give detuning relative to |g> -> |F'=2>.
       D2 AOMs give detuning relative to |g> -> unresolved D2 peak.
 
       Parameters
@@ -45,9 +46,17 @@ class DDS():
       linewidths_detuned=float(linewidths_detuned)
 
       f_shift_to_resonance_MHz = 461.7 / 2 # half the crossover detuning. Value from T.G. Tiecke.
+      
+      f_D1_shift_from_F1_to_F2 = 55.5
+
       linewidth_MHz = 6
       detuning_MHz = linewidths_detuned * linewidth_MHz
       freq = ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2
+
+      if self.transition == 'D1':
+         freq += f_D1_shift_from_F1_to_F2 / 2
+      if self.transition == 'D2':
+         pass
 
       if freq < 0.:
          freq = -freq

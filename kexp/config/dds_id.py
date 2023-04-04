@@ -33,6 +33,16 @@ class dds_frame():
         self._aom_order[1][2] = -1
         self._aom_order[1][3] = 1
 
+        self._transition = dds_empty_frame()
+        self._transition[0][0] = 'D2'
+        self._transition[0][1] = 'D2'
+        self._transition[0][2] = 'D2'
+        self._transition[0][3] = 'D2'
+        self._transition[1][0] = 'D2'
+        self._transition[1][1] = 'D2'
+        self._transition[1][2] = 'D1'
+        self._transition[1][3] = 'D1'
+
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx)
         self.push = self.dds_assign(0,0)
         self.d2_2d_r = self.dds_assign(0,1)
@@ -54,6 +64,7 @@ class dds_frame():
         '''
         dds0 = self._dds_state[uru][ch]
         dds0.aom_order = self._aom_order[uru][ch]
+        dds0.transition = self._transition[uru][ch]
         return dds0
     
     def dds_list(self):
