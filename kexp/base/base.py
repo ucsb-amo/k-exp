@@ -21,13 +21,15 @@ class Base(devices, cooling, image):
 
         if setup_camera:
             self.camera = BaslerUSB()
-            self.images = []
-            self.image_timestamps = []
+        self.images = []
+        self.image_timestamps = []
 
         self.prepare_devices()
 
         self.run_info = RunInfo(self)
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
+
+        self.xvarnames = []
 
     @rpc(flags={"async"})
     def StartTriggeredGrab(self, N):
