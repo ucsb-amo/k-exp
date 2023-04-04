@@ -125,10 +125,10 @@ class tof(EnvExperiment, Base):
     @kernel
     def gm(self,t):
         delay(-10*us)
-        self.dds.d1_3d_r.set_dds_gamma(delta=self.p.f_d1_r_gm, 
+        self.dds.d1_3d_r.set_dds_gamma(delta=self.p.detune_d1_r_gm, 
                                        att_dB=self.p.att_d1_r_gm)
         delay_mu(self.p.t_rtio_mu)
-        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.f_d1_c_gm, 
+        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_gm, 
                                        att_dB=self.p.att_d1_c_gm)
         delay(10*us)
         with parallel:
@@ -174,11 +174,11 @@ class tof(EnvExperiment, Base):
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-            # self.cmot_d2(self.p.t_d2_cmot * s)
+            self.cmot_d2(self.p.t_d2_cmot * s)
 
-            #self.cmot(self.p.t_hybrid_cmot * s)
+            # self.cmot(self.p.t_hybrid_cmot * s)
 
-            # self.gm(self.p.t_gm * s)
+            self.gm(self.p.t_gm * s)
             
             self.kill_trap()
             
