@@ -20,4 +20,5 @@ class ExptParams():
 
         self.N_shots = 2
         self.N_repeats = 1
+        self.N_img = 1
             
