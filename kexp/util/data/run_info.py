@@ -8,7 +8,7 @@ class RunInfo():
         self.run_datetime = time.localtime(time.time())
         self.filepath = []
         if expt_obj not None:
-            expt_class = expt_obj.__class__.__name__
+            self.expt_class = expt_obj.__class__.__name__
         else:
-            expt_class = "expt"
+            self.expt_class = "expt"
             
