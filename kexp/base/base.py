@@ -12,6 +12,7 @@ from kexp.base.sub.image import image
 import numpy as np
 
 from kexp.util.data.data_vault import DataSaver
+from kexp.util.data.run_info import RunInfo
 
 class Base(devices, cooling, image):
     def __init__(self,setup_camera=True):
@@ -21,17 +22,20 @@ class Base(devices, cooling, image):
 
         if setup_camera:
             self.camera = BaslerUSB()
-            self.images = []
-            self.image_timestamps = []
+        self.images = []
+        self.image_timestamps = []
 
         self.prepare_devices()
 
-        ds = DataSaver()
-        self._rid = ds._get_rid()
-        self._ridstr = " Run ID: "+ str(self._rid)
+        self.run_info = RunInfo(self)
+        self._ridstr = " Run ID: "+ str(self.run_info.run_id)
+
+        self.xvarnames = []
+
+        self.ds = DataSaver()
 
     @rpc(flags={"async"})
-    def StartTriggeredGrab(self, N):
+    def StartTriggeredGrab(self):
         '''
         Start camera waiting for triggers, wait for N images.
 
@@ -40,7 +44,7 @@ class Base(devices, cooling, image):
         N: int
             Number of images to wait for.
         '''
-        Nimg = int(N)
+        Nimg = int(self.params.N_img)
         self.camera.StartGrabbingMax(Nimg, py.GrabStrategy_LatestImages)
         count = 0
         while self.camera.IsGrabbing():
@@ -56,3 +60,22 @@ class Base(devices, cooling, image):
                 break
         self.camera.StopGrabbing()
         self.camera.Close()
+
+    def get_N_img(self):
+        N_img = 1
+        msg = ""
+        
+        for key in self.xvarnames:
+            xvar = vars(self.params)[key]
+            if not isinstance(xvar,list) and not isinstance(xvar,np.ndarray):
+                xvar = [xvar]
+            N_img = N_img * len( vars(self.params)[key] )
+            msg += f" {len(xvar)} values of {key}."
+
+        msg += f" {N_img} total shots."
+
+        N_img = 3 * N_img # 3 shots per value of independent variable (xvar)
+
+        msg += f" {N_img} total images expected."
+        print(msg)
+        self.params.N_img = N_img

@@ -4,6 +4,7 @@ import os
 import _pickle as pickle
 import glob
 import copy
+import h5py
 
 data_dir = os.getenv("data")
 run_id_path = os.path.join(data_dir,"run_id.py")
@@ -12,44 +13,60 @@ class DataSaver():
     def __init__(self):
         pass
 
-    def save_data(self,atomdata):
-        '''
-        Saves data to a pickle. All attributes which start with "_" are ignored.
-        '''
-        print("Saving data...")
+    def save_data(self,expt):
 
-        fpath = self._data_path(atomdata)
-        atomdata.run_info.filepath = fpath
+        fpath = self._data_path(expt.run_info)
+        expt.run_info.filepath = fpath
+        expt.run_info.xvarnames = expt.xvarnames
 
-        attrs = list(vars(atomdata))
-        keys_to_skip = [p for p in attrs if p.startswith("_")]
-        for key in keys_to_skip:
-            delattr(atomdata,key)
+        f = h5py.File(fpath,'w')
+        data = f.create_group('data')
 
-        self._update_run_id(atomdata)
-
-        with open(fpath, 'wb') as f:
-            pickle.dump(atomdata, f, protocol=-1)
-
-        print("Done saving data!")
-
-    def _data_path(self,atomdata):
-
-        run_id_str = f"{str(atomdata.run_info.run_id).zfill(7)}"
-
-        date = atomdata.run_info.run_datetime
-        monthstr = time.strftime("%Y-%m-%d", date)
-        datestring = time.strftime("%Y-%m-%d_%H-%M-%S", date)
+        f.attrs['xvarnames'] = expt.xvarnames
+        data.create_dataset('images',data=expt.images)
+        data.create_dataset('image_timestamps',data=expt.image_timestamps)
         
-        expt_class = atomdata._expt.__class__.__name__
+        # store run info as attrs
+        self._class_attr_to_attr(f,expt.run_info)
+        # also store run info as dataset
+        runinfo_dset = f.create_group('run_info')
+        self._class_attr_to_dataset(runinfo_dset,expt.run_info)
+        params_dset = f.create_group('params')
+        self._class_attr_to_dataset(params_dset,expt.params)
+        
+        f.close()
 
-        filename = run_id_str + "_" + datestring + "_" + expt_class + ".pickle"
-        filepath = os.path.join(data_dir,monthstr,filename)
+        self._update_run_id(expt.run_info)
+
+    def _class_attr_to_dataset(self,dset,obj):
+        try:
+            keys = list(vars(obj))  
+            for key in keys:
+                value = vars(obj)[key]
+                dset.create_dataset(key, data=value)
+        except Exception as e:
+            print(e)
+
+    def _class_attr_to_attr(self,dset,obj):
+        try:
+            keys = list(vars(obj))  
+            for key in keys:
+                value = vars(obj)[key]
+                dset.attrs[key] = value
+        except Exception as e:
+            print(e)
+
+    def _data_path(self,run_info):
+        run_id_str = f"{str(run_info.run_id).zfill(7)}"
+        expt_class = run_info.expt_class
+        datetime_str = run_info.run_datetime_str
+        filename = run_id_str + "_" + datetime_str + "_" + expt_class + ".hdf5"
+        filepath = os.path.join(data_dir,run_info.run_date_str,filename)
         return filepath
 
-    def _update_run_id(self,atomdata):
+    def _update_run_id(self,run_info):
         
-        line = f"{atomdata.run_info.run_id + 1}"
+        line = f"{run_info.run_id + 1}"
         with open(run_id_path,'w') as f:
             f.write(line)
 

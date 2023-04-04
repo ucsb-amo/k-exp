@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.analysis.base_analysis import atomdata
 from kexp.base.base import Base
+
 import numpy as np
 
 class tof(EnvExperiment, Base):
@@ -17,12 +18,12 @@ class tof(EnvExperiment, Base):
         self.p.t_mot_load = 3
 
         self.p.t_d2_cmot = 5.e-3
-        self.p.t_hybrid_cmot = 7.e-3
+        self.p.t_hybrid_cmot = 1.e-3
         self.p.t_gm = 1.5e-3
 
         self.p.N_shots = 5
         self.p.N_repeats = 2
-        self.p.t_tof = np.linspace(500,900,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.linspace(20,900,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         #MOT detunings
@@ -41,17 +42,21 @@ class tof(EnvExperiment, Base):
         self.p.detune_d1_c_cmot = 3.5
 
         #GM Detunings
-        gm_delta = 3.5
+        gm_delta = 1.5
         self.p.detune_d1_c_gm = gm_delta
-        self.p.att_d1_c_gm = self.dds.d1_3d_c.att_dB
+        self.p.att_d1_c_gm = 10.5
+        # self.p.att_d1_c_gm = self.dds.d1_3d_c.att_dB
         self.p.detune_d1_r_gm = gm_delta
-        self.p.att_d1_r_gm = self.dds.d1_3d_r.att_dB
+        self.p.att_d1_r_gm = 10.0
+        # self.p.att_d1_r_gm = self.dds.d1_3d_r.att_dB
 
         #MOT current settings
-        self.p.V_cmot0_current = 1.5
-        self.p.V_cmot_current = .4
+        self.p.V_d2_cmot_current = 1.5
+        self.p.V_cmot_current = .5
 
-        self.p.N_img = 3 * len(self.p.t_tof)
+        self.xvarnames = ['t_tof']
+
+        self.get_N_img()
     
     @kernel
     def load_2D_mot(self,t):
@@ -92,7 +97,7 @@ class tof(EnvExperiment, Base):
         with parallel:
             self.switch_d2_3d(1)
             with sequential:
-                self.zotino.write_dac(self.dac_ch_3Dmot_current_control,self.p.V_cmot0_current)
+                self.zotino.write_dac(self.dac_ch_3Dmot_current_control,self.p.V_d2_cmot_current)
                 self.zotino.load()
         delay(t)
     
@@ -157,7 +162,7 @@ class tof(EnvExperiment, Base):
         
         self.init_kernel()
 
-        self.StartTriggeredGrab(self.p.N_img)
+        self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
         
         self.kill_mot(self.p.t_mot_kill * s)
@@ -172,9 +177,9 @@ class tof(EnvExperiment, Base):
 
             self.cmot_d2(self.p.t_d2_cmot * s)
 
-            # self.cmot(self.p.t_hybrid_cmot * s)
+            # self.cmot_d1(self.p.t_hybrid_cmot * s)
 
-            # self.gm(self.p.t_gm * s)
+            self.gm(self.p.t_gm * s)
             
             self.kill_trap()
             
@@ -196,10 +201,8 @@ class tof(EnvExperiment, Base):
     def analyze(self):
 
         self.camera.Close()
-        
-        data = atomdata(xvarnames='t_tof',expt=self)
 
-        data.save_data()
+        self.ds.save_data(self)
 
         print("Done!")
 

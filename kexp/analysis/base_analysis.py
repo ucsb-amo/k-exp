@@ -17,15 +17,15 @@ class atomdata():
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, xvarnames, expt, crop_type='mot'):
+    def __init__(self, xvarnames, images, image_timestamps,
+                params, run_info, crop_type='mot'):
 
         self._ds = DataSaver()
-        self.run_info = RunInfo()
+        self.run_info = run_info
         
-        self._expt = expt
-        self.images = expt.images
-        self.img_timestamps = expt.image_timestamps
-        self.params = self._expt.params
+        self.images = images
+        self.img_timestamps = image_timestamps
+        self.params = params
 
         self.xvarnames = xvarnames
         self.xvars = self._unpack_xvars()
@@ -63,16 +63,16 @@ class atomdata():
     def _remap_fit_results(self):
         try:
             fits_x = self.cloudfit_x
-            self.fit_sd_x = self._extract_attr(self,fits_x,'sigma')
-            self.fit_center_x = self._extract_attr(self,fits_x,'x_center')
-            self.fit_amp_x = self._extract_attr(self,fits_x,'amplitude')
-            self.fit_offset_x = self._extract_attr(self,fits_x,'y_offset')
+            self.fit_sd_x = self._extract_attr(fits_x,'sigma')
+            self.fit_center_x = self._extract_attr(fits_x,'x_center')
+            self.fit_amp_x = self._extract_attr(fits_x,'amplitude')
+            self.fit_offset_x = self._extract_attr(fits_x,'y_offset')
 
             fits_y = self.cloudfit_y
-            self.fit_sd_y = self._extract_attr(self,fits_y,'sigma')
-            self.fit_center_y = self._extract_attr(self,fits_y,'x_center')
-            self.fit_amp_y = self._extract_attr(self,fits_y,'amplitude')
-            self.fit_offset_y = self._extract_attr(self,fits_y,'y_offset')
+            self.fit_sd_y = self._extract_attr(fits_y,'sigma')
+            self.fit_center_y = self._extract_attr(fits_y,'x_center')
+            self.fit_amp_y = self._extract_attr(fits_y,'amplitude')
+            self.fit_offset_y = self._extract_attr(fits_y,'y_offset')
         except:
             print("Unable to extract fit parameters. The gaussian fit must have failed")
 
@@ -140,7 +140,7 @@ class atomdata():
     
     def _unpack_xvars(self):
         # fetch the arrays for each xvar from parameters
-        if not isinstance(self.xvarnames,list):
+        if not isinstance(self.xvarnames,list) and not isinstance(self.xvarnames,np.ndarray):
             self.xvarnames = [self.xvarnames]
 
         xvarnames = self.xvarnames
