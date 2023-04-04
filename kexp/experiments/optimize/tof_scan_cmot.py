@@ -39,6 +39,7 @@ class tof_scan_cmot(EnvExperiment, Base):
         self.p.att_d2_r_cmot = 12.5
 
         self.p.detune_d1_c_cmot = np.linspace(0.0,4.5,8)
+        self.p.att_d1_c_cmot = self.dds.d1_3d_c.att_dB
 
         #GM Detunings
         # self.p.delta_gm_r = np.linspace(0.0,4.5,8)
@@ -103,7 +104,7 @@ class tof_scan_cmot(EnvExperiment, Base):
     def cmot_d1(self,t,delta):
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=delta,
-                                       att_dB=self.p.att_d1_c_gm)
+                                       att_dB=self.p.att_d1_c_cmot)
         delay_mu(self.p.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_cmot,
                                        att_dB=self.p.att_d2_r_cmot)
