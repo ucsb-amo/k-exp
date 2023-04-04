@@ -16,8 +16,8 @@ class tof_scan(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
 
-        self.p.t_cmot0 = 5.e-3
-        self.p.t_cmot = 7.e-3
+        self.p.t_d2_cmot = 5.e-3
+        self.p.t_hybrid_cmot = 7.e-3
         self.p.t_gm = 1.5e-3
 
         self.p.N_shots = 5
@@ -27,10 +27,9 @@ class tof_scan(EnvExperiment, Base):
 
         #MOT detunings
 
-        self.p.detune_d2_c_mot = np.linspace(-0.9,-5,8)
+        self.p.detune_d2_c_mot = -3.3
         self.p.att_d2_c_mot = self.dds.d2_3d_c.att_dB
-        # self.p.detune_d2_r_mot = -4.7
-        self.p.detune_d2_r_mot_relative_c = -1.4
+        self.p.detune_d2_r_mot = -4.7
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
 
         #CMOT detunings
@@ -42,17 +41,19 @@ class tof_scan(EnvExperiment, Base):
         self.p.detune_d1_c_cmot = 3.5
 
         #GM Detunings
-        gm_delta = 3.5
-        self.p.detune_d1_c_gm = gm_delta
+        self.p.delta_gm = np.linspace(0.0,4.5,8)
+        self.p.detune_d1_c_gm = self.p.delta_gm
         self.p.att_d1_c_gm = self.dds.d1_3d_c.att_dB
-        self.p.detune_d1_r_gm = gm_delta
+        self.p.detune_d1_r_gm = self.p.delta_gm
         self.p.att_d1_r_gm = self.dds.d1_3d_r.att_dB
 
         #MOT current settings
         self.p.V_cmot0_current = 1.5
         self.p.V_cmot_current = .4
 
-        self.p.N_img = 3 * len(self.p.t_tof) * len(self.p.detune_d2_c_mot)
+        self.xvarnames = ['delta_gm','t_tof']
+
+        self.get_N_img()
     
     @kernel
     def load_2D_mot(self,t):
@@ -61,12 +62,12 @@ class tof_scan(EnvExperiment, Base):
         delay(t)
 
     @kernel
-    def load_mot(self,t,delta):
+    def load_mot(self,t):
         delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=delta,
+        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_mot,
                                  att_dB=self.p.att_d2_c_mot)
         delay_mu(self.p.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=delta + self.p.detune_d2_r_mot_relative_c,
+        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_mot,
                                  att_dB=self.p.att_d2_r_mot)
         delay(10*us)
         with parallel:
@@ -119,12 +120,12 @@ class tof_scan(EnvExperiment, Base):
 
     #GM with only D1, turning B field off
     @kernel
-    def gm(self,t):
+    def gm(self,t,delta):
         delay(-10*us)
-        self.dds.d1_3d_r.set_dds_gamma(delta=self.p.f_d1_r_gm, 
+        self.dds.d1_3d_r.set_dds_gamma(delta=delta, 
                                        att_dB=self.p.att_d1_r_gm)
         delay_mu(self.p.t_rtio_mu)
-        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.f_d1_c_gm, 
+        self.dds.d1_3d_c.set_dds_gamma(delta=delta, 
                                        att_dB=self.p.att_d1_c_gm)
         delay(10*us)
         with parallel:
@@ -157,25 +158,25 @@ class tof_scan(EnvExperiment, Base):
         
         self.init_kernel()
 
-        self.StartTriggeredGrab(self.p.N_img)
+        self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait * s)
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for delta in self.p.detune_d2_c_mot:
+        for delta in self.p.delta_gm:
             for t_tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.load_mot(self.p.t_mot_load * s, delta)
+                self.load_mot(self.p.t_mot_load * s)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                # self.cmot_d2(self.p.t_cmot0 * s)
+                self.cmot_d2(self.p.t_d2_cmot * s)
 
-                # self.cmot(self.p.t_cmot * s)
+                # self.cmot(self.p.t_hybrid_cmot * s)
 
-                # self.gm(self.p.t_gm * s)
+                self.gm(self.p.t_gm * s, delta)
                 
                 self.kill_trap()
                 
@@ -198,9 +199,7 @@ class tof_scan(EnvExperiment, Base):
 
         self.camera.Close()
         
-        data = atomdata(xvarnames=['detune_d2_c_mot','t_tof'],expt=self)
-
-        data.save_data()
+        self.ds.save_data(self)
 
         print("Done!")
 

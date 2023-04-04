@@ -42,12 +42,12 @@ class tof(EnvExperiment, Base):
         self.p.detune_d1_c_cmot = 3.5
 
         #GM Detunings
-        gm_delta = 1.5
+        gm_delta = 3.5
         self.p.detune_d1_c_gm = gm_delta
-        self.p.att_d1_c_gm = 10.5
+        self.p.att_d1_c_gm = 11.5
         # self.p.att_d1_c_gm = self.dds.d1_3d_c.att_dB
         self.p.detune_d1_r_gm = gm_delta
-        self.p.att_d1_r_gm = 10.0
+        self.p.att_d1_r_gm = 11.0
         # self.p.att_d1_r_gm = self.dds.d1_3d_r.att_dB
 
         #MOT current settings
