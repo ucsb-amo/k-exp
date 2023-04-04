@@ -158,7 +158,7 @@ class tof_scan(EnvExperiment, Base):
         self.init_kernel()
 
         self.StartTriggeredGrab(self.p.N_img)
-        delay(self.p.t_grab_start_wait*s)
+        delay(self.p.t_grab_start_wait * s)
         
         self.kill_mot(self.p.t_mot_kill * s)
 
@@ -173,7 +173,7 @@ class tof_scan(EnvExperiment, Base):
 
                 # self.cmot_d2(self.p.t_cmot0 * s)
 
-                #self.cmot(self.p.t_cmot * s)
+                # self.cmot(self.p.t_cmot * s)
 
                 # self.gm(self.p.t_gm * s)
                 
