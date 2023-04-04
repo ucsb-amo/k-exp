@@ -93,10 +93,8 @@ class tof_scan(EnvExperiment, Base):
     @kernel
     def cmot_d2(self,t):
         delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_cmot,
-                                       att_dB=self.p.att_d1_c_gm)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_cmot,
-                                       att_dB=self.p.att_d2_r_cmot)
+        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_cmot)
+        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_cmot)
         delay(10*us)
         with parallel:
             self.switch_d2_3d(1)
