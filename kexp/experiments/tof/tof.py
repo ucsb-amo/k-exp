@@ -200,7 +200,7 @@ class tof(EnvExperiment, Base):
 
         self.camera.Close()
 
-        self.ds.save_data_hdf5(self)
+        self.ds.save_data(self)
 
         print("Done!")
 
