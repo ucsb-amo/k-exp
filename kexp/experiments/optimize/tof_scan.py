@@ -22,7 +22,7 @@ class tof_scan(EnvExperiment, Base):
 
         self.p.N_shots = 5
         self.p.N_repeats = 1
-        self.p.t_tof = np.linspace(20,900,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         #MOT detunings
@@ -41,17 +41,17 @@ class tof_scan(EnvExperiment, Base):
         self.p.detune_d1_c_cmot = 3.5
 
         #GM Detunings
-        self.p.delta_gm = np.linspace(0.0,4.5,8)
-        self.p.detune_d1_c_gm = self.p.delta_gm
+        # self.p.delta_gm_r = np.linspace(0.0,4.5,8)
+        self.p.detune_d1_c_gm = 1.29
         self.p.att_d1_c_gm = self.dds.d1_3d_c.att_dB
-        self.p.detune_d1_r_gm = self.p.delta_gm
+        self.p.detune_d1_r_gm = np.linspace(0.0,4.5,8)
         self.p.att_d1_r_gm = self.dds.d1_3d_r.att_dB
 
         #MOT current settings
         self.p.V_cmot0_current = 1.5
         self.p.V_cmot_current = .4
 
-        self.xvarnames = ['delta_gm','t_tof']
+        self.xvarnames = ['detune_d1_r_gm','t_tof']
 
         self.get_N_img()
     
@@ -122,11 +122,11 @@ class tof_scan(EnvExperiment, Base):
     @kernel
     def gm(self,t,delta):
         delay(-10*us)
+        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_gm, 
+                                       att_dB=self.p.att_d1_c_gm)
+        delay_mu(self.p.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=delta, 
                                        att_dB=self.p.att_d1_r_gm)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d1_3d_c.set_dds_gamma(delta=delta, 
-                                       att_dB=self.p.att_d1_c_gm)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(0)
@@ -163,7 +163,7 @@ class tof_scan(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for delta in self.p.delta_gm:
+        for delta in self.p.detune_d1_r_gm:
             for t_tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
