@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.analysis.base_analysis import atomdata
 from kexp.base.base import Base
+
 import numpy as np
 
 class tof(EnvExperiment, Base):
@@ -52,6 +53,8 @@ class tof(EnvExperiment, Base):
         self.p.V_cmot_current = .4
 
         self.p.N_img = 3 * len(self.p.t_tof)
+
+        self.xvarnames = ['t_tof']
     
     @kernel
     def load_2D_mot(self,t):
@@ -196,10 +199,8 @@ class tof(EnvExperiment, Base):
     def analyze(self):
 
         self.camera.Close()
-        
-        data = atomdata(xvarnames='t_tof',expt=self)
 
-        data.save_data()
+        self._ds.save_data_hdf5(self)
 
         print("Done!")
 
