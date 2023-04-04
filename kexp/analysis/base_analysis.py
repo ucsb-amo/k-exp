@@ -61,20 +61,20 @@ class atomdata():
         self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
 
     def _remap_fit_results(self):
-        # try:
-        fits_x = self.cloudfit_x
-        self.fit_sd_x = self._extract_attr(fits_x,'sigma')
-        self.fit_center_x = self._extract_attr(fits_x,'x_center')
-        self.fit_amp_x = self._extract_attr(fits_x,'amplitude')
-        self.fit_offset_x = self._extract_attr(fits_x,'y_offset')
+        try:
+            fits_x = self.cloudfit_x
+            self.fit_sd_x = self._extract_attr(fits_x,'sigma')
+            self.fit_center_x = self._extract_attr(fits_x,'x_center')
+            self.fit_amp_x = self._extract_attr(fits_x,'amplitude')
+            self.fit_offset_x = self._extract_attr(fits_x,'y_offset')
 
-        fits_y = self.cloudfit_y
-        self.fit_sd_y = self._extract_attr(fits_y,'sigma')
-        self.fit_center_y = self._extract_attr(fits_y,'x_center')
-        self.fit_amp_y = self._extract_attr(fits_y,'amplitude')
-        self.fit_offset_y = self._extract_attr(fits_y,'y_offset')
-        # except:
-        #     print("Unable to extract fit parameters. The gaussian fit must have failed")
+            fits_y = self.cloudfit_y
+            self.fit_sd_y = self._extract_attr(fits_y,'sigma')
+            self.fit_center_y = self._extract_attr(fits_y,'x_center')
+            self.fit_amp_y = self._extract_attr(fits_y,'amplitude')
+            self.fit_offset_y = self._extract_attr(fits_y,'y_offset')
+        except:
+            print("Unable to extract fit parameters. The gaussian fit must have failed")
 
     def _extract_attr(self,ndarray,attr):
         dims = np.shape(ndarray)
