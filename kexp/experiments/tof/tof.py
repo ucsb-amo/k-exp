@@ -20,14 +20,10 @@ class tof(EnvExperiment, Base):
         self.p.t_hybrid_cmot = 7.e-3
         self.p.t_gm = 1.5e-3
 
-        self.p.N_shots = 6
-        self.p.N_repeats = 3
-        self.p.t_tof = np.linspace(20,900,self.p.N_shots) * 1.e-6
+        self.p.N_shots = 5
+        self.p.N_repeats = 2
+        self.p.t_tof = np.linspace(500,900,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
-        
-        #attentuation settings
-        
-        
 
         #MOT detunings
 
@@ -178,7 +174,7 @@ class tof(EnvExperiment, Base):
 
             # self.cmot(self.p.t_hybrid_cmot * s)
 
-            self.gm(self.p.t_gm * s)
+            # self.gm(self.p.t_gm * s)
             
             self.kill_trap()
             
