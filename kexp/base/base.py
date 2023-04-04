@@ -35,7 +35,7 @@ class Base(devices, cooling, image):
         self.ds = DataSaver()
 
     @rpc(flags={"async"})
-    def StartTriggeredGrab(self, N):
+    def StartTriggeredGrab(self):
         '''
         Start camera waiting for triggers, wait for N images.
 
@@ -44,7 +44,7 @@ class Base(devices, cooling, image):
         N: int
             Number of images to wait for.
         '''
-        Nimg = int(N)
+        Nimg = int(self.params.N_img)
         self.camera.StartGrabbingMax(Nimg, py.GrabStrategy_LatestImages)
         count = 0
         while self.camera.IsGrabbing():
@@ -60,3 +60,22 @@ class Base(devices, cooling, image):
                 break
         self.camera.StopGrabbing()
         self.camera.Close()
+
+    def get_N_img(self):
+        N_img = 1
+        msg = ""
+        
+        for key in self.xvarnames:
+            xvar = vars(self.params)[key]
+            if not isinstance(xvar,list) and not isinstance(xvar,np.ndarray):
+                xvar = [xvar]
+            N_img = N_img * len( vars(self.params)[key] )
+            msg += f" {len(xvar)} values of {key}."
+
+        msg += f" {N_img} total shots."
+
+        N_img = 3 * N_img # 3 shots per value of independent variable (xvar)
+
+        msg += f" {N_img} total images expected."
+        print(msg)
+        self.params.N_img = N_img
