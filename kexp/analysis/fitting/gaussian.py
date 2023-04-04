@@ -66,6 +66,7 @@ class GaussianTemperatureFit(Fit):
         return c.kB * T / c.m_K * t_squared + sigma0_squared
 
     def _fit(self, x, y):
-        sigma0_guess = self.ydata[np.argmin(self.xdata)]
+        # sigma0_guess = self.ydata[np.argmin(self.xdata)]
+        sigma0_guess = 500
         popt, pcov = curve_fit(self._fit_func, x, y, p0=[0.001,sigma0_guess**2], bounds=((0,0),(1,np.inf)))
         return popt
