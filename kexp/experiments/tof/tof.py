@@ -52,9 +52,9 @@ class tof(EnvExperiment, Base):
         self.p.V_cmot0_current = 1.5
         self.p.V_cmot_current = .4
 
-        self.p.N_img = 3 * len(self.p.t_tof)
-
         self.xvarnames = ['t_tof']
+
+        self.get_N_img()
     
     @kernel
     def load_2D_mot(self,t):
@@ -160,7 +160,7 @@ class tof(EnvExperiment, Base):
         
         self.init_kernel()
 
-        self.StartTriggeredGrab(self.p.N_img)
+        self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
         
         self.kill_mot(self.p.t_mot_kill * s)
