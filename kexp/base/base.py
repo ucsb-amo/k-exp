@@ -11,7 +11,7 @@ from kexp.base.sub.cooling import cooling
 from kexp.base.sub.image import image
 import numpy as np
 
-from kexp.util.data.data_vault import DataSaver
+from kexp.util.data.run_info import RunInfo
 
 class Base(devices, cooling, image):
     def __init__(self,setup_camera=True):
@@ -26,9 +26,8 @@ class Base(devices, cooling, image):
 
         self.prepare_devices()
 
-        ds = DataSaver()
-        self._rid = ds._get_rid()
-        self._ridstr = " Run ID: "+ str(self._rid)
+        self.run_info = RunInfo(self)
+        self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
     @rpc(flags={"async"})
     def StartTriggeredGrab(self, N):
