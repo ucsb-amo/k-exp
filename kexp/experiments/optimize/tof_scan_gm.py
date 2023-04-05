@@ -4,7 +4,7 @@ from kexp.analysis.base_analysis import atomdata
 from kexp.base.base import Base
 import numpy as np
 
-class tof_scan(EnvExperiment, Base):
+class tof_scan_gm(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)

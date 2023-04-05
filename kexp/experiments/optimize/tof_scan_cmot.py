@@ -22,7 +22,7 @@ class tof_scan_cmot(EnvExperiment, Base):
 
         self.p.N_shots = 5
         self.p.N_repeats = 1
-        self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.linspace(2000,4000,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         #MOT detunings
@@ -36,9 +36,10 @@ class tof_scan_cmot(EnvExperiment, Base):
         self.p.detune_d2_c_cmot = -.9
         self.p.att_d2_c_cmot = self.dds.d2_3d_c.att_dB
         self.p.detune_d2_r_cmot = -3.7
+        self.p.detune_d2_r_d1cmot = np.linspace(-4.0,-6.0,8)
         self.p.att_d2_r_cmot = 12.5
 
-        self.p.detune_d1_c_cmot = np.linspace(0.0,4.5,8)
+        self.p.detune_d1_c_cmot = 1.29
         self.p.att_d1_c_cmot = self.dds.d1_3d_c.att_dB
 
         #GM Detunings
@@ -52,7 +53,7 @@ class tof_scan_cmot(EnvExperiment, Base):
         self.p.V_cmot0_current = 1.5
         self.p.V_cmot_current = .4
 
-        self.xvarnames = ['detune_d1_c_cmot','t_tof']
+        self.xvarnames = ['detune_d2_r_d1cmot','t_tof']
 
         self.get_N_img()
     
@@ -103,10 +104,10 @@ class tof_scan_cmot(EnvExperiment, Base):
     @kernel
     def cmot_d1(self,t,delta):
         delay(-10*us)
-        self.dds.d1_3d_c.set_dds_gamma(delta=delta,
+        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_cmot,
                                        att_dB=self.p.att_d1_c_cmot)
         delay_mu(self.p.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_cmot,
+        self.dds.d2_3d_r.set_dds_gamma(delta=delta,
                                        att_dB=self.p.att_d2_r_cmot)
         delay(10*us)
         with parallel:
@@ -164,7 +165,7 @@ class tof_scan_cmot(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for delta in self.p.detune_d1_c_cmot:
+        for delta in self.p.detune_d2_r_d1cmot:
             for t_tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
