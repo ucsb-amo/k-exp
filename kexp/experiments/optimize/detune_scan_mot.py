@@ -24,36 +24,16 @@ class detune_scan_mot(EnvExperiment, Base):
         self.p.N_repeats = 1
 
         self.p.t_tof = 500.e-6
-        # self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         #MOT detunings
 
         # self.p.detune_d2_c_mot = -3.3
-        # self.p.att_d2_c_mot = self.dds.d2_3d_c.att_dB
         # self.p.detune_d2_r_mot = -4.7
-        # self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
 
         self.p.detune_d2_c_mot = np.linspace(0,-6,self.p.N_shots)
         self.p.att_d2_c_mot = self.dds.d2_3d_c.att_dB
         self.p.detune_d2_r_mot = np.linspace(0,-6,self.p.N_shots)
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
-
-        #CMOT detunings
-        # self.p.detune_d2_c_cmot = -.9
-        # self.p.att_d2_c_cmot = self.dds.d2_3d_c.att_dB
-        # self.p.detune_d2_r_cmot = -3.7
-        # self.p.detune_d2_r_d1cmot = np.linspace(-4.0,-6.0,8)
-        # self.p.att_d2_r_cmot = 12.5
-
-        # self.p.detune_d1_c_cmot = 1.29
-        # self.p.att_d1_c_cmot = self.dds.d1_3d_c.att_dB
-
-        #GM Detunings
-        # self.p.delta_gm_r = np.linspace(0.0,4.5,8)
-        # self.p.detune_d1_c_gm = 1.29
-        # self.p.att_d1_c_gm = self.dds.d1_3d_c.att_dB
-        # self.p.detune_d1_r_gm = np.linspace(0.0,4.5,8)
-        # self.p.att_d1_r_gm = self.dds.d1_3d_r.att_dB
 
         #MOT current settings
         self.p.V_cmot0_current = 1.5
