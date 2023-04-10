@@ -35,28 +35,16 @@ class detune_scan_mot(EnvExperiment, Base):
         self.p.detune_d2_r_mot = np.linspace(0,-6,self.p.N_shots)
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
 
-        #MOT current settings
-        self.p.V_cmot0_current = 1.5
-        self.p.V_cmot_current = .4
-
         self.xvarnames = ['detune_d2_c_mot','detune_d2_r_mot']
 
         self.get_N_img()
-    
-    @kernel
-    def load_2D_mot(self,t):
-        with parallel:
-            self.switch_d2_2d(1)
-        delay(t)
 
     @kernel
     def load_mot(self,t,delta_c,delta_r):
         delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=delta_c,
-                                 att_dB=self.p.att_d2_c_mot)
+        self.dds.d2_3d_c.set_dds_gamma(delta=delta_c, att_dB=self.p.att_d2_c_mot)
         delay_mu(self.p.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=delta_r,
-                                 att_dB=self.p.att_d2_r_mot)
+        self.dds.d2_3d_r.set_dds_gamma(delta=delta_r, att_dB=self.p.att_d2_r_mot)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(1)
@@ -64,32 +52,6 @@ class detune_scan_mot(EnvExperiment, Base):
             delay_mu(self.p.t_rtio_mu)
             self.dds.push.on()
         delay(t)
-
-    @kernel
-    def kill_mot(self,t):
-        with parallel:
-            self.dds.push.off()
-            self.switch_d2_3d(0)
-        delay(t)
-
-    @kernel
-    def kill_trap(self):
-        with parallel:
-            self.switch_mot_magnet(0)
-            self.switch_d2_3d(0)
-            self.switch_d1_3d(0)
-
-    @kernel
-    def abs_image(self):
-        self.trigger_camera()
-        self.pulse_imaging_light(self.p.t_imaging_pulse * s)
-
-        delay(self.p.t_light_only_image_delay * s)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.p.t_imaging_pulse * s)
-
-        delay(self.p.t_dark_image_delay * s)
-        self.trigger_camera()
 
     @kernel
     def run(self):
@@ -110,7 +72,7 @@ class detune_scan_mot(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
                 
-                self.kill_trap()
+                self.release()
                 
                 ### abs img
                 delay(self.p.t_tof * s)
