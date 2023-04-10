@@ -26,3 +26,16 @@ class image():
         t_adv = self.params.t_pretrigger - self.params.t_camera_trigger
         delay(t_adv * s)
 
+    @kernel
+    def abs_image(self):
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+
+        delay(self.params.t_light_only_image_delay * s)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+
+        self.dds.imaging.off()
+        delay(self.params.t_dark_image_delay * s)
+        self.trigger_camera()
+

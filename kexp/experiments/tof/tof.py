@@ -57,109 +57,6 @@ class tof(EnvExperiment, Base):
         self.xvarnames = ['t_tof']
 
         self.get_N_img()
-    
-    @kernel
-    def mot_2d(self,t):
-        with parallel:
-            self.switch_d2_2d(1)
-        delay(t)
-
-    @kernel
-    def mot(self,t):
-        delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_mot,
-                                 att_dB=self.p.att_d2_c_mot)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_mot,
-                                 att_dB=self.p.att_d2_r_mot)
-        delay(10*us)
-        with parallel:
-            self.switch_mot_magnet(1)
-            self.switch_d2_3d(1)
-            delay_mu(self.p.t_rtio_mu)
-            self.dds.push.on()
-        delay(t)
-
-    @kernel
-    def kill_mot(self,t):
-        with parallel:
-            self.dds.push.off()
-            self.switch_d2_3d(0)
-        delay(t)
-
-    #compress MOT by changing D2 detunings and raising B field
-    @kernel
-    def cmot_d2(self,t):
-        delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_d2cmot,
-                                       att_dB=self.p.att_d2_c_d2cmot)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d2cmot,
-                                       att_dB=self.p.att_d2_r_d2cmot)
-        delay(10*us)
-        with parallel:
-            self.switch_d2_3d(1)
-            with sequential:
-                self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
-                                      self.p.V_d2cmot_current)
-                self.zotino.load()
-        delay(t)
-    
-    #hybrid compressed MOT with only D2 repump and D1 cooler, setting B field to lower value
-    @kernel
-    def cmot_d1(self,t):
-        delay(-10*us)
-        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_d1cmot,
-                                       att_dB=self.p.att_d2_r_d1cmot)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d1cmot,
-                                       att_dB=self.p.att_d2_r_d1cmot)
-        delay(10*us)
-        with parallel:
-            self.dds.d2_3d_r.on()
-            self.dds.d1_3d_c.on()
-            self.dds.d2_3d_c.off()
-            self.dds.d1_3d_r.off()
-            with sequential:
-                self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
-                                      self.p.V_d1cmot_current)
-                self.zotino.load()
-        delay(t)
-
-    #GM with only D1, turning B field off
-    @kernel
-    def gm(self,t):
-        delay(-10*us)
-        self.dds.d1_3d_r.set_dds_gamma(delta=self.p.detune_d1_r_gm, 
-                                       att_dB=self.p.att_d1_r_gm)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_gm, 
-                                       att_dB=self.p.att_d1_c_gm)
-        delay(10*us)
-        with parallel:
-            self.switch_mot_magnet(0)
-            self.switch_d1_3d(1)
-            self.switch_d2_3d(0)
-        delay(t)
-
-    @kernel
-    def kill_trap(self):
-        with parallel:
-            self.switch_mot_magnet(0)
-            self.switch_d2_3d(0)
-            self.switch_d1_3d(0)
-
-    @kernel
-    def abs_image(self):
-        self.trigger_camera()
-        self.pulse_imaging_light(self.p.t_imaging_pulse * s)
-
-        delay(self.p.t_light_only_image_delay * s)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.p.t_imaging_pulse * s)
-
-        self.dds.imaging.off()
-        delay(self.p.t_dark_image_delay * s)
-        self.trigger_camera()
 
     @kernel
     def run(self):
@@ -185,7 +82,7 @@ class tof(EnvExperiment, Base):
 
             self.gm(self.p.t_gm * s)
             
-            self.kill_trap()
+            self.release()
             
             ### abs img
             delay(t_tof * s)
