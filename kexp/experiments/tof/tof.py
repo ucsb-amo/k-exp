@@ -195,13 +195,6 @@ class tof(EnvExperiment, Base):
 
         # return to mot load state
         self.switch_all_dds(state=1)
-
-        self.dds.d1_3d_c.off()
-        self.dds.d1_3d_r.off()
-        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_mot,
-                                        att_dB=self.p.att_d2_c_mot)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_mot,
-                                        att_dB=self.p.att_d2_r_mot)
         self.dds.imaging.off()
 
         self.core.break_realtime()
