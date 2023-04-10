@@ -20,9 +20,9 @@ class att_scan_gm(EnvExperiment, Base):
         self.p.t_d1cmot = 7.e-3
         self.p.t_gm = 2e-3
 
-        self.p.N_shots = 10
+        self.p.N_shots = 8
         # self.p.N_repeats = 1
-        self.p.t_tof = 3000.e-6
+        self.p.t_tof = 2000.e-6
 
         #MOT detunings
         self.p.detune_d2_c_mot = -3.3
@@ -43,7 +43,7 @@ class att_scan_gm(EnvExperiment, Base):
         self.p.att_d2_r_d1cmot = self.p.att_d2_r_d2cmot
         
         #GM Detunings
-        self.p.detune_d1_c_gm = 1.29
+        self.p.detune_d1_c_gm = 3.21
         self.p.att_d1_c_gm = np.linspace(11,26,self.p.N_shots)
         self.p.detune_d1_r_gm = 3.21
         self.p.att_d1_r_gm = np.linspace(5,30,self.p.N_shots)
@@ -89,8 +89,10 @@ class att_scan_gm(EnvExperiment, Base):
     @kernel
     def cmot_d2(self,t):
         delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_d2cmot)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d2cmot)
+        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_d2cmot,
+                                       att_dB=self.p.att_d2_c_d2cmot)
+        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d2cmot,
+                                       att_dB=self.p.att_d2_r_d2cmot)
         delay(10*us)
         with parallel:
             self.switch_d2_3d(1)
@@ -105,7 +107,7 @@ class att_scan_gm(EnvExperiment, Base):
     def cmot_d1(self,t):
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_d1cmot,
-                                       att_dB=self.p.att_d1_c_gm)
+                                       att_dB=self.p.att_d1_c_d1cmot)
         delay_mu(self.p.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d1cmot,
                                        att_dB=self.p.att_d2_r_d1cmot)
