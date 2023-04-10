@@ -56,10 +56,14 @@ class GaussianTemperatureFit(Fit):
         self._xdata_sq = (self.xdata * self._mult)**2
         self._ydata_sq = (self.ydata * self._mult)**2
 
-        T, sigma0_squared = self._fit(self._xdata_sq,self._ydata_sq)
+        fit_params, cov = self._fit(self._xdata_sq,self._ydata_sq)
+        T, sigma0_squared = fit_params
+        err = np.sqrt(np.diag(cov))
+        err_T, _ = err
         self.T = T
+        self.err_T = err_T
         self.sigma0 = np.sqrt(sigma0_squared) / self._mult
-        
+
         self.y_fitdata = np.sqrt( self._fit_func(self._xdata_sq,T,sigma0_squared) ) / self._mult
 
     def _fit_func(self, t_squared, T, sigma0_squared):
@@ -69,4 +73,4 @@ class GaussianTemperatureFit(Fit):
         # sigma0_guess = self.ydata[np.argmin(self.xdata)]
         sigma0_guess = 500
         popt, pcov = curve_fit(self._fit_func, x, y, p0=[0.001,sigma0_guess**2], bounds=((0,0),(1,np.inf)))
-        return popt
+        return popt, pcov
