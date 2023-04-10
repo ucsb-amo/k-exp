@@ -2,10 +2,9 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.analysis.base_analysis import atomdata
 from kexp.base.base import Base
-
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class att_scan_gm(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -19,42 +18,41 @@ class tof(EnvExperiment, Base):
 
         self.p.t_d2_cmot = 5.e-3
         self.p.t_hybrid_cmot = 7.e-3
-        self.p.t_gm = 7.e-3
+        self.p.t_gm = 1.5e-3
 
-        self.p.N_shots = 5
-        self.p.N_repeats = 3
-        self.p.t_tof = np.linspace(2000,4000,self.p.N_shots) * 1.e-6
-        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
+        self.p.N_shots = 2
+        # self.p.N_repeats = 1
+        self.p.t_tof = 3000.e-6
 
         #MOT detunings
-
         self.p.detune_d2_c_mot = -3.3
         self.p.att_d2_c_mot = self.dds.d2_3d_c.att_dB
         self.p.detune_d2_r_mot = -4.7
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
 
-        #CMOT detunings
-        self.p.detune_d2_c_cmot = -.9
-        self.p.att_d2_c_cmot = self.dds.d2_3d_c.att_dB
-        self.p.detune_d2_r_cmot = -3.7
-        self.p.att_d2_r_cmot = 12.5
+        #D2 CMOT detunings
+        self.p.detune_d2_c_d2cmot = -.9
+        self.p.att_d2_c_d2cmot = self.dds.d2_3d_c.att_dB
+        self.p.detune_d2_r_d2cmot = -3.7
+        self.p.att_d2_r_d2cmot = 12.5
 
+        #D1 CMOT detunings
         self.p.detune_d1_c_d1cmot = 1.29
         self.p.att_d1_c_d1cmot = 11.5
         self.p.detune_d2_r_d1cmot = -3.7
         self.p.att_d2_r_d1cmot = self.p.att_d2_r_d2cmot
-
+        
         #GM Detunings
         self.p.detune_d1_c_gm = 1.29
-        self.p.att_d1_c_gm = 11.5
+        self.p.att_d1_c_gm = np.linspace(11,26,self.p.N_shots)
         self.p.detune_d1_r_gm = 3.21
-        self.p.att_d1_r_gm = 11.0
+        self.p.att_d1_r_gm = np.linspace(5,30,self.p.N_shots)
 
         #MOT current settings
         self.p.V_d2cmot_current = 1.5
-        self.p.V_d1cmot_current = .5
+        self.p.V_d1cmot_current = .4
 
-        self.xvarnames = ['t_tof']
+        self.xvarnames = ['att_d1_c_gm','att_d1_r_gm']
 
         self.get_N_img()
     
@@ -107,7 +105,7 @@ class tof(EnvExperiment, Base):
     def cmot_d1(self,t):
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_d1cmot,
-                                       att_dB=self.p.att_d2_r_d1cmot)
+                                       att_dB=self.p.att_d1_c_gm)
         delay_mu(self.p.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d1cmot,
                                        att_dB=self.p.att_d2_r_d1cmot)
@@ -125,13 +123,13 @@ class tof(EnvExperiment, Base):
 
     #GM with only D1, turning B field off
     @kernel
-    def gm(self,t):
+    def gm(self,t,att_c,att_r):
         delay(-10*us)
-        self.dds.d1_3d_r.set_dds_gamma(delta=self.p.detune_d1_r_gm, 
-                                       att_dB=self.p.att_d1_r_gm)
-        delay_mu(self.p.t_rtio_mu)
         self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_gm, 
-                                       att_dB=self.p.att_d1_c_gm)
+                                       att_dB=att_c)
+        delay_mu(self.p.t_rtio_mu)
+        self.dds.d1_3d_r.set_dds_gamma(delta=self.p.detune_d1_r_gm, 
+                                       att_dB=att_r)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(0)
@@ -164,35 +162,35 @@ class tof(EnvExperiment, Base):
         self.init_kernel()
 
         self.StartTriggeredGrab()
-        delay(self.p.t_grab_start_wait*s)
+        delay(self.p.t_grab_start_wait * s)
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for t_tof in self.p.t_tof:
-            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+        for att_c in self.p.att_d1_c_gm:
+            for att_r in self.p.att_d1_r_gm:
+                self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-            self.load_mot(self.p.t_mot_load * s)
+                self.load_mot(self.p.t_mot_load * s)
 
-            self.dds.push.off()
-            self.switch_d2_2d(0)
+                self.dds.push.off()
+                self.switch_d2_2d(0)
 
-            self.cmot_d2(self.p.t_d2_cmot * s)
+                self.cmot_d2(self.p.t_d2_cmot * s)
 
-            self.cmot_d1(self.p.t_hybrid_cmot * s)
+                # self.cmot(self.p.t_hybrid_cmot * s)
 
-            # self.gm(self.p.t_gm * s)
-            
-            self.kill_trap()
-            
-            ### abs img
-            delay(t_tof * s)
-            self.abs_image()
+                self.gm(self.p.t_gm * s, att_c, att_r)
+                
+                self.kill_trap()
+                
+                ### abs img
+                delay(self.p.t_tof * s)
+                self.abs_image()
 
-            self.core.break_realtime()
+                self.core.break_realtime()
 
         # return to mot load state
         self.switch_all_dds(state=1)
-
         self.dds.d1_3d_c.off()
         self.dds.d1_3d_r.off()
         self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_mot,
@@ -200,7 +198,6 @@ class tof(EnvExperiment, Base):
         self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_mot,
                                         att_dB=self.p.att_d2_r_mot)
         self.dds.imaging.off()
-
         self.core.break_realtime()
         self.switch_mot_magnet(1)
 
@@ -210,7 +207,7 @@ class tof(EnvExperiment, Base):
     def analyze(self):
 
         self.camera.Close()
-
+        
         self.ds.save_data(self)
 
         print("Done!")
