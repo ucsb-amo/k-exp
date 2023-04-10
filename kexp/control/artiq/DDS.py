@@ -1,7 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay_mu, delay
 from kexp.util.db.device_db import device_db
-from kexp.config.expt_params import ExptParams
 import numpy as np
 
 class DDS():
@@ -21,7 +20,7 @@ class DDS():
       self.ftw_per_hz = 0
       self.read_db(device_db)
 
-      self._t_rtio_mu = ExptParams().t_rtio_mu
+      self._t_rtio_mu = np.int64(8)
 
    @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
