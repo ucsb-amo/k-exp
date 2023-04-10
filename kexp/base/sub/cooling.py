@@ -19,7 +19,7 @@ class cooling():
         delay(t)
 
     @kernel
-    def mot_2d(self,t):
+    def load_2D_mot(self,t):
         with parallel:
             self.switch_d2_2d(1)
         delay(t)

@@ -69,7 +69,7 @@ class tof(EnvExperiment, Base):
         self.kill_mot(self.p.t_mot_kill * s)
 
         for t_tof in self.p.t_tof:
-            self.mot_2d(self.p.t_2D_mot_load_delay * s)
+            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)
 
