@@ -43,7 +43,6 @@ class tof(EnvExperiment, Base):
         self.p.detune_d1_c_cmot = 1.29
 
         #GM Detunings
-        gm_delta = 3.5
         self.p.detune_d1_c_gm = 1.29
         self.p.att_d1_c_gm = 11.5
         # self.p.att_d1_c_gm = self.dds.d1_3d_c.att_dB
