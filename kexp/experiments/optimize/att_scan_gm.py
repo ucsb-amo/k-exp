@@ -22,7 +22,7 @@ class att_scan_gm(EnvExperiment, Base):
 
         self.p.N_shots = 8
         # self.p.N_repeats = 1
-        self.p.t_tof = 2000.e-6
+        self.p.t_tof = 4000.e-6
 
         #MOT detunings
         self.p.detune_d2_c_mot = -3.3
@@ -44,9 +44,9 @@ class att_scan_gm(EnvExperiment, Base):
         
         #GM Detunings
         self.p.detune_d1_c_gm = 3.21
-        self.p.att_d1_c_gm = np.linspace(11,26,self.p.N_shots)
+        self.p.att_d1_c_gm = np.linspace(2,6,self.p.N_shots)
         self.p.detune_d1_r_gm = 3.21
-        self.p.att_d1_r_gm = np.linspace(5,30,self.p.N_shots)
+        self.p.att_d1_r_gm = np.linspace(11,30,self.p.N_shots)
 
         #MOT current settings
         self.p.V_d2cmot_current = 1.5

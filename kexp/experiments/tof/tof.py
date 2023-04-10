@@ -15,15 +15,15 @@ class tof(EnvExperiment, Base):
         self.p = self.params
 
         self.p.t_mot_kill = 1
-        self.p.t_mot_load = 3
+        self.p.t_mot_load = 2
 
         self.p.t_d2cmot = 5.e-3
         self.p.t_d1cmot = 7.e-3
-        self.p.t_gm = 7.e-3
+        self.p.t_gm = 3.e-3
 
-        self.p.N_shots = 5
-        self.p.N_repeats = 1
-        self.p.t_tof = np.linspace(2000,4000,self.p.N_shots) * 1.e-6
+        self.p.N_shots = 6
+        self.p.N_repeats = 5
+        self.p.t_tof = np.linspace(1000,5000,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         #MOT detunings
@@ -40,13 +40,13 @@ class tof(EnvExperiment, Base):
         self.att_d2_r_d2cmot = 12.5
 
         self.p.detune_d1_c_d1cmot = 1.29
-        self.p.att_d1_c_d1cmot = 11.5
+        self.p.att_d1_c_d1cmot = 4.
         self.p.detune_d2_r_d1cmot = -3.7
         self.p.att_d2_r_d1cmot = self.p.att_d2_r_d2cmot
 
         #GM Detunings
         self.p.detune_d1_c_gm = 1.29
-        self.p.att_d1_c_gm = 11.5
+        self.p.att_d1_c_gm = 4.
         self.p.detune_d1_r_gm = 3.21
         self.p.att_d1_r_gm = 11.0
 
@@ -59,13 +59,13 @@ class tof(EnvExperiment, Base):
         self.get_N_img()
     
     @kernel
-    def load_2D_mot(self,t):
+    def mot_2d(self,t):
         with parallel:
             self.switch_d2_2d(1)
         delay(t)
 
     @kernel
-    def load_mot(self,t):
+    def mot(self,t):
         delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_mot,
                                  att_dB=self.p.att_d2_c_mot)
@@ -172,9 +172,9 @@ class tof(EnvExperiment, Base):
         self.kill_mot(self.p.t_mot_kill * s)
 
         for t_tof in self.p.t_tof:
-            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+            self.mot_2d(self.p.t_2D_mot_load_delay * s)
 
-            self.load_mot(self.p.t_mot_load * s)
+            self.mot(self.p.t_mot_load * s)
 
             self.dds.push.off()
             self.switch_d2_2d(0)
