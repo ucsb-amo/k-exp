@@ -16,11 +16,11 @@ class att_scan_gm(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
 
-        self.p.t_d2_cmot = 5.e-3
-        self.p.t_hybrid_cmot = 7.e-3
-        self.p.t_gm = 1.5e-3
+        self.p.t_d2cmot = 5.e-3
+        self.p.t_d1cmot = 7.e-3
+        self.p.t_gm = 2e-3
 
-        self.p.N_shots = 2
+        self.p.N_shots = 10
         # self.p.N_repeats = 1
         self.p.t_tof = 3000.e-6
 
@@ -50,7 +50,7 @@ class att_scan_gm(EnvExperiment, Base):
 
         #MOT current settings
         self.p.V_d2cmot_current = 1.5
-        self.p.V_d1cmot_current = .4
+        self.p.V_d1cmot_current = .5
 
         self.xvarnames = ['att_d1_c_gm','att_d1_r_gm']
 
@@ -175,9 +175,9 @@ class att_scan_gm(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                self.cmot_d2(self.p.t_d2_cmot * s)
+                self.cmot_d2(self.p.t_d2cmot * s)
 
-                # self.cmot(self.p.t_hybrid_cmot * s)
+                self.cmot_d1(self.p.t_d1cmot * s)
 
                 self.gm(self.p.t_gm * s, att_c, att_r)
                 

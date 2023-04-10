@@ -17,12 +17,12 @@ class tof(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
 
-        self.p.t_d2_cmot = 5.e-3
-        self.p.t_hybrid_cmot = 7.e-3
+        self.p.t_d2cmot = 5.e-3
+        self.p.t_d1cmot = 7.e-3
         self.p.t_gm = 7.e-3
 
         self.p.N_shots = 5
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
         self.p.t_tof = np.linspace(2000,4000,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
@@ -34,10 +34,10 @@ class tof(EnvExperiment, Base):
         self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
 
         #CMOT detunings
-        self.p.detune_d2_c_cmot = -.9
-        self.p.att_d2_c_cmot = self.dds.d2_3d_c.att_dB
-        self.p.detune_d2_r_cmot = -3.7
-        self.p.att_d2_r_cmot = 12.5
+        self.detune_d2_c_d2cmot = -.9
+        self.att_d2_c_d2cmot = self.dds.d2_3d_c.att_dB
+        self.detune_d2_r_d2cmot = -3.7
+        self.att_d2_r_d2cmot = 12.5
 
         self.p.detune_d1_c_d1cmot = 1.29
         self.p.att_d1_c_d1cmot = 11.5
@@ -91,8 +91,10 @@ class tof(EnvExperiment, Base):
     @kernel
     def cmot_d2(self,t):
         delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_d2cmot)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d2cmot)
+        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_d2cmot,
+                                       att_dB=self.p.att_d2_c_d2cmot)
+        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d2cmot,
+                                       att_dB=self.p.att_d2_r_d2cmot)
         delay(10*us)
         with parallel:
             self.switch_d2_3d(1)
@@ -155,6 +157,7 @@ class tof(EnvExperiment, Base):
         self.trigger_camera()
         self.pulse_imaging_light(self.p.t_imaging_pulse * s)
 
+        self.dds.imaging.off()
         delay(self.p.t_dark_image_delay * s)
         self.trigger_camera()
 
@@ -176,11 +179,11 @@ class tof(EnvExperiment, Base):
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-            self.cmot_d2(self.p.t_d2_cmot * s)
+            self.cmot_d2(self.p.t_d2cmot * s)
 
-            self.cmot_d1(self.p.t_hybrid_cmot * s)
+            self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.gm(self.p.t_gm * s)
+            self.gm(self.p.t_gm * s)
             
             self.kill_trap()
             
