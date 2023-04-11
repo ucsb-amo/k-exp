@@ -1,7 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
-from kexp.analysis.base_analysis import atomdata
-from kexp.base.base import Base
+from kexp import Base
 import numpy as np
 
 class detune_scan_mot(EnvExperiment, Base):
@@ -40,7 +39,7 @@ class detune_scan_mot(EnvExperiment, Base):
         self.get_N_img()
 
     @kernel
-    def load_mot(self,t,delta_c,delta_r):
+    def mot(self,t,delta_c,delta_r):
         delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=delta_c, att_dB=self.p.att_d2_c_mot)
         delay_mu(self.p.t_rtio_mu)
@@ -67,7 +66,7 @@ class detune_scan_mot(EnvExperiment, Base):
             for delta_r in self.p.detune_d2_r_mot:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.load_mot(self.p.t_mot_load * s, delta_c, delta_r)
+                self.mot(self.p.t_mot_load * s, delta_c, delta_r)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
