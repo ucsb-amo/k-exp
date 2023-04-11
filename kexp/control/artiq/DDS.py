@@ -90,18 +90,9 @@ class DDS():
          freq_MHz = self.detuning_to_frequency(linewidths_detuned=delta)
          self.freq_MHz = freq_MHz
       
-      if att_dB < 0.:
-         att_dB = self.att_dB
-      else:
-         self.att_dB = att_dB
+      self.set_dds(freq_MHz=freq_MHz, att_dB=att_dB)
 
-      if self.freq_MHz != 0.:
-         self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
-         self.dds_device.set_att(self.att_dB * dB)
-      else:
-         self.dds_device.sw.off()
-
-   @kernel
+   @kernel(flags={"fast-math"})
    def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
       '''Set the dds device. If freq_MHz = 0, turn it off'''
 
