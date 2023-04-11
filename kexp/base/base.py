@@ -6,15 +6,15 @@ from kexp.config.expt_params import ExptParams
 from kexp.control.cameras.basler_usb import BaslerUSB
 import pypylon.pylon as py
 
-from kexp.base.sub.devices import devices
-from kexp.base.sub.cooling import cooling
-from kexp.base.sub.image import image
+from kexp.base.sub.devices import Devices
+from kexp.base.sub.cooling import Cooling
+from kexp.base.sub.image import Image
 import numpy as np
 
 from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 
-class Base(devices, cooling, image):
+class Base(Devices, Cooling, Image):
     def __init__(self,setup_camera=True):
         super().__init__()
 

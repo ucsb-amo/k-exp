@@ -7,7 +7,7 @@ from kexp.config.expt_params import ExptParams
 
 import numpy as np
 
-class devices():
+class Devices():
 
     def __init__(self):
         self.params = ExptParams()
@@ -29,6 +29,7 @@ class devices():
         for dds in self.dds.dds_list():
             dds.dds_device = self.get_device(dds.name)
             dds.cpld_device = self.get_device(dds.cpld_name)
+            print(dds.dds_device.sync_data.io_update_delay)
 
     @kernel
     def init_kernel(self):
@@ -46,7 +47,8 @@ class devices():
     @kernel
     def set_all_dds(self):
         for dds in self.dds_list:
-            dds.set_dds()
+            dds.dds_device.set(frequency = dds.freq_MHz * MHz)
+            dds.dds_device.set_att(dds.att_dB * dB)
             delay_mu(self.params.t_rtio_mu)
 
     @kernel

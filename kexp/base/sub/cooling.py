@@ -3,7 +3,7 @@ from artiq.experiment import delay, delay_mu, parallel, sequential
 from kexp.config.dds_id import dds_frame
 from kexp.config.expt_params import ExptParams
 
-class cooling():
+class Cooling():
     def __init__(self):
         self.dds = dds_frame()
         self.params = ExptParams()
