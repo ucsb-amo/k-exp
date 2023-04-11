@@ -4,6 +4,7 @@ from kexp.util.db.device_db import device_db
 import numpy as np
 
 from artiq.coredevice.ad9910 import AD9910
+from artiq.coredevice.urukul import CPLD
 
 class DDS():
 
@@ -14,15 +15,17 @@ class DDS():
       self.att_dB = att_dB
       self.aom_order = []
       self.transition = []
-      self.dds_device = AD9910()
+      self.dds_device = AD9910
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
-      self.cpld_device = []
+      self.cpld_device = CPLD
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
 
-      self._t_rtio_mu = np.int64(8)
+      self._t_att_xfer_mu = 1592
+      self._t_set_xfer_mu = 1248
+      self._t_ref_period_mu = 8
 
    @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
@@ -106,7 +109,6 @@ class DDS():
       else:
          self.att_dB = att_dB
 
-      # delay(-10*ns)
       if self.freq_MHz != 0.:
          self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
          self.dds_device.set_att(self.att_dB * dB)
