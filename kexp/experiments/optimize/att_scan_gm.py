@@ -86,7 +86,7 @@ class att_scan_gm(EnvExperiment, Base):
             for att_r in self.p.att_d1_r_gm:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.load_mot(self.p.t_mot_load * s)
+                self.mot(self.p.t_mot_load * s)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
