@@ -1,2 +1,1 @@
-from .async_print import aprint
 from .att_linear_power_ramp import att_list_for_linear_power_ramp

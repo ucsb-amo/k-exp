@@ -3,7 +3,6 @@ from artiq.experiment import delay_mu, delay, parallel
 from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np
-from kexp.util import aprint
 
 from artiq.coredevice.ad9910 import AD9910
 from artiq.coredevice.urukul import CPLD
