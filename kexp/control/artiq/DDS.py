@@ -1,7 +1,9 @@
 from artiq.experiment import *
-from artiq.experiment import delay_mu, delay
+from artiq.experiment import delay_mu, delay, parallel
+from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np
+from kexp.util import aprint
 
 from artiq.coredevice.ad9910 import AD9910
 from artiq.coredevice.urukul import CPLD
@@ -101,19 +103,36 @@ class DDS():
    def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
       '''Set the dds device. If freq_MHz = 0, turn it off'''
 
-      if freq_MHz != self.freq_MHz and freq_MHz > 0.:
+      _set_freq = (freq_MHz != self.freq_MHz and freq_MHz > 0.)
+      _set_att = (att_dB != self.att_dB and att_dB > 0.)
+      _set_both = (_set_freq and _set_att)
+      
+      tnow = now_mu()
+
+      if _set_att:
+         self.att_dB = att_dB
+         # delay_mu(-self._t_att_xfer_mu - self._t_ref_period_mu)
+
+      if _set_freq:
          self.freq_MHz = freq_MHz
-         self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
+         # dt = now_mu() - (now_mu() & ~7)
+         # delay_mu(-(dt + self._t_set_xfer_mu))
       elif freq_MHz == 0.:
          self.dds_device.sw.off()
-      else:
-         pass
 
-      if att_dB != self.att_dB and att_dB > 0.:
-         self.att_dB = att_dB
+      
+      if _set_both:
+         self.dds_device.set(self.freq_MHz * MHz)
          self.dds_device.set_att(self.att_dB)
-      else:
-         pass
+      elif _set_att:
+         self.dds_device.set_att(self.att_dB)
+      elif _set_freq:
+         self.dds_device.set(self.freq_MHz * MHz)
+
+      # if _set_freq:
+      #    delay_mu(-self._t_ref_period_mu + dt)
+
+      
 
    @kernel
    def off(self):
