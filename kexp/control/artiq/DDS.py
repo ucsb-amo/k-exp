@@ -1,6 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay_mu, delay
-from kexp import device_db
+from kexp.util.db.device_db import device_db
 import numpy as np
 
 from artiq.coredevice.ad9910 import AD9910
