@@ -3,6 +3,7 @@ from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gau
 from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 import numpy as np
+from kamo.atom_properties.k39 import Potassium39
 
 class atomdata():
     '''
@@ -33,6 +34,11 @@ class atomdata():
         self._sort_images()
         self._analyze_absorption_images(crop_type)
         self._remap_fit_results()
+
+        # self.atom = Potassium39()
+        # self.atom_cross_section = self.atom.get_cross_section()
+        # self.atom_number_density = self.od / self.atom_cross_section
+        # self.atom_number = np.sum(self.atom_number_density)
 
     ### Analysis
 
