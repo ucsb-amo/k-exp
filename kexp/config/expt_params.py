@@ -27,13 +27,13 @@ class ExptParams():
 
         #MOT
         self.detune_d2_c_mot = -3.3
-        self.att_d2_c_mot = dds.d2_3d_c.att_dB
+        self.att_d2_c_mot = 4.5
         self.detune_d2_r_mot = -4.7
-        self.att_d2_r_mot = dds.d2_3d_r.att_dB
+        self.att_d2_r_mot = 3.7
 
         #CMOT
         self.detune_d2_c_d2cmot = -.9
-        self.att_d2_c_d2cmot = dds.d2_3d_c.att_dB
+        self.att_d2_c_d2cmot = 4.5
         self.detune_d2_r_d2cmot = -3.7
         self.att_d2_r_d2cmot = 12.5
 
