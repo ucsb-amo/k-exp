@@ -3,8 +3,6 @@ from artiq.experiment import delay_mu, delay
 from kexp.util.db.device_db import device_db
 import numpy as np
 
-from artiq.coredevice.ad9910 import AD9910
-
 class DDS():
 
    def __init__(self, urukul_idx, ch, freq_MHz=0., att_dB=0.):
@@ -14,7 +12,7 @@ class DDS():
       self.att_dB = att_dB
       self.aom_order = []
       self.transition = []
-      self.dds_device = AD9910()
+      self.dds_device = []
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
       self.cpld_device = []
