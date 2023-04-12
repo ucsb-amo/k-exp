@@ -23,9 +23,12 @@ class DDS():
       self.ftw_per_hz = 0
       self.read_db(device_db)
 
-      self._t_att_xfer_mu = 1592
-      self._t_set_xfer_mu = 1248
-      self._t_ref_period_mu = 8
+      self._t_att_xfer_mu = np.int64(1592) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.10qxjvv6p35q
+      self._t_set_xfer_mu = np.int64(1248) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.e1ucbs8kjf4z
+      self._t_ref_period_mu = np.int64(8) # one clock cycle, 125 MHz --> T = 8 ns (mu)
+
+      self._t_set_delay_mu = self._t_set_xfer_mu + self._t_ref_period_mu + 1
+      self._t_att_delay_mu = self._t_att_xfer_mu + self._t_ref_period_mu + 1
 
    @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
