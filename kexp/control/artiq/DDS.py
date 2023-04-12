@@ -99,21 +99,19 @@ class DDS():
    def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
       '''Set the dds device. If freq_MHz = 0, turn it off'''
 
-      if freq_MHz < 0.:
-         freq_MHz = self.freq_MHz
-      else:
+      if freq_MHz != self.freq_MHz and freq_MHz > 0.:
          self.freq_MHz = freq_MHz
-
-      if att_dB < 0.:
-         att_dB = self.att_dB
-      else:
-         self.att_dB = att_dB
-
-      if self.freq_MHz != 0.:
          self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
-         self.dds_device.set_att(self.att_dB * dB)
-      else:
+      elif freq_MHz == 0.:
          self.dds_device.sw.off()
+      else:
+         pass
+
+      if att_dB != self.att_dB and att_dB > 0.:
+         self.att_dB = att_dB
+         self.dds_device.set_att(self.att_dB)
+      else:
+         pass
 
    @kernel
    def off(self):
