@@ -1,8 +1,5 @@
 import kexp.config.camera_params as cam
 import numpy as np
-from kexp.config.dds_id import dds_frame
-
-dds = dds_frame()
 
 class ExptParams():
     def __init__(self):
