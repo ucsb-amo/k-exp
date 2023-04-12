@@ -88,10 +88,9 @@ class DDS():
       delta = float(delta)
 
       if delta == -1000.:
-         freq_MHz = self.freq_MHz
+         freq_MHz = -0.1
       else:
          freq_MHz = self.detuning_to_frequency(linewidths_detuned=delta)
-         self.freq_MHz = freq_MHz
       
       self.set_dds(freq_MHz=freq_MHz, att_dB=att_dB)
 
