@@ -1,6 +1,6 @@
 import numpy as np
 import kexp.config.camera_params as cam
-import kexp.analysis.fitting.gaussian as gfit
+from kexp.analysis.fitting import GaussianFit
 
 def fit_gaussian_sum_OD(sum_od):
     '''
@@ -22,14 +22,14 @@ def fit_gaussian_sum_OD(sum_od):
         An array of GaussianFit objects.
     '''
     sh = sum_od.shape[:-1:]
-    fits = np.empty(sh,dtype=gfit.GaussianFit)
+    fits = np.empty(sh,dtype=GaussianFit)
 
     xaxis = cam.pixel_size_m / cam.magnification * np.arange(sum_od.shape[len(sh)])
 
     if len(sh) == 1:
         for i in range(sum_od.shape[0]):
             try:
-                fit = gfit.GaussianFit(xaxis, sum_od[i])
+                fit = GaussianFit(xaxis, sum_od[i])
                 fits[i] = fit
             except:
                 pass
@@ -37,7 +37,7 @@ def fit_gaussian_sum_OD(sum_od):
         for ix in range(sum_od.shape[0]):
             for iy in range(sum_od.shape[1]):
                 try:
-                    fit = gfit.GaussianFit(xaxis, sum_od[ix][iy])
+                    fit = GaussianFit(xaxis, sum_od[ix][iy])
                     fits[ix][iy] = fit
                 except:
                     pass

@@ -1,7 +1,12 @@
 from artiq.experiment import *
-from artiq.experiment import delay_mu, delay
+from artiq.experiment import delay_mu, delay, parallel
+from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np
+from kexp.util import aprint
+
+from artiq.coredevice.ad9910 import AD9910
+from artiq.coredevice.urukul import CPLD
 
 class DDS():
 
@@ -12,15 +17,20 @@ class DDS():
       self.att_dB = att_dB
       self.aom_order = []
       self.transition = []
-      self.dds_device = []
+      self.dds_device = AD9910
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
-      self.cpld_device = []
+      self.cpld_device = CPLD
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
 
-      self._t_rtio_mu = np.int64(8)
+      self._t_att_xfer_mu = np.int64(1592) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.10qxjvv6p35q
+      self._t_set_xfer_mu = np.int64(1248) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.e1ucbs8kjf4z
+      self._t_ref_period_mu = np.int64(8) # one clock cycle, 125 MHz --> T = 8 ns (mu)
+
+      self._t_set_delay_mu = self._t_set_xfer_mu + self._t_ref_period_mu + 1
+      self._t_att_delay_mu = self._t_att_xfer_mu + self._t_ref_period_mu + 1
 
    @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
@@ -83,42 +93,46 @@ class DDS():
       delta = float(delta)
 
       if delta == -1000.:
-         freq_MHz = self.freq_MHz
+         freq_MHz = -0.1
       else:
          freq_MHz = self.detuning_to_frequency(linewidths_detuned=delta)
-         self.freq_MHz = freq_MHz
       
-      if att_dB < 0.:
-         att_dB = self.att_dB
-      else:
-         self.att_dB = att_dB
+      self.set_dds(freq_MHz=freq_MHz, att_dB=att_dB)
 
-      if self.freq_MHz != 0.:
-         self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
-         self.dds_device.set_att(self.att_dB * dB)
-      else:
-         self.dds_device.sw.off()
-
-   @kernel
+   @kernel(flags={"fast-math"})
    def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
       '''Set the dds device. If freq_MHz = 0, turn it off'''
 
-      if freq_MHz < 0.:
-         freq_MHz = self.freq_MHz
-      else:
-         self.freq_MHz = freq_MHz
+      _set_freq = (freq_MHz != self.freq_MHz and freq_MHz > 0.)
+      _set_att = (att_dB != self.att_dB and att_dB > 0.)
+      _set_both = (_set_freq and _set_att)
+      
+      tnow = now_mu()
 
-      if att_dB < 0.:
-         att_dB = self.att_dB
-      else:
+      if _set_att:
          self.att_dB = att_dB
+         # delay_mu(-self._t_att_xfer_mu - self._t_ref_period_mu)
 
-      # delay(-10*ns)
-      if self.freq_MHz != 0.:
-         self.dds_device.set(self.freq_MHz * MHz, amplitude = 1.)
-         self.dds_device.set_att(self.att_dB * dB)
-      else:
+      if _set_freq:
+         self.freq_MHz = freq_MHz
+         # dt = now_mu() - (now_mu() & ~7)
+         # delay_mu(-(dt + self._t_set_xfer_mu))
+      elif freq_MHz == 0.:
          self.dds_device.sw.off()
+
+      
+      if _set_both:
+         self.dds_device.set(self.freq_MHz * MHz)
+         self.dds_device.set_att(self.att_dB)
+      elif _set_att:
+         self.dds_device.set_att(self.att_dB)
+      elif _set_freq:
+         self.dds_device.set(self.freq_MHz * MHz)
+
+      # if _set_freq:
+      #    delay_mu(-self._t_ref_period_mu + dt)
+
+      
 
    @kernel
    def off(self):
