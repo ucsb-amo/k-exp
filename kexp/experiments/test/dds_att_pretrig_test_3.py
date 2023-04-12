@@ -41,9 +41,9 @@ class dds_att_test(EnvExperiment):
 
         self.core.break_realtime()
 
-        self.dds1.dds_device.set(45. * MHz)
+        self.dds1.dds_device.set(20. * MHz)
         delay(1*ms)
-        self.dds2.dds_device.set(45. * MHz)
+        self.dds2.dds_device.set(20. * MHz)
         delay(1*ms)
         self.dds1.dds_device.set_att(20.)
         delay(1*ms)
@@ -59,6 +59,9 @@ class dds_att_test(EnvExperiment):
         # self.dds1.dds_device.set_att(20.)
         self.t[idx] = now_mu(); idx+=1
         self.dds1.set_dds(freq_MHz = 60., att_dB=10.)
+        # self.dds1.set_dds(att_dB=10.)
+        # self.dds1.set_dds(freq_MHz=60.)
+        delay_mu(self.dds1._t_set_delay_mu)
         self.dds2.set_dds(freq_MHz = 60., att_dB=10.)
         self.t[idx] = now_mu(); idx+=1
         self.ttl.on()
