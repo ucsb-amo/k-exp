@@ -1,5 +1,8 @@
 import numpy as np
+from artiq.experiment import portable
+from kexp.util.artiq.async_print import aprint
 
+@portable(flags={"fast-math"})
 def att_list_for_linear_power_ramp(att_i, att_f, N):
     p_i = 10**(- att_i)
     p_f = 10**(- att_f)
@@ -12,4 +15,4 @@ def att_list_for_linear_power_ramp(att_i, att_f, N):
         # if att_f > att_i, more power initially (decreasing ramp)
         p = np.flip( np.arange( p_f, p_i+dp, dp ) )
     att = -np.log10(p)
-    return att,p
+    return att
