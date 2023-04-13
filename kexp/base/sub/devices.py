@@ -29,7 +29,6 @@ class Devices():
         for dds in self.dds.dds_list():
             dds.dds_device = self.get_device(dds.name)
             dds.cpld_device = self.get_device(dds.cpld_name)
-            print(dds.dds_device.sync_data.io_update_delay)
 
     @kernel
     def init_kernel(self):
