@@ -29,7 +29,6 @@ class Devices():
         for dds in self.dds.dds_list():
             dds.dds_device = self.get_device(dds.name)
             dds.cpld_device = self.get_device(dds.cpld_name)
-            print(dds.dds_device.sync_data.io_update_delay)
 
     @kernel
     def init_kernel(self):
@@ -39,15 +38,15 @@ class Devices():
         self.zotino.init()
         delay_mu(self.params.t_rtio_mu)
         self.init_all_cpld()
-        self.set_all_dds()
         self.init_all_dds()
+        self.set_all_dds()
         self.switch_all_dds(0)
         self.core.break_realtime()
 
     @kernel
     def set_all_dds(self):
         for dds in self.dds_list:
-            dds.dds_device.set(frequency = dds.freq_MHz * MHz)
+            dds.dds_device.set(frequency = dds.frequency, amplitude = dds.amplitude)
             dds.dds_device.set_att(dds.att_dB * dB)
             delay_mu(self.params.t_rtio_mu)
 

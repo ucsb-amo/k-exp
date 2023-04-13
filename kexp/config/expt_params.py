@@ -20,33 +20,33 @@ class ExptParams():
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1
-        self.t_mot_load = 1
+        self.t_mot_load = 3
         self.t_d2cmot = 5.e-3
         self.t_d1cmot = 7.e-3
         self.t_gm = 7e-3
 
         #MOT
         self.detune_d2_c_mot = -3.3
-        self.att_d2_c_mot = 4.5
+        self.amp_d2_c_mot = 0.188
         self.detune_d2_r_mot = -4.7
-        self.att_d2_r_mot = 3.7
+        self.amp_d2_r_mot = 0.188
 
         #CMOT
         self.detune_d2_c_d2cmot = -.9
-        self.att_d2_c_d2cmot = 4.5
+        self.amp_d2_c_d2cmot = 0.188
         self.detune_d2_r_d2cmot = -3.7
-        self.att_d2_r_d2cmot = 12.5
+        self.amp_d2_r_d2cmot = 0.09 # needs recalibrating
 
         self.detune_d1_c_d1cmot = 1.29
-        self.att_d1_c_d1cmot = 11.5
+        self.amp_d1_c_d1cmot = 0.270 # needs recalibrating
         self.detune_d2_r_d1cmot = -3.7
-        self.att_d2_r_d1cmot = self.att_d2_r_d2cmot
+        self.amp_d2_r_d1cmot = self.amp_d2_r_d2cmot
 
         #GM
         self.detune_d1_c_gm = 1.29
-        self.att_d1_c_gm = 11.5
+        self.amp_d1_c_gm = 0.270 # needs recalibrating
         self.detune_d1_r_gm = 3.21
-        self.att_d1_r_gm = 11.0
+        self.amp_d1_r_gm = 0.092 # needs recalibrating
 
         #Fields
         self.V_mot_current = 0.7 # 3.4A on 3D MOT coils

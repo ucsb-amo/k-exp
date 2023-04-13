@@ -26,13 +26,10 @@ class detune_scan_mot(EnvExperiment, Base):
 
         #MOT detunings
 
-        # self.p.detune_d2_c_mot = -3.3
-        # self.p.detune_d2_r_mot = -4.7
-
         self.p.detune_d2_c_mot = np.linspace(0,-6,self.p.N_shots)
-        self.p.att_d2_c_mot = self.dds.d2_3d_c.att_dB
+        self.p.amp_d2_c_mot = self.dds.d2_3d_c.amplitude
         self.p.detune_d2_r_mot = np.linspace(0,-6,self.p.N_shots)
-        self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
+        self.p.amp_d2_r_mot = self.dds.d2_3d_r.amplitude
 
         self.xvarnames = ['detune_d2_c_mot','detune_d2_r_mot']
 
@@ -41,9 +38,9 @@ class detune_scan_mot(EnvExperiment, Base):
     @kernel
     def mot(self,t,delta_c,delta_r):
         delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=delta_c, att_dB=self.p.att_d2_c_mot)
+        self.dds.d2_3d_c.set_dds_gamma(delta=delta_c, amplitude=self.p.amp_d2_c_mot)
         delay_mu(self.p.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=delta_r, att_dB=self.p.att_d2_r_mot)
+        self.dds.d2_3d_r.set_dds_gamma(delta=delta_r, amplitude=self.p.amp_d2_r_mot)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(1)

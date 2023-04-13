@@ -7,12 +7,15 @@ import numpy as np
 from artiq.coredevice.ad9910 import AD9910
 from artiq.coredevice.urukul import CPLD
 
+from kexp.util.artiq.async_print import aprint
+
 class DDS():
 
-   def __init__(self, urukul_idx, ch, freq_MHz=0., att_dB=0.):
+   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., att_dB=0.):
       self.urukul_idx = urukul_idx
       self.ch = ch
-      self.freq_MHz = freq_MHz
+      self.frequency = frequency
+      self.amplitude = amplitude
       self.att_dB = att_dB
       self.aom_order = []
       self.transition = []
@@ -49,7 +52,7 @@ class DDS():
       Returns
       -------
       float
-         The corresponding AOM frequency setting in MHz.
+         The corresponding AOM frequency setting in Hz.
       '''
       linewidths_detuned=float(linewidths_detuned)
 
@@ -72,10 +75,10 @@ class DDS():
       if single_pass:
          freq = freq * 2
 
-      return freq
+      return freq * 1.e6
    
    @kernel(flags={"fast-math"})
-   def set_dds_gamma(self, delta=-1000., att_dB=-0.1):
+   def set_dds_gamma(self, delta=-1000., amplitude=-0.1, att_dB=-0.1):
       '''
       Sets the DDS frequency and attenuation. Uses delta (detuning) in units of
       gamma, the linewidth of the D1 and D2 transition (Gamma = 2 * pi * 6 MHz).
@@ -84,7 +87,7 @@ class DDS():
       -----------
       delta: float
          Detuning in units of linewidth Gamma = 2 * pi * 6 MHz. (default: use
-         stored self.freq_MHz)
+         stored self.frequency)
 
       att_dB: float
          The attenuation in units of dB. (default: stored self.att_dB)
@@ -92,46 +95,52 @@ class DDS():
       delta = float(delta)
 
       if delta == -1000.:
-         freq_MHz = -0.1
+         frequency = -0.1
       else:
-         freq_MHz = self.detuning_to_frequency(linewidths_detuned=delta)
+         frequency = self.detuning_to_frequency(linewidths_detuned=delta)
       
-      self.set_dds(freq_MHz=freq_MHz, att_dB=att_dB)
+      self.set_dds(frequency=frequency, amplitude=amplitude, att_dB=att_dB)
 
    @kernel(flags={"fast-math"})
-   def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
-      '''Set the dds device. If freq_MHz = 0, turn it off'''
+   def set_dds(self, frequency = -0.1, amplitude = -0.1, att_dB = -0.1):
+      '''Set the dds device. If frequency = 0, turn it off'''
 
-      _set_freq = (freq_MHz != self.freq_MHz and freq_MHz > 0.)
+      _set_freq = (frequency != self.frequency and frequency > 0.)
+      _set_amp = (amplitude != self.amplitude and amplitude > 0.)
+      _set_freq_or_amp = _set_freq or _set_amp
       _set_att = (att_dB != self.att_dB and att_dB > 0.)
-      _set_both = (_set_freq and _set_att)
+      _set_both = (_set_freq_or_amp and _set_att)
       
-      tnow = now_mu()
+      # tnow = now_mu()
 
       if _set_att:
          self.att_dB = att_dB
          # delay_mu(-self._t_att_xfer_mu - self._t_ref_period_mu)
 
-      if _set_freq:
-         self.freq_MHz = freq_MHz
+      # if _set_freq_or_amp:
          # dt = now_mu() - (now_mu() & ~7)
          # delay_mu(-(dt + self._t_set_xfer_mu))
-      elif freq_MHz == 0.:
+
+      if _set_freq:
+         self.frequency = frequency
+      elif frequency == 0.:
          self.dds_device.sw.off()
 
+      if _set_amp:
+         self.amplitude = amplitude
+      elif amplitude == 0.:
+         self.dds_device.sw.off()
       
       if _set_both:
-         self.dds_device.set(self.freq_MHz * MHz)
+         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
          self.dds_device.set_att(self.att_dB)
       elif _set_att:
          self.dds_device.set_att(self.att_dB)
-      elif _set_freq:
-         self.dds_device.set(self.freq_MHz * MHz)
+      elif _set_freq or _set_amp:
+         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
 
-      # if _set_freq:
+      # if _set_freq_or_amp:
       #    delay_mu(-self._t_ref_period_mu + dt)
-
-      
 
    @kernel
    def off(self):

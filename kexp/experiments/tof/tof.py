@@ -25,34 +25,6 @@ class tof(EnvExperiment, Base):
         self.p.t_tof = np.linspace(1000,5000,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
-        #MOT detunings
-
-        self.p.detune_d2_c_mot = -3.3
-        self.p.att_d2_c_mot = self.dds.d2_3d_c.att_dB
-        self.p.detune_d2_r_mot = -4.7
-        self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
-
-        #CMOT detunings
-        self.detune_d2_c_d2cmot = -.9
-        self.att_d2_c_d2cmot = self.dds.d2_3d_c.att_dB
-        self.detune_d2_r_d2cmot = -3.7
-        self.att_d2_r_d2cmot = 12.5
-
-        self.p.detune_d1_c_d1cmot = 1.29
-        self.p.att_d1_c_d1cmot = 4.
-        self.p.detune_d2_r_d1cmot = -3.7
-        self.p.att_d2_r_d1cmot = self.p.att_d2_r_d2cmot
-
-        #GM Detunings
-        self.p.detune_d1_c_gm = 1.29
-        self.p.att_d1_c_gm = 4.
-        self.p.detune_d1_r_gm = 3.21
-        self.p.att_d1_r_gm = 11.0
-
-        #MOT current settings
-        self.p.V_d2cmot_current = 1.5
-        self.p.V_d1cmot_current = .5
-
         self.xvarnames = ['t_tof']
 
         self.get_N_img()
@@ -96,7 +68,7 @@ class tof(EnvExperiment, Base):
         self.core.break_realtime()
         self.switch_mot_magnet(1)
 
-        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,0.7)
+        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,self.p.V_mot_current)
         self.zotino.load()
 
     def analyze(self):
