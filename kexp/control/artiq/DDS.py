@@ -7,6 +7,8 @@ import numpy as np
 from artiq.coredevice.ad9910 import AD9910
 from artiq.coredevice.urukul import CPLD
 
+from kexp.util.artiq.async_print import aprint
+
 class DDS():
 
    def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., att_dB=0.):
@@ -50,7 +52,7 @@ class DDS():
       Returns
       -------
       float
-         The corresponding AOM frequency setting in MHz.
+         The corresponding AOM frequency setting in Hz.
       '''
       linewidths_detuned=float(linewidths_detuned)
 
@@ -73,7 +75,7 @@ class DDS():
       if single_pass:
          freq = freq * 2
 
-      return freq
+      return freq * 1.e6
    
    @kernel(flags={"fast-math"})
    def set_dds_gamma(self, delta=-1000., amplitude=-0.1, att_dB=-0.1):
