@@ -26,7 +26,7 @@ class DDSSpinner(QWidget):
         self.f.setDecimals(1)
         self.f.setRange(0.,500.)
         self.f.setSuffix(" MHz")
-        self.f.setDecimals(2)
+        self.f.setDecimals(3)
         
         self.amp = QDoubleSpinBox()
         self.amp.setRange(0.,1.)
