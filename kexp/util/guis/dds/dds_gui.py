@@ -13,7 +13,7 @@ __config_path__ = dds_state.__file__
 expt_builder = DDSGUIExptBuilder()
         
 class DDSSpinner(QWidget):
-    '''Frequency and attenuation spinbox widgets for a DDS channel'''
+    '''Frequency and amplitude spinbox widgets for a DDS channel'''
     def __init__(self,urukul_idx,ch_idx):
         super().__init__(parent=None)
 
@@ -27,9 +27,9 @@ class DDSSpinner(QWidget):
         self.f.setRange(0.,500.)
         self.f.setSuffix(" MHz")
         
-        self.att = QDoubleSpinBox()
-        self.att.setRange(0.,60.)
-        self.att.setSuffix(" dB")
+        self.amp = QDoubleSpinBox()
+        self.amp.setRange(0.,60.)
+        self.amp.setSuffix("")
 
         self.offbutton = QToolButton()
         self.offbutton.pressed.connect(self.submit_dds_off_job)
@@ -46,7 +46,7 @@ class DDSSpinner(QWidget):
         label = QLabel(labeltext)
         layout.addWidget(label, alignment=Qt.AlignCenter)
         layout.addWidget(self.f)
-        layout.addWidget(self.att)
+        layout.addWidget(self.amp)
 
         onofflayout = QHBoxLayout()
         # onofflayout.addWidget(self.onbutton)
@@ -61,9 +61,9 @@ class DDSSpinner(QWidget):
 
     # def submit_dds_on_job(self):
     #     freq_MHz = self.f.value()
-    #     att_dB = self.att.value()
+    #     amp = self.amp.value()
     #     self.modelDDS.freq_MHz = freq_MHz
-    #     self.modelDDS.att_dB = att_dB
+    #     self.modelDDS.amplitude = amplitude
     #     expt_builder.execute_single_dds_on(self.modelDDS)
 
 class MessageWindow(QLabel):
@@ -153,7 +153,7 @@ class MainWindow(QWidget):
         '''Create dds spinner gui widget for specified uru, ch'''
         spin = DDSSpinner(uru_idx,ch_idx)
         spin.f.valueChanged.connect(self.valueChangedWarning)
-        spin.att.valueChanged.connect(self.valueChangedWarning)
+        spin.amp.valueChanged.connect(self.valueChangedWarning)
         self.spinners[uru_idx][ch_idx] = spin
 
     def valueChangedWarning(self):
@@ -166,8 +166,8 @@ class MainWindow(QWidget):
             for ch_idx in range(self.N_ch):
                 this_spinner = self.spinners[uru_idx][ch_idx]
                 freq = this_spinner.f.value()
-                att = this_spinner.att.value()
-                param_list[uru_idx][ch_idx] = DDS(uru_idx,ch_idx,freq,att)
+                amp = this_spinner.amp.value()
+                param_list[uru_idx][ch_idx] = DDS(uru_idx,ch_idx,freq,amp)
         return param_list
 
     def submit_job(self):
@@ -186,10 +186,10 @@ class MainWindow(QWidget):
         uru_idx = dds.urukul_idx
         ch = dds.ch
         f = dds.frequency
-        att = dds.att_dB
+        amp = dds.amplitude
 
         self.spinners[uru_idx][ch].f.setValue(f/1.e6)
-        self.spinners[uru_idx][ch].att.setValue(att)
+        self.spinners[uru_idx][ch].amp.setValue(amp)
 
     def read_defaults(self):
         for dds_uru_list in dds_state.dds_state:
@@ -216,9 +216,9 @@ class MainWindow(QWidget):
             lines += "["
             for ch in range(self.N_ch):
                 frequency = self.spinners[uru_idx][ch].f.value()
-                att_dB = self.spinners[uru_idx][ch].att.value()
+                amp = self.spinners[uru_idx][ch].amp.value()
                 linetoadd = f"""
-                DDS({uru_idx:d},{ch:d},{frequency:.2f}*MHz,{att_dB:.1f})"""
+                DDS({uru_idx:d},{ch:d},{frequency:.2f}*MHz,{amp:.4f})"""
                 if ch != (self.N_ch-1):
                     linetoadd += ","
                 lines += linetoadd
