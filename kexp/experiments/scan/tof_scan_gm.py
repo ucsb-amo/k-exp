@@ -16,8 +16,6 @@ class tof_scan_gm(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
 
-        self.p.t_d2_cmot = 5.e-3
-        self.p.t_hybrid_cmot = 7.e-3
         self.p.t_gm = 1.5e-3
 
         self.p.N_shots = 5
@@ -25,27 +23,12 @@ class tof_scan_gm(EnvExperiment, Base):
         self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
-        #MOT detunings
-
-        self.p.detune_d2_c_mot = -3.3
-        self.p.att_d2_c_mot = self.dds.d2_3d_c.att_dB
-        self.p.detune_d2_r_mot = -4.7
-        self.p.att_d2_r_mot = self.dds.d2_3d_r.att_dB
-
-        #CMOT detunings
-        self.p.detune_d2_c_cmot = -.9
-        self.p.att_d2_c_cmot = self.dds.d2_3d_c.att_dB
-        self.p.detune_d2_r_cmot = -3.7
-        self.p.att_d2_r_cmot = 12.5
-
-        self.p.detune_d1_c_cmot = 3.5
-
         #GM Detunings
         # self.p.delta_gm_r = np.linspace(0.0,4.5,8)
         self.p.detune_d1_c_gm = 1.29
-        self.p.att_d1_c_gm = self.dds.d1_3d_c.att_dB
+        self.p.amp_d1_c_gm = self.dds.d1_3d_c.amplitude
         self.p.detune_d1_r_gm = np.linspace(0.0,4.5,8)
-        self.p.att_d1_r_gm = self.dds.d1_3d_r.att_dB
+        self.p.amp_d1_r_gm = self.dds.d1_3d_r.amplitude
 
         #MOT current settings
         self.p.V_cmot0_current = 1.5
@@ -60,10 +43,10 @@ class tof_scan_gm(EnvExperiment, Base):
     def gm(self,t,delta):
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_gm, 
-                                       att_dB=self.p.att_d1_c_gm)
+                                       amplitude=self.p.amp_d1_c_gm)
         delay_mu(self.p.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=delta, 
-                                       att_dB=self.p.att_d1_r_gm)
+                                       amplitude=self.p.amp_d1_r_gm)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(0)
@@ -90,7 +73,7 @@ class tof_scan_gm(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                self.cmot_d2(self.p.t_d2_cmot * s)
+                self.cmot_d2(self.p.t_d2cmot * s)
 
                 # self.cmot(self.p.t_hybrid_cmot * s)
 
