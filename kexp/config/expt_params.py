@@ -20,7 +20,7 @@ class ExptParams():
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1
-        self.t_mot_load = 1
+        self.t_mot_load = 3
         self.t_d2cmot = 5.e-3
         self.t_d1cmot = 7.e-3
         self.t_gm = 7e-3
