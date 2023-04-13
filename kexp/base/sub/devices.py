@@ -38,8 +38,8 @@ class Devices():
         self.zotino.init()
         delay_mu(self.params.t_rtio_mu)
         self.init_all_cpld()
-        self.set_all_dds()
         self.init_all_dds()
+        self.set_all_dds()
         self.switch_all_dds(0)
         self.core.break_realtime()
 
