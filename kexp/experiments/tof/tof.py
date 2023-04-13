@@ -21,9 +21,8 @@ class tof(EnvExperiment, Base):
         self.p.t_gm = 3.e-3
 
         self.p.N_shots = 6
-        self.p.N_repeats = 4
-        self.p.t_tof = np.linspace(100,1500,self.p.N_shots) * 1.e-6
-        # self.p.t_tof = np.linspace(1000,5000,self.p.N_shots) * 1.e-6
+        self.p.N_repeats = 5
+        self.p.t_tof = np.linspace(1000,5000,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         self.xvarnames = ['t_tof']
@@ -48,11 +47,11 @@ class tof(EnvExperiment, Base):
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-            # self.cmot_d2(self.p.t_d2cmot * s)
+            self.cmot_d2(self.p.t_d2cmot * s)
 
-            # self.cmot_d1(self.p.t_d1cmot * s)
+            self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.gm(self.p.t_gm * s)
+            self.gm(self.p.t_gm * s)
             
             self.release()
             
