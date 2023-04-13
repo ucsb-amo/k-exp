@@ -3,11 +3,11 @@ from kexp import Base
 
 class setdds(EnvExperiment,Base):
     def build(self):
-        Base.__init__(self)
+        Base.__init__(self,setup_camera=False)
 
-        self.mydds = self.dds.d1_3d_r
+        self.mydds = self.dds.imaging
 
-        self.f = self.mydds.freq_MHz * MHz
+        self.f = self.mydds.frequency
 
         # self.att = self.mydds.att_dB
         # self.a = 1.0
