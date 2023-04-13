@@ -28,9 +28,9 @@ class DDSGUIExptBuilder():
             def specify_dds_settings(self):
                 {dds_setting_lines}
 
-            def dds(self,urukul_idx,ch,freq_MHz,att_dB):
+            def dds(self,urukul_idx,ch,frequency,att_dB):
                 
-                self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,freq_MHz,att_dB)
+                self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,frequency,att_dB)
 
             def prep_default_DDS_list(self):
                 ''' Preps a list of DDS states, defaulting to off. '''
@@ -39,7 +39,7 @@ class DDSGUIExptBuilder():
 
                 for urukul_idx in range(len(self.DDS_list)):
                     for ch in range(len(self.DDS_list[urukul_idx])):
-                        self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,freq_MHz=0.,att_dB=0.)
+                        self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,frequency=0.,att_dB=0.)
 
             def get_dds(self,dds):
                 '''Fetch a DDS device from its name in device-db.py'''
@@ -53,7 +53,7 @@ class DDSGUIExptBuilder():
                     for dds in dds_sublist:
                         dds.dds_device.init()
                         delay(1*ms)
-                        dds.dds_device.set(frequency=dds.freq_MHz*MHz)
+                        dds.dds_device.set(frequency=dds.frequency)
                         dds.dds_device.set_att(dds.att_dB)
                         delay(1*us)
                         dds.on()
@@ -92,8 +92,8 @@ class DDSGUIExptBuilder():
 
         class set_all_dds_off(EnvExperiment):
 
-            def list_dds(self,urukul_idx,ch,freq_MHz,att_dB):
-                self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,freq_MHz,att_dB)
+            def list_dds(self,urukul_idx,ch,frequency,att_dB):
+                self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,frequency,att_dB)
 
             def prep_default_DDS_list(self):
                 ''' Preps a list of DDS states, defaulting to off. '''
@@ -101,7 +101,7 @@ class DDSGUIExptBuilder():
 
                 for urukul_idx in range(len(self.DDS_list)):
                     for ch in range(len(self.DDS_list[urukul_idx])):
-                        self.list_dds(urukul_idx,ch,freq_MHz=0.,att_dB=0.)
+                        self.list_dds(urukul_idx,ch,frequency=0.,att_dB=0.)
 
             def get_dds(self,dds):
                 '''Fetch a DDS device from its name in device-db.py'''
@@ -161,7 +161,7 @@ class DDSGUIExptBuilder():
                 delay(1*ms)
                 self.dds_device.init()
                 delay_mu(8)
-                self.dds_device.set(frequency={dds_to_turn_on.freq_MHz}*MHz, amplitude=1.)
+                self.dds_device.set(frequency={dds_to_turn_on.frequency}, amplitude=1.)
                 self.dds_device.set_att({dds_to_turn_on.att_dB}*dB)
                 self.dds_device.sw.on()
         """)
@@ -200,7 +200,7 @@ class DDSGUIExptBuilder():
 
                 uru_idx = dds.urukul_idx
                 ch = dds.ch
-                freq = dds.freq_MHz
+                freq = dds.frequency
                 att = dds.att_dB
 
                 dds_setting_lines += f"""
@@ -234,7 +234,7 @@ class DDSGUIExptBuilder():
     
     def execute_single_dds_on(self,dds_to_turn_on):
         print(dds_to_turn_on.name)
-        print(dds_to_turn_on.freq_MHz)
+        print(dds_to_turn_on.frequency)
         print(dds_to_turn_on.att_dB)
         program = self.make_single_dds_on_expt(dds_to_turn_on)
         self.write_experiment_to_file(program)

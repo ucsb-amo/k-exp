@@ -9,10 +9,10 @@ from artiq.coredevice.urukul import CPLD
 
 class DDS():
 
-   def __init__(self, urukul_idx, ch, freq_MHz=0., att_dB=0.):
+   def __init__(self, urukul_idx, ch, frequency=0., att_dB=0.):
       self.urukul_idx = urukul_idx
       self.ch = ch
-      self.freq_MHz = freq_MHz
+      self.frequency = frequency
       self.att_dB = att_dB
       self.aom_order = []
       self.transition = []
@@ -84,7 +84,7 @@ class DDS():
       -----------
       delta: float
          Detuning in units of linewidth Gamma = 2 * pi * 6 MHz. (default: use
-         stored self.freq_MHz)
+         stored self.frequency)
 
       att_dB: float
          The attenuation in units of dB. (default: stored self.att_dB)
@@ -92,17 +92,17 @@ class DDS():
       delta = float(delta)
 
       if delta == -1000.:
-         freq_MHz = -0.1
+         frequency = -0.1
       else:
-         freq_MHz = self.detuning_to_frequency(linewidths_detuned=delta)
+         frequency = self.detuning_to_frequency(linewidths_detuned=delta)
       
-      self.set_dds(freq_MHz=freq_MHz, att_dB=att_dB)
+      self.set_dds(frequency=frequency, att_dB=att_dB)
 
    @kernel(flags={"fast-math"})
-   def set_dds(self, freq_MHz = -0.1, att_dB = -0.1):
-      '''Set the dds device. If freq_MHz = 0, turn it off'''
+   def set_dds(self, frequency = -0.1, att_dB = -0.1):
+      '''Set the dds device. If frequency = 0, turn it off'''
 
-      _set_freq = (freq_MHz != self.freq_MHz and freq_MHz > 0.)
+      _set_freq = (frequency != self.frequency and frequency > 0.)
       _set_att = (att_dB != self.att_dB and att_dB > 0.)
       _set_both = (_set_freq and _set_att)
       
@@ -113,20 +113,20 @@ class DDS():
          # delay_mu(-self._t_att_xfer_mu - self._t_ref_period_mu)
 
       if _set_freq:
-         self.freq_MHz = freq_MHz
+         self.frequency = frequency
          # dt = now_mu() - (now_mu() & ~7)
          # delay_mu(-(dt + self._t_set_xfer_mu))
-      elif freq_MHz == 0.:
+      elif frequency == 0.:
          self.dds_device.sw.off()
 
       
       if _set_both:
-         self.dds_device.set(self.freq_MHz * MHz)
+         self.dds_device.set(self.frequency)
          self.dds_device.set_att(self.att_dB)
       elif _set_att:
          self.dds_device.set_att(self.att_dB)
       elif _set_freq:
-         self.dds_device.set(self.freq_MHz * MHz)
+         self.dds_device.set(self.frequency)
 
       # if _set_freq:
       #    delay_mu(-self._t_ref_period_mu + dt)
