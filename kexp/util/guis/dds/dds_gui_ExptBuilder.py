@@ -53,7 +53,8 @@ class DDSGUIExptBuilder():
                     for dds in dds_sublist:
                         dds.dds_device.init()
                         delay(1*ms)
-                        dds.set_dds()
+                        dds.dds_device.set(frequency=dds.freq_MHz*MHz)
+                        dds.dds_device.set_att(dds.att_dB)
                         delay(1*us)
                         dds.on()
 
@@ -113,7 +114,7 @@ class DDSGUIExptBuilder():
                     for dds in dds_sublist:
                         dds.dds_device.init()
                         delay(1*ms)
-                        dds.set_dds()
+                        dds.off()
                         delay(1*us)
 
             @kernel
