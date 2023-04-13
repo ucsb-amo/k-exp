@@ -26,10 +26,12 @@ class DDSSpinner(QWidget):
         self.f.setDecimals(1)
         self.f.setRange(0.,500.)
         self.f.setSuffix(" MHz")
+        self.f.setDecimals(2)
         
         self.amp = QDoubleSpinBox()
-        self.amp.setRange(0.,60.)
-        self.amp.setSuffix("")
+        self.amp.setRange(0.,1.)
+        # self.amp.setSuffix("")
+        self.amp.setDecimals(4)
 
         self.offbutton = QToolButton()
         self.offbutton.pressed.connect(self.submit_dds_off_job)
