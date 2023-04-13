@@ -28,16 +28,16 @@ class Cooling():
     @kernel
     def mot(self,t):
         delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_mot,
-                                 amplitude=self.p.amp_d2_c_mot)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_mot,
-                                 amplitude=self.p.amp_d2_r_mot)
+        self.dds.d2_3d_c.set_dds_gamma(delta=self.params.detune_d2_c_mot,
+                                 amplitude=self.params.amp_d2_c_mot)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d2_3d_r.set_dds_gamma(delta=self.params.detune_d2_r_mot,
+                                 amplitude=self.params.amp_d2_r_mot)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(1)
             self.switch_d2_3d(1)
-            delay_mu(self.p.t_rtio_mu)
+            delay_mu(self.params.t_rtio_mu)
             self.dds.push.on()
         delay(t)
 
@@ -45,16 +45,16 @@ class Cooling():
     @kernel
     def cmot_d2(self,t):
         delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_d2cmot,
-                                       amplitude=self.p.amp_d2_c_d2cmot)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d2cmot,
-                                       amplitude=self.p.amp_d2_r_d2cmot)
+        self.dds.d2_3d_c.set_dds_gamma(delta=self.params.detune_d2_c_d2cmot,
+                                       amplitude=self.params.amp_d2_c_d2cmot)
+        self.dds.d2_3d_r.set_dds_gamma(delta=self.params.detune_d2_r_d2cmot,
+                                       amplitude=self.params.amp_d2_r_d2cmot)
         delay(10*us)
         with parallel:
             self.switch_d2_3d(1)
             with sequential:
                 self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
-                                      self.p.V_d2cmot_current)
+                                      self.params.V_d2cmot_current)
                 self.zotino.load()
         delay(t)
 
@@ -62,11 +62,11 @@ class Cooling():
     @kernel
     def cmot_d1(self,t):
         delay(-10*us)
-        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_d1cmot,
-                                       amplitude=self.p.amp_d2_r_d1cmot)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_d1cmot,
-                                       amplitude=self.p.amp_d2_r_d1cmot)
+        self.dds.d1_3d_c.set_dds_gamma(delta=self.params.detune_d1_c_d1cmot,
+                                       amplitude=self.params.amp_d2_r_d1cmot)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d2_3d_r.set_dds_gamma(delta=self.params.detune_d2_r_d1cmot,
+                                       amplitude=self.params.amp_d2_r_d1cmot)
         delay(10*us)
         with parallel:
             self.dds.d2_3d_r.on()
@@ -75,7 +75,7 @@ class Cooling():
             self.dds.d1_3d_r.off()
             with sequential:
                 self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
-                                      self.p.V_d1cmot_current)
+                                      self.params.V_d1cmot_current)
                 self.zotino.load()
         delay(t)
 
@@ -83,11 +83,11 @@ class Cooling():
     @kernel
     def gm(self,t):
         delay(-10*us)
-        self.dds.d1_3d_r.set_dds_gamma(delta=self.p.detune_d1_r_gm, 
-                                       amplitude=self.p.amp_d1_r_gm)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_gm, 
-                                       amplitude=self.p.amp_d1_c_gm)
+        self.dds.d1_3d_r.set_dds_gamma(delta=self.params.detune_d1_r_gm, 
+                                       amplitude=self.params.amp_d1_r_gm)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d1_3d_c.set_dds_gamma(delta=self.params.detune_d1_c_gm, 
+                                       amplitude=self.params.amp_d1_c_gm)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(0)
@@ -99,11 +99,11 @@ class Cooling():
     @kernel
     def gm_ramp(self,t,att_c_i,att_c_f,att_r_i,att_r_f):
         delay(-10*us)
-        self.dds.d1_3d_r.set_dds_gamma(delta=self.p.detune_d1_r_gm, 
-                                       amplitude=self.p.amp_d1_r_gm)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_gm, 
-                                       amplitude=self.p.amp_d1_c_gm)
+        self.dds.d1_3d_r.set_dds_gamma(delta=self.params.detune_d1_r_gm, 
+                                       amplitude=self.params.amp_d1_r_gm)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d1_3d_c.set_dds_gamma(delta=self.params.detune_d1_c_gm, 
+                                       amplitude=self.params.amp_d1_c_gm)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(0)
