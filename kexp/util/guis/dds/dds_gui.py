@@ -167,7 +167,7 @@ class MainWindow(QWidget):
         for uru_idx in range(self.N_urukul):
             for ch_idx in range(self.N_ch):
                 this_spinner = self.spinners[uru_idx][ch_idx]
-                freq = this_spinner.f.value()
+                freq = this_spinner.f.value() * 1.e6
                 amp = this_spinner.amp.value()
                 param_list[uru_idx][ch_idx] = DDS(uru_idx,ch_idx,freq,amp)
         return param_list
@@ -175,6 +175,7 @@ class MainWindow(QWidget):
     def submit_job(self):
         '''Submit job when clicked or when hotkey is pressed'''
         param_list = self.spinners_to_param_list()
+        print([[dds.frequency for dds in dds_sub] for dds_sub in param_list])
         returncode = expt_builder.execute_set_from_gui(param_list)
         self.message.msg_report(returncode)
 
