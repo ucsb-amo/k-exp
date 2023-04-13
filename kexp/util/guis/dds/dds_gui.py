@@ -185,10 +185,10 @@ class MainWindow(QWidget):
 
         uru_idx = dds.urukul_idx
         ch = dds.ch
-        f = dds.freq_MHz
+        f = dds.frequency
         att = dds.att_dB
 
-        self.spinners[uru_idx][ch].f.setValue(f)
+        self.spinners[uru_idx][ch].f.setValue(f/1.e6)
         self.spinners[uru_idx][ch].att.setValue(att)
 
     def read_defaults(self):
@@ -202,6 +202,7 @@ class MainWindow(QWidget):
         default_py = textwrap.dedent(
             f"""
             from kexp.control.artiq.DDS import DDS
+            from artiq.experiment import *
 
             dds_state = [{dds_strings}]
             """
@@ -214,10 +215,10 @@ class MainWindow(QWidget):
         for uru_idx in range(self.N_urukul):
             lines += "["
             for ch in range(self.N_ch):
-                freq_MHz = self.spinners[uru_idx][ch].f.value()
+                frequency = self.spinners[uru_idx][ch].f.value()
                 att_dB = self.spinners[uru_idx][ch].att.value()
                 linetoadd = f"""
-                DDS({uru_idx:d},{ch:d},{freq_MHz:.2f},{att_dB:.1f})"""
+                DDS({uru_idx:d},{ch:d},{frequency:.2f}*MHz,{att_dB:.1f})"""
                 if ch != (self.N_ch-1):
                     linetoadd += ","
                 lines += linetoadd
