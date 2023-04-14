@@ -35,18 +35,18 @@ class ExptParams():
         self.detune_d2_c_d2cmot = -.9
         self.amp_d2_c_d2cmot = 0.188
         self.detune_d2_r_d2cmot = -3.7
-        self.amp_d2_r_d2cmot = 0.09 # needs recalibrating
+        self.amp_d2_r_d2cmot = 0.12 # needs recalibrating
 
-        self.detune_d1_c_d1cmot = 1.29
-        self.amp_d1_c_d1cmot = 0.270 # needs recalibrating
+        self.detune_d1_c_d1cmot = 3.5 # 1.29 (pre lock fix)
+        self.amp_d1_c_d1cmot = 0.1300 # needs recalibrating
         self.detune_d2_r_d1cmot = -3.7
         self.amp_d2_r_d1cmot = self.amp_d2_r_d2cmot
 
         #GM
-        self.detune_d1_c_gm = 1.29
-        self.amp_d1_c_gm = 0.270 # needs recalibrating
-        self.detune_d1_r_gm = 3.21
-        self.amp_d1_r_gm = 0.092 # needs recalibrating
+        self.detune_d1_c_gm = 3.5 # 3.21 (pre lock fix)
+        self.amp_d1_c_gm = 0.1300 # needs recalibrating
+        self.detune_d1_r_gm = 3.5 # 3.21 (pre lock fix)
+        self.amp_d1_r_gm = 0.1300 # needs recalibrating
 
         #Fields
         self.V_mot_current = 0.7 # 3.4A on 3D MOT coils
