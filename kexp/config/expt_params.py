@@ -9,7 +9,7 @@ class ExptParams():
         self.t_light_only_image_delay = 100.e-3
         self.t_dark_image_delay = 25.e-3
         self.t_camera_exposure = 0. # camera init will default to min exposure
-        self.t_grab_start_wait = 1.5
+        self.t_grab_start_wait = 0.5
         self.t_pretrigger = cam.exposure_delay
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
@@ -31,21 +31,21 @@ class ExptParams():
         self.detune_d2_r_mot = -4.7
         self.amp_d2_r_mot = 0.188
 
-        #CMOT
+        #D2 CMOT
         self.detune_d2_c_d2cmot = -.9
         self.amp_d2_c_d2cmot = 0.188
         self.detune_d2_r_d2cmot = -3.7
-        self.amp_d2_r_d2cmot = 0.12 # needs recalibrating
+        self.amp_d2_r_d2cmot = 0.188
 
-        self.detune_d1_c_d1cmot = 3.5 # 1.29 (pre lock fix)
+        #D1 CMOT
+        self.detune_d1_c_d1cmot = 3.5
         self.amp_d1_c_d1cmot = 0.1300
         self.detune_d2_r_d1cmot = -3.7
-        self.amp_d2_r_d1cmot = self.amp_d2_r_d2cmot
-
+        self.amp_d2_r_d1cmot = 0.065
         #GM
-        self.detune_d1_c_gm = 3.5 # 3.21 (pre lock fix)
+        self.detune_d1_c_gm = 3.5
         self.amp_d1_c_gm = 0.1300
-        self.detune_d1_r_gm = 3.5 # 3.21 (pre lock fix)
+        self.detune_d1_r_gm = 3.5
         self.amp_d1_r_gm = 0.1300
 
         #Fields
