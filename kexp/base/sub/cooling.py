@@ -63,7 +63,7 @@ class Cooling():
     def cmot_d1(self,t):
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=self.params.detune_d1_c_d1cmot,
-                                       amplitude=self.params.amp_d2_r_d1cmot)
+                                       amplitude=self.params.amp_d1_c_d1cmot)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=self.params.detune_d2_r_d1cmot,
                                        amplitude=self.params.amp_d2_r_d1cmot)

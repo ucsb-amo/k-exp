@@ -38,9 +38,9 @@ class ExptParams():
         self.amp_d2_r_d2cmot = 0.188
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 3.5
+        self.detune_d1_c_d1cmot = 7.6
         self.amp_d1_c_d1cmot = 0.1300
-        self.detune_d2_r_d1cmot = -3.7
+        self.detune_d2_r_d1cmot = -4.2
         self.amp_d2_r_d1cmot = 0.065
         #GM
         self.detune_d1_c_gm = 3.5

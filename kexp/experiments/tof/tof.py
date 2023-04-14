@@ -14,20 +14,25 @@ class tof(EnvExperiment, Base):
         self.p = self.params
 
         self.p.t_mot_kill = 1
-        self.p.t_mot_load = 2
+        self.p.t_mot_load = 3
 
         self.p.t_d2cmot = 5.e-3
-        self.p.t_d1cmot = 7.e-3
+        self.p.t_d1cmot = 1.e-3
         self.p.t_gm = 3.e-3
 
-        self.p.N_shots = 6
-        self.p.N_repeats = 5
-        self.p.t_tof = np.linspace(1000,5000,self.p.N_shots) * 1.e-6
+        self.p.N_shots = 5
+        self.p.N_repeats = 1
+        # self.p.t_tof = np.linspace(1000,5000,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.linspace(500,4000,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         self.xvarnames = ['t_tof']
 
         self.get_N_img()
+
+        # #GM
+        # self.p.amp_d1_c_gm = 0.0
+        # self.p.amp_d1_r_gm = 0.0
 
     @kernel
     def run(self):
@@ -48,10 +53,9 @@ class tof(EnvExperiment, Base):
             self.switch_d2_2d(0)
 
             self.cmot_d2(self.p.t_d2cmot * s)
-
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            self.gm(self.p.t_gm * s)
+            # self.gm(self.p.t_gm * s)
             
             self.release()
             
