@@ -12,8 +12,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [650, 1400]
         roiy = [250, 900]
     else:
-        roix = [0,np.shape(OD)[1]-1]
-        roiy = [0,np.shape(OD)[0]-1]
+        roix = [0,np.shape(OD)[len(np.shape(OD))-1]-1]
+        roiy = [0,np.shape(OD)[len(np.shape(OD))-2]-1]
 
     if Nvars == 1:
         cropOD = OD[:, roiy[0]:roiy[1], roix[0]:roix[1] ]
