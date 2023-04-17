@@ -1,10 +1,11 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
+from kexp.config import DDS_Calibration as ddscal
 from kexp import Base
 
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class tof_gmramp(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -19,30 +20,42 @@ class tof(EnvExperiment, Base):
         self.p.t_d2cmot = 5.e-3
         self.p.t_d1cmot = 7.e-3
         self.p.t_gm = 2.e-3
+        self.p.t_gm_ramp = 5.e-3
 
         self.p.N_shots = 5
         self.p.N_repeats = 3
         # self.p.t_tof = np.linspace(1000,5000,self.p.N_shots) * 1.e-6
-        self.p.t_tof = np.linspace(2000,5000,self.p.N_shots) * 1.e-6
+        self.p.t_tof = np.linspace(2000,3500,self.p.N_shots) * 1.e-6
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         self.xvarnames = ['t_tof']
 
         self.get_N_img()
 
+        self.V_d2cmot_current = 2.0
+        self.V_d1cmot_current = 2.0
+
         d = 8.
 
         #D1 CMOT
-        self.p.detune_d1_c_d1cmot = d
+        self.p.detune_d1_c_d1cmot = 7.6
         self.p.amp_d1_c_d1cmot = 0.1880
         self.p.detune_d2_r_d1cmot = -4.2
         self.p.amp_d2_r_d1cmot = 0.079
 
         #GM
         self.p.detune_d1_c_gm = d
-        self.p.amp_d1_c_gm = 0.1300
+        self.p.amp_d1_c_gm = 0.13
         self.p.detune_d1_r_gm = d
-        self.p.amp_d1_r_gm = 0.1300
+        self.p.amp_d1_r_gm = 0.13
+
+        div = 20
+        p_frac_c = ddscal().dds_amplitude_to_power_fraction(self.p.amp_d1_c_gm)
+        p_frac_r = ddscal().dds_amplitude_to_power_fraction(self.p.amp_d1_r_gm)
+        amp_ramp_c = ddscal().power_fraction_to_dds_amplitude(np.linspace(p_frac_c,p_frac_c/div,100))
+        amp_ramp_r = ddscal().power_fraction_to_dds_amplitude(np.linspace(p_frac_r,p_frac_r/div,100))
+        self.p.amp_d1_c_gm_ramp = amp_ramp_c
+        self.p.amp_d1_r_gm_ramp = amp_ramp_r
 
     @kernel
     def run(self):
@@ -66,6 +79,8 @@ class tof(EnvExperiment, Base):
             self.cmot_d1(self.p.t_d1cmot * s)
 
             self.gm(self.p.t_gm * s)
+
+            # self.gm_ramp(self.p.t_gm_ramp * s, self.p.amp_d1_c_gm_ramp, self.p.amp_d1_r_gm_ramp)
             
             self.release()
             
