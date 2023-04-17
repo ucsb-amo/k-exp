@@ -9,7 +9,7 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [300, 1600]
         roiy = [50, 1250]
     elif crop_type == 'gm':
-        roix = [650, 1400]
+        roix = [550, 1400]
         roiy = [250, 900]
     else:
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]-1]
