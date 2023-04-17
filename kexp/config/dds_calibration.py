@@ -1,4 +1,6 @@
 import numpy as np
+from artiq.experiment import portable, kernel, EnvExperiment
+from artiq.language.types import TArray, TFloat
 
 p_vs_amp = [(0.0, 4.4709388971684053e-07),
             (0.02, 0.0006855439642324888),
@@ -44,11 +46,17 @@ p_vs_amp = [(0.0, 4.4709388971684053e-07),
 p = [d[1] for d in p_vs_amp]
 a = [d[0] for d in p_vs_amp]
 
-def power_fraction_to_dds_amplitude(fraction_of_max):
-    amp = np.interp(fraction_of_max,p,a)
-    return amp
+class DDS_Calibration():
 
-def dds_amplitude_to_power_fraction(amp):
-    p_frac = np.interp(amp,a,p)
-    return p_frac
+    def __init__(self):
+        self.power_data = p
+        self.amp_data = a
+
+    def power_fraction_to_dds_amplitude(self,fraction_of_max):
+        amp = np.interp(fraction_of_max,self.power_data,self.amp_data)
+        return amp
+
+    def dds_amplitude_to_power_fraction(self,amp):
+        p_frac = np.interp(amp,self.amp_data,self.power_data)
+        return p_frac
     
