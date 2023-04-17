@@ -1,6 +1,4 @@
 import numpy as np
-from artiq.experiment import portable, kernel, EnvExperiment
-from artiq.language.types import TArray, TFloat
 
 p_vs_amp = [(0.0, 4.4709388971684053e-07),
             (0.02, 0.0006855439642324888),
