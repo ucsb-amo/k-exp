@@ -44,6 +44,6 @@ class Fit():
 
     def plot_fit(self):
         plt.figure()
-        plt.plot(self.xdata,self.ydata,'.k',markersize=2)
-        plt.plot(self.xdata,self.y_fitdata,'--k')
+        plt.plot(self.xdata,self.ydata,'.',markersize=2)
+        plt.plot(self.xdata,self.y_fitdata,'--')
         plt.legend(["Data","Fit"])
