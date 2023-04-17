@@ -6,3 +6,4 @@ __all__ = [ basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('_
 from .dds_id import dds_empty_frame, dds_frame
 from .expt_params import ExptParams
 import kexp.config.camera_params
+from .dds_calibration import DDS_Calibration
