@@ -4,7 +4,7 @@ from kexp import Base
 
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class scan_delta_gm(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -21,10 +21,10 @@ class tof(EnvExperiment, Base):
         self.p.t_gm = 2.e-3
 
         self.p.N_shots = 5
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
         self.p.t_tof = 2000.e-6
 
-        self.p.detune_gm = np.linspace(6.5,8.5,10)
+        self.p.detune_gm = np.linspace(6.5,8.5,self.p.N_shots)
         self.p.detune_d1_c_gm = self.p.detune_gm
         self.p.detune_d1_r_gm = self.p.detune_gm
 
