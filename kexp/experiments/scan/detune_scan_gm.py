@@ -3,7 +3,7 @@ from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
 import numpy as np
 
-class amp_scan_gm(EnvExperiment, Base):
+class detune_scan_gm(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -15,31 +15,33 @@ class amp_scan_gm(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
 
-        self.p.t_gm = 2e-3
+        self.t_d2cmot = 5.e-3
+        self.t_d1cmot = 7.e-3
+        self.p.t_gm = 2.e-3
 
-        self.p.N_shots = 8
-        # self.p.N_repeats = 1
+        # self.p.N_shots = 4
+        self.p.N_repeats = 1
+
         self.p.t_tof = 1500.e-6
-        
-        #GM Detunings
-        self.p.detune_d1_c_gm = 7.8
-        self.p.amp_d1_c_gm = np.linspace(0.00,0.21,9)
-        self.p.detune_d1_r_gm = 7.5
-        self.p.amp_d1_r_gm = np.linspace(0.00,0.21,9)
 
-        self.xvarnames = ['amp_d1_c_gm','amp_d1_r_gm']
+        #MOT detunings
+
+        self.p.detune_d1_c_gm = np.linspace(6,8.5,9)
+        self.p.detune_d1_r_gm = np.linspace(6,8.5,9)
+
+        self.xvarnames = ['detune_d1_c_gm','detune_d1_r_gm']
 
         self.get_N_img()
 
     #GM with only D1, turning B field off
     @kernel
-    def gm(self,t,amp_c,amp_r):
+    def gm(self,t,delta_c,delta_r):
         delay(-10*us)
-        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_gm, 
-                                       amplitude=amp_c)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d1_3d_r.set_dds_gamma(delta=self.p.detune_d1_r_gm, 
-                                       amplitude=amp_r)
+        self.dds.d1_3d_c.set_dds_gamma(delta=delta_c, 
+                                       amplitude=self.params.amp_d1_c_gm)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d1_3d_r.set_dds_gamma(delta=delta_r, 
+                                       amplitude=self.params.amp_d1_r_gm)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(0)
@@ -57,8 +59,8 @@ class amp_scan_gm(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for amp_c in self.p.amp_d1_c_gm:
-            for amp_r in self.p.amp_d1_r_gm:
+        for delta_c in self.p.detune_d1_c_gm:
+            for delta_r in self.p.detune_d1_r_gm:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
@@ -66,11 +68,10 @@ class amp_scan_gm(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                self.cmot_d2(self.p.t_d2cmot * s)
+                self.cmot_d2(self.p.t_d2cmot)
+                self.cmot_d1(self.p.t_d1cmot)
 
-                self.cmot_d1(self.p.t_d1cmot * s)
-
-                self.gm(self.p.t_gm * s, amp_c, amp_r)
+                self.gm(self.p.t_gm, delta_c, delta_r)
                 
                 self.release()
                 
@@ -86,7 +87,7 @@ class amp_scan_gm(EnvExperiment, Base):
         self.core.break_realtime()
         self.switch_mot_magnet(1)
 
-        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,self.p.V_mot_current)
+        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,0.7)
         self.zotino.load()
 
     def analyze(self):

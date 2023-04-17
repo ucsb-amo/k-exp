@@ -39,14 +39,14 @@ class ExptParams():
 
         #D1 CMOT
         self.detune_d1_c_d1cmot = 7.6
-        self.amp_d1_c_d1cmot = 0.1300
+        self.amp_d1_c_d1cmot = 0.1800
         self.detune_d2_r_d1cmot = -4.2
-        self.amp_d2_r_d1cmot = 0.065
+        self.amp_d2_r_d1cmot = 0.079
         #GM
-        self.detune_d1_c_gm = 3.5
-        self.amp_d1_c_gm = 0.1300
-        self.detune_d1_r_gm = 3.5
-        self.amp_d1_r_gm = 0.1300
+        self.detune_d1_c_gm = 8.0
+        self.amp_d1_c_gm = 0.1880
+        self.detune_d1_r_gm = 7.8
+        self.amp_d1_r_gm = 0.0790
 
         #Fields
         self.V_mot_current = 0.7 # 3.4A on 3D MOT coils

@@ -83,11 +83,11 @@ class Cooling():
     @kernel
     def gm(self,t):
         delay(-10*us)
-        self.dds.d1_3d_r.set_dds_gamma(delta=self.params.detune_d1_r_gm, 
-                                       amplitude=self.params.amp_d1_r_gm)
-        delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_c.set_dds_gamma(delta=self.params.detune_d1_c_gm, 
                                        amplitude=self.params.amp_d1_c_gm)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d1_3d_r.set_dds_gamma(delta=self.params.detune_d1_r_gm, 
+                                       amplitude=self.params.amp_d1_r_gm)
         delay(10*us)
         with parallel:
             self.switch_mot_magnet(0)
