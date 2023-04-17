@@ -97,7 +97,7 @@ class Cooling():
 
     #GM with only D1, turning B field off
     @kernel
-    def gm_ramp(self,t,att_c_i,att_c_f,att_r_i,att_r_f):
+    def gm_ramp(self,t,amp_c_list,amp_r_list):
         delay(-10*us)
         self.dds.d1_3d_r.set_dds_gamma(delta=self.params.detune_d1_r_gm, 
                                        amplitude=self.params.amp_d1_r_gm)
@@ -110,16 +110,12 @@ class Cooling():
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
 
-        dt = 8.e-9 # 8 ns
-        N = np.floor(t/dt)
-        att_list_c = np.linspace(att_c_i,att_c_f,N)
-        att_list_r = np.linspace(att_r_i,att_r_f,N)
+        N = len(amp_c_list)
+        dt = t / N
         for i in range(N):
-            with parallel:
-                self.dds.d1_3d_c.dds_device.set_att(att_list_c[i])
-                self.dds.d1_3d_r.dds_device.set_att(att_list_r[i])
-            delay(dt)
-        # delay(t)
+            self.dds.d1_3d_c.set_dds(amp_c_list[i])
+            self.dds.d1_3d_r.set_dds(amp_r_list[i])
+            delay(dt - self.dds.d1_3d_c._t_set_delay_mu * 1.e-9 * 2)
 
     @kernel
     def release(self):
