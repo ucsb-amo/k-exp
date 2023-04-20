@@ -3,7 +3,7 @@ from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
 import numpy as np
 
-class detune_scan_gm(EnvExperiment, Base):
+class test_scan(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -15,37 +15,34 @@ class detune_scan_gm(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
 
-        self.t_d2cmot = 5.e-3
-        self.t_d1cmot = 7.e-3
-        self.p.t_gm = 2.e-3
+        self.p.t_d2_cmot = 5.e-3
+        self.p.t_hybrid_cmot = 7.e-3
+        self.p.t_gm = 1.5e-3
 
-        self.p.t_tof = 4000.e-6
+        self.p.N_repeats = 1
+
+        self.p.t_tof = np.linspace(100.,1500.,3) * 1.e-6
 
         #MOT detunings
 
-        self.p.amp_d1_c_gm = 0.1300
-        self.p.amp_d1_r_gm = 0.1300
-        self.p.detune_d1_c_gm = np.linspace(3.75,6,6)
-        self.p.detune_d1_r_gm = np.linspace(3.75,6,6)
+        self.p.amp_d2_mot = np.linspace(0,0.188,2)
 
-        self.xvarnames = ['detune_d1_c_gm','detune_d1_r_gm']
+        self.xvarnames = ['amp_d2_mot','t_tof']
 
         self.get_N_img()
 
-    #GM with only D1, turning B field off
     @kernel
-    def gm(self,t,delta_c,delta_r):
+    def mot(self,t,amp):
         delay(-10*us)
-        self.dds.d1_3d_c.set_dds_gamma(delta=delta_c, 
-                                       amplitude=self.params.amp_d1_c_gm)
-        delay_mu(self.params.t_rtio_mu)
-        self.dds.d1_3d_r.set_dds_gamma(delta=delta_r, 
-                                       amplitude=self.params.amp_d1_r_gm)
+        self.dds.d2_3d_c.set_dds_gamma(delta=self.p.detune_d2_c_mot, amplitude=amp)
+        delay_mu(self.p.t_rtio_mu)
+        self.dds.d2_3d_r.set_dds_gamma(delta=self.p.detune_d2_r_mot, amplitude=amp)
         delay(10*us)
         with parallel:
-            self.switch_mot_magnet(0)
-            self.switch_d1_3d(1)
-            self.switch_d2_3d(0)
+            self.switch_mot_magnet(1)
+            self.switch_d2_3d(1)
+            delay_mu(self.p.t_rtio_mu)
+            self.dds.push.on()
         delay(t)
 
     @kernel
@@ -58,24 +55,19 @@ class detune_scan_gm(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for delta_c in self.p.detune_d1_c_gm:
-            for delta_r in self.p.detune_d1_r_gm:
+        for amp in self.p.amp_d2_mot:
+            for t_tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(self.p.t_mot_load * s)
+                self.mot(self.p.t_mot_load * s, amp)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
-
-                self.cmot_d2(self.p.t_d2cmot)
-                self.cmot_d1(self.p.t_d1cmot)
-
-                self.gm(self.p.t_gm, delta_c, delta_r)
                 
                 self.release()
                 
                 ### abs img
-                delay(self.p.t_tof * s)
+                delay(t_tof * s)
                 self.abs_image()
 
                 self.core.break_realtime()

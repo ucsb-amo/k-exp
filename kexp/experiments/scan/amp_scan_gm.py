@@ -15,17 +15,17 @@ class amp_scan_gm(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 3
 
-        self.p.t_gm = 2e-3
+        # self.p.t_gm = 2.e-3
 
         self.p.N_shots = 8
         # self.p.N_repeats = 1
-        self.p.t_tof = 1500.e-6
+        self.p.t_tof = 3500.e-6
         
         #GM Detunings
-        self.p.detune_d1_c_gm = 7.8
-        self.p.amp_d1_c_gm = np.linspace(0.00,0.21,9)
-        self.p.detune_d1_r_gm = 7.5
-        self.p.amp_d1_r_gm = np.linspace(0.00,0.21,9)
+        self.p.detune_d1_c_gm = 5.1
+        self.p.amp_d1_c_gm = np.linspace(0.00,0.21,6)
+        self.p.detune_d1_r_gm = 5.1
+        self.p.amp_d1_r_gm = np.linspace(0.00,0.21,6)
 
         self.xvarnames = ['amp_d1_c_gm','amp_d1_r_gm']
 
@@ -70,7 +70,8 @@ class amp_scan_gm(EnvExperiment, Base):
 
                 self.cmot_d1(self.p.t_d1cmot * s)
 
-                self.gm(self.p.t_gm * s, amp_c, amp_r)
+                # self.gm(self.p.t_gm * s, amp_c, amp_r)
+                delay(self.p.t_gm)
                 
                 self.release()
                 
