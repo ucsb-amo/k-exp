@@ -20,7 +20,7 @@ class tof(EnvExperiment, Base):
         self.p.t_d1cmot = 7.e-3
         self.p.t_gm = 2.e-3
 
-        self.p.N_shots = 3
+        self.p.N_shots = 5
         self.p.N_repeats = 1
         # self.p.t_tof = np.linspace(300,1000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(750,1250,self.p.N_shots) * 1.e-6 # d2 cmot
@@ -37,7 +37,7 @@ class tof(EnvExperiment, Base):
         self.p.V_d1cmot_current = 0.7
 
         # d = 8.
-        d = -3.5
+        d = 3.5
 
         #D1 CMOT
         self.p.detune_d1_c_d1cmot = d

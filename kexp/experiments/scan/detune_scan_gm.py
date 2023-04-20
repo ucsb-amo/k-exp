@@ -19,14 +19,16 @@ class detune_scan_gm(EnvExperiment, Base):
         self.t_d1cmot = 7.e-3
         self.p.t_gm = 2.e-3
 
-        self.p.t_tof = 4000.e-6
+        self.p.t_tof = 7500.e-6
 
         #MOT detunings
 
-        self.p.amp_d1_c_gm = 0.1300
-        self.p.amp_d1_r_gm = 0.1300
-        self.p.detune_d1_c_gm = np.linspace(3.75,6,6)
-        self.p.detune_d1_r_gm = np.linspace(3.75,6,6)
+        # scan_center = 4.8
+
+        self.p.amp_d1_c_gm = 0.188
+        self.p.amp_d1_r_gm = 0.079
+        self.p.detune_d1_c_gm = np.linspace(4.125,6,7)
+        self.p.detune_d1_r_gm = np.linspace(4.125,6,7)
 
         self.xvarnames = ['detune_d1_c_gm','detune_d1_r_gm']
 
