@@ -41,6 +41,28 @@ class Cooling():
             self.dds.push.on()
         delay(t)
 
+    @kernel
+    def hybrid_mot(self,t):
+        delay(-10*us)
+        self.dds.d2_3d_c.set_dds_gamma(delta=self.params.detune_d2_c_mot,
+                                 amplitude=self.params.amp_d2_c_mot)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d2_3d_r.set_dds_gamma(delta=self.params.detune_d2_r_mot,
+                                 amplitude=self.params.amp_d2_r_mot)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d1_3d_c.set_dds_gamma(delta=self.params.detune_d1_c_mot,
+                                 amplitude=self.params.amp_d1_c_mot)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d1_3d_r.set_dds_gamma(delta=self.params.detune_d1_r_mot,
+                                 amplitude=self.params.amp_d1_r_mot)
+        delay(10*us)
+        self.switch_mot_magnet(1)
+        with parallel:
+            self.switch_d2_3d(1)
+            self.switch_d1_3d(1)
+            self.dds.push.on()
+        delay(t)
+
     #compress MOT by changing D2 detunings and raising B field
     @kernel
     def cmot_d2(self,t):
