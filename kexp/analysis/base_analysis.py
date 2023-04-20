@@ -4,6 +4,7 @@ from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 import numpy as np
 from kamo.atom_properties.k39 import Potassium39
+from kexp.config import camera_params as cam
 
 class atomdata():
     '''
@@ -35,10 +36,10 @@ class atomdata():
         self._analyze_absorption_images(crop_type)
         self._remap_fit_results()
 
-        # self.atom = Potassium39()
-        # self.atom_cross_section = self.atom.get_cross_section()
-        # self.atom_number_density = self.od / self.atom_cross_section
-        # self.atom_number = np.sum(self.atom_number_density)
+        self.atom = Potassium39()
+        self.atom_cross_section = self.atom.get_cross_section()
+        self.atom_number_density = self.od / self.atom_cross_section * (cam.pixel_size_m / cam.magnification)**2
+        self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
     ### Analysis
 
