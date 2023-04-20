@@ -9,6 +9,8 @@ class tof(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
+        self.run_info._run_description = "d1 cmot tof"
+
         ## Parameters
 
         self.p = self.params
@@ -20,12 +22,12 @@ class tof(EnvExperiment, Base):
         self.p.t_d1cmot = 7.e-3
         self.p.t_gm = 2.e-3
 
-        self.p.N_shots = 5
-        self.p.N_repeats = 1
+        self.p.N_shots = 6
+        self.p.N_repeats = 3
         # self.p.t_tof = np.linspace(300,1000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(750,1250,self.p.N_shots) * 1.e-6 # d2 cmot
-        # self.p.t_tof = np.linspace(1500,3000,self.p.N_shots) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(2000,5000,self.p.N_shots) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(1500,3000,self.p.N_shots) * 1.e-6 # d1 cmot
+        # self.p.t_tof = np.linspace(2000,5000,self.p.N_shots) * 1.e-6 # gm
 
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
@@ -34,7 +36,7 @@ class tof(EnvExperiment, Base):
         self.get_N_img()
 
         self.p.V_d2cmot_current = 1.5
-        self.p.V_d1cmot_current = 0.7
+        self.p.V_d1cmot_current = 1.0
 
         # d = 8.
         d = 3.5
@@ -72,9 +74,9 @@ class tof(EnvExperiment, Base):
 
             self.cmot_d2(self.p.t_d2cmot * s)
 
-            self.cmot_d1(self.p.t_d1cmot * s)
+            # self.cmot_d1(self.p.t_d1cmot * s)
 
-            self.gm(self.p.t_gm * s)
+            # self.gm(self.p.t_gm * s)
             
             self.release()
             
