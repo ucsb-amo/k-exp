@@ -129,6 +129,8 @@ class DDS():
       if _set_amp:
          self.amplitude = amplitude
       elif amplitude == 0.:
+         self.amplitude = 0.
+         self.dds_device.set(amplitude=self.amplitude)
          self.dds_device.sw.off()
       
       if _set_both:
