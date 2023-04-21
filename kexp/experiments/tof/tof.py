@@ -9,23 +9,26 @@ class tof(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
+        self.run_info._run_description = "gm tof"
+
         ## Parameters
 
         self.p = self.params
 
         self.p.t_mot_kill = 1
-        self.p.t_mot_load = 3
+        self.p.t_mot_load = 6
 
         self.p.t_d2cmot = 5.e-3
         self.p.t_d1cmot = 7.e-3
         self.p.t_gm = 2.e-3
 
         self.p.N_shots = 5
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         # self.p.t_tof = np.linspace(300,1000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(750,1250,self.p.N_shots) * 1.e-6 # d2 cmot
-        # self.p.t_tof = np.linspace(1500,3000,self.p.N_shots) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(2000,5000,self.p.N_shots) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(1500,4000,self.p.N_shots) * 1.e-6 # d1 cmot
+        # self.p.t_tof = np.linspace(6000,12000,self.p.N_shots) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(3500,5000,self.p.N_shots) * 1.e-6 # gm
 
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
@@ -33,23 +36,14 @@ class tof(EnvExperiment, Base):
 
         self.get_N_img()
 
-        self.p.V_d2cmot_current = 1.5
-        self.p.V_d1cmot_current = 0.7
-
-        # d = 8.
-        d = 3.5
-
-        #D1 CMOT
-        self.p.detune_d1_c_d1cmot = d
-        self.p.amp_d1_c_d1cmot = 0.1880
-        self.p.detune_d2_r_d1cmot = -4.2
-        self.p.amp_d2_r_d1cmot = 0.079
+        d = 5.8
+        amp = 0.09
 
         #GM
         self.p.detune_d1_c_gm = d
-        self.p.amp_d1_c_gm = 0.13
+        self.p.amp_d1_c_gm = amp
         self.p.detune_d1_r_gm = d
-        self.p.amp_d1_r_gm = 0.13
+        self.p.amp_d1_r_gm = amp
 
     @kernel
     def run(self):
@@ -69,8 +63,6 @@ class tof(EnvExperiment, Base):
 
             self.dds.push.off()
             self.switch_d2_2d(0)
-
-            self.cmot_d2(self.p.t_d2cmot * s)
 
             self.cmot_d1(self.p.t_d1cmot * s)
 

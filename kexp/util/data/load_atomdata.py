@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import _pickle as pickle
 import glob
 import h5py
 from kexp.analysis.base_analysis import atomdata
@@ -49,8 +48,10 @@ def load_atomdata(idx=0,path = [],crop_type='mot') -> atomdata:
     Parameters
     ----------
     idx: int
-        The index of the pickle file to be loaded, relative to the latest file
-        (idx=0). (default: idx = 0)
+        If a positive value is specified, it is interpreted as a run_id (as
+        stored in run_info.run_id), and that data is found and loaded. If zero
+        or a negative number are given, data is loaded relative to the most
+        recent dataset (idx=0).
     path: str
         The full path to the file to be loaded. If not specified, loads the file
         as dictated by `idx`.
@@ -62,8 +63,14 @@ def load_atomdata(idx=0,path = [],crop_type='mot') -> atomdata:
     if path == []:
         folderpath=os.path.join(data_dir,'*','*.hdf5')
         list_of_files = glob.glob(folderpath)
-        list_of_files.sort(key=lambda x: os.path.getmtime(x))
-        file = list_of_files[-(idx+1)]
+        if idx <= 0:
+            list_of_files.sort(key=lambda x: os.path.getmtime(x))
+            file = list_of_files[-(idx+1)]
+        if idx > 0:
+            run_id = idx
+            rids = [int(file.split("_")[0].split("\\")[-1]) for file in list_of_files]
+            rid_idx = rids.index(run_id)
+            file = list_of_files[rid_idx]
     else:
         if path.endswith('.hdf5'):
             file = path

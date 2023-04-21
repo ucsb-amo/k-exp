@@ -19,16 +19,16 @@ class detune_scan_mot(EnvExperiment, Base):
         self.p.t_hybrid_cmot = 7.e-3
         self.p.t_gm = 1.5e-3
 
-        self.p.N_shots = 8
+        self.p.N_shots = 6
         self.p.N_repeats = 1
 
         self.p.t_tof = 500.e-6
 
         #MOT detunings
 
-        self.p.detune_d2_c_mot = np.linspace(0,-6,self.p.N_shots)
+        self.p.detune_d2_c_mot = np.linspace(0.01,-6,self.p.N_shots)
         self.p.amp_d2_c_mot = self.dds.d2_3d_c.amplitude
-        self.p.detune_d2_r_mot = np.linspace(0,-6,self.p.N_shots)
+        self.p.detune_d2_r_mot = np.linspace(0.01,-6,self.p.N_shots)
         self.p.amp_d2_r_mot = self.dds.d2_3d_r.amplitude
 
         self.xvarnames = ['detune_d2_c_mot','detune_d2_r_mot']

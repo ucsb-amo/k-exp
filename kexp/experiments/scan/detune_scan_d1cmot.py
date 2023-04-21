@@ -8,6 +8,8 @@ class detune_scan_d1cmot(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
+        self.run_info._run_description = "d1 cmot tof"
+
         ## Parameters
 
         self.p = self.params
