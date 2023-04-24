@@ -186,3 +186,17 @@ class Cooling():
         with sequential:
             self.zotino.write_dac(self.dac_ch_3Dmot_current_control,V)
             self.zotino.load()
+
+    ## Other
+    
+    @kernel
+    def mot_observe(self):
+        # return to mot load state
+        self.switch_d1_3d(0)
+        self.switch_d2_3d(1)
+        self.switch_d2_2d(1)
+        self.dds.imaging.off()
+
+        self.core.break_realtime()
+        self.set_magnet_current()
+        self.ttl_magnets.on()
