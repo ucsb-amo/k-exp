@@ -81,14 +81,7 @@ class scan_delta_tof_gm(EnvExperiment, Base):
                 self.core.break_realtime()
 
         # return to mot load state
-        self.switch_all_dds(state=1)
-        self.dds.imaging.off()
-
-        self.core.break_realtime()
-        self.switch_mot_magnet(1)
-
-        self.zotino.write_dac(self.dac_ch_3Dmot_current_control,self.p.V_mot_current)
-        self.zotino.load()
+        self.mot_observe()
 
     def analyze(self):
 
