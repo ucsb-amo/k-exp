@@ -40,6 +40,7 @@ class Devices():
         delay_mu(self.params.t_rtio_mu)
         self.init_all_cpld()
         self.init_all_dds()
+        delay(1*ms)
         self.set_all_dds()
         self.switch_all_dds(0)
         self.core.break_realtime()

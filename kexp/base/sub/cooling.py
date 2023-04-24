@@ -192,8 +192,12 @@ class Cooling():
     @kernel
     def mot_observe(self):
         # return to mot load state
+        self.dds.push.on()
+        delay(1*ms)
         self.switch_d1_3d(0)
+        delay(1*ms)
         self.switch_d2_3d(1)
+        delay(1*ms)
         self.switch_d2_2d(1)
         self.dds.imaging.off()
 
