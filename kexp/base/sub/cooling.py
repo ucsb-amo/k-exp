@@ -34,8 +34,9 @@ class Cooling():
         self.dds.d2_3d_r.set_dds_gamma(delta=self.params.detune_d2_r_mot,
                                  amplitude=self.params.amp_d2_r_mot)
         delay(10*us)
+        self.set_magnet_current(V = self.params.V_mot_current)
         with parallel:
-            self.switch_mot_magnet(1)
+            self.ttl_magnets.on()
             self.switch_d2_3d(1)
             delay_mu(self.params.t_rtio_mu)
             self.dds.push.on()
@@ -56,7 +57,8 @@ class Cooling():
         self.dds.d1_3d_r.set_dds_gamma(delta=self.params.detune_d1_r_mot,
                                  amplitude=self.params.amp_d1_r_mot)
         delay(10*us)
-        self.switch_mot_magnet(1)
+        self.set_magnet_current(V = self.params.V_mot_current)
+        self.ttl_magnets.on()
         with parallel:
             self.switch_d2_3d(1)
             self.switch_d1_3d(1)
@@ -74,10 +76,7 @@ class Cooling():
         delay(10*us)
         with parallel:
             self.switch_d2_3d(1)
-            with sequential:
-                self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
-                                      self.params.V_d2cmot_current)
-                self.zotino.load()
+            self.set_magnet_current(V = self.params.V_d2cmot_current)
         delay(t)
 
     #hybrid compressed MOT with only D2 repump and D1 cooler, setting B field to lower value
@@ -95,10 +94,7 @@ class Cooling():
             self.dds.d1_3d_c.on()
             self.dds.d2_3d_c.off()
             self.dds.d1_3d_r.off()
-            with sequential:
-                self.zotino.write_dac(self.dac_ch_3Dmot_current_control,
-                                      self.params.V_d1cmot_current)
-                self.zotino.load()
+            self.set_magnet_current(V = self.params.V_d1cmot_current)
         delay(t)
 
     #GM with only D1, turning B field off
@@ -112,7 +108,7 @@ class Cooling():
                                        amplitude=self.params.amp_d1_r_gm)
         delay(10*us)
         with parallel:
-            self.switch_mot_magnet(0)
+            self.ttl_magnets.off()
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
         delay(t)
@@ -128,7 +124,7 @@ class Cooling():
                                        amplitude=self.params.amp_d1_c_gm)
         delay(10*us)
         with parallel:
-            self.switch_mot_magnet(0)
+            self.ttl_magnets.off()
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
 
@@ -142,7 +138,7 @@ class Cooling():
     @kernel
     def release(self):
         with parallel:
-            self.switch_mot_magnet(0)
+            self.ttl_magnets.off()
             self.switch_d2_3d(0)
             self.switch_d1_3d(0)
 
@@ -184,11 +180,9 @@ class Cooling():
     ## Magnet functions
 
     @kernel
-    def switch_mot_magnet(self, state = 0):
-        if state == 1:
+    def set_magnet_current(self, V = -0.1):
+        if V < 0.:
             V = self.params.V_mot_current
-        else:
-            V = 0.
         with sequential:
             self.zotino.write_dac(self.dac_ch_3Dmot_current_control,V)
             self.zotino.load()
