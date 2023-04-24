@@ -24,6 +24,7 @@ class Devices():
         self.dac_ch_3Dmot_current_control = 0
 
         self.ttl_camera = self.get_device("ttl4")
+        self.ttl_magnets = self.get_device("ttl6")
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list():
