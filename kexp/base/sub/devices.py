@@ -23,8 +23,8 @@ class Devices():
 
         self.dac_ch_3Dmot_current_control = 0
 
-        self.ttl_camera = self.get_device("ttl4")
-        self.ttl_magnets = self.get_device("ttl6")
+        self.ttl_camera = self.get_device("ttl9")
+        self.ttl_magnets = self.get_device("ttl11")
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list():
@@ -40,6 +40,9 @@ class Devices():
         delay_mu(self.params.t_rtio_mu)
         self.init_all_cpld()
         self.init_all_dds()
+        delay(1*ms)
+        self.ttl_camera.output()
+        self.ttl_magnets.output()
         delay(1*ms)
         self.set_all_dds()
         self.switch_all_dds(0)
