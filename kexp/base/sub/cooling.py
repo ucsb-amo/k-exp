@@ -28,6 +28,7 @@ class Cooling():
                      detune_d2_r = dv,
                      amp_d2_r = dv):
         
+        ### Start Defaults ###
         if detune_d2_c == dv:
             detune_d2_c = self.params.detune_d2_c_2dmot
         if amp_d2_c == dv:
@@ -36,6 +37,7 @@ class Cooling():
             detune_d2_r = self.params.detune_d2_r_2dmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_2dmot
+        ### End Defaults ###
 
         delay(-10*us)
         self.dds.d2_2d_c.set_dds_gamma(delta=detune_d2_c,
@@ -56,6 +58,7 @@ class Cooling():
             amp_d2_r = dv,
             V_current = dv):
         
+        ### Start Defaults ###
         if detune_d2_c == dv:
             detune_d2_c = self.params.detune_d2_c_mot
         if amp_d2_c == dv:
@@ -66,6 +69,7 @@ class Cooling():
             amp_d2_r = self.params.amp_d2_r_mot
         if V_current == dv:
             V_current = self.params.V_mot_current
+        ### End Defaults ###
 
         delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
@@ -94,6 +98,7 @@ class Cooling():
             amp_d1_r = dv,
             V_current = dv):
         
+        ### Start Defaults ###
         if detune_d2_c == dv:
             detune_d2_c = self.params.detune_d2_c_mot
         if amp_d2_c == dv:
@@ -102,6 +107,7 @@ class Cooling():
             detune_d2_r = self.params.detune_d2_r_mot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_mot
+        ### End Defaults ###
 
         if detune_d1_c == dv:
             detune_d1_c = self.params.detune_d1_c_mot
@@ -145,6 +151,7 @@ class Cooling():
             amp_d2_r = dv,
             V_current = dv):
         
+        ### Start Defaults ###
         if detune_d2_c == dv:
             detune_d2_c = self.params.detune_d2_c_d2cmot
         if amp_d2_c == dv:
@@ -155,6 +162,7 @@ class Cooling():
             amp_d2_r = self.params.amp_d2_r_d2cmot
         if V_current == dv:
             V_current = self.params.V_d2cmot_current
+        ### End Defaults ###
 
         delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
@@ -170,12 +178,13 @@ class Cooling():
     #hybrid compressed MOT with only D2 repump and D1 cooler, setting B field to lower value
     @kernel
     def cmot_d1(self,t,
-            detune_d2_c = dv,
-            amp_d2_c = dv,
+            detune_d1_c = dv,
+            amp_d1_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
             V_current = dv):
         
+        ### Start Defaults ###
         if detune_d1_c == dv:
             detune_d1_c = self.params.detune_d1_c_d1cmot
         if amp_d1_c == dv:
@@ -186,6 +195,7 @@ class Cooling():
             amp_d2_r = self.params.amp_d2_r_d1cmot
         if V_current == dv:
             V_current = self.params.V_d1cmot_current
+        ### End Defaults ###
 
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
@@ -211,6 +221,7 @@ class Cooling():
             amp_d1_r = dv,
             delta_d1 = dv):
         
+        ### Start Defaults ###
         if delta_d1 != dv:
             detune_d1_c = delta_d1
             detune_d1_r = delta_d1
@@ -224,6 +235,7 @@ class Cooling():
             amp_d1_c = self.params.amp_d1_c_gm
         if amp_d1_r == dv:
             amp_d1_r = self.params.amp_d1_r_gm
+        ### End Defaults ###
 
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
@@ -247,6 +259,7 @@ class Cooling():
             amp_d1_r = dv,
             delta_d1 = dv):
         
+        ### Start Defaults ###
         if delta_d1 != dv:
             detune_d1_c = delta_d1
             detune_d1_r = delta_d1
@@ -260,6 +273,7 @@ class Cooling():
             amp_d1_c = self.params.amp_d1_c_gm
         if amp_d1_r == dv:
             amp_d1_r = self.params.amp_d1_r_gm
+        ### End Defaults ###
 
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
