@@ -4,8 +4,6 @@ from kexp.config.dds_id import dds_frame
 from kexp.config.expt_params import ExptParams
 import numpy as np
 
-params = ExptParams()
-
 class Cooling():
     def __init__(self):
         self.dds = dds_frame()
@@ -22,13 +20,26 @@ class Cooling():
         delay(t)
 
     @kernel
-    def load_2D_mot(self,t):
+    def load_2D_mot(self, t,
+                     detune_2d_c = 100.,
+                     amp_2d_c = 100.,
+                     detune_2d_r = 100.,
+                     amp_2d_r = 100.):
+        if detune_2d_c == 100.:
+            detune_2d_c = self.params.detune_d2_c_2dmot
+        if amp_2d_c == 100.:
+            amp_2d_c = self.params.amp_d2_c_2dmot
+        if detune_2d_r == 100.:
+            detune_2d_r = self.params.detune_d2_r_2dmot
+        if amp_2d_r == 100.:
+            amp_2d_r = self.params.amp_d2_r_2dmot
+
         delay(-10*us)
-        self.dds.d2_2d_c.set_dds_gamma(delta=self.params.detune_d2_c_2dmot,
-                                 amplitude=self.params.amp_d2_c_2dmot)
+        self.dds.d2_2d_c.set_dds_gamma(delta=detune_2d_c,
+                                 amplitude=amp_2d_c)
         delay_mu(self.params.t_rtio_mu)
-        self.dds.d2_2d_r.set_dds_gamma(delta=self.params.detune_d2_r_2dmot,
-                                 amplitude=self.params.amp_d2_r_2dmot)
+        self.dds.d2_2d_r.set_dds_gamma(delta=detune_2d_r,
+                                 amplitude=amp_2d_r)
         delay(10*us)
         with parallel:
             self.switch_d2_2d(1)
