@@ -26,6 +26,12 @@ class ExptParams():
         self.t_gm = 7e-3
         self.t_gm_ramp = 5.e-3
 
+        #2D MOT
+        self.detune_d2_c_2dmot = -3.
+        self.amp_d2_c_2dmot = 0.1880
+        self.detune_d2_r_2dmot = -5.8
+        self.amp_d2_r_2dmot = 0.1880
+
         #MOT
         self.detune_d2_c_mot = 0.
         self.amp_d2_c_mot = 0.188
