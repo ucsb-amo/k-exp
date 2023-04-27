@@ -102,13 +102,21 @@ class DDS():
       self.set_dds(frequency=frequency, amplitude=amplitude, att_dB=att_dB)
 
    @kernel(flags={"fast-math"})
-   def set_dds(self, frequency = -0.1, amplitude = -0.1, att_dB = -0.1):
+   def set_dds(self, frequency = -0.1, amplitude = -0.1, att_dB = -0.1, set_stored = False):
       '''Set the dds device. If frequency = 0, turn it off'''
 
-      _set_freq = (frequency != self.frequency and frequency > 0.)
-      _set_amp = (amplitude != self.amplitude and amplitude > 0.)
+      if set_stored:
+         if frequency < 0.:
+            frequency = self.frequency
+         if amplitude < 0.:
+            amplitude = self.amplitude
+         if att_dB < 0.:
+            att_dB = self.att_dB
+
+      _set_freq = frequency > 0.
+      _set_amp = amplitude > 0.
       _set_freq_or_amp = _set_freq or _set_amp
-      _set_att = (att_dB != self.att_dB and att_dB > 0.)
+      _set_att = att_dB > 0.
       _set_both = (_set_freq_or_amp and _set_att)
       
       # tnow = now_mu()
@@ -138,7 +146,7 @@ class DDS():
          self.dds_device.set_att(self.att_dB)
       elif _set_att:
          self.dds_device.set_att(self.att_dB)
-      elif _set_freq or _set_amp:
+      elif _set_freq_or_amp:
          self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
 
       # if _set_freq_or_amp:
