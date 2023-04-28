@@ -32,13 +32,17 @@ class Devices():
         self.ttl_magnets = self.get_device("ttl11")
 
     def gm_ramp_setup(self):
-        pic,pir = self.dds.dds_calibration.dds_amplitude_to_power_fraction(
-            [self.params.amp_d1_c_gm,self.params.amp_d1_r_gm])
-        pfc,pfr = np.array([pic,pir]) / self.params.power_ramp_factor_gmramp
-        self.dds.set_amplitude_profile(
-            self.dds.d1_3d_c,self.params.t_gm_ramp,p_i=pic,p_f=pfc)
-        self.dds.set_amplitude_profile(
-            self.dds.d1_3d_r,self.params.t_gm_ramp,p_i=pir,p_f=pfr)
+        try:
+            pic,pir = self.dds.dds_calibration.dds_amplitude_to_power_fraction(
+                [self.params.amp_d1_c_gm,self.params.amp_d1_r_gm])
+            pfc,pfr = np.array([pic,pir]) / self.params.power_ramp_factor_gmramp
+            
+            self.dds.set_amplitude_profile(
+                self.dds.d1_3d_c,self.params.t_gm_ramp,p_i=pic,p_f=pfc)
+            self.dds.set_amplitude_profile(
+                self.dds.d1_3d_r,self.params.t_gm_ramp,p_i=pir,p_f=pfr)
+        except:
+            print("Setting up DDS ramp profiles failed. If this is a repo scan, ignore.")
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list():
