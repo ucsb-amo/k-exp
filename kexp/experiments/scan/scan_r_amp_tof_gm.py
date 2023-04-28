@@ -1,6 +1,5 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
-from kexp.config import DDS_Calibration as ddscal
 from kexp import Base
 
 import numpy as np
@@ -30,7 +29,7 @@ class scan_r_amp_tof_gm(EnvExperiment, Base):
         self.p.detune_d1_c_gm = self.p.detune_gm
         self.p.detune_d1_r_gm = self.p.detune_gm
 
-        self.p.amp_d1_r_gm = ddscal().power_fraction_to_dds_amplitude(np.linspace(1.,0.01,10))
+        self.p.amp_d1_r_gm = self.dds.dds_calibration.power_fraction_to_dds_amplitude(np.linspace(1.,0.01,10))
 
         self.xvarnames = ['amp_d1_r_gm','t_tof']
 
