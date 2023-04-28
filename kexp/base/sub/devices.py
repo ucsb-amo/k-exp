@@ -5,6 +5,8 @@ from kexp.config.dds_id import dds_frame, N_uru
 from kexp.control.artiq.DDS import DDS
 from kexp.config.expt_params import ExptParams
 
+from jax import AD9910Manager, RAMProfile, RAMType
+
 import numpy as np
 
 class Devices():
@@ -18,6 +20,8 @@ class Devices():
         self.zotino = self.get_device("zotino0")
 
         self.dds = dds_frame()
+        self.dds.dds_manager = AD9910Manager(self.core)
+
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list()
 
