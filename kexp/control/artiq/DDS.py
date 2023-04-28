@@ -4,10 +4,11 @@ from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np
 
-from artiq.coredevice.ad9910 import AD9910
+from artiq.coredevice import ad9910
 from artiq.coredevice.urukul import CPLD
 
 from kexp.util.artiq.async_print import aprint
+from kexp.config.dds_calibration import DDS_Calibration as ddscal
 
 class DDS():
 
@@ -19,13 +20,15 @@ class DDS():
       self.att_dB = att_dB
       self.aom_order = []
       self.transition = []
-      self.dds_device = AD9910
+      self.dds_device = ad9910.AD9910
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
       self.cpld_device = CPLD
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
+
+      self.dds_calibration = ddscal()
 
       self._t_att_xfer_mu = np.int64(1592) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.10qxjvv6p35q
       self._t_set_xfer_mu = np.int64(1248) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.e1ucbs8kjf4z
@@ -152,6 +155,10 @@ class DDS():
       # if _set_freq_or_amp:
       #    delay_mu(-self._t_ref_period_mu + dt)
 
+   def get_devices(self,expt):
+      self.dds_device = expt.get_device(self.name)
+      self.cpld_device = expt.get_device(self.cpld_name)
+
    @kernel
    def off(self):
       self.dds_device.sw.off()
@@ -176,3 +183,5 @@ class DDS():
 
    def ftw_to_freq(self,ftw):
       return ftw / self.ftw_per_hz
+   
+   

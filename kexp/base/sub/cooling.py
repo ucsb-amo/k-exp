@@ -252,47 +252,14 @@ class Cooling():
 
     #GM with only D1, turning B field off
     @kernel
-    def gm_ramp(self,t,amp_c_list,amp_r_list,
-            detune_d1_c = dv,
-            amp_d1_c = dv,
-            detune_d1_r = dv,
-            amp_d1_r = dv,
-            delta_d1 = dv):
-        
-        ### Start Defaults ###
-        if delta_d1 != dv:
-            detune_d1_c = delta_d1
-            detune_d1_r = delta_d1
-        else:
-            if detune_d1_c == dv:
-                detune_d1_c = self.params.detune_d1_c_gm
-            if detune_d1_r == dv:
-                detune_d1_r = self.params.detune_d1_r_gm
-        
-        if amp_d1_c == dv:
-            amp_d1_c = self.params.amp_d1_c_gm
-        if amp_d1_r == dv:
-            amp_d1_r = self.params.amp_d1_r_gm
-        ### End Defaults ###
-
-        delay(-10*us)
-        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
-                                       amplitude=amp_d1_c)
-        delay_mu(self.params.t_rtio_mu)
-        self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
-                                       amplitude=amp_d1_r)
-        delay(10*us)
+    def gm_ramp(self,t):
         with parallel:
             self.ttl_magnets.off()
-            self.switch_d1_3d(1)
             self.switch_d2_3d(0)
-
-        N = len(amp_c_list)
-        dt = t / N
-        for i in range(N):
-            self.dds.d1_3d_c.set_dds(amp_c_list[i])
-            self.dds.d1_3d_r.set_dds(amp_r_list[i])
-            delay(dt - self.dds.d1_3d_c._t_set_delay_mu * 1.e-9 * 2)
+            self.switch_d1_3d(1)
+        self.dds.enable_profile()
+        delay(t)
+        self.dds.disable_profile()
 
     @kernel
     def release(self):

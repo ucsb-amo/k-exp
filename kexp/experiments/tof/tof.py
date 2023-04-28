@@ -36,15 +36,6 @@ class tof(EnvExperiment, Base):
 
         self.get_N_img()
 
-        d = 5.8
-        amp = 0.09
-
-        #GM
-        self.p.detune_d1_c_gm = d
-        self.p.amp_d1_c_gm = amp
-        self.p.detune_d1_r_gm = d
-        self.p.amp_d1_r_gm = amp
-
     @kernel
     def run(self):
         
@@ -67,6 +58,8 @@ class tof(EnvExperiment, Base):
             self.cmot_d1(self.p.t_d1cmot * s)
 
             self.gm(self.p.t_gm * s)
+
+            # self.gm_ramp(self.p.t_gm_ramp * s)
             
             self.release()
             

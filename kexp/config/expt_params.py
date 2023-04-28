@@ -60,14 +60,16 @@ class ExptParams():
         self.V_d1cmot_current = .5
         
         #GM
-        self.detune_d1_c_gm = 8.0
-        self.amp_d1_c_gm = 0.1880
-        self.detune_d1_r_gm = 7.8
-        self.amp_d1_r_gm = 0.0790
+        self.detune_gm = 5.8
+        self.amp_gm = 0.09
+
+        self.detune_d1_c_gm = self.detune_gm
+        self.amp_d1_c_gm = self.amp_gm
+        self.detune_d1_r_gm = self.detune_gm
+        self.amp_d1_r_gm = self.amp_gm
 
         #GM ramp
         self.power_ramp_factor_gmramp = 20
-        self.power_ramp_steps_gmramp = 100
         
         
             

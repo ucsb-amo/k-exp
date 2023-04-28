@@ -5,6 +5,8 @@ from kexp.config.dds_id import dds_frame, N_uru
 from kexp.control.artiq.DDS import DDS
 from kexp.config.expt_params import ExptParams
 
+from jax import AD9910Manager
+
 import numpy as np
 
 class Devices():
@@ -18,13 +20,29 @@ class Devices():
         self.zotino = self.get_device("zotino0")
 
         self.dds = dds_frame()
+        self.dds.dds_manager = AD9910Manager(self.core)
+
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list()
+        self.gm_ramp_setup()
 
         self.dac_ch_3Dmot_current_control = 0
 
         self.ttl_camera = self.get_device("ttl9")
         self.ttl_magnets = self.get_device("ttl11")
+
+    def gm_ramp_setup(self):
+        try:
+            pic,pir = self.dds.dds_calibration.dds_amplitude_to_power_fraction(
+                [self.params.amp_d1_c_gm,self.params.amp_d1_r_gm])
+            pfc,pfr = np.array([pic,pir]) / self.params.power_ramp_factor_gmramp
+            
+            self.dds.set_amplitude_profile(
+                self.dds.d1_3d_c,self.params.t_gm_ramp,p_i=pic,p_f=pfc)
+            self.dds.set_amplitude_profile(
+                self.dds.d1_3d_r,self.params.t_gm_ramp,p_i=pir,p_f=pfr)
+        except:
+            print("Setting up DDS ramp profiles failed. If this is a repo scan, ignore.")
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list():
