@@ -67,7 +67,6 @@ class ExptParams():
 
         #GM ramp
         self.power_ramp_factor_gmramp = 20
-        self.power_ramp_steps_gmramp = 100
         
         
             
