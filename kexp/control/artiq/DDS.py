@@ -4,10 +4,11 @@ from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np
 
-from artiq.coredevice.ad9910 import AD9910
+from artiq.coredevice import ad9910
 from artiq.coredevice.urukul import CPLD
 
 from kexp.util.artiq.async_print import aprint
+from kexp.config.dds_calibration import DDS_Calibration as ddscal
 
 class DDS():
 
@@ -19,7 +20,7 @@ class DDS():
       self.att_dB = att_dB
       self.aom_order = []
       self.transition = []
-      self.dds_device = AD9910
+      self.dds_device = ad9910.AD9910
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
       self.cpld_device = CPLD
@@ -33,6 +34,8 @@ class DDS():
 
       self._t_set_delay_mu = self._t_set_xfer_mu + self._t_ref_period_mu + 1
       self._t_att_delay_mu = self._t_att_xfer_mu + self._t_ref_period_mu + 1
+
+      self._ramp_step_N = 1
 
    @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
@@ -152,6 +155,10 @@ class DDS():
       # if _set_freq_or_amp:
       #    delay_mu(-self._t_ref_period_mu + dt)
 
+   def get_devices(self,expt):
+      self.dds_device = expt.get_device(self.name)
+      self.cpld_device = expt.get_device(self.cpld_name)
+
    @kernel
    def off(self):
       self.dds_device.sw.off()
@@ -176,3 +183,57 @@ class DDS():
 
    def ftw_to_freq(self,ftw):
       return ftw / self.ftw_per_hz
+   
+   def get_amplitude_ramp_list(self, t_ramp, power_i, power_f, dt = 4):
+      self._ramp_step_N = dt
+      dt = dt * 4.e-9
+      N = int(t_ramp // dt)
+      # N = 5
+      aprint(N)
+      p_list = np.linspace(power_i,power_f,N)
+      amp_list = ddscal().power_fraction_to_dds_amplitude(p_list)
+      return amp_list
+   
+   @kernel
+   def set_amplitude_ramp(self, core, amp_list: TArray(TFloat), profile=0, mode=ad9910.RAM_MODE_CONT_BIDIR_RAMP):
+
+      N_steps = len(amp_list)
+      data = [0] * N_steps
+      l = [0.0] * N_steps
+      for i in range(N_steps):
+         l[i] = amp_list[-(i+1)]
+         # l[i] = amp_list[i]
+      self.dds_device.amplitude_to_ram(l,data)
+
+      self.dds_device.set_cfr1(ram_enable=0)
+      self.cpld_device.io_update.pulse_mu(8)
+
+      self.dds_device.set_profile_ram(
+         start = 0, end = 0 + N_steps - 1,
+         step = self._ramp_step_N,
+         profile = profile,
+         mode = mode
+      )
+
+      self.cpld_device.set_profile(profile)
+      self.cpld_device.io_update.pulse_mu(8)
+
+      delay(50*us)
+      self.dds_device.write_ram(data)
+      delay(100*us)
+      core.break_realtime()
+
+      self.dds_device.set(frequency=self.frequency)
+      self.dds_device.set_att(self.att_dB)
+      
+      core.break_realtime()
+
+      self.cpld_device.set_profile(7)
+
+   @kernel
+   def enable_amplitude_ramp(self):
+      
+      self.dds_device.set_cfr1(
+            ram_destination=ad9910.RAM_DEST_ASF, ram_enable=1, osk_enable=0
+        )
+      self.cpld_device.io_update.pulse_mu(8)
