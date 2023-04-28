@@ -67,6 +67,8 @@ class tof(EnvExperiment, Base):
             self.cmot_d1(self.p.t_d1cmot * s)
 
             self.gm(self.p.t_gm * s)
+
+            # self.gm_ramp(self.p.t_gm_ramp * s)
             
             self.release()
             
