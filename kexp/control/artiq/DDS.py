@@ -28,14 +28,14 @@ class DDS():
       self.ftw_per_hz = 0
       self.read_db(device_db)
 
+      self.dds_calibration = ddscal()
+
       self._t_att_xfer_mu = np.int64(1592) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.10qxjvv6p35q
       self._t_set_xfer_mu = np.int64(1248) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.e1ucbs8kjf4z
       self._t_ref_period_mu = np.int64(8) # one clock cycle, 125 MHz --> T = 8 ns (mu)
 
       self._t_set_delay_mu = self._t_set_xfer_mu + self._t_ref_period_mu + 1
       self._t_att_delay_mu = self._t_att_xfer_mu + self._t_ref_period_mu + 1
-
-      self.t_ramp_step = 100 * 4.e-9
 
    @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
@@ -184,12 +184,4 @@ class DDS():
    def ftw_to_freq(self,ftw):
       return ftw / self.ftw_per_hz
    
-   def get_amplitude_ramp_list(self, t_ramp, power_i, power_f, dt = 100):
-      self._ramp_step_N = dt
-      dt = dt * 4.e-9
-      N = int(t_ramp // dt)
-      # N = 5
-      aprint(N)
-      p_list = np.linspace(power_i,power_f,N)
-      amp_list = ddscal().power_fraction_to_dds_amplitude(p_list)
-      return amp_list
+   
