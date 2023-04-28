@@ -32,7 +32,7 @@ class Devices():
         self.ttl_magnets = self.get_device("ttl11")
 
     def gm_ramp_setup(self):
-        pic,pir = DDS().dds_calibration.dds_amplitude_to_power_fraction(
+        pic,pir = self.dds.dds_calibration.dds_amplitude_to_power_fraction(
             [self.params.amp_d1_c_gm,self.params.amp_d1_r_gm])
         pfc,pfr = np.array([pic,pir]) / self.params.power_ramp_factor_gmramp
         self.dds.set_amplitude_profile(

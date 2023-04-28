@@ -28,6 +28,7 @@ class dds_frame():
 
         self.dds_manager = AD9910Manager
         self.dds_calibration = DDS_Calibration()
+        self.ramp_dt = RAMP_STEP_TIME
 
         self._N_uru = N_uru
         self._N_ch = N_ch
@@ -85,11 +86,21 @@ class dds_frame():
         Returns a list of all dds objects in 
         '''
         return [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
+    
+    def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
+        dt = RAMP_STEP_TIME
+        N = round(t_ramp / dt)
+        if N > 1024:
+            N = 1024
+            self.ramp_dt = round( ( t_ramp / 1024 ) / 4.e-9 ) * 4.e-9
+        p_list = np.linspace(power_i,power_f,N)
+        amp_list = self.dds_calibration.power_fraction_to_dds_amplitude(p_list).tolist()
+        return amp_list
         
     def set_amplitude_profile(self, dds:DDS, t_ramp:float, amp=-1., p_i=-1., p_f=-1., dwell_end=1):
 
-        _power_specified = p_i < 0. and p_f < 0.
-        _amp_specified = amp < 0.
+        _power_specified = p_i > 0. and p_f > 0.
+        _amp_specified = amp > 0.
         if (_power_specified and _amp_specified) or not (_power_specified or _amp_specified):
             raise ValueError("Either initial and final power, or constant amplitude should be specified. \
                               Either both or none were specified.")
@@ -98,18 +109,11 @@ class dds_frame():
             amp_list = [amp]
         if _power_specified and not _amp_specified:
             amp_list = self.get_amplitude_ramp_list(t_ramp,p_i,p_f)
-        
+
         this_profile = RAMProfile(
-            dds, amp_list, RAMP_STEP_TIME, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
+            dds.dds_device, amp_list, self.ramp_dt, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
 
         self.dds_manager.append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=this_profile)
-        
-    def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
-      dt = RAMP_STEP_TIME
-      N = round(t_ramp / dt)
-      p_list = np.linspace(power_i,power_f,N)
-      amp_list = self.dds_calibration.power_fraction_to_dds_amplitude(p_list).tolist()
-      return amp_list
     
     @kernel
     def enable_profile(self):
