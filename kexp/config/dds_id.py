@@ -1,6 +1,7 @@
 import numpy as np
 
 from artiq.coredevice import ad9910
+from artiq.experiment import kernel
 
 from kexp.config.dds_state import dds_state
 from kexp.control.artiq.DDS import DDS
