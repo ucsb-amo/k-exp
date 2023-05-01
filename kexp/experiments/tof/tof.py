@@ -18,19 +18,20 @@ class tof(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 6
 
-        self.p.t_d2cmot = 5.e-3
-        self.p.t_d1cmot = 7.e-3
-        self.p.t_gm = 2.e-3
+        self.t_gm_ramp = 3.e-3
 
         self.p.N_shots = 3
         self.p.N_repeats = 1
         # self.p.t_tof = np.linspace(300,1000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(750,1250,self.p.N_shots) * 1.e-6 # d2 cmot
         # self.p.t_tof = np.linspace(1500,4000,self.p.N_shots) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(6000,12000,self.p.N_shots) * 1.e-6 # gm
-        self.p.t_tof = np.linspace(3500,5000,self.p.N_shots) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(5000,8000,self.p.N_shots) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(7000,10000,self.p.N_shots) * 1.e-6 # gm
 
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
+
+        self.detune_gm = 5.8
+        self.amp_gm = 0.13
 
         self.xvarnames = ['t_tof']
 
@@ -59,7 +60,7 @@ class tof(EnvExperiment, Base):
 
             self.gm(self.p.t_gm * s)
 
-            # self.gm_ramp(self.p.t_gm_ramp * s)
+            self.gm_ramp(self.p.t_gm_ramp * s)
             
             self.release()
             

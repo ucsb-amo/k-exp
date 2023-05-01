@@ -23,8 +23,8 @@ class ExptParams():
         self.t_mot_load = 3
         self.t_d2cmot = 5.e-3
         self.t_d1cmot = 7.e-3
-        self.t_gm = 7e-3
-        self.t_gm_ramp = 5.e-3
+        self.t_gm = 2e-3
+        self.t_gm_ramp = 2.e-3
 
         #2D MOT
         self.detune_d2_c_2dmot = -3.
@@ -69,7 +69,7 @@ class ExptParams():
         self.amp_d1_r_gm = self.amp_gm
 
         #GM ramp
-        self.power_ramp_factor_gmramp = 20
+        self.power_ramp_factor_gmramp = 10
         
         
             
