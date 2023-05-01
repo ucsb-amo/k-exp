@@ -4,7 +4,7 @@ from kexp import Base
 
 import numpy as np
 
-class gm_ramp_tof_scan(EnvExperiment, Base):
+class scan_2d_mot(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
