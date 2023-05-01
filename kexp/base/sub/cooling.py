@@ -306,8 +306,8 @@ class Cooling():
     ## Magnet functions
 
     @kernel
-    def set_magnet_current(self, V = -0.1):
-        if V < 0.:
+    def set_magnet_current(self, V = dv):
+        if V == dv:
             V = self.params.V_mot_current
         with sequential:
             self.zotino.write_dac(self.dac_ch_3Dmot_current_control,V)
