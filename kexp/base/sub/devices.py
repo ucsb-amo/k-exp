@@ -56,7 +56,8 @@ class Devices():
             self.dds.set_amplitude_profile(
                 self.dds.d1_3d_r,t_gm_ramp,p_i=pir,p_f=pfr)
         except:
-            print("Setting up DDS ramp profiles failed. If this is a repo scan, ignore.")
+            # print("Setting up DDS ramp profiles failed. If this is a repo scan, ignore.")
+            pass
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list():
