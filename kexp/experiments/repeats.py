@@ -4,32 +4,26 @@ from kexp import Base
 
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class repeats(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "gm tof"
+        self.run_info._run_description = "vary mot load"
 
         ## Parameters
 
         self.p = self.params
+        
+        self.p.N_shots = 15
+        self.p.t_tof = 1000 * 1.e-6 # gm
 
-        self.p.t_mot_kill = 1
-        self.p.t_mot_load = 1
+        self.p.t_mot_load = np.linspace(0.25,5.,self.p.N_shots)
 
-        self.t_gm_ramp = 3.e-3
+        # self.p.dummy = np.ones(self.p.N_shots)
+        # self.xvarnames = ['dummy']
 
-        self.p.N_shots = 5
-        self.p.N_repeats = 1
-        # self.p.t_tof = np.linspace(300,1000,self.p.N_shots) * 1.e-6 # mot
-        # self.p.t_tof = np.linspace(750,1250,self.p.N_shots) * 1.e-6 # d2 cmot
-        # self.p.t_tof = np.linspace(1500,4000,self.p.N_shots) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(5000,8000,self.p.N_shots) * 1.e-6 # gm
-
-        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
-
-        self.xvarnames = ['t_tof']
+        self.xvarnames = ['t_mot_load']
 
         self.get_N_img()
 
@@ -43,25 +37,26 @@ class tof(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for t_tof in self.p.t_tof:
+        # for _ in self.p.dummy:
+        for t in self.p.t_mot_load:
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-            self.mot(self.p.t_mot_load * s)
+            self.mot(t * s)
             # self.hybrid_mot(self.p.t_mot_load * s)
 
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-            self.cmot_d1(self.p.t_d1cmot * s)
+            # self.cmot_d1(self.p.t_d1cmot * s)
 
-            self.gm(self.p.t_gm * s)
+            # self.gm(self.p.t_gm * s)
 
-            self.gm_ramp(self.p.t_gm_ramp * s)
+            # self.gm_ramp(self.p.t_gm_ramp * s)
             
             self.release()
             
             ### abs img
-            delay(t_tof * s)
+            delay(self.p.t_tof * s)
             self.abs_image()
 
             self.core.break_realtime()
