@@ -23,10 +23,10 @@ class scan_2d_mot(EnvExperiment, Base):
 
         self.p.t_tof = 500.e-6
 
-        self.p.detune_d2_c_2dmot = np.linspace(-1.,5.,self.p.N_shots)
-        self.p.detune_d2_r_2dmot = np.linspace(-1.,5.,self.p.N_shots)
+        self.p.xvar1_detune_d2_c_2dmot = np.linspace(-1.,5.,self.p.N_shots)
+        self.p.xvar2_detune_d2_r_2dmot = np.linspace(-1.,5.,self.p.N_shots)
 
-        self.xvarnames = ['detune_d2_c_2dmot','detune_d2_r_2dmot']
+        self.xvarnames = ['xvar1_detune_d2_c_2dmot','xvar2_detune_d2_r_2dmot']
 
         self.get_N_img()
 
@@ -40,8 +40,8 @@ class scan_2d_mot(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for detune_c in self.p.detune_d2_c_2dmot:
-            for detune_r in self.p.detune_d2_r_2dmot:
+        for detune_c in self.p.xvar1_detune_d2_c_2dmot:
+            for detune_r in self.p.xvar2_detune_d2_r_2dmot:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s,
                                  detune_d2_c=detune_c, detune_d2_r=detune_r)
 
@@ -56,6 +56,9 @@ class scan_2d_mot(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
+
+        self.p.detune_d2_c_2dmot = self.p.xvar1_detune_d2_c_2dmot
+        self.p.detune_d2_r_2dmot = self.p.xvar2_detune_d2_r_2dmot
 
         self.camera.Close()
 
