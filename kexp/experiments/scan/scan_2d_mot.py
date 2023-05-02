@@ -47,6 +47,8 @@ class scan_2d_mot(EnvExperiment, Base):
 
                 self.mot(self.p.t_mot_load * s)
 
+                self.release()
+
                 delay(self.p.t_tof)
 
                 self.abs_image()
