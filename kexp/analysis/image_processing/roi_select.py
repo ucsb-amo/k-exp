@@ -5,9 +5,12 @@ def crop_OD(OD,crop_type='',Nvars=1):
     if len(np.shape(OD)) <= 2:
         OD = [OD]
 
-    if crop_type == 'mot':
+    if crop_type == 'bigmot':
+        roix = [350, 1500]
+        roiy = [100, 1200]
+    elif crop_type == 'mot':
         roix = [500, 1400]
-        roiy = [250, 1275]
+        roiy = [250, 1200]
     elif crop_type == 'gm':
         roix = [550, 1400]
         roiy = [250, 1000]
