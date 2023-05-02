@@ -4,6 +4,7 @@ import numpy as np
 class ExptParams():
     def __init__(self):
         
+        self.t_mot_kill = 1
         self.t_camera_trigger = 2.e-6
         self.t_imaging_pulse = 5.e-6
         self.t_light_only_image_delay = 100.e-3
@@ -20,7 +21,7 @@ class ExptParams():
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1
-        self.t_mot_load = 3
+        self.t_mot_load = 2
         self.t_d2cmot = 5.e-3
         self.t_d1cmot = 7.e-3
         self.t_gm = 2e-3
@@ -33,9 +34,9 @@ class ExptParams():
         self.amp_d2_r_2dmot = 0.1880
 
         #MOT
-        self.detune_d2_c_mot = 0.
+        self.detune_d2_c_mot = -0.83
         self.amp_d2_c_mot = 0.188
-        self.detune_d2_r_mot = -4.7
+        self.detune_d2_r_mot = -5.4
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 3.25
