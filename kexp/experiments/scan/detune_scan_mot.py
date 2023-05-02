@@ -13,41 +13,23 @@ class detune_scan_mot(EnvExperiment, Base):
         self.p = self.params
 
         self.p.t_mot_kill = 1
-        self.p.t_mot_load = 3
+        self.p.t_mot_load = 1
 
-        self.p.t_d2_cmot = 5.e-3
-        self.p.t_hybrid_cmot = 7.e-3
-        self.p.t_gm = 1.5e-3
-
-        self.p.N_shots = 6
+        self.p.N_shots = 10
         self.p.N_repeats = 1
 
-        self.p.t_tof = 500.e-6
+        self.p.t_tof = 1000.e-6
 
         #MOT detunings
 
-        self.p.detune_d2_c_mot = np.linspace(0.01,-6,self.p.N_shots)
+        self.p.x_detune_d2_c_mot = np.linspace(0.,-3.,self.p.N_shots)
         self.p.amp_d2_c_mot = self.dds.d2_3d_c.amplitude
-        self.p.detune_d2_r_mot = np.linspace(0.01,-6,self.p.N_shots)
+        self.p.x_detune_d2_r_mot = np.linspace(-4.,-6,self.p.N_shots)
         self.p.amp_d2_r_mot = self.dds.d2_3d_r.amplitude
 
-        self.xvarnames = ['detune_d2_c_mot','detune_d2_r_mot']
+        self.xvarnames = ['x_detune_d2_c_mot','x_detune_d2_r_mot']
 
         self.get_N_img()
-
-    @kernel
-    def mot(self,t,delta_c,delta_r):
-        delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=delta_c, amplitude=self.p.amp_d2_c_mot)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=delta_r, amplitude=self.p.amp_d2_r_mot)
-        delay(10*us)
-        with parallel:
-            self.switch_mot_magnet(1)
-            self.switch_d2_3d(1)
-            delay_mu(self.p.t_rtio_mu)
-            self.dds.push.on()
-        delay(t)
 
     @kernel
     def run(self):
@@ -59,11 +41,11 @@ class detune_scan_mot(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for delta_c in self.p.detune_d2_c_mot:
-            for delta_r in self.p.detune_d2_r_mot:
+        for delta_c in self.p.x_detune_d2_c_mot:
+            for delta_r in self.p.x_detune_d2_r_mot:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(self.p.t_mot_load * s, delta_c, delta_r)
+                self.mot(self.p.t_mot_load * s, detune_d2_c=delta_c, detune_d2_r=delta_r)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
@@ -82,6 +64,9 @@ class detune_scan_mot(EnvExperiment, Base):
     def analyze(self):
 
         self.camera.Close()
+
+        self.p.detune_d2_c_mot = self.p.x_detune_d2_c_mot
+        self.p.detune_d2_r_mot = self.p.x_detune_d2_r_mot
         
         self.ds.save_data(self)
 
