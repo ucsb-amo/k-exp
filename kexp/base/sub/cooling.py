@@ -4,6 +4,8 @@ from kexp.config.dds_id import dds_frame
 from kexp.config.expt_params import ExptParams
 import numpy as np
 
+from kexp.util.artiq.async_print import aprint
+
 dv = 100.
 
 class Cooling():
