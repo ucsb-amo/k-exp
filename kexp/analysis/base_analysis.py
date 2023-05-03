@@ -176,10 +176,6 @@ class atomdata():
     def unshuffle_ad(self):
         self._unshuffle(self)
         self._unshuffle(self.params)
-        
-        # sort all the vars in top level
-        
-        # sort all the vars in params
 
     def _unshuffle(self,struct):
 
