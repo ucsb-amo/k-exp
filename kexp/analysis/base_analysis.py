@@ -19,7 +19,7 @@ class atomdata():
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, xvarnames, images, image_timestamps,
+    def __init__(self, xvarnames, images, image_timestamps, sort_idx,
                 params, run_info, unshuffle_xvars = True, crop_type='mot'):
 
         self._ds = DataSaver()
@@ -31,6 +31,8 @@ class atomdata():
 
         self.xvarnames = xvarnames
         self.xvars = self._unpack_xvars()
+
+        self.sort_idx = sort_idx
 
         self._sort_images()
         self._analyze_absorption_images(crop_type)
