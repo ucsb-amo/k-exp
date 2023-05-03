@@ -26,6 +26,8 @@ class Base(Devices, Cooling, Image, Dealer):
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
         self.xvarnames = []
+        self.sort_idx = []
+        self.sort_N = []
 
         self.ds = DataSaver()
 

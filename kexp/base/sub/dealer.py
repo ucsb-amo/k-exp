@@ -8,6 +8,7 @@ import numpy as np
 class Dealer():
     def __init__(self):
         self.sort_idx = []
+        self.sort_N = []
         self.params = ExptParams()
         self.xvarnames = []
 
@@ -43,6 +44,8 @@ class Dealer():
 
         sort_idx_w_duplicates = list(zip(len_list,sort_idx))
         self.sort_idx = []
+        self.sort_N = []
         for elem in sort_idx_w_duplicates:
             if elem not in self.sort_idx:
-                self.sort_idx.append(elem)
+                self.sort_N.append(elem[0])
+                self.sort_idx.append(elem[1])

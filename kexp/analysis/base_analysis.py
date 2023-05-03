@@ -19,8 +19,8 @@ class atomdata():
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, xvarnames, images, image_timestamps, sort_idx,
-                params, run_info, unshuffle_xvars = True, crop_type='mot'):
+    def __init__(self, xvarnames, images, image_timestamps, params, run_info,
+                  sort_idx, sort_N, unshuffle_xvars = True, crop_type='mot'):
 
         self._ds = DataSaver()
         self.run_info = run_info
@@ -33,6 +33,7 @@ class atomdata():
         self.xvars = self._unpack_xvars()
 
         self.sort_idx = sort_idx
+        self.sort_N = sort_N
 
         self._sort_images()
         self._analyze_absorption_images(crop_type)
@@ -152,6 +153,7 @@ class atomdata():
     
     def _unpack_xvars(self):
         # fetch the arrays for each xvar from parameters
+
         if not isinstance(self.xvarnames,list) and not isinstance(self.xvarnames,np.ndarray):
             self.xvarnames = [self.xvarnames]
 
@@ -182,9 +184,9 @@ class atomdata():
     def _unshuffle(self,struct):
 
         # only unshuffle if list has been shuffled
-        if self.sort_idx:
-            sort_N = [v[0] for v in self.sort_idx]
-            sort_idx = [v[1] for v in self.sort_idx]
+        if np.any(self.sort_idx):
+            sort_N = self.sort_N
+            sort_idx = self.sort_idx
 
             protected_keys = ['xvarnames','sort_idx','images','img_timestamps']
             ks = struct.__dict__.keys()
@@ -198,7 +200,7 @@ class atomdata():
                     for dim in sdims:
                         N = var.shape[dim]
                         if N in sort_N:
-                            i = sort_N.index(N)
+                            i = np.where(sort_N == N)[0][0]
                             shuf_idx = sort_idx[i]
                             unshuf_idx = np.zeros_like(shuf_idx)
                             unshuf_idx[shuf_idx] = np.arange(N)

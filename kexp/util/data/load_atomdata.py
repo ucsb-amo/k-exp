@@ -48,15 +48,15 @@ def load_atomdata(idx=0,path = [],unshuffle_xvars=True,crop_type='mot') -> atomd
     
     params = ExptParams()
     run_info = RunInfo()
-
     unpack_group(f,'params',params)
     unpack_group(f,'run_info',run_info)
     images = f['data']['images'][()]
     image_timestamps = f['data']['image_timestamps'][()]
     xvarnames = f.attrs['xvarnames'][()]
     sort_idx = f['data']['sort_idx'][()]
+    sort_N = f['data']['sort_N'][()]
 
-    ad = atomdata(xvarnames,images,image_timestamps,params,run_info,
+    ad = atomdata(xvarnames,images,image_timestamps,params,run_info,sort_idx,sort_N,
                   unshuffle_xvars=unshuffle_xvars,crop_type=crop_type)
 
     return ad
