@@ -20,7 +20,7 @@ class atomdata():
     This class also handles saving parameters from expt.params to the dataset.
     '''
     def __init__(self, xvarnames, images, image_timestamps,
-                params, run_info, crop_type='mot'):
+                params, run_info, unshuffle_xvars = True, crop_type='mot'):
 
         self._ds = DataSaver()
         self.run_info = run_info
@@ -40,6 +40,9 @@ class atomdata():
         self.atom_cross_section = self.atom.get_cross_section()
         self.atom_number_density = self.od / self.atom_cross_section * (cam.pixel_size_m / cam.magnification)**2
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
+
+        if unshuffle_xvars:
+            self.unshuffle_ad()
 
     ### Analysis
 
@@ -163,6 +166,49 @@ class atomdata():
             self.xvardims[i] = np.int32(len(xvars[i]))
 
         return xvars
+    
+    ## Unshuffling
+    
+    def unshuffle_ad(self):
+        self._unshuffle(self)
+        self._unshuffle(self.params)
+        
+        # sort all the vars in top level
+        
+        # sort all the vars in params
+
+    def _unshuffle(self,struct):
+
+        # only unshuffle if list has been shuffled
+        if self.sort_idx:
+            sort_N = [v[0] for v in self.sort_idx]
+            sort_idx = [v[1] for v in self.sort_idx]
+
+            protected_keys = ['xvarnames','sort_idx','images','img_timestamps']
+            ks = struct.__dict__.keys()
+            sort_ks = [k for k in ks if k not in protected_keys]
+            for k in sort_ks:
+                var = vars(struct)[k]
+                if isinstance(var,list):
+                    var = np.array(var)
+                if isinstance(var,np.ndarray):
+                    sdims = self._dims_to_sort(var)
+                    for dim in sdims:
+                        N = var.shape[dim]
+                        if N in sort_N:
+                            i = sort_N.index(N)
+                            shuf_idx = sort_idx[i]
+                            unshuf_idx = np.zeros_like(shuf_idx)
+                            unshuf_idx[shuf_idx] = np.arange(N)
+                            var = var.take(unshuf_idx,dim)
+                            vars(struct)[k] = var
+            
+    def _dims_to_sort(self,var):
+        ndims = var.ndim
+        last_dim_to_sort = ndims
+        if last_dim_to_sort < 0: last_dim_to_sort = 0
+        dims_to_sort = np.arange(0,last_dim_to_sort)
+        return dims_to_sort
 
     ### data saving
 
