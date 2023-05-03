@@ -8,40 +8,7 @@ from kexp.util.data.run_info import RunInfo
 
 data_dir = os.getenv("data")
 
-# def load_atomdata(idx=0, path = []) -> atomdata:
-#     '''
-#     Returns the atomdata stored in the `idx`th newest pickle file at `path`.
-
-#     Parameters
-#     ----------
-#     idx: int
-#         The index of the pickle file to be loaded, relative to the latest file
-#         (idx=0). (default: idx = 0)
-#     path: str
-#         The full path to the file to be loaded. If not specified, loads the file
-#         as dictated by `idx`.
-
-#     Returns
-#     -------
-#     ad: atomdata
-#     '''
-#     if path == []:
-#         folderpath=os.path.join(data_dir,'*','*.pickle')
-#         list_of_files = glob.glob(folderpath)
-#         list_of_files.sort(key=lambda x: os.path.getmtime(x))
-#         file = list_of_files[-(idx+1)]
-#     else:
-#         if path.endswith('.pickle'):
-#             file = path
-#         else:
-#             raise ValueError("The provided path is not a pickle file.")
-        
-#     with open(file,'rb') as f:
-#         ad = pickle.load(f)
-
-#     return ad
-
-def load_atomdata(idx=0,path = [],crop_type='mot') -> atomdata:
+def load_atomdata(idx=0,path = [],unshuffle_xvars=True,crop_type='mot') -> atomdata:
     '''
     Returns the atomdata stored in the `idx`th newest pickle file at `path`.
 
@@ -81,14 +48,16 @@ def load_atomdata(idx=0,path = [],crop_type='mot') -> atomdata:
     
     params = ExptParams()
     run_info = RunInfo()
-
     unpack_group(f,'params',params)
     unpack_group(f,'run_info',run_info)
     images = f['data']['images'][()]
     image_timestamps = f['data']['image_timestamps'][()]
     xvarnames = f.attrs['xvarnames'][()]
+    sort_idx = f['data']['sort_idx'][()]
+    sort_N = f['data']['sort_N'][()]
 
-    ad = atomdata(xvarnames,images,image_timestamps,params,run_info,crop_type=crop_type)
+    ad = atomdata(xvarnames,images,image_timestamps,params,run_info,sort_idx,sort_N,
+                  unshuffle_xvars=unshuffle_xvars,crop_type=crop_type)
 
     return ad
 

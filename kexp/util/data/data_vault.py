@@ -25,6 +25,8 @@ class DataSaver():
         f.attrs['xvarnames'] = expt.xvarnames
         data.create_dataset('images',data=expt.images)
         data.create_dataset('image_timestamps',data=expt.image_timestamps)
+        data.create_dataset('sort_idx',data=expt.sort_idx)
+        data.create_dataset('sort_N',data=expt.sort_N)
         
         # store run info as attrs
         self._class_attr_to_attr(f,expt.run_info)

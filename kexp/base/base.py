@@ -6,10 +6,10 @@ import numpy as np
 
 from kexp.config import ExptParams
 from kexp.control import BaslerUSB
-from kexp.base.sub import Devices, Cooling, Image
+from kexp.base.sub import Devices, Cooling, Image, Dealer
 from kexp.util.data import DataSaver, RunInfo
 
-class Base(Devices, Cooling, Image):
+class Base(Devices, Cooling, Image, Dealer):
     def __init__(self,setup_camera=True):
         super().__init__()
 
@@ -26,6 +26,8 @@ class Base(Devices, Cooling, Image):
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
         self.xvarnames = []
+        self.sort_idx = []
+        self.sort_N = []
 
         self.ds = DataSaver()
 

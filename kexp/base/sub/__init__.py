@@ -6,3 +6,4 @@ __all__ = [ basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('_
 from .cooling import Cooling
 from .devices import Devices
 from .image import Image
+from .dealer import Dealer
