@@ -1,8 +1,6 @@
 import time
 import numpy as np
 import os
-import _pickle as pickle
-import glob
 import copy
 import h5py
 
@@ -14,6 +12,9 @@ class DataSaver():
         pass
 
     def save_data(self,expt):
+
+        pwd = os.getcwd()
+        os.chdir(data_dir)
 
         fpath = self._data_path(expt.run_info)
         expt.run_info.filepath = fpath
@@ -39,6 +40,8 @@ class DataSaver():
         f.close()
 
         self._update_run_id(expt.run_info)
+
+        os.chdir(pwd)
 
     def _class_attr_to_dataset(self,dset,obj):
         try:
@@ -67,14 +70,24 @@ class DataSaver():
         return filepath
 
     def _update_run_id(self,run_info):
-        
+        pwd = os.getcwd()
+        os.chdir(data_dir)
+
         line = f"{run_info.run_id + 1}"
         with open(run_id_path,'w') as f:
             f.write(line)
 
+        os.chdir(pwd)
+
     def _get_rid(self):
+        pwd = os.getcwd()
+        os.chdir(data_dir)
+
         with open(run_id_path,'r') as f:
             rid = f.read()
+
+        os.chdir(pwd)
+
         return int(rid)
 
 class DataVault():
