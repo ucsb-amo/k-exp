@@ -46,6 +46,6 @@ class Dealer():
         self.sort_idx = []
         self.sort_N = []
         for elem in sort_idx_w_duplicates:
-            if elem not in self.sort_idx:
+            if elem[0] not in self.sort_N:
                 self.sort_N.append(elem[0])
                 self.sort_idx.append(elem[1])
