@@ -327,7 +327,46 @@ class Cooling():
     ## Other
     
     @kernel
-    def mot_observe(self):
+    def mot_observe(self,
+            detune_d2_c = dv,
+            amp_d2_c = dv,
+            detune_d2_r = dv,
+            amp_d2_r = dv,
+            detune_push = dv,
+            amp_push = dv,
+            V_current = dv):
+        
+        ### Start Defaults ###
+        if detune_d2_c == dv:
+            detune_d2_c = self.params.detune_d2_c_mot
+        if amp_d2_c == dv:
+            amp_d2_c = self.params.amp_d2_c_mot
+        if detune_d2_r == dv:
+            detune_d2_r = self.params.detune_d2_r_mot
+        if amp_d2_r == dv:
+            amp_d2_r = self.params.amp_d2_r_mot
+        if detune_push == dv:
+            detune_push = self.params.detune_push
+        if amp_push == dv:
+            amp_push = self.params.amp_push
+        if V_current == dv:
+            V_current = self.params.V_mot_current
+        ### End Defaults ###
+
+        delay(-10*us)
+        self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
+                                 amplitude=amp_d2_c)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
+                                 amplitude=amp_d2_r)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.push.set_dds_gamma(delta=detune_push,
+                                 amplitude=amp_push)
+        delay(10*us)
+        self.set_magnet_current(V = V_current)
+
+        delay(1*ms)
+
         # return to mot load state
         self.dds.push.on()
         delay(1*ms)
