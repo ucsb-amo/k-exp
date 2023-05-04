@@ -58,6 +58,8 @@ class Cooling():
             amp_d2_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
+            detune_push = dv,
+            amp_push = dv,
             V_current = dv):
         
         ### Start Defaults ###
@@ -69,6 +71,10 @@ class Cooling():
             detune_d2_r = self.params.detune_d2_r_mot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_mot
+        if detune_push == dv:
+            detune_push = self.params.detune_push
+        if amp_push == dv:
+            amp_push = self.params.amp_push
         if V_current == dv:
             V_current = self.params.V_mot_current
         ### End Defaults ###
@@ -79,6 +85,9 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.push.set_dds_gamma(delta=detune_push,
+                                 amplitude=amp_push)
         delay(10*us)
         self.set_magnet_current(V = V_current)
         with parallel:

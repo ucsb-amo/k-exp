@@ -27,6 +27,10 @@ class ExptParams():
         self.t_gm = 2e-3
         self.t_gm_ramp = 2.e-3
 
+        #push beam
+        self.detune_push = -5.8
+        self.amp_push = 0.1880
+
         #2D MOT
         self.detune_d2_c_2dmot = -2.7
         self.amp_d2_c_2dmot = 0.1880
