@@ -18,11 +18,4 @@ class Startup(EnvExperiment, Base):
         Init all devices, set dds to default values and turn on
         '''
         self.init_kernel()
-        for dds in self.dds_list:
-            dds.set_dds()
-            dds.on()
-        delay_mu(self.params.t_rtio_mu)
-        self.zotino.write_dac(0,self.params.V_mot_current)
-        self.zotino.load()
-        
-    
+        self.mot_observe()
