@@ -6,6 +6,9 @@ import numpy as np
 from kamo.atom_properties.k39 import Potassium39
 from kexp.config import camera_params as cam
 
+import warnings
+# warnings.filterwarnings("error")
+
 class atomdata():
     '''
     Use to store and do basic analysis on data for every experiment.
@@ -46,6 +49,8 @@ class atomdata():
 
         if unshuffle_xvars:
             self.unshuffle_ad()
+
+        self.xvars = self._unpack_xvars() # re-unpack xvars to get unshuffled xvars
 
     ### Analysis
 
@@ -184,7 +189,7 @@ class atomdata():
             sort_N = self.sort_N
             sort_idx = self.sort_idx
 
-            protected_keys = ['xvarnames','sort_idx','images','img_timestamps']
+            protected_keys = ['xvarnames','sort_idx','images','img_timestamps','sort_N','sort_idx','xvars']
             ks = struct.__dict__.keys()
             sort_ks = [k for k in ks if k not in protected_keys]
             for k in sort_ks:
@@ -198,6 +203,7 @@ class atomdata():
                         if N in sort_N:
                             i = np.where(sort_N == N)[0][0]
                             shuf_idx = sort_idx[i]
+                            shuf_idx = shuf_idx[shuf_idx >= 0].astype(int) # remove padding [-1]s
                             unshuf_idx = np.zeros_like(shuf_idx)
                             unshuf_idx[shuf_idx] = np.arange(N)
                             var = var.take(unshuf_idx,dim)
@@ -213,7 +219,4 @@ class atomdata():
     ### data saving
 
     def save_data(self):
-        self._ds.save_data(self)
-
-
-    
+        self._ds.save_data(self)    
