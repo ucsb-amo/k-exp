@@ -8,7 +8,7 @@ from kexp.util.data.run_info import RunInfo
 
 data_dir = os.getenv("data")
 
-def load_atomdata(idx=0,path = [],unshuffle_xvars=True,crop_type='mot') -> atomdata:
+def load_atomdata(idx=0, path = [],unshuffle_xvars=True,crop_type='mot') -> atomdata:
     '''
     Returns the atomdata stored in the `idx`th newest pickle file at `path`.
 
@@ -32,7 +32,8 @@ def load_atomdata(idx=0,path = [],unshuffle_xvars=True,crop_type='mot') -> atomd
         list_of_files = glob.glob(folderpath)
         if idx <= 0:
             list_of_files.sort(key=lambda x: os.path.getmtime(x))
-            file = list_of_files[-(idx+1)]
+            list_of_files = np.flip(list_of_files)
+            file = list_of_files[-idx]
         if idx > 0:
             run_id = idx
             rids = [int(file.split("_")[0].split("\\")[-1]) for file in list_of_files]
