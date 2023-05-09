@@ -40,8 +40,7 @@ class MOTCurrentRamp(EnvExperiment,Base):
     def run(self):
         self.init_kernel()
         self.core.break_realtime()
-        self.switch_all_dds(1)
-        self.dds.imaging.off()
+        self.mot_observe()
 
         self.record()
 
