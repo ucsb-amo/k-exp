@@ -4,7 +4,8 @@ import numpy as np
 class ExptParams():
     def __init__(self):
         
-        self.t_mot_kill = 1
+        self.t_mot_kill = 1.
+        self.t_mot_load = 1.
         self.t_camera_trigger = 2.e-6
         self.t_imaging_pulse = 5.e-6
         self.t_light_only_image_delay = 100.e-3
@@ -15,7 +16,7 @@ class ExptParams():
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
-        self.N_shots = 2
+        self.N_shots = 1
         self.N_repeats = 1
         self.N_img = 1
 
@@ -28,8 +29,8 @@ class ExptParams():
         self.t_gm_ramp = 2.e-3
 
         #push beam
-        self.detune_push = -5.8
-        self.amp_push = 0.1880
+        self.detune_push = -6.4
+        self.amp_push = 0.13
 
         #2D MOT
         self.detune_d2_c_2dmot = -2.7
