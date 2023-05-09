@@ -13,46 +13,22 @@ class tof_scan_gm(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_mot_kill = 1
-        self.p.t_mot_load = 3
+        # self.p.N_shots = 5
 
-        self.p.t_gm = 1.5e-3
+        # self.p.N_repeats = 1
+        # self.p.t_tof = np.linspace(3000,8000,self.p.N_shots) * 1.e-6
+        # self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
-        self.p.N_shots = 5
-        self.p.N_repeats = 1
-        self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6
-        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
+        self.p.t_tof = 3000.e-6
 
         #GM Detunings
-        # self.p.delta_gm_r = np.linspace(0.0,4.5,8)
-        self.p.detune_d1_c_gm = 1.29
-        self.p.amp_d1_c_gm = self.dds.d1_3d_c.amplitude
-        self.p.detune_d1_r_gm = np.linspace(0.0,4.5,8)
-        self.p.amp_d1_r_gm = self.dds.d1_3d_r.amplitude
+        self.params.xvar_detune_c = np.linspace(3.,6.,7)
+        self.params.xvar_detune_r = np.linspace(3.,6.,7)
 
-        #MOT current settings
-        self.p.V_cmot0_current = 1.5
-        self.p.V_cmot_current = .4
+        self.xvarnames = ['xvar_detune_c','xvar_detune_r']
 
-        self.xvarnames = ['detune_d1_r_gm','t_tof']
-
+        self.shuffle_xvars()
         self.get_N_img()
-
-    #GM with only D1, turning B field off
-    @kernel
-    def gm(self,t,delta):
-        delay(-10*us)
-        self.dds.d1_3d_c.set_dds_gamma(delta=self.p.detune_d1_c_gm, 
-                                       amplitude=self.p.amp_d1_c_gm)
-        delay_mu(self.p.t_rtio_mu)
-        self.dds.d1_3d_r.set_dds_gamma(delta=delta, 
-                                       amplitude=self.p.amp_d1_r_gm)
-        delay(10*us)
-        with parallel:
-            self.switch_mot_magnet(0)
-            self.switch_d1_3d(1)
-            self.switch_d2_3d(0)
-        delay(t)
 
     @kernel
     def run(self):
@@ -64,8 +40,8 @@ class tof_scan_gm(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for delta in self.p.detune_d1_r_gm:
-            for t_tof in self.p.t_tof:
+        for delta_c in self.p.xvar_detune_c:
+            for delta_r in self.p.xvar_detune_r:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
@@ -73,16 +49,14 @@ class tof_scan_gm(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                self.cmot_d2(self.p.t_d2cmot * s)
+                self.cmot_d1(self.p.t_d2cmot * s)
 
-                # self.cmot(self.p.t_hybrid_cmot * s)
-
-                self.gm(self.p.t_gm * s, delta)
+                self.gm(self.p.t_gm * s, detune_d1_c=delta_c, detune_d1_r=delta_r)
                 
                 self.release()
                 
                 ### abs img
-                delay(t_tof * s)
+                delay(self.params.t_tof * s)
                 self.abs_image()
 
                 self.core.break_realtime()
@@ -91,6 +65,9 @@ class tof_scan_gm(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
+
+        self.params.detune_d1_c_gm = self.params.xvar_detune_c
+        self.params.detune_d1_r_gm = self.params.xvar_detune_r
 
         self.camera.Close()
         
