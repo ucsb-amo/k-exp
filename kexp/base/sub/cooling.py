@@ -230,12 +230,12 @@ class Cooling():
             amp_d1_c = dv,
             detune_d1_r = dv,
             amp_d1_r = dv,
-            delta_d1 = dv):
+            detune_d1 = dv):
         
         ### Start Defaults ###
-        if delta_d1 != dv:
-            detune_d1_c = delta_d1
-            detune_d1_r = delta_d1
+        if detune_d1 != dv:
+            detune_d1_c = detune_d1
+            detune_d1_r = detune_d1
         else:
             if detune_d1_c == dv:
                 detune_d1_c = self.params.detune_d1_c_gm
