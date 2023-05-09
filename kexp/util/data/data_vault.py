@@ -27,7 +27,6 @@ class DataSaver():
         data.create_dataset('images',data=expt.images)
         data.create_dataset('image_timestamps',data=expt.image_timestamps)
         if expt.sort_idx:
-            print(expt.sort_idx)
             data.create_dataset('sort_idx',data=expt.sort_idx)
             data.create_dataset('sort_N',data=expt.sort_N)
         
