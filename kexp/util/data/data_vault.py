@@ -16,7 +16,11 @@ class DataSaver():
         pwd = os.getcwd()
         os.chdir(data_dir)
 
-        fpath = self._data_path(expt.run_info)
+        fpath, folder = self._data_path(expt.run_info)
+
+        if not os.path.exists(folder):
+            os.mkdir(folder)
+
         expt.run_info.filepath = fpath
         expt.run_info.xvarnames = expt.xvarnames
 
@@ -67,8 +71,9 @@ class DataSaver():
         expt_class = run_info.expt_class
         datetime_str = run_info.run_datetime_str
         filename = run_id_str + "_" + datetime_str + "_" + expt_class + ".hdf5"
-        filepath = os.path.join(data_dir,run_info.run_date_str,filename)
-        return filepath
+        filepath_folder = os.path.join(data_dir,run_info.run_date_str)
+        filepath = os.path.join(filepath_folder,filename)
+        return filepath, filepath_folder
 
     def _update_run_id(self,run_info):
         pwd = os.getcwd()
