@@ -15,11 +15,11 @@ class repeats(EnvExperiment, Base):
 
         self.p = self.params
         
-        self.p.N_shots = 15
-        self.p.N_repeats = 3
+        self.p.N_shots = 2
+        self.p.N_repeats = 1
         self.p.t_tof = 1000 * 1.e-6 # gm
 
-        self.p.t_mot_load = np.linspace(0.25,5.,self.p.N_shots)
+        self.p.t_mot_load = np.linspace(0.25,4.,self.p.N_shots)
         self.p.t_mot_load = np.repeat(self.p.t_mot_load,self.p.N_repeats)
 
         # self.p.dummy = np.ones(self.p.N_shots)
