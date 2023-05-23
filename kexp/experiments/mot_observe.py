@@ -12,6 +12,7 @@ class mot_observe(EnvExperiment, Base):
     def run(self):
         
         self.init_kernel()
+        delay(50*ms)
         self.mot_observe()
 
     def analyze(self):

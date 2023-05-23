@@ -6,14 +6,14 @@ def crop_OD(OD,crop_type='',Nvars=1):
         OD = [OD]
 
     if crop_type == 'bigmot':
-        roix = [350, 1500]
+        roix = [700, 1500]
         roiy = [100, 1200]
     elif crop_type == 'mot':
         roix = [500, 1400]
         roiy = [250, 1200]
     elif crop_type == 'gm':
-        roix = [700, 1200]
-        roiy = [450, 750]
+        roix = [0, 1350]
+        roiy = [0, 900]
     elif crop_type == 'gm2':
         roix = [800, 1150]
         roiy = [400, 700]

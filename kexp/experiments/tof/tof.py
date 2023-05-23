@@ -9,7 +9,7 @@ class tof(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "d1 cmot tof"
+        self.run_info._run_description = "gm tof with ramp"
 
         ## Parameters
 
@@ -18,14 +18,15 @@ class tof(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 2
 
-        self.t_gm_ramp = 3.e-3
+        self.t_gm_ramp = 5.e-3
 
-        self.p.N_shots = 5
-        self.p.N_repeats = 1
-        # self.p.t_tof = np.linspace(300,1000,self.p.N_shots) * 1.e-6 # mot
+        self.p.N_shots = 7
+        self.p.N_repeats = 3
+        # self.p.t_tof = np.linspace(300,700,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(750,1250,self.p.N_shots) * 1.e-6 # d2 cmot
-        self.p.t_tof = np.linspace(7500,10000,self.p.N_shots) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(5000,8000,self.p.N_shots) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(1500,18000,self.p.N_shots) * 1.e-6 # d1 cmot
+        # self.p.t_tof = np.linspace(7500,10000,self.p.N_shots) * 1.e-6 # d1 cmot
+        self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # gm
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         self.xvarnames = ['t_tof']
@@ -54,7 +55,7 @@ class tof(EnvExperiment, Base):
 
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.gm(self.p.t_gm * s)
+            self.gm(self.p.t_gm * s)
 
             # self.gm_ramp(self.p.t_gm_ramp * s)
             
