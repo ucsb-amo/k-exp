@@ -11,6 +11,10 @@ from kexp.config import dds_id
 
 __config_path__ = dds_state.__file__
 expt_builder = DDSGUIExptBuilder()
+
+VPD_VALUES = dds_id.dds_empty_frame(0.)
+VPD_VALUES[1][2] = 4.5
+VPD_VALUES[1][3] = 1.5
         
 class DDSSpinner(QWidget):
     '''Frequency and amplitude spinbox widgets for a DDS channel'''
@@ -219,8 +223,9 @@ class MainWindow(QWidget):
             for ch in range(self.N_ch):
                 frequency = self.spinners[uru_idx][ch].f.value()
                 amp = self.spinners[uru_idx][ch].amp.value()
+                vpd = VPD_VALUES[uru_idx][ch]
                 linetoadd = f"""
-                DDS({uru_idx:d},{ch:d},{frequency:.2f}*MHz,{amp:.4f})"""
+                DDS({uru_idx:d},{ch:d},{frequency:.2f}*MHz,{amp:.4f},{vpd:.4f})"""
                 if ch != (self.N_ch-1):
                     linetoadd += ","
                 lines += linetoadd
