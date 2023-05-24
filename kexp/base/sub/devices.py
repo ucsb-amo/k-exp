@@ -26,40 +26,11 @@ class Devices():
 
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list()
-        # self.gm_ramp_setup()
 
         self.dac_ch_3Dmot_current_control = 0
-        self.dac_ch_d1_r_pd = 1
-        self.dac_ch_d1_c_pd = 2
 
         self.ttl_camera = self.get_device("ttl9")
         self.ttl_magnets = self.get_device("ttl11")
-
-    # def gm_ramp_setup(self, t_gm_ramp=dv, ampc_i=dv, ampr_i=dv, power_ramp_factor=dv):
-
-    #     ### Start defaults ###
-    #     if t_gm_ramp == dv:
-    #         t_gm_ramp = self.params.t_gm_ramp
-    #     if ampc_i == dv:
-    #         ampc_i = self.params.amp_d1_c_gm
-    #     if ampr_i == dv:
-    #         ampr_i = self.params.amp_d1_r_gm
-    #     if power_ramp_factor == dv:
-    #         power_ramp_factor = self.params.power_ramp_factor_gmramp
-    #     ### End defaults ###
-
-    #     try:
-    #         pic,pir = self.dds.dds_calibration.dds_amplitude_to_power_fraction(
-    #             [ampc_i,ampr_i])
-    #         pfc,pfr = np.array([pic,pir]) / power_ramp_factor
-            
-    #         self.dds.set_amplitude_profile(
-    #             self.dds.d1_3d_c,t_gm_ramp,p_i=pic,p_f=pfc)
-    #         self.dds.set_amplitude_profile(
-    #             self.dds.d1_3d_r,t_gm_ramp,p_i=pir,p_f=pfr)
-    #     except:
-    #         # print("Setting up DDS ramp profiles failed. If this is a repo scan, ignore.")
-    #         pass
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list():
