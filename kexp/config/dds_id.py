@@ -5,9 +5,9 @@ from artiq.experiment import kernel
 
 from kexp.config.dds_state import dds_state
 from kexp.control.artiq.DDS import DDS
-from kexp.config.dds_calibration import DDS_Calibration
+from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 
-from jax import AD9910Manager, RAMProfile, RAMType
+# from jax import AD9910Manager, RAMProfile, RAMType
 
 N_uru = 2
 N_ch = 4
@@ -26,9 +26,9 @@ class dds_frame():
     '''
     def __init__(self, dds_state = dds_state):
 
-        self.dds_manager = AD9910Manager
-        self.dds_calibration = DDS_Calibration()
-        self.ramp_dt = RAMP_STEP_TIME
+        # self.dds_manager = AD9910Manager
+        self.dds_amp_calibration = DDS_Amplitude_Calibration()
+        # self.ramp_dt = RAMP_STEP_TIME
 
         self._N_uru = N_uru
         self._N_ch = N_ch
@@ -74,7 +74,7 @@ class dds_frame():
     #         N = 1024
     #         self.ramp_dt = round( ( t_ramp / 1024 ) / 4.e-9 ) * 4.e-9
     #     p_list = np.linspace(power_i,power_f,N)
-    #     amp_list = self.dds_calibration.power_fraction_to_dds_amplitude(p_list).tolist()
+    #     amp_list = self.dds_amp_calibration.power_fraction_to_dds_amplitude(p_list).tolist()
     #     return amp_list
         
     # def set_amplitude_profile(self, dds:DDS, t_ramp:float, amp=-1., p_i=-1., p_f=-1., dwell_end=1):
