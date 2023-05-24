@@ -86,7 +86,7 @@ class DDS():
       return freq * 1.e6
    
    @kernel(flags={"fast-math"})
-   def set_dds_gamma(self, delta=-1000., amplitude=-0.1):
+   def set_dds_gamma(self, delta=-1000., amplitude=-0.1, v_pd=-0.1):
       '''
       Sets the DDS frequency and attenuation. Uses delta (detuning) in units of
       gamma, the linewidth of the D1 and D2 transition (Gamma = 2 * pi * 6 MHz).
@@ -104,7 +104,10 @@ class DDS():
       else:
          frequency = self.detuning_to_frequency(linewidths_detuned=delta)
       
-      self.set_dds(frequency=frequency, amplitude=amplitude, att_dB=att_dB)
+      if self.dac_control_bool:
+         self.set_dds(frequency=frequency, v_pd=v_pd)
+      else:
+         self.set_dds(frequency=frequency, amplitude=amplitude)
 
    @kernel(flags={"fast-math"})
    def set_dds(self, frequency = -0.1, amplitude = -0.1, att_dB = -0.1, set_stored = False):
