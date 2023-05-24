@@ -5,6 +5,7 @@ from kexp.util.db.device_db import device_db
 import numpy as np
 
 from artiq.coredevice import ad9910
+from artiq.coredevice import ad9910, zotino
 from artiq.coredevice.urukul import CPLD
 
 from kexp.util.artiq.async_print import aprint
@@ -19,6 +20,8 @@ class DDS():
       self.amplitude = amplitude
       self.aom_order = []
       self.transition = []
+      self.v_pd = 0.
+      self.dac_ch_vpd_setpoint = -1
       self.dds_device = ad9910.AD9910
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
@@ -26,6 +29,9 @@ class DDS():
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
+      
+      self.dac_device = zotino.Zotino
+      self.dac_control_bool = self.dac_ch_vpd_setpoint > 0
 
       self.dds_amp_calibration = dds_amp_cal()
 
