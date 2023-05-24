@@ -4,7 +4,6 @@ from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np
 
-from artiq.coredevice import ad9910
 from artiq.coredevice import ad9910, zotino
 from artiq.coredevice.urukul import CPLD
 
