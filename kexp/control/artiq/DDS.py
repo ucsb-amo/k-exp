@@ -12,14 +12,14 @@ from kexp.config.dds_calibration import DDS_Amplitude_Calibration as dds_amp_cal
 
 class DDS():
 
-   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0.):
+   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., v_pd=0.):
       self.urukul_idx = urukul_idx
       self.ch = ch
       self.frequency = frequency
       self.amplitude = amplitude
       self.aom_order = []
       self.transition = []
-      self.v_pd = 0.
+      self.v_pd = v_pd
       self.dac_ch_vpd_setpoint = -1
       self.dds_device = ad9910.AD9910
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
@@ -122,7 +122,7 @@ class DDS():
 
          self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude)
          if self.dac_control_bool:
-            self.update_dac_setpoint(v_pd)
+            self.update_dac_setpoint(self.v_pd)
 
       _set_freq = frequency > 0.
       if self.dac_control_bool:
