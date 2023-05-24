@@ -15,8 +15,8 @@ shape = (N_uru,N_ch)
 
 RAMP_STEP_TIME = 100 * 4.e-9
 
-def dds_empty_frame():
-    return [[None for _ in range(N_ch)] for _ in range(N_uru)]
+def dds_empty_frame(x=None):
+    return [[x for _ in range(N_ch)] for _ in range(N_uru)]
 
 class dds_frame():
     '''
@@ -57,6 +57,10 @@ class dds_frame():
         self._transition[1][2] = 'D1'
         self._transition[1][3] = 'D1'
 
+        self._dac_ch_vpd_setpoint = dds_empty_frame(-1)
+        self._dac_ch_vpd_setpoint[1][2] = 2
+        self._dac_ch_vpd_setpoint[1][3] = 1
+
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx)
         self.push = self.dds_assign(0,0)
         self.d2_2d_r = self.dds_assign(0,1)
@@ -79,6 +83,7 @@ class dds_frame():
         dds0 = self._dds_state[uru][ch]
         dds0.aom_order = self._aom_order[uru][ch]
         dds0.transition = self._transition[uru][ch]
+        dds0.dac_ch_vpd_setpoint = self._dac_ch_vpd_setpoint[uru][ch]
         return dds0
     
     def dds_list(self):
