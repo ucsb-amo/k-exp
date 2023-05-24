@@ -29,6 +29,8 @@ class Devices():
         self.gm_ramp_setup()
 
         self.dac_ch_3Dmot_current_control = 0
+        self.dac_ch_d1_r_pd = 1
+        self.dac_ch_d1_c_pd = 2
 
         self.ttl_camera = self.get_device("ttl9")
         self.ttl_magnets = self.get_device("ttl11")
