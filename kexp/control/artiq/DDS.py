@@ -110,7 +110,7 @@ class DDS():
          self.set_dds(frequency=frequency, amplitude=amplitude)
 
    @kernel(flags={"fast-math"})
-   def set_dds(self, frequency = -0.1, amplitude = -0.1, att_dB = -0.1, set_stored = False):
+   def set_dds(self, frequency = -0.1, amplitude = -0.1, v_pd = -0.1, set_stored = False):
       '''Set the dds device. If frequency = 0, turn it off'''
 
       if set_stored:
@@ -118,38 +118,49 @@ class DDS():
             frequency = self.frequency
          if amplitude < 0.:
             amplitude = self.amplitude
+         if v_pd < 0.:
+            v_pd = self.v_pd
+
+         self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude)
+         if self.dac_control_bool:
+            self.update_dac_setpoint(v_pd)
 
       _set_freq = frequency > 0.
-      _set_amp = amplitude > 0.
-      _set_freq_or_amp = _set_freq or _set_amp
-      
-      # tnow = now_mu()
+      if self.dac_control_bool:
+         _set_vpd = v_pd > 0.
+         _set_amp = False
+      else:
+         _set_amp = amplitude > 0.
+         _set_vpd = False
+      _set_freq_and_power = _set_freq or (_set_amp or _set_vpd)
 
-      # if _set_att:
-      #    self.att_dB = att_dB
-         # delay_mu(-self._t_att_xfer_mu - self._t_ref_period_mu)
-
-      # if _set_freq_or_amp:
-         # dt = now_mu() - (now_mu() & ~7)
-         # delay_mu(-(dt + self._t_set_xfer_mu))
-
-      if _set_freq:
+      if _set_freq_and_power:
          self.frequency = frequency
-      elif frequency == 0.:
-         self.dds_device.sw.off()
-         
-      if _set_amp:
+         if self.dac_control_bool:
+            self.v_pd = v_pd
+            self.dds_device.set_frequency(frequency=self.frequency)
+            self.update_dac_setpoint(v_pd)
+         else:
+            self.amplitude = amplitude
+            self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
+      elif _set_freq:
+         self.frequency = frequency
+         if frequency == 0.:
+            self.dds_device.sw.off()
+      elif _set_amp:
          self.amplitude = amplitude
-      elif amplitude == 0.:
-         self.amplitude = 0.
-         self.dds_device.set(amplitude=self.amplitude)
-         self.dds_device.sw.off()
-
-      if _set_freq_or_amp:
-         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-
-      # if _set_freq_or_amp:
-      #    delay_mu(-self._t_ref_period_mu + dt)
+         if amplitude == 0.:
+            self.dds_device.set(amplitude=self.amplitude)
+            self.dds_device.sw.off()
+      elif _set_vpd:
+         self.update_dac_setpoint(v_pd)
+   
+   def update_dac_setpoint(self, v_pd=-0.1, update = True):
+      if v_pd < 0.:
+         v_pd = self.v_pd
+      self.dac_device.write_dac(channel=self.dac_ch_vpd_setpoint, voltage=v_pd)
+      if update:
+         self.dac_device.load()
 
    def get_devices(self,expt):
       self.dds_device = expt.get_device(self.name)
