@@ -36,42 +36,17 @@ class dds_frame():
 
         self._dds_state = dds_state
 
-        self._aom_order = dds_empty_frame()
-        # self._aom_order[urukul_idx][ch_idx] = order
-        self._aom_order[0][0] = 1
-        self._aom_order[0][1] = 1
-        self._aom_order[0][2] = -1
-        self._aom_order[0][3] = 1
-        self._aom_order[1][0] = -1
-        self._aom_order[1][1] = 1
-        self._aom_order[1][2] = -1
-        self._aom_order[1][3] = 1
+        # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
+        self.push = self.dds_assign(0,0, ao_order = 1, transition = 'D2')
+        self.d2_2d_r = self.dds_assign(0,1, ao_order = 1, transition = 'D2')
+        self.d2_2d_c = self.dds_assign(0,2, ao_order = -1, transition = 'D2')
+        self.d2_3d_r = self.dds_assign(0,3, ao_order = 1, transition = 'D2')
+        self.d2_3d_c = self.dds_assign(1,0, ao_order = -1, transition = 'D2')
+        self.imaging = self.dds_assign(1,1, ao_order = 1, transition = 'D2')
+        self.d1_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D1', dac_ch_vpd = 2)
+        self.d1_3d_r = self.dds_assign(1,3, ao_order = 1, transition = 'D1', dac_ch_vpd = 1)
 
-        self._transition = dds_empty_frame()
-        self._transition[0][0] = 'D2'
-        self._transition[0][1] = 'D2'
-        self._transition[0][2] = 'D2'
-        self._transition[0][3] = 'D2'
-        self._transition[1][0] = 'D2'
-        self._transition[1][1] = 'D2'
-        self._transition[1][2] = 'D1'
-        self._transition[1][3] = 'D1'
-
-        self._dac_ch_vpd_setpoint = dds_empty_frame(-1)
-        self._dac_ch_vpd_setpoint[1][2] = 2
-        self._dac_ch_vpd_setpoint[1][3] = 1
-
-        # self.aom_name = self.dds_assign(urukul_idx,ch_idx)
-        self.push = self.dds_assign(0,0)
-        self.d2_2d_r = self.dds_assign(0,1)
-        self.d2_2d_c = self.dds_assign(0,2)
-        self.d2_3d_r = self.dds_assign(0,3)
-        self.d2_3d_c = self.dds_assign(1,0)
-        self.imaging = self.dds_assign(1,1)
-        self.d1_3d_c = self.dds_assign(1,2)
-        self.d1_3d_r = self.dds_assign(1,3)
-
-    def dds_assign(self, uru, ch) -> DDS:
+    def dds_assign(self, uru, ch, ao_order, transition, dac_ch_vpd=-1) -> DDS:
         '''
         Gets the DDS() object from the dds_state vector, sets the aom order, and
         returns the DDS() object.
@@ -81,9 +56,9 @@ class dds_frame():
         DDS
         '''
         dds0 = self._dds_state[uru][ch]
-        dds0.aom_order = self._aom_order[uru][ch]
-        dds0.transition = self._transition[uru][ch]
-        dds0.dac_ch_vpd_setpoint = self._dac_ch_vpd_setpoint[uru][ch]
+        dds0.aom_order = ao_order
+        dds0.transition = transition
+        dds0.dac_ch_vpd_setpoint = dac_ch_vpd
         return dds0
     
     def dds_list(self):
