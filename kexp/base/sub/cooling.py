@@ -262,15 +262,6 @@ class Cooling():
         delay(t)
 
     #GM with only D1, turning B field off
-    @kernel
-    def gm_ramp(self,t):
-        with parallel:
-            self.ttl_magnets.off()
-            self.switch_d2_3d(0)
-            self.switch_d1_3d(1)
-        self.dds.enable_profile()
-        delay(t)
-        self.dds.disable_profile()
 
     @kernel
     def release(self):
