@@ -4,7 +4,7 @@ from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np
 
-from artiq.coredevice import ad9910, zotino
+from artiq.coredevice import ad9910, ad53xx
 from artiq.coredevice.urukul import CPLD
 
 from kexp.util.artiq.async_print import aprint
@@ -29,7 +29,7 @@ class DDS():
       self.ftw_per_hz = 0
       self.read_db(device_db)
       
-      self.dac_device = zotino.Zotino
+      self.dac_device = ad53xx.AD53xx
       self.dac_control_bool = self.dac_ch_vpd_setpoint > 0
 
       self.dds_amp_calibration = dds_amp_cal()
@@ -154,6 +154,7 @@ class DDS():
       elif _set_vpd:
          self.update_dac_setpoint(v_pd)
    
+   @kernel
    def update_dac_setpoint(self, v_pd=-0.1, update = True):
       if v_pd < 0.:
          v_pd = self.v_pd
