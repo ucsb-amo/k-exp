@@ -10,7 +10,7 @@ class Startup(EnvExperiment, Base):
         '''
         Get core device, dds, zotino drivers.
         '''
-        Base.__init__(self)
+        Base.__init__(self,setup_camera=False)
 
     @kernel
     def run(self):
