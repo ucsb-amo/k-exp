@@ -1,6 +1,6 @@
 import numpy as np
 
-from artiq.coredevice import ad9910
+from artiq.coredevice import zotino
 from artiq.experiment import kernel
 
 from kexp.config.dds_state import dds_state
@@ -24,7 +24,7 @@ class dds_frame():
     artiq experiments. Also, records the AOM order so that AOM frequencies can be
     determined from detunings.
     '''
-    def __init__(self, dds_state = dds_state):
+    def __init__(self, dds_state = dds_state, dac_device = []):
 
         # self.dds_manager = AD9910Manager
         self.dds_amp_calibration = DDS_Amplitude_Calibration()
@@ -36,6 +36,11 @@ class dds_frame():
 
         self._dds_state = dds_state
 
+        if dac_device:
+            self._dac_device = dac_device
+        else:
+            self._dac_device = zotino.Zotino
+
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
         self.push = self.dds_assign(0,0, ao_order = 1, transition = 'D2')
         self.d2_2d_r = self.dds_assign(0,1, ao_order = 1, transition = 'D2')
@@ -46,7 +51,7 @@ class dds_frame():
         self.d1_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D1', dac_ch_vpd = 2)
         self.d1_3d_r = self.dds_assign(1,3, ao_order = 1, transition = 'D1', dac_ch_vpd = 1)
 
-    def dds_assign(self, uru, ch, ao_order, transition, dac_ch_vpd=-1) -> DDS:
+    def dds_assign(self, uru, ch, ao_order, transition, dac_ch_vpd=-1, dac_device = []) -> DDS:
         '''
         Gets the DDS() object from the dds_state vector, sets the aom order, and
         returns the DDS() object.
@@ -59,6 +64,11 @@ class dds_frame():
         dds0.aom_order = ao_order
         dds0.transition = transition
         dds0.dac_ch_vpd_setpoint = dac_ch_vpd
+        dds0.dac_device = dac_device
+        
+        if dds0.dac_ch_vpd_setpoint < 0:
+            dds0.amplitude = 0.2
+
         return dds0
     
     def dds_list(self):
