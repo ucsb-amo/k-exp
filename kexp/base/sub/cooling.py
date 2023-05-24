@@ -60,7 +60,7 @@ class Cooling():
             amp_d2_r = dv,
             detune_push = dv,
             amp_push = dv,
-            V_current = dv):
+            v_current = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -75,8 +75,8 @@ class Cooling():
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
-        if V_current == dv:
-            V_current = self.params.V_mot_current
+        if v_current == dv:
+            v_current = self.params.v_mot_current
         ### End Defaults ###
 
         delay(-10*us)
@@ -89,7 +89,7 @@ class Cooling():
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         delay(10*us)
-        self.set_magnet_current(V = V_current)
+        self.set_magnet_current(v = v_current)
         with parallel:
             self.ttl_magnets.on()
             self.switch_d2_3d(1)
@@ -107,7 +107,7 @@ class Cooling():
             amp_d1_c = dv,
             detune_d1_r = dv,
             amp_d1_r = dv,
-            V_current = dv):
+            v_current = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -129,8 +129,8 @@ class Cooling():
         if amp_d1_r == dv:
             amp_d1_r = self.params.amp_d1_r_mot
 
-        if V_current == dv:
-            V_current = self.params.V_mot_current
+        if v_current == dv:
+            v_current = self.params.v_mot_current
 
         delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
@@ -145,7 +145,7 @@ class Cooling():
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
                                  amplitude=amp_d1_r)
         delay(10*us)
-        self.set_magnet_current(V = V_current)
+        self.set_magnet_current(v = v_current)
         self.ttl_magnets.on()
         with parallel:
             self.switch_d2_3d(1)
@@ -160,7 +160,7 @@ class Cooling():
             amp_d2_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
-            V_current = dv):
+            v_current = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -171,8 +171,8 @@ class Cooling():
             detune_d2_r = self.params.detune_d2_r_d2cmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_d2cmot
-        if V_current == dv:
-            V_current = self.params.V_d2cmot_current
+        if v_current == dv:
+            v_current = self.params.v_d2cmot_current
         ### End Defaults ###
 
         delay(-10*us)
@@ -183,7 +183,7 @@ class Cooling():
         delay(10*us)
         with parallel:
             self.switch_d2_3d(1)
-            self.set_magnet_current(V = V_current)
+            self.set_magnet_current(v = v_current)
         delay(t)
 
     #hybrid compressed MOT with only D2 repump and D1 cooler, setting B field to lower value
@@ -193,7 +193,7 @@ class Cooling():
             amp_d1_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
-            V_current = dv):
+            v_current = dv):
         
         ### Start Defaults ###
         if detune_d1_c == dv:
@@ -204,8 +204,8 @@ class Cooling():
             detune_d2_r = self.params.detune_d2_r_d1cmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_d1cmot
-        if V_current == dv:
-            V_current = self.params.V_d1cmot_current
+        if v_current == dv:
+            v_current = self.params.v_d1cmot_current
         ### End Defaults ###
 
         delay(-10*us)
@@ -220,16 +220,16 @@ class Cooling():
             self.dds.d1_3d_c.on()
             self.dds.d2_3d_c.off()
             self.dds.d1_3d_r.off()
-            self.set_magnet_current(V = V_current)
+            self.set_magnet_current(v = v_current)
         delay(t)
 
     #GM with only D1, turning B field off
     @kernel
     def gm(self,t,
             detune_d1_c = dv,
-            amp_d1_c = dv,
+            v_d1_c = dv,
             detune_d1_r = dv,
-            amp_d1_r = dv,
+            v_d1_r = dv,
             detune_d1 = dv):
         
         ### Start Defaults ###
@@ -242,10 +242,10 @@ class Cooling():
             if detune_d1_r == dv:
                 detune_d1_r = self.params.detune_d1_r_gm
         
-        if amp_d1_c == dv:
-            amp_d1_c = self.params.amp_d1_c_gm
-        if amp_d1_r == dv:
-            amp_d1_r = self.params.amp_d1_r_gm
+        if v_d1_c == dv:
+            v_d1_c = self.params.v_d1_c_gm
+        if v_d1_r == dv:
+            v_d1_r = self.params.v_d1_r_gm
         ### End Defaults ###
 
         delay(-10*us)
@@ -262,6 +262,7 @@ class Cooling():
         delay(t)
 
     #GM with only D1, turning B field off
+
 
     @kernel
     def release(self):
@@ -308,11 +309,11 @@ class Cooling():
     ## Magnet functions
 
     @kernel
-    def set_magnet_current(self, V = dv):
-        if V == dv:
-            V = self.params.V_mot_current
+    def set_magnet_current(self, v = dv):
+        if v == dv:
+            v = self.params.v_mot_current
         with sequential:
-            self.zotino.write_dac(self.dac_ch_3Dmot_current_control,V)
+            self.zotino.write_dac(self.dac_ch_3Dmot_current_control,v)
             self.zotino.load()
 
     ## Other
@@ -325,7 +326,7 @@ class Cooling():
             amp_d2_r = dv,
             detune_push = dv,
             amp_push = dv,
-            V_current = dv):
+            v_current = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -340,8 +341,8 @@ class Cooling():
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
-        if V_current == dv:
-            V_current = self.params.V_mot_current
+        if v_current == dv:
+            v_current = self.params.v_mot_current
         ### End Defaults ###
 
         delay(-10*us)
@@ -354,7 +355,7 @@ class Cooling():
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         delay(10*us)
-        self.set_magnet_current(V = V_current)
+        self.set_magnet_current(v = v_current)
 
         delay(1*ms)
 
