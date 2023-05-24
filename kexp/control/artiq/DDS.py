@@ -12,12 +12,11 @@ from kexp.config.dds_calibration import DDS_Calibration as ddscal
 
 class DDS():
 
-   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., att_dB=0.):
+   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0.):
       self.urukul_idx = urukul_idx
       self.ch = ch
       self.frequency = frequency
       self.amplitude = amplitude
-      self.att_dB = att_dB
       self.aom_order = []
       self.transition = []
       self.dds_device = ad9910.AD9910
@@ -81,7 +80,7 @@ class DDS():
       return freq * 1.e6
    
    @kernel(flags={"fast-math"})
-   def set_dds_gamma(self, delta=-1000., amplitude=-0.1, att_dB=-0.1):
+   def set_dds_gamma(self, delta=-1000., amplitude=-0.1):
       '''
       Sets the DDS frequency and attenuation. Uses delta (detuning) in units of
       gamma, the linewidth of the D1 and D2 transition (Gamma = 2 * pi * 6 MHz).
@@ -91,9 +90,6 @@ class DDS():
       delta: float
          Detuning in units of linewidth Gamma = 2 * pi * 6 MHz. (default: use
          stored self.frequency)
-
-      att_dB: float
-         The attenuation in units of dB. (default: stored self.att_dB)
       '''
       delta = float(delta)
 
@@ -113,19 +109,15 @@ class DDS():
             frequency = self.frequency
          if amplitude < 0.:
             amplitude = self.amplitude
-         if att_dB < 0.:
-            att_dB = self.att_dB
 
       _set_freq = frequency > 0.
       _set_amp = amplitude > 0.
       _set_freq_or_amp = _set_freq or _set_amp
-      _set_att = att_dB > 0.
-      _set_both = (_set_freq_or_amp and _set_att)
       
       # tnow = now_mu()
 
-      if _set_att:
-         self.att_dB = att_dB
+      # if _set_att:
+      #    self.att_dB = att_dB
          # delay_mu(-self._t_att_xfer_mu - self._t_ref_period_mu)
 
       # if _set_freq_or_amp:
@@ -136,20 +128,15 @@ class DDS():
          self.frequency = frequency
       elif frequency == 0.:
          self.dds_device.sw.off()
-
+         
       if _set_amp:
          self.amplitude = amplitude
       elif amplitude == 0.:
          self.amplitude = 0.
          self.dds_device.set(amplitude=self.amplitude)
          self.dds_device.sw.off()
-      
-      if _set_both:
-         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-         self.dds_device.set_att(self.att_dB)
-      elif _set_att:
-         self.dds_device.set_att(self.att_dB)
-      elif _set_freq_or_amp:
+
+      if _set_freq_or_amp:
          self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
 
       # if _set_freq_or_amp:
