@@ -65,9 +65,6 @@ class dds_frame():
         dds0.transition = transition
         dds0.dac_ch_vpd_setpoint = dac_ch_vpd
         dds0.dac_device = self._dac_device
-        
-        if dds0.dac_ch_vpd_setpoint < 0:
-            dds0.amplitude = 0.2
 
         return dds0
     
