@@ -112,6 +112,11 @@ class DDS():
    def set_dds(self, frequency = -0.1, amplitude = -0.1, v_pd = -0.1, set_stored = False):
       '''Set the dds device. If frequency = 0, turn it off'''
 
+      # update dac_control_bool if not already updated
+      self.dac_control_bool = self.dac_ch_vpd_setpoint > 0
+
+      # set unspecified parameters to default values if set_stored
+      # otherwise, set_dds will not set unspecified values to save time
       if set_stored:
          if frequency < 0.:
             frequency = self.frequency
@@ -124,6 +129,7 @@ class DDS():
          if self.dac_control_bool:
             self.update_dac_setpoint(self.v_pd)
 
+      # determine which values need to be set
       _set_freq = frequency > 0.
       if self.dac_control_bool:
          _set_vpd = v_pd > 0.
@@ -133,6 +139,7 @@ class DDS():
          _set_vpd = False
       _set_freq_and_power = _set_freq or (_set_amp or _set_vpd)
 
+      # set the things which need to be set
       if _set_freq_and_power:
          self.frequency = frequency
          if self.dac_control_bool:
