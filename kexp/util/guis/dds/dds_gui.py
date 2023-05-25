@@ -3,6 +3,9 @@ from PyQt5.QtCore import *
 import sys
 import textwrap
 
+import os
+from subprocess import PIPE, run
+
 from kexp.util.guis.dds.dds_gui_ExptBuilder import DDSGUIExptBuilder
 from kexp.control.artiq.DDS import DDS
 from kexp.config import dds_state
@@ -141,7 +144,37 @@ class MainWindow(QWidget):
         self.all_off_button.setSizePolicy(sizePolicy)
         self.grid.addWidget(self.all_off_button,self.N_ch+2,1,1,self.N_urukul-1)
 
+        self.mot_observe_button = QToolButton()
+        self.mot_observe_button.setText("MOT observe")
+        self.mot_observe_button.clicked.connect(self.submit_mot_observe)
+        self.mot_observe_button.setSizePolicy(sizePolicy)
+        self.grid.addWidget(self.mot_observe_button,self.N_ch+3,0,1,self.N_urukul)
+
+        self.hmot_observe_button = QToolButton()
+        self.hmot_observe_button.setText("Hybrid MOT observe")
+        self.hmot_observe_button.clicked.connect(self.submit_hybrid_mot_observe)
+        self.hmot_observe_button.setSizePolicy(sizePolicy)
+        self.grid.addWidget(self.hmot_observe_button,self.N_ch+4,0,1,self.N_urukul)
+
         self.setLayout(self.grid)
+
+    def submit_mot_observe(self):
+        __code_path__ = os.environ.get('code')
+        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","mot_observe.py")
+
+        expt_path = __temp_exp_path__
+        run_expt_command = r"%kpy% & artiq_run " + expt_path
+        result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+        self.message.msg_report(result.returncode)
+
+    def submit_hybrid_mot_observe(self):
+        __code_path__ = os.environ.get('code')
+        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","hybrid_mot_observe.py")
+
+        expt_path = __temp_exp_path__
+        run_expt_command = r"%kpy% & artiq_run " + expt_path
+        result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+        self.message.msg_report(result.returncode)
 
     def add_dds_to_grid(self):
         '''Populate grid layout with dds channels'''
