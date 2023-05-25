@@ -10,8 +10,8 @@ class MOTCurrentRamp(EnvExperiment,Base):
         self.core_dma = self.get_device("core_dma")
         self.ch = self.dac_ch_3Dmot_current_control
 
-        V1 = self.params.V_mot_current - 0.25
-        V2 = self.params.V_mot_current + 1
+        V1 = self.params.v_mot_current - 0.25
+        V2 = self.params.v_mot_current + 1
         T_half = 2
         fs = 100
         self.N = int(2 * T_half * fs)
