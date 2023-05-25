@@ -44,7 +44,7 @@ p_vs_amp = [(0.0, 4.4709388971684053e-07),
 p = [d[1] for d in p_vs_amp]
 a = [d[0] for d in p_vs_amp]
 
-class DDS_Calibration():
+class DDS_Amplitude_Calibration():
 
     def __init__(self):
         self.power_data = p

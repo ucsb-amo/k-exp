@@ -4,22 +4,23 @@ from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np
 
-from artiq.coredevice import ad9910
+from artiq.coredevice import ad9910, ad53xx
 from artiq.coredevice.urukul import CPLD
 
 from kexp.util.artiq.async_print import aprint
-from kexp.config.dds_calibration import DDS_Calibration as ddscal
+from kexp.config.dds_calibration import DDS_Amplitude_Calibration as dds_amp_cal
 
 class DDS():
 
-   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., att_dB=0.):
+   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., v_pd=0.):
       self.urukul_idx = urukul_idx
       self.ch = ch
       self.frequency = frequency
       self.amplitude = amplitude
-      self.att_dB = att_dB
       self.aom_order = []
       self.transition = []
+      self.v_pd = v_pd
+      self.dac_ch_vpd_setpoint = -1
       self.dds_device = ad9910.AD9910
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
@@ -27,8 +28,11 @@ class DDS():
       self.bus_channel = []
       self.ftw_per_hz = 0
       self.read_db(device_db)
+      
+      self.dac_device = ad53xx.AD53xx
+      self.dac_control_bool = self.dac_ch_vpd_setpoint > 0
 
-      self.dds_calibration = ddscal()
+      self.dds_amp_calibration = dds_amp_cal()
 
       self._t_att_xfer_mu = np.int64(1592) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.10qxjvv6p35q
       self._t_set_xfer_mu = np.int64(1248) # see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.e1ucbs8kjf4z
@@ -81,7 +85,7 @@ class DDS():
       return freq * 1.e6
    
    @kernel(flags={"fast-math"})
-   def set_dds_gamma(self, delta=-1000., amplitude=-0.1, att_dB=-0.1):
+   def set_dds_gamma(self, delta=-1000., amplitude=-0.1, v_pd=-0.1):
       '''
       Sets the DDS frequency and attenuation. Uses delta (detuning) in units of
       gamma, the linewidth of the D1 and D2 transition (Gamma = 2 * pi * 6 MHz).
@@ -91,9 +95,6 @@ class DDS():
       delta: float
          Detuning in units of linewidth Gamma = 2 * pi * 6 MHz. (default: use
          stored self.frequency)
-
-      att_dB: float
-         The attenuation in units of dB. (default: stored self.att_dB)
       '''
       delta = float(delta)
 
@@ -102,58 +103,71 @@ class DDS():
       else:
          frequency = self.detuning_to_frequency(linewidths_detuned=delta)
       
-      self.set_dds(frequency=frequency, amplitude=amplitude, att_dB=att_dB)
+      if self.dac_control_bool:
+         self.set_dds(frequency=frequency, v_pd=v_pd)
+      else:
+         self.set_dds(frequency=frequency, amplitude=amplitude)
 
    @kernel(flags={"fast-math"})
-   def set_dds(self, frequency = -0.1, amplitude = -0.1, att_dB = -0.1, set_stored = False):
+   def set_dds(self, frequency = -0.1, amplitude = -0.1, v_pd = -0.1, set_stored = False):
       '''Set the dds device. If frequency = 0, turn it off'''
 
+      # update dac_control_bool if not already updated
+      self.dac_control_bool = self.dac_ch_vpd_setpoint > 0
+
+      # set unspecified parameters to default values if set_stored
+      # otherwise, set_dds will not set unspecified values to save time
       if set_stored:
          if frequency < 0.:
             frequency = self.frequency
          if amplitude < 0.:
             amplitude = self.amplitude
-         if att_dB < 0.:
-            att_dB = self.att_dB
+         if v_pd < 0.:
+            v_pd = self.v_pd
 
+         self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude)
+         if self.dac_control_bool:
+            self.update_dac_setpoint(self.v_pd)
+
+      # determine which values need to be set
       _set_freq = frequency > 0.
-      _set_amp = amplitude > 0.
-      _set_freq_or_amp = _set_freq or _set_amp
-      _set_att = att_dB > 0.
-      _set_both = (_set_freq_or_amp and _set_att)
-      
-      # tnow = now_mu()
+      if self.dac_control_bool:
+         _set_vpd = v_pd > 0.
+         _set_amp = False
+      else:
+         _set_amp = amplitude > 0.
+         _set_vpd = False
+      _set_freq_and_power = _set_freq or (_set_amp or _set_vpd)
 
-      if _set_att:
-         self.att_dB = att_dB
-         # delay_mu(-self._t_att_xfer_mu - self._t_ref_period_mu)
-
-      # if _set_freq_or_amp:
-         # dt = now_mu() - (now_mu() & ~7)
-         # delay_mu(-(dt + self._t_set_xfer_mu))
-
-      if _set_freq:
+      # set the things which need to be set
+      if _set_freq_and_power:
          self.frequency = frequency
-      elif frequency == 0.:
-         self.dds_device.sw.off()
-
-      if _set_amp:
+         if self.dac_control_bool:
+            self.v_pd = v_pd
+            self.dds_device.set_frequency(frequency=self.frequency)
+            self.update_dac_setpoint(v_pd)
+         else:
+            self.amplitude = amplitude
+            self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
+      elif _set_freq:
+         self.frequency = frequency
+         if frequency == 0.:
+            self.dds_device.sw.off()
+      elif _set_amp:
          self.amplitude = amplitude
-      elif amplitude == 0.:
-         self.amplitude = 0.
-         self.dds_device.set(amplitude=self.amplitude)
-         self.dds_device.sw.off()
-      
-      if _set_both:
-         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-         self.dds_device.set_att(self.att_dB)
-      elif _set_att:
-         self.dds_device.set_att(self.att_dB)
-      elif _set_freq_or_amp:
-         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-
-      # if _set_freq_or_amp:
-      #    delay_mu(-self._t_ref_period_mu + dt)
+         if amplitude == 0.:
+            self.dds_device.set(amplitude=self.amplitude)
+            self.dds_device.sw.off()
+      elif _set_vpd:
+         self.update_dac_setpoint(v_pd)
+   
+   @kernel
+   def update_dac_setpoint(self, v_pd=-0.1, update = True):
+      if v_pd < 0.:
+         v_pd = self.v_pd
+      self.dac_device.write_dac(channel=self.dac_ch_vpd_setpoint, voltage=v_pd)
+      if update:
+         self.dac_device.load()
 
    def get_devices(self,expt):
       self.dds_device = expt.get_device(self.name)
