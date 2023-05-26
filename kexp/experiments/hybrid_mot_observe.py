@@ -3,7 +3,7 @@ from kexp import Base
 
 import numpy as np
 
-class mot_observe(EnvExperiment, Base):
+class hybrid_mot_observe(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self, setup_camera = False)
