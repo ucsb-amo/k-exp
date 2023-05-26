@@ -104,9 +104,9 @@ class Cooling():
             detune_d2_r = dv,
             amp_d2_r = dv,
             detune_d1_c = dv,
-            vpd_d1_c = dv,
+            v_pd_d1_c = dv,
             detune_d1_r = dv,
-            vpd_d1_r = dv,
+            v_pd_d1_r = dv,
             v_current = dv):
         
         ### Start Defaults ###
@@ -122,12 +122,12 @@ class Cooling():
 
         if detune_d1_c == dv:
             detune_d1_c = self.params.detune_d1_c_mot
-        if vpd_d1_c == dv:
-            vpd_d1_c = self.params.vpd_d1_c_mot
+        if v_pd_d1_c == dv:
+            v_pd_d1_c = self.params.v_pd_d1_c_mot
         if detune_d1_r == dv:
             detune_d1_r = self.params.detune_d1_r_mot
-        if vpd_d1_r == dv:
-            vpd_d1_r = self.params.vpd_d1_r_mot
+        if v_pd_d1_r == dv:
+            v_pd_d1_r = self.params.v_pd_d1_r_mot
 
         if v_current == dv:
             v_current = self.params.v_mot_current
@@ -190,7 +190,7 @@ class Cooling():
     @kernel
     def cmot_d1(self,t,
             detune_d1_c = dv,
-            vpd_d1_c = dv,
+            v_pd_d1_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
             v_current = dv):
@@ -198,8 +198,8 @@ class Cooling():
         ### Start Defaults ###
         if detune_d1_c == dv:
             detune_d1_c = self.params.detune_d1_c_d1cmot
-        if vpd_d1_c == dv:
-            vpd_d1_c = self.params.vpd_d1_c_d1cmot
+        if v_pd_d1_c == dv:
+            v_pd_d1_c = self.params.v_pd_d1_c_d1cmot
         if detune_d2_r == dv:
             detune_d2_r = self.params.detune_d2_r_d1cmot
         if amp_d2_r == dv:
@@ -210,7 +210,7 @@ class Cooling():
 
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
-                                       amplitude=amp_d1_c)
+                                       v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                        amplitude=amp_d2_r)
@@ -227,9 +227,9 @@ class Cooling():
     @kernel
     def gm(self,t,
             detune_d1_c = dv,
-            vpd_d1_c = dv,
+            v_pd_d1_c = dv,
             detune_d1_r = dv,
-            vpd_d1_r = dv,
+            v_pd_d1_r = dv,
             detune_d1 = dv):
         
         ### Start Defaults ###
@@ -242,18 +242,18 @@ class Cooling():
             if detune_d1_r == dv:
                 detune_d1_r = self.params.detune_d1_r_gm
         
-        if vpd_d1_c == dv:
-            vpd_d1_c = self.params.vpd_d1_c_gm
-        if vpd_d1_r == dv:
-            vpd_d1_r = self.params.vpd_d1_r_gm
+        if v_pd_d1_c == dv:
+            v_pd_d1_c = self.params.v_pd_d1_c_gm
+        if v_pd_d1_r == dv:
+            v_pd_d1_r = self.params.v_pd_d1_r_gm
         ### End Defaults ###
 
         delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
-                                       amplitude=vpd_d1_c)
+                                       v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
-                                       amplitude=vpd_d1_r)
+                                       v_pd=v_pd_d1_r)
         delay(10*us)
         with parallel:
             self.ttl_magnets.off()
