@@ -70,7 +70,7 @@ class ExptParams():
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
-        self.v_pd_d1_c_gm = 4.5
+        self.v_pd_d1_c_gm = 1.0 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
         self.v_pd_d1_r_gm = 1.5
 
