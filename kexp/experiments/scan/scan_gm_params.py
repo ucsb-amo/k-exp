@@ -9,7 +9,7 @@ class scan_gm_params(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "GM detune_c vs detune_r"
+        self.run_info._run_description = "GM v_pd_c vs v_pd_r"
 
         ## Parameters
 
@@ -21,15 +21,14 @@ class scan_gm_params(EnvExperiment, Base):
         #GM Detunings
         # self.p.xvar_detune_c_gm = np.linspace(3.2,3.8,6)
         # self.p.xvar_detune_r_gm = np.linspace(3.2,3.8,6)
-        # self.p.xvar_amp_gm = np.linspace(0.13,0.188,2)
-        self.p.xvar_amp_c_gm = np.linspace(0.04,0.188,5)
-        self.p.xvar_amp_r_gm = np.linspace(0.04,0.188,5)
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(0.1,1.1,5)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(0.1,2.0,5)
         # self.xvarnames = ['xvar_detune_gm','xvar_amp_gm']
 
         # self.p.xvar_amp_c = np.repeat(self.p.xvar_amp_c,3)
         # self.p.xvar_amp_r = np.repeat(self.p.xvar_amp_r,3)
 
-        self.xvarnames = ['xvar_amp_c_gm', 'xvar_amp_r_gm']
+        self.xvarnames = ['xvar_v_pd_d1_c_gm', 'xvar_v_pd_d1_r_gm']
 
         self.shuffle_xvars()
         self.get_N_img()
@@ -44,8 +43,8 @@ class scan_gm_params(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar_1 in self.p.xvar_amp_c_gm:
-            for xvar_2 in self.p.xvar_amp_r_gm:
+        for xvar_1 in self.p.xvar_v_pd_d1_c_gm:
+            for xvar_2 in self.p.xvar_v_pd_d1_r_gm:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
@@ -55,7 +54,7 @@ class scan_gm_params(EnvExperiment, Base):
 
                 self.cmot_d1(self.p.t_d2cmot * s)
 
-                self.gm(self.p.t_gm * s, amp_d1_c_gm=xvar_1, amp_d1_r_gm=xvar_2)
+                self.gm(self.p.t_gm * s, v_pd_d1_c=xvar_1, v_pd_d1_r=xvar_2)
 
                 # self.gm_ramp(self.p.t_gm_ramp)
                 
@@ -76,8 +75,8 @@ class scan_gm_params(EnvExperiment, Base):
         # self.p.amp_d1_c_gm = self.p.xvar_amp_c
         # self.p.amp_d1_r_gm = self.p.xvar_amp_r
 
-        self.p.detune_d1_c_gm = self.p.xvar_detune_c_gm
-        self.p.detune_d1_r_gm = self.p.xvar_detune_r_gm
+        self.p.v_pd_d1_c_gm = self.p.xvar_v_pd_d1_c_gm
+        self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
 
         self.camera.Close()
         
