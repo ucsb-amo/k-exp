@@ -8,7 +8,7 @@ from kexp.util.data.run_info import RunInfo
 
 data_dir = os.getenv("data")
 
-def load_atomdata(idx=0, path = [],unshuffle_xvars=True,crop_type='mot') -> atomdata:
+def load_atomdata(idx=0, path = [], unshuffle_xvars=True, crop_type='mot') -> atomdata:
     '''
     Returns the atomdata stored in the `idx`th newest pickle file at `path`.
 
