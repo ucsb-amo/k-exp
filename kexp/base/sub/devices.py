@@ -56,7 +56,7 @@ class Devices():
     @kernel
     def set_all_dds(self):
         for dds in self.dds_list:
-            dds.set_dds(set_stored=True)
+            dds.set_dds(dac_update=True)
             dds.dds_device.set_att(0. * dB)
             delay_mu(self.params.t_rtio_mu)
 
