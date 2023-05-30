@@ -162,11 +162,11 @@ class DDS():
          self.update_dac_setpoint(v_pd)
    
    @kernel
-   def update_dac_setpoint(self, v_pd=-0.1, update = True):
+   def update_dac_setpoint(self, v_pd=-0.1, dac_load = True):
       if v_pd < 0.:
          v_pd = self.v_pd
       self.dac_device.write_dac(channel=self.dac_ch_vpd_setpoint, voltage=v_pd)
-      if update:
+      if dac_load:
          self.dac_device.load()
 
    def get_devices(self,expt):
@@ -174,11 +174,20 @@ class DDS():
       self.cpld_device = expt.get_device(self.cpld_name)
 
    @kernel
-   def off(self):
+   def off(self, dac_update = True, dac_load = True):
       self.dds_device.sw.off()
+      delay(1*us)
+      if self.dac_control_bool and dac_update:
+         self.dac_device.write_dac(self.dac_ch_vpd_setpoint,0.)
+         if dac_load:
+            self.dac_device.load()
 
    @kernel
-   def on(self):
+   def on(self, dac_update = True, dac_load=True):
+      if self.dac_control_bool and dac_update:
+         self.dac_device.write_dac(self.dac_ch_vpd_setpoint,self.v_pd)
+         if dac_load:
+            self.dac_device.load()
       self.dds_device.sw.on()
 
    def read_db(self,ddb):

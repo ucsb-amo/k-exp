@@ -298,13 +298,13 @@ class Cooling():
     @kernel
     def switch_d1_3d(self,state):
         if state == 1:
-            with parallel:
-                self.dds.d1_3d_c.on()
-                self.dds.d1_3d_r.on()
+            self.dds.d1_3d_c.on(dac_load=False)
+            self.dds.d1_3d_r.on(dac_load=False)
+            self.zotino.load()
         elif state == 0:
-            with parallel:
-                self.dds.d1_3d_c.off()
-                self.dds.d1_3d_r.off()
+            self.dds.d1_3d_c.off(dac_load=False)
+            self.dds.d1_3d_r.off(dac_load=False)
+            self.zotino.load()
 
     ## Magnet functions
 
