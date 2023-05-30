@@ -12,11 +12,11 @@ class d1_pi_switch_test(EnvExperiment,Base):
 
         delay(100*ms)
 
-        self.gm(t=1*s, v_pd_d1_c=1.0)
+        self.gm(t=3*ms, v_pd_d1_c=1.0, v_pd_d1_r=0.5)
 
-        # self.release()
+        self.release()
 
-        # delay(1*s)
+        delay(1*s)
 
         # self.core.break_realtime()
         # self.mot_observe()
