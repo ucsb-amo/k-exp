@@ -4,34 +4,25 @@ from kexp import Base
 
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class mot_field_scan(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "mot tof"
+        self.run_info._run_description = "scan mot gradient"
 
         ## Parameters
 
         self.p = self.params
 
-        self.p.t_mot_kill = 1
-        self.p.t_mot_load = 2
-
-        self.p.N_shots = 10
+        self.p.N_shots = 6
         self.p.N_repeats = 1
-        # self.p.t_tof = np.linspace(300,700,self.p.N_shots) * 1.e-6 # mot
-        self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
-        # self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(7500,10000,self.p.N_shots) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # gm
-        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
+        self.p.t_tof = 500 * 1.e-6 # mot
 
-        self.p.detune_gm = 5.5
-        self.v_pd_d1_c_gm = 1.8
-        self.v_pd_d1_r_gm = 2.0
+        self.p.xvar_v_mot_current = np.linspace(0.8,1.6,self.p.N_shots)
+        self.p.xvar_v_mot_current = np.repeat(self.p.xvar_v_mot_current,self.p.N_repeats)
 
-        self.xvarnames = ['t_tof']
+        self.xvarnames = ['xvar_v_mot_current']
 
         self.shuffle_xvars()
         self.get_N_img()
@@ -46,10 +37,10 @@ class tof(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for t_tof in self.p.t_tof:
+        for xvar in self.p.xvar_v_mot_current:
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-            self.mot(self.p.t_mot_load * s)
+            self.mot(self.p.t_mot_load * s, v_current=xvar)
             # self.hybrid_mot(self.p.t_mot_load * s)
 
             self.dds.push.off()
@@ -64,7 +55,7 @@ class tof(EnvExperiment, Base):
             self.release()
             
             ### abs img
-            delay(t_tof * s)
+            delay(self.p.t_tof * s)
             self.abs_image()
 
             self.core.break_realtime()
@@ -72,6 +63,8 @@ class tof(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
+        
+        self.p.v_mot_current = self.p.xvar_v_mot_current
 
         self.camera.Close()
 

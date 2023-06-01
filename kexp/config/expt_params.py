@@ -4,6 +4,7 @@ import numpy as np
 class ExptParams():
     def __init__(self):
         
+
         self.t_mot_kill = 1.
         self.t_mot_load = 1.
         self.t_camera_trigger = 2.e-6
@@ -39,17 +40,17 @@ class ExptParams():
         self.amp_d2_r_2dmot = 0.1880
 
         #MOT
-        self.detune_d2_c_mot = -0.83
+        self.detune_d2_c_mot = -0.45
         self.amp_d2_c_mot = 0.188
-        self.detune_d2_r_mot = -5.4
+        self.detune_d2_r_mot = -5.1
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 3.25
-        self.v_pd_d1_c_mot = 2.
+        self.v_pd_d1_c_mot = 1.8
         self.detune_d1_r_mot = 3.25
-        self.v_pd_d1_r_mot = 1.
+        self.v_pd_d1_r_mot = 2.4
 
-        self.v_mot_current = 0.7 # 3.4A on 3D MOT coils
+        self.v_mot_current = 1.0 # 3.4A on 3D MOT coils
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.5
@@ -60,9 +61,9 @@ class ExptParams():
 
         #D1 CMOT
         self.detune_d1_c_d1cmot = 5.5
-        self.v_pd_d1_c_d1cmot = 4.5
-        self.detune_d2_r_d1cmot = -4.2
-        self.amp_d2_r_d1cmot = 0.0625
+        self.v_pd_d1_c_d1cmot = 1.8
+        self.detune_d2_r_d1cmot = -2.35
+        self.amp_d2_r_d1cmot = 0.045
         self.v_d1cmot_current = 1.5
         
         #GM
@@ -70,9 +71,9 @@ class ExptParams():
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
-        self.v_pd_d1_c_gm = 4.5
+        self.v_pd_d1_c_gm = 1.8 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.v_pd_d1_r_gm = 1.5
+        self.v_pd_d1_r_gm = 0.68
 
         #GM ramp
         self.power_ramp_factor_gmramp = 10
