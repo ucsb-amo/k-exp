@@ -93,7 +93,7 @@ class MainWindow(QWidget):
     def __init__(self):
         '''Create main window, populate with widgets'''
         super().__init__()
-        self.setFixedSize(300,540)
+        self.setFixedSize(300,600)
 
         self.N_urukul = dds_id.N_uru
         self.N_ch = dds_id.N_ch
@@ -156,7 +156,22 @@ class MainWindow(QWidget):
         self.hmot_observe_button.setSizePolicy(sizePolicy)
         self.grid.addWidget(self.hmot_observe_button,self.N_ch+4,0,1,self.N_urukul)
 
+        self.imaging_beam_observe_button = QToolButton()
+        self.imaging_beam_observe_button.setText("Imaging beam only")
+        self.imaging_beam_observe_button.clicked.connect(self.submit_img_observe)
+        self.imaging_beam_observe_button.setSizePolicy(sizePolicy)
+        self.grid.addWidget(self.imaging_beam_observe_button,self.N_ch+5,0,1,self.N_urukul)
+
         self.setLayout(self.grid)
+
+    def submit_img_observe(self):
+        __code_path__ = os.environ.get('code')
+        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","imaging_beam_observe.py")
+
+        expt_path = __temp_exp_path__
+        run_expt_command = r"%kpy% & artiq_run " + expt_path
+        result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+        self.message.msg_report(result.returncode)
 
     def submit_mot_observe(self):
         __code_path__ = os.environ.get('code')
