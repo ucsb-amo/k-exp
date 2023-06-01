@@ -41,6 +41,10 @@ class DDS():
       self._t_set_delay_mu = self._t_set_xfer_mu + self._t_ref_period_mu + 1
       self._t_att_delay_mu = self._t_att_xfer_mu + self._t_ref_period_mu + 1
 
+   @portable
+   def update_dac_bool(self):
+      self.dac_control_bool = self.dac_ch_vpd_setpoint > 0
+
    @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
       '''
@@ -175,15 +179,17 @@ class DDS():
 
    @kernel
    def off(self, dac_update = True, dac_load = True):
+      self.update_dac_bool()
       self.dds_device.sw.off()
       delay(1*us)
       if self.dac_control_bool and dac_update:
-         self.dac_device.write_dac(self.dac_ch_vpd_setpoint,0.)
+         self.dac_device.write_dac(channel=self.dac_ch_vpd_setpoint,voltage=0.)
          if dac_load:
             self.dac_device.load()
 
    @kernel
    def on(self, dac_update = True, dac_load=True):
+      self.update_dac_bool()
       if self.dac_control_bool and dac_update:
          self.dac_device.write_dac(self.dac_ch_vpd_setpoint,self.v_pd)
          if dac_load:
