@@ -9,11 +9,14 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [700, 1500]
         roiy = [100, 1200]
     elif crop_type == 'mot':
-        roix = [800, 1700]
-        roiy = [150, 1000]
+        roix = [500, 1200]
+        roiy = [70, 900]
+    elif crop_type == 'cmot':
+        roix = [500, 1400]
+        roiy = [70, 1000]
     elif crop_type == 'gm':
-        roix = [0, 1350]
-        roiy = [0, 900]
+        roix = [750, 1200]
+        roiy = [350, 700]
     elif crop_type == 'gm2':
         roix = [800, 1150]
         roiy = [400, 700]
