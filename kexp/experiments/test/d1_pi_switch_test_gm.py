@@ -2,7 +2,7 @@ from kexp import Base
 from artiq.experiment import *
 from artiq.experiment import delay, kernel, parallel
 
-class d1_pi_switch_test(EnvExperiment,Base):
+class d1_pi_switch_test_gm(EnvExperiment,Base):
     def build(self):
         Base.__init__(self,setup_camera=False)
 
