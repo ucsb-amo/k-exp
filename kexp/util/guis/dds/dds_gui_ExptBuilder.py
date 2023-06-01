@@ -22,6 +22,7 @@ class DDSGUIExptBuilder():
         from artiq.experiment import *
         from kexp.control.artiq.DDS import DDS
         from kexp.config.dds_id import dds_empty_frame
+        from kexp import Base
 
         class set_all_dds_on(EnvExperiment):
 
