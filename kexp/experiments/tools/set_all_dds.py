@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from kexp.base.base import Base
+from kexp import Base
 
 class dds_set(EnvExperiment, Base):
     def build(self):
