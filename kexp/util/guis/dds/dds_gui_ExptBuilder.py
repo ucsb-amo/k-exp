@@ -20,122 +20,40 @@ class DDSGUIExptBuilder():
     def make_all_dds_on_expt(self,dds_setting_lines):
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from kexp.control.artiq.DDS import DDS
-        from kexp.config.dds_id import dds_empty_frame
         from kexp import Base
 
-        class set_all_dds_on(EnvExperiment):
+        class set_all_dds_on(EnvExperiment, Base):
 
             def specify_dds_settings(self):
                 {dds_setting_lines}
 
-            def dds(self,urukul_idx,ch,frequency,amplitude):
-                
-                self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,frequency,amplitude)
-
-            def prep_default_DDS_list(self):
-                ''' Preps a list of DDS states, defaulting to off. '''
-
-                self.DDS_list = dds_empty_frame()
-
-                for urukul_idx in range(len(self.DDS_list)):
-                    for ch in range(len(self.DDS_list[urukul_idx])):
-                        self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,frequency=0.,amplitude=0.)
-
-            def get_dds(self,dds):
-                '''Fetch a DDS device from its name in device-db.py'''
-
-                dds.dds_device = self.get_device(dds.name)
-                return dds
-
-            @kernel
-            def set_all_dds(self):
-                for dds_sublist in self.DDS_list:
-                    for dds in dds_sublist:
-                        dds.dds_device.init()
-                        delay(1*ms)
-                        dds.dds_device.set(frequency=dds.frequency,amplitude=dds.amplitude)
-                        delay(1*us)
-                        dds.on()
-
-            @kernel
-            def init_all_cpld(self):
-                for dds_sublist in self.DDS_list:
-                    for dds in dds_sublist:
-                        dds.dds_device.cpld.init()
-                        delay(1*ms)
-
             def build(self):
-                '''Prep lists, set parameters manually, get the device drivers.'''
-
-                self.setattr_device("core")
-                self.prep_default_DDS_list()
+                Base.__init__(self,setup_camera=False)
                 self.specify_dds_settings()
-                self.DDS_list = [[self.get_dds(dds) for dds in dds_on_this_uru] for dds_on_this_uru in self.DDS_list]
 
             @kernel
             def run(self):
                 '''Execute on the core device, init then set the DDS devices to the corresponding parameters'''
-
-                self.core.reset()
-                self.init_all_cpld()
-                self.core.break_realtime()
-                self.set_all_dds()
+                self.init_kernel()
+                self.switch_all_dds(1)
         """)
         return script
     
     def make_all_dds_off_expt(self):
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from kexp.control.artiq.DDS import DDS
-        from kexp.config.dds_id import dds_empty_frame
+        from kexp import Base
 
-        class set_all_dds_off(EnvExperiment):
-
-            def list_dds(self,urukul_idx,ch,frequency,amplitude):
-                self.DDS_list[urukul_idx][ch] = DDS(urukul_idx,ch,frequency,amplitude)
-
-            def prep_default_DDS_list(self):
-                ''' Preps a list of DDS states, defaulting to off. '''
-                self.DDS_list = dds_empty_frame()
-
-                for urukul_idx in range(len(self.DDS_list)):
-                    for ch in range(len(self.DDS_list[urukul_idx])):
-                        self.list_dds(urukul_idx,ch,frequency=0.,amplitude=0.)
-
-            def get_dds(self,dds):
-                '''Fetch a DDS device from its name in device-db.py'''
-                dds.dds_device = self.get_device(dds.name)
-                return dds
-
-            @kernel
-            def set_all_dds(self):
-                for dds_sublist in self.DDS_list:
-                    for dds in dds_sublist:
-                        dds.dds_device.init()
-                        delay(1*ms)
-                        dds.off()
-                        delay(1*us)
-
-            @kernel
-            def init_all_cpld(self):
-                for dds_sublist in self.DDS_list:
-                    for dds in dds_sublist:
-                        dds.dds_device.cpld.init()
-                        delay(1*ms)
+        class set_all_dds_off(EnvExperiment, Base):
 
             def build(self):
                 '''Prep lists, set parameters manually, get the device drivers.'''
-                self.setattr_device("core")
-                self.prep_default_DDS_list()
-                self.DDS_list = [[self.get_dds(dds) for dds in dds_on_this_uru] for dds_on_this_uru in self.DDS_list]
+                Base.__init__(self,setup_camera=False)
 
             @kernel
             def run(self):
-                self.core.reset()
-                self.init_all_cpld()
-                self.core.break_realtime()
-                self.set_all_dds()
+                self.init_kernel()
+                self.switch_all_dds(0)
         """)
         return script
     
@@ -169,7 +87,7 @@ class DDSGUIExptBuilder():
     def make_single_dds_off_expt(self,dds_to_turn_off):
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from kexp.control.artiq.DDS import DDS
+        from kexp import Base
 
         class set_single_dds_off(EnvExperiment):
 
@@ -203,7 +121,8 @@ class DDSGUIExptBuilder():
                 amplitude = dds.amplitude
 
                 dds_setting_lines += f"""
-                    self.dds({uru_idx},{ch},{freq},{amplitude})"""
+                    self.dds_list[{uru_idx}][{ch}].frequency = {freq}
+                    self.dds_list[{uru_idx}][{ch}].amplitude = {amplitude}"""
 
         return dds_setting_lines
     
