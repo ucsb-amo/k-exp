@@ -39,25 +39,22 @@ class Devices():
 
     @kernel
     def init_kernel(self):
-        print(self._ridstr)
-        self.core.reset()
+        print(self._ridstr) # prints run ID to terminal
+        self.core.reset() # clears RTIO
         delay_mu(self.params.t_rtio_mu)
-        self.zotino.init()
+        self.zotino.init() # initializes DAC
         delay_mu(self.params.t_rtio_mu)
-        self.init_all_cpld()
-        self.init_all_dds()
+        self.init_all_cpld() # initializes DDS CPLDs
+        self.init_all_dds() # initializes DDS channels
         delay(1*ms)
-        self.ttl_camera.output()
-        self.ttl_magnets.output()
-        delay(1*ms)
-        self.set_all_dds()
-        self.switch_all_dds(0)
-        self.core.break_realtime()
+        self.set_all_dds() # set DDS to default values
+        self.switch_all_dds(0) # turn all DDS off to start experiment
+        self.core.break_realtime() # add slack before scheduling experiment events
 
     @kernel
     def set_all_dds(self):
         for dds in self.dds_list:
-            dds.set_dds()
+            dds.set_dds(set_stored=True)
             dds.dds_device.set_att(0. * dB)
             delay_mu(self.params.t_rtio_mu)
 
