@@ -15,11 +15,11 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [500, 1400]
         roiy = [70, 1000]
     elif crop_type == 'gm':
-        roix = [750, 1200]
-        roiy = [350, 700]
+        roix = [850, 1150]
+        roiy = [450, 650] 
     elif crop_type == 'gm2':
-        roix = [800, 1150]
-        roiy = [400, 700]
+        roix = [800, 1200]
+        roiy = [400, 800]
     else:
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]-1]
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]-1]
