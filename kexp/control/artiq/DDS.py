@@ -151,7 +151,7 @@ class DDS():
          self.frequency = frequency
          if self.dac_control_bool:
             self.v_pd = v_pd
-            self.dds_device.set_frequency(frequency=self.frequency)
+            self.dds_device.set(frequency=self.frequency)
             self.update_dac_setpoint(v_pd)
          else:
             self.amplitude = amplitude
@@ -160,13 +160,14 @@ class DDS():
          self.frequency = frequency
          if frequency == 0.: # do I need this block? It probably should not be here
             self.dds_device.sw.off()
-         self.dds_device.set_frequency(frequency=self.frequency)
+         aprint(self.frequency)
+         self.dds_device.set(frequency=self.frequency)
       elif _set_amp: 
          self.amplitude = amplitude
-         self.dds_device.set_amplitude(amplitude=self.amplitude)
+         self.dds_device.set(amplitude=self.amplitude)
          if amplitude == 0.: # do I need this block? It probably should not be here
             self.dds_device.sw.off()
-         self.dds_device.set_amplitude(amplitude=self.amplitude)
+         self.dds_device.set(amplitude=self.amplitude)
       elif _set_vpd:
          self.update_dac_setpoint(v_pd)
    
