@@ -181,7 +181,7 @@ class MainWindow(QWidget):
 
     def submit_img_observe(self):
         __code_path__ = os.environ.get('code')
-        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","imaging_beam_observe.py")
+        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","tools","imaging_beam_observe.py")
 
         expt_path = __temp_exp_path__
         run_expt_command = r"%kpy% & artiq_run " + expt_path
@@ -190,7 +190,7 @@ class MainWindow(QWidget):
 
     def submit_mot_observe(self):
         __code_path__ = os.environ.get('code')
-        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","mot_observe.py")
+        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","tools","mot_observe.py")
 
         expt_path = __temp_exp_path__
         run_expt_command = r"%kpy% & artiq_run " + expt_path
@@ -199,7 +199,7 @@ class MainWindow(QWidget):
 
     def submit_hybrid_mot_observe(self):
         __code_path__ = os.environ.get('code')
-        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","hybrid_mot_observe.py")
+        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","tools","hybrid_mot_observe.py")
 
         expt_path = __temp_exp_path__
         run_expt_command = r"%kpy% & artiq_run " + expt_path
