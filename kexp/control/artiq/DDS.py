@@ -99,6 +99,9 @@ class DDS():
       delta: float
          Detuning in units of linewidth Gamma = 2 * pi * 6 MHz. (default: use
          stored self.frequency)
+
+      amplitude: float
+         
       '''
       delta = float(delta)
 
@@ -106,7 +109,7 @@ class DDS():
          frequency = -0.1
       else:
          frequency = self.detuning_to_frequency(linewidths_detuned=delta)
-      
+
       if self.dac_control_bool:
          self.set_dds(frequency=frequency, v_pd=v_pd)
       else:
@@ -134,14 +137,14 @@ class DDS():
             self.update_dac_setpoint(self.v_pd)
 
       # determine which values need to be set
-      _set_freq = frequency > 0.
+      _set_freq = frequency >= 0.
       if self.dac_control_bool:
          _set_vpd = v_pd > 0.
          _set_amp = False
       else:
-         _set_amp = amplitude > 0.
+         _set_amp = (amplitude >= 0.)
          _set_vpd = False
-      _set_freq_and_power = _set_freq or (_set_amp or _set_vpd)
+      _set_freq_and_power = _set_freq and (_set_amp or _set_vpd)
 
       # set the things which need to be set
       if _set_freq_and_power:
@@ -155,13 +158,15 @@ class DDS():
             self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
       elif _set_freq:
          self.frequency = frequency
-         if frequency == 0.:
+         if frequency == 0.: # do I need this block? It probably should not be here
             self.dds_device.sw.off()
-      elif _set_amp:
+         self.dds_device.set_frequency(frequency=self.frequency)
+      elif _set_amp: 
          self.amplitude = amplitude
-         if amplitude == 0.:
-            self.dds_device.set(amplitude=self.amplitude)
+         self.dds_device.set_amplitude(amplitude=self.amplitude)
+         if amplitude == 0.: # do I need this block? It probably should not be here
             self.dds_device.sw.off()
+         self.dds_device.set_amplitude(amplitude=self.amplitude)
       elif _set_vpd:
          self.update_dac_setpoint(v_pd)
    
