@@ -22,8 +22,8 @@ class scan_gm_params(EnvExperiment, Base):
         #GM Detunings
         # self.p.xvar_detune_c_gm = np.linspace(4.5,6.,6)
         # self.p.xvar_detune_r_gm = np.linspace(4.5,6.,6)
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(1.3,1.7,8)
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(0.25,1.,8)
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(1.7,1.9,2)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(0.1,0.7,5)
 
         # self.xvarnames = ['xvar_detune_c_gm','xvar_detune_r_gm']
         self.xvarnames = ['xvar_v_pd_d1_c_gm', 'xvar_v_pd_d1_r_gm']
@@ -50,7 +50,7 @@ class scan_gm_params(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                self.cmot_d1(self.p.t_d2cmot * s)
+                self.cmot_d1(self.p.t_d1cmot * s)
 
                 self.gm(self.p.t_gm * s, v_pd_d1_c=xvar_1, v_pd_d1_r=xvar_2)
 
