@@ -15,13 +15,13 @@ class scan_mot(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.N_shots = 8
+        self.p.N_shots = 5
         self.p.N_repeats = 1
 
         self.p.t_tof = 200.e-6
 
         self.p.xvar1_detune_d2_c_mot = np.linspace(-1.,1.,self.p.N_shots)
-        self.p.xvar2_detune_d2_r_mot = np.linspace(-6.,-5.,self.p.N_shots)
+        self.p.xvar2_detune_d2_r_mot = np.linspace(-5.,-3.,self.p.N_shots)
 
         self.xvarnames = ['xvar1_detune_d2_c_mot','xvar2_detune_d2_r_mot']
 
