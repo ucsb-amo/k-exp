@@ -215,6 +215,7 @@ class Cooling():
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                        amplitude=amp_d2_r)
         delay(10*us)
+
         # with parallel:
         self.dds.d2_3d_r.on()
         self.dds.d1_3d_c.on()
