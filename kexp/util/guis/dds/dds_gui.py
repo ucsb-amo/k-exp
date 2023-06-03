@@ -16,8 +16,8 @@ __config_path__ = dds_state.__file__
 expt_builder = DDSGUIExptBuilder()
 
 VPD_VALUES = dds_id.dds_empty_frame(0.)
-VPD_VALUES[1][2] = 4.5
-VPD_VALUES[1][3] = 1.5
+VPD_VALUES[1][2] = 1.
+VPD_VALUES[1][3] = 0.5
         
 class DDSSpinner(QWidget):
     '''Frequency and amplitude spinbox widgets for a DDS channel'''
@@ -162,7 +162,22 @@ class MainWindow(QWidget):
         self.imaging_beam_observe_button.setSizePolicy(sizePolicy)
         self.grid.addWidget(self.imaging_beam_observe_button,self.N_ch+5,0,1,self.N_urukul)
 
+        self.all_on_button = QToolButton()
+        self.all_on_button.setText("All on")
+        self.all_on_button.clicked.connect(self.submit_all_on)
+        self.all_on_button.setSizePolicy(sizePolicy)
+        self.grid.addWidget(self.all_on_button,self.N_ch+6,0,1,self.N_urukul)
+
         self.setLayout(self.grid)
+
+    def submit_all_on(self):
+        __code_path__ = os.environ.get('code')
+        __temp_exp_path__ = os.path.join(__code_path__,"k-exp","kexp","experiments","tools","set_all_dds.py")
+
+        expt_path = __temp_exp_path__
+        run_expt_command = r"%kpy% & artiq_run " + expt_path
+        result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+        self.message.msg_report(result.returncode)
 
     def submit_img_observe(self):
         __code_path__ = os.environ.get('code')
