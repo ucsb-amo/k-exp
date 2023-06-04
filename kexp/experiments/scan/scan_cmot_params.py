@@ -3,6 +3,7 @@ from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.analysis.base_analysis import atomdata
 from kexp.base.base import Base
 import numpy as np
+from kexp.util.artiq.async_print import aprint
 
 class scan_cmot_params(EnvExperiment, Base):
 
@@ -21,17 +22,18 @@ class scan_cmot_params(EnvExperiment, Base):
         #GM Detunings
         # self.p.xvar_detune_c_gm = np.linspace(3.2,3.8,6)
         # self.p.xvar_detune_r_gm = np.linspace(3.2,3.8,6)
-        self.p.xvar0_detune_d1_c_d1cmot = np.linspace(0.0,8.0,8)
-        # self.p.xvar1_v_pd_d1_c_d1cmot = np.linspace(1.4,1.8,8)
+        self.p.xvar0_detune_d1_c_d1cmot = np.linspace(0.0,3.0,2)
+        self.p.xvar1_v_pd_d1_c_d1cmot = np.linspace(0.7,1.8,2)
         # self.p.xvar1_detune_d2_r_d1cmot = np.linspace(-.5,-4.0,6)
-        self.p.xvar1_amp_d2_r_d1cmot = np.linspace(0.03,1.8,6)
+        # self.p.xvar1_amp_d2_r_d1cmot = np.linspace(0.03,1.8,6)
+        # self.p.xvar1_amp_d2_r_d1cmot = np.linspace(0.2,0.188,2) # must be between 0 and 1
 
         # self.xvarnames = ['xvar_detune_gm','xvar_amp_gm']
 
         # self.p.xvar_amp_c = np.repeat(self.p.xvar_amp_c,3)
         # self.p.xvar_amp_r = np.repeat(self.p.xvar_amp_r,3)
 
-        self.xvarnames = ['xvar0_detune_d1_c_d1cmot', 'xvar1_amp_d2_r_d1cmot']
+        self.xvarnames = ['xvar0_detune_d1_c_d1cmot', 'xvar1_v_pd_d1_c_d1cmot']
 
         self.shuffle_xvars()
         self.get_N_img()
@@ -47,7 +49,7 @@ class scan_cmot_params(EnvExperiment, Base):
         self.kill_mot(self.p.t_mot_kill * s)
 
         for xvar_0 in self.p.xvar0_detune_d1_c_d1cmot:
-            for xvar_1 in self.p.xvar1_amp_d2_r_d1cmot:
+            for xvar_1 in self.p.xvar1_v_pd_d1_c_d1cmot:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
@@ -55,7 +57,7 @@ class scan_cmot_params(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                self.cmot_d1(self.p.t_d1cmot * s, detune_d1_c=xvar_0, amp_d2_r=xvar_1)
+                self.cmot_d1(self.p.t_d1cmot * s, detune_d1_c=xvar_0, v_pd_d1_c=xvar_1)
 
                 # self.gm_ramp(self.p.t_gm_ramp)
                 
@@ -76,8 +78,8 @@ class scan_cmot_params(EnvExperiment, Base):
         # self.p.amp_d1_c_gm = self.p.xvar_amp_c
         # self.p.amp_d1_r_gm = self.p.xvar_amp_r
 
-        self.p.detune_d2_r_d1cmot = self.p.xvar0_detune_d1_c_d1cmot
-        self.p.amp_d2_r_d1cmot = self.p.xvar1_amp_d2_r_d1cmot
+        self.p.detune_d1_c_d1cmot = self.p.xvar0_detune_d1_c_d1cmot
+        self.p.v_pd_d1_c_d1cmot = self.p.xvar1_v_pd_d1_c_d1cmot
 
         self.camera.Close()
         

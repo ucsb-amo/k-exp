@@ -17,16 +17,16 @@ class scan_gm_params(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 2000.e-6
+        self.p.t_tof = 6000.e-6
 
         #GM Detunings
-        # self.p.xvar_detune_c_gm = np.linspace(4.5,6.,6)
+        # self.p.xvar_detune_gm = np.linspace(2.0,5.0,6)
         # self.p.xvar_detune_r_gm = np.linspace(4.5,6.,6)
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(1.7,1.9,2)
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(0.1,0.7,5)
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(0.3,1.9,4)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(0.05,0.14,4)
 
-        # self.xvarnames = ['xvar_detune_c_gm','xvar_detune_r_gm']
-        self.xvarnames = ['xvar_v_pd_d1_c_gm', 'xvar_v_pd_d1_r_gm']
+        self.xvarnames = ['xvar_v_pd_d1_c_gm','xvar_v_pd_d1_r_gm']
+        # self.xvarnames = ['xvar_detune_gm', 'xvar_v_pd_d1_r_gm']
 
         self.shuffle_xvars()
         self.get_N_img()
