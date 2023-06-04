@@ -103,6 +103,8 @@ class DDS():
       amplitude: float
          
       '''
+      self.update_dac_bool()
+
       delta = float(delta)
 
       if delta == -1000.:
@@ -151,7 +153,7 @@ class DDS():
          self.frequency = frequency
          if self.dac_control_bool:
             self.v_pd = v_pd
-            self.dds_device.set(frequency=self.frequency)
+            self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
             self.update_dac_setpoint(v_pd)
          else:
             self.amplitude = amplitude
@@ -160,11 +162,10 @@ class DDS():
          self.frequency = frequency
          if frequency == 0.: # do I need this block? It probably should not be here
             self.dds_device.sw.off()
-         aprint(self.frequency)
-         self.dds_device.set(frequency=self.frequency)
+         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
       elif _set_amp: 
          self.amplitude = amplitude
-         self.dds_device.set(amplitude=self.amplitude)
+         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
          if amplitude == 0.: # do I need this block? It probably should not be here
             self.dds_device.sw.off()
          self.dds_device.set(amplitude=self.amplitude)
@@ -175,6 +176,8 @@ class DDS():
    def update_dac_setpoint(self, v_pd=-0.1, dac_load = True):
       if v_pd < 0.:
          v_pd = self.v_pd
+      else:
+         self.v_pd = v_pd # code breaks without that line
       self.dac_device.write_dac(channel=self.dac_ch_vpd_setpoint, voltage=v_pd)
       if dac_load:
          self.dac_device.load()
