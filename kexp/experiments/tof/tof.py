@@ -15,14 +15,15 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
+        self.p.tweezer_hold = 15. * 1.e-3
 
         self.p.N_shots = 5
-        self.p.N_repeats = 3
+        self.p.N_repeats = 2
         # self.p.t_tof = np.linspace(300,1000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(7500,10000,self.p.N_shots) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(1000,7500,self.p.N_shots) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(10000,15000,self.p.N_shots) * 1.e-6 # d1 cmot
+        self.p.t_tof = np.linspace(50,300,self.p.N_shots) * 1.e-6 # gm
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         self.xvarnames = ['t_tof']
@@ -53,7 +54,13 @@ class tof(EnvExperiment, Base):
 
             self.gm(self.p.t_gm * s)
 
+            self.switch_d1_3d(0)
+
             # self.gm_ramp(self.p.t_gm_ramp * s)
+
+            self.tweezer_trap(self.p.tweezer_hold)
+
+            # delay(self.p.tweezer_hold)
             
             self.release()
             

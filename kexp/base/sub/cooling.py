@@ -272,6 +272,26 @@ class Cooling():
             self.switch_d2_3d(0)
             self.switch_d1_3d(0)
 
+    #switch on a single 1227 trap for time t
+    @kernel
+    def tweezer_trap(self,t,
+                     detune_1227 = dv,
+                     amp_1227 = dv):
+        
+        if detune_1227 == dv:
+            detune_1227 = self.params.detune_1227
+        if amp_1227 == dv:
+            amp_1227 = self.params.amp_1227
+
+        delay(-10*us)
+        self.dds.tweezer.set_dds_gamma(delta=detune_1227,
+                                       amplitude=amp_1227)
+        delay(10*us)
+        self.dds.tweezer.on()
+        delay(t)
+        self.dds.tweezer.off()
+        
+
     ## AOM group control
 
     @kernel
