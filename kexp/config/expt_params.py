@@ -25,7 +25,7 @@ class ExptParams():
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 5.e-3
-        self.t_d1cmot = 7.e-3
+        self.t_d1cmot = 7.e-31
         self.t_gm = 2.e-3
         self.t_gm_ramp = 2.e-3
 
@@ -79,7 +79,7 @@ class ExptParams():
         self.power_ramp_factor_gmramp = 10
 
         #1227
-        self.detune_1227 = -12.
+        self.frequency_ao_1227 = 80.e6
         self.amp_1227 = .45
         
             

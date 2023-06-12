@@ -262,9 +262,6 @@ class Cooling():
             self.switch_d2_3d(0)
         delay(t)
 
-    #GM with only D1, turning B field off
-
-
     @kernel
     def release(self):
         with parallel:
@@ -275,16 +272,16 @@ class Cooling():
     #switch on a single 1227 trap for time t
     @kernel
     def tweezer_trap(self,t,
-                     detune_1227 = dv,
+                     frequency_ao_1227 = dv,
                      amp_1227 = dv):
         
-        if detune_1227 == dv:
-            detune_1227 = self.params.detune_1227
+        if frequency_ao_1227 == dv:
+            frequency_ao_1227 = self.params.frequency_ao_1227
         if amp_1227 == dv:
             amp_1227 = self.params.amp_1227
 
         delay(-10*us)
-        self.dds.tweezer.set_dds_gamma(delta=detune_1227,
+        self.dds.tweezer.set_dds(frequency=frequency_ao_1227,
                                        amplitude=amp_1227)
         delay(10*us)
         self.dds.tweezer.on()
