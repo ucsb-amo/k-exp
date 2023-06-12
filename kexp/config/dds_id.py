@@ -9,7 +9,7 @@ from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 
 # from jax import AD9910Manager, RAMProfile, RAMType
 
-N_uru = 2
+N_uru = 3
 N_ch = 4
 shape = (N_uru,N_ch)
 
