@@ -9,14 +9,24 @@ from kexp.control import BaslerUSB
 from kexp.base.sub import Devices, Cooling, Image, Dealer
 from kexp.util.data import DataSaver, RunInfo
 
+from kexp.config import basler_camera_params as bcp
+
 class Base(Devices, Cooling, Image, Dealer):
-    def __init__(self,setup_camera=True):
+    def __init__(self,setup_camera=True,absorption_image=True,basler_imaging=True):
         super().__init__()
 
         self.params = ExptParams()
 
         if setup_camera:
-            self.camera = BaslerUSB()
+            if basler_imaging:
+                if absorption_image:
+                    self.camera = BaslerUSB(BaslerSerialNumber=bcp.absorption_sn)
+                else:
+                    self.camera = BaslerUSB(BaslerSerialNumber=bcp.fluorescence_sn)
+                self.StartTriggeredGrab = self.start_triggered_grab_basler
+            else:
+                self.StartTriggeredGrab = self.start_triggered_grab_andor
+                raise ValueError("Andor is not set up yet.")
         self.images = []
         self.image_timestamps = []
 
@@ -32,7 +42,7 @@ class Base(Devices, Cooling, Image, Dealer):
         self.ds = DataSaver()
 
     @rpc(flags={"async"})
-    def StartTriggeredGrab(self):
+    def start_triggered_grab_basler(self):
         '''
         Start camera waiting for triggers, wait for N images.
 
@@ -57,6 +67,10 @@ class Base(Devices, Cooling, Image, Dealer):
                 break
         self.camera.StopGrabbing()
         self.camera.Close()
+
+    @rpc(flags={"async"})
+    def start_triggered_grab_andor(self):
+        pass
 
     def get_N_img(self):
         N_img = 1
