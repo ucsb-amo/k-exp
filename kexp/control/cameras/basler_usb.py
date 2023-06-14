@@ -1,7 +1,7 @@
 from pypylon import pylon
 from artiq.experiment import *
 
-from kexp.config import camera_params as cam_p
+from kexp.config import basler_camera_params as bcp
 
 class BaslerUSB(pylon.InstantCamera):
     '''
@@ -14,7 +14,7 @@ class BaslerUSB(pylon.InstantCamera):
         TriggerMode (str): picks whether or not the camera waits for a trigger to capture frames. (default: 'On')
         BaslerSerialNumber (str): identifies which camera should be used via the serial number. (default: ExptParams.basler_serial_no_absorption)
     '''
-    def __init__(self,ExposureTime=0.,TriggerSource='Line1',TriggerMode='On',BaslerSerialNumber=cam_p.basler_absorption_sn):
+    def __init__(self,ExposureTime=0.,TriggerSource='Line1',TriggerMode='On',BaslerSerialNumber=bcp.absorption_sn):
 
         super().__init__()
 
