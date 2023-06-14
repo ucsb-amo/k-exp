@@ -4,10 +4,12 @@ from kexp import Base
 
 import numpy as np
 
+from kexp.config import camera_params
+
 class flourescence(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self)
+        Base.__init__(self, absorption_image=False)
 
         self.run_info._run_description = "oneshot"
 
