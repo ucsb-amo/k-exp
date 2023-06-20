@@ -16,7 +16,7 @@ class Base(Devices, Cooling, Image, Dealer):
     def __init__(self,setup_camera=True,absorption_image=True,basler_imaging=True):
         super().__init__()
 
-        self.params = ExptParams()
+        self.params = ExptParams(camera_params=self.camera_params)
 
         if setup_camera:
             if basler_imaging:

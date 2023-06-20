@@ -1,8 +1,10 @@
-import kexp.config.camera_params as cam
+from kexp.config.camera_params import CameraParams
 import numpy as np
 
+camera_params = CameraParams()
+
 class ExptParams():
-    def __init__(self):
+    def __init__(self, camera_params=camera_params):
         
 
         self.t_mot_kill = 1.
@@ -13,7 +15,7 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
         self.t_camera_exposure = 0. # camera init will default to min exposure
         self.t_grab_start_wait = 0.5
-        self.t_pretrigger = cam.exposure_delay
+        self.t_pretrigger = camera_params.exposure_delay
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
