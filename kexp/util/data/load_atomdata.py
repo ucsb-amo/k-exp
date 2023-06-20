@@ -65,8 +65,8 @@ def load_atomdata(idx=0, path = [], unshuffle_xvars=True, crop_type='mot') -> at
         sort_idx = []
         sort_N = []
 
-    ad = atomdata(xvarnames,images,image_timestamps,params,run_info,sort_idx,sort_N,
-                  unshuffle_xvars=unshuffle_xvars,crop_type=crop_type)
+    ad = atomdata(xvarnames,images,image_timestamps,params,camera_params,run_info,
+                  sort_idx,sort_N,unshuffle_xvars=unshuffle_xvars,crop_type=crop_type)
 
     return ad
 
