@@ -16,8 +16,6 @@ class Base(Devices, Cooling, Image, Dealer):
     def __init__(self,setup_camera=True,absorption_image=True,basler_imaging=True):
         super().__init__()
 
-        self.params = ExptParams(camera_params=self.camera_params)
-
         if setup_camera:
             if basler_imaging:
                 if absorption_image:
@@ -30,6 +28,9 @@ class Base(Devices, Cooling, Image, Dealer):
                 self.StartTriggeredGrab = self.start_triggered_grab_andor
                 # self.camera_params = acp
                 raise ValueError("Andor is not set up yet.")
+
+        self.params = ExptParams(camera_params=self.camera_params)
+
         self.images = []
         self.image_timestamps = []
 
