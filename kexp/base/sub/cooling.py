@@ -93,7 +93,7 @@ class Cooling():
         with parallel:
             self.ttl_magnets.on()
             self.switch_d2_3d(1)
-            delay_mu(self.params.t_rtio_mu)
+            # delay_mu(self.params.t_rtio_mu)
             self.dds.push.on()
         delay(t)
 
@@ -286,7 +286,6 @@ class Cooling():
         delay(10*us)
         self.dds.tweezer.on()
         delay(t)
-        self.dds.tweezer.off()
         
 
     ## AOM group control
