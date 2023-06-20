@@ -1,7 +1,7 @@
 from pypylon import pylon
 from artiq.experiment import *
 
-from kexp.config import basler_camera_params as bcp
+from kexp.config.camera_params import basler_absorp_camera_params as bcp
 
 class BaslerUSB(pylon.InstantCamera):
     '''
