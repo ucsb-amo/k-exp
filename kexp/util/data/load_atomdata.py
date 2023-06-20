@@ -2,9 +2,10 @@ import numpy as np
 import os
 import glob
 import h5py
-from kexp.analysis.base_analysis import atomdata
+from kexp.analysis.atomdata import atomdata
 from kexp.config.expt_params import ExptParams
 from kexp.util.data.run_info import RunInfo
+from kexp.config.camera_params import CameraParams
 
 data_dir = os.getenv("data")
 
@@ -49,7 +50,9 @@ def load_atomdata(idx=0, path = [], unshuffle_xvars=True, crop_type='mot') -> at
     
     params = ExptParams()
     run_info = RunInfo()
+    camera_params = CameraParams()
     unpack_group(f,'params',params)
+    unpack_group(f,'camera_params',camera_params)
     unpack_group(f,'run_info',run_info)
     images = f['data']['images'][()]
     image_timestamps = f['data']['image_timestamps'][()]

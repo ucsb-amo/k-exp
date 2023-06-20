@@ -41,6 +41,8 @@ class DataSaver():
         self._class_attr_to_dataset(runinfo_dset,expt.run_info)
         params_dset = f.create_group('params')
         self._class_attr_to_dataset(params_dset,expt.params)
+        cam_dset = f.create_group('camera_params')
+        self._class_attr_to_dataset(cam_dset,expt.camera_params)
         
         f.close()
 
