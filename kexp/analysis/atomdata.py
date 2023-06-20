@@ -4,10 +4,6 @@ from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 import numpy as np
 from kamo.atom_properties.k39 import Potassium39
-from kexp.config import camera_params as cam
-
-import warnings
-# warnings.filterwarnings("error")
 
 class atomdata():
     '''
@@ -22,8 +18,8 @@ class atomdata():
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, xvarnames, images, image_timestamps, params, run_info,
-                  sort_idx, sort_N, unshuffle_xvars = True, crop_type='mot'):
+    def __init__(self, xvarnames, images, image_timestamps, params, camera_params,
+                  run_info, sort_idx, sort_N, unshuffle_xvars = True, crop_type='mot'):
 
         self._ds = DataSaver()
         self.run_info = run_info
@@ -31,6 +27,7 @@ class atomdata():
         self.images = images
         self.img_timestamps = image_timestamps
         self.params = params
+        self.camera_params = camera_params
 
         self.xvarnames = xvarnames
         self.xvars = self._unpack_xvars()
@@ -44,7 +41,7 @@ class atomdata():
 
         self.atom = Potassium39()
         self.atom_cross_section = self.atom.get_cross_section()
-        self.atom_number_density = self.od / self.atom_cross_section * (cam.pixel_size_m / cam.magnification)**2
+        self.atom_number_density = self.od / self.atom_cross_section * (self.camera_params.pixel_size_m / self.camera_params.magnification)**2
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
         if unshuffle_xvars:
@@ -75,8 +72,8 @@ class atomdata():
                         self.img_dark,
                         crop_type,
                         self.Nvars)
-        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x)
-        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y)
+        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x,self.camera_params)
+        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y,self.camera_params)
 
     def _remap_fit_results(self):
         try:
