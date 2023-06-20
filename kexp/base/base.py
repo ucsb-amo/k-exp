@@ -9,7 +9,8 @@ from kexp.control import BaslerUSB
 from kexp.base.sub import Devices, Cooling, Image, Dealer
 from kexp.util.data import DataSaver, RunInfo
 
-from kexp.config import basler_camera_params as bcp
+import kexp.config.camera_params as camera_params
+# also import the andor camera parameters
 
 class Base(Devices, Cooling, Image, Dealer):
     def __init__(self,setup_camera=True,absorption_image=True,basler_imaging=True):
@@ -20,12 +21,14 @@ class Base(Devices, Cooling, Image, Dealer):
         if setup_camera:
             if basler_imaging:
                 if absorption_image:
-                    self.camera = BaslerUSB(BaslerSerialNumber=bcp.absorption_sn)
+                    self.camera_params = camera_params.basler_absorp_camera_params
                 else:
-                    self.camera = BaslerUSB(BaslerSerialNumber=bcp.fluorescence_sn)
+                    self.camera_params = camera_params.basler_fluor_camera_params
+                self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no)
                 self.StartTriggeredGrab = self.start_triggered_grab_basler
             else:
                 self.StartTriggeredGrab = self.start_triggered_grab_andor
+                # self.camera_params = acp
                 raise ValueError("Andor is not set up yet.")
         self.images = []
         self.image_timestamps = []
