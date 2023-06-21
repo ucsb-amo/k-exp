@@ -287,7 +287,6 @@ class Cooling():
         delay(10*us)
         self.dds.tweezer.on()
         delay(t)
-        
 
     ## AOM group control
 
