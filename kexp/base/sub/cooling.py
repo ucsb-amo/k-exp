@@ -219,6 +219,7 @@ class Cooling():
         # with parallel:
         self.dds.d2_3d_r.on()
         self.dds.d1_3d_c.on()
+        delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_c.off()
         self.dds.d1_3d_r.off()
         self.set_magnet_current(v = v_current)
