@@ -28,7 +28,9 @@ class Base(Devices, Cooling, Image, Dealer):
                 self.StartTriggeredGrab = self.start_triggered_grab_andor
                 # self.camera_params = acp
                 raise ValueError("Andor is not set up yet.")
-
+        else:
+            self.camera_params = camera_params.CameraParams()
+            
         self.params = ExptParams(camera_params=self.camera_params)
 
         self.images = []
