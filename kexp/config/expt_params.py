@@ -27,7 +27,7 @@ class ExptParams():
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 5.e-3
-        self.t_d1cmot = 7.e-31
+        self.t_d1cmot = 7.e-3
         self.t_gm = 2.e-3
         self.t_gm_ramp = 2.e-3
 
@@ -63,13 +63,13 @@ class ExptParams():
 
         #D1 CMOT
         self.detune_d1_c_d1cmot = 5.5
-        self.v_pd_d1_c_d1cmot = 1.8
+        self.v_pd_d1_c_d1cmot = 1.55
         self.detune_d2_r_d1cmot = -1.9
         self.amp_d2_r_d1cmot = 0.045
         self.v_d1cmot_current = 1.5
         
         #GM
-        self.detune_gm = 5.
+        self.detune_gm = 4.8
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
