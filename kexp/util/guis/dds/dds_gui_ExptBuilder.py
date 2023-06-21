@@ -121,8 +121,8 @@ class DDSGUIExptBuilder():
                 amplitude = dds.amplitude
 
                 dds_setting_lines += f"""
-                    self.dds_list[{uru_idx}][{ch}].frequency = {freq}
-                    self.dds_list[{uru_idx}][{ch}].amplitude = {amplitude}"""
+                    self.dds_list[{uru_idx}*4+{ch}].frequency = {freq}
+                    self.dds_list[{uru_idx}*4+{ch}].amplitude = {amplitude}"""
 
         return dds_setting_lines
     
