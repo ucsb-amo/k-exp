@@ -112,6 +112,8 @@ class DDSGUIExptBuilder():
 
         dds_setting_lines = ""
 
+        N_dds = len(dds_list)
+
         for dds_slist in dds_list:
             for dds in dds_slist:
 
@@ -120,9 +122,12 @@ class DDSGUIExptBuilder():
                 freq = dds.frequency
                 amplitude = dds.amplitude
 
-                dds_setting_lines += f"""
-                    self.dds_list[{uru_idx}*4+{ch}].frequency = {freq}
-                    self.dds_list[{uru_idx}*4+{ch}].amplitude = {amplitude}"""
+                lin_idx = uru_idx*4 + ch
+                
+                if lin_idx < N_dds:
+                    dds_setting_lines += f"""
+                        self.dds_list[{lin_idx}].frequency = {freq}
+                        self.dds_list[{lin_idx}].amplitude = {amplitude}"""
 
         return dds_setting_lines
     

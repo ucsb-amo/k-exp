@@ -12,12 +12,15 @@ from kexp.config import dds_state
 
 from kexp.config import dds_id
 
+from kexp.config.expt_params import ExptParams 
+
 __config_path__ = dds_state.__file__
 expt_builder = DDSGUIExptBuilder()
 
+p = ExptParams()
 VPD_VALUES = dds_id.dds_empty_frame(0.)
-VPD_VALUES[1][2] = 1.
-VPD_VALUES[1][3] = 0.5
+VPD_VALUES[1][2] = 1.6
+VPD_VALUES[1][3] = 0.8
         
 class DDSSpinner(QWidget):
     '''Frequency and amplitude spinbox widgets for a DDS channel'''
