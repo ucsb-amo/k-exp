@@ -40,8 +40,8 @@ class BaslerUSB(pylon.InstantCamera):
         self.TriggerMode = TriggerMode
         self.TriggerSource = TriggerSource
         if ExposureTime_us < self.ExposureTime.GetMin():
-            ExposureTime = self.ExposureTime.GetMin()
-        self.ExposureTime.SetValue(ExposureTime)
+            ExposureTime_us = self.ExposureTime.GetMin()
+        self.ExposureTime.SetValue(ExposureTime_us)
 
     def set_exposure_time(self,ExposureTime_s):
         self.ExposureTime = ExposureTime_s * 1.e6

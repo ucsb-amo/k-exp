@@ -19,6 +19,7 @@ class Devices():
     def prepare_devices(self):
 
         self.core = self.get_device("core")
+        self.core_dma = self.get_device("core_dma")
         self.zotino = self.get_device("zotino0")
 
         self.dds = dds_frame(dac_device=self.zotino)

@@ -9,7 +9,7 @@ class tof(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "mot tof"
+        self.run_info._run_description = "gm tof"
 
         ## Parameters
 
@@ -17,19 +17,23 @@ class tof(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 15. * 1.e-3
 
-        self.p.N_shots = 5
+        self.p.N_shots = 2
         self.p.N_repeats = 1
-        # self.p.t_tof = np.linspace(300,800,self.p.N_shots) * 1.e-6 # mot
+        # self.p.t_tof = np.linspace(300,1000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(10000,15000,self.p.N_shots) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(1200,2400,self.p.N_shots) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(1200,3000,self.p.N_shots) * 1.e-6 # gm
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
         self.xvarnames = ['t_tof']
 
         self.shuffle_xvars()
         self.get_N_img()
+
+    @kernel
+    def gm_ramp(self):
+        
 
     @kernel
     def run(self):
@@ -52,8 +56,6 @@ class tof(EnvExperiment, Base):
             self.switch_d2_2d(0)
 
             self.cmot_d1(self.p.t_d1cmot * s)
-
-            # self.dds.tweezer.on()
 
             self.gm(self.p.t_gm * s)
 

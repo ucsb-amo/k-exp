@@ -22,7 +22,8 @@ class Base(Devices, Cooling, Image, Dealer):
                     self.camera_params = camera_params.basler_absorp_camera_params
                 else:
                     self.camera_params = camera_params.basler_fluor_camera_params
-                self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no)
+                self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
+                                        ExposureTime=self.camera_params.exposure_time)
                 self.StartTriggeredGrab = self.start_triggered_grab_basler
             else:
                 self.StartTriggeredGrab = self.start_triggered_grab_andor

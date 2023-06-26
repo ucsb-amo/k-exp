@@ -1,6 +1,5 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
-from kexp.analysis.base_analysis import atomdata
 from kexp.base.base import Base
 import numpy as np
 from kexp.util.artiq.async_print import aprint

@@ -9,7 +9,7 @@ from kexp.config import camera_params
 class flourescence(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self, absorption_image=False)
+        Base.__init__(self, setup_camera=False)
 
         self.run_info._run_description = "oneshot"
 
@@ -17,35 +17,39 @@ class flourescence(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_andor_expose = .5 * 1.e-3
+        self.p.t_andor_expose = 50. * 1.e-3
 
-        self.p.tweezer_hold = 20. * 1.e-3
+        self.p.t_tweezer_hold = 500. * 1.e-3
 
+    @kernel
+    def fl_img(self, t):
+        
+        delay(-10*us)
+        self.dds.d2_3d_c.set_dds_gamma(delta=-0.5,
+                                amplitude=.188)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d2_3d_r.set_dds_gamma(delta=-2.5,
+                                amplitude=.188)
+        delay(10*us)
+
+        with parallel:
+            # self.dds.imaging.on()
+            self.switch_d2_3d(1)
+            self.ttl_andor.pulse(t*s)
 
     @kernel
     def run(self):
         
         self.init_kernel()
 
-        self.StartTriggeredGrab()
-        delay(self.p.t_grab_start_wait*s)
+        self.dds.imaging.set_dds(amplitude=.188)
         
+        # self.fl_img(self.p.t_andor_expose)
+
         self.kill_mot(self.p.t_mot_kill * s)
 
-        # delay(-10*us)
-        # self.dds.d2_3d_c.set_dds_gamma(delta=0.,
-        #                         amplitude=.188)
-        # delay_mu(self.params.t_rtio_mu)
-        # self.dds.d2_3d_r.set_dds_gamma(delta=0.,
-        #                         amplitude=.188)
-        # delay(10*us)
+        # self.fl_img(self.p.t_andor_expose)
 
-        # with parallel:
-        #     self.switch_d2_3d(1)
-        #     self.ttl_andor.pulse(self.p.t_andor_expose*s)
-
-        self.dds.push.off()
-        self.switch_d2_2d(0)
         
         
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
@@ -53,52 +57,44 @@ class flourescence(EnvExperiment, Base):
         
         self.mot(self.p.t_mot_load * s)
 
-        # with parallel:
-        #     self.ttl_magnets.off()
-        #     self.switch_d2_3d(0)
-        #     delay_mu(self.params.t_rtio_mu)
-        #     self.dds.push.off()
+        # self.fl_img(self.p.t_andor_expose)
 
-        # delay(-10*us)
-        # self.dds.d2_3d_c.set_dds_gamma(delta=0.,
-        #                         amplitude=.188)
-        # delay_mu(self.params.t_rtio_mu)
-        # self.dds.d2_3d_r.set_dds_gamma(delta=0.,
-        #                         amplitude=.188)
-        # delay(10*us)
+        # self.ttl_andor.pulse(self.p.t_andor_expose)
 
-        # with parallel:
-        #     self.switch_d2_3d(1)
-        #     self.ttl_andor.pulse(self.p.t_andor_expose*s)
+        self.dds.push.off()
+        self.switch_d2_2d(0)
+        self.switch_d2_3d(0)
+
         
+        # self.fl_img(self.p.t_andor_expose)
+
         
         self.cmot_d1(self.p.t_d1cmot * s)
+
+        # self.fl_img(self.p.t_andor_expose)
 
         # self.dds.d2_3d_r.off()
         # self.dds.d1_3d_c.off()
 
         self.gm(self.p.t_gm * s)
 
+        # self.ttl_andor.pulse(self.p.t_andor_expose)
+
         self.switch_d1_3d(0)
 
-        self.tweezer_trap(self.p.tweezer_hold)
+        # self.tweezer_trap(self.p.t_tweezer_hold)
+        # self.dds.tweezer.off()
 
-        # delay(self.p.tweezer_hold)
-        # delay(5. * 1.e-3)
+
+        delay(self.p.t_tweezer_hold)
         
-        delay(-10*us)
-        self.dds.d2_3d_c.set_dds_gamma(delta=0.,
-                                amplitude=.188)
-        delay_mu(self.params.t_rtio_mu)
-        self.dds.d2_3d_r.set_dds_gamma(delta=0.,
-                                amplitude=.188)
-        delay(10*us)
-
-        with parallel:
-            self.switch_d2_3d(1)
-            self.ttl_andor.pulse(self.p.t_andor_expose*s)
+        self.fl_img(self.p.t_andor_expose)
+        # self.ttl_andor.pulse(self.p.t_andor_expose)
+        
         
         self.release()
+
+        delay(1*s)
 
         self.core.break_realtime()
 

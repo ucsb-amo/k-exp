@@ -4,12 +4,14 @@ class CameraParams():
         self.magnification = 1.
         self.exposure_delay = 0.
         self.serial_no = 0.
+        self.exposure_time = 0.
 
 basler_fluor_camera_params = CameraParams()
 basler_fluor_camera_params.pixel_size_m = 3.45 * 1.e-6
-basler_fluor_camera_params.magnification = 0.5
+basler_fluor_camera_params.magnification = 0.75
 basler_fluor_camera_params.exposure_delay = 17 * 1.e-6
 basler_fluor_camera_params.serial_no = '40320384'
+basler_fluor_camera_params.exposure_time = 500.e-6
 
 basler_absorp_camera_params = CameraParams()
 basler_absorp_camera_params.pixel_size_m = 3.45 * 1.e-6

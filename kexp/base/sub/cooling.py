@@ -386,6 +386,8 @@ class Cooling():
         self.switch_d2_2d(1)
         self.dds.imaging.off()
 
+        self.dds.tweezer.on()
+
         self.core.break_realtime()
         self.set_magnet_current()
         self.ttl_magnets.on()

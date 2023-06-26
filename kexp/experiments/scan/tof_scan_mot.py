@@ -3,26 +3,25 @@ from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.base.base import Base
 import numpy as np
 
-class tof_scan_gm(EnvExperiment, Base):
+class tof_scan_mot(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "GM tof, vary detune"
+        self.run_info._run_description = "mot tof, vary power"
 
         ## Parameters
 
         self.p = self.params
 
-        self.p.N_repeats = 2
+        self.p.t_tof = np.linspace(200,800,6) * 1.e-6
 
-        self.p.t_tof = np.linspace(1200,3000,5) * 1.e-6
-        self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
+        self.p.xvar_mot_amp = np.linspace(0.,0.188,3)
 
         #GM Detunings
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(1.0,1.3,7)
+        # self.p.xvar_v_pd_d1_r_gm = np.linspace(.03,.188,6)
 
-        self.xvarnames = ['xvar_v_pd_d1_r_gm','t_tof']
+        self.xvarnames = ['xvar_mot_amp','t_tof']
 
         self.shuffle_xvars()
         self.get_N_img()
@@ -37,18 +36,14 @@ class tof_scan_gm(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_v_pd_d1_r_gm:
+        for xvar in self.p.xvar_mot_amp:
             for tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(self.p.t_mot_load * s)
+                self.mot(self.p.t_mot_load * s, amp_d2_c=xvar, amp_d2_r=xvar)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
-
-                self.cmot_d1(self.p.t_d2cmot * s)
-
-                self.gm(self.p.t_gm * s, v_pd_d1_r=xvar)
 
                 # self.gm_ramp(self.p.t_gm_ramp)
                 
@@ -65,7 +60,8 @@ class tof_scan_gm(EnvExperiment, Base):
 
     def analyze(self):
 
-        self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
+        self.p.amp_d2_c_mot = self.p.xvar_mot_amp
+        self.p.amp_d2_r_mot = self.p.xvar_mot_amp
 
         self.camera.Close()
         
