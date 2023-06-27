@@ -4,7 +4,7 @@ from kexp import Base
 
 import numpy as np
 
-class mot_reload(EnvExperiment, Base):
+class tof(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
