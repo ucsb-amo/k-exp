@@ -98,6 +98,40 @@ class Cooling():
         delay(t)
 
     @kernel
+    def mot_reload(self,t,
+            detune_d2_c = dv,
+            amp_d2_c = dv,
+            detune_d2_r = dv,
+            amp_d2_r = dv,
+            v_current = dv):
+        
+        ### Start Defaults ###
+        if detune_d2_c == dv:
+            detune_d2_c = self.params.detune_d2_c_mot
+        if amp_d2_c == dv:
+            amp_d2_c = self.params.amp_d2_c_mot
+        if detune_d2_r == dv:
+            detune_d2_r = self.params.detune_d2_r_mot
+        if amp_d2_r == dv:
+            amp_d2_r = self.params.amp_d2_r_mot
+        if v_current == dv:
+            v_current = self.params.v_mot_current
+        ### End Defaults ###
+
+        delay(-10*us)
+        self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
+                                 amplitude=amp_d2_c)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
+                                 amplitude=amp_d2_r)
+        delay(10*us)
+        self.set_magnet_current(v = v_current)
+        with parallel:
+            self.ttl_magnets.on()
+            self.switch_d2_3d(1)
+        delay(t)
+
+    @kernel
     def hybrid_mot(self,t,
             detune_d2_c = dv,
             amp_d2_c = dv,
