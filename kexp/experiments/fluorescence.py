@@ -19,7 +19,7 @@ class flourescence(EnvExperiment, Base):
 
         self.p.t_andor_expose = 50. * 1.e-3
 
-        self.p.t_tweezer_hold = 10. * 1.e-3
+        self.p.t_tweezer_hold = 100. * 1.e-3
 
     @kernel
     def fl_img(self, t):
@@ -49,11 +49,8 @@ class flourescence(EnvExperiment, Base):
         self.kill_mot(self.p.t_mot_kill * s)
 
         # self.fl_img(self.p.t_andor_expose)
-
-        
         
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-
         
         self.mot(self.p.t_mot_load * s)
 
@@ -65,9 +62,7 @@ class flourescence(EnvExperiment, Base):
         self.switch_d2_2d(0)
         self.switch_d2_3d(0)
 
-        
         # self.fl_img(self.p.t_andor_expose)
-
         
         self.cmot_d1(self.p.t_d1cmot * s)
 
@@ -82,15 +77,16 @@ class flourescence(EnvExperiment, Base):
 
         self.switch_d1_3d(0)
 
-        # self.tweezer_trap(self.p.t_tweezer_hold)
-        # self.dds.tweezer.off()
+        self.tweezer_trap(self.p.t_tweezer_hold)
+        self.dds.tweezer.off()
 
+        # delay(self.p.t_tweezer_hold)
 
-        delay(self.p.t_tweezer_hold)
+        with parallel:
+            self.mot_reload(self.p.t_andor_expose * s)
+            self.ttl_andor.pulse(self.p.t_andor_expose)
         
-        self.fl_img(self.p.t_andor_expose)
-        # self.ttl_andor.pulse(self.p.t_andor_expose)
-        
+        # self.fl_img(self.p.t_andor_expose)
         
         self.release()
 
