@@ -18,8 +18,10 @@ basler_absorp_camera_params.pixel_size_m = 3.45 * 1.e-6
 basler_absorp_camera_params.magnification = 0.5
 basler_absorp_camera_params.exposure_delay = 17 * 1.e-6
 basler_absorp_camera_params.serial_no = '40316451'
+basler_absorp_camera_params.exposure_time = 17.e-6
 
 andor_camera_params = CameraParams()
 andor_camera_params.pixel_size_m = 16.e-6
 andor_camera_params.magnification = 1. # needs to be figured out and updated
 andor_camera_params.exposure_delay = 0. # needs to be updated from docs
+andor_camera_params.exposure_time = 5.e-3
