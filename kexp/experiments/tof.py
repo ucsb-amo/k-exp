@@ -19,14 +19,14 @@ class tof(EnvExperiment, Base):
 
         self.p.t_andor_expose = 50. * 1.e-3
 
-        self.p.N_shots = 3
+        self.p.N_shots = 5
         self.p.N_repeats = 1
-        # self.p.t_tof = np.linspace(300,800,self.p.N_shots) * 1.e-6 # mot
+        self.p.t_tof = np.linspace(100,400,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(10000,15000,self.p.N_shots) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(1200,2400,self.p.N_shots) * 1.e-6 # gm
-        self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
+        # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
 
         self.p.t_tof = np.repeat(self.p.t_tof,self.p.N_repeats)
 
@@ -55,13 +55,13 @@ class tof(EnvExperiment, Base):
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-            self.cmot_d1(self.p.t_d1cmot * s)
+            # self.cmot_d1(self.p.t_d1cmot * s)
 
             # self.dds.tweezer.on()
 
-            self.gm(self.p.t_gm * s)
+            # self.gm(self.p.t_gm * s)
 
-            self.switch_d1_3d(0)
+            # self.switch_d1_3d(0)
 
             # self.gm_ramp(self.p.t_gm_ramp * s)
 
@@ -69,9 +69,9 @@ class tof(EnvExperiment, Base):
 
             # self.dds.tweezer.off()
 
-            delay(self.p.t_tweezer_hold)
+            # delay(self.p.t_tweezer_hold)
 
-            self.mot_reload(self.p.t_mot_reload * s)
+            # self.mot_reload(self.p.t_mot_reload * s)
             
             self.release()
             
