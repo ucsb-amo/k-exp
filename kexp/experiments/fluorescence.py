@@ -19,7 +19,7 @@ class flourescence(EnvExperiment, Base):
 
         self.p.t_andor_expose = 50. * 1.e-3
 
-        self.p.t_tweezer_hold = 100. * 1.e-3
+        self.p.t_tweezer_hold = 50. * 1.e-3
 
     @kernel
     def fl_img(self, t):
