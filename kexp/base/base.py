@@ -5,7 +5,7 @@ import pypylon.pylon as py
 import numpy as np
 
 from kexp.config import ExptParams
-from kexp.control import BaslerUSB
+from kexp.control import BaslerUSB, AndorEMCCD
 from kexp.base.sub import Devices, Cooling, Image, Dealer
 from kexp.util.data import DataSaver, RunInfo
 
@@ -27,8 +27,9 @@ class Base(Devices, Cooling, Image, Dealer):
                 self.StartTriggeredGrab = self.start_triggered_grab_basler
             else:
                 self.StartTriggeredGrab = self.start_triggered_grab_andor
-                # self.camera_params = acp
-                raise ValueError("Andor is not set up yet.")
+                self.camera_params = camera_params.andor_camera_params
+                self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
+                # raise ValueError("Andor is not set up yet.")
         else:
             self.camera_params = camera_params.CameraParams()
             
@@ -77,7 +78,8 @@ class Base(Devices, Cooling, Image, Dealer):
 
     @rpc(flags={"async"})
     def start_triggered_grab_andor(self):
-        pass
+        Nimg = int(self.params.N_img)
+        self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
 
     def get_N_img(self):
         N_img = 1
