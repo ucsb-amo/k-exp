@@ -45,5 +45,8 @@ class BaslerUSB(pylon.InstantCamera):
 
     def set_exposure_time(self,ExposureTime_s):
         self.ExposureTime = ExposureTime_s * 1.e6
+
+    def close(self):
+        self.Close()
         
 
