@@ -22,8 +22,10 @@ class Base(Devices, Cooling, Image, Dealer):
         # allow andor_imaging to override basler_imaging
         if andor_imaging and basler_imaging:
             basler_imaging = False
+            absorption_image = False
         if not basler_imaging and not andor_imaging:
             andor_imaging = True
+            absorption_image = False
 
         # choose the correct camera
         if setup_camera:
@@ -52,6 +54,7 @@ class Base(Devices, Cooling, Image, Dealer):
 
         self.run_info = RunInfo(self)
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
+        self.run_info.absorption_image = absorption_image
 
         self.xvarnames = []
         self.sort_idx = []
