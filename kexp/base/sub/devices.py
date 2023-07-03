@@ -1,5 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay_mu
+from artiq.coredevice.ttl import TTLOut
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.control.artiq.DDS import DDS
@@ -29,9 +30,10 @@ class Devices():
 
         self.dac_ch_3Dmot_current_control = 0
 
-        self.ttl_camera = self.get_device("ttl9")
+        self.ttl_basler = self.get_device("ttl9")
         self.ttl_magnets = self.get_device("ttl11")
         self.ttl_andor = self.get_device("ttl13")
+        self.ttl_camera = TTLOut
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list():
