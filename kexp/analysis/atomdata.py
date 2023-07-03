@@ -1,5 +1,5 @@
 from kexp.analysis.image_processing.compute_ODs import *
-from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_OD
+from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_dist
 from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 import numpy as np
@@ -23,7 +23,8 @@ class atomdata():
 
         self._ds = DataSaver()
         self.run_info = run_info
-        
+        absorption_analysis = self.run_info.absorption_image
+    
         self.images = images
         self.img_timestamps = image_timestamps
         self.params = params
@@ -35,8 +36,12 @@ class atomdata():
         self.sort_idx = sort_idx
         self.sort_N = sort_N
 
-        self._sort_images()
-        self._analyze_absorption_images(crop_type)
+        if absorption_analysis:
+            self._sort_images_absorption()
+            self._analyze_absorption_images(crop_type)
+        else:
+            self._sort_images_fluor()
+            self._analyze_fluorescence_images(crop_type)
         self._remap_fit_results()
 
         self.atom = Potassium39()
@@ -72,8 +77,29 @@ class atomdata():
                         self.img_dark,
                         crop_type,
                         self.Nvars)
-        self.cloudfit_x = fit_gaussian_sum_OD(self.sum_od_x,self.camera_params)
-        self.cloudfit_y = fit_gaussian_sum_OD(self.sum_od_y,self.camera_params)
+        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
+        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
+
+    def _analyze_fluorescence_images(self,crop_type='mot'):
+        '''
+        Saves the images, image timestamps (in ns), computes a subtracted image,
+        and performs gaussian fits to the profiles.
+
+        Parameters
+        ----------
+        expt: EnvExperiment
+            The experiment object, called to save datasets.
+
+        crop_type: str
+            Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
+            options: 'mot'.
+        '''
+
+        self.sig = self.img_atoms - self.img_light
+        self.sum_sig_x = np.sum(self.sig,self.Nvars)
+        self.sum_sig_y = np.sum(self.sig,self.Nvars+1)
+        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_sig_x,self.camera_params)
+        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_sig_y,self.camera_params)
 
     def _remap_fit_results(self):
         try:
@@ -104,9 +130,9 @@ class atomdata():
 
     ### image handling, sorting by xvars
 
-    def _sort_images(self):
+    def _sort_images_absorption(self):
 
-        self._split_images()
+        self._split_images_abs()
 
         # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
         img_dims = np.shape(self.images[0])
@@ -139,7 +165,7 @@ class atomdata():
                                                      self._img_light_tstamp[idx],
                                                      self._img_dark_tstamp[idx]]
                     
-    def _split_images(self):
+    def _split_images_abs(self):
         
         atom_img_idx = 0
         light_img_idx = 1
@@ -152,6 +178,50 @@ class atomdata():
         self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
         self._img_light_tstamp = self.img_timestamps[light_img_idx::3]
         self._img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
+
+    def _sort_images_fluor(self):
+
+        self._split_images_fluor()
+
+        # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
+        img_dims = np.shape(self.images[0])
+        sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
+
+        self.img_atoms = np.zeros(sorted_img_dims)
+        self.img_light = np.zeros(sorted_img_dims)
+        self.img_tstamps = np.empty(tuple(self.xvardims),dtype=list)
+
+        if self.Nvars == 1:
+            self.img_atoms = self._img_atoms
+            self.img_light = self._img_light
+            # for i in range(self.xvardims[0]):
+            #     self.img_tstamps[i] = list([self._img_atoms_tstamp[i],
+            #                         self._img_light_tstamp[i],
+            #                         self._img_dark_tstamp[i]])
+        
+        if self.Nvars == 2:
+            n1 = self.xvardims[0]
+            n2 = self.xvardims[1]
+            for i1 in range(n1):
+                for i2 in range(n2):
+                    idx = i1*n2 + i2
+                    self.img_atoms[i1][i2] = self._img_atoms[idx]
+                    self.img_light[i1][i2] = self._img_light[idx]
+                    self.img_dark[i1][i2] = self._img_dark[idx]
+                    # self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
+                    #                                  self._img_light_tstamp[idx],
+                    #                                  self._img_dark_tstamp[idx]]
+                    
+    def _split_images_fluor(self):
+        
+        atom_img_idx = 0
+        light_img_idx = 1
+        
+        self._img_atoms = np.array(self.images[atom_img_idx::2])
+        self._img_light = np.array(self.images[light_img_idx::2])
+
+        self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::2]
+        self._img_light_tstamp = self.img_timestamps[light_img_idx::2]
     
     def _unpack_xvars(self):
         # fetch the arrays for each xvar from parameters
