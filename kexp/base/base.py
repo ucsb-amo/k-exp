@@ -12,12 +12,29 @@ from kexp.util.data import DataSaver, RunInfo
 import kexp.config.camera_params as camera_params
 # also import the andor camera parameters
 
-class Base(Devices, Cooling, Image, Dealer):
-    def __init__(self,setup_camera=True,absorption_image=True,basler_imaging=True):
-        super().__init__()
+from kexp.util.artiq.async_print import aprint
 
+class Base(Devices, Cooling, Image, Dealer):
+    def __init__(self,setup_camera=True,absorption_image=True,basler_imaging=True,andor_imaging=False):
+        super().__init__()
+        self.prepare_devices()
+
+        # allow andor_imaging to override basler_imaging
+        if andor_imaging and basler_imaging:
+            basler_imaging = False
+        if not basler_imaging and not andor_imaging:
+            andor_imaging = True
+
+        # choose the correct camera
         if setup_camera:
-            if basler_imaging:
+            if andor_imaging:
+                self.ttl_camera = self.ttl_andor
+                self.StartTriggeredGrab = self.start_triggered_grab_andor
+                self.camera_params = camera_params.andor_camera_params
+                self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
+                # raise ValueError("Andor is not set up yet.")
+            elif basler_imaging:
+                self.ttl_camera = self.ttl_basler
                 if absorption_image:
                     self.camera_params = camera_params.basler_absorp_camera_params
                 else:
@@ -25,11 +42,6 @@ class Base(Devices, Cooling, Image, Dealer):
                 self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
                                         ExposureTime=self.camera_params.exposure_time)
                 self.StartTriggeredGrab = self.start_triggered_grab_basler
-            else:
-                self.StartTriggeredGrab = self.start_triggered_grab_andor
-                self.camera_params = camera_params.andor_camera_params
-                self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
-                # raise ValueError("Andor is not set up yet.")
         else:
             self.camera_params = camera_params.CameraParams()
             
@@ -37,8 +49,6 @@ class Base(Devices, Cooling, Image, Dealer):
 
         self.images = []
         self.image_timestamps = []
-
-        self.prepare_devices()
 
         self.run_info = RunInfo(self)
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
@@ -80,6 +90,7 @@ class Base(Devices, Cooling, Image, Dealer):
     def start_triggered_grab_andor(self):
         Nimg = int(self.params.N_img)
         self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
+        self.image_timestamps = np.zeros( Nimg )
 
     def get_N_img(self):
         N_img = 1
