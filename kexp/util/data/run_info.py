@@ -17,6 +17,8 @@ class RunInfo():
         self.filepath = []
         self.xvarnames = []
 
+        self.absorption_image = True
+
         if expt_obj is not None:
             self.expt_class = expt_obj.__class__.__name__
         else:
