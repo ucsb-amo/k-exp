@@ -58,19 +58,4 @@ def compute_OD(atoms,light,dark):
     
     OD[OD<0] = 0
 
-    return OD
-    
-def compute_summedOD(OD):
-    summedODy = np.sum(OD,1)
-    summedODx = np.sum(OD,0)
-    return summedODx, summedODy
-
-    
-
-        
-        
-        
-
-    
-
-        
+    return OD  
