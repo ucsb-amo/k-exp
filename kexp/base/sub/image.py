@@ -65,7 +65,4 @@ class Image():
         self.trigger_camera()
         # self.pulse_imaging_light(self.camera_params.exposure_time * s)
         self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
-        
-        delay(self.params.t_dark_image_delay * s)
-        self.trigger_camera()
 
