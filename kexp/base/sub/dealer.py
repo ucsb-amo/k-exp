@@ -19,9 +19,24 @@ class Dealer():
         np.repeat(xvar,self.params.N_repeats).
         """        
         Nvars = len(self.xvarnames)
+
+        error_msg = "self.params.repeats must have either have one element or length equal to the number of xvarnames"
+        if isinstance(self.params.N_repeats,int):
+            self.params.N_repeats = [self.params.N_repeats] * Nvars
+        elif isinstance(self.params.N_repeats,list):
+            if len(self.params.N_repeats) == 1:
+                self.params.N_repeats = self.params.N_repeats * Nvars
+            elif len(self.params.N_repeats) != Nvars:
+                raise ValueError(error_msg)
+        elif isinstance(self.params.N_repeats,np.ndarray):
+            if len(self.params.N_repeats) == 1:
+                self.params.N_repeats = np.repeat(self.params.N_repeats,Nvars)
+            elif len(self.params.N_repeats) != Nvars:
+                raise ValueError(error_msg)
+
         for i in range(Nvars):
             vars(self.params)[self.xvarnames[i]] = np.repeat(
-                vars(self.params)[self.xvarnames[i]], self.params.N_repeats
+                vars(self.params)[self.xvarnames[i]], self.params.N_repeats[i]
             )
 
     def shuffle_xvars(self,sort_preshuffle=True):
