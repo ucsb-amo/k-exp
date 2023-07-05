@@ -12,6 +12,18 @@ class Dealer():
         self.params = ExptParams()
         self.xvarnames = []
 
+    def repeat_xvars(self):
+        """
+        For each attribute of self.params with key specified in self.xvarnames,
+        replaces the corresponding array xvar with
+        np.repeat(xvar,self.params.N_repeats).
+        """        
+        Nvars = len(self.xvarnames)
+        for i in range(Nvars):
+            vars(self.params)[self.xvarnames[i]] = np.repeat(
+                vars(self.params)[self.xvarnames[i]], self.params.N_repeats
+            )
+
     def shuffle_xvars(self,sort_preshuffle=True):
         """
         For each attribute of self.params with key specified in self.xvarnames,
