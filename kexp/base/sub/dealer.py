@@ -12,13 +12,24 @@ class Dealer():
         self.params = ExptParams()
         self.xvarnames = []
 
-    def repeat_xvars(self):
+    def repeat_xvars(self,N_repeats=[]):
         """
         For each attribute of self.params with key specified in self.xvarnames,
         replaces the corresponding array xvar with
         np.repeat(xvar,self.params.N_repeats).
+
+        Parameters
+        ----------
+        N_repeats (int/list/ndarray, optional): The number of repeats to be
+        implemented. Can be omitted to use the stored value of
+        self.params.N_repeats. Must be either int or list/array of length one,
+        or a list/array with one element per element of self.xvarnames.
         """        
         Nvars = len(self.xvarnames)
+
+        # allow user to overwrite repeats number when repeat_xvars called
+        if N_repeats != []:
+            self.params.N_repeats = N_repeats
 
         error_msg = "self.params.repeats must have either have one element or length equal to the number of xvarnames"
         if isinstance(self.params.N_repeats,int):
