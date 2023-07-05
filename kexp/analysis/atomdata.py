@@ -85,7 +85,9 @@ class atomdata():
     def _analyze_fluorescence_images(self,crop_type='mot'):
         '''
         Saves the images, image timestamps (in ns), computes a subtracted image,
-        and performs gaussian fits to the profiles.
+        and performs gaussian fits to the profiles. Note: the subtracted image
+        is called "od" in order to provide compatability and ease of use to the
+        user. The computed difference is NOT an optical density.
 
         Parameters
         ----------
@@ -97,11 +99,12 @@ class atomdata():
             options: 'mot'.
         '''
 
-        self.sig = self.img_atoms - self.img_light
-        self.sum_sig_x = np.sum(self.sig,self.Nvars)
-        self.sum_sig_y = np.sum(self.sig,self.Nvars+1)
-        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_sig_x,self.camera_params)
-        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_sig_y,self.camera_params)
+        self.od_raw = self.img_atoms - self.img_light
+        self.od = roi.crop_OD(self.od_raw,crop_type)
+        self.sum_od_x = np.sum(self.od,self.Nvars)
+        self.sum_od_y = np.sum(self.od,self.Nvars+1)
+        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
+        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
 
     def _remap_fit_results(self):
         try:
