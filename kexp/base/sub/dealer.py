@@ -12,7 +12,22 @@ class Dealer():
         self.params = ExptParams()
         self.xvarnames = []
 
-    def shuffle_xvars(self,sort_preshuffle=1):
+    def shuffle_xvars(self,sort_preshuffle=True):
+        """
+        For each attribute of self.params with key specified in self.xvarnames,
+        replaces the corresponding array with a shuffled version of that array.
+        The shuffle orders are stored in self.sort_idx to be used in re-sorting
+        derived arrays.
+
+        Example: self.xvarnames = ['t_tof']. User specifies self.params.t_tof =
+        [4.,6.,8.]. This function might rewrite-in-place self.params.t_tof =
+        [8.,4.,6.], and record self.sort_idx = [3,1,2].
+
+        Args:
+            sort_preshuffle (bool, optional): If True, each xvar will be sorted
+            so that its elements are sequential before being shuffled, such that
+            when un-shuffled, the elements are in order. Defaults to True.
+        """        
         rng = np.random.default_rng()
         sort_idx = []
         len_list = []
