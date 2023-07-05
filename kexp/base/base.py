@@ -63,7 +63,11 @@ class Base(Devices, Cooling, Image, Dealer):
 
     def finish_build(self,N_repeats=[]):
         """
-        To be called at the end of build. Automatically includes repeats
+        To be called at the end of build. Automatically adds repeats either if
+        specified in N_repeats argument or if previously specified in
+        self.params.N_repeats. Shuffles xvars if specified (defaults to True).
+        Computes the number of images to be taken from the imaging method and
+        the length of the xvar arrays.
         """        
         self.repeat_xvars(N_repeats=N_repeats)
         self.shuffle_xvars()
