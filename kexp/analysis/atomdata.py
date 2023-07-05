@@ -69,7 +69,8 @@ class atomdata():
 
         crop_type: str
             Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-            options: 'mot'.
+            options: 'mot', 'bigmot', 'cmot', 'gm'. If another string is
+            supplied, defaults to full ROI.
         '''
 
         self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
