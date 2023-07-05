@@ -18,18 +18,6 @@ class Image():
     ### Imaging sequences ###
 
     @kernel
-    def trigger_camera(self):
-        '''
-        Written to pretrigger camera such that the camera exposure begins at the
-        timeline cursor position where this is called. Returns the timeline
-        cursor to this position after pretrigger.
-        '''
-        delay(-self.params.t_pretrigger * s)
-        self.ttl_camera.pulse(self.params.t_camera_trigger * s)
-        t_adv = self.params.t_pretrigger - self.params.t_camera_trigger
-        delay(t_adv * s)
-
-    @kernel
     def pulse_imaging_light(self,t):
         self.dds.imaging.on()
         delay(t)
@@ -37,6 +25,12 @@ class Image():
 
     @kernel
     def pulse_resonant_mot_beams(self,t):
+        """
+        Sets D2 3D MOT beams to resonance and turns them on for time t.
+
+        Args:
+            t (float): Time (in seconds) to hold the resonant MOT beams on.
+        """        
         with parallel:
             self.dds.d2_3d_c.set_dds_gamma(0.)
             self.dds.d2_3d_r.set_dds_gamma(0.)
@@ -63,7 +57,6 @@ class Image():
 
     @kernel
     def fl_image(self):
-
         self.trigger_camera()
         # self.pulse_imaging_light(self.camera_params.exposure_time * s)
         self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
@@ -73,17 +66,25 @@ class Image():
         # self.pulse_imaging_light(self.camera_params.exposure_time * s)
         self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
 
+    @kernel
+    def trigger_camera(self):
+        '''
+        Written to pretrigger camera such that the camera exposure begins at the
+        timeline cursor position where this is called. Returns the timeline
+        cursor to this position after pretrigger.
+        '''
+        delay(-self.params.t_pretrigger * s)
+        self.ttl_camera.pulse(self.params.t_camera_trigger * s)
+        t_adv = self.params.t_pretrigger - self.params.t_camera_trigger
+        delay(t_adv * s)
+
     ### Camera setup functions ###
 
     @rpc(flags={"async"})
     def start_triggered_grab_basler(self):
         '''
-        Start camera waiting for triggers, wait for N images.
-
-        Parameters
-        ----------
-        N: int
-            Number of images to wait for.
+        Start basler camera waiting for triggers, wait for self.params.N_img
+        images.
         '''
         Nimg = int(self.params.N_img)
         self.camera.StartGrabbingMax(Nimg, py.GrabStrategy_LatestImages)
@@ -104,11 +105,21 @@ class Image():
 
     @rpc(flags={"async"})
     def start_triggered_grab_andor(self):
+        """
+        Starts the Andor waiting for self.params.N_img triggers. Default 10
+        second timeout.
+        """        
         Nimg = int(self.params.N_img)
         self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
         self.image_timestamps = np.zeros( Nimg )
 
     def get_N_img(self):
+        """
+        Computes the number of images to be taken during the sequence from the
+        length of the specified xvars, stores in self.params.N_img. For
+        absorption imaging, 3 images per shot. For fluorescence imaging, 2
+        images per shot.
+        """                
         N_img = 1
         msg = ""
         
