@@ -61,4 +61,11 @@ class Base(Devices, Cooling, Image, Dealer):
 
         self.ds = DataSaver()
 
-    
+    def finish_build(self,N_repeats=[]):
+        """
+        To be called at the end of build. Automatically includes repeats
+        """        
+        self.repeat_xvars(N_repeats=N_repeats)
+        self.shuffle_xvars()
+        self.get_N_img()
+
