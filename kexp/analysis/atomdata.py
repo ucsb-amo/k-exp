@@ -39,15 +39,16 @@ class atomdata():
         if absorption_analysis:
             self._sort_images_absorption()
             self._analyze_absorption_images(crop_type)
+            self.atom_cross_section = self.atom.get_cross_section()
+            self.atom_number_density = self.od / self.atom_cross_section * (self.camera_params.pixel_size_m / self.camera_params.magnification)**2
+            self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
         else:
             self._sort_images_fluor()
             self._analyze_fluorescence_images(crop_type)
         self._remap_fit_results()
 
         self.atom = Potassium39()
-        self.atom_cross_section = self.atom.get_cross_section()
-        self.atom_number_density = self.od / self.atom_cross_section * (self.camera_params.pixel_size_m / self.camera_params.magnification)**2
-        self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
+        
 
         if unshuffle_xvars:
             self.unshuffle_ad()
