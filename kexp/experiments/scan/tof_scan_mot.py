@@ -8,20 +8,20 @@ class tof_scan_mot(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "mot tof, vary power"
+        self.run_info._run_description = "mot tof, vary coil current"
 
         ## Parameters
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(200,800,6) * 1.e-6
+        self.p.t_tof = np.linspace(500,900,5) * 1.e-6
 
-        self.p.xvar_mot_amp = np.linspace(0.,0.188,3)
+        self.p.xvar_detune_push = np.linspace(-7.,1.,5)
 
         #GM Detunings
         # self.p.xvar_v_pd_d1_r_gm = np.linspace(.03,.188,6)
 
-        self.xvarnames = ['xvar_mot_amp','t_tof']
+        self.xvarnames = ['xvar_detune_push','t_tof']
 
         self.shuffle_xvars()
         self.get_N_img()
@@ -36,11 +36,11 @@ class tof_scan_mot(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_mot_amp:
+        for xvar in self.p.xvar_detune_push:
             for tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(self.p.t_mot_load * s, amp_d2_c=xvar, amp_d2_r=xvar)
+                self.mot(self.p.t_mot_load * s, detune_push=xvar)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
@@ -60,8 +60,7 @@ class tof_scan_mot(EnvExperiment, Base):
 
     def analyze(self):
 
-        self.p.amp_d2_c_mot = self.p.xvar_mot_amp
-        self.p.amp_d2_r_mot = self.p.xvar_mot_amp
+        self.p.detune_push = self.p.xvar_detune_push
 
         self.camera.Close()
         

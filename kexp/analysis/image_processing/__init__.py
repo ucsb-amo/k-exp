@@ -3,6 +3,6 @@ import glob
 modules = glob.glob(join(dirname(__file__), "*.py"))
 __all__ = [ basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('__init__.py')]
 
-from .compute_gaussian_cloud_params import fit_gaussian_sum_OD
-from .compute_ODs import compute_OD, compute_ODs, compute_summedOD
+from .compute_gaussian_cloud_params import fit_gaussian_sum_dist
+from .compute_ODs import compute_OD, compute_ODs
 from .roi_select import crop_OD

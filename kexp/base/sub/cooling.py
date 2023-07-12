@@ -28,7 +28,9 @@ class Cooling():
                      detune_d2_c = dv,
                      amp_d2_c = dv,
                      detune_d2_r = dv,
-                     amp_d2_r = dv):
+                     amp_d2_r = dv,
+                     detune_push = dv,
+                     amp_push = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -39,6 +41,10 @@ class Cooling():
             detune_d2_r = self.params.detune_d2_r_2dmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_2dmot
+        if detune_push == dv:
+            detune_push = self.params.detune_push
+        if amp_push == dv:
+            amp_push = self.params.amp_push
         ### End Defaults ###
 
         delay(-10*us)
@@ -47,6 +53,9 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_2d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.push.set_dds_gamma(delta=detune_push,
+                                 amplitude=amp_push)
         delay(10*us)
         with parallel:
             self.switch_d2_2d(1)

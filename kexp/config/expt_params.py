@@ -37,23 +37,23 @@ class ExptParams():
         self.amp_push = 0.13
 
         #2D MOT
-        self.detune_d2_c_2dmot = -2.7
+        self.detune_d2_c_2dmot = .5
         self.amp_d2_c_2dmot = 0.1880
-        self.detune_d2_r_2dmot = -4.2
+        self.detune_d2_r_2dmot = -3.
         self.amp_d2_r_2dmot = 0.1880
 
         #MOT
         self.detune_d2_c_mot = -0.5
-        self.amp_d2_c_mot = 0.188
-        self.detune_d2_r_mot = -3.5
-        self.amp_d2_r_mot = 0.188
+        self.amp_d2_c_mot = 0.2
+        self.detune_d2_r_mot = -4.5
+        self.amp_d2_r_mot = 0.073
 
         self.detune_d1_c_mot = 3.25
         self.v_pd_d1_c_mot = 1.8
         self.detune_d1_r_mot = 3.25
         self.v_pd_d1_r_mot = 2.4
 
-        self.v_mot_current = 1.0 # 3.4A on 3D MOT coils
+        self.v_mot_current = .8 # 3.4A on 3D MOT coils
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.5
