@@ -14,14 +14,15 @@ class tof_scan_mot(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(500,900,5) * 1.e-6
+        self.p.t_tof = np.linspace(2000,3500,5) * 1.e-6
 
-        self.p.xvar_detune_push = np.linspace(-7.,1.,5)
+        # self.p.xvar_amp_push = np.linspace(.1,.31,8)
+        # self.p.xvar_v_d1cmot_current = np.linspace(.9,1.6,5)
 
         #GM Detunings
-        # self.p.xvar_v_pd_d1_r_gm = np.linspace(.03,.188,6)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(.95,1.2,5)
 
-        self.xvarnames = ['xvar_detune_push','t_tof']
+        self.xvarnames = ['xvar_v_pd_d1_r_gm','t_tof']
 
         self.shuffle_xvars()
         self.get_N_img()
@@ -36,16 +37,18 @@ class tof_scan_mot(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_detune_push:
+        for xvar in self.p.xvar_v_pd_d1_r_gm:
             for tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(self.p.t_mot_load * s, detune_push=xvar)
+                self.mot(self.p.t_mot_load * s)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                # self.gm_ramp(self.p.t_gm_ramp)
+                self.cmot_d1(self.p.t_d1cmot * s)
+
+                self.gm(self.p.t_gm * s, v_pd_d1_r = xvar)
                 
                 self.release()
                 
@@ -60,7 +63,7 @@ class tof_scan_mot(EnvExperiment, Base):
 
     def analyze(self):
 
-        self.p.detune_push = self.p.xvar_detune_push
+        self.p.v_d1cmot_current = self.p.xvar_v_pd_d1_r_gm
 
         self.camera.Close()
         

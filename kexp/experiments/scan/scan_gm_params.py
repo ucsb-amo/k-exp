@@ -16,16 +16,17 @@ class scan_gm_params(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 2000.e-6
+        self.p.t_tof = 3500.e-6
 
         #GM Detunings
-        # self.p.xvar_detune_d1_gm = np.linspace(3.0,6.0,6)
-        # self.p.xvar_detune_d1_c_gm = np.linspace(4.0,7.0,6)
-        # self.p.xvar_detune_d1_r_gm = np.linspace(4.0,7.0,6)
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.7,4.5,8)
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(1.,2.,8)
+        # self.p.xvar_detune_gm = np.linspace(5.5,7.0,5)
+        # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
+        # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.5,5.,5)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(.8,1.3,5)
 
         self.xvarnames = ['xvar_v_pd_d1_c_gm','xvar_v_pd_d1_r_gm']
+        # self.xvarnames = ['xvar_detune_d1_gm', 'xvar_detune_d1_r_gm']
         # self.xvarnames = ['xvar_detune_gm', 'xvar_v_pd_d1_r_gm']
 
         self.shuffle_xvars()
@@ -69,12 +70,15 @@ class scan_gm_params(EnvExperiment, Base):
 
     def analyze(self):
 
-        # # self.p.detune_gm = self.p.xvar_detune_gm
-        # self.p.detune_d1_c_gm = self.p.xvar_detune_d1_gm
-        # self.p.detune_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
-# 
+        # self.p.detune_gm = self.p.xvar_detune_gm
         self.p.v_pd_d1_c_gm = self.p.xvar_v_pd_d1_c_gm
         self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
+
+        # self.p.detune_d1_c_gm = self.p.xvar_detune_d1_c_gm
+        # self.p.detune_d1_r_gm = self.p.xvar_detune_d1_r_gm
+# 
+        # self.p.v_pd_d1_c_gm = self.p.xvar_v_pd_d1_c_gm
+        # self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
 
         self.camera.Close()
         
