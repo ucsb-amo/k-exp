@@ -21,6 +21,8 @@ class flourescence(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 50. * 1.e-3
 
+        self.finish_build()
+        
     @kernel
     def run(self):
         
@@ -40,9 +42,7 @@ class flourescence(EnvExperiment, Base):
         
         self.cmot_d1(self.p.t_d1cmot * s)
 
-        with parallel:
-            self.gm(self.p.t_tweezer_hold * s)
-            self.tweezer_trap(self.p.t_tweezer_hold)
+        self.gm_tweezer(self.p.t_tweezer_hold * s)
         
         # self.dds.tweezer.off()
 
@@ -54,7 +54,7 @@ class flourescence(EnvExperiment, Base):
         #     self.mot_reload(self.p.t_andor_expose * s)
         #     self.ttl_andor.pulse(self.p.t_andor_expose)
         
-        self.fl_image(self.p.t_andor_expose)
+        self.fl_image()
         
         self.release()
 
