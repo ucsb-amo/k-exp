@@ -6,3 +6,4 @@ __all__ = [ basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('_
 from .artiq.DDS import DDS
 from .cameras.basler_usb import BaslerUSB
 from .cameras.andor import AndorEMCCD
+from .cameras.dummy_cam import DummyCamera

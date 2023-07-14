@@ -4,7 +4,7 @@ from artiq.experiment import delay_mu, delay
 import numpy as np
 
 from kexp.config import ExptParams
-from kexp.control import BaslerUSB, AndorEMCCD
+from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
 from kexp.base.sub import Devices, Cooling, Image, Dealer
 from kexp.util.data import DataSaver, RunInfo
 
@@ -76,7 +76,7 @@ class Base(Devices, Cooling, Image, Dealer):
                 self.StartTriggeredGrab = self.start_triggered_grab_basler
         
         if not setup_camera:
-            self.camera = []
+            self.camera = DummyCamera()
             self.camera_params = camera_params.CameraParams()
             self.StartTriggeredGrab = self.nothing
 
