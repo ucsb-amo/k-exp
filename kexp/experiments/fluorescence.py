@@ -9,7 +9,7 @@ from kexp.config import camera_params
 class flourescence(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,absorption_image=False,basler_imaging=False,andor_imaging=True)
+        Base.__init__(self,setup_camera=False,absorption_image=False,basler_imaging=False,andor_imaging=True)
 
         self.run_info._run_description = "oneshot"
 
@@ -22,7 +22,7 @@ class flourescence(EnvExperiment, Base):
         self.p.t_tweezer_hold = 50. * 1.e-3
 
         self.finish_build()
-        
+
     @kernel
     def run(self):
         
