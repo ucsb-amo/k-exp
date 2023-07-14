@@ -18,9 +18,7 @@ __config_path__ = dds_state.__file__
 expt_builder = DDSGUIExptBuilder()
 
 p = ExptParams()
-VPD_VALUES = dds_id.dds_empty_frame(0.)
-VPD_VALUES[1][2] = 1.6
-VPD_VALUES[1][3] = 1.6
+VPD_VALUES = [dds.v_pd for dds in dds_state.dds_state]
         
 class DDSSpinner(QWidget):
     '''Frequency and amplitude spinbox widgets for a DDS channel'''
