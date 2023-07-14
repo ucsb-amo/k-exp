@@ -74,7 +74,8 @@ class Base(Devices, Cooling, Image, Dealer):
                 self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
                                         ExposureTime=self.camera_params.exposure_time)
                 self.StartTriggeredGrab = self.start_triggered_grab_basler
-        else:
+        
+        if not setup_camera:
             self.camera = []
             self.camera_params = camera_params.CameraParams()
             self.StartTriggeredGrab = self.nothing
