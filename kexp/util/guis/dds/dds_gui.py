@@ -20,7 +20,7 @@ expt_builder = DDSGUIExptBuilder()
 p = ExptParams()
 VPD_VALUES = dds_id.dds_empty_frame(0.)
 VPD_VALUES[1][2] = 1.6
-VPD_VALUES[1][3] = 0.8
+VPD_VALUES[1][3] = 1.6
         
 class DDSSpinner(QWidget):
     '''Frequency and amplitude spinbox widgets for a DDS channel'''

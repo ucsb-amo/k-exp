@@ -24,4 +24,4 @@ andor_camera_params = CameraParams()
 andor_camera_params.pixel_size_m = 16.e-6
 andor_camera_params.magnification = 1. # needs to be figured out and updated
 andor_camera_params.exposure_delay = 0. # needs to be updated from docs
-andor_camera_params.exposure_time = 5.e-3
+andor_camera_params.exposure_time = 10.e-3

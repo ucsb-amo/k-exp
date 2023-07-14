@@ -36,6 +36,8 @@ class atomdata():
         self.sort_idx = sort_idx
         self.sort_N = sort_N
 
+        self.atom = Potassium39()
+
         if absorption_analysis:
             self._sort_images_absorption()
             self._analyze_absorption_images(crop_type)
@@ -46,8 +48,6 @@ class atomdata():
             self._sort_images_fluor()
             self._analyze_fluorescence_images(crop_type)
         self._remap_fit_results()
-
-        self.atom = Potassium39()
         
 
         if unshuffle_xvars:
