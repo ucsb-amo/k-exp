@@ -60,24 +60,27 @@ class Base(Devices, Cooling, Image, Dealer):
         # choose the correct camera
         if andor_imaging:
             self.ttl_camera = self.ttl_andor
+            self.camera_params = camera_params.andor_camera_params
             if setup_camera:
-                self.StartTriggeredGrab = self.start_triggered_grab_andor
-                self.camera_params = camera_params.andor_camera_params
                 self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
-            else:
-                self.camera_params = camera_params.CameraParams()
+                self.StartTriggeredGrab = self.start_triggered_grab_andor
         elif basler_imaging:
             self.ttl_camera = self.ttl_basler
+            if absorption_image:
+                self.camera_params = camera_params.basler_absorp_camera_params
+            else:
+                self.camera_params = camera_params.basler_fluor_camera_params
             if setup_camera:
-                if absorption_image:
-                    self.camera_params = camera_params.basler_absorp_camera_params
-                else:
-                    self.camera_params = camera_params.basler_fluor_camera_params
                 self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
                                         ExposureTime=self.camera_params.exposure_time)
                 self.StartTriggeredGrab = self.start_triggered_grab_basler
-            else:
-                self.camera_params = camera_params.CameraParams()
+        else:
+            self.camera = []
+            self.camera_params = camera_params.CameraParams()
+            self.StartTriggeredGrab = self.nothing
 
         self.run_info.absorption_image = absorption_image
+
+    def nothing(self):
+        pass
         
