@@ -16,6 +16,10 @@ from kexp.util.artiq.async_print import aprint
 class Base(Devices, Cooling, Image, Dealer):
     def __init__(self,setup_camera=True,absorption_image=True,basler_imaging=True,andor_imaging=False):
         super().__init__()
+
+        self.run_info = RunInfo(self)
+        self._ridstr = " Run ID: "+ str(self.run_info.run_id)
+
         self.prepare_devices()
 
         self.choose_camera(setup_camera,absorption_image,basler_imaging,andor_imaging)
@@ -24,9 +28,6 @@ class Base(Devices, Cooling, Image, Dealer):
 
         self.images = []
         self.image_timestamps = []
-
-        self.run_info = RunInfo(self)
-        self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
         self.xvarnames = []
         self.sort_idx = []
