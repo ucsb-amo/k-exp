@@ -68,8 +68,9 @@ class Base(Devices, Cooling, Image, Dealer):
         self.params.N_repeats. Shuffles xvars if specified (defaults to True).
         Computes the number of images to be taken from the imaging method and
         the length of the xvar arrays.
-        """        
-        self.repeat_xvars(N_repeats=N_repeats)
-        self.shuffle_xvars()
+        """
+        if self.xvarnames:
+            self.repeat_xvars(N_repeats=N_repeats)
+            self.shuffle_xvars()
         self.get_N_img()
 
