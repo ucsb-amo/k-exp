@@ -66,6 +66,8 @@ class flourescence(EnvExperiment, Base):
 
     def analyze(self):
 
+        print(self.images)
+
         self.camera.Close()
 
         self.ds.save_data(self)
