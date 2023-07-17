@@ -142,6 +142,12 @@ class Image():
 
         msg += f" {N_img} total shots."
 
+        if len(self.params.N_repeats) == 1:
+            N_repeats = self.params.N_repeats[0]
+        else:
+            N_repeats = 1
+        self.params.N_shots = int(N_img / N_repeats)
+
         if self.run_info.absorption_image:
             images_per_shot = 3
         else:
