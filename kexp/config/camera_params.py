@@ -5,6 +5,7 @@ class CameraParams():
         self.exposure_delay = 0.
         self.serial_no = 0.
         self.exposure_time = 0.
+        self.connection_delay = 0.5
 
 basler_fluor_camera_params = CameraParams()
 basler_fluor_camera_params.pixel_size_m = 3.45 * 1.e-6
@@ -25,3 +26,4 @@ andor_camera_params.pixel_size_m = 16.e-6
 andor_camera_params.magnification = 1. # needs to be figured out and updated
 andor_camera_params.exposure_delay = 0. # needs to be updated from docs
 andor_camera_params.exposure_time = 10.e-3
+andor_camera_params.connection_delay = 7.6
