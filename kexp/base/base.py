@@ -23,6 +23,8 @@ class Base(Devices, Cooling, Image, Dealer):
         self.prepare_devices()
 
         self.choose_camera(setup_camera,absorption_image,basler_imaging,andor_imaging)
+        print(self.camera)
+        print(self.run_info.absorption_image)
             
         self.params = ExptParams(camera_params=self.camera_params)
 
@@ -63,7 +65,7 @@ class Base(Devices, Cooling, Image, Dealer):
             self.camera_params = camera_params.andor_camera_params
             if setup_camera:
                 self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
-                self.StartTriggeredGrab = self.start_triggered_grab_andor
+                self.start_triggered_grab = self.start_triggered_grab_andor
         elif basler_imaging:
             self.ttl_camera = self.ttl_basler
             if absorption_image:
@@ -73,14 +75,17 @@ class Base(Devices, Cooling, Image, Dealer):
             if setup_camera:
                 self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
                                         ExposureTime=self.camera_params.exposure_time)
-                self.StartTriggeredGrab = self.start_triggered_grab_basler
+                self.start_triggered_grab = self.start_triggered_grab_basler
         
         if not setup_camera:
             self.camera = DummyCamera()
             self.camera_params = camera_params.CameraParams()
-            self.StartTriggeredGrab = self.nothing
+            self.start_triggered_grab = self.nothing
 
         self.run_info.absorption_image = absorption_image
+        
+        # for backward compatability
+        self.StartTriggeredGrab = self.start_triggered_grab
 
     def nothing(self):
         pass
