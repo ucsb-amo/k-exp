@@ -23,8 +23,6 @@ class Base(Devices, Cooling, Image, Dealer):
         self.prepare_devices()
 
         self.choose_camera(setup_camera,absorption_image,basler_imaging,andor_imaging)
-        print(self.camera)
-        print(self.run_info.absorption_image)
             
         self.params = ExptParams(camera_params=self.camera_params)
 
@@ -37,7 +35,7 @@ class Base(Devices, Cooling, Image, Dealer):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[]):
+    def finish_build(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of build. Automatically adds repeats either if
         specified in N_repeats argument or if previously specified in
@@ -45,8 +43,13 @@ class Base(Devices, Cooling, Image, Dealer):
         Computes the number of images to be taken from the imaging method and
         the length of the xvar arrays.
         """
-        if self.xvarnames:
-            self.repeat_xvars(N_repeats=N_repeats)
+        if not self.xvarnames:
+            self.xvarnames = ["dummy"]
+            self.params.dummy = np.array([0])
+        elif isinstance(self.xvarnames,str):
+            self.xvarnames = [self.xvarnames]
+        self.repeat_xvars(N_repeats=N_repeats)
+        if shuffle:
             self.shuffle_xvars()
         self.get_N_img()
 

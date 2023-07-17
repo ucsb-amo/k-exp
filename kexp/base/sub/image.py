@@ -7,6 +7,8 @@ from kexp.control import BaslerUSB, AndorEMCCD
 from kexp.util.data import RunInfo
 import pypylon.pylon as py
 import numpy as np
+from kexp.util.artiq.async_print import aprint
+import logging
 
 class Image():
     def __init__(self):
@@ -110,7 +112,12 @@ class Image():
         second timeout.
         """        
         Nimg = int(self.params.N_img)
-        self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
+        # self.images = self.camera.grab(nframes=Nimg,frame_timeout=20.)
+        try:
+            self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
+        except Exception:
+            logging.exception("An error occurred with the camera grab. Closing the camera connection.")
+            self.camera.close()
         self.image_timestamps = np.zeros( Nimg )
 
     def get_N_img(self):
@@ -142,4 +149,3 @@ class Image():
         msg += f" {N_img} total images expected."
         print(msg)
         self.params.N_img = N_img
-

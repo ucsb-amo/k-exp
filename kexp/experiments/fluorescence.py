@@ -9,7 +9,7 @@ from kexp.config import camera_params
 class flourescence(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=False,absorption_image=False,basler_imaging=False,andor_imaging=True)
+        Base.__init__(self,setup_camera=True,andor_imaging=True)
 
         self.run_info._run_description = "oneshot"
 
@@ -17,9 +17,10 @@ class flourescence(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_andor_expose = 10. * 1.e-3
-
         self.p.t_tweezer_hold = 50. * 1.e-3
+
+        self.xvarnames = 'dummy'
+        self.p.dummy = np.ones(2)
 
         self.finish_build()
 
@@ -28,37 +29,41 @@ class flourescence(EnvExperiment, Base):
         
         self.init_kernel()
 
+        self.start_triggered_grab()
+        delay(6.)
+
         self.kill_mot(self.p.t_mot_kill * s)
         
-        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-        
-        self.mot(self.p.t_mot_load * s)
+        for _ in self.p.dummy:
+            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+            
+            self.mot(self.p.t_mot_load * s)
 
-        # self.ttl_andor.pulse(self.p.t_andor_expose)
+            # self.ttl_andor.pulse(self.p.t_andor_expose)
 
-        self.dds.push.off()
-        self.switch_d2_2d(0)
-        self.switch_d2_3d(0)
-        
-        self.cmot_d1(self.p.t_d1cmot * s)
+            self.dds.push.off()
+            self.switch_d2_2d(0)
+            self.switch_d2_3d(0)
+            
+            self.cmot_d1(self.p.t_d1cmot * s)
 
-        self.gm_tweezer(self.p.t_tweezer_hold * s)
-        
-        # self.dds.tweezer.off()
+            self.gm_tweezer(self.p.t_tweezer_hold * s)
+            
+            # self.dds.tweezer.off()
 
-        # self.switch_d1_3d(0)
-        
-        # delay(self.p.t_tweezer_hold)
+            # self.switch_d1_3d(0)
+            
+            # delay(self.p.t_tweezer_hold)
 
-        # with parallel:
-        #     self.mot_reload(self.p.t_andor_expose * s)
-        #     self.ttl_andor.pulse(self.p.t_andor_expose)
-        
-        self.fl_image()
-        
-        self.release()
+            # with parallel:
+            #     self.mot_reload(self.p.t_andor_expose * s)
+            #     self.ttl_andor.pulse(self.p.t_andor_expose)
+            
+            self.fl_image()
+            
+            self.release()
 
-        delay(1*s)
+            delay(1*s)
 
         self.core.break_realtime()
 
@@ -66,7 +71,9 @@ class flourescence(EnvExperiment, Base):
 
     def analyze(self):
 
+        print(self.p.N_img)
         print(self.images)
+        print(self.image_timestamps)
 
         self.camera.Close()
 
