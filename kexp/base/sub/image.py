@@ -88,6 +88,8 @@ class Image():
         Start basler camera waiting for triggers, wait for self.params.N_img
         images.
         '''
+        self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
+                                ExposureTime=self.camera_params.exposure_time)
         Nimg = int(self.params.N_img)
         self.camera.StartGrabbingMax(Nimg, py.GrabStrategy_LatestImages)
         count = 0
@@ -110,7 +112,8 @@ class Image():
         """
         Starts the Andor waiting for self.params.N_img triggers. Default 10
         second timeout.
-        """        
+        """
+        self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
         Nimg = int(self.params.N_img)
         # self.images = self.camera.grab(nframes=Nimg,frame_timeout=20.)
         try:
