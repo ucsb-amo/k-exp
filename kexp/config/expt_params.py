@@ -10,7 +10,7 @@ class ExptParams():
         self.t_mot_kill = 1.
         self.t_mot_load = 1.
         self.t_mot_reload = 2.
-        self.t_camera_trigger = 2.e-6
+        self.t_camera_trigger = camera_params.t_camera_trigger
         self.t_imaging_pulse = 5.e-6
         self.t_light_only_image_delay = 100.e-3
         self.t_dark_image_delay = 25.e-3
