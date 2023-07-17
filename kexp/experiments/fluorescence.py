@@ -19,6 +19,9 @@ class flourescence(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 50. * 1.e-3
 
+        self.xvarnames = ['dummy']
+        self.p.dummy = [1]*5
+
         self.finish_build()
 
     @kernel
