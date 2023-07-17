@@ -45,7 +45,7 @@ class Base(Devices, Cooling, Image, Dealer):
         """
         if not self.xvarnames:
             self.xvarnames = ["dummy"]
-            self.params.dummy = np.array([0])
+            self.params.dummy = np.linspace(0,0,1)
         elif isinstance(self.xvarnames,str):
             self.xvarnames = [self.xvarnames]
         self.repeat_xvars(N_repeats=N_repeats)
@@ -67,7 +67,7 @@ class Base(Devices, Cooling, Image, Dealer):
             self.ttl_camera = self.ttl_andor
             self.camera_params = camera_params.andor_camera_params
             if setup_camera:
-                self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
+                # self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
                 self.start_triggered_grab = self.start_triggered_grab_andor
         elif basler_imaging:
             self.ttl_camera = self.ttl_basler
@@ -76,8 +76,8 @@ class Base(Devices, Cooling, Image, Dealer):
             else:
                 self.camera_params = camera_params.basler_fluor_camera_params
             if setup_camera:
-                self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
-                                        ExposureTime=self.camera_params.exposure_time)
+                # self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
+                #                         ExposureTime=self.camera_params.exposure_time)
                 self.start_triggered_grab = self.start_triggered_grab_basler
         
         if not setup_camera:
