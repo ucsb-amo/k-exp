@@ -22,8 +22,8 @@ class scan_gm_params(EnvExperiment, Base):
         # self.p.xvar_detune_gm = np.linspace(5.5,7.0,5)
         # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.5,5.,5)
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(.8,1.3,5)
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(1.0,5.,5)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(.5,1.3,5)
 
         self.xvarnames = ['xvar_v_pd_d1_c_gm','xvar_v_pd_d1_r_gm']
         # self.xvarnames = ['xvar_detune_d1_gm', 'xvar_detune_d1_r_gm']
