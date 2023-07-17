@@ -195,7 +195,6 @@ class atomdata():
         # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
         img_dims = np.shape(self.images[0])
         sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
-        print(sorted_img_dims)
 
         self.img_atoms = np.zeros(sorted_img_dims)
         self.img_light = np.zeros(sorted_img_dims)
@@ -204,13 +203,9 @@ class atomdata():
         if self.Nvars == 1:
             self.img_atoms = self._img_atoms
             self.img_light = self._img_light
-            # for i in range(self.xvardims[0]):
-            #     self.img_tstamps[i] = list([self._img_atoms_tstamp[i],
-            #                         self._img_light_tstamp[i],
-            #                         self._img_dark_tstamp[i]])
-            if len(self.xvars[0]) == 1:
-                self.img_atoms = np.array([self.img_atoms])
-                self.img_light = np.array([self.img_light])
+            # if len(self.xvars[0]) == 1:
+            #     self.img_atoms = np.array([self.img_atoms])
+            #     self.img_light = np.array([self.img_light])
         
         if self.Nvars == 2:
             n1 = self.xvardims[0]
@@ -221,9 +216,6 @@ class atomdata():
                     self.img_atoms[i1][i2] = self._img_atoms[idx]
                     self.img_light[i1][i2] = self._img_light[idx]
                     self.img_dark[i1][i2] = self._img_dark[idx]
-                    # self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
-                    #                                  self._img_light_tstamp[idx],
-                    #                                  self._img_dark_tstamp[idx]]
                     
     def _split_images_fluor(self):
         
