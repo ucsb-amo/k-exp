@@ -19,9 +19,6 @@ class flourescence(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 50. * 1.e-3
 
-        self.xvarnames = 'dummy'
-        self.p.dummy = np.ones(2)
-
         self.finish_build()
 
     @kernel
@@ -30,7 +27,7 @@ class flourescence(EnvExperiment, Base):
         self.init_kernel()
 
         self.start_triggered_grab()
-        delay(6.)
+        delay(self.p.t_grab_start_wait)
 
         self.kill_mot(self.p.t_mot_kill * s)
         
@@ -70,10 +67,6 @@ class flourescence(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
-
-        print(self.p.N_img)
-        print(self.images)
-        print(self.image_timestamps)
 
         self.camera.Close()
 
