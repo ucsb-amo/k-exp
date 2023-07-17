@@ -20,7 +20,7 @@ class ExptParams():
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
-        self.N_shots = 2
+        self.N_shots = 1
         self.N_repeats = 1
         self.N_img = 1
 
