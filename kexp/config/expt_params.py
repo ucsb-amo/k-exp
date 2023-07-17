@@ -10,17 +10,17 @@ class ExptParams():
         self.t_mot_kill = 1.
         self.t_mot_load = 1.
         self.t_mot_reload = 2.
-        self.t_camera_trigger = 2.e-6
+        self.t_camera_trigger = camera_params.t_camera_trigger
         self.t_imaging_pulse = 5.e-6
         self.t_light_only_image_delay = 100.e-3
         self.t_dark_image_delay = 25.e-3
         self.t_camera_exposure = 0. # camera init will default to min exposure
-        self.t_grab_start_wait = 0.5
+        self.t_grab_start_wait = camera_params.connection_delay
         self.t_pretrigger = camera_params.exposure_delay
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
-        self.N_shots = 2
+        self.N_shots = 1
         self.N_repeats = 1
         self.N_img = 1
 

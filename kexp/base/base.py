@@ -35,7 +35,7 @@ class Base(Devices, Cooling, Image, Dealer):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[]):
+    def finish_build(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of build. Automatically adds repeats either if
         specified in N_repeats argument or if previously specified in
@@ -43,8 +43,13 @@ class Base(Devices, Cooling, Image, Dealer):
         Computes the number of images to be taken from the imaging method and
         the length of the xvar arrays.
         """
-        if self.xvarnames:
-            self.repeat_xvars(N_repeats=N_repeats)
+        if not self.xvarnames:
+            self.xvarnames = ["dummy"]
+            self.params.dummy = np.linspace(0,0,1)
+        elif isinstance(self.xvarnames,str):
+            self.xvarnames = [self.xvarnames]
+        self.repeat_xvars(N_repeats=N_repeats)
+        if shuffle:
             self.shuffle_xvars()
         self.get_N_img()
 
@@ -62,8 +67,8 @@ class Base(Devices, Cooling, Image, Dealer):
             self.ttl_camera = self.ttl_andor
             self.camera_params = camera_params.andor_camera_params
             if setup_camera:
-                self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
-                self.StartTriggeredGrab = self.start_triggered_grab_andor
+                # self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
+                self.start_triggered_grab = self.start_triggered_grab_andor
         elif basler_imaging:
             self.ttl_camera = self.ttl_basler
             if absorption_image:
@@ -71,16 +76,19 @@ class Base(Devices, Cooling, Image, Dealer):
             else:
                 self.camera_params = camera_params.basler_fluor_camera_params
             if setup_camera:
-                self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
-                                        ExposureTime=self.camera_params.exposure_time)
-                self.StartTriggeredGrab = self.start_triggered_grab_basler
+                # self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
+                #                         ExposureTime=self.camera_params.exposure_time)
+                self.start_triggered_grab = self.start_triggered_grab_basler
         
         if not setup_camera:
             self.camera = DummyCamera()
             self.camera_params = camera_params.CameraParams()
-            self.StartTriggeredGrab = self.nothing
+            self.start_triggered_grab = self.nothing
 
         self.run_info.absorption_image = absorption_image
+        
+        # for backward compatability
+        self.StartTriggeredGrab = self.start_triggered_grab
 
     def nothing(self):
         pass

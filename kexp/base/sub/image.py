@@ -7,6 +7,8 @@ from kexp.control import BaslerUSB, AndorEMCCD
 from kexp.util.data import RunInfo
 import pypylon.pylon as py
 import numpy as np
+from kexp.util.artiq.async_print import aprint
+import logging
 
 class Image():
     def __init__(self):
@@ -86,6 +88,8 @@ class Image():
         Start basler camera waiting for triggers, wait for self.params.N_img
         images.
         '''
+        self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
+                                ExposureTime=self.camera_params.exposure_time)
         Nimg = int(self.params.N_img)
         self.camera.StartGrabbingMax(Nimg, py.GrabStrategy_LatestImages)
         count = 0
@@ -108,9 +112,15 @@ class Image():
         """
         Starts the Andor waiting for self.params.N_img triggers. Default 10
         second timeout.
-        """        
+        """
+        self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
         Nimg = int(self.params.N_img)
-        self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
+        # self.images = self.camera.grab(nframes=Nimg,frame_timeout=20.)
+        try:
+            self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
+        except Exception:
+            logging.exception("An error occurred with the camera grab. Closing the camera connection.")
+            self.camera.close()
         self.image_timestamps = np.zeros( Nimg )
 
     def get_N_img(self):
@@ -132,6 +142,12 @@ class Image():
 
         msg += f" {N_img} total shots."
 
+        if len(self.params.N_repeats) == 1:
+            N_repeats = self.params.N_repeats[0]
+        else:
+            N_repeats = 1
+        self.params.N_shots = int(N_img / N_repeats)
+
         if self.run_info.absorption_image:
             images_per_shot = 3
         else:
@@ -142,4 +158,3 @@ class Image():
         msg += f" {N_img} total images expected."
         print(msg)
         self.params.N_img = N_img
-
