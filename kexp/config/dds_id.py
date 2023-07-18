@@ -50,7 +50,7 @@ class dds_frame():
         self.imaging = self.dds_assign(1,1, ao_order = 1, transition = 'D2')
         self.d1_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D1', dac_ch_vpd = 2)
         self.d1_3d_r = self.dds_assign(1,3, ao_order = 1, transition = 'D1', dac_ch_vpd = 1)
-        self.tweezer = self.dds_assign(2,0, ao_order = 1, transition = 'None')
+        self.tweezer = self.dds_assign(2,0, ao_order = 1)
         self.beatlock_ref = self.dds_assign(2,1)
 
     def dds_assign(self, uru, ch, ao_order=0, transition='None', dac_ch_vpd=-1) -> DDS:
