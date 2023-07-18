@@ -4,7 +4,9 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
     def __init__(self, ExposureTime=0.):
         super().__init__()
         self.set_exposure(ExposureTime)
-        self.set_trigger_mode("ext_start")
+        self.set_trigger_mode("ext")
+        self.setup_shutter(mode="open")
     
     def Close(self):
+        self.setup_shutter(mode="closed")
         self.close()
