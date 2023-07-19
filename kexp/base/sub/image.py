@@ -145,8 +145,11 @@ class Image():
         if isinstance(self.params.N_repeats,list):
             if len(self.params.N_repeats) == 1:
                 N_repeats = self.params.N_repeats[0]
+            else:
+                N_repeats = 1
         else:
             N_repeats = 1
+
         self.params.N_shots = int(N_img / N_repeats)
 
         if self.run_info.absorption_image:
