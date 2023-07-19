@@ -120,7 +120,7 @@ class Image():
             self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
         except Exception:
             logging.exception("An error occurred with the camera grab. Closing the camera connection.")
-            self.camera.close()
+            self.camera.Close()
         self.image_timestamps = np.zeros( Nimg )
 
     def get_N_img(self):
