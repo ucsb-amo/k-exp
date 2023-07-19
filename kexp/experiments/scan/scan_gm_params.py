@@ -16,14 +16,14 @@ class scan_gm_params(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 3500.e-6
+        self.p.t_tof = 2000.e-6
 
         #GM Detunings
         # self.p.xvar_detune_gm = np.linspace(5.5,7.0,5)
         # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(1.0,5.,5)
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(.5,2.,5)
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.8,4.5,5)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(.5,1.5,5)
 
         self.xvarnames = ['xvar_v_pd_d1_c_gm','xvar_v_pd_d1_r_gm']
         # self.xvarnames = ['xvar_detune_d1_gm', 'xvar_detune_d1_r_gm']

@@ -20,9 +20,13 @@ class tof_scan_mot(EnvExperiment, Base):
         # self.p.xvar_v_d1cmot_current = np.linspace(.9,1.6,5)
 
         #GM Detunings
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(3.0,5.0,5)
 
-        self.xvarnames = ['xvar_v_pd_d1_c_gm','t_tof']
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.5,4.2,5)
+        # self.p.xvar_detune_gm = np.linspace(6.5,7.0,5)
+
+        self.p.xvar_t_gm = np.linspace(2.e-3,5.e-3,5)
+
+        self.xvarnames = ['xvar_t_gm','t_tof']
 
         self.shuffle_xvars()
         self.get_N_img()
@@ -37,7 +41,7 @@ class tof_scan_mot(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_v_pd_d1_c_gm:
+        for xvar in self.p.xvar_t_gm:
             for tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -48,7 +52,7 @@ class tof_scan_mot(EnvExperiment, Base):
 
                 self.cmot_d1(self.p.t_d1cmot * s)
 
-                self.gm(self.p.t_gm * s, v_pd_d1_c = xvar)
+                self.gm(xvar)
                 
                 self.release()
                 
@@ -63,7 +67,7 @@ class tof_scan_mot(EnvExperiment, Base):
 
     def analyze(self):
 
-        self.p.xvar_v_pd_d1_c_gm = self.p.xvar_v_pd_d1_c_gm
+        self.p.t_gm = self.p.xvar_t_gm
 
         self.camera.Close()
         

@@ -46,20 +46,14 @@ class Cameras():
 
     @rpc(flags={"async"})
     def start_triggered_grab_andor(self):
-        self.init_grab_andor()
-        # while self.camera.acquisition_in_progress:
-            
-    @rpc(flags={"async"})
-    def init_grab_andor(self):
         """
         Starts the Andor waiting for self.params.N_img triggers. Default 10
         second timeout.
         """
         self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
         Nimg = int(self.params.N_img)
-        # self.images = self.camera.grab(nframes=Nimg,frame_timeout=20.)
         try:
-            self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
+            self.images = self.camera.grab_andor(nframes=Nimg,frame_timeout=10.)
         except Exception:
             logging.exception("An error occurred with the camera grab. Closing the camera connection.")
             self.camera.Close()
@@ -104,3 +98,5 @@ class Cameras():
 
     def nothing(self):
         pass
+
+    

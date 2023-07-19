@@ -20,7 +20,7 @@ class flourescence(EnvExperiment, Base):
         self.p.t_tweezer_hold = 50. * 1.e-3
 
         self.xvarnames = ['dummy']
-        self.p.dummy = [1]*5
+        self.p.dummy = [1]*2
 
         self.finish_build()
 
@@ -39,25 +39,19 @@ class flourescence(EnvExperiment, Base):
             
             self.mot(self.p.t_mot_load * s)
 
-            # self.ttl_andor.pulse(self.p.t_andor_expose)
-
             self.dds.push.off()
             self.switch_d2_2d(0)
             self.switch_d2_3d(0)
-            
+
             self.cmot_d1(self.p.t_d1cmot * s)
+
+            # self.gm(self.p.t_gm * s)
 
             self.gm_tweezer(self.p.t_tweezer_hold * s)
             
             # self.dds.tweezer.off()
 
             # self.switch_d1_3d(0)
-            
-            # delay(self.p.t_tweezer_hold)
-
-            # with parallel:
-            #     self.mot_reload(self.p.t_andor_expose * s)
-            #     self.ttl_andor.pulse(self.p.t_andor_expose)
             
             self.fl_image()
             
