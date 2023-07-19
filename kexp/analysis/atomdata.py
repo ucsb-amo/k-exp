@@ -46,7 +46,7 @@ class atomdata():
             self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
         else:
             self._sort_images_fluor()
-            self._analyze_fluorescence_images(crop_type)
+            self._analyze_fluorescence_images()
         self._remap_fit_results()
         
 
@@ -73,6 +73,10 @@ class atomdata():
             supplied, defaults to full ROI.
         '''
 
+        self.img_atoms = self.img_atoms.astype(np.int8)
+        self.img_light = self.img_light.astype(np.int8)
+        self.img_dark = self.img_dark.astype(np.int8)
+
         self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
             compute_ODs(self.img_atoms,
                         self.img_light,
@@ -82,7 +86,7 @@ class atomdata():
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
 
-    def _analyze_fluorescence_images(self,crop_type='mot'):
+    def _analyze_fluorescence_images(self):
         '''
         Saves the images, image timestamps (in ns), computes a subtracted image,
         and performs gaussian fits to the profiles. Note: the subtracted image
@@ -98,9 +102,13 @@ class atomdata():
             Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
             options: 'mot'.
         '''
+        self.img_atoms = self.img_atoms.astype(np.int16)
+        self.img_light = self.img_light.astype(np.int16)
 
         self.od_raw = self.img_atoms - self.img_light
-        self.od = roi.crop_OD(self.od_raw,crop_type)
+        # self.od_raw = self.img_atoms
+        # self.od = roi.crop_OD(self.od_raw,crop_type)
+        self.od = self.od_raw
         self.sum_od_x = np.sum(self.od,self.Nvars)
         self.sum_od_y = np.sum(self.od,self.Nvars+1)
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
