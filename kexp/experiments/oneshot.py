@@ -24,8 +24,7 @@ class oneshot(EnvExperiment, Base):
 
         self.xvarnames = ['dummy']
 
-        self.shuffle_xvars()
-        self.get_N_img()
+        self.finish_build()
 
     @kernel
     def run(self):
