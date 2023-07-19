@@ -80,48 +80,7 @@ class Image():
         t_adv = self.params.t_pretrigger - self.params.t_camera_trigger
         delay(t_adv * s)
 
-    ### Camera setup functions ###
-
-    @rpc(flags={"async"})
-    def start_triggered_grab_basler(self):
-        '''
-        Start basler camera waiting for triggers, wait for self.params.N_img
-        images.
-        '''
-        self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
-                                ExposureTime=self.camera_params.exposure_time)
-        Nimg = int(self.params.N_img)
-        self.camera.StartGrabbingMax(Nimg, py.GrabStrategy_LatestImages)
-        count = 0
-        while self.camera.IsGrabbing():
-            grab = self.camera.RetrieveResult(1000000, py.TimeoutHandling_ThrowException)
-            if grab.GrabSucceeded():
-                print(f'gotem (img {count+1}/{Nimg})')
-                img = np.uint8(grab.GetArray())
-                img_t = grab.TimeStamp
-                self.images.append(img)
-                self.image_timestamps.append(img_t)
-                count += 1
-            if count >= Nimg:
-                break
-        self.camera.StopGrabbing()
-        self.camera.Close()
-
-    @rpc(flags={"async"})
-    def start_triggered_grab_andor(self):
-        """
-        Starts the Andor waiting for self.params.N_img triggers. Default 10
-        second timeout.
-        """
-        self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
-        Nimg = int(self.params.N_img)
-        # self.images = self.camera.grab(nframes=Nimg,frame_timeout=20.)
-        try:
-            self.images = self.camera.grab(nframes=Nimg,frame_timeout=10.)
-        except Exception:
-            logging.exception("An error occurred with the camera grab. Closing the camera connection.")
-            self.camera.Close()
-        self.image_timestamps = np.zeros( Nimg )
+    ###
 
     def get_N_img(self):
         """

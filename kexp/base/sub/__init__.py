@@ -7,3 +7,4 @@ from .cooling import Cooling
 from .devices import Devices
 from .image import Image
 from .dealer import Dealer
+from .cameras import Cameras
