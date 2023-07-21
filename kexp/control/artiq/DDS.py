@@ -90,6 +90,14 @@ class DDS():
 
       return freq * 1.e6
    
+   @portable(flags={"fast-math"})
+   def frequency_to_detuning(self,frequency,single_pass=False) -> TFloat:
+      frequency = float(frequency)
+      f_shift_to_resonance = 461.7 / 2
+      linewidth_MHz = 6
+      detuning = (2 * frequency - self.aom_order * f_shift_to_resonance) / linewidth_MHz
+      return detuning
+   
    @kernel(flags={"fast-math"})
    def set_dds_gamma(self, delta=-1000., amplitude=-0.1, v_pd=-0.1):
       '''
