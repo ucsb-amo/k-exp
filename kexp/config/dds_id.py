@@ -3,7 +3,7 @@ import numpy as np
 from artiq.coredevice import ad53xx
 from artiq.experiment import kernel
 
-from kexp.config.dds_state import dds_state
+import kexp.config.dds_state as dds_state
 from kexp.control.artiq.DDS import DDS
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 
@@ -14,6 +14,8 @@ N_ch = 4
 shape = (N_uru,N_ch)
 
 RAMP_STEP_TIME = 100 * 4.e-9
+
+default_dac_dds_amplitude = 0.3
 
 def dds_empty_frame(x=None):
     return [[x for _ in range(N_ch)] for _ in range(N_uru)]
@@ -33,6 +35,7 @@ class dds_frame():
         self._N_uru = N_uru
         self._N_ch = N_ch
         self._shape = shape
+        self._default_dac_dds_amplitude = default_dac_dds_amplitude
 
         self._dds_state = dds_state
 
@@ -41,7 +44,7 @@ class dds_frame():
         else:
             self._dac_device = ad53xx.AD53xx
 
-        self.dds_array = dds_empty_frame()
+        self.dds_array = [[DDS(uru,ch) for ch in range(N_ch)] for uru in range(N_uru)]
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
         self.push = self.dds_assign(0,0, ao_order = 1, transition = 'D2')
@@ -68,10 +71,23 @@ class dds_frame():
         -------
         DDS
         '''
-        dds0 = self._dds_state[uru][ch]
+        try:
+            idx = dds_state.ch.index((uru,ch))
+            freq = dds_state.freq[idx] * 1.e6
+            v_dac = dds_state.v_dac[idx]
+            if v_dac != 0.0:
+                amplitude = default_dac_dds_amplitude
+            else:
+                amplitude = dds_state.amplitude[idx]
+        except:
+            freq = 0.0
+            amplitude = 0.0
+            v_dac = 0.0
+            
+        dds0 = DDS(urukul_idx=uru,ch=ch,frequency=freq,amplitude=amplitude,v_pd=v_dac)
         dds0.aom_order = ao_order
         dds0.transition = transition
-        dds0.dac_ch_vpd_setpoint = dac_ch_vpd
+        dds0.dac_ch = dac_ch_vpd
         dds0.dac_device = self._dac_device
 
         return dds0
@@ -82,15 +98,12 @@ class dds_frame():
                 self.__dict__[key].key = key
     
     def make_dds_array(self):
-        dds_linlist = self.dds_list()
+        dds_linlist = [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
         for dds in dds_linlist:
             self.dds_array[dds.urukul_idx][dds.ch] = dds
     
     def dds_list(self):
-        '''
-        Returns a list of all dds objects in 
-        '''
-        return [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
+        return np.array(self.dds_array).flatten()
     
     # def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
     #     dt = RAMP_STEP_TIME
