@@ -39,17 +39,19 @@ class Devices():
             dds.cpld_device = self.get_device(dds.cpld_name)
 
     @kernel
-    def init_kernel(self):
+    def init_kernel(self, set_and_switch_off_dds = True, init_dac = True):
         print(self._ridstr) # prints run ID to terminal
         self.core.reset() # clears RTIO
-        delay_mu(self.params.t_rtio_mu)
-        self.zotino.init() # initializes DAC
-        delay_mu(self.params.t_rtio_mu)
-        self.init_all_cpld() # initializes DDS CPLDs
-        self.init_all_dds() # initializes DDS channels
-        delay(1*ms)
-        self.set_all_dds() # set DDS to default values
-        self.switch_all_dds(0) # turn all DDS off to start experiment
+        if init_dac:
+            delay_mu(self.params.t_rtio_mu)
+            self.zotino.init() # initializes DAC
+            delay_mu(self.params.t_rtio_mu)
+        if set_and_switch_off_dds:
+            self.init_all_cpld() # initializes DDS CPLDs
+            self.init_all_dds() # initializes DDS channels
+            delay(1*ms)
+            self.set_all_dds() # set DDS to default values
+            self.switch_all_dds(0) # turn all DDS off to start experiment
         self.core.break_realtime() # add slack before scheduling experiment events
 
     @kernel

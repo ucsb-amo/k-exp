@@ -205,6 +205,13 @@ class DDS():
             self.dac_device.load()
       self.dds_device.sw.on()
 
+   @kernel
+   def init(self):
+      self.cpld_device.init()
+      delay(1*ms)
+      self.dds_device.init()
+      delay(1*ms)
+
    def read_db(self,ddb):
       '''read out info from ddb. ftw_per_hz comes from artiq.frontend.moninj, line 206-207'''
       v = device_db[self.name]
