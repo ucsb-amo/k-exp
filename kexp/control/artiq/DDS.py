@@ -10,6 +10,8 @@ from artiq.coredevice.urukul import CPLD
 from kexp.util.artiq.async_print import aprint
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration as dds_amp_cal
 
+DAC_CH_DEFAULT = -1
+
 class DDS():
 
    def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., v_pd=0.):
@@ -20,7 +22,7 @@ class DDS():
       self.aom_order = []
       self.transition = []
       self.v_pd = v_pd
-      self.dac_ch = -1
+      self.dac_ch = DAC_CH_DEFAULT
       self.key = ""
 
       self.dds_device = ad9910.AD9910
@@ -45,7 +47,7 @@ class DDS():
 
    @portable
    def update_dac_bool(self):
-      self.dac_control_bool = self.dac_ch > 0
+      self.dac_control_bool = (self.dac_ch != DAC_CH_DEFAULT)
 
    @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
@@ -68,26 +70,14 @@ class DDS():
          The corresponding AOM frequency setting in Hz.
       '''
       linewidths_detuned=float(linewidths_detuned)
-
       f_shift_to_resonance_MHz = 461.7 / 2 # half the crossover detuning. Value from T.G. Tiecke.
-      
-      # f_D1_shift_from_F1_to_F2 = 55.5
-
       linewidth_MHz = 6
       detuning_MHz = linewidths_detuned * linewidth_MHz
       freq = ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2
-
-      # if self.transition == 'D1':
-      #    freq += f_D1_shift_from_F1_to_F2 / 2
-      # if self.transition == 'D2':
-      #    pass
-
       if freq < 0.:
          freq = -freq
-
       if single_pass:
          freq = freq * 2
-
       return freq * 1.e6
    
    @portable(flags={"fast-math"})
@@ -114,9 +104,7 @@ class DDS():
          
       '''
       self.update_dac_bool()
-
       delta = float(delta)
-
       if delta == -1000.:
          frequency = -0.1
       else:
@@ -132,7 +120,7 @@ class DDS():
       '''Set the dds device. If frequency = 0, turn it off'''
 
       # update dac_control_bool if not already updated
-      self.dac_control_bool = self.dac_ch > 0
+      self.update_dac_bool()
 
       # set unspecified parameters to default values if set_stored
       # otherwise, set_dds will not set unspecified values to save time
