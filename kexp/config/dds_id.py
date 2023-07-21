@@ -61,6 +61,7 @@ class dds_frame():
 
         self.write_dds_keys()
         self.make_dds_array()
+        self.dds_list = np.array(self.dds_array).flatten()
 
     def dds_assign(self, uru, ch, ao_order=0, transition='None', dac_ch_vpd=-1) -> DDS:
         '''
@@ -101,9 +102,6 @@ class dds_frame():
         dds_linlist = [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
         for dds in dds_linlist:
             self.dds_array[dds.urukul_idx][dds.ch] = dds
-    
-    def dds_list(self):
-        return np.array(self.dds_array).flatten()
     
     # def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
     #     dt = RAMP_STEP_TIME

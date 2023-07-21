@@ -24,7 +24,6 @@ class Devices():
         self.dds = dds_frame(dac_device=self.zotino)
 
         self.get_dds_devices()
-        self.dds_list = self.dds.dds_list()
 
         self.dac_ch_3Dmot_current_control = 0
 
@@ -34,7 +33,7 @@ class Devices():
         self.ttl_camera = TTLOut
 
     def get_dds_devices(self):
-        for dds in self.dds.dds_list():
+        for dds in self.dds.dds_list:
             dds.dds_device = self.get_device(dds.name)
             dds.cpld_device = self.get_device(dds.cpld_name)
 
@@ -58,14 +57,14 @@ class Devices():
 
     @kernel
     def set_all_dds(self):
-        for dds in self.dds_list:
+        for dds in self.dds.dds_list:
             dds.set_dds(set_stored=True)
             dds.dds_device.set_att(0. * dB)
             delay_mu(self.params.t_rtio_mu)
 
     @kernel
     def switch_all_dds(self,state):
-        for dds in self.dds_list:
+        for dds in self.dds.dds_list:
             if state == 1:
                 dds.on()
             elif state == 0:
@@ -74,13 +73,13 @@ class Devices():
 
     @kernel
     def init_all_dds(self):
-        for dds in self.dds_list:
+        for dds in self.dds.dds_list:
             dds.dds_device.init()
             delay(1*ms)
 
     @kernel
     def init_all_cpld(self):
-        for dds in self.dds_list:
+        for dds in self.dds.dds_list:
             dds.cpld_device.init()
             delay(1*ms)
 
