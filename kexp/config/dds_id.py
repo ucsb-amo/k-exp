@@ -71,7 +71,7 @@ class dds_frame():
         dds0 = self._dds_state[uru][ch]
         dds0.aom_order = ao_order
         dds0.transition = transition
-        dds0.dac_ch_vpd_setpoint = dac_ch_vpd
+        dds0.dac_ch = dac_ch_vpd
         dds0.dac_device = self._dac_device
 
         return dds0
