@@ -6,8 +6,6 @@ from kexp.config.dds_id import dds_frame, N_uru
 from kexp.control.artiq.DDS import DDS
 from kexp.config.expt_params import ExptParams
 
-from jax import AD9910Manager
-
 import numpy as np
 
 dv = -0.1
