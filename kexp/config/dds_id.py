@@ -41,6 +41,8 @@ class dds_frame():
         else:
             self._dac_device = ad53xx.AD53xx
 
+        self.dds_array = dds_empty_frame()
+
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
         self.push = self.dds_assign(0,0, ao_order = 1, transition = 'D2')
         self.d2_2d_r = self.dds_assign(0,1, ao_order = 1, transition = 'D2')
@@ -53,6 +55,9 @@ class dds_frame():
         self.tweezer = self.dds_assign(2,0, ao_order = 1)
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging_4_real = self.dds_assign(2,2, ao_order = -1, transition = 'D2')
+
+        self.write_dds_keys()
+        self.make_dds_array()
 
     def dds_assign(self, uru, ch, ao_order=0, transition='None', dac_ch_vpd=-1) -> DDS:
         '''
@@ -70,6 +75,16 @@ class dds_frame():
         dds0.dac_device = self._dac_device
 
         return dds0
+    
+    def write_dds_keys(self):
+        for key in self.__dict__.keys():
+            if isinstance(self.__dict__[key],DDS):
+                self.__dict__[key].key = key
+    
+    def make_dds_array(self):
+        dds_linlist = self.dds_list()
+        for dds in dds_linlist:
+            self.dds_array[dds.urukul_idx][dds.ch] = dds
     
     def dds_list(self):
         '''

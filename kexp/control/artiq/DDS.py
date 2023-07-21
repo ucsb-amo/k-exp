@@ -21,6 +21,8 @@ class DDS():
       self.transition = []
       self.v_pd = v_pd
       self.dac_ch_vpd_setpoint = -1
+      self.key = ""
+
       self.dds_device = ad9910.AD9910
       self.name = f'urukul{self.urukul_idx}_ch{self.ch}'
       self.cpld_name = []
