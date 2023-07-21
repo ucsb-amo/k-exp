@@ -20,7 +20,7 @@ class DDS():
       self.aom_order = []
       self.transition = []
       self.v_pd = v_pd
-      self.dac_ch_vpd_setpoint = -1
+      self.dac_ch = -1
       self.key = ""
 
       self.dds_device = ad9910.AD9910
@@ -32,7 +32,7 @@ class DDS():
       self.read_db(device_db)
       
       self.dac_device = ad53xx.AD53xx
-      self.dac_control_bool = self.dac_ch_vpd_setpoint > 0
+      self.dac_control_bool = self.dac_ch > 0
 
       self.dds_amp_calibration = dds_amp_cal()
 
@@ -45,7 +45,7 @@ class DDS():
 
    @portable
    def update_dac_bool(self):
-      self.dac_control_bool = self.dac_ch_vpd_setpoint > 0
+      self.dac_control_bool = self.dac_ch > 0
 
    @portable(flags={"fast-math"})
    def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
@@ -124,7 +124,7 @@ class DDS():
       '''Set the dds device. If frequency = 0, turn it off'''
 
       # update dac_control_bool if not already updated
-      self.dac_control_bool = self.dac_ch_vpd_setpoint > 0
+      self.dac_control_bool = self.dac_ch > 0
 
       # set unspecified parameters to default values if set_stored
       # otherwise, set_dds will not set unspecified values to save time
@@ -180,7 +180,7 @@ class DDS():
          v_pd = self.v_pd
       else:
          self.v_pd = v_pd # code breaks without that line
-      self.dac_device.write_dac(channel=self.dac_ch_vpd_setpoint, voltage=v_pd)
+      self.dac_device.write_dac(channel=self.dac_ch, voltage=v_pd)
       if dac_load:
          self.dac_device.load()
 
@@ -194,7 +194,7 @@ class DDS():
       self.dds_device.sw.off()
       delay(1*us)
       if self.dac_control_bool and dac_update:
-         self.dac_device.write_dac(channel=self.dac_ch_vpd_setpoint,voltage=0.)
+         self.dac_device.write_dac(channel=self.dac_ch,voltage=0.)
          if dac_load:
             self.dac_device.load()
 
@@ -202,7 +202,7 @@ class DDS():
    def on(self, dac_update = True, dac_load=True):
       self.update_dac_bool()
       if self.dac_control_bool and dac_update:
-         self.dac_device.write_dac(self.dac_ch_vpd_setpoint,self.v_pd)
+         self.dac_device.write_dac(self.dac_ch,self.v_pd)
          if dac_load:
             self.dac_device.load()
       self.dds_device.sw.on()
