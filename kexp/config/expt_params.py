@@ -29,7 +29,7 @@ class ExptParams():
         self.t_mot_load = 2.
         self.t_d2cmot = 5.e-3
         self.t_d1cmot = 7.e-3
-        self.t_gm = 2.e-3
+        self.t_gm = 2.5e-3
         self.t_gm_ramp = 2.e-3
 
         #push beam

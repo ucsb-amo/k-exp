@@ -45,9 +45,9 @@ class flourescence(EnvExperiment, Base):
 
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.gm(self.p.t_gm * s)
+            self.gm(self.p.t_gm * s)
 
-            self.gm_tweezer(self.p.t_tweezer_hold * s)
+            # self.gm_tweezer(self.p.t_tweezer_hold * s)
             
             # self.dds.tweezer.off()
 

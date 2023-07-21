@@ -344,6 +344,7 @@ class Cooling():
             self.switch_d2_3d(0)
         self.dds.tweezer.on()
         delay(t)
+        # self.dds.tweezer.off()
 
     @kernel
     def release(self):
@@ -454,6 +455,9 @@ class Cooling():
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         delay(10*us)
+        self.dds.imaging_4_real.set_dds_gamma(delta=5.,
+                                 amplitude=.188)
+        delay(10*us)
         self.set_magnet_current(v = v_current)
 
         delay(1*ms)
@@ -469,6 +473,8 @@ class Cooling():
         self.dds.imaging.off()
 
         self.dds.tweezer.on()
+
+        self.dds.imaging_4_real.on()
 
         self.core.break_realtime()
         self.set_magnet_current()
