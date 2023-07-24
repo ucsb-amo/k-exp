@@ -2,6 +2,7 @@ import os
 import textwrap
 from subprocess import PIPE, run
 from kexp.control.artiq.DDS import DDS
+import numpy as np
 
 class DDSGUIExptBuilder():
 
@@ -110,9 +111,11 @@ class DDSGUIExptBuilder():
 
     def make_dds_setting_lines(self,dds_list):
 
+        dds_list = np.array(dds_list)
+
         dds_setting_lines = ""
 
-        N_dds = len(dds_list)
+        N_dds = dds_list.size
 
         for dds_slist in dds_list:
             for dds in dds_slist:
@@ -125,9 +128,10 @@ class DDSGUIExptBuilder():
                 lin_idx = uru_idx*4 + ch
                 
                 if lin_idx < N_dds:
-                    dds_setting_lines += f"""
+                    dds_setting_lines_0 = f"""
                         self.dds_list[{lin_idx}].frequency = {freq}
                         self.dds_list[{lin_idx}].amplitude = {amplitude}"""
+                    dds_setting_lines += dds_setting_lines_0
 
         return dds_setting_lines
     
