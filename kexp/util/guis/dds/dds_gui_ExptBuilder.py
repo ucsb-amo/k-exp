@@ -129,8 +129,10 @@ class DDSGUIExptBuilder():
                 
                 if lin_idx < N_dds:
                     dds_setting_lines_0 = f"""
-                        self.dds_list[{lin_idx}].frequency = {freq}
-                        self.dds_list[{lin_idx}].amplitude = {amplitude}"""
+                        try:
+                            self.dds_list[{lin_idx}].frequency = {freq}
+                            self.dds_list[{lin_idx}].amplitude = {amplitude}
+                        except: pass"""
                     dds_setting_lines += dds_setting_lines_0
 
         return dds_setting_lines
