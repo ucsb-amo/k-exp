@@ -15,13 +15,13 @@ class scan_push(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_mot_kill = 3
+        self.p.t_mot_kill = 1
         self.p.t_mot_load = 0.5
 
-        self.p.t_tof = 200.e-6
+        self.p.t_tof = 1500.e-6
 
-        self.p.xvar1_detune_push = np.linspace(-10.,-5.,8)
-        self.p.xvar2_amp_push = np.linspace(0.05,0.188,8)
+        self.p.xvar1_detune_push = np.linspace(1.5,4.,8)
+        self.p.xvar2_amp_push = np.linspace(0.1,0.2,8)
 
         self.xvarnames = ['xvar1_detune_push','xvar2_amp_push']
 

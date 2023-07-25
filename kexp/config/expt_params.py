@@ -8,7 +8,7 @@ class ExptParams():
         
 
         self.t_mot_kill = 1.
-        self.t_mot_load = 1.
+        self.t_mot_load = 2.
         self.t_mot_reload = 2.
         self.t_camera_trigger = camera_params.t_camera_trigger
         self.t_imaging_pulse = 5.e-6
@@ -33,11 +33,11 @@ class ExptParams():
         self.t_gm_ramp = 2.e-3
 
         #push beam
-        self.detune_push = 2.5
+        self.detune_push = 2.9
         self.amp_push = 0.188
 
         #2D MOT
-        self.detune_d2_c_2dmot = .5
+        self.detune_d2_c_2dmot = .57
         self.amp_d2_c_2dmot = 0.1880
         self.detune_d2_r_2dmot = -3.
         self.amp_d2_r_2dmot = 0.1880
@@ -65,13 +65,13 @@ class ExptParams():
         #D1 CMOT
         self.detune_d1_c_d1cmot = 6.4
         self.v_pd_d1_c_d1cmot = 3.0
-        self.detune_d2_r_d1cmot = -2.9
-        self.amp_d2_r_d1cmot = 0.036
+        self.detune_d2_r_d1cmot = -2.3
+        self.amp_d2_r_d1cmot = 0.03
 
-        self.v_d1cmot_current = 1.4
+        self.v_d1cmot_current = .0
         
         #GM
-        self.detune_gm = 6.8
+        self.detune_gm = 7.2
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
