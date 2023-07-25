@@ -44,7 +44,7 @@ class dds_frame():
         else:
             self._dac_device = ad53xx.AD53xx
 
-        self.dds_array = [[DDS(uru,ch) for ch in range(N_ch)] for uru in range(N_uru)]
+        self.dds_array = [[DDS(uru,ch,dac_device=self._dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
         self.push = self.dds_assign(0,0, ao_order = 1, transition = 'D2')

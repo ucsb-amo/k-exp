@@ -14,7 +14,7 @@ DAC_CH_DEFAULT = -1
 
 class DDS():
 
-   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., v_pd=0.):
+   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., v_pd=0., dac_device=[]):
       self.urukul_idx = urukul_idx
       self.ch = ch
       self.frequency = frequency
@@ -33,7 +33,10 @@ class DDS():
       self.ftw_per_hz = 0
       self.read_db(device_db)
       
-      self.dac_device = ad53xx.AD53xx
+      if dac_device:
+         self.dac_device = dac_device
+      else:
+         self.dac_device = ad53xx.AD53xx
       self.dac_control_bool = self.dac_ch > 0
 
       self.dds_amp_calibration = dds_amp_cal()
