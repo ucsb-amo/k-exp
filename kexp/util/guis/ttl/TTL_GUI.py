@@ -287,7 +287,7 @@ class TTLControlGrid(QWidget):
             QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
         )
         if result == QMessageBox.StandardButton.Ok:
-            filename = "ttl_config.py"  # Set the file name
+            filename = CONFIG_PATH  # Set the file name
             if filename:
                 # Code for reloading settings goes here
                 settings = {}
