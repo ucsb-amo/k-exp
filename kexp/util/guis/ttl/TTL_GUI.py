@@ -16,8 +16,8 @@ import os
 NUM_TTL = 16
 START_TTL = 8
 
-CODE_DIR = os.environ("code")
-CONFIG_PATH = os.path.join("k-exp","kexp","config","ttl_config.py")
+CODE_DIR = os.environ.get("code")
+CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","ttl_config.py")
 
 class InputBox(QWidget):
     toggleStateChanged = pyqtSignal(bool, int)
