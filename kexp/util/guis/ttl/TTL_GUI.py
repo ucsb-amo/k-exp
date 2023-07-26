@@ -124,7 +124,7 @@ class InputBox(QWidget):
             if state:
                 # Check if the pulse input_box value is not '0.0'
                 duration = self.input_box.text()
-                if duration != '0.0':
+                if float(duration) != 0.:
                     # Update the duration before using it
                     self.update_duration()
                     # Execute TTL pulse
@@ -142,6 +142,8 @@ class InputBox(QWidget):
                         QTimer.singleShot(interval, lambda: self.toggle.setChecked(False))
                         
                     print(f"{channel} {float(self.input_box.text())} {self.duration_combobox.currentText()}")
+                else:
+                    self.set_channel(channel)
             else:
                 # Execute TTL on/off
                 self.set_channel(channel)
@@ -254,7 +256,7 @@ class TTLControlGrid(QWidget):
                 duration_units = []
                 for input_box in self.input_boxes:
                     channel = input_box.channel
-                    duration = input_box.input_box.text()
+                    duration = float(input_box.input_box.text())
                     label = input_box.custom_label_box.text()
                     
                     channels.append(channel)
