@@ -116,7 +116,7 @@ class InputBox(QWidget):
         else:
             if current_voltage != "0.0":
                 self.previous_voltage = current_voltage
-            self.input_box.setText("0.0")
+            # self.input_box.setText("0.0") #### don't want to alter the current value in input_box when turning off
             if not self.toggle.isChecked():  # If toggle is currently "off"
                 ch_builder = CHDACGUIExptBuilder()
                 ch_builder.execute_set_dac_voltage(self.channel, 0.0)
