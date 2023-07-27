@@ -43,7 +43,7 @@ class DACGUIExptBuilder():
 
                         self.core.break_realtime()
 
-                        delay(9 * us)
+                        delay(20 * us)
 
                         # Program the DAC channels and pulse LDAC
                         self.dac_device.set_dac(self.voltages, channels=self.channels)
@@ -98,11 +98,11 @@ class CHDACGUIExptBuilder():
 
                 self.dac_device.load()
 
-                delay(3*s)
+                # delay(3*s)
 
-                self.dac_device.write_dac(self.channel, 0.)
+                # self.dac_device.write_dac(self.channel, 0.)
 
-                self.dac_device.load()
+                # self.dac_device.load()
         """)
         return script
 
