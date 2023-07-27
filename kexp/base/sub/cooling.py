@@ -344,9 +344,6 @@ class Cooling():
             self.switch_d2_3d(0)
         self.dds.tweezer.on()
         delay(t)
-        self.switch_d1_3d(0)
-        delay(t * 100.)
-        self.dds.tweezer.off()
 
     @kernel
     def release(self):
