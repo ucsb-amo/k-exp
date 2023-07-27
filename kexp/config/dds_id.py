@@ -55,9 +55,10 @@ class dds_frame():
         self.tweezer = self.dds_assign(2,0, ao_order = 1)
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging_4_real = self.dds_assign(2,2, ao_order = -1, transition = 'D2')
+        self.test_dds = self.dds_assign(2,3)
 
         self.write_dds_keys()
-        self.make_dds_array()
+        self.dds_list = np.array(self.dds_array).flatten()
 
     def dds_assign(self, uru, ch, ao_order=0, transition='None', dac_ch_vpd=-1) -> DDS:
         '''
@@ -74,23 +75,14 @@ class dds_frame():
         dds0.dac_ch = dac_ch_vpd
         dds0.dac_device = self._dac_device
 
+        self.dds_array[uru][ch] = dds0
+
         return dds0
     
     def write_dds_keys(self):
         for key in self.__dict__.keys():
             if isinstance(self.__dict__[key],DDS):
                 self.__dict__[key].key = key
-    
-    def make_dds_array(self):
-        dds_linlist = self.dds_list()
-        for dds in dds_linlist:
-            self.dds_array[dds.urukul_idx][dds.ch] = dds
-    
-    def dds_list(self):
-        '''
-        Returns a list of all dds objects in 
-        '''
-        return [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
     
     # def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
     #     dt = RAMP_STEP_TIME

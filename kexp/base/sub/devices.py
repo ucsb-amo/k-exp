@@ -24,7 +24,7 @@ class Devices():
         self.dds = dds_frame(dac_device=self.zotino)
 
         self.get_dds_devices()
-        self.dds_list = self.dds.dds_list()
+        self.dds_list = self.dds.dds_list
 
         self.dac_ch_3Dmot_current_control = 0
 
@@ -34,7 +34,7 @@ class Devices():
         self.ttl_camera = TTLOut
 
     def get_dds_devices(self):
-        for dds in self.dds.dds_list():
+        for dds in self.dds.dds_list:
             dds.dds_device = self.get_device(dds.name)
             dds.cpld_device = self.get_device(dds.cpld_name)
 
