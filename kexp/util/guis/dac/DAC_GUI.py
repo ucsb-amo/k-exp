@@ -84,6 +84,8 @@ class InputBox(QWidget):
         self.previous_voltage = ""
         self.toggle_state = True  # True represents "on"
         self.toggle.stateChanged.connect(self.toggle_state_changed)
+        self.do_it = True
+        self.toggle.stateChanged.connect(lambda state: self.toggle_state_changed(state, do_it=self.do_it))
 
         self.setLayout(self.box_layout)
         self.input_box = input_box
@@ -122,16 +124,17 @@ class InputBox(QWidget):
                 ch_builder.execute_set_dac_voltage(self.channel, 0.0)
 
 
-    def toggle_state_changed(self, state):
-        self.toggle_state = state == Qt.CheckState.Unchecked
-        if not self.toggle_state:  # If toggle is currently "off"
-            self.set_channel_to_zero()
-        else:  # If toggle is currently "on"
-            current_voltage = self.input_box.text().strip()
-            if current_voltage:
-                voltage = float(current_voltage)
-                ch_builder = CHDACGUIExptBuilder()
-                ch_builder.execute_set_dac_voltage(self.channel, voltage)
+    def toggle_state_changed(self, state, do_it):
+        if do_it:
+            self.toggle_state = state == Qt.CheckState.Unchecked
+            if not self.toggle_state:  # If toggle is currently "off"
+                self.set_channel_to_zero()
+            else:  # If toggle is currently "on"
+                current_voltage = self.input_box.text().strip()
+                if current_voltage:
+                    voltage = float(current_voltage)
+                    ch_builder = CHDACGUIExptBuilder()
+                    ch_builder.execute_set_dac_voltage(self.channel, voltage)
     
 
 
@@ -213,6 +216,7 @@ class DACControlGrid(QWidget):
         channels = []
         for input_box in self.input_boxes:
             if isinstance(input_box.input_box, QLineEdit):  # Skip the input boxes with channel labels
+                input_box.do_it = False
                 voltage = input_box.input_box.text().strip()
                 if voltage:
                     try:
@@ -224,6 +228,7 @@ class DACControlGrid(QWidget):
                     input_box.toggle.setChecked(True)
                 elif voltage == '0.0':
                     input_box.toggle.setChecked(False)
+                input_box.do_it = True
         print(voltages)
 
         if voltages:
