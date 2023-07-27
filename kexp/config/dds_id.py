@@ -58,6 +58,7 @@ class dds_frame():
         self.tweezer = self.dds_assign(2,0, ao_order = 1)
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging_4_real = self.dds_assign(2,2, ao_order = -1, transition = 'D2')
+        self.test_dds = self.dds_assign(2,3)
 
         self.write_dds_keys()
         self.make_dds_array()
