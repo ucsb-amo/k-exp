@@ -58,15 +58,17 @@ class Image():
         self.trigger_camera()
 
     @kernel
-    def fl_image(self):
+    def fl_image(self, with_light = True):
         self.trigger_camera()
-        # self.pulse_imaging_light(self.camera_params.exposure_time * s)
-        self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+        if with_light:
+            # self.pulse_imaging_light(self.camera_params.exposure_time * s)
+            self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
 
         delay(self.params.t_light_only_image_delay * s)
         self.trigger_camera()
-        # self.pulse_imaging_light(self.camera_params.exposure_time * s)
-        self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+        if with_light:
+            # self.pulse_imaging_light(self.camera_params.exposure_time * s)
+            self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
 
     @kernel
     def trigger_camera(self):
