@@ -82,8 +82,16 @@ class InputBox(QWidget):
         self.box_layout.addWidget(frame)  # Add the frame to the main box layout
 
         self.previous_voltage = ""
-        self.toggle_state = True  # True represents "on"
+        # Initialize a variable to track the previous state
+        self.previous_toggle_state = self.toggle.isChecked()
+
+        # Connect the stateChanged signal to the toggle_state_changed slot
         self.toggle.stateChanged.connect(self.toggle_state_changed)
+
+        self.toggle_state = True  # True represents "on"
+        # self.toggle_state = False # False represents "off"
+        self.toggle.stateChanged.connect(self.toggle_state_changed)
+        # self.toggle.stateChanged.connect(self.set_channel)
         # self.do_it = True
         # self.toggle.stateChanged.connect(lambda state: self.toggle_state_changed(state, do_it=self.do_it))
 
@@ -102,6 +110,7 @@ class InputBox(QWidget):
 
     def set_channel(self):
         current_voltage = self.input_box.text().strip()
+        print(self.toggle.isChecked())
         if self.toggle.isChecked():
             if current_voltage == "0.0":
                 if self.previous_voltage and self.previous_voltage != "0.0":
@@ -109,47 +118,29 @@ class InputBox(QWidget):
                     voltage = float(self.previous_voltage)
                     ch_builder = CHDACGUIExptBuilder()
                     ch_builder.execute_set_dac_voltage(self.channel, voltage)
-                    print(f'{self.channel} current_voltage == "0.0"')
             else:
                 current_voltage = self.input_box.text().strip()
                 if current_voltage:
                     voltage = float(current_voltage)
                     ch_builder = CHDACGUIExptBuilder()
                     ch_builder.execute_set_dac_voltage(self.channel, voltage)
-                    print(f'{self.channel} {current_voltage} if current_voltage:')
+                    # print(f'{self.channel} {current_voltage} if current_voltage:')
         else:
             if current_voltage != "0.0":
                 self.previous_voltage = current_voltage
             if not self.toggle.isChecked():  # If toggle is currently "off"
                 ch_builder = CHDACGUIExptBuilder()
                 ch_builder.execute_set_dac_voltage(self.channel, 0.0)
-                self.input_box.setText("0.0")
-                print(f'{self.channel} if not self.toggle.isChecked():')
+                # self.input_box.setText("0.0")
 
 
 
     def toggle_state_changed(self, state):
-        if hasattr(self, 'calling_handle_button_click') and self.calling_handle_button_click:
-                # Skip executing set_channel when called from handle_button_click
-                return
-        else:
-            self.toggle_state = state == Qt.CheckState.Unchecked
+        # Check if the new state is different from the previous state
+        current_toggle_state = state == Qt.CheckState.Checked
+        if current_toggle_state != self.previous_toggle_state:
+            self.previous_toggle_state = current_toggle_state
             self.set_channel()
-            print('self.set_channel')
-            # if not self.toggle_state:  # If toggle is currently "off"
-            #     self.set_channel()
-            #     print('# If toggle is currently "off"')
-
-            # else:  # If toggle is currently "on"
-            #     current_voltage = self.input_box.text().strip()
-            #     if current_voltage:
-            #         self.set_channel()
-            #         print(' # If toggle is currently "on"')
-
-                #     voltage = float(current_voltage)
-                #     ch_builder = CHDACGUIExptBuilder()
-                #     ch_builder.execute_set_dac_voltage(self.channel, voltage)
-                #     print('yesssssssss')
 
     
 
@@ -232,7 +223,6 @@ class DACControlGrid(QWidget):
         channels = []
         for input_box in self.input_boxes:
             if isinstance(input_box.input_box, QLineEdit):  # Skip the input boxes without channel labels
-                input_box.calling_handle_button_click = True
                 voltage = input_box.input_box.text().strip()
                 if voltage:
                     try:
@@ -240,15 +230,22 @@ class DACControlGrid(QWidget):
                         channels.append(input_box.channel)
                     except ValueError:
                         print(f"Invalid voltage: {voltage}")
-                if voltage != '0.0':
-                    input_box.toggle.setChecked(True)
-                elif voltage == '0.0':
-                    input_box.toggle.setChecked(False)
-                input_box.calling_handle_button_click = False  # Reset the attribute after setting the voltage
+
+                    # Disconnect the stateChanged signal temporarily
+                    input_box.toggle.stateChanged.disconnect(input_box.set_channel)
+
+                    # Update the toggle's state without triggering set_channel
+                    if voltage != '0.0':
+                        input_box.toggle.setChecked(True)
+                    else:
+                        input_box.toggle.setChecked(False)
+
+                    # Reconnect the stateChanged signal
+                    input_box.toggle.stateChanged.connect(input_box.set_channel)
 
         if voltages:
             builder = DACGUIExptBuilder()
-            builder.execute_set_dac_voltage(channels, voltages)
+            builder.execute_set_all_dac_voltage(channels, voltages)
             print(f"DAC channels are   : {channels}")
             print(f"DAC voltages set to: {voltages}")
         else:

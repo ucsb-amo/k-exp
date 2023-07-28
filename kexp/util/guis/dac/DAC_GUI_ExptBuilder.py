@@ -14,7 +14,7 @@ class DACGUIExptBuilder():
         print(result.returncode, result.stdout, result.stderr)
         os.remove(self.__temp_exp_path__)
 
-    def execute_set_dac_voltage(self, channels, voltages):
+    def execute_set_all_dac_voltage(self, channels, voltages):
         with open(self.__temp_exp_path__, "w") as f:
             f.write(textwrap.dedent(f'''
                 import sys
