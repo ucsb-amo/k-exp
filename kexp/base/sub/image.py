@@ -45,6 +45,25 @@ class Image():
             self.dds.d2_3d_r.off()
 
     @kernel
+    def pulse_D1_beams(self,t):
+        """
+        Sets D1 GM beams to resonance and turns them on for time t.
+
+        Args:
+            t (float): Time (in seconds) to hold the resonant MOT beams on.
+        """        
+        with parallel:
+            self.dds.d1_3d_c.set_dds_gamma(0.)
+            self.dds.d1_3d_r.set_dds_gamma(0.)
+        with parallel:
+            self.dds.d1_3d_c.on()
+            self.dds.d1_3d_r.on()
+        delay(t)
+        with parallel:
+            self.dds.d1_3d_c.off()
+            self.dds.d1_3d_r.off()
+
+    @kernel
     def abs_image(self):
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
