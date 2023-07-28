@@ -3,15 +3,17 @@ from pylablib.devices.interface.camera import trim_frames
 import numpy as np
 
 class AndorEMCCD(Andor.AndorSDK2Camera):
-    def __init__(self, ExposureTime=0., gain = 30):
+    def __init__(self, ExposureTime=0., gain = 30, vsspeed = .9):
         super().__init__()
         self.set_temperature(temperature=-80)
         self.set_EMCCD_gain(gain=30)
         self.set_exposure(ExposureTime)
         self.set_trigger_mode("ext")
         self.setup_shutter(mode="open")
-        self.set_vsspeed(vsspeed=.5)
-    
+        self.set_vsspeed(vsspeed=.9)
+        self.set_acquisition_mode("single")
+        self.set_read_mode("image")
+
     def Close(self):
         self.setup_shutter(mode="closed")
         self.close()

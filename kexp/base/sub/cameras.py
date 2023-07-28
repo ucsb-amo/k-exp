@@ -51,7 +51,8 @@ class Cameras():
         second timeout.
         """
         self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time,
-                                gain = self.camera_params.em_gain)
+                                gain = self.camera_params.em_gain,
+                                vsspeed=self.camera_params.vsspeed)
         Nimg = int(self.params.N_img)
         try:
             self.images = self.camera.grab_andor(nframes=Nimg,frame_timeout=10.)
