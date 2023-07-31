@@ -2,17 +2,22 @@ from pylablib.devices import Andor
 from pylablib.devices.interface.camera import trim_frames
 import numpy as np
 
+from pylablib.devices.Andor.atmcd32d_lib import wlib as lib
+
 class AndorEMCCD(Andor.AndorSDK2Camera):
-    def __init__(self, ExposureTime=0., gain = 30, vsspeed = .9):
-        super().__init__()
-        self.set_temperature(temperature=-80)
+    def __init__(self, ExposureTime=0., gain = 30, vs_speed = .9, vs_amp=1):
+        super().__init__(temperature=-60,fan_mode="full")
         self.set_EMCCD_gain(gain=30)
         self.set_exposure(ExposureTime)
         self.set_trigger_mode("ext")
         self.setup_shutter(mode="open")
-        self.set_vsspeed(vsspeed=.9)
+        self.set_vsspeed(vs_speed=vs_speed)
+        self.set_vsamplitude(vs_amp=vs_amp)
         self.set_acquisition_mode("single")
         self.set_read_mode("image")
+
+    def set_vsamplitude(self, vs_amp:int = 0):
+        lib.SetVSAmplitude(vs_amp)
 
     def Close(self):
         self.setup_shutter(mode="closed")
