@@ -21,7 +21,7 @@ class flourescence(EnvExperiment, Base):
 
         self.p.t_load_time = 2000 * 1.e-3
 
-        self.camera_params.exposure_time = 1.5e-3
+        self.camera_params.exposure_time = 0.15e-3
 
         self.xvarnames = ['dummy']
         self.p.dummy = [1]*2
@@ -58,10 +58,10 @@ class flourescence(EnvExperiment, Base):
             self.gm_tweezer(self.p.t_tweezer_hold * s)
             
             self.dds.tweezer.off()
-
             self.switch_d1_3d(0)
+            delay(10*us)
 
-            self.fl_image(with_light=False)
+            self.fl_image(with_light=True)
 
             self.release()
             
