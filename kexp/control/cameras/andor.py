@@ -5,7 +5,7 @@ import numpy as np
 from pylablib.devices.Andor.atmcd32d_lib import wlib as lib
 
 class AndorEMCCD(Andor.AndorSDK2Camera):
-    def __init__(self, ExposureTime=0., gain = 30, vs_speed = .9, vs_amp=1):
+    def __init__(self, ExposureTime=0., gain = 30, vs_speed:int=2, vs_amp:int=1):
         # overwrite a broken method in the parent class
         self._initial_setup_temperature = self._initial_setup_temperature_fixed
         # init the parent class
@@ -15,8 +15,8 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.set_exposure(ExposureTime)
         self.set_trigger_mode("ext")
         self.setup_shutter(mode="open")
-        self.set_vsspeed(vs_speed=vs_speed)
-        self.set_vsamplitude(vs_amp=vs_amp)
+        self.set_vsspeed(vs_speed)
+        self.set_vsamplitude(vs_amp)
         self.set_acquisition_mode("single")
         self.set_read_mode("image")
         self.set_cooler_mode(mode=1)
