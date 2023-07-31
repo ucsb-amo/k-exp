@@ -19,6 +19,10 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.set_vsamplitude(vs_amp=vs_amp)
         self.set_acquisition_mode("single")
         self.set_read_mode("image")
+        self.set_cooler_mode(mode=1)
+
+    def set_cooler_mode(self, mode:int = 1):
+        lib.SetCoolerMode(mode)
 
     def set_vsamplitude(self, vs_amp:int = 0):
         lib.SetVSAmplitude(vs_amp)
