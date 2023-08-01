@@ -17,14 +17,14 @@ class scan_flourescence(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tweezer_hold = 50. * 1.e-3
+        self.p.t_tweezer_hold = 40. * 1.e-3
 
         self.p.t_load_time = 2000 * 1.e-3
 
         self.camera_params.exposure_time = 10.0e-3
 
-        self.xvarnames = ['imaging_detuning']
-        self.p.xvar_imaging_detuning = np.linspace(320., 280., 7)
+        self.xvarnames = ['image_detuning']
+        self.p.xvar_image_detuning = np.linspace(320., 280., 7)
 
         self.finish_build()
 
@@ -38,7 +38,7 @@ class scan_flourescence(EnvExperiment, Base):
 
         self.kill_mot(self.p.t_mot_kill * s)
         
-        for xvar in self.p.xvar_imaging_detuning:
+        for xvar in self.p.xvar_image_detuning:
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
             
             self.mot(self.p.t_load_time * s)
