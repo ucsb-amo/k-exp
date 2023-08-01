@@ -3,7 +3,7 @@ from artiq.experiment import delay, parallel, sequential
 from kexp.config.dds_id import dds_frame
 from kexp.config.expt_params import ExptParams
 from kexp.config.camera_params import CameraParams
-from kexp.control import BaslerUSB, AndorEMCCD
+from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
 from kexp.util.data import RunInfo
 import pypylon.pylon as py
 import numpy as np
@@ -16,6 +16,7 @@ class Image():
         self.params = ExptParams()
         self.camera_params = CameraParams()
         self.run_info = RunInfo()
+        self.camera = DummyCamera()
 
     ### Imaging sequences ###
 
@@ -105,6 +106,44 @@ class Image():
         t_adv = self.params.t_pretrigger - self.params.t_camera_trigger
         delay(t_adv * s)
 
+    ###
+
+    @kernel(flags={"fast-math"})
+    def set_imaging_detuning(self, detuning):
+        '''
+        Sets the detuning of the beat-locked imaging laser (in Hz).
+
+        Imaging detuning is controlled by two things -- the Vescent offset lock
+        and a 100 MHz double pass (+1 order).
+
+        The offset lock has a multiplier, N, that determines the offset lock
+        frequency relative to the lock point of the D2 laser locked at the
+        crossover feature for the D2 transition. Offset = N * reference freqeuency.
+        
+        The reference frequency is provided by a DDS channel (dds_frame.beatlock_ref).
+        '''
+
+        # determine this manually -- minimum offset frequency where the offset lock is happy
+        f_minimum_offset_frequency = 150.e6
+
+        f_hyperfine_splitting_4s_MHz = 461.7 * 1.e6
+        f_shift_resonance = f_hyperfine_splitting_4s_MHz / 2
+
+        f_ao_shift = self.dds.imaging.frequency * 2
+
+        f_offset = f_ao_shift - detuning + f_shift_resonance
+
+        if f_offset < f_minimum_offset_frequency:
+            try: 
+                self.camera.Close()
+            except: pass
+            raise ValueError("The beat lock is unhappy at a lock point below the minimum offset.")
+            
+        offset_lock_multiplier_N = 8
+        f_beatlock_ref = f_offset / offset_lock_multiplier_N
+        
+        self.dds.beatlock_ref.set_dds(frequency=f_beatlock_ref)
+        self.dds.beatlock_ref.on()
     ###
 
     def get_N_img(self):
