@@ -82,7 +82,7 @@ class Image():
     def fl_image(self, with_light = True, image_detuning = 0.):
         self.trigger_camera()
         if with_light:
-            self.pulse_imaging_light(self.camera_params.exposure_time * s, image_detuning=self.params.imaging_detuning)
+            self.pulse_imaging_light(self.camera_params.exposure_time * s, image_detuning=image_detuning)
             # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
@@ -92,7 +92,7 @@ class Image():
         delay(self.params.t_light_only_image_delay * s)
         self.trigger_camera()
         if with_light:
-            self.pulse_imaging_light(self.camera_params.exposure_time * s)
+            self.pulse_imaging_light(self.camera_params.exposure_time * s, image_detuning=image_detuning)
             # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
@@ -114,6 +114,8 @@ class Image():
     def set_imaging_detuning(self, detuning):
         '''
         Sets the detuning of the beat-locked imaging laser (in Hz).
+
+        Positive detunings are blue detunings.
 
         Imaging detuning is controlled by two things -- the Vescent offset lock
         and a 100 MHz double pass (+1 order).

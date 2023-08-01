@@ -25,7 +25,6 @@ class ExptParams():
         self.N_img = 1
 
         #imaging
-        self.imaging_detuning = 0.
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1.
