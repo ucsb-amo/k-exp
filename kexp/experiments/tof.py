@@ -20,12 +20,12 @@ class tof(EnvExperiment, Base):
         self.p.t_andor_expose = 50. * 1.e-3
 
         self.p.N_shots = 5
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
         # self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(2000,4000,self.p.N_shots) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(10000,15000,self.p.N_shots) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(3000,7000,self.p.N_shots) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(6000,9000,self.p.N_shots) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
 
