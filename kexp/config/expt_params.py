@@ -5,7 +5,6 @@ camera_params = CameraParams()
 
 class ExptParams():
     def __init__(self, camera_params=camera_params):
-        
 
         self.t_mot_kill = 1.
         self.t_mot_load = 2.
@@ -23,6 +22,9 @@ class ExptParams():
         self.N_shots = 1
         self.N_repeats = 1
         self.N_img = 1
+        
+        #Imaging
+        self.frequency_detuned_imaging = 0.
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1.

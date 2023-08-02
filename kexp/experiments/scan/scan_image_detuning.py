@@ -4,12 +4,12 @@ from kexp import Base
 
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class scan_image_detuning(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "mot tof"
+        self.run_info._run_description = "scan image detuning"
 
         ## Parameters
 
@@ -19,17 +19,13 @@ class tof(EnvExperiment, Base):
 
         self.p.t_andor_expose = 50. * 1.e-3
 
-        self.p.N_shots = 2
+        self.p.N_shots = 7
         self.p.N_repeats = 1
-        self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
-        # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
-        # self.p.t_tof = np.linspace(2000,4000,self.p.N_shots) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(10000,15000,self.p.N_shots) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(6000,9000,self.p.N_shots) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
-        # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
+        self.p.t_tof = 1000 * 1.e-6 # mot
+        
+        self.p.xvar_image_detuning = np.linspace(-300,300,self.p.N_shots) * 1.e6
 
-        self.xvarnames = ['t_tof']
+        self.xvarnames = ['xvar_image_detuning']
 
         self.finish_build()
 
@@ -43,7 +39,7 @@ class tof(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for t_tof in self.p.t_tof:
+        for x_var in self.p.xvar_image_detuning:
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)
@@ -59,6 +55,8 @@ class tof(EnvExperiment, Base):
 
             # self.gm_tweezer(self.p.t_tweezer_hold * s)
 
+            # self.fl_image(detuning=x_var)
+
             # self.gm_ramp(self.p.t_gm_ramp * s)
 
             # self.mot_reload(self.p.t_mot_reload * s)
@@ -66,8 +64,8 @@ class tof(EnvExperiment, Base):
             self.release()
             
             ### abs img
-            delay(t_tof * s)
-            self.abs_image()
+            delay(self.p.t_tof * s)
+            self.abs_image(detuning=x_var)
 
             self.core.break_realtime()
 

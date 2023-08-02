@@ -454,9 +454,6 @@ class Cooling():
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         delay(10*us)
-        self.dds.imaging_4_real.set_dds_gamma(delta=5.,
-                                 amplitude=.188)
-        delay(10*us)
         self.set_magnet_current(v = v_current)
 
         delay(1*ms)
@@ -473,7 +470,7 @@ class Cooling():
 
         self.dds.tweezer.on()
 
-        self.dds.imaging_4_real.on()
+        self.dds.beatlock_ref.on()
 
         self.core.break_realtime()
         self.set_magnet_current()
