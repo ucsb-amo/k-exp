@@ -7,7 +7,8 @@ from kexp.config.dds_state import dds_state
 from kexp.control.artiq.DDS import DDS
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 
-# from jax import AD9910Manager, RAMProfile, RAMType
+from jax import AD9910Manager, RAMProfile, RAMType
+from artiq.coredevice import ad9910
 
 N_uru = 3
 N_ch = 4
@@ -26,9 +27,9 @@ class dds_frame():
     '''
     def __init__(self, dds_state = dds_state, dac_device = []):
 
-        # self.dds_manager = AD9910Manager
+        self.dds_manager = AD9910Manager
         self.dds_amp_calibration = DDS_Amplitude_Calibration()
-        # self.ramp_dt = RAMP_STEP_TIME
+        self.ramp_dt = RAMP_STEP_TIME
 
         self._N_uru = N_uru
         self._N_ch = N_ch
@@ -84,44 +85,40 @@ class dds_frame():
             if isinstance(self.__dict__[key],DDS):
                 self.__dict__[key].key = key
     
-    # def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
-    #     dt = RAMP_STEP_TIME
-    #     N = round(t_ramp / dt)
-    #     if N > 1024:
-    #         N = 1024
-    #         self.ramp_dt = round( ( t_ramp / 1024 ) / 4.e-9 ) * 4.e-9
-    #     p_list = np.linspace(power_i,power_f,N)
-    #     amp_list = self.dds_amp_calibration.power_fraction_to_dds_amplitude(p_list).tolist()
-    #     return amp_list
+    def get_ramp_dt(self, t_ramp):
+        '''
+        Returns the number of points to use in a ramp and the corresponding
+        minimum timestep dt.
+        '''
+        dt = RAMP_STEP_TIME
+        N_points = round(t_ramp / dt)
+        if N_points > 1024:
+            N_points = 1024
+            ramp_dt = round( ( t_ramp / 1024 ) / 4.e-9 ) * 4.e-9
+        else:
+            ramp_dt = dt
+        return N_points, ramp_dt
+
+    def set_frequency_ramp_profile(self, dds:DDS, freq_list, dt_ramp:float, dwell_end=True):
+        if isinstance(freq_list,np.ndarray):
+            freq_list = list(freq_list)
+        this_profile = RAMProfile(
+            dds.dds_device, freq_list, dt_ramp, RAMType.FREQ, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
+        self.dds_manager.append(dds.dds_device, frequency_src=this_profile, amplitude_src=dds.amplitude)
         
-    # def set_amplitude_profile(self, dds:DDS, t_ramp:float, amp=-1., p_i=-1., p_f=-1., dwell_end=1):
-
-    #     _power_specified = p_i > 0. and p_f > 0.
-    #     _amp_specified = amp > 0.
-    #     if (_power_specified and _amp_specified) or not (_power_specified or _amp_specified):
-    #         raise ValueError("Either initial and final power, or constant amplitude should be specified. \
-    #                           Either both or none were specified.")
-        
-    #     if _amp_specified and not _power_specified:
-    #         amp_list = [amp]
-    #     if _power_specified and not _amp_specified:
-    #         amp_list = self.get_amplitude_ramp_list(t_ramp,p_i,p_f)
-
-    #     this_profile = RAMProfile(
-    #         dds.dds_device, amp_list, self.ramp_dt, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
-
-    #     self.dds_manager.append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=this_profile)
+    def set_amplitude_ramp_profile(self, dds:DDS, amp_list, dt_ramp:float, dwell_end=True):
+        if isinstance(amp_list,np.ndarray):
+            amp_list = list(amp_list)
+        this_profile = RAMProfile(
+            dds.dds_device, amp_list, dt_ramp, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
+        self.dds_manager.append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=this_profile)
     
-    # @kernel
-    # def enable_profile(self):
-    #     self.dds_manager.enable()
-    #     self.dds_manager.commit_enable()
+    @kernel
+    def enable_profile(self):
+        self.dds_manager.enable()
+        self.dds_manager.commit_enable()
 
-    # @kernel
-    # def disable_profile(self):
-    #     self.dds_manager.disable()
-    #     self.dds_manager.commit_disable()
-        
-
-        
-
+    @kernel
+    def disable_profile(self):
+        self.dds_manager.disable()
+        self.dds_manager.commit_disable()

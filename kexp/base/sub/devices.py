@@ -6,6 +6,7 @@ from kexp.config.dds_id import dds_frame, N_uru
 from kexp.control.artiq.DDS import DDS
 from kexp.config.expt_params import ExptParams
 
+from jax import AD9910Manager
 from kexp.control.cameras.dummy_cam import DummyCamera
 
 import numpy as np
@@ -24,6 +25,7 @@ class Devices():
         self.zotino = self.get_device("zotino0")
 
         self.dds = dds_frame(dac_device=self.zotino)
+        self.dds.dds_manager = AD9910Manager(core=self.core)
 
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list

@@ -170,7 +170,6 @@ class DDS():
          self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
          if amplitude == 0.: # do I need this block? It probably should not be here
             self.dds_device.sw.off()
-         self.dds_device.set(amplitude=self.amplitude)
       elif _set_vpd:
          self.update_dac_setpoint(v_pd)
    
