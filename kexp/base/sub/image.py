@@ -5,10 +5,13 @@ from kexp.config.expt_params import ExptParams
 from kexp.config.camera_params import CameraParams
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
 from kexp.util.data import RunInfo
+from kexp.base.sub.devices import Devices
 import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
+
+dv = -10.e9
 
 class Image():
     def __init__(self):
@@ -21,7 +24,13 @@ class Image():
     ### Imaging sequences ###
 
     @kernel
-    def pulse_imaging_light(self,t):
+    def pulse_imaging_light(self,t,detuning=dv,set_img_detuning=True):
+
+        if set_img_detuning:
+            if detuning == dv:
+                detuning = self.params.frequency_detuned_imaging
+            self.set_imaging_detuning(detuning = detuning)
+            
         self.dds.imaging.on()
         delay(t)
         self.dds.imaging.off()
@@ -65,24 +74,30 @@ class Image():
             self.dds.d1_3d_r.off()
 
     @kernel
-    def abs_image(self):
+    def abs_image(self, detuning=dv):
+        if detuning == dv:
+            detuning = self.params.frequency_detuned_imaging
+
         self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s, detuning=detuning)
 
         delay(self.params.t_light_only_image_delay * s)
         self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s, set_img_detuning=False)
 
         self.dds.imaging.off()
         delay(self.params.t_dark_image_delay * s)
         self.trigger_camera()
 
     @kernel
-    def fl_image(self, with_light = True):
+    def fl_image(self, detuning=dv, with_light = True):
+        if detuning == dv:
+            detuning = self.params.frequency_detuned_imaging
+
         self.trigger_camera()
         if with_light:
-            # self.pulse_imaging_light(self.camera_params.exposure_time * s)
-            self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+            self.pulse_imaging_light(self.camera_params.exposure_time * s, detuning=detuning)
+            # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
         self.dds.tweezer.off()
@@ -90,8 +105,8 @@ class Image():
         delay(self.params.t_light_only_image_delay * s)
         self.trigger_camera()
         if with_light:
-            # self.pulse_imaging_light(self.camera_params.exposure_time * s)
-            self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+            self.pulse_imaging_light(self.camera_params.exposure_time * s, set_img_detuning=False)
+            # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
     @kernel
@@ -109,7 +124,7 @@ class Image():
     ###
 
     @kernel(flags={"fast-math"})
-    def set_imaging_detuning(self, detuning):
+    def set_imaging_detuning(self, detuning = dv):
         '''
         Sets the detuning of the beat-locked imaging laser (in Hz).
 
@@ -124,6 +139,10 @@ class Image():
         '''
 
         # determine this manually -- minimum offset frequency where the offset lock is happy
+
+        if detuning == -10.e9:
+            detuning = self.params.frequency_detuned_imaging
+
         f_minimum_offset_frequency = 150.e6
 
         f_hyperfine_splitting_4s_MHz = 461.7 * 1.e6
@@ -144,6 +163,7 @@ class Image():
         
         self.dds.beatlock_ref.set_dds(frequency=f_beatlock_ref)
         self.dds.beatlock_ref.on()
+
     ###
 
     def get_N_img(self):
