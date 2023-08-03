@@ -25,9 +25,9 @@ class dds_frame():
     artiq experiments. Also, records the AOM order so that AOM frequencies can be
     determined from detunings.
     '''
-    def __init__(self, dds_state = dds_state, dac_device = []):
+    def __init__(self, dds_state = dds_state, dac_device = [], core = DummyCore()):
 
-        self.core = DummyCore()
+        self.core = core
         self.dds_manager = [DDSManager]
         self.dds_amp_calibration = DDS_Amplitude_Calibration()
         self.ramp_dt = RAMP_STEP_TIME
@@ -82,6 +82,8 @@ class dds_frame():
         return dds0
     
     def write_dds_keys(self):
+        '''Adds the assigned keys to the DDS objects so that the user-defined
+        names (keys) are available with the DDS objects.'''
         for key in self.__dict__.keys():
             if isinstance(self.__dict__[key],DDS):
                 self.__dict__[key].key = key
@@ -101,18 +103,61 @@ class dds_frame():
         return N_points, ramp_dt
 
     def set_frequency_ramp_profile(self, dds:DDS, freq_list, dt_ramp:float, dwell_end=True, dds_mgr_idx=0):
+        """Define an amplitude ramp profile and append to the specified DDSManager object.
+
+        Args:
+            dds (DDS): the DDS object corresponding to the channel to be ramped.
+            freq_list (ArrayLike): An ndarray or list of values over which to ramp.
+            dt_ramp (float): The time step (in seconds) between ramp values.
+            Obtain from get_ramp_dt. 
+            dwell_end (bool, optional): If True, after completing the ramp, the
+            DDS will remain at the final value in freq_list. Otherwise, switches
+            back to freq_list[0]. Defaults to True. 
+            dds_mgr_idx (int, optional): The index of the DDSManager to use. By
+            specifying different indices, one can define multiple ramp sequences
+            to be used at different times during a sequence. Defaults to 0.
+        """
         if isinstance(freq_list,np.ndarray):
             freq_list = list(freq_list)
+        self.populate_dds_mgrs(self, dds_mgr_idx)
         this_profile = RAMProfile(
             dds.dds_device, freq_list, dt_ramp, RAMType.FREQ, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
         self.dds_manager[dds_mgr_idx].append(dds.dds_device, frequency_src=this_profile, amplitude_src=dds.amplitude)
         
     def set_amplitude_ramp_profile(self, dds:DDS, amp_list, dt_ramp:float, dwell_end=True, dds_mgr_idx=0):
+        """Define an amplitude ramp profile and append to the specified DDSManager object.
+
+        Args:
+            dds (DDS): the DDS object corresponding to the channel to be ramped.
+            amp_list (ArrayLike): An ndarray or list of values over which to ramp.
+            dt_ramp (float): The time step (in seconds) between ramp values.
+            Obtain from get_ramp_dt. 
+            dwell_end (bool, optional): If True, after completing the ramp, the
+            DDS will remain at the final value in amp_list. Otherwise, switches
+            back to amp_list[0]. Defaults to True. 
+            dds_mgr_idx (int, optional): The index of the DDSManager to use. By
+            specifying different indices, one can define multiple ramp sequences
+            to be used at different times during a sequence. Defaults to 0.
+        """        
         if isinstance(amp_list,np.ndarray):
             amp_list = list(amp_list)
+        self.populate_dds_mgrs(self, dds_mgr_idx)
         this_profile = RAMProfile(
             dds.dds_device, amp_list, dt_ramp, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
         self.dds_manager[dds_mgr_idx].append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=this_profile)
+
+    def populate_dds_mgrs(self, dds_mgr_idx):
+        '''Create a new DDSManager and add to the list if the specified number
+        of DDSManagers does not yet exist.'''
+        current_max_mgr_idx = len(self.dds_manager) - 1
+        if dds_mgr_idx == current_max_mgr_idx + 1:
+            self.dds_manager.append(DDSManager(core=self.core))
+        else:
+            raise ValueError("Must add DDSManagers sequentially with index increasing from 0.")
+
+    @kernel
+    def load_profile(self, dds_mgr_idx=0):
+        self.dds_manager[dds_mgr_idx].load_profile()
     
     @kernel
     def enable_profile(self, dds_mgr_idx=0):
@@ -125,7 +170,7 @@ class dds_frame():
         self.dds_manager[dds_mgr_idx].commit_disable()
 
 class DDSManager(AD9910Manager):
-    def __init__(self,core):
+    def __init__(self,core=DummyCore()):
         AD9910Manager().__init__(core=core)
         self.DDS_with_ramps = []
 
