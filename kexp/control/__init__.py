@@ -4,6 +4,7 @@ modules = glob.glob(join(dirname(__file__), "*.py"))
 __all__ = [ basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('__init__.py')]
 
 from .artiq.DDS import DDS
+from .artiq.dummy_core import DummyCore
 from .cameras.basler_usb import BaslerUSB
 from .cameras.andor import AndorEMCCD
 from .cameras.dummy_cam import DummyCamera
