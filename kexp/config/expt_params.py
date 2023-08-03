@@ -24,7 +24,7 @@ class ExptParams():
         self.N_img = 1
         
         #Imaging
-        self.frequency_detuned_imaging = 27.e6
+        self.frequency_detuned_imaging = 25.78e6
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1.
@@ -35,7 +35,7 @@ class ExptParams():
         self.t_gm_ramp = 2.e-3
 
         #push beam
-        self.detune_push = 2.9
+        self.detune_push = 0.
         self.amp_push = 0.188
 
         #2D MOT
@@ -45,10 +45,10 @@ class ExptParams():
         self.amp_d2_r_2dmot = 0.1880
 
         #MOT
-        self.detune_d2_c_mot = -0.2
-        self.amp_d2_c_mot = 0.2
-        self.detune_d2_r_mot = -4.
-        self.amp_d2_r_mot = 0.073
+        self.detune_d2_c_mot = -2.1
+        self.amp_d2_c_mot = 0.1
+        self.detune_d2_r_mot = -3.
+        self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 3.25
         self.v_pd_d1_c_mot = 1.8

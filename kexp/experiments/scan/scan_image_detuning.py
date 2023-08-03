@@ -25,7 +25,7 @@ class scan_image_detuning(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_tof = 50 * 1.e-6 # mot
         
-        self.p.xvar_image_detuning = np.linspace(20,70,self.p.N_shots) * 1.e6
+        self.p.xvar_image_detuning = np.linspace(10,30,self.p.N_shots) * 1.e6
 
         self.xvarnames = ['xvar_image_detuning']
 

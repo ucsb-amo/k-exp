@@ -306,6 +306,52 @@ class Cooling():
             self.switch_d2_3d(0)
         delay(t)
 
+    @kernel
+    def gm_ramp(self,t,t_ramp,
+            detune_d1_c = dv,
+            v_pd_d1_c = dv,
+            detune_d1_r = dv,
+            v_pd_d1_r = dv,
+            detune_d1 = dv,
+            dds_mgr_idx = 0):
+        
+        ### Start Defaults ###
+        if detune_d1 != dv:
+            detune_d1_c = detune_d1
+            detune_d1_r = detune_d1
+        else:
+            if detune_d1_c == dv:
+                detune_d1_c = self.params.detune_d1_c_gm
+            if detune_d1_r == dv:
+                detune_d1_r = self.params.detune_d1_r_gm
+        
+        if v_pd_d1_c == dv:
+            v_pd_d1_c = self.params.v_pd_d1_c_gm
+        if v_pd_d1_r == dv:
+            v_pd_d1_r = self.params.v_pd_d1_r_gm
+        ### End Defaults ###
+
+        delay(-10*us)
+        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
+                                       v_pd=v_pd_d1_c)
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
+                                       v_pd=v_pd_d1_r)
+        delay(10*us)
+
+        delay(-10*us)
+        self.dds.load_profile(dds_mgr_idx)
+
+        with parallel:
+            self.ttl_magnets.off()
+            self.switch_d1_3d(1)
+            self.switch_d2_3d(0)
+        delay(t)
+        self.dds.enable_profile(dds_mgr_idx)
+        delay(t_ramp)
+        self.dds.disable_profile(dds_mgr_idx)
+        
+
     #GM with only D1, turning B field off
     @kernel
     def gm_tweezer(self,t,

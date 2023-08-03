@@ -142,6 +142,7 @@ class Image():
 
         if detuning == -10.e9:
             detuning = self.params.frequency_detuned_imaging
+            aprint('beans')
 
         f_minimum_offset_frequency = 150.e6
 

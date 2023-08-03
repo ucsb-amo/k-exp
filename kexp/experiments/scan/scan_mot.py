@@ -20,17 +20,17 @@ class scan_mot(EnvExperiment, Base):
 
         self.p.t_tof = 1000.e-6
 
-        self.p.xvar1_detune_d2_c_mot = np.linspace(-0.,1.5,self.p.N_shots)
-        self.p.xvar2_detune_d2_r_mot = np.linspace(-4.5,-2.5,self.p.N_shots)
+        self.p.xvar_detune_d2_c_mot = np.linspace(-2.5,-1.,self.p.N_shots)
+        self.p.xvar_detune_d2_r_mot = np.linspace(-5.,-1.,self.p.N_shots)
 
-        # self.p.xvar1_amp_d2_c_mot = np.linspace(.15,.25,self.p.N_shots)
-        # self.p.xvar2_amp_d2_r_mot = np.linspace(.05,.095,self.p.N_shots)
+        # self.p.xvar_amp_d2_c_mot = np.linspace(.09,.13,self.p.N_shots)
+        # self.p.xvar_amp_d2_r_mot = np.linspace(.13,.188,self.p.N_shots)
 
-        self.xvarnames = ['xvar1_detune_d2_c_mot','xvar2_detune_d2_r_mot']
+        self.xvarnames = ['xvar_detune_d2_c_mot','xvar_detune_d2_r_mot']
         
-        # self.xvarnames = ['xvar1_amp_d2_c_mot','xvar2_amp_d2_r_mot']
+        # self.xvarnames = ['xvar_amp_d2_c_mot','xvar_amp_d2_r_mot']
 
-        self.get_N_img()
+        self.finish_build()
 
     @kernel
     def run(self):
@@ -42,11 +42,15 @@ class scan_mot(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar1 in self.p.xvar1_detune_d2_c_mot:
-            for xvar2 in self.p.xvar2_detune_d2_r_mot:
+        for xvar1 in self.p.xvar_detune_d2_c_mot:
+            for xvar2 in self.p.xvar_detune_d2_r_mot:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s, detune_d2_c=xvar1, detune_d2_r=xvar2)
+
+                ### Turn off push beam and 2D MOT to stop the atomic beam ###
+                self.dds.push.off()
+                self.switch_d2_2d(0)
 
                 self.release()
 
@@ -60,8 +64,11 @@ class scan_mot(EnvExperiment, Base):
 
     def analyze(self):
 
-        self.p.detune_d2_c_mot = self.p.xvar1_detune_d2_c_mot
-        self.p.detune_d2_r_mot = self.p.xvar2_detune_d2_r_mot
+        self.p.detune_d2_c_mot = self.p.xvar_detune_d2_c_mot
+        self.p.detune_d2_r_mot = self.p.xvar_detune_d2_r_mot
+        
+        # self.p.amp_d2_c_mot = self.p.xvar_amp_d2_c_mot
+        # self.p.amp_d2_r_mot = self.p.xvar_amp_d2_r_mot
 
         self.camera.Close()
 
