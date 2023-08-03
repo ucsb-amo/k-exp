@@ -28,8 +28,7 @@ class dds_frame():
     def __init__(self, dds_state = dds_state, dac_device = []):
 
         self.core = DummyCore()
-        # self.dds_manager = [AD9910Manager(core = self.core) for _ in range(2)]
-        self.dds_manager = [AD9910Manager]
+        self.dds_manager = [DDSManager]
         self.dds_amp_calibration = DDS_Amplitude_Calibration()
         self.ramp_dt = RAMP_STEP_TIME
 
@@ -124,3 +123,24 @@ class dds_frame():
     def disable_profile(self, dds_mgr_idx=0):
         self.dds_manager[dds_mgr_idx].disable()
         self.dds_manager[dds_mgr_idx].commit_disable()
+
+class DDSManager(AD9910Manager):
+    def __init__(self,core):
+        AD9910Manager().__init__(core=core)
+        self.DDS_with_ramps = []
+
+    def append_ramp(self, dds:DDS, frequency_src=0.0, phase_src=0.0, amplitude_src=1.0):
+        self.append(dds.dds_device, frequency_src=frequency_src, phase_src=phase_src, amplitude_src=amplitude_src)
+        self.DDS_with_ramps.append(dds)
+
+    def other_dds_to_single_tone_ram(self, dds_array):
+        ch_with_ram = [(dds.urukul_idx,dds.ch) for dds in self.DDS_with_ramps]
+        uru_with_ram = set([ch[0] for ch in ch_with_ram])
+        for uru in uru_with_ram:
+            all_ch = set([0,1,2,3])
+            ch_with_ram_on_this_uru = [ch[1] for ch in ch_with_ram if ch[0] == uru]
+            ch_without_ram_on_this_uru = all_ch.difference(ch_with_ram_on_this_uru)
+            
+            for ch in ch_without_ram_on_this_uru:
+                dds = dds_array[uru][ch]
+                self.append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=dds.amplitude)
