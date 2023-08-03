@@ -85,7 +85,7 @@ class DDS():
    
    @portable(flags={"fast-math"})
    def frequency_to_detuning(self,frequency,single_pass=False) -> TFloat:
-      frequency = float(frequency)
+      frequency = float(frequency) / 1e6
       f_shift_to_resonance = 461.7 / 2
       linewidth_MHz = 6
       detuning = (2 * frequency - self.aom_order * f_shift_to_resonance) / linewidth_MHz
