@@ -24,7 +24,7 @@ class Devices():
         self.core_dma = self.get_device("core_dma")
         self.zotino = self.get_device("zotino0")
 
-        self.dds = dds_frame(dac_device=self.zotino)
+        self.dds = dds_frame(dac_device=self.zotino, core=self.core)
         self.dds.dds_manager = [DDSManager(self.core)]
 
         self.get_dds_devices()
