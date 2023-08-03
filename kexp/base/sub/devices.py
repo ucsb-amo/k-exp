@@ -25,7 +25,7 @@ class Devices():
         self.zotino = self.get_device("zotino0")
 
         self.dds = dds_frame(dac_device=self.zotino)
-        self.dds.dds_manager = AD9910Manager(core=self.core)
+        self.dds.dds_manager = [AD9910Manager(core=self.core) for _ in range(2)]
 
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list

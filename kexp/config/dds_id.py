@@ -4,7 +4,7 @@ from artiq.coredevice import ad53xx
 from artiq.experiment import kernel
 
 from kexp.config.dds_state import dds_state
-from kexp.control.artiq.DDS import DDS
+from kexp.control import DDS, DummyCore
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 
 from jax import AD9910Manager, RAMProfile, RAMType
@@ -27,7 +27,9 @@ class dds_frame():
     '''
     def __init__(self, dds_state = dds_state, dac_device = []):
 
-        self.dds_manager = AD9910Manager
+        self.core = DummyCore()
+        # self.dds_manager = [AD9910Manager(core = self.core) for _ in range(2)]
+        self.dds_manager = [AD9910Manager]
         self.dds_amp_calibration = DDS_Amplitude_Calibration()
         self.ramp_dt = RAMP_STEP_TIME
 
@@ -99,26 +101,26 @@ class dds_frame():
             ramp_dt = dt
         return N_points, ramp_dt
 
-    def set_frequency_ramp_profile(self, dds:DDS, freq_list, dt_ramp:float, dwell_end=True):
+    def set_frequency_ramp_profile(self, dds:DDS, freq_list, dt_ramp:float, dwell_end=True, dds_mgr_idx=0):
         if isinstance(freq_list,np.ndarray):
             freq_list = list(freq_list)
         this_profile = RAMProfile(
             dds.dds_device, freq_list, dt_ramp, RAMType.FREQ, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
-        self.dds_manager.append(dds.dds_device, frequency_src=this_profile, amplitude_src=dds.amplitude)
+        self.dds_manager[dds_mgr_idx].append(dds.dds_device, frequency_src=this_profile, amplitude_src=dds.amplitude)
         
-    def set_amplitude_ramp_profile(self, dds:DDS, amp_list, dt_ramp:float, dwell_end=True):
+    def set_amplitude_ramp_profile(self, dds:DDS, amp_list, dt_ramp:float, dwell_end=True, dds_mgr_idx=0):
         if isinstance(amp_list,np.ndarray):
             amp_list = list(amp_list)
         this_profile = RAMProfile(
             dds.dds_device, amp_list, dt_ramp, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
-        self.dds_manager.append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=this_profile)
+        self.dds_manager[dds_mgr_idx].append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=this_profile)
     
     @kernel
-    def enable_profile(self):
-        self.dds_manager.enable()
-        self.dds_manager.commit_enable()
+    def enable_profile(self, dds_mgr_idx=0):
+        self.dds_manager[dds_mgr_idx].enable()
+        self.dds_manager[dds_mgr_idx].commit_enable()
 
     @kernel
-    def disable_profile(self):
-        self.dds_manager.disable()
-        self.dds_manager.commit_disable()
+    def disable_profile(self, dds_mgr_idx=0):
+        self.dds_manager[dds_mgr_idx].disable()
+        self.dds_manager[dds_mgr_idx].commit_disable()
