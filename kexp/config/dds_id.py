@@ -122,7 +122,7 @@ class dds_frame():
         self.populate_dds_mgrs(self, dds_mgr_idx)
         this_profile = RAMProfile(
             dds.dds_device, freq_list, dt_ramp, RAMType.FREQ, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
-        self.dds_manager[dds_mgr_idx].append(dds.dds_device, frequency_src=this_profile, amplitude_src=dds.amplitude)
+        self.dds_manager[dds_mgr_idx].append_ramp(dds, frequency_src=this_profile, amplitude_src=dds.amplitude)
         
     def set_amplitude_ramp_profile(self, dds:DDS, amp_list, dt_ramp:float, dwell_end=True, dds_mgr_idx=0):
         """Define an amplitude ramp profile and append to the specified DDSManager object.
@@ -144,7 +144,7 @@ class dds_frame():
         self.populate_dds_mgrs(self, dds_mgr_idx)
         this_profile = RAMProfile(
             dds.dds_device, amp_list, dt_ramp, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
-        self.dds_manager[dds_mgr_idx].append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=this_profile)
+        self.dds_manager[dds_mgr_idx].append_ramp(dds, frequency_src=dds.frequency, amplitude_src=this_profile)
 
     def populate_dds_mgrs(self, dds_mgr_idx):
         '''Create a new DDSManager and add to the list if the specified number
@@ -169,6 +169,10 @@ class dds_frame():
         self.dds_manager[dds_mgr_idx].disable()
         self.dds_manager[dds_mgr_idx].commit_disable()
 
+    def cleanup_dds_ramps(self):
+        for dds_mgr in self.dds_manager:
+            dds_mgr.other_dds_to_single_tone_ram(dds_array=self.dds_array)
+
 class DDSManager(AD9910Manager):
     def __init__(self,core=DummyCore()):
         AD9910Manager().__init__(core=core)
@@ -179,13 +183,25 @@ class DDSManager(AD9910Manager):
         self.DDS_with_ramps.append(dds)
 
     def other_dds_to_single_tone_ram(self, dds_array):
+        '''For DDS channels that are not being ramped which live on the same
+        urukul card as one that has a ramp profile set in this DDSManager,
+        define a RAM profile which is single-frequency, single-amplitude to
+        maintain that channel's output when the RAM profiles for this DDSManager
+        are enabled.'''
+
+        # figure out which dds channels are being ramped on this DDSManager
         ch_with_ram = [(dds.urukul_idx,dds.ch) for dds in self.DDS_with_ramps]
         uru_with_ram = set([ch[0] for ch in ch_with_ram])
+
+        # loop over the urukul cards which have a DDS being ramped
         for uru in uru_with_ram:
             all_ch = set([0,1,2,3])
+            # figure out which channels on this urukul are being ramped
             ch_with_ram_on_this_uru = [ch[1] for ch in ch_with_ram if ch[0] == uru]
+            # figure out which channels on this urukul are not being ramped
             ch_without_ram_on_this_uru = all_ch.difference(ch_with_ram_on_this_uru)
-            
+            # loop over those not being ramped
             for ch in ch_without_ram_on_this_uru:
                 dds = dds_array[uru][ch]
+                # append a single-frequency, single-amplitude RAM profile.
                 self.append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=dds.amplitude)
