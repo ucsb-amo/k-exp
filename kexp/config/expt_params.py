@@ -24,7 +24,7 @@ class ExptParams():
         self.N_img = 1
         
         #Imaging
-        self.frequency_detuned_imaging = 0.
+        self.frequency_detuned_imaging = 27.e6
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1.
@@ -45,9 +45,9 @@ class ExptParams():
         self.amp_d2_r_2dmot = 0.1880
 
         #MOT
-        self.detune_d2_c_mot = -0.5
+        self.detune_d2_c_mot = -0.2
         self.amp_d2_c_mot = 0.2
-        self.detune_d2_r_mot = -4.5
+        self.detune_d2_r_mot = -4.
         self.amp_d2_r_mot = 0.073
 
         self.detune_d1_c_mot = 3.25

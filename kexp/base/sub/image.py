@@ -26,10 +26,10 @@ class Image():
     @kernel
     def pulse_imaging_light(self,t,detuning=dv,set_img_detuning=True):
 
-        if set_img_detuning:
-            if detuning == dv:
-                detuning = self.params.frequency_detuned_imaging
-            self.set_imaging_detuning(detuning = detuning)
+        # if set_img_detuning:
+        #     if detuning == dv:
+        #         detuning = self.params.frequency_detuned_imaging
+        #     self.set_imaging_detuning(detuning = detuning)
             
         self.dds.imaging.on()
         delay(t)
@@ -161,6 +161,11 @@ class Image():
         offset_lock_multiplier_N = 8
         f_beatlock_ref = f_offset / offset_lock_multiplier_N
         
+        if f_beatlock_ref < 0.:
+            try: 
+                self.camera.Close()
+            except: pass
+            raise ValueError("You tried to set the DDS to a negative frequency!")
         self.dds.beatlock_ref.set_dds(frequency=f_beatlock_ref)
         self.dds.beatlock_ref.on()
 

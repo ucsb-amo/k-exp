@@ -2,6 +2,8 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
 
+from kexp.util.artiq.async_print import aprint
+
 import numpy as np
 
 class scan_image_detuning(EnvExperiment, Base):
@@ -19,15 +21,15 @@ class scan_image_detuning(EnvExperiment, Base):
 
         self.p.t_andor_expose = 50. * 1.e-3
 
-        self.p.N_shots = 7
+        self.p.N_shots = 20
         self.p.N_repeats = 1
-        self.p.t_tof = 1000 * 1.e-6 # mot
+        self.p.t_tof = 50 * 1.e-6 # mot
         
-        self.p.xvar_image_detuning = np.linspace(-300,300,self.p.N_shots) * 1.e6
+        self.p.xvar_image_detuning = np.linspace(20,70,self.p.N_shots) * 1.e6
 
         self.xvarnames = ['xvar_image_detuning']
 
-        self.finish_build()
+        self.finish_build(shuffle=False)
 
     @kernel
     def run(self):
@@ -40,6 +42,9 @@ class scan_image_detuning(EnvExperiment, Base):
         self.kill_mot(self.p.t_mot_kill * s)
 
         for x_var in self.p.xvar_image_detuning:
+
+            self.set_imaging_detuning(detuning=x_var)
+
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)

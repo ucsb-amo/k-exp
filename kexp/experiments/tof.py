@@ -19,7 +19,7 @@ class tof(EnvExperiment, Base):
 
         self.p.t_andor_expose = 50. * 1.e-3
 
-        self.p.N_shots = 2
+        self.p.N_shots = 5
         self.p.N_repeats = 1
         self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
