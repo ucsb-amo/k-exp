@@ -4,7 +4,7 @@ from kexp import Base
 
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class tof_discrete_ramp(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
@@ -37,6 +37,14 @@ class tof(EnvExperiment, Base):
         self.r_ramp_start = 4.1
         self.r_ramp_end = 1.1
 
+        self.t_ramp = 5.e-3
+
+        self.steps = 7
+        self.step_time = self.t_ramp / self.steps
+
+        self.c_ramp = np.linspace(self.c_ramp_start, self.c_ramp_end, self.steps)
+        self.r_ramp = np.linspace(self.r_ramp_start, self.r_ramp_end, self.steps)
+
         self.xvarnames = ['t_tof']
 
         self.trig_ttl = self.get_device("ttl14")
@@ -65,15 +73,23 @@ class tof(EnvExperiment, Base):
 
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.trig_ttl.on()
+            self.trig_ttl.on()
             self.gm(self.p.t_gm * s)
-            # self.trig_ttl.off()
+            
 
-            # self.gm_tweezer(self.p.t_tweezer_hold * s)
+            for n in range(self.steps):
+                delay(-10*us)
+                self.dds.d1_3d_c.set_dds_gamma(v_pd=self.c_ramp[n])
+                delay_mu(self.params.t_rtio_mu)
+                self.dds.d1_3d_r.set_dds_gamma(v_pd=self.r_ramp[n])
+                delay(10*us)
 
-            # self.gm_ramp(self.p.t_gm_ramp * s)
-
-            self.gm_ramp_discrete(t_ramp=self.p.t_gm_ramp * s, v_pd_d1_c_s=self.c_ramp_start, v_pd_d1_c_e=self.c_ramp_end, v_pd_d1_r_s=self.r_ramp_start, v_pd_d1_r_e=self.r_ramp_end)
+                with parallel:
+                    self.ttl_magnets.off()
+                    self.switch_d1_3d(1)
+                    self.switch_d2_3d(0)
+                delay(self.step_time)
+            self.trig_ttl.off()
 
             # self.mot_reload(self.p.t_mot_reload * s)
             
