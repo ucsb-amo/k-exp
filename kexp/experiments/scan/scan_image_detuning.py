@@ -17,17 +17,33 @@ class scan_image_detuning(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tweezer_hold = 50. * 1.e-3
+        self.p.t_tweezer_hold = 20. * 1.e-3
 
         self.p.t_andor_expose = 50. * 1.e-3
 
-        self.p.N_shots = 20
+        self.p.N_shots = 7
         self.p.N_repeats = 1
         self.p.t_tof = 20 * 1.e-6 # mot
         
-        self.p.xvar_image_detuning = np.linspace(0.,30.,self.p.N_shots) * 1.e6
+        self.p.xvar_image_detuning = np.linspace(-290.,-280.,self.p.N_shots) * 1.e6
 
-        self.camera_params.exposure_time = 5.0e-3
+        self.camera_params.exposure_time = 20.0e-3
+
+        self.trig_ttl = self.get_device("ttl14")
+        
+        self.c_ramp_start = 4.5
+        self.c_ramp_end = 1.25
+
+        self.r_ramp_start = 3.1
+        self.r_ramp_end = 1.25
+
+        self.t_ramp = 8.e-3
+
+        self.steps = 10
+        self.step_time = self.t_ramp / self.steps
+
+        self.c_ramp = np.linspace(self.c_ramp_start, self.c_ramp_end, self.steps)
+        self.r_ramp = np.linspace(self.r_ramp_start, self.r_ramp_end, self.steps)
 
         self.xvarnames = ['xvar_image_detuning']
 
@@ -60,9 +76,27 @@ class scan_image_detuning(EnvExperiment, Base):
 
             # self.gm(self.p.t_gm * s)
 
-            self.gm_tweezer(self.p.t_tweezer_hold * s)
+            self.trig_ttl.on()
+            self.gm(self.p.t_gm * s)
+            self.dds.tweezer.on()
+            for n in range(self.steps):
+                delay(-10*us)
+                self.dds.d1_3d_c.set_dds_gamma(v_pd=self.c_ramp[n])
+                delay_mu(self.params.t_rtio_mu)
+                self.dds.d1_3d_r.set_dds_gamma(v_pd=self.r_ramp[n])
+                delay(10*us)
 
-            self.fl_image(detuning=x_var)
+                with parallel:
+                    self.ttl_magnets.off()
+                    self.switch_d1_3d(1)
+                    self.switch_d2_3d(0)
+                delay(self.step_time)
+
+            self.trig_ttl.off()
+
+            delay(self.p.t_tweezer_hold)
+
+            self.fl_image(detuning=x_var, with_light=True)
 
             # self.gm_ramp(self.p.t_gm_ramp * s)
 

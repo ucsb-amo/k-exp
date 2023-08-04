@@ -20,7 +20,8 @@ class tof_discrete_ramp(EnvExperiment, Base):
         self.p.t_andor_expose = 50. * 1.e-3
 
         self.p.N_shots = 5
-        self.p.N_repeats = 2
+        self.p.N_repeats = 3
+
         # self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # d1 cmot
@@ -31,15 +32,15 @@ class tof_discrete_ramp(EnvExperiment, Base):
 
         # self.p.amp_push = 0.
 
-        self.c_ramp_start = 5.5
-        self.c_ramp_end = 1.1
+        self.c_ramp_start = 4.5
+        self.c_ramp_end = 1.25
 
-        self.r_ramp_start = 4.1
-        self.r_ramp_end = 1.1
+        self.r_ramp_start = 3.1
+        self.r_ramp_end = 1.25
 
-        self.t_ramp = 5.e-3
+        self.t_ramp = 8.e-3
 
-        self.steps = 7
+        self.steps = 10
         self.step_time = self.t_ramp / self.steps
 
         self.c_ramp = np.linspace(self.c_ramp_start, self.c_ramp_end, self.steps)
@@ -76,7 +77,6 @@ class tof_discrete_ramp(EnvExperiment, Base):
             self.trig_ttl.on()
             self.gm(self.p.t_gm * s)
             
-
             for n in range(self.steps):
                 delay(-10*us)
                 self.dds.d1_3d_c.set_dds_gamma(v_pd=self.c_ramp[n])
@@ -89,6 +89,9 @@ class tof_discrete_ramp(EnvExperiment, Base):
                     self.switch_d1_3d(1)
                     self.switch_d2_3d(0)
                 delay(self.step_time)
+
+            # delay(self.p.t_gm * s)
+
             self.trig_ttl.off()
 
             # self.mot_reload(self.p.t_mot_reload * s)

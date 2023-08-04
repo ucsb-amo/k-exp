@@ -31,12 +31,6 @@ class tof(EnvExperiment, Base):
 
         # self.p.amp_push = 0.
 
-        self.c_ramp_start = 5.5
-        self.c_ramp_end = 1.1
-
-        self.r_ramp_start = 4.1
-        self.r_ramp_end = 1.1
-
         self.xvarnames = ['t_tof']
 
         self.trig_ttl = self.get_device("ttl14")
@@ -72,8 +66,6 @@ class tof(EnvExperiment, Base):
             # self.gm_tweezer(self.p.t_tweezer_hold * s)
 
             # self.gm_ramp(self.p.t_gm_ramp * s)
-
-            self.gm_ramp_discrete(t_ramp=self.p.t_gm_ramp * s, v_pd_d1_c_s=self.c_ramp_start, v_pd_d1_c_e=self.c_ramp_end, v_pd_d1_r_s=self.r_ramp_start, v_pd_d1_r_e=self.r_ramp_end)
 
             # self.mot_reload(self.p.t_mot_reload * s)
             
