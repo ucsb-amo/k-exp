@@ -94,19 +94,25 @@ class Image():
         if detuning == dv:
             detuning = self.params.frequency_detuned_imaging
 
+        self.dds.imaging.set_dds_gamma(amplitude=.3)
+
         self.trigger_camera()
         if with_light:
-            self.pulse_imaging_light(self.camera_params.exposure_time * s, detuning=detuning)
-            # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+            # self.pulse_imaging_light(self.camera_params.exposure_time * s, detuning=detuning)
+            self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
-        self.dds.tweezer.off()
+        # self.dds.tweezer.off()
+        self.switch_d1_3d(0)
 
         delay(self.params.t_light_only_image_delay * s)
+        
+        self.switch_d1_3d(1)
+
         self.trigger_camera()
         if with_light:
-            self.pulse_imaging_light(self.camera_params.exposure_time * s, set_img_detuning=False)
-            # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+            # self.pulse_imaging_light(self.camera_params.exposure_time * s, detuning=detuning)
+            self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
     @kernel

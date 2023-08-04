@@ -25,30 +25,24 @@ class tof(EnvExperiment, Base):
 
         # self.p.amp_push = 0.
 
-        self.p.t_gm_ramp = np.linspace(1.,10.,5)*1.e-3
+        self.p.t_gm_ramp = 7.e-3
         self.p.amp_frac_gm_ramp = np.linspace(0.1,1.0,5)
 
-        self.xvarnames = ['t_gm_ramp','amp_frac_gm_ramp']
+        self.xvarnames = ['amp_frac_gm_ramp']
 
-        idx = 0
-        N_x1 = len(self.p.t_gm_ramp)
-        N_x2 = len(self.p.amp_frac_gm_ramp)
-        self.idx_mat = np.empty((N_x1,N_x2),dtype=int)
-        for ii in range(N_x1):
-            for jj in range(N_x2):
+        self.idx = 0
+        for ii in range(len(self.p.amp_frac_gm_ramp)):
 
-                N, dt = self.dds.get_ramp_dt(self.p.t_gm_ramp[ii])
+            N, dt = self.dds.get_ramp_dt(self.p.t_gm_ramp)
 
-                a_ic, a_ir = self.dds.d1_3d_c.amplitude, self.dds.d1_3d_r.amplitude
-                a_c = np.linspace(1,self.p.amp_frac_gm_ramp[jj],N)*a_ic
-                a_r = np.linspace(1,self.p.amp_frac_gm_ramp[jj],N)*a_ir
+            a_ic, a_ir = self.dds.d1_3d_c.amplitude, self.dds.d1_3d_r.amplitude
+            a_c = np.linspace(1,self.p.amp_frac_gm_ramp[ii],N)*a_ic
+            a_r = np.linspace(1,self.p.amp_frac_gm_ramp[ii],N)*a_ir
 
-                self.dds.set_amplitude_ramp_profile(self.dds.d1_3d_c,amp_list=a_c,dt_ramp=dt,dds_mgr_idx=idx)
-                self.dds.set_amplitude_ramp_profile(self.dds.d1_3d_r,amp_list=a_r,dt_ramp=dt,dds_mgr_idx=idx)
+            self.dds.set_amplitude_ramp_profile(self.dds.d1_3d_c,amp_list=a_c,dt_ramp=dt,dds_mgr_idx=self.idx)
+            self.dds.set_amplitude_ramp_profile(self.dds.d1_3d_r,amp_list=a_r,dt_ramp=dt,dds_mgr_idx=self.idx)
 
-                self.idx_mat[ii][jj] = idx
-
-                idx += 1
+            self.idx += 1
 
         self.trig_ttl = self.get_device("ttl14")
 
@@ -64,8 +58,7 @@ class tof(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for ii in range(len(self.p.t_gm_ramp)):
-            for jj in range(len(self.p.amp_frac_gm_ramp)):
+        for idx in range(self.idx):
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
@@ -77,16 +70,10 @@ class tof(EnvExperiment, Base):
 
                 self.cmot_d1(self.p.t_d1cmot * s)
 
-                # self.gm(self.p.t_gm * s)
-
-                # self.gm_tweezer(self.p.t_tweezer_hold * s)
-
                 self.trig_ttl.on()
-                # self.gm(self.p.t_gm)
-                self.gm_ramp(self.p.t_gm, self.p.t_gm_ramp[ii], dds_mgr_idx=self.idx_mat[ii][jj])
+                # self.gm_ramp(self.p.t_gm, self.p.t_gm_ramp, dds_mgr_idx=idx)
+                self.gm(self.p.t_gm+self.p.t_gm_ramp)
                 self.trig_ttl.off()
-
-                # self.mot_reload(self.p.t_mot_reload * s)
                 
                 self.release()
                 

@@ -48,7 +48,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
             self.shuffle_xvars()
         self.get_N_img()
 
-        self.dds.cleanup_dds_ramps()
+        # self.dds.cleanup_dds_ramps()
 
     @kernel
     def init_kernel(self, set_and_switch_off_dds = True, init_dac = True):

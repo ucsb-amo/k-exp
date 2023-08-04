@@ -349,6 +349,7 @@ class Cooling():
         delay(t)
         self.dds.enable_profile(dds_mgr_idx)
         delay(t_ramp)
+        # delay(t)
         self.dds.disable_profile(dds_mgr_idx)
         
 

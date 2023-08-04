@@ -11,7 +11,7 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_camera_trigger = camera_params.t_camera_trigger
         self.t_imaging_pulse = 5.e-6
-        self.t_light_only_image_delay = 100.e-3
+        self.t_light_only_image_delay = 500.e-3
         self.t_dark_image_delay = 25.e-3
         self.t_camera_exposure = 0. # camera init will default to min exposure
         self.t_grab_start_wait = camera_params.connection_delay
@@ -30,9 +30,9 @@ class ExptParams():
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 5.e-3
-        self.t_d1cmot = 7.e-3
-        self.t_gm = 2.5e-3
-        self.t_gm_ramp = 2.e-3
+        self.t_d1cmot = 1.3e-3
+        self.t_gm = 2.e-3
+        self.t_gm_ramp = 5.e-3
 
         #push beam
         self.detune_push = 0.
@@ -41,13 +41,13 @@ class ExptParams():
         #2D MOT
         self.detune_d2_c_2dmot = .57
         self.amp_d2_c_2dmot = 0.1880
-        self.detune_d2_r_2dmot = -3.
+        self.detune_d2_r_2dmot = -2.5
         self.amp_d2_r_2dmot = 0.1880
 
         #MOT
-        self.detune_d2_c_mot = -2.1
-        self.amp_d2_c_mot = 0.1
-        self.detune_d2_r_mot = -3.
+        self.detune_d2_c_mot = -1.8
+        self.amp_d2_c_mot = 0.14
+        self.detune_d2_r_mot = -3.2
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 3.25
@@ -55,7 +55,7 @@ class ExptParams():
         self.detune_d1_r_mot = 3.25
         self.v_pd_d1_r_mot = 2.4
 
-        self.v_mot_current = .8 # 3.4A on 3D MOT coils
+        self.v_mot_current = .75 # 3.4A on 3D MOT coils
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.5
@@ -65,21 +65,21 @@ class ExptParams():
         self.v_d2cmot_current = 2.5
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 6.4
-        self.v_pd_d1_c_d1cmot = 3.0
-        self.detune_d2_r_d1cmot = -2.3
-        self.amp_d2_r_d1cmot = 0.03
+        self.detune_d1_c_d1cmot = 7.1
+        self.v_pd_d1_c_d1cmot = 5.0
+        self.detune_d2_r_d1cmot = -1.5
+        self.amp_d2_r_d1cmot = 0.07
 
-        self.v_d1cmot_current = .0
+        self.v_d1cmot_current = 0.5
         
         #GM
-        self.detune_gm = 7.2
+        self.detune_gm = 7.4
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
-        self.v_pd_d1_c_gm = 3.2 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.v_pd_d1_c_gm = 1.2 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.v_pd_d1_r_gm = 1.1
+        self.v_pd_d1_r_gm = 2.
 
         #GM ramp
         self.power_ramp_factor_gmramp = 10

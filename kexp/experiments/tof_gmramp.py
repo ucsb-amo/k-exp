@@ -19,19 +19,33 @@ class tof(EnvExperiment, Base):
 
         self.p.t_andor_expose = 50. * 1.e-3
 
+        self.p.t_gm_ramp = 5.e-3
+
+        self.core_dma
+
         self.p.N_shots = 5
-        self.p.N_repeats =3
-        # self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
+        self.p.N_repeats = 1
+        # self.p.t_tof = np.linspace(500,1500,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(10000,15000,self.p.N_shots) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(3000,7000,self.p.N_shots) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(3000,6000,self.p.N_shots) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
 
         # self.p.amp_push = 0.
 
         self.xvarnames = ['t_tof']
+
+        N, dt = self.dds.get_ramp_dt(self.p.t_gm_ramp)
+
+        a_ic, a_ir = self.dds.d1_3d_c.amplitude, self.dds.d1_3d_r.amplitude
+        self.p.amp_div_gm_ramp = 2.
+        a_c = np.linspace(a_ic,a_ic/self.p.amp_div_gm_ramp,N)
+        a_r = np.linspace(a_ir,a_ic/self.p.amp_div_gm_ramp,N)
+
+        self.dds.set_amplitude_ramp_profile(self.dds.d1_3d_c,amp_list=a_c,dt_ramp=dt,dds_mgr_idx=0)
+        self.dds.set_amplitude_ramp_profile(self.dds.d1_3d_r,amp_list=a_r,dt_ramp=dt,dds_mgr_idx=0)
 
         self.trig_ttl = self.get_device("ttl14")
 
@@ -59,13 +73,14 @@ class tof(EnvExperiment, Base):
 
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            self.trig_ttl.on()
-            self.gm(self.p.t_gm * s)
-            self.trig_ttl.off()
+            # self.gm(self.p.t_gm * s)
 
             # self.gm_tweezer(self.p.t_tweezer_hold * s)
 
-            # self.gm_ramp(self.p.t_gm_ramp * s)
+            self.trig_ttl.on()
+            self.gm(self.p.t_gm)
+            # self.gm_ramp(t=self.p.t_gm, t_ramp=self.p.t_gm_ramp)
+            self.trig_ttl.off()
 
             # self.mot_reload(self.p.t_mot_reload * s)
             

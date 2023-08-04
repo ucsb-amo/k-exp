@@ -223,7 +223,6 @@ class atomdata():
                     idx = i1*n2 + i2
                     self.img_atoms[i1][i2] = self._img_atoms[idx]
                     self.img_light[i1][i2] = self._img_light[idx]
-                    self.img_dark[i1][i2] = self._img_dark[idx]
                     
     def _split_images_fluor(self):
         
