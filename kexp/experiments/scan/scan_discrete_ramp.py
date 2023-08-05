@@ -17,18 +17,6 @@ class scan_discrete_ramp(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(3000.,7000.,3) * 1.e-6
         self.p.t_tof = 5000 * 1.e-6
 
-        # self.p.xvar_amp_push = np.linspace(.00,.2,5)
-
-        # self.p.xvar_detune_push = np.linspace(-4.0,4.,5)
-
-        # self.p.xvar_v_mot_current = np.linspace(.7,.9,5)
-
-        # self.p.xvar_v_d1cmot_current = np.linspace(0.2,.6,5)
-
-        # self.p.xvar_t_gm = np.linspace(.3,2.,5) * 1.e-3
-
-        # self.p.xvar_t_d1cmot = np.linspace(.3,10.,5) * 1.e-3
-
         #Ramp params
         self.p.xvar_c_ramp_start = np.linspace(5.5,2.,5)
         self.p.xvar_r_ramp_start = np.linspace(4.5,2.,5)
@@ -39,6 +27,8 @@ class scan_discrete_ramp(EnvExperiment, Base):
         # self.p.xvar_t_ramp = np.linspace(7.,12.,5) * 1.e-3
 
         self.xvarnames = ['self.p.xvar_c_ramp_start','self.p.xvar_r_ramp_start']
+
+        self.trig_ttl = self.get_device("ttl14")
 
         self.finish_build()
 
@@ -70,7 +60,8 @@ class scan_discrete_ramp(EnvExperiment, Base):
 
                 self.cmot_d1(self.p.t_d1cmot * s)
 
-                self.gm(self.p.t_gm * s, v_pd_d1_r=xvar)
+                self.trig_ttl.on()
+                self.gm(self.p.t_gm * s)
 
                 for n in range(self.steps):
                     delay(-10*us)
