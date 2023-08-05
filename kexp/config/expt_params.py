@@ -84,6 +84,18 @@ class ExptParams():
         #GM ramp
         self.power_ramp_factor_gmramp = 10
 
+        #Discrete GM ramp
+        #v_pd values for start and end of ramp
+        self.c_ramp_start = 4.5
+        self.c_ramp_end = 1.25
+
+        self.r_ramp_start = 3.1
+        self.r_ramp_end = 1.25
+
+        self.t_ramp = 8.e-3
+
+        self.steps = 10
+
         #1227
         self.frequency_ao_1227 = 80.e6
         self.amp_1227 = .45
