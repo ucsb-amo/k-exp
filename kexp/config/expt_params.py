@@ -51,9 +51,9 @@ class ExptParams():
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
-        self.v_pd_d1_c_mot = 1.8
+        self.v_pd_d1_c_mot = .5
         self.detune_d1_r_mot = 0.
-        self.v_pd_d1_r_mot = 2.4
+        self.v_pd_d1_r_mot = 5.5
 
         self.v_mot_current = .75 # 3.4A on 3D MOT coils
 

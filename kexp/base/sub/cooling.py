@@ -183,17 +183,18 @@ class Cooling():
                                  amplitude=amp_d2_r)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
-                                 v_pd=v_pd_c)
+                                 v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
-                                 amplitude=v_pd_r)
+                                 amplitude=v_pd_d1_r)
         delay(10*us)
         self.set_magnet_current(v = v_current)
         self.ttl_magnets.on()
         with parallel:
             self.switch_d2_3d(1)
-            self.switch_d1_3d(1)
+            
             self.dds.push.on()
+        self.switch_d1_3d(1)
         delay(t)
 
     #compress MOT by changing D2 detunings and raising B field

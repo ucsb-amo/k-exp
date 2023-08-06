@@ -24,7 +24,6 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(10000,15000,self.p.N_shots) * 1.e-6 # d1 cmot
         self.p.t_tof = np.linspace(3000,7000,self.p.N_shots) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload

@@ -18,9 +18,17 @@ class oneshot(EnvExperiment, Base):
 
         self.p.N_shots = 1
         self.p.N_repeats = 1
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 500.e-6
 
         self.p.dummy = np.linspace(1.,1.,self.p.N_shots)
+
+        
+        self.step_time = self.p.t_ramp / self.p.steps
+
+        self.c_ramp = np.linspace(self.p.c_ramp_start, self.p.c_ramp_end, self.p.steps)
+        self.r_ramp = np.linspace(self.p.r_ramp_start, self.p.r_ramp_end, self.p.steps)
+
+        self.trig_ttl = self.get_device("ttl14")
 
         self.xvarnames = ['dummy']
 
@@ -47,10 +55,26 @@ class oneshot(EnvExperiment, Base):
             self.switch_d2_2d(0)
             
             self.cmot_d1(self.p.t_d1cmot * s)
-            
+
+            self.trig_ttl.on()
             self.gm(self.p.t_gm * s)
             
-            # self.gm_ramp(self.p.t_gm_ramp * s)
+            for n in range(self.p.steps):
+                delay(-10*us)
+                self.dds.d1_3d_c.set_dds_gamma(v_pd=self.c_ramp[n])
+                delay_mu(self.params.t_rtio_mu)
+                self.dds.d1_3d_r.set_dds_gamma(v_pd=self.r_ramp[n])
+                delay(10*us)
+
+                with parallel:
+                    self.ttl_magnets.off()
+                    self.switch_d1_3d(1)
+                    self.switch_d2_3d(0)
+                delay(self.step_time)
+
+            # delay(self.p.t_gm * s)
+
+            self.trig_ttl.off()
             
             self.release()
             

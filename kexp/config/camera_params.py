@@ -34,6 +34,6 @@ andor_camera_params.exposure_time = 10.e-3
 andor_camera_params.connection_delay = 7.6
 andor_camera_params.t_camera_trigger = 10.e-6
 andor_camera_params.t_readout_time = 512 * 3.3e-6
-andor_camera_params.em_gain = 250.
+andor_camera_params.em_gain = 290.
 andor_camera_params.vs_speed = 2
 andor_camera_params.vs_amp = 2

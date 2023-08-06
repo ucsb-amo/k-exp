@@ -29,8 +29,8 @@ class scan_mot(EnvExperiment, Base):
         # self.p.xvar_detune_d1_c_mot = np.linspace(-1.,1.,self.p.N_shots)
         # self.p.xvar_detune_d1_r_mot = np.linspace(-1.,1.,self.p.N_shots)
 
-        self.p.xvar_v_pd_d1_c_mot = np.linspace(5.5,1.,self.p.N_shots)
-        self.p.xvar_v_pd_d1_r_mot = np.linspace(4.5,1.,self.p.N_shots)
+        self.p.xvar_v_pd_d1_c_mot = np.linspace(2,.5,self.p.N_shots)
+        self.p.xvar_v_pd_d1_r_mot = np.linspace(5.5,3.,self.p.N_shots)
 
         # self.xvarnames = ['xvar_detune_d2_c_mot','xvar_detune_d2_r_mot']
         

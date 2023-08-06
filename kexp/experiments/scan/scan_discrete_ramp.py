@@ -18,15 +18,20 @@ class scan_discrete_ramp(EnvExperiment, Base):
         self.p.t_tof = 5000 * 1.e-6
 
         #Ramp params
-        self.p.xvar_c_ramp_start = np.linspace(5.5,2.,5)
-        self.p.xvar_r_ramp_start = np.linspace(4.5,2.,5)
+        self.p.xvar_c_ramp_start = np.linspace(5.5,3.,5)
+        self.p.xvar_r_ramp_start = np.linspace(4.5,3.,5)
 
         # self.p.xvar_c_ramp_end = np.linspace(2.5,1.,5)
         # self.p.xvar_r_ramp_end = np.linspace(2.5,1.,5)
 
         # self.p.xvar_t_ramp = np.linspace(7.,12.,5) * 1.e-3
 
-        self.xvarnames = ['self.p.xvar_c_ramp_start','self.p.xvar_r_ramp_start']
+        
+        
+        self.c_ramp = np.linspace(xvar1, self.p.c_ramp_end, self.p.steps)
+        self.r_ramp = np.linspace(xvar2, self.p.r_ramp_end, self.p.steps)
+
+        self.xvarnames = ['xvar_c_ramp_start','xvar_r_ramp_start']
 
         self.trig_ttl = self.get_device("ttl14")
 
@@ -45,11 +50,6 @@ class scan_discrete_ramp(EnvExperiment, Base):
         for xvar1 in self.p.xvar_c_ramp_start:
 
             for xvar2 in self.p.xvar_r_ramp_start:
-
-                self.step_time = self.p.t_ramp / self.p.steps
-
-                self.c_ramp = np.linspace(xvar1, self.p.c_ramp_end, self.p.steps)
-                self.r_ramp = np.linspace(xvar2, self.p.r_ramp_end, self.p.steps)
 
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
