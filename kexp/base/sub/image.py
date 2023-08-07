@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential
+from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.config.dds_id import dds_frame
 from kexp.config.expt_params import ExptParams
 from kexp.config.camera_params import CameraParams
