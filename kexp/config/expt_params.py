@@ -35,6 +35,7 @@ class ExptParams():
         self.t_d1cmot = 1.3e-3
         self.t_gm = 1.5e-3
         self.t_gm_ramp = 5.e-3
+        self.t_tweezer_hold = 50.e-3
 
         #push beam
         self.detune_push = 0.
@@ -88,15 +89,14 @@ class ExptParams():
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.c_ramp_start = 4.5
-        self.c_ramp_end = 1.25
+        self.v_pd_c_gmramp_start = 4.5
+        self.v_pd_c_gmramp_end = 1.25
 
-        self.r_ramp_start = 3.1
-        self.r_ramp_end = 1.25
+        self.v_pd_r_gmramp_start = 3.1
+        self.v_pd_r_gmramp_end = 1.25
 
         self.t_ramp = 8.e-3
-
-        self.steps = 10
+        self.n_gmramp_steps = 50
 
         #1227
         self.frequency_ao_1227 = 80.e6
