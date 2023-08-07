@@ -25,6 +25,8 @@ class ExptParams():
         
         #Imaging
         self.frequency_detuned_imaging = 25.78e6
+        self.amp_imaging_fluor = 0.15
+        self.amp_imaging_abs = 0.08
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1.
