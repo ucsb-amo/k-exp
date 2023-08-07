@@ -37,7 +37,8 @@ def load_atomdata(idx=0, path = [], unshuffle_xvars=True, crop_type='mot') -> at
             file = list_of_files[-idx]
         if idx > 0:
             run_id = idx
-            rids = [int(file.split("_")[0].split("\\")[-1]) for file in list_of_files]
+            data_dir_depth_idx = len(data_dir.split('\\')[0:-1]) - 2 # accounts for data directory depth
+            rids = [int(file.split("_")[data_dir_depth_idx].split("\\")[-1]) for file in list_of_files]
             rid_idx = rids.index(run_id)
             file = list_of_files[rid_idx]
     else:
