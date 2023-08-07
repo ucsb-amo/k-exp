@@ -47,7 +47,6 @@ class Cooling():
             amp_push = self.params.amp_push
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_2d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
@@ -56,7 +55,6 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
-        delay(10*us)
         with parallel:
             self.switch_d2_2d(1)
         delay(t)
@@ -88,7 +86,6 @@ class Cooling():
             v_current = self.params.v_mot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
@@ -97,7 +94,6 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
-        delay(10*us)
         self.set_magnet_current(v = v_current)
         with parallel:
             self.ttl_magnets.on()
@@ -127,13 +123,11 @@ class Cooling():
             v_current = self.params.v_mot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
-        delay(10*us)
         self.set_magnet_current(v = v_current)
         with parallel:
             self.ttl_magnets.on()
@@ -175,7 +169,6 @@ class Cooling():
         if v_current == dv:
             v_current = self.params.v_mot_current
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
@@ -187,7 +180,6 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
                                  amplitude=v_pd_d1_r)
-        delay(10*us)
         self.set_magnet_current(v = v_current)
         self.ttl_magnets.on()
         with parallel:
@@ -219,12 +211,10 @@ class Cooling():
             v_current = self.params.v_d2cmot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                        amplitude=amp_d2_c)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                        amplitude=amp_d2_r)
-        delay(10*us)
         with parallel:
             self.switch_d2_3d(1)
             self.set_magnet_current(v = v_current)
@@ -252,13 +242,11 @@ class Cooling():
             v_current = self.params.v_d1cmot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
                                        v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                        amplitude=amp_d2_r)
-        delay(10*us)
 
         # with parallel:
         self.dds.d2_3d_r.on()
@@ -294,13 +282,11 @@ class Cooling():
             v_pd_d1_r = self.params.v_pd_d1_r_gm
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
                                        v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        v_pd=v_pd_d1_r)
-        delay(10*us)
         with parallel:
             self.ttl_magnets.off()
             self.switch_d1_3d(1)
@@ -332,15 +318,12 @@ class Cooling():
             v_pd_d1_r = self.params.v_pd_d1_r_gm
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
                                        v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        v_pd=v_pd_d1_r)
-        delay(10*us)
-
-        delay(-10*us)
+        
         self.dds.load_profile(dds_mgr_idx)
 
         with parallel:
@@ -379,13 +362,11 @@ class Cooling():
             v_pd_d1_r = self.params.v_pd_d1_r_gm
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
                                        v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        v_pd=v_pd_d1_r)
-        delay(10*us)
         with parallel:
             self.ttl_magnets.off()
             self.switch_d1_3d(1)
@@ -411,10 +392,8 @@ class Cooling():
         if amp_1227 == dv:
             amp_1227 = self.params.amp_1227
 
-        delay(-10*us)
         self.dds.tweezer.set_dds(frequency=frequency_ao_1227,
                                        amplitude=amp_1227)
-        delay(10*us)
         self.dds.tweezer.on()
         delay(t)
 
@@ -492,7 +471,6 @@ class Cooling():
             v_current = self.params.v_mot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
@@ -501,7 +479,7 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
-        delay(10*us)
+        
         self.set_magnet_current(v = v_current)
 
         delay(1*ms)
