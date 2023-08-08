@@ -392,13 +392,12 @@ class Cooling():
             self.dds.d1_3d_r.set_dds(v_pd=v_pd_d1_r_list[n])
             delay(dt_gmramp)
 
-    #GM with only D1, turning B field off
     @kernel
-    def gm_tweezer(self,t,
+    def gm_ramp(self, t_gmramp = dv,
             detune_d1_c = dv,
-            v_pd_d1_c = dv,
+            v_pd_d1_c_list = dvlist,
             detune_d1_r = dv,
-            v_pd_d1_r = dv,
+            v_pd_d1_r_list = dvlist,
             detune_d1 = dv):
         
         ### Start Defaults ###
@@ -411,23 +410,42 @@ class Cooling():
             if detune_d1_r == dv:
                 detune_d1_r = self.params.detune_d1_r_gm
         
-        if v_pd_d1_c == dv:
-            v_pd_d1_c = self.params.v_pd_d1_c_gm
-        if v_pd_d1_r == dv:
-            v_pd_d1_r = self.params.v_pd_d1_r_gm
+        if v_pd_d1_c_list == dvlist:
+            v_pd_d1_c_list = self.params.v_pd_c_gmramp_list
+        if v_pd_d1_r_list == dvlist:
+            v_pd_d1_r_list = self.params.v_pd_r_gmramp_list
+
+        # check for list length agreement
+        N_elem = len(v_pd_d1_c_list)
+        if N_elem != len(v_pd_d1_r_list):
+            try: self.camera.Close()
+            except: pass
+            raise ValueError("GM ramp v_pd lists must be of the same length.")
+        
+        if t_gmramp == dv:
+            t_gmramp = self.params.t_gmramp
+            dt_gmramp = self.params.dt_gmramp
+        else:
+            dt_gmramp = t_gmramp / N_elem
+
         ### End Defaults ###
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
-                                       v_pd=v_pd_d1_c)
+                                       v_pd=v_pd_d1_c_list[0])
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
-                                       v_pd=v_pd_d1_r)
+                                       v_pd=v_pd_d1_r_list[0])
+
         with parallel:
             self.ttl_magnets.off()
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
-        self.dds.tweezer.on()
-        delay(t)
+
+        for n in range(N_elem):
+            self.dds.d1_3d_c.set_dds(v_pd=v_pd_d1_c_list[n])
+            delay_mu(self.params.t_rtio_mu)
+            self.dds.d1_3d_r.set_dds(v_pd=v_pd_d1_r_list[n])
+            delay(dt_gmramp)
 
     @kernel
     def release(self):
@@ -435,22 +453,6 @@ class Cooling():
             self.ttl_magnets.off()
             self.switch_d2_3d(0)
             self.switch_d1_3d(0)
-
-    #switch on a single 1227 trap for time t
-    @kernel
-    def tweezer_trap(self,t,
-                     frequency_ao_1227 = dv,
-                     amp_1227 = dv):
-        
-        if frequency_ao_1227 == dv:
-            frequency_ao_1227 = self.params.frequency_ao_1227
-        if amp_1227 == dv:
-            amp_1227 = self.params.amp_1227
-
-        self.dds.tweezer.set_dds(frequency=frequency_ao_1227,
-                                       amplitude=amp_1227)
-        self.dds.tweezer.on()
-        delay(t)
 
     ## AOM group control
 
@@ -556,3 +558,5 @@ class Cooling():
         self.core.break_realtime()
         self.set_magnet_current()
         self.ttl_magnets.on()
+
+        self.dds.imaging_fake.on()
