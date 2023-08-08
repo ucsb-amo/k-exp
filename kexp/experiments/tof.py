@@ -62,9 +62,7 @@ class tof(EnvExperiment, Base):
             self.gm(self.p.t_gm * s)
             # self.trig_ttl.off()
 
-            # self.gm_tweezer(self.p.t_tweezer_hold * s)
-
-            # self.gm_ramp(self.p.t_gm_ramp * s)
+            self.gm_ramp(self.p.t_gm_ramp * s)
 
             # self.mot_reload(self.p.t_mot_reload * s)
             
