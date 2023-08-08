@@ -30,7 +30,8 @@ def fit_gaussian_sum_dist(sum_dist,camera_params):
             try:
                 fit = GaussianFit(xaxis, sum_dist[i])
                 fits[i] = fit
-            except:
+            except Exception as e:
+                print(e)
                 pass
     elif len(sh) == 2:
         for ix in range(sum_dist.shape[0]):
@@ -38,7 +39,8 @@ def fit_gaussian_sum_dist(sum_dist,camera_params):
                 try:
                     fit = GaussianFit(xaxis, sum_dist[ix][iy])
                     fits[ix][iy] = fit
-                except:
+                except Exception as e:
+                    print(e)
                     pass
     else:
         print("The data is more than 2D -- update everthing to support 3D.")
