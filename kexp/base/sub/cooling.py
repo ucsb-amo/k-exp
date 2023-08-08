@@ -7,6 +7,7 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 
 dv = 100.
+dvlist = np.linspace(1.,1.,5)
 
 class Cooling():
     def __init__(self):
@@ -293,14 +294,56 @@ class Cooling():
             self.switch_d2_3d(0)
         delay(t)
 
+    # @kernel
+    # def gm_ramp(self,t,t_ramp,
+    #         detune_d1_c = dv,
+    #         v_pd_d1_c = dv,
+    #         detune_d1_r = dv,
+    #         v_pd_d1_r = dv,
+    #         detune_d1 = dv,
+    #         dds_mgr_idx = 0):
+        
+    #     ### Start Defaults ###
+    #     if detune_d1 != dv:
+    #         detune_d1_c = detune_d1
+    #         detune_d1_r = detune_d1
+    #     else:
+    #         if detune_d1_c == dv:
+    #             detune_d1_c = self.params.detune_d1_c_gm
+    #         if detune_d1_r == dv:
+    #             detune_d1_r = self.params.detune_d1_r_gm
+        
+    #     if v_pd_d1_c == dv:
+    #         v_pd_d1_c = self.params.v_pd_d1_c_gm
+    #     if v_pd_d1_r == dv:
+    #         v_pd_d1_r = self.params.v_pd_d1_r_gm
+    #     ### End Defaults ###
+
+    #     self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
+    #                                    v_pd=v_pd_d1_c)
+    #     delay_mu(self.params.t_rtio_mu)
+    #     self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
+    #                                    v_pd=v_pd_d1_r)
+        
+    #     self.dds.load_profile(dds_mgr_idx)
+
+    #     with parallel:
+    #         self.ttl_magnets.off()
+    #         self.switch_d1_3d(1)
+    #         self.switch_d2_3d(0)
+    #     delay(t)
+    #     self.dds.enable_profile(dds_mgr_idx)
+    #     delay(t_ramp)
+    #     # delay(t)
+    #     self.dds.disable_profile(dds_mgr_idx)
+
     @kernel
-    def gm_ramp(self,t,t_ramp,
+    def gm_ramp(self, t_gmramp = dv,
             detune_d1_c = dv,
-            v_pd_d1_c = dv,
+            v_pd_d1_c_list = dvlist,
             detune_d1_r = dv,
-            v_pd_d1_r = dv,
-            detune_d1 = dv,
-            dds_mgr_idx = 0):
+            v_pd_d1_r_list = dvlist,
+            detune_d1 = dv):
         
         ### Start Defaults ###
         if detune_d1 != dv:
@@ -312,30 +355,41 @@ class Cooling():
             if detune_d1_r == dv:
                 detune_d1_r = self.params.detune_d1_r_gm
         
-        if v_pd_d1_c == dv:
-            v_pd_d1_c = self.params.v_pd_d1_c_gm
-        if v_pd_d1_r == dv:
-            v_pd_d1_r = self.params.v_pd_d1_r_gm
+        if v_pd_d1_c_list == dvlist:
+            v_pd_d1_c_list = self.params.v_pd_d1_c_gm
+        if v_pd_d1_r_list == dvlist:
+            v_pd_d1_r_list = self.params.v_pd_d1_r_gm
+
+        # check for list length agreement
+        N_elem = len(v_pd_d1_c_list)
+        if N_elem != len(v_pd_d1_r_list):
+            try: self.camera.Close()
+            except: pass
+            raise ValueError("GM ramp v_pd lists must be of the same length.")
+        
+        if t_gmramp == dv:
+            t_gmramp = self.params.t_gmramp
+        else:
+            dt_gmramp = t_gmramp / N_elem
+
         ### End Defaults ###
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
-                                       v_pd=v_pd_d1_c)
+                                       v_pd=v_pd_d1_c_list[0])
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
-                                       v_pd=v_pd_d1_r)
-        
-        self.dds.load_profile(dds_mgr_idx)
+                                       v_pd=v_pd_d1_r_list[0])
 
         with parallel:
             self.ttl_magnets.off()
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
-        delay(t)
-        self.dds.enable_profile(dds_mgr_idx)
-        delay(t_ramp)
-        # delay(t)
-        self.dds.disable_profile(dds_mgr_idx)
-        
+
+        for n in range(N_elem):
+            self.dds.d1_3d_c.set_dds(v_pd=v_pd_d1_c_list[n])
+            delay_mu(self.params.t_rtio_mu)
+            self.dds.d1_3d_r.set_dds(v_pd=v_pd_d1_r_list[n])
+            delay(dt_gmramp)
 
     #GM with only D1, turning B field off
     @kernel
