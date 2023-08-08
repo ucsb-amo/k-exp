@@ -356,9 +356,9 @@ class Cooling():
                 detune_d1_r = self.params.detune_d1_r_gm
         
         if v_pd_d1_c_list == dvlist:
-            v_pd_d1_c_list = self.params.v_pd_d1_c_gm
+            v_pd_d1_c_list = self.params.v_pd_c_gmramp_list
         if v_pd_d1_r_list == dvlist:
-            v_pd_d1_r_list = self.params.v_pd_d1_r_gm
+            v_pd_d1_r_list = self.params.v_pd_r_gmramp_list
 
         # check for list length agreement
         N_elem = len(v_pd_d1_c_list)
@@ -369,6 +369,7 @@ class Cooling():
         
         if t_gmramp == dv:
             t_gmramp = self.params.t_gmramp
+            dt_gmramp = self.params.dt_gmramp
         else:
             dt_gmramp = t_gmramp / N_elem
 
