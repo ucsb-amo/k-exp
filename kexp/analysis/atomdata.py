@@ -127,7 +127,8 @@ class atomdata():
             self.fit_center_y = self._extract_attr(fits_y,'x_center')
             self.fit_amp_y = self._extract_attr(fits_y,'amplitude')
             self.fit_offset_y = self._extract_attr(fits_y,'y_offset')
-        except:
+        except Exception as e:
+            print(e)
             print("Unable to extract fit parameters. The gaussian fit must have failed")
 
     def _extract_attr(self,ndarray,attr):
