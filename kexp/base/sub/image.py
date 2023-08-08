@@ -95,11 +95,11 @@ class Image():
             # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
+        delay_mu(self.params.t_rtio_mu)
         self.dds.tweezer.off()
         self.switch_d1_3d(0)
 
         delay(self.params.t_light_only_image_delay * s)
-        
         self.switch_d1_3d(1)
 
         self.trigger_camera()

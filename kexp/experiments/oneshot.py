@@ -23,10 +23,10 @@ class oneshot(EnvExperiment, Base):
         self.p.dummy = np.linspace(1.,1.,self.p.N_shots)
 
         
-        self.step_time = self.p.t_ramp / self.p.steps
+        self.step_time = self.p.t_ramp / self.p.n_gmramp_steps
 
-        self.c_ramp = np.linspace(self.p.c_ramp_start, self.p.c_ramp_end, self.p.steps)
-        self.r_ramp = np.linspace(self.p.r_ramp_start, self.p.r_ramp_end, self.p.steps)
+        self.c_ramp = np.linspace(self.p.v_pd_c_gmramp_start, self.p.v_pd_c_gmramp_end, self.p.n_gmramp_steps)
+        self.r_ramp = np.linspace(self.p.v_pd_r_gmramp_start, self.p.v_pd_r_gmramp_end, self.p.n_gmramp_steps)
 
         self.trig_ttl = self.get_device("ttl14")
 
@@ -47,40 +47,52 @@ class oneshot(EnvExperiment, Base):
         self.dds.tweezer.on()
         
         for _ in self.p.dummy:
+
+            self.set_imaging_detuning()
+            self.dds.imaging.set_dds(amplitude=.3)
+            self.core.break_realtime()
+
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)
+            # self.hybrid_mot(self.p.t_mot_load * s)
 
+            ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
             self.switch_d2_2d(0)
-            
+
             self.cmot_d1(self.p.t_d1cmot * s)
 
             self.trig_ttl.on()
             self.gm(self.p.t_gm * s)
-            
-            for n in range(self.p.steps):
-                delay(-10*us)
+
+            # self.dds.tweezer.on()
+
+            for n in range(self.p.n_gmramp_steps):
                 self.dds.d1_3d_c.set_dds_gamma(v_pd=self.c_ramp[n])
                 delay_mu(self.params.t_rtio_mu)
                 self.dds.d1_3d_r.set_dds_gamma(v_pd=self.r_ramp[n])
-                delay(10*us)
-
-                with parallel:
-                    self.ttl_magnets.off()
-                    self.switch_d1_3d(1)
-                    self.switch_d2_3d(0)
                 delay(self.step_time)
+            
+            # self.trig_ttl.off()
+            self.switch_d1_3d(0)
+            
+            # delay(self.p.t_tweezer_hold)
 
-            # delay(self.p.t_gm * s)
+            # delay(8*ms)
 
-            self.trig_ttl.off()
+            # self.switch_d1_3d(1)
+            self.fl_image()
+
+            # self.gm_ramp(self.p.t_gm_ramp * s)
+
+            # self.mot_reload(self.p.t_mot_reload * s)
             
             self.release()
             
             ### abs img
-            delay(self.p.t_tof * s)
-            self.fl_image()
+            # delay(self.p.t_tof * s)
+            # self.abs_image()
 
             self.core.break_realtime()
 
