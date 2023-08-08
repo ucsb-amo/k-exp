@@ -109,6 +109,28 @@ class Image():
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
     @kernel
+    def fl_image_old(self):
+
+        self.trigger_camera()
+
+        self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+        # self.dds.imaging_fake.on()
+        # delay(self.camera_params.exposure_time * s)
+        # self.dds.imaging_fake.off()
+
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.tweezer.off()
+        self.switch_d1_3d(0)
+
+        delay(self.params.t_light_only_image_delay * s)
+
+        self.trigger_camera()
+        self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+        # self.dds.imaging_fake.on()
+        # delay(self.camera_params.exposure_time * s)
+        # self.dds.imaging_fake.off()
+
+    @kernel
     def trigger_camera(self):
         '''
         Written to pretrigger camera such that the camera exposure begins at the
