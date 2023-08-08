@@ -21,9 +21,11 @@ class flourescence(EnvExperiment, Base):
 
         self.p.t_mot_load = 2 * 1.e-3
 
-        self.camera_params.exposure_time = 5.0e-3
+        self.camera_params.exposure_time = 15.0e-3
 
         self.img_detuning = -300.78e6
+
+        self.amp_imaging_fluor = 0.15
 
         self.trig_ttl = self.get_device("ttl14")
 
