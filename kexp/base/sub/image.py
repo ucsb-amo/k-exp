@@ -85,50 +85,61 @@ class Image():
         self.trigger_camera()
 
     @kernel
-    def fl_image(self, with_light=True):
+    def fl_image(self, t=-1., with_light=True):
+
+        if t == -1.:
+            t = self.camera_params.exposure_time
 
         self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_fluor)
 
         self.trigger_camera()
         if with_light:
-            self.pulse_imaging_light(self.camera_params.exposure_time * s)
-            # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
-            # self.pulse_D1_beams(self.camera_params.exposure_time * s)
+            # self.pulse_imaging_light(t * s)
+            # self.pulse_resonant_mot_beams(t * s)
+            self.pulse_D1_beams(t * s)
 
         delay_mu(self.params.t_rtio_mu)
-        self.dds.tweezer.off()
-        self.switch_d1_3d(0)
+        # self.dds.tweezer.off()
+        # self.switch_d1_3d(0)
 
         delay(self.params.t_light_only_image_delay * s)
-        self.switch_d1_3d(1)
+        # self.switch_d1_3d(1)
 
         self.trigger_camera()
         if with_light:
-            self.pulse_imaging_light(self.camera_params.exposure_time * s)
-            # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
-            # self.pulse_D1_beams(self.camera_params.exposure_time * s)
+            # self.pulse_imaging_light(t * s)
+            # self.pulse_resonant_mot_beams(t * s)
+            self.pulse_D1_beams(t * s)
 
     @kernel
-    def fl_image_old(self):
+    def fl_image_old(self, t=-1.):
+        '''Fluorescence imaging, using the old imaging beam'''
+
+        if t == -1.:
+            t = self.camera_params.exposure_time
+
+        self.dds.imaging_fake.set_dds(amplitude=0.188)
 
         self.trigger_camera()
 
-        self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
-        # self.dds.imaging_fake.on()
-        # delay(self.camera_params.exposure_time * s)
-        # self.dds.imaging_fake.off()
+        # self.pulse_resonant_mot_beams(t * s)
+
+        self.dds.imaging_fake.on()
+        delay(t * s)
+        self.dds.imaging_fake.off()
 
         delay_mu(self.params.t_rtio_mu)
-        self.dds.tweezer.off()
         self.switch_d1_3d(0)
 
         delay(self.params.t_light_only_image_delay * s)
 
         self.trigger_camera()
-        self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
-        # self.dds.imaging_fake.on()
-        # delay(self.camera_params.exposure_time * s)
-        # self.dds.imaging_fake.off()
+
+        # self.pulse_resonant_mot_beams(t * s)
+
+        self.dds.imaging_fake.on()
+        delay(t * s)
+        self.dds.imaging_fake.off()
 
     @kernel
     def trigger_camera(self):
