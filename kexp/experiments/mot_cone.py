@@ -16,13 +16,18 @@ class mot_cone(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.N_shots = 3
+        self.p.N_shots = 1
         self.p.N_repeats = 1
-        self.p.t_tof = np.linspace(500,10000,self.p.N_shots) * 1.e-6
+        self.p.t_tof = 10.e-6
+
+        self.p.dummy = np.linspace(0.,50.,self.p.N_shots)*1.e-6
 
         self.trig_ttl = self.get_device("ttl14")
 
-        self.xvarnames = ['t_tof']
+        self.xvarnames = ['dummy']
+
+        self.params.amp_imaging_fluor = 0.3
+        self.camera_params.exposure_time = 1.e-3
 
         self.finish_build()
 
@@ -35,10 +40,8 @@ class mot_cone(EnvExperiment, Base):
         delay(self.p.t_grab_start_wait*s)
         
         self.kill_mot(self.p.t_mot_kill * s)
-
-        self.dds.tweezer.on()
         
-        for t_tof in self.p.t_tof:
+        for d in self.p.dummy:
 
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -49,19 +52,24 @@ class mot_cone(EnvExperiment, Base):
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-            self.cmot_d1(self.p.t_d1cmot * s)
+            self.dds.d2_3d_c.off()
+            delay(d)
 
-            self.trig_ttl.on()
-            self.gm(self.p.t_gm * s)
+            # self.cmot_d1(self.p.t_d1cmot * s)
 
-            self.gm_ramp(self.p.t_gmramp * s)
-            self.trig_ttl.off()
+            # self.trig_ttl.on()
+            # self.gm(self.p.t_gm * s)
 
-            delay(t_tof)
+            # self.gm_ramp(self.p.t_gmramp * s)
+            # self.trig_ttl.off()
 
-            self.fl_image_old()
-            
+            # self.dds.d1_3d_c.off()
+            # delay(500.e-6)
+
             self.release()
+            delay(self.p.t_tof)
+
+            self.fl_image()
 
             self.core.break_realtime()
 
