@@ -34,7 +34,7 @@ class ExptParams():
         self.t_d2cmot = 5.e-3
         self.t_d1cmot = 1.3e-3
         self.t_gm = 1.5e-3
-        self.t_gm_ramp = 5.e-3
+        self.t_gmramp = 8.e-3
         self.t_tweezer_hold = 50.e-3
 
         #push beam
@@ -91,15 +91,28 @@ class ExptParams():
         #v_pd values for start and end of ramp
         self.v_pd_c_gmramp_start = 4.5
         self.v_pd_c_gmramp_end = 1.25
-
         self.v_pd_r_gmramp_start = 3.1
         self.v_pd_r_gmramp_end = 1.25
 
-        self.t_ramp = 8.e-3
         self.n_gmramp_steps = 50
 
         #1227
         self.frequency_ao_1227 = 80.e6
         self.amp_1227 = .45
+
+        self.compute_derived()
+        
+    def compute_dt_gmramp(self):
+        self.dt_gmramp = self.t_gmramp / self.n_gmramp_steps
+
+    def compute_gmramp_lists(self):
+        self.v_pd_c_gmramp_list = np.linspace(self.v_pd_c_gmramp_start, self.v_pd_c_gmramp_end, self.n_gmramp_steps)
+        self.v_pd_r_gmramp_list = np.linspace(self.v_pd_r_gmramp_start, self.v_pd_r_gmramp_end, self.n_gmramp_steps)
+
+    def compute_derived(self):
+        '''loop through methods (except built in ones) and compute all derived quantities'''
+        methods = [m for m in dir(self) if not m.startswith('__') and callable(getattr(self,m)) and not m == 'compute_derived']
+        for m in methods:
+            getattr(self,m)()
         
             
