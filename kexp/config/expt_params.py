@@ -25,14 +25,17 @@ class ExptParams():
         
         #Imaging
         self.frequency_detuned_imaging = 25.78e6
+        self.amp_imaging_fluor = 0.15
+        self.amp_imaging_abs = 0.08
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 5.e-3
         self.t_d1cmot = 1.3e-3
-        self.t_gm = 2.e-3
+        self.t_gm = 1.5e-3
         self.t_gm_ramp = 5.e-3
+        self.t_tweezer_hold = 50.e-3
 
         #push beam
         self.detune_push = 0.
@@ -50,10 +53,10 @@ class ExptParams():
         self.detune_d2_r_mot = -3.2
         self.amp_d2_r_mot = 0.188
 
-        self.detune_d1_c_mot = 3.25
-        self.v_pd_d1_c_mot = 1.8
-        self.detune_d1_r_mot = 3.25
-        self.v_pd_d1_r_mot = 2.4
+        self.detune_d1_c_mot = 0.
+        self.v_pd_d1_c_mot = .5
+        self.detune_d1_r_mot = 0.
+        self.v_pd_d1_r_mot = 5.5
 
         self.v_mot_current = .75 # 3.4A on 3D MOT coils
 
@@ -77,12 +80,23 @@ class ExptParams():
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
-        self.v_pd_d1_c_gm = 1.2 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.v_pd_d1_c_gm = 5.5 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.v_pd_d1_r_gm = 2.
+        self.v_pd_d1_r_gm = 4.2
 
         #GM ramp
         self.power_ramp_factor_gmramp = 10
+
+        #Discrete GM ramp
+        #v_pd values for start and end of ramp
+        self.v_pd_c_gmramp_start = 4.5
+        self.v_pd_c_gmramp_end = 1.25
+
+        self.v_pd_r_gmramp_start = 3.1
+        self.v_pd_r_gmramp_end = 1.25
+
+        self.t_ramp = 8.e-3
+        self.n_gmramp_steps = 50
 
         #1227
         self.frequency_ao_1227 = 80.e6

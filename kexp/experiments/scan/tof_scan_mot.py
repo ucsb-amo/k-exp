@@ -14,7 +14,7 @@ class tof_scan_mot(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(3000.,7000.,4) * 1.e-6
+        self.p.t_tof = np.linspace(3000.,7000.,5) * 1.e-6
 
         # self.p.xvar_amp_push = np.linspace(.00,.2,5)
 
@@ -26,13 +26,14 @@ class tof_scan_mot(EnvExperiment, Base):
 
         # self.p.xvar_t_gm = np.linspace(.3,2.,5) * 1.e-3
 
-        self.p.xvar_t_d1cmot = np.linspace(.3,10.,5) * 1.e-3
+        # self.p.xvar_t_d1cmot = np.linspace(.3,10.,5) * 1.e-3
 
         #GM Detunings
-        # self.p.xvar_v_pd_d1_c_gm = np.linspace(2.5,4.2,5)
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.,1.,5)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(2.,1.,5)
         # self.p.xvar_detune_gm = np.linspace(7.,8.7,5)
 
-        self.xvarnames = ['xvar_t_d1cmot','t_tof']
+        self.xvarnames = ['xvar_v_pd_d1_r_gm','t_tof']
 
         self.finish_build()
 
@@ -46,7 +47,7 @@ class tof_scan_mot(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_t_d1cmot:
+        for xvar in self.p.xvar_v_pd_d1_r_gm:
             for tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -55,9 +56,9 @@ class tof_scan_mot(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                self.cmot_d1(xvar * s)
+                self.cmot_d1(self.p.t_d1cmot * s)
 
-                self.gm(self.p.t_gm * s)
+                self.gm(self.p.t_gm * s, v_pd_d1_r=xvar)
                 
                 self.release()
                 
@@ -82,7 +83,10 @@ class tof_scan_mot(EnvExperiment, Base):
         # self.p.v_d1cmot_current = self.p.xvar_v_d1cmot_current
         
         # self.p.t_gm = self.p.xvar_t_gm
-        self.p.t_d1cmot = self.p.xvar_t_d1cmot
+        # self.p.t_d1cmot = self.p.xvar_t_d1cmot
+
+        # self.p.v_pd_d1_c_gm = self.p.xvar_v_pd_d1_c_gm
+        self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
 
         self.camera.Close()
         

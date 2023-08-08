@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential
+from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.config.dds_id import dds_frame
 from kexp.config.expt_params import ExptParams
 from kexp.config.camera_params import CameraParams
@@ -26,11 +26,6 @@ class Image():
     @kernel
     def pulse_imaging_light(self,t,detuning=dv,set_img_detuning=True):
 
-        # if set_img_detuning:
-        #     if detuning == dv:
-        #         detuning = self.params.frequency_detuned_imaging
-        #     self.set_imaging_detuning(detuning = detuning)
-            
         self.dds.imaging.on()
         delay(t)
         self.dds.imaging.off()
@@ -74,45 +69,43 @@ class Image():
             self.dds.d1_3d_r.off()
 
     @kernel
-    def abs_image(self, detuning=dv):
-        if detuning == dv:
-            detuning = self.params.frequency_detuned_imaging
+    def abs_image(self):
+
+        self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_abs)
 
         self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s, detuning=detuning)
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 
         delay(self.params.t_light_only_image_delay * s)
         self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s, set_img_detuning=False)
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 
         self.dds.imaging.off()
         delay(self.params.t_dark_image_delay * s)
         self.trigger_camera()
 
     @kernel
-    def fl_image(self, detuning=dv, with_light = True):
-        if detuning == dv:
-            detuning = self.params.frequency_detuned_imaging
+    def fl_image(self, with_light=True):
 
-        self.dds.imaging.set_dds_gamma(amplitude=.3)
+        self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_fluor)
 
         self.trigger_camera()
         if with_light:
-            # self.pulse_imaging_light(self.camera_params.exposure_time * s, detuning=detuning)
-            self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+            self.pulse_imaging_light(self.camera_params.exposure_time * s)
+            # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
-        # self.dds.tweezer.off()
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.tweezer.off()
         self.switch_d1_3d(0)
 
         delay(self.params.t_light_only_image_delay * s)
-        
         self.switch_d1_3d(1)
 
         self.trigger_camera()
         if with_light:
-            # self.pulse_imaging_light(self.camera_params.exposure_time * s, detuning=detuning)
-            self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
+            self.pulse_imaging_light(self.camera_params.exposure_time * s)
+            # self.pulse_resonant_mot_beams(self.camera_params.exposure_time * s)
             # self.pulse_D1_beams(self.camera_params.exposure_time * s)
 
     @kernel
