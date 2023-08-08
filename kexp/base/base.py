@@ -38,14 +38,20 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         Computes the number of images to be taken from the imaging method and
         the length of the xvar arrays.
         """
+
+        self.params.compute_derived()
+
         if not self.xvarnames:
             self.xvarnames = ["dummy"]
             self.params.dummy = np.linspace(0,0,1)
         elif isinstance(self.xvarnames,str):
             self.xvarnames = [self.xvarnames]
+
         self.repeat_xvars(N_repeats=N_repeats)
+
         if shuffle:
             self.shuffle_xvars()
+
         self.get_N_img()
 
         # self.dds.cleanup_dds_ramps()
