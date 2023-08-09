@@ -10,7 +10,7 @@ class ExptParams():
         self.t_mot_load = 2.
         self.t_mot_reload = 2.
         self.t_imaging_pulse = 5.e-6
-        self.t_light_only_image_delay = 500.e-3
+        self.t_light_only_image_delay = 100.e-3
         self.t_dark_image_delay = 25.e-3
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
@@ -31,6 +31,7 @@ class ExptParams():
         self.t_d1cmot = 1.3e-3
         self.t_gm = 1.5e-3
         self.t_gmramp = 8.e-3
+        self.t_tweezer_ramp = 3.e-3
         self.t_tweezer_hold = 50.e-3
 
         #push beam
@@ -95,6 +96,9 @@ class ExptParams():
         #1227
         self.frequency_ao_1227 = 80.e6
         self.amp_1227 = .45
+        self.v_pd_tweezer_ramp_start = 0.0
+        self.v_pd_tweezer_ramp_end = 4.0
+        self.n_tweezer_ramp_steps = 50
 
         self.compute_derived()
 
@@ -104,12 +108,15 @@ class ExptParams():
         self.t_pretrigger = camera_params.exposure_delay
         self.t_camera_trigger = camera_params.t_camera_trigger
         
-    def compute_dt_gmramp(self):
-        self.dt_gmramp = self.t_gmramp / self.n_gmramp_steps
 
-    def compute_gmramp_lists(self):
+    def compute_gmramp_params(self):
         self.v_pd_c_gmramp_list = np.linspace(self.v_pd_c_gmramp_start, self.v_pd_c_gmramp_end, self.n_gmramp_steps)
         self.v_pd_r_gmramp_list = np.linspace(self.v_pd_r_gmramp_start, self.v_pd_r_gmramp_end, self.n_gmramp_steps)
+        self.dt_gmramp = self.t_gmramp / self.n_gmramp_steps
+
+    def compute_tweezer_ramp_params(self):
+        self.v_pd_tweezer_ramp_list = np.linspace(self.v_pd_tweezer_ramp_start,self.v_pd_tweezer_ramp_end, self.n_tweezer_ramp_steps)
+        self.dt_tweezer_ramp = self.t_tweezer_ramp / self.n_tweezer_ramp_steps
 
     def compute_derived(self):
         '''loop through methods (except built in ones) and compute all derived quantities'''

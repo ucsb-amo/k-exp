@@ -448,6 +448,33 @@ class Cooling():
             delay(dt_gmramp)
 
     @kernel
+    def tweezer_ramp(self, t_tweezer_ramp = dv,
+            v_pd_tweezer_ramp_list = dvlist):
+        
+        ### Start Defaults ###
+        
+        if v_pd_tweezer_ramp_list == dvlist:
+            v_pd_tweezer_ramp_list = self.params.v_pd_tweezer_ramp_list
+
+        # check for list length agreement
+        N_elem = len(v_pd_tweezer_ramp_list)
+        
+        if t_tweezer_ramp == dv:
+            t_tweezer_ramp = self.params.t_tweezer_ramp
+            dt_tweezer_ramp = self.params.dt_tweezer_ramp
+        else:
+            dt_tweezer_ramp = t_tweezer_ramp / N_elem
+
+        ### End Defaults ###
+
+        self.dds.tweezer.set_dds(frequency=self.params.frequency_ao_1227,
+                                 v_pd=v_pd_tweezer_ramp_list[0])
+        self.dds.tweezer.on()
+        for n in range(N_elem):
+            self.dds.tweezer.set_dds(v_pd=v_pd_tweezer_ramp_list[n])
+            delay(dt_tweezer_ramp)
+
+    @kernel
     def release(self):
         with parallel:
             self.ttl_magnets.off()
