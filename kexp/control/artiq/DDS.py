@@ -76,9 +76,7 @@ class DDS():
       f_shift_to_resonance_MHz = 461.7 / 2 # half the crossover detuning. Value from T.G. Tiecke.
       linewidth_MHz = 6
       detuning_MHz = linewidths_detuned * linewidth_MHz
-      freq = ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2
-      if freq < 0.:
-         freq = -freq
+      freq = ( f_shift_to_resonance_MHz + self.aom_order * detuning_MHz ) / 2
       if single_pass:
          freq = freq * 2
       return freq * 1.e6
@@ -88,7 +86,7 @@ class DDS():
       frequency = float(frequency) / 1e6
       f_shift_to_resonance = 461.7 / 2
       linewidth_MHz = 6
-      detuning = (2 * frequency - self.aom_order * f_shift_to_resonance) / linewidth_MHz
+      detuning = self.aom_order * (2 * frequency - f_shift_to_resonance) / linewidth_MHz
       return detuning
    
    @kernel(flags={"fast-math"})
