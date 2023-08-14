@@ -21,6 +21,7 @@ class DDS():
       self.amplitude = amplitude
       self.aom_order = []
       self.transition = []
+      self.double_pass = True
       self.v_pd = v_pd
       self.dac_ch = DAC_CH_DEFAULT
       self.key = ""
@@ -53,7 +54,7 @@ class DDS():
       self.dac_control_bool = (self.dac_ch != DAC_CH_DEFAULT)
 
    @portable(flags={"fast-math"})
-   def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
+   def detuning_to_frequency(self,linewidths_detuned) -> TFloat:
       '''
       Returns the DDS frequency value in MHz corresponding to detuning =
       linewidths_detuned * Gamma from the resonant D1, D2 transitions. Gamma = 2
@@ -77,7 +78,7 @@ class DDS():
       linewidth_MHz = 6
       detuning_MHz = linewidths_detuned * linewidth_MHz
       freq = ( f_shift_to_resonance_MHz + self.aom_order * detuning_MHz ) / 2
-      if single_pass:
+      if not self.double_pass:
          freq = freq * 2
       return freq * 1.e6
    
@@ -86,7 +87,11 @@ class DDS():
       frequency = float(frequency) / 1e6
       f_shift_to_resonance = 461.7 / 2
       linewidth_MHz = 6
-      detuning = self.aom_order * (2 * frequency - f_shift_to_resonance) / linewidth_MHz
+      if not self.double_pass:
+         double_pass_multiplier = 1
+      else:
+         double_pass_multiplier = 2
+      detuning = self.aom_order * (double_pass_multiplier * frequency - f_shift_to_resonance) / linewidth_MHz
       return detuning
    
    @kernel(flags={"fast-math"})

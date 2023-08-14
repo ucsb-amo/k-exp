@@ -55,7 +55,7 @@ class dds_frame():
         self.imaging = self.dds_assign(1,1, ao_order = 1, transition = 'D2')
         self.d1_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D1', dac_ch_vpd = 2)
         self.d1_3d_r = self.dds_assign(1,3, ao_order = 1, transition = 'D1', dac_ch_vpd = 1)
-        self.tweezer = self.dds_assign(2,0, ao_order = 1)
+        self.tweezer = self.dds_assign(2,0, ao_order = 1, double_pass=False)
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging_4_real = self.dds_assign(2,2, ao_order = -1, transition = 'D2')
         self.test_dds = self.dds_assign(2,3)
@@ -64,7 +64,7 @@ class dds_frame():
         self.make_dds_array()
         self.dds_list = np.array(self.dds_array).flatten()
 
-    def dds_assign(self, uru, ch, ao_order=0, transition='None', dac_ch_vpd=-1) -> DDS:
+    def dds_assign(self, uru, ch, ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
         '''
         Gets the DDS() object from the dds_state vector, sets the aom order, and
         returns the DDS() object.
@@ -91,6 +91,7 @@ class dds_frame():
         dds0.transition = transition
         dds0.dac_ch = dac_ch_vpd
         dds0.dac_device = self._dac_device
+        dds0.double_pass = double_pass
 
         return dds0
     
