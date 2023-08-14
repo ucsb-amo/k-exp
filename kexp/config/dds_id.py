@@ -57,7 +57,7 @@ class dds_frame():
         self.tweezer = self.dds_assign(2,0, dac_ch_vpd=3)
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging = self.dds_assign(2,2, ao_order = 1)
-        self.test_dds = self.dds_assign(2,3)
+        self.light_sheet = self.dds_assign(2,3, ao_order=-1)
 
         self.write_dds_keys()
         self.dds_list = np.array(self.dds_array).flatten()
