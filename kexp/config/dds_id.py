@@ -58,11 +58,23 @@ class dds_frame():
         self.tweezer = self.dds_assign(2,0, ao_order = 1, double_pass=False)
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging_4_real = self.dds_assign(2,2, ao_order = -1, transition = 'D2')
-        self.test_dds = self.dds_assign(2,3)
+        # self.test_dds = self.dds_assign(2,3)
 
         self.write_dds_keys()
         self.make_dds_array()
         self.dds_list = np.array(self.dds_array).flatten()
+
+    def read_dds_state(self, uru, ch):
+        try:
+            idx = dds_state.ch.index((uru,ch))
+            freq = dds_state.freq[idx] * 1.e6
+            v_dac = dds_state.v_dac[idx]
+            amplitude = dds_state.amplitude[idx]
+        except:
+            freq = 0.0
+            amplitude = 0.0
+            v_dac = 0.0
+        return freq, amplitude, v_dac
 
     def dds_assign(self, uru, ch, ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
         '''
@@ -73,19 +85,8 @@ class dds_frame():
         -------
         DDS
         '''
-        try:
-            idx = dds_state.ch.index((uru,ch))
-            freq = dds_state.freq[idx] * 1.e6
-            v_dac = dds_state.v_dac[idx]
-            if v_dac != 0.0:
-                amplitude = default_dac_dds_amplitude
-            else:
-                amplitude = dds_state.amplitude[idx]
-        except:
-            freq = 0.0
-            amplitude = 0.0
-            v_dac = 0.0
-            
+        
+        freq, amplitude, v_dac = self.read_dds_state(uru,ch)
         dds0 = DDS(urukul_idx=uru,ch=ch,frequency=freq,amplitude=amplitude,v_pd=v_dac)
         dds0.aom_order = ao_order
         dds0.transition = transition
@@ -104,7 +105,17 @@ class dds_frame():
         dds_linlist = [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
         for dds in dds_linlist:
             self.dds_array[dds.urukul_idx][dds.ch] = dds
-    
+
+        all_idx = [(uru,ch) for uru in range(N_uru) for ch in range(N_ch)]
+        key_idx = [(dds.urukul_idx,dds.ch) for dds in dds_linlist]
+        non_key_idx = list(set(all_idx).difference(key_idx))
+        for idx in non_key_idx:
+            uru = idx[0]
+            ch = idx[1]
+            freq, amp, v_pd = self.read_dds_state(idx[0],idx[1])
+            this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_device)
+            self.dds_array[uru][ch] = this_dds
+            
     # def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
     #     dt = RAMP_STEP_TIME
     #     N = round(t_ramp / dt)
