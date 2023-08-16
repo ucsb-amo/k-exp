@@ -95,8 +95,8 @@ class Image():
         self.trigger_camera()
         if with_light:
             # self.pulse_imaging_light(t * s)
-            # self.pulse_resonant_mot_beams(t * s)
-            self.pulse_D1_beams(t * s)
+            self.pulse_resonant_mot_beams(t * s)
+            # self.pulse_D1_beams(t * s)
 
         delay_mu(self.params.t_rtio_mu)
         # self.dds.tweezer.off()
@@ -108,8 +108,8 @@ class Image():
         self.trigger_camera()
         if with_light:
             # self.pulse_imaging_light(t * s)
-            # self.pulse_resonant_mot_beams(t * s)
-            self.pulse_D1_beams(t * s)
+            self.pulse_resonant_mot_beams(t * s)
+            # self.pulse_D1_beams(t * s)
 
     @kernel
     def fl_image_old(self, t=-1.):
@@ -127,9 +127,6 @@ class Image():
         self.dds.imaging_fake.on()
         delay(t * s)
         self.dds.imaging_fake.off()
-
-        delay_mu(self.params.t_rtio_mu)
-        self.switch_d1_3d(0)
 
         delay(self.params.t_light_only_image_delay * s)
 
