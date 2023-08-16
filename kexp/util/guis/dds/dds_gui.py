@@ -9,7 +9,7 @@ from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal
 from toggleSlider import AnimatedToggle
 from PyQt6.QtGui import QColor, QIcon
 import kexp.config.dds_id as dds_id
-from DDS_GUI_ExptBuilder import DDSGUIExptBuilder
+from dds_gui_ExptBuilder import DDSGUIExptBuilder
 import copy
 
 from kexp.control import DDS
@@ -38,9 +38,7 @@ class DDSChannel(QWidget):
         self.urukul_idx = urukul_idx
         self.ch_idx = ch_idx
 
-
         dds_key = self.dds.key
-
         
         layout = QVBoxLayout()
 

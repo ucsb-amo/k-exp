@@ -3,7 +3,7 @@ import numpy as np
 from artiq.coredevice import ad53xx
 from artiq.experiment import kernel
 
-from kexp.config.dds_state import dds_state
+import kexp.config.dds_state as dds_state
 from kexp.control import DDS, DummyCore
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 
