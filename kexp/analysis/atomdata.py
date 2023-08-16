@@ -127,7 +127,8 @@ class atomdata():
             self.fit_center_y = self._extract_attr(fits_y,'x_center')
             self.fit_amp_y = self._extract_attr(fits_y,'amplitude')
             self.fit_offset_y = self._extract_attr(fits_y,'y_offset')
-        except:
+        except Exception as e:
+            print(e)
             print("Unable to extract fit parameters. The gaussian fit must have failed")
 
     def _extract_attr(self,ndarray,attr):
@@ -223,7 +224,6 @@ class atomdata():
                     idx = i1*n2 + i2
                     self.img_atoms[i1][i2] = self._img_atoms[idx]
                     self.img_light[i1][i2] = self._img_light[idx]
-                    self.img_dark[i1][i2] = self._img_dark[idx]
                     
     def _split_images_fluor(self):
         

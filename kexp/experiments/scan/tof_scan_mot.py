@@ -14,22 +14,28 @@ class tof_scan_mot(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(2000,3500,5) * 1.e-6
+        self.p.t_tof = np.linspace(3000.,7000.,5) * 1.e-6
 
-        # self.p.xvar_amp_push = np.linspace(.1,.31,8)
-        # self.p.xvar_v_d1cmot_current = np.linspace(.9,1.6,5)
+        # self.p.xvar_amp_push = np.linspace(.00,.2,5)
+
+        # self.p.xvar_detune_push = np.linspace(-4.0,4.,5)
+
+        # self.p.xvar_v_mot_current = np.linspace(.7,.9,5)
+
+        # self.p.xvar_v_d1cmot_current = np.linspace(0.2,.6,5)
+
+        # self.p.xvar_t_gm = np.linspace(.3,2.,5) * 1.e-3
+
+        # self.p.xvar_t_d1cmot = np.linspace(.3,10.,5) * 1.e-3
 
         #GM Detunings
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.,1.,5)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(2.,1.,5)
+        # self.p.xvar_detune_gm = np.linspace(7.,8.7,5)
 
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.5,4.2,5)
-        # self.p.xvar_detune_gm = np.linspace(6.5,7.0,5)
+        self.xvarnames = ['xvar_v_pd_d1_r_gm','t_tof']
 
-        self.p.xvar_t_gm = np.linspace(2.e-3,5.e-3,5)
-
-        self.xvarnames = ['xvar_t_gm','t_tof']
-
-        self.shuffle_xvars()
-        self.get_N_img()
+        self.finish_build()
 
     @kernel
     def run(self):
@@ -41,7 +47,7 @@ class tof_scan_mot(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_t_gm:
+        for xvar in self.p.xvar_v_pd_d1_r_gm:
             for tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -52,7 +58,7 @@ class tof_scan_mot(EnvExperiment, Base):
 
                 self.cmot_d1(self.p.t_d1cmot * s)
 
-                self.gm(xvar)
+                self.gm(self.p.t_gm * s, v_pd_d1_r=xvar)
                 
                 self.release()
                 
@@ -67,7 +73,20 @@ class tof_scan_mot(EnvExperiment, Base):
 
     def analyze(self):
 
-        self.p.t_gm = self.p.xvar_t_gm
+        # self.p.detune_gm = self.p.xvar_detune_gm
+
+        # self.p.detune_push = self.p.xvar_detune_push
+        # self.p.amp_push = self.p.xvar_amp_push
+
+        # self.p.v_mot_current = self.p.xvar_v_mot_current
+        
+        # self.p.v_d1cmot_current = self.p.xvar_v_d1cmot_current
+        
+        # self.p.t_gm = self.p.xvar_t_gm
+        # self.p.t_d1cmot = self.p.xvar_t_d1cmot
+
+        # self.p.v_pd_d1_c_gm = self.p.xvar_v_pd_d1_c_gm
+        self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
 
         self.camera.Close()
         

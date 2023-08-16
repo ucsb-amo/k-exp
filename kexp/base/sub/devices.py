@@ -1,10 +1,16 @@
 from artiq.experiment import *
 from artiq.experiment import delay_mu
 from artiq.coredevice.ttl import TTLOut
+from artiq.coredevice.core import Core
+from artiq.coredevice.zotino import Zotino
+from artiq.coredevice.dma import CoreDMA
 
-from kexp.config.dds_id import dds_frame, N_uru
+from kexp.config.dds_id import dds_frame, N_uru, DDSManager
 from kexp.control.artiq.DDS import DDS
 from kexp.config.expt_params import ExptParams
+
+from jax import AD9910Manager
+from kexp.control.cameras.dummy_cam import DummyCamera
 
 import numpy as np
 
@@ -16,21 +22,33 @@ class Devices():
         self.params = ExptParams()
 
     def prepare_devices(self):
+        # for syntax highlighting
+        self.core = Core
+        self.zotino = Zotino
+        self.core_dma = CoreDMA
 
+        # get em
         self.core = self.get_device("core")
         self.core_dma = self.get_device("core_dma")
         self.zotino = self.get_device("zotino0")
 
-        self.dds = dds_frame(dac_device=self.zotino)
-
+        # set up dds_frame
+        self.dds = dds_frame(dac_device=self.zotino, core=self.core)
+        self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
+        self.dds_list = self.dds.dds_list
 
+        # dac channels
         self.dac_ch_3Dmot_current_control = 0
 
+        # ttl channels
         self.ttl_basler = self.get_device("ttl9")
         self.ttl_magnets = self.get_device("ttl11")
         self.ttl_andor = self.get_device("ttl13")
         self.ttl_camera = TTLOut
+
+        # camera placeholder
+        self.camera = DummyCamera()
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list:
@@ -83,3 +101,4 @@ class Devices():
             dds.cpld_device.init()
             delay(1*ms)
 
+        ###

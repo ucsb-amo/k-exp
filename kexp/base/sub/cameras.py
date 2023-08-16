@@ -50,7 +50,10 @@ class Cameras():
         Starts the Andor waiting for self.params.N_img triggers. Default 10
         second timeout.
         """
-        self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
+        self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time,
+                                gain = self.camera_params.em_gain,
+                                vs_speed=self.camera_params.vs_speed,
+                                vs_amp=self.camera_params.vs_amp)
         Nimg = int(self.params.N_img)
         try:
             self.images = self.camera.grab_andor(nframes=Nimg,frame_timeout=10.)

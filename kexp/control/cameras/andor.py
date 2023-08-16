@@ -2,13 +2,31 @@ from pylablib.devices import Andor
 from pylablib.devices.interface.camera import trim_frames
 import numpy as np
 
+from pylablib.devices.Andor.atmcd32d_lib import wlib as lib
+
 class AndorEMCCD(Andor.AndorSDK2Camera):
-    def __init__(self, ExposureTime=0.):
-        super().__init__()
+    def __init__(self, ExposureTime=0., gain = 30, vs_speed:int=2, vs_amp:int=1):
+        # overwrite a broken method in the parent class
+        self._initial_setup_temperature = self._initial_setup_temperature_fixed
+        # init the parent class
+        super().__init__(temperature=-60,fan_mode="full")
+        # run startup setting methods
+        self.set_EMCCD_gain(gain=30)
         self.set_exposure(ExposureTime)
         self.set_trigger_mode("ext")
         self.setup_shutter(mode="open")
-    
+        self.set_vsspeed(vs_speed)
+        self.set_vsamplitude(vs_amp)
+        self.set_acquisition_mode("single")
+        self.set_read_mode("image")
+        self.set_cooler_mode(mode=1)
+
+    def set_cooler_mode(self, mode:int = 1):
+        lib.SetCoolerMode(mode)
+
+    def set_vsamplitude(self, vs_amp:int = 0):
+        lib.SetVSAmplitude(vs_amp)
+
     def Close(self):
         self.setup_shutter(mode="closed")
         self.close()
@@ -51,3 +69,16 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
             return (frames,info) if return_info else frames
         finally:
             self.stop_acquisition()
+
+    def _initial_setup_temperature_fixed(self):
+        if self._start_temperature=="off":
+            trng=self.get_temperature_range()
+            self.set_temperature(trng[1] if trng else 0,enable_cooler=False)
+        else:
+            if self._start_temperature is None:
+                trng=self.get_temperature_range()
+                if trng:
+                    self._start_temperature=trng[0]+int((trng[1]-trng[0])*0.2)
+                else:
+                    self._start_temperature=0
+            self.set_temperature(self._start_temperature,enable_cooler=True)

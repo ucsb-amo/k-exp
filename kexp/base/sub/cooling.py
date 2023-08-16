@@ -7,6 +7,7 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 
 dv = 100.
+dvlist = np.linspace(1.,1.,5)
 
 class Cooling():
     def __init__(self):
@@ -47,7 +48,6 @@ class Cooling():
             amp_push = self.params.amp_push
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_2d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
@@ -56,7 +56,6 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
-        delay(10*us)
         with parallel:
             self.switch_d2_2d(1)
         delay(t)
@@ -88,7 +87,6 @@ class Cooling():
             v_current = self.params.v_mot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
@@ -97,7 +95,6 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
-        delay(10*us)
         self.set_magnet_current(v = v_current)
         with parallel:
             self.ttl_magnets.on()
@@ -127,13 +124,11 @@ class Cooling():
             v_current = self.params.v_mot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
-        delay(10*us)
         self.set_magnet_current(v = v_current)
         with parallel:
             self.ttl_magnets.on()
@@ -175,7 +170,6 @@ class Cooling():
         if v_current == dv:
             v_current = self.params.v_mot_current
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
@@ -183,17 +177,17 @@ class Cooling():
                                  amplitude=amp_d2_r)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
-                                 v_pd=v_pd_c)
+                                 v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
-                                 amplitude=v_pd_r)
-        delay(10*us)
+                                 amplitude=v_pd_d1_r)
         self.set_magnet_current(v = v_current)
         self.ttl_magnets.on()
         with parallel:
             self.switch_d2_3d(1)
-            self.switch_d1_3d(1)
+            
             self.dds.push.on()
+        self.switch_d1_3d(1)
         delay(t)
 
     #compress MOT by changing D2 detunings and raising B field
@@ -218,12 +212,10 @@ class Cooling():
             v_current = self.params.v_d2cmot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                        amplitude=amp_d2_c)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                        amplitude=amp_d2_r)
-        delay(10*us)
         with parallel:
             self.switch_d2_3d(1)
             self.set_magnet_current(v = v_current)
@@ -251,13 +243,11 @@ class Cooling():
             v_current = self.params.v_d1cmot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
                                        v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                        amplitude=amp_d2_r)
-        delay(10*us)
 
         # with parallel:
         self.dds.d2_3d_r.on()
@@ -293,26 +283,66 @@ class Cooling():
             v_pd_d1_r = self.params.v_pd_d1_r_gm
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
                                        v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        v_pd=v_pd_d1_r)
-        delay(10*us)
         with parallel:
             self.ttl_magnets.off()
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
         delay(t)
 
-    #GM with only D1, turning B field off
+    # @kernel
+    # def gm_ramp(self,t,t_ramp,
+    #         detune_d1_c = dv,
+    #         v_pd_d1_c = dv,
+    #         detune_d1_r = dv,
+    #         v_pd_d1_r = dv,
+    #         detune_d1 = dv,
+    #         dds_mgr_idx = 0):
+        
+    #     ### Start Defaults ###
+    #     if detune_d1 != dv:
+    #         detune_d1_c = detune_d1
+    #         detune_d1_r = detune_d1
+    #     else:
+    #         if detune_d1_c == dv:
+    #             detune_d1_c = self.params.detune_d1_c_gm
+    #         if detune_d1_r == dv:
+    #             detune_d1_r = self.params.detune_d1_r_gm
+        
+    #     if v_pd_d1_c == dv:
+    #         v_pd_d1_c = self.params.v_pd_d1_c_gm
+    #     if v_pd_d1_r == dv:
+    #         v_pd_d1_r = self.params.v_pd_d1_r_gm
+    #     ### End Defaults ###
+
+    #     self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
+    #                                    v_pd=v_pd_d1_c)
+    #     delay_mu(self.params.t_rtio_mu)
+    #     self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
+    #                                    v_pd=v_pd_d1_r)
+        
+    #     self.dds.load_profile(dds_mgr_idx)
+
+    #     with parallel:
+    #         self.ttl_magnets.off()
+    #         self.switch_d1_3d(1)
+    #         self.switch_d2_3d(0)
+    #     delay(t)
+    #     self.dds.enable_profile(dds_mgr_idx)
+    #     delay(t_ramp)
+    #     # delay(t)
+    #     self.dds.disable_profile(dds_mgr_idx)
+
     @kernel
-    def gm_tweezer(self,t,
+    def gm_ramp(self, t_gmramp = dv,
             detune_d1_c = dv,
-            v_pd_d1_c = dv,
+            v_pd_d1_c_list = dvlist,
             detune_d1_r = dv,
-            v_pd_d1_r = dv,
+            v_pd_d1_r_list = dvlist,
             detune_d1 = dv):
         
         ### Start Defaults ###
@@ -325,26 +355,124 @@ class Cooling():
             if detune_d1_r == dv:
                 detune_d1_r = self.params.detune_d1_r_gm
         
-        if v_pd_d1_c == dv:
-            v_pd_d1_c = self.params.v_pd_d1_c_gm
-        if v_pd_d1_r == dv:
-            v_pd_d1_r = self.params.v_pd_d1_r_gm
+        if v_pd_d1_c_list == dvlist:
+            v_pd_d1_c_list = self.params.v_pd_c_gmramp_list
+        if v_pd_d1_r_list == dvlist:
+            v_pd_d1_r_list = self.params.v_pd_r_gmramp_list
+
+        # check for list length agreement
+        N_elem = len(v_pd_d1_c_list)
+        if N_elem != len(v_pd_d1_r_list):
+            try: self.camera.Close()
+            except: pass
+            raise ValueError("GM ramp v_pd lists must be of the same length.")
+        
+        if t_gmramp == dv:
+            t_gmramp = self.params.t_gmramp
+            dt_gmramp = self.params.dt_gmramp
+        else:
+            dt_gmramp = t_gmramp / N_elem
+
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
-                                       v_pd=v_pd_d1_c)
+                                       v_pd=v_pd_d1_c_list[0])
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
-                                       v_pd=v_pd_d1_r)
-        delay(10*us)
+                                       v_pd=v_pd_d1_r_list[0])
+
         with parallel:
             self.ttl_magnets.off()
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
+
+        for n in range(N_elem):
+            self.dds.d1_3d_c.set_dds(v_pd=v_pd_d1_c_list[n])
+            delay_mu(self.params.t_rtio_mu)
+            self.dds.d1_3d_r.set_dds(v_pd=v_pd_d1_r_list[n])
+            delay(dt_gmramp)
+
+    @kernel
+    def gm_ramp(self, t_gmramp = dv,
+            detune_d1_c = dv,
+            v_pd_d1_c_list = dvlist,
+            detune_d1_r = dv,
+            v_pd_d1_r_list = dvlist,
+            detune_d1 = dv):
+        
+        ### Start Defaults ###
+        if detune_d1 != dv:
+            detune_d1_c = detune_d1
+            detune_d1_r = detune_d1
+        else:
+            if detune_d1_c == dv:
+                detune_d1_c = self.params.detune_d1_c_gm
+            if detune_d1_r == dv:
+                detune_d1_r = self.params.detune_d1_r_gm
+        
+        if v_pd_d1_c_list == dvlist:
+            v_pd_d1_c_list = self.params.v_pd_c_gmramp_list
+        if v_pd_d1_r_list == dvlist:
+            v_pd_d1_r_list = self.params.v_pd_r_gmramp_list
+
+        # check for list length agreement
+        N_elem = len(v_pd_d1_c_list)
+        if N_elem != len(v_pd_d1_r_list):
+            try: self.camera.Close()
+            except: pass
+            raise ValueError("GM ramp v_pd lists must be of the same length.")
+        
+        if t_gmramp == dv:
+            t_gmramp = self.params.t_gmramp
+            dt_gmramp = self.params.dt_gmramp
+        else:
+            dt_gmramp = t_gmramp / N_elem
+
+        ### End Defaults ###
+
+        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
+                                       v_pd=v_pd_d1_c_list[0])
+        delay_mu(self.params.t_rtio_mu)
+        self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
+                                       v_pd=v_pd_d1_r_list[0])
+
+        with parallel:
+            self.ttl_magnets.off()
+            self.switch_d1_3d(1)
+            self.switch_d2_3d(0)
+
+        for n in range(N_elem):
+            self.dds.d1_3d_c.set_dds(v_pd=v_pd_d1_c_list[n])
+            delay_mu(self.params.t_rtio_mu)
+            self.dds.d1_3d_r.set_dds(v_pd=v_pd_d1_r_list[n])
+            delay(dt_gmramp)
+
+    @kernel
+    def tweezer_ramp(self, t_tweezer_ramp = dv,
+            v_pd_tweezer_ramp_list = dvlist):
+        
+        ### Start Defaults ###
+        
+        if v_pd_tweezer_ramp_list == dvlist:
+            v_pd_tweezer_ramp_list = self.params.v_pd_tweezer_ramp_list
+
+        # check for list length agreement
+        N_elem = len(v_pd_tweezer_ramp_list)
+        
+        if t_tweezer_ramp == dv:
+            t_tweezer_ramp = self.params.t_tweezer_ramp
+            dt_tweezer_ramp = self.params.dt_tweezer_ramp
+        else:
+            dt_tweezer_ramp = t_tweezer_ramp / N_elem
+
+        ### End Defaults ###
+
+        self.dds.tweezer.set_dds(frequency=self.params.frequency_ao_1227,
+                                 v_pd=v_pd_tweezer_ramp_list[0])
         self.dds.tweezer.on()
-        delay(t)
-        # self.dds.tweezer.off()
+        for n in range(N_elem):
+            self.dds.tweezer.set_dds(v_pd=v_pd_tweezer_ramp_list[n])
+            delay(dt_tweezer_ramp)
 
     @kernel
     def release(self):
@@ -352,24 +480,6 @@ class Cooling():
             self.ttl_magnets.off()
             self.switch_d2_3d(0)
             self.switch_d1_3d(0)
-
-    #switch on a single 1227 trap for time t
-    @kernel
-    def tweezer_trap(self,t,
-                     frequency_ao_1227 = dv,
-                     amp_1227 = dv):
-        
-        if frequency_ao_1227 == dv:
-            frequency_ao_1227 = self.params.frequency_ao_1227
-        if amp_1227 == dv:
-            amp_1227 = self.params.amp_1227
-
-        delay(-10*us)
-        self.dds.tweezer.set_dds(frequency=frequency_ao_1227,
-                                       amplitude=amp_1227)
-        delay(10*us)
-        self.dds.tweezer.on()
-        delay(t)
 
     ## AOM group control
 
@@ -445,7 +555,6 @@ class Cooling():
             v_current = self.params.v_mot_current
         ### End Defaults ###
 
-        delay(-10*us)
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
@@ -454,10 +563,7 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
-        delay(10*us)
-        self.dds.imaging_4_real.set_dds_gamma(delta=5.,
-                                 amplitude=.188)
-        delay(10*us)
+        
         self.set_magnet_current(v = v_current)
 
         delay(1*ms)
@@ -474,8 +580,10 @@ class Cooling():
 
         self.dds.tweezer.on()
 
-        self.dds.imaging_4_real.on()
+        self.dds.beatlock_ref.on()
 
         self.core.break_realtime()
         self.set_magnet_current()
         self.ttl_magnets.on()
+
+        self.dds.imaging_fake.on()

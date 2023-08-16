@@ -3,7 +3,6 @@ import textwrap
 from subprocess import PIPE, run
 from kexp.control.artiq.DDS import DDS
 import numpy as np
-
 from kexp.config.dds_id import dds_frame
 
 class DDSGUIExptBuilder():
@@ -111,7 +110,5 @@ class DDSGUIExptBuilder():
         """)
         returncode = self.execute(script)
         return(returncode)
-
-        ############# here ends test.py written by JEP
 
     
