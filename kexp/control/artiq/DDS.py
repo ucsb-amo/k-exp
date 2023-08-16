@@ -10,17 +10,20 @@ from artiq.coredevice.urukul import CPLD
 from kexp.util.artiq.async_print import aprint
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration as dds_amp_cal
 
+DAC_CH_DEFAULT = -1
+
 class DDS():
 
-   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., v_pd=0.):
+   def __init__(self, urukul_idx, ch, frequency=0., amplitude=0., v_pd=0., dac_device=[]):
       self.urukul_idx = urukul_idx
       self.ch = ch
       self.frequency = frequency
       self.amplitude = amplitude
-      self.aom_order = []
-      self.transition = []
+      self.aom_order = 0
+      self.transition = 'None'
+      self.double_pass = True
       self.v_pd = v_pd
-      self.dac_ch = -1
+      self.dac_ch = DAC_CH_DEFAULT
       self.key = ""
 
       self.dds_device = ad9910.AD9910
@@ -31,7 +34,10 @@ class DDS():
       self.ftw_per_hz = 0
       self.read_db(device_db)
       
-      self.dac_device = ad53xx.AD53xx
+      if dac_device:
+         self.dac_device = dac_device
+      else:
+         self.dac_device = ad53xx.AD53xx
       self.dac_control_bool = self.dac_ch > 0
 
       self.dds_amp_calibration = dds_amp_cal()
@@ -45,10 +51,10 @@ class DDS():
 
    @portable
    def update_dac_bool(self):
-      self.dac_control_bool = self.dac_ch > 0
+      self.dac_control_bool = (self.dac_ch != DAC_CH_DEFAULT)
 
    @portable(flags={"fast-math"})
-   def detuning_to_frequency(self,linewidths_detuned,single_pass=False) -> TFloat:
+   def detuning_to_frequency(self,linewidths_detuned) -> TFloat:
       '''
       Returns the DDS frequency value in MHz corresponding to detuning =
       linewidths_detuned * Gamma from the resonant D1, D2 transitions. Gamma = 2
@@ -68,27 +74,25 @@ class DDS():
          The corresponding AOM frequency setting in Hz.
       '''
       linewidths_detuned=float(linewidths_detuned)
-
       f_shift_to_resonance_MHz = 461.7 / 2 # half the crossover detuning. Value from T.G. Tiecke.
-      
-      # f_D1_shift_from_F1_to_F2 = 55.5
-
       linewidth_MHz = 6
       detuning_MHz = linewidths_detuned * linewidth_MHz
-      freq = ( self.aom_order * f_shift_to_resonance_MHz + detuning_MHz ) / 2
-
-      # if self.transition == 'D1':
-      #    freq += f_D1_shift_from_F1_to_F2 / 2
-      # if self.transition == 'D2':
-      #    pass
-
-      if freq < 0.:
-         freq = -freq
-
-      if single_pass:
+      freq = ( f_shift_to_resonance_MHz + self.aom_order * detuning_MHz ) / 2
+      if not self.double_pass:
          freq = freq * 2
-
       return freq * 1.e6
+   
+   @portable(flags={"fast-math"})
+   def frequency_to_detuning(self,frequency,single_pass=False) -> TFloat:
+      frequency = float(frequency) / 1e6
+      f_shift_to_resonance = 461.7 / 2
+      linewidth_MHz = 6
+      if not self.double_pass:
+         double_pass_multiplier = 1
+      else:
+         double_pass_multiplier = 2
+      detuning = self.aom_order * (double_pass_multiplier * frequency - f_shift_to_resonance) / linewidth_MHz
+      return detuning
    
    @kernel(flags={"fast-math"})
    def set_dds_gamma(self, delta=-1000., amplitude=-0.1, v_pd=-0.1):
@@ -106,9 +110,7 @@ class DDS():
          
       '''
       self.update_dac_bool()
-
       delta = float(delta)
-
       if delta == -1000.:
          frequency = -0.1
       else:
@@ -124,7 +126,7 @@ class DDS():
       '''Set the dds device. If frequency = 0, turn it off'''
 
       # update dac_control_bool if not already updated
-      self.dac_control_bool = self.dac_ch > 0
+      self.update_dac_bool()
 
       # set unspecified parameters to default values if set_stored
       # otherwise, set_dds will not set unspecified values to save time

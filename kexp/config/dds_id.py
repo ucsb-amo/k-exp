@@ -16,6 +16,8 @@ shape = (N_uru,N_ch)
 
 RAMP_STEP_TIME = 100 * 4.e-9
 
+default_dac_dds_amplitude = 0.3
+
 def dds_empty_frame(x=None):
     return [[x for _ in range(N_ch)] for _ in range(N_uru)]
 
@@ -35,6 +37,7 @@ class dds_frame():
         self._N_uru = N_uru
         self._N_ch = N_ch
         self._shape = shape
+        self._default_dac_dds_amplitude = default_dac_dds_amplitude
 
         self._dds_state = dds_state
 
@@ -43,7 +46,7 @@ class dds_frame():
         else:
             self._dac_device = ad53xx.AD53xx
 
-        self.dds_array = dds_empty_frame()
+        self.dds_array = [[DDS(uru,ch,dac_device=self._dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
         self.push = self.dds_assign(0,0, ao_order = 1, transition = 'D2')
@@ -60,9 +63,22 @@ class dds_frame():
         self.light_sheet = self.dds_assign(2,3, ao_order=-1)
 
         self.write_dds_keys()
+        self.make_dds_array()
         self.dds_list = np.array(self.dds_array).flatten()
+        
+    def read_dds_state(self, uru, ch):
+        try:
+            idx = dds_state.ch.index((uru,ch))
+            freq = dds_state.freq[idx] * 1.e6
+            v_dac = dds_state.v_dac[idx]
+            amplitude = dds_state.amplitude[idx]
+        except:
+            freq = 0.0
+            amplitude = 0.0
+            v_dac = 0.0
+        return freq, amplitude, v_dac
 
-    def dds_assign(self, uru, ch, ao_order=0, transition='None', dac_ch_vpd=-1) -> DDS:
+    def dds_assign(self, uru, ch, ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
         '''
         Gets the DDS() object from the dds_state vector, sets the aom order, and
         returns the DDS() object.
@@ -71,11 +87,14 @@ class dds_frame():
         -------
         DDS
         '''
-        dds0 = self._dds_state[uru][ch]
+        
+        freq, amplitude, v_dac = self.read_dds_state(uru,ch)
+        dds0 = DDS(urukul_idx=uru,ch=ch,frequency=freq,amplitude=amplitude,v_pd=v_dac)
         dds0.aom_order = ao_order
         dds0.transition = transition
         dds0.dac_ch = dac_ch_vpd
         dds0.dac_device = self._dac_device
+        dds0.double_pass = double_pass
 
         self.dds_array[uru][ch] = dds0
 
@@ -87,6 +106,59 @@ class dds_frame():
         for key in self.__dict__.keys():
             if isinstance(self.__dict__[key],DDS):
                 self.__dict__[key].key = key
+    
+    def make_dds_array(self):
+        dds_linlist = [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
+        for dds in dds_linlist:
+            self.dds_array[dds.urukul_idx][dds.ch] = dds
+
+        all_idx = [(uru,ch) for uru in range(N_uru) for ch in range(N_ch)]
+        key_idx = [(dds.urukul_idx,dds.ch) for dds in dds_linlist]
+        non_key_idx = list(set(all_idx).difference(key_idx))
+        for idx in non_key_idx:
+            uru = idx[0]
+            ch = idx[1]
+            freq, amp, v_pd = self.read_dds_state(idx[0],idx[1])
+            this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_device)
+            self.dds_array[uru][ch] = this_dds
+            
+    # def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
+    #     dt = RAMP_STEP_TIME
+    #     N = round(t_ramp / dt)
+    #     if N > 1024:
+    #         N = 1024
+    #         self.ramp_dt = round( ( t_ramp / 1024 ) / 4.e-9 ) * 4.e-9
+    #     p_list = np.linspace(power_i,power_f,N)
+    #     amp_list = self.dds_amp_calibration.power_fraction_to_dds_amplitude(p_list).tolist()
+    #     return amp_list
+        
+    # def set_amplitude_profile(self, dds:DDS, t_ramp:float, amp=-1., p_i=-1., p_f=-1., dwell_end=1):
+
+    #     _power_specified = p_i > 0. and p_f > 0.
+    #     _amp_specified = amp > 0.
+    #     if (_power_specified and _amp_specified) or not (_power_specified or _amp_specified):
+    #         raise ValueError("Either initial and final power, or constant amplitude should be specified. \
+    #                           Either both or none were specified.")
+        
+    #     if _amp_specified and not _power_specified:
+    #         amp_list = [amp]
+    #     if _power_specified and not _amp_specified:
+    #         amp_list = self.get_amplitude_ramp_list(t_ramp,p_i,p_f)
+
+    #     this_profile = RAMProfile(
+    #         dds.dds_device, amp_list, self.ramp_dt, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
+
+    #     self.dds_manager.append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=this_profile)
+    
+    # @kernel
+    # def enable_profile(self):
+    #     self.dds_manager.enable()
+    #     self.dds_manager.commit_enable()
+
+    # @kernel
+    # def disable_profile(self):
+    #     self.dds_manager.disable()
+    #     self.dds_manager.commit_disable()
     
     def get_ramp_dt(self, t_ramp):
         '''
