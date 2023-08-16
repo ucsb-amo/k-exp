@@ -19,8 +19,8 @@ class DDS():
       self.ch = ch
       self.frequency = frequency
       self.amplitude = amplitude
-      self.aom_order = []
-      self.transition = []
+      self.aom_order = 0
+      self.transition = 'None'
       self.double_pass = True
       self.v_pd = v_pd
       self.dac_ch = DAC_CH_DEFAULT
