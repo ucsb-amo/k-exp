@@ -23,7 +23,7 @@ class oneshot(EnvExperiment, Base):
         self.p.dummy = np.linspace(1.,1.,self.p.N_shots)
 
         
-        self.step_time = self.p.t_ramp / self.p.n_gmramp_steps
+        self.step_time = self.p.t_gmramp / self.p.n_gmramp_steps
 
         self.c_ramp = np.linspace(self.p.v_pd_c_gmramp_start, self.p.v_pd_c_gmramp_end, self.p.n_gmramp_steps)
         self.r_ramp = np.linspace(self.p.v_pd_r_gmramp_start, self.p.v_pd_r_gmramp_end, self.p.n_gmramp_steps)

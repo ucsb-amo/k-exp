@@ -16,18 +16,18 @@ class mot_cone(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.N_shots = 1
+        self.p.N_shots = 4
         self.p.N_repeats = 1
-        self.p.t_tof = 10.e-6
+        self.p.t_tof = 50.e-6
 
-        self.p.dummy = np.linspace(0.,50.,self.p.N_shots)*1.e-6
+        self.p.dummy = np.linspace(0.,100.,self.p.N_shots)*1.e-6
 
         self.trig_ttl = self.get_device("ttl14")
 
         self.xvarnames = ['dummy']
 
         self.params.amp_imaging_fluor = 0.3
-        self.camera_params.exposure_time = 1.e-3
+        self.camera_params.exposure_time = 20.e-3
 
         self.finish_build()
 
@@ -52,8 +52,8 @@ class mot_cone(EnvExperiment, Base):
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-            self.dds.d2_3d_c.off()
-            delay(d)
+            # self.dds.d2_3d_c.off()
+            # delay(d)
 
             # self.cmot_d1(self.p.t_d1cmot * s)
 
@@ -64,12 +64,19 @@ class mot_cone(EnvExperiment, Base):
             # self.trig_ttl.off()
 
             # self.dds.d1_3d_c.off()
-            # delay(500.e-6)
+            # delay(d)
+
+            self.dds.d2_3d_r.off()
+            delay(d)
+            # self.dds.d2_3d_c.off()
+            # self.dds.push.off()
 
             self.release()
             delay(self.p.t_tof)
 
-            self.fl_image()
+            # self.fl_image()
+            self.fl_image_old()
+            
 
             self.core.break_realtime()
 
