@@ -15,6 +15,8 @@ import copy
 from kexp.control import DDS
 import os
 
+import kexp.config.dds_state as dds_state
+
 CODE_DIR = os.environ.get("code")
 CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","dds_state.py")
 
@@ -452,10 +454,8 @@ class DDSControlGrid(QWidget):
                 amplitudes = [channel.get_amplitude() for channel in self.dds_channels]
                 v_dacs = [channel.get_v_dac() for channel in self.dds_channels]
 
-               # settings = list(zip(urukul_ch_indices, frequencies, amplitudes, v_dacs))
-
                 # Save settings to a file
-                with open("dds_state.py", "w") as f:
+                with open(CONFIG_PATH, "w") as f:
                     f.write("ch = " + str(urukul_ch_indices) + "\n")
                     f.write("freq = " + str([float(f"{freq:.3f}") for freq in frequencies]) + "\n")
                     f.write("amplitude = " + str(amplitudes) + "\n")
@@ -465,8 +465,6 @@ class DDSControlGrid(QWidget):
             
         else:
             return
-
-
 
     def reload_settings(self):
         result = QMessageBox.warning(
@@ -484,8 +482,6 @@ class DDSControlGrid(QWidget):
 
     def load_settings_from_file(self, filename):
         try:
-            import dds_state
-
             urukul_ch_indices = dds_state.ch
             frequencies = dds_state.freq
             amplitudes = dds_state.amplitude
@@ -505,31 +501,32 @@ class DDSControlGrid(QWidget):
         channel.freq_input.setText(f"{frequency:.3f}")
         channel.amp_input.setText(f"{amplitude:.3f}")
 
-        if channel.dds.dac_ch != -1 and channel.dds.v_pd != 0.0:
+        if channel.dds.dac_ch != -1:
             channel.amp_unit_combobox.setCurrentText("V (DAC)")
-            channel.dds.v_pd = str(v_dac)
+            channel.dds.v_pd = float(v_dac)
         else:
             channel.amp_unit_combobox.setCurrentText("A (DDS)")
-            channel.dds.amplitude = str(amplitude)
-
-
-
+            channel.dds.amplitude = float(amplitude)
 
     def set_all_on(self):            
         # Implement All On settings logic here
         builder = DDSGUIExptBuilder()
         builder.all_on(self.dds_channels)
+        self.execute_logic = False
           # Loop through all the DDSChannel instances and turn on their toggles
         for channel in self.dds_channels:
             channel.turn_on_toggle()
+        self.execute_logic = True
             
     def set_all_off(self):
     # Implement All Off settings logic here
         builder = DDSGUIExptBuilder()
         builder.all_off()
+        self.execute_logic = False
          # Loop through all the DDSChannel instances and turn off their toggles
         for channel in self.dds_channels:
             channel.turn_off_toggle()
+        self.execute_logic = True
 
     def initialize(self):
         # Initalize all CH. 

@@ -77,19 +77,20 @@ class DDSGUIExptBuilder():
         script = textwrap.dedent(f"""
         from artiq.experiment import *
         from kexp import Base
-        def build(self):
-            Base.__init__(self,setup_camera=False)
-        @kernel
-        def run(self):
-            self.init_kernel(init_dds=False,dds_set=False,dds_off=False)
-            for dds in self.dds.dds_list:
-                dds.off()
-                delay(1*ms)
+        class all_off(EnvExperiment,Base):         
+            def build(self):
+                Base.__init__(self,setup_camera=False)
+            @kernel
+            def run(self):
+                self.init_kernel(init_dds=False,dds_set=False,dds_off=False)
+                for dds in self.dds.dds_list:
+                    dds.off()
+                    delay(1*ms)
         """)
         returncode = self.execute(script)
         return(returncode)
 
-    def all_on(self, dds_channels):
+    def all_on(self, dds_channels): 
         lines = []
         for ch in dds_channels:
             dds = ch.dds
@@ -101,12 +102,13 @@ class DDSGUIExptBuilder():
         script = textwrap.dedent(f"""
         from artiq.experiment import *
         from kexp import Base
-        def build(self):
-            Base.__init__(self,setup_camera=False)
-        @kernel
-        def run(self):
-            self.init_kernel(init_dds=False,dds_set=False,dds_off=False)
-            {lines}
+        class all_on(EnvExperiment,Base): 
+            def build(self):
+                Base.__init__(self,setup_camera=False)
+            @kernel
+            def run(self):
+                self.init_kernel(init_dds=False,dds_set=False,dds_off=False)
+                {lines}
         """)
         returncode = self.execute(script)
         return(returncode)
