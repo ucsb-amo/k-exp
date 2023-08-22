@@ -20,6 +20,7 @@ class ExptParams():
         self.N_img = 1
         
         #Imaging
+        self.frequency_imaging_ao = 350.00e6
         self.frequency_detuned_imaging = 25.78e6
         self.amp_imaging_fluor = 0.260
         self.amp_imaging_abs = 0.140

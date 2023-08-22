@@ -173,6 +173,8 @@ class Image():
             detuning = self.params.frequency_detuned_imaging
             aprint('beans')
 
+        self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging)
+
         f_minimum_offset_frequency = 150.e6
 
         f_hyperfine_splitting_4s_MHz = 461.7 * 1.e6
