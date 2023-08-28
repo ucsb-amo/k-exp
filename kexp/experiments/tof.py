@@ -17,7 +17,7 @@ class tof(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 30. * 1.e-3
 
-        self.p.N_shots = 1
+        self.p.N_shots = 5
         self.p.N_repeats = 1
         self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
@@ -33,8 +33,6 @@ class tof(EnvExperiment, Base):
         self.trig_ttl = self.get_device("ttl14")
 
         self.finish_build()
-
-        print(self.images)
 
     @kernel
     def run(self):
@@ -77,8 +75,6 @@ class tof(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
-
-        print(self.images)
 
         self.camera.Close()
 
