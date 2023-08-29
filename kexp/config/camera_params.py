@@ -5,7 +5,7 @@ class CameraParams():
         self.exposure_delay = 0.
         self.serial_no = 0.
         self.exposure_time = 0.
-        self.connection_delay = 0.5
+        self.connection_delay = 1.5
         self.t_camera_trigger = 2.e-6
         self.t_readout_time = 0.
         self.em_gain = 250.
@@ -24,7 +24,7 @@ basler_absorp_camera_params.pixel_size_m = 3.45 * 1.e-6
 basler_absorp_camera_params.magnification = 0.5
 basler_absorp_camera_params.exposure_delay = 17 * 1.e-6
 basler_absorp_camera_params.serial_no = '40316451'
-basler_absorp_camera_params.exposure_time = 17.e-6
+basler_absorp_camera_params.exposure_time = 19.e-6
 
 andor_camera_params = CameraParams()
 andor_camera_params.pixel_size_m = 16.e-6
