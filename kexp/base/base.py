@@ -71,8 +71,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         if dds_set:
             delay(1*ms)
             self.set_all_dds() # set DDS to default values
+            self.set_imaging_detuning()
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
         self.core.break_realtime() # add slack before scheduling experiment events
-
-        self.set_imaging_detuning()
