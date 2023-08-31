@@ -17,8 +17,8 @@ class tof_discrete_ramp(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 30. * 1.e-3
 
-        self.p.N_shots = 6
-        self.p.N_repeats = 5
+        self.p.N_shots = 3
+        self.p.N_repeats = 1
 
         # self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
@@ -30,7 +30,7 @@ class tof_discrete_ramp(EnvExperiment, Base):
 
         # self.p.amp_push = 0.
 
-        self.step_time = self.p.t_ramp / self.p.n_gmramp_steps
+        self.step_time = self.p.t_gmramp / self.p.n_gmramp_steps
 
         self.c_ramp = np.linspace(self.p.v_pd_c_gmramp_start, self.p.v_pd_c_gmramp_end, self.p.n_gmramp_steps)
         self.r_ramp = np.linspace(self.p.v_pd_r_gmramp_start, self.p.v_pd_r_gmramp_end, self.p.n_gmramp_steps)
