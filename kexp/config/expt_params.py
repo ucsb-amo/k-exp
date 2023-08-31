@@ -1,10 +1,12 @@
 from kexp.config.camera_params import CameraParams
 import numpy as np
 
-camera_params = CameraParams()
+default_camera_params = CameraParams()
 
 class ExptParams():
-    def __init__(self, camera_params=camera_params):
+    def __init__(self, camera_params=default_camera_params):
+
+        self._camera_params = camera_params
 
         self.t_mot_kill = 1.
         self.t_mot_load = 2.
@@ -104,12 +106,11 @@ class ExptParams():
         self.compute_derived()
 
     def assign_camera_times(self):
-        self.t_camera_exposure = camera_params.exposure_time
-        self.t_grab_start_wait = camera_params.connection_delay
-        self.t_pretrigger = camera_params.exposure_delay
-        self.t_camera_trigger = camera_params.t_camera_trigger
+        self.t_camera_exposure = self._camera_params.exposure_time
+        self.t_grab_start_wait = self._camera_params.connection_delay
+        self.t_pretrigger = self._camera_params.exposure_delay
+        self.t_camera_trigger = self._camera_params.t_camera_trigger
         
-
     def compute_gmramp_params(self):
         self.v_pd_c_gmramp_list = np.linspace(self.v_pd_c_gmramp_start, self.v_pd_c_gmramp_end, self.n_gmramp_steps)
         self.v_pd_r_gmramp_list = np.linspace(self.v_pd_r_gmramp_start, self.v_pd_r_gmramp_end, self.n_gmramp_steps)
