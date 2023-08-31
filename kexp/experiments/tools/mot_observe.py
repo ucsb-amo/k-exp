@@ -15,9 +15,6 @@ class mot_observe(EnvExperiment, Base):
         delay(50*ms)
         self.mot_observe()
 
-        self.dds.imaging_fake.set_dds(amplitude=0.188)
-        self.dds.imaging_fake.on()
-
     def analyze(self):
 
         print("Done!")
