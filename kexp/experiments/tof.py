@@ -7,6 +7,7 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
+        # Base.__init__(self, basler_imaging=True, absorption_image=False)
         Base.__init__(self)
 
         self.run_info._run_description = "mot tof"
@@ -17,10 +18,10 @@ class tof(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 30. * 1.e-3
 
-        self.p.N_shots = 5
+        self.p.N_shots = 2
         self.p.N_repeats = 1
-        self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
-        # self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
+        # self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
+        self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(3000,7000,self.p.N_shots) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
@@ -31,6 +32,13 @@ class tof(EnvExperiment, Base):
         self.xvarnames = ['t_tof']
 
         self.trig_ttl = self.get_device("ttl14")
+
+        # self.run_info.absorption_image = False
+
+        self.params.frequency_detuned_imaging = 32.e6
+        self.params.amp_imaging_abs = 0.15
+        # self.camera_params.exposure_time = 20.e-6
+        self.params.t_imaging_pulse = 7.e-6
 
         self.finish_build()
 
@@ -53,6 +61,7 @@ class tof(EnvExperiment, Base):
             ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
             self.switch_d2_2d(0)
+            self.switch_d2_3d(0)
 
             # self.cmot_d1(self.p.t_d1cmot * s)
 
@@ -68,6 +77,9 @@ class tof(EnvExperiment, Base):
             
             ### abs img
             delay(t_tof * s)
+            
+            # self.fl_image()
+
             self.abs_image()
 
             self.core.break_realtime()
