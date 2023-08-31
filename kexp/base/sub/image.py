@@ -124,7 +124,7 @@ class Image():
     ###
 
     @kernel(flags={"fast-math"})
-    def set_imaging_detuning(self, detuning = dv):
+    def set_imaging_detuning(self, detuning = dv, amp = dv):
         '''
         Sets the detuning of the beat-locked imaging laser (in Hz).
 
@@ -139,12 +139,16 @@ class Image():
         '''
 
         # determine this manually -- minimum offset frequency where the offset lock is happy
-
-        if detuning == -10.e9:
+        if amp == dv:
+            if self.run_info.absorption_image:
+                amp = self.params.amp_imaging_abs
+            else:
+                amp = self.params.amp_imaging_fluor
+        if detuning == dv:
             detuning = self.params.frequency_detuned_imaging
             aprint('beans')
 
-        self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging)
+        self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging,amplitude=amp)
 
         f_minimum_offset_frequency = 150.e6
 
