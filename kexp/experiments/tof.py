@@ -33,13 +33,6 @@ class tof(EnvExperiment, Base):
 
         self.trig_ttl = self.get_device("ttl14")
 
-        # self.run_info.absorption_image = False
-
-        self.params.frequency_detuned_imaging = 32.e6
-        self.params.amp_imaging_abs = 0.15
-        # self.camera_params.exposure_time = 20.e-6
-        self.params.t_imaging_pulse = 7.e-6
-
         self.finish_build()
 
     @kernel

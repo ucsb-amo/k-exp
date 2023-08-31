@@ -25,7 +25,8 @@ class scan_image_detuning(EnvExperiment, Base):
         # self.p.xvar_amp_imaging_abs = np.linspace(0.1,0.6,3)
         self.p.amp_imaging_abs = 0.2
 
-        self.p.xvar_frequency_detuned_imaging = np.linspace(29.,34.,12) * 1.e6
+        self.p.N_repeats = 5
+        self.p.xvar_frequency_detuned_imaging = np.linspace(25.,32.,15) * 1.e6
 
         self.trig_ttl = self.get_device("ttl14")
 
