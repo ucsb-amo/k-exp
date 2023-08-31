@@ -11,9 +11,6 @@ class ExptParams():
         self.t_mot_kill = 1.
         self.t_mot_load = 2.
         self.t_mot_reload = 2.
-        self.t_imaging_pulse = 5.e-6
-        self.t_light_only_image_delay = 100.e-3
-        self.t_dark_image_delay = 25.e-3
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
@@ -22,10 +19,18 @@ class ExptParams():
         self.N_img = 1
         
         #Imaging
+        self.t_imaging_pulse = 5.e-6
+        self.t_light_only_image_delay = 100.e-3
+        self.t_dark_image_delay = 25.e-3
+
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 27.e6
         self.amp_imaging_fluor = 0.260
         self.amp_imaging_abs = 0.2
+        
+        self.t_repump_flash_imaging = 2.e-6
+        self.detune_d2_r_imaging = 0.
+        self.amp_d2_r_imaging = 0.065
 
         #Cooling timing
         self.t_2D_mot_load_delay = 1.
