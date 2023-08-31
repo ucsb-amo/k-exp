@@ -52,10 +52,11 @@ class DataSaver():
 
     def _class_attr_to_dataset(self,dset,obj):
         try:
-            keys = list(vars(obj))  
+            keys = list(vars(obj)) 
             for key in keys:
-                value = vars(obj)[key]
-                dset.create_dataset(key, data=value)
+                if not key.startswith("_"):
+                    value = vars(obj)[key]
+                    dset.create_dataset(key, data=value)
         except Exception as e:
             print(e)
 
