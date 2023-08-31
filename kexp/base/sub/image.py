@@ -71,7 +71,6 @@ class Image():
     @kernel
     def abs_image(self):
 
-        self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_abs)
         delay_mu(self.params.t_rtio_mu)
 
         self.trigger_camera()
