@@ -9,9 +9,10 @@ import numpy as np
 class scan_image_detuning(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,andor_imaging=True,absorption_image=False)
+        # Base.__init__(self,setup_camera=True,andor_imaging=False,absorption_image=False)
+        Base.__init__(self)
 
-        self.run_info._run_description = "scan image detuning"
+        self.run_info._run_description = "scan image amp vs pulse time"
 
         ## Parameters
 
@@ -19,26 +20,20 @@ class scan_image_detuning(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 30. * 1.e-3
 
-        self.p.N_shots = 100
-        self.p.N_repeats = 1
-        self.p.t_tof = 10 * 1.e-6 # mot
+        self.p.t_tof = 20 * 1.e-6 # mot
         
-        self.p.xvar_image_detuning = np.linspace(-300.,-100.,self.p.N_shots) * 1.e6
-        # self.p.xvar_amp_imaging_fluor = np.linspace(.15,.07,self.p.N_shots)
-        self.p.xvar_amp_imaging_fluor = [self.p.amp_imaging_fluor]
+        # self.p.xvar_image_detuning = np.linspace(30.,35.,5) * 1.e6
+        self.p.frequency_detuned_imaging = 32.e6
+        self.p.xvar_amp_imaging_abs = np.linspace(0.1,0.3,5)
+        self.p.xvar_t_imaging_pulse = np.linspace(5.,10.,5) * 1.e-6
 
-        self.camera_params.exposure_time = 20.0e-3
+        # self.camera_params.exposure_time = 8.0e-3
 
         self.trig_ttl = self.get_device("ttl14")
-        
-        self.step_time = self.p.t_ramp / self.p.n_gmramp_steps
 
-        self.c_ramp = np.linspace(self.p.v_pd_c_gmramp_start, self.p.v_pd_c_gmramp_end, self.p.n_gmramp_steps)
-        self.r_ramp = np.linspace(self.p.v_pd_r_gmramp_start, self.p.v_pd_r_gmramp_end, self.p.n_gmramp_steps)
+        self.xvarnames = ['xvar_amp_imaging_abs','xvar_t_imaging_pulse']
 
-        self.xvarnames = ['xvar_image_detuning','xvar_amp_imaging_fluor']
-
-        self.finish_build(shuffle=False)
+        self.finish_build(shuffle=True)
 
     @kernel
     def run(self):
@@ -50,22 +45,21 @@ class scan_image_detuning(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for x_var1 in self.p.xvar_image_detuning:
+        for xvar1 in self.p.xvar_amp_imaging_abs:
+            for xvar2 in self.p.xvar_t_imaging_pulse:
 
-            for xvar2 in self.p.xvar_amp_imaging_fluor:
-
-                self.set_imaging_detuning(detuning=x_var1)
-                self.dds.imaging.set_dds_gamma(amplitude=xvar2)
+                self.p.t_imaging_pulse = xvar2
+                self.set_imaging_detuning(amp=xvar1)
                 self.core.break_realtime()
 
-                # self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+                self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                # self.mot(self.p.t_mot_load * s)
+                self.mot(self.p.t_mot_load * s)
                 # self.hybrid_mot(self.p.t_mot_load * s)
 
                 ### Turn off push beam and 2D MOT to stop the atomic beam ###
-                # self.dds.push.off()
-                # self.switch_d2_2d(0)
+                self.dds.push.off()
+                self.switch_d2_2d(0)
 
                 # self.cmot_d1(self.p.t_d1cmot * s)
 
@@ -82,17 +76,15 @@ class scan_image_detuning(EnvExperiment, Base):
 
                 # self.dds.tweezer.on()
                 
-                self.trig_ttl.off()
-                delay(2*ms)
-                self.switch_d1_3d(0)
+                # self.trig_ttl.off()
+                # delay(2*ms)
+                # self.switch_d1_3d(0)
 
-                delay(self.p.t_tweezer_hold)
+                # delay(self.p.t_tweezer_hold)
 
                 # self.dds.tweezer.off()
 
                 # self.switch_d1_3d(1)
-
-                self.fl_image()
 
                 # self.gm_ramp(self.p.t_gm_ramp * s)
 
@@ -101,14 +93,18 @@ class scan_image_detuning(EnvExperiment, Base):
                 self.release()
                 
                 ### abs img
-                # delay(self.p.t_tof * s)
-                # self.abs_image()
+                delay(self.p.t_tof * s)
+                self.abs_image()
+                # self.fl_image()
 
                 self.core.break_realtime()
 
         self.mot_observe()
 
     def analyze(self):
+
+        self.p.t_imaging_pulse = self.p.xvar_t_imaging_pulse
+        self.p.amp_imaging_abs = self.p.xvar_amp_imaging_abs
 
         self.camera.Close()
 
