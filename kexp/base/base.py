@@ -58,7 +58,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         # self.dds.cleanup_dds_ramps()
 
     @kernel
-    def init_kernel(self, init_dds = True, init_dac = True, dds_set = True, dds_off = True):
+    def init_kernel(self, init_dds = True, init_dac = True, dds_set = True, dds_off = True, beat_ref_on=True):
         print(self._ridstr) # prints run ID to terminal
         self.core.reset() # clears RTIO
         if init_dac:
@@ -74,4 +74,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
             self.set_imaging_detuning()
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
+        if beat_ref_on:
+            self.dds.beatlock_ref.on()
         self.core.break_realtime() # add slack before scheduling experiment events
