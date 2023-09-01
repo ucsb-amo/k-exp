@@ -18,20 +18,23 @@ class tof(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 30. * 1.e-3
 
-        self.p.N_shots = 2
+        self.p.N_shots = 6
         self.p.N_repeats = 1
-        # self.p.t_tof = np.linspace(1000,2000,self.p.N_shots) * 1.e-6 # mot
-        self.p.t_tof = np.linspace(400,1250,self.p.N_shots) * 1.e-6 # cmot
+        # self.p.t_tof = np.linspace(1500,2500,self.p.N_shots) * 1.e-6 # mot
+        # self.p.t_tof = np.linspace(2000,3500,self.p.N_shots) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(3000,7000,self.p.N_shots) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(3000,7000,self.p.N_shots) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
 
-        # self.p.amp_push = 0.
-
-        self.xvarnames = ['t_tof']
+        self.p.v_pd_c_gmramp_start = 4.5
+        self.p.v_pd_c_gmramp_end = 1.8
+        self.p.v_pd_r_gmramp_start = 3.1
+        self.p.v_pd_r_gmramp_end = 1.8
 
         self.trig_ttl = self.get_device("ttl14")
+
+        self.xvarnames = ['t_tof']
 
         self.finish_build()
 
@@ -54,15 +57,18 @@ class tof(EnvExperiment, Base):
             ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
             self.switch_d2_2d(0)
-            self.switch_d2_3d(0)
 
-            # self.cmot_d1(self.p.t_d1cmot * s)
+            self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.trig_ttl.on()
-            # self.gm(self.p.t_gm * s)
-            # self.trig_ttl.off()
+            self.trig_ttl.on()
+            self.gm(self.p.t_gm * s)
+            self.trig_ttl.off()
 
-            # self.gm_ramp(self.p.t_gmramp * s)
+            self.gm_ramp(self.p.t_gmramp * s)
+
+            self.dds.light_sheet.on()
+            delay(40.e-3)
+            self.dds.light_sheet.off()
 
             # self.mot_reload(self.p.t_mot_reload * s)
             
@@ -70,9 +76,8 @@ class tof(EnvExperiment, Base):
             
             ### abs img
             delay(t_tof * s)
-            
             # self.fl_image()
-
+            self.flash_repump()
             self.abs_image()
 
             self.core.break_realtime()

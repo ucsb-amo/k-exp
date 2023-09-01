@@ -25,7 +25,7 @@ class tof(EnvExperiment, Base):
 
         # self.p.amp_push = 0.
 
-        self.p.t_gm_ramp = 7.e-3
+        self.p.t_gm_ramp = 4.e-3
         self.p.amp_frac_gm_ramp = np.linspace(0.1,1.0,5)
 
         self.xvarnames = ['amp_frac_gm_ramp']

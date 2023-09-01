@@ -23,9 +23,9 @@ class scan_image_detuning(EnvExperiment, Base):
         self.p.t_tof = 20 * 1.e-6 # mot
         
         # self.p.xvar_image_detuning = np.linspace(30.,35.,5) * 1.e6
-        self.p.frequency_detuned_imaging = 32.e6
-        self.p.xvar_amp_imaging_abs = np.linspace(0.1,0.3,5)
-        self.p.xvar_t_imaging_pulse = np.linspace(5.,10.,5) * 1.e-6
+        # self.p.frequency_detuned_imaging = 32.e6
+        self.p.xvar_amp_imaging_abs = np.linspace(0.1,0.3,3)
+        self.p.xvar_t_imaging_pulse = np.linspace(5.,10.,3) * 1.e-6
 
         # self.camera_params.exposure_time = 8.0e-3
 

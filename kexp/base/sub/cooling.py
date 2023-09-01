@@ -583,3 +583,5 @@ class Cooling():
         self.core.break_realtime()
         self.set_magnet_current()
         self.ttl_magnets.on()
+
+        self.dds.imaging.on()

@@ -38,7 +38,7 @@ class Image():
         if amp == dv:
             amp = self.params.amp_d2_r_imaging
 
-        self.dds.d2_3d_r.set_dds_gamma(detune=detune,amplitude=amp)
+        self.dds.d2_3d_r.set_dds_gamma(delta=detune,amplitude=amp)
         self.dds.d2_3d_r.on()
         delay(t)
         self.dds.d2_3d_r.off()
@@ -158,7 +158,6 @@ class Image():
                 amp = self.params.amp_imaging_fluor
         if detuning == dv:
             detuning = self.params.frequency_detuned_imaging
-            aprint('beans')
 
         self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging,amplitude=amp)
 

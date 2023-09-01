@@ -37,8 +37,8 @@ class ExptParams():
         self.t_mot_load = 2.
         self.t_d2cmot = 5.e-3
         self.t_d1cmot = 1.3e-3
-        self.t_gm = 1.5e-3
-        self.t_gmramp = 8.e-3
+        self.t_gm = 1.e-3
+        self.t_gmramp = 4.e-3
         self.t_tweezer_ramp = 3.e-3
         self.t_tweezer_hold = 50.e-3
 
@@ -95,11 +95,11 @@ class ExptParams():
         #Discrete GM ramp
         #v_pd values for start and end of ramp
         self.v_pd_c_gmramp_start = 4.5
-        self.v_pd_c_gmramp_end = 1.25
+        self.v_pd_c_gmramp_end = 1.5
         self.v_pd_r_gmramp_start = 3.1
-        self.v_pd_r_gmramp_end = 1.25
+        self.v_pd_r_gmramp_end = 1.5
 
-        self.n_gmramp_steps = 50
+        self.n_gmramp_steps = 200
 
         #1227
         self.frequency_ao_1227 = 80.e6

@@ -15,14 +15,14 @@ class scan_discrete_ramp(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000.,7000.,3) * 1.e-6
-        self.p.t_tof = 11000 * 1.e-6
+        self.p.t_tof = 3000 * 1.e-6
 
         #Ramp params
 
         self.p.N_shots = 6
         self.p.N_repeats = [1,1]
-        self.p.v_pd_c_gmramp_end = np.linspace(0.9,1.45,self.p.N_shots)
-        self.p.v_pd_r_gmramp_end = np.linspace(0.9,1.45,self.p.N_shots)
+        self.p.v_pd_c_gmramp_end = np.linspace(0.9,2.5,self.p.N_shots)
+        self.p.v_pd_r_gmramp_end = np.linspace(0.9,2.5,self.p.N_shots)
 
         self.c_ramp = np.zeros((len(self.p.v_pd_c_gmramp_end), len(self.p.v_pd_r_gmramp_end), self.p.n_gmramp_steps))
         self.r_ramp = np.zeros((len(self.p.v_pd_c_gmramp_end), len(self.p.v_pd_r_gmramp_end), self.p.n_gmramp_steps))
@@ -32,7 +32,7 @@ class scan_discrete_ramp(EnvExperiment, Base):
                 self.c_ramp[idx1][idx2][:] = np.linspace(self.p.v_pd_c_gmramp_start, self.p.v_pd_c_gmramp_end[idx1], self.p.n_gmramp_steps)
                 self.r_ramp[idx1][idx2][:] = np.linspace(self.p.v_pd_r_gmramp_start, self.p.v_pd_r_gmramp_end[idx2], self.p.n_gmramp_steps)
 
-        self.t_step_time = self.p.t_gm_ramp / self.p.n_gmramp_steps
+        self.t_step_time = self.p.t_gmramp / self.p.n_gmramp_steps
 
         self.xvarnames = ['v_pd_c_gmramp_end','v_pd_r_gmramp_end']
 
