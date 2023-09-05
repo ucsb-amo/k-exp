@@ -20,9 +20,7 @@ class ALSControlWindow(QWidget):
         super().__init__()
         self.expt_builder = ALSGUIExptBuilder()
         self.make_layout()
-
-        _, current_val = self.expt_builder.read_dac_expt()
-        self.update_current_value(current_val)
+        self.update_button_clicked()
 
     def make_layout(self):
 
@@ -46,14 +44,24 @@ class ALSControlWindow(QWidget):
         self.off_button = QPushButton("Off")
         self.off_button.clicked.connect(self.off_button_clicked)
 
-        current_val_label = QLabel("Current DAC Voltage = ")
+        current_dac_label = QLabel("Current DAC Voltage =")
         self.current_dac_value = QLabel("")
+        self.current_dac_value.setStyleSheet("font-weight: bold")
+
+        current_als_label = QLabel("Current ALS Power =")
+        self.current_als_value = QLabel("")
+        self.current_als_value.setStyleSheet("font-weight: bold")
+
+        self.update_button = QPushButton("Update DAC Reading")
+        self.update_button.clicked.connect(self.update_button_clicked)
 
         layout = QVBoxLayout()
         p_layout = QHBoxLayout()
         v_layout = QHBoxLayout()
         button_layout = QHBoxLayout()
-        current_val_layout = QHBoxLayout()
+        current_val_layout_1 = QHBoxLayout()
+        current_val_layout_2 = QHBoxLayout()
+        update_button_layout = QHBoxLayout()
 
         layout.addWidget(title)
         
@@ -68,14 +76,23 @@ class ALSControlWindow(QWidget):
         button_layout.addWidget(self.set_button)
         button_layout.addWidget(self.off_button)
 
-        current_val_layout.addWidget(current_val_label)
-        current_val_layout.addWidget(self.current_dac_value)
+        current_val_layout_2.addWidget(current_als_label)
+        current_val_layout_2.addWidget(self.current_als_value)
+
+        current_val_layout_1.addWidget(current_dac_label)
+        current_val_layout_1.addWidget(self.current_dac_value)
+
+        update_button_layout.addWidget(self.update_button)
 
         layout.addLayout(p_layout)
         layout.addLayout(v_layout)
         layout.addLayout(button_layout)
-        layout.addLayout(current_val_layout)
+        layout.addLayout(current_val_layout_2)
+        layout.addLayout(current_val_layout_1)
+        layout.addLayout(update_button_layout)
         self.layout = layout
+
+        self.power_layout = current_val_layout_2
 
     def update_power_box(self):
         power = als_voltage_to_power(self.dac_value.value())
@@ -96,6 +113,25 @@ class ALSControlWindow(QWidget):
         self.returncode_feedback(returncode,self.off_button)
         self.update_current_value(out)
 
+    def update_button_clicked(self):
+        returncode, current_val = self.expt_builder.read_dac_expt()
+        self.returncode_feedback(returncode,self.update_button)
+        self.update_current_value(current_val)
+
+    def update_current_value(self, dac_read_output):
+        v_dac = self.dac_mu_to_voltage(int(dac_read_output))
+        als_power = als_voltage_to_power(v_dac)
+        self.current_dac_value.setText(f"{v_dac:1.3f} V")
+        self.current_als_value.setText(f"{als_power:1.2f} W")
+        if v_dac > 0.:
+            self.current_als_value.setStyleSheet("background-color: #FC5656; font-weight: bold")
+        elif v_dac == 0.:
+            self.current_als_value.setStyleSheet("font-weight: bold")
+
+    def dac_mu_to_voltage(self, dac_mu):
+        V_abs_max = 10.
+        return (dac_mu - 2**15) / 2**15 * V_abs_max
+    
     def returncode_feedback(self, returncode, button:QPushButton, t=1000):
         if returncode == 0: 
             button.setStyleSheet("background-color: #FFA500")
@@ -103,14 +139,6 @@ class ALSControlWindow(QWidget):
         else:
             button.setStyleSheet("background-color: #FF4500")
             QTimer.singleShot(t, lambda: button.setStyleSheet(""))
-
-    def update_current_value(self, dac_read_output):
-        v_dac = self.dac_mu_to_voltage(int(dac_read_output))
-        self.current_dac_value.setText(f"{v_dac:1.3f} V")
-
-    def dac_mu_to_voltage(self, dac_mu):
-        V_abs_max = 10.
-        return (dac_mu - 2**15) / 2**15 * V_abs_max
         
 class ALSGUIExptBuilder():
     def __init__(self):
@@ -184,7 +212,7 @@ def main():
     window.setWindowTitle("ALS Control Panel")
     window.setWindowIcon(QIcon('banana-icon.png'))
 
-    window.setGeometry(window.x(), window.y(), 266, 160)
+    window.setFixedSize(266, 200)
 
     window.show()
     sys.exit(app.exec())
