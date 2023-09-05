@@ -1,5 +1,6 @@
 from kexp.config.camera_params import CameraParams
 import numpy as np
+from kexp.control.als_remote_control import als_power_to_voltage
 
 default_camera_params = CameraParams()
 
@@ -95,9 +96,9 @@ class ExptParams():
         #Discrete GM ramp
         #v_pd values for start and end of ramp
         self.v_pd_c_gmramp_start = 4.5
-        self.v_pd_c_gmramp_end = 1.5
+        self.v_pd_c_gmramp_end = 1.8
         self.v_pd_r_gmramp_start = 3.1
-        self.v_pd_r_gmramp_end = 1.5
+        self.v_pd_r_gmramp_end = 1.8
 
         self.n_gmramp_steps = 200
 
@@ -108,7 +109,13 @@ class ExptParams():
         self.v_pd_tweezer_ramp_end = 4.0
         self.n_tweezer_ramp_steps = 50
 
+        #ODT
+        self.power_light_sheet = 15.
+
         self.compute_derived()
+
+    def compute_als_remote_dac_voltage(self):
+        self.v_als_remote_power_control = als_power_to_voltage(self.power_light_sheet)
 
     def assign_camera_times(self):
         self.t_camera_exposure = self._camera_params.exposure_time

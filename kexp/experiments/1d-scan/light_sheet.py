@@ -4,7 +4,7 @@ from kexp import Base
 
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class light_sheet(EnvExperiment, Base):
 
     def build(self):
         # Base.__init__(self, basler_imaging=True, absorption_image=False)
@@ -16,20 +16,17 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tweezer_hold = 30. * 1.e-3
+        self.p.t_tof = 10.e-6
 
-        self.p.N_shots = 6
+        self.p.N_shots = 4
         self.p.N_repeats = 1
-        # self.p.t_tof = np.linspace(1500,2500,self.p.N_shots) * 1.e-6 # mot
-        # self.p.t_tof = np.linspace(2000,3500,self.p.N_shots) * 1.e-6 # cmot
-        # self.p.t_tof = np.linspace(1000,3000,self.p.N_shots) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(3000,7000,self.p.N_shots) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
-        # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
+        self.p.t_test = 5.0e-3
+        self.p.t_lightsheet_load = np.linspace(0.0,self.p.t_test,self.p.N_shots) * 1.e-3
+        self.p.t_lightsheet_hold = 1.e-3
 
         self.trig_ttl = self.get_device("ttl14")
 
-        self.xvarnames = ['t_tof']
+        self.xvarnames = ['t_lightsheet_load']
 
         self.finish_build()
 
@@ -43,7 +40,7 @@ class tof(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for t_tof in self.p.t_tof:
+        for t in self.p.t_lightsheet_load:
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)
@@ -61,10 +58,15 @@ class tof(EnvExperiment, Base):
 
             self.gm_ramp(self.p.t_gmramp * s)
 
-            self.release()
+            # delay(self.p.t_test - t)
+            self.dds.light_sheet.on()
+            delay(t)
+            self.switch_d1_3d(0)
+            # delay(self.p.t_lightsheet_hold)
+            self.dds.light_sheet.off()
 
             ### abs img
-            delay(t_tof * s)
+            delay(self.p.t_tof * s)
             # self.fl_image()
             self.flash_repump()
             self.abs_image()

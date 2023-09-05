@@ -40,6 +40,7 @@ class Devices():
 
         # dac channels
         self.dac_ch_3Dmot_current_control = 0
+        self.dac_ch_als_remote_power_control = 4
 
         # ttl channels
         self.ttl_basler = self.get_device("ttl9")
