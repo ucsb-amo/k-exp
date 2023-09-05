@@ -5,6 +5,7 @@ from PyQt6.QtWidgets import (
     QLineEdit, QPushButton, QMainWindow, QFileDialog, QFrame, QSpacerItem,
     QSizePolicy, QMessageBox
 )
+import numpy as np
 from PyQt6.QtCore import Qt, QSize, QMargins
 from PyQt6.QtGui import QIcon
 from toggleSlider import AnimatedToggle
@@ -12,6 +13,8 @@ from DAC_GUI_ExptBuilder import DACGUIExptBuilder, CHDACGUIExptBuilder
 
 CODE_DIR = os.environ.get("code")
 CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","dac_config.py")
+
+SKIP_CHANNELS = [4]
 
 # Create the main window
 class InputBox(QWidget):
@@ -79,9 +82,6 @@ class InputBox(QWidget):
         self.previous_voltage = ""
         # Initialize a variable to track the previous state
         self.previous_toggle_state = self.toggle.isChecked()
-
-        # Connect the stateChanged signal to the toggle_state_changed slot
-        self.toggle.stateChanged.connect(self.toggle_state_changed)
 
         self.toggle_state = True  # True represents "on"
         self.toggle.stateChanged.connect(self.toggle_state_changed)
@@ -166,6 +166,10 @@ class DACControlGrid(QWidget):
                 self.input_boxes.append(input_box)
                 self.channels.append(input_box.channel)  # Add the channel number to the list
 
+                if channel in SKIP_CHANNELS:
+                    input_box.toggle.stateChanged.disconnect(input_box.set_channel)
+                    input_box.setStyleSheet("background-color: red")
+                
         # Reload labels and voltages from configuration file on first program launch without giving a warning
         self.reload_opening()
 
@@ -183,7 +187,6 @@ class DACControlGrid(QWidget):
         self.layout.setContentsMargins(10, 10, 10, 10)
         self.grid_layout.setSpacing(20)  # Adjust the spacing between input boxes
 
-
     def handle_button_click(self):
         # Get the voltage values for each channel from the input boxes
         voltages = []
@@ -198,37 +201,41 @@ class DACControlGrid(QWidget):
                     except ValueError:
                         print(f"Invalid voltage: {voltage}")
 
-                    # Disconnect the stateChanged signal temporarily
-                    input_box.toggle.stateChanged.disconnect(input_box.set_channel)
+                    if input_box.channel not in SKIP_CHANNELS:
+                        # Disconnect the stateChanged signal temporarily
+                        input_box.toggle.stateChanged.disconnect(input_box.set_channel)
 
-                    # Update the toggle's state without triggering set_channel
-                    # if voltage != '0.0':
-                    input_box.toggle.setChecked(True)
-                    # else:
-                    #     input_box.toggle.setChecked(False)
+                        # Update the toggle's state without triggering set_channel
+                        # if voltage != '0.0':
+                        input_box.toggle.setChecked(True)
+                        # else:
+                        #     input_box.toggle.setChecked(False)
 
-                    # Reconnect the stateChanged signal
-                    input_box.toggle.stateChanged.connect(input_box.set_channel)
+                        # Reconnect the stateChanged signal
+                        input_box.toggle.stateChanged.connect(input_box.set_channel)
 
         if voltages:
             builder = DACGUIExptBuilder()
+            new_channels = list( set(channels).difference(set(SKIP_CHANNELS)) )
+            if new_channels != channels:
+                skip_ch_idx = [channels.index(skip_ch) for skip_ch in SKIP_CHANNELS]
+                no_skip_ch_idx = list( set(range(len(voltages))).difference(skip_ch_idx) )
+            channels = new_channels
+            voltages = np.array(voltages)[no_skip_ch_idx]
+            print(channels)
             builder.execute_set_all_dac_voltage(channels, voltages)
             print(f"DAC channels are   : {channels}")
             print(f"DAC voltages set to: {voltages}")
         else:
             print("No valid voltages entered")
 
-
-
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
             self.handle_button_click()
 
-
     def set_all_to_zero(self):
         for input_box in self.input_boxes:
             input_box.input_box.setText("0.0")
-
 
     def save_settings(self):
         result = QMessageBox.warning(self, "Warning", "Saving settings will overwrite the existing saved configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
@@ -256,9 +263,6 @@ class DACControlGrid(QWidget):
                     file.write("]\n")
         else:
             return
-
-                
-
 
     def reload_settings(self):
         result = QMessageBox.warning(self, "Warning", "Reloading settings will overwrite current configuration. Are you sure you want to proceed?",
@@ -320,7 +324,6 @@ class DACControlGrid(QWidget):
                 input_box.input_box.setText(str(voltage))
             else:
                 input_box.input_box.setText("0.0")
-
     
 app = QApplication(sys.argv)
 window = QMainWindow()
