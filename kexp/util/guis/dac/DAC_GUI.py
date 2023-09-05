@@ -202,10 +202,10 @@ class DACControlGrid(QWidget):
                     input_box.toggle.stateChanged.disconnect(input_box.set_channel)
 
                     # Update the toggle's state without triggering set_channel
-                    if voltage != '0.0':
-                        input_box.toggle.setChecked(True)
-                    else:
-                        input_box.toggle.setChecked(False)
+                    # if voltage != '0.0':
+                    input_box.toggle.setChecked(True)
+                    # else:
+                    #     input_box.toggle.setChecked(False)
 
                     # Reconnect the stateChanged signal
                     input_box.toggle.stateChanged.connect(input_box.set_channel)
