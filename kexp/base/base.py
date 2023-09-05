@@ -58,8 +58,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         # self.dds.cleanup_dds_ramps()
 
     @kernel
-    def init_kernel(self, init_dds = True, init_dac = True, dds_set = True, dds_off = True, beat_ref_on=True):
-        print(self._ridstr) # prints run ID to terminal
+    def init_kernel(self, run_id = True, init_dds = True, init_dac = True, dds_set = True, dds_off = True, beat_ref_on=True):
+        if run_id:
+            print(self._ridstr) # prints run ID to terminal
         self.core.reset() # clears RTIO
         if init_dac:
             delay_mu(self.params.t_rtio_mu)
