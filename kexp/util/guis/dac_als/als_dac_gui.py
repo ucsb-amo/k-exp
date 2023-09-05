@@ -105,7 +105,7 @@ class ALSControlWindow(QWidget):
             QTimer.singleShot(t, lambda: button.setStyleSheet(""))
 
     def update_current_value(self, dac_read_output):
-        v_dac = self.dac_mu_to_voltage(np.int32(dac_read_output))
+        v_dac = self.dac_mu_to_voltage(int(dac_read_output))
         self.current_dac_value.setText(f"{v_dac:1.3f} V")
 
     def dac_mu_to_voltage(self, dac_mu):
@@ -141,12 +141,14 @@ class ALSGUIExptBuilder():
                     class StartUp(EnvExperiment,Base):
                         def build(self):
                             Base.__init__(self,setup_camera=False)
+                            self.out = 0
                         @kernel
                         def run(self):
                             self.init_kernel(run_id = False, init_dds = False, init_dac = True, dds_set = False, dds_off = False, beat_ref_on=False)
                             self.zotino.write_dac({DAC_CH_ALS}, {voltage:1.3f})
-                            self.out = self.zotino.read_reg(channel={DAC_CH_ALS})
                             self.zotino.load()
+                            delay(1*ms)
+                            self.out = self.zotino.read_reg(channel={DAC_CH_ALS})
                         def analyze(self):
                             print(self.out)
                     """)
