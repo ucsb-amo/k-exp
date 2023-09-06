@@ -49,7 +49,7 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
             self.release()
 
             ### abs img
-            delay(self.p.t_tof * s)
+            delay(t * s)
             self.flash_repump()
             self.abs_image()
 
