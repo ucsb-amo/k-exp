@@ -40,6 +40,7 @@ class ExptParams():
         self.t_d1cmot = 1.3e-3
         self.t_gm = 1.e-3
         self.t_gmramp = 4.e-3
+        self.t_lightsheet_rampup = 10.e-3
         self.t_tweezer_ramp = 3.e-3
         self.t_tweezer_hold = 50.e-3
 
@@ -99,8 +100,14 @@ class ExptParams():
         self.v_pd_c_gmramp_end = 1.8
         self.v_pd_r_gmramp_start = 3.1
         self.v_pd_r_gmramp_end = 1.8
-
         self.n_gmramp_steps = 200
+
+        #ODT
+        self.amp_lightsheet = 0.6
+        self.frequency_ao_lightsheet = 80.e6
+        self.n_lightsheet_rampup_steps = 100
+        self.v_pd_lightsheet_rampup_start = 0.0
+        self.v_pd_lightsheet_rampup_end = 4.0
 
         #1227
         self.frequency_ao_1227 = 80.e6
@@ -108,9 +115,6 @@ class ExptParams():
         self.v_pd_tweezer_ramp_start = 0.0
         self.v_pd_tweezer_ramp_end = 4.0
         self.n_tweezer_ramp_steps = 50
-
-        #ODT
-        self.power_light_sheet = 15.
 
         self.compute_derived()
 
@@ -123,6 +127,13 @@ class ExptParams():
         self.t_pretrigger = self._camera_params.exposure_delay
         self.t_camera_trigger = self._camera_params.t_camera_trigger
         
+    def compute_lightsheet_ramp_params(self):
+        self.dt_lightsheet_rampup = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
+        self.v_pd_light_sheet_ramp = np.linspace(
+            self.v_pd_lightsheet_rampup_start,
+            self.v_pd_lightsheet_rampup_end,
+            self.n_lightsheet_rampup_steps)
+
     def compute_gmramp_params(self):
         self.v_pd_c_gmramp_list = np.linspace(self.v_pd_c_gmramp_start, self.v_pd_c_gmramp_end, self.n_gmramp_steps)
         self.v_pd_r_gmramp_list = np.linspace(self.v_pd_r_gmramp_start, self.v_pd_r_gmramp_end, self.n_gmramp_steps)
@@ -137,5 +148,3 @@ class ExptParams():
         methods = [m for m in dir(self) if not m.startswith('__') and callable(getattr(self,m)) and not m == 'compute_derived']
         for m in methods:
             getattr(self,m)()
-        
-            
