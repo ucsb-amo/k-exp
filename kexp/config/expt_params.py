@@ -41,6 +41,7 @@ class ExptParams():
         self.t_gm = 1.e-3
         self.t_gmramp = 4.e-3
         self.t_lightsheet_rampup = 10.e-3
+        self.t_lightsheet_hold = 50.e-3
         self.t_tweezer_ramp = 3.e-3
         self.t_tweezer_hold = 50.e-3
 
@@ -118,9 +119,6 @@ class ExptParams():
 
         self.compute_derived()
 
-    def compute_als_remote_dac_voltage(self):
-        self.v_als_remote_power_control = als_power_to_voltage(self.power_light_sheet)
-
     def assign_camera_times(self):
         self.t_camera_exposure = self._camera_params.exposure_time
         self.t_grab_start_wait = self._camera_params.connection_delay
@@ -128,8 +126,7 @@ class ExptParams():
         self.t_camera_trigger = self._camera_params.t_camera_trigger
         
     def compute_lightsheet_ramp_params(self):
-        self.dt_lightsheet_rampup = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
-        self.v_pd_light_sheet_ramp = np.linspace(
+        self.v_pd_lightsheet_ramp_list = np.linspace(
             self.v_pd_lightsheet_rampup_start,
             self.v_pd_lightsheet_rampup_end,
             self.n_lightsheet_rampup_steps)
