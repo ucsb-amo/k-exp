@@ -38,8 +38,8 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
             # self.hybrid_mot(self.p.t_mot_load * s)
 
             ###ODT on
-            self.dds.light_sheet.set_dds(v_pd=self.p.v_pd_lightsheet)
-            self.dds.light_sheet.on()
+            self.dds.lightsheet.set_dds(v_pd=self.p.v_pd_lightsheet)
+            self.dds.lightsheet.on()
 
             delay(100.e-3)
 
