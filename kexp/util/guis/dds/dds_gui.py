@@ -22,6 +22,8 @@ CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","dds_state.py")
 
 DISABLE_REVERT_BUTTON = True
 
+EXECUTE_LOGIC = True
+
 class DDSChannel(QWidget):
 
     toggleStateChanged = pyqtSignal(bool, int)
@@ -30,7 +32,6 @@ class DDSChannel(QWidget):
         super().__init__(parent=None)
 
         self.toggle_states = {}  # Initialize toggle states dictionary
-
 
         self.dds = dds
         self.prev_freq = copy.deepcopy(self.dds.frequency)
@@ -110,8 +111,8 @@ class DDSChannel(QWidget):
         # Create the AnimatedToggle widget with the specified colors
         self.toggle = AnimatedToggle(checked_color=QColor("#FFA500"), pulse_checked_color=QColor("#FFFF00"))
         self.toggle.setFixedSize(QSize(60, 40))
-        self.execute_logic = True
-        self.toggle.stateChanged.connect(lambda state: self.toggle_state_changed(state, execute_logic=self.execute_logic))
+        EXECUTE_LOGIC = True
+        self.toggle.stateChanged.connect(lambda state: self.toggle_state_changed(state, execute_logic=EXECUTE_LOGIC))
         frame_layout.addWidget(self.toggle)
 
          # Create the SET and REVERT buttons with smaller size
@@ -192,7 +193,7 @@ class DDSChannel(QWidget):
             self.freq_input.setText(f"{detuning:.3f}")
 
     def set_amp_combobox_options(self):
-        if self.dds.dac_ch != -1 and self.dds.v_pd != 0.0:
+        if self.dds.dac_ch != -1:
             self.amp_unit_combobox.addItems(["V (DAC)","A (DDS)"])
             v_pd = self.dds.v_pd
             self.amp_input.setText(f'{v_pd}')
@@ -266,13 +267,13 @@ class DDSChannel(QWidget):
         return_code = 0
         t = 2000
         if return_code == 0: 
-            self.execute_logic = False
+            EXECUTE_LOGIC = False
             self.turn_on_toggle()
             # Change the background color to the specified color
             self.set_button.setStyleSheet("background-color: #FFA500")
             # Remain colored for duration equivalent to loading DDS
             QTimer.singleShot(t, lambda: self.set_button.setStyleSheet(""))  # Clear the stylesheet to revert to default color)
-            self.execute_logic = True
+            EXECUTE_LOGIC = True
         else:
              # Change the background color to the specified color
             self.set_button.setStyleSheet("background-color: #FF4500")
@@ -334,7 +335,7 @@ class DDSChannel(QWidget):
     def get_amplitude(self):
         amp_unit = self.amp_unit_combobox.currentText()
         if amp_unit == "V (DAC)":
-            return float(self.amp_input.text().strip())
+            return self.dds.amplitude
         elif amp_unit == "A (DDS)":
             return float(self.amp_input.text().strip())
 
@@ -344,9 +345,6 @@ class DDSChannel(QWidget):
             return float(self.amp_input.text().strip())
         else:
             return self.dds.v_pd
-
-        
-    
 
 class DDSControlGrid(QWidget):
     def __init__(self):
@@ -498,46 +496,49 @@ class DDSControlGrid(QWidget):
             print("dds_state.py not found or does not contain the required attributes.")
 
     def update_channel_inputs(self, channel, frequency, amplitude, v_dac):
-        channel.freq_input.setText(f"{frequency:.3f}")
-        channel.amp_input.setText(f"{amplitude:.3f}")
 
+        channel.dds.v_pd = v_dac
+        channel.dds.frequency = frequency * 1.e6
+        channel.dds.amplitude = amplitude
+
+        channel.freq_input.setText(f"{frequency:.3f}")
+        
         if channel.dds.dac_ch != -1:
             channel.amp_unit_combobox.setCurrentText("V (DAC)")
-            channel.dds.v_pd = float(v_dac)
+            channel.amp_input.setText(f"{v_dac:.3f}")
         else:
             channel.amp_unit_combobox.setCurrentText("A (DDS)")
-            channel.dds.amplitude = float(amplitude)
+            channel.amp_input.setText(f"{amplitude:.3f}")
 
     def set_all_on(self):            
         # Implement All On settings logic here
         builder = DDSGUIExptBuilder()
         builder.all_on(self.dds_channels)
-        self.execute_logic = False
+        EXECUTE_LOGIC = False
           # Loop through all the DDSChannel instances and turn on their toggles
         for channel in self.dds_channels:
             channel.turn_on_toggle()
-        self.execute_logic = True
+        EXECUTE_LOGIC = True
             
     def set_all_off(self):
     # Implement All Off settings logic here
         builder = DDSGUIExptBuilder()
         builder.all_off()
-        self.execute_logic = False
+        EXECUTE_LOGIC = False
          # Loop through all the DDSChannel instances and turn off their toggles
         for channel in self.dds_channels:
             channel.turn_off_toggle()
-        self.execute_logic = True
+        EXECUTE_LOGIC = True
 
     def initialize(self):
         # Initalize all CH. 
         builder = DDSGUIExptBuilder()
-        return_code =builder.startup()
+        return_code = builder.startup()
         if return_code == 0:
             self.init_button.setText("Initialized!")
             self.init_button.setStyleSheet(f"background-color: #FFA500")
         else:
             self.init_button.setStyleSheet(f"background-color: #FF4500")
-
 
 def main():
     app = QApplication(sys.argv)
