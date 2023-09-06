@@ -230,13 +230,11 @@ class DDSChannel(QWidget):
                 unit = self.amp_unit_combobox.currentText()
                 if unit == "V (DAC)":
                     self.dds.v_pd = float(self.amp_input.text().strip())
-                    # self.dds.amplitude = dds_id.default_dac_dds_amplitude
                 if unit == "A (DDS)":
                     self.dds.amplitude = float(self.amp_input.text().strip())
                 self.prev_freq = self.dds.frequency
                 self.prev_amp = self.dds.amplitude
                 self.prev_voltage = self.dds.v_pd
-                # print(self.prev_freq, self.prev_amp, self.prev_voltage)
                 builder = DDSGUIExptBuilder()
                 builder.one_on(self.dds)
 
@@ -257,7 +255,6 @@ class DDSChannel(QWidget):
         amp_unit = self.amp_unit_combobox.currentText()
         if amp_unit == "V (DAC)":
             self.dds.v_pd = float(self.amp_input.text().strip())
-            # self.dds.amplitude = dds_id.default_dac_dds_amplitude
         if amp_unit == "A (DDS)":
             self.dds.amplitude = float(self.amp_input.text().strip())
             
@@ -283,7 +280,6 @@ class DDSChannel(QWidget):
 
     def revert_button_clicked(self):
         # Function to handle REVERT button click
-        # print(type(self.dds.frequency),type(self.dds.amplitude),type(self.dds.v_pd))
         warningmessage = "Reverting will overwrite the existing configuration. Current settings will be lost forever."
         warningmessage += f"\nCurrent:   (frequency, amp, v_pd) = ({self.dds.frequency/1.e6:1.3f},{self.dds.amplitude:1.3f},{self.dds.v_pd:1.3f})"
         warningmessage += f"\nRevert to: (frequency, amp, v_pd) = ({self.prev_freq/1.e6:1.3f},{self.prev_amp:1.3f},{self.prev_voltage:1.3f})"

@@ -141,39 +141,36 @@ class DDS():
          self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude)
          if self.dac_control_bool:
             self.update_dac_setpoint(self.v_pd)
-
-      # determine which values need to be set
-      _set_freq = frequency >= 0.
-      if self.dac_control_bool:
-         _set_vpd = v_pd > 0.
-         _set_amp = False
       else:
-         _set_amp = (amplitude >= 0.)
-         _set_vpd = False
-      _set_freq_and_power = _set_freq and (_set_amp or _set_vpd)
-
-      # set the things which need to be set
-      if _set_freq_and_power:
-         self.frequency = frequency
+         # determine which values need to be set
+         _set_freq = frequency >= 0.
          if self.dac_control_bool:
-            self.v_pd = v_pd
-            self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-            self.update_dac_setpoint(v_pd)
+            _set_vpd = v_pd > 0.
+            _set_amp = (amplitude >= 0.)
          else:
+            _set_amp = (amplitude >= 0.)
+            _set_vpd = False
+         _set_freq_and_power = _set_freq and (_set_amp or _set_vpd)
+
+         if not frequency < 0.:
+            self.frequency = frequency
+         if not amplitude < 0.:
             self.amplitude = amplitude
+         if not v_pd < 0.:
+            self.v_pd = v_pd
+
+         # set the things which need to be set
+         if _set_freq_and_power:
+            if self.dac_control_bool:
+               self.update_dac_setpoint(v_pd)
             self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-      elif _set_freq:
-         self.frequency = frequency
-         if frequency == 0.: # do I need this block? It probably should not be here
-            self.dds_device.sw.off()
-         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-      elif _set_amp: 
-         self.amplitude = amplitude
-         self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-         if amplitude == 0.: # do I need this block? It probably should not be here
-            self.dds_device.sw.off()
-      elif _set_vpd:
-         self.update_dac_setpoint(v_pd)
+         elif _set_freq:
+            self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
+         if not _set_freq_and_power:
+            if _set_amp:
+               self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
+            if _set_vpd:
+               self.update_dac_setpoint(v_pd)
    
    @kernel
    def update_dac_setpoint(self, v_pd=-0.1, dac_load = True):
