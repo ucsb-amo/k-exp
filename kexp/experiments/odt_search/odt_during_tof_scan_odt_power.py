@@ -13,11 +13,12 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
         self.p = self.params
 
         self.p.N_shots = 6
-        self.p.t_tof = np.linspace(1000,4000,self.p.N_shots) * 1.e-6
+        # self.p.t_tof = np.linspace(1000,4000,self.p.N_shots) * 1.e-6
+        self.p.t_tof = 1000 * 1e-6
+        self.p.v_pd_lightsheet = np.linspace(0.,5.,10)
+        # self.p.v_pd_lightsheet = 5.
 
-        self.xvarnames = ['t_tof']
-
-        self.p.v_pd_lightsheet = 5.
+        self.xvarnames = ['v_pd_lightsheet']
 
         self.finish_build()
 
@@ -29,7 +30,7 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
 
-        for t in self.p.t_tof:
+        for t in self.p.v_pd_lightsheet:
             self.kill_mot(self.p.t_mot_kill * s)
 
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
@@ -38,7 +39,8 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
             # self.hybrid_mot(self.p.t_mot_load * s)
 
             ###ODT on
-            self.dds.lightsheet.set_dds(v_pd=self.p.v_pd_lightsheet)
+            # self.dds.lightsheet.set_dds(v_pd=self.p.v_pd_lightsheet)
+            self.dds.lightsheet.set_dds(v_pd=t)
             self.dds.lightsheet.on()
 
             delay(100.e-3)
@@ -49,13 +51,23 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
             self.release()
 
             ### abs img
-            delay(t * s)
+            delay(self.p.t_tof * s)
             self.flash_repump()
             self.abs_image()
+
+            self.dds.lightsheet.off()
 
             self.core.break_realtime()
 
         self.mot_observe()
+
+    def analyze(self):
+
+        self.camera.Close()
+
+        self.ds.save_data(self)
+
+        print("Done!")
 
 
 
