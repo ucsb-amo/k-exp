@@ -27,12 +27,14 @@ kexp/base/sub/devices.py
 kexp/base/sub/image.py
 kexp/config/__init__.py
 kexp/config/camera_params.py
+kexp/config/dac_config.py
 kexp/config/dds_calibration.py
 kexp/config/dds_id.py
 kexp/config/dds_state.py
 kexp/config/expt_params.py
 kexp/config/ttl_config.py
 kexp/control/__init__.py
+kexp/control/als_remote_control.py
 kexp/control/artiq/DDS.py
 kexp/control/artiq/__init__.py
 kexp/control/artiq/dummy_core.py
@@ -45,10 +47,10 @@ kexp/experiments/fluorescence.py
 kexp/experiments/oneshot.py
 kexp/experiments/repeats.py
 kexp/experiments/tof.py
-kexp/experiments/tof_gmramp.py
 kexp/experiments/looping/__init__.py
 kexp/experiments/looping/mot_current_ramp.py
 kexp/experiments/startup/__init__.py
+kexp/experiments/startup/startup.py
 kexp/experiments/test/__init__.py
 kexp/experiments/test/gm_ramp_test.py
 kexp/experiments/test/tweezer_test.py
@@ -69,6 +71,8 @@ kexp/util/db/__init__.py
 kexp/util/db/device_db.py
 kexp/util/db/device_db_master.py
 kexp/util/guis/__init__.py
+kexp/util/guis/dds/DDSSpinner.py
 kexp/util/guis/dds/__init__.py
 kexp/util/guis/dds/dds_gui.py
 kexp/util/guis/dds/dds_gui_ExptBuilder.py
+kexp/util/guis/dds/toggleSlider.py
