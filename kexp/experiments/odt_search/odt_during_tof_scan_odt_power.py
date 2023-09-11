@@ -30,7 +30,7 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
 
-        for t in self.p.v_pd_lightsheet:
+        for v in self.p.v_pd_lightsheet:
             self.kill_mot(self.p.t_mot_kill * s)
 
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
@@ -40,7 +40,7 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
 
             ###ODT on
             # self.dds.lightsheet.set_dds(v_pd=self.p.v_pd_lightsheet)
-            self.dds.lightsheet.set_dds(v_pd=t)
+            self.dds.lightsheet.set_dds(v_pd=v)
             self.dds.lightsheet.on()
 
             delay(100.e-3)

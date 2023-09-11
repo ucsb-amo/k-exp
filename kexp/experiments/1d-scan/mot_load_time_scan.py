@@ -16,16 +16,14 @@ class mot_load_scan(EnvExperiment, Base):
         self.p = self.params
 
         self.p.N_shots = 8
-        self.p.N_repeats = 2
-        self.p.t_tof = 300 * 1.e-6 # mot
+        self.p.N_repeats = 3
+        self.p.t_tof = 800 * 1.e-6 # mot
 
-        self.p.xvar_t_mot_load = np.linspace(0.25,3.5,self.p.N_shots)
-        self.p.xvar_t_mot_load = np.repeat(self.p.xvar_t_mot_load,self.p.N_repeats)
+        self.p.xvar_t_mot_load = np.linspace(0.1,3.5,self.p.N_shots)
 
         self.xvarnames = ['xvar_t_mot_load']
 
-        self.shuffle_xvars()
-        self.get_N_img()
+        self.finish_build()
 
     @kernel
     def run(self):

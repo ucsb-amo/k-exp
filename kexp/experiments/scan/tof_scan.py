@@ -16,18 +16,12 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tweezer_hold = 30. * 1.e-3
-
-        self.p.N_repeats = [1,3]
-        self.p.t_gm = 1.e-3
-        self.p.t_tof = 4000.e-6
-        self.p.xvar2_t = np.linspace(3000,7000,4) * 1.e-6 # gm
-        self.p.xvar_t = np.linspace(3.,6.,5) * 1.e-3
-        self.p.n_gmramp_steps = 100
+        self.p.t_tof = np.linspace(3000.,5500.,6) * 1.e-6
+        self.p.t_mot_load = np.linspace(0.2,2.,6)
 
         self.trig_ttl = self.get_device("ttl14")
 
-        self.xvarnames = ['xvar_t','t_tof']
+        self.xvarnames = ['t_mot_load','t_tof']
 
         self.finish_build()
 
@@ -41,11 +35,11 @@ class tof(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for t in self.p.xvar_t:
-            for t2 in self.p.xvar_t2:
+        for t in self.p.t_mot_load:
+            for t2 in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(self.p.t_mot_load * s)
+                self.mot(t * s)
                 # self.hybrid_mot(self.p.t_mot_load * s)
 
                 ### Turn off push beam and 2D MOT to stop the atomic beam ###
@@ -55,17 +49,17 @@ class tof(EnvExperiment, Base):
                 self.cmot_d1(self.p.t_d1cmot * s)
 
                 self.trig_ttl.on()
-                self.gm(t * s)
+                self.gm(self.p.t_gm * s)
                 self.trig_ttl.off()
 
-                # self.gm_ramp(t2 * s)
+                self.gm_ramp(self.p.t_gmramp * s)
 
                 # self.mot_reload(self.p.t_mot_reload * s)
                 
                 self.release()
                 
                 ### abs img
-                delay(self.p.t_tof * s)
+                delay(t2 * s)
                 # self.fl_image()
                 self.flash_repump()
                 self.abs_image()
@@ -75,8 +69,6 @@ class tof(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
-
-        self.p.t_gm = self.p.xvar_t
 
         self.camera.Close()
 

@@ -13,7 +13,7 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
         self.p = self.params
 
         self.p.N_shots = 6
-        self.p.t_tof = np.linspace(1000,4000,6) * 1.e-6
+        self.p.t_tof = np.linspace(1000,2100,6) * 1.e-6
         # self.p.t_tof = 1000 * 1e-6
         self.p.v_pd_lightsheet = np.linspace(1.,4.5,5)
         # self.p.v_pd_lightsheet = 5.

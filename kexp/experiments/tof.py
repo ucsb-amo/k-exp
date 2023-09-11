@@ -25,6 +25,8 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
 
+        self.p.t_gmramp = 5.e-3
+
         self.trig_ttl = self.get_device("ttl14")
 
         self.xvarnames = ['t_tof']
@@ -53,11 +55,11 @@ class tof(EnvExperiment, Base):
 
             # self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.trig_ttl.on()
-            # self.gm(self.p.t_gm * s)
-            # self.trig_ttl.off()
+            self.trig_ttl.on()
+            self.gm(self.p.t_gm * s)
+            self.trig_ttl.off()
 
-            # self.gm_ramp(self.p.t_gmramp * s)
+            self.gm_ramp(self.p.t_gmramp * s)
 
             self.release()
 

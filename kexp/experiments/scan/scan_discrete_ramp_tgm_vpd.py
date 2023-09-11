@@ -8,33 +8,32 @@ class scan_discrete_ramp(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "mot tof, vary discrete ramp params"
+        self.run_info._run_description = "gm tof, vary discrete ramp params"
 
         ## Parameters
 
         self.p = self.params
 
-        # self.p.t_tof = np.linspace(3000.,7000.,3) * 1.e-6
-        self.p.t_tof = 3000 * 1.e-6
-
         #Ramp params
 
         self.p.N_shots = 6
-        self.p.N_repeats = [1,1]
-        self.p.v_pd_c_gmramp_end = np.linspace(0.9,2.5,self.p.N_shots)
-        self.p.v_pd_r_gmramp_end = np.linspace(0.9,2.5,self.p.N_shots)
+        self.p.N_repeats = [2,2]
+        self.p.v_pd_gmramp_end = np.linspace(0.8,1.5,self.p.N_shots)
 
-        self.c_ramp = np.zeros((len(self.p.v_pd_c_gmramp_end), len(self.p.v_pd_r_gmramp_end), self.p.n_gmramp_steps))
-        self.r_ramp = np.zeros((len(self.p.v_pd_c_gmramp_end), len(self.p.v_pd_r_gmramp_end), self.p.n_gmramp_steps))
+        self.c_ramp = np.zeros((len(self.p.v_pd_gmramp_end), self.p.n_gmramp_steps))
+        self.r_ramp = np.zeros((len(self.p.v_pd_gmramp_end), self.p.n_gmramp_steps))
 
-        for idx1 in range(len(self.p.v_pd_c_gmramp_end)):
-            for idx2 in range(len(self.p.v_pd_r_gmramp_end)):
-                self.c_ramp[idx1][idx2][:] = np.linspace(self.p.v_pd_c_gmramp_start, self.p.v_pd_c_gmramp_end[idx1], self.p.n_gmramp_steps)
-                self.r_ramp[idx1][idx2][:] = np.linspace(self.p.v_pd_r_gmramp_start, self.p.v_pd_r_gmramp_end[idx2], self.p.n_gmramp_steps)
+        # self.p.t_tof = np.linspace(3000.,7000.,8) * 1.e-6
 
-        self.t_step_time = self.p.t_gmramp / self.p.n_gmramp_steps
+        self.p.t_tof = 3000.e-6
+        self.p.xvar_t_gmramp = np.linspace(1.,7.,7) * 1.e-3
 
-        self.xvarnames = ['v_pd_c_gmramp_end','v_pd_r_gmramp_end']
+        for idx1 in range(len(self.p.v_pd_gmramp_end)):
+                self.c_ramp[idx1][:] = np.linspace(self.p.v_pd_c_gmramp_start, self.p.v_pd_gmramp_end[idx1], self.p.n_gmramp_steps)
+                self.r_ramp[idx1][:] = np.linspace(self.p.v_pd_r_gmramp_start, self.p.v_pd_gmramp_end[idx1], self.p.n_gmramp_steps)
+
+        # self.xvarnames = ['v_pd_gmramp_end','t_tof']
+        self.xvarnames = ['v_pd_gmramp_end','xvar_t_gmramp']
 
         self.trig_ttl = self.get_device("ttl14")
 
@@ -50,8 +49,8 @@ class scan_discrete_ramp(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for idx1 in range(len(self.p.v_pd_c_gmramp_end)):
-            for idx2 in range(len(self.p.v_pd_r_gmramp_end)):
+        for idx1 in range(len(self.p.v_pd_gmramp_end)):
+            for t in self.p.xvar_t_gmramp:
 
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -65,16 +64,17 @@ class scan_discrete_ramp(EnvExperiment, Base):
                 self.trig_ttl.on()
                 self.gm(self.p.t_gm * s)
 
+                dt_gmramp = t / self.p.n_gmramp_steps
                 for n in range(self.p.n_gmramp_steps):
-                    self.dds.d1_3d_c.set_dds_gamma(v_pd=self.c_ramp[idx1][idx2][n])
+                    self.dds.d1_3d_c.set_dds_gamma(v_pd=self.c_ramp[idx1][n])
                     delay_mu(self.params.t_rtio_mu)
-                    self.dds.d1_3d_r.set_dds_gamma(v_pd=self.r_ramp[idx1][idx2][n])
+                    self.dds.d1_3d_r.set_dds_gamma(v_pd=self.r_ramp[idx1][n])
 
                     with parallel:
                         self.ttl_magnets.off()
                         self.switch_d1_3d(1)
                         self.switch_d2_3d(0)
-                    delay(self.t_step_time)
+                    delay(dt_gmramp)
 
                 # delay(self.p.t_gm * s)
 
