@@ -9,7 +9,7 @@ class tof(EnvExperiment, Base):
 
     def build(self):
         # Base.__init__(self, basler_imaging=True, absorption_image=False)
-        Base.__init__(self,setup_camera=False)
+        Base.__init__(self)
 
         self.run_info._run_description = "mot tof"
 
@@ -17,18 +17,13 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = 1000 * 1.e-6 # mot
+        self.p.t_tof = 3000 * 1.e-6 # mot
 
         self.p.t_gmramp = 5.e-3
 
         self.p.dummy = [1]*1000
 
         self.xvarnames = ['dummy']
-
-        self.ttl_camera = self.ttl_basler
-
-        # self.params.t_light_only_image_delay = 200.e-3
-        # self.params.t_dark_image_delay = 200.e-3
 
         self.finish_build()
 
@@ -53,11 +48,11 @@ class tof(EnvExperiment, Base):
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-            # self.cmot_d1(self.p.t_d1cmot * s)
+            self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.gm(self.p.t_gm * s)
+            self.gm(self.p.t_gm * s)
 
-            # self.gm_ramp(self.p.t_gmramp * s)
+            self.gm_ramp(self.p.t_gmramp * s)
 
             self.release()
 
