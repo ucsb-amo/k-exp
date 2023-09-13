@@ -2,9 +2,9 @@ class CameraParams():
     def __init__(self):
         self.pixel_size_m = 1.
         self.magnification = 1.
-        self.exposure_delay = 0.
+        self.exposure_delay = 17 * 1.e-6
         self.serial_no = 0.
-        self.exposure_time = 0.
+        self.exposure_time = 19.e-6
         self.connection_delay = 1.5
         self.t_camera_trigger = 2.e-6
         self.t_readout_time = 0.

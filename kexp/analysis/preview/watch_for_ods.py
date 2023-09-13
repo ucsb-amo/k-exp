@@ -1,0 +1,129 @@
+from pypylon import pylon
+import matplotlib.pyplot as plt
+from kexp.control import BaslerUSB
+from kexp.analysis.image_processing import compute_ODs, fit_gaussian_sum_dist
+import numpy as np
+from kexp.config import camera_params
+from kamo.atom_properties.k39 import Potassium39
+
+####
+
+CROP_TYPE = 'gm'
+
+
+####
+
+atom = Potassium39()
+atom_cross_section = atom.get_cross_section()
+convert_to_atom_number = 1/atom_cross_section * (camera_params.basler_absorp_camera_params.pixel_size_m / camera_params.basler_absorp_camera_params.magnification)**2
+
+###
+
+
+# fig, viewer = plt.subplots(2,4,figsize=(15,6))
+
+ax = [0,0,0,0,0,0]
+fig = plt.figure()
+fig.set_figheight(8)
+fig.set_figwidth(12)
+grid = (3,6)
+ax[0] = plt.subplot2grid(grid,(0,0),colspan=2)
+ax[1] = plt.subplot2grid(grid,(0,2),colspan=2)
+ax[2] = plt.subplot2grid(grid,(0,4),colspan=2)
+ax[3] = plt.subplot2grid(grid,(1,0),colspan=3,rowspan=2)
+ax[4] = plt.subplot2grid(grid,(1,3),colspan=3,rowspan=1)
+ax[5] = plt.subplot2grid(grid,(2,3),colspan=3,rowspan=1)
+
+plt.ion()
+
+# open the camera
+camera = BaslerUSB(BaslerSerialNumber=camera_params.basler_absorp_camera_params.serial_no,
+                    ExposureTime=camera_params.basler_absorp_camera_params.exposure_time,
+                    TriggerMode='On')
+
+# start waiting for triggers
+camera.StartGrabbingMax(3000,pylon.GrabStrategy_LatestImages)
+
+# empty arrays
+images = []
+count = 0
+sigmas_x = np.zeros(10); sigmas_x.fill(np.NaN)
+sigmas_y = np.zeros(10); sigmas_y.fill(np.NaN)
+atom_N = np.zeros(10); atom_N.fill(np.NaN)
+t_axis = np.linspace(-9,0,10)
+
+# during camera grab...
+while camera.IsGrabbing():
+    try:
+        # get an image if available
+        grabResult = camera.RetrieveResult(30000, pylon.TimeoutHandling_ThrowException)
+    except Exception as e:
+        # close camera if it fucks up
+        print(e)
+        camera.Close()
+
+    # when you get an image
+    if grabResult.GrabSucceeded():
+        # Access the image data
+        img = np.uint8(grabResult.GetArray())
+        images.append(img)
+        # count up how many images you've gotten
+        count += 1
+        print(f'gotem {count}/3')
+        # when you get 3 images (enough to compute an OD)
+        if count == 3:
+            # compute the OD
+            _, OD, sum_od_x, sum_od_y = compute_ODs(images[0],images[1],images[2],crop_type=CROP_TYPE)
+            # fit the summed ODs
+            fit_x = fit_gaussian_sum_dist(sum_od_x,camera_params.basler_absorp_camera_params)
+            fit_y = fit_gaussian_sum_dist(sum_od_y,camera_params.basler_absorp_camera_params)
+            # add the new widths to the arrays of widths, ditto "atom number"
+            sigmas_x = np.append(sigmas_x,fit_x[0].sigma * 1.e6)
+            sigmas_y = np.append(sigmas_y,fit_y[0].sigma * 1.e6)
+            atom_N = np.append(atom_N,np.sum(OD) * convert_to_atom_number)
+            # remove the oldest width, atom number from the lists
+            sigmas_x = sigmas_x[1:]
+            sigmas_y = sigmas_y[1:]
+            atom_N = atom_N[1:]
+
+            # clear the axes
+            for a in ax:
+                a.cla()
+            # plot the raw images
+            ax[0].imshow(images[0],vmax=np.max(images[0]),vmin=0)
+            ax[0].set_title("atoms + light image")
+            ax[1].imshow(images[1],vmax=np.max(images[1]),vmin=0)
+            ax[1].set_xticklabels("")
+            ax[1].set_yticklabels("")
+            ax[1].set_title("light only image")
+            ax[2].imshow(images[2],vmax=np.max(images[2]),vmin=0)
+            ax[2].set_yticklabels("")
+            ax[2].set_yticklabels("")
+            ax[2].set_title("dark image")
+            # plot the OD, hardcoded colorbar max for visual comparison between runs
+            ax[3].imshow(OD[0],vmax=3,vmin=0)
+            ax[3].set_title("OD")
+            # plot the widths
+            ax[4].plot(t_axis,sigmas_x,'.')
+            ax[4].plot(t_axis,sigmas_y,'.')
+            ax[4].legend(["sigma_x","sigma_y"],loc='lower left')
+            ax[4].yaxis.set_label_position("right")
+            ax[4].yaxis.tick_right()
+            ax[4].set_ylabel("width (um)")
+            ax[4].set_xticklabels("")
+            # plot the atom number
+            ax[5].plot(t_axis,atom_N,'.')
+            ax[5].yaxis.set_label_position("right")
+            ax[5].yaxis.tick_right()
+            ax[5].set_ylabel("atom number")
+            ax[5].set_xlabel("shot (relative to current shot)")
+
+            # update the figure
+            plt.pause(0.1)
+            fig.canvas.draw()
+            
+            # clear the images & counter to get ready for the next ones
+            images = []
+            count = 0
+
+    grabResult.Release()

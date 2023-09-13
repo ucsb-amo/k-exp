@@ -17,7 +17,7 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = 3000 * 1.e-6 # mot
+        self.p.t_tof = 5000 * 1.e-6 # mot
 
         self.p.t_gmramp = 5.e-3
 
