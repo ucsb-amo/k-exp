@@ -24,8 +24,8 @@ convert_to_atom_number = 1/atom_cross_section * (camera_params.basler_absorp_cam
 
 ax = [0,0,0,0,0,0]
 fig = plt.figure()
-fig.set_figheight(8)
-fig.set_figwidth(12)
+fig.set_figheight(7)
+fig.set_figwidth(10)
 grid = (3,6)
 ax[0] = plt.subplot2grid(grid,(0,0),colspan=2)
 ax[1] = plt.subplot2grid(grid,(0,2),colspan=2)
@@ -79,12 +79,18 @@ while camera.IsGrabbing():
             fit_x = fit_gaussian_sum_dist(sum_od_x,camera_params.basler_absorp_camera_params)
             fit_y = fit_gaussian_sum_dist(sum_od_y,camera_params.basler_absorp_camera_params)
             # add the new widths to the arrays of widths, ditto "atom number"
-            sigmas_x = np.append(sigmas_x,fit_x[0].sigma * 1.e6)
-            sigmas_y = np.append(sigmas_y,fit_y[0].sigma * 1.e6)
+            try:
+                sigmas_x = np.append(sigmas_x,fit_x[0].sigma * 1.e6)
+                sigmas_y = np.append(sigmas_y,fit_y[0].sigma * 1.e6)
+                # remove the oldest width, atom number from the lists
+                sigmas_x = sigmas_x[1:]
+                sigmas_y = sigmas_y[1:]
+            except:
+                sigmas_x = sigmas_x
+                sigmas_y = sigmas_y
+                print("The fits must have failed")
+
             atom_N = np.append(atom_N,np.sum(OD) * convert_to_atom_number)
-            # remove the oldest width, atom number from the lists
-            sigmas_x = sigmas_x[1:]
-            sigmas_y = sigmas_y[1:]
             atom_N = atom_N[1:]
 
             # clear the axes

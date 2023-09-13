@@ -23,6 +23,8 @@ class tof(EnvExperiment, Base):
 
         self.p.dummy = [1]*1000
 
+        self.p.t_mot_reload = 1.
+
         self.xvarnames = ['dummy']
 
         self.finish_build()
