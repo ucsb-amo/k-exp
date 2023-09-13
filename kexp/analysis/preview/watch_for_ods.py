@@ -33,6 +33,7 @@ ax[2] = plt.subplot2grid(grid,(0,4),colspan=2)
 ax[3] = plt.subplot2grid(grid,(1,0),colspan=3,rowspan=2)
 ax[4] = plt.subplot2grid(grid,(1,3),colspan=3,rowspan=1)
 ax[5] = plt.subplot2grid(grid,(2,3),colspan=3,rowspan=1)
+fig.show()
 
 plt.ion()
 
