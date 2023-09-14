@@ -7,7 +7,13 @@ class GaussianFit(Fit):
     def __init__(self,xdata,ydata):
         super().__init__(xdata,ydata,savgol_window=20)
 
-        amplitude, sigma, x_center, y_offset = self._fit(xdata,ydata)
+        try:
+            amplitude, sigma, x_center, y_offset = self._fit(xdata,ydata)
+        except Exception as e:
+            print(e)
+            amplitude, sigma, x_center, y_offset = np.NaN, np.NaN, np.NaN, np.NaN
+            self.y_fitdata = np.zeros(ydata.shape); self.y_fitdata.fill(np.NaN)
+
         self.amplitude = amplitude
         self.sigma = sigma
         self.x_center = x_center
@@ -72,5 +78,11 @@ class GaussianTemperatureFit(Fit):
     def _fit(self, x, y):
         # sigma0_guess = self.ydata[np.argmin(self.xdata)]
         sigma0_guess = 500
+        # get rid of nans
+        logic = ~np.isnan(y)
+        y = y[logic]
+        x = x[logic]
+        print(x,y)
+        # fit
         popt, pcov = curve_fit(self._fit_func, x, y, p0=[0.001,sigma0_guess**2], bounds=((0,0),(1,np.inf)))
         return popt, pcov
