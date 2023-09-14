@@ -6,6 +6,7 @@ from kexp.util.artiq.async_print import aprint
 import numpy as np
 
 T_TOF_US = 4000
+T_MOTLOAD_S = 0.5
 
 class tof(EnvExperiment, Base):
 
@@ -25,7 +26,7 @@ class tof(EnvExperiment, Base):
 
         self.p.dummy = [1]*1000
 
-        self.p.t_mot_reload = 1.
+        self.p.t_mot_load = T_MOTLOAD_S
 
         self.xvarnames = ['dummy']
 

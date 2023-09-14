@@ -7,12 +7,12 @@ import numpy as np
 from kexp.config import camera_params
 from kamo.atom_properties.k39 import Potassium39
 
-from preview_experiment import T_TOF_US
+from preview_experiment import T_TOF_US, T_MOTLOAD_S
 
 ####
 
 CROP_TYPE = 'gm'
-ODLIM = 2.5
+ODLIM = 1
 N_HISTORY = 10
 
 ####
@@ -43,6 +43,8 @@ ax[4] = plt.subplot2grid(grid,(1,3),colspan=3,rowspan=1)
 ax[5] = plt.subplot2grid(grid,(2,3),colspan=3,rowspan=1)
 fig.show()
 plt.ion()
+
+plt.set_cmap('magma')
 
 ### Camera handling
 
@@ -131,7 +133,7 @@ while camera.IsGrabbing():
             ax[2].set_yticklabels("")
             ax[2].set_title("dark image")
             # plot the OD, hardcoded colorbar max for visual comparison between runs
-            ax[3].imshow(OD[0],vmax=ODLIM,vmin=0)
+            ax[3].imshow(OD[0],vmax=ODLIM,vmin=0,origin='lower')
             ax[3].scatter(centers_x,centers_y,s=100,c=centercolors)
             ax[3].set_title("OD")
             # plot the widths
@@ -149,7 +151,7 @@ while camera.IsGrabbing():
             ax[5].set_ylabel("atom number")
             ax[5].set_xlabel("shot (relative to current shot)")
 
-            plt.suptitle(f"t_tof = {T_TOF_US:1.0f} us")
+            plt.suptitle(f"t_tof = {T_TOF_US:1.0f} us, t_mot_load = {T_MOTLOAD_S} s")
 
             # update the figure
             plt.pause(0.1)
