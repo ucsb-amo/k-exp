@@ -39,7 +39,7 @@ class ExptParams():
         self.t_d2cmot = 5.e-3
         self.t_d1cmot = 1.3e-3
         self.t_gm = 1.e-3
-        self.t_gmramp = 4.e-3
+        self.t_gmramp = 5.e-3
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_hold = 50.e-3
         self.t_tweezer_ramp = 3.e-3

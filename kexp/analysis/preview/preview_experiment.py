@@ -5,6 +5,8 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
+T_TOF_US = 5000
+
 class tof(EnvExperiment, Base):
 
     def build(self):
@@ -17,7 +19,7 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = 5000 * 1.e-6 # mot
+        self.p.t_tof = T_TOF_US * 1.e-6 # mot
 
         self.p.t_gmramp = 5.e-3
 
@@ -34,8 +36,7 @@ class tof(EnvExperiment, Base):
 
         count = 0
         
-        self.init_kernel(run_id=False)
-        print(self.p.t_tof*1.e6)
+        self.init_kernel(run_id=True)
 
         delay(2*s)
         

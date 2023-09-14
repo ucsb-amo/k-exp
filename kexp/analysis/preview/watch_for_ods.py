@@ -7,28 +7,7 @@ import numpy as np
 from kexp.config import camera_params
 from kamo.atom_properties.k39 import Potassium39
 
-import os
-from subprocess import PIPE, run
-
-### Running the expt
-
-__code_path__ = os.environ.get('code')
-__exp_path__ = os.path.join(__code_path__,"k-exp","kexp","analysis","preview","preview_experiment.py")
-
-def run_expt():
-    run_expt_command = r"%kpy% & artiq_run " + __exp_path__
-    result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
-    print(result.returncode, result.stdout, result.stderr)
-    return result.returncode, result.stout
-
-# run the experiment
-rc, out = run_expt()
-
-# print if an error (rc != 0), else out = tof time
-if rc:
-    print(out)
-else:
-    t_tof_us = out
+from preview_experiment import T_TOF_US
 
 ####
 
@@ -86,7 +65,7 @@ atom_N = np.zeros(N_HISTORY); atom_N.fill(np.NaN)
 centers_x = np.zeros(N_HISTORY); centers_x.fill(np.NaN)
 centers_y = np.zeros(N_HISTORY); centers_y.fill(np.NaN)
 t_axis = np.linspace(-N_HISTORY+1,0,N_HISTORY)
-centercolors = cm.gray(np.linspace(0.,1.,N_HISTORY))
+centercolors = cm.gray(np.linspace(0.3,0.7,N_HISTORY))
 
 ### Running loop
 
@@ -120,8 +99,8 @@ while camera.IsGrabbing():
                 sigmas_x = np.append(sigmas_x,fit_x[0].sigma * 1.e6)
                 sigmas_y = np.append(sigmas_y,fit_y[0].sigma * 1.e6)
 
-                xcenter_idx = find_idx(fit_x[0].xdata,fit_x[0].x_center)
-                ycenter_idx = find_idx(fit_y[0].xdata,fit_y[0].x_center)
+                xcenter_idx, _ = find_idx(fit_x[0].xdata,fit_x[0].x_center)
+                ycenter_idx, _ = find_idx(fit_y[0].xdata,fit_y[0].x_center)
                 centers_x = np.append(centers_x,xcenter_idx)
                 centers_y = np.append(centers_y,ycenter_idx)
 
@@ -153,7 +132,7 @@ while camera.IsGrabbing():
             ax[2].set_title("dark image")
             # plot the OD, hardcoded colorbar max for visual comparison between runs
             ax[3].imshow(OD[0],vmax=ODLIM,vmin=0)
-            ax[3].scatter(xcenter_idx,ycenter_idx,s=300,c=centercolors)
+            ax[3].scatter(centers_x,centers_y,s=100,c=centercolors)
             ax[3].set_title("OD")
             # plot the widths
             ax[4].plot(t_axis,sigmas_x,'.')
@@ -170,7 +149,7 @@ while camera.IsGrabbing():
             ax[5].set_ylabel("atom number")
             ax[5].set_xlabel("shot (relative to current shot)")
 
-            plt.suptitle(f"t_tof = {t_tof_us:1.0f} us")
+            plt.suptitle(f"t_tof = {T_TOF_US:1.0f} us")
 
             # update the figure
             plt.pause(0.1)
