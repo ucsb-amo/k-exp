@@ -34,9 +34,10 @@ class tof(EnvExperiment, Base):
 
         count = 0
         
-        self.init_kernel()
+        self.init_kernel(run_id=False)
+        print(self.p.t_tof*1.e6)
 
-        delay(3*s)
+        delay(2*s)
         
         self.kill_mot(self.p.t_mot_kill * s)
 

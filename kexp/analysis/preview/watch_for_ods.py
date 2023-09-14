@@ -1,15 +1,40 @@
 from pypylon import pylon
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 from kexp.control import BaslerUSB
 from kexp.analysis.image_processing import compute_ODs, fit_gaussian_sum_dist
 import numpy as np
 from kexp.config import camera_params
 from kamo.atom_properties.k39 import Potassium39
 
+import os
+from subprocess import PIPE, run
+
+### Running the expt
+
+__code_path__ = os.environ.get('code')
+__exp_path__ = os.path.join(__code_path__,"k-exp","kexp","analysis","preview","preview_experiment.py")
+
+def run_expt():
+    run_expt_command = r"%kpy% & artiq_run " + __exp_path__
+    result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
+    print(result.returncode, result.stdout, result.stderr)
+    return result.returncode, result.stout
+
+# run the experiment
+rc, out = run_expt()
+
+# print if an error (rc != 0), else out = tof time
+if rc:
+    print(out)
+else:
+    t_tof_us = out
+
 ####
 
 CROP_TYPE = 'gm'
-
+ODLIM = 2.5
+N_HISTORY = 10
 
 ####
 
@@ -17,10 +42,14 @@ atom = Potassium39()
 atom_cross_section = atom.get_cross_section()
 convert_to_atom_number = 1/atom_cross_section * (camera_params.basler_absorp_camera_params.pixel_size_m / camera_params.basler_absorp_camera_params.magnification)**2
 
-###
+### useful functions
 
+def find_idx(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return idx, array[idx]
 
-# fig, viewer = plt.subplots(2,4,figsize=(15,6))
+### axes setup
 
 ax = [0,0,0,0,0,0]
 fig = plt.figure()
@@ -34,8 +63,9 @@ ax[3] = plt.subplot2grid(grid,(1,0),colspan=3,rowspan=2)
 ax[4] = plt.subplot2grid(grid,(1,3),colspan=3,rowspan=1)
 ax[5] = plt.subplot2grid(grid,(2,3),colspan=3,rowspan=1)
 fig.show()
-
 plt.ion()
+
+### Camera handling
 
 # open the camera
 camera = BaslerUSB(BaslerSerialNumber=camera_params.basler_absorp_camera_params.serial_no,
@@ -45,13 +75,20 @@ camera = BaslerUSB(BaslerSerialNumber=camera_params.basler_absorp_camera_params.
 # start waiting for triggers
 camera.StartGrabbingMax(3000,pylon.GrabStrategy_LatestImages)
 
+### Setup
+
 # empty arrays
 images = []
 count = 0
-sigmas_x = np.zeros(10); sigmas_x.fill(np.NaN)
-sigmas_y = np.zeros(10); sigmas_y.fill(np.NaN)
-atom_N = np.zeros(10); atom_N.fill(np.NaN)
-t_axis = np.linspace(-9,0,10)
+sigmas_x = np.zeros(N_HISTORY); sigmas_x.fill(np.NaN)
+sigmas_y = np.zeros(N_HISTORY); sigmas_y.fill(np.NaN)
+atom_N = np.zeros(N_HISTORY); atom_N.fill(np.NaN)
+centers_x = np.zeros(N_HISTORY); centers_x.fill(np.NaN)
+centers_y = np.zeros(N_HISTORY); centers_y.fill(np.NaN)
+t_axis = np.linspace(-N_HISTORY+1,0,N_HISTORY)
+centercolors = cm.gray(np.linspace(0.,1.,N_HISTORY))
+
+### Running loop
 
 # during camera grab...
 while camera.IsGrabbing():
@@ -78,20 +115,27 @@ while camera.IsGrabbing():
             # fit the summed ODs
             fit_x = fit_gaussian_sum_dist(sum_od_x,camera_params.basler_absorp_camera_params)
             fit_y = fit_gaussian_sum_dist(sum_od_y,camera_params.basler_absorp_camera_params)
-            # add the new widths to the arrays of widths, ditto "atom number"
             try:
+                # add the new widths to the arrays of widths, ditto, centers
                 sigmas_x = np.append(sigmas_x,fit_x[0].sigma * 1.e6)
                 sigmas_y = np.append(sigmas_y,fit_y[0].sigma * 1.e6)
-                # remove the oldest width, atom number from the lists
+
+                xcenter_idx = find_idx(fit_x[0].xdata,fit_x[0].x_center)
+                ycenter_idx = find_idx(fit_y[0].xdata,fit_y[0].x_center)
+                centers_x = np.append(centers_x,xcenter_idx)
+                centers_y = np.append(centers_y,ycenter_idx)
+
+                # then remove oldest values
                 sigmas_x = sigmas_x[1:]
                 sigmas_y = sigmas_y[1:]
+                centers_x = centers_x[1:]
+                centers_y = centers_y[1:]
             except:
-                sigmas_x = sigmas_x
-                sigmas_y = sigmas_y
-                print("The fits must have failed")
+                print("The gaussian fitting must have failed")
 
-            atom_N = np.append(atom_N,np.sum(OD) * convert_to_atom_number)
+            # do the same with atom number
             atom_N = atom_N[1:]
+            atom_N = np.append(atom_N,np.sum(OD) * convert_to_atom_number)
 
             # clear the axes
             for a in ax:
@@ -108,7 +152,8 @@ while camera.IsGrabbing():
             ax[2].set_yticklabels("")
             ax[2].set_title("dark image")
             # plot the OD, hardcoded colorbar max for visual comparison between runs
-            ax[3].imshow(OD[0],vmax=3,vmin=0)
+            ax[3].imshow(OD[0],vmax=ODLIM,vmin=0)
+            ax[3].scatter(xcenter_idx,ycenter_idx,s=300,c=centercolors)
             ax[3].set_title("OD")
             # plot the widths
             ax[4].plot(t_axis,sigmas_x,'.')
@@ -124,6 +169,8 @@ while camera.IsGrabbing():
             ax[5].yaxis.tick_right()
             ax[5].set_ylabel("atom number")
             ax[5].set_xlabel("shot (relative to current shot)")
+
+            plt.suptitle(f"t_tof = {t_tof_us:1.0f} us")
 
             # update the figure
             plt.pause(0.1)

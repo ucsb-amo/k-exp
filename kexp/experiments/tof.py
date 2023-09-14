@@ -10,7 +10,7 @@ class tof(EnvExperiment, Base):
         # Base.__init__(self, basler_imaging=True, absorption_image=False)
         Base.__init__(self)
 
-        self.run_info._run_description = "gm tof"
+        self.run_info._run_description = "mot tof"
 
         ## Parameters
 
