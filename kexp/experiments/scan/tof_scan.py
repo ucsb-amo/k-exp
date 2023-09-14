@@ -17,11 +17,13 @@ class tof(EnvExperiment, Base):
         self.p = self.params
 
         self.p.t_tof = np.linspace(3000.,5500.,6) * 1.e-6
-        self.p.t_mot_load = np.linspace(0.2,2.,6)
+        self.p.t_mot_load = np.linspace(0.3,1.2,6)
 
         self.trig_ttl = self.get_device("ttl14")
 
         self.xvarnames = ['t_mot_load','t_tof']
+
+        self.p.N_repeats = [2,1]
 
         self.finish_build()
 

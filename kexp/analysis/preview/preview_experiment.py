@@ -5,7 +5,7 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-T_TOF_US = 5000
+T_TOF_US = 4000
 
 class tof(EnvExperiment, Base):
 
