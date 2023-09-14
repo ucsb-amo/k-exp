@@ -67,7 +67,7 @@ atom_N = np.zeros(N_HISTORY); atom_N.fill(np.NaN)
 centers_x = np.zeros(N_HISTORY); centers_x.fill(np.NaN)
 centers_y = np.zeros(N_HISTORY); centers_y.fill(np.NaN)
 t_axis = np.linspace(-N_HISTORY+1,0,N_HISTORY)
-centercolors = cm.gray(np.linspace(0.3,0.7,N_HISTORY))
+centercolors = cm.gray(np.linspace(0.7,0.0,N_HISTORY))
 
 ### Running loop
 
@@ -134,7 +134,7 @@ while camera.IsGrabbing():
             ax[2].set_title("dark image")
             # plot the OD, hardcoded colorbar max for visual comparison between runs
             ax[3].imshow(OD[0],vmax=ODLIM,vmin=0,origin='lower')
-            ax[3].scatter(centers_x,centers_y,s=100,c=centercolors)
+            ax[3].scatter(centers_x,centers_y,s=50,c=centercolors)
             ax[3].set_title("OD")
             # plot the widths
             ax[4].plot(t_axis,sigmas_x,'.')
