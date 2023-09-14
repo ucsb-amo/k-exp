@@ -82,7 +82,6 @@ class GaussianTemperatureFit(Fit):
         logic = ~np.isnan(y)
         y = y[logic]
         x = x[logic]
-        print(x,y)
         # fit
         popt, pcov = curve_fit(self._fit_func, x, y, p0=[0.001,sigma0_guess**2], bounds=((0,0),(1,np.inf)))
         return popt, pcov
