@@ -12,12 +12,12 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(10000,12000,20) * 1.e-6
+        self.p.t_delay = np.linspace(8,15,5) * 1.e-3
         # self.p.t_tof = 1000 * 1e-6
         self.p.v_pd_lightsheet = np.linspace(0.,5.,2)
         # self.p.v_pd_lightsheet = 5.
 
-        self.xvarnames = ['v_pd_lightsheet','t_tof']
+        self.xvarnames = ['v_pd_lightsheet', 't_delay']
 
         self.finish_build()
 
@@ -30,7 +30,7 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
         delay(self.p.t_grab_start_wait*s)
 
         for v in self.p.v_pd_lightsheet:
-            for t in self.p.t_tof:
+            for t in self.p.t_delay:
 
                 self.kill_mot(self.p.t_mot_kill * s)
 
@@ -38,6 +38,10 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
 
                 self.mot(self.p.t_mot_load * s)
                 # self.hybrid_mot(self.p.t_mot_load * s)
+
+                ###ODT on v1
+                self.dds.lightsheet.set_dds(v_pd=v)
+                self.dds.lightsheet.on()
 
                 ### Turn off 2d MOT, Repump, and 3D MOT###
                 self.dds.push.off()
@@ -49,21 +53,24 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
 
                 # self.gm_ramp(self.p.t_gmramp * s)
 
-                ###ODT on
-                # self.dds.lightsheet.set_dds(v_pd=self.p.v_pd_lightsheet)
-                self.dds.lightsheet.set_dds(v_pd=v)
-                self.dds.lightsheet.on()
+                # ###ODT on v2
+                # self.dds.lightsheet.set_dds(v_pd=v)
+                # self.dds.lightsheet.on()
 
-                delay(1.e-3)
+                delay(5.e-3)
+
+                self.switch_d1_3d(0)
+
+                delay(t * s)
 
                 self.release()
 
+                self.dds.lightsheet.off()
+
                 ### abs img
-                delay(t * s)
+                delay(100.e-6)
                 self.flash_repump()
                 self.abs_image()
-
-                self.dds.lightsheet.off()
 
                 self.core.break_realtime()
 
