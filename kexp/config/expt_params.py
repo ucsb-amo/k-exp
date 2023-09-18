@@ -41,6 +41,7 @@ class ExptParams():
         self.t_gm = 1.e-3
         self.t_gmramp = 5.e-3
         self.t_lightsheet_rampup = 10.e-3
+        self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 50.e-3
         self.t_tweezer_ramp = 3.e-3
         self.t_tweezer_hold = 50.e-3
@@ -84,7 +85,7 @@ class ExptParams():
         self.v_d1cmot_current = 0.5
         
         #GM
-        self.detune_gm = 7.4
+        self.detune_gm = 7.9
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm

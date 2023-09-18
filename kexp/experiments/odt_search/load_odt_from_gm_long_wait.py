@@ -11,9 +11,7 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
         self.run_info._run_description = "load MOT, ODT on, MOT off, "
 
         self.p = self.params
-
-        self.p.t_delay = np.linspace(8,15,5) * 1.e-3
-        # self.p.t_tof = 1000 * 1e-6
+ 
         self.p.v_pd_lightsheet = np.linspace(0.,5.,2)
         # self.p.v_pd_lightsheet = 5.
 

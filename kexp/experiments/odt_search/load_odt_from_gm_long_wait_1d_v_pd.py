@@ -11,7 +11,7 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
         self.run_info._run_description = "load MOT, ODT on, MOT off, "
 
         self.p = self.params
-        self.p.v_pd_lightsheet = np.linspace(0.,5.,2)
+        self.p.v_pd_lightsheet = np.linspace(0.,5.,10)
 
         self.xvarnames = ['v_pd_lightsheet']
 
