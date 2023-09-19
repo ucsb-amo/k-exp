@@ -11,9 +11,11 @@ from preview_experiment import T_TOF_US, T_MOTLOAD_S
 
 ####
 
-CROP_TYPE = 'gm'
-ODLIM = 1
+CROP_TYPE = 'mot'
+ODLIM = 2
 N_HISTORY = 10
+PLOT_CENTROID = False
+
 
 ####
 
@@ -134,7 +136,8 @@ while camera.IsGrabbing():
             ax[2].set_title("dark image")
             # plot the OD, hardcoded colorbar max for visual comparison between runs
             ax[3].imshow(OD[0],vmax=ODLIM,vmin=0,origin='lower')
-            ax[3].scatter(centers_x,centers_y,s=50,c=centercolors)
+            if PLOT_CENTROID:
+                ax[3].scatter(centers_x,centers_y,s=50,c=centercolors)
             ax[3].set_title("OD")
             # plot the widths
             ax[4].plot(t_axis,sigmas_x,'.')

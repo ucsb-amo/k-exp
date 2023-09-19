@@ -5,8 +5,9 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-T_TOF_US = 4000
-T_MOTLOAD_S = 0.5
+# T_TOF_US = 4000
+T_TOF_US = 20
+T_MOTLOAD_S = 1.0
 
 class tof(EnvExperiment, Base):
 
@@ -21,8 +22,6 @@ class tof(EnvExperiment, Base):
         self.p = self.params
 
         self.p.t_tof = T_TOF_US * 1.e-6 # mot
-
-        self.p.t_gmramp = 5.e-3
 
         self.p.dummy = [1]*1000
 
@@ -57,8 +56,16 @@ class tof(EnvExperiment, Base):
 
             self.gm(self.p.t_gm * s)
 
-            self.gm_ramp(self.p.t_gmramp * s)
+            self.dds.lightsheet.set_dds(v_pd=1.0)
+            self.dds.lightsheet.on()
 
+            # self.gm_ramp(self.p.t_gmramp * s)
+
+            delay(5.e-3)
+            self.switch_d1_3d(0)
+            delay(12.e-3)
+
+            self.dds.lightsheet.off()
             self.release()
 
             ### abs img
