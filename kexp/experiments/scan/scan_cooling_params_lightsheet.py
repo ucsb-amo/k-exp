@@ -8,7 +8,7 @@ class scan_gm_params(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,andor_imaging=False)
 
-        self.run_info._run_description = "scan gm detuning with light sheet load"
+        self.run_info._run_description = "scan mot detuning with light sheet load"
         # self.run_info._run_description = "GM detune_c vs detune_r"
 
         ## Parameters
@@ -19,14 +19,16 @@ class scan_gm_params(EnvExperiment, Base):
         self.p.t_tof = 100.e-6
 
         #GM Detunings
-        self.p.xvar_detune_gm = np.linspace(6.0,8.5,5)
+        self.p.xvar_mot_c_detune = np.linspace(-0.0,-2.0,6)
+        self.p.xvar_mot_r_detune = np.linspace(-4.0,-2.0,6)
         # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
         # self.p.xvar_v_pd_d1_c_gm = np.linspace(1.5,5.,7)
         # self.p.xvar_v_pd_d1_r_gm = np.linspace(1.5,5.,7)
         # self.p.xvar_v_pd_d1_r_gm = np.linspace(1.5,5.,7)
 
-        self.xvarnames = ['xvar_detune_gm']
+        # self.xvarnames = ['xvar_detune_gm']   
+        self.xvarnames = ['xvar_mot_c_detune', 'xvar_mot_r_detune']
         # self.xvarnames = ['xvar_detune_d1_gm', 'xvar_detune_d1_r_gm']
         # self.xvarnames = ['xvar_detune_gm', 'xvar_v_pd_d1_r_gm']
 
@@ -44,41 +46,44 @@ class scan_gm_params(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar_1 in self.p.xvar_detune_gm:
-            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+        for xvar_1 in self.p.xvar_mot_c_detune:
+            for xvar_2 in self.p.xvar_mot_r_detune:
+                self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-            self.mot(self.p.t_mot_load * s)
+                self.mot(self.p.t_mot_load * s, detune_d2_c=xvar_1, detune_d2_r=xvar_2)
 
-            self.dds.lightsheet.set_dds(v_pd=5.0)
-            self.dds.lightsheet.on()
+                self.dds.lightsheet.set_dds(v_pd=5.0)
+                self.dds.lightsheet.on()
 
-            self.dds.push.off()
-            self.switch_d2_2d(0)
+                self.dds.push.off()
+                self.switch_d2_2d(0)
 
-            self.cmot_d1(self.p.t_d1cmot * s)
+                self.cmot_d1(self.p.t_d1cmot * s)
 
-            self.gm(self.p.t_gm * s, detune_d1=xvar_1)
+                self.gm(self.p.t_gm * s)
 
-            delay(self.p.t_lightsheet_load)
-            
-            self.release()
-            
-            delay(self.p.t_lightsheet_hold)
-            self.dds.lightsheet.off()
-            
-            ### abs img
-            delay(self.p.t_tof * s)
-            self.flash_repump()
-            self.abs_image()
+                delay(self.p.t_lightsheet_load)
+                
+                self.release()
+                
+                delay(self.p.t_lightsheet_hold)
+                self.dds.lightsheet.off()
+                
+                ### abs img
+                delay(self.p.t_tof * s)
+                self.abs_image()
 
-            self.core.break_realtime()
+                self.core.break_realtime()
 
         # return to mot load state
         self.mot_observe()
 
     def analyze(self):
 
-        self.p.detune_gm = self.p.xvar_detune_gm
+        self.p.detune_d2_c_mot = self.p.xvar_mot_c_detune
+        self.p.detune_d2_r_mot = self.p.xvar_mot_r_detune
+
+        # self.p.detune_gm = self.p.xvar_detune_gm
         # self.p.v_pd_d1_c_gm = self.p.xvar_v_pd_d1_c_gm
         # self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
 

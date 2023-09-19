@@ -34,6 +34,10 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
             self.mot(self.p.t_mot_load * s)
             # self.hybrid_mot(self.p.t_mot_load * s)
 
+            ###ODT on
+            self.dds.lightsheet.set_dds(v_pd=v)
+            self.dds.lightsheet.on()
+
             ### Turn off 2d MOT, Repump, and 3D MOT###
             self.dds.push.off()
             self.switch_d2_2d(0)
@@ -44,17 +48,9 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
 
             # self.gm_ramp(self.p.t_gmramp * s)
 
-            ###ODT on
-            self.dds.lightsheet.set_dds(v_pd=v)
-            self.dds.lightsheet.on()
-
-            delay(10.e-3)
-
-            self.switch_d1_3d(0)
+            self.release()
 
             delay(12.e-3 * s)
-
-            self.release()
 
             self.dds.lightsheet.off()
 
