@@ -14,6 +14,10 @@ class tof(EnvExperiment, Base):
     def build(self):
         # Base.__init__(self, basler_imaging=True, absorption_image=False)
         Base.__init__(self)
+        
+        # comment in/out to switch to abs imaging on x-axis
+        self.camera_params.serial_no = camera_params.basler_fluor_camera_params.serial_no
+        self.camera_params.magnification = camera_params.basler_fluor_camera_params.magnification
 
         self.run_info._run_description = "mot tof"
 
