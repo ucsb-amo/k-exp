@@ -22,6 +22,9 @@ def crop_OD(OD,crop_type='',Nvars=1):
     elif crop_type == 'gm2':
         roix = [800, 1350]
         roiy = [450, 1050]
+    elif crop_type == 'fluor_gm':
+        roix = [500, 1450]
+        roiy = [350, 1150]
     else:
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]-1]
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]-1]
