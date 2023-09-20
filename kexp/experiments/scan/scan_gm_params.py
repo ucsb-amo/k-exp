@@ -16,24 +16,26 @@ class scan_gm_params(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 5000.e-6
+        self.p.t_tof = 15000.e-6
 
         #GM Detunings
         # self.p.xvar_detune_gm = np.linspace(5.5,7.0,5)
         # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(1.5,5.,7)
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(1.5,5.,7)
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(3.,5.,4)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(3.,5.,4)
+
+        self.p.N_repeats = 1
 
         self.xvarnames = ['xvar_v_pd_d1_c_gm','xvar_v_pd_d1_r_gm']
         # self.xvarnames = ['xvar_detune_d1_gm', 'xvar_detune_d1_r_gm']
         # self.xvarnames = ['xvar_detune_gm', 'xvar_v_pd_d1_r_gm']
 
-        self.img_detuning = -275.78e6
+        # self.img_detuning = -275.78e6
 
-        self.camera_params.exposure_time = 20.0e-3
+        # self.camera_params.exposure_time = 20.0e-3
 
-        self.p.t_tweezer_hold = 200. * 1.e-3
+        # self.p.t_tweezer_hold = 200. * 1.e-3
 
         self.finish_build()
 
