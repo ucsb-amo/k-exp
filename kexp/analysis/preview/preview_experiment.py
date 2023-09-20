@@ -2,12 +2,12 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
 from kexp.util.artiq.async_print import aprint
+from kexp.config import camera_params
 
 import numpy as np
 
-# T_TOF_US = 4000
-T_TOF_US = 20
-T_MOTLOAD_S = 1.0
+T_TOF_US = 8000
+T_MOTLOAD_S = 0.3
 
 class tof(EnvExperiment, Base):
 
@@ -60,14 +60,14 @@ class tof(EnvExperiment, Base):
 
             self.gm(self.p.t_gm * s)
 
-            self.dds.lightsheet.set_dds(v_pd=1.0)
-            self.dds.lightsheet.on()
+            # self.dds.lightsheet.set_dds(v_pd=1.0)
+            # self.dds.lightsheet.on()
 
             # self.gm_ramp(self.p.t_gmramp * s)
 
-            delay(5.e-3)
-            self.switch_d1_3d(0)
-            delay(12.e-3)
+            # delay(5.e-3)
+            # self.switch_d1_3d(0)
+            # delay(12.e-3)
 
             self.dds.lightsheet.off()
             self.release()

@@ -11,17 +11,24 @@ from preview_experiment import T_TOF_US, T_MOTLOAD_S
 
 ####
 
-CROP_TYPE = 'mot'
+CROP_TYPE = ''
 ODLIM = 2
 N_HISTORY = 10
-PLOT_CENTROID = False
+PLOT_CENTROID = True
+XAXIS_IMAGING = True
 
+###
+
+cam_p = camera_params.basler_absorp_camera_params
+if XAXIS_IMAGING:
+    cam_p.serial_no = camera_params.basler_fluor_camera_params.serial_no
+    cam_p.magnification = camera_params.basler_fluor_camera_params.magnification
 
 ####
 
 atom = Potassium39()
 atom_cross_section = atom.get_cross_section()
-convert_to_atom_number = 1/atom_cross_section * (camera_params.basler_absorp_camera_params.pixel_size_m / camera_params.basler_absorp_camera_params.magnification)**2
+convert_to_atom_number = 1/atom_cross_section * (cam_p.pixel_size_m / cam_p.magnification)**2
 
 ### useful functions
 
@@ -51,8 +58,8 @@ plt.set_cmap('magma')
 ### Camera handling
 
 # open the camera
-camera = BaslerUSB(BaslerSerialNumber=camera_params.basler_absorp_camera_params.serial_no,
-                    ExposureTime=camera_params.basler_absorp_camera_params.exposure_time,
+camera = BaslerUSB(BaslerSerialNumber=cam_p.serial_no,
+                    ExposureTime=cam_p.exposure_time,
                     TriggerMode='On')
 
 # start waiting for triggers
