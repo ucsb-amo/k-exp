@@ -14,7 +14,7 @@ from preview_experiment import T_TOF_US, T_MOTLOAD_S
 CROP_TYPE = ''
 ODLIM = 2
 N_HISTORY = 10
-PLOT_CENTROID = True
+PLOT_CENTROID = False
 XAXIS_IMAGING = False
 
 ###

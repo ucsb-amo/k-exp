@@ -65,7 +65,7 @@ class tof(EnvExperiment, Base):
             # self.gm_ramp(self.p.t_gmramp * s)
 
             self.switch_d1_3d(0)
-            delay(14.e-3)
+            delay(20.e-3)
 
             self.release()
             self.dds.lightsheet.off()
