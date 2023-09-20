@@ -18,14 +18,14 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 4
+        N = 6
 
         # self.p.t_tof = np.linspace(1200,2000,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(2000,3500,N) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,3000,N) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(7000,10000,N) * 1.e-6 # gm
-        self.p.t_tof = np.linspace(9000,13000,N) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(12000,17000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # mot_reload
 
@@ -57,11 +57,11 @@ class tof(EnvExperiment, Base):
 
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.trig_ttl.on()
+            self.trig_ttl.on()
             self.gm(self.p.t_gm * s)
-            # self.trig_ttl.off()
+            self.trig_ttl.off()
 
-            # self.gm_ramp(self.p.t_gmramp * s)
+            self.gm_ramp(self.p.t_gmramp * s)
 
             self.release()
 

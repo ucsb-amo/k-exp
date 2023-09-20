@@ -6,7 +6,7 @@ import numpy as np
 class scan_gm_params(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,andor_imaging=False)
+        Base.__init__(self)
 
         self.run_info._run_description = "GM v_pd_d1_c_gm vs v_pd_r"
         # self.run_info._run_description = "GM detune_c vs detune_r"
