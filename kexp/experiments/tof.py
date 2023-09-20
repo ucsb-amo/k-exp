@@ -8,10 +8,9 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        # Base.__init__(self, basler_imaging=True, absorption_image=False)
         Base.__init__(self)
-        self.camera_params.serial_no = camera_params.basler_fluor_camera_params.serial_no
-        self.camera_params.magnification = camera_params.basler_fluor_camera_params.magnification
+        # self.camera_params.serial_no = camera_params.basler_fluor_camera_params.serial_no
+        # self.camera_params.magnification = camera_params.basler_fluor_camera_params.magnification
 
         self.run_info._run_description = "mot tof"
 
@@ -19,13 +18,14 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 6
+        N = 4
 
         # self.p.t_tof = np.linspace(1200,2000,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(2000,3500,N) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(1000,3000,N) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
-        self.p.t_tof = np.linspace(7000,10000,N) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(7000,10000,N) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(9000,13000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # mot_reload
 
@@ -53,7 +53,7 @@ class tof(EnvExperiment, Base):
 
             ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
-            self.switch_d2_2d(0)
+            # self.switch_d2_2d(0)
 
             self.cmot_d1(self.p.t_d1cmot * s)
 

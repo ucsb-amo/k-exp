@@ -11,7 +11,7 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
         self.run_info._run_description = "load MOT, ODT on, MOT off, "
 
         self.p = self.params
-        self.p.t_delay = np.linspace(2,13,10) * 1.e-3
+        self.p.t_delay = np.linspace(2,20,10) * 1.e-3
 
         self.xvarnames = ['t_delay']
 
@@ -40,15 +40,11 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
 
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            self.gm(self.p.t_gm * s)
-
             ###ODT on
             self.dds.lightsheet.set_dds(v_pd=5.)
             self.dds.lightsheet.on()
 
-            # self.gm_ramp(self.p.t_gmramp * s)
-
-            delay(10.e-3)
+            self.gm(self.p.t_gm * s)
 
             self.switch_d1_3d(0)
 

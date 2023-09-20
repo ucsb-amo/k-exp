@@ -2,12 +2,11 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
 from kexp.util.artiq.async_print import aprint
-from kexp.config import camera_params
 
 import numpy as np
 
-T_TOF_US = 8000
-T_MOTLOAD_S = 0.3
+T_TOF_US = 4000
+T_MOTLOAD_S = 0.5
 
 class tof(EnvExperiment, Base):
 
@@ -16,8 +15,8 @@ class tof(EnvExperiment, Base):
         Base.__init__(self)
         
         # comment in/out to switch to abs imaging on x-axis
-        self.camera_params.serial_no = camera_params.basler_fluor_camera_params.serial_no
-        self.camera_params.magnification = camera_params.basler_fluor_camera_params.magnification
+        # self.camera_params.serial_no = camera_params.basler_fluor_camera_params.serial_no
+        # self.camera_params.magnification = camera_params.basler_fluor_camera_params.magnification
 
         self.run_info._run_description = "mot tof"
 
@@ -25,7 +24,9 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = T_TOF_US * 1.e-6 # mot
+        self.p.t_tof = 14000 * 1.e-6 # mot
+
+        self.p.t_gmramp = 5.e-3
 
         self.p.dummy = [1]*1000
 
@@ -60,16 +61,8 @@ class tof(EnvExperiment, Base):
 
             self.gm(self.p.t_gm * s)
 
-            # self.dds.lightsheet.set_dds(v_pd=1.0)
-            # self.dds.lightsheet.on()
-
             # self.gm_ramp(self.p.t_gmramp * s)
 
-            # delay(5.e-3)
-            # self.switch_d1_3d(0)
-            # delay(12.e-3)
-
-            self.dds.lightsheet.off()
             self.release()
 
             ### abs img

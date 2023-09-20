@@ -1,6 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
+from kexp.config import camera_params
 
 import numpy as np
 
@@ -8,6 +9,8 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
     def build(self):
         # Base.__init__(self, basler_imaging=True, absorption_image=False)
         Base.__init__(self)
+        # self.camera_params.serial_no = camera_params.basler_fluor_camera_params.serial_no
+        # self.camera_params.magnification = camera_params.basler_fluor_camera_params.magnification
         self.run_info._run_description = "load MOT, ODT on, MOT off, "
 
         self.p = self.params
@@ -34,15 +37,15 @@ class light_sheet_mot_recapture(EnvExperiment, Base):
             self.mot(self.p.t_mot_load * s)
             # self.hybrid_mot(self.p.t_mot_load * s)
 
-            ###ODT on
-            self.dds.lightsheet.set_dds(v_pd=v)
-            self.dds.lightsheet.on()
-
             ### Turn off 2d MOT, Repump, and 3D MOT###
             self.dds.push.off()
             self.switch_d2_2d(0)
 
             self.cmot_d1(self.p.t_d1cmot * s)
+
+            ###ODT on
+            self.dds.lightsheet.set_dds(v_pd=v)
+            self.dds.lightsheet.on()
 
             self.gm(self.p.t_gm * s)
 

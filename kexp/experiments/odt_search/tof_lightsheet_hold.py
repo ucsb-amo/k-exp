@@ -46,14 +46,14 @@ class tof(EnvExperiment, Base):
             self.mot(self.p.t_mot_load * s)
             # self.hybrid_mot(self.p.t_mot_load * s)
 
-            self.dds.lightsheet.set_dds(v_pd=5.)
-            self.dds.lightsheet.on()
-
             ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
             self.switch_d2_2d(0)
 
             self.cmot_d1(self.p.t_d1cmot * s)
+
+            self.dds.lightsheet.set_dds(v_pd=5.)
+            self.dds.lightsheet.on()
 
             self.gm(self.p.t_gm * s)
 
