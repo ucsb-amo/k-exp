@@ -24,7 +24,7 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(1.,20.,7) * 1.e-3
+        self.p.xvar_t_lightsheet_hold = np.linspace(25.,50.,10) * 1.e-3
 
         self.xvarnames = ['xvar_t_lightsheet_hold']
 
@@ -53,18 +53,23 @@ class tof(EnvExperiment, Base):
             self.cmot_d1(self.p.t_d1cmot * s)
 
             self.dds.lightsheet.set_dds(v_pd=5.)
-            self.dds.lightsheet.on()
 
+            self.dds.lightsheet.on()
+            
             self.gm(self.p.t_gm * s)
 
-            delay(self.p.t_lightsheet_load)
+            self.gm_ramp(self.p.t_gmramp * s)
+
+            # delay(self.p.t_lightsheet_load)
             
             self.release()
+
+            
             
             delay(t)
             self.dds.lightsheet.off()
             
-            delay(20.e-6)
+            delay(10.e-6)
             # self.fl_image()
             self.flash_repump()
             self.abs_image()

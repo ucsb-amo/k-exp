@@ -14,14 +14,20 @@ class tof_scan_gm(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(10000,16000,5) * 1.e-6
+        self.p.t_tof = np.linspace(11000,16000,6) * 1.e-6
 
         #GM Detunings
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(4.0,5.,5)
+        # self.p.xvar_v_pd_d1_r_gm = np.linspace(4.0,5.,5)
         # self.p.xvar_t_gm = np.linspace(4.0,12.0,5) * 1.e-3
 
-        self.xvarnames = ['xvar_v_pd_d1_r_gm','t_tof']
-        self.p.N_repeats = 1
+        # self.p.xvar_n_gmramp_steps = np.linspace(10,200,5) * 1.e-6
+
+        self.p.xvar_v_d1cmot_current = np.linspace(0.5,1.,6)
+
+        # self.p.xvar_t_gmramp = np.linspace(5.,7,5) * 1.e-3
+
+        self.xvarnames = ['xvar_v_d1cmot_current','t_tof']
+        self.p.N_repeats = [1,1]
 
         self.finish_build()
 
@@ -35,7 +41,7 @@ class tof_scan_gm(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_v_pd_d1_r_gm:
+        for xvar in self.p.xvar_v_d1cmot_current:
             for tof in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -44,11 +50,11 @@ class tof_scan_gm(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
-                self.cmot_d1(self.p.t_d2cmot * s)
+                self.cmot_d1(self.p.t_d2cmot * s,v_current=xvar)
 
-                self.gm(self.p.t_gm * s, v_pd_d1_r=xvar)
+                self.gm(self.p.t_gm * s)
 
-                # self.gm_ramp(self.p.t_gm_ramp)
+                self.gm_ramp(self.p.t_gmramp * s)
                 
                 self.release()
                 
@@ -64,7 +70,9 @@ class tof_scan_gm(EnvExperiment, Base):
 
     def analyze(self):
 
-        self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
+        # self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
+
+        self.p.v_d1cmot_current = self.p.xvar_v_d1cmot_current
 
         self.camera.Close()
         
