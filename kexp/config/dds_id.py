@@ -174,14 +174,13 @@ class dds_frame():
             ramp_dt = dt
         return N_points, ramp_dt
 
-    def set_frequency_ramp_profile(self, dds:DDS, freq_list, dt_ramp:float, dwell_end=True, dds_mgr_idx=0):
+    def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):
         """Define an amplitude ramp profile and append to the specified DDSManager object.
 
         Args:
             dds (DDS): the DDS object corresponding to the channel to be ramped.
             freq_list (ArrayLike): An ndarray or list of values over which to ramp.
-            dt_ramp (float): The time step (in seconds) between ramp values.
-            Obtain from get_ramp_dt. 
+            t_ramp (float): The time (in seconds) for the complete ramp.
             dwell_end (bool, optional): If True, after completing the ramp, the
             DDS will remain at the final value in freq_list. Otherwise, switches
             back to freq_list[0]. Defaults to True. 
@@ -192,18 +191,18 @@ class dds_frame():
         if isinstance(freq_list,np.ndarray):
             freq_list = list(freq_list)
         self.populate_dds_mgrs(dds_mgr_idx)
+        dt_ramp = self.get_ramp_dt(t_ramp)
         this_profile = RAMProfile(
             dds.dds_device, freq_list, dt_ramp, RAMType.FREQ, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
         self.dds_manager[dds_mgr_idx].append_ramp(dds, frequency_src=this_profile, amplitude_src=dds.amplitude)
         
-    def set_amplitude_ramp_profile(self, dds:DDS, amp_list, dt_ramp:float, dwell_end=True, dds_mgr_idx=0):
+    def set_amplitude_ramp_profile(self, dds:DDS, amp_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):
         """Define an amplitude ramp profile and append to the specified DDSManager object.
 
         Args:
             dds (DDS): the DDS object corresponding to the channel to be ramped.
             amp_list (ArrayLike): An ndarray or list of values over which to ramp.
-            dt_ramp (float): The time step (in seconds) between ramp values.
-            Obtain from get_ramp_dt. 
+            t_ramp (float): The time (in seconds) for the complete ramp.
             dwell_end (bool, optional): If True, after completing the ramp, the
             DDS will remain at the final value in amp_list. Otherwise, switches
             back to amp_list[0]. Defaults to True. 
@@ -214,6 +213,7 @@ class dds_frame():
         if isinstance(amp_list,np.ndarray):
             amp_list = list(amp_list)
         self.populate_dds_mgrs(dds_mgr_idx)
+        dt_ramp = self.get_ramp_dt(t_ramp)
         this_profile = RAMProfile(
             dds.dds_device, amp_list, dt_ramp, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
         self.dds_manager[dds_mgr_idx].append_ramp(dds, frequency_src=dds.frequency, amplitude_src=this_profile)
@@ -229,7 +229,7 @@ class dds_frame():
         else:
             raise ValueError("Must add DDSManagers sequentially with index increasing from 0.")
         
-    def cleanup_dds_ramps(self):
+    def cleanup_dds_profiles(self):
         '''Loops over all DDSManagers and adds single-tone RAM profiles for
         non-ramped DDS channels which share a card with a ramped DDS channel.'''
         for dds_mgr in self.dds_manager:
