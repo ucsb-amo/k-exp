@@ -55,7 +55,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
 
         self.get_N_img()
 
-        # self.dds.cleanup_dds_ramps()
+        self.dds.cleanup_dds_profiles()
 
     @kernel
     def init_kernel(self, run_id = True, init_dds = True, init_dac = True, dds_set = True, dds_off = True, beat_ref_on=True):
