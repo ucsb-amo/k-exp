@@ -15,14 +15,14 @@ class scan_discrete_ramp(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000.,7000.,3) * 1.e-6
-        self.p.t_tof = 4000 * 1.e-6
+        self.p.t_tof = 8000 * 1.e-6
 
         #Ramp params
 
-        self.p.N_shots = 6
+        self.p.N_shots = 4
         self.p.N_repeats = [1,1]
-        self.p.v_pd_c_gmramp_end = np.linspace(0.8,1.5,self.p.N_shots)
-        self.p.v_pd_r_gmramp_end = np.linspace(0.8,1.5,self.p.N_shots)
+        self.p.v_pd_c_gmramp_end = np.linspace(1.2,5.0,self.p.N_shots)
+        self.p.v_pd_r_gmramp_end = np.linspace(1.2,5.0,self.p.N_shots)
 
         self.c_ramp = np.zeros((len(self.p.v_pd_c_gmramp_end), len(self.p.v_pd_r_gmramp_end), self.p.n_gmramp_steps))
         self.r_ramp = np.zeros((len(self.p.v_pd_c_gmramp_end), len(self.p.v_pd_r_gmramp_end), self.p.n_gmramp_steps))
@@ -38,7 +38,7 @@ class scan_discrete_ramp(EnvExperiment, Base):
 
         self.trig_ttl = self.get_device("ttl14")
 
-        self.finish_build()
+        self.finish_build(shuffle=False)
 
     @kernel
     def run(self):
@@ -60,6 +60,8 @@ class scan_discrete_ramp(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
+                self.cmot_d2(self.p.t_d2cmot * s)
+
                 self.cmot_d1(self.p.t_d1cmot * s)
 
                 self.trig_ttl.on()
@@ -76,7 +78,7 @@ class scan_discrete_ramp(EnvExperiment, Base):
                         self.switch_d2_3d(0)
                     delay(self.t_step_time)
 
-                # delay(self.p.t_gm * s)
+                delay(self.p.t_gm * s)
 
                 self.trig_ttl.off()
                 

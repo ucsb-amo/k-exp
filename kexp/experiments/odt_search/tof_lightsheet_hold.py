@@ -24,9 +24,15 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(1.,20.,7) * 1.e-3
+        self.p.xvar_t_lightsheet_hold = np.linspace(12.,30.,10) * 1.e-3
+
+        # self.p.xvar_v_d1cmot_current = np.linspace(.5,1.8,10)
+
+        # self.p.xvar_v_d2cmot_current = np.linspace(.5,1.8,10)
 
         self.xvarnames = ['xvar_t_lightsheet_hold']
+        # self.xvarnames = ['xvar_v_d1cmot_current']
+        # self.xvarnames = ['xvar_v_d2cmot_current']
 
         self.finish_build()
 
@@ -40,7 +46,7 @@ class tof(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for t in self.p.xvar_t_lightsheet_hold:
+        for xvar in self.p.xvar_t_lightsheet_hold:
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)
@@ -53,18 +59,29 @@ class tof(EnvExperiment, Base):
             self.cmot_d1(self.p.t_d1cmot * s)
 
             self.dds.lightsheet.set_dds(v_pd=5.)
-            self.dds.lightsheet.on()
-
+            
+            ### GM 1 ###
             self.gm(self.p.t_gm * s)
 
-            delay(self.p.t_lightsheet_load)
+            self.gm_ramp(self.p.t_gmramp * s)
+
+            # delay(self.p.t_lightsheet_load)
             
             self.release()
-            
-            delay(t)
+
+            self.dds.lightsheet.on()
+
+            ### GM 2 ###
+            # self.gm(t=2.e-3*s, detune_d1=11., v_pd_d1_c=4.5, v_pd_d1_r=4.)
+
+            self.release()
+
+            # self.pulse_resonant_mot_beams(1.e-6*s)
+
+            delay(xvar)
             self.dds.lightsheet.off()
             
-            delay(20.e-6)
+            delay(10.e-6)
             # self.fl_image()
             self.flash_repump()
             self.abs_image()
@@ -76,6 +93,10 @@ class tof(EnvExperiment, Base):
     def analyze(self):
 
         self.p.t_lightsheet_hold = self.p.xvar_t_lightsheet_hold
+
+        # self.p.v_d1cmot_current = self.p.xvar_v_d1cmot_current
+
+        # self.p.v_d2cmot_current = self.p.xvar_v_d2cmot_current
 
         self.camera.Close()
 

@@ -393,60 +393,31 @@ class Cooling():
             delay(dt_gmramp)
 
     @kernel
-    def gm_ramp(self, t_gmramp = dv,
-            detune_d1_c = dv,
-            v_pd_d1_c_list = dvlist,
-            detune_d1_r = dv,
-            v_pd_d1_r_list = dvlist,
-            detune_d1 = dv):
+    def lightsheet_ramp(self, t_lightsheet_rampup = dv,
+                 v_pd_lightsheet_ramp_list = dvlist):
         
         ### Start Defaults ###
-        if detune_d1 != dv:
-            detune_d1_c = detune_d1
-            detune_d1_r = detune_d1
-        else:
-            if detune_d1_c == dv:
-                detune_d1_c = self.params.detune_d1_c_gm
-            if detune_d1_r == dv:
-                detune_d1_r = self.params.detune_d1_r_gm
         
-        if v_pd_d1_c_list == dvlist:
-            v_pd_d1_c_list = self.params.v_pd_c_gmramp_list
-        if v_pd_d1_r_list == dvlist:
-            v_pd_d1_r_list = self.params.v_pd_r_gmramp_list
+        if v_pd_lightsheet_ramp_list == dvlist:
+            v_pd_odt_ramp_list = self.params.v_pd_lightsheet_ramp_list
+            
+        N_elem = len(v_pd_lightsheet_ramp_list)
 
-        # check for list length agreement
-        N_elem = len(v_pd_d1_c_list)
-        if N_elem != len(v_pd_d1_r_list):
-            try: self.camera.Close()
-            except: pass
-            raise ValueError("GM ramp v_pd lists must be of the same length.")
-        
-        if t_gmramp == dv:
-            t_gmramp = self.params.t_gmramp
-            dt_gmramp = self.params.dt_gmramp
+        if t_lightsheet_rampup == dv:
+            t_lightsheet_rampup = self.params.t_lightsheet_rampup
+            dt_lightsheet_ramp = self.params.dt_lightsheet_ramp
         else:
-            dt_gmramp = t_gmramp / N_elem
+            dt_lightsheet_ramp = t_lightsheet_rampup / N_elem
 
         ### End Defaults ###
 
-        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
-                                       v_pd=v_pd_d1_c_list[0])
-        delay_mu(self.params.t_rtio_mu)
-        self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
-                                       v_pd=v_pd_d1_r_list[0])
-
-        with parallel:
-            self.ttl_magnets.off()
-            self.switch_d1_3d(1)
-            self.switch_d2_3d(0)
-
+        self.dds.tweezer.set_dds(frequency=self.params.frequency_ao_lightsheet,
+                                 v_pd=v_pd_lightsheet_ramp_list[0])
+        self.dds.tweezer.on()
         for n in range(N_elem):
-            self.dds.d1_3d_c.set_dds(v_pd=v_pd_d1_c_list[n])
-            delay_mu(self.params.t_rtio_mu)
-            self.dds.d1_3d_r.set_dds(v_pd=v_pd_d1_r_list[n])
-            delay(dt_gmramp)
-
+            self.dds.tweezer.set_dds(v_pd=v_pd_lightsheet_ramp_list[n])
+            delay(dt_lightsheet_ramp)
+        
     @kernel
     def tweezer_ramp(self, t_tweezer_ramp = dv,
             v_pd_tweezer_ramp_list = dvlist):
