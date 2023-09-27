@@ -10,7 +10,7 @@ from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 from jax import AD9910Manager, RAMProfile, RAMType
 from artiq.coredevice import ad9910
 
-N_uru = 3
+N_uru = 4
 N_ch = 4
 shape = (N_uru,N_ch)
 
@@ -61,6 +61,8 @@ class dds_frame():
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging = self.dds_assign(2,2, ao_order = 1)
         self.lightsheet = self.dds_assign(2,3, ao_order=-1, dac_ch_vpd=5)
+        self.test_1 = self.dds_assign(3,0)
+        self.test_2 = self.dds_assign(3,1)
 
         self.write_dds_keys()
         self.make_dds_array()
@@ -160,19 +162,19 @@ class dds_frame():
     #     self.dds_manager.disable()
     #     self.dds_manager.commit_disable()
     
-    def get_ramp_dt(self, t_ramp):
-        '''
-        Returns the number of points to use in a ramp and the corresponding
-        minimum timestep dt.
-        '''
-        dt = RAMP_STEP_TIME
-        N_points = round(t_ramp / dt)
-        if N_points > 1024:
-            N_points = 1024
-            ramp_dt = round( ( t_ramp / 1024 ) / 4.e-9 ) * 4.e-9
-        else:
-            ramp_dt = dt
-        return N_points, ramp_dt
+    # def get_ramp_dt(self, t_ramp):
+    #     '''
+    #     Returns the number of points to use in a ramp and the corresponding
+    #     minimum timestep dt.
+    #     '''
+    #     dt = RAMP_STEP_TIME
+    #     N_points = round(t_ramp / dt)
+    #     if N_points > 1024:
+    #         N_points = 1024
+    #         ramp_dt = round( ( t_ramp / 1024 ) / 4.e-9 ) * 4.e-9
+    #     else:
+    #         ramp_dt = dt
+    #     return N_points, ramp_dt
 
     def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):
         """Define an amplitude ramp profile and append to the specified DDSManager object.
@@ -188,10 +190,7 @@ class dds_frame():
             specifying different indices, one can define multiple ramp sequences
             to be used at different times during a sequence. Defaults to 0.
         """
-        if isinstance(freq_list,np.ndarray):
-            freq_list = list(freq_list)
-        self.populate_dds_mgrs(dds_mgr_idx)
-        dt_ramp = self.get_ramp_dt(t_ramp)
+        freq_list, dt_ramp = self.handle_ramp_input(freq_list,t_ramp,dds_mgr_idx)
         this_profile = RAMProfile(
             dds.dds_device, freq_list, dt_ramp, RAMType.FREQ, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
         self.dds_manager[dds_mgr_idx].append_ramp(dds, frequency_src=this_profile, amplitude_src=dds.amplitude)
@@ -210,13 +209,20 @@ class dds_frame():
             specifying different indices, one can define multiple ramp sequences
             to be used at different times during a sequence. Defaults to 0.
         """        
-        if isinstance(amp_list,np.ndarray):
-            amp_list = list(amp_list)
-        self.populate_dds_mgrs(dds_mgr_idx)
-        dt_ramp = self.get_ramp_dt(t_ramp)
+        amp_list, dt_ramp = self.handle_ramp_input(amp_list,t_ramp,dds_mgr_idx)
         this_profile = RAMProfile(
             dds.dds_device, amp_list, dt_ramp, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
         self.dds_manager[dds_mgr_idx].append_ramp(dds, frequency_src=dds.frequency, amplitude_src=this_profile)
+
+    def handle_ramp_input(self,value_list,t_ramp,dds_mgr_idx):
+        if isinstance(value_list,np.ndarray):
+            value_list = list(value_list)
+        self.populate_dds_mgrs(dds_mgr_idx)
+        N_points = len(value_list)
+        if N_points > 1024:
+            raise ValueError("Too many points!")
+        dt_ramp = round( ( t_ramp / N_points ) / 4.e-9 ) * 4.e-9
+        return value_list, dt_ramp
 
     def populate_dds_mgrs(self,dds_mgr_idx):
         '''Create a new DDSManager and add to the list if the specified number
