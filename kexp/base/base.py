@@ -31,7 +31,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[],shuffle=True):
+    def finish_build(self,N_repeats=[],shuffle=False):
         """
         To be called at the end of build. Automatically adds repeats either if
         specified in N_repeats argument or if previously specified in
@@ -52,6 +52,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
 
         if shuffle:
             self.shuffle_xvars()
+            self.shuffle_derived()
 
         self.get_N_img()
 

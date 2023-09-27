@@ -112,5 +112,32 @@ class Dealer():
         for i in range(len(self.sort_idx)):
             N_to_pad = maxN - len(self.sort_idx[i])
             self.sort_idx[i] = np.append(self.sort_idx[i], [-1]*N_to_pad)
-                
-            
+
+    def shuffle_derived(self):
+        sort_N = self.sort_N
+        sort_idx = self.sort_idx
+
+        protected_keys = ['xvarnames','sort_idx','images','img_timestamps','sort_N','sort_idx','xvars']
+        ks = self.params.__dict__.keys()
+        sort_ks = [k for k in ks if k not in protected_keys if k not in self.xvarnames]
+        for k in sort_ks:
+            var = vars(self.params)[k]
+            if isinstance(var,list):
+                var = np.array(var)
+            if isinstance(var,np.ndarray):
+                sdims = self._dims_to_sort(var)
+                for dim in sdims:
+                    N = var.shape[dim]
+                    if N in sort_N:
+                        i = np.where(sort_N == N)[0][0]
+                        shuf_idx = sort_idx[i]
+                        shuf_idx = shuf_idx[shuf_idx >= 0].astype(int) # remove padding [-1]s
+                        var = var.take(shuf_idx,dim)
+                        vars(self.params)[k] = var
+
+    def _dims_to_sort(self,var):
+        ndims = var.ndim
+        last_dim_to_sort = ndims
+        if last_dim_to_sort < 0: last_dim_to_sort = 0
+        dims_to_sort = np.arange(0,last_dim_to_sort)
+        return dims_to_sort
