@@ -16,15 +16,20 @@ class scan_cmot_params(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 8000.e-6
+        self.p.t_tof = 5000.e-6
 
-        #GM Detunings
+        # self.p.xvar_detune_d2_c_d2cmot = np.linspace(0.,-1.7,5)
+        # self.p.xvar_detune_d2_r_d2cmot = np.linspace(0.,-3.0,5)
 
-        self.p.xvar_detune_d1_c_d1cmot = np.linspace(6.5,8.0,6)
-        # self.p.xvar_detune_d2_r_d1cmot = np.linspace(-1.3,-2.3,5)
+        # self.p.xvar_v_d2cmot_current = np.linspace(0.5,1.7,6)
 
-        # self.p.xvar_amp_d2_r_d1cmot = np.linspace(0.03,.07,5)
-        self.p.xvar_v_pd_d1_c_d1cmot = np.linspace(2.,5.0,6)
+        # self.p.xvar_t_d2cmot = np.linspace(20.,100.0,6) * 1.e-3
+
+        self.p.xvar_detune_d1_c_d1cmot = np.linspace(7.5,11.0,6)
+        # self.p.xvar_detune_d2_r_d1cmot = np.linspace(0.,-2.4,5)
+
+        # self.p.xvar_amp_d2_r_d1cmot = np.linspace(0.03,.1,5)
+        self.p.xvar_v_pd_d1_c_d1cmot = np.linspace(1.,6.0,4)
 
         # self.p.xvar_amp_c = np.repeat(self.p.xvar_amp_c,3)
         # self.p.xvar_amp_r = np.repeat(self.p.xvar_amp_r,3)
@@ -34,6 +39,9 @@ class scan_cmot_params(EnvExperiment, Base):
         self.xvarnames = ['xvar_detune_d1_c_d1cmot', 'xvar_v_pd_d1_c_d1cmot']
         # self.xvarnames = ['xvar_detune_d1_c_d1cmot', 'xvar_detune_d2_r_d1cmot']
         # self.xvarnames = ['xvar_v_pd_d1_c_d1cmot', 'xvar_amp_d2_r_d1cmot']
+        # self.xvarnames = ['xvar_detune_d2_r_d1cmot', 'xvar_amp_d2_r_d1cmot']
+        # self.xvarnames = ['xvar_detune_d2_c_d2cmot', 'xvar_detune_d2_r_d2cmot']
+        # self.xvarnames = ['xvar_detune_d2_c_d2cmot', 'xvar_detune_d2_r_d2cmot']
 
         self.shuffle_xvars()
         self.get_N_img()
@@ -57,9 +65,11 @@ class scan_cmot_params(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
+                self.cmot_d2(self.p.t_d2cmot * s)
+
                 self.cmot_d1(self.p.t_d1cmot * s, detune_d1_c=xvar_0, v_pd_d1_c=xvar_1)
 
-                self.gm(self.p.t_gm * s)
+                # self.gm(self.p.t_gm * s)
 
                 # self.gm_ramp(self.p.t_gm_ramp)
                 
@@ -78,13 +88,18 @@ class scan_cmot_params(EnvExperiment, Base):
 
         # self.p.detune_gm = self.p.xvar_detune_gm
         # self.p.amp_d1_c_gm = self.p.xvar_amp_c
-        # self.p.amp_d1_r_gm = self.p.xvar_amp_r
 
         # self.p.detune_d2_r_d1cmot = self.p.xvar_detune_d2_r_d1cmot
         # self.p.amp_d2_r_d1cmot = self.p.xvar_amp_d2_r_d1cmot
+
+        # self.p.detune_d2_c_d2cmot = self.p.xvar_detune_d2_c_d2cmot
+        # self.p.detune_d2_r_d2cmot = self.p.xvar_detune_d2_r_d2cmot
         
         self.p.detune_d1_c_d1cmot = self.p.xvar_detune_d1_c_d1cmot
         self.p.v_pd_d1_c_d1cmot = self.p.xvar_v_pd_d1_c_d1cmot
+
+        # self.p.v_d2cmot_current = self.p.xvar_v_d2cmot_current
+        # self.p.t_d2cmot = self.p.xvar_t_d2cmot
 
         self.camera.Close()
         

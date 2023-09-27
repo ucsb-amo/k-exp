@@ -24,13 +24,31 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
 
-        # self.p.xvar_t_lightsheet_hold = np.linspace(15.,30.,4) * 1.e-3
-        self.p.xvar_detune_gm2 = np.linspace(6.,10.5,5)
-        self.p.xvar_t_gm2 = np.linspace(1.,10.,5) *1.e-3
+        cmot_ramp_start = .75
+        cmot_ramp_end = 1.5
+        self.cmot_ramp_steps = 10
+        self.cmot_ramp_time = 100.e-6 * s
+        self.cmot_ramp_v_values = np.linspace(cmot_ramp_start,cmot_ramp_end,self.cmot_ramp_steps)
+
+        # self.p.xvar_t_lightsheet_hold = np.linspace(25.,70.,6) * 1.e-3
+
+        self.p.xvar_detune_gm2 = np.linspace(8.,13.5,6)
+        self.p.xvar_t_gm2 = np.linspace(.5,8.,6) *1.e-3
+
+        # self.p.xvar_v_pd_d1_c_gm2 = np.linspace(.5,5.5,6)
+        # self.p.xvar_v_pd_d1_r_gm2 = np.linspace(.5,5.5,6)
+
+        
+        # self.p.xvar_v_d1cmot_current = np.linspace(.7,1.7,6)
+
+        # self.p.xvar_v_d2cmot_current = np.linspace(.7,1.7,6)
 
         self.trig_ttl = self.get_device("ttl14")
 
         self.xvarnames = ['xvar_detune_gm2','xvar_t_gm2']
+        # self.xvarnames = ['xvar_v_pd_d1_c_gm2','xvar_v_pd_d1_r_gm2']
+        # self.xvarnames = ['xvar_v_d2cmot_current', 'xvar_v_d1cmot_current']
+        # self.xvarnames = ['xvar_t_lightsheet_hold','xvar_v_d2cmot_current']
 
         self.finish_build()
 
@@ -57,6 +75,10 @@ class tof(EnvExperiment, Base):
 
                 self.cmot_d1(self.p.t_d1cmot * s)
 
+                # for v in self.cmot_ramp_v_values:
+                #     self.set_magnet_current(v)
+                #     delay(self.cmot_ramp_time / self.cmot_ramp_steps)
+
                 self.dds.lightsheet.set_dds(v_pd=5.)
                 
                 self.trig_ttl.on()
@@ -72,12 +94,14 @@ class tof(EnvExperiment, Base):
                 self.dds.lightsheet.on()
 
                 ### GM 2 ###
-                self.gm(t=xvar2 * s,detune_d1=xvar1)
+                self.gm(t=xvar2 * s, detune_d1=xvar1, v_pd_d1_c=4.5, v_pd_d1_r=4.)
                 self.trig_ttl.off()
 
                 self.release()
 
-                delay(self.p.t_lightsheet_hold)
+                # self.pulse_resonant_mot_beams(1.e-6*s)
+
+                delay(20.e-3 * s)
                 self.dds.lightsheet.off()
                 
                 delay(10.e-6)
@@ -93,7 +117,13 @@ class tof(EnvExperiment, Base):
 
         # self.p.t_lightsheet_hold = self.p.xvar_t_lightsheet_hold
         self.p.t_gm = self.p.xvar_t_gm2
-        # self.p.detune_gm2 = self.p.xvar_detune_gm2
+        self.p.detune_gm2 = self.p.xvar_detune_gm2
+
+        # self.p.v_pd_d1_c_gm2 = self.p.xvar_v_pd_d1_c_gm2
+        # self.p.v_pd_d1_r_gm2 = self.p.xvar_v_pd_d1_r_gm2
+
+        # self.p.v_d1cmot_current = self.p.xvar_v_d1cmot_current
+        # self.p.v_d2cmot_current = self.p.xvar_v_d2cmot_current
 
         self.camera.Close()
 

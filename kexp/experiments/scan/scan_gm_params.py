@@ -16,19 +16,19 @@ class scan_gm_params(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 10000.e-6
+        self.p.t_tof = 11000.e-6
 
         #GM Detunings
         # self.p.xvar_detune_gm = np.linspace(4.5,10.0,6)
         # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.5,5.,6)
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(2.5,5.,6)
+        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.,5.,6)
+        self.p.xvar_v_pd_d1_r_gm = np.linspace(2.,5.,6)
 
         self.p.N_repeats = 1
 
         self.xvarnames = ['xvar_v_pd_d1_c_gm','xvar_v_pd_d1_r_gm']
-        # self.xvarnames = ['xvar_detune_d1_gm', 'xvar_detune_d1_r_gm']
+        # self.xvarnames = ['xvar_detune_d1_c_gm', 'xvar_detune_d1_r_gm']
         # self.xvarnames = ['xvar_detune_gm', 'xvar_v_pd_d1_r_gm']
 
         # self.img_detuning = -275.78e6
@@ -36,6 +36,8 @@ class scan_gm_params(EnvExperiment, Base):
         # self.camera_params.exposure_time = 20.0e-3
 
         # self.p.t_tweezer_hold = 200. * 1.e-3
+
+        self.trig_ttl = self.get_device("ttl14")
 
         self.finish_build()
 
@@ -58,8 +60,11 @@ class scan_gm_params(EnvExperiment, Base):
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
+                self.cmot_d2(self.p.t_d2cmot * s)
+
                 self.cmot_d1(self.p.t_d1cmot * s)
 
+                self.trig_ttl.on()
                 self.gm(self.p.t_gm * s, v_pd_d1_c=xvar_1, v_pd_d1_r=xvar_2)
                 
                 # self.gm_tweezer(self.p.t_tweezer_hold * s, v_pd_d1_c=xvar_1, v_pd_d1_r=xvar_2)
@@ -67,7 +72,8 @@ class scan_gm_params(EnvExperiment, Base):
                 # self.fl_image(detuning=self.img_detuning)
 
                 # self.gm_ramp(self.p.t_gm_ramp)
-                
+                self.trig_ttl.off()
+
                 self.release()
                 
                 ### abs img
