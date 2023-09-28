@@ -62,15 +62,15 @@ class scan_discrete_ramp(EnvExperiment, Base):
                 # self.trig_ttl.on()
                 self.gm(self.p.t_gm * s)
 
+                with parallel:
+                    self.ttl_magnets.off()
+                    self.switch_d1_3d(1)
+                    self.switch_d2_3d(0)
+
                 for n in range(self.p.n_gmramp_steps):
                     self.dds.d1_3d_c.set_dds_gamma(v_pd=self.c_ramp[idx1][idx2][n])
                     delay_mu(self.params.t_rtio_mu)
                     self.dds.d1_3d_r.set_dds_gamma(v_pd=self.r_ramp[idx1][idx2][n])
-
-                    with parallel:
-                        self.ttl_magnets.off()
-                        self.switch_d1_3d(1)
-                        self.switch_d2_3d(0)
                     delay(self.t_step_time)
 
                 # self.trig_ttl.off()
