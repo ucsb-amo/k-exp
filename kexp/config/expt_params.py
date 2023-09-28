@@ -80,7 +80,7 @@ class ExptParams():
 
         #D1 CMOT
         self.detune_d1_c_d1cmot = 8.5
-        self.v_pd_d1_c_d1cmot = 4.0
+        self.pfrac_d1_c_d1cmot = 1.0
         self.detune_d2_r_d1cmot = -1.5
         self.amp_d2_r_d1cmot = 0.07
         self.v_d1cmot_current = 0.75
@@ -134,13 +134,18 @@ class ExptParams():
     def compute_gmramp_params(self):
         self.pfrac_c_gmramp_list = np.linspace(self.pfrac_c_gmramp_start, self.pfrac_c_gmramp_end, self.n_gmramp_steps)
         self.pfrac_r_gmramp_list = np.linspace(self.pfrac_r_gmramp_start, self.pfrac_r_gmramp_end, self.n_gmramp_steps)
-        self.v_pd_c_gmramp_list = DDS_VVA_Calibration().power_fraction_to_vva(self.pfrac_c_gmramp_list)
-        self.v_pd_r_gmramp_list = DDS_VVA_Calibration().power_fraction_to_vva(self.pfrac_r_gmramp_list)
+
+        cal = DDS_VVA_Calibration()
+        self.v_pd_c_gmramp_list = cal.power_fraction_to_vva(self.pfrac_c_gmramp_list)
+        self.v_pd_r_gmramp_list = cal.power_fraction_to_vva(self.pfrac_r_gmramp_list)
+
         self.dt_gmramp = self.t_gmramp / self.n_gmramp_steps
 
-    def compute_gm_vvas(self):
-        self.v_pd_d1_c_gm = DDS_VVA_Calibration().power_fraction_to_vva(self.pfrac_d1_c_gm)
-        self.v_pd_d1_r_gm = DDS_VVA_Calibration().power_fraction_to_vva(self.pfrac_d1_r_gm)
+    def compute_d1_vvas(self):
+        cal = DDS_VVA_Calibration()
+        self.v_pd_d1_c_d1cmot = cal.power_fraction_to_vva(self.pfrac_d1_c_d1cmot)
+        self.v_pd_d1_c_gm = cal.power_fraction_to_vva(self.pfrac_d1_c_gm)
+        self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
 
     def compute_tweezer_ramp_params(self):
         self.v_pd_tweezer_ramp_list = np.linspace(self.v_pd_tweezer_ramp_start,self.v_pd_tweezer_ramp_end, self.n_tweezer_ramp_steps)
