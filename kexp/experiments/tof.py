@@ -30,9 +30,6 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # mot_reload
 
-        self.p.v_pd_c_gmramp_end = 2.4
-        self.p.v_pd_r_gmramp_end = 3.3
-
         self.trig_ttl = self.get_device("ttl14")
 
         self.xvarnames = ['t_tof']

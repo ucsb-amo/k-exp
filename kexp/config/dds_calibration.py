@@ -111,9 +111,11 @@ p_vs_vva = [(5.,182.),
             (.425,.21),
             (.4,.059),
             (.3,.006),
-            (.2,0.)]
-p_vva = []
+            (.0,0.)]
+
+p_vva = [d[1] for d in p_vs_vva]
 p_vva = p_vva / np.max(p_vva)
+v_vva = [d[0] for d in p_vs_vva]
     
 class DDS_VVA_Calibration():
 
@@ -121,11 +123,11 @@ class DDS_VVA_Calibration():
         self.power_data = p_vva
         self.vva_data = v_vva
 
-    def power_fraction_to_dds_amplitude(self,fraction_of_max):
-        amp = np.interp(fraction_of_max,self.power_data,self.vva_data)
-        return amp
+    def power_fraction_to_vva(self,fraction_of_max):
+        vva = np.interp(fraction_of_max,self.power_data,self.vva_data)
+        return vva
 
-    def dds_amplitude_to_power_fraction(self,v_vva):
+    def vva_to_power_fraction(self,v_vva):
         p_frac = np.interp(v_vva,self.vva_data,self.power_data)
         return p_frac
     

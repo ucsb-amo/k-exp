@@ -2,6 +2,8 @@ from kexp.config.camera_params import CameraParams
 import numpy as np
 from kexp.control.als_remote_control import als_power_to_voltage
 
+from kexp.config.dds_calibration import DDS_VVA_Calibration
+
 default_camera_params = CameraParams()
 
 class ExptParams():
@@ -88,19 +90,16 @@ class ExptParams():
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
-        self.v_pd_d1_c_gm = 4.5 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = 1.0 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.v_pd_d1_r_gm = 4.0
-
-        #GM ramp
-        self.power_ramp_factor_gmramp = 10
+        self.pfrac_d1_r_gm = 1.0
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.v_pd_c_gmramp_start = 4.5
-        self.v_pd_c_gmramp_end = .6
-        self.v_pd_r_gmramp_start = 4.0
-        self.v_pd_r_gmramp_end = 2.1
+        self.pfrac_c_gmramp_start = 1.0
+        self.pfrac_c_gmramp_end = 0.05
+        self.pfrac_r_gmramp_start = 1.0
+        self.pfrac_r_gmramp_end = 0.05
         self.n_gmramp_steps = 100
 
         #ODT
@@ -133,9 +132,15 @@ class ExptParams():
         self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
 
     def compute_gmramp_params(self):
-        self.v_pd_c_gmramp_list = np.linspace(self.v_pd_c_gmramp_start, self.v_pd_c_gmramp_end, self.n_gmramp_steps)
-        self.v_pd_r_gmramp_list = np.linspace(self.v_pd_r_gmramp_start, self.v_pd_r_gmramp_end, self.n_gmramp_steps)
+        self.pfrac_c_gmramp_list = np.linspace(self.pfrac_c_gmramp_start, self.pfrac_c_gmramp_end, self.n_gmramp_steps)
+        self.pfrac_r_gmramp_list = np.linspace(self.pfrac_r_gmramp_start, self.pfrac_r_gmramp_end, self.n_gmramp_steps)
+        self.v_pd_c_gmramp_list = DDS_VVA_Calibration().power_fraction_to_vva(self.pfrac_c_gmramp_list)
+        self.v_pd_r_gmramp_list = DDS_VVA_Calibration().power_fraction_to_vva(self.pfrac_r_gmramp_list)
         self.dt_gmramp = self.t_gmramp / self.n_gmramp_steps
+
+    def compute_gm_vvas(self):
+        self.v_pd_d1_c_gm = DDS_VVA_Calibration().power_fraction_to_vva(self.pfrac_d1_c_gm)
+        self.v_pd_d1_r_gm = DDS_VVA_Calibration().power_fraction_to_vva(self.pfrac_d1_r_gm)
 
     def compute_tweezer_ramp_params(self):
         self.v_pd_tweezer_ramp_list = np.linspace(self.v_pd_tweezer_ramp_start,self.v_pd_tweezer_ramp_end, self.n_tweezer_ramp_steps)
