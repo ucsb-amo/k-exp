@@ -22,14 +22,11 @@ class scan_gm_params(EnvExperiment, Base):
         # self.p.xvar_detune_gm = np.linspace(4.5,10.0,6)
         # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
-        self.p.xvar_pfrac_d1_gm = np.linspace(0.1,1.0,6)
-
+        self.p.xvar_pfrac_d1_gm = np.linspace(0.6,1.0,3)
         cal = self.dds.dds_vva_calibration
         self.p.xvar_v_pd_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_gm)
-
-        self.p.xvar_t_gm = np.linspace(1.,10.,6) * 1.e-3
-
-        self.p.N_repeats = 1
+        
+        self.p.xvar_t_gm = np.linspace(2.,10.,6) * 1.e-3
 
         self.xvarnames = ['xvar_pfrac_d1_gm','xvar_t_gm']
         # self.xvarnames = ['xvar_detune_d1_c_gm', 'xvar_detune_d1_r_gm']
