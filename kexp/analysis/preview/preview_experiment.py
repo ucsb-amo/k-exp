@@ -62,7 +62,7 @@ class tof(EnvExperiment, Base):
 
             self.gm(self.p.t_gm * s)
 
-            # self.gm_ramp(self.p.t_gmramp * s)
+            self.gm_ramp(self.p.t_gmramp * s)
 
             # self.switch_d1_3d(0)
             # delay(20.e-3)
