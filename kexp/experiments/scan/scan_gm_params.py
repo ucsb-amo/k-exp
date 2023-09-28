@@ -22,20 +22,18 @@ class scan_gm_params(EnvExperiment, Base):
         # self.p.xvar_detune_gm = np.linspace(4.5,10.0,6)
         # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
-        self.p.xvar_v_pd_d1_c_gm = np.linspace(2.,5.,6)
-        self.p.xvar_v_pd_d1_r_gm = np.linspace(2.,5.,6)
+        self.p.xvar_pfrac_d1_gm = np.linspace(0.1,1.0,6)
+
+        cal = self.dds.dds_vva_calibration
+        self.p.xvar_v_pd_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_gm)
+
+        self.p.xvar_t_gm = np.linspace(1.,10.,6) * 1.e-3
 
         self.p.N_repeats = 1
 
-        self.xvarnames = ['xvar_v_pd_d1_c_gm','xvar_v_pd_d1_r_gm']
+        self.xvarnames = ['xvar_pfrac_d1_gm','xvar_t_gm']
         # self.xvarnames = ['xvar_detune_d1_c_gm', 'xvar_detune_d1_r_gm']
         # self.xvarnames = ['xvar_detune_gm', 'xvar_v_pd_d1_r_gm']
-
-        # self.img_detuning = -275.78e6
-
-        # self.camera_params.exposure_time = 20.0e-3
-
-        # self.p.t_tweezer_hold = 200. * 1.e-3
 
         self.trig_ttl = self.get_device("ttl14")
 
@@ -51,8 +49,8 @@ class scan_gm_params(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar_1 in self.p.xvar_v_pd_d1_c_gm:
-            for xvar_2 in self.p.xvar_v_pd_d1_r_gm:
+        for xvar_1 in self.p.xvar_v_pd_gm:
+            for t_gm in self.p.xvar_t_gm:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
@@ -65,7 +63,7 @@ class scan_gm_params(EnvExperiment, Base):
                 self.cmot_d1(self.p.t_d1cmot * s)
 
                 self.trig_ttl.on()
-                self.gm(self.p.t_gm * s, v_pd_d1_c=xvar_1, v_pd_d1_r=xvar_2)
+                self.gm(t_gm * s, v_pd_d1_c=xvar_1, v_pd_d1_r=xvar_1)
                 
                 # self.gm_tweezer(self.p.t_tweezer_hold * s, v_pd_d1_c=xvar_1, v_pd_d1_r=xvar_2)
 
@@ -86,16 +84,6 @@ class scan_gm_params(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
-
-        # self.p.detune_gm = self.p.xvar_detune_gm
-        self.p.v_pd_d1_c_gm = self.p.xvar_v_pd_d1_c_gm
-        self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
-
-        # self.p.detune_d1_c_gm = self.p.xvar_detune_d1_c_gm
-        # self.p.detune_d1_r_gm = self.p.xvar_detune_d1_r_gm
-# 
-        # self.p.v_pd_d1_c_gm = self.p.xvar_v_pd_d1_c_gm
-        # self.p.v_pd_d1_r_gm = self.p.xvar_v_pd_d1_r_gm
 
         self.camera.Close()
         
