@@ -32,12 +32,19 @@ class scan_discrete_ramp(EnvExperiment, Base):
 
         cal = DDS_VVA_Calibration()
 
-        for idx1 in range(len(self.p.xvar_pfrac_gmramp_c_end)):
+        for idx1 in range(len(self.p.xvar_pfrac_gmramp_end)):
                 self.c_ramp[idx1][:] = np.linspace(self.p.pfrac_c_gmramp_start, self.p.xvar_pfrac_gmramp_end[idx1], self.p.n_gmramp_steps)
                 self.r_ramp[idx1][:] = np.linspace(self.p.pfrac_r_gmramp_start, self.p.xvar_pfrac_gmramp_end[idx1], self.p.n_gmramp_steps)
 
         self.c_ramp_vva = cal.power_fraction_to_vva(self.c_ramp)
         self.r_ramp_vva = cal.power_fraction_to_vva(self.r_ramp)
+
+        self.keys = np.empty((len(self.p.xvar_pfrac_gmramp_end),len(self.p.xvar_t_gmramp)),dtype=str)
+        for idx1 in range(len(self.p.xvar_pfrac_gmramp_end)):
+            for idx2 in range(len(self.p.xvar_t_gmramp)):
+                # unique string to label each ramp
+                # must be done outside kernel
+                self.keys[idx1][idx2] = str(idx1) + str(idx2)
 
         self.xvarnames = ['xvar_pfrac_gmramp_end','xvar_t_gmramp']
 
@@ -47,14 +54,12 @@ class scan_discrete_ramp(EnvExperiment, Base):
 
     @kernel
     def record_ramps(self):
-        for idx1 in range(len(self.p.xvar_pfrac_gmramp_c_end)):
+        for idx1 in range(len(self.p.xvar_pfrac_gmramp_end)):
             for idx2 in range(len(self.p.xvar_t_gmramp)):
-                # unique string to label each ramp
-                key = str(idx1) + str(idx2)
-                
+                # retrieve key that labels this recorded ramp
+                key = self.keys[idx1][idx2]
                 t_gmramp = self.p.xvar_t_gmramp[idx2]
                 dt_gmramp = t_gmramp / self.p.n_gmramp_steps
-
                 # record the ramp
                 with self.core_dma.record(key):
                     for n in range(self.p.n_gmramp_steps):
@@ -75,11 +80,11 @@ class scan_discrete_ramp(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for idx1 in range(len(self.p.xvar_pfrac_gmramp_c_end)):
+        for idx1 in range(len(self.p.xvar_pfrac_gmramp_end)):
             for idx2 in range(len(self.p.xvar_t_gmramp)):
 
                 # retrieve the ramp for this run
-                key = str(idx1) + str(idx2)
+                key = self.keys[idx1][idx2]
                 ramp_handle = self.core_dma.get_handle(key)
                 self.core.break_realtime()
 
