@@ -15,14 +15,14 @@ class scan_discrete_ramp(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000.,7000.,3) * 1.e-6
-        self.p.t_tof = 8000 * 1.e-6
+        self.p.t_tof = 13000 * 1.e-6
 
         #Ramp params
 
         self.p.N_shots = 4
         self.p.N_repeats = [1,1]
-        self.p.v_pd_c_gmramp_end = np.linspace(1.2,5.0,self.p.N_shots)
-        self.p.v_pd_r_gmramp_end = np.linspace(1.2,5.0,self.p.N_shots)
+        self.p.v_pd_c_gmramp_end = np.linspace(.7,3,self.p.N_shots)
+        self.p.v_pd_r_gmramp_end = np.linspace(.7,3,self.p.N_shots)
 
         self.c_ramp = np.zeros((len(self.p.v_pd_c_gmramp_end), len(self.p.v_pd_r_gmramp_end), self.p.n_gmramp_steps))
         self.r_ramp = np.zeros((len(self.p.v_pd_c_gmramp_end), len(self.p.v_pd_r_gmramp_end), self.p.n_gmramp_steps))

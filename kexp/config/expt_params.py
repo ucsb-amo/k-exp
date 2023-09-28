@@ -36,11 +36,11 @@ class ExptParams():
         #Cooling timing
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
-        self.t_d2cmot = 5.e-3
-        self.t_d1cmot = 1.3e-3
-        self.t_gm = 2.e-3
-        self.t_gmramp = 5.5e-3
-        self.t_lightsheet_rampup = 10.e-3
+        self.t_d2cmot = 50.e-3
+        self.t_d1cmot = 6.e-3
+        self.t_gm = 2.5e-3
+        self.t_gmramp = 5.0e-3
+        self.t_lightsheet_rampup = 50.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 30.e-3
         self.t_tweezer_ramp = 3.e-3
@@ -70,28 +70,27 @@ class ExptParams():
         self.v_mot_current = .75 # 3.4A on 3D MOT coils
 
         #D2 CMOT
-        self.detune_d2_c_d2cmot = -0.5
-        self.amp_d2_c_d2cmot = 0.188
-        self.detune_d2_r_d2cmot = -2.5
+        self.detune_d2_c_d2cmot = -0.9
+        self.amp_d2_c_d2cmot = 0.14
+        self.detune_d2_r_d2cmot = -1.5
         self.amp_d2_r_d2cmot = 0.188
-        self.v_d2cmot_current = 2.5
+        self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 7.7
-        self.v_pd_d1_c_d1cmot = 3.8
+        self.detune_d1_c_d1cmot = 8.5
+        self.v_pd_d1_c_d1cmot = 4.0
         self.detune_d2_r_d1cmot = -1.5
         self.amp_d2_r_d1cmot = 0.07
-
-        self.v_d1cmot_current = 0.5
+        self.v_d1cmot_current = 0.75
         
         #GM
-        self.detune_gm = 7.85
+        self.detune_gm = 8.5
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
-        self.v_pd_d1_c_gm = 3.8 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.v_pd_d1_c_gm = 4.5 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.v_pd_d1_r_gm = 3.5
+        self.v_pd_d1_r_gm = 4.0
 
         #GM ramp
         self.power_ramp_factor_gmramp = 10
@@ -99,10 +98,10 @@ class ExptParams():
         #Discrete GM ramp
         #v_pd values for start and end of ramp
         self.v_pd_c_gmramp_start = 4.5
-        self.v_pd_c_gmramp_end = .9
-        self.v_pd_r_gmramp_start = 4.5
-        self.v_pd_r_gmramp_end = .9
-        self.n_gmramp_steps = 200
+        self.v_pd_c_gmramp_end = .6
+        self.v_pd_r_gmramp_start = 4.0
+        self.v_pd_r_gmramp_end = 2.1
+        self.n_gmramp_steps = 100
 
         #ODT
         self.amp_lightsheet = 0.6
@@ -131,6 +130,7 @@ class ExptParams():
             self.v_pd_lightsheet_rampup_start,
             self.v_pd_lightsheet_rampup_end,
             self.n_lightsheet_rampup_steps)
+        self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
 
     def compute_gmramp_params(self):
         self.v_pd_c_gmramp_list = np.linspace(self.v_pd_c_gmramp_start, self.v_pd_c_gmramp_end, self.n_gmramp_steps)

@@ -58,3 +58,21 @@ class DDS_Amplitude_Calibration():
         p_frac = np.interp(amp,self.amp_data,self.power_data)
         return p_frac
     
+v_vva = []
+p_vva = []
+p_vva = p_vva / np.max(p_vva)
+    
+class DDS_VVA_Calibration():
+
+    def __init__(self):
+        self.power_data = p_vva
+        self.vva_data = v_vva
+
+    def power_fraction_to_dds_amplitude(self,fraction_of_max):
+        amp = np.interp(fraction_of_max,self.power_data,self.vva_data)
+        return amp
+
+    def dds_amplitude_to_power_fraction(self,v_vva):
+        p_frac = np.interp(v_vva,self.vva_data,self.power_data)
+        return p_frac
+    

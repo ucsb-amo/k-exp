@@ -6,6 +6,7 @@ from artiq.experiment import kernel
 import kexp.config.dds_state as dds_state
 from kexp.control import DDS, DummyCore
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
+from kexp.config.dds_calibration import DDS_VVA_Calibration
 
 from jax import AD9910Manager, RAMProfile, RAMType
 from artiq.coredevice import ad9910
@@ -32,6 +33,7 @@ class dds_frame():
         self.core = core
         self.dds_manager = [DDSManager]
         self.dds_amp_calibration = DDS_Amplitude_Calibration()
+        self.dds_vva_calibration = DDS_VVA_Calibration()
         self.ramp_dt = RAMP_STEP_TIME
 
         self._N_uru = N_uru
