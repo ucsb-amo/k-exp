@@ -1,6 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
+from kexp.config.dds_calibration import DDS_VVA_Calibration
 
 import numpy as np
 
@@ -24,13 +25,21 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,self.p.N_shots) * 1.e-6 # mot_reload
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(12.,30.,10) * 1.e-3
+        cal = DDS_VVA_Calibration()
+
+        self.p.v_pd_d1_c = cal.power_fraction_to_vva(1.)
+        self.p.v_pd_d1_r = cal.power_fraction_to_vva(1.)
+
+        # self.p.xvar_t_lightsheet_hold = np.linspace(31.,41.,10) * 1.e-3
+
+        self.p.xvar_t_lightsheet_rampup = np.linspace(10.,100.,10) * 1.e-3
 
         # self.p.xvar_v_d1cmot_current = np.linspace(.5,1.8,10)
 
         # self.p.xvar_v_d2cmot_current = np.linspace(.5,1.8,10)
 
-        self.xvarnames = ['xvar_t_lightsheet_hold']
+        # self.xvarnames = ['xvar_t_lightsheet_hold']
+        self.xvarnames = ['xvar_t_lightsheet_rampup']
         # self.xvarnames = ['xvar_v_d1cmot_current']
         # self.xvarnames = ['xvar_v_d2cmot_current']
 
@@ -46,7 +55,7 @@ class tof(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_t_lightsheet_hold:
+        for xvar in self.p.xvar_t_lightsheet_rampup:
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)
@@ -69,16 +78,17 @@ class tof(EnvExperiment, Base):
             
             self.release()
 
-            self.dds.lightsheet.on()
-
             ### GM 2 ###
-            # self.gm(t=2.e-3*s, detune_d1=11., v_pd_d1_c=4.5, v_pd_d1_r=4.)
+            self.gm(t=10.e-6*s, detune_d1=11., v_pd_d1_c=self.p.v_pd_d1_c, v_pd_d1_r=self.p.v_pd_d1_r)
+
+            self.lightsheet_ramp(t_lightsheet_rampup=xvar)
+            # self.dds.lightsheet.on()
 
             self.release()
 
             # self.pulse_resonant_mot_beams(1.e-6*s)
 
-            delay(xvar)
+            delay(10.e-3 * s)
             self.dds.lightsheet.off()
             
             delay(10.e-6)
@@ -92,7 +102,7 @@ class tof(EnvExperiment, Base):
 
     def analyze(self):
 
-        self.p.t_lightsheet_hold = self.p.xvar_t_lightsheet_hold
+        # self.p.t_lightsheet_rampup = self.p.xvar_t_lightsheet_rampup
 
         # self.p.v_d1cmot_current = self.p.xvar_v_d1cmot_current
 

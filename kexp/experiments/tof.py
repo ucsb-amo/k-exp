@@ -18,17 +18,20 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 6
-        self.p.N_repeats = 1
+        N = 5
+        self.p.N_repeats = 2
 
         # self.p.t_tof = np.linspace(900,1500,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(2000,3500,N) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(7000,10000,N)  * 1.e-6 # gm
-        self.p.t_tof = np.linspace(12501,15000,N) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(7501,13000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # mot_reload
+
+        # self.p.pfrac_c_gmramp_end = .9
+        # self.p.pfrac_c_gmramp_end = .13
 
         self.trig_ttl = self.get_device("ttl14")
 
@@ -63,7 +66,7 @@ class tof(EnvExperiment, Base):
             self.trig_ttl.on()
             self.gm(self.p.t_gm * s)
 
-            self.gm_ramp(self.p.t_gmramp * s)
+            # self.gm_ramp(self.p.t_gmramp * s)
             self.trig_ttl.off()
 
             self.release()

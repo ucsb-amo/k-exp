@@ -18,7 +18,7 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roiy = [400, 700]
     elif crop_type == 'gm':
         roix = [500, 1400]
-        roiy = [150, 900] 
+        roiy = [50, 900] 
     elif crop_type == 'gm2':
         roix = [800, 1350]
         roiy = [450, 1050]

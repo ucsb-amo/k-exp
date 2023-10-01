@@ -399,7 +399,7 @@ class Cooling():
         ### Start Defaults ###
         
         if v_pd_lightsheet_ramp_list == dvlist:
-            v_pd_odt_ramp_list = self.params.v_pd_lightsheet_ramp_list
+            v_pd_lightsheet_ramp_list = self.params.v_pd_lightsheet_ramp_list
             
         N_elem = len(v_pd_lightsheet_ramp_list)
 
@@ -411,11 +411,11 @@ class Cooling():
 
         ### End Defaults ###
 
-        self.dds.tweezer.set_dds(frequency=self.params.frequency_ao_lightsheet,
+        self.dds.lightsheet.set_dds(frequency=self.params.frequency_ao_lightsheet,
                                  v_pd=v_pd_lightsheet_ramp_list[0])
-        self.dds.tweezer.on()
+        self.dds.lightsheet.on()
         for n in range(N_elem):
-            self.dds.tweezer.set_dds(v_pd=v_pd_lightsheet_ramp_list[n])
+            self.dds.lightsheet.set_dds(v_pd=v_pd_lightsheet_ramp_list[n])
             delay(dt_lightsheet_ramp)
         
     @kernel

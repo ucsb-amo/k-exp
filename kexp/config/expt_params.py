@@ -41,8 +41,8 @@ class ExptParams():
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 6.e-3
         self.t_gm = 2.5e-3
-        self.t_gmramp = 5.0e-3
-        self.t_lightsheet_rampup = 50.e-3
+        self.t_gmramp = 6.0e-3
+        self.t_lightsheet_rampup = 20.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 30.e-3
         self.t_tweezer_ramp = 3.e-3
@@ -97,15 +97,15 @@ class ExptParams():
         #Discrete GM ramp
         #v_pd values for start and end of ramp
         self.pfrac_c_gmramp_start = 1.0
-        self.pfrac_c_gmramp_end = 0.05
+        self.pfrac_c_gmramp_end = 0.75
         self.pfrac_r_gmramp_start = 1.0
-        self.pfrac_r_gmramp_end = 0.05
+        self.pfrac_r_gmramp_end = 0.1
         self.n_gmramp_steps = 100
 
         #ODT
         self.amp_lightsheet = 0.6
         self.frequency_ao_lightsheet = 80.e6
-        self.n_lightsheet_rampup_steps = 100
+        self.n_lightsheet_rampup_steps = 500
         self.v_pd_lightsheet_rampup_start = 0.0
         self.v_pd_lightsheet_rampup_end = 4.0
 
