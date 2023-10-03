@@ -39,29 +39,29 @@ class ExptParams():
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
-        self.t_d1cmot = 6.e-3
-        self.t_gm = 2.5e-3
-        self.t_gmramp = 6.0e-3
-        self.t_lightsheet_rampup = 20.e-3
+        self.t_d1cmot = 17.e-3
+        self.t_gm = 2.7e-3
+        self.t_gmramp = 2.4e-3
+        self.t_lightsheet_rampup = 5.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 30.e-3
         self.t_tweezer_ramp = 3.e-3
         self.t_tweezer_hold = 50.e-3
 
         #push beam
-        self.detune_push = 0.
-        self.amp_push = 0.188
+        self.detune_push = 2.
+        self.amp_push = 0.1
 
         #2D MOT
-        self.detune_d2_c_2dmot = .57
+        self.detune_d2_c_2dmot = -1.2
         self.amp_d2_c_2dmot = 0.1880
-        self.detune_d2_r_2dmot = -2.5
+        self.detune_d2_r_2dmot = -3.2
         self.amp_d2_r_2dmot = 0.1880
 
         #MOT
-        self.detune_d2_c_mot = -1.6
-        self.amp_d2_c_mot = 0.14
-        self.detune_d2_r_mot = -2.4
+        self.detune_d2_c_mot = -1.
+        self.amp_d2_c_mot = 0.188
+        self.detune_d2_r_mot = -4.
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -79,33 +79,33 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 8.5
+        self.detune_d1_c_d1cmot = 5.
         self.pfrac_d1_c_d1cmot = 1.0
-        self.detune_d2_r_d1cmot = -1.5
-        self.amp_d2_r_d1cmot = 0.07
+        self.detune_d2_r_d1cmot = -2.5
+        self.amp_d2_r_d1cmot = 0.056
         self.v_d1cmot_current = 0.75
         
         #GM
-        self.detune_gm = 8.5
+        self.detune_gm = 6.6
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
         self.pfrac_d1_c_gm = 1.0 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = 1.0
+        self.pfrac_d1_r_gm = .89
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
         self.pfrac_c_gmramp_start = 1.0
-        self.pfrac_c_gmramp_end = 0.75
-        self.pfrac_r_gmramp_start = 1.0
+        self.pfrac_c_gmramp_end = 0.79
+        self.pfrac_r_gmramp_start = .89
         self.pfrac_r_gmramp_end = 0.1
         self.n_gmramp_steps = 100
 
         #ODT
         self.amp_lightsheet = 0.6
         self.frequency_ao_lightsheet = 80.e6
-        self.n_lightsheet_rampup_steps = 500
+        self.n_lightsheet_rampup_steps = 100
         self.v_pd_lightsheet_rampup_start = 0.0
         self.v_pd_lightsheet_rampup_end = 4.0
 

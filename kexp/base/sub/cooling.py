@@ -409,6 +409,8 @@ class Cooling():
         else:
             dt_lightsheet_ramp = t_lightsheet_rampup / N_elem
 
+        aprint(dt_lightsheet_ramp,N_elem)
+
         ### End Defaults ###
 
         self.dds.lightsheet.set_dds(frequency=self.params.frequency_ao_lightsheet,

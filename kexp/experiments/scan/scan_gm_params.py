@@ -16,21 +16,30 @@ class scan_gm_params(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 11000.e-6
+        self.p.t_tof = 13000.e-6
+
+        # self.p.xvar_t_gm = np.linspace(.5,6.,6) * 1.e-3
 
         #GM Detunings
-        # self.p.xvar_detune_gm = np.linspace(4.5,10.0,6)
+        # self.p.xvar_detune_gm = np.linspace(3.,12.0,6)
+
         # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
-        self.p.xvar_pfrac_d1_gm = np.linspace(0.6,1.0,3)
-        cal = self.dds.dds_vva_calibration
-        self.p.xvar_v_pd_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_gm)
-        
-        self.p.xvar_t_gm = np.linspace(2.,10.,6) * 1.e-3
 
-        self.xvarnames = ['xvar_pfrac_d1_gm','xvar_t_gm']
+        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.6,1.0,5)
+        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.6,1.0,5)
+
+        cal = self.dds.dds_vva_calibration
+
+        self.p.xvar_v_pd_c_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_c_gm)
+        self.p.xvar_v_pd_r_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_r_gm)
+        
+        
+
+        # self.xvarnames = ['xvar_t_gm','xvar_detune_gm']
         # self.xvarnames = ['xvar_detune_d1_c_gm', 'xvar_detune_d1_r_gm']
         # self.xvarnames = ['xvar_detune_gm', 'xvar_v_pd_d1_r_gm']
+        self.xvarnames = ['xvar_pfrac_d1_c_gm', 'xvar_pfrac_d1_r_gm']
 
         self.trig_ttl = self.get_device("ttl14")
 
@@ -46,8 +55,8 @@ class scan_gm_params(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar_1 in self.p.xvar_v_pd_gm:
-            for t_gm in self.p.xvar_t_gm:
+        for xvar1 in self.p.xvar_v_pd_c_gm:
+            for xvar2 in self.p.xvar_v_pd_r_gm:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
@@ -60,19 +69,20 @@ class scan_gm_params(EnvExperiment, Base):
                 self.cmot_d1(self.p.t_d1cmot * s)
 
                 self.trig_ttl.on()
-                self.gm(t_gm * s, v_pd_d1_c=xvar_1, v_pd_d1_r=xvar_1)
+                self.gm(self.p.t_gm * s, v_pd_d1_c=xvar1, v_pd_d1_r=xvar2)
                 
                 # self.gm_tweezer(self.p.t_tweezer_hold * s, v_pd_d1_c=xvar_1, v_pd_d1_r=xvar_2)
 
                 # self.fl_image(detuning=self.img_detuning)
 
-                # self.gm_ramp(self.p.t_gm_ramp)
+                self.gm_ramp(t_gmramp=self.p.t_gmramp)
                 self.trig_ttl.off()
 
                 self.release()
                 
                 ### abs img
                 delay(self.p.t_tof * s)
+                self.flash_repump()
                 self.abs_image()
 
                 self.core.break_realtime()

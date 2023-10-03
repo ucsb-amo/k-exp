@@ -24,7 +24,7 @@ class scan_discrete_ramp(EnvExperiment, Base):
         self.p.N_repeats = [1,1]
 
         self.p.xvar_pfrac_gmramp_c_end = np.linspace(0.5,.99,6)
-        self.p.xvar_pfrac_gmramp_r_end = np.linspace(0.01,0.3,6)
+        self.p.xvar_pfrac_gmramp_r_end = np.linspace(0.01,0.6,6)
 
         self.p.c_ramp = np.zeros((len(self.p.xvar_pfrac_gmramp_c_end), self.p.n_gmramp_steps))
         self.p.r_ramp = np.zeros((len(self.p.xvar_pfrac_gmramp_r_end), self.p.n_gmramp_steps))

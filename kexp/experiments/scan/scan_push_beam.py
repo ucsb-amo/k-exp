@@ -16,13 +16,15 @@ class scan_push(EnvExperiment, Base):
         self.p = self.params
 
         self.p.t_mot_kill = 1
-        self.p.t_mot_load = 0.5
+        self.p.t_mot_load = 2
 
-        self.p.t_tof = 1500.e-6
+        self.p.t_tof = 12000.e-6
 
-        self.p.xvar1_detune_push = np.linspace(1.5,4.,8)
-        self.p.xvar2_amp_push = np.linspace(0.1,0.2,8)
+        self.p.xvar1_detune_push = np.linspace(0.,4.,5)
+        self.p.xvar2_amp_push = np.linspace(0.01,0.18,5)
 
+        self.trig_ttl = self.get_device("ttl14")
+        
         self.xvarnames = ['xvar1_detune_push','xvar2_amp_push']
 
         self.shuffle_xvars()
@@ -44,10 +46,21 @@ class scan_push(EnvExperiment, Base):
 
                 self.mot(self.p.t_mot_load * s, detune_push=d_push, amp_push=a_push)
 
+                self.dds.push.off()
+
+                self.cmot_d1(self.p.t_d1cmot * s)
+
+                self.trig_ttl.on()
+                self.gm(self.p.t_gm * s)
+
+                self.gm_ramp(self.p.t_gmramp * s)
+                self.trig_ttl.off()
+                
                 self.release()
 
                 delay(self.p.t_tof)
 
+                self.flash_repump()
                 self.abs_image()
 
                 self.core.break_realtime()
