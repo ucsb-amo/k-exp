@@ -29,9 +29,11 @@ class tof_scan_gm(EnvExperiment, Base):
 
         # self.p.xvar_v_d1cmot_current = np.linspace(0.3,1.3,6)
 
-        self.p.xvar_t_gmramp = np.linspace(3.,10.,6) * 1.e-3
+        # self.p.xvar_t_gmramp = np.linspace(3.,10.,6) * 1.e-3
 
         # self.p.xvar_v_mot_current = np.linspace(.7,.9,6)
+
+        self.p.xvar_v_zshim_current = np.linspace(.7,2.,6)
 
         # self.p.xvar_v_d2cmot_current = np.linspace(0.7,1.5,6)
 
@@ -45,7 +47,7 @@ class tof_scan_gm(EnvExperiment, Base):
 
         # self.p.xvar_t_d1cmot = np.linspace(5.,25.0,6) * 1.e-3
 
-        self.xvarnames = ['xvar_t_gmramp','t_tof']
+        self.xvarnames = ['xvar_v_zshim_current','t_tof']
         self.p.N_repeats = [1,1]
 
         self.trig_ttl = self.get_device("ttl14")
@@ -62,12 +64,12 @@ class tof_scan_gm(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_t_gmramp:
+        for xvar in self.p.xvar_v_zshim_current:
             for t_tof in self.p.t_tof:
 
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(self.p.t_mot_load * s)
+                self.mot(self.p.t_mot_load * s,v_zshim_current=xvar)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
@@ -79,7 +81,7 @@ class tof_scan_gm(EnvExperiment, Base):
                 self.trig_ttl.on()
                 self.gm(self.p.t_gm * s)
 
-                self.gm_ramp(t_gmramp=xvar)
+                self.gm_ramp(t_gmramp=self.p.t_gmramp)
                 self.trig_ttl.off()
                 
                 self.release()

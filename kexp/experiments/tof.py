@@ -26,12 +26,12 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(7000,10000,N)  * 1.e-6 # gm
-        self.p.t_tof = np.linspace(13023,19368,N) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(11023,19368,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # mot_reload
 
-        self.p.pfrac_c_gmramp_end = 1.
-        self.p.pfrac_r_gmramp_end = .26
+        # self.p.pfrac_c_gmramp_end = 1.
+        # self.p.pfrac_r_gmramp_end = .26
 
         self.trig_ttl = self.get_device("ttl14")
 
