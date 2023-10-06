@@ -24,11 +24,11 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roiy = [450, 1050]
     elif crop_type == 'fluor_gm':
         roix = [500, 1450]
-        roiy = [350, 1150]
+        roiy = [350, 1120]
 
     elif crop_type == 'lightsheet':
         roix = [900, 1000]
-        roiy = [500, 675]
+        roiy = [550, 710]
     else:
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]-1]
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]-1]

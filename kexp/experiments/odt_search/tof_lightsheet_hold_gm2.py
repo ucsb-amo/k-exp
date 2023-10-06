@@ -33,20 +33,20 @@ class tof(EnvExperiment, Base):
         # for p in self.p.xvar_cmot_ramp_end:
         #     self.p.ramps.append(np.linspace(cmot_ramp_start,p,self.cmot_ramp_steps))
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(20.,40.,4) * 1.e-3
+        self.p.xvar_t_lightsheet_hold = np.linspace(30.,70.,6) * 1.e-3
 
-        # self.p.xvar_t_lightsheet_rampup = np.linspace(10.,100.,6) * 1.e-3
+        # self.p.xvar_t_lightsheet_rampup = np.linspace(2.,10.,6) * 1.e-3
         
-        self.p.xvar_detune_gm2 = np.linspace(5.,12.,6)
+        self.p.xvar_detune_gm2 = np.linspace(6.,12.,6)
         # self.p.xvar_t_gm2 = np.linspace(.5,8.,6) *1.e-3
 
         cal = DDS_VVA_Calibration()
 
-        self.p.v_pd_d1_c = cal.power_fraction_to_vva(1.)
-        self.p.v_pd_d1_r = cal.power_fraction_to_vva(1.)
+        # self.p.v_pd_d1_c = cal.power_fraction_to_vva(.85)
+        # self.p.v_pd_d1_r = cal.power_fraction_to_vva(.26)
 
-        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.4,1.0,6)
-        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.01,1.0,6)
+        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.1,1.0,6)
+        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.1,1.0,6)
 
         cal = self.dds.dds_vva_calibration
 
@@ -61,6 +61,7 @@ class tof(EnvExperiment, Base):
         self.trig_ttl = self.get_device("ttl14")
 
         self.xvarnames = ['xvar_pfrac_d1_c_gm','xvar_pfrac_d1_r_gm']
+        # self.xvarnames = ['xvar_detune_gm2','xvar_t_lightsheet_hold']
         # self.xvarnames = ['xvar_v_pd_d1_c_gm2','xvar_v_pd_d1_r_gm2']
         # self.xvarnames = ['xvar_v_d2cmot_current', 'xvar_v_d1cmot_current']
         # self.xvarnames = ['xvar_t_lightsheet_hold','xvar_v_d2cmot_current']
@@ -78,7 +79,7 @@ class tof(EnvExperiment, Base):
         self.kill_mot(self.p.t_mot_kill * s)
 
         for xvar1 in self.p.xvar_v_pd_c_gm:
-            for xvar2 in self.p.xvar_v_pd_r_gm:
+            for xvar2 in self.p.xvar_t_lightsheet_hold:
 
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -108,16 +109,16 @@ class tof(EnvExperiment, Base):
                 self.release()
 
                 ### GM 2 ###
-                self.gm(t=10.e-6 * s, detune_d1=8.5, v_pd_d1_c=xvar1, v_pd_d1_r=xvar2)
+                self.gm(t=10.e-6 * s, detune_d1=6.6, v_pd_d1_c=xvar1, v_pd_d1_r=xvar1)
                 self.trig_ttl.off()
 
-                self.lightsheet_ramp(t_lightsheet_rampup=self.p.t_lightsheet_rampup * s,)
+                self.lightsheet_ramp(t_lightsheet_rampup=3.5e-3 * s)
 
                 self.release()
 
                 # self.pulse_resonant_mot_beams(1.e-6*s)
 
-                delay(30.e-3)
+                delay(xvar2 * s)
                 self.dds.lightsheet.off()
                 
                 delay(10.e-6)

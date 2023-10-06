@@ -109,7 +109,8 @@ class Cooling():
             amp_d2_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
-            v_current = dv):
+            v_current = dv,
+            v_zshim_current = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -122,6 +123,8 @@ class Cooling():
             amp_d2_r = self.params.amp_d2_r_mot
         if v_current == dv:
             v_current = self.params.v_mot_current
+        if v_zshim_current == dv:
+            v_current = self.params.v_zshim_current
         ### End Defaults ###
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
@@ -130,6 +133,7 @@ class Cooling():
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
         self.set_magnet_current(v = v_current)
+        self.set_zshim_magnet_current(v=v_zshim_current)
         with parallel:
             self.ttl_magnets.on()
             self.switch_d2_3d(1)
@@ -497,6 +501,14 @@ class Cooling():
             v = self.params.v_mot_current
         with sequential:
             self.zotino.write_dac(self.dac_ch_3Dmot_current_control,v)
+            self.zotino.load()
+
+    @kernel
+    def set_zshim_magnet_current(self, v = dv):
+        if v == dv:
+            v = self.params.v_zshim_current
+        with sequential:
+            self.zotino.write_dac(self.dac_ch_zshim_current_control,v)
             self.zotino.load()
 
     ## Other

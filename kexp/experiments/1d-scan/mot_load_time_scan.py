@@ -41,12 +41,18 @@ class mot_load_scan(EnvExperiment, Base):
             self.mot(xvar * s)
 
             self.dds.push.off()
-            self.switch_d2_2d(0)
+
+            # self.cmot_d1(self.p.t_d1cmot * s)
+
+            # self.gm(self.p.t_gm * s)
+
+            # self.gm_ramp(self.p.t_gmramp * s)
             
             self.release()
             
             ### abs img
             delay(self.p.t_tof * s)
+            self.flash_repump()
             self.abs_image()
 
             self.core.break_realtime()
@@ -54,8 +60,6 @@ class mot_load_scan(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
-        
-        self.p.t_mot_load = self.p.xvar_t_mot_load
 
         self.camera.Close()
 

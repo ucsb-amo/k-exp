@@ -18,10 +18,10 @@ class scan_push(EnvExperiment, Base):
         self.p.t_mot_kill = 1
         self.p.t_mot_load = 2
 
-        self.p.t_tof = 12000.e-6
+        self.p.t_tof = 14500.e-6
 
-        self.p.xvar1_detune_push = np.linspace(0.,4.,5)
-        self.p.xvar2_amp_push = np.linspace(0.01,0.18,5)
+        self.p.xvar1_detune_push = np.linspace(.25,6.,5)
+        self.p.xvar2_amp_push = np.linspace(0.1,0.18,5)
 
         self.trig_ttl = self.get_device("ttl14")
         
@@ -39,7 +39,6 @@ class scan_push(EnvExperiment, Base):
         delay(self.p.t_grab_start_wait*s)
         
         self.kill_mot(self.p.t_mot_kill * s)
-
         for d_push in self.p.xvar1_detune_push:
             for a_push in self.p.xvar2_amp_push:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
