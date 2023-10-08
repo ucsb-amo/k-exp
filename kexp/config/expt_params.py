@@ -40,7 +40,7 @@ class ExptParams():
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 12.e-3
-        self.t_gm = 3.e-3
+        self.t_gm = 2.e-3
         self.t_gmramp = 6.e-3
         self.t_lightsheet_rampup = 5.e-3
         self.t_lightsheet_load = 10.e-3
@@ -100,7 +100,7 @@ class ExptParams():
         self.detune_d1_c_gm = self.detune_gm
         self.pfrac_d1_c_gm = 1.0 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .8
+        self.pfrac_d1_r_gm = .75
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp

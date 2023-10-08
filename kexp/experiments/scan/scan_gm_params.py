@@ -16,22 +16,22 @@ class scan_gm_params(EnvExperiment, Base):
 
         self.p = self.params
 
+        self.p.v_zshim_current = .3
+
         # self.p.detune_gm = 9.2
-        self.p.t_gm = 3.e-3
+        # self.p.t_gm = 3.e-3
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 3000.e-6
+        self.p.t_tof = 6000.e-6
 
-        # self.p.xvar_t_gm = np.linspace(.5,5.,5) * 1.e-3
-
-        #GM Detunings
-        # self.p.xvar_detune_gm = np.linspace(1.,8.0,5)
+        # self.p.xvar_t_gm = np.linspace(.1,5.,5) * 1.e-3
+        # self.p.xvar_detune_gm = np.linspace(6.,11.0,5)
 
         # self.p.xvar_detune_d1_c_gm = np.linspace(3.5,10.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(3.5,10.0,5)
 
-        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.1,1.0,5)
-        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.1,1.0,5)
+        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.5,1.0,5)
+        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.5,1.0,5)
 
         cal = self.dds.dds_vva_calibration
 
@@ -40,9 +40,9 @@ class scan_gm_params(EnvExperiment, Base):
         
         
 
-        # self.xvarnames = ['xvar_t_gm','xvar_detune_gm']
+        self.xvarnames = ['xvar_pfrac_d1_c_gm','xvar_pfrac_d1_r_gm']
         # self.xvarnames = ['xvar_detune_d1_c_gm', 'xvar_detune_d1_r_gm']
-        self.xvarnames = ['xvar_pfrac_d1_c_gm', 'xvar_pfrac_d1_r_gm']
+        # self.xvarnames = ['xvar_pfrac_d1_c_gm', 'xvar_pfrac_d1_r_gm']
         # self.xvarnames = ['xvar_detune_gm', 'xvar_pfrac_d1_r_gm']
         # self.xvarnames = ['xvar_detune_gm', 'xvar_t_gm']
 
@@ -74,7 +74,7 @@ class scan_gm_params(EnvExperiment, Base):
                 self.cmot_d1(self.p.t_d1cmot * s)
 
                 self.trig_ttl.on()
-                self.gm(self.p.t_gm * s, v_pd_d1_c=xvar1, v_pd_d1_r=xvar2)
+                self.gm(self.p.t_gm * s, v_pd_d1_c=xvar1,v_pd_d1_r=xvar2)
 
                 # self.gm_ramp(t_gmramp=self.p.t_gmramp)
                 self.trig_ttl.off()
