@@ -14,7 +14,7 @@ class tof_scan_gm(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(12001.,18033.,5) * 1.e-6
+        self.p.t_tof = np.linspace(3000.,6203.,5) * 1.e-6
         # self.p.t_tof = 13.e-3
 
         #GM Detunings
@@ -31,13 +31,13 @@ class tof_scan_gm(EnvExperiment, Base):
 
         # self.p.xvar_t_gmramp = np.linspace(3.,10.,6) * 1.e-3
 
-        # self.p.xvar_v_mot_current = np.linspace(.7,.9,6)
+        # self.p.xvar_v_mot_current = np.linspace(.5,1.2,6)
 
         self.p.xvar_v_zshim_current = np.linspace(.7,2.,6)
 
         # self.p.xvar_v_d2cmot_current = np.linspace(0.7,1.5,6)
 
-        # self.xvar_v_d1cmot_current = np.linspace(0.03,.07,5)
+        # self.p.xvar_v_d1cmot_current = np.linspace(0.5,1.,5)
         
         # self.p.xvar_v_pd_d1_c_d1cmot = np.linspace(3.,6.0,6)
 
@@ -45,7 +45,7 @@ class tof_scan_gm(EnvExperiment, Base):
 
         # self.p.xvar_t_d2cmot = np.linspace(1.,30.0,6) * 1.e-3
 
-        # self.p.xvar_t_d1cmot = np.linspace(5.,25.0,6) * 1.e-3
+        # self.p.xvar_t_d1cmot = np.linspace(7.,14.0,5) * 1.e-3
 
         self.xvarnames = ['xvar_v_zshim_current','t_tof']
         self.p.N_repeats = [1,1]
@@ -69,20 +69,20 @@ class tof_scan_gm(EnvExperiment, Base):
 
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(self.p.t_mot_load * s,v_zshim_current=xvar)
+                self.mot(self.p.t_mot_load * s, v_zshim_current=xvar)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
 
                 # self.cmot_d2(self.p.t_d2cmot * s)
 
-                self.cmot_d1(self.p.t_d1cmot)
+                self.cmot_d1(t=xvar)
 
-                self.trig_ttl.on()
+                # self.trig_ttl.on()
                 self.gm(self.p.t_gm * s)
 
-                self.gm_ramp(t_gmramp=self.p.t_gmramp)
-                self.trig_ttl.off()
+                # self.gm_ramp(t_gmramp=self.p.t_gmramp)
+                # self.trig_ttl.off()
                 
                 self.release()
                 

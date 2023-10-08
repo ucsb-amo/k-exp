@@ -16,31 +16,34 @@ class scan_gm_params(EnvExperiment, Base):
 
         self.p = self.params
 
-        # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 15000.e-6
+        # self.p.detune_gm = 9.2
+        self.p.t_gm = 3.e-3
 
-        self.p.xvar_t_gm = np.linspace(.5,12.,6) * 1.e-3
+        # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
+        self.p.t_tof = 3000.e-6
+
+        # self.p.xvar_t_gm = np.linspace(.5,5.,5) * 1.e-3
 
         #GM Detunings
-        self.p.xvar_detune_gm = np.linspace(5.,9.0,5)
+        # self.p.xvar_detune_gm = np.linspace(1.,8.0,5)
 
-        # self.p.xvar_detune_d1_c_gm = np.linspace(5.5,9.0,5)
-        # self.p.xvar_detune_d1_r_gm = np.linspace(5.5,9.0,5)
+        # self.p.xvar_detune_d1_c_gm = np.linspace(3.5,10.0,5)
+        # self.p.xvar_detune_d1_r_gm = np.linspace(3.5,10.0,5)
 
-        # self.p.xvar_pfrac_d1_c_gm = np.linspace(0.6,1.0,5)
-        # self.p.xvar_pfrac_d1_r_gm = np.linspace(0.6,1.0,6)
+        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.1,1.0,5)
+        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.1,1.0,5)
 
         cal = self.dds.dds_vva_calibration
 
-        # self.p.xvar_v_pd_c_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_c_gm)
-        # self.p.xvar_v_pd_r_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_r_gm)
+        self.p.xvar_v_pd_c_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_c_gm)
+        self.p.xvar_v_pd_r_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_r_gm)
         
         
 
-        self.xvarnames = ['xvar_t_gm','xvar_detune_gm']
+        # self.xvarnames = ['xvar_t_gm','xvar_detune_gm']
         # self.xvarnames = ['xvar_detune_d1_c_gm', 'xvar_detune_d1_r_gm']
-        # self.xvarnames = ['xvar_pfrac_d1_c_gm', 'xvar_pfrac_d1_r_gm']
-        # self.xvarnames = ['xvar_detune_gm', 'xvar_v_pd_d1_r_gm']
+        self.xvarnames = ['xvar_pfrac_d1_c_gm', 'xvar_pfrac_d1_r_gm']
+        # self.xvarnames = ['xvar_detune_gm', 'xvar_pfrac_d1_r_gm']
         # self.xvarnames = ['xvar_detune_gm', 'xvar_t_gm']
 
         self.trig_ttl = self.get_device("ttl14")
@@ -57,8 +60,8 @@ class scan_gm_params(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar1 in self.p.xvar_t_gm:
-            for xvar2 in self.p.xvar_detune_gm:
+        for xvar1 in self.p.xvar_v_pd_c_gm:
+            for xvar2 in self.p.xvar_v_pd_r_gm:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
@@ -71,9 +74,9 @@ class scan_gm_params(EnvExperiment, Base):
                 self.cmot_d1(self.p.t_d1cmot * s)
 
                 self.trig_ttl.on()
-                self.gm(xvar1* s, detune_d1=xvar2)
+                self.gm(self.p.t_gm * s, v_pd_d1_c=xvar1, v_pd_d1_r=xvar2)
 
-                self.gm_ramp(t_gmramp=self.p.t_gmramp)
+                # self.gm_ramp(t_gmramp=self.p.t_gmramp)
                 self.trig_ttl.off()
 
                 self.release()

@@ -39,7 +39,7 @@ class ExptParams():
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
-        self.t_d1cmot = 9.e-3
+        self.t_d1cmot = 12.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 6.e-3
         self.t_lightsheet_rampup = 5.e-3
@@ -49,21 +49,21 @@ class ExptParams():
         self.t_tweezer_hold = 50.e-3
 
         #push beam
-        self.detune_push = .25
-        self.amp_push = 0.16
+        self.detune_push = .0
+        self.amp_push = 0.14
 
         #2D MOT
-        self.detune_d2_c_2dmot = -1.2
-        self.amp_d2_c_2dmot = 0.1880
+        self.detune_d2_c_2dmot = -.6
+        self.amp_d2_c_2dmot = 0.188
 
-        self.detune_d2_r_2dmot = -3.2
-        self.amp_d2_r_2dmot = 0.1880
+        self.detune_d2_r_2dmot = -2.4
+        self.amp_d2_r_2dmot = 0.188
 
         #MOT
-        self.detune_d2_c_mot = -1.
+        self.detune_d2_c_mot = -3.
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.
+        self.detune_d2_r_mot = -5.
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -85,22 +85,22 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 6.6
+        self.detune_d1_c_d1cmot = 9.2
         self.pfrac_d1_c_d1cmot = 1.0
 
-        self.detune_d2_r_d1cmot = -2.5
-        self.amp_d2_r_d1cmot = 0.056
+        self.detune_d2_r_d1cmot = -3.8
+        self.amp_d2_r_d1cmot = 0.04
 
         self.v_d1cmot_current = 0.8
         
         #GM
-        self.detune_gm = 6.6
+        self.detune_gm = 9.2
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
         self.pfrac_d1_c_gm = 1.0 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .9
+        self.pfrac_d1_r_gm = .8
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp

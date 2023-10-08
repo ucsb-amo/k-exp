@@ -17,7 +17,7 @@ class scan_cmot_params(EnvExperiment, Base):
         self.p = self.params
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 12000.e-6
+        self.p.t_tof = 4000.e-6
 
         # self.p.xvar_detune_d2_c_d2cmot = np.linspace(0.,-1.7,5)
         # self.p.xvar_detune_d2_r_d2cmot = np.linspace(0.,-3.0,5)
@@ -26,13 +26,13 @@ class scan_cmot_params(EnvExperiment, Base):
 
         # self.p.xvar_t_d2cmot = np.linspace(20.,100.0,6) * 1.e-3
 
-        # self.p.xvar_detune_d2_r_d1cmot = np.linspace(-3.,-2.,3)
+        # self.p.xvar_detune_d2_r_d1cmot = np.linspace(-4.5,-3.,5)
 
-        # self.p.xvar_amp_d2_r_d1cmot = np.linspace(0.048,.08,5)
+        # self.p.xvar_amp_d2_r_d1cmot = np.linspace(0.03,.05,5)
 
-        self.p.xvar_detune_d1_c_d1cmot = np.linspace(3.,7.,5)
+        self.p.xvar_detune_d1_c_d1cmot = np.linspace(7.,10.,5)
 
-        self.p.xvar_pfrac_d1_c_d1cmot = np.linspace(0.8,1.,2)
+        self.p.xvar_pfrac_d1_c_d1cmot = np.linspace(0.6,1.,5)
         cal = self.dds.dds_vva_calibration
         self.p.xvar_v_pd_d1_c_d1cmot = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_c_d1cmot)
 
@@ -74,11 +74,11 @@ class scan_cmot_params(EnvExperiment, Base):
                 # self.cmot_d1(self.p.t_d1cmot * s, detune_d2_r=xvar_0, amp_d2_r=xvar_1)
                 self.cmot_d1(self.p.t_d1cmot * s, detune_d1_c=xvar_0, v_pd_d1_c=xvar_1)
 
-                self.trig_ttl.on()
-                self.gm(self.p.t_gm * s)
+                # self.trig_ttl.on()
+                # self.gm(self.p.t_gm * s)
 
-                self.gm_ramp(self.p.t_gm_ramp)
-                self.trig_ttl.off()
+                # self.gm_ramp(self.p.t_gm_ramp)
+                # self.trig_ttl.off()
 
                 self.release()
                 
