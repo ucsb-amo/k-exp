@@ -14,7 +14,7 @@ class tof_scan_gm(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(4000.,7203.,5) * 1.e-6
+        self.p.t_tof = np.linspace(5000.,8203.,5) * 1.e-6
         # self.p.t_tof = 13.e-3
 
         #GM Detunings
@@ -33,7 +33,7 @@ class tof_scan_gm(EnvExperiment, Base):
 
         # self.p.xvar_v_mot_current = np.linspace(.5,1.2,6)
 
-        self.p.xvar_v_zshim_current = np.linspace(0.0,1.5,6)
+        self.p.xvar_v_zshim_current = np.linspace(0.5,5.5,6)
 
         # self.p.xvar_v_d2cmot_current = np.linspace(0.7,1.5,6)
 
@@ -76,7 +76,7 @@ class tof_scan_gm(EnvExperiment, Base):
 
                 # self.cmot_d2(self.p.t_d2cmot * s)
 
-                self.cmot_d1(t=xvar)
+                self.cmot_d1(self.p.t_d1cmot * s)
 
                 # self.trig_ttl.on()
                 self.gm(self.p.t_gm * s)
