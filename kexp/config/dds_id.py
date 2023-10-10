@@ -63,7 +63,7 @@ class dds_frame():
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging = self.dds_assign(2,2, ao_order = 1)
         self.lightsheet = self.dds_assign(2,3, ao_order=-1, dac_ch_vpd=5)
-        self.test_1 = self.dds_assign(3,0)
+        self.lightsheet_paint = self.dds_assign(3,0)
         self.test_2 = self.dds_assign(3,1)
 
         self.write_dds_keys()

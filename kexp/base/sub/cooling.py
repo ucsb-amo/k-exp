@@ -569,7 +569,6 @@ class Cooling():
         self.switch_d2_3d(1)
         delay(1*ms)
         self.switch_d2_2d(1)
-        self.dds.imaging.off()
 
         self.dds.beatlock_ref.on()
 
