@@ -39,8 +39,8 @@ class ExptParams():
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
-        self.t_d1cmot = 12.e-3
-        self.t_gm = 2.e-3
+        self.t_d1cmot = 17.e-3
+        self.t_gm = 3.e-3
         self.t_gmramp = 6.e-3
         self.t_lightsheet_rampup = 5.e-3
         self.t_lightsheet_load = 10.e-3
@@ -73,7 +73,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.5
 
         self.v_mot_current = .8 # 3.4A on 3D MOT coils
-        self.v_zshim_current = 2.5
+        self.v_zshim_current = 2.
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -106,7 +106,7 @@ class ExptParams():
         #v_pd values for start and end of ramp
         self.pfrac_c_gmramp_start = 1.0
         self.pfrac_c_gmramp_end = 0.85
-        self.pfrac_r_gmramp_start = .9
+        self.pfrac_r_gmramp_start = .75
         self.pfrac_r_gmramp_end = 0.26
         self.n_gmramp_steps = 200
 
