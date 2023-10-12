@@ -269,7 +269,7 @@ class atomdata():
             sort_N = self.sort_N
             sort_idx = self.sort_idx
 
-            protected_keys = ['xvarnames','sort_idx','images','img_timestamps','sort_N','sort_idx','xvars']
+            protected_keys = ['xvarnames','sort_idx','images','img_timestamps','sort_N','sort_idx','xvars','N_repeats','N_shots']
             ks = struct.__dict__.keys()
             sort_ks = [k for k in ks if k not in protected_keys]
             for k in sort_ks:

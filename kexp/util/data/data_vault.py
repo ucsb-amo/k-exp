@@ -56,7 +56,11 @@ class DataSaver():
             for key in keys:
                 if not key.startswith("_"):
                     value = vars(obj)[key]
-                    dset.create_dataset(key, data=value)
+                    try:
+                        dset.create_dataset(key, data=value)
+                    except Exception as e:
+                        print(f"Failed to save attribute \"{key}\" of {obj}.")
+                        print(e)
         except Exception as e:
             print(e)
 

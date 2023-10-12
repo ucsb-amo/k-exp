@@ -2,6 +2,8 @@ from kexp.config.camera_params import CameraParams
 import numpy as np
 from kexp.control.als_remote_control import als_power_to_voltage
 
+from kexp.config.dds_calibration import DDS_VVA_Calibration
+
 default_camera_params = CameraParams()
 
 class ExptParams():
@@ -37,71 +39,76 @@ class ExptParams():
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
-        self.t_d1cmot = 6.e-3
-        self.t_gm = 2.5e-3
-        self.t_gmramp = 5.0e-3
-        self.t_lightsheet_rampup = 50.e-3
+        self.t_d1cmot = 17.e-3
+        self.t_gm = 2.e-3
+        self.t_gmramp = 6.e-3
+        self.t_lightsheet_rampup = 5.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 30.e-3
         self.t_tweezer_ramp = 3.e-3
         self.t_tweezer_hold = 50.e-3
 
         #push beam
-        self.detune_push = 0.
-        self.amp_push = 0.188
+        self.detune_push = -2.
+        self.amp_push = 0.12
 
         #2D MOT
-        self.detune_d2_c_2dmot = .57
-        self.amp_d2_c_2dmot = 0.1880
-        self.detune_d2_r_2dmot = -2.5
-        self.amp_d2_r_2dmot = 0.1880
+        self.detune_d2_c_2dmot = -.6
+        self.amp_d2_c_2dmot = 0.188
+
+        self.detune_d2_r_2dmot = -2.4
+        self.amp_d2_r_2dmot = 0.188
 
         #MOT
-        self.detune_d2_c_mot = -1.6
-        self.amp_d2_c_mot = 0.14
-        self.detune_d2_r_mot = -2.4
+        self.detune_d2_c_mot = -2.
+        self.amp_d2_c_mot = 0.188
+
+        self.detune_d2_r_mot = -4.7
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
         self.v_pd_d1_c_mot = .5
+
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.5
 
-        self.v_mot_current = .75 # 3.4A on 3D MOT coils
+        self.v_mot_current = .8 # 3.4A on 3D MOT coils
+        self.v_zshim_current = 2.
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
         self.amp_d2_c_d2cmot = 0.14
+
         self.detune_d2_r_d2cmot = -1.5
         self.amp_d2_r_d2cmot = 0.188
+
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 8.5
-        self.v_pd_d1_c_d1cmot = 4.0
-        self.detune_d2_r_d1cmot = -1.5
-        self.amp_d2_r_d1cmot = 0.07
-        self.v_d1cmot_current = 0.75
+        self.detune_d1_c_d1cmot = 7.5
+        self.pfrac_d1_c_d1cmot = 1.0
+
+        self.detune_d2_r_d1cmot = -3.8
+        self.amp_d2_r_d1cmot = 0.04
+
+        self.v_d1cmot_current = 0.8
         
         #GM
-        self.detune_gm = 8.5
+        self.detune_gm = 7.5
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
-        self.v_pd_d1_c_gm = 4.5 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = 1.0 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.v_pd_d1_r_gm = 4.0
-
-        #GM ramp
-        self.power_ramp_factor_gmramp = 10
+        self.pfrac_d1_r_gm = 1.
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.v_pd_c_gmramp_start = 4.5
-        self.v_pd_c_gmramp_end = .6
-        self.v_pd_r_gmramp_start = 4.0
-        self.v_pd_r_gmramp_end = 2.1
-        self.n_gmramp_steps = 100
+        self.pfrac_c_gmramp_start = 1.0
+        self.pfrac_c_gmramp_end = 0.85
+        self.pfrac_r_gmramp_start = .75
+        self.pfrac_r_gmramp_end = 0.26
+        self.n_gmramp_steps = 200
 
         #ODT
         self.amp_lightsheet = 0.6
@@ -133,9 +140,20 @@ class ExptParams():
         self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
 
     def compute_gmramp_params(self):
-        self.v_pd_c_gmramp_list = np.linspace(self.v_pd_c_gmramp_start, self.v_pd_c_gmramp_end, self.n_gmramp_steps)
-        self.v_pd_r_gmramp_list = np.linspace(self.v_pd_r_gmramp_start, self.v_pd_r_gmramp_end, self.n_gmramp_steps)
+        self.pfrac_c_gmramp_list = np.linspace(self.pfrac_c_gmramp_start, self.pfrac_c_gmramp_end, self.n_gmramp_steps)
+        self.pfrac_r_gmramp_list = np.linspace(self.pfrac_r_gmramp_start, self.pfrac_r_gmramp_end, self.n_gmramp_steps)
+
+        cal = DDS_VVA_Calibration()
+        self.v_pd_c_gmramp_list = cal.power_fraction_to_vva(self.pfrac_c_gmramp_list)
+        self.v_pd_r_gmramp_list = cal.power_fraction_to_vva(self.pfrac_r_gmramp_list)
+
         self.dt_gmramp = self.t_gmramp / self.n_gmramp_steps
+
+    def compute_d1_vvas(self):
+        cal = DDS_VVA_Calibration()
+        self.v_pd_d1_c_d1cmot = cal.power_fraction_to_vva(self.pfrac_d1_c_d1cmot)
+        self.v_pd_d1_c_gm = cal.power_fraction_to_vva(self.pfrac_d1_c_gm)
+        self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
 
     def compute_tweezer_ramp_params(self):
         self.v_pd_tweezer_ramp_list = np.linspace(self.v_pd_tweezer_ramp_start,self.v_pd_tweezer_ramp_end, self.n_tweezer_ramp_steps)

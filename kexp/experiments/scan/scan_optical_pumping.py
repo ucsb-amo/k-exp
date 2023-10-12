@@ -6,13 +6,13 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-class scan_image_detuning(EnvExperiment, Base):
+class scan_optical_pumping(EnvExperiment, Base):
 
     def build(self):
         # Base.__init__(self,setup_camera=True,andor_imaging=False,absorption_image=False)
         Base.__init__(self)
 
-        self.run_info._run_description = "scan image amp vs pulse time"
+        self.run_info._run_description = "scan optical pumping detuning, amplitude"
 
         ## Parameters
 
@@ -22,16 +22,12 @@ class scan_image_detuning(EnvExperiment, Base):
 
         self.p.t_tof = 12000 * 1.e-6 # gm
         
-        self.p.xvar_image_detuning = np.linspace(22.,28.,5) * 1.e6
-        # self.p.frequency_detuned_imaging = 32.e6
-        # self.p.xvar_amp_imaging_abs = np.linspace(0.1,0.3,3)
-        self.p.xvar_t_imaging_pulse = np.linspace(2.,4.,4) * 1.e-6
-
-        # self.camera_params.exposure_time = 8.0e-3
+        self.p.xvar_detuning_optical_pumping = np.linspace(22.,28.,5) * 1.e6
+        self.p.xvar_amp_optical_pumping = np.linspace(.1,.2,5)
 
         self.trig_ttl = self.get_device("ttl14")
 
-        self.xvarnames = ['xvar_image_detuning','xvar_t_imaging_pulse']
+        self.xvarnames = ['xvar_detuning_optical_pumping','xvar_amp_optical_pumping']
 
         self.finish_build(shuffle=True)
 
@@ -45,12 +41,12 @@ class scan_image_detuning(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar1 in self.p.xvar_image_detuning:
-            for xvar2 in self.p.xvar_t_imaging_pulse:
+        for xvar1 in self.p.xvar_detuning_optical_pumping:
+            for xvar2 in self.p.xvar_amp_optical_pumping:
 
-                self.p.t_imaging_pulse = xvar2
-                self.set_imaging_detuning(detuning=xvar1)
-                self.core.break_realtime()
+                # self.p.t_imaging_pulse = xvar2
+                # self.set_imaging_detuning(detuning=xvar1)
+                # self.core.break_realtime()
 
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -70,6 +66,13 @@ class scan_image_detuning(EnvExperiment, Base):
                 self.trig_ttl.off()
                 
                 self.release()
+
+                self.dds.optical_pumping.set_dds_gamma(delta=xvar1,
+                                       amplitude=xvar2)
+                with parallel:
+                    self.dds.optical_pumping.on()
+                    # self.set_magnet_current(v = v_current) REPLACE WITH SOMETHING FOR Z SHIM
+                delay(t)
                 
                 ### abs img
                 delay(self.p.t_tof * s)
@@ -82,9 +85,6 @@ class scan_image_detuning(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
-
-        self.p.t_imaging_pulse = self.p.xvar_t_imaging_pulse
-        self.p.frequency_detuned_imaging = self.p.xvar_image_detuning
 
         self.camera.Close()
 

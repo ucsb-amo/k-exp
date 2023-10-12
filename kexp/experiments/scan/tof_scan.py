@@ -16,14 +16,15 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(3000.,5500.,6) * 1.e-6
-        self.p.t_mot_load = np.linspace(0.3,1.2,6)
+        self.p.t_tof = np.linspace(6000.,8500.,5) * 1.e-6
+        self.p.xvar_amp_d2_r_mot = np.linspace(.05,.188,5)
+        # self.p.t_mot_load = np.linspace(0.3,1.2,6)
 
         self.trig_ttl = self.get_device("ttl14")
 
-        self.xvarnames = ['t_mot_load','t_tof']
+        self.xvarnames = ['xvar_amp_d2_r_mot','t_tof']
 
-        self.p.N_repeats = [2,1]
+        self.p.N_repeats = [1,1]
 
         self.finish_build()
 
@@ -37,16 +38,16 @@ class tof(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for t in self.p.t_mot_load:
-            for t2 in self.p.t_tof:
+        for r in self.p.xvar_amp_d2_r_mot:
+            for t in self.p.t_tof:
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(t * s)
+                self.mot(self.p.t_mot_load * s, amp_d2_r=r)
                 # self.hybrid_mot(self.p.t_mot_load * s)
 
                 ### Turn off push beam and 2D MOT to stop the atomic beam ###
                 self.dds.push.off()
-                self.switch_d2_2d(0)
+                # self.switch_d2_2d(0)
 
                 self.cmot_d1(self.p.t_d1cmot * s)
 
@@ -54,14 +55,14 @@ class tof(EnvExperiment, Base):
                 self.gm(self.p.t_gm * s)
                 self.trig_ttl.off()
 
-                self.gm_ramp(self.p.t_gmramp * s)
+                # self.gm_ramp(self.p.t_gmramp * s)
 
                 # self.mot_reload(self.p.t_mot_reload * s)
                 
                 self.release()
                 
                 ### abs img
-                delay(t2 * s)
+                delay(t * s)
                 # self.fl_image()
                 self.flash_repump()
                 self.abs_image()

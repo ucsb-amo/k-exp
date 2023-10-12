@@ -114,28 +114,56 @@ class Dealer():
             self.sort_idx[i] = np.append(self.sort_idx[i], [-1]*N_to_pad)
 
     def shuffle_derived(self):
+        '''
+        Loop through all the attributes of params which are not in the list of
+        protected keys. For each attribute which has a dimension of size equal
+        to the length of one of the xvars specified in xvarnames, scramble that
+        axis of the attribute in the same way that the xvar of matching length
+        was scrambled.
+        '''
         sort_N = self.sort_N
+        if not isinstance(sort_N,np.ndarray):
+            sort_N = np.array(sort_N)
         sort_idx = self.sort_idx
 
-        protected_keys = ['xvarnames','sort_idx','images','img_timestamps','sort_N','sort_idx','xvars']
+        protected_keys = ['xvarnames','sort_idx','images','img_timestamps','sort_N','sort_idx','xvars','N_repeats','N_shots']
+        # get a list of the variable keys (that are not protected)
         ks = self.params.__dict__.keys()
         sort_ks = [k for k in ks if k not in protected_keys if k not in self.xvarnames]
+        # loop over the keys
         for k in sort_ks:
+            # get the value of the attribute with that key
             var = vars(self.params)[k]
+            # cast arrays as np.ndarrays
             if isinstance(var,list):
                 var = np.array(var)
             if isinstance(var,np.ndarray):
+                # get a list of the dimensions to check for sorting, loop over them
                 sdims = self._dims_to_sort(var)
                 for dim in sdims:
                     N = var.shape[dim]
+                    # check to see if this dimension is of a length which matches one of the xvars
+                    # (sort_N is a list of the lengths of the xvars)
                     if N in sort_N:
+                        # if this dim's length matches that of one of the xvars,
+                        # grab the index of the match
                         i = np.where(sort_N == N)[0][0]
+                        # get the indices used to shuffle the matching xvar
                         shuf_idx = sort_idx[i]
-                        shuf_idx = shuf_idx[shuf_idx >= 0].astype(int) # remove padding [-1]s
+                        # remove padding [-1]s (added since the shuffling idx
+                        # have to be the same length in the hdf5 later)
+                        shuf_idx = shuf_idx[shuf_idx >= 0].astype(int)
+                        # scramble the var along the this dimension according to
+                        # the shuffling idx 
                         var = var.take(shuf_idx,dim)
+                        # save the shuffled variable into params
                         vars(self.params)[k] = var
 
     def _dims_to_sort(self,var):
+        '''
+        Create a list of which dimensions should be checked for sorting.
+        TBH I do not remember why that if statement is necessary.
+        '''
         ndims = var.ndim
         last_dim_to_sort = ndims
         if last_dim_to_sort < 0: last_dim_to_sort = 0

@@ -11,24 +11,24 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [500, 1500]
         roiy = [100, 1200]
     elif crop_type == 'mot':
-        roix = [400, 1600]
+        roix = [150, 1350]
         roiy = [150, 1200]
     elif crop_type == 'cmot':
         roix = [750, 1400]
         roiy = [400, 700]
     elif crop_type == 'gm':
-        roix = [500, 1400]
-        roiy = [150, 900] 
+        roix = [300, 1250]
+        roiy = [200, 1100] 
     elif crop_type == 'gm2':
-        roix = [800, 1350]
+        roix = [850, 1350]
         roiy = [450, 1050]
     elif crop_type == 'fluor_gm':
         roix = [500, 1450]
-        roiy = [350, 1150]
+        roiy = [350, 1120]
 
     elif crop_type == 'lightsheet':
-        roix = [800, 1000]
-        roiy = [0, 1150]
+        roix = [900, 1000]
+        roiy = [550, 710]
     else:
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]-1]
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]-1]
