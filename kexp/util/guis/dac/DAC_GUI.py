@@ -221,7 +221,7 @@ class DACControlGrid(QWidget):
                 skip_ch_idx = [channels.index(skip_ch) for skip_ch in SKIP_CHANNELS]
                 no_skip_ch_idx = list( set(range(len(voltages))).difference(skip_ch_idx) )
             channels = new_channels
-            voltages = np.array(voltages)[no_skip_ch_idx]
+            voltages = list(np.array(voltages)[no_skip_ch_idx])
             print(channels)
             builder.execute_set_all_dac_voltage(channels, voltages)
             print(f"DAC channels are   : {channels}")
