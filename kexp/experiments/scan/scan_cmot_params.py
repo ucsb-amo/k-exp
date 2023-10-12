@@ -30,7 +30,7 @@ class scan_cmot_params(EnvExperiment, Base):
 
         # self.p.xvar_amp_d2_r_d1cmot = np.linspace(0.03,.05,5)
 
-        self.p.xvar_detune_d1_c_d1cmot = np.linspace(7.,10.,5)
+        self.p.xvar_detune_d1_c_d1cmot = np.linspace(4.5,10.5,5)
 
         self.p.xvar_pfrac_d1_c_d1cmot = np.linspace(0.6,1.,5)
         cal = self.dds.dds_vva_calibration

@@ -8,23 +8,23 @@ class tof_scan_gm(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
-        self.run_info._run_description = "cmot tof, vary cmot time"
+        self.run_info._run_description = "gm tof, vary gm detuning"
 
         ## Parameters
 
         self.p = self.params
 
-        self.p.t_tof = np.linspace(5000.,8203.,5) * 1.e-6
+        self.p.t_tof = np.linspace(5500.,9347.,5) * 1.e-6
         # self.p.t_tof = 13.e-3
 
         #GM Detunings
 
-        # self.p.xvar_detune_gm = np.linspace(5.,12.,4)
+        self.p.xvar_detune_gm = np.linspace(4.,12.,5)
 
         # self.p.xvar_v_pd_d1_r_gm = np.linspace(1.,5.,6)
         # self.p.xvar_v_pd_d1_c_gm = np.linspace(1.,5.,6)
 
-        # self.p.xvar_t_gm = np.linspace(1.0,12.0,6) * 1.e-3
+        self.p.xvar_t_gm = np.linspace(1.0,12.0,6) * 1.e-3
 
         # self.p.xvar_n_gmramp_steps = np.linspace(10,200,5) * 1.e-6
 
@@ -32,7 +32,7 @@ class tof_scan_gm(EnvExperiment, Base):
 
         # self.p.xvar_t_gmramp = np.linspace(3.,10.,6) * 1.e-3
 
-        self.p.xvar_v_mot_current = np.linspace(.2,1.,6)
+        # self.p.xvar_v_mot_current = np.linspace(.2,1.,6)
 
         # self.p.xvar_v_zshim_current = np.linspace(0.5,5.5,6)
 
@@ -46,13 +46,12 @@ class tof_scan_gm(EnvExperiment, Base):
 
         # self.p.xvar_t_d2cmot = np.linspace(1.,30.0,6) * 1.e-3
 
-        # self.p.xvar_t_d1cmot = np.linspace(12.,18.0,5) * 1.e-3
+        self.p.xvar_t_d1cmot = np.linspace(12.,22.0,6) * 1.e-3
 
-        self.xvarnames = ['xvar_v_mot_current','t_tof']
+        self.xvarnames = ['xvar_t_gm','t_tof']
         self.p.N_repeats = [1,1]
 
         self.trig_ttl = self.get_device("ttl14")
-
         self.finish_build()
 
     @kernel
@@ -65,12 +64,12 @@ class tof_scan_gm(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_v_mot_current:
+        for xvar in self.p.xvar_t_gm:
             for t_tof in self.p.t_tof:
 
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-                self.mot(self.p.t_mot_load * s, v_current=xvar)
+                self.mot(self.p.t_mot_load * s)
 
                 self.dds.push.off()
                 self.switch_d2_2d(0)
@@ -80,7 +79,7 @@ class tof_scan_gm(EnvExperiment, Base):
                 self.cmot_d1(self.p.t_d1cmot * s)
 
                 # self.trig_ttl.on()
-                self.gm(self.p.t_gm * s)
+                self.gm(xvar * s)
 
                 # self.gm_ramp(t_gmramp=self.p.t_gmramp)
                 # self.trig_ttl.off()
