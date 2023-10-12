@@ -401,6 +401,35 @@ class Cooling():
             delay(dt_gmramp)
 
     @kernel
+    def optical_pumping(self, t,
+                        detune_optical_pumping=dv,
+                        amp_optical_pumping=dv,
+                        detune_d2_r=dv,
+                        amp_d2_r=dv,
+                        v_zshim_current=dv):
+        
+        if detune_optical_pumping == dv:
+            detune_optical_pumping = self.params.detune_optical_pumping_op
+        if amp_optical_pumping == dv:
+            amp_optical_pumping = self.params.amp_optical_pumping_op
+        if detune_d2_r == dv:
+            detune_d2_r = self.params.detune_d2_r_op
+        if amp_d2_r == dv:
+            amp_d2_r = self.params.amp_d2_r_op
+        if v_zshim_current == dv:
+            v_zshim_current = self.params.v_zshim_current_op
+
+        self.set_zshim_magnet_current(self.dac_ch_zshim_current_control,
+                                      v_zshim_current)
+        self.dds.optical_pumping.set_dds_gamma(delta=detune_optical_pumping, 
+                                       amplitude=amp_optical_pumping)
+        self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r, 
+                                       amplitude=amp_d2_r)
+        delay(t)
+        self.set_zshim_magnet_current(self.dac_ch_zshim_current_control,
+                                      self.params.v_zshim_current)
+
+    @kernel
     def lightsheet_ramp(self, t_lightsheet_rampup = dv,
                  v_pd_lightsheet_ramp_list = dvlist):
         

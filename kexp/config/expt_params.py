@@ -42,6 +42,7 @@ class ExptParams():
         self.t_d1cmot = 17.e-3
         self.t_gm = 2.e-3
         self.t_gmramp = 6.e-3
+        self.t_optical_pumping = 1.e-3
         self.t_lightsheet_rampup = 5.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 30.e-3
@@ -109,6 +110,13 @@ class ExptParams():
         self.pfrac_r_gmramp_start = .75
         self.pfrac_r_gmramp_end = 0.26
         self.n_gmramp_steps = 200
+
+        #Optical Pumping
+        self.detune_optical_pumping_op = 0.0
+        self.amp_optical_pumping_op = 0.25
+        self.detune_d2_r_op = 0.0
+        self.amp_d2_r_op = 0.188
+        self.v_zshim_current_op = 2.5
 
         #ODT
         self.amp_lightsheet = 0.6
