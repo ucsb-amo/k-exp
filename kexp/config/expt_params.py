@@ -74,7 +74,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.5
 
         self.v_mot_current = .8 # 3.4A on 3D MOT coils
-        self.v_zshim_current = 2.
+        self.v_zshim_current = 2.7
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -116,7 +116,7 @@ class ExptParams():
         self.amp_optical_pumping_op = 0.25
         self.detune_d2_r_op = 0.0
         self.amp_d2_r_op = 0.188
-        self.v_zshim_current_op = 2.5
+        self.v_zshim_current_op = 3.5
 
         #ODT
         self.amp_lightsheet = 0.6
