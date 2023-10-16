@@ -12,7 +12,7 @@ class scan_optical_pumping(EnvExperiment, Base):
         # Base.__init__(self,setup_camera=True,andor_imaging=False,absorption_image=False)
         Base.__init__(self)
 
-        self.run_info._run_description = "scan optical pumping detuning, amplitude"
+        self.run_info._run_description = "scan optical pumping detuning"
 
         ## Parameters
 
@@ -23,13 +23,14 @@ class scan_optical_pumping(EnvExperiment, Base):
         self.p.t_tof = 12000 * 1.e-6 # gm
         
         self.p.xvar_detune_optical_pumping_op = np.linspace(22.,28.,5) * 1.e6
-        self.p.xvar_amp_optical_pumping_op = np.linspace(.1,.2,5)
 
-        self.p.xvar_v_zshim_current_op = self.p.v_zshim_current_op
+        self.p.xvar_amp_optical_pumping_op = 2.5
+
+        self.p.xvar_v_zshim_current_op = np.linspace(2,4,5)
 
         self.trig_ttl = self.get_device("ttl14")
 
-        self.xvarnames = ['xvar_detune_optical_pumping_op','xvar_amp_optical_pumping_op']
+        self.xvarnames = ['xvar_detune_optical_pumping_op','xvar_v_zshim_current_op']
 
         self.finish_build(shuffle=True)
 
@@ -44,17 +45,12 @@ class scan_optical_pumping(EnvExperiment, Base):
         self.kill_mot(self.p.t_mot_kill * s)
 
         for xvar1 in self.p.xvar_detune_optical_pumping_op:
-            for xvar2 in self.p.xvar_amp_optical_pumping_op:
-
-                # self.p.t_imaging_pulse = xvar2
-                # self.set_imaging_detuning(detuning=xvar1)
-                # self.core.break_realtime()
+            for xvar2 in self.p.xvar_v_zshim_current_op:
 
                 self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
-                # self.hybrid_mot(self.p.t_mot_load * s)
-
+                
                 ### Turn off push beam and 2D MOT to stop the atomic beam ###
                 self.dds.push.off()
                 self.switch_d2_2d(0)
@@ -70,10 +66,10 @@ class scan_optical_pumping(EnvExperiment, Base):
                 self.release()
 
                 self.dds.optical_pumping.set_dds_gamma(delta=xvar1,
-                                       amplitude=xvar2)
+                                       amplitude=self.p.xvar_amp_optical_pumping_op)
                 with parallel:
                     self.dds.optical_pumping.on()
-                    self.set_magnet_current(v = self.p.xvar_v_zshim_current_op)
+                    self.set_magnet_current(v = xvar2)
                 delay(t)
                 
                 ### abs img
@@ -92,4 +88,4 @@ class scan_optical_pumping(EnvExperiment, Base):
 
         self.ds.save_data(self)
 
-        print("Done!")
+        print("Done!")    
