@@ -12,7 +12,8 @@ class ExptParams():
         self._camera_params = camera_params
 
         self.t_mot_kill = 1.
-        self.t_mot_load = 2.
+        # self.t_mot_load = 2. ############ YOU CHANGED THIS JUST TO MAKE SCANS FASTER
+        self.t_mot_load = 0.5
         self.t_mot_reload = 2.
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
@@ -90,7 +91,7 @@ class ExptParams():
         self.pfrac_d1_c_d1cmot = 1.0
 
         self.detune_d2_r_d1cmot = -3.
-        self.amp_d2_r_d1cmot = 0.04
+        self.amp_d2_r_d1cmot = 0.047
 
         self.v_d1cmot_current = 0.8
         
