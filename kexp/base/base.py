@@ -31,7 +31,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[],shuffle=False,cleanup_dds_profiles=True):
+    def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True):
         """
         To be called at the end of build. Automatically adds repeats either if
         specified in N_repeats argument or if previously specified in
