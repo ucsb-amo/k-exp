@@ -22,6 +22,7 @@ class Cooling():
         with parallel:
             self.dds.push.off()
             self.switch_d2_3d(0)
+            self.set_magnet_current(0.)
         delay(t)
 
     @kernel
