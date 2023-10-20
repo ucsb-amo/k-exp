@@ -22,16 +22,16 @@ class scan_gm_params(EnvExperiment, Base):
         # self.p.t_gm = 3.e-3
 
         # self.p.t_tof = np.linspace(3000,8000,5) * 1.e-6
-        self.p.t_tof = 7500.e-6
+        self.p.t_tof = 10000.e-6
 
-        # self.p.xvar_t_gm = np.linspace(1.,9.,5) * 1.e-3
-        # self.p.xvar_detune_gm = np.linspace(6.,11.0,5)
+        self.p.xvar_t_gm = np.linspace(1.,9.,5) * 1.e-3
+        self.p.xvar_detune_gm = np.linspace(6.,11.0,5)
 
         # self.p.xvar_detune_d1_c_gm = np.linspace(7.,12.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(7.,12.0,5)
 
-        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.2,1.,5)
-        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.2,1.,5)
+        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.01,1.,5)
+        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.01,1.,5)
 
         cal = self.dds.dds_vva_calibration
 
@@ -54,17 +54,17 @@ class scan_gm_params(EnvExperiment, Base):
 
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait * s)
+
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         
         self.kill_mot(self.p.t_mot_kill * s)
 
         for xvar1 in self.p.xvar_v_pd_c_gm:
             for xvar2 in self.p.xvar_v_pd_r_gm:
-                self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
 
                 self.dds.push.off()
-                self.switch_d2_2d(0)
 
                 # self.cmot_d2(self.p.t_d2cmot * s)
 
@@ -85,6 +85,8 @@ class scan_gm_params(EnvExperiment, Base):
                 self.abs_image()
 
                 self.core.break_realtime()
+                
+                delay(self.p.t_recover)
 
         # return to mot load state
         self.mot_observe()

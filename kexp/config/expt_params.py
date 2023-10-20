@@ -11,11 +11,6 @@ class ExptParams():
 
         self._camera_params = camera_params
 
-        self.t_mot_kill = 1.
-        # self.t_mot_load = 2. ############ YOU CHANGED THIS JUST TO MAKE SCANS FASTER
-        self.t_mot_load = 0.5
-        self.t_mot_reload = 2.
-
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
         self.N_shots = 1
@@ -37,11 +32,12 @@ class ExptParams():
         self.amp_d2_r_imaging = 0.065
 
         #Cooling timing
+        self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
-        self.t_d1cmot = 20.e-3
-        self.t_gm = 2.e-3
+        self.t_d1cmot = 7.5e-3
+        self.t_gm = 2.5e-3
         self.t_gmramp = 6.e-3
         self.t_optical_pumping = 1.e-3
         self.t_lightsheet_rampup = 5.e-3
@@ -49,6 +45,8 @@ class ExptParams():
         self.t_lightsheet_hold = 30.e-3
         self.t_tweezer_ramp = 3.e-3
         self.t_tweezer_hold = 50.e-3
+        self.t_mot_reload = 2.
+        self.t_recover = 20.e-3
 
         #push beam
         self.detune_push = -2.
@@ -96,13 +94,13 @@ class ExptParams():
         self.v_d1cmot_current = 0.8
         
         #GM
-        self.detune_gm = 7.5
+        self.detune_gm = 9.
         # self.amp_gm = 0.09
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = 1.0 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .6 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = 1.
+        self.pfrac_d1_r_gm = .6
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp

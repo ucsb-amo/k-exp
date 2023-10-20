@@ -15,15 +15,18 @@ class mot_load_scan(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.N_shots = 8
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
         self.p.t_tof = 1200 * 1.e-6 # mot
 
-        self.p.xvar_t_mot_load = np.linspace(0.1,3.5,self.p.N_shots)
+        # self.p.xvar_t_mot_load = np.linspace(0.1,3.5,7)
+        self.p.xvar_t_2dmot_load = np.linspace(0.1,1.,4)
+        # self.p.xvar_t_2dmot_load = np.insert(self.p.xvar_t_2dmot_load,0,0.)
+        # self.p.xvar_t_2dmot_load = np.insert(self.p.xvar_t_2dmot_load,3,0.)
+        # self.p.xvar_t_mot_kill = np.linspace(.1,3.,10)
 
-        self.xvarnames = ['xvar_t_mot_load']
+        self.xvarnames = ['xvar_t_2dmot_load']
 
-        self.finish_build()
+        self.finish_build(shuffle=False)
 
     @kernel
     def run(self):
@@ -32,13 +35,11 @@ class mot_load_scan(EnvExperiment, Base):
 
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
+
+        for t in self.p.xvar_t_2dmot_load:
+            self.load_2D_mot(t * s)
         
-        self.kill_mot(self.p.t_mot_kill * s)
-
-        for xvar in self.p.xvar_t_mot_load:
-            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-
-            self.mot(xvar * s)
+            self.mot(self.p.t_mot_load * s)
 
             self.dds.push.off()
 
@@ -56,6 +57,10 @@ class mot_load_scan(EnvExperiment, Base):
             self.abs_image()
 
             self.core.break_realtime()
+            delay(self.p.t_recover)
+
+            self.switch_d2_2d(0)
+            delay(3*s)
 
         self.mot_observe()
 

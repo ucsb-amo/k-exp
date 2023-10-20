@@ -5,7 +5,7 @@ class CameraParams():
         self.exposure_delay = 17 * 1.e-6
         self.serial_no = 0.
         self.exposure_time = 19.e-6
-        self.connection_delay = 1.5
+        self.connection_delay = 0.25
         self.t_camera_trigger = 2.e-6
         self.t_readout_time = 0.
         self.em_gain = 250.

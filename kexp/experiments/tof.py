@@ -46,11 +46,12 @@ class tof(EnvExperiment, Base):
 
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
+
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         
         self.kill_mot(self.p.t_mot_kill * s)
 
         for t_tof in self.p.t_tof:
-            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)
             # self.hybrid_mot(self.p.t_mot_load * s)
@@ -77,6 +78,8 @@ class tof(EnvExperiment, Base):
             self.abs_image()
 
             self.core.break_realtime()
+            
+            delay(self.p.t_recover)
 
         self.mot_observe()
 
