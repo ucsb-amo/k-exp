@@ -13,7 +13,7 @@ from TTL_GUI_ExptBuilder import TTLGUIExptBuilder
 
 import os
 
-NUM_TTL = 16
+NUM_TTL = 32
 START_TTL = 8
 
 CODE_DIR = os.environ.get("code")

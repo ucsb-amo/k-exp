@@ -446,7 +446,7 @@ class Cooling():
         else:
             dt_lightsheet_ramp = t_lightsheet_rampup / N_elem
 
-        aprint(dt_lightsheet_ramp,N_elem)
+        # aprint(dt_lightsheet_ramp,N_elem)
 
         ### End Defaults ###
 
@@ -602,7 +602,6 @@ class Cooling():
         self.dds.beatlock_ref.on()
 
         self.core.break_realtime()
-        self.set_magnet_current()
         self.ttl_magnets.on()
 
         self.dds.imaging.on()

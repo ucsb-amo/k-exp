@@ -39,7 +39,7 @@ class ExptParams():
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
-        self.t_d1cmot = 17.e-3
+        self.t_d1cmot = 20.e-3
         self.t_gm = 2.e-3
         self.t_gmramp = 6.e-3
         self.t_optical_pumping = 1.e-3
@@ -89,7 +89,7 @@ class ExptParams():
         self.detune_d1_c_d1cmot = 7.5
         self.pfrac_d1_c_d1cmot = 1.0
 
-        self.detune_d2_r_d1cmot = -3.8
+        self.detune_d2_r_d1cmot = -3.
         self.amp_d2_r_d1cmot = 0.04
 
         self.v_d1cmot_current = 0.8
