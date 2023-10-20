@@ -24,7 +24,7 @@ class tof(EnvExperiment, Base):
         self.xvarnames = ['state_2dmot_bool','t_tof']
         self.p.N_repeats = [2,1]
 
-        self.finish_build()
+        self.finish_build(shuffle=False)
 
     @kernel
     def run(self):
@@ -33,12 +33,13 @@ class tof(EnvExperiment, Base):
 
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
+
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         
         self.kill_mot(self.p.t_mot_kill * s)
 
         for state_2dmot_bool in self.p.state_2dmot_bool:
             for t_tof in self.p.t_tof:
-                self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
                 # self.hybrid_mot(self.p.t_mot_load * s)

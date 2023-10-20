@@ -21,6 +21,8 @@ class tof(EnvExperiment, Base):
         N = 5
         self.p.N_repeats = 1
 
+        self.p.t_mot_kill = 3.
+
         # self.p.t_tof = np.linspace(1200,1500,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(2000,3500,N) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
@@ -37,7 +39,7 @@ class tof(EnvExperiment, Base):
 
         self.xvarnames = ['t_tof']
 
-        self.finish_build()
+        self.finish_build(shuffle=False)
 
     @kernel
     def run(self):
@@ -46,10 +48,11 @@ class tof(EnvExperiment, Base):
 
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
-        
+
         self.kill_mot(self.p.t_mot_kill * s)
 
         for t_tof in self.p.t_tof:
+
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)
@@ -57,8 +60,6 @@ class tof(EnvExperiment, Base):
 
             ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
-
-            # self.cmot_d2(self.p.t_d2cmot * s)
 
             self.cmot_d1(self.p.t_d1cmot * s)
 

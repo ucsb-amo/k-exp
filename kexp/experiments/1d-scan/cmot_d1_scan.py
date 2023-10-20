@@ -15,17 +15,14 @@ class cmot_d1_scan(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.N_shots = 10
         self.p.N_repeats = 1
-        self.p.t_tof = 1000 * 1.e-6 # mot
+        self.p.t_tof = 5000 * 1.e-6 # mot
 
-        self.p.xvar_v_pd_d1_c_d1cmot = np.linspace(2.95,3.15,self.p.N_shots)
-        self.p.xvar_v_pd_d1_c_d1cmot = np.repeat(self.p.xvar_v_pd_d1_c_d1cmot,self.p.N_repeats)
+        self.p.t_d1cmot = np.linspace(1.0,10.0,10) * 1.e-3
 
-        self.xvarnames = ['xvar_v_pd_d1_c_d1cmot']
+        self.xvarnames = ['t_d1cmot']
 
-        self.shuffle_xvars()
-        self.get_N_img()
+        self.finish_build()
 
     @kernel
     def run(self):
@@ -37,7 +34,7 @@ class cmot_d1_scan(EnvExperiment, Base):
         
         self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_v_pd_d1_c_d1cmot:
+        for xvar in self.p.t_d1cmot:
             self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
             self.mot(self.p.t_mot_load * s)
@@ -46,7 +43,7 @@ class cmot_d1_scan(EnvExperiment, Base):
             self.dds.push.off()
             self.switch_d2_2d(0)
 
-            self.cmot_d1(self.p.t_d1cmot * s, v_pd_d1_c=xvar)
+            self.cmot_d1(xvar * s)
 
             # self.gm(self.p.t_gm * s)
 
@@ -56,6 +53,7 @@ class cmot_d1_scan(EnvExperiment, Base):
             
             ### abs img
             delay(self.p.t_tof * s)
+            self.flash_repump()
             self.abs_image()
 
             self.core.break_realtime()
@@ -63,8 +61,6 @@ class cmot_d1_scan(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
-        
-        self.p.v_pd_d1_c_d1cmot = self.p.xvar_v_pd_d1_c_d1cmot
 
         self.camera.Close()
 

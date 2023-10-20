@@ -30,15 +30,13 @@ class scan_gm_params(EnvExperiment, Base):
         # self.p.xvar_detune_d1_c_gm = np.linspace(7.,12.0,5)
         # self.p.xvar_detune_d1_r_gm = np.linspace(7.,12.0,5)
 
-        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.5,1.0,5)
-        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.5,1.,5)
+        self.p.xvar_pfrac_d1_c_gm = np.linspace(0.2,1.,5)
+        self.p.xvar_pfrac_d1_r_gm = np.linspace(0.2,1.,5)
 
         cal = self.dds.dds_vva_calibration
 
         self.p.xvar_v_pd_c_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_c_gm)
         self.p.xvar_v_pd_r_gm = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_r_gm)
-        
-        
 
         self.xvarnames = ['xvar_pfrac_d1_c_gm','xvar_pfrac_d1_r_gm']
         # self.xvarnames = ['xvar_detune_d1_c_gm', 'xvar_detune_d1_r_gm']
@@ -46,8 +44,6 @@ class scan_gm_params(EnvExperiment, Base):
         # self.xvarnames = ['xvar_detune_gm', 'xvar_t_gm']
 
         self.trig_ttl = self.get_device("ttl14")
-
-        # self.p.N_repeats = [1,1]
 
         self.finish_build()
 
