@@ -390,10 +390,7 @@ class Cooling():
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        v_pd=v_pd_d1_r_list[0])
 
-        with parallel:
-            self.ttl_magnets.off()
-            self.switch_d1_3d(1)
-            self.switch_d2_3d(0)
+        self.switch_d1_3d(1)
 
         for n in range(N_elem):
             self.dds.d1_3d_c.set_dds(v_pd=v_pd_d1_c_list[n])
