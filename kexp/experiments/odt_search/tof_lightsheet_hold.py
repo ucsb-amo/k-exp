@@ -30,7 +30,7 @@ class tof(EnvExperiment, Base):
         self.p.v_pd_d1_c = cal.power_fraction_to_vva(.85)
         self.p.v_pd_d1_r = cal.power_fraction_to_vva(.26)
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(1.,20.,10) * 1.e-3
+        self.p.xvar_t_lightsheet_hold = np.linspace(10.,30.,10) * 1.e-3
 
         # self.p.xvar_t_lightsheet_rampup = np.linspace(2.,18.,20) * 1.e-3
 
@@ -57,41 +57,43 @@ class tof(EnvExperiment, Base):
 
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
+
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         
         self.kill_mot(self.p.t_mot_kill * s)
 
         for xvar in self.p.xvar_t_lightsheet_hold:
-            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+            
+            self.dds.lightsheet.set_dds(frequency=self.p.frequency_ao_lightsheet, v_pd=4.)
 
             self.mot(self.p.t_mot_load * s)
             # self.hybrid_mot(self.p.t_mot_load * s)
 
             ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
-            self.switch_d2_2d(0)
 
             self.cmot_d1(self.p.t_d1cmot * s)
-
-            self.dds.lightsheet.set_dds(v_pd=5.)
             
             ### GM 1 ###
             self.gm(self.p.t_gm * s)
 
-            # self.gm_ramp(self.p.t_gmramp * s)
+            self.gm_ramp(self.p.t_gmramp * s)
 
             # delay(self.p.t_lightsheet_load)
             
             self.release()
 
             ### GM 2 ###
-            # self.gm(t=10.e-6*s, detune_d1=7.6, v_pd_d1_c=self.p.v_pd_d1_c, v_pd_d1_r=self.p.v_pd_d1_r)
+            # self.gm(t=10.e-6*s, detune_d1=11., v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
 
-            self.trig_ttl2.on()
-            self.lightsheet_ramp(t_lightsheet_rampup=6.e-3,
-                                 v_pd_lightsheet_ramp_list=self.p.v_pd_lightsheet_ramp_list)
-            # self.dds.lightsheet.on()
-            self.trig_ttl2.off()
-            self.release()
+            self.dds.lightsheet.on()
+
+            # self.trig_ttl2.on()
+            # self.lightsheet_ramp(t_lightsheet_rampup=6.e-3,
+            #                      v_pd_lightsheet_ramp_list=self.p.v_pd_lightsheet_ramp_list)
+            # # self.dds.lightsheet.on()
+            # self.trig_ttl2.off()
+            # self.release()
 
             # self.pulse_resonant_mot_beams(1.e-6*s)
 
@@ -104,6 +106,8 @@ class tof(EnvExperiment, Base):
             self.abs_image()
 
             self.core.break_realtime()
+            
+            delay(self.p.t_recover)
 
         self.mot_observe()
 
