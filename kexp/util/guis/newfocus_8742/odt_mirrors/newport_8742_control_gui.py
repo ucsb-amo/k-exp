@@ -12,6 +12,11 @@ from PyQt6.QtWidgets import (
 
 import numpy as np
 
+N_MIRRORS = 2
+MIRROR_NAMES = ["turning","kick-up"]
+AXES_LISTS = [[1,2],[3,4]]
+AXES_NAME_LIST = [["x","y"],["x","y"]]
+
 class updown_button_set(QWidget):
     def __init__(self,name:str,axis:int,controller:Newport.Picomotor8742,N_big=1000,N_small=100):
         super().__init__()
@@ -93,17 +98,14 @@ class updown_button_set(QWidget):
             self.move(N_steps=-self.cust_step_size))
 
 class mirror_panel(QWidget):
-    def __init__(self,controller:Newport.Picomotor8742,name,axis_list):
+    def __init__(self,controller:Newport.Picomotor8742,name,axis_list,axes_name_list):
         super().__init__()
 
         self.name = name
-        self.axis_list = axis_list
-
-        axes_names = ["x","y"]
 
         self.axis_control_sets = []
-        for idx in range(len(self.axis_list)):
-            self.axis_control_sets.append( updown_button_set(axes_names[idx],self.axis_list[idx],controller) )
+        for idx in range(len(axis_list)):
+            self.axis_control_sets.append( updown_button_set(axes_name_list[idx],axis_list[idx],controller) )
 
         self.setup_layout()
 
@@ -121,21 +123,12 @@ class mirror_panel(QWidget):
 class main_window(QWidget):
     def __init__(self):
         super().__init__()
-
-        N_STAGES = Newport.get_usb_devices_number_picomotor()
-        print(N_STAGES)
-        MIRROR_STAGE_IDX = 0
-        if MIRROR_STAGE_IDX > N_STAGES:
-            raise ValueError(f"The requested stage index ({MIRROR_STAGE_IDX} is not connected via USB.)")
         
-        self.stage = Newport.Picomotor8742(MIRROR_STAGE_IDX)
+        self.stage = Newport.Picomotor8742("8742-103159")
 
-        N_MIRRORS = 2
-        MIRROR_NAMES = ["turning","kick-up"]
-        AXES_LISTS = [[1,2],[3,4]]
         self.panels = []
         for idx in range(N_MIRRORS):
-            self.panels.append( mirror_panel(self.stage,MIRROR_NAMES[idx],AXES_LISTS[idx]) )
+            self.panels.append( mirror_panel(self.stage,MIRROR_NAMES[idx],AXES_LISTS[idx],AXES_NAME_LIST[idx]) )
 
         self.setup_layout()
 
@@ -144,30 +137,6 @@ class main_window(QWidget):
         for panel in self.panels:
             self.grid.addWidget(panel)
         self.layout = self.grid
-
-# class main_window(QWidget):
-#     def __init__(self):
-#         super().__init__()
-
-#         N_STAGES = Newport.get_usb_devices_number_picomotor()
-#         print(N_STAGES)
-#         MIRROR_STAGE_IDX = 0
-#         if MIRROR_STAGE_IDX > N_STAGES:
-#             raise ValueError(f"The requested stage index ({MIRROR_STAGE_IDX} is not connected via USB.)")
-        
-#         self.stage = Newport.Picomotor8742(MIRROR_STAGE_IDX)
-
-#         self.panels = []
-#         for idx in range(1):
-#             self.panels.append( updown_button_set(1,self.stage) )
-
-#         self.setup_layout()
-
-#     def setup_layout(self):
-#         self.grid = QVBoxLayout(self)
-#         for panel in self.panels:
-#             self.grid.addWidget(panel)
-#         self.layout = self.grid
 
 def close_connection(stage):
     stage.close()
