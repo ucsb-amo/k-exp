@@ -45,8 +45,8 @@ class updown_button_set(QWidget):
         self.small_up_button = QPushButton(f"+{self.N_small}")
         self.small_down_button = QPushButton(f"-{self.N_small}")
 
-        self.cust_up_button = QPushButton("^")
-        self.cust_down_button = QPushButton("^")
+        self.cust_up_button = QPushButton("+")
+        self.cust_down_button = QPushButton("-")
         self.cust_value_box = QDoubleSpinBox()
         self.cust_value_box.setSingleStep(10)
         self.cust_value_box.setDecimals(0)
