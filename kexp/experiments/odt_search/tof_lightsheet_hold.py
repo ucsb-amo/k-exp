@@ -59,8 +59,6 @@ class tof(EnvExperiment, Base):
         delay(self.p.t_grab_start_wait*s)
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-        
-        self.kill_mot(self.p.t_mot_kill * s)
 
         for xvar in self.p.xvar_t_lightsheet_hold:
             
@@ -84,13 +82,13 @@ class tof(EnvExperiment, Base):
             self.release()
 
             ### GM 2 ###
-            # self.gm(t=10.e-6*s, detune_d1=11., v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
+            self.gm(t=10.e-6*s, detune_d1=11., v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
 
-            self.dds.lightsheet.on()
+            # self.dds.lightsheet.on()
 
             # self.trig_ttl2.on()
-            # self.lightsheet_ramp(t_lightsheet_rampup=6.e-3,
-            #                      v_pd_lightsheet_ramp_list=self.p.v_pd_lightsheet_ramp_list)
+            self.lightsheet_ramp(t_lightsheet_rampup=6.e-3,
+                                 v_pd_lightsheet_ramp_list=self.p.v_pd_lightsheet_ramp_list)
             # # self.dds.lightsheet.on()
             # self.trig_ttl2.off()
             # self.release()
