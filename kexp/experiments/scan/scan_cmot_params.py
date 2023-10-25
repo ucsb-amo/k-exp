@@ -12,6 +12,8 @@ class scan_cmot_params(EnvExperiment, Base):
 
         self.run_info._run_description = "cmot D2 r detuning vs d2 r amp"
 
+        cal = self.dds.dds_vva_calibration
+
         ## Parameters
 
         self.p = self.params
@@ -32,8 +34,8 @@ class scan_cmot_params(EnvExperiment, Base):
 
         self.p.xvar_detune_d1_c_d1cmot = np.linspace(5.,10.,5)
 
-        self.p.xvar_pfrac_d1_c_d1cmot = np.linspace(0.5,.8,5)
-        cal = self.dds.dds_vva_calibration
+        self.p.xvar_pfrac_d1_c_d1cmot = np.linspace(0.5,1.,5)
+        
         self.p.xvar_v_pd_d1_c_d1cmot = cal.power_fraction_to_vva(self.p.xvar_pfrac_d1_c_d1cmot)
 
         # self.p.xvar_amp_c = np.repeat(self.p.xvar_amp_c,3)

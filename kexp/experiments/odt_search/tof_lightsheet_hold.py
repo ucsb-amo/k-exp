@@ -30,7 +30,7 @@ class tof(EnvExperiment, Base):
         self.p.v_pd_d1_c = cal.power_fraction_to_vva(.85)
         self.p.v_pd_d1_r = cal.power_fraction_to_vva(.26)
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(10.,30.,10) * 1.e-3
+        self.p.xvar_t_lightsheet_hold = np.linspace(15.,40.,10) * 1.e-3
 
         # self.p.xvar_t_lightsheet_rampup = np.linspace(2.,18.,20) * 1.e-3
 
@@ -82,7 +82,7 @@ class tof(EnvExperiment, Base):
             self.release()
 
             ### GM 2 ###
-            self.gm(t=10.e-6*s, detune_d1=11., v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
+            # self.gm(t=10.e-6*s, detune_d1=11., v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
 
             # self.dds.lightsheet.on()
 
