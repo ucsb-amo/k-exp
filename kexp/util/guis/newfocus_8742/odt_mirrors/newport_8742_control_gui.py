@@ -52,6 +52,7 @@ class updown_button_set(QWidget):
         self.cust_value_box = QDoubleSpinBox()
         self.cust_value_box.setSingleStep(10)
         self.cust_value_box.setDecimals(0)
+        self.cust_value_box.setMaximum(50000.)
 
     def setup_layout(self):
 
@@ -68,7 +69,7 @@ class updown_button_set(QWidget):
         cust_updown_layout = QVBoxLayout()
         cust_updown_layout.addWidget(self.cust_up_button)
         cust_updown_layout.addWidget(self.cust_down_button)
-        cust_layout = QHBoxLayout()
+        cust_layout = QVBoxLayout()
         cust_layout.addWidget(self.cust_value_box)
         cust_layout.addLayout(cust_updown_layout)
 

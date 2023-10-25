@@ -5,8 +5,10 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-T_TOF_US = 10000
-T_MOTLOAD_S = 0.5
+# T_TOF_US = 8500
+# T_TOF_US = 751
+T_TOF_US = 10
+T_MOTLOAD_S = 1.0
 
 class tof(EnvExperiment, Base):
 
@@ -24,6 +26,8 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
+        # self.p.v_zshim_current = .3
+
         self.p.t_tof = T_TOF_US * 1.e-6 # mot
 
         self.p.dummy = [1]*1000
@@ -40,35 +44,38 @@ class tof(EnvExperiment, Base):
         count = 0
         
         self.init_kernel(run_id=True)
-
-        delay(2*s)
         
-        self.kill_mot(self.p.t_mot_kill * s)
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
         for _ in self.p.dummy:
-            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
+            delay(1.0)
+            
             self.mot(self.p.t_mot_load * s)
+            # self.set_magnet_current(v=0.4)
             # self.hybrid_mot(self.p.t_mot_load * s)
 
             ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
-            self.switch_d2_2d(0)
 
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.dds.lightsheet.set_dds(v_pd=5.0)
-            # self.dds.lightsheet.on()
+            self.dds.lightsheet.set_dds(v_pd=5.0)
+            # # self.dds.lightsheet.on()
 
             self.gm(self.p.t_gm * s)
 
-            self.gm_ramp(self.p.t_gmramp * s)
+            # self.gm_ramp(self.p.t_gmramp * s)
+
+            self.dds.lightsheet.on()
 
             # self.switch_d1_3d(0)
-            # delay(20.e-3)
+            delay(2.e-3)
 
             self.release()
-            # self.dds.lightsheet.off()
+
+            delay(18.e-3)
+            self.dds.lightsheet.off()
 
             ### abs img
             delay(self.p.t_tof * s)
@@ -80,6 +87,8 @@ class tof(EnvExperiment, Base):
 
             aprint(count)
             count += 1
+
+            delay(self.p.t_recover)
 
         self.mot_observe()
 
