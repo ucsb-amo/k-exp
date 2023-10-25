@@ -12,6 +12,8 @@ from PyQt6.QtWidgets import (
 
 import numpy as np
 
+# CONTROLLER_HOSTNAME = "8742-103159 (4)"
+CONTROLLER_HOSTNAME = 0
 N_MIRRORS = 2
 MIRROR_NAMES = ["turning","kick-up"]
 AXES_LISTS = [[1,2],[3,4]]
@@ -124,7 +126,7 @@ class main_window(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.stage = Newport.Picomotor8742("8742-103159")
+        self.stage = Newport.Picomotor8742(CONTROLLER_HOSTNAME)
 
         self.panels = []
         for idx in range(N_MIRRORS):
