@@ -33,11 +33,11 @@ class tof(EnvExperiment, Base):
         # for p in self.p.xvar_cmot_ramp_end:
         #     self.p.ramps.append(np.linspace(cmot_ramp_start,p,self.cmot_ramp_steps))
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(30.,70.,6) * 1.e-3
+        self.p.xvar_t_lightsheet_hold = np.linspace(30.,70.,4) * 1.e-3
 
         # self.p.xvar_t_lightsheet_rampup = np.linspace(2.,10.,6) * 1.e-3
         
-        self.p.xvar_detune_gm2 = np.linspace(6.,12.,6)
+        self.p.xvar_detune_gm2 = np.linspace(6.,12.,2)
         # self.p.xvar_t_gm2 = np.linspace(.5,8.,6) *1.e-3
 
         cal = DDS_VVA_Calibration()
@@ -60,7 +60,7 @@ class tof(EnvExperiment, Base):
 
         self.trig_ttl = self.get_device("ttl14")
 
-        self.xvarnames = ['xvar_pfrac_d1_c_gm','xvar_pfrac_d1_r_gm']
+        self.xvarnames = ['xvar_detune_gm2','xvar_t_lightsheet_hold']
         # self.xvarnames = ['xvar_detune_gm2','xvar_t_lightsheet_hold']
         # self.xvarnames = ['xvar_v_pd_d1_c_gm2','xvar_v_pd_d1_r_gm2']
         # self.xvarnames = ['xvar_v_d2cmot_current', 'xvar_v_d1cmot_current']
@@ -76,23 +76,14 @@ class tof(EnvExperiment, Base):
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
         
-        self.kill_mot(self.p.t_mot_kill * s)
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-        for xvar1 in self.p.xvar_v_pd_c_gm:
+        for xvar1 in self.p.xvar_detune_gm2:
             for xvar2 in self.p.xvar_t_lightsheet_hold:
 
-                self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
-
                 self.mot(self.p.t_mot_load * s)
-                # self.hybrid_mot(self.p.t_mot_load * s)
 
-                ### Turn off push beam and 2D MOT to stop the atomic beam ###
                 self.dds.push.off()
-                self.switch_d2_2d(0)
-
-                # for v in xvar1:
-                #     self.set_magnet_current(v)
-                #     delay(self.cmot_ramp_time / self.cmot_ramp_steps)
 
                 self.cmot_d1(self.p.t_d1cmot * s)
 
@@ -109,14 +100,12 @@ class tof(EnvExperiment, Base):
                 self.release()
 
                 ### GM 2 ###
-                self.gm(t=10.e-6 * s, detune_d1=6.6, v_pd_d1_c=xvar1, v_pd_d1_r=xvar1)
+                self.gm(t=0. * s, detune_d1=xvar1)
                 self.trig_ttl.off()
 
                 self.lightsheet_ramp(t_lightsheet_rampup=3.5e-3 * s)
 
                 self.release()
-
-                # self.pulse_resonant_mot_beams(1.e-6*s)
 
                 delay(xvar2 * s)
                 self.dds.lightsheet.off()
@@ -127,6 +116,8 @@ class tof(EnvExperiment, Base):
                 self.abs_image()
 
                 self.core.break_realtime()
+
+                delay(self.p.t_recover)
 
         self.mot_observe()
 

@@ -18,7 +18,7 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 5
+        N = 7
         self.p.N_repeats = 1
 
         # self.p.t_tof = np.linspace(1000,1500,N) * 1.e-6 # mot
