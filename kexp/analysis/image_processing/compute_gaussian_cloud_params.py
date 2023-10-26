@@ -1,7 +1,8 @@
 import numpy as np
 from kexp.analysis.fitting import GaussianFit
+from typing import List
 
-def fit_gaussian_sum_dist(sum_dist,camera_params):
+def fit_gaussian_sum_dist(sum_dist,camera_params) -> List[GaussianFit]:
     '''
     Performs a guassian fit on each summedOD in the input list.
 
