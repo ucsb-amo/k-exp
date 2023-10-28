@@ -21,6 +21,8 @@ class GaussianFit(Fit):
 
         self.y_fitdata = self._fit_func(xdata,amplitude,sigma,x_center,y_offset)
 
+        self.area = self.amplitude * np.sqrt( 2 * np.pi * self.sigma**2 )
+
     def _fit_func(self, x, amplitude, sigma, x_center, y_offset):
         return y_offset + amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) )
 
