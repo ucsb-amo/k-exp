@@ -30,9 +30,9 @@ class tof(EnvExperiment, Base):
         self.p.v_pd_d1_c = cal.power_fraction_to_vva(.85)
         self.p.v_pd_d1_r = cal.power_fraction_to_vva(.26)
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(15.,40.,10) * 1.e-3
+        # self.p.xvar_t_lightsheet_hold = np.linspace(15.,40.,10) * 1.e-3
 
-        # self.p.xvar_t_lightsheet_rampup = np.linspace(2.,18.,20) * 1.e-3
+        self.p.xvar_t_lightsheet_rampup = np.linspace(3.,40.,20) * 1.e-3
 
         # self.p.pfrac_lightsheet_ramp = np.linspace(0.0,1.0,200)
         # self.p.xvar_v_pd_lightsheet_ramp_list = cal.power_fraction_to_vva(self.p.pfrac_lightsheet_ramp)
@@ -41,8 +41,8 @@ class tof(EnvExperiment, Base):
 
         # self.p.xvar_v_d2cmot_current = np.linspace(.5,1.8,10)
 
-        self.xvarnames = ['xvar_t_lightsheet_hold']
-        # self.xvarnames = ['xvar_t_lightsheet_rampup']
+        # self.xvarnames = ['xvar_t_lightsheet_hold']
+        self.xvarnames = ['xvar_t_lightsheet_rampup']
         # self.xvarnames = ['xvar_v_d1cmot_current']
         # self.xvarnames = ['xvar_v_d2cmot_current']
 
@@ -60,7 +60,7 @@ class tof(EnvExperiment, Base):
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-        for xvar in self.p.xvar_t_lightsheet_hold:
+        for xvar in self.p.xvar_t_lightsheet_rampup:
             
             self.dds.lightsheet.set_dds(frequency=self.p.frequency_ao_lightsheet, v_pd=4.)
 
@@ -87,15 +87,15 @@ class tof(EnvExperiment, Base):
             # self.dds.lightsheet.on()
 
             # self.trig_ttl2.on()
-            self.lightsheet_ramp(t_lightsheet_rampup=6.e-3,
+            self.lightsheet_ramp(t_lightsheet_rampup=xvar,
                                  v_pd_lightsheet_ramp_list=self.p.v_pd_lightsheet_ramp_list)
-            # # self.dds.lightsheet.on()
+            # self.dds.lightsheet.on()
             # self.trig_ttl2.off()
             # self.release()
 
             # self.pulse_resonant_mot_beams(1.e-6*s)
 
-            delay(xvar * s)
+            delay(15.e-3 * s)
             self.dds.lightsheet.off()
             
             delay(10.e-6)

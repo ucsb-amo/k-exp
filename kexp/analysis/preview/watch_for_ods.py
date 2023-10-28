@@ -11,7 +11,7 @@ from preview_experiment import T_TOF_US, T_MOTLOAD_S
 
 ####
 
-CROP_TYPE = ''
+CROP_TYPE = 'gm'
 ODLIM = 2
 N_HISTORY = 10
 PLOT_CENTROID = False
@@ -39,17 +39,19 @@ def find_idx(array, value):
 
 ### axes setup
 
-ax = [0,0,0,0,0,0]
 fig = plt.figure()
 fig.set_figheight(7)
 fig.set_figwidth(10)
-grid = (3,6)
+grid = (5,6)
+ax = [0]*8
 ax[0] = plt.subplot2grid(grid,(0,0),colspan=2)
 ax[1] = plt.subplot2grid(grid,(0,2),colspan=2)
 ax[2] = plt.subplot2grid(grid,(0,4),colspan=2)
 ax[3] = plt.subplot2grid(grid,(1,0),colspan=3,rowspan=2)
 ax[4] = plt.subplot2grid(grid,(1,3),colspan=3,rowspan=1)
 ax[5] = plt.subplot2grid(grid,(2,3),colspan=3,rowspan=1)
+ax[6] = plt.subplot2grid(grid,(3,0),colspan=6,rowspan=1)
+ax[7] = plt.subplot2grid(grid,(4,0),colspan=6,rowspan=1)
 fig.show()
 plt.ion()
 
@@ -160,6 +162,16 @@ while camera.IsGrabbing():
             ax[5].yaxis.tick_right()
             ax[5].set_ylabel("atom number")
             ax[5].set_xlabel("shot (relative to current shot)")
+            # plot the sumodx and the fit
+            ax[6].plot(fit_x[0].xdata,fit_x[0].ydata)
+            ax[6].plot(fit_x[0].xdata,fit_x[0].y_fitdata)
+            ax[6].set_xlabel("position (um)")
+            ax[6].set_ylabel("sum_od_x")
+            ax[6].legend(["data","fit"])
+            # plot the sumodx fit residuals
+            ax[7].plot(fit_x[0].xdata,fit_x[0].ydata - fit_x[0].y_fitdata)
+            ax[7].set_xlabel("position (um)")
+            ax[7].set_ylabel("sum_od_x fit residuals")
 
             plt.suptitle(f"t_tof = {T_TOF_US:1.0f} us, t_mot_load = {T_MOTLOAD_S} s")
 
