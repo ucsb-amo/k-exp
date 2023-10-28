@@ -18,20 +18,16 @@ class scan_optical_pumping(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tweezer_hold = 30. * 1.e-3
+        self.p.t_tof = 7000 * 1.e-6 # gm
 
-        self.p.t_tof = 12000 * 1.e-6 # gm
-        
-        self.p.xvar_detune_optical_pumping_op = np.linspace(22.,28.,5) * 1.e6
-        self.p.xvar_amp_optical_pumping_op = np.linspace(.1,.2,5)
+        self.p.imaging_state = [1,2]
+        # self.p.xvar_t_op = np.linspace(0.,30.,3) * 1.e-6
+        self.p.xvar_amp_optical_pumping_op = np.linspace(0.0,0.06,4)
+        self.p.xvar_amp_d2_r_op = np.linspace(0.0,0.06,4)
 
-        self.p.xvar_v_zshim_current_op = self.p.v_zshim_current_op
+        self.xvarnames = ['xvar_amp_optical_pumping_op','xvar_amp_d2_r_op','imaging_state']
 
-        self.trig_ttl = self.get_device("ttl14")
-
-        self.xvarnames = ['xvar_detune_optical_pumping_op','xvar_amp_optical_pumping_op']
-
-        self.finish_build(shuffle=True)
+        self.finish_build()
 
     @kernel
     def run(self):
@@ -41,48 +37,41 @@ class scan_optical_pumping(EnvExperiment, Base):
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
         
-        self.kill_mot(self.p.t_mot_kill * s)
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-        for xvar1 in self.p.xvar_detune_optical_pumping_op:
-            for xvar2 in self.p.xvar_amp_optical_pumping_op:
+        for xvar1 in self.p.xvar_amp_optical_pumping_op:
+            for xvar2 in self.p.xvar_amp_d2_r_op:
+                for img_state in self.p.imaging_state:
+                    if img_state == 1:
+                         self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1) 
+                    elif img_state == 2:
+                         self.set_imaging_detuning()
 
-                # self.p.t_imaging_pulse = xvar2
-                # self.set_imaging_detuning(detuning=xvar1)
-                # self.core.break_realtime()
+                    self.mot(self.p.t_mot_load * s)
+                    # self.hybrid_mot(self.p.t_mot_load * s)
 
-                self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+                    ### Turn off push beam and 2D MOT to stop the atomic beam ###
+                    self.dds.push.off()
 
-                self.mot(self.p.t_mot_load * s)
-                # self.hybrid_mot(self.p.t_mot_load * s)
+                    self.cmot_d1(self.p.t_d1cmot * s)
 
-                ### Turn off push beam and 2D MOT to stop the atomic beam ###
-                self.dds.push.off()
-                self.switch_d2_2d(0)
+                    self.gm(self.p.t_gm * s)
 
-                self.cmot_d1(self.p.t_d1cmot * s)
+                    self.gm_ramp(self.p.t_gmramp * s)
+                    
+                    self.release()
 
-                self.trig_ttl.on()
-                self.gm(self.p.t_gm * s)
+                    self.optical_pumping(t=100.e-6,amp_optical_pumping=xvar1,amp_d2_r=xvar2,v_zshim_current=9.9)
+                    
+                    ### abs img
+                    delay(self.p.t_tof * s)
+                    self.abs_image()
 
-                self.gm_ramp(self.p.t_gmramp * s)
-                self.trig_ttl.off()
-                
-                self.release()
+                    self.core.break_realtime()
+                    delay(1.e-3)
+                    self.set_zshim_magnet_current()
 
-                self.dds.optical_pumping.set_dds_gamma(delta=xvar1,
-                                       amplitude=xvar2)
-                with parallel:
-                    self.dds.optical_pumping.on()
-                    self.set_magnet_current(v = self.p.xvar_v_zshim_current_op)
-                delay(t)
-                
-                ### abs img
-                delay(self.p.t_tof * s)
-                self.flash_repump()
-                self.abs_image()
-                # self.fl_image()
-
-                self.core.break_realtime()
+                    delay(self.p.t_recover)
 
         self.mot_observe()
 

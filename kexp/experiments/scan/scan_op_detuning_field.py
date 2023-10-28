@@ -42,12 +42,10 @@ class scan_optical_pumping(EnvExperiment, Base):
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
         
-        self.kill_mot(self.p.t_mot_kill * s)
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
         for xvar1 in self.p.xvar_detune_optical_pumping_op:
             for xvar2 in self.p.xvar_v_zshim_current_op:
-
-                self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
                 self.mot(self.p.t_mot_load * s)
                 
@@ -79,6 +77,8 @@ class scan_optical_pumping(EnvExperiment, Base):
                 # self.fl_image()
 
                 self.core.break_realtime()
+
+                delay(self.p.t_recover)
 
         self.mot_observe()
 

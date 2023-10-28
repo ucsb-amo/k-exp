@@ -19,19 +19,20 @@ class scan_image_detuning(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_tof = 1500 * 1.e-6 # mot
+        self.p.t_tof = 1250 * 1.e-6 # mot
         
         # self.p.xvar_amp_imaging_abs = np.linspace(0.1,0.6,3)
 
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
         # self.p.xvar_frequency_detuned_imaging = np.linspace(25.,32.,15) * 1.e6
-        self.p.xvar_detune_repump_flash = np.linspace(-4.,4.,20)
+        # self.p.xvar_detune_repump_flash = np.linspace(-4.,4.,20)
+        self.p.frequency_detuned_imaging_F1 = 461.7e6 + np.linspace(-14.,15.,12) * 1.e6
 
         self.trig_ttl = self.get_device("ttl14")
 
-        self.xvarnames = ['xvar_detune_repump_flash']
+        self.xvarnames = ['frequency_detuned_imaging_F1']
 
-        self.finish_build(shuffle=True)
+        self.finish_build()
 
     @kernel
     def run(self):
@@ -40,28 +41,24 @@ class scan_image_detuning(EnvExperiment, Base):
 
         self.StartTriggeredGrab()
         delay(self.p.t_grab_start_wait*s)
-        
-        self.kill_mot(self.p.t_mot_kill * s)
 
-        for xvar in self.p.xvar_detune_repump_flash:
+        self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-            self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
+        for xvar in self.p.frequency_detuned_imaging_F1:
 
+            self.set_imaging_detuning(detuning=xvar)
             self.mot(self.p.t_mot_load * s)
-            # self.hybrid_mot(self.p.t_mot_load * s)
-
-            ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
-            self.switch_d2_2d(0)
-            
             self.release()
             
             ### abs img
             delay(self.p.t_tof * s)
-            self.flash_repump(detune=xvar)
+            # self.flash_repump(detune=xvar)
             self.abs_image()
 
             self.core.break_realtime()
+
+            delay(self.p.t_recover)
 
         self.mot_observe()
 

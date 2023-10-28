@@ -417,15 +417,17 @@ class Cooling():
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current_op
 
-        self.set_zshim_magnet_current(self.dac_ch_zshim_current_control,
-                                      v_zshim_current)
+        self.set_zshim_magnet_current(v_zshim_current)
         self.dds.optical_pumping.set_dds_gamma(delta=detune_optical_pumping, 
                                        amplitude=amp_optical_pumping)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r, 
                                        amplitude=amp_d2_r)
+        self.dds.optical_pumping.on()
+        self.dds.d2_3d_r.on()
         delay(t)
-        self.set_zshim_magnet_current(self.dac_ch_zshim_current_control,
-                                      self.params.v_zshim_current)
+        self.dds.optical_pumping.off()
+        self.dds.d2_3d_r.off()
+        self.set_zshim_magnet_current(self.params.v_zshim_current)
 
     @kernel
     def lightsheet_ramp(self, t_lightsheet_rampup = dv,

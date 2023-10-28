@@ -24,6 +24,7 @@ class ExptParams():
 
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 27.e6
+        self.frequency_detuned_imaging_F1 = 4.58e08
         self.amp_imaging_fluor = 0.260
         self.amp_imaging_abs = 0.2
         
@@ -73,7 +74,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.5
 
         self.v_mot_current = .8
-        self.v_zshim_current = 2.7
+        self.v_zshim_current = 1.315
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -114,8 +115,8 @@ class ExptParams():
         self.detune_optical_pumping_op = 0.0
         self.amp_optical_pumping_op = 0.25
         self.detune_d2_r_op = 0.0
-        self.amp_d2_r_op = 0.188
-        self.v_zshim_current_op = 3.5
+        self.amp_d2_r_op = 0.065
+        self.v_zshim_current_op = 2.63
 
         #ODT
         self.amp_lightsheet = 0.6

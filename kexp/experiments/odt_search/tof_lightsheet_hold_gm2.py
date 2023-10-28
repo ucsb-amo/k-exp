@@ -33,11 +33,11 @@ class tof(EnvExperiment, Base):
         # for p in self.p.xvar_cmot_ramp_end:
         #     self.p.ramps.append(np.linspace(cmot_ramp_start,p,self.cmot_ramp_steps))
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(30.,70.,4) * 1.e-3
+        self.p.xvar_t_lightsheet_hold = np.linspace(30.,70.,2) * 1.e-3
 
         # self.p.xvar_t_lightsheet_rampup = np.linspace(2.,10.,6) * 1.e-3
         
-        self.p.xvar_detune_gm2 = np.linspace(6.,12.,2)
+        self.p.xvar_detune_gm2 = np.linspace(6.,12.,8)
         # self.p.xvar_t_gm2 = np.linspace(.5,8.,6) *1.e-3
 
         cal = DDS_VVA_Calibration()
@@ -103,7 +103,7 @@ class tof(EnvExperiment, Base):
                 self.gm(t=0. * s, detune_d1=xvar1)
                 self.trig_ttl.off()
 
-                self.lightsheet_ramp(t_lightsheet_rampup=3.5e-3 * s)
+                self.lightsheet_ramp(t_lightsheet_rampup=10.e-3 * s)
 
                 self.release()
 
