@@ -25,10 +25,9 @@ def crop_OD(OD,crop_type='',Nvars=1):
     elif crop_type == 'fluor_gm':
         roix = [500, 1450]
         roiy = [200, 950]
-
     elif crop_type == 'lightsheet':
-        roix = [900, 1000]
-        roiy = [550, 710]
+        roix = [950, 1150]
+        roiy = [300, 850]
     else:
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]-1]
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]-1]
@@ -37,5 +36,7 @@ def crop_OD(OD,crop_type='',Nvars=1):
         cropOD = OD[:, roiy[0]:roiy[1], roix[0]:roix[1] ]
     if Nvars == 2:
         cropOD = OD[:, :, roiy[0]:roiy[1], roix[0]:roix[1] ]
+    if Nvars == 3:
+        cropOD = OD[:, :, :, roiy[0]:roiy[1], roix[0]:roix[1] ]
 
     return cropOD

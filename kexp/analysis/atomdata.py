@@ -121,12 +121,15 @@ class atomdata():
             self.fit_center_x = self._extract_attr(fits_x,'x_center')
             self.fit_amp_x = self._extract_attr(fits_x,'amplitude')
             self.fit_offset_x = self._extract_attr(fits_x,'y_offset')
+            self.fit_area_x = self._extract_attr(fits_x,'area')
 
             fits_y = self.cloudfit_y
             self.fit_sd_y = self._extract_attr(fits_y,'sigma')
             self.fit_center_y = self._extract_attr(fits_y,'x_center')
             self.fit_amp_y = self._extract_attr(fits_y,'amplitude')
             self.fit_offset_y = self._extract_attr(fits_y,'y_offset')
+            self.fit_area_y = self._extract_attr(fits_y,'area')
+            
         except Exception as e:
             print(e)
             print("Unable to extract fit parameters. The gaussian fit must have failed")
@@ -140,6 +143,9 @@ class atomdata():
         elif len(dims) == 2:
             for (i0,i1), fit in np.ndenumerate(ndarray):
                 frame[i0][i1] = vars(fit)[attr]
+        elif len(dims) == 3:
+            for (i0,i1,i2), fit in np.ndenumerate(ndarray):
+                frame[i0][i1][i2] = vars(fit)[attr]
         return frame
 
     ### image handling, sorting by xvars
@@ -183,6 +189,21 @@ class atomdata():
                                                      self._img_light_tstamp[idx],
                                                      self._img_dark_tstamp[idx]]
                     
+        if self.Nvars == 3:
+            n1 = self.xvardims[0]
+            n2 = self.xvardims[1]
+            n3 = self.xvardims[2]
+            for i1 in range(n1):
+                for i2 in range(n2):
+                        for i3 in range(n3):
+                            idx = (i1*n2 + i2)*n3 + i3
+                            self.img_atoms[i1][i2][i3] = self._img_atoms[idx]
+                            self.img_light[i1][i2][i3] = self._img_light[idx]
+                            self.img_dark[i1][i2][i3] = self._img_dark[idx]
+                            self.img_tstamps[i1][i2][i3] = [self._img_atoms_tstamp[idx],
+                                                            self._img_light_tstamp[idx],
+                                                            self._img_dark_tstamp[idx]]
+                    
     def _split_images_abs(self):
         
         atom_img_idx = 0
@@ -224,6 +245,17 @@ class atomdata():
                     idx = i1*n2 + i2
                     self.img_atoms[i1][i2] = self._img_atoms[idx]
                     self.img_light[i1][i2] = self._img_light[idx]
+
+        if self.Nvars == 3:
+            n1 = self.xvardims[0]
+            n2 = self.xvardims[1]
+            n3 = self.xvardims[2]
+            for i1 in range(n1):
+                for i2 in range(n2):
+                    for i3 in range(n3):
+                        idx = (i1*n2 + i2)*n3 + i3
+                        self.img_atoms[i1][i2][i3] = self._img_atoms[idx]
+                        self.img_light[i1][i2][i3] = self._img_light[idx]
                     
     def _split_images_fluor(self):
         
