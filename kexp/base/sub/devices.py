@@ -6,7 +6,8 @@ from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
 
 from kexp.config.dds_id import dds_frame, N_uru, DDSManager
-from kexp.control.artiq.DDS import DDS
+from kexp.config.ttl_id import ttl_frame
+from kexp.control.artiq import TTL
 from kexp.config.expt_params import ExptParams
 
 from jax import AD9910Manager
@@ -43,13 +44,15 @@ class Devices():
         self.dac_ch_zshim_current_control = 6
 
         # ttl channels
-        self.ttl_basler = self.get_device("ttl9")
-        self.ttl_magnets = self.get_device("ttl11")
-        self.ttl_andor = self.get_device("ttl13")
-        self.ttl_camera = TTLOut
+        self.ttl = ttl_frame()
+        self.get_ttl_devices()
 
         # camera placeholder
         self.camera = DummyCamera()
+
+    def get_ttl_devices(self):
+        for ttl in self.ttl.ttl_list:
+            self.get_device(ttl.name)
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list:
