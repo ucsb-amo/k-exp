@@ -1,6 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.config.dds_id import dds_frame
+from kexp.config.ttl_id import ttl_frame
 from kexp.config.expt_params import ExptParams
 from kexp.config.camera_params import CameraParams
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
@@ -16,6 +17,7 @@ dv = -10.e9
 class Image():
     def __init__(self):
         self.dds = dds_frame()
+        self.ttl = ttl_frame()
         self.params = ExptParams()
         self.camera_params = CameraParams()
         self.run_info = RunInfo()
@@ -129,7 +131,7 @@ class Image():
         cursor to this position after pretrigger.
         '''
         delay(-self.params.t_pretrigger * s)
-        self.ttl_camera.pulse(self.params.t_camera_trigger * s)
+        self.ttl.ttl_camera.pulse(self.params.t_camera_trigger * s)
         t_adv = self.params.t_pretrigger - self.params.t_camera_trigger
         delay(t_adv * s)
 

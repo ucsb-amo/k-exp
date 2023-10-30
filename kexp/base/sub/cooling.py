@@ -1,6 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay, delay_mu, parallel, sequential
 from kexp.config.dds_id import dds_frame
+from kexp.config.ttl_id import ttl_frame
 from kexp.config.expt_params import ExptParams
 import numpy as np
 
@@ -12,6 +13,7 @@ dvlist = np.linspace(1.,1.,5)
 class Cooling():
     def __init__(self):
         self.dds = dds_frame()
+        self.ttl = ttl_frame()
         self.params = ExptParams()
         # just to get syntax highlighting
 
@@ -102,7 +104,7 @@ class Cooling():
         self.set_magnet_current(v = v_current)
         self.set_zshim_magnet_current(v = v_zshim_current)
         with parallel:
-            self.ttl_magnets.on()
+            self.ttl.ttl_magnets.on()
             self.switch_d2_3d(1)
             # delay_mu(self.params.t_rtio_mu)
             self.dds.push.on()
@@ -140,7 +142,7 @@ class Cooling():
         self.set_magnet_current(v = v_current)
         self.set_zshim_magnet_current(v=v_zshim_current)
         with parallel:
-            self.ttl_magnets.on()
+            self.ttl.ttl_magnets.on()
             self.switch_d2_3d(1)
         delay(t)
 
@@ -191,7 +193,7 @@ class Cooling():
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
                                  amplitude=v_pd_d1_r)
         self.set_magnet_current(v = v_current)
-        self.ttl_magnets.on()
+        self.ttl.ttl_magnets.on()
         with parallel:
             self.switch_d2_3d(1)
             
@@ -298,7 +300,7 @@ class Cooling():
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        v_pd=v_pd_d1_r)
         with parallel:
-            self.ttl_magnets.off()
+            self.ttl.ttl_magnets.off()
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
         delay(t)
@@ -337,7 +339,7 @@ class Cooling():
     #     self.dds.load_profile(dds_mgr_idx)
 
     #     with parallel:
-    #         self.ttl_magnets.off()
+    #         self.ttl.ttl_magnets.off()
     #         self.switch_d1_3d(1)
     #         self.switch_d2_3d(0)
     #     delay(t)
@@ -487,7 +489,7 @@ class Cooling():
     @kernel
     def release(self):
         with parallel:
-            self.ttl_magnets.off()
+            self.ttl.ttl_magnets.off()
             self.switch_d2_3d(0)
             self.switch_d1_3d(0)
 
@@ -602,6 +604,6 @@ class Cooling():
         self.dds.beatlock_ref.on()
 
         self.core.break_realtime()
-        self.ttl_magnets.on()
+        self.ttl.ttl_magnets.on()
 
         self.dds.imaging.on()
