@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay, delay_mu, parallel, sequential
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
+from kexp.config.dac_id import dac_frame
 from kexp.config.expt_params import ExptParams
 import numpy as np
 
@@ -14,6 +15,7 @@ class Cooling():
     def __init__(self):
         self.dds = dds_frame()
         self.ttl = ttl_frame()
+        self.dac = dac_frame()
         self.params = ExptParams()
         # just to get syntax highlighting
 
@@ -535,16 +537,14 @@ class Cooling():
         if v == dv:
             v = self.params.v_mot_current
         with sequential:
-            self.zotino.write_dac(self.dac_ch_3Dmot_current_control,v)
-            self.zotino.load()
+            self.dac.mot_current_control.set_dac(v)
 
     @kernel
     def set_zshim_magnet_current(self, v = dv):
         if v == dv:
             v = self.params.v_zshim_current
         with sequential:
-            self.zotino.write_dac(self.dac_ch_zshim_current_control,v)
-            self.zotino.load()
+            self.dac.zshim_current_control(v)
 
     ## Other
     
