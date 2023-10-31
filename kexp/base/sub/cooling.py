@@ -433,33 +433,33 @@ class Cooling():
         self.dds.d2_3d_r.off()
         self.set_zshim_magnet_current(self.params.v_zshim_current)
 
-    @kernel
-    def lightsheet_ramp(self, t_lightsheet_rampup = dv,
-                 v_pd_lightsheet_ramp_list = dvlist):
+    # @kernel
+    # def lightsheet_ramp(self, t_lightsheet_rampup = dv,
+    #              v_pd_lightsheet_ramp_list = dvlist):
         
-        ### Start Defaults ###
+    #     ### Start Defaults ###
         
-        if v_pd_lightsheet_ramp_list == dvlist:
-            v_pd_lightsheet_ramp_list = self.params.v_pd_lightsheet_ramp_list
+    #     if v_pd_lightsheet_ramp_list == dvlist:
+    #         v_pd_lightsheet_ramp_list = self.params.v_pd_lightsheet_ramp_list
             
-        N_elem = len(v_pd_lightsheet_ramp_list)
+    #     N_elem = len(v_pd_lightsheet_ramp_list)
 
-        if t_lightsheet_rampup == dv:
-            t_lightsheet_rampup = self.params.t_lightsheet_rampup
-            dt_lightsheet_ramp = self.params.dt_lightsheet_ramp
-        else:
-            dt_lightsheet_ramp = t_lightsheet_rampup / N_elem
+    #     if t_lightsheet_rampup == dv:
+    #         t_lightsheet_rampup = self.params.t_lightsheet_rampup
+    #         dt_lightsheet_ramp = self.params.dt_lightsheet_ramp
+    #     else:
+    #         dt_lightsheet_ramp = t_lightsheet_rampup / N_elem
 
-        # aprint(dt_lightsheet_ramp,N_elem)
+    #     # aprint(dt_lightsheet_ramp,N_elem)
 
-        ### End Defaults ###
+    #     ### End Defaults ###
 
-        self.dds.lightsheet.set_dds(frequency=self.params.frequency_ao_lightsheet,
-                                 v_pd=v_pd_lightsheet_ramp_list[0])
-        self.dds.lightsheet.on()
-        for n in range(N_elem):
-            self.dds.lightsheet.set_dds(v_pd=v_pd_lightsheet_ramp_list[n])
-            delay(dt_lightsheet_ramp)
+    #     self.dds.lightsheet.set_dds(frequency=self.params.frequency_ao_lightsheet,
+    #                              v_pd=v_pd_lightsheet_ramp_list[0])
+    #     self.dds.lightsheet.on()
+    #     for n in range(N_elem):
+    #         self.dds.lightsheet.set_dds(v_pd=v_pd_lightsheet_ramp_list[n])
+    #         delay(dt_lightsheet_ramp)
         
     @kernel
     def tweezer_ramp(self, t_tweezer_ramp = dv,
