@@ -47,9 +47,14 @@ class lightsheet():
     def ramp(self,t_ramp,v_ramp_list=dv_list):
         if v_ramp_list == dv_list:
             v_ramp_list = self.params.v_pd_lightsheet_ramp_list
+
         n_ramp = len(v_ramp_list)
         dt_ramp = t_ramp / n_ramp
-        for v in v_ramp_list:
+
+        self.dac_ch.set(v=v_ramp_list[0])
+        self.on()
+        delay(dt_ramp)
+        for v in v_ramp_list[1:]:
             self.dac_ch.set(v=v)
             delay(dt_ramp)
 
