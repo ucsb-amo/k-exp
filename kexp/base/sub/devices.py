@@ -6,7 +6,8 @@ from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
 
 from kexp.config.dds_id import dds_frame, N_uru, DDSManager
-from kexp.control.artiq.DDS import DDS
+from kexp.config.ttl_id import ttl_frame
+from kexp.config.dac_id import dac_frame
 from kexp.config.expt_params import ExptParams
 
 from jax import AD9910Manager
@@ -24,32 +25,33 @@ class Devices():
     def prepare_devices(self):
         # for syntax highlighting
         self.core = Core
-        self.zotino = Zotino
+        zotino = Zotino
         self.core_dma = CoreDMA
 
         # get em
         self.core = self.get_device("core")
         self.core_dma = self.get_device("core_dma")
-        self.zotino = self.get_device("zotino0")
+        zotino = self.get_device("zotino0")
+
+        # dac channels
+        self.dac = dac_frame(dac_device=zotino)
+
+        # ttl channels
+        self.ttl = ttl_frame()
+        self.get_ttl_devices()
 
         # set up dds_frame
-        self.dds = dds_frame(dac_device=self.zotino, core=self.core)
+        self.dds = dds_frame(dac_frame_obj=self.dac, core=self.core)
         self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
 
-        # dac channels
-        self.dac_ch_3Dmot_current_control = 0
-        self.dac_ch_zshim_current_control = 6
-
-        # ttl channels
-        self.ttl_basler = self.get_device("ttl9")
-        self.ttl_magnets = self.get_device("ttl11")
-        self.ttl_andor = self.get_device("ttl13")
-        self.ttl_camera = TTLOut
-
         # camera placeholder
         self.camera = DummyCamera()
+
+    def get_ttl_devices(self):
+        for ttl in self.ttl.ttl_list:
+            self.get_device(ttl.name)
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list:

@@ -30,7 +30,7 @@ class tof(EnvExperiment, Base):
 
         # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
 
-        self.trig_ttl = self.get_device("ttl14")
+        self.ttl.ttl_trig = self.get_device("ttl14")
 
         self.xvarnames = ['t_tof']
 
@@ -60,11 +60,11 @@ class tof(EnvExperiment, Base):
 
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.trig_ttl.on()
+            # self.ttl.ttl_trig.on()
             self.gm(self.p.t_gm * s)
 
             self.gm_ramp(self.p.t_gmramp * s)
-            # self.trig_ttl.off()
+            # self.ttl.ttl_trig.off()
 
             self.release()
 

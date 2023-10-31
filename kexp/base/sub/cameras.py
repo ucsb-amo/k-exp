@@ -1,6 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 from kexp.config.dds_id import dds_frame
+from kexp.config.ttl_id import ttl_frame
 from kexp.config.expt_params import ExptParams
 import kexp.config.camera_params as camera_params
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
@@ -16,6 +17,7 @@ class Cameras():
         self.params = ExptParams()
         self.camera_params = camera_params.CameraParams()
         self.run_info = RunInfo()
+        self.ttl = ttl_frame()
 
     ### Camera setup functions ###
 
@@ -73,13 +75,13 @@ class Cameras():
 
         # choose the correct camera
         if andor_imaging:
-            self.ttl_camera = self.ttl_andor
+            self.ttl.ttl_camera = self.ttl.ttl_andor
             self.camera_params = camera_params.andor_camera_params
             if setup_camera:
                 # self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
                 self.start_triggered_grab = self.start_triggered_grab_andor
         elif basler_imaging:
-            self.ttl_camera = self.ttl_basler
+            self.ttl.ttl_camera = self.ttl.ttl_basler
             if absorption_image:
                 self.camera_params = camera_params.basler_absorp_camera_params
             else:

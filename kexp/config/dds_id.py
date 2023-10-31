@@ -5,6 +5,7 @@ from artiq.experiment import kernel
 
 import kexp.config.dds_state as dds_state
 from kexp.control import DDS, DummyCore
+from kexp.config.dac_id import dac_frame
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 from kexp.config.dds_calibration import DDS_VVA_Calibration
 
@@ -28,7 +29,7 @@ class dds_frame():
     artiq experiments. Also, records the AOM order so that AOM frequencies can be
     determined from detunings.
     '''
-    def __init__(self, dds_state = dds_state, dac_device = [], core = DummyCore()):
+    def __init__(self, dds_state = dds_state, dac_frame_obj:dac_frame = [], core = DummyCore()):
 
         self.core = core
         self.dds_manager = [DDSManager]
@@ -43,12 +44,12 @@ class dds_frame():
 
         self._dds_state = dds_state
 
-        if dac_device:
-            self._dac_device = dac_device
+        if dac_frame_obj:
+            self._dac_frame = dac_frame_obj
         else:
-            self._dac_device = ad53xx.AD53xx
+            self._dac_frame = dac_frame()
 
-        self.dds_array = [[DDS(uru,ch,dac_device=self._dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
+        self.dds_array = [[DDS(uru,ch,dac_device=self._dac_frame.dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
         self.push = self.dds_assign(0,0, ao_order = 1, transition = 'D2')
@@ -57,12 +58,16 @@ class dds_frame():
         self.d2_3d_r = self.dds_assign(0,3, ao_order = 1, transition = 'D2')
         self.d2_3d_c = self.dds_assign(1,0, ao_order = -1, transition = 'D2')
         self.optical_pumping = self.dds_assign(1,1, ao_order = -1, transition = 'D1')
-        self.d1_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D1', dac_ch_vpd = 2)
-        self.d1_3d_r = self.dds_assign(1,3, ao_order = 1, transition = 'D1', dac_ch_vpd = 1)
-        self.tweezer = self.dds_assign(2,0, dac_ch_vpd=3)
+        self.d1_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D1',
+                                        dac_ch_vpd = self._dac_frame.vva_d1_3d_c.ch)
+        self.d1_3d_r = self.dds_assign(1,3, ao_order = 1, transition = 'D1',
+                                        dac_ch_vpd = self._dac_frame.vva_d1_3d_r.ch)
+        self.tweezer = self.dds_assign(2,0, 
+                                       dac_ch_vpd = self._dac_frame.vva_tweezer.ch)
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging = self.dds_assign(2,2, ao_order = 1)
-        self.lightsheet = self.dds_assign(2,3, ao_order=-1, dac_ch_vpd=5)
+        self.lightsheet = self.dds_assign(2,3, ao_order=-1, 
+                                          dac_ch_vpd = self._dac_frame.vva_lightsheet.ch)
         self.lightsheet_paint = self.dds_assign(3,0)
         self.test_2 = self.dds_assign(3,1)
 
@@ -97,7 +102,7 @@ class dds_frame():
         dds0.aom_order = ao_order
         dds0.transition = transition
         dds0.dac_ch = dac_ch_vpd
-        dds0.dac_device = self._dac_device
+        dds0.dac_device = self._dac_frame.dac_device
         dds0.double_pass = double_pass
 
         self.dds_array[uru][ch] = dds0
@@ -123,7 +128,7 @@ class dds_frame():
             uru = idx[0]
             ch = idx[1]
             freq, amp, v_pd = self.read_dds_state(idx[0],idx[1])
-            this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_device)
+            this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame)
             self.dds_array[uru][ch] = this_dds
             
     # def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
