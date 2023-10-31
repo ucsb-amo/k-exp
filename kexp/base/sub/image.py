@@ -130,9 +130,9 @@ class Image():
         timeline cursor position where this is called. Returns the timeline
         cursor to this position after pretrigger.
         '''
-        delay(-self.params.t_pretrigger * s)
-        self.ttl.camera.pulse(self.params.t_camera_trigger * s)
-        t_adv = self.params.t_pretrigger - self.params.t_camera_trigger
+        delay(-self.camera_params.exposure_delay * s)
+        self.ttl.camera.pulse(self.camera_params.t_camera_trigger * s)
+        t_adv = self.camera_params.exposure_delay - self.camera_params.t_camera_trigger
         delay(t_adv * s)
 
     ###

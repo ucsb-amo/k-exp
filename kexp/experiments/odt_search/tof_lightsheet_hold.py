@@ -40,10 +40,8 @@ class tof(EnvExperiment, Base):
         # self.p.xvar_v_d1cmot_current = np.linspace(.5,1.8,10)
 
         # self.p.xvar_v_d2cmot_current = np.linspace(.5,1.8,10)
-        self.p.bool_optical_pump = [0,1]
-        self.p.N_repeats = [1,1]
 
-        self.xvarnames = ['bool_optical_pump','xvar_t_lightsheet_hold']
+        self.xvarnames = ['xvar_t_lightsheet_hold']
         # self.xvarnames = ['xvar_t_lightsheet_rampup']
         # self.xvarnames = ['xvar_v_d1cmot_current']
         # self.xvarnames = ['xvar_v_d2cmot_current']
@@ -62,58 +60,51 @@ class tof(EnvExperiment, Base):
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
         
-        for xvar0 in self.p.bool_optical_pump:
-            for xvar in self.p.xvar_t_lightsheet_hold:
-                
-                self.dds.lightsheet.set_dds(frequency=self.p.frequency_ao_lightsheet, v_pd=4.)
+        for xvar in self.p.xvar_t_lightsheet_hold:
+            
+            self.lightsheet.set(amplitude=0.,v_lightsheet_vva=5.)
 
-                self.mot(self.p.t_mot_load * s)
-                # self.hybrid_mot(self.p.t_mot_load * s)
+            self.mot(self.p.t_mot_load * s)
+            # self.hybrid_mot(self.p.t_mot_load * s)
 
-                ### Turn off push beam and 2D MOT to stop the atomic beam ###
-                self.dds.push.off()
+            ### Turn off push beam and 2D MOT to stop the atomic beam ###
+            self.dds.push.off()
 
-                self.cmot_d1(self.p.t_d1cmot * s)
-                
-                ### GM 1 ###
-                self.gm(self.p.t_gm * s)
+            self.cmot_d1(self.p.t_d1cmot * s)
+            
+            ### GM 1 ###
+            self.gm(self.p.t_gm * s)
 
-                self.gm_ramp(self.p.t_gmramp * s)
+            self.gm_ramp(self.p.t_gmramp * s)
 
-                # delay(self.p.t_lightsheet_load)
-                
-                self.release()
+            # delay(self.p.t_lightsheet_load)
+            
+            self.release()
 
-                ### GM 2 ###
-                # self.gm(t=10.e-6*s, detune_d1=11., v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
+            ### GM 2 ###
+            # self.gm(t=10.e-6*s, detune_d1=11., v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
 
-                # self.dds.lightsheet.on()
+            # self.dds.lightsheet.on()
 
-                if xvar0:
-                    self.optical_pumping(t=200.e-6)
-                else:
-                    delay(200.e-6)
+            # self.trig_ttl2.on()
+            self.lightsheet.on()
+            # # self.dds.lightsheet.on()
+            # self.trig_ttl2.off()
+            # self.release()
 
-                # self.trig_ttl2.on()
-                self.lightsheet_ramp(t_lightsheet_rampup=6.e-3,
-                                    v_pd_lightsheet_ramp_list=self.p.v_pd_lightsheet_ramp_list)
-                # # self.dds.lightsheet.on()
-                # self.trig_ttl2.off()
-                # self.release()
+            # self.pulse_resonant_mot_beams(1.e-6*s)
 
-                # self.pulse_resonant_mot_beams(1.e-6*s)
+            delay(xvar * s)
+            self.lightsheet.off()
+            
+            delay(10.e-6)
+            # self.fl_image()
+            self.flash_repump()
+            self.abs_image()
 
-                delay(xvar * s)
-                self.dds.lightsheet.off()
-                
-                delay(10.e-6)
-                # self.fl_image()
-                self.flash_repump()
-                self.abs_image()
-
-                self.core.break_realtime()
-                
-                delay(self.p.t_recover)
+            self.core.break_realtime()
+            
+            delay(self.p.t_recover)
 
         self.mot_observe()
 

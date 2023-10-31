@@ -9,6 +9,7 @@ class ttl_frame():
         self.ttl_list = []
 
         self.basler = self.ttl_assign(9)
+        self.lightsheet_sw = self.ttl_assign(10)
         self.magnets = self.ttl_assign(11)
         self.andor = self.ttl_assign(13)
         self.trig = self.ttl_assign(14)

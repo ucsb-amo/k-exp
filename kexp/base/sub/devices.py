@@ -13,16 +13,19 @@ from kexp.config.expt_params import ExptParams
 from jax import AD9910Manager
 from kexp.control.cameras.dummy_cam import DummyCamera
 
+from kexp.control.misc.painted_lightsheet import lightsheet
+
 import numpy as np
 
 dv = -0.1
+d_exptparams = ExptParams()
 
 class Devices():
 
     def __init__(self):
         self.params = ExptParams()
 
-    def prepare_devices(self):
+    def prepare_devices(self,expt_params:ExptParams=d_exptparams):
         # for syntax highlighting
         self.core = Core
         zotino = Zotino
@@ -45,6 +48,12 @@ class Devices():
         self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
+        
+        # painted ligthsheet
+        self.lightsheet = lightsheet(dac_ch=self.dac.vva_lightsheet,
+                                     paint_dds=self.dds.lightsheet_paint,
+                                     sw_ttl=self.ttl.lightsheet_sw,
+                                     expt_params=self.params)
 
         # camera placeholder
         self.camera = DummyCamera()

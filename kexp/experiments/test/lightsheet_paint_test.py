@@ -20,16 +20,7 @@ class tof(EnvExperiment, Base):
         N = 7
         self.p.N_repeats = 1
 
-        # self.p.t_tof = np.linspace(1000,1500,N) * 1.e-6 # mot
-        # self.p.t_tof = np.linspace(2000,3500,N) * 1.e-6 # cmot
-        # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
         self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(8000,13000,N)  * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
-        # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # mot_reload
-
-        # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
 
         self.xvarnames = ['t_tof']
 

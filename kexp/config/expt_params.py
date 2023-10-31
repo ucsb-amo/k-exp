@@ -4,12 +4,8 @@ from kexp.control.als_remote_control import als_power_to_voltage
 
 from kexp.config.dds_calibration import DDS_VVA_Calibration
 
-default_camera_params = CameraParams()
-
 class ExptParams():
-    def __init__(self, camera_params=default_camera_params):
-
-        self._camera_params = camera_params
+    def __init__(self):
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
@@ -119,8 +115,11 @@ class ExptParams():
         self.v_zshim_current_op = 2.63
 
         #ODT
-        self.amp_lightsheet = 0.6
-        self.frequency_ao_lightsheet = 80.e6
+        # self.amp_lightsheet = 0.6
+        # self.frequency_ao_lightsheet = 80.e6
+        self.amp_painting = 1.0
+        self.frequency_painting = 100.e3
+        self.v_pd_lightsheet = 5.
         self.n_lightsheet_rampup_steps = 100
         self.v_pd_lightsheet_rampup_start = 0.0
         self.v_pd_lightsheet_rampup_end = 4.0
@@ -133,12 +132,6 @@ class ExptParams():
         self.n_tweezer_ramp_steps = 50
 
         self.compute_derived()
-
-    def assign_camera_times(self):
-        self.t_camera_exposure = self._camera_params.exposure_time
-        self.t_grab_start_wait = self._camera_params.connection_delay
-        self.t_pretrigger = self._camera_params.exposure_delay
-        self.t_camera_trigger = self._camera_params.t_camera_trigger
         
     def compute_lightsheet_ramp_params(self):
         self.v_pd_lightsheet_ramp_list = np.linspace(
