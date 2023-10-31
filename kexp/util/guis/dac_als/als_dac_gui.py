@@ -173,10 +173,10 @@ class ALSGUIExptBuilder():
                         @kernel
                         def run(self):
                             self.init_kernel(run_id = False, init_dds = False, init_dac = True, dds_set = False, dds_off = False, beat_ref_on=False)
-                            self.zotino.write_dac({DAC_CH_ALS}, {voltage:1.3f})
-                            self.zotino.load()
+                            self.dac.dac_device.write_dac({DAC_CH_ALS}, {voltage:1.3f})
+                            self.dac.dac_device.load()
                             delay(1*ms)
-                            self.out = self.zotino.read_reg(channel={DAC_CH_ALS})
+                            self.out = self.dac.dac_device.read_reg(channel={DAC_CH_ALS})
                         def analyze(self):
                             print(self.out)
                     """)
@@ -194,7 +194,7 @@ class ALSGUIExptBuilder():
                         @kernel
                         def run(self):
                             self.init_kernel(run_id = False, init_dds = False, init_dac = True, dds_set = False, dds_off = False, beat_ref_on=False)
-                            self.out = self.zotino.read_reg(channel={DAC_CH_ALS})
+                            self.out = self.dac.dac_device.read_reg(channel={DAC_CH_ALS})
                         def analyze(self):
                             print(self.out)
                     """)
