@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
 from kexp.config import camera_params
+from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
@@ -30,11 +31,9 @@ class tof(EnvExperiment, Base):
 
         # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
 
-        self.ttl.ttl_trig = self.get_device("ttl14")
-
         self.xvarnames = ['t_tof']
 
-        self.finish_build(shuffle=False)
+        self.finish_build()
 
     @kernel
     def run(self):
@@ -71,7 +70,7 @@ class tof(EnvExperiment, Base):
             ### abs img
             delay(t_tof * s)
             # self.fl_image()
-            # self.flash_repump()
+            self.flash_repump()
             self.abs_image()
 
             self.core.break_realtime()
