@@ -8,19 +8,19 @@ class ttl_frame():
 
         self.ttl_list = []
 
-        self.ttl_basler = self.ttl_assign(9)
-        self.ttl_magnets = self.ttl_assign(11)
-        self.ttl_andor = self.ttl_assign(13)
-        self.ttl_trig = self.ttl_assign(14)
+        self.basler = self.ttl_assign(9)
+        self.magnets = self.ttl_assign(11)
+        self.andor = self.ttl_assign(13)
+        self.trig = self.ttl_assign(14)
 
         self._write_ttl_keys()
 
-        self.ttl_camera = TTL
+        self.camera = TTL
 
     def ttl_assign(self,ch) -> TTL:
         this_ttl = TTL(ch)
         self.ttl_list.append(this_ttl)
-        return
+        return this_ttl
     
     def _write_ttl_keys(self):
         '''Adds the assigned keys to the DDS objects so that the user-defined

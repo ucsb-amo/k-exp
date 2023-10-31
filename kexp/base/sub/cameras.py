@@ -75,13 +75,13 @@ class Cameras():
 
         # choose the correct camera
         if andor_imaging:
-            self.ttl.ttl_camera = self.ttl.ttl_andor
+            self.ttl.camera = self.ttl.andor
             self.camera_params = camera_params.andor_camera_params
             if setup_camera:
                 # self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
                 self.start_triggered_grab = self.start_triggered_grab_andor
         elif basler_imaging:
-            self.ttl.ttl_camera = self.ttl.ttl_basler
+            self.ttl.camera = self.ttl.basler
             if absorption_image:
                 self.camera_params = camera_params.basler_absorp_camera_params
             else:

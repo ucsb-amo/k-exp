@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay_mu
+from artiq.experiment import delay_mu, delay
 from artiq.coredevice.ttl import TTLOut
 from artiq.coredevice.core import Core
 from artiq.coredevice.zotino import Zotino
@@ -51,7 +51,7 @@ class Devices():
 
     def get_ttl_devices(self):
         for ttl in self.ttl.ttl_list:
-            self.get_device(ttl.name)
+            ttl.ttl_device = self.get_device(ttl.name)
 
     def get_dds_devices(self):
         for dds in self.dds.dds_list:
@@ -85,5 +85,3 @@ class Devices():
         for dds in self.dds.dds_list:
             dds.cpld_device.init()
             delay(1*ms)
-
-        ###

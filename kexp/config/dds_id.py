@@ -128,7 +128,7 @@ class dds_frame():
             uru = idx[0]
             ch = idx[1]
             freq, amp, v_pd = self.read_dds_state(idx[0],idx[1])
-            this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame)
+            this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame.dac_device)
             self.dds_array[uru][ch] = this_dds
             
     # def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):

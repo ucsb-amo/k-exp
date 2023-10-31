@@ -106,7 +106,7 @@ class Cooling():
         self.set_magnet_current(v = v_current)
         self.set_zshim_magnet_current(v = v_zshim_current)
         with parallel:
-            self.ttl.ttl_magnets.on()
+            self.ttl.magnets.on()
             self.switch_d2_3d(1)
             # delay_mu(self.params.t_rtio_mu)
             self.dds.push.on()
@@ -144,7 +144,7 @@ class Cooling():
         self.set_magnet_current(v = v_current)
         self.set_zshim_magnet_current(v=v_zshim_current)
         with parallel:
-            self.ttl.ttl_magnets.on()
+            self.ttl.magnets.on()
             self.switch_d2_3d(1)
         delay(t)
 
@@ -195,7 +195,7 @@ class Cooling():
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
                                  amplitude=v_pd_d1_r)
         self.set_magnet_current(v = v_current)
-        self.ttl.ttl_magnets.on()
+        self.ttl.magnets.on()
         with parallel:
             self.switch_d2_3d(1)
             
@@ -302,7 +302,7 @@ class Cooling():
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        v_pd=v_pd_d1_r)
         with parallel:
-            self.ttl.ttl_magnets.off()
+            self.ttl.magnets.off()
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
         delay(t)
@@ -341,7 +341,7 @@ class Cooling():
     #     self.dds.load_profile(dds_mgr_idx)
 
     #     with parallel:
-    #         self.ttl.ttl_magnets.off()
+    #         self.ttl.magnets.off()
     #         self.switch_d1_3d(1)
     #         self.switch_d2_3d(0)
     #     delay(t)
@@ -491,7 +491,7 @@ class Cooling():
     @kernel
     def release(self):
         with parallel:
-            self.ttl.ttl_magnets.off()
+            self.ttl.magnets.off()
             self.switch_d2_3d(0)
             self.switch_d1_3d(0)
 
@@ -524,11 +524,11 @@ class Cooling():
         if state == 1:
             self.dds.d1_3d_c.on(dac_load=False)
             self.dds.d1_3d_r.on(dac_load=False)
-            self.zotino.load()
+            self.dac.load()
         elif state == 0:
             self.dds.d1_3d_c.off(dac_load=False)
             self.dds.d1_3d_r.off(dac_load=False)
-            self.zotino.load()
+            self.dac.load()
 
     ## Magnet functions
 
@@ -537,14 +537,14 @@ class Cooling():
         if v == dv:
             v = self.params.v_mot_current
         with sequential:
-            self.dac.mot_current_control.set_dac(v)
+            self.dac.mot_current_control.set(v)
 
     @kernel
     def set_zshim_magnet_current(self, v = dv):
         if v == dv:
             v = self.params.v_zshim_current
         with sequential:
-            self.dac.zshim_current_control(v)
+            self.dac.zshim_current_control.set(v)
 
     ## Other
     
@@ -604,6 +604,6 @@ class Cooling():
         self.dds.beatlock_ref.on()
 
         self.core.break_realtime()
-        self.ttl.ttl_magnets.on()
+        self.ttl.magnets.on()
 
         self.dds.imaging.on()

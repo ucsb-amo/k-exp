@@ -36,11 +36,6 @@ class dac_frame():
             if isinstance(self.__dict__[key],DAC_CH):
                 self.__dict__[key].key = key
 
-    def write_dac(self,ch,v,load_dac=True):
-        self.dac_device.write_dac(channel=ch,voltage=v)
-        if load_dac:
-            self.dac_device.load()
-
     def dac_by_ch(self,ch):
         ch_list = [dac.ch for dac in self.dac_ch_list]
         ch_idx = ch_list.index(ch)
@@ -48,3 +43,13 @@ class dac_frame():
             return ch_list[ch_idx]
         else:
             raise ValueError(f"DAC ch {ch} not assigned in dac_id.")
+        
+    @kernel
+    def set(self,ch,v,load_dac=True):
+        self.dac_device.write_dac(channel=ch,voltage=v)
+        if load_dac:
+            self.dac_device.load()
+            
+    @kernel
+    def load(self):
+        self.dac_device.load()

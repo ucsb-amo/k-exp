@@ -66,7 +66,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         self.core.reset() # clears RTIO
         if init_dac:
             delay_mu(self.params.t_rtio_mu)
-            self.zotino.init() # initializes DAC
+            self.dac.dac_device.init() # initializes DAC
             delay_mu(self.params.t_rtio_mu)
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs

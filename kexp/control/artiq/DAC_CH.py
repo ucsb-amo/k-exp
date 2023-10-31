@@ -13,11 +13,10 @@ class DAC_CH():
         self.key = ""
 
     @kernel
-    def set_dac(self,v=dv,load_dac=True):
+    def set(self,v=dv,load_dac=True):
         if v != dv:
-            
             self.v = v
-        self.dac_device.write_dac(self.v)
+        self.dac_device.write_dac(self.ch,float(self.v))
         if load_dac:
             self.dac_device.load()
 
