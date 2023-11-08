@@ -66,10 +66,8 @@ class dds_frame():
                                        dac_ch_vpd = self._dac_frame.vva_tweezer.ch)
         self.beatlock_ref = self.dds_assign(2,1)
         self.imaging = self.dds_assign(2,2, ao_order = 1)
-        self.lightsheet = self.dds_assign(2,3, ao_order=-1, 
-                                          dac_ch_vpd = self._dac_frame.vva_lightsheet.ch)
-        self.lightsheet_paint = self.dds_assign(3,0)
-        self.test_2 = self.dds_assign(3,1)
+        self.lightsheet_paint = self.dds_assign(2,3)
+        self.op_r = self.dds_assign(3,0, ao_order = 1, transition = 'D1')
 
         self.write_dds_keys()
         self.make_dds_array()

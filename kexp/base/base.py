@@ -16,11 +16,13 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         self.run_info = RunInfo(self)
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
+        self.params = ExptParams()
+
         self.prepare_devices()
 
         self.choose_camera(setup_camera,absorption_image,basler_imaging,andor_imaging)
             
-        self.params = ExptParams(camera_params=self.camera_params)
+        
 
         self.images = []
         self.image_timestamps = []

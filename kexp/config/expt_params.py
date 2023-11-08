@@ -4,12 +4,8 @@ from kexp.control.als_remote_control import als_power_to_voltage
 
 from kexp.config.dds_calibration import DDS_VVA_Calibration
 
-default_camera_params = CameraParams()
-
 class ExptParams():
-    def __init__(self, camera_params=default_camera_params):
-
-        self._camera_params = camera_params
+    def __init__(self):
 
         self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
 
@@ -41,6 +37,7 @@ class ExptParams():
         self.t_gm = 2.5e-3
         self.t_gmramp = 5.5e-3
         self.t_optical_pumping = 1.e-3
+        self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 5.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 30.e-3
@@ -114,13 +111,16 @@ class ExptParams():
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
         self.amp_optical_pumping_op = 0.25
-        self.detune_d2_r_op = 0.0
-        self.amp_d2_r_op = 0.065
         self.v_zshim_current_op = 2.63
+        self.detune_optical_pumping_r_op = 0.0
+        self.amp_optical_pumping_r_op = 0.3
 
         #ODT
-        self.amp_lightsheet = 0.6
-        self.frequency_ao_lightsheet = 80.e6
+        # self.amp_lightsheet = 0.6
+        # self.frequency_ao_lightsheet = 80.e6
+        self.amp_painting = 1.0
+        self.frequency_painting = 100.e3
+        self.v_pd_lightsheet = 5.
         self.n_lightsheet_rampup_steps = 100
         self.v_pd_lightsheet_rampup_start = 0.0
         self.v_pd_lightsheet_rampup_end = 4.0
@@ -133,12 +133,6 @@ class ExptParams():
         self.n_tweezer_ramp_steps = 50
 
         self.compute_derived()
-
-    def assign_camera_times(self):
-        self.t_camera_exposure = self._camera_params.exposure_time
-        self.t_grab_start_wait = self._camera_params.connection_delay
-        self.t_pretrigger = self._camera_params.exposure_delay
-        self.t_camera_trigger = self._camera_params.t_camera_trigger
         
     def compute_lightsheet_ramp_params(self):
         self.v_pd_lightsheet_ramp_list = np.linspace(

@@ -19,6 +19,7 @@ class dac_frame():
         self.vva_tweezer = self.assign_dac_ch(3)
         self.vva_lightsheet = self.assign_dac_ch(5)
         self.zshim_current_control = self.assign_dac_ch(6)
+        self.lightsheet_mod_amp = self.assign_dac_ch(7)
 
         self._write_dac_keys()
         

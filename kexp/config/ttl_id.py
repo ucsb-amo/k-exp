@@ -9,9 +9,12 @@ class ttl_frame():
         self.ttl_list = []
 
         self.basler = self.ttl_assign(9)
+        self.lightsheet_sw = self.ttl_assign(10)
         self.magnets = self.ttl_assign(11)
+        self.spectrum_trig = self.ttl_assign(12)
         self.andor = self.ttl_assign(13)
-        self.trig = self.ttl_assign(14)
+        self.pd_scope_trig = self.ttl_assign(14)
+        self.machine_table_trig = self.ttl_assign(25)
 
         self._write_ttl_keys()
 
