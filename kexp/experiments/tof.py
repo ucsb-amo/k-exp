@@ -24,9 +24,9 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(2000,3500,N) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(8000,13000,N)  * 1.e-6 # gm
+        self.p.t_tof = np.linspace(8000,13000,N)  * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
-        self.p.t_tof = np.linspace(12043,16240,N) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(10043,16240 ,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # mot_reload
 
@@ -57,16 +57,18 @@ class tof(EnvExperiment, Base):
             self.dds.push.off()
 
             # self.cmot_d2(self.p.t_d2cmot * s)
-
+            
+            self.ttl.pd_scope_trig.on()
             self.cmot_d1(self.p.t_d1cmot * s)
 
-            # self.ttl.ttl_trig.on()
             self.gm(self.p.t_gm * s)
 
             self.gm_ramp(self.p.t_gmramp * s)
-            # self.ttl.ttl_trig.off()
+            self.ttl.pd_scope_trig.off()
 
             self.release()
+
+            # self.optical_pumping(t=)
 
             ### abs img
             delay(t_tof * s)
