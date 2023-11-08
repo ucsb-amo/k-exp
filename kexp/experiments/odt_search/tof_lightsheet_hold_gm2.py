@@ -33,7 +33,7 @@ class tof(EnvExperiment, Base):
         # for p in self.p.xvar_cmot_ramp_end:
         #     self.p.ramps.append(np.linspace(cmot_ramp_start,p,self.cmot_ramp_steps))
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(30.,70.,2) * 1.e-3
+        self.p.xvar_t_lightsheet_hold = np.linspace(20.,500.,4) * 1.e-3
 
         # self.p.xvar_t_lightsheet_rampup = np.linspace(2.,10.,6) * 1.e-3
         
@@ -58,8 +58,6 @@ class tof(EnvExperiment, Base):
 
         # self.p.xvar_v_d2cmot_current = np.linspace(.7,1.7,6)
 
-        self.trig_ttl = self.get_device("ttl14")
-
         self.xvarnames = ['xvar_detune_gm2','xvar_t_lightsheet_hold']
         # self.xvarnames = ['xvar_detune_gm2','xvar_t_lightsheet_hold']
         # self.xvarnames = ['xvar_v_pd_d1_c_gm2','xvar_v_pd_d1_r_gm2']
@@ -74,22 +72,22 @@ class tof(EnvExperiment, Base):
         self.init_kernel()
 
         self.StartTriggeredGrab()
-        delay(self.p.t_grab_start_wait*s)
+        delay(self.camera_params.connection_delay*s)
         
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
         for xvar1 in self.p.xvar_detune_gm2:
             for xvar2 in self.p.xvar_t_lightsheet_hold:
 
+                self.lightsheet.set_power(v_lightsheet_vva=5.)
+
                 self.mot(self.p.t_mot_load * s)
 
                 self.dds.push.off()
 
+                self.ttl.pd_scope_trig.on()
                 self.cmot_d1(self.p.t_d1cmot * s)
-
-                self.dds.lightsheet.set_dds(v_pd=5.)
-                
-                self.trig_ttl.on()
+            
                 ### GM 1 ###
                 self.gm(self.p.t_gm * s)
 
@@ -100,15 +98,15 @@ class tof(EnvExperiment, Base):
                 self.release()
 
                 ### GM 2 ###
-                self.gm(t=0. * s, detune_d1=xvar1)
-                self.trig_ttl.off()
+                self.gm(t=10.e-6 * s, detune_d1=xvar1, v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
 
-                self.lightsheet_ramp(t_lightsheet_rampup=10.e-3 * s)
+                self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
+                self.ttl.pd_scope_trig.off()
 
                 self.release()
 
                 delay(xvar2 * s)
-                self.dds.lightsheet.off()
+                self.lightsheet.off()
                 
                 delay(10.e-6)
                 # self.fl_image()

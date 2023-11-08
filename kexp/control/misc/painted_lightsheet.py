@@ -2,6 +2,7 @@ from kexp.control.artiq.DAC_CH import DAC_CH
 from kexp.control.artiq.DDS import DDS
 from kexp.control.artiq.TTL import TTL
 from kexp.config import ExptParams
+from kexp.util.artiq.async_print import aprint
 
 from artiq.experiment import kernel, delay
 
@@ -67,6 +68,6 @@ class lightsheet():
         self.ttl.off()
 
     @kernel
-    def set(self,amplitude=dv,frequency=dv,v_lightsheet_vva=dv):
-        self.set_paint_params(amplitude=amplitude,frequency=frequency)
+    def set(self,paint_amplitude=dv,paint_frequency=dv,v_lightsheet_vva=dv):
+        self.set_paint_params(amplitude=paint_amplitude,frequency=paint_frequency)
         self.set_power(v_lightsheet_vva=v_lightsheet_vva)

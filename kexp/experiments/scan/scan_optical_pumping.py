@@ -23,12 +23,12 @@ class scan_optical_pumping(EnvExperiment, Base):
         self.p.imaging_state = [1,2]
         # self.p.xvar_t_op = np.linspace(0.,30.,3) * 1.e-6
         self.p.xvar_amp_optical_pumping_op = np.linspace(0.0,0.06,4)
-        # self.p.xvar_amp_d2_r_op = np.linspace(0.0,0.06,4)
-        self.p.amp_d2_r_op = 0.014
+        self.p.xvar_amp_optical_pumping_r_op = np.linspace(0.0,0.06,4)
+        # self.p.amp_d2_r_op = 0.014
 
         self.p.t_optical_pumping = np.linspace(10.,500.,4) * 1.e-6
 
-        self.xvarnames = ['xvar_amp_optical_pumping_op','xvar_amp_d2_r_op','imaging_state']
+        self.xvarnames = ['xvar_amp_optical_pumping_op','xvar_amp_optical_pumping_r_op','imaging_state']
 
         self.finish_build()
 
@@ -43,7 +43,7 @@ class scan_optical_pumping(EnvExperiment, Base):
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
         for xvar1 in self.p.xvar_amp_optical_pumping_op:
-            for xvar2 in self.p.xvar_amp_d2_r_op:
+            for xvar2 in self.p.xvar_amp_optical_pumping_r_op:
                 for img_state in self.p.imaging_state:
                     if img_state == 1:
                          self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1) 
@@ -64,7 +64,7 @@ class scan_optical_pumping(EnvExperiment, Base):
                     
                     self.release()
 
-                    self.optical_pumping(t=,amp_optical_pumping=xvar1,amp_d2_r=xvar2,v_zshim_current=9.9)
+                    self.optical_pumping(t=100.e-6,amp_optical_pumping=xvar1,amp_optical_pumping_r=xvar2,v_zshim_current=9.9)
                     
                     ### abs img
                     delay(self.p.t_tof * s)

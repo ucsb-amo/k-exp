@@ -404,62 +404,38 @@ class Cooling():
 
     @kernel
     def optical_pumping(self, t,
+                        t_bias_rampup=dv,
                         detune_optical_pumping=dv,
                         amp_optical_pumping=dv,
-                        detune_d2_r=dv,
-                        amp_d2_r=dv,
-                        v_zshim_current=dv):
+                        v_zshim_current=dv,
+                        detune_optical_pumping_r=dv,
+                        amp_optical_pumping_r=dv):
         
+        if t_bias_rampup == dv:
+            t_bias_rampup = self.params.t_optical_pumping_bias_rampup
         if detune_optical_pumping == dv:
             detune_optical_pumping = self.params.detune_optical_pumping_op
         if amp_optical_pumping == dv:
             amp_optical_pumping = self.params.amp_optical_pumping_op
-        if detune_d2_r == dv:
-            detune_d2_r = self.params.detune_d2_r_op
-        if amp_d2_r == dv:
-            amp_d2_r = self.params.amp_d2_r_op
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current_op
+        if detune_optical_pumping_r == dv:
+            detune_optical_pumping_r = self.params.detune_optical_pumping_r_op
+        if amp_optical_pumping_r == dv:
+            amp_optical_pumping_r = self.params.amp_optical_pumping_r_op
 
         self.set_zshim_magnet_current(v_zshim_current)
         self.dds.optical_pumping.set_dds_gamma(delta=detune_optical_pumping, 
                                        amplitude=amp_optical_pumping)
-        self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r, 
-                                       amplitude=amp_d2_r)
+        self.dds.op_r.set_dds_gamma(delta=detune_optical_pumping_r,
+                              amplitude=amp_optical_pumping_r)
+        delay(t_bias_rampup)
         self.dds.optical_pumping.on()
-        self.dds.d2_3d_r.on()
+        self.dds.op_r.on()
         delay(t)
         self.dds.optical_pumping.off()
-        self.dds.d2_3d_r.off()
+        self.dds.op_r.off()
         self.set_zshim_magnet_current(self.params.v_zshim_current)
-
-    # @kernel
-    # def lightsheet_ramp(self, t_lightsheet_rampup = dv,
-    #              v_pd_lightsheet_ramp_list = dvlist):
-        
-    #     ### Start Defaults ###
-        
-    #     if v_pd_lightsheet_ramp_list == dvlist:
-    #         v_pd_lightsheet_ramp_list = self.params.v_pd_lightsheet_ramp_list
-            
-    #     N_elem = len(v_pd_lightsheet_ramp_list)
-
-    #     if t_lightsheet_rampup == dv:
-    #         t_lightsheet_rampup = self.params.t_lightsheet_rampup
-    #         dt_lightsheet_ramp = self.params.dt_lightsheet_ramp
-    #     else:
-    #         dt_lightsheet_ramp = t_lightsheet_rampup / N_elem
-
-    #     # aprint(dt_lightsheet_ramp,N_elem)
-
-    #     ### End Defaults ###
-
-    #     self.dds.lightsheet.set_dds(frequency=self.params.frequency_ao_lightsheet,
-    #                              v_pd=v_pd_lightsheet_ramp_list[0])
-    #     self.dds.lightsheet.on()
-    #     for n in range(N_elem):
-    #         self.dds.lightsheet.set_dds(v_pd=v_pd_lightsheet_ramp_list[n])
-    #         delay(dt_lightsheet_ramp)
         
     @kernel
     def tweezer_ramp(self, t_tweezer_ramp = dv,
