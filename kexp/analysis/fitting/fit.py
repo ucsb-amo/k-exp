@@ -26,15 +26,19 @@ class Fit():
         y_fitdata
         ydata_smoothed
         '''
-        self.xdata = np.array(xdata)
-        self.ydata = np.array(ydata)
+        xdata = np.asarray(xdata)
+        ydata = np.asarray(ydata)
+
+        xdata, ydata = self.remove_infnan(xdata,ydata)
+        self.xdata = xdata
+        self.ydata = ydata
 
         self.y_fitdata = []
         
         try:
             self.ydata_smoothed = savgol_filter(self.ydata,savgol_window,savgol_degree)
         except:
-            self.ydata_smoothed = copy.deepcopy(ydata)
+            self.ydata_smoothed = copy.deepcopy(self.ydata)
 
     def _fit_func(self,x):
         pass
@@ -47,3 +51,8 @@ class Fit():
         plt.plot(self.xdata,self.ydata,'.',markersize=2)
         plt.plot(self.xdata,self.y_fitdata,'--')
         plt.legend(["Data","Fit"])
+
+    def remove_infnan(self,xdata,ydata):
+        bools = ~np.isnan(xdata) & ~np.isinf(xdata) & ~np.isnan(ydata) & ~np.isinf(ydata)
+        return xdata[bools], ydata[bools]
+
