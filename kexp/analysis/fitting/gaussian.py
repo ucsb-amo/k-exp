@@ -8,18 +8,18 @@ class GaussianFit(Fit):
         super().__init__(xdata,ydata,savgol_window=20)
 
         try:
-            amplitude, sigma, x_center, y_offset = self._fit(xdata,ydata)
+            amplitude, sigma, x_center, y_offset = self._fit(self.xdata,self.ydata)
         except Exception as e:
             print(e)
             amplitude, sigma, x_center, y_offset = np.NaN, np.NaN, np.NaN, np.NaN
-            self.y_fitdata = np.zeros(ydata.shape); self.y_fitdata.fill(np.NaN)
+            self.y_fitdata = np.zeros(self.ydata.shape); self.y_fitdata.fill(np.NaN)
 
         self.amplitude = amplitude
         self.sigma = sigma
         self.x_center = x_center
         self.y_offset = y_offset
 
-        self.y_fitdata = self._fit_func(xdata,amplitude,sigma,x_center,y_offset)
+        self.y_fitdata = self._fit_func(self.xdata,amplitude,sigma,x_center,y_offset)
 
         self.area = self.amplitude * np.sqrt( 2 * np.pi * self.sigma**2 )
 
