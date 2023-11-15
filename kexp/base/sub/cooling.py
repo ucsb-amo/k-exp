@@ -74,7 +74,9 @@ class Cooling():
             detune_push = dv,
             amp_push = dv,
             v_current = dv,
-            v_zshim_current = dv):
+            v_zshim_current = dv,
+            v_yshim_current = dv,
+            v_xshim_current = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -93,6 +95,10 @@ class Cooling():
             v_current = self.params.v_mot_current
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current
+        if v_yshim_current == dv:
+            v_yshim_current = self.params.v_yshim_current
+        if v_xshim_current == dv:
+            v_xshim_current = self.params.v_xshim_current
         ### End Defaults ###
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
@@ -105,6 +111,8 @@ class Cooling():
                                  amplitude=amp_push)
         self.set_magnet_current(v = v_current)
         self.set_zshim_magnet_current(v = v_zshim_current)
+        self.dac.xshim_current_control.set(v = v_xshim_current)
+        self.dac.yshim_current_control.set(v = v_yshim_current)
         with parallel:
             self.ttl.magnets.on()
             self.switch_d2_3d(1)

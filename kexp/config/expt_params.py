@@ -70,8 +70,10 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.5
 
-        self.v_mot_current = .8
+        self.v_mot_current = 3.0
         self.v_zshim_current = 1.315
+        self.v_xshim_current = 1.58
+        self.v_yshim_current = 0.
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -89,7 +91,7 @@ class ExptParams():
         self.detune_d2_r_d1cmot = -3.
         self.amp_d2_r_d1cmot = 0.047
 
-        self.v_d1cmot_current = 0.8
+        self.v_d1cmot_current = 3.0
         
         #GM
         self.detune_gm = 9.
@@ -111,7 +113,7 @@ class ExptParams():
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
         self.amp_optical_pumping_op = 0.25
-        self.v_zshim_current_op = 2.63
+        self.v_zshim_current_op = 7.0
         self.detune_optical_pumping_r_op = 0.0
         self.amp_optical_pumping_r_op = 0.3
 
