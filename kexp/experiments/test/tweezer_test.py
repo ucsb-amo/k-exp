@@ -8,11 +8,16 @@ class tweezer_test(EnvExperiment, Base):
     def build(self):
         Base.__init__(self)
 
-        self.t_time = 300 * s
-
     @kernel
     def run(self):
         
         self.init_kernel()
 
-        self.tweezer_trap(self.t_time)
+        self.mot_observe()
+
+        self.dds.tweezer.set_dds(v_pd=5.)
+        self.dds.tweezer.on()
+
+        self.lightsheet.set(paint_amplitude=0.,v_lightsheet_vva=1.0)
+
+        self.lightsheet.on()

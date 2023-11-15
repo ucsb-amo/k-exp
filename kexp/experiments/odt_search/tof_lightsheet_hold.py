@@ -32,7 +32,11 @@ class tof(EnvExperiment, Base):
         self.p.v_pd_d1_c = cal.power_fraction_to_vva(.85)
         self.p.v_pd_d1_r = cal.power_fraction_to_vva(.26)
 
-        self.p.xvar_t_lightsheet_hold = np.linspace(15.,100.,10) * 1.e-3
+        # self.p.xvar_t_lightsheet_hold = np.linspace(15.,6000.,15) * 1.e-30000000
+        self.p.xvar_t_lightsheet_hold = np.logspace(np.log10(15.*1.e-3),np.log10(7.),20)
+        # self.p.xvar_t_mot_load = np.linspace(0.25,3.,10)
+        self.p.t_mot_load = 0.5
+        # self.p.xvar_frequency_detuned_imaging = np.linspace(-100.e6,100.e6,5) + self.p.frequency_detuned_imaging
 
         # self.p.t_lightsheet_hold = 100. * 1.e-3
 
@@ -48,17 +52,18 @@ class tof(EnvExperiment, Base):
         # self.p.ramp_bool = [0,1]
         # self.p.xvar_t_lightsheet_rampup = np.linspace(3.,20.,2) * 1.e-3
         self.p.t_lightsheet_rampup = 10.e-3
-        # self.p.t_longest = np.max(self.p.xvar_t_lightsheet_rampup)
 
-        self.p.xvar_amp_lightsheet_paint = np.linspace(0.,.51,6)
+        # self.p.xvar_amp_lightsheet_paint = np.linspace(0.,.51,6)
         # self.p.xvar_freq_lightsheet_paint = np.linspace(100.452,164.452,2) * 1.e3
 
         # self.p.t_lightsheet_hold = 100.e-3
 
-        # self.xvarnames = ['xvar_t_lightsheet_hold']
+        self.xvarnames = ['xvar_t_lightsheet_hold']
         # self.xvarnames = ['xvar_t_lightsheet_hold','ramp_bool']
         # self.xvarnames = ['xvar_t_lightsheet_rampup']
-        self.xvarnames = ['xvar_t_lightsheet_hold']
+        # self.xvarnames = ['xvar_t_lightsheet_hold']
+        # self.xvarnames = ['xvar_t_mot_load']
+        # self.xvarnames = ['xvar_frequency_detuned_imaging']
         # self.xvarnames = ['xvar_v_d1cmot_current']
         # self.xvarnames = ['xvar_v_d2cmot_current']
 
@@ -76,12 +81,17 @@ class tof(EnvExperiment, Base):
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
     
-        for xvar2 in self.p.xvar_t_lightsheet_hold:
+        for xvar in self.p.xvar_t_lightsheet_hold:
+        # for xvar in self.p.xvar_t_lightsheet_hold:
+        # for xvar in self.p.xvar_frequency_detuned_imaging:
+
+            # self.set_imaging_detuning(detuning=xvar)
             
             # self.lightsheet.set(paint_amplitude=a,v_lightsheet_vva=5.,paint_frequency=xvar2)
-            self.lightsheet.set_power(v_lightsheet_vva=5.)
+            # self.lightsheet.set_power(v_lightsheet_vva=5.)
 
             self.mot(self.p.t_mot_load * s)
+            # self.mot(xvar)
             # self.hybrid_mot(self.p.t_mot_load * s)
 
             ### Turn off push beam and 2D MOT to stop the atomic beam ###
@@ -108,7 +118,8 @@ class tof(EnvExperiment, Base):
             # self.pulse_resonant_mot_beams(1.e-6*s)
 
             self.ttl.spectrum_trig.on()
-            delay(xvar2 * s)
+            # delay(self.p.t_lightsheet_hold * s)
+            delay(xvar)
             self.ttl.spectrum_trig.off()
 
             self.lightsheet.off()
@@ -126,14 +137,10 @@ class tof(EnvExperiment, Base):
 
     def analyze(self):
 
-        # self.p.t_lightsheet_rampup = self.p.xvar_t_lightsheet_rampup
-
-        # self.p.v_d1cmot_current = self.p.xvar_v_d1cmot_current
-
-        # self.p.v_d2cmot_current = self.p.xvar_v_d2cmot_current
-
         self.camera.Close()
 
-        self.ds.save_data(self)
+        import os
+        expt_filepath = os.path.abspath(__file__)
+        self.ds.save_data(self, expt_filepath)
 
         print("Done!")

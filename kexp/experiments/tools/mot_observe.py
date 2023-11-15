@@ -1,5 +1,6 @@
 from artiq.experiment import *
 from kexp import Base
+import os
 
 import numpy as np
 

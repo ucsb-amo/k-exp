@@ -16,7 +16,7 @@ class mot_load_scan(EnvExperiment, Base):
         self.p = self.params
 
         self.p.N_repeats = 2
-        self.p.t_tof = 9000 * 1.e-6 # mot
+        self.p.t_tof = 12000 * 1.e-6 # mot
 
         self.p.xvar_t_mot_load = np.linspace(0.1,3.5,7)
         # self.p.xvar_t_2dmot_load = np.linspace(0.1,1.,4)
@@ -34,7 +34,7 @@ class mot_load_scan(EnvExperiment, Base):
         self.init_kernel()
 
         self.StartTriggeredGrab()
-        delay(self.p.t_grab_start_wait*s)
+        delay(self.camera_params.connection_delay*s)
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
