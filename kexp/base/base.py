@@ -21,8 +21,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         self.prepare_devices()
 
         self.choose_camera(setup_camera,absorption_image,basler_imaging,andor_imaging)
-            
-        
 
         self.images = []
         self.image_timestamps = []
