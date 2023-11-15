@@ -15,6 +15,7 @@ class RunInfo():
         self.run_datetime_str = time.strftime("%Y-%m-%d_%H-%M-%S", date)
 
         self.filepath = []
+        self.experiment_filepath = []
         self.xvarnames = []
 
         self.absorption_image = True

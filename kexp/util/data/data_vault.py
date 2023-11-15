@@ -11,7 +11,7 @@ class DataSaver():
     def __init__(self):
         pass
 
-    def save_data(self,expt):
+    def save_data(self,expt,expt_filepath=""):
 
         pwd = os.getcwd()
         os.chdir(data_dir)
@@ -43,6 +43,13 @@ class DataSaver():
         self._class_attr_to_dataset(params_dset,expt.params)
         cam_dset = f.create_group('camera_params')
         self._class_attr_to_dataset(cam_dset,expt.camera_params)
+
+        if expt_filepath:
+            with open(expt_filepath) as expt_file:
+                expt_text = expt_file.read()
+            f.attrs["expt_file"] = expt_text
+        else:
+            f.attrs["expt_file"] = ""
         
         f.close()
 

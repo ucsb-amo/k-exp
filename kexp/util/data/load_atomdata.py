@@ -58,6 +58,7 @@ def load_atomdata(idx=0, path = [], unshuffle_xvars=True, crop_type='mot') -> at
     images = f['data']['images'][()]
     image_timestamps = f['data']['image_timestamps'][()]
     xvarnames = f.attrs['xvarnames'][()]
+    expt_text = f.attrs['expt_file']
 
     try:
         sort_idx = f['data']['sort_idx'][()]
@@ -67,7 +68,7 @@ def load_atomdata(idx=0, path = [], unshuffle_xvars=True, crop_type='mot') -> at
         sort_N = []
 
     ad = atomdata(xvarnames,images,image_timestamps,params,camera_params,run_info,
-                  sort_idx,sort_N,unshuffle_xvars=unshuffle_xvars,crop_type=crop_type)
+                  sort_idx,sort_N,expt_text,unshuffle_xvars=unshuffle_xvars,crop_type=crop_type)
     
     f.close()
 
