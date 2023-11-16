@@ -78,22 +78,26 @@ class tof(EnvExperiment, Base):
             self.dds.push.off()
             self.cmot_d1(self.p.t_d1cmot * s)
             self.gm(self.p.t_gm * s)
-            self.gm_ramp(self.p.t_gmramp * s)
+            self.gm_ramp(self.p.t_gmramp * s) 
 
-            # delay(self.p.t_lightsheet_load)
-            
             self.release()
-
-            ### GM 2 ###
-            # self.gm(t=10.e-6*s, detune_d1=9.2, v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
+            
+            # self.set_magnet_current(v=v)
+            # self.ttl.magnets.on()
 
             self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
+            
+            # self.ttl.magnets.off()
+            # delay(50.e-3*s)
 
-            delay(xvar)
+            self.set_zshim_magnet_current(v=self.p.v_zshim_current_op)
+            delay(10*ms) 
 
             self.lightsheet.off()
 
-            delay(10.e-6)
+            self.optical_pumping(t=self.p.t_optical_pumping,
+                                    t_bias_rampup=0.,
+                                    v_zshim_current=self.p.v_zshim_current_op)
 
             # self.fl_image()
             self.flash_repump()
