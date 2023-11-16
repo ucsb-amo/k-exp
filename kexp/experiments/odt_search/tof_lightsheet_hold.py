@@ -10,7 +10,7 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        # Base.__init__(self, basler_imaging=True, absorption_image=False)
+        # Base.__init__(self, basler_imaging=False, absorption_image=False, andor_imaging=True)
         Base.__init__(self)
 
         self.run_info._run_description = "scan lightsheet hold"
@@ -32,26 +32,10 @@ class tof(EnvExperiment, Base):
         self.p.v_pd_d1_c = cal.power_fraction_to_vva(.85)
         self.p.v_pd_d1_r = cal.power_fraction_to_vva(.26)
 
-        # self.p.xvar_t_lightsheet_hold = np.linspace(15.,6000.,15) * 1.e-30000000
-        self.p.xvar_t_lightsheet_hold = np.logspace(np.log10(15.*1.e-3),np.log10(7.),20)
+        self.p.xvar_t_lightsheet_hold = np.linspace(15.,600.,15) * 1.e-3
+        # self.p.xvar_t_lightsheet_hold = np.logspace(np.log10(15.*1.e-3),np.log10(7.),20)
         # self.p.xvar_t_mot_load = np.linspace(0.25,3.,10)
         self.p.t_mot_load = 0.5
-        # self.p.xvar_frequency_detuned_imaging = np.linspace(-100.e6,100.e6,5) + self.p.frequency_detuned_imaging
-
-        # self.p.t_lightsheet_hold = 100. * 1.e-3
-
-        # self.p.xvar_t_lightsheet_rampup = np.linspace(2.,18.,20) * 1.e-3
-
-        # self.p.pfrac_lightsheet_ramp = np.linspace(0.0,1.0,200)
-        # self.p.xvar_v_pd_lightsheet_ramp_list = cal.power_fraction_to_vva(self.p.pfrac_lightsheet_ramp)
-
-        # self.p.xvar_v_d1cmot_current = np.linspace(.5,1.8,10)
-
-        # self.p.xvar_v_d2cmot_current = np.linspace(.5,1.8,10)
-
-        # self.p.ramp_bool = [0,1]
-        # self.p.xvar_t_lightsheet_rampup = np.linspace(3.,20.,2) * 1.e-3
-        self.p.t_lightsheet_rampup = 10.e-3
 
         # self.p.xvar_amp_lightsheet_paint = np.linspace(0.,.51,6)
         # self.p.xvar_freq_lightsheet_paint = np.linspace(100.452,164.452,2) * 1.e3
@@ -67,7 +51,7 @@ class tof(EnvExperiment, Base):
         # self.xvarnames = ['xvar_v_d1cmot_current']
         # self.xvarnames = ['xvar_v_d2cmot_current']
 
-        self.p.N_repeats = [2]
+        self.p.N_repeats = [1]
 
         self.finish_build()
 
@@ -91,17 +75,9 @@ class tof(EnvExperiment, Base):
             # self.lightsheet.set_power(v_lightsheet_vva=5.)
 
             self.mot(self.p.t_mot_load * s)
-            # self.mot(xvar)
-            # self.hybrid_mot(self.p.t_mot_load * s)
-
-            ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
-
             self.cmot_d1(self.p.t_d1cmot * s)
-            
-            ### GM 1 ###
             self.gm(self.p.t_gm * s)
-
             self.gm_ramp(self.p.t_gmramp * s)
 
             # delay(self.p.t_lightsheet_load)
@@ -112,19 +88,13 @@ class tof(EnvExperiment, Base):
             # self.gm(t=10.e-6*s, detune_d1=9.2, v_pd_d1_c=self.p.pfrac_c_gmramp_end, v_pd_d1_r=self.p.pfrac_r_gmramp_end)
 
             self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
-            # self.lightsheet.on()
-            self.release()
 
-            # self.pulse_resonant_mot_beams(1.e-6*s)
-
-            self.ttl.spectrum_trig.on()
-            # delay(self.p.t_lightsheet_hold * s)
             delay(xvar)
-            self.ttl.spectrum_trig.off()
 
             self.lightsheet.off()
 
             delay(10.e-6)
+
             # self.fl_image()
             self.flash_repump()
             self.abs_image()
