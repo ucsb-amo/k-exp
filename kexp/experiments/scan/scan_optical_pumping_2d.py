@@ -19,27 +19,31 @@ class scan_optical_pumping(EnvExperiment, Base):
         self.p = self.params
 
         self.p.t_tof = 10 * 1.e-6 # gm
-        self.p.t_mot_load = 0.5
+        self.p.t_mot_load = 1.
 
         self.p.imaging_state = [1,2]
-        self.p.xvar_t_op = np.linspace(0.,1000.,20) * 1.e-6
+        # self.p.xvar_t_op = np.linspace(0.,80.,20) * 1.e-6
         # self.p.xvar_amp_optical_pumping_op = np.linspace(0.0,0.3,3)
-        # self.p.amp_optical_pumping_op = 0.3
+        self.p.amp_optical_pumping_op = 0.3
         # self.p.xvar_amp_optical_pumping_r_op = np.linspace(0.0,0.3,5)
-        # self.p.amp_optical_pumping_r_op = 0.3
+        self.p.amp_optical_pumping_r_op = 0.2
+
+        self.p.v_magtrap = np.linspace(2.0,9.,6)
 
         # self.p.t_optical_pumping = np.linspace(10.,600.,5) * 1.e-6
-        # self.p.t_optical_pumping = 200.e-6
+        self.p.t_optical_pumping = 50.e-6
         # self.p.t_total = np.max(self.p.t_optical_pumping)
+
+        self.p.t_lightsheet_hold = np.linspace(15.,100.,10) * 1.e-3
 
         # self.p.quantization_field_bool = [0,1]
 
         self.p.t_lightsheet_rampup = 10.e-3
 
-        self.p.v_zshim_current_op = 2.6
+        self.p.v_zshim_current_op = self.p.v_zshim_current
 
         # self.xvarnames = ['xvar_amp_optical_pumping_op','t_optical_pumping','imaging_state']
-        self.xvarnames = ['xvar_t_op','imaging_state']
+        self.xvarnames = ['imaging_state','v_magtrap']
         # self.xvarnames = ['quantization_field_bool','t_optical_pumping','imaging_state']
 
         self.finish_build()
@@ -56,7 +60,7 @@ class scan_optical_pumping(EnvExperiment, Base):
 
         # for do_optical_pumping in self.p.quantization_field_bool:
         for img_state in self.p.imaging_state:
-            for t_op in self.p.xvar_t_op:        
+            for v in self.p.v_magtrap:        
                 if img_state == 1:
                         self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1) 
                 elif img_state == 2:
@@ -70,18 +74,23 @@ class scan_optical_pumping(EnvExperiment, Base):
                 
                 self.release()
 
-                self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
-                delay(10.e-3)
+                # self.set_magnet_current(v=v)
+                # self.ttl.magnets.on()
 
-                self.set_zshim_magnet_current(v=self.p.v_zshim_current_op)
-                delay(50*ms) 
+                self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
+                
+                # self.ttl.magnets.off()
+                delay(50.e-3*s)
+
+                # self.set_zshim_magnet_current(v=self.p.v_zshim_current_op)
+                # delay(10*ms) 
 
                 self.lightsheet.off()
 
-                self.optical_pumping(t=t_op,
+                self.optical_pumping(t=self.p.t_optical_pumping,
                                         t_bias_rampup=0.,
                                         v_zshim_current=self.p.v_zshim_current_op)
-                
+
                 ### abs img
                 delay(self.p.t_tof * s)
                 self.abs_image()
