@@ -17,15 +17,17 @@ class magtrap_vs_shim(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.p.t_mot_load = 0.25
+        self.p.t_mot_load = 0.5
 
         self.p.t_tof = 10.e-6
 
-        # self.p.t_magtrap_on = np.linspace(1.,25.,6) * 1.e-3
-        self.p.t_magtrap_on = 11.e-3
+        self.p.t_magtrap_on = np.linspace(1.,25.,6) * 1.e-3
+        # self.p.t_magtrap_on = 11.e-3
 
-        self.p.xvar_v_xshim = np.linspace(0.0,2.5,7)
-        self.p.xvar_v_yshim = np.linspace(0.0,2.5,7)
+        self.p.v_magtrap = np.linspace(3.0,9.99,6)
+
+        # self.p.xvar_v_xshim = np.linspace(0.0,2.5,7)
+        # self.p.xvar_v_yshim = np.linspace(0.0,2.5,7)
 
         # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
 
@@ -46,16 +48,15 @@ class magtrap_vs_shim(EnvExperiment, Base):
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-        for vy in self.p.xvar_v_yshim:
-            for vx in self.p.xvar_v_xshim:
+        # for vy in self.p.xvar_v_yshim:
+        #     for vx in self.p.xvar_v_xshim:
+        for t_mag in self.p.t_magtrap_on:
+            for v_mag_trap in self.p.v_magtrap:
 
-                self.mot(self.p.t_mot_load * s, v_yshim_current=vy, v_xshim_current=vx)
-                # self.hybrid_mot(self.p.t_mot_load * s)
+                # self.mot(self.p.t_mot_load * s, v_yshim_current=vy, v_xshim_current=vx)
+                self.mot(self.p.t_mot_load)
 
-                ### Turn off push beam and 2D MOT to stop the atomic beam ###
                 self.dds.push.off()
-
-                # self.cmot_d2(self.p.t_d2cmot * s)
                 
                 self.ttl.pd_scope_trig.on()
                 self.cmot_d1(self.p.t_d1cmot * s)
@@ -67,11 +68,9 @@ class magtrap_vs_shim(EnvExperiment, Base):
 
                 self.switch_d1_3d(0)
 
-                # self.optical_pumping(t=200.e-6,t_bias_rampup=2.e-3,amp_optical_pumping=0.3,amp_optical_pumping_r=0.3,v_zshim_current=9.99)
-
-                self.set_magnet_current(v=9.99)
+                self.set_magnet_current(v=v_mag_trap)
                 self.ttl.magnets.on()
-                delay(self.p.t_magtrap_on)
+                delay(t_mag)
                 self.ttl.magnets.off()
 
                 ### abs img

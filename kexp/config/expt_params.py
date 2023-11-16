@@ -37,7 +37,7 @@ class ExptParams():
         self.t_gm = 2.5e-3
         self.t_gmramp = 5.5e-3
         self.t_optical_pumping = 1.e-3
-        self.t_optical_pumping_bias_rampup = 2.e-3
+        self.t_optical_pumping_bias_rampup = 4.e-3
         self.t_lightsheet_rampup = 5.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 30.e-3

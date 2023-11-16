@@ -17,9 +17,9 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 7
-        self.p.N_repeats = 6
-        self.p.t_mot_load = 0.25
+        N = 2
+        self.p.N_repeats = 8
+        self.p.t_mot_load = 2.0
 
         # self.p.t_tof = np.linspace(1000,1500,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(2000,3500,N) * 1.e-6 # cmot
@@ -27,9 +27,9 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(7000,13000,N)  * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
-        self.p.t_tof = np.linspace(10135,13543,N) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(10135,13543,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(12503,15032,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
+        self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
 
         # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
 
@@ -67,9 +67,9 @@ class tof(EnvExperiment, Base):
             self.gm_ramp(self.p.t_gmramp * s)
             self.ttl.pd_scope_trig.off()
 
-            # self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
-
             self.release()
+
+            # self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
 
             # delay(25.e-3)
             # self.lightsheet.off()
