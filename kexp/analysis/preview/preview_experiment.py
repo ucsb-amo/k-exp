@@ -5,10 +5,10 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-T_TOF_US = 8500 # gm ramp
+T_TOF_US = 5000 # gm ramp
 # T_TOF_US = 751 # mot
 # T_TOF_US = 10 # light sheet
-T_MOTLOAD_S = 1.0
+T_MOTLOAD_S = .5
 
 class tof(EnvExperiment, Base):
 
@@ -30,6 +30,8 @@ class tof(EnvExperiment, Base):
 
         self.p.t_tof = T_TOF_US * 1.e-6 # mot
 
+        self.p.t_imaging_pulse = 5.e-6
+
         self.p.dummy = [1]*1000
 
         self.p.t_mot_load = T_MOTLOAD_S
@@ -45,7 +47,7 @@ class tof(EnvExperiment, Base):
         
         self.init_kernel(run_id=True)
 
-        self.dds.second_imaging.set_dds(frequency=102.425e6,amplitude=0.188)
+        self.dds.second_imaging.set_dds(frequency=115.425e6,amplitude=0.188)
         
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
@@ -60,7 +62,7 @@ class tof(EnvExperiment, Base):
             self.gm_ramp(self.p.t_gmramp * s)
 
             self.dds.second_imaging.on()
-            delay(1.5e-3*s)
+            # delay(1.5e-3*s)
 
             self.release()
 
