@@ -94,12 +94,9 @@ class tof(EnvExperiment, Base):
 
             # self.set_imaging_detuning(detuning=f) 
 
-            # self.dds.second_imaging.on()
-
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
             self.cmot_d1(self.p.t_d1cmot * s)
-            # self.dds.second_imaging.on()
             self.gm(self.p.t_gm * s)
             self.gm_ramp(self.p.t_gmramp * s) 
 
