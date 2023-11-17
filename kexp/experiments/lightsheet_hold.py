@@ -54,7 +54,8 @@ class tof(EnvExperiment, Base):
 
         self.camera_params.exposure_time = 1000.e-6 * s
 
-        self.p.t_mot_kill_time = np.linspace(0.,100.,5) * 1.e-6
+        self.p.t_mot_kill_time = np.linspace(0.,2500.,10) * 1.e-6
+        self.p.t_max = np.max(self.p.t_mot_kill_time)
 
         # self.xvarnames = ['xvar_frequency_detuned_imaging']
         # self.xvarnames = ['xvar_t_lightsheet_hold','ramp_bool']
@@ -93,11 +94,17 @@ class tof(EnvExperiment, Base):
 
             # self.set_imaging_detuning(detuning=f) 
 
+            # self.dds.second_imaging.on()
+
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
             self.cmot_d1(self.p.t_d1cmot * s)
+            # self.dds.second_imaging.on()
             self.gm(self.p.t_gm * s)
             self.gm_ramp(self.p.t_gmramp * s) 
+
+            self.dds.second_imaging.on()
+            delay(xvar)
 
             self.release()
             
@@ -114,14 +121,15 @@ class tof(EnvExperiment, Base):
             
             # self.lightsheet.off()
 
-            if xvar != 0.:
-                self.dds.second_imaging.on()
-                delay(xvar)
-                self.dds.second_imaging.off()
+            # if xvar != 0.:
+            #     self.dds.second_imaging.on()
+            #     delay(xvar)
+            #     self.dds.second_imaging.off()
+            # delay(self.p.t_max-xvar)
 
             # self.dds.tweezer.off()
 
-            delay(10.e-6)
+            # delay(5.e-3)
 
             # self.optical_pumping(t=self.p.t_optical_pumping,
             #                         t_bias_rampup=0.,
@@ -133,6 +141,8 @@ class tof(EnvExperiment, Base):
 
             self.flash_repump()
             self.abs_image()
+
+            self.dds.second_imaging.off()
             
             self.core.break_realtime()
             

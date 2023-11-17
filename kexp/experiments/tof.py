@@ -17,17 +17,17 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 3
-        self.p.N_repeats = 1
-        self.p.t_mot_load = 2.0
+        N = 6
+        self.p.N_repeats = 2
+        self.p.t_mot_load = 0.3
 
         # self.p.t_tof = np.linspace(1000,1500,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(2000,3500,N) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
-        # self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(7000,13000,N)  * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
-        self.p.t_tof = np.linspace(10135,13543,N) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(10135,13543,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(12503,15032,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
 
