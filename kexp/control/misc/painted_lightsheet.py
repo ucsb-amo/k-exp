@@ -45,12 +45,12 @@ class lightsheet():
         self.dac_ch.set(v=v_lightsheet_vva,load_dac=load_dac)
     
     @kernel
-    def ramp(self,t_ramp,v_ramp_list=dv_list):
+    def ramp(self,t,v_ramp_list=dv_list):
         if v_ramp_list == dv_list:
             v_ramp_list = self.params.v_pd_lightsheet_ramp_list
 
         n_ramp = len(v_ramp_list)
-        dt_ramp = t_ramp / n_ramp
+        dt_ramp = t / n_ramp
 
         self.dac_ch.set(v=v_ramp_list[0])
         self.on()

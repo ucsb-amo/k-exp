@@ -4,6 +4,7 @@ from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.expt_params import ExptParams
 from kexp.config.camera_params import CameraParams
+from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
 from kexp.util.data import RunInfo
 from kexp.base.sub.devices import Devices
@@ -22,6 +23,7 @@ class Image():
         self.camera_params = CameraParams()
         self.run_info = RunInfo()
         self.camera = DummyCamera()
+        self.lightsheet = lightsheet()
 
     ### Imaging sequences ###
 
@@ -109,18 +111,20 @@ class Image():
 
         self.trigger_camera()
         if with_light:
-            # self.pulse_imaging_light(t * s)
-            self.pulse_resonant_mot_beams(t * s)
+            self.pulse_imaging_light(t * s)
+            # self.pulse_resonant_mot_beams(t * s)
             # self.pulse_D1_beams(t * s)
 
-        delay_mu(self.params.t_rtio_mu)
+        self.lightsheet.off()
+        self.dds.tweezer.off()
 
+        delay_mu(self.params.t_rtio_mu)
         delay(self.params.t_light_only_image_delay * s)
 
         self.trigger_camera()
         if with_light:
-            # self.pulse_imaging_light(t * s)
-            self.pulse_resonant_mot_beams(t * s)
+            self.pulse_imaging_light(t * s)
+            # self.pulse_resonant_mot_beams(t * s)
             # self.pulse_D1_beams(t * s)
 
     @kernel

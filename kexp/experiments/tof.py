@@ -17,8 +17,8 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 2
-        self.p.N_repeats = 8
+        N = 3
+        self.p.N_repeats = 1
         self.p.t_mot_load = 2.0
 
         # self.p.t_tof = np.linspace(1000,1500,N) * 1.e-6 # mot
@@ -27,9 +27,9 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(7000,13000,N)  * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(10135,13543,N) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(10135,13543,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(12503,15032,N) * 1.e-6 # gm
-        self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
+        # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
 
         # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
 
@@ -52,21 +52,12 @@ class tof(EnvExperiment, Base):
         for t_tof in self.p.t_tof:
 
             self.mot(self.p.t_mot_load * s)
-            # self.hybrid_mot(self.p.t_mot_load * s)
-
-            ### Turn off push beam and 2D MOT to stop the atomic beam ###
             self.dds.push.off()
-
-            # self.cmot_d2(self.p.t_d2cmot * s)
-            
             self.ttl.pd_scope_trig.on()
             self.cmot_d1(self.p.t_d1cmot * s)
-
             self.gm(self.p.t_gm * s)
-
             self.gm_ramp(self.p.t_gmramp * s)
             self.ttl.pd_scope_trig.off()
-
             self.release()
 
             # self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)

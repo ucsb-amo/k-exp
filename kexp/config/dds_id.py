@@ -68,6 +68,7 @@ class dds_frame():
         self.imaging = self.dds_assign(2,2, ao_order = 1)
         self.lightsheet_paint = self.dds_assign(2,3)
         self.op_r = self.dds_assign(3,0, ao_order = 1, transition = 'D1')
+        self.second_imaging = self.dds_assign(3,1, ao_order = -1, transition = 'D2')
 
         self.write_dds_keys()
         self.make_dds_array()

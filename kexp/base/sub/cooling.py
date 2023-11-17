@@ -438,11 +438,12 @@ class Cooling():
         self.dds.op_r.set_dds_gamma(delta=detune_optical_pumping_r,
                               amplitude=amp_optical_pumping_r)
         delay(t_bias_rampup)
-        self.dds.optical_pumping.on()
-        self.dds.op_r.on()
-        delay(t)
-        self.dds.optical_pumping.off()
-        self.dds.op_r.off()
+        if t:
+            self.dds.optical_pumping.on()
+            self.dds.op_r.on()
+            delay(t)
+            self.dds.optical_pumping.off()
+            self.dds.op_r.off()
         self.set_zshim_magnet_current(self.params.v_zshim_current)
         
     @kernel
@@ -524,11 +525,11 @@ class Cooling():
             self.dac.mot_current_control.set(v)
 
     @kernel
-    def set_zshim_magnet_current(self, v = dv):
+    def set_zshim_magnet_current(self, v = dv, load_dac=True):
         if v == dv:
             v = self.params.v_zshim_current
         with sequential:
-            self.dac.zshim_current_control.set(v)
+            self.dac.zshim_current_control.set(v, load_dac)
 
     ## Other
     
