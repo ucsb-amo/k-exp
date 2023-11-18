@@ -103,17 +103,24 @@ class Image():
 
     @kernel
     def fl_image(self, t=-1., with_light=True):
+        
+        if t==-1:
+           t = self.camera_params.exposure_time
 
-        if t == -1.:
-            t = self.camera_params.exposure_time
+        delay_mu(self.params.t_rtio_mu)
 
         self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_fluor)
+        self.dds.second_imaging.set_dds(amplitude=.03)
 
         self.trigger_camera()
         if with_light:
             self.pulse_imaging_light(t * s)
+            # self.dds.second_imaging.on()
+            # delay(t)
+            # self.dds.second_imaging.off()
             # self.pulse_resonant_mot_beams(t * s)
             # self.pulse_D1_beams(t * s)
+            pass
 
         self.lightsheet.off()
         self.dds.tweezer.off()
@@ -124,8 +131,12 @@ class Image():
         self.trigger_camera()
         if with_light:
             self.pulse_imaging_light(t * s)
+            # self.dds.second_imaging.on()
+            # delay(t)
+            # self.dds.second_imaging.off()
             # self.pulse_resonant_mot_beams(t * s)
             # self.pulse_D1_beams(t * s)
+            pass
 
     @kernel
     def trigger_camera(self):

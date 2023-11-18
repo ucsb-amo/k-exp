@@ -88,7 +88,7 @@ class atomdata():
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
 
-    def _analyze_fluorescence_images(self):
+    def _analyze_fluorescence_images(self,crop_type='tweezer'):
         '''
         Saves the images, image timestamps (in ns), computes a subtracted image,
         and performs gaussian fits to the profiles. Note: the subtracted image

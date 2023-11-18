@@ -41,7 +41,7 @@ class ExptParams():
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 30.e-3
-        self.t_tweezer_ramp = 3.e-3
+        self.t_tweezer_ramp = 10.e-3
         self.t_tweezer_hold = 50.e-3
         self.t_mot_reload = 2.
         self.t_recover = 20.e-3
@@ -140,6 +140,13 @@ class ExptParams():
         self.v_pd_lightsheet_ramp_list = np.linspace(
             self.v_pd_lightsheet_rampup_start,
             self.v_pd_lightsheet_rampup_end,
+            self.n_lightsheet_rampup_steps)
+        self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
+
+    def compute_lightsheet_ramp_down_params(self):
+        self.v_pd_lightsheet_ramp_down_list = np.linspace(
+            self.v_pd_lightsheet_rampup_end,
+            self.v_pd_lightsheet_rampup_start,
             self.n_lightsheet_rampup_steps)
         self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
 
