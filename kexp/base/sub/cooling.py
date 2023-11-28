@@ -286,7 +286,8 @@ class Cooling():
             v_pd_d1_c = dv,
             detune_d1_r = dv,
             v_pd_d1_r = dv,
-            detune_d1 = dv):
+            detune_d1 = dv,
+            t_magnet_off_pretrigger = dv):
         
         ### Start Defaults ###
         if detune_d1 != dv:
@@ -302,7 +303,14 @@ class Cooling():
             v_pd_d1_c = self.params.v_pd_d1_c_gm
         if v_pd_d1_r == dv:
             v_pd_d1_r = self.params.v_pd_d1_r_gm
+
+        if t_magnet_off_pretrigger == dv:
+            t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
         ### End Defaults ###
+
+        delay(-t_magnet_off_pretrigger)
+        self.ttl.magnets.off()
+        delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
                                        v_pd=v_pd_d1_c)
@@ -310,7 +318,6 @@ class Cooling():
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        v_pd=v_pd_d1_r)
         with parallel:
-            self.ttl.magnets.off()
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
         delay(t)
