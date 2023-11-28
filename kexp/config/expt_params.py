@@ -22,7 +22,7 @@ class ExptParams():
         self.frequency_detuned_imaging = 27.e6
         self.frequency_detuned_imaging_F1 = 4.58e08
         self.amp_imaging_fluor = 0.260
-        self.amp_imaging_abs = 0.2
+        self.amp_imaging_abs = 0.24
         
         self.t_repump_flash_imaging = 2.e-6
         self.detune_d2_r_imaging = 0.
@@ -34,6 +34,7 @@ class ExptParams():
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 7.5e-3
+        self.t_magnet_off_pretrigger = 2.e-3
         self.t_gm = 2.5e-3
         self.t_gmramp = 5.5e-3
         self.t_optical_pumping = 50.e-6

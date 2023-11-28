@@ -17,19 +17,18 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 6
-        self.p.N_repeats = 2
-        self.p.t_mot_load = 0.3
+        N = 5
+        self.p.N_repeats = 1
+        self.p.t_mot_load = 1.
 
         # self.p.t_tof = np.linspace(1000,1500,N) * 1.e-6 # mot
-        # self.p.t_tof = np.linspace(2000,3500,N) * 1.e-6 # cmot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(6000,9000,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(7000,13000,N)  * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(5000,7000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(10135,13543,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(12503,15032,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(20,100,N) * 1.e-6 # tweezer
+        # self.p.t_tof = np.linspace(100,20368,N) * 1.e-6
+        self.p.t_tof = np.linspace(100.,700.,N) * 1.e-6
+
+        # self.p.mag_trap_bool = np.array([0,1])
 
         # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
 
@@ -53,12 +52,21 @@ class tof(EnvExperiment, Base):
 
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
-            self.ttl.pd_scope_trig.on()
-            self.cmot_d1(self.p.t_d1cmot * s)
-            self.gm(self.p.t_gm * s)
-            self.gm_ramp(self.p.t_gmramp * s)
-            self.ttl.pd_scope_trig.off()
+            # self.ttl.pd_scope_trig.on()
+            # self.cmot_d1(self.p.t_d1cmot * s)
+            # self.gm(self.p.t_gm * s)
+            # self.gm_ramp(self.p.t_gmramp * s)
+            # self.dds.d1_3d_c.off()
+            # delay(100.e-6)
+            # self.dds.d1_3d_r.off()
+            # self.ttl.pd_scope_trig.off()
             self.release()
+            
+
+            # self.set_magnet_current(v=5.)
+            # self.ttl.magnets.on()
+            # delay(t_tof * s)
+            # self.ttl.magnets.off()
 
             # self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
 
@@ -69,6 +77,7 @@ class tof(EnvExperiment, Base):
 
             ### abs img
             delay(t_tof * s)
+            # delay(100.e-6 * s)
             # self.fl_image()
             self.flash_repump()
             self.abs_image()
