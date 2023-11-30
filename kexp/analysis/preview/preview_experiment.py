@@ -5,7 +5,7 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-T_TOF_US = 100 # gm ramp
+T_TOF_US = 20 # gm ramp
 # T_TOF_US = 751 # mot
 # T_TOF_US = 10 # light sheet
 T_MOTLOAD_S = .9
@@ -65,7 +65,7 @@ class tof(EnvExperiment, Base):
 
             self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
-            delay(1.e-3*s)
+            delay(10e-3*s)
             self.lightsheet.off()
 
             self.dds.second_imaging.on()
