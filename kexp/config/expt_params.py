@@ -34,7 +34,7 @@ class ExptParams():
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 7.5e-3
-        self.t_magnet_off_pretrigger = 2.e-3
+        self.t_magnet_off_pretrigger = 1.4e-3
         self.t_gm = 2.5e-3
         self.t_gmramp = 5.5e-3
         self.t_optical_pumping = 50.e-6

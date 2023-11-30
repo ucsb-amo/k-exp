@@ -17,16 +17,20 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 5
-        self.p.N_repeats = 1
-        self.p.t_mot_load = 1.
+        N = 20
+        self.p.N_repeats = 2
+        self.p.t_mot_load = 0.4
+
+        self.p.amp_imaging_abs = 0.26
+        self.p.t_imaging_pulse = 5.e-6
 
         # self.p.t_tof = np.linspace(1000,1500,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(5000,7000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(100,20368,N) * 1.e-6
-        self.p.t_tof = np.linspace(100.,700.,N) * 1.e-6
+        # self.p.t_tof = np.linspace(100.,700.,N) * 1.e-6
+        self.p.t_tof = np.linspace(14000.,17000.,N) * 1.e-6
 
         # self.p.mag_trap_bool = np.array([0,1])
 
@@ -53,9 +57,9 @@ class tof(EnvExperiment, Base):
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
             # self.ttl.pd_scope_trig.on()
-            # self.cmot_d1(self.p.t_d1cmot * s)
-            # self.gm(self.p.t_gm * s)
-            # self.gm_ramp(self.p.t_gmramp * s)
+            self.cmot_d1(self.p.t_d1cmot * s)
+            self.gm(self.p.t_gm * s)
+            self.gm_ramp(self.p.t_gmramp * s)
             # self.dds.d1_3d_c.off()
             # delay(100.e-6)
             # self.dds.d1_3d_r.off()
