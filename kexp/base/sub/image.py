@@ -30,8 +30,10 @@ class Image():
     @kernel
     def pulse_imaging_light(self,t):
         self.dds.imaging.on()
+        # self.dds.d2_3d_r.on()
         delay(t)
         self.dds.imaging.off()
+        # self.dds.d2_3d_r.off()
 
     @kernel
     def flash_repump(self,t=dv,detune=dv,amp=dv):
@@ -110,7 +112,8 @@ class Image():
         delay_mu(self.params.t_rtio_mu)
 
         self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_fluor)
-        self.dds.second_imaging.set_dds(amplitude=.03)
+        self.dds.second_imaging.set_dds(amplitude=.01)
+        self.dds.d2_3d_r.set_dds(0.,amplitude=.06)
 
         self.trigger_camera()
         if with_light:
@@ -122,11 +125,15 @@ class Image():
             # self.pulse_D1_beams(t * s)
             pass
 
-        self.lightsheet.off()
-        self.dds.tweezer.off()
+        # self.lightsheet.off()
+        # self.dds.tweezer.off()
 
         delay_mu(self.params.t_rtio_mu)
         delay(self.params.t_light_only_image_delay * s)
+
+        self.lightsheet.on()
+        delay(10.e-3*s)
+        self.lightsheet.off()
 
         self.trigger_camera()
         if with_light:
