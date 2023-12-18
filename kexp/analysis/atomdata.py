@@ -74,10 +74,15 @@ class atomdata():
             options: 'mot', 'bigmot', 'cmot', 'gm'. If another string is
             supplied, defaults to full ROI.
         '''
-
-        self.img_atoms = self.img_atoms.astype(np.int8)
-        self.img_light = self.img_light.astype(np.int8)
-        self.img_dark = self.img_dark.astype(np.int8)
+        dtype = self.img_atoms.dtype
+        if dtype == np.dtype('uint8'):
+            self.img_atoms = self.img_atoms.astype(np.int16)
+            self.img_light = self.img_light.astype(np.int16)
+            self.img_dark = self.img_dark.astype(np.int16)
+        elif dtype == np.dtype('uint16'):
+            self.img_atoms = self.img_atoms.astype(np.int32)
+            self.img_light = self.img_light.astype(np.int32)
+            self.img_dark = self.img_dark.astype(np.int32)
 
         self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
             compute_ODs(self.img_atoms,
