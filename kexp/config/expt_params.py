@@ -38,12 +38,13 @@ class ExptParams():
         self.t_gm = 2.5e-3
         self.t_gmramp = 5.5e-3
         self.t_optical_pumping = 50.e-6
-        self.t_optical_pumping_bias_rampup = 4.e-3
+        self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 30.e-3
         self.t_tweezer_ramp = 10.e-3
         self.t_tweezer_hold = 50.e-3
+        self.t_tweezer_1064_ramp = 10.e-3
         self.t_mot_reload = 2.
         self.t_recover = 20.e-3
 
@@ -72,7 +73,8 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.5
 
         self.v_mot_current = 3.0
-        self.v_zshim_current = 0.56
+        # self.v_zshim_current = 0.18 # 15A supply
+        self.v_zshim_current = 0.032
         self.v_xshim_current = 0.92
         self.v_yshim_current = 0.56
 
@@ -114,7 +116,7 @@ class ExptParams():
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
         self.amp_optical_pumping_op = 0.25
-        self.v_zshim_current_op = 7.0
+        self.v_zshim_current_op = 9.99
         self.detune_optical_pumping_r_op = 0.0
         self.amp_optical_pumping_r_op = 0.3
 
@@ -134,6 +136,13 @@ class ExptParams():
         self.v_pd_tweezer_ramp_start = 0.0
         self.v_pd_tweezer_ramp_end = 5.0
         self.n_tweezer_ramp_steps = 50
+
+        #1064 tweezer
+        self.frequency_aod_1064 = 75.e6
+        self.amp_1064 = .25
+        self.amp_tweezer_1064_ramp_start = 0.0
+        self.amp_tweezer_1064_ramp_end = .25
+        self.n_tweezer_1064_ramp_steps = 50
 
         self.compute_derived()
         
@@ -170,6 +179,10 @@ class ExptParams():
     def compute_tweezer_ramp_params(self):
         self.v_pd_tweezer_ramp_list = np.linspace(self.v_pd_tweezer_ramp_start,self.v_pd_tweezer_ramp_end, self.n_tweezer_ramp_steps)
         self.dt_tweezer_ramp = self.t_tweezer_ramp / self.n_tweezer_ramp_steps
+    
+    def compute_tweezer_1064_ramp_params(self):
+        self.amp_tweezer_1064_ramp_list = np.linspace(self.amp_tweezer_1064_ramp_start,self.amp_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps)
+        self.dt_tweezer_1064_ramp = self.t_tweezer_1064_ramp / self.n_tweezer_1064_ramp_steps
 
     def compute_derived(self):
         '''loop through methods (except built in ones) and compute all derived quantities'''

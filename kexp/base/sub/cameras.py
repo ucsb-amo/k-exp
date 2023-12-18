@@ -66,12 +66,6 @@ class Cameras():
 
     def choose_camera(self,setup_camera=True,absorption_image=True,basler_imaging=True,andor_imaging=False):
         # allow andor_imaging to override basler_imaging
-        if andor_imaging and basler_imaging:
-            basler_imaging = False
-            absorption_image = False
-        if not basler_imaging and not andor_imaging:
-            andor_imaging = True
-            absorption_image = False
 
         # choose the correct camera
         if andor_imaging:

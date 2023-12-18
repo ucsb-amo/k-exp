@@ -8,6 +8,7 @@ class ttl_frame():
 
         self.ttl_list = []
 
+        self.awg = self.ttl_assign(8)
         self.basler = self.ttl_assign(9)
         self.lightsheet_sw = self.ttl_assign(10)
         self.magnets = self.ttl_assign(11)
