@@ -20,8 +20,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [500,1300]
         roiy = [300,1100] 
     elif crop_type == 'gm2':
-        roix = [850, 1350]
-        roiy = [250, 950]
+        roix = [500,1300]
+        roiy = [500,1200] 
     elif crop_type == 'fluor_gm':
         roix = [500, 1450]
         roiy = [200, 950]

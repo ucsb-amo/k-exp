@@ -77,7 +77,7 @@ class scan_optical_pumping(EnvExperiment, Base):
                 # self.set_magnet_current(v=v)
                 # self.ttl.magnets.on()
 
-                self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
+                self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
                 
                 # self.ttl.magnets.off()
                 delay(50.e-3*s)

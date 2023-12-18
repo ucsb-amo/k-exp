@@ -9,8 +9,6 @@ class sg(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self)
-        # self.camera_params.serial_no = camera_params.basler_fluor_camera_params.serial_no
-        # self.camera_params.magnification = camera_params.basler_fluor_camera_params.magnification
 
         self.run_info._run_description = "SG"
 
@@ -18,12 +16,16 @@ class sg(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 8
+        self.p.t_mot_load = 0.25
+
         self.p.N_repeats = 1
 
-        self.p.t_tof = np.linspace(17000,25000,N) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(1.,5.,8) * 1.e-3
+        self.p.t_tof = 10.e-3
+        self.p.v_bias = np.linspace(0.,1.00,3)
+        self.p.v_sg_gradient = np.linspace(0.,5.,5)
 
-        self.xvarnames = ['t_tof']
+        self.xvarnames = ['v_bias','v_sg_gradient']
 
         self.finish_build()
 
@@ -33,35 +35,42 @@ class sg(EnvExperiment, Base):
         self.init_kernel()
 
         self.StartTriggeredGrab()
-        delay(self.p.t_grab_start_wait*s)
+        delay(self.camera_params.connection_delay*s)
         
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-        for t_tof in self.p.t_tof:
+        # for t_tof in self.p.t_tof:
+        for v_bias in self.p.v_bias:
+            for v_ah_grad in self.p.v_sg_gradient:
 
-            self.mot(self.p.t_mot_load * s)
-            self.dds.push.off()
-            self.cmot_d1(self.p.t_d1cmot * s)
-            self.gm(self.p.t_gm * s)
-            self.gm_ramp(self.p.t_gmramp * s)
-            self.release()
+                self.mot(self.p.t_mot_load * s)
+                self.dds.push.off()
+                self.cmot_d1(self.p.t_d1cmot * s)
+                self.gm(self.p.t_gm * s)
+                self.gm_ramp(self.p.t_gmramp * s)
+                self.release()
+                self.flash_repump()
 
-            # self.flash_repump(t=150.e-6,amp=0.188)
+                self.set_zshim_magnet_current(v=v_bias)
+                # self.optical_pumping(t=10.e-6,t_bias_rampup=0.)
+                self.ttl.machine_table_trig.on()
+                self.set_magnet_current(v=v_ah_grad)
+                # delay(2.e-3)
+                self.ttl.magnets.on()
 
-            # self.set_zshim_magnet_current(v=9.99)
-            self.ttl_magnets.on()
+                # ### abs img
+                delay(self.p.t_tof * s)
+                self.ttl.magnets.off()
+                self.set_zshim_magnet_current(v=self.p.v_zshim_current)
+                self.set_magnet_current()
+                delay(5.e-3)
+                # self.flash_repump()
+                self.abs_image()
+                self.ttl.machine_table_trig.off()
 
-            ### abs img
-            delay(t_tof * s)
-            self.ttl_magnets.off()
-            self.flash_repump()
-            self.abs_image()
+                self.core.break_realtime()
 
-            self.core.break_realtime()
-
-            self.set_zshim_magnet_current()
-
-            delay(self.p.t_recover)
+                delay(self.p.t_recover)
 
         self.mot_observe()
 

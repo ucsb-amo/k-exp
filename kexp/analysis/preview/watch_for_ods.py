@@ -11,7 +11,7 @@ from preview_experiment import T_TOF_US, T_MOTLOAD_S
 
 ####
 
-CROP_TYPE = ''
+CROP_TYPE = 'lightsheet_short'
 ODLIM = 1
 N_HISTORY = 10
 PLOT_CENTROID = False
