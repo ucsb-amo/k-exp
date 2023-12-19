@@ -8,14 +8,14 @@ class ttl_frame():
 
         self.ttl_list = []
 
-        self.awg = self.ttl_assign(8)
-        self.basler = self.ttl_assign(9)
+        self.awg = self.ttl_assign(15)
+        self.basler = self.ttl_assign(5)
         self.lightsheet_sw = self.ttl_assign(10)
-        self.magnets = self.ttl_assign(11)
-        self.spectrum_trig = self.ttl_assign(12)
-        self.andor = self.ttl_assign(13)
-        self.pd_scope_trig = self.ttl_assign(14)
-        self.machine_table_trig = self.ttl_assign(25)
+        self.magnets = self.ttl_assign(6)
+        # self.spectrum_trig = self.ttl_assign()
+        self.andor = self.ttl_assign(7)
+        # self.pd_scope_trig = self.ttl_assign()
+        # self.machine_table_trig = self.ttl_assign(25)
 
         self._write_ttl_keys()
 

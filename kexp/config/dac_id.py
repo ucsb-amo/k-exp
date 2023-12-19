@@ -13,15 +13,14 @@ class dac_frame():
 
         self.dac_ch_list = []
 
-        self.mot_current_control = self.assign_dac_ch(0)
-        self.vva_d1_3d_r = self.assign_dac_ch(1)
+        self.lightsheet_mod_amp = self.assign_dac_ch(0)
+        self.vva_lightsheet = self.assign_dac_ch(1)
         self.vva_d1_3d_c = self.assign_dac_ch(2)
-        self.vva_tweezer = self.assign_dac_ch(3)
-        self.vva_lightsheet = self.assign_dac_ch(5)
-        self.zshim_current_control = self.assign_dac_ch(6)
-        self.lightsheet_mod_amp = self.assign_dac_ch(7)
-        self.xshim_current_control = self.assign_dac_ch(8)
-        self.yshim_current_control = self.assign_dac_ch(9)
+        self.vva_d1_3d_r = self.assign_dac_ch(3)
+        self.mot_current_control = self.assign_dac_ch(4)
+        self.xshim_current_control = self.assign_dac_ch(5)
+        self.yshim_current_control = self.assign_dac_ch(6)
+        self.zshim_current_control = self.assign_dac_ch(7)
 
         self._write_dac_keys()
         
