@@ -613,10 +613,12 @@ class Cooling():
         
         self.set_magnet_current(v = v_current)
         self.set_zshim_magnet_current(v = v_zshim_current)
+        self.dac.xshim_current_control.set(v=self.params.v_xshim_current)
+        self.dac.yshim_current_control.set(v=self.params.v_yshim_current)
 
         delay(1*ms)
 
-        # return to mot load state
+        # # return to mot load state
         self.dds.push.on()
         delay(1*ms)
         self.switch_d1_3d(0)
