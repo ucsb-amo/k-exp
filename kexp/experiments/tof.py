@@ -21,12 +21,12 @@ class tof(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_mot_load = 0.25
 
-        self.p.amp_imaging_abs = 0.26
+        self.p.amp_imaging_abs = 0.2
 
-        # self.p.t_tof = np.linspace(500,1000,N) * 1.e-6 # mot
+        self.p.t_tof = np.linspace(500,1000,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(5000,7000,N) * 1.e-6 # gm
-        self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(100,20368,N) * 1.e-6
         # self.p.t_tof = np.linspace(100.,700.,N) * 1.e-6
         # self.p.t_tof = np.linspace(14000.,17000.,N) * 1.e-6
@@ -53,22 +53,14 @@ class tof(EnvExperiment, Base):
 
         for t_tof in self.p.t_tof:
 
-            self.dds.tweezer_aod.set_dds(frequency=self.params.frequency_aod_1064,
-                                 amplitude=.25)
-
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
-            # self.ttl.pd_scope_trig.on()
-            self.cmot_d1(self.p.t_d1cmot * s)
-            self.gm(self.p.t_gm * s)
-            self.gm_ramp(self.p.t_gmramp * s)
-            # self.dds.d1_3d_c.off()
-            # delay(100.e-6)
-            # self.dds.d1_3d_r.off()
+            # # self.ttl.pd_scope_trig.on()
+            # self.cmot_d1(self.p.t_d1cmot * s)
+            # self.gm(self.p.t_gm * s)
+            # self.gm_ramp(self.p.t_gmramp * s)
             # self.ttl.pd_scope_trig.off()
             self.release()
-
-            # self.dds.tweezer_aod.on()
 
             # self.set_magnet_current(v=5.)
             # self.ttl.magnets.on()
@@ -88,8 +80,6 @@ class tof(EnvExperiment, Base):
             # self.fl_image()
             self.flash_repump()
             self.abs_image()
-
-            self.dds.tweezer_aod.off()
 
             self.core.break_realtime()
             

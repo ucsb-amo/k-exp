@@ -6,7 +6,7 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class test(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=False)
@@ -18,9 +18,7 @@ class tof(EnvExperiment, Base):
         
         self.init_kernel()
 
-        self.release()
-
-        self.abs_image()
+        self.mot_observe()
         
     def analyze(self):
 
