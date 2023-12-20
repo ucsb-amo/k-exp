@@ -12,7 +12,7 @@ dv = -1.
 dv_list = np.linspace(0.,1.,5)
 
 class lightsheet():
-    def __init__(self, dac_ch:DAC_CH, paint_dds:DDS, sw_ttl:TTL, expt_params:ExptParams):
+    def __init__(self, vva_dac:DAC_CH, paint_amp_dac:DAC_CH, sw_ttl:TTL, expt_params:ExptParams):
         """Controls the light sheet beam.
 
         Args:
@@ -24,25 +24,22 @@ class lightsheet():
             sw_ttl (TTL): TTL
             channel, controls an RF switch between AWG and amplifier.
         """        
-        self.dac_ch = dac_ch
-        self.dds = paint_dds
+        self.vva_dac = vva_dac
+        self.paint_amp_dac = paint_amp_dac
         self.ttl = sw_ttl
         self.params = expt_params
 
     @kernel
-    def set_paint_params(self,amplitude=dv,frequency=dv):
-        if frequency == dv:
-            frequency = self.params.frequency_painting
-        if amplitude == dv:
-            amplitude = self.params.amp_painting
-        self.dds.set_dds(frequency=frequency,amplitude=amplitude)
-        self.dds.on()
+    def set_paint_amp(self,v_paint_amp=dv,load_dac=True):
+        if v_paint_amp == dv:
+            v_paint_amp = 0.0
+        self.vva_dac.set(v=v_paint_amp,load_dac=load_dac)
 
     @kernel
     def set_power(self,v_lightsheet_vva=dv,load_dac=True):
         if v_lightsheet_vva == dv:
             v_lightsheet_vva = self.params.v_pd_lightsheet
-        self.dac_ch.set(v=v_lightsheet_vva,load_dac=load_dac)
+        self.vva_dac.set(v=v_lightsheet_vva,load_dac=load_dac)
     
     @kernel
     def ramp(self,t,v_ramp_list=dv_list):
@@ -52,11 +49,11 @@ class lightsheet():
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
 
-        self.dac_ch.set(v=v_ramp_list[0])
+        self.vva_dac.set(v=v_ramp_list[0])
         self.on()
         delay(dt_ramp)
         for v in v_ramp_list[1:]:
-            self.dac_ch.set(v=v)
+            self.vva_dac.set(v=v)
             delay(dt_ramp)
     
     @kernel
@@ -67,11 +64,11 @@ class lightsheet():
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
 
-        self.dac_ch.set(v=v_ramp_list[0])
+        self.vva_dac.set(v=v_ramp_list[0])
         self.on()
         delay(dt_ramp)
         for v in v_ramp_list[1:]:
-            self.dac_ch.set(v=v)
+            self.vva_dac.set(v=v)
             delay(dt_ramp)
 
     @kernel
@@ -81,8 +78,3 @@ class lightsheet():
     @kernel
     def off(self):
         self.ttl.off()
-
-    @kernel
-    def set(self,paint_amplitude=dv,paint_frequency=dv,v_lightsheet_vva=dv):
-        self.set_paint_params(amplitude=paint_amplitude,frequency=paint_frequency)
-        self.set_power(v_lightsheet_vva=v_lightsheet_vva)

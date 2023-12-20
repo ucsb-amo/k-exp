@@ -50,8 +50,8 @@ class Devices():
         self.dds_list = self.dds.dds_list
         
         # painted ligthsheet
-        self.lightsheet = lightsheet(dac_ch=self.dac.vva_lightsheet,
-                                     paint_dds=self.dds.lightsheet_paint,
+        self.lightsheet = lightsheet(vva_dac=self.dac.vva_lightsheet,
+                                     paint_amp_dac=self.dac.lightsheet_mod_amp,
                                      sw_ttl=self.ttl.lightsheet_sw,
                                      expt_params=self.params)
 
