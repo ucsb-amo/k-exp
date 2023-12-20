@@ -247,6 +247,7 @@ class Cooling():
     def cmot_d1(self,t,
             detune_d1_c = dv,
             v_pd_d1_c = dv,
+            amp_d1_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
             v_current = dv):
@@ -256,6 +257,8 @@ class Cooling():
             detune_d1_c = self.params.detune_d1_c_d1cmot
         if v_pd_d1_c == dv:
             v_pd_d1_c = self.params.v_pd_d1_c_d1cmot
+        if amp_d1_c == dv:
+            amp_d1_c = self.params.amp_d1_3d_c
         if detune_d2_r == dv:
             detune_d2_r = self.params.detune_d2_r_d1cmot
         if amp_d2_r == dv:
@@ -284,8 +287,10 @@ class Cooling():
     def gm(self,t,
             detune_d1_c = dv,
             v_pd_d1_c = dv,
+            amp_d1_c = dv,
             detune_d1_r = dv,
             v_pd_d1_r = dv,
+            amp_d1_r = dv,
             detune_d1 = dv,
             t_magnet_off_pretrigger = dv):
         
@@ -301,8 +306,12 @@ class Cooling():
         
         if v_pd_d1_c == dv:
             v_pd_d1_c = self.params.v_pd_d1_c_gm
+        if amp_d1_c == dv:
+            amp_d1_c = self.params.amp_d1_3d_c
         if v_pd_d1_r == dv:
             v_pd_d1_r = self.params.v_pd_d1_r_gm
+        if amp_d1_r == dv:
+            amp_d1_r = self.params.amp_d1_3d_r
 
         if t_magnet_off_pretrigger == dv:
             t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger

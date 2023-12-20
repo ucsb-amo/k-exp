@@ -67,11 +67,6 @@ class dds_frame():
         self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1')
         self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1')
 
-
-        # self.unused_0 = self.dds_assign(2,0)
-        # self.unused_1 = self.dds_assign(2,3)
-        # self.tweezer_aod = self.dds_assign(3,2, ao_order = 1)
-
         self.write_dds_keys()
         self.make_dds_array()
         self.dds_list = np.array(self.dds_array).flatten()

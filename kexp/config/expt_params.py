@@ -48,6 +48,10 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_recover = 20.e-3
 
+        # DAC controlled AO amplitudes
+        self.amp_d1_3d_c = 0.3
+        self.amp_d1_3d_r = 0.3
+
         #push beam
         self.detune_push = -2.
         self.amp_push = 0.12
