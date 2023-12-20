@@ -4,7 +4,7 @@ from artiq.coredevice.zotino import Zotino
 from kexp.control.artiq.DAC_CH import DAC_CH
 from kexp.control.artiq.DDS import DDS
 
-FORBIDDEN_CH = [4]
+FORBIDDEN_CH = []
 
 class dac_frame():
     def __init__(self,dac_device=Zotino):
