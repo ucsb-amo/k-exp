@@ -73,8 +73,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.5
 
         self.v_mot_current = 3.0
-        # self.v_zshim_current = 0.18 # 15A supply
-        self.v_zshim_current = 0.032
+        self.v_zshim_current = 0.185
         self.v_xshim_current = 0.92
         self.v_yshim_current = 0.56
 
