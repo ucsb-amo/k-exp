@@ -18,7 +18,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
 
         self.params = ExptParams()
 
-        self.prepare_devices()
+        self.prepare_devices(expt_params=self.params)
 
         self.choose_camera(setup_camera,absorption_image,basler_imaging,andor_imaging)
 
