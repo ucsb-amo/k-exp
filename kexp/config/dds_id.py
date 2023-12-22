@@ -3,7 +3,6 @@ import numpy as np
 from artiq.coredevice import ad53xx
 from artiq.experiment import kernel
 
-import kexp.config.dds_state as dds_state
 from kexp.control import DDS, DummyCore
 from kexp.config.dac_id import dac_frame
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
@@ -12,24 +11,33 @@ from kexp.config.dds_calibration import DDS_VVA_Calibration
 from jax import AD9910Manager, RAMProfile, RAMType
 from artiq.coredevice import ad9910
 
+from kexp.config.expt_params import ExptParams
+
 N_uru = 5
 N_ch = 4
 shape = (N_uru,N_ch)
 
 RAMP_STEP_TIME = 100 * 4.e-9
 
-default_dac_dds_amplitude = 0.3
+# default_dac_dds_amplitude = 0.3
+
+dv = -0.1
+d_exptparams = ExptParams()
 
 def dds_empty_frame(x=None):
     return [[x for _ in range(N_ch)] for _ in range(N_uru)]
 
 class dds_frame():
     '''
-    Associates each dds in the dds_state file with a variable to be referenced in
-    artiq experiments. Also, records the AOM order so that AOM frequencies can be
-    determined from detunings.
+    Associates each dds with a instance of the DDS class for use in experiments.
+    Also, records the AOM order so that AOM frequencies can be determined from
+    detunings.
     '''
-    def __init__(self, dds_state = dds_state, dac_frame_obj:dac_frame = [], core = DummyCore()):
+    def __init__(self, expt_params:ExptParams=d_exptparams,
+                  dac_frame_obj:dac_frame = [],
+                    core = DummyCore()):
+        
+        self.p = expt_params
 
         self.core = core
         self.dds_manager = [DDSManager]
@@ -40,9 +48,6 @@ class dds_frame():
         self._N_uru = N_uru
         self._N_ch = N_ch
         self._shape = shape
-        self._default_dac_dds_amplitude = default_dac_dds_amplitude
-
-        self._dds_state = dds_state
 
         if dac_frame_obj:
             self._dac_frame = dac_frame_obj
@@ -52,38 +57,52 @@ class dds_frame():
         self.dds_array = [[DDS(uru,ch,dac_device=self._dac_frame.dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
-        self.push = self.dds_assign(2,0, ao_order = 1, transition = 'D2')
-        self.d2_2d_r = self.dds_assign(2,1, ao_order = 1, transition = 'D2')
-        self.d2_2d_c = self.dds_assign(2,2, ao_order = -1, transition = 'D2')
-        self.d2_3d_r = self.dds_assign(2,3, ao_order = 1, transition = 'D2')
-        self.d2_3d_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2')
-        self.mot_killer = self.dds_assign(3,1, ao_order = -1, transition = 'D2')
+        self.push = self.dds_assign(2,0, ao_order = 1, transition = 'D2',
+                                    default_detuning = self.p.detune_push,
+                                    default_amp = self.p.amp_push)
+        self.d2_2d_r = self.dds_assign(2,1, ao_order = 1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2_r_2dmot,
+                                    default_amp = self.p.amp_d2_r_2dmot)
+        self.d2_2d_c = self.dds_assign(2,2, ao_order = -1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2_c_2dmot,
+                                    default_amp = self.p.amp_d2_c_2dmot)
+        self.d2_3d_r = self.dds_assign(2,3, ao_order = 1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2_r_mot,
+                                    default_amp = self.p.amp_d2_r_mot)
+
+        self.d2_3d_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2_c_mot,
+                                    default_amp = self.p.amp_d2_c_mot)
+        self.mot_killer = self.dds_assign(3,1, ao_order = -1, transition = 'D2',
+                                    default_detuning = 0.,
+                                    default_amp = 0.188)
         self.beatlock_ref = self.dds_assign(3,2)
         self.d1_3d_c = self.dds_assign(3,3, ao_order = -1, transition = 'D1',
-                                        dac_ch_vpd = self._dac_frame.vva_d1_3d_c.ch)
+                                    dac_ch_vpd = self._dac_frame.vva_d1_3d_c.ch,
+                                    default_detuning = self.p.detune_d1_c_gm,
+                                    default_amp = self.p.amp_d1_3d_c)
+        
         self.d1_3d_r = self.dds_assign(4,0, ao_order = 1, transition = 'D1',
-                                        dac_ch_vpd = self._dac_frame.vva_d1_3d_r.ch)
-        self.imaging = self.dds_assign(4,1, ao_order = 1)
-        self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1')
-        self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1')
+                                    dac_ch_vpd = self._dac_frame.vva_d1_3d_r.ch,
+                                    default_detuning = self.p.detune_d1_r_gm,
+                                    default_amp = self.p.amp_d1_3d_r)
+        self.imaging = self.dds_assign(4,1, ao_order = 1,
+                                    default_freq = self.p.frequency_ao_imaging,
+                                    default_amp = self.p.amp_imaging_abs)
+        self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1',
+                                    default_detuning = self.p.detune_optical_pumping_op,
+                                    default_amp = self.p.amp_optical_pumping_op)
+        self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1',
+                                    default_detuning = self.p.detune_optical_pumping_r_op,
+                                    default_amp = self.p.amp_optical_pumping_r_op)
 
         self.write_dds_keys()
         self.make_dds_array()
         self.dds_list = np.array(self.dds_array).flatten()
-        
-    def read_dds_state(self, uru, ch):
-        try:
-            idx = dds_state.ch.index((uru,ch))
-            freq = dds_state.freq[idx] * 1.e6
-            v_dac = dds_state.v_dac[idx]
-            amplitude = dds_state.amplitude[idx]
-        except:
-            freq = 0.0
-            amplitude = 0.0
-            v_dac = 0.0
-        return freq, amplitude, v_dac
 
-    def dds_assign(self, uru, ch, ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
+    def dds_assign(self, uru, ch, 
+                   default_freq=dv, default_detuning=dv, default_amp=dv, 
+                   ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
         '''
         Gets the DDS() object from the dds_state vector, sets the aom order, and
         returns the DDS() object.
@@ -92,14 +111,23 @@ class dds_frame():
         -------
         DDS
         '''
-        
-        freq, amplitude, v_dac = self.read_dds_state(uru,ch)
-        dds0 = DDS(urukul_idx=uru,ch=ch,frequency=freq,amplitude=amplitude,v_pd=v_dac)
+
+        dds0 = DDS(urukul_idx=uru,ch=ch,
+                   frequency=default_freq,
+                   amplitude=default_amp,
+                   v_pd=5.0)
         dds0.aom_order = ao_order
         dds0.transition = transition
         dds0.dac_ch = dac_ch_vpd
         dds0.dac_device = self._dac_frame.dac_device
         dds0.double_pass = double_pass
+
+        # set the frequency according to detuning if default_detuning was specified instead of default_freq
+        if default_detuning != dv and default_freq == dv:
+            freq = dds0.detuning_to_frequency(default_detuning)
+            dds0.frequency = freq
+        elif default_detuning != dv and default_freq != dv:
+            raise ValueError("Only one of default_detuning and default_freq must be set in dds_id.py.")
 
         self.dds_array[uru][ch] = dds0
 
@@ -123,61 +151,9 @@ class dds_frame():
         for idx in non_key_idx:
             uru = idx[0]
             ch = idx[1]
-            freq, amp, v_pd = self.read_dds_state(idx[0],idx[1])
+            freq, amp, v_pd = 0., 0., 0.
             this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame.dac_device)
             self.dds_array[uru][ch] = this_dds
-            
-    # def get_amplitude_ramp_list(self, t_ramp, power_i, power_f):
-    #     dt = RAMP_STEP_TIME
-    #     N = round(t_ramp / dt)
-    #     if N > 1024:
-    #         N = 1024
-    #         self.ramp_dt = round( ( t_ramp / 1024 ) / 4.e-9 ) * 4.e-9
-    #     p_list = np.linspace(power_i,power_f,N)
-    #     amp_list = self.dds_amp_calibration.power_fraction_to_dds_amplitude(p_list).tolist()
-    #     return amp_list
-        
-    # def set_amplitude_profile(self, dds:DDS, t_ramp:float, amp=-1., p_i=-1., p_f=-1., dwell_end=1):
-
-    #     _power_specified = p_i > 0. and p_f > 0.
-    #     _amp_specified = amp > 0.
-    #     if (_power_specified and _amp_specified) or not (_power_specified or _amp_specified):
-    #         raise ValueError("Either initial and final power, or constant amplitude should be specified. \
-    #                           Either both or none were specified.")
-        
-    #     if _amp_specified and not _power_specified:
-    #         amp_list = [amp]
-    #     if _power_specified and not _amp_specified:
-    #         amp_list = self.get_amplitude_ramp_list(t_ramp,p_i,p_f)
-
-    #     this_profile = RAMProfile(
-    #         dds.dds_device, amp_list, self.ramp_dt, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)
-
-    #     self.dds_manager.append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=this_profile)
-    
-    # @kernel
-    # def enable_profile(self):
-    #     self.dds_manager.enable()
-    #     self.dds_manager.commit_enable()
-
-    # @kernel
-    # def disable_profile(self):
-    #     self.dds_manager.disable()
-    #     self.dds_manager.commit_disable()
-    
-    # def get_ramp_dt(self, t_ramp):
-    #     '''
-    #     Returns the number of points to use in a ramp and the corresponding
-    #     minimum timestep dt.
-    #     '''
-    #     dt = RAMP_STEP_TIME
-    #     N_points = round(t_ramp / dt)
-    #     if N_points > 1024:
-    #         N_points = 1024
-    #         ramp_dt = round( ( t_ramp / 1024 ) / 4.e-9 ) * 4.e-9
-    #     else:
-    #         ramp_dt = dt
-    #     return N_points, ramp_dt
 
     def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):
         """Define an amplitude ramp profile and append to the specified DDSManager object.

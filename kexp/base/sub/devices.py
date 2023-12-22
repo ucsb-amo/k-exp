@@ -22,11 +22,11 @@ d_exptparams = ExptParams()
 
 class Devices():
 
-    def __init__(self):
-        self.params = ExptParams()
-
     def prepare_devices(self,expt_params:ExptParams=d_exptparams):
         # for syntax highlighting
+
+        self.params = expt_params
+
         self.core = Core
         zotino = Zotino
         self.core_dma = CoreDMA
@@ -44,7 +44,7 @@ class Devices():
         self.get_ttl_devices()
 
         # set up dds_frame
-        self.dds = dds_frame(dac_frame_obj=self.dac, core=self.core)
+        self.dds = dds_frame(dac_frame_obj=self.dac, core=self.core, expt_params=self.params)
         self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
