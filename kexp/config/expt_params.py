@@ -48,6 +48,10 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_recover = 20.e-3
 
+        # DAC controlled AO amplitudes
+        self.amp_d1_3d_c = 0.3
+        self.amp_d1_3d_r = 0.3
+
         #push beam
         self.detune_push = -2.
         self.amp_push = 0.12
@@ -73,8 +77,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.5
 
         self.v_mot_current = 3.0
-        # self.v_zshim_current = 0.18 # 15A supply
-        self.v_zshim_current = 0.032
+        self.v_zshim_current = 0.185
         self.v_xshim_current = 0.92
         self.v_yshim_current = 0.56
 

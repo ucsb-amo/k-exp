@@ -18,7 +18,10 @@ class test(EnvExperiment, Base):
         
         self.init_kernel()
 
-        self.mot_observe()
+        # self.dds.d1_3d_c.set_dds_gamma(delta=self.params.detune_d1_c_gm,amplitude=0.3,v_pd=5.0)
+        # self.dds.d1_3d_c.on()
+
+        self.gm(1.e-3)
         
     def analyze(self):
 

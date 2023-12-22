@@ -247,21 +247,27 @@ class Cooling():
     def cmot_d1(self,t,
             detune_d1_c = dv,
             v_pd_d1_c = dv,
+            amp_d1_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
-            v_current = dv):
+            v_current = dv,
+            t_magnet_off_pretrigger = dv):
         
         ### Start Defaults ###
         if detune_d1_c == dv:
             detune_d1_c = self.params.detune_d1_c_d1cmot
         if v_pd_d1_c == dv:
             v_pd_d1_c = self.params.v_pd_d1_c_d1cmot
+        if amp_d1_c == dv:
+            amp_d1_c = self.params.amp_d1_3d_c
         if detune_d2_r == dv:
             detune_d2_r = self.params.detune_d2_r_d1cmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_d1cmot
         if v_current == dv:
             v_current = self.params.v_d1cmot_current
+        if t_magnet_off_pretrigger == dv:
+            t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
         ### End Defaults ###
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
@@ -277,17 +283,22 @@ class Cooling():
         self.dds.d2_3d_c.off()
         self.dds.d1_3d_r.off()
         self.set_magnet_current(v = v_current)
-        delay(t)
+
+        delay(t - t_magnet_off_pretrigger)
+        self.ttl.magnets.off()
+        self.set_magnet_current(v=0.)
+        delay(t_magnet_off_pretrigger)
 
     #GM with only D1, turning B field off
     @kernel
     def gm(self,t,
             detune_d1_c = dv,
             v_pd_d1_c = dv,
+            amp_d1_c = dv,
             detune_d1_r = dv,
             v_pd_d1_r = dv,
-            detune_d1 = dv,
-            t_magnet_off_pretrigger = dv):
+            amp_d1_r = dv,
+            detune_d1 = dv):
         
         ### Start Defaults ###
         if detune_d1 != dv:
@@ -301,22 +312,28 @@ class Cooling():
         
         if v_pd_d1_c == dv:
             v_pd_d1_c = self.params.v_pd_d1_c_gm
+        if amp_d1_c == dv:
+            amp_d1_c = self.params.amp_d1_3d_c
         if v_pd_d1_r == dv:
             v_pd_d1_r = self.params.v_pd_d1_r_gm
+        if amp_d1_r == dv:
+            amp_d1_r = self.params.amp_d1_3d_r
 
-        if t_magnet_off_pretrigger == dv:
-            t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
-        ### End Defaults ###
+        # if t_magnet_off_pretrigger == dv:
+        #     t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
+        # ### End Defaults ###
 
-        delay(-t_magnet_off_pretrigger)
-        self.ttl.magnets.off()
-        self.set_magnet_current(v=0.)
-        delay(t_magnet_off_pretrigger)
+        # delay(-t_magnet_off_pretrigger)
+        # self.ttl.magnets.off()
+        # self.set_magnet_current(v=0.)
+        # delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
+                                       amplitude=amp_d1_c,
                                        v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
+                                       amplitude=amp_d1_r,
                                        v_pd=v_pd_d1_r)
         with parallel:
             self.switch_d1_3d(1)
@@ -370,8 +387,10 @@ class Cooling():
     def gm_ramp(self, t_gmramp = dv,
             detune_d1_c = dv,
             v_pd_d1_c_list = dvlist,
+            amp_d1_c = dv,
             detune_d1_r = dv,
             v_pd_d1_r_list = dvlist,
+            amp_d1_r = dv,
             detune_d1 = dv):
         
         ### Start Defaults ###
@@ -383,6 +402,11 @@ class Cooling():
                 detune_d1_c = self.params.detune_d1_c_gm
             if detune_d1_r == dv:
                 detune_d1_r = self.params.detune_d1_r_gm
+
+        if amp_d1_c == dv:
+            amp_d1_c = self.params.amp_d1_3d_c
+        if amp_d1_r == dv:
+            amp_d1_r = self.params.amp_d1_3d_r
         
         if v_pd_d1_c_list == dvlist:
             v_pd_d1_c_list = self.params.v_pd_c_gmramp_list
@@ -404,10 +428,12 @@ class Cooling():
 
         ### End Defaults ###
 
-        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
+        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
+                                       amplitude=amp_d1_c, 
                                        v_pd=v_pd_d1_c_list[0])
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
+                                       amplitude=amp_d1_r,
                                        v_pd=v_pd_d1_r_list[0])
 
         self.switch_d1_3d(1)
@@ -613,10 +639,12 @@ class Cooling():
         
         self.set_magnet_current(v = v_current)
         self.set_zshim_magnet_current(v = v_zshim_current)
+        self.dac.xshim_current_control.set(v=self.params.v_xshim_current)
+        self.dac.yshim_current_control.set(v=self.params.v_yshim_current)
 
         delay(1*ms)
 
-        # return to mot load state
+        # # return to mot load state
         self.dds.push.on()
         delay(1*ms)
         self.switch_d1_3d(0)

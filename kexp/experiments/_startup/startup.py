@@ -13,5 +13,9 @@ class Startup(EnvExperiment, Base):
         '''
         Init all devices, set dds to default values and turn on
         '''
+        rtio_up = False
+        while not rtio_up:
+            self.core.get_rtio_destination_status(destination=1)
         self.init_kernel()
         self.mot_observe()
+        pass

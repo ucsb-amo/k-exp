@@ -12,7 +12,7 @@ from kexp.config.dds_calibration import DDS_VVA_Calibration
 from jax import AD9910Manager, RAMProfile, RAMType
 from artiq.coredevice import ad9910
 
-N_uru = 4
+N_uru = 5
 N_ch = 4
 shape = (N_uru,N_ch)
 
@@ -52,24 +52,20 @@ class dds_frame():
         self.dds_array = [[DDS(uru,ch,dac_device=self._dac_frame.dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
-        self.push = self.dds_assign(0,0, ao_order = 1, transition = 'D2')
-        self.d2_2d_r = self.dds_assign(0,1, ao_order = 1, transition = 'D2')
-        self.d2_2d_c = self.dds_assign(0,2, ao_order = -1, transition = 'D2')
-        self.d2_3d_r = self.dds_assign(0,3, ao_order = 1, transition = 'D2')
-        self.d2_3d_c = self.dds_assign(1,0, ao_order = -1, transition = 'D2')
-        self.optical_pumping = self.dds_assign(1,1, ao_order = -1, transition = 'D1')
-        self.d1_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D1',
+        self.push = self.dds_assign(2,0, ao_order = 1, transition = 'D2')
+        self.d2_2d_r = self.dds_assign(2,1, ao_order = 1, transition = 'D2')
+        self.d2_2d_c = self.dds_assign(2,2, ao_order = -1, transition = 'D2')
+        self.d2_3d_r = self.dds_assign(2,3, ao_order = 1, transition = 'D2')
+        self.d2_3d_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2')
+        self.mot_killer = self.dds_assign(3,1, ao_order = -1, transition = 'D2')
+        self.beatlock_ref = self.dds_assign(3,2)
+        self.d1_3d_c = self.dds_assign(3,3, ao_order = -1, transition = 'D1',
                                         dac_ch_vpd = self._dac_frame.vva_d1_3d_c.ch)
-        self.d1_3d_r = self.dds_assign(1,3, ao_order = 1, transition = 'D1',
+        self.d1_3d_r = self.dds_assign(4,0, ao_order = 1, transition = 'D1',
                                         dac_ch_vpd = self._dac_frame.vva_d1_3d_r.ch)
-        self.tweezer = self.dds_assign(2,0, 
-                                       dac_ch_vpd = self._dac_frame.vva_tweezer.ch)
-        self.beatlock_ref = self.dds_assign(2,1)
-        self.imaging = self.dds_assign(2,2, ao_order = 1)
-        self.lightsheet_paint = self.dds_assign(2,3)
-        self.op_r = self.dds_assign(3,0, ao_order = 1, transition = 'D1')
-        self.second_imaging = self.dds_assign(3,1, ao_order = -1, transition = 'D2')
-        self.tweezer_aod = self.dds_assign(3,2, ao_order = 1)
+        self.imaging = self.dds_assign(4,1, ao_order = 1)
+        self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1')
+        self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1')
 
         self.write_dds_keys()
         self.make_dds_array()

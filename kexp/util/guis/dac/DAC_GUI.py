@@ -14,7 +14,7 @@ from DAC_GUI_ExptBuilder import DACGUIExptBuilder, CHDACGUIExptBuilder
 CODE_DIR = os.environ.get("code")
 CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","dac_config.py")
 
-SKIP_CHANNELS = [4]
+SKIP_CHANNELS = []
 
 # Create the main window
 class InputBox(QWidget):
@@ -220,8 +220,9 @@ class DACControlGrid(QWidget):
             if new_channels != channels:
                 skip_ch_idx = [channels.index(skip_ch) for skip_ch in SKIP_CHANNELS]
                 no_skip_ch_idx = list( set(range(len(voltages))).difference(skip_ch_idx) )
+                voltages = list(np.array(voltages)[no_skip_ch_idx])
             channels = new_channels
-            voltages = list(np.array(voltages)[no_skip_ch_idx])
+            
             print(channels)
             builder.execute_set_all_dac_voltage(channels, voltages)
             print(f"DAC channels are   : {channels}")

@@ -11,7 +11,7 @@ class TTL():
 
     @kernel
     def get_device(self,expt:artiq.experiment.EnvExperiment):
-        expt.get_device(self.name)
+        self.ttl_device = expt.get_device(self.name)
 
     @kernel
     def on(self):
