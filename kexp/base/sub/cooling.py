@@ -250,7 +250,8 @@ class Cooling():
             amp_d1_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
-            v_current = dv):
+            v_current = dv,
+            t_magnet_off_pretrigger = dv):
         
         ### Start Defaults ###
         if detune_d1_c == dv:
@@ -265,6 +266,8 @@ class Cooling():
             amp_d2_r = self.params.amp_d2_r_d1cmot
         if v_current == dv:
             v_current = self.params.v_d1cmot_current
+        if t_magnet_off_pretrigger == dv:
+            t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
         ### End Defaults ###
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
@@ -280,7 +283,11 @@ class Cooling():
         self.dds.d2_3d_c.off()
         self.dds.d1_3d_r.off()
         self.set_magnet_current(v = v_current)
-        delay(t)
+
+        delay(t - t_magnet_off_pretrigger)
+        self.ttl.magnets.off()
+        self.set_magnet_current(v=0.)
+        delay(t_magnet_off_pretrigger)
 
     #GM with only D1, turning B field off
     @kernel
@@ -291,8 +298,7 @@ class Cooling():
             detune_d1_r = dv,
             v_pd_d1_r = dv,
             amp_d1_r = dv,
-            detune_d1 = dv,
-            t_magnet_off_pretrigger = dv):
+            detune_d1 = dv):
         
         ### Start Defaults ###
         if detune_d1 != dv:
@@ -313,14 +319,14 @@ class Cooling():
         if amp_d1_r == dv:
             amp_d1_r = self.params.amp_d1_3d_r
 
-        if t_magnet_off_pretrigger == dv:
-            t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
-        ### End Defaults ###
+        # if t_magnet_off_pretrigger == dv:
+        #     t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
+        # ### End Defaults ###
 
-        delay(-t_magnet_off_pretrigger)
-        self.ttl.magnets.off()
-        self.set_magnet_current(v=0.)
-        delay(t_magnet_off_pretrigger)
+        # delay(-t_magnet_off_pretrigger)
+        # self.ttl.magnets.off()
+        # self.set_magnet_current(v=0.)
+        # delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
                                        amplitude=amp_d1_c,
