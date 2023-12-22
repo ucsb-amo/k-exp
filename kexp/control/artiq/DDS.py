@@ -119,7 +119,7 @@ class DDS():
          frequency = self.detuning_to_frequency(linewidths_detuned=delta)
 
       if self.dac_control_bool:
-         self.set_dds(frequency=frequency, v_pd=v_pd)
+         self.set_dds(frequency=frequency, amplitude=amplitude, v_pd=v_pd)
       else:
          self.set_dds(frequency=frequency, amplitude=amplitude)
 

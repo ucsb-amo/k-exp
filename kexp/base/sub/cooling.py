@@ -323,9 +323,11 @@ class Cooling():
         delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
+                                       amplitude=amp_d1_c,
                                        v_pd=v_pd_d1_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
+                                       amplitude=amp_d1_r,
                                        v_pd=v_pd_d1_r)
         with parallel:
             self.switch_d1_3d(1)
@@ -379,8 +381,10 @@ class Cooling():
     def gm_ramp(self, t_gmramp = dv,
             detune_d1_c = dv,
             v_pd_d1_c_list = dvlist,
+            amp_d1_c = dv,
             detune_d1_r = dv,
             v_pd_d1_r_list = dvlist,
+            amp_d1_r = dv,
             detune_d1 = dv):
         
         ### Start Defaults ###
@@ -392,6 +396,11 @@ class Cooling():
                 detune_d1_c = self.params.detune_d1_c_gm
             if detune_d1_r == dv:
                 detune_d1_r = self.params.detune_d1_r_gm
+
+        if amp_d1_c == dv:
+            amp_d1_c = self.params.amp_d1_3d_c
+        if amp_d1_r == dv:
+            amp_d1_r = self.params.amp_d1_3d_r
         
         if v_pd_d1_c_list == dvlist:
             v_pd_d1_c_list = self.params.v_pd_c_gmramp_list
@@ -413,10 +422,12 @@ class Cooling():
 
         ### End Defaults ###
 
-        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
+        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
+                                       amplitude=amp_d1_c, 
                                        v_pd=v_pd_d1_c_list[0])
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
+                                       amplitude=amp_d1_r,
                                        v_pd=v_pd_d1_r_list[0])
 
         self.switch_d1_3d(1)
