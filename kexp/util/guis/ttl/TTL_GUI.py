@@ -13,8 +13,8 @@ from TTL_GUI_ExptBuilder import TTLGUIExptBuilder
 
 import os
 
-NUM_TTL = 32
-START_TTL = 8
+NUM_TTL = 40
+START_TTL = 4
 
 CODE_DIR = os.environ.get("code")
 CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","ttl_config.py")
@@ -211,13 +211,14 @@ class TTLControlGrid(QWidget):
             self.grid_layout.addLayout(row_layout)
             for j in range(8):
                 channel = i * 8 + j + START_TTL
-                input_box = InputBox(channel)
-                row_layout.addWidget(input_box)
-                self.input_boxes.append(input_box)
-                self.channels.append(input_box.channel)  # Add the channel number to the list
+                if channel < NUM_TTL:
+                    input_box = InputBox(channel)
+                    row_layout.addWidget(input_box)
+                    self.input_boxes.append(input_box)
+                    self.channels.append(input_box.channel)  # Add the channel number to the list
 
-                # Store the initial state of the toggle button in the toggle_states dictionary
-                self.toggle_states[channel] = input_box.toggle.isChecked()
+                    # Store the initial state of the toggle button in the toggle_states dictionary
+                    self.toggle_states[channel] = input_box.toggle.isChecked()
 
         # Create the "Set All Off" button
         off_button = QPushButton("Set All Off", parent=self)

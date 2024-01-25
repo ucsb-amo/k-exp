@@ -88,7 +88,7 @@ class TTLGUIExptBuilder():
                     # Specify the TTL device you want to control
                     self.core = self.get_device("core")
                     self.beans = []
-                    for ch in range({START_TTL},{START_TTL + NUM_TTL}):
+                    for ch in range({START_TTL},{NUM_TTL}):
                         self.beans.append(self.get_device("ttl"+str(ch)))
                 
                 @kernel
