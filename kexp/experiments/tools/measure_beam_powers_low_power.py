@@ -14,8 +14,8 @@ class measure_beam_powers(EnvExperiment, Base):
         
         self.init_kernel()
 
-        self.dds.d2_2d_c.set_dds_gamma(delta=self.params.detune_d2_c_2dmot,amplitude=0.01)
-        self.dds.d2_2d_r.set_dds_gamma(delta=self.params.detune_d2_r_2dmot,amplitude=0.03)
+        self.dds.d2_2d_c.set_dds_gamma(delta=self.params.detune_d2_c_2dmot,amplitude=0.04)
+        self.dds.d2_2d_r.set_dds_gamma(delta=self.params.detune_d2_r_2dmot,amplitude=0.04)
         self.dds.d2_3d_c.set_dds_gamma(delta=self.params.detune_d2_c_mot,amplitude=0.05)
         self.dds.d2_3d_r.set_dds_gamma(delta=self.params.detune_d2_r_mot,amplitude=0.1)
         self.dds.d1_3d_c.set_dds_gamma(delta=self.params.detune_d1_c_gm,amplitude=0.3,v_pd=1.0)
@@ -25,9 +25,9 @@ class measure_beam_powers(EnvExperiment, Base):
         self.dds.op_r.set_dds_gamma(delta=self.params.detune_optical_pumping_r_op,amplitude=0.1)
         self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging,amplitude=0.5)
 
-        # self.dds.d2_2d_c.on()
-        # self.dds.d2_2d_r.on()
-        # self.dds.d2_3d_c.on()
+        self.dds.d2_2d_c.on()
+        self.dds.d2_2d_r.on()
+        self.dds.d2_3d_c.on()
         self.dds.d2_3d_r.on()
         # self.dds.d1_3d_c.on()
         # self.dds.d1_3d_r.on()

@@ -21,6 +21,8 @@ class dac_frame():
         self.xshim_current_control = self.assign_dac_ch(5)
         self.yshim_current_control = self.assign_dac_ch(6)
         self.zshim_current_control = self.assign_dac_ch(7)
+        self.inner_coil_supply = self.assign_dac_ch(8)
+        self.outer_coil_supply = self.assign_dac_ch(9)
 
         self._write_dac_keys()
         

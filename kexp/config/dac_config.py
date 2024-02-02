@@ -1,3 +1,3 @@
 channels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, ]
 voltages = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, ]
-labels = ['ligthsheet_mod_amp', 'vva_lightsheet', 'vva_d1_3d_c', 'vva_d1_3d_r', 'MOT current supply control', 'xshim_current_control', 'yshim_current_control', 'zshim_current_control', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ]
+labels = ['ligthsheet_mod_amp', 'vva_lightsheet', 'vva_d1_3d_c', 'vva_d1_3d_r', 'MOT current supply control', 'xshim_current_control', 'yshim_current_control', 'zshim_current_control', 'inner_coil_supply', 'outer_coil_supply', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ]
