@@ -25,19 +25,25 @@ class current_supply_widget(QWidget):
         self.max_current = max_current
         self.supply = vxi11.Instrument(ip)
 
+        self.init_device()
+
         self.init_UI()
+
+    def init_device(self):
+        # make sure the device is set up to listen to its inhibit pin
+        self.supply.write("OUTP:INH:MODE LIVE")
         
-    def read_current(self,supply):
+    def read_current(self):
         # send the supply the query to measure the current
-        supply.write(":MEASure:CURRent:DC?")
+        self.supply.write(":MEASure:CURRent:DC?")
         # wait a bit for the reply to be available (probably don't need this)
         time.sleep(0.05)
         # read out the value that the supply sends back -- convert it to a
         # number since it's a nasty string
-        return float(supply.read())
+        return float(self.supply.read())
     
     def update_current_UI(self):
-        current = self.read_current(self.supply)
+        current = self.read_current()
         # set the value text of our box (see "init_UI") to the new current
         # the "1.4f" formats the number to a string as with 4 decimal places (f for "float")
         self.value_label.setText(f"{current:1.4f}") 
