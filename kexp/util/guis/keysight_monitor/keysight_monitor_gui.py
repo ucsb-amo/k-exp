@@ -24,9 +24,7 @@ class current_supply_widget(QWidget):
         self.ip = ip
         self.max_current = max_current
         self.supply = vxi11.Instrument(ip)
-
         self.init_device()
-
         self.init_UI()
 
     def init_device(self):
