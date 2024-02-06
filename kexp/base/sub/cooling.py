@@ -114,7 +114,7 @@ class Cooling():
         self.dac.xshim_current_control.set(v = v_xshim_current)
         self.dac.yshim_current_control.set(v = v_yshim_current)
         with parallel:
-            self.ttl.magnets.on()
+            self.ttl.inner_coil_igbt.on()
             self.switch_d2_3d(1)
             # delay_mu(self.params.t_rtio_mu)
             self.dds.push.on()
@@ -152,7 +152,7 @@ class Cooling():
         self.set_magnet_current(v = v_current)
         self.set_zshim_magnet_current(v=v_zshim_current)
         with parallel:
-            self.ttl.magnets.on()
+            self.ttl.inner_coil_igbt.on()
             self.switch_d2_3d(1)
         delay(t)
 
@@ -203,7 +203,7 @@ class Cooling():
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
                                  amplitude=v_pd_d1_r)
         self.set_magnet_current(v = v_current)
-        self.ttl.magnets.on()
+        self.ttl.inner_coil_igbt.on()
         with parallel:
             self.switch_d2_3d(1)
             
@@ -285,7 +285,7 @@ class Cooling():
         self.set_magnet_current(v = v_current)
 
         delay(t - t_magnet_off_pretrigger)
-        self.ttl.magnets.off()
+        self.ttl.inner_coil_igbt.off()
         self.set_magnet_current(v=0.)
         delay(t_magnet_off_pretrigger)
 
@@ -324,7 +324,7 @@ class Cooling():
         # ### End Defaults ###
 
         # delay(-t_magnet_off_pretrigger)
-        # self.ttl.magnets.off()
+        # self.ttl.inner_coil_igbt.off()
         # self.set_magnet_current(v=0.)
         # delay(t_magnet_off_pretrigger)
 
@@ -374,7 +374,7 @@ class Cooling():
     #     self.dds.load_profile(dds_mgr_idx)
 
     #     with parallel:
-    #         self.ttl.magnets.off()
+    #         self.ttl.inner_coil_igbt.off()
     #         self.switch_d1_3d(1)
     #         self.switch_d2_3d(0)
     #     delay(t)
@@ -541,7 +541,7 @@ class Cooling():
     @kernel
     def release(self):
         with parallel:
-            self.ttl.magnets.off()
+            self.ttl.inner_coil_igbt.off()
             self.switch_d2_3d(0)
             self.switch_d1_3d(0)
 
@@ -587,7 +587,7 @@ class Cooling():
         if v == dv:
             v = self.params.v_mot_current
         with sequential:
-            self.dac.mot_current_control.set(v)
+            self.dac.inner_coil_supply.set(v)
 
     @kernel
     def set_zshim_magnet_current(self, v = dv, load_dac=True):
@@ -656,6 +656,6 @@ class Cooling():
         self.dds.beatlock_ref.on()
 
         self.core.break_realtime()
-        self.ttl.magnets.on()
+        self.ttl.inner_coil_igbt.on()
 
         self.dds.imaging.on()
