@@ -10,6 +10,7 @@ from PyQt6.QtCore import Qt, QSize, pyqtSignal, QTimer
 from PyQt6.QtGui import QIcon, QColor, QScreen, QGuiApplication, QPixmap
 from toggleSlider import AnimatedToggle
 from TTL_GUI_ExptBuilder import TTLGUIExptBuilder
+from kexp.config.ttl_id import ttl_frame
 
 import os
 
@@ -169,6 +170,9 @@ class TTLControlGrid(QWidget):
         # Maintains the X x 8 layout of the grid
         num_rows = int(NUM_TTL/8)
 
+        ttls = ttl_frame()
+        ttl_id_channels = [ttl.ch for ttl in ttls.ttl_list]
+
         self.toggle_channels = {}  # Dictionary to store toggle button channels
         self.toggle_states = {}
 
@@ -213,6 +217,11 @@ class TTLControlGrid(QWidget):
                 channel = i * 8 + j + START_TTL
                 if channel < NUM_TTL:
                     input_box = InputBox(channel)
+                    
+                    if channel in ttl_id_channels:
+                        idx = ttl_id_channels.index(channel)
+                        input_box.custom_label_box.setText(ttls.ttl_list[idx].key)
+
                     row_layout.addWidget(input_box)
                     self.input_boxes.append(input_box)
                     self.channels.append(input_box.channel)  # Add the channel number to the list
