@@ -17,7 +17,7 @@ class dac_frame():
         self.vva_lightsheet = self.assign_dac_ch(1)
         self.vva_d1_3d_c = self.assign_dac_ch(2)
         self.vva_d1_3d_r = self.assign_dac_ch(3)
-        self.mot_current_control = self.assign_dac_ch(4)
+        self.mot2D_current_control = self.assign_dac_ch(4)
         self.xshim_current_control = self.assign_dac_ch(5)
         self.yshim_current_control = self.assign_dac_ch(6)
         self.zshim_current_control = self.assign_dac_ch(7)
@@ -40,11 +40,11 @@ class dac_frame():
             if isinstance(self.__dict__[key],DAC_CH):
                 self.__dict__[key].key = key
 
-    def dac_by_ch(self,ch):
+    def dac_by_ch(self,ch) -> DAC_CH:
         ch_list = [dac.ch for dac in self.dac_ch_list]
-        ch_idx = ch_list.index(ch)
-        if ch_idx:
-            return ch_list[ch_idx]
+        if ch in ch_list:
+            ch_idx = ch_list.index(ch)
+            return self.dac_ch_list[ch_idx]
         else:
             raise ValueError(f"DAC ch {ch} not assigned in dac_id.")
         
