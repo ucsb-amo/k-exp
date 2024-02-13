@@ -10,6 +10,7 @@ from PyQt6.QtCore import Qt, QSize, QMargins
 from PyQt6.QtGui import QIcon
 from toggleSlider import AnimatedToggle
 from DAC_GUI_ExptBuilder import DACGUIExptBuilder, CHDACGUIExptBuilder
+from kexp.config.dac_id import dac_frame
 
 CODE_DIR = os.environ.get("code")
 CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","dac_config.py")
@@ -123,6 +124,9 @@ class DACControlGrid(QWidget):
         super().__init__()
         self.setGeometry(100, 100, 800, 400)
 
+        dacs = dac_frame()
+        ch_in_frame = [dac.ch for dac in dacs.dac_ch_list]
+
         self.layout = QVBoxLayout(self)
 
         # Add a hello message
@@ -161,6 +165,8 @@ class DACControlGrid(QWidget):
             for j in range(8):
                 channel = i * 8 + j
                 input_box = InputBox(channel)
+                if channel in ch_in_frame:
+                    input_box.custom_label_box.setText(dacs.dac_by_ch(channel).key)
                 input_box.input_box.setText("0.0")  # Set the input box value to "0.0"
                 row_layout.addWidget(input_box)
                 self.input_boxes.append(input_box)
@@ -171,7 +177,7 @@ class DACControlGrid(QWidget):
                     input_box.setStyleSheet("background-color: red")
                 
         # Reload labels and voltages from configuration file on first program launch without giving a warning
-        self.reload_opening()
+        # self.reload_opening()
 
         # Create the "Set Voltages" button
         self.button = QPushButton("Set Voltages", parent=self)
