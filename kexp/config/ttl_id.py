@@ -15,7 +15,7 @@ class ttl_frame():
         self.outer_coil_igbt = self.ttl_assign(8)
         self.hbridge_helmholtz = self.ttl_assign(9)
         self.awg = self.ttl_assign(15)
-        # self.pd_scope_trig = self.ttl_assign()
+        self.pd_scope_trig = self.ttl_assign(16)
         # self.machine_table_trig = self.ttl_assign(25)
 
         self._write_ttl_keys()
@@ -26,6 +26,14 @@ class ttl_frame():
         this_ttl = TTL(ch)
         self.ttl_list.append(this_ttl)
         return this_ttl
+    
+    def ttl_by_ch(self,ch) -> TTL:
+        ch_list = [ttl.ch for ttl in self.ttl_list]
+        if ch in ch_list:
+            ch_idx = ch_list.index(ch)
+            return ttl_list[ch_idx]
+        else:
+            raise ValueError(f"DAC ch {ch} not assigned in dac_id.")
     
     def _write_ttl_keys(self):
         '''Adds the assigned keys to the DDS objects so that the user-defined
