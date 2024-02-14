@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
+from kexp.control.artiq.TTL import TTL
 from kexp.config.expt_params import ExptParams
 import kexp.config.camera_params as camera_params
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
@@ -64,38 +65,52 @@ class Cameras():
             self.camera.Close()
         self.image_timestamps = np.zeros( Nimg )
 
-    def choose_camera(self,setup_camera=True,absorption_image=True,basler_imaging=True,andor_imaging=False):
-        # allow andor_imaging to override basler_imaging
+    def choose_camera(self,setup_camera=True,absorption_image=True,camera_select="xy_basler"):
 
-        # choose the correct camera
-        if andor_imaging:
-            self.ttl.camera = self.ttl.andor
-            self.camera_params = camera_params.andor_camera_params
-            if setup_camera:
-                # self.camera = AndorEMCCD(ExposureTime=self.camera_params.exposure_time)
-                self.start_triggered_grab = self.start_triggered_grab_andor
-        elif basler_imaging:
-            self.ttl.camera = self.ttl.basler
-            if absorption_image:
-                self.camera_params = camera_params.basler_absorp_camera_params
-            else:
-                self.camera_params = camera_params.basler_fluor_camera_params
-            if setup_camera:
-                # self.camera = BaslerUSB(BaslerSerialNumber=self.camera_params.serial_no,
-                #                         ExposureTime=self.camera_params.exposure_time)
-                self.start_triggered_grab = self.start_triggered_grab_basler
-        
         if not setup_camera:
             self.camera = DummyCamera()
             self.camera_params = camera_params.CameraParams()
             self.start_triggered_grab = self.nothing
-
+        else:
+            match camera_select:
+                case "xy_basler":
+                    ttl = self.ttl.xy_basler
+                    self.assign_camera_stuff(camera_params.xy_basler_params,
+                                            camera_ttl=ttl,
+                                            grab_loop_method=self.start_triggered_grab_basler,
+                                            absorption_bool=absorption_image)
+                case "z_basler":
+                    ttl = self.ttl.z_basler
+                    self.assign_camera_stuff(camera_params.z_basler_params,
+                                             camera_ttl=ttl,
+                                             grab_loop_method=self.start_triggered_grab_basler,
+                                             absorption_bool=absorption_image)
+                case "andor":
+                    ttl = self.ttl.andor
+                    self.assign_camera_stuff(camera_params.andor_params,
+                                             camera_ttl=ttl,
+                                             grab_loop_method=self.start_triggered_grab_andor,
+                                             absorption_bool=absorption_image)
+                case _:
+                    raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
+                
         self.run_info.absorption_image = absorption_image
+        self.StartTriggeredGrab = self.start_triggered_grab # for backward compatability
+
+    def assign_camera_stuff(self,
+                            camera_params:camera_params.CameraParams,
+                            camera_ttl:TTL,
+                            grab_loop_method,
+                            absorption_bool):
         
-        # for backward compatability
-        self.StartTriggeredGrab = self.start_triggered_grab
+        self.camera_params = camera_params
+        self.camera_params.select_absorption(absorption_bool)
+        self.ttl.camera = camera_ttl
+        self.start_triggered_grab = grab_loop_method
 
     def nothing(self):
         pass
+
+        
 
     
