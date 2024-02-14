@@ -66,9 +66,9 @@ class InputBox(QWidget):
         elements_layout.addItem(spacer_after)
 
         # Add input box
-        input_box = QLineEdit(parent=container)
-        input_box.setFixedWidth(50)  # Adjust the width as needed
-        elements_layout.addWidget(input_box)
+        voltage_box = QLineEdit(parent=container)
+        voltage_box.setFixedWidth(50)  # Adjust the width as needed
+        elements_layout.addWidget(voltage_box)
 
         # Add spacer for spacing before the volts label
         spacer_before = QSpacerItem(10, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
@@ -76,7 +76,7 @@ class InputBox(QWidget):
 
         # Add volts label
         volts_label = QLabel("V", parent=container)
-        volts_label.setFixedSize(QSize(10, input_box.sizeHint().height()))  # Match height with input box
+        volts_label.setFixedSize(QSize(10, voltage_box.sizeHint().height()))  # Match height with input box
         volts_label.setStyleSheet("font-weight: bold;")
         elements_layout.addWidget(volts_label)
 
@@ -99,7 +99,7 @@ class InputBox(QWidget):
         self.toggle.stateChanged.connect(self.toggle_state_changed)
 
         self.setLayout(self.box_layout)
-        self.input_box = input_box
+        self.voltage_box = voltage_box
         self.channel = channel
         self.custom_label_box = custom_label_box
         
@@ -177,8 +177,11 @@ class DACControlGrid(QWidget):
                 channel = i * 8 + j
                 input_box = InputBox(channel)
                 if channel in ch_in_frame:
-                    input_box.custom_label_box.setText(dacs.dac_by_ch(channel).key)
-                input_box.input_box.setText("0.0")  # Set the input box value to "0.0"
+                    dac_ch = dacs.dac_by_ch(channel)
+                    input_box.custom_label_box.setText(dac_ch.key)
+                    input_box.voltage_box.setText(f"{dac_ch.v:1.3f}")
+                else:
+                    input_box.voltage_box.setText("0.0")  # Set the input box value to "0.0"
                 row_layout.addWidget(input_box)
                 self.input_boxes.append(input_box)
                 self.channels.append(input_box.channel)  # Add the channel number to the list
@@ -209,8 +212,8 @@ class DACControlGrid(QWidget):
         voltages = []
         channels = []
         for input_box in self.input_boxes:
-            if isinstance(input_box.input_box, QLineEdit):  # Skip the input boxes without channel labels
-                voltage = input_box.input_box.text().strip()
+            if isinstance(input_box.voltage_box, QLineEdit):  # Skip the input boxes without channel labels
+                voltage = input_box.voltage_box.text().strip()
                 if voltage:
                     try:
                         voltages.append(float(voltage))
@@ -253,7 +256,7 @@ class DACControlGrid(QWidget):
 
     def set_all_to_zero(self):
         for input_box in self.input_boxes:
-            input_box.input_box.setText("0.0")
+            input_box.voltage_box.setText("0.0")
 
     def save_settings(self):
         pass
@@ -272,7 +275,7 @@ class DACControlGrid(QWidget):
     #                 file.write("]\n")
     #                 file.write("voltages = [")
     #                 for input_box in self.input_boxes:
-    #                     voltage = input_box.input_box.text()
+    #                     voltage = input_box.voltage_box.text()
     #                     file.write(f"{voltage}, ")
     #                 file.write("]\n")
 
@@ -312,9 +315,9 @@ class DACControlGrid(QWidget):
     #                 if channel in channels:
     #                     index = channels.index(channel)
     #                     voltage = voltages[index]
-    #                     input_box.input_box.setText(str(voltage))
+    #                     input_box.voltage_box.setText(str(voltage))
     #                 else:
-    #                     input_box.input_box.setText("0.0")
+    #                     input_box.voltage_box.setText("0.0")
     #     else:
     #         return
         
@@ -344,9 +347,9 @@ class DACControlGrid(QWidget):
     #         if channel in channels:
     #             index = channels.index(channel)
     #             voltage = voltages[index]
-    #             input_box.input_box.setText(str(voltage))
+    #             input_box.voltage_box.setText(str(voltage))
     #         else:
-    #             input_box.input_box.setText("0.0")
+    #             input_box.voltage_box.setText("0.0")
     
 app = QApplication(sys.argv)
 window = QMainWindow()
