@@ -127,7 +127,7 @@ class main_window(QWidget):
     def __init__(self):
         super().__init__()
         
-        self.stage = Newport.Picomotor8742(CONTROLLER_HOSTNAME,multiaddr=True)
+        self.stage = Newport.Picomotor8742(CONTROLLER_HOSTNAME,multiaddr=True,scan=False)
 
         self.panels = []
         for idx in range(N_MIRRORS):
