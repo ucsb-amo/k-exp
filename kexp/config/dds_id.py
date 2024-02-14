@@ -104,7 +104,7 @@ class dds_frame():
                    default_freq=dv, default_detuning=dv, default_amp=dv, 
                    ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
         '''
-        Gets the DDS() object from the dds_state vector, sets the aom order, and
+        Makes a DDS object, sets the aom order, and
         returns the DDS() object.
 
         Returns
