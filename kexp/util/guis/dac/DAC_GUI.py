@@ -111,10 +111,10 @@ class InputBox(QWidget):
         self.toggle.setChecked(True)
 
     def set_channel(self):
-        current_voltage = self.input_box.text().strip()
+        current_voltage = self.voltage_box.text().strip()
         print(self.toggle.isChecked())
         if self.toggle.isChecked():
-            current_voltage = self.input_box.text().strip()
+            current_voltage = self.voltage_box.text().strip()
             if current_voltage:
                 voltage = float(current_voltage)
                 ch_builder = CHDACGUIExptBuilder()
