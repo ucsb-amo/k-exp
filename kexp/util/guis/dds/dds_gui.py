@@ -361,18 +361,18 @@ class DDSControlGrid(QWidget):
         self.layout.addLayout(top_layout)  # Add the top layout to the main layout
 
         # Create a horizontal layout for the buttons
-        button_layout = QHBoxLayout()
+        # button_layout = QHBoxLayout()
 
-        self.save_button = QPushButton("Save Configuration", parent=self)
-        self.save_button.clicked.connect(self.save_settings)
-        button_layout.addWidget(self.save_button)
+        # self.save_button = QPushButton("Save Configuration", parent=self)
+        # self.save_button.clicked.connect(self.save_settings)
+        # button_layout.addWidget(self.save_button)
 
-        self.reload_button = QPushButton("Reload Configuration", parent=self)
-        self.reload_button.clicked.connect(self.reload_settings)
-        button_layout.addWidget(self.reload_button)
+        # self.reload_button = QPushButton("Reload Configuration", parent=self)
+        # self.reload_button.clicked.connect(self.reload_settings)
+        # button_layout.addWidget(self.reload_button)
 
         # Add the button_layout to the top_layout
-        top_layout.addLayout(button_layout)
+        # top_layout.addLayout(button_layout)
 
         # Create a grid layout to hold the DDS control boxes and column frames
         self.grid_layout = QGridLayout()
@@ -385,7 +385,6 @@ class DDSControlGrid(QWidget):
         self.column_frames = []  # Convert to instance variable
 
         self.dds = dds_id.dds_frame()
-
 
         # Create DDS channels in each column
         for urukul_idx in range(dds_id.N_uru): # can replace with dds_id.shape[0]

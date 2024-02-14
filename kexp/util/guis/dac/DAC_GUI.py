@@ -36,10 +36,18 @@ class InputBox(QWidget):
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(10, 10, 0, 0)  # Remove margins
         container_layout.setSpacing(0)  # Remove spacing
+
+        upper_label_layout = QHBoxLayout()
+
+        # Add channel label
+        channel_label = QLabel(f"CH. {channel}: ", parent=container)
+        upper_label_layout.addWidget(channel_label)
         
         custom_label_box = QLineEdit(parent=container)
         custom_label_box.setFixedWidth(160)  # Adjust the width as needed
-        container_layout.addWidget(custom_label_box)
+        upper_label_layout.addWidget(custom_label_box)
+
+        container_layout.addLayout(upper_label_layout)
 
         # Create a horizontal layout for the toggle, channel label, input box, and volts label
         elements_layout = QHBoxLayout()
@@ -50,9 +58,12 @@ class InputBox(QWidget):
         self.toggle.stateChanged.connect(self.set_channel)
         elements_layout.addWidget(self.toggle)
 
-        # Add channel label
-        channel_label = QLabel(f"CH. {channel}: ", parent=container)
-        elements_layout.addWidget(channel_label)
+        set_button = QPushButton("Set")
+        set_button.clicked.connect(self.set_channel)
+        set_button.setFixedSize(QSize(50, set_button.sizeHint().height()))
+        elements_layout.addWidget(set_button)
+        spacer_after = QSpacerItem(10, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        elements_layout.addItem(spacer_after)
 
         # Add input box
         input_box = QLineEdit(parent=container)
@@ -137,18 +148,18 @@ class DACControlGrid(QWidget):
         self.layout.addLayout(top_layout)  # Add the top layout to the main layout
 
         # Create a horizontal layout for the buttons
-        button_layout = QHBoxLayout()
+        # button_layout = QHBoxLayout()
 
-        self.save_button = QPushButton("Save Configuration", parent=self)
-        self.save_button.clicked.connect(self.save_settings)
-        button_layout.addWidget(self.save_button)
+        # self.save_button = QPushButton("Save Configuration", parent=self)
+        # self.save_button.clicked.connect(self.save_settings)
+        # button_layout.addWidget(self.save_button)
 
-        self.reload_button = QPushButton("Reload Configuration", parent=self)
-        self.reload_button.clicked.connect(self.reload_settings)
-        button_layout.addWidget(self.reload_button)
+        # self.reload_button = QPushButton("Reload Configuration", parent=self)
+        # self.reload_button.clicked.connect(self.reload_settings)
+        # button_layout.addWidget(self.reload_button)
 
-        # Add the button_layout to the top_layout
-        top_layout.addLayout(button_layout)
+        # # Add the button_layout to the top_layout
+        # top_layout.addLayout(button_layout)
 
         # Create a grid layout to hold the DAC control boxes
         self.grid_layout = QHBoxLayout()
