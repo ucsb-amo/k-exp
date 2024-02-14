@@ -245,92 +245,97 @@ class DACControlGrid(QWidget):
             input_box.input_box.setText("0.0")
 
     def save_settings(self):
-        result = QMessageBox.warning(self, "Warning", "Saving settings will overwrite the existing saved configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
-                                     QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
-        if result == QMessageBox.StandardButton.Ok:
-            filename = CONFIG_PATH
-            if filename:
-                # Code for saving settings goes here
-                with open(filename, "w") as file:
-                    file.write("channels = [")
-                    for input_box in self.input_boxes:
-                        channel = input_box.channel
-                        file.write(f"{channel}, ")
-                    file.write("]\n")
-                    file.write("voltages = [")
-                    for input_box in self.input_boxes:
-                        voltage = input_box.input_box.text()
-                        file.write(f"{voltage}, ")
-                    file.write("]\n")
+        pass
+    # def save_settings(self):
+    #     result = QMessageBox.warning(self, "Warning", "Saving settings will overwrite the existing saved configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
+    #                                  QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+    #     if result == QMessageBox.StandardButton.Ok:
+    #         filename = CONFIG_PATH
+    #         if filename:
+    #             # Code for saving settings goes here
+    #             with open(filename, "w") as file:
+    #                 file.write("channels = [")
+    #                 for input_box in self.input_boxes:
+    #                     channel = input_box.channel
+    #                     file.write(f"{channel}, ")
+    #                 file.write("]\n")
+    #                 file.write("voltages = [")
+    #                 for input_box in self.input_boxes:
+    #                     voltage = input_box.input_box.text()
+    #                     file.write(f"{voltage}, ")
+    #                 file.write("]\n")
 
-                    file.write("labels = [")
-                    for input_box in self.input_boxes:
-                        label = input_box.custom_label_box.text()
-                        file.write(f"'{label}', ")
-                    file.write("]\n")
-        else:
-            return
+    #                 file.write("labels = [")
+    #                 for input_box in self.input_boxes:
+    #                     label = input_box.custom_label_box.text()
+    #                     file.write(f"'{label}', ")
+    #                 file.write("]\n")
+    #     else:
+    #         return
 
     def reload_settings(self):
-        result = QMessageBox.warning(self, "Warning", "Reloading settings will overwrite current configuration. Are you sure you want to proceed?",
-                                     QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
-        if result == QMessageBox.StandardButton.Ok:
-            filename = CONFIG_PATH
-            if filename:
-                # Code for reloading settings goes here
-                settings = {}
-                with open(filename, "r") as file:
-                    exec(file.read(), {}, settings)
+        pass
+    # def reload_settings(self):
+    #     result = QMessageBox.warning(self, "Warning", "Reloading settings will overwrite current configuration. Are you sure you want to proceed?",
+    #                                  QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+    #     if result == QMessageBox.StandardButton.Ok:
+    #         filename = CONFIG_PATH
+    #         if filename:
+    #             # Code for reloading settings goes here
+    #             settings = {}
+    #             with open(filename, "r") as file:
+    #                 exec(file.read(), {}, settings)
 
-                channels = settings.get("channels", [])
-                voltages = settings.get("voltages", [])
-                labels = settings.get("labels", [])
-                for i, input_box in enumerate(self.input_boxes):
-                    if i < len(labels):
-                        label = labels[i]
-                        input_box.custom_label_box.setText(label)
-                    else:
-                        input_box.custom_label_box.setText("")
+    #             channels = settings.get("channels", [])
+    #             voltages = settings.get("voltages", [])
+    #             labels = settings.get("labels", [])
+    #             for i, input_box in enumerate(self.input_boxes):
+    #                 if i < len(labels):
+    #                     label = labels[i]
+    #                     input_box.custom_label_box.setText(label)
+    #                 else:
+    #                     input_box.custom_label_box.setText("")
 
-                for input_box in self.input_boxes:
-                    channel = input_box.channel
-                    if channel in channels:
-                        index = channels.index(channel)
-                        voltage = voltages[index]
-                        input_box.input_box.setText(str(voltage))
-                    else:
-                        input_box.input_box.setText("0.0")
-        else:
-            return
+    #             for input_box in self.input_boxes:
+    #                 channel = input_box.channel
+    #                 if channel in channels:
+    #                     index = channels.index(channel)
+    #                     voltage = voltages[index]
+    #                     input_box.input_box.setText(str(voltage))
+    #                 else:
+    #                     input_box.input_box.setText("0.0")
+    #     else:
+    #         return
         
-
     def reload_opening(self):
-        filename = CONFIG_PATH  # Set the file name
+        pass
+    # def reload_opening(self):
+    #     filename = CONFIG_PATH  # Set the file name
 
-        settings = {}
-        with open(filename, "r") as file:
-            exec(file.read(), {}, settings)
+    #     settings = {}
+    #     with open(filename, "r") as file:
+    #         exec(file.read(), {}, settings)
 
-        channels = settings.get("channels", [])
-        voltages = settings.get("voltages", [])
+    #     channels = settings.get("channels", [])
+    #     voltages = settings.get("voltages", [])
 
-        labels = settings.get("labels", [])
+    #     labels = settings.get("labels", [])
 
-        for i, input_box in enumerate(self.input_boxes):
-            if i < len(labels):
-                label = labels[i]
-                input_box.custom_label_box.setText(label)
-            else:
-                input_box.custom_label_box.setText("")
+    #     for i, input_box in enumerate(self.input_boxes):
+    #         if i < len(labels):
+    #             label = labels[i]
+    #             input_box.custom_label_box.setText(label)
+    #         else:
+    #             input_box.custom_label_box.setText("")
 
-        for input_box in self.input_boxes:
-            channel = input_box.channel
-            if channel in channels:
-                index = channels.index(channel)
-                voltage = voltages[index]
-                input_box.input_box.setText(str(voltage))
-            else:
-                input_box.input_box.setText("0.0")
+    #     for input_box in self.input_boxes:
+    #         channel = input_box.channel
+    #         if channel in channels:
+    #             index = channels.index(channel)
+    #             voltage = voltages[index]
+    #             input_box.input_box.setText(str(voltage))
+    #         else:
+    #             input_box.input_box.setText("0.0")
     
 app = QApplication(sys.argv)
 window = QMainWindow()
