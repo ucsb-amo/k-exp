@@ -31,7 +31,7 @@ class ttl_frame():
         ch_list = [ttl.ch for ttl in self.ttl_list]
         if ch in ch_list:
             ch_idx = ch_list.index(ch)
-            return ttl_list[ch_idx]
+            return self.ttl_list[ch_idx]
         else:
             raise ValueError(f"DAC ch {ch} not assigned in dac_id.")
     
