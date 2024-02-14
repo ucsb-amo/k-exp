@@ -1,7 +1,5 @@
-import numpy as np
 from artiq.experiment import kernel, rpc
 from artiq.coredevice.zotino import Zotino
-
 
 dv = -100.
 
