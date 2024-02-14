@@ -12,7 +12,7 @@ class CameraParams():
 
 class BaslerParams(CameraParams):
     def __init__(self,serial_number='40320384'):
-        super.__init__()
+        super().__init__()
         self.serial_no = serial_number
 
         self.pixel_size_m = 3.45 * 1.e-6
@@ -30,7 +30,7 @@ class BaslerParams(CameraParams):
 
 class AndorParams(CameraParams):
     def __init__(self):
-        super.__init__()
+        super().__init__()
         self.pixel_size_m = 16.e-6
         self.magnification = 1. # needs to be figured out and updated
         self.exposure_delay = 0. # needs to be updated from docs
