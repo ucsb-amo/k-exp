@@ -13,24 +13,27 @@ class dac_frame():
 
         self.dac_ch_list = []
 
+        from kexp.config import ExptParams
+        p = ExptParams()
+
         self.lightsheet_mod_amp = self.assign_dac_ch(0)
-        self.vva_lightsheet = self.assign_dac_ch(1)
-        self.vva_d1_3d_c = self.assign_dac_ch(2)
-        self.vva_d1_3d_r = self.assign_dac_ch(3)
+        self.vva_lightsheet = self.assign_dac_ch(1,v=5.0)
+        self.vva_d1_3d_c = self.assign_dac_ch(2,p.v_pd_d1_c_gm)
+        self.vva_d1_3d_r = self.assign_dac_ch(3,p.v_pd_d1_r_gm)
         self.mot2D_current_control = self.assign_dac_ch(4)
-        self.xshim_current_control = self.assign_dac_ch(5)
-        self.yshim_current_control = self.assign_dac_ch(6)
-        self.zshim_current_control = self.assign_dac_ch(7)
+        self.xshim_current_control = self.assign_dac_ch(5,p.v_xshim_current)
+        self.yshim_current_control = self.assign_dac_ch(6,p.v_yshim_current)
+        self.zshim_current_control = self.assign_dac_ch(7,p.v_zshim_current)
         self.inner_coil_supply = self.assign_dac_ch(8)
         self.outer_coil_supply = self.assign_dac_ch(9)
 
         self._write_dac_keys()
         
-    def assign_dac_ch(self,ch,default_v=0.) -> DAC_CH:
+    def assign_dac_ch(self,ch,v=0.) -> DAC_CH:
         if ch in FORBIDDEN_CH:
             raise ValueError(f"DAC channel {ch} is forbidden.")
         this_dac_ch = DAC_CH(ch,self.dac_device)
-        this_dac_ch.v = default_v
+        this_dac_ch.v = v
         self.dac_ch_list.append(this_dac_ch)
         return this_dac_ch
     
