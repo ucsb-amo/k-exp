@@ -9,7 +9,11 @@ class ExptParams():
         self.N_shots = 1
         self.N_repeats = 1
         self.N_img = 1
-        
+
+        #Magnet
+        self.t_keysight_analog_response = 17.e-3
+        self.t_hbridge_switch_delay = 5.e-3
+
         #Imaging
         self.t_imaging_pulse = 5.e-6
         self.t_light_only_image_delay = 100.e-3
