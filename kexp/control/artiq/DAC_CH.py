@@ -4,7 +4,7 @@ from artiq.coredevice.zotino import Zotino
 dv = -100.
 
 class DAC_CH():
-    def __init__(self,ch,max_v=dv,dac_device=Zotino):
+    def __init__(self,ch,dac_device=Zotino,max_v=dv):
         self.ch = ch
         self.dac_device = dac_device
         self.v = 0.
@@ -19,7 +19,7 @@ class DAC_CH():
     @kernel
     def set(self,v=dv,load_dac=True):
         if v != dv:
-            if self.v > self.max_v:
+            if v > self.max_v:
                 self.v = 0.
                 self.max_voltage_error()
             else:
