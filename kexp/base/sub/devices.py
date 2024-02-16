@@ -13,6 +13,7 @@ from kexp.config.expt_params import ExptParams
 from jax import AD9910Manager
 from kexp.control.cameras.dummy_cam import DummyCamera
 
+from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.misc.painted_lightsheet import lightsheet
 
 import numpy as np
@@ -48,6 +49,18 @@ class Devices():
         self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
+
+        # magnet coils
+        self.inner_coil = hbridge_magnet(v_control_dac=self.dac.inner_coil_supply_voltage,
+                                      i_control_dac=self.dac.inner_coil_supply_current,
+                                      igbt_ttl=self.ttl.inner_coil_igbt,
+                                      hbridge_ttl=self.ttl.hbridge_helmholtz,
+                                      expt_params=self.params)
+                                      
+        self.outer_coil = igbt_magnet(v_control_dac=self.dac.inner_coil_supply_voltage,
+                                      i_control_dac=self.dac.inner_coil_supply_current,
+                                      igbt_ttl=self.ttl.inner_coil_igbt,
+                                      expt_params=self.params)
         
         # painted ligthsheet
         self.lightsheet = lightsheet(vva_dac=self.dac.vva_lightsheet,
