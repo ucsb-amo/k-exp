@@ -587,7 +587,7 @@ class Cooling():
         if v == dv:
             v = self.params.v_mot_current
         with sequential:
-            self.dac.inner_coil_supply.set(v)
+            self.dac.inner_coil_supply_current.set(v)
 
     @kernel
     def set_zshim_magnet_current(self, v = dv, load_dac=True):
