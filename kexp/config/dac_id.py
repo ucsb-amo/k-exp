@@ -31,10 +31,10 @@ class dac_frame():
 
         self._write_dac_keys()
         
-    def assign_dac_ch(self,ch,v=0.) -> DAC_CH:
+    def assign_dac_ch(self,ch,v=0.,max_v=9.99) -> DAC_CH:
         if ch in FORBIDDEN_CH:
             raise ValueError(f"DAC channel {ch} is forbidden.")
-        this_dac_ch = DAC_CH(ch,self.dac_device)
+        this_dac_ch = DAC_CH(ch,self.dac_device,max_v=max_v)
         this_dac_ch.v = v
         self.dac_ch_list.append(this_dac_ch)
         return this_dac_ch
