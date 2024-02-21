@@ -15,6 +15,8 @@ class ttl_frame():
         self.outer_coil_igbt = self.ttl_assign(8)
         self.hbridge_helmholtz = self.ttl_assign(9)
         self.z_basler = self.ttl_assign(10)
+        self.inner_coil_contactor = self.ttl_assign(11)
+        self.outer_coil_contactor = self.ttl_assign(12)
         self.awg = self.ttl_assign(15)
         self.pd_scope_trig = self.ttl_assign(16)
         # self.machine_table_trig = self.ttl_assign(25)
