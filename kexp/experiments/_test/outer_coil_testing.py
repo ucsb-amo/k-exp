@@ -27,7 +27,7 @@ class test(EnvExperiment, Base):
         self.finish_build(shuffle=False)
 
     @kernel
-    def contactor_close(self,t):
+    def outer_contactor_close(self,t):
         '''
         Closes the contactor time t. Minimum close time is t_close, otherwise
         the contactor does nothing.
@@ -41,7 +41,7 @@ class test(EnvExperiment, Base):
             aprint("pulse time is too short for the contactor, probably didn't close")
         t_ttl = t + t_on_delay_max - t_off_delay
         delay(-t_on_delay_max)
-        self.ttl.inner_coil_contactor.pulse(t_ttl)
+        self.ttl.outer_coil_contactor.pulse(t_ttl)
         delay(t_off_delay)
 
     @kernel
@@ -49,43 +49,40 @@ class test(EnvExperiment, Base):
         
         self.init_kernel()
 
-        for _ in range(1):
+        # for _ in range(1):
 
-            self.dac.inner_coil_supply_voltage.set(0.0)
-            self.dac.inner_coil_supply_current.set(0.0)
-            
-            self.ttl.pd_scope_trig.on()
-            self.ttl.inner_coil_igbt.on()
-
-            self.dac.inner_coil_supply_voltage.set(9.)
-            self.dac.inner_coil_supply_current.set(1.)
-            delay(40*ms)
-            self.ttl.inner_coil_igbt.off()
-            self.ttl.pd_scope_trig.off()
-
-            delay(20*ms)
-            
-            delay(-15*ms)
-            self.dac.inner_coil_supply_current.set(0.0)
-            self.dac.inner_coil_supply_voltage.set(0.0)
-            delay(15*ms)
-                
-            self.ttl.pd_scope_trig.on()
-            self.contactor_close(6*ms)
-            # delay(6*ms)
-            self.ttl.pd_scope_trig.off()
-
-            delay(5*ms)
-
-            self.ttl.pd_scope_trig.on()
-            self.ttl.inner_coil_igbt.on()
-            delay(10*ms)
-            self.ttl.inner_coil_igbt.off()
-            self.ttl.pd_scope_trig.off()
-
-            delay(1.5*s)
+        self.dac.outer_coil_supply_voltage.set(0.0)
+        self.dac.outer_coil_supply_current.set(0.0)
         
+        self.ttl.pd_scope_trig.on()
+        self.ttl.outer_coil_igbt.on()
+
+        self.dac.outer_coil_supply_voltage.set(5.)
+        self.dac.outer_coil_supply_current.set(.2)
+        delay(40*ms)
+        self.ttl.outer_coil_igbt.off()
+        self.ttl.pd_scope_trig.off()
+
+        delay(20*ms)
         
+        delay(-15*ms)
+        self.dac.outer_coil_supply_current.set(0.0)
+        self.dac.outer_coil_supply_voltage.set(0.0)
+        delay(15*ms)
+            
+        self.ttl.pd_scope_trig.on()
+        self.outer_contactor_close(10*ms)
+        # delay(10*ms)
+        self.ttl.pd_scope_trig.off()
+
+        delay(5*ms)
+
+        self.ttl.pd_scope_trig.on()
+        self.ttl.outer_coil_igbt.on()
+        delay(10*ms)
+        self.ttl.outer_coil_igbt.off()
+        self.ttl.pd_scope_trig.off()
+
     def analyze(self):
 
         print("Done!")
