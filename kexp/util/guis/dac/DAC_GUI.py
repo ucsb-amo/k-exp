@@ -36,10 +36,18 @@ class InputBox(QWidget):
         container_layout = QVBoxLayout(container)
         container_layout.setContentsMargins(10, 10, 0, 0)  # Remove margins
         container_layout.setSpacing(0)  # Remove spacing
+
+        upper_label_layout = QHBoxLayout()
+
+        # Add channel label
+        channel_label = QLabel(f"CH. {channel}: ", parent=container)
+        upper_label_layout.addWidget(channel_label)
         
         custom_label_box = QLineEdit(parent=container)
         custom_label_box.setFixedWidth(160)  # Adjust the width as needed
-        container_layout.addWidget(custom_label_box)
+        upper_label_layout.addWidget(custom_label_box)
+
+        container_layout.addLayout(upper_label_layout)
 
         # Create a horizontal layout for the toggle, channel label, input box, and volts label
         elements_layout = QHBoxLayout()
@@ -50,14 +58,17 @@ class InputBox(QWidget):
         self.toggle.stateChanged.connect(self.set_channel)
         elements_layout.addWidget(self.toggle)
 
-        # Add channel label
-        channel_label = QLabel(f"CH. {channel}: ", parent=container)
-        elements_layout.addWidget(channel_label)
+        set_button = QPushButton("Set")
+        set_button.clicked.connect(self.set_channel)
+        set_button.setFixedSize(QSize(50, set_button.sizeHint().height()))
+        elements_layout.addWidget(set_button)
+        spacer_after = QSpacerItem(10, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
+        elements_layout.addItem(spacer_after)
 
         # Add input box
-        input_box = QLineEdit(parent=container)
-        input_box.setFixedWidth(50)  # Adjust the width as needed
-        elements_layout.addWidget(input_box)
+        voltage_box = QLineEdit(parent=container)
+        voltage_box.setFixedWidth(50)  # Adjust the width as needed
+        elements_layout.addWidget(voltage_box)
 
         # Add spacer for spacing before the volts label
         spacer_before = QSpacerItem(10, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
@@ -65,7 +76,7 @@ class InputBox(QWidget):
 
         # Add volts label
         volts_label = QLabel("V", parent=container)
-        volts_label.setFixedSize(QSize(10, input_box.sizeHint().height()))  # Match height with input box
+        volts_label.setFixedSize(QSize(10, voltage_box.sizeHint().height()))  # Match height with input box
         volts_label.setStyleSheet("font-weight: bold;")
         elements_layout.addWidget(volts_label)
 
@@ -88,7 +99,7 @@ class InputBox(QWidget):
         self.toggle.stateChanged.connect(self.toggle_state_changed)
 
         self.setLayout(self.box_layout)
-        self.input_box = input_box
+        self.voltage_box = voltage_box
         self.channel = channel
         self.custom_label_box = custom_label_box
         
@@ -100,10 +111,10 @@ class InputBox(QWidget):
         self.toggle.setChecked(True)
 
     def set_channel(self):
-        current_voltage = self.input_box.text().strip()
+        current_voltage = self.voltage_box.text().strip()
         print(self.toggle.isChecked())
         if self.toggle.isChecked():
-            current_voltage = self.input_box.text().strip()
+            current_voltage = self.voltage_box.text().strip()
             if current_voltage:
                 voltage = float(current_voltage)
                 ch_builder = CHDACGUIExptBuilder()
@@ -137,18 +148,18 @@ class DACControlGrid(QWidget):
         self.layout.addLayout(top_layout)  # Add the top layout to the main layout
 
         # Create a horizontal layout for the buttons
-        button_layout = QHBoxLayout()
+        # button_layout = QHBoxLayout()
 
-        self.save_button = QPushButton("Save Configuration", parent=self)
-        self.save_button.clicked.connect(self.save_settings)
-        button_layout.addWidget(self.save_button)
+        # self.save_button = QPushButton("Save Configuration", parent=self)
+        # self.save_button.clicked.connect(self.save_settings)
+        # button_layout.addWidget(self.save_button)
 
-        self.reload_button = QPushButton("Reload Configuration", parent=self)
-        self.reload_button.clicked.connect(self.reload_settings)
-        button_layout.addWidget(self.reload_button)
+        # self.reload_button = QPushButton("Reload Configuration", parent=self)
+        # self.reload_button.clicked.connect(self.reload_settings)
+        # button_layout.addWidget(self.reload_button)
 
-        # Add the button_layout to the top_layout
-        top_layout.addLayout(button_layout)
+        # # Add the button_layout to the top_layout
+        # top_layout.addLayout(button_layout)
 
         # Create a grid layout to hold the DAC control boxes
         self.grid_layout = QHBoxLayout()
@@ -166,8 +177,11 @@ class DACControlGrid(QWidget):
                 channel = i * 8 + j
                 input_box = InputBox(channel)
                 if channel in ch_in_frame:
-                    input_box.custom_label_box.setText(dacs.dac_by_ch(channel).key)
-                input_box.input_box.setText("0.0")  # Set the input box value to "0.0"
+                    dac_ch = dacs.dac_by_ch(channel)
+                    input_box.custom_label_box.setText(dac_ch.key)
+                    input_box.voltage_box.setText(f"{dac_ch.v:1.3f}")
+                else:
+                    input_box.voltage_box.setText("0.0")  # Set the input box value to "0.0"
                 row_layout.addWidget(input_box)
                 self.input_boxes.append(input_box)
                 self.channels.append(input_box.channel)  # Add the channel number to the list
@@ -183,6 +197,11 @@ class DACControlGrid(QWidget):
         self.button = QPushButton("Set Voltages", parent=self)
         self.button.clicked.connect(self.handle_button_click)
         self.layout.addWidget(self.button)
+        
+        result = QMessageBox.warning(self, "Warning", "Set DAC output to defaults?",
+                                      QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.No)
+        if result == QMessageBox.StandardButton.Ok:
+            self.handle_button_click()
 
         # Create the "Set All to Zero" button
         zero_button = QPushButton("Set All to Zero", parent=self)
@@ -198,8 +217,8 @@ class DACControlGrid(QWidget):
         voltages = []
         channels = []
         for input_box in self.input_boxes:
-            if isinstance(input_box.input_box, QLineEdit):  # Skip the input boxes without channel labels
-                voltage = input_box.input_box.text().strip()
+            if isinstance(input_box.voltage_box, QLineEdit):  # Skip the input boxes without channel labels
+                voltage = input_box.voltage_box.text().strip()
                 if voltage:
                     try:
                         voltages.append(float(voltage))
@@ -242,95 +261,100 @@ class DACControlGrid(QWidget):
 
     def set_all_to_zero(self):
         for input_box in self.input_boxes:
-            input_box.input_box.setText("0.0")
+            input_box.voltage_box.setText("0.0")
 
     def save_settings(self):
-        result = QMessageBox.warning(self, "Warning", "Saving settings will overwrite the existing saved configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
-                                     QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
-        if result == QMessageBox.StandardButton.Ok:
-            filename = CONFIG_PATH
-            if filename:
-                # Code for saving settings goes here
-                with open(filename, "w") as file:
-                    file.write("channels = [")
-                    for input_box in self.input_boxes:
-                        channel = input_box.channel
-                        file.write(f"{channel}, ")
-                    file.write("]\n")
-                    file.write("voltages = [")
-                    for input_box in self.input_boxes:
-                        voltage = input_box.input_box.text()
-                        file.write(f"{voltage}, ")
-                    file.write("]\n")
+        pass
+    # def save_settings(self):
+    #     result = QMessageBox.warning(self, "Warning", "Saving settings will overwrite the existing saved configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
+    #                                  QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+    #     if result == QMessageBox.StandardButton.Ok:
+    #         filename = CONFIG_PATH
+    #         if filename:
+    #             # Code for saving settings goes here
+    #             with open(filename, "w") as file:
+    #                 file.write("channels = [")
+    #                 for input_box in self.input_boxes:
+    #                     channel = input_box.channel
+    #                     file.write(f"{channel}, ")
+    #                 file.write("]\n")
+    #                 file.write("voltages = [")
+    #                 for input_box in self.input_boxes:
+    #                     voltage = input_box.voltage_box.text()
+    #                     file.write(f"{voltage}, ")
+    #                 file.write("]\n")
 
-                    file.write("labels = [")
-                    for input_box in self.input_boxes:
-                        label = input_box.custom_label_box.text()
-                        file.write(f"'{label}', ")
-                    file.write("]\n")
-        else:
-            return
+    #                 file.write("labels = [")
+    #                 for input_box in self.input_boxes:
+    #                     label = input_box.custom_label_box.text()
+    #                     file.write(f"'{label}', ")
+    #                 file.write("]\n")
+    #     else:
+    #         return
 
     def reload_settings(self):
-        result = QMessageBox.warning(self, "Warning", "Reloading settings will overwrite current configuration. Are you sure you want to proceed?",
-                                     QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
-        if result == QMessageBox.StandardButton.Ok:
-            filename = CONFIG_PATH
-            if filename:
-                # Code for reloading settings goes here
-                settings = {}
-                with open(filename, "r") as file:
-                    exec(file.read(), {}, settings)
+        pass
+    # def reload_settings(self):
+    #     result = QMessageBox.warning(self, "Warning", "Reloading settings will overwrite current configuration. Are you sure you want to proceed?",
+    #                                  QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel)
+    #     if result == QMessageBox.StandardButton.Ok:
+    #         filename = CONFIG_PATH
+    #         if filename:
+    #             # Code for reloading settings goes here
+    #             settings = {}
+    #             with open(filename, "r") as file:
+    #                 exec(file.read(), {}, settings)
 
-                channels = settings.get("channels", [])
-                voltages = settings.get("voltages", [])
-                labels = settings.get("labels", [])
-                for i, input_box in enumerate(self.input_boxes):
-                    if i < len(labels):
-                        label = labels[i]
-                        input_box.custom_label_box.setText(label)
-                    else:
-                        input_box.custom_label_box.setText("")
+    #             channels = settings.get("channels", [])
+    #             voltages = settings.get("voltages", [])
+    #             labels = settings.get("labels", [])
+    #             for i, input_box in enumerate(self.input_boxes):
+    #                 if i < len(labels):
+    #                     label = labels[i]
+    #                     input_box.custom_label_box.setText(label)
+    #                 else:
+    #                     input_box.custom_label_box.setText("")
 
-                for input_box in self.input_boxes:
-                    channel = input_box.channel
-                    if channel in channels:
-                        index = channels.index(channel)
-                        voltage = voltages[index]
-                        input_box.input_box.setText(str(voltage))
-                    else:
-                        input_box.input_box.setText("0.0")
-        else:
-            return
+    #             for input_box in self.input_boxes:
+    #                 channel = input_box.channel
+    #                 if channel in channels:
+    #                     index = channels.index(channel)
+    #                     voltage = voltages[index]
+    #                     input_box.voltage_box.setText(str(voltage))
+    #                 else:
+    #                     input_box.voltage_box.setText("0.0")
+    #     else:
+    #         return
         
-
     def reload_opening(self):
-        filename = CONFIG_PATH  # Set the file name
+        pass
+    # def reload_opening(self):
+    #     filename = CONFIG_PATH  # Set the file name
 
-        settings = {}
-        with open(filename, "r") as file:
-            exec(file.read(), {}, settings)
+    #     settings = {}
+    #     with open(filename, "r") as file:
+    #         exec(file.read(), {}, settings)
 
-        channels = settings.get("channels", [])
-        voltages = settings.get("voltages", [])
+    #     channels = settings.get("channels", [])
+    #     voltages = settings.get("voltages", [])
 
-        labels = settings.get("labels", [])
+    #     labels = settings.get("labels", [])
 
-        for i, input_box in enumerate(self.input_boxes):
-            if i < len(labels):
-                label = labels[i]
-                input_box.custom_label_box.setText(label)
-            else:
-                input_box.custom_label_box.setText("")
+    #     for i, input_box in enumerate(self.input_boxes):
+    #         if i < len(labels):
+    #             label = labels[i]
+    #             input_box.custom_label_box.setText(label)
+    #         else:
+    #             input_box.custom_label_box.setText("")
 
-        for input_box in self.input_boxes:
-            channel = input_box.channel
-            if channel in channels:
-                index = channels.index(channel)
-                voltage = voltages[index]
-                input_box.input_box.setText(str(voltage))
-            else:
-                input_box.input_box.setText("0.0")
+    #     for input_box in self.input_boxes:
+    #         channel = input_box.channel
+    #         if channel in channels:
+    #             index = channels.index(channel)
+    #             voltage = voltages[index]
+    #             input_box.voltage_box.setText(str(voltage))
+    #         else:
+    #             input_box.voltage_box.setText("0.0")
     
 app = QApplication(sys.argv)
 window = QMainWindow()

@@ -15,8 +15,6 @@ import copy
 from kexp.control import DDS
 import os
 
-import kexp.config.dds_state as dds_state
-
 CODE_DIR = os.environ.get("code")
 CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","dds_state.py")
 
@@ -214,7 +212,6 @@ class DDSChannel(QWidget):
             amp = self.dds.amplitude
             self.amp_input.setText(f'{amp}')
 
-
     def toggle_state_changed(self, state, execute_logic):
         if execute_logic:
             self.toggle_states = state
@@ -362,18 +359,18 @@ class DDSControlGrid(QWidget):
         self.layout.addLayout(top_layout)  # Add the top layout to the main layout
 
         # Create a horizontal layout for the buttons
-        button_layout = QHBoxLayout()
+        # button_layout = QHBoxLayout()
 
-        self.save_button = QPushButton("Save Configuration", parent=self)
-        self.save_button.clicked.connect(self.save_settings)
-        button_layout.addWidget(self.save_button)
+        # self.save_button = QPushButton("Save Configuration", parent=self)
+        # self.save_button.clicked.connect(self.save_settings)
+        # button_layout.addWidget(self.save_button)
 
-        self.reload_button = QPushButton("Reload Configuration", parent=self)
-        self.reload_button.clicked.connect(self.reload_settings)
-        button_layout.addWidget(self.reload_button)
+        # self.reload_button = QPushButton("Reload Configuration", parent=self)
+        # self.reload_button.clicked.connect(self.reload_settings)
+        # button_layout.addWidget(self.reload_button)
 
         # Add the button_layout to the top_layout
-        top_layout.addLayout(button_layout)
+        # top_layout.addLayout(button_layout)
 
         # Create a grid layout to hold the DDS control boxes and column frames
         self.grid_layout = QGridLayout()
@@ -386,7 +383,6 @@ class DDSControlGrid(QWidget):
         self.column_frames = []  # Convert to instance variable
 
         self.dds = dds_id.dds_frame()
-
 
         # Create DDS channels in each column
         for urukul_idx in range(dds_id.N_uru): # can replace with dds_id.shape[0]
@@ -430,66 +426,70 @@ class DDSControlGrid(QWidget):
         off_button.clicked.connect(self.set_all_off)
         self.layout.addWidget(off_button)
 
-    
-
     def save_settings(self):
-        result = QMessageBox.warning(
-            self,
-            "Warning",
-            "Saving settings will overwrite the existing saved configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
-        )
+        pass
+    # def save_settings(self):
+    #     result = QMessageBox.warning(
+    #         self,
+    #         "Warning",
+    #         "Saving settings will overwrite the existing saved configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
+    #         QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+    #     )
 
-        if result == QMessageBox.StandardButton.Ok:
-            filename = CONFIG_PATH
-            if filename:
-                urukul_ch_indices = [(channel.get_urukul_idx(), channel.get_ch_idx()) for channel in self.dds_channels]
-                frequencies = [channel.get_frequency() for channel in self.dds_channels]
-                amplitudes = [channel.get_amplitude() for channel in self.dds_channels]
-                v_dacs = [channel.get_v_dac() for channel in self.dds_channels]
+    #     if result == QMessageBox.StandardButton.Ok:
+    #         filename = CONFIG_PATH
+    #         if filename:
+    #             urukul_ch_indices = [(channel.get_urukul_idx(), channel.get_ch_idx()) for channel in self.dds_channels]
+    #             frequencies = [channel.get_frequency() for channel in self.dds_channels]
+    #             amplitudes = [channel.get_amplitude() for channel in self.dds_channels]
+    #             v_dacs = [channel.get_v_dac() for channel in self.dds_channels]
 
-                # Save settings to a file
-                with open(CONFIG_PATH, "w") as f:
-                    f.write("ch = " + str(urukul_ch_indices) + "\n")
-                    f.write("freq = " + str([float(f"{freq:.3f}") for freq in frequencies]) + "\n")
-                    f.write("amplitude = " + str(amplitudes) + "\n")
-                    f.write("v_dac = " + str(v_dacs) + "\n")
+    #             # Save settings to a file
+    #             with open(CONFIG_PATH, "w") as f:
+    #                 f.write("ch = " + str(urukul_ch_indices) + "\n")
+    #                 f.write("freq = " + str([float(f"{freq:.3f}") for freq in frequencies]) + "\n")
+    #                 f.write("amplitude = " + str(amplitudes) + "\n")
+    #                 f.write("v_dac = " + str(v_dacs) + "\n")
             
-                print("Settings saved to dds_state.py")
+    #             print("Settings saved to dds_state.py")
             
-        else:
-            return
-
+    #     else:
+    #         return
+        
     def reload_settings(self):
-        result = QMessageBox.warning(
-            self,
-            "Warning",
-            "Reloading settings will overwrite the existing configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
-        )
+        pass
+    # def reload_settings(self):
+    #     result = QMessageBox.warning(
+    #         self,
+    #         "Warning",
+    #         "Reloading settings will overwrite the existing configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
+    #         QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+    #     )
 
-        if result == QMessageBox.StandardButton.Ok:
-            filename = CONFIG_PATH
-            if filename:
-                self.load_settings_from_file(filename)
-                print("Settings reloaded from dds_state.py")
+    #     if result == QMessageBox.StandardButton.Ok:
+    #         filename = CONFIG_PATH
+    #         if filename:
+    #             self.load_settings_from_file(filename)
+    #             print("Settings reloaded from dds_state.py")
 
-    def load_settings_from_file(self, filename):
-        try:
-            urukul_ch_indices = dds_state.ch
-            frequencies = dds_state.freq
-            amplitudes = dds_state.amplitude
-            v_dacs = dds_state.v_dac
+    def load_settings_from_file(self,filename):
+        pass
+    # def load_settings_from_file(self, filename):
+    #     try:
+    #         urukul_ch_indices = dds_state.ch
+    #         frequencies = dds_state.freq
+    #         amplitudes = dds_state.amplitude
+    #         v_dacs = dds_state.v_dac
 
-            for channel, (urukul_idx, ch_idx) in zip(self.dds_channels, urukul_ch_indices):
-                frequency = frequencies[channel.get_urukul_idx() * dds_id.N_ch + channel.get_ch_idx()]
-                amplitude = amplitudes[channel.get_urukul_idx() * dds_id.N_ch + channel.get_ch_idx()]
-                v_dac = v_dacs[channel.get_urukul_idx() * dds_id.N_ch + channel.get_ch_idx()]
+    #         for channel, (urukul_idx, ch_idx) in zip(self.dds_channels, urukul_ch_indices):
+    #             frequency = frequencies[channel.get_urukul_idx() * dds_id.N_ch + channel.get_ch_idx()]
+    #             amplitude = amplitudes[channel.get_urukul_idx() * dds_id.N_ch + channel.get_ch_idx()]
+    #             v_dac = v_dacs[channel.get_urukul_idx() * dds_id.N_ch + channel.get_ch_idx()]
 
-                self.update_channel_inputs(channel, frequency, amplitude, v_dac)
+    #             self.update_channel_inputs(channel, frequency, amplitude, v_dac)
 
-        except ImportError:
-            print("dds_state.py not found or does not contain the required attributes.")
+    #     except ImportError:
+    #         print("dds_state.py not found or does not contain the required attributes.")
 
     def update_channel_inputs(self, channel, frequency, amplitude, v_dac):
 

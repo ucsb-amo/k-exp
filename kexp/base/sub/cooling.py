@@ -3,6 +3,7 @@ from artiq.experiment import delay, delay_mu, parallel, sequential
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
+from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
 from kexp.config.expt_params import ExptParams
 import numpy as np
 
@@ -13,11 +14,13 @@ dvlist = np.linspace(1.,1.,5)
 
 class Cooling():
     def __init__(self):
+        # just to get syntax highlighting
         self.dds = dds_frame()
         self.ttl = ttl_frame()
         self.dac = dac_frame()
+        self.inner_coil = hbridge_magnet()
+        self.outer_coil = igbt_magnet()
         self.params = ExptParams()
-        # just to get syntax highlighting
 
     ## cooling stages
 
@@ -26,7 +29,7 @@ class Cooling():
         with parallel:
             self.dds.push.off()
             self.switch_d2_3d(0)
-            self.set_magnet_current(0.)
+            self.inner_coil.off()
         delay(t)
 
     @kernel
@@ -73,7 +76,7 @@ class Cooling():
             amp_d2_r = dv,
             detune_push = dv,
             amp_push = dv,
-            v_current = dv,
+            i_supply = dv,
             v_zshim_current = dv,
             v_yshim_current = dv,
             v_xshim_current = dv):
@@ -91,8 +94,8 @@ class Cooling():
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
-        if v_current == dv:
-            v_current = self.params.v_mot_current
+        if i_supply == dv:
+            i_supply = self.params.i_mot
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current
         if v_yshim_current == dv:
@@ -100,6 +103,8 @@ class Cooling():
         if v_xshim_current == dv:
             v_xshim_current = self.params.v_xshim_current
         ### End Defaults ###
+            
+        self.inner_coil.on(i_supply,wait_for_analog=True)
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
@@ -109,14 +114,9 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
-        self.set_magnet_current(v = v_current)
-        self.set_zshim_magnet_current(v = v_zshim_current)
-        self.dac.xshim_current_control.set(v = v_xshim_current)
-        self.dac.yshim_current_control.set(v = v_yshim_current)
+        self.set_shims(v_xshim_current,v_yshim_current,v_zshim_current)
         with parallel:
-            self.ttl.inner_coil_igbt.on()
             self.switch_d2_3d(1)
-            # delay_mu(self.params.t_rtio_mu)
             self.dds.push.on()
         delay(t)
 
@@ -126,7 +126,7 @@ class Cooling():
             amp_d2_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
-            v_current = dv,
+            i_supply = dv,
             v_zshim_current = dv):
         
         ### Start Defaults ###
@@ -138,22 +138,21 @@ class Cooling():
             detune_d2_r = self.params.detune_d2_r_mot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_mot
-        if v_current == dv:
-            v_current = self.params.v_mot_current
+        if i_supply == dv:
+            i_supply = self.params.i_mot
         if v_zshim_current == dv:
-            v_current = self.params.v_zshim_current
+            v_zshim_current = self.params.v_zshim_current
         ### End Defaults ###
-
+            
+        self.inner_coil.on(i_supply)
+        
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
-        self.set_magnet_current(v = v_current)
-        self.set_zshim_magnet_current(v=v_zshim_current)
-        with parallel:
-            self.ttl.inner_coil_igbt.on()
-            self.switch_d2_3d(1)
+        self.set_shims()
+        self.switch_d2_3d(1)
         delay(t)
 
     @kernel
@@ -166,7 +165,8 @@ class Cooling():
             v_pd_d1_c = dv,
             detune_d1_r = dv,
             v_pd_d1_r = dv,
-            v_current = dv):
+            i_supply = dv,
+            v_zshim_current = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -188,8 +188,12 @@ class Cooling():
         if v_pd_d1_r == dv:
             v_pd_d1_r = self.params.v_pd_d1_r_mot
 
-        if v_current == dv:
-            v_current = self.params.v_mot_current
+        if i_supply == dv:
+            i_supply = self.params.i_mot
+        if v_zshim_current == dv:
+            v_zshim_current = self.params.v_zshim_current
+
+        self.inner_coil.on(i_supply,wait_for_analog=True)
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
@@ -202,11 +206,9 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
                                  amplitude=v_pd_d1_r)
-        self.set_magnet_current(v = v_current)
-        self.ttl.inner_coil_igbt.on()
+        self.set_shims()
         with parallel:
             self.switch_d2_3d(1)
-            
             self.dds.push.on()
         self.switch_d1_3d(1)
         delay(t)
@@ -218,7 +220,7 @@ class Cooling():
             amp_d2_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
-            v_current = dv):
+            i_supply = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -229,17 +231,17 @@ class Cooling():
             detune_d2_r = self.params.detune_d2_r_d2cmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_d2cmot
-        if v_current == dv:
-            v_current = self.params.v_d2cmot_current
+        if i_supply == dv:
+            i_supply = self.params.i_cmot
         ### End Defaults ###
+            
+        self.inner_coil.on(i_supply,wait_for_analog=True)
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                        amplitude=amp_d2_c)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                        amplitude=amp_d2_r)
-        with parallel:
-            self.switch_d2_3d(1)
-            self.set_magnet_current(v = v_current)
+        self.switch_d2_3d(1)
         delay(t)
 
     #hybrid compressed MOT with only D2 repump and D1 cooler, setting B field to lower value
@@ -250,8 +252,7 @@ class Cooling():
             amp_d1_c = dv,
             detune_d2_r = dv,
             amp_d2_r = dv,
-            v_current = dv,
-            t_magnet_off_pretrigger = dv):
+            i_supply = dv):
         
         ### Start Defaults ###
         if detune_d1_c == dv:
@@ -264,11 +265,11 @@ class Cooling():
             detune_d2_r = self.params.detune_d2_r_d1cmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_d1cmot
-        if v_current == dv:
-            v_current = self.params.v_d1cmot_current
-        if t_magnet_off_pretrigger == dv:
-            t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
+        if i_supply == dv:
+            i_supply = self.params.i_cmot
         ### End Defaults ###
+            
+        self.inner_coil.on(i_supply,wait_for_analog=True)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
                                        v_pd=v_pd_d1_c)
@@ -282,12 +283,8 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_c.off()
         self.dds.d1_3d_r.off()
-        self.set_magnet_current(v = v_current)
-
-        delay(t - t_magnet_off_pretrigger)
-        self.ttl.inner_coil_igbt.off()
-        self.set_magnet_current(v=0.)
-        delay(t_magnet_off_pretrigger)
+        
+        delay(t)
 
     #GM with only D1, turning B field off
     @kernel
@@ -298,7 +295,8 @@ class Cooling():
             detune_d1_r = dv,
             v_pd_d1_r = dv,
             amp_d1_r = dv,
-            detune_d1 = dv):
+            detune_d1 = dv,
+            t_magnet_off_pretrigger = dv):
         
         ### Start Defaults ###
         if detune_d1 != dv:
@@ -318,14 +316,13 @@ class Cooling():
             v_pd_d1_r = self.params.v_pd_d1_r_gm
         if amp_d1_r == dv:
             amp_d1_r = self.params.amp_d1_3d_r
-
-        # if t_magnet_off_pretrigger == dv:
-        #     t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
+        if t_magnet_off_pretrigger == dv:
+            t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
+        
         # ### End Defaults ###
-
+       
         # delay(-t_magnet_off_pretrigger)
-        # self.ttl.inner_coil_igbt.off()
-        # self.set_magnet_current(v=0.)
+        self.inner_coil.off()
         # delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
@@ -540,10 +537,10 @@ class Cooling():
 
     @kernel
     def release(self):
-        with parallel:
-            self.ttl.inner_coil_igbt.off()
-            self.switch_d2_3d(0)
-            self.switch_d1_3d(0)
+        self.inner_coil.off()
+        self.switch_d2_3d(0)
+        self.switch_d1_3d(0)
+        
 
     ## AOM group control
 
@@ -570,24 +567,15 @@ class Cooling():
                 self.dds.d2_3d_r.off()
 
     @kernel
-    def switch_d1_3d(self,state):
+    def switch_d1_3d(self,state,load_dac=True):
         if state == 1:
             self.dds.d1_3d_c.on(dac_load=False)
             self.dds.d1_3d_r.on(dac_load=False)
-            self.dac.load()
         elif state == 0:
             self.dds.d1_3d_c.off(dac_load=False)
             self.dds.d1_3d_r.off(dac_load=False)
+        if load_dac:
             self.dac.load()
-
-    ## Magnet functions
-
-    @kernel
-    def set_magnet_current(self, v = dv):
-        if v == dv:
-            v = self.params.v_mot_current
-        with sequential:
-            self.dac.inner_coil_supply.set(v)
 
     @kernel
     def set_zshim_magnet_current(self, v = dv, load_dac=True):
@@ -606,7 +594,7 @@ class Cooling():
             amp_d2_r = dv,
             detune_push = dv,
             amp_push = dv,
-            v_current = dv,
+            i_supply = dv,
             v_zshim_current = dv):
         
         ### Start Defaults ###
@@ -622,8 +610,8 @@ class Cooling():
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
-        if v_current == dv:
-            v_current = self.params.v_mot_current
+        if i_supply == dv:
+            i_supply = self.params.i_mot
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current
         ### End Defaults ###
@@ -637,10 +625,8 @@ class Cooling():
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         
-        self.set_magnet_current(v = v_current)
-        self.set_zshim_magnet_current(v = v_zshim_current)
-        self.dac.xshim_current_control.set(v=self.params.v_xshim_current)
-        self.dac.yshim_current_control.set(v=self.params.v_yshim_current)
+        
+        self.set_shims(v_zshim_current=v_zshim_current)
 
         delay(1*ms)
 
@@ -656,6 +642,23 @@ class Cooling():
         self.dds.beatlock_ref.on()
 
         self.core.break_realtime()
-        self.ttl.inner_coil_igbt.on()
+
+        self.inner_coil.on(i_supply)
 
         self.dds.imaging.on()
+
+    @kernel
+    def set_shims(self,
+                  v_xshim_current = dv,
+                  v_yshim_current = dv,
+                  v_zshim_current = dv):
+        if v_xshim_current == dv:
+            v_xshim_current = self.params.v_xshim_current
+        if v_yshim_current == dv:
+            v_yshim_current = self.params.v_yshim_current
+        if v_zshim_current == dv:
+            v_zshim_current = self.params.v_zshim_current
+
+        self.dac.xshim_current_control.set(v = v_xshim_current)
+        self.dac.yshim_current_control.set(v = v_yshim_current)
+        self.dac.zshim_current_control.set(v = v_zshim_current)

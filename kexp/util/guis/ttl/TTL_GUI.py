@@ -250,89 +250,95 @@ class TTLControlGrid(QWidget):
         builder.execute_all_ttl_off(START_TTL, NUM_TTL)
 
     def save_settings(self):
-        result = QMessageBox.warning(
-            self,
-            "Warning",
-            "Saving settings will overwrite the existing saved configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
-        )
-        if result == QMessageBox.StandardButton.Ok:
-            filename = CONFIG_PATH  # Set the file name
-            if filename:
-                # Code for saving settings goes here
-                channels = []
-                durations = []
-                labels = []
-                duration_units = []
-                for input_box in self.input_boxes:
-                    channel = input_box.channel
-                    duration = float(input_box.input_box.text())
-                    label = input_box.custom_label_box.text()
-                    
-                    channels.append(channel)
-                    durations.append(duration)
-                    labels.append(label)
-                    duration_units.append(input_box.duration_combobox.currentIndex())
-        
-
-                with open(filename, "w") as file:
-                    file.write("channels = ")
-                    file.write(str(channels))
-                    file.write("\n")
-                    file.write("durations = ")
-                    file.write(str(durations))
-                    file.write("\n")
-                    file.write("labels = ")
-                    file.write(repr(labels))
-                    file.write("\n")
-                    file.write("duration_units = ")
-                    file.write(str(duration_units))
-                    file.write("\n")
-        else:
-            return
+        pass
 
     def reload_settings(self):
-        result = QMessageBox.warning(
-            self,
-            "Warning",
-            "Reloading settings will overwrite current configuration. Are you sure you want to proceed?",
-            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
-        )
-        if result == QMessageBox.StandardButton.Ok:
-            filename = CONFIG_PATH  # Set the file name
-            if filename:
-                # Code for reloading settings goes here
-                settings = {}
-                with open(filename, "r") as file:
-                    exec(file.read(), {}, settings)
-                channels = settings.get("channels", [])
-                durations = settings.get("durations", [])
-                labels = settings.get("labels", [])
+        pass
 
-                # Additional code to retrieve the duration units from the settings
-                duration_units = settings.get("duration_units", [])
-                for input_box in self.input_boxes:
-                        channel = input_box.channel
-                        index = channels.index(channel) if channel in channels else -1
+    # def save_settings(self):
+    #     result = QMessageBox.warning(
+    #         self,
+    #         "Warning",
+    #         "Saving settings will overwrite the existing saved configuration. All previous labels and values will be lost forever. Are you sure you want to proceed?",
+    #         QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+    #     )
+    #     if result == QMessageBox.StandardButton.Ok:
+    #         filename = CONFIG_PATH  # Set the file name
+    #         if filename:
+    #             # Code for saving settings goes here
+    #             channels = []
+    #             durations = []
+    #             labels = []
+    #             duration_units = []
+    #             for input_box in self.input_boxes:
+    #                 channel = input_box.channel
+    #                 duration = float(input_box.input_box.text())
+    #                 label = input_box.custom_label_box.text()
+                    
+    #                 channels.append(channel)
+    #                 durations.append(duration)
+    #                 labels.append(label)
+    #                 duration_units.append(input_box.duration_combobox.currentIndex())
+        
 
-                        if index != -1:
-                            duration = durations[index]
-                            input_box.input_box.setText(str(duration))
-                            label = labels[index]
-                            input_box.custom_label_box.setText(label)
+    #             with open(filename, "w") as file:
+    #                 file.write("channels = ")
+    #                 file.write(str(channels))
+    #                 file.write("\n")
+    #                 file.write("durations = ")
+    #                 file.write(str(durations))
+    #                 file.write("\n")
+    #                 file.write("labels = ")
+    #                 file.write(repr(labels))
+    #                 file.write("\n")
+    #                 file.write("duration_units = ")
+    #                 file.write(str(duration_units))
+    #                 file.write("\n")
+    #     else:
+    #         return
 
-                            # Set the corresponding index of the duration_combobox
-                            if index < len(duration_units):
-                                duration_unit_index = duration_units[index]
-                                input_box.duration_combobox.setCurrentIndex(duration_unit_index)
-                        else:
-                            input_box.input_box.setText("")
-                            input_box.custom_label_box.setText("")
+    # def reload_settings(self):
+    #     result = QMessageBox.warning(
+    #         self,
+    #         "Warning",
+    #         "Reloading settings will overwrite current configuration. Are you sure you want to proceed?",
+    #         QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
+    #     )
+    #     if result == QMessageBox.StandardButton.Ok:
+    #         filename = CONFIG_PATH  # Set the file name
+    #         if filename:
+    #             # Code for reloading settings goes here
+    #             settings = {}
+    #             with open(filename, "r") as file:
+    #                 exec(file.read(), {}, settings)
+    #             channels = settings.get("channels", [])
+    #             durations = settings.get("durations", [])
+    #             labels = settings.get("labels", [])
 
-                            # Set the duration_combobox index to 0 (first item) for new input_boxes
-                            input_box.duration_combobox.setCurrentIndex(0)
-        else:
-            return
+    #             # Additional code to retrieve the duration units from the settings
+    #             duration_units = settings.get("duration_units", [])
+    #             for input_box in self.input_boxes:
+    #                     channel = input_box.channel
+    #                     index = channels.index(channel) if channel in channels else -1
+
+    #                     if index != -1:
+    #                         duration = durations[index]
+    #                         input_box.input_box.setText(str(duration))
+    #                         label = labels[index]
+    #                         input_box.custom_label_box.setText(label)
+
+    #                         # Set the corresponding index of the duration_combobox
+    #                         if index < len(duration_units):
+    #                             duration_unit_index = duration_units[index]
+    #                             input_box.duration_combobox.setCurrentIndex(duration_unit_index)
+    #                     else:
+    #                         input_box.input_box.setText("")
+    #                         input_box.custom_label_box.setText("")
+
+    #                         # Set the duration_combobox index to 0 (first item) for new input_boxes
+    #                         input_box.duration_combobox.setCurrentIndex(0)
+    #     else:
+    #         return
 
 app = QApplication(sys.argv)
 window = QMainWindow()

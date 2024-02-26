@@ -10,7 +10,7 @@ from kexp.util.data import DataSaver, RunInfo
 from kexp.util.artiq.async_print import aprint
 
 class Base(Devices, Cooling, Image, Dealer, Cameras):
-    def __init__(self,setup_camera=True,absorption_image=True,basler_imaging=True,andor_imaging=False):
+    def __init__(self,setup_camera=True,absorption_image=True,camera_select="xy_basler"):
         super().__init__()
 
         self.run_info = RunInfo(self)
@@ -20,7 +20,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
 
         self.prepare_devices(expt_params=self.params)
 
-        self.choose_camera(setup_camera,absorption_image,basler_imaging,andor_imaging)
+        self.choose_camera(setup_camera,absorption_image,camera_select)
 
         self.images = []
         self.image_timestamps = []

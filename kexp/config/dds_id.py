@@ -76,7 +76,9 @@ class dds_frame():
         self.mot_killer = self.dds_assign(3,1, ao_order = -1, transition = 'D2',
                                     default_detuning = 0.,
                                     default_amp = 0.188)
-        self.beatlock_ref = self.dds_assign(3,2,default_freq=40.e6,default_amp=0.1)
+        self.beatlock_ref = self.dds_assign(3,2,
+                                            default_freq=42.26e6,
+                                            default_amp=0.1)
         self.d1_3d_c = self.dds_assign(3,3, ao_order = -1, transition = 'D1',
                                     dac_ch_vpd = self._dac_frame.vva_d1_3d_c.ch,
                                     default_detuning = self.p.detune_d1_c_gm,
@@ -104,7 +106,7 @@ class dds_frame():
                    default_freq=dv, default_detuning=dv, default_amp=dv, 
                    ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
         '''
-        Gets the DDS() object from the dds_state vector, sets the aom order, and
+        Makes a DDS object, sets the aom order, and
         returns the DDS() object.
 
         Returns
