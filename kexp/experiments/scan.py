@@ -23,12 +23,9 @@ class tof(EnvExperiment, Base):
 
         # self.p.amp_imaging_abs = 0.26
 
-        self.p.t_magnet_off_pretrigger = .5e-3
-        self.p.t_gm = 5.e-3
-
-        # self.p.t_tof = np.linspace(500,1500,N) * 1.e-6 # mot
+        self.p.t_tof = np.linspace(500,2000,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(5000,10000,N) * 1.e-6 # gm
+        # self.p.t_tof = np.linspace(5000,7000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(100,20368,N) * 1.e-6
         # self.p.t_tof = np.linspace(100.,700.,N) * 1.e-6
@@ -59,8 +56,11 @@ class tof(EnvExperiment, Base):
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
             self.ttl.pd_scope_trig.on()
-            self.cmot_d1(self.p.t_d1cmot * s)
-            self.gm(self.p.t_gm * s)
+            # self.cmot_d1(self.p.t_d1cmot * s)
+            # delay(-5*ms)
+            # self.inner_coil.off()
+            # delay(5*ms)
+            # self.gm(self.p.t_gm * s)
             # self.gm_ramp(self.p.t_gmramp * s)
             self.release()
 
