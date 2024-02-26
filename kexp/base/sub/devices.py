@@ -51,15 +51,21 @@ class Devices():
         self.dds_list = self.dds.dds_list
 
         # magnet coils
-        self.inner_coil = hbridge_magnet(v_control_dac=self.dac.inner_coil_supply_voltage,
-                                      i_control_dac=self.dac.inner_coil_supply_current,
-                                      igbt_ttl=self.ttl.inner_coil_igbt,
-                                      hbridge_ttl=self.ttl.hbridge_helmholtz,
-                                      expt_params=self.params)
+        self.inner_coil = hbridge_magnet(max_current=170.,
+                                         max_voltage=80.,
+                                         v_control_dac=self.dac.inner_coil_supply_voltage,
+                                         i_control_dac=self.dac.inner_coil_supply_current,
+                                         igbt_ttl=self.ttl.inner_coil_igbt,
+                                         contactor_ttl=self.ttl.inner_coil_contactor,
+                                         hbridge_ttl=self.ttl.hbridge_helmholtz,
+                                         expt_params=self.params)
                                       
-        self.outer_coil = igbt_magnet(v_control_dac=self.dac.inner_coil_supply_voltage,
-                                      i_control_dac=self.dac.inner_coil_supply_current,
-                                      igbt_ttl=self.ttl.inner_coil_igbt,
+        self.outer_coil = igbt_magnet(max_current=500.,
+                                      max_voltage=80.,
+                                      v_control_dac=self.dac.outer_coil_supply_voltage,
+                                      i_control_dac=self.dac.outer_coil_supply_current,
+                                      igbt_ttl=self.ttl.outer_coil_igbt,
+                                      contactor_ttl=self.ttl.outer_coil_contactor,
                                       expt_params=self.params)
         
         # painted ligthsheet
