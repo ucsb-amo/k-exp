@@ -7,6 +7,8 @@ import numpy as np
 from kexp.config import camera_params
 from kamo.atom_properties.k39 import Potassium39
 
+from kexp.base.base import Cameras
+
 from preview_experiment import T_TOF_US, T_MOTLOAD_S
 
 ####
@@ -19,10 +21,12 @@ XAXIS_IMAGING = False
 
 ###
 
-cam_p = camera_params.basler_absorp_camera_params
-if XAXIS_IMAGING:
-    cam_p.serial_no = camera_params.basler_fluor_camera_params.serial_no
-    cam_p.magnification = camera_params.basler_fluor_camera_params.magnification
+camera_handler = Cameras()
+camera_handler.choose_camera()
+cam_p = camera_handler.camera_params
+camera = BaslerUSB(BaslerSerialNumber=cam_p.serial_no,
+                    ExposureTime=cam_p.exposure_time,
+                    TriggerMode='On')
 
 ####
 
@@ -57,15 +61,8 @@ plt.ion()
 
 plt.set_cmap('magma')
 
-### Camera handling
-
-# open the camera
-camera = BaslerUSB(BaslerSerialNumber=cam_p.serial_no,
-                    ExposureTime=cam_p.exposure_time,
-                    TriggerMode='On')
-
 # start waiting for triggers
-camera.StartGrabbingMax(3000,pylon.GrabStrategy_LatestImages)
+camera.StartGrabbingMax(10000,pylon.GrabStrategy_LatestImages)
 
 ### Setup
 
@@ -105,8 +102,8 @@ while camera.IsGrabbing():
             # compute the OD
             _, OD, sum_od_x, sum_od_y = compute_ODs(images[0],images[1],images[2],crop_type=CROP_TYPE)
             # fit the summed ODs
-            fit_x = fit_gaussian_sum_dist(sum_od_x,camera_params.basler_absorp_camera_params)
-            fit_y = fit_gaussian_sum_dist(sum_od_y,camera_params.basler_absorp_camera_params)
+            fit_x = fit_gaussian_sum_dist(sum_od_x,cam_p)
+            fit_y = fit_gaussian_sum_dist(sum_od_y,cam_p)
             try:
                 # add the new widths to the arrays of widths, ditto, centers
                 sigmas_x = np.append(sigmas_x,fit_x[0].sigma * 1.e6)
