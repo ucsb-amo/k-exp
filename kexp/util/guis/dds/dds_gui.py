@@ -15,8 +15,6 @@ import copy
 from kexp.control import DDS
 import os
 
-import kexp.config.dds_state as dds_state
-
 CODE_DIR = os.environ.get("code")
 CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","dds_state.py")
 
