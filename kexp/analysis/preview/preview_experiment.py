@@ -5,7 +5,7 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-T_TOF_US = 500 # gm ramp
+T_TOF_US = 8000 # gm ramp
 # T_TOF_US = 751 # mot
 # T_TOF_US = 10 # light sheet
 T_MOTLOAD_S = 1.0
@@ -38,6 +38,9 @@ class tof(EnvExperiment, Base):
 
         self.xvarnames = ['dummy']
 
+        self.p.t_magnet_off_pretrigger = 0.
+        self.p.t_gm = 5.e-3
+
         self.finish_build()
 
         print('hi')
@@ -55,12 +58,12 @@ class tof(EnvExperiment, Base):
 
         for _ in self.p.dummy:
 
-            delay(1.0)
+            delay(.5)
             
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
-            # self.cmot_d1(self.p.t_d1cmot * s)
-            # self.gm(self.p.t_gm * s)
+            self.cmot_d1(self.p.t_d1cmot * s)
+            self.gm(self.p.t_gm * s)
             # self.gm_ramp(self.p.t_gmramp * s)
 
             self.release()

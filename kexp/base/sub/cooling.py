@@ -283,6 +283,8 @@ class Cooling():
         delay_mu(self.params.t_rtio_mu)
         self.dds.d2_3d_c.off()
         self.dds.d1_3d_r.off()
+        
+        delay(t)
 
     #GM with only D1, turning B field off
     @kernel
@@ -293,9 +295,8 @@ class Cooling():
             detune_d1_r = dv,
             v_pd_d1_r = dv,
             amp_d1_r = dv,
-            detune_d1 = dv):
-        
-        self.inner_coil.off()
+            detune_d1 = dv,
+            t_magnet_off_pretrigger = dv):
         
         ### Start Defaults ###
         if detune_d1 != dv:
@@ -315,14 +316,13 @@ class Cooling():
             v_pd_d1_r = self.params.v_pd_d1_r_gm
         if amp_d1_r == dv:
             amp_d1_r = self.params.amp_d1_3d_r
-
-        # if t_magnet_off_pretrigger == dv:
-        #     t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
+        if t_magnet_off_pretrigger == dv:
+            t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
+        
         # ### End Defaults ###
-
+       
         # delay(-t_magnet_off_pretrigger)
-        # self.ttl.inner_coil_igbt.off()
-        # self.set_magnet_current(v=0.)
+        self.inner_coil.off()
         # delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
