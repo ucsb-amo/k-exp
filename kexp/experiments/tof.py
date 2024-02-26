@@ -21,9 +21,9 @@ class tof(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_mot_load = 2.0
 
-        self.p.amp_imaging_abs = 0.26
+        # self.p.amp_imaging_abs = 0.26
 
-        self.p.t_tof = np.linspace(100,500,N) * 1.e-6 # mot
+        self.p.t_tof = np.linspace(500,2000,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(5000,7000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
@@ -55,11 +55,13 @@ class tof(EnvExperiment, Base):
 
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
-            # # self.ttl.pd_scope_trig.on()
-            self.cmot_d1(self.p.t_d1cmot * s)
-            self.gm(self.p.t_gm * s)
+            self.ttl.pd_scope_trig.on()
+            # self.cmot_d1(self.p.t_d1cmot * s)
+            # delay(-5*ms)
+            # self.inner_coil.off()
+            # delay(5*ms)
+            # self.gm(self.p.t_gm * s)
             # self.gm_ramp(self.p.t_gmramp * s)
-            # self.ttl.pd_scope_trig.off()
             self.release()
 
             # self.set_magnet_current(v=5.)
@@ -76,6 +78,7 @@ class tof(EnvExperiment, Base):
 
             ### abs img
             delay(t_tof * s)
+            self.ttl.pd_scope_trig.off()
             # delay(100.e-6 * s)
             # self.fl_image()
             self.flash_repump()
