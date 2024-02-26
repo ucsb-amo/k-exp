@@ -11,8 +11,10 @@ class ExptParams():
         self.N_img = 1
 
         #Magnet
-        self.t_keysight_analog_response = 17.e-3
-        self.t_hbridge_switch_delay = 5.e-3
+        self.t_keysight_analog_response = 10.e-3
+        self.t_hbridge_switch_delay = 80.e-3
+        self.t_contactor_close_delay = 25.e-3
+        self.t_contactor_open_delay = 12.e-3
 
         #Imaging
         self.t_imaging_pulse = 5.e-6
@@ -47,7 +49,7 @@ class ExptParams():
         self.t_tweezer_hold = 50.e-3
         self.t_tweezer_1064_ramp = 10.e-3
         self.t_mot_reload = 2.
-        self.t_recover = 20.e-3
+        self.t_recover = 40.e-3
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -77,7 +79,7 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.5
 
-        self.v_mot_current = 3.0
+        self.i_mot = 25.0
         self.v_zshim_current = 0.185
         self.v_xshim_current = 0.92
         self.v_yshim_current = 0.56
@@ -98,7 +100,7 @@ class ExptParams():
         self.detune_d2_r_d1cmot = -3.
         self.amp_d2_r_d1cmot = 0.047
 
-        self.v_d1cmot_current = 3.0
+        self.i_cmot = 25.
         
         #GM
         self.detune_gm = 9.
