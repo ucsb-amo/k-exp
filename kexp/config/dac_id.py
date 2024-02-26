@@ -7,7 +7,7 @@ from kexp.control.artiq.DDS import DDS
 FORBIDDEN_CH = []
 
 class dac_frame():
-    def __init__(self,dac_device=Zotino):
+    def __init__(self, dac_device = Zotino):
 
         self.dac_device = dac_device
 

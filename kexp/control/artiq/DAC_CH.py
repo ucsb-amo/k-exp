@@ -37,3 +37,7 @@ class DAC_CH():
     def handle_dac_error(self,v):
         if ( v <= -10.) | (v >= 10.):
             raise ValueError("DAC voltage must be between -10 and 10 V (noninclusive).")
+        
+    @kernel
+    def load(self):
+        self.dac_device.load()
