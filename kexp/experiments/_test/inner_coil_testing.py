@@ -57,18 +57,20 @@ class test(EnvExperiment, Base):
         self.ttl.pd_scope_trig.on()
         self.ttl.inner_coil_igbt.on()
 
-        self.dac.inner_coil_supply_voltage.set(9.)
+        self.dac.inner_coil_supply_voltage.set(5.)
         self.dac.inner_coil_supply_current.set(1.)
         delay(40*ms)
         self.ttl.inner_coil_igbt.off()
         self.ttl.pd_scope_trig.off()
 
-        delay(20*ms)
+        # delay(20*ms)
         
-        delay(-15*ms)
+        # delay(-15*ms)
         self.dac.inner_coil_supply_current.set(0.0)
         self.dac.inner_coil_supply_voltage.set(0.0)
-        delay(15*ms)
+        # delay(15*ms)
+
+        delay(50*ms)
             
         self.ttl.pd_scope_trig.on()
         self.inner_contactor_close(10*ms)

@@ -18,7 +18,11 @@ class test(EnvExperiment, Base):
         
         self.init_kernel()
 
-        self.mot_observe()
+        self.ttl.pd_scope_trig.on()
+        self.inner_coil.on(i_supply=20.)
+        delay(100*ms)
+        self.inner_coil.off()
+        self.ttl.pd_scope_trig.off()
         
     def analyze(self):
 

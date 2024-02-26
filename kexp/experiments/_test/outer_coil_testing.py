@@ -59,7 +59,7 @@ class test(EnvExperiment, Base):
 
         self.dac.outer_coil_supply_voltage.set(5.)
         self.dac.outer_coil_supply_current.set(.2)
-        delay(40*ms)
+        delay(70*ms)
         self.ttl.outer_coil_igbt.off()
         self.ttl.pd_scope_trig.off()
 
@@ -79,7 +79,7 @@ class test(EnvExperiment, Base):
 
         self.ttl.pd_scope_trig.on()
         self.ttl.outer_coil_igbt.on()
-        delay(10*ms)
+        delay(100*ms)
         self.ttl.outer_coil_igbt.off()
         self.ttl.pd_scope_trig.off()
 
