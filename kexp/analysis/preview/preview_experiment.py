@@ -68,11 +68,11 @@ class tof(EnvExperiment, Base):
 
             self.release()
 
-            # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
             # self.tweezer_1064_ramp(t_tweezer_1064_ramp=10.e-3)
-            # delay(2.e-3)
+            delay(.5e-3*s)
             # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampup)
-            # self.lightsheet.off()
+            self.lightsheet.off()
             # delay(1.2e-3*s)
 
             # self.dds.second_imaging.on()
@@ -81,7 +81,7 @@ class tof(EnvExperiment, Base):
             # self.dds.tweezer_aod.off()
 
             ### abs img
-            delay(self.p.t_tof * s)
+            delay(20.e-6 * s)
             # self.fl_image()
             self.flash_repump()
             self.abs_image()

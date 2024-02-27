@@ -38,7 +38,7 @@ class ExptParams():
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 7.5e-3
         self.t_magnet_off_pretrigger = 1.e-3
-        self.t_gm = 2.5e-3
+        self.t_gm = 5.e-3
         self.t_gmramp = 5.5e-3
         self.t_optical_pumping = 50.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
@@ -79,7 +79,7 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.5
 
-        self.i_mot = 25.0
+        self.i_mot = 23.0
         self.v_zshim_current = 0.185
         self.v_xshim_current = 0.92
         self.v_yshim_current = 0.56
@@ -115,7 +115,7 @@ class ExptParams():
         #v_pd values for start and end of ramp
         self.pfrac_c_gmramp_start = .6
         self.pfrac_c_gmramp_end = 0.3
-        self.pfrac_r_gmramp_start = .3
+        self.pfrac_r_gmramp_start = .4
         self.pfrac_r_gmramp_end = 0.097
         self.n_gmramp_steps = 200
 

@@ -17,18 +17,17 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 5
         self.p.N_repeats = 1
-        self.p.t_mot_load = 2.0
+        self.p.t_mot_load = 1.0
 
         # self.p.amp_imaging_abs = 0.26
 
-        self.p.t_magnet_off_pretrigger = .5e-3
-        self.p.t_gm = 5.e-3
+        self.p.t_magnet_off_pretrigger = 1.e-3
+        self.p.t_gm = 2.5e-3
 
         # self.p.t_tof = np.linspace(500,1500,N) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(5000,10000,N) * 1.e-6 # gm
+        self.p.t_tof = np.linspace(12000,18000,5) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(100,20368,N) * 1.e-6
         # self.p.t_tof = np.linspace(100.,700.,N) * 1.e-6
@@ -60,8 +59,9 @@ class tof(EnvExperiment, Base):
             self.dds.push.off()
             self.ttl.pd_scope_trig.on()
             self.cmot_d1(self.p.t_d1cmot * s)
+            self.set_shims(v_zshim_current=.84, v_yshim_current=self.p.v_yshim_current, v_xshim_current=self.p.v_xshim_current)
             self.gm(self.p.t_gm * s)
-            # self.gm_ramp(self.p.t_gmramp * s)
+            self.gm_ramp(self.p.t_gmramp * s)
             self.release()
 
             # self.set_magnet_current(v=5.)
