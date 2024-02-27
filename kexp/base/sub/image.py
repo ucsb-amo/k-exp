@@ -176,10 +176,7 @@ class Image():
 
         # determine this manually -- minimum offset frequency where the offset lock is happy
         if amp == dv:
-            if self.run_info.absorption_image:
-                amp = self.params.amp_imaging_abs
-            else:
-                amp = self.params.amp_imaging_fluor
+            amp = self.camera_params.amp_imaging
         if detuning == dv:
             detuning = self.params.frequency_detuned_imaging
 
