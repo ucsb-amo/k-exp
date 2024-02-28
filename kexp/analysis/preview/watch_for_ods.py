@@ -18,7 +18,7 @@ ODLIM = 1.4
 N_HISTORY = 10
 PLOT_CENTROID = False
 XAXIS_IMAGING = False
-CAMERA = "z_basler"
+CAMERA = "xy_basler"
 
 ###
 

@@ -5,7 +5,7 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-T_TOF_US = 800 # gm ramp
+T_TOF_US = 8000 # gm ramp
 # T_TOF_US = 751 # mot
 # T_TOF_US = 10 # light sheet
 T_MOTLOAD_S = 1.0
@@ -14,7 +14,7 @@ class tof(EnvExperiment, Base):
 
     def build(self):
         # Base.__init__(self, basler_imaging=True, absorption_image=False)
-        Base.__init__(self, camera_select="z_basler")
+        Base.__init__(self, camera_select="xy_basler")
         
         # comment in/out to switch to abs imaging on x-axis
         # self.camera_params.serial_no = camera_params.basler_fluor_camera_params.serial_no
@@ -26,7 +26,7 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        self.amp_imaging_abs = 0.5
+        self.amp_imaging_abs = 0.25
 
         # self.p.v_zshim_current = .3
 
