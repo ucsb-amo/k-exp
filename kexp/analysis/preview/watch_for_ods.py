@@ -18,11 +18,12 @@ ODLIM = 1.4
 N_HISTORY = 10
 PLOT_CENTROID = False
 XAXIS_IMAGING = False
+CAMERA = "xy_basler"
 
 ###
 
 camera_handler = Cameras()
-camera_handler.choose_camera()
+camera_handler.choose_camera(camera_select=CAMERA)
 cam_p = camera_handler.camera_params
 camera = BaslerUSB(BaslerSerialNumber=cam_p.serial_no,
                     ExposureTime=cam_p.exposure_time,
