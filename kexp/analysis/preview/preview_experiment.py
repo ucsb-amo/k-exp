@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
 from kexp.util.artiq.async_print import aprint
+import msvcrt
 
 import numpy as np
 
@@ -45,6 +46,14 @@ class tof(EnvExperiment, Base):
 
         print('hi')
 
+    @rpc(flags={"async"})
+    def watch_for_keypress(self):
+        self.stop_flag = False
+        while True:
+            if msvcrt.kbhit():
+                self.stop_flag = True
+                break
+
     @kernel
     def run(self):
 
@@ -52,49 +61,57 @@ class tof(EnvExperiment, Base):
         
         self.init_kernel(run_id=True)
 
+        self.watch_for_keypress()
+        delay(1*s)
+
         # # self.dds.second_imaging.set_dds(frequency=115.425e6,amplitude=0.188)
         
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
         for _ in self.p.dummy:
 
-            delay(.5)
-            
-            self.mot(self.p.t_mot_load * s)
-            self.dds.push.off()
-            self.cmot_d1(self.p.t_d1cmot * s)
-            self.set_shims(v_zshim_current=.84, v_yshim_current=self.p.v_yshim_current, v_xshim_current=self.p.v_xshim_current)
-            self.gm(self.p.t_gm * s)
-            # self.gm_ramp(self.p.t_gmramp * s)
+            if self.stop_flag:
 
-            self.release()
+                delay(.5)
+                
+                self.mot(self.p.t_mot_load * s)
+                self.dds.push.off()
+                self.cmot_d1(self.p.t_d1cmot * s)
+                self.gm(self.p.t_gm * s)
+                # self.gm_ramp(self.p.t_gmramp * s)
 
-            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-            # self.tweezer_1064_ramp(t_tweezer_1064_ramp=10.e-3)
-            delay(.2e-3*s)
-            # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampup)
-            self.lightsheet.off()
-            # delay(1.2e-3*s)
+                self.release()
 
-            self.dds.mot_killer.on()
-            # delay(200.e-6*s)
-            
-            # self.dds.tweezer_aod.off()
+                # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+                # self.tweezer_1064_ramp(t_tweezer_1064_ramp=10.e-3)
+                # delay(.5e-3*s)
+                # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampup)
+                # self.lightsheet.off()
+                # delay(1.2e-3*s)
 
-            ### abs img
-            delay(self.p.t_tof * s)
-            # self.fl_image()
-            self.flash_repump()
-            self.abs_image()
+                self.dds.mot_killer.on()
+                # delay(200.e-6*s)
+                
+                # self.dds.tweezer_aod.off()
 
-            self.dds.mot_killer.off()
+                ### abs img
+                delay(self.p.t_tof * s)
+                # self.fl_image()
+                self.flash_repump()
+                self.abs_image()
 
-            self.core.break_realtime()
+                self.dds.mot_killer.off()
 
-            aprint(count)
-            count += 1
+                self.core.break_realtime()
 
-            delay(self.p.t_recover)
+                aprint(count)
+                count += 1
+
+                delay(self.p.t_recover)
+
+            else:
+                self.core.reset()
+                break
 
         self.mot_observe()
 
