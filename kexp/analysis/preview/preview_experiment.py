@@ -5,9 +5,7 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-T_TOF_US = 8000 # gm ramp
-# T_TOF_US = 751 # mot
-# T_TOF_US = 10 # light sheet
+T_TOF_US = 40
 T_MOTLOAD_S = 1.0
 
 class tof(EnvExperiment, Base):
@@ -65,16 +63,17 @@ class tof(EnvExperiment, Base):
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
             self.cmot_d1(self.p.t_d1cmot * s)
+            self.set_shims(v_zshim_current=.84, v_yshim_current=self.p.v_yshim_current, v_xshim_current=self.p.v_xshim_current)
             self.gm(self.p.t_gm * s)
             # self.gm_ramp(self.p.t_gmramp * s)
 
             self.release()
 
-            # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
             # self.tweezer_1064_ramp(t_tweezer_1064_ramp=10.e-3)
-            # delay(.5e-3*s)
+            delay(.2e-3*s)
             # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampup)
-            # self.lightsheet.off()
+            self.lightsheet.off()
             # delay(1.2e-3*s)
 
             self.dds.mot_killer.on()

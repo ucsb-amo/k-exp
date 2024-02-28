@@ -9,7 +9,7 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self)
+        Base.__init__(self,camera_select='xy_basler')
 
         self.run_info._run_description = "mot tof"
 
@@ -25,13 +25,7 @@ class tof(EnvExperiment, Base):
         self.p.t_magnet_off_pretrigger = 1.e-3
         self.p.t_gm = 2.5e-3
 
-        # self.p.t_tof = np.linspace(500,1500,N) * 1.e-6 # mot
-        # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
-        self.p.t_tof = np.linspace(12000,18000,5) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(100,20368,N) * 1.e-6
-        # self.p.t_tof = np.linspace(100.,700.,N) * 1.e-6
-        # self.p.t_tof = np.linspace(14000.,17000.,N) * 1.e-6
+        self.p.t_tof = np.linspace(20,500,6) * 1.e-6 # mot
 
         # self.p.mag_trap_bool = np.array([0,1])
 
@@ -61,18 +55,14 @@ class tof(EnvExperiment, Base):
             self.cmot_d1(self.p.t_d1cmot * s)
             self.set_shims(v_zshim_current=.84, v_yshim_current=self.p.v_yshim_current, v_xshim_current=self.p.v_xshim_current)
             self.gm(self.p.t_gm * s)
-            self.gm_ramp(self.p.t_gmramp * s)
+            # self.gm_ramp(self.p.t_gmramp * s)
             self.release()
 
-            # self.set_magnet_current(v=5.)
-            # self.ttl.magnets.on()
-            # delay(t_tof * s)
-            # self.ttl.magnets.off()
+            self.dds.mot_killer.on()
 
-            # self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
-
-            # delay(25.e-3)
-            # self.lightsheet.off()
+            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+            delay(.2e-3)
+            self.lightsheet.off()
 
             # self.optical_pumping(t=)
 
@@ -83,6 +73,8 @@ class tof(EnvExperiment, Base):
             # self.fl_image()
             self.flash_repump()
             self.abs_image()
+
+            self.dds.mot_killer.off()
 
             self.core.break_realtime()
             
