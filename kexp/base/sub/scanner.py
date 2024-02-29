@@ -106,6 +106,7 @@ class Scanner():
         """
         for xvar in self.scan_xvars:
             vars(self.params)[xvar.key] = xvar.values
+        self.params.compute_derived()
 
 class xvar():
     def __init__(self,key:str,values:np.ndarray,position=0):
@@ -118,8 +119,8 @@ class xvar():
             by "key" should be scanned.
         """
         self.key = key
-        self.values = values
-        self.position = 0
+        self.values = np.asarray(values)
+        self.position = position
         self.counter = 0
         self.sort_idx = []
         self.Nvals = np.shape(self.values)[0]
