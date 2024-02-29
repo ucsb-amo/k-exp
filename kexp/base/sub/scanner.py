@@ -13,16 +13,21 @@ class Scanner():
         self.update_nvars()
 
     def add_xvar(self,key,values):
+        """Adds an xvar to the experiment.
+
+        Args:
+            key (str): The key of the ExptParams attribute to scan.
+            values (ndarray): Values to scan over. Can be n-dimensional, scan will step over first index.
+        """
         this_xvar = xvar(key,values,position=len(self.scan_xvars))
         self.scan_xvars.append(this_xvar)
-        self.add_xvar_to_expt(this_xvar)
-        self.update_nvars()
-    
-    def add_xvar_to_expt(self,xvar):
+        # check if params has this xvar key already -- if not, add it
         params_keylist = list(self.params.__dict__.keys())
-        if xvar.key not in params_keylist:
-            self.xvarnames.append(xvar.key)
-            vars(self.params)[xvar.key] = xvar.values[0] # set to a single value, it will be overwritten per shot in scan
+        if this_xvar.key not in params_keylist:
+            self.xvarnames.append(this_xvar.key)
+            # set value to a single value (vs list), it will be overwritten per shot in scan
+            vars(self.params)[this_xvar.key] = this_xvar.values[0] 
+        self.update_nvars()
 
     def update_nvars(self):
         """Updates the number of xvars to be scanned.
@@ -31,18 +36,24 @@ class Scanner():
 
     @kernel
     def scan_kernel(self):
-        """The kernel function to be scanned in the experiment. It should
-        correspond to a single "shot" (single set of images to generate one OD).
+        """The kernel function to be scanned in the experiment. 
+        
+        It should correspond to a single "shot" (single set of images to
+        generate one OD).
 
-        The scan kernel should accept no arguments. Any parameters being scanned
-        should be referenced in the scan kernel as an attribute of the
-        experiment parameters attribute of the experiment class.
+        The scan kernel should accept no arguments. 
+        
+        Any parameters being scanned should be referenced in the scan kernel as
+        an attribute of the experiment parameters attribute of the experiment
+        class.
         """
         pass
 
     @kernel
     def scan(self,scan_kernel):
-        """Runs the scan_kernel function for each value of the xvars specified.
+        """
+        Runs the scan_kernel function for each value of the xvars specified.
+        
         The xvars are scanned as if looping over nested for loops, with the last xvar
         as the innermost loop.
 
@@ -52,14 +63,19 @@ class Scanner():
         self.scanning = True
         while self.scanning:
             for this_xvar in self.scan_xvars:
-                vars(self.params)[this_xvar.key] = this_xvar.values[this_xvar.counter]
+                self.write_value_to_param(this_xvar)
             scan_kernel()
             self.step_scan()
+
+    @kernel
+    def write_value_to_param(self,xvar):
+        vars(self.params)[xvar.key] = xvar.values[xvar.counter]
 
     @kernel
     def step_scan(self,idx=0):
         '''
         Advances the counters of the xvars to the next step in the scan.
+
         Advances counters as if the xvars were looped over in nested for loops,
         with the last xvar being the innermost loop.
         '''
@@ -77,9 +93,15 @@ class Scanner():
                 xvars[idx].counter += 1
 
     def cleanup_scanned(self):
-        """Sets the parameters in exptparams to the lists that were used to take
-        the data. These are put in in the order the data was taken -- no
-        unshuffling is done. This is good for recordkeeping.
+        """
+        Sets the parameters in ExptParams to the lists that were used to take
+        the data. 
+        
+        These are put in in the order the data was taken -- no unshuffling is
+        done. 
+        
+        This is good for recordkeeping, and ensures backward compatability with
+        analysis code.
         """
         for xvar in self.scan_xvars:
             vars(self.params)[xvar.key] = xvar.values
