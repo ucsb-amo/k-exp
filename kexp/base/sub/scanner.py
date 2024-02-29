@@ -64,6 +64,7 @@ class Scanner():
         while self.scanning:
             for this_xvar in self.scan_xvars:
                 self.write_value_to_param(this_xvar)
+            ### ADD COMPUTE DERIVED HERE ###
             scan_kernel()
             self.step_scan()
 
@@ -120,4 +121,5 @@ class xvar():
         self.values = values
         self.position = 0
         self.counter = 0
+        self.sort_idx = []
         self.Nvals = np.shape(self.values)[0]
