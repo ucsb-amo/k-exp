@@ -42,12 +42,22 @@ class Scanner():
         this_xvar = xvar(key,values,position=len(self.scan_xvars))
         self.scan_xvars.append(this_xvar)
         # check if params has this xvar key already -- if not, add it
-        params_keylist = list(self.params.__dict__.keys())
-        if this_xvar.key not in params_keylist:
-            self.xvarnames.append(this_xvar.key)
-            # set value to a single value (vs list), it will be overwritten per shot in scan
-            vars(self.params)[this_xvar.key] = this_xvar.values[0] 
+        self.new_param_check(this_xvar)
         self.update_nvars()
+
+    def new_param_check(self,xvar):
+        self.param_police(xvar)
+        
+        params_keylist = list(self.params.__dict__.keys())
+        if xvar.key not in params_keylist:
+            self.xvarnames.append(xvar.key)
+            # set value to a single value (vs list), it will be overwritten per shot in scan
+            vars(self.params)[xvar.key] = xvar.values[0]
+
+    def param_police(self,xvar):
+        forbidden_chars = [":",",","."," ","-","+","(",")","@","#","$","%","^","&","*","=","!","[","]",";","/","\\","`","~"]
+        if any([fc in xvar.key for fc in forbidden_chars]):
+            raise ValueError("Key contains forbidden characters.")
 
     def update_nvars(self):
         """Updates the number of xvars to be scanned.
