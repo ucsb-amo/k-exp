@@ -189,7 +189,7 @@ class ExptParams():
         self.dt_tweezer_ramp = self.t_tweezer_ramp / self.n_tweezer_ramp_steps
     
     def compute_tweezer_1064_ramp_params(self):
-        self.amp_tweezer_1064_ramp_list = np.linspace(self.amp_tweezer_1064_ramp_start,self.amp_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()
+        self.v_pd_tweezer_1064_ramp_list = np.linspace(self.v_pd_tweezer_1064_ramp_start,self.v_pd_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()
         self.dt_tweezer_1064_ramp = self.t_tweezer_1064_ramp / self.n_tweezer_1064_ramp_steps
 
     def compute_derived(self):
