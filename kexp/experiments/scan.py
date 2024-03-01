@@ -17,25 +17,28 @@ class tof(EnvExperiment, Base):
 
         self.p = self.params
 
-        N = 5
         self.p.N_repeats = 1
-        self.p.t_mot_load = 2.0
+        self.p.t_mot_load = 1.
+
+        self.p.t_magnet_off_pretrigger = 1.e-3
+
+        self.p.t_gm = 2.5 * 1.e-3
+        # self.p.tcmot = np.linspace(3.,15.,5) * 1.e-3
+        self.p.tgm_ramp = np.linspace(4.,15.,5) * 1.e-3
 
         # self.p.amp_imaging_abs = 0.26
 
-        self.p.t_tof = np.linspace(500,2000,N) * 1.e-6 # mot
+        self.p.t_tof = np.linspace(12000,18000,4) * 1.e-6 # mot
         # self.p.t_tof = np.linspace(4000,6000,N) * 1.e-6 # d1 cmot
         # self.p.t_tof = np.linspace(5000,7000,N) * 1.e-6 # gm
         # self.p.t_tof = np.linspace(9023,13368,N) * 1.e-6 # gm
-        # self.p.t_tof = np.linspace(100,20368,N) * 1.e-6
-        # self.p.t_tof = np.linspace(100.,700.,N) * 1.e-6
-        # self.p.t_tof = np.linspace(14000.,17000.,N) * 1.e-6
 
-        # self.p.mag_trap_bool = np.array([0,1])
+        # self.p.t_lightsheet_hold = np.linspace(50000,2000000,10) * 1.e-6
 
-        # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
+        # self.p.mot_magnet_current = np.linspace(21.,29.,5)
+        # self.p.zshim_current = np.linspace(.4,.99,5)
 
-        self.xvarnames = ['t_tof']
+        self.xvarnames = ['tgm_ramp', 't_tof']
 
         self.finish_build()
 
@@ -51,42 +54,42 @@ class tof(EnvExperiment, Base):
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-        for t_tof in self.p.t_tof:
+        for v in self.p.tgm_ramp:
+            for t in self.p.t_tof:
 
-            self.mot(self.p.t_mot_load * s)
-            self.dds.push.off()
-            self.ttl.pd_scope_trig.on()
-            # self.cmot_d1(self.p.t_d1cmot * s)
-            # delay(-5*ms)
-            # self.inner_coil.off()
-            # delay(5*ms)
-            # self.gm(self.p.t_gm * s)
-            # self.gm_ramp(self.p.t_gmramp * s)
-            self.release()
+                self.mot(self.p.t_mot_load * s)
+                self.dds.push.off()
+                self.ttl.pd_scope_trig.on()
+                self.cmot_d1(self.p.t_d1cmot * s)
+                self.set_shims(v_zshim_current=.84, v_yshim_current=self.p.v_yshim_current, v_xshim_current=self.p.v_xshim_current)
+                self.gm(self.p.t_gm * s)
+                self.gm_ramp(v * s)
+                self.release()
 
-            # self.set_magnet_current(v=5.)
-            # self.ttl.magnets.on()
-            # delay(t_tof * s)
-            # self.ttl.magnets.off()
+                # self.set_magnet_current(v=5.)
+                # self.ttl.magnets.on()
+                # delay(t_tof * s)
+                # self.ttl.magnets.off()
 
-            # self.lightsheet.ramp(t_ramp=self.p.t_lightsheet_rampup)
+                # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
-            # delay(25.e-3)
-            # self.lightsheet.off()
+                # delay(t)
+                # self.lightsheet.off()
 
-            # self.optical_pumping(t=)
+                # self.optical_pumping(t=)
 
-            ### abs img
-            delay(t_tof * s)
-            self.ttl.pd_scope_trig.off()
-            # delay(100.e-6 * s)
-            # self.fl_image()
-            self.flash_repump()
-            self.abs_image()
+                ### abs img
+                self.ttl.pd_scope_trig.off()
+                delay(t * s)
+                
+                # delay(100.e-6 * s)
+                # self.fl_image()
+                self.flash_repump()
+                self.abs_image()
 
-            self.core.break_realtime()
-            
-            delay(self.p.t_recover)
+                self.core.break_realtime()
+                
+                delay(self.p.t_recover)
 
         self.mot_observe()
 

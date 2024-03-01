@@ -321,9 +321,9 @@ class Cooling():
         
         # ### End Defaults ###
        
-        # delay(-t_magnet_off_pretrigger)
+        delay(-t_magnet_off_pretrigger)
         self.inner_coil.off()
-        # delay(t_magnet_off_pretrigger)
+        delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
                                        amplitude=amp_d1_c,
@@ -479,7 +479,7 @@ class Cooling():
             self.dds.op_r.off()
         
     @kernel
-    def tweezer_ramp(self, t_tweezer_ramp = dv,
+    def tweezer_1227_ramp(self, t_tweezer_ramp = dv,
             v_pd_tweezer_ramp_list = dvlist):
         
         ### Start Defaults ###
@@ -504,36 +504,6 @@ class Cooling():
         for n in range(N_elem):
             self.dds.tweezer.set_dds(v_pd=v_pd_tweezer_ramp_list[n])
             delay(dt_tweezer_ramp)
-
-    @kernel
-    def tweezer_1064_ramp(self, t_tweezer_1064_ramp = dv,
-            amp_tweezer_1064_ramp_list = dvlist, tweezer_frequency = dv):
-        
-        ### Start Defaults ###
-        
-        if amp_tweezer_1064_ramp_list == dvlist:
-            amp_tweezer_1064_ramp_list = self.params.amp_tweezer_1064_ramp_list
-        
-        if tweezer_frequency == dv:
-            tweezer_frequency = self.params.frequency_aod_1064
-
-        # check for list length agreement
-        N_elem = len(amp_tweezer_1064_ramp_list)
-        
-        if t_tweezer_1064_ramp == dv:
-            t_tweezer_1064_ramp = self.params.t_tweezer_1064_ramp
-            dt_tweezer_1064_ramp = self.params.dt_tweezer_1064_ramp
-        else:
-            dt_tweezer_1064_ramp = t_tweezer_1064_ramp / N_elem
-
-        ### End Defaults ###
-
-        self.dds.tweezer_aod.set_dds(frequency=tweezer_frequency,
-                                 amplitude=amp_tweezer_1064_ramp_list[0])
-        self.dds.tweezer_aod.on()
-        for n in range(N_elem):
-            self.dds.tweezer_aod.set_dds(amplitude=amp_tweezer_1064_ramp_list[n])
-            delay(dt_tweezer_1064_ramp)
 
     @kernel
     def release(self):

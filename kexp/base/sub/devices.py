@@ -15,6 +15,7 @@ from kexp.control.cameras.dummy_cam import DummyCamera
 
 from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.misc.painted_lightsheet import lightsheet
+from kexp.control.misc.awg_tweezer import tweezer
 
 import numpy as np
 
@@ -73,6 +74,10 @@ class Devices():
                                      paint_amp_dac=self.dac.lightsheet_mod_amp,
                                      sw_ttl=self.ttl.lightsheet_sw,
                                      expt_params=self.params)
+        
+        self.tweezer = tweezer(self.dac.vva_tweezer,
+                               sw_ttl=self.ttl.awg,
+                               expt_params=self.params)
 
         # camera placeholder
         self.camera = DummyCamera()
