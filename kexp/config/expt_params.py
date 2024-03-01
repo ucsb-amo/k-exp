@@ -9,6 +9,7 @@ class ExptParams():
         self.N_shots = 1
         self.N_repeats = 1
         self.N_img = 1
+        self.N_shots_with_repeats = 1
 
         #Magnet
         self.t_keysight_analog_response = 10.e-3
@@ -167,12 +168,12 @@ class ExptParams():
         self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
 
     def compute_gmramp_params(self):
-        self.pfrac_c_gmramp_list = np.linspace(self.pfrac_c_gmramp_start, self.pfrac_c_gmramp_end, self.n_gmramp_steps)
-        self.pfrac_r_gmramp_list = np.linspace(self.pfrac_r_gmramp_start, self.pfrac_r_gmramp_end, self.n_gmramp_steps)
+        self.pfrac_c_gmramp_list = np.linspace(self.pfrac_c_gmramp_start, self.pfrac_c_gmramp_end, self.n_gmramp_steps).transpose()
+        self.pfrac_r_gmramp_list = np.linspace(self.pfrac_r_gmramp_start, self.pfrac_r_gmramp_end, self.n_gmramp_steps).transpose()
 
         cal = DDS_VVA_Calibration()
-        self.v_pd_c_gmramp_list = cal.power_fraction_to_vva(self.pfrac_c_gmramp_list)
-        self.v_pd_r_gmramp_list = cal.power_fraction_to_vva(self.pfrac_r_gmramp_list)
+        self.v_pd_c_gmramp_list = cal.power_fraction_to_vva(self.pfrac_c_gmramp_list).transpose()
+        self.v_pd_r_gmramp_list = cal.power_fraction_to_vva(self.pfrac_r_gmramp_list).transpose()
 
         self.dt_gmramp = self.t_gmramp / self.n_gmramp_steps
 
@@ -183,11 +184,11 @@ class ExptParams():
         self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
 
     def compute_tweezer_ramp_params(self):
-        self.v_pd_tweezer_ramp_list = np.linspace(self.v_pd_tweezer_ramp_start,self.v_pd_tweezer_ramp_end, self.n_tweezer_ramp_steps)
+        self.v_pd_tweezer_ramp_list = np.linspace(self.v_pd_tweezer_ramp_start,self.v_pd_tweezer_ramp_end, self.n_tweezer_ramp_steps).transpose()
         self.dt_tweezer_ramp = self.t_tweezer_ramp / self.n_tweezer_ramp_steps
     
     def compute_tweezer_1064_ramp_params(self):
-        self.amp_tweezer_1064_ramp_list = np.linspace(self.amp_tweezer_1064_ramp_start,self.amp_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps)
+        self.amp_tweezer_1064_ramp_list = np.linspace(self.amp_tweezer_1064_ramp_start,self.amp_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()
         self.dt_tweezer_1064_ramp = self.t_tweezer_1064_ramp / self.n_tweezer_1064_ramp_steps
 
     def compute_derived(self):
@@ -195,3 +196,4 @@ class ExptParams():
         methods = [m for m in dir(self) if not m.startswith('__') and callable(getattr(self,m)) and not m == 'compute_derived']
         for m in methods:
             getattr(self,m)()
+        
