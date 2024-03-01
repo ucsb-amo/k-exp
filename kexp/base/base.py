@@ -63,6 +63,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
 
         if not self.xvarnames:
             self.xvar("dummy",[0])
+        if self.xvarnames and not self.scan_xvars:
+            for key in self.xvarnames:
+                self.xvar(key,vars(self.params)[key])
 
         self.repeat_xvars(N_repeats=N_repeats)
 
@@ -97,6 +100,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
             self.set_imaging_detuning()
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
+        print('hi')
         if beat_ref_on:
             self.dds.beatlock_ref.on()
         self.core.break_realtime() # add slack before scheduling experiment events
