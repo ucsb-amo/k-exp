@@ -2,21 +2,27 @@ from artiq.experiment import *
 from artiq.experiment import delay, delay_mu
 import numpy as np
 from kexp.config import ExptParams
-from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras
+from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner
 from kexp.util.data import DataSaver, RunInfo
 
 # also import the andor camera parameters
 
 from kexp.util.artiq.async_print import aprint
 
-class Base(Devices, Cooling, Image, Dealer, Cameras):
+@portable
+def nothing():
+    pass
+
+class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
     def __init__(self,setup_camera=True,absorption_image=True,camera_select="xy_basler"):
+        Scanner.__init__(self)
         super().__init__()
 
         self.run_info = RunInfo(self)
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
         self.params = ExptParams()
+        self.compute_new_derived = nothing
 
         self.prepare_devices(expt_params=self.params)
 
@@ -31,33 +37,46 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True):
+    def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True,
+                     compute_new_derived=nothing):
         """
-        To be called at the end of build. Automatically adds repeats either if
-        specified in N_repeats argument or if previously specified in
-        self.params.N_repeats. Shuffles xvars if specified (defaults to True).
-        Computes the number of images to be taken from the imaging method and
-        the length of the xvar arrays.
-        """
+        To be called at the end of build. 
+        
+        Automatically adds repeats either if specified in N_repeats argument or
+        if previously specified in self.params.N_repeats. 
+        
+        Shuffles xvars if specified (defaults to True). Computes the number of
+        images to be taken from the imaging method and the length of the xvar
+        arrays.
 
-        self.params.compute_derived()
+        Computes derived parameters within ExptParams.
+
+        Accepts an additional compute_derived method that is user defined in the
+        experiment file. This is to allow for recomputation of derived
+        parameters that the user created in the experiment file at each step in
+        a scan. This must be an RPC -- no kernel decorator.
+        """
+        if compute_new_derived == nothing:
+            compute_new_derived = self.compute_new_derived
+        else:
+            self.compute_new_derived = compute_new_derived
 
         if not self.xvarnames:
-            self.xvarnames = ["dummy"]
-            self.params.dummy = np.linspace(0,0,1)
-        elif isinstance(self.xvarnames,str):
-            self.xvarnames = [self.xvarnames]
+            self.xvar("dummy",[0])
 
         self.repeat_xvars(N_repeats=N_repeats)
 
         if shuffle:
             self.shuffle_xvars()
-            self.shuffle_derived()
 
         self.get_N_img()
 
         if cleanup_dds_profiles:
             self.dds.cleanup_dds_profiles()
+
+        self.params.compute_derived()
+        self.compute_new_derived()
+        self.generate_assignment_kernels()
 
     @kernel
     def init_kernel(self, run_id = True, init_dds = True, init_dac = True, dds_set = True, dds_off = True, beat_ref_on=True):
