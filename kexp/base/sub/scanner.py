@@ -3,6 +3,7 @@ from artiq.experiment import *
 import numpy as np
 from kexp.control.artiq.dummy_core import DummyCore
 from artiq.language.core import kernel_from_string
+from artiq.experiment import delay
 
 dv = -100.
 dvlist = np.array([])
@@ -21,24 +22,15 @@ class Scanner():
         self.compute_new_derived = nothing
         self.core = DummyCore()
 
-        self.xvar_writer = []
-        self.xvar_writer_floats = []
-        self.xvar_writer_int32s = []
-        self.xvar_writer_int64s = []
-        self.xvar_writer_arrays = []
+        self._xvar_writer_floats = []
+        self._xvar_writer_int32s = []
+        self._xvar_writer_int64s = []
+        self._xvar_writer_arrays = []
 
-        self.params_keylist = list(self.params.__dict__.keys())
-        self.param_keylist_floats = []
-        self.param_keylist_int32s = []
-        self.param_keylist_int64s = []
-        self.param_keylist_arrays = []
-
-        self.int32val = 1
-        self.int64val = np.int64(1)
-        self.floatval = 0.
-        self.arrayval = np.array([])
-
-        self.param_vartypes = []
+        self._param_keylist_floats = []
+        self._param_keylist_int32s = []
+        self._param_keylist_int64s = []
+        self._param_keylist_arrays = []
 
     def xvar(self,key,values):
         """Adds an xvar to the experiment.
@@ -78,6 +70,12 @@ class Scanner():
         pass
 
     @kernel
+    def pre_scan(self):
+        """This method is run in scan_base before the scan loop.
+        """        
+        pass
+
+    @kernel
     def scan(self):
         """
         Runs the scan_kernel function for each value of the xvars specified.
@@ -91,6 +89,8 @@ class Scanner():
         ExptParams.
         """        
 
+        self.pre_scan()
+
         scanning = True
 
         while scanning:
@@ -100,6 +100,7 @@ class Scanner():
 
             self.core.break_realtime()
             self.scan_kernel()
+            delay(self.params.t_recover)
 
             scanning = self.step_scan()
             self.core.break_realtime()
@@ -127,26 +128,26 @@ class Scanner():
         attributes.
 
         Must have run generate_assignment_kernels() in build first.
-        """        
+        """
         int32val = 1
         int64val = np.int64(1)
         floatval = 0.1
         arrayval = np.array([1.])
-        for idx in range(len(self.param_keylist_int32s)):
+        for idx in range(len(self._param_keylist_int32s)):
             int32val = self.fetch_int32(idx)
-            self.xvar_writer_int32s[idx](self,int32val)
+            self._xvar_writer_int32s[idx](self,int32val)
 
-        for idx in range(len(self.param_keylist_int64s)):
+        for idx in range(len(self._param_keylist_int64s)):
             int64val = self.fetch_int64(idx)
-            self.xvar_writer_int64s[idx](self,int64val)
+            self._xvar_writer_int64s[idx](self,int64val)
 
-        for idx in range(len(self.param_keylist_floats)):
+        for idx in range(len(self._param_keylist_floats)):
             floatval = self.fetch_float(idx)
-            self.xvar_writer_floats[idx](self,floatval)
+            self._xvar_writer_floats[idx](self,floatval)
 
-        for idx in range(len(self.param_keylist_arrays)):
+        for idx in range(len(self._param_keylist_arrays)):
             arrayval = self.fetch_array(idx)
-            self.xvar_writer_arrays[idx](self,arrayval)
+            self._xvar_writer_arrays[idx](self,arrayval)
     
     def fetch_float(self,i) -> TFloat:
         """Returns the value of the ith experiment parameter with datatype
@@ -154,12 +155,12 @@ class Scanner():
 
         Args:
             i (int): index of the ith float experiment paramter in the list
-            self.param_keylist_floats.
+            self._param_keylist_floats.
 
         Returns:
             TFloat: The value of the ith float ExptParam attribute.
         """        
-        return vars(self.params)[self.param_keylist_floats[i]]
+        return vars(self.params)[self._param_keylist_floats[i]]
     
     def fetch_array(self,i) -> TArray(TFloat):
         """Returns the value of the ith experiment parameter with datatype
@@ -167,12 +168,12 @@ class Scanner():
 
         Args:
             i (int): index of the ith ndarray experiment paramter in the list
-            self.param_keylist_arrays.
+            self._param_keylist_arrays.
 
         Returns:
             TFloat: The value of the ith ndarray ExptParam attribute.
         """        
-        return vars(self.params)[self.param_keylist_arrays[i]]
+        return vars(self.params)[self._param_keylist_arrays[i]]
     
     def fetch_int64(self,i) -> TInt64:
         """Returns the value of the ith experiment parameter with datatype
@@ -180,12 +181,12 @@ class Scanner():
 
         Args:
             i (int): index of the ith ndarray experiment paramter in the list
-            self.param_keylist_int64s.
+            self._param_keylist_int64s.
 
         Returns:
             TFloat: The value of the ith int64 ExptParam attribute.
         """      
-        return vars(self.params)[self.param_keylist_int64s[i]]
+        return vars(self.params)[self._param_keylist_int64s[i]]
     
     def fetch_int32(self,i) -> TInt32:
         """Returns the value of the ith experiment parameter with datatype
@@ -193,12 +194,12 @@ class Scanner():
 
         Args:
             i (int): index of the ith ndarray experiment paramter in the list
-            self.param_keylist_int32s.
+            self._param_keylist_int32s.
 
         Returns:
             TFloat: The value of the ith int32 ExptParam attribute.
         """     
-        return vars(self.params)[self.param_keylist_int32s[i]]
+        return vars(self.params)[self._param_keylist_int32s[i]]
 
     def generate_assignment_kernels(self):
         """Generates a list of kernel functions for each param datatype (int32,
@@ -214,22 +215,22 @@ class Scanner():
 
             if 'int' in dtype:
                 if 'numpy.int64' in dtype:
-                    self.param_keylist_int64s.append(key)
-                    self.xvar_writer_int64s.append( kernel_from_string(["self","value"],bodycode) )
+                    self._param_keylist_int64s.append(key)
+                    self._xvar_writer_int64s.append( kernel_from_string(["self","value"],bodycode) )
                 else:
-                    self.param_keylist_int32s.append(key)
-                    self.xvar_writer_int32s.append( kernel_from_string(["self","value"],bodycode) )
+                    self._param_keylist_int32s.append(key)
+                    self._xvar_writer_int32s.append( kernel_from_string(["self","value"],bodycode) )
             elif 'float' in dtype:
-                self.param_keylist_floats.append(key)
-                self.xvar_writer_floats.append( kernel_from_string(["self","value"],bodycode) )
+                self._param_keylist_floats.append(key)
+                self._xvar_writer_floats.append( kernel_from_string(["self","value"],bodycode) )
 
             elif 'ndarray' in dtype:
-                self.param_keylist_arrays.append(key)
-                self.xvar_writer_arrays.append( kernel_from_string(["self","value"],bodycode) )
+                self._param_keylist_arrays.append(key)
+                self._xvar_writer_arrays.append( kernel_from_string(["self","value"],bodycode) )
 
             # self.param_vartypes.append(dtypestr)
             
-            # self.xvar_writer.append( kernel_from_string(["self",value_arg],bodycode) )
+            # self._xvar_writer.append( kernel_from_string(["self",value_arg],bodycode) )
 
     def step_scan(self,idx=0) -> TBool:
         '''
