@@ -113,6 +113,7 @@ class Scanner():
             delay(self.params.t_recover)
 
             scanning = self.step_scan()
+
             self.core.break_realtime()
 
     def update_params_from_xvars(self):
