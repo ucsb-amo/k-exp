@@ -2,7 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
-from kexp.control.artiq.TTL import TTL
+from kexp.control.artiq.TTL import TTL, DummyTTL
 from kexp.config.expt_params import ExptParams
 import kexp.config.camera_params as camera_params
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
@@ -71,6 +71,7 @@ class Cameras():
             self.camera = DummyCamera()
             self.camera_params = camera_params.CameraParams()
             self.start_triggered_grab = self.nothing
+            self.ttl.camera = DummyTTL()
         else:
             match camera_select:
                 case "xy_basler":
