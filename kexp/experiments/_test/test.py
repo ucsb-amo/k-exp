@@ -13,14 +13,14 @@ class test(EnvExperiment, Base):
 
         self.finish_build()
 
-        print(self.params.v_pd_d1_c_d1cmot)
-
     @kernel
     def run(self):
         
         self.init_kernel()
 
-        self.cmot_d1(1*ms)
+        # self.core.reset()
+
+        # self.cmot_d1(1*ms)
         # self.mot(1*ms)
         # self.mot_observe()
 

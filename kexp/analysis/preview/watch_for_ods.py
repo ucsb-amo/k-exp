@@ -9,7 +9,7 @@ from kamo.atom_properties.k39 import Potassium39
 
 from kexp.base.base import Cameras
 
-from preview_experiment import T_TOF_US, T_MOTLOAD_S
+from preview_experiment import T_TOF_US, T_MOTLOAD_S, CAMERA
 
 ####
 
@@ -18,7 +18,7 @@ ODLIM = 1.4
 N_HISTORY = 10
 PLOT_CENTROID = False
 XAXIS_IMAGING = False
-CAMERA = "xy_basler"
+
 
 ###
 

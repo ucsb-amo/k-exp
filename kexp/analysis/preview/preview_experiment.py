@@ -3,17 +3,19 @@ from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp import Base
 from kexp.util.artiq.async_print import aprint
 import msvcrt
+import os
 
 import numpy as np
 
-T_TOF_US = 40
+T_TOF_US = 15
 T_MOTLOAD_S = 1.0
+CAMERA = "xy_basler"
 
 class tof(EnvExperiment, Base):
 
     def build(self):
         # Base.__init__(self, basler_imaging=True, absorption_image=False)
-        Base.__init__(self, camera_select="xy_basler")
+        Base.__init__(self, camera_select=CAMERA)
         
         # comment in/out to switch to abs imaging on x-axis
         # self.camera_params.serial_no = camera_params.basler_fluor_camera_params.serial_no
@@ -46,13 +48,12 @@ class tof(EnvExperiment, Base):
 
         print('hi')
 
-    @rpc(flags={"async"})
-    def watch_for_keypress(self):
-        self.stop_flag = False
-        while True:
+    def check_for_keypress(self) -> TBool:
+        if os.name == "nt":
             if msvcrt.kbhit():
-                self.stop_flag = True
-                break
+                return True
+            else:
+                return False
 
     @kernel
     def run(self):
@@ -61,7 +62,6 @@ class tof(EnvExperiment, Base):
         
         self.init_kernel(run_id=True)
 
-        self.watch_for_keypress()
         delay(1*s)
 
         # # self.dds.second_imaging.set_dds(frequency=115.425e6,amplitude=0.188)
@@ -70,7 +70,7 @@ class tof(EnvExperiment, Base):
 
         for _ in self.p.dummy:
 
-            if self.stop_flag:
+            if not self.check_for_keypress():
 
                 delay(.5)
                 
@@ -83,13 +83,14 @@ class tof(EnvExperiment, Base):
                 self.release()
 
                 # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-                # self.tweezer_1064_ramp(t_tweezer_1064_ramp=10.e-3)
                 # delay(.5e-3*s)
-                # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampup)
                 # self.lightsheet.off()
-                # delay(1.2e-3*s)
+                
+                self.tweezer.ramp(t=10.e-3)
+                delay(4.e-3)
+                self.tweezer.off()
 
-                self.dds.mot_killer.on()
+                # self.dds.mot_killer.on()
                 # delay(200.e-6*s)
                 
                 # self.dds.tweezer_aod.off()
@@ -100,7 +101,7 @@ class tof(EnvExperiment, Base):
                 self.flash_repump()
                 self.abs_image()
 
-                self.dds.mot_killer.off()
+                # self.dds.mot_killer.off()
 
                 self.core.break_realtime()
 
@@ -111,6 +112,7 @@ class tof(EnvExperiment, Base):
 
             else:
                 self.core.reset()
+                self.core.break_realtime()
                 break
 
         self.mot_observe()

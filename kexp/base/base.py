@@ -64,6 +64,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         self.core.reset() # clears RTIO
+        delay(1*s)
         if init_dac:
             delay_mu(self.params.t_rtio_mu)
             self.dac.dac_device.init() # initializes DAC

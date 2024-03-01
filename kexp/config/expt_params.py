@@ -32,12 +32,13 @@ class ExptParams():
         self.amp_d2_r_imaging = 0.065
 
         #Cooling timing
+        self.t_tof = 100.e-6
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 2.
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 7.5e-3
-        self.t_magnet_off_pretrigger = 1.e-3
+        self.t_magnet_off_pretrigger = 0.e-3
         self.t_gm = 5.e-3
         self.t_gmramp = 5.5e-3
         self.t_optical_pumping = 50.e-6
@@ -139,16 +140,15 @@ class ExptParams():
         #1227
         self.frequency_ao_1227 = 80.e6
         self.amp_1227 = .45
-        self.v_pd_tweezer_ramp_start = 0.0
+        self.v_pd_tweezer_ramp_start = 0.15
         self.v_pd_tweezer_ramp_end = 5.0
         self.n_tweezer_ramp_steps = 50
 
         #1064 tweezer
-        self.frequency_aod_1064 = 75.e6
-        self.amp_1064 = .25
-        self.amp_tweezer_1064_ramp_start = 0.0
-        self.amp_tweezer_1064_ramp_end = .25
-        self.n_tweezer_1064_ramp_steps = 50
+        self.v_pd_1064 = 1.7
+        self.v_pd_tweezer_1064_ramp_start = 0.1
+        self.v_pd_tweezer_1064_ramp_end = 1.7
+        self.n_tweezer_1064_ramp_steps = 100
 
         self.compute_derived()
         
@@ -187,7 +187,7 @@ class ExptParams():
         self.dt_tweezer_ramp = self.t_tweezer_ramp / self.n_tweezer_ramp_steps
     
     def compute_tweezer_1064_ramp_params(self):
-        self.amp_tweezer_1064_ramp_list = np.linspace(self.amp_tweezer_1064_ramp_start,self.amp_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps)
+        self.v_pd_tweezer_1064_ramp_list = np.linspace(self.v_pd_tweezer_1064_ramp_start,self.v_pd_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps)
         self.dt_tweezer_1064_ramp = self.t_tweezer_1064_ramp / self.n_tweezer_1064_ramp_steps
 
     def compute_derived(self):

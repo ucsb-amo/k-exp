@@ -20,18 +20,19 @@ class tof(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.0
 
-        # self.p.amp_imaging_abs = 0.26
+        # self.p.amp_imaging_abs = 0.3
 
-        self.p.t_magnet_off_pretrigger = 1.e-3
-        self.p.t_gm = 2.5e-3
+        # self.p.t_magnet_off_pretrigger = 1.e-3
 
-        self.p.t_tof = np.linspace(20,500,6) * 1.e-6 # mot
+        self.p.t_gm = 4.5e-3
 
-        # self.p.mag_trap_bool = np.array([0,1])
+        # self.p.t_tof = np.linspace(20,500,6) * 1.e-6 # mot
+
+        self.p.t_hold = np.linspace(.05,30,6) * 1.e-3
 
         # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
 
-        self.xvarnames = ['t_tof']
+        self.xvarnames = ['t_hold']
 
         self.finish_build()
 
@@ -47,34 +48,42 @@ class tof(EnvExperiment, Base):
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
-        for t_tof in self.p.t_tof:
+        for t in self.p.t_hold:
 
             self.mot(self.p.t_mot_load * s)
             self.dds.push.off()
-            self.ttl.pd_scope_trig.on()
             self.cmot_d1(self.p.t_d1cmot * s)
             self.set_shims(v_zshim_current=.84, v_yshim_current=self.p.v_yshim_current, v_xshim_current=self.p.v_xshim_current)
             self.gm(self.p.t_gm * s)
             # self.gm_ramp(self.p.t_gmramp * s)
             self.release()
 
-            self.dds.mot_killer.on()
+            # self.dds.mot_killer.on()
 
-            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-            delay(.2e-3)
-            self.lightsheet.off()
+            
+
+            # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+            # delay(t)
+            
+            
+            # self.ttl.pd_scope_trig.on()
+            self.tweezer.ramp(t=10.e-3)
+            delay(t)
+            self.tweezer.off()
+            # self.ttl.pd_scope_trig.off()
+
+            
 
             # self.optical_pumping(t=)
 
             ### abs img
-            delay(t_tof * s)
-            self.ttl.pd_scope_trig.off()
+            delay(15.e-6 * s)
             # delay(100.e-6 * s)
             # self.fl_image()
             self.flash_repump()
             self.abs_image()
 
-            self.dds.mot_killer.off()
+            # self.dds.mot_killer.off()
 
             self.core.break_realtime()
             
