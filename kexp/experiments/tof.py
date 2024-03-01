@@ -44,6 +44,8 @@ class tof(EnvExperiment, Base):
         self.StartTriggeredGrab()
         delay(self.camera_params.connection_delay*s)
 
+        print('hi')
+
         self.load_2D_mot(self.p.t_2D_mot_load_delay * s)
 
         for t in self.p.t_hold:
