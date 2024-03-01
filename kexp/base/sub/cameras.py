@@ -34,7 +34,7 @@ class Cameras():
         self.camera.StartGrabbingMax(Nimg, py.GrabStrategy_LatestImages)
         count = 0
         while self.camera.IsGrabbing():
-            grab = self.camera.RetrieveResult(1000000, py.TimeoutHandling_ThrowException)
+            grab = self.camera.RetrieveResult(10000, py.TimeoutHandling_ThrowException)
             if grab.GrabSucceeded():
                 print(f'gotem (img {count+1}/{Nimg})')
                 img = np.uint8(grab.GetArray())
