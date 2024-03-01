@@ -50,6 +50,7 @@ class ExptParams():
         self.t_tweezer_hold = 50.e-3
         self.t_tweezer_1064_ramp = 10.e-3
         self.t_mot_reload = 2.
+        self.t_tof = 1000.e-6
         self.t_recover = 40.e-3
 
         # DAC controlled AO amplitudes
