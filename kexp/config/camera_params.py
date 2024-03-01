@@ -8,8 +8,8 @@ class CameraParams():
         self.exposure_time_fluor = 0.
         self.exposure_time_abs = 0.
 
-        self.connection_delay = 0.
-        self.t_camera_trigger = 2.e-6
+        self.connection_delay = 0.1
+        self.t_camera_trigger = 5.e-6
 
         self.amp_imaging = 0.
         self.amp_absorption = 0.25
@@ -28,6 +28,8 @@ class BaslerParams(CameraParams):
         self.pixel_size_m = 3.45 * 1.e-6
         self.magnification = 0.75
         self.exposure_delay = 17 * 1.e-6
+
+        self.connection_delay = 1.0
 
         self.exposure_time_fluor = exposure_time_fluor
         self.exposure_time_abs = exposure_time_abs
