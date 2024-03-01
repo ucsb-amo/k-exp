@@ -41,6 +41,7 @@ class Scanner():
         """
         this_xvar = xvar(key,values,position=len(self.scan_xvars))
         self.scan_xvars.append(this_xvar)
+        self.xvarnames.append(this_xvar.key)
         # check if params has this xvar key already -- if not, add it
         self.new_param_check(this_xvar)
         self.update_nvars()
