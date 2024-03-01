@@ -30,6 +30,8 @@ class tof(EnvExperiment, Base):
 
         self.p.t_hold = np.linspace(.05,30,6) * 1.e-3
 
+        # self.p.t_scan = np.linspace(3.,15,6) * 1.e-3
+
         # self.p.frequency_detuned_imaging_F1 = self.p.frequency_detuned_imaging + 461.7e6
 
         self.xvarnames = ['t_hold']
@@ -62,14 +64,15 @@ class tof(EnvExperiment, Base):
 
             
 
-            # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-            # delay(t)
+            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+            delay(t)
+            self.lightsheet.off()
             
             
             # self.ttl.pd_scope_trig.on()
-            self.tweezer.ramp(t=10.e-3)
-            delay(t)
-            self.tweezer.off()
+            # self.tweezer.ramp(t=t)
+            # delay(10.e-3)
+            # self.tweezer.off()
             # self.ttl.pd_scope_trig.off()
 
             
