@@ -47,8 +47,6 @@ class tof(EnvExperiment, Base):
         
         self.init_kernel()
 
-        # self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
-
         self.StartTriggeredGrab()
         delay(self.camera_params.connection_delay*s)
 
