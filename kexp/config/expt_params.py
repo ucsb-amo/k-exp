@@ -4,7 +4,7 @@ from kexp.config.dds_calibration import DDS_VVA_Calibration
 class ExptParams():
     def __init__(self):
 
-        self.t_rtio_mu = np.int64(8) # get this by running core.ref_multiplier
+        self.t_rtio = 8.e-9
 
         self.N_shots = 1
         self.N_repeats = 1

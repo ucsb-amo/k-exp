@@ -91,8 +91,6 @@ class Image():
     @kernel
     def abs_image(self):
 
-        delay_mu(self.params.t_rtio_mu)
-
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 
@@ -109,8 +107,6 @@ class Image():
         
         if t==-1:
            t = self.camera_params.exposure_time
-
-        delay_mu(self.params.t_rtio_mu)
 
         self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_fluor)
         self.dds.second_imaging.set_dds(amplitude=.01)
@@ -129,7 +125,6 @@ class Image():
         # self.lightsheet.off()
         # self.dds.tweezer.off()
 
-        delay_mu(self.params.t_rtio_mu)
         delay(self.params.t_light_only_image_delay * s)
 
         self.lightsheet.on()
