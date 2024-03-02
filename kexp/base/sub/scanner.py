@@ -8,7 +8,6 @@ from artiq.experiment import delay
 dv = -100.
 dvlist = np.array([])
 
-@portable
 def nothing():
     pass
 
@@ -24,12 +23,12 @@ class Scanner():
 
         self._xvar_writer_floats = []
         self._xvar_writer_int32s = []
-        self._xvar_writer_int64s = []
+        # self._xvar_writer_int64s = []
         self._xvar_writer_arrays = []
 
         self._param_keylist_floats = []
         self._param_keylist_int32s = []
-        self._param_keylist_int64s = []
+        # self._param_keylist_int64s = []
         self._param_keylist_arrays = []
 
     def xvar(self,key,values):
@@ -98,7 +97,7 @@ class Scanner():
         values of the xvars and derived parameters are recomputed. Then, the
         updated host ExptParams values are written into the corresponding kernel
         ExptParams.
-        """        
+        """
 
         self.pre_scan()
 
@@ -112,6 +111,7 @@ class Scanner():
             self.core.break_realtime()
             self.scan_kernel()
             delay(self.params.t_recover)
+            self.core.break_realtime()
 
             scanning = self.step_scan()
 
@@ -128,7 +128,6 @@ class Scanner():
         # update each xvar parameter in the host params
         for xvar in self.scan_xvars:
             vars(self.params)[xvar.key] = xvar.values[xvar.counter]
-
         # update derived params in the host params
         self.params.compute_derived()
         self.compute_new_derived()
@@ -142,16 +141,16 @@ class Scanner():
         Must have run generate_assignment_kernels() in build first.
         """
         int32val = 1
-        int64val = np.int64(1)
+        # int64val = np.int64(1)
         floatval = 0.1
         arrayval = np.array([1.])
         for idx in range(len(self._param_keylist_int32s)):
             int32val = self.fetch_int32(idx)
             self._xvar_writer_int32s[idx](self,int32val)
 
-        for idx in range(len(self._param_keylist_int64s)):
-            int64val = self.fetch_int64(idx)
-            self._xvar_writer_int64s[idx](self,int64val)
+        # for idx in range(len(self._param_keylist_int64s)):
+        #     int64val = self.fetch_int64(idx)
+        #     self._xvar_writer_int64s[idx](self,int64val)
 
         for idx in range(len(self._param_keylist_floats)):
             floatval = self.fetch_float(idx)
@@ -160,7 +159,7 @@ class Scanner():
         for idx in range(len(self._param_keylist_arrays)):
             arrayval = self.fetch_array(idx)
             self._xvar_writer_arrays[idx](self,arrayval)
-    
+            
     def fetch_float(self,i) -> TFloat:
         """Returns the value of the ith experiment parameter with datatype
         float.
@@ -187,18 +186,18 @@ class Scanner():
         """        
         return vars(self.params)[self._param_keylist_arrays[i]]
     
-    def fetch_int64(self,i) -> TInt64:
-        """Returns the value of the ith experiment parameter with datatype
-        int64.
+    # def fetch_int64(self,i) -> TInt64:
+    #     """Returns the value of the ith experiment parameter with datatype
+    #     int64.
 
-        Args:
-            i (int): index of the ith ndarray experiment paramter in the list
-            self._param_keylist_int64s.
+    #     Args:
+    #         i (int): index of the ith ndarray experiment paramter in the list
+    #         self._param_keylist_int64s.
 
-        Returns:
-            TFloat: The value of the ith int64 ExptParam attribute.
-        """      
-        return vars(self.params)[self._param_keylist_int64s[i]]
+    #     Returns:
+    #         TFloat: The value of the ith int64 ExptParam attribute.
+    #     """      
+    #     return vars(self.params)[self._param_keylist_int64s[i]]
     
     def fetch_int32(self,i) -> TInt32:
         """Returns the value of the ith experiment parameter with datatype
@@ -226,12 +225,12 @@ class Scanner():
             dtype = str(type(vars(self.params)[key]))
 
             if 'int' in dtype:
-                if 'numpy.int64' in dtype:
-                    self._param_keylist_int64s.append(key)
-                    self._xvar_writer_int64s.append( kernel_from_string(["self","value"],bodycode) )
-                else:
-                    self._param_keylist_int32s.append(key)
-                    self._xvar_writer_int32s.append( kernel_from_string(["self","value"],bodycode) )
+                # if 'numpy.int64' in dtype:
+                #     self._param_keylist_int64s.append(key)
+                #     self._xvar_writer_int64s.append( kernel_from_string(["self","value"],bodycode) )
+                # else:
+                self._param_keylist_int32s.append(key)
+                self._xvar_writer_int32s.append( kernel_from_string(["self","value"],bodycode) )
             elif 'float' in dtype:
                 self._param_keylist_floats.append(key)
                 self._xvar_writer_floats.append( kernel_from_string(["self","value"],bodycode) )
@@ -239,10 +238,6 @@ class Scanner():
             elif 'ndarray' in dtype:
                 self._param_keylist_arrays.append(key)
                 self._xvar_writer_arrays.append( kernel_from_string(["self","value"],bodycode) )
-
-            # self.param_vartypes.append(dtypestr)
-            
-            # self._xvar_writer.append( kernel_from_string(["self",value_arg],bodycode) )
 
     def step_scan(self,idx=0) -> TBool:
         '''
