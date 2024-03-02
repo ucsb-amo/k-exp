@@ -23,6 +23,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
         self.params = ExptParams()
+        self.p = self.params
         self.compute_new_derived = nothing
 
         self.prepare_devices(expt_params=self.params)
@@ -37,7 +38,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         self.sort_N = []
 
         self.ds = DataSaver()
-        self.ds.create_data_file(self)
 
     def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True,
                      compute_new_derived=nothing):
@@ -74,13 +74,18 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         if shuffle:
             self.shuffle_xvars()
 
-        self.get_N_img()
+        self.params.N_img = self.get_N_img()
+
+        
 
         if cleanup_dds_profiles:
             self.dds.cleanup_dds_profiles()
 
         self.params.compute_derived()
         self.compute_new_derived()
+
+        self.datapath = self.ds.create_data_file(self)
+
         self.generate_assignment_kernels()
 
     @kernel
@@ -107,3 +112,33 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         self.core.break_realtime() # add slack before scheduling experiment events
 
         self.dds.mot_killer.on()
+
+    def prepare_image_array(self):
+        self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=np.uint8)
+        self.image_timestamps = np.zeros((self.params.N_img,))
+
+    def wait_for_data_available(self):
+        """Blocks until the file at self.datapath is available.
+        """        
+        import h5py, time
+        check_period = 0.05
+        t0 = time.time()
+        while True:
+            try:
+                f = h5py.File(self.datapath,'r+')
+                f.close()
+                break
+            except Exception as e:
+                if "Unable to open file" in str(e):
+                    # file is busy -- wait for available
+                    time.sleep(check_period)
+                else:
+                    raise e
+            t_elapsed = time.time() - t0
+            if t_elapsed > 10.:
+                raise ValueError("Too long has passed waiting for data file to be available. Closing.")
+                
+    def end(self,expt_filepath):
+        self.wait_for_data_available()
+        self.ds.save_data(self, expt_filepath)
+        print("Done!")
