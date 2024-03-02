@@ -1,5 +1,7 @@
 class CameraParams():
     def __init__(self):
+        self.camera_type = ""
+
         self.pixel_size_m = 0.
         self.magnification = 13
         self.exposure_delay = 0.
@@ -14,6 +16,8 @@ class CameraParams():
         self.amp_imaging = 0.
         self.amp_absorption = 0.25
         self.amp_fluorescence = 0.5
+
+        self.resolution = (1,1,)
     
     def select_absorption(self,absorption_bool):
         pass
@@ -21,9 +25,13 @@ class CameraParams():
 class BaslerParams(CameraParams):
     def __init__(self,serial_number='40320384',
                  exposure_time_fluor = 500.e-6, exposure_time_abs = 19.e-6,
-                 amp_absorption = 0.25,amp_fluorescence=0.5):
+                 amp_absorption = 0.25,amp_fluorescence=0.5,
+                 resolution = (1200,1920,)):
         super().__init__()
+        self.camera_type = "basler"
         self.serial_no = serial_number
+
+        self.resolution = resolution
 
         self.pixel_size_m = 3.45 * 1.e-6
         self.magnification = 0.75
@@ -45,8 +53,10 @@ class BaslerParams(CameraParams):
 class AndorParams(CameraParams):
     def __init__(self,
                  exposure_time_fluor = 10.e-3, exposure_time_abs = 10.e-6,
-                 amp_absorption = 0.25,amp_fluorescence=0.5):
+                 amp_absorption = 0.25,amp_fluorescence=0.5,
+                 resolution = (512,512,)):
         super().__init__()
+        self.camera_type = "andor"
         self.pixel_size_m = 16.e-6
         self.magnification = 1. # needs to be figured out and updated
         self.exposure_delay = 0. # needs to be updated from docs
@@ -56,6 +66,8 @@ class AndorParams(CameraParams):
         self.em_gain = 290.
         self.vs_speed = 2
         self.vs_amp = 2
+
+        self.resolution = resolution
 
         self.exposure_time_fluor = exposure_time_fluor
         self.exposure_time_abs = exposure_time_abs
