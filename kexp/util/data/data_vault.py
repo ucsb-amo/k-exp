@@ -31,11 +31,8 @@ class DataSaver():
                 f.attrs["expt_file"] = ""
 
             f.attrs['run_complete'] = 1
-
             f.close()
-
             self._update_run_id(expt.run_info)
-
             os.chdir(pwd)
 
     def create_data_file(self,expt):
@@ -77,6 +74,8 @@ class DataSaver():
             f.close()
 
             os.chdir(pwd)
+
+            return fpath
 
     def _class_attr_to_dataset(self,dset,obj):
         try:
