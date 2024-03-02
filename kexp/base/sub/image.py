@@ -243,4 +243,4 @@ class Image():
 
         msg += f" {N_img} total images expected."
         print(msg)
-        self.params.N_img = N_img
+        return N_img
