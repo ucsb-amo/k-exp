@@ -75,8 +75,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
             self.shuffle_xvars()
 
         self.params.N_img = self.get_N_img()
-
-        
+        self.prepare_image_array()
 
         if cleanup_dds_profiles:
             self.dds.cleanup_dds_profiles()
