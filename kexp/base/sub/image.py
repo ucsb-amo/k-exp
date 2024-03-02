@@ -226,6 +226,8 @@ class Image():
             msg += f" {xvar.Nvals} values of {xvar.key}."
         self.params.N_shots_with_repeats = N_img
 
+        msg += f" {N_img} total shots."
+
         ### I have no idea what this is for. ###
         if isinstance(self.params.N_repeats,list):
             if len(self.params.N_repeats) == 1:
