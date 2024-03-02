@@ -18,6 +18,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         Scanner.__init__(self)
         super().__init__()
 
+        self.setup_camera = setup_camera
         self.run_info = RunInfo(self)
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
@@ -36,6 +37,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         self.sort_N = []
 
         self.ds = DataSaver()
+        self.ds.create_data_file(self)
 
     def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True,
                      compute_new_derived=nothing):
@@ -88,9 +90,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         self.core.reset() # clears RTIO
         delay(1*s)
         if init_dac:
-            delay_mu(self.params.t_rtio_mu)
+            delay(self.params.t_rtio)
             self.dac.dac_device.init() # initializes DAC
-            delay_mu(self.params.t_rtio_mu)
+            delay(self.params.t_rtio)
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
             self.init_all_dds() # initializes DDS channels
@@ -100,7 +102,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
             self.set_imaging_detuning()
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
-        print('hi')
         if beat_ref_on:
             self.dds.beatlock_ref.on()
         self.core.break_realtime() # add slack before scheduling experiment events
+
+        self.dds.mot_killer.on()
