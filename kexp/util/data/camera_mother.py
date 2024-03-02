@@ -96,11 +96,14 @@ class CameraWatcher():
         print("All images captured. Now, death.")
         return True
     
-    def dishonorable_death(self):
+    def dishonorable_death(self,delete_data=True):
         self.camera.close()
         self.dataset.close()
-        print("An error has occurred. Destroying incomplete data.")
-        os.remove(self.data_filepath)
+        msg = "An error has occurred."
+        if delete_data:
+            msg += "Destroying incomplete data."
+            os.remove(self.data_filepath)
+        print(msg)
         return True
 
     def read_params(self):
