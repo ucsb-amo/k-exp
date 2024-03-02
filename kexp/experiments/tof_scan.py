@@ -1,4 +1,5 @@
 from artiq.experiment import *
+from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
@@ -27,3 +28,6 @@ class tof(EnvExperiment, Base):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
+
+
+        
