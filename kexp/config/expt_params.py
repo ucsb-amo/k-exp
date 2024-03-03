@@ -81,7 +81,7 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.5
 
-        self.i_mot = 23.0
+        self.i_mot = 24.0
         self.v_zshim_current = 0.185
         self.v_xshim_current = 0.92
         self.v_yshim_current = 0.56
