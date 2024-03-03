@@ -10,6 +10,7 @@ from kexp.config.expt_params import ExptParams
 from kexp.config.camera_params import CameraParams
 from kexp.util.data.load_atomdata import unpack_group
 
+from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.control.cameras.basler_usb import BaslerUSB
 from kexp.control.cameras.andor import AndorEMCCD
 
@@ -24,7 +25,6 @@ UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
 class CameraMother():
     def __init__(self):
         self.latest_file = ""
-
         self.watch_for_new_file()
 
     def read_run_id(self):
@@ -45,6 +45,7 @@ class CameraMother():
             new_file_bool, run_id = self.check_if_file_new(latest_file)
             if new_file_bool:
                 self.new_file(latest_file, run_id)
+                print("Mother is watching...")
             attempts += 1
             time.sleep(CHECK_DELAY)
             if attempts == UPDATE_EVERY:
@@ -61,10 +62,12 @@ class CameraMother():
             rid = int(latest_filepath.split("_")[data_dir_depth_idx].split("\\")[-1])
             if rid == self.read_run_id():
                 new_file_bool = True
+                self.latest_file = latest_filepath
             else:
                 new_file_bool = False
         else:
             new_file_bool = False
+            rid = None
         return new_file_bool, rid
     
     def birth(self,data_filepath):
@@ -75,10 +78,10 @@ class CameraWatcher():
     def __init__(self,data_filepath):
         self.params = ExptParams()
         self.camera_params = CameraParams()
-        self.camera = []
+        self.camera = DummyCamera()
         self.grab_loop = []
         self.dataset = []
-        self.death = []
+        self.death = self.dishonorable_death
         self.data_filepath = data_filepath
 
     def birth(self):
@@ -106,9 +109,11 @@ class CameraWatcher():
         print(msg)
         return True
 
-    def read_params(self):
+    def read_params(self,close=False):
         unpack_group(self.dataset,'camera_params',self.camera_params)
         unpack_group(self.dataset,'params',self.params)
+        if close:
+            self.dataset.close()
 
     def wait_for_data_available(self,close=True):
         """Blocks until the file at self.datapath is available. Opens the h5py
@@ -179,21 +184,24 @@ class CameraWatcher():
         self.camera.StopGrabbing()
         self.camera.Close()
         
-
     def start_triggered_grab_andor(self):
         """
         Starts the Andor waiting for self.params.N_img triggers. Default 10
         second timeout.
         """
-        
         Nimg = int(self.params.N_img)
         try:
             count = 0
-            for _ in range(Nimg):
-                img = self.camera.grab_andor(nframes=Nimg,frame_timeout=10.)
+            imgs = self.camera.grab_andor(nframes=Nimg,frame_timeout=10.)
+            for img in imgs:
                 self.write_image_to_dataset(count,img)
-                print(f'gotem (img {count+1}/{Nimg})')
                 count += 1
+            # for _ in range(Nimg):
+            #     img = self.camera.grab_andor(nframes=1,frame_timeout=10.)
+            #     self.write_image_to_dataset(count,img)
+            #     print(f'gotem (img {count+1}/{Nimg})')
+            #     count += 1
+            self.death = self.honorable_death
         except Exception as e:
             self.death = self.dishonorable_death
             print("An error occurred with the camera grab. Closing the camera connection.")
