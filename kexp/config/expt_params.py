@@ -45,6 +45,7 @@ class ExptParams():
         self.t_optical_pumping = 50.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 10.e-3
+        self.t_lightsheet_paint_ramp = 10.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 10.e-3
         self.t_tweezer_ramp = 10.e-3
@@ -138,6 +139,9 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_start = 0.0
         self.v_pd_lightsheet_rampup_end = 4.0
 
+        self.v_pd_lightsheet_paint_ramp_start = 9.99
+        self.v_pd_lightsheet_paint_ramp_end = -9.99
+
         #1227
         self.frequency_ao_1227 = 80.e6
         self.amp_1227 = .45
@@ -166,6 +170,13 @@ class ExptParams():
             self.v_pd_lightsheet_rampup_start,
             self.n_lightsheet_rampup_steps)
         self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
+
+    def compute_lightsheet_paint_ramp_params(self):
+        self.v_pd_lightsheet_paint_ramp_list = np.linspace(
+            self.v_pd_lightsheet_paint_ramp_start,
+            self.v_pd_lightsheet_paint_ramp_end,
+            self.n_lightsheet_rampup_steps)
+        self.dt_lightsheet_paint_ramp = self.t_lightsheet_paint_ramp / self.n_lightsheet_rampup_steps
 
     def compute_gmramp_params(self):
         self.pfrac_c_gmramp_list = np.linspace(self.pfrac_c_gmramp_start, self.pfrac_c_gmramp_end, self.n_gmramp_steps).transpose()

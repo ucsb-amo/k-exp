@@ -48,9 +48,9 @@ class tof(EnvExperiment, Base):
         # delay(self.p.t_tweezer_hold)
         # self.tweezer.off()
 
-        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        # delay(self.p.t_lightsheet_hold)
-        # self.lightsheet.off()
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup,with_painting=True)
+        delay(self.p.t_lightsheet_hold)
+        self.lightsheet.off()
 
         delay(self.p.t_tof)
         self.flash_repump()
