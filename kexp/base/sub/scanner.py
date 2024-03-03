@@ -275,6 +275,7 @@ class Scanner():
         for xvar in self.scan_xvars:
             vars(self.params)[xvar.key] = xvar.values
         self.params.compute_derived()
+        self.compute_new_derived()
 
 class xvar():
     def __init__(self,key:str,values:np.ndarray,position=0):
