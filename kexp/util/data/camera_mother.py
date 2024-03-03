@@ -6,13 +6,10 @@ import glob
 
 import pypylon.pylon as py
 
-from kexp.config.expt_params import ExptParams
-from kexp.config.camera_params import CameraParams
 from kexp.util.data.load_atomdata import unpack_group
 
 from kexp.control.cameras.dummy_cam import DummyCamera
-from kexp.control.cameras.basler_usb import BaslerUSB
-from kexp.control.cameras.andor import AndorEMCCD
+from kexp.control.cameras 
 
 import sys
 
@@ -75,10 +72,14 @@ class CameraMother():
        dead = c.birth()
 
 class CameraWatcher():
-    def __init__(self,data_filepath):
+    def __init__(self,data_filepath,camera_conn):
+        from kexp.config.expt_params import ExptParams
+        from kexp.config.camera_params import CameraParams
         self.params = ExptParams()
         self.camera_params = CameraParams()
-        self.camera = DummyCamera()
+        self.camera_select = ""
+
+        self.camera_conn = camera_conn
         self.grab_loop = []
         self.dataset = []
         self.death = self.dishonorable_death
@@ -112,6 +113,7 @@ class CameraWatcher():
     def read_params(self,close=False):
         unpack_group(self.dataset,'camera_params',self.camera_params)
         unpack_group(self.dataset,'params',self.params)
+        self.camera_select = self.dataset['run_info']['camera_select']
         if close:
             self.dataset.close()
 
@@ -157,6 +159,12 @@ class CameraWatcher():
         self.dataset['data']['image_timestamps'][idx] = img_timestamp
         if close_data_betwixt_shots:
             self.dataset.close()
+
+    def grab_loop(self):
+        Nimg = int(self.params.N_img)
+        count = 0
+        try:
+
 
     def start_triggered_grab_basler(self):
         '''
