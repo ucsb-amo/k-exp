@@ -94,12 +94,12 @@ class Image():
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 
-        delay(self.params.t_light_only_image_delay * s)
+        delay(self.camera_params.t_light_only_image_delay * s)
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 
         self.dds.imaging.off()
-        delay(self.params.t_dark_image_delay * s)
+        delay(self.camera_params.t_dark_image_delay * s)
         self.trigger_camera()
 
     @kernel
