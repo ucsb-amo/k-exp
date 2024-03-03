@@ -1,5 +1,6 @@
 from pypylon import pylon
 from artiq.experiment import *
+import numpy as np
 
 from kexp.config.camera_params import xy_basler_params
 
@@ -46,5 +47,26 @@ class BaslerUSB(pylon.InstantCamera):
 
     def close(self):
         self.Close()
-        
 
+    def grab(self):
+        """Starts the camera waiting for a trigger to take a single image.
+
+        Returns:
+            grab_success (bool): A boolean indicating whether or not the frame grab was successful.
+            img (np.ndarray): The frame that was grabbed. dtype = np.uint8.
+            img_t (float): The timestamp of the grame that was grabbed.
+        """        
+        grab_success = False
+        img = []
+        img_t = []
+        try:
+            timeout_ms = 10.e3
+            grab_result = self.GrabOne(timeout_ms,pylon.GrabStrategy_LatestImages)
+            img = np.uint8(grab_result.GetArray())
+            img_t = grab_result.TimeStamp
+            grab_success = True
+        except Exception as e:
+            grab_success = False
+            print(e)
+            print("An error occurred with the camera grab.")
+        return grab_success, img, img_t
