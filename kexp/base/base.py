@@ -9,7 +9,6 @@ from kexp.util.data import DataSaver, RunInfo
 
 from kexp.util.artiq.async_print import aprint
 
-@portable
 def nothing():
     pass
 
@@ -87,6 +86,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
 
         self.generate_assignment_kernels()
 
+    def compute_new_derived(self):
+        pass
+
     @kernel
     def init_kernel(self, run_id = True, init_dds = True, init_dac = True, dds_set = True, dds_off = True, beat_ref_on=True):
         if run_id:
@@ -109,11 +111,14 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         if beat_ref_on:
             self.dds.beatlock_ref.on()
         self.core.break_realtime() # add slack before scheduling experiment events
-
-        self.dds.mot_killer.on()
+        delay(self.camera_params.connection_delay)
 
     def prepare_image_array(self):
-        self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=np.uint8)
+        if self.camera_params.camera_type == 'andor':
+            dtype = np.uint16
+        if self.camera_params.camera_type == 'basler':
+            dtype = np.uint8
+        self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=dtype)
         self.image_timestamps = np.zeros((self.params.N_img,))
 
     def wait_for_data_available(self):
@@ -133,11 +138,13 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
                     time.sleep(check_period)
                 else:
                     raise e
-            t_elapsed = time.time() - t0
-            if t_elapsed > 10.:
-                raise ValueError("Too long has passed waiting for data file to be available. Closing.")
+            # t_elapsed = time.time() - t0
+            # if t_elapsed > (20.+self.camera_params.connection_delay*2):
+            #     self.ds._update_run_id(self.run_info)
+            #     raise ValueError("Too long has passed waiting for data file to be available. Closing.")
                 
     def end(self,expt_filepath):
+        self.cleanup_scanned()
         self.wait_for_data_available()
         self.ds.save_data(self, expt_filepath)
         print("Done!")
