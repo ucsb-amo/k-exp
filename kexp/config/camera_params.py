@@ -1,6 +1,7 @@
 class CameraParams():
     def __init__(self):
         self.camera_type = ""
+        self.camera_select = ""
 
         self.pixel_size_m = 0.
         self.magnification = 13
