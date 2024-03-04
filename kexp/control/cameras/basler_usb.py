@@ -56,20 +56,14 @@ class BaslerUSB(pylon.InstantCamera):
             img (np.ndarray): The frame that was grabbed. dtype = np.uint8.
             img_t (float): The timestamp of the grame that was grabbed.
         """        
-        grab_success = False
         img = []
         img_t = []
 
-        try:
-            grab_result = self.GrabOne(int(timeout_s*1000))
-            img = np.uint8(grab_result.GetArray())
-            img_t = grab_result.TimeStamp
-            grab_success = True
-        except Exception as e:
-            grab_success = False
-            print(e)
-            print("An error occurred with the camera grab.")
-        return grab_success, img, img_t
+        grab_result = self.GrabOne(int(timeout_s*1000))
+        img = np.uint8(grab_result.GetArray())
+        img_t = grab_result.TimeStamp
+
+        return img, img_t
     
     def is_opened(self):
         return self.IsOpen()
