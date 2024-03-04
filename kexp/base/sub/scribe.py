@@ -12,7 +12,7 @@ class Scribe():
         self.ds = DataSaver()
         self.data_filepath = ""
 
-    def wait_for_data_available(self,close=True,openmode='r+'):
+    def wait_for_data_available(self,close=True,openmode='r+',check_period=CHECK_PERIOD):
         """Blocks until the file at self.datapath is available.
         """       
         t0 = time.time()
@@ -25,7 +25,7 @@ class Scribe():
             except Exception as e:
                 if "Unable to open file" in str(e):
                     # file is busy -- wait for available
-                    time.sleep(CHECK_PERIOD)
+                    time.sleep(check_period)
                 else:
                     raise e
                 
