@@ -31,8 +31,8 @@ class BaslerParams(CameraParams):
                  exposure_time_fluor = 500.e-6, exposure_time_abs = 19.e-6,
                  amp_absorption = 0.25,amp_fluorescence=0.5,
                  resolution = (1200,1920,),
-                 t_light_only_image_delay=60.e-3,
-                 t_dark_image_delay=60.e-3,
+                 t_light_only_image_delay=100.e-3,
+                 t_dark_image_delay=100.e-3,
                  camera_select = ""):
         super().__init__()
         self.camera_select = camera_select
