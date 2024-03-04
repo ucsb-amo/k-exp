@@ -86,7 +86,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.generate_assignment_kernels()
 
-        self.wait_for_camera_ready()
+        if self.setup_camera:
+            self.wait_for_camera_ready()
+            print("Camera is ready.")
 
     def compute_new_derived(self):
         pass
@@ -119,9 +121,12 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             dtype = np.uint16
         if self.camera_params.camera_type == 'basler':
             dtype = np.uint8
+        else:
+            dtype = np.uint8
         self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=dtype)
         self.image_timestamps = np.zeros((self.params.N_img,))
 
     def end(self,expt_filepath):
-        self.cleanup_scanned()
-        self.write_data(expt_filepath)
+        if self.setup_camera:
+            self.cleanup_scanned()
+            self.write_data(expt_filepath)
