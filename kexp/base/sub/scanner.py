@@ -248,7 +248,7 @@ class Scanner():
         out = True
         xvars = list(reversed(self.scan_xvars))
         last_xvar_idx = self.Nvars - 1
-        last_xval_idx = xvars[idx].Nvals - 1
+        last_xval_idx = xvars[idx].values.shape[0] - 1
         if idx < self.Nvars:
             if xvars[idx].counter == last_xval_idx:
                 if idx != last_xvar_idx:
@@ -291,4 +291,3 @@ class xvar():
         self.position = position
         self.counter = 0
         self.sort_idx = []
-        self.Nvals = np.shape(self.values)[0]

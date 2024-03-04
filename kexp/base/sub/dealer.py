@@ -78,14 +78,14 @@ class Dealer():
             # create list of scramble indices for each xvar
             # use same index list for xvars of same length
             ### Note: with new xvar class, this is not necessary. Update later.
-            if xvar.Nvals in len_list:
-                match_idx = len_list.index(xvar.Nvals)
+            if xvar.values.shape[0] in len_list:
+                match_idx = len_list.index(xvar.values.shape[0])
                 sort_idx.append(sort_idx[match_idx])
             else:
-                sort_idx.append( np.arange(xvar.Nvals) )
+                sort_idx.append( np.arange(xvar.values.shape[0]) )
                 rng.shuffle(sort_idx[xvar.position])
                 xvar.sort_idx = sort_idx[xvar.position]
-            len_list.append(xvar.Nvals)
+            len_list.append(xvar.values.shape[0])
         
         # shuffle arrays with the scrambled indices
         for xvar in self.scan_xvars:
