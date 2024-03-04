@@ -7,26 +7,40 @@ class tof(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(.2,.7,5))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.4,5))
-
-        # self.xvar('pfrac_d1_c_gm',np.linspace(.4,.9,5))
-        # self.xvar('pfrac_d1_r_gm',np.linspace(.3,.5,5))
-
-        # self.xvar('t_gm',np.linspace(1.,8.,5)*1.e-3)
-        # self.xvar('t_gmramp',np.linspace(3.,9.,5)*1.e-3)
 
         # self.xvar('detune_push',np.linspace(-4.,4.,5))
         # self.xvar('amp_push',np.linspace(.05,.188,5))
 
         # self.xvar('detune_d2_c_mot',np.linspace(-3.,0.,5))
         # self.xvar('detune_d2_r_mot',np.linspace(-5.,-3.,5))
-        self.xvar('i_mot',np.linspace(22.,25.,5))
+        # self.xvar('i_mot',np.linspace(22.,25.,5))
 
-        self.xvar('t_tof',np.linspace(10000,16000,5)*1.e-6)
+        # self.xvar('detune_d1_c_d1cmot',np.linspace(7.,10.,5))
+        # self.xvar('detune_d2_r_d1cmot',np.linspace(-4.,-2.,5))
+        # self.xvar('pfrac_d1_c_d1cmot',np.linspace(.7,.99,5))
+        # self.xvar('amp_d2_r_d1cmot',np.linspace(0.03,.09,5))        
+        # self.xvar('t_d1cmot',np.linspace(1.,10.,5)*1.e-3)
+        # self.xvar('i_cmot',np.linspace(20.,27.,5))
+
+        # self.xvar('detune_gm',np.linspace(1.,12.,5))
+        # self.xvar('pfrac_d1_c_gm',np.linspace(.7,.99,5))
+        # self.xvar('pfrac_d1_r_gm',np.linspace(.3,.6,5))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.2,.7,5))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.4,5))
+        # self.xvar('t_gm',np.linspace(1.,8.,5)*1.e-3)
+        # self.xvar('t_gmramp',np.linspace(3.,9.,5)*1.e-3)
+  
+        # self.xvar('t_lightsheet_rampup',np.linspace(3.,12,5)*1.e-3)
+
+        self.xvar('t_tof',np.linspace(13000,18000,6)*1.e-6)
+        # self.xvar('t_lightsheet_hold',np.linspace(1000,40000,5)*1.e-6)
+        # self.xvar('t_tweezer_hold',np.linspace(1000,40000,5)*1.e-6)
+
+        # self.p.N_repeats = 3
 
         self.p.t_mot_load = 1.
-        self.p.t_tof = 12000.e-6
+        # self.p.t_tof = 12000.e-6
+        # self.p.t_lightsheet_hold = 40.e-3
         # self.p.t_gm = 3.e-3
         # self.p.t_gmramp = 4.e-3
 
@@ -48,9 +62,9 @@ class tof(EnvExperiment, Base):
         # delay(self.p.t_tweezer_hold)
         # self.tweezer.off()
 
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup,with_painting=True)
-        delay(self.p.t_lightsheet_hold)
-        self.lightsheet.off()
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup,with_painting=False)
+        # delay(self.p.t_lightsheet_hold)
+        # self.lightsheet.off()
 
         delay(self.p.t_tof)
         self.flash_repump()
