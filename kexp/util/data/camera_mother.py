@@ -154,13 +154,10 @@ class CameraBaby(Scribe):
         Nimg = int(self.params.N_img)
         count = 0
         while True:
-            t0 = time.time()
             img, img_timestamp = self.camera.grab()
-            t1 = time.time()
             self.write_image_to_dataset(count,img,img_timestamp)
             count += 1
             print(f"gotem (img {count}/{Nimg})")
-            print(t1-t0)
             if count >= Nimg:
                 self.death = self.honorable_death
                 break
