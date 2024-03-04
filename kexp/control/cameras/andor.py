@@ -39,16 +39,9 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
             img (np.ndarray): The frame that was grabbed. dtype = np.uint16.
             img_t (float): The timestamp of the grame that was grabbed.
         """
-        grab_success = False
-        img = []
-        img_t = []
-        try:
-            img = self.grab_andor(nframes=1,frame_timeout=10.)
-            img_t = 0.
-        except Exception as e:
-            print("An error occurred with the camera grab.")
-            print(e)
-            return grab_success, img, img_t
+        img = self.grab_andor(nframes=1,frame_timeout=10.)
+        img_t = 0.
+        return img, img_t
 
     def grab_andor(self, nframes=1, frame_timeout=5., missing_frame="skip", return_info=False, buff_size=None):
         """
