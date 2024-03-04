@@ -43,7 +43,8 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         img = []
         img_t = []
         try:
-            imgs = self.grab_andor(nframes=1,frame_timeout=10.)
+            img = self.grab_andor(nframes=1,frame_timeout=10.)
+            img_t = 0.
         except Exception as e:
             print("An error occurred with the camera grab.")
             print(e)
