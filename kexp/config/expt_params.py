@@ -82,7 +82,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.5
 
         self.i_mot = 24.0
-        self.v_zshim_current = 0.185
+        self.v_zshim_current = 0.2
         self.v_xshim_current = 0.92
         self.v_yshim_current = 0.56
 
@@ -107,6 +107,10 @@ class ExptParams():
         #GM
         self.detune_gm = 9.
         # self.amp_gm = 0.09
+
+        self.v_zshim_current_gm = .9
+        self.v_xshim_current_gm = 1.
+        self.v_yshim_current_gm = 1.
 
         self.detune_d1_c_gm = self.detune_gm
         self.pfrac_d1_c_gm = .78 # there is an ND on this photodiode -- much higher power/volt than the repump
