@@ -30,7 +30,6 @@ class DataSaver():
             else:
                 f.attrs["expt_file"] = ""
 
-            f.attrs['run_complete'] = 1
             f.close()
             self._update_run_id(expt.run_info)
             os.chdir(pwd)
@@ -53,7 +52,9 @@ class DataSaver():
             f = h5py.File(fpath,'w')
             data = f.create_group('data')
 
-            f.attrs['run_complete'] = 0
+            f.attrs['camera_ready'] = 0
+            f.attrs['camera_ready_ack'] = 0
+            
             f.attrs['xvarnames'] = expt.xvarnames
             data.create_dataset('images',data=expt.images)
             data.create_dataset('image_timestamps',data=expt.image_timestamps)
