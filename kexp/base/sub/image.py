@@ -217,8 +217,8 @@ class Image():
         msg = ""
 
         for xvar in self.scan_xvars:
-            N_img = N_img * xvar.Nvals
-            msg += f" {xvar.Nvals} values of {xvar.key}."
+            N_img = N_img * xvar.values.shape[0]
+            msg += f" {xvar.values.shape[0]} values of {xvar.key}."
         self.params.N_shots_with_repeats = N_img
 
         msg += f" {N_img} total shots."
