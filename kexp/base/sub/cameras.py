@@ -30,7 +30,6 @@ class Cameras():
             self.start_triggered_grab = self.nothing
             self.ttl.camera = DummyTTL()
         else:
-            self.camera_params.camera_select = camera_select
             match camera_select:
                 case "xy_basler":
                     ttl = self.ttl.xy_basler
@@ -47,7 +46,6 @@ class Cameras():
                 case _:
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
             self.assign_camera_stuff(camera_select,camera_ttl=ttl,absorption_bool=absorption_image)
-                
         self.run_info.absorption_image = absorption_image
 
     def assign_camera_stuff(self,
@@ -56,6 +54,7 @@ class Cameras():
                             absorption_bool):
         
         self.camera_params = self.get_camera_params(camera_select)
+        self.camera_params.camera_select = camera_select
         self.camera_params.select_absorption(absorption_bool)
         self.ttl.camera = camera_ttl
 
