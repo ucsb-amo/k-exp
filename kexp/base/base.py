@@ -67,12 +67,13 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         if self.xvarnames and not self.scan_xvars:
             for key in self.xvarnames:
                 self.xvar(key,vars(self.params)[key])
-
+        
         self.repeat_xvars(N_repeats=N_repeats)
-
+        
+        
         if shuffle:
             self.shuffle_xvars()
-
+        
         self.params.N_img = self.get_N_img()
         self.prepare_image_array()
 
