@@ -74,7 +74,7 @@ class CameraMother():
     
     def birth(self,data_filepath,name):
        c = CameraBaby(data_filepath,self.camera_nanny,name)
-       dead = c.birth()
+       c.birth()
 
 class CameraBaby(Scribe):
     def __init__(self,data_filepath,camera_nanny:CameraNanny,name):
@@ -92,41 +92,51 @@ class CameraBaby(Scribe):
         self.data_filepath = data_filepath
 
     def birth(self):
-        print(f"{self.name}: I am born!")
-        self.dataset = self.wait_for_data_available(close=False) # leaves open
-        self.read_params() # closes
-        self.create_camera() # checks for camera, deletes data if bad
-        print('camera created')
-        self.mark_camera_ready() # opens and closes data
-        print('camera marked as ready')
-        self.dataset = self.check_camera_ready_ack() # opens data
-        print('camera ready acknowledged')
-        self.grab_loop()
-        self.dataset.close()
-        self.death()
-    
+        try:
+            print(f"{self.name}: I am born!")
+            self.dataset = self.wait_for_data_available(close=False) # leaves open
+            self.read_params() # closes
+            self.create_camera() # checks for camera
+            print('camera created')
+            self.mark_camera_ready() # opens and closes data
+            print('camera marked as ready')
+            self.dataset = self.check_camera_ready_ack() # opens data
+            print('camera ready acknowledged')
+            self.grab_loop()
+            self.dataset.close()
+            self.death()
+        except Exception as e:
+            print(e)
+            self.death()
+
+    def create_camera(self):
+        self.camera = self.camera_nanny.persistent_get_camera(self.camera_params)
+
     def honorable_death(self):
         print(f"{self.name}: All images captured.")
-        print(f"{self.name} has died.")
+        print(f"{self.name} has died honorably.")
         return True
     
     def dishonorable_death(self,delete_data=True):
-        msg = "An error has occurred."
+        msg = "Something went wrong. "
         if delete_data:
             msg += "Destroying incomplete data."
-            os.remove(self.data_filepath)
+            while True:
+                try:
+                    self.dataset.close()
+                    self.wait_for_data_available(check_period=0.25)
+                    os.remove(self.data_filepath)
+                    break
+                except Exception as e:
+                    print(e)
         print(msg)
+        print(f"{self.name} has died dishonorably.")
         return True
 
     def read_params(self):
         unpack_group(self.dataset,'camera_params',self.camera_params)
         unpack_group(self.dataset,'params',self.params)
         self.dataset.close()
-
-    def create_camera(self):
-        self.camera = self.camera_nanny.get_camera(self.camera_params)
-        if self.camera == None:
-            self.dishonorable_death()
 
     def write_image_to_dataset(self,idx,img,img_timestamp=0.,
                                close_data_betwixt_shots=False):
@@ -141,13 +151,12 @@ class CameraBaby(Scribe):
         Nimg = int(self.params.N_img)
         count = 0
         while True:
-            grab_success, img, img_timestamp = self.camera.grab()
+            img, img_timestamp = self.camera.grab()
             self.write_image_to_dataset(count,img,img_timestamp)
             count += 1
+            print(f"gotem (img {count}/{Nimg})")
             if count >= Nimg:
                 self.death = self.honorable_death
                 break
-        if not grab_success:
-            self.death = self.dishonorable_death
         
 c = CameraMother()
