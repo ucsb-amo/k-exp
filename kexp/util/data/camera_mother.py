@@ -16,6 +16,7 @@ from kexp.base.sub.scribe import Scribe
 
 import sys
 
+RUN_ID_PATH = r"B:\_K\PotassiumData\run_id.py"
 DATA_DIR = os.getenv("data")
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
 CHECK_DELAY = 0.25
@@ -132,6 +133,7 @@ class CameraBaby(Scribe):
                     print(e)
         print(msg)
         print(f"{self.name} has died dishonorably.")
+        self.update_run_id()
         return True
 
     def read_params(self):
@@ -159,5 +161,14 @@ class CameraBaby(Scribe):
             if count >= Nimg:
                 self.death = self.honorable_death
                 break
+
+    def update_run_id(self):
+        pwd = os.getcwd()
+        os.chdir(DATA_DIR)
+        with open(RUN_ID_PATH,'r+') as f:
+            rid = f.read()
+            line = f"{rid+1}"
+            f.write(line)
+        os.chdir(pwd)
         
 c = CameraMother()
