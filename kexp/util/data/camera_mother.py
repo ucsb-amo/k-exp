@@ -54,8 +54,9 @@ class CameraMother():
                 print("No new file found.")
 
     def new_file(self,file,run_id):
-        print(f"New file found! Run ID {run_id}. Welcome to the world, little {names.get_first_name()}...")
-        dead = self.birth(file)
+        name = names.get_first_name()
+        print(f"New file found! Run ID {run_id}. Welcome to the world, little {name}...")
+        dead = self.birth(file,name)
                 
     def check_if_file_new(self,latest_filepath):
         if latest_filepath != self.latest_file:
@@ -71,38 +72,42 @@ class CameraMother():
             rid = None
         return new_file_bool, rid
     
-    def birth(self,data_filepath):
-       c = CameraBaby(data_filepath,self.camera_nanny)
+    def birth(self,data_filepath,name):
+       c = CameraBaby(data_filepath,self.camera_nanny,name)
        dead = c.birth()
 
 class CameraBaby(Scribe):
-    def __init__(self,data_filepath,camera_nanny:CameraNanny):
+    def __init__(self,data_filepath,camera_nanny:CameraNanny,name):
         super().__init__()
 
         from kexp.config.expt_params import ExptParams
         from kexp.config.camera_params import CameraParams
         self.params = ExptParams()
         self.camera_params = CameraParams()
+        self.name = name
 
         self.camera_nanny = camera_nanny
-        self.grab_loop = []
         self.dataset = []
         self.death = self.dishonorable_death
         self.data_filepath = data_filepath
 
     def birth(self):
-        print("I am born!")
+        print(f"{self.name}: I am born!")
         self.dataset = self.wait_for_data_available(close=False) # leaves open
         self.read_params() # closes
         self.create_camera() # checks for camera, deletes data if bad
+        print('camera created')
         self.mark_camera_ready() # opens and closes data
+        print('camera marked as ready')
         self.dataset = self.check_camera_ready_ack() # opens data
+        print('camera ready acknowledged')
         self.grab_loop()
         self.dataset.close()
         self.death()
     
     def honorable_death(self):
-        print("All images captured. Now, death.")
+        print(f"{self.name}: All images captured.")
+        print(f"{self.name} has died.")
         return True
     
     def dishonorable_death(self,delete_data=True):
