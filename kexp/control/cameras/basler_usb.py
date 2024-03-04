@@ -48,7 +48,7 @@ class BaslerUSB(pylon.InstantCamera):
     def close(self):
         self.Close()
 
-    def grab(self,timeout_ms=10.e3):
+    def grab(self,timeout_s=10):
         """Starts the camera waiting for a trigger to take a single image.
 
         Returns:
@@ -59,8 +59,9 @@ class BaslerUSB(pylon.InstantCamera):
         grab_success = False
         img = []
         img_t = []
+
         try:
-            grab_result = self.GrabOne(timeout_ms,pylon.GrabStrategy_LatestImages)
+            grab_result = self.GrabOne(int(timeout_s*1000))
             img = np.uint8(grab_result.GetArray())
             img_t = grab_result.TimeStamp
             grab_success = True
