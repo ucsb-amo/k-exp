@@ -50,7 +50,6 @@ class Scanner():
         
         params_keylist = list(self.params.__dict__.keys())
         if xvar.key not in params_keylist:
-            self.xvarnames.append(xvar.key)
             # set value to a single value (vs list), it will be overwritten per shot in scan
             vars(self.params)[xvar.key] = xvar.values[0]
 
