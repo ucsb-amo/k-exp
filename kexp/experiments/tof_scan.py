@@ -21,15 +21,14 @@ class tof(EnvExperiment, Base):
 
         # self.xvar('detune_d2_c_mot',np.linspace(-3.,0.,5))
         # self.xvar('detune_d2_r_mot',np.linspace(-5.,-3.,5))
-        self.xvar('i_mot',np.linspace(22.,25.,5))
+        # self.xvar('i_mot',np.linspace(22.,25.,5))
 
         self.xvar('t_tof',np.linspace(10000,16000,5)*1.e-6)
 
         self.p.t_mot_load = 1.
-        self.p.t_tof = 12000.e-6
+        # self.p.t_tof = 12000.e-6
         # self.p.t_gm = 3.e-3
         # self.p.t_gmramp = 4.e-3
-
 
         self.finish_build()
 
@@ -37,11 +36,11 @@ class tof(EnvExperiment, Base):
     def scan_kernel(self):
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.mot(self.p.t_mot_load)
-        self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot * s)
-        self.set_shims(v_zshim_current=.84, v_yshim_current=self.p.v_yshim_current, v_xshim_current=self.p.v_xshim_current)
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
+        # self.dds.push.off()
+        # self.cmot_d1(self.p.t_d1cmot * s)
+        # self.set_shims(v_zshim_current=.84, v_yshim_current=self.p.v_yshim_current, v_xshim_current=self.p.v_xshim_current)
+        # self.gm(self.p.t_gm * s)
+        # self.gm_ramp(self.p.t_gmramp)
         self.release()
         
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
