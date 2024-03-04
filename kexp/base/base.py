@@ -2,7 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay, delay_mu
 import numpy as np
 from kexp.config import ExptParams
-from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner
+from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
 from kexp.util.data import DataSaver, RunInfo
 
 # also import the andor camera parameters
@@ -12,7 +12,7 @@ from kexp.util.artiq.async_print import aprint
 def nothing():
     pass
 
-class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
+class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     def __init__(self,setup_camera=True,absorption_image=True,camera_select="xy_basler"):
         Scanner.__init__(self)
         super().__init__()
@@ -82,9 +82,11 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         self.params.compute_derived()
         self.compute_new_derived()
 
-        self.datapath = self.ds.create_data_file(self)
+        self.data_filepath = self.ds.create_data_file(self)
 
         self.generate_assignment_kernels()
+
+        self.wait_for_camera_ready()
 
     def compute_new_derived(self):
         pass
@@ -111,7 +113,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         if beat_ref_on:
             self.dds.beatlock_ref.on()
         self.core.break_realtime() # add slack before scheduling experiment events
-        delay(self.camera_params.connection_delay)
 
     def prepare_image_array(self):
         if self.camera_params.camera_type == 'andor':
@@ -121,30 +122,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner):
         self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=dtype)
         self.image_timestamps = np.zeros((self.params.N_img,))
 
-    def wait_for_data_available(self):
-        """Blocks until the file at self.datapath is available.
-        """        
-        import h5py, time
-        check_period = 0.05
-        t0 = time.time()
-        while True:
-            try:
-                f = h5py.File(self.datapath,'r+')
-                f.close()
-                break
-            except Exception as e:
-                if "Unable to open file" in str(e):
-                    # file is busy -- wait for available
-                    time.sleep(check_period)
-                else:
-                    raise e
-            # t_elapsed = time.time() - t0
-            # if t_elapsed > (20.+self.camera_params.connection_delay*2):
-            #     self.ds._update_run_id(self.run_info)
-            #     raise ValueError("Too long has passed waiting for data file to be available. Closing.")
-                
     def end(self,expt_filepath):
         self.cleanup_scanned()
-        self.wait_for_data_available()
-        self.ds.save_data(self, expt_filepath)
-        print("Done!")
+        self.write_data(expt_filepath)
