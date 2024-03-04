@@ -31,6 +31,18 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.setup_shutter(mode="closed")
         self.close()
 
+    def grab(self):
+        """Starts the camera waiting for a trigger to take a single image.
+
+        Returns:
+            grab_success (bool): A boolean indicating whether or not the frame grab was successful.
+            img (np.ndarray): The frame that was grabbed. dtype = np.uint16.
+            img_t (float): The timestamp of the grame that was grabbed.
+        """
+        img = self.grab_andor(nframes=1,frame_timeout=10.)
+        img_t = 0.
+        return img, img_t
+
     def grab_andor(self, nframes=1, frame_timeout=5., missing_frame="skip", return_info=False, buff_size=None):
         """
         Snap `nframes` images (with preset image read mode parameters)

@@ -2,21 +2,28 @@ from artiq.experiment import *
 from artiq.experiment import delay, delay_mu
 import numpy as np
 from kexp.config import ExptParams
-from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras
+from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
 from kexp.util.data import DataSaver, RunInfo
 
 # also import the andor camera parameters
 
 from kexp.util.artiq.async_print import aprint
 
-class Base(Devices, Cooling, Image, Dealer, Cameras):
+def nothing():
+    pass
+
+class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     def __init__(self,setup_camera=True,absorption_image=True,camera_select="xy_basler"):
+        Scanner.__init__(self)
         super().__init__()
 
+        self.setup_camera = setup_camera
         self.run_info = RunInfo(self)
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
         self.params = ExptParams()
+        self.p = self.params
+        self.compute_new_derived = nothing
 
         self.prepare_devices(expt_params=self.params)
 
@@ -31,33 +38,61 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True):
+    def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True,
+                     compute_new_derived=nothing):
         """
-        To be called at the end of build. Automatically adds repeats either if
-        specified in N_repeats argument or if previously specified in
-        self.params.N_repeats. Shuffles xvars if specified (defaults to True).
-        Computes the number of images to be taken from the imaging method and
-        the length of the xvar arrays.
-        """
+        To be called at the end of build. 
+        
+        Automatically adds repeats either if specified in N_repeats argument or
+        if previously specified in self.params.N_repeats. 
+        
+        Shuffles xvars if specified (defaults to True). Computes the number of
+        images to be taken from the imaging method and the length of the xvar
+        arrays.
 
-        self.params.compute_derived()
+        Computes derived parameters within ExptParams.
+
+        Accepts an additional compute_derived method that is user defined in the
+        experiment file. This is to allow for recomputation of derived
+        parameters that the user created in the experiment file at each step in
+        a scan. This must be an RPC -- no kernel decorator.
+        """
+        if compute_new_derived == nothing:
+            compute_new_derived = self.compute_new_derived
+        else:
+            self.compute_new_derived = compute_new_derived
 
         if not self.xvarnames:
-            self.xvarnames = ["dummy"]
-            self.params.dummy = np.linspace(0,0,1)
-        elif isinstance(self.xvarnames,str):
-            self.xvarnames = [self.xvarnames]
-
+            self.xvar("dummy",[0])
+        if self.xvarnames and not self.scan_xvars:
+            for key in self.xvarnames:
+                self.xvar(key,vars(self.params)[key])
+        
         self.repeat_xvars(N_repeats=N_repeats)
-
+        
+        
         if shuffle:
             self.shuffle_xvars()
-            self.shuffle_derived()
-
-        self.get_N_img()
+        
+        self.params.N_img = self.get_N_img()
+        self.prepare_image_array()
 
         if cleanup_dds_profiles:
             self.dds.cleanup_dds_profiles()
+
+        self.params.compute_derived()
+        self.compute_new_derived()
+
+        self.data_filepath = self.ds.create_data_file(self)
+
+        self.generate_assignment_kernels()
+
+        if self.setup_camera:
+            self.wait_for_camera_ready()
+            print("Camera is ready.")
+
+    def compute_new_derived(self):
+        pass
 
     @kernel
     def init_kernel(self, run_id = True, init_dds = True, init_dac = True, dds_set = True, dds_off = True, beat_ref_on=True):
@@ -66,9 +101,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         self.core.reset() # clears RTIO
         delay(1*s)
         if init_dac:
-            delay_mu(self.params.t_rtio_mu)
+            delay(self.params.t_rtio)
             self.dac.dac_device.init() # initializes DAC
-            delay_mu(self.params.t_rtio_mu)
+            delay(self.params.t_rtio)
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
             self.init_all_dds() # initializes DDS channels
@@ -81,3 +116,18 @@ class Base(Devices, Cooling, Image, Dealer, Cameras):
         if beat_ref_on:
             self.dds.beatlock_ref.on()
         self.core.break_realtime() # add slack before scheduling experiment events
+
+    def prepare_image_array(self):
+        if self.camera_params.camera_type == 'andor':
+            dtype = np.uint16
+        if self.camera_params.camera_type == 'basler':
+            dtype = np.uint8
+        else:
+            dtype = np.uint8
+        self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=dtype)
+        self.image_timestamps = np.zeros((self.params.N_img,))
+
+    def end(self,expt_filepath):
+        if self.setup_camera:
+            self.cleanup_scanned()
+            self.write_data(expt_filepath)

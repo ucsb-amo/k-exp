@@ -8,54 +8,75 @@ data_dir = os.getenv("data")
 run_id_path = os.path.join(data_dir,"run_id.py")
 
 class DataSaver():
-    def __init__(self):
-        pass
 
     def save_data(self,expt,expt_filepath=""):
 
-        pwd = os.getcwd()
-        os.chdir(data_dir)
+        if expt.setup_camera:
+            
+            pwd = os.getcwd()
+            os.chdir(data_dir)
 
-        fpath, folder = self._data_path(expt.run_info)
+            fpath, _ = self._data_path(expt.run_info)
+            f = h5py.File(fpath,'r+')
 
-        if not os.path.exists(folder):
-            os.mkdir(folder)
+            del f['params']
+            params_dset = f.create_group('params')
+            self._class_attr_to_dataset(params_dset,expt.params)
 
-        expt.run_info.filepath = fpath
-        expt.run_info.xvarnames = expt.xvarnames
+            if expt_filepath:
+                with open(expt_filepath) as expt_file:
+                    expt_text = expt_file.read()
+                f.attrs["expt_file"] = expt_text
+            else:
+                f.attrs["expt_file"] = ""
 
-        f = h5py.File(fpath,'w')
-        data = f.create_group('data')
+            f.close()
+            self._update_run_id(expt.run_info)
+            os.chdir(pwd)
 
-        f.attrs['xvarnames'] = expt.xvarnames
-        data.create_dataset('images',data=expt.images)
-        data.create_dataset('image_timestamps',data=expt.image_timestamps)
-        if expt.sort_idx:
-            data.create_dataset('sort_idx',data=expt.sort_idx)
-            data.create_dataset('sort_N',data=expt.sort_N)
-        
-        # store run info as attrs
-        self._class_attr_to_attr(f,expt.run_info)
-        # also store run info as dataset
-        runinfo_dset = f.create_group('run_info')
-        self._class_attr_to_dataset(runinfo_dset,expt.run_info)
-        params_dset = f.create_group('params')
-        self._class_attr_to_dataset(params_dset,expt.params)
-        cam_dset = f.create_group('camera_params')
-        self._class_attr_to_dataset(cam_dset,expt.camera_params)
+    def create_data_file(self,expt):
 
-        if expt_filepath:
-            with open(expt_filepath) as expt_file:
-                expt_text = expt_file.read()
-            f.attrs["expt_file"] = expt_text
-        else:
-            f.attrs["expt_file"] = ""
-        
-        f.close()
+        if expt.setup_camera:
 
-        self._update_run_id(expt.run_info)
+            pwd = os.getcwd()
+            os.chdir(data_dir)
 
-        os.chdir(pwd)
+            fpath, folder = self._data_path(expt.run_info)
+
+            if not os.path.exists(folder):
+                os.mkdir(folder)
+
+            expt.run_info.filepath = fpath
+            expt.run_info.xvarnames = expt.xvarnames
+
+            f = h5py.File(fpath,'w')
+            data = f.create_group('data')
+
+            f.attrs['camera_ready'] = 0
+            f.attrs['camera_ready_ack'] = 0
+            
+            f.attrs['xvarnames'] = expt.xvarnames
+            data.create_dataset('images',data=expt.images)
+            data.create_dataset('image_timestamps',data=expt.image_timestamps)
+            if expt.sort_idx:
+                data.create_dataset('sort_idx',data=expt.sort_idx)
+                data.create_dataset('sort_N',data=expt.sort_N)
+            
+            # store run info as attrs
+            self._class_attr_to_attr(f,expt.run_info)
+            # also store run info as dataset
+            runinfo_dset = f.create_group('run_info')
+            self._class_attr_to_dataset(runinfo_dset,expt.run_info)
+            params_dset = f.create_group('params')
+            self._class_attr_to_dataset(params_dset,expt.params)
+            cam_dset = f.create_group('camera_params')
+            self._class_attr_to_dataset(cam_dset,expt.camera_params)
+            
+            f.close()
+
+            os.chdir(pwd)
+
+            return fpath
 
     def _class_attr_to_dataset(self,dset,obj):
         try:

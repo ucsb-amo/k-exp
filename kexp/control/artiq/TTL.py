@@ -26,3 +26,23 @@ class TTL():
         self.ttl_device.on()
         delay(t)
         self.ttl_device.off()
+
+class DummyTTL():
+    def __init__(self):
+        super().__init__()
+    
+    @kernel
+    def get_device(self,expt:artiq.experiment.EnvExperiment):
+        return TTLOut
+
+    @kernel
+    def on(self):
+        pass
+
+    @kernel
+    def off(self):
+        pass
+
+    @kernel
+    def pulse(self,t):
+        pass

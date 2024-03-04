@@ -2,8 +2,6 @@ import numpy as np
 
 def crop_OD(OD,crop_type='',Nvars=1):
 
-    print(OD.shape)
-
     if len(np.shape(OD)) <= 2:
         OD = np.array([OD])
 
@@ -17,8 +15,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [750, 1400]
         roiy = [400, 700]
     elif crop_type == 'gm':
-        roix = [500,1300]
-        roiy = [300,1100] 
+        roix = [550,1400]
+        roiy = [150,1000]
     elif crop_type == 'gm2':
         roix = [500,1300]
         roiy = [500,1200] 

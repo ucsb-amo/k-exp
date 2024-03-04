@@ -96,7 +96,7 @@ class Devices():
         for dds in self.dds.dds_list:
             dds.set_dds(set_stored=True)
             dds.dds_device.set_att(0. * dB)
-            delay_mu(self.params.t_rtio_mu)
+            delay(self.params.t_rtio)
 
     @kernel
     def switch_all_dds(self,state):
@@ -105,7 +105,7 @@ class Devices():
                 dds.on()
             elif state == 0:
                 dds.off()
-            delay_mu(self.params.t_rtio_mu)
+            delay(self.params.t_rtio)
 
     @kernel
     def init_all_dds(self):

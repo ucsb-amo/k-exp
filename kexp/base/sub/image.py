@@ -24,6 +24,7 @@ class Image():
         self.run_info = RunInfo()
         self.camera = DummyCamera()
         self.lightsheet = lightsheet()
+        self.scan_xvars = []
 
     ### Imaging sequences ###
 
@@ -90,17 +91,15 @@ class Image():
     @kernel
     def abs_image(self):
 
-        delay_mu(self.params.t_rtio_mu)
-
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 
-        delay(self.params.t_light_only_image_delay * s)
+        delay(self.camera_params.t_light_only_image_delay * s)
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 
         self.dds.imaging.off()
-        delay(self.params.t_dark_image_delay * s)
+        delay(self.camera_params.t_dark_image_delay * s)
         self.trigger_camera()
 
     @kernel
@@ -108,8 +107,6 @@ class Image():
         
         if t==-1:
            t = self.camera_params.exposure_time
-
-        delay_mu(self.params.t_rtio_mu)
 
         self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_fluor)
         self.dds.second_imaging.set_dds(amplitude=.01)
@@ -128,7 +125,6 @@ class Image():
         # self.lightsheet.off()
         # self.dds.tweezer.off()
 
-        delay_mu(self.params.t_rtio_mu)
         delay(self.params.t_light_only_image_delay * s)
 
         self.lightsheet.on()
@@ -219,16 +215,15 @@ class Image():
         """                
         N_img = 1
         msg = ""
-        
-        for key in self.xvarnames:
-            xvar = vars(self.params)[key]
-            if not isinstance(xvar,list) and not isinstance(xvar,np.ndarray):
-                xvar = [xvar]
-            N_img = N_img * len( vars(self.params)[key] )
-            msg += f" {len(xvar)} values of {key}."
+
+        for xvar in self.scan_xvars:
+            N_img = N_img * xvar.values.shape[0]
+            msg += f" {xvar.values.shape[0]} values of {xvar.key}."
+        self.params.N_shots_with_repeats = N_img
 
         msg += f" {N_img} total shots."
 
+        ### I have no idea what this is for. ###
         if isinstance(self.params.N_repeats,list):
             if len(self.params.N_repeats) == 1:
                 N_repeats = self.params.N_repeats[0]
@@ -236,8 +231,8 @@ class Image():
                 N_repeats = 1
         else:
             N_repeats = 1
-
         self.params.N_shots = int(N_img / N_repeats)
+        ###
 
         if self.run_info.absorption_image:
             images_per_shot = 3
@@ -248,4 +243,4 @@ class Image():
 
         msg += f" {N_img} total images expected."
         print(msg)
-        self.params.N_img = N_img
+        return N_img

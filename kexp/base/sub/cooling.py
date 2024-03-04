@@ -58,10 +58,10 @@ class Cooling():
 
         self.dds.d2_2d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d2_2d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         with parallel:
@@ -108,10 +108,10 @@ class Cooling():
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         self.set_shims(v_xshim_current,v_yshim_current,v_zshim_current)
@@ -148,7 +148,7 @@ class Cooling():
         
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
         self.set_shims()
@@ -197,13 +197,13 @@ class Cooling():
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
                                  v_pd=v_pd_d1_c)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
                                  amplitude=v_pd_d1_r)
         self.set_shims()
@@ -273,14 +273,14 @@ class Cooling():
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
                                        v_pd=v_pd_d1_c)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                        amplitude=amp_d2_r)
 
         # with parallel:
         self.dds.d2_3d_r.on()
         self.dds.d1_3d_c.on()
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d2_3d_c.off()
         self.dds.d1_3d_r.off()
         
@@ -328,7 +328,7 @@ class Cooling():
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
                                        amplitude=amp_d1_c,
                                        v_pd=v_pd_d1_c)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        amplitude=amp_d1_r,
                                        v_pd=v_pd_d1_r)
@@ -364,7 +364,7 @@ class Cooling():
 
     #     self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
     #                                    v_pd=v_pd_d1_c)
-    #     delay_mu(self.params.t_rtio_mu)
+    #     delay(self.params.t_rtio)
     #     self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
     #                                    v_pd=v_pd_d1_r)
         
@@ -428,7 +428,7 @@ class Cooling():
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
                                        amplitude=amp_d1_c, 
                                        v_pd=v_pd_d1_c_list[0])
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
                                        amplitude=amp_d1_r,
                                        v_pd=v_pd_d1_r_list[0])
@@ -437,7 +437,7 @@ class Cooling():
 
         for n in range(N_elem):
             self.dds.d1_3d_c.set_dds(v_pd=v_pd_d1_c_list[n])
-            delay_mu(self.params.t_rtio_mu)
+            delay(self.params.t_rtio)
             self.dds.d1_3d_r.set_dds(v_pd=v_pd_d1_r_list[n])
             delay(dt_gmramp)
 
@@ -588,10 +588,10 @@ class Cooling():
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
-        delay_mu(self.params.t_rtio_mu)
+        delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         
