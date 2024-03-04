@@ -7,3 +7,6 @@ class DummyCamera():
 
     def Close(self):
         pass
+
+    def is_opened(self):
+        return False
