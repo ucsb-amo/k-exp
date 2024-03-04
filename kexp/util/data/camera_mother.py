@@ -107,6 +107,7 @@ class CameraBaby(Scribe):
             self.death()
         except Exception as e:
             print(e)
+            self.dataset.close()
             self.death()
 
     def create_camera(self):
