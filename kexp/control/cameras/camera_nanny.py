@@ -6,11 +6,31 @@ from kexp.config import camera_params
 
 import numpy as np
 import pypylon.pylon as py
+
+import time
+
+CHECK_EVERY = 0.2
+CHECK_PERIOD = 2.0
+N_NOTIFY = CHECK_PERIOD // CHECK_EVERY
     
 class CameraNanny():
     def __init__(self):
         super().__init__()
         self.camera_db = dict()
+
+    def persistent_get_camera(self,camera_params):
+        got_camera = False
+        count = 1
+        while not got_camera:
+            camera = self.get_camera(camera_params)
+            if type(camera) == DummyCamera:
+                count += 1
+                time.sleep(CHECK_PERIOD)
+                if np.mod(count,N_NOTIFY) == 0:
+                    count = 1
+                    print("Can't reach camera. Make it available to continue, or Ctrl+C to stop the process.")
+            else:
+                return camera
 
     def get_camera(self,camera_params:camera_params.CameraParams):
         camera_select = camera_params.camera_select
