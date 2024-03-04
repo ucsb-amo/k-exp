@@ -30,7 +30,7 @@ class Scribe():
                     raise e
                 
     def wait_for_camera_ready(self):
-        count = 0
+        count = 1
         while True:
             if np.mod(count,N_NOTIFY*3) == 0:
                 print('Is CameraMother running?')
@@ -49,7 +49,7 @@ class Scribe():
 
     def mark_camera_ready(self):
         while True:
-            data_obj = self.wait_for_data_available()
+            data_obj = self.wait_for_data_available(close=False)
             data_obj.attrs['camera_ready'] = 1
             data_obj.close()
             break
