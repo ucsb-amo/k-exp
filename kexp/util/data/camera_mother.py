@@ -24,10 +24,14 @@ LOG_UPDATE_INTERVAL = 2.
 UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
 
 class CameraMother():
-    def __init__(self):
+    def __init__(self,start_watching=True):
         self.latest_file = ""
         self.camera_nanny = CameraNanny()
-        self.watch_for_new_file()
+        print(start_watching)
+        if start_watching:
+            self.watch_for_new_file()
+        else:
+            pass
 
     def read_run_id(self):
         with open(RUN_ID_PATH,'r') as f:
@@ -170,5 +174,3 @@ class CameraBaby(Scribe):
             line = f"{rid+1}"
             f.write(line)
         os.chdir(pwd)
-        
-c = CameraMother()
