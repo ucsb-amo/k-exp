@@ -27,7 +27,6 @@ class CameraMother():
     def __init__(self,start_watching=True):
         self.latest_file = ""
         self.camera_nanny = CameraNanny()
-        print(start_watching)
         if start_watching:
             self.watch_for_new_file()
         else:
