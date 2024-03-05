@@ -23,6 +23,9 @@ CHECK_DELAY = 0.25
 LOG_UPDATE_INTERVAL = 2.
 UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
 
+def nothing():
+    pass
+
 class CameraMother():
     def __init__(self,start_watching=True):
         self.latest_file = ""
@@ -81,7 +84,8 @@ class CameraMother():
        c.birth()
 
 class CameraBaby(Scribe):
-    def __init__(self,data_filepath,camera_nanny:CameraNanny,name):
+    def __init__(self,data_filepath,camera_nanny:CameraNanny,name,
+                 grab_signal_method:nothing):
         super().__init__()
 
         from kexp.config.expt_params import ExptParams
@@ -94,6 +98,10 @@ class CameraBaby(Scribe):
         self.dataset = []
         self.death = self.dishonorable_death
         self.data_filepath = data_filepath
+
+        self.grab_signal_method = grab_signal_method
+
+        self.img = np.ones((1,1))
 
     def birth(self):
         try:
@@ -157,8 +165,9 @@ class CameraBaby(Scribe):
         Nimg = int(self.params.N_img)
         count = 0
         while True:
-            img, img_timestamp = self.camera.grab()
-            self.write_image_to_dataset(count,img,img_timestamp)
+            self.img, img_timestamp = self.camera.grab()
+            self.write_image_to_dataset(count,self.img,img_timestamp)
+            self.grab_signal_method()
             count += 1
             print(f"gotem (img {count}/{Nimg})")
             if count >= Nimg:
