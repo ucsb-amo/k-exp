@@ -32,7 +32,7 @@ class CameraNanny():
             else:
                 return camera
 
-    def get_camera(self,camera_params:camera_params.CameraParams):
+    def get_camera(self,camera_params:camera_params.CameraParams) -> DummyCamera:
         camera_select = camera_params.camera_select
         if camera_select in self.camera_db.keys():
             camera = self.camera_db[camera_select]
