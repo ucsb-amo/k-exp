@@ -14,6 +14,8 @@ from kexp.control.cameras.camera_nanny import CameraNanny
 
 from kexp.base.sub.scribe import Scribe
 
+from PyQt6.QtCore import QThread, pyqtSignal
+
 import sys
 
 RUN_ID_PATH = r"B:\_K\PotassiumData\run_id.py"
@@ -26,14 +28,21 @@ UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
 def nothing():
     pass
 
-class CameraMother():
-    def __init__(self,start_watching=True):
+class CameraMother(QThread):
+    
+    new_camera_baby = pyqtSignal(str,str)
+
+    def __init__(self,start_watching=True,manage_babies=True):
+        super().__init__()
         self.latest_file = ""
         self.camera_nanny = CameraNanny()
         if start_watching:
-            self.watch_for_new_file()
+            self.watch_for_new_file(manage_babies)
         else:
             pass
+
+    def run(self):
+        self.watch_for_new_file()
 
     def read_run_id(self):
         with open(RUN_ID_PATH,'r') as f:
@@ -41,7 +50,7 @@ class CameraMother():
         f.close()
         return run_id
 
-    def watch_for_new_file(self):
+    def watch_for_new_file(self,manage_babies=False):
         new_file_bool = False
         attempts = -1
         print("Mother is watching...")
@@ -52,7 +61,10 @@ class CameraMother():
             latest_file = list_of_files[-1]
             new_file_bool, run_id = self.check_if_file_new(latest_file)
             if new_file_bool:
-                self.new_file(latest_file, run_id)
+                file, name = self.new_file(latest_file, run_id)
+                self.new_camera_baby.emit(file,name)
+                if manage_babies:
+                    self.birth(file,name)
                 print("Mother is watching...")
             attempts += 1
             time.sleep(CHECK_DELAY)
@@ -63,7 +75,7 @@ class CameraMother():
     def new_file(self,file,run_id):
         name = names.get_first_name()
         print(f"New file found! Run ID {run_id}. Welcome to the world, little {name}...")
-        dead = self.birth(file,name)
+        return file, name
                 
     def check_if_file_new(self,latest_filepath):
         if latest_filepath != self.latest_file:
@@ -81,11 +93,14 @@ class CameraMother():
     
     def birth(self,data_filepath,name):
        c = CameraBaby(data_filepath,self.camera_nanny,name)
-       c.birth()
+       c.run()
 
-class CameraBaby(Scribe):
-    def __init__(self,data_filepath,camera_nanny:CameraNanny,name,
-                 grab_signal_method:nothing):
+class CameraBaby(Scribe,QThread):
+    image_captured = pyqtSignal(np.ndarray)
+    dishonorable_death_signal = pyqtSignal()
+    honorable_death_signal = pyqtSignal()
+
+    def __init__(self,data_filepath,name,camera_nanny:CameraNanny):
         super().__init__()
 
         from kexp.config.expt_params import ExptParams
@@ -99,11 +114,7 @@ class CameraBaby(Scribe):
         self.death = self.dishonorable_death
         self.data_filepath = data_filepath
 
-        self.grab_signal_method = grab_signal_method
-
-        self.img = np.ones((1,1))
-
-    def birth(self):
+    def run(self):
         try:
             print(f"{self.name}: I am born!")
             self.dataset = self.wait_for_data_available(close=False) # leaves open
@@ -128,6 +139,7 @@ class CameraBaby(Scribe):
     def honorable_death(self):
         print(f"{self.name}: All images captured.")
         print(f"{self.name} has died honorably.")
+        self.honorable_death_signal.emit()
         return True
     
     def dishonorable_death(self,delete_data=True):
@@ -145,6 +157,7 @@ class CameraBaby(Scribe):
         print(msg)
         print(f"{self.name} has died dishonorably.")
         self.update_run_id()
+        self.dishonorable_death_signal.emit()
         return True
 
     def read_params(self):
@@ -165,9 +178,9 @@ class CameraBaby(Scribe):
         Nimg = int(self.params.N_img)
         count = 0
         while True:
-            self.img, img_timestamp = self.camera.grab()
-            self.write_image_to_dataset(count,self.img,img_timestamp)
-            self.grab_signal_method()
+            img, img_timestamp = self.camera.grab()
+            self.image_captured.emit(img)
+            self.write_image_to_dataset(count,img,img_timestamp)
             count += 1
             print(f"gotem (img {count}/{Nimg})")
             if count >= Nimg:

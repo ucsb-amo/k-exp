@@ -3,25 +3,36 @@ import sys
 from subprocess import PIPE, run
 from PyQt6.QtWidgets import (
     QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QTextBrowser)
-from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QIcon
+from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal, QThread
 
-from kexp.util.data.camera_mother import CameraMother
+from kexp.util.data.camera_mother import CameraMother, CameraBaby
 import kexp.config.camera_params as cp
 from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.control.cameras.camera_nanny import CameraNanny
 
-from kexp.base.sub import Scanner
+import matplotlib
+matplotlib.use('QtAgg')
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.figure import Figure
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.camera_mother = CameraMother(start_watching=False)
+        self.camera_mother = CameraMother(start_watching=False, manage_babies=False)
         self.camera_nanny = self.camera_mother.camera_nanny
 
         self.conn_bar = CamConnBar(self.camera_nanny)
 
         self.setup_layout()
+
+        self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
+        self.camera_mother.start()
+
+    def create_camera_baby(self,file,name):
+        self.the_baby = CameraBaby(file, name,
+                                   self.camera_nanny)
+        self.the_baby.start()
 
     def setup_layout(self):
         self.layout = QVBoxLayout()
@@ -31,10 +42,47 @@ class MainWindow(QWidget):
 class ODviewer(QWidget):
     def __init__(self):
         super().__init__()
+        self.setup_widgets()
+
+    def setup_widgets(self):
+        self.od_plot = PlotPanel('img')
+        self.sum_od_x_plot = PlotPanel('line')
+        self.sum_od_y_plot = PlotPanel('line')
+    
+    def setup_layout(self):
+        self.layout = QGridLayout()
 
 class AtomHistory(QWidget):
     def __init__(self):
         super().__init__()
+
+class PlotPanel(FigureCanvasQTAgg):
+    def __init__(self,plottype='line'):
+        fig = Figure()
+        self.axes = fig.add_subplot(111)
+        super(FigureCanvasQTAgg,self).__init__(fig)
+        self._choose_update(plottype)
+        self._plot_ref = None
+
+    def _choose_update(self):
+        if self._plottype == 'line':
+            self.update = self.plot
+        elif self._plottype == 'img':
+            self.update = self.imshow
+        
+    def imshow(self,img):
+        if self._plot_ref == None:
+            self._plot_ref = self.axes.imshow(img)
+        else:
+            self._plot_ref.set_data(img)
+        self.draw()
+
+    def plot(self,ydata):
+        if self._plot_ref == None:
+            self._plot_ref, = self.axes.plot(ydata)
+        else:
+            self._plot_ref.set_ydata(ydata)
+        self.draw()
 
 # Maybe hard, need to iterate through xvars in same order that the data is being taken
 # or, once have communication working, just send over the xvars real time
