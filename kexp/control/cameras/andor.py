@@ -69,7 +69,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         try:
             while nacq<nframes:
                 self.wait_for_frame(timeout=frame_timeout)
-                print(f'gotem (img {nacq+1}/{nframes})') # added this line to give print statements
+                # print(f'gotem (img {nacq+1}/{nframes})') # added this line to give print statements
                 if return_info:
                     new_frames,new_info,rng=self.read_multiple_images(missing_frame=missing_frame,return_info=True,return_rng=True)
                     info+=new_info
