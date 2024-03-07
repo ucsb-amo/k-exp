@@ -118,9 +118,10 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.core.break_realtime() # add slack before scheduling experiment events
 
     def prepare_image_array(self):
+        print(self.camera_params.camera_type)
         if self.camera_params.camera_type == 'andor':
             dtype = np.uint16
-        if self.camera_params.camera_type == 'basler':
+        elif self.camera_params.camera_type == 'basler':
             dtype = np.uint8
         else:
             dtype = np.uint8
