@@ -8,15 +8,11 @@ class CameraParams():
         self.exposure_delay = 0.
         
         self.exposure_time = 0.
-        self.exposure_time_fluor = 0.
-        self.exposure_time_abs = 0.
 
         self.connection_delay = 0.0
         self.t_camera_trigger = 2.e-6
 
         self.amp_imaging = 0.
-        self.amp_absorption = 0.25
-        self.amp_fluorescence = 0.5
 
         self.resolution = (1,1,)
 
@@ -45,21 +41,21 @@ class BaslerParams(CameraParams):
         self.magnification = 0.75
         self.exposure_delay = 17 * 1.e-6
 
-        self.exposure_time_fluor = exposure_time_fluor
-        self.exposure_time_abs = exposure_time_abs
-        self.amp_absorption = amp_absorption
-        self.amp_fluorescence = amp_fluorescence 
+        self.__exposure_time_fluor__ = exposure_time_fluor
+        self.__exposure_time_abs__ = exposure_time_abs
+        self.__amp_absorption__ = amp_absorption
+        self.__amp_fluorescence__ = amp_fluorescence 
 
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
 
     def select_absorption(self,absorption_bool):
         if absorption_bool:
-            self.amp_imaging = self.amp_absorption
-            self.exposure_time = self.exposure_time_abs
+            self.amp_imaging = self.__amp_absorption__
+            self.exposure_time = self.__exposure_time_abs__
         else:
-            self.amp_imaging = self.amp_fluorescence
-            self.exposure_time = self.exposure_time_fluor
+            self.amp_imaging = self.__amp_fluorescence__
+            self.exposure_time = self.__exposure_time_fluor__
 
 class AndorParams(CameraParams):
     def __init__(self,
@@ -84,10 +80,10 @@ class AndorParams(CameraParams):
 
         self.resolution = resolution
 
-        self.exposure_time_fluor = exposure_time_fluor
-        self.exposure_time_abs = exposure_time_abs
-        self.amp_absorption = amp_absorption
-        self.amp_fluorescence = amp_fluorescence
+        self.__exposure_time_fluor__ = exposure_time_fluor
+        self.__exposure_time_abs__ = exposure_time_abs
+        self.__amp_absorption__ = amp_absorption
+        self.__amp_fluorescence__ = amp_fluorescence
 
         self.em_gain_fluor = 290.
         self.em_gain_abs = 0.
@@ -97,12 +93,12 @@ class AndorParams(CameraParams):
 
     def select_absorption(self,absorption_bool):
         if absorption_bool:
-            self.amp_imaging = self.amp_absorption
-            self.exposure_time = self.exposure_time_abs
+            self.amp_imaging = self.__amp_absorption__
+            self.exposure_time = self.__exposure_time_abs__
             self.em_gain = self.em_gain_abs
         else:
-            self.amp_imaging = self.amp_fluorescence
-            self.exposure_time = self.exposure_time_fluor
+            self.amp_imaging = self.__amp_fluorescence__
+            self.exposure_time = self.__exposure_time_fluor__
             self.em_gain = self.em_gain_fluor
 
 andor_params = AndorParams(camera_select='andor')
