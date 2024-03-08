@@ -1,11 +1,12 @@
 import numpy as np
 import sys
-from subprocess import PIPE, run
 from PyQt6.QtWidgets import (
-    QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QTextBrowser)
+    QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QPlainTextEdit, QComboBox)
 from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal, QThread
+from PyQt6.QtGui import QIcon
+from queue import Queue
 
-from kexp.util.data.camera_mother import CameraMother, CameraBaby
+from kexp.util.data.camera_mother import CameraMother, CameraBaby, DataHandler
 import kexp.config.camera_params as cp
 from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.control.cameras.camera_nanny import CameraNanny
@@ -16,59 +17,179 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
+from kexp.analysis.image_processing import compute_ODs
+import kexp.analysis.image_processing.roi_select as roi
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.camera_mother = CameraMother(start_watching=False, manage_babies=False)
+        self.queue = Queue()
+        self.camera_mother = CameraMother(start_watching=False, manage_babies=False, output_queue=self.queue)
         self.camera_nanny = self.camera_mother.camera_nanny
-
-        self.conn_bar = CamConnBar(self.camera_nanny)
-
+        self.setup_widgets()
         self.setup_layout()
+
+        self.analyzer = Analyzer()
+        self.plotter = Plotter(self.viewer_window,self.analyzer)
 
         self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
         self.camera_mother.start()
 
+        self.img_count = 0
+
     def create_camera_baby(self,file,name):
-        self.the_baby = CameraBaby(file, name,
+        self.the_baby = CameraBaby(file, name, self.queue,
                                    self.camera_nanny)
-        self.the_baby.start()
+        self.data_handler = DataHandler(self.queue,dataset_path=file)
+
+        self.the_baby.camera_grab_start.connect(self.grab_start_msg)
+
+        self.the_baby.image_captured.connect(self.data_handler.start)
+        self.the_baby.image_captured.connect(self.gotem_msg)
+
+        self.data_handler.got_image_from_queue.connect(self.analyzer.got_img)
+        self.data_handler.got_image_from_queue.connect(self.count_images)
+
+        self.the_baby.death_signal.connect(self.camera_mother.start)
+
+        self.the_baby.run()
+
+    def setup_widgets(self):
+        self.conn_bar = CamConnBar(self.camera_nanny)
+        
+        self.crop_dropdown = QComboBox()
+        self.crop_dropdown.addItems(['bigmot','mot','cmot','gm',
+                                         'gm2','lightsheet','lightsheet_long',
+                                         'lightsheet_short','tweezer'])
+        self.crop_dropdown.currentIndexChanged.connect(self.update_crop)
+
+        self.viewer_window = ODviewer()
+
+        self.output_window = QPlainTextEdit()
 
     def setup_layout(self):
         self.layout = QVBoxLayout()
-        self.layout.addWidget(self.conn_bar)
+
+        self.top_row = QHBoxLayout()
+        self.top_row.addWidget(self.conn_bar)
+        self.top_row.addWidget(self.crop_dropdown)
+        self.layout.addLayout(self.top_row)
+
+        self.layout.addWidget(self.viewer_window)
+
+        self.layout.addWidget(self.output_window)
+
         self.setLayout(self.layout)
+
+    def count_images(self):
+        self.img_count += 1
+        if self.img_count == 3:
+            self.plotter.run()
+            self.img_count = 0
+
+    def update_crop(self):
+        self.analyzer.crop_type = self.crop_dropdown.currentText()
+
+    def msg(self,msg):
+        self.output_window.appendPlainText(msg)
+
+    def grab_start_msg(self,Nimg):
+        self.N_img = Nimg
+        msg = f"Camera grabbing... Expecting {Nimg} images."
+        self.msg(msg)
+
+    def gotem_msg(self,count):
+        msg = f"gotem (img {count}/{self.N_img})"
+        self.msg(msg)
+
+class Analyzer():
+
+    def __init__(self):
+        self.imgs = []
+        self.crop_type = ''
+
+    def got_img(self,img):
+        self.imgs.append(np.asarray(img))
+        if len(self.imgs) == 3:
+            self.analyze()
+            self.imgs = []
+
+    def analyze(self):
+        self.img_atoms = self.imgs[0]
+        self.img_light = self.imgs[1]
+        self.img_dark = self.imgs[2]
+
+        self.fix_datatype()
+
+        self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
+            compute_ODs(self.img_atoms,
+                        self.img_light,
+                        self.img_dark,
+                        self.crop_type)
+
+    def fix_datatype(self):
+        dtype = self.img_atoms.dtype
+        if dtype == np.dtype('uint8'):
+            self.img_atoms = self.img_atoms.astype(np.int16)
+            self.img_light = self.img_light.astype(np.int16)
+            self.img_dark = self.img_dark.astype(np.int16)
+        elif dtype == np.dtype('uint16'):
+            self.img_atoms = self.img_atoms.astype(np.int32)
+            self.img_light = self.img_light.astype(np.int32)
+            self.img_dark = self.img_dark.astype(np.int32)
 
 class ODviewer(QWidget):
     def __init__(self):
         super().__init__()
         self.setup_widgets()
+        self.setup_layout()
 
     def setup_widgets(self):
-        self.od_plot = PlotPanel('img')
-        self.sum_od_x_plot = PlotPanel('line')
-        self.sum_od_y_plot = PlotPanel('line')
+        self.img_atoms_plot = PlotPanel()
+        self.img_light_plot = PlotPanel()
+        self.img_dark_plot = PlotPanel()
+
+        self.od_plot = PlotPanel()
+        self.sum_od_x_plot = PlotPanel()
+        self.sum_od_y_plot = PlotPanel()
     
     def setup_layout(self):
         self.layout = QGridLayout()
+        self.layout.addWidget(self.img_atoms_plot,0,0,1,1)
+        self.layout.addWidget(self.img_light_plot,0,1,1,1)
+        self.layout.addWidget(self.img_dark_plot,0,2,1,1)
+        self.layout.addWidget(self.od_plot,1,0,2,2)
+        self.layout.addWidget(self.sum_od_y_plot,1,2,2,1)
+        self.layout.addWidget(self.sum_od_x_plot,3,0,1,2)
+        self.setLayout(self.layout)
+
+class Plotter(QThread):
+    def __init__(self,plotwindow:ODviewer,analyzer:Analyzer):
+        super().__init__()
+        self.plotwindow = plotwindow
+        self.analyzer = analyzer
+
+    def run(self):
+        self.plotwindow.img_atoms_plot.imshow(self.analyzer.img_atoms)
+        self.plotwindow.img_light_plot.imshow(self.analyzer.img_atoms)
+        self.plotwindow.img_dark_plot.imshow(self.analyzer.img_dark)
+        self.plotwindow.od_plot.imshow(self.analyzer.od)
+        self.plotwindow.sum_od_x_plot.plot(self.analyzer.sum_od_x)
+        self.plotwindow.sum_od_y_plot.plot(self.analyzer.sum_od_y)
 
 class AtomHistory(QWidget):
     def __init__(self):
         super().__init__()
 
 class PlotPanel(FigureCanvasQTAgg):
-    def __init__(self,plottype='line'):
+    def __init__(self):
         fig = Figure()
         self.axes = fig.add_subplot(111)
         super(FigureCanvasQTAgg,self).__init__(fig)
-        self._choose_update(plottype)
         self._plot_ref = None
 
-    def _choose_update(self):
-        if self._plottype == 'line':
-            self.update = self.plot
-        elif self._plottype == 'img':
-            self.update = self.imshow
+    def process_imgs(self):
+        pass
         
     def imshow(self,img):
         if self._plot_ref == None:
