@@ -1,3 +1,5 @@
+import numpy as np
+
 class DummyCamera():
     def __init__(self):
         pass
@@ -10,3 +12,6 @@ class DummyCamera():
 
     def is_opened(self):
         return False
+    
+    def grab(self) -> np.ndarray:
+        return None
