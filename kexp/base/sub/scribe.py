@@ -58,6 +58,7 @@ class Scribe():
         while True:
             data_obj = self.wait_for_data_available(close=False)
             if data_obj.attrs['camera_ready_ack']:
+                data_obj.close()
                 break
             else:
                 data_obj.close()
