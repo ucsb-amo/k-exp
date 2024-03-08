@@ -18,7 +18,7 @@ class CameraNanny():
         super().__init__()
         self.camera_db = dict()
 
-    def persistent_get_camera(self,camera_params):
+    def persistent_get_camera(self,camera_params) -> DummyCamera:
         got_camera = False
         count = 1
         while not got_camera:
