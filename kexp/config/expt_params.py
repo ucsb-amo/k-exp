@@ -32,6 +32,10 @@ class ExptParams():
         self.detune_d2_r_imaging = 0.
         self.amp_d2_r_imaging = 0.065
 
+        self.t_cooler_flash_imaging = 15.e-6
+        self.detune_d2_c_imaging = 0.
+        self.amp_d2_c_imaging = 0.065
+
         #Cooling timing
         self.t_tof = 20.e-6
         self.t_mot_kill = 1.
@@ -46,9 +50,9 @@ class ExptParams():
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_load = 10.e-3
-        self.t_lightsheet_hold = 10.e-3
-        self.t_tweezer_ramp = 10.e-3
-        self.t_tweezer_hold = 50.e-3
+        self.t_lightsheet_hold = 20.e-3
+        self.t_tweezer_ramp = 5.e-3
+        self.t_tweezer_hold = 1.e-3
         self.t_tweezer_1064_ramp = 10.e-3
         self.t_mot_reload = 2.
         self.t_recover = 40.e-3
@@ -151,9 +155,9 @@ class ExptParams():
 
         #1064 tweezer
         self.v_pd_1064 = 1.7
-        self.v_pd_tweezer_1064_ramp_start = 0.5
+        self.v_pd_tweezer_1064_ramp_start = 0.35
         self.v_pd_tweezer_1064_ramp_end = 1.7
-        self.n_tweezer_1064_ramp_steps = 50
+        self.n_tweezer_1064_ramp_steps = 100
 
         self.compute_derived()
         
