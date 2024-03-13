@@ -165,8 +165,9 @@ class CameraBaby(Scribe):
     def update_run_id(self):
         pwd = os.getcwd()
         os.chdir(DATA_DIR)
-        with open(RUN_ID_PATH,'r+') as f:
+        with open(RUN_ID_PATH,'r') as f:
             rid = int(f.read())
+        with open(RUN_ID_PATH,'w') as f:
             line = f"{rid+1}"
             f.write(line)
         os.chdir(pwd)
