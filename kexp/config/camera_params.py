@@ -74,7 +74,7 @@ class AndorParams(CameraParams):
         self.connection_delay = 8.0
         self.t_camera_trigger = 10.e-6
         self.t_readout_time = 512 * 3.3e-6
-        self.em_gain = 290.
+        self.em_gain = 1.
         self.vs_speed = 2
         self.vs_amp = 2
 
