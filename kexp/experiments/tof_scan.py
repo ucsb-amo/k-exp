@@ -31,8 +31,8 @@ class tof(EnvExperiment, Base):
         self.xvar('t_tof',np.linspace(10000,18000,6)*1.e-6)
 
         self.p.t_mot_load = 1.
-        self.p.t_tof = 14000.e-6
-        self.p.N_repeats = 3
+        # self.p.t_tof = 14000.e-6
+        self.p.N_repeats = 1
         # self.p.t_gm = 3.e-3
         # self.p.t_gmramp = 4.e-3
 

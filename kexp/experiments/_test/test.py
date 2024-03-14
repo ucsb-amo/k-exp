@@ -9,28 +9,30 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=False,camera_select="xy_basler")
+        Base.__init__(self,setup_camera=True,camera_select="xy_basler")
 
-        self.xvar('dummy',np.linspace(1.,1.,1)*1.e-3)
+        self.xvar('dummy',np.linspace(1.,1.,4)*1.e-3)
 
         self.finish_build()
 
     @kernel
     def scan_kernel(self):
         self.ttl.xy_basler.pulse(self.camera_params.t_camera_trigger)
-        delay(30*ms)
+        delay(100*ms)
         self.ttl.xy_basler.pulse(self.camera_params.t_camera_trigger)
-        delay(30*ms)
+        delay(100*ms)
         self.ttl.xy_basler.pulse(self.camera_params.t_camera_trigger)
 
-        delay(1*s)
+        delay(4*s)
 
     @kernel
     def run(self):
         
         self.init_kernel()
+        delay(1*s)
         self.scan()
 
     def analyze(self):
-
-        print("Done!")
+        import os
+        expt_filepath = os.path.abspath(__file__)
+        self.end(expt_filepath)

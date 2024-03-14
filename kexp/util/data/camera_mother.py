@@ -121,18 +121,18 @@ class CameraMother(QThread):
         print(f"New file found! Run ID {run_id}. Welcome to the world, little {name}...")
         return file, name
 
-class DataHandler(Scribe,QThread):
+class DataHandler(QThread,Scribe):
     got_image_from_queue = pyqtSignal(np.ndarray)
 
-    def __init__(self,queue:Queue,dataset_path):
+    def __init__(self,queue:Queue,data_filepath):
         super().__init__()
         self.queue = queue
-        self.dataset_path = dataset_path
+        self.data_filepath = data_filepath
 
     def run(self):
         self.write_image_to_dataset()
 
-    def write_image_to_dataset(self,idx):
+    def write_image_to_dataset(self):
         self.dataset = self.wait_for_data_available(close=False)
         img, img_t, idx = self.queue.get()
         self.got_image_from_queue.emit(img)
@@ -140,8 +140,8 @@ class DataHandler(Scribe,QThread):
         self.dataset['data']['image_timestamps'][idx] = img_t
         self.dataset.close()
 
-class CameraBaby(Scribe,QThread):
-    image_captured = pyqtSignal()
+class CameraBaby(QThread,Scribe):
+    image_captured = pyqtSignal(int)
     camera_grab_start = pyqtSignal(int)
     death_signal = pyqtSignal()
 
@@ -171,7 +171,7 @@ class CameraBaby(Scribe,QThread):
             print('camera created')
             self.mark_camera_ready() # opens and closes data
             print('camera marked as ready')
-            self.dataset = self.check_camera_ready_ack() # opens data and closes
+            self.check_camera_ready_ack() # opens data and closes
             print('camera ready acknowledged')
             self.grab_loop()
             self.dataset.close()
@@ -230,8 +230,9 @@ class CameraBaby(Scribe,QThread):
     def update_run_id(self):
         pwd = os.getcwd()
         os.chdir(DATA_DIR)
-        with open(RUN_ID_PATH,'r+') as f:
-            rid = f.read()
+        with open(RUN_ID_PATH,'r') as f:
+            rid = int(f.read())
             line = f"{rid+1}"
+        with open(RUN_ID_PATH,'w') as f:
             f.write(line)
         os.chdir(pwd)

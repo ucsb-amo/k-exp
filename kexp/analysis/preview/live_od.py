@@ -31,6 +31,7 @@ class MainWindow(QWidget):
 
         self.analyzer = Analyzer()
         self.plotter = Plotter(self.viewer_window,self.analyzer)
+        # self.crop_dropdown.currentIndexChanged.connect(self.plotter.clear)
 
         self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
         self.camera_mother.start()
@@ -40,7 +41,7 @@ class MainWindow(QWidget):
     def create_camera_baby(self,file,name):
         self.the_baby = CameraBaby(file, name, self.queue,
                                    self.camera_nanny)
-        self.data_handler = DataHandler(self.queue,dataset_path=file)
+        self.data_handler = DataHandler(self.queue,data_filepath=file)
 
         self.the_baby.camera_grab_start.connect(self.grab_start_msg)
 
@@ -50,9 +51,9 @@ class MainWindow(QWidget):
         self.data_handler.got_image_from_queue.connect(self.analyzer.got_img)
         self.data_handler.got_image_from_queue.connect(self.count_images)
 
-        self.the_baby.death_signal.connect(self.camera_mother.start)
+        # self.the_baby.death_signal.connect(self.camera_mother.start)
 
-        self.the_baby.run()
+        self.the_baby.start()
 
     def setup_widgets(self):
         self.conn_bar = CamConnBar(self.camera_nanny)
@@ -84,6 +85,7 @@ class MainWindow(QWidget):
     def count_images(self):
         self.img_count += 1
         if self.img_count == 3:
+            self.msg('new OD!')
             self.plotter.run()
             self.img_count = 0
 
@@ -126,6 +128,10 @@ class Analyzer():
                         self.img_light,
                         self.img_dark,
                         self.crop_type)
+        self.od_raw = self.od_raw[0]
+        self.od = self.od[0]
+        self.sum_od_x = self.sum_od_x[0]
+        self.sum_od_y = self.sum_od_y[0]
 
     def fix_datatype(self):
         dtype = self.img_atoms.dtype
@@ -145,22 +151,37 @@ class ODviewer(QWidget):
         self.setup_layout()
 
     def setup_widgets(self):
-        self.img_atoms_plot = PlotPanel()
-        self.img_light_plot = PlotPanel()
-        self.img_dark_plot = PlotPanel()
+        self.img_atoms_plot = ImgPlotPanel()
+        self.img_light_plot = ImgPlotPanel()
+        self.img_dark_plot = ImgPlotPanel()
 
-        self.od_plot = PlotPanel()
-        self.sum_od_x_plot = PlotPanel()
-        self.sum_od_y_plot = PlotPanel()
+        self.od_plot = ImgPlotPanel()
+        self.sum_od_x_plot = LinePlotPanel(hlabel='Position (pixels)',
+                                           vlabel='Integrated OD')
+        self.sum_od_y_plot = RotatedLinePlotPanel(vlabel='Position (pixels)',
+                                                  hlabel='Integrated OD')
     
     def setup_layout(self):
-        self.layout = QGridLayout()
-        self.layout.addWidget(self.img_atoms_plot,0,0,1,1)
-        self.layout.addWidget(self.img_light_plot,0,1,1,1)
-        self.layout.addWidget(self.img_dark_plot,0,2,1,1)
-        self.layout.addWidget(self.od_plot,1,0,2,2)
-        self.layout.addWidget(self.sum_od_y_plot,1,2,2,1)
-        self.layout.addWidget(self.sum_od_x_plot,3,0,1,2)
+        # self.layout = QGridLayout()
+        # self.layout.addWidget(self.img_atoms_plot,0,0,1,1)
+        # self.layout.addWidget(self.img_light_plot,0,1,1,1)
+        # self.layout.addWidget(self.img_dark_plot,0,2,1,1)
+        # self.layout.addWidget(self.od_plot,1,0,2,2)
+        # self.layout.addWidget(self.sum_od_y_plot,1,2,2,1)
+        # self.layout.addWidget(self.sum_od_x_plot,3,0,1,2)
+        # self.setLayout(self.layout)
+
+        self.layout = QVBoxLayout()
+        images = QHBoxLayout()
+        images.addWidget(self.img_atoms_plot)
+        images.addWidget(self.img_light_plot)
+        images.addWidget(self.img_dark_plot)
+        self.layout.addLayout(images)
+        OD_grid = QGridLayout()
+        OD_grid.addWidget(self.od_plot,0,0,3,3)
+        OD_grid.addWidget(self.sum_od_y_plot,0,3,3,1)
+        OD_grid.addWidget(self.sum_od_x_plot,4,0,1,3)
+        self.layout.addLayout(OD_grid)
         self.setLayout(self.layout)
 
 class Plotter(QThread):
@@ -170,39 +191,68 @@ class Plotter(QThread):
         self.analyzer = analyzer
 
     def run(self):
-        self.plotwindow.img_atoms_plot.imshow(self.analyzer.img_atoms)
-        self.plotwindow.img_light_plot.imshow(self.analyzer.img_atoms)
-        self.plotwindow.img_dark_plot.imshow(self.analyzer.img_dark)
-        self.plotwindow.od_plot.imshow(self.analyzer.od)
+        self.plotwindow.img_atoms_plot.plot(self.analyzer.img_atoms)
+        self.plotwindow.img_light_plot.plot(self.analyzer.img_atoms)
+        self.plotwindow.img_dark_plot.plot(self.analyzer.img_dark)
+        self.plotwindow.od_plot.plot(self.analyzer.od)
         self.plotwindow.sum_od_x_plot.plot(self.analyzer.sum_od_x)
         self.plotwindow.sum_od_y_plot.plot(self.analyzer.sum_od_y)
+
+    def clear(self):
+        for k in vars(self.plotwindow).keys():
+            obj = vars(self.plotwindow)[k]
+            if issubclass(type(obj),PlotPanel):
+                obj.clear()
+
 
 class AtomHistory(QWidget):
     def __init__(self):
         super().__init__()
 
 class PlotPanel(FigureCanvasQTAgg):
-    def __init__(self):
+    def __init__(self,hlabel="",vlabel=""):
         fig = Figure()
         self.axes = fig.add_subplot(111)
         super(FigureCanvasQTAgg,self).__init__(fig)
         self._plot_ref = None
+        self.hlabel = hlabel
+        self.vlabel = vlabel
 
-    def process_imgs(self):
-        pass
-        
-    def imshow(self,img):
+    def clear(self):
+        if self._plot_ref:
+            self.axes.clear()
+
+class ImgPlotPanel(PlotPanel):
+    def plot(self,img):
         if self._plot_ref == None:
             self._plot_ref = self.axes.imshow(img)
+            self.axes.set_ylabel(self.vlabel)
+            self.axes.set_xlabel(self.hlabel)
         else:
             self._plot_ref.set_data(img)
         self.draw()
 
+class LinePlotPanel(PlotPanel):
     def plot(self,ydata):
         if self._plot_ref == None:
             self._plot_ref, = self.axes.plot(ydata)
+            self.axes.set_ylabel(self.vlabel)
+            self.axes.set_xlabel(self.hlabel)
         else:
             self._plot_ref.set_ydata(ydata)
+            self.axes.margins(0,0.05)
+        self.draw()
+
+class RotatedLinePlotPanel(PlotPanel):
+    def plot(self,ydata):
+        xdata = np.arange(len(ydata))
+        if self._plot_ref == None:
+            self._plot_ref, = self.axes.plot(-np.flip(ydata),xdata)
+            self.axes.set_ylabel(self.vlabel)
+            self.axes.set_xlabel(self.hlabel)
+        else:
+            self._plot_ref.set_data(-np.flip(ydata),xdata)
+            self.axes.margins(0.05,0)
         self.draw()
 
 # Maybe hard, need to iterate through xvars in same order that the data is being taken

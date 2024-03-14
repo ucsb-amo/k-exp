@@ -9,15 +9,19 @@ run_id_path = os.path.join(data_dir,"run_id.py")
 
 class DataSaver():
 
-    def save_data(self,expt,expt_filepath=""):
+    def save_data(self,expt,expt_filepath="",data_object=None):
 
         if expt.setup_camera:
             
             pwd = os.getcwd()
             os.chdir(data_dir)
-
+            
             fpath, _ = self._data_path(expt.run_info)
-            f = h5py.File(fpath,'r+')
+
+            if data_object:
+                f = data_object
+            else:
+                f = h5py.File(fpath,'r+')
 
             del f['params']
             params_dset = f.create_group('params')

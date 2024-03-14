@@ -23,7 +23,7 @@ class Scribe():
                     f.close()
                 return f
             except Exception as e:
-                if "Unable to open file" in str(e):
+                if "Unable to open file" in str(e) or "Invalid file name" in str(e):
                     # file is busy -- wait for available
                     time.sleep(check_period)
                 else:
@@ -66,6 +66,6 @@ class Scribe():
         return data_obj
         
     def write_data(self, expt_filepath):
-        self.wait_for_data_available()
-        self.ds.save_data(self, expt_filepath)
+        data_object = self.wait_for_data_available(close=False)
+        self.ds.save_data(self, expt_filepath, data_object)
         print("Done!")
