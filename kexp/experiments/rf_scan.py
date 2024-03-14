@@ -9,7 +9,8 @@ class tof(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')
         
         self.xvar('imaging_state',[1,2])
-        self.xvar('t_wait',np.linspace(20,20.e3,2)*1.e-6)
+        self.xvar('rf_yes',[0,1])
+        # self.xvar('t_wait',np.linspace(20,10.e3,10)*1.e-6)
 
         self.p.t_mot_load = 1.
 
@@ -18,9 +19,13 @@ class tof(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
+        self.dds.d1_3d_r.dds_device.init()
         self.dds.d1_3d_c.dds_device.init()
         self.dds.d2_3d_c.dds_device.init()
         self.dds.d2_3d_r.dds_device.init()
+        self.dds.d2_2d_c.dds_device.init()
+        self.dds.d2_2d_r.dds_device.init()
+        self.dds.push.dds_device.init()
 
         self.core.break_realtime()
 
@@ -29,6 +34,7 @@ class tof(EnvExperiment, Base):
         else:
             self.set_imaging_detuning()
 
+        self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
@@ -39,27 +45,37 @@ class tof(EnvExperiment, Base):
         self.gm_ramp(self.p.t_gmramp)
 
         self.release()
+        self.flash_cooler()
+
+        self.dds.d1_3d_r.dds_device.power_down()
         self.dds.d1_3d_c.dds_device.power_down()
         self.dds.d2_3d_c.dds_device.power_down()
         self.dds.d2_3d_r.dds_device.power_down()
+        self.dds.d2_2d_c.dds_device.power_down()
+        self.dds.d2_2d_r.dds_device.power_down()
+        self.dds.push.dds_device.power_down()
 
-        self.flash_cooler()
-
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        delay(self.p.t_lightsheet_hold)
+        
         if self.p.rf_yes:
             self.ttl.antenna_rf_sw.on()
             self.ttl.antenna_rf_sweep_trig.pulse(t=100.e-6)
-            delay(9.e-3)
+            delay(1500.e-3)
             self.ttl.antenna_rf_sw.off()
         else:
-            delay(9.e-3)
-            
-        delay(self.p.t_wait)
+            delay(1500.e-3)
+        
+
+        self.lightsheet.off()
+        
+        delay(self.p.t_tof)
         self.abs_image()
 
     @kernel
     def run(self):
         self.init_kernel()
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
+        
         self.scan()
         self.mot_observe()
 
