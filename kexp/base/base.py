@@ -95,7 +95,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         pass
 
     @kernel
-    def init_kernel(self, run_id = True, init_dds = True, init_dac = True, dds_set = True, dds_off = True, beat_ref_on=True):
+    def init_kernel(self, run_id = True, init_dds = True, init_dac = True,
+                     dds_set = True, dds_off = True, beat_ref_on=True,
+                     init_rf = True):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         self.core.reset() # clears RTIO
@@ -115,12 +117,15 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.switch_all_dds(0) # turn all DDS off to start experiment
         if beat_ref_on:
             self.dds.beatlock_ref.on()
+        if init_rf:
+            self.rf.init()
         self.core.break_realtime() # add slack before scheduling experiment events
 
     def prepare_image_array(self):
+        print(self.camera_params.camera_type)
         if self.camera_params.camera_type == 'andor':
             dtype = np.uint16
-        if self.camera_params.camera_type == 'basler':
+        elif self.camera_params.camera_type == 'basler':
             dtype = np.uint8
         else:
             dtype = np.uint8

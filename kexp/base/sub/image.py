@@ -51,6 +51,20 @@ class Image():
         self.dds.d2_3d_r.off()
 
     @kernel
+    def flash_cooler(self,t=dv,detune=dv,amp=dv):
+        if t == dv:
+            t = self.params.t_cooler_flash_imaging
+        if detune == dv:
+            detune = self.params.detune_d2_c_imaging
+        if amp == dv:
+            amp = self.params.amp_d2_c_imaging
+
+        self.dds.d2_3d_c.set_dds_gamma(delta=detune,amplitude=amp)
+        self.dds.d2_3d_c.on()
+        delay(t)
+        self.dds.d2_3d_c.off()
+
+    @kernel
     def pulse_resonant_mot_beams(self,t):
         """
         Sets D2 3D MOT beams to resonance and turns them on for time t.
@@ -95,6 +109,7 @@ class Image():
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 
         delay(self.camera_params.t_light_only_image_delay * s)
+        
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 

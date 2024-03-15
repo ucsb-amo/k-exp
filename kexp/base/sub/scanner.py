@@ -287,7 +287,9 @@ class xvar():
             by "key" should be scanned.
         """
         self.key = key
-        self.values = np.asarray(values)
+        if type(values) == float or type(values) == int:
+            values = [values]
+        self.values = np.asarray(values,dtype=float)
         self.position = position
         self.counter = 0
         self.sort_idx = []
