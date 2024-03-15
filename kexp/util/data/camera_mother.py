@@ -20,7 +20,6 @@ from queue import Queue
 
 import sys
 
-RUN_ID_PATH = r"B:\_K\PotassiumData\run_id.py"
 DATA_DIR = os.getenv("data")
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
 CHECK_DELAY = 0.25
@@ -75,7 +74,6 @@ class CameraMother(QThread):
                 file, name = self.new_file(latest_file, run_id)
                 self.new_camera_baby.emit(file,name)
                 self.handle_baby_creation(file, name, manage_babies)
-                print("Mother is watching...")
             if count == self.N_runs:
                 break
             self.file_checking_timer(attempts)
@@ -93,6 +91,7 @@ class CameraMother(QThread):
             self.baby = CameraBaby(file,name,self.output_queue,self.camera_nanny)
             self.baby.image_captured.connect(self.data_writer.start)
             self.baby.run()
+            print("Mother is watching...")
 
     def check_files(self):
         folderpath=os.path.join(DATA_DIR,'*','*.hdf5')
@@ -148,7 +147,6 @@ class CameraBaby(QThread,Scribe):
     def __init__(self,data_filepath,name,output_queue:Queue,
                  camera_nanny:CameraNanny):
         super().__init__()
-        super(CameraBaby,self).__init__()
 
         from kexp.config.expt_params import ExptParams
         from kexp.config.camera_params import CameraParams
@@ -183,6 +181,7 @@ class CameraBaby(QThread,Scribe):
 
     def create_camera(self):
         self.camera = self.camera_nanny.persistent_get_camera(self.camera_params)
+        # self.camera = vars(self.camera_nanny)[self.camera_params.camera_select]
 
     def honorable_death(self):
         print(f"{self.name}: All images captured.")
@@ -232,7 +231,7 @@ class CameraBaby(QThread,Scribe):
         os.chdir(DATA_DIR)
         with open(RUN_ID_PATH,'r') as f:
             rid = int(f.read())
-            line = f"{rid+1}"
         with open(RUN_ID_PATH,'w') as f:
+            line = f"{rid+1}"
             f.write(line)
         os.chdir(pwd)
