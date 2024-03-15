@@ -1,7 +1,7 @@
 import numpy as np
 import sys
 from PyQt6.QtWidgets import (
-    QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QPlainTextEdit, QComboBox)
+    QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QPlainTextEdit, QComboBox, QSizePolicy)
 from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal, QThread
 from PyQt6.QtGui import QIcon
 from queue import Queue
@@ -31,7 +31,7 @@ class MainWindow(QWidget):
 
         self.analyzer = Analyzer()
         self.plotter = Plotter(self.viewer_window,self.analyzer)
-        # self.crop_dropdown.currentIndexChanged.connect(self.plotter.clear)
+        self.crop_dropdown.currentIndexChanged.connect(self.plotter.clear)
 
         self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
         self.camera_mother.start()
@@ -151,25 +151,19 @@ class ODviewer(QWidget):
         self.setup_layout()
 
     def setup_widgets(self):
-        self.img_atoms_plot = ImgPlotPanel()
-        self.img_light_plot = ImgPlotPanel()
-        self.img_dark_plot = ImgPlotPanel()
+        self.img_atoms_plot = ImgPlotPanel(title='Atoms + Light')
+        self.img_light_plot = ImgPlotPanel(title='Light only')
+        self.img_dark_plot = ImgPlotPanel(title='Dark')
 
-        self.od_plot = ImgPlotPanel()
+        self.od_plot = ImgPlotPanel(title='OD')
         self.sum_od_x_plot = LinePlotPanel(hlabel='Position (pixels)',
-                                           vlabel='Integrated OD')
+                                           vlabel='Integrated OD',
+                                           title='y-integrated OD (sum_od_x)')
         self.sum_od_y_plot = RotatedLinePlotPanel(vlabel='Position (pixels)',
-                                                  hlabel='Integrated OD')
+                                                  hlabel='Integrated OD',
+                                                  title='x-integrated OD (sum_od_y)')
     
     def setup_layout(self):
-        # self.layout = QGridLayout()
-        # self.layout.addWidget(self.img_atoms_plot,0,0,1,1)
-        # self.layout.addWidget(self.img_light_plot,0,1,1,1)
-        # self.layout.addWidget(self.img_dark_plot,0,2,1,1)
-        # self.layout.addWidget(self.od_plot,1,0,2,2)
-        # self.layout.addWidget(self.sum_od_y_plot,1,2,2,1)
-        # self.layout.addWidget(self.sum_od_x_plot,3,0,1,2)
-        # self.setLayout(self.layout)
 
         self.layout = QVBoxLayout()
         images = QHBoxLayout()
@@ -192,7 +186,7 @@ class Plotter(QThread):
 
     def run(self):
         self.plotwindow.img_atoms_plot.plot(self.analyzer.img_atoms)
-        self.plotwindow.img_light_plot.plot(self.analyzer.img_atoms)
+        self.plotwindow.img_light_plot.plot(self.analyzer.img_light)
         self.plotwindow.img_dark_plot.plot(self.analyzer.img_dark)
         self.plotwindow.od_plot.plot(self.analyzer.od)
         self.plotwindow.sum_od_x_plot.plot(self.analyzer.sum_od_x)
@@ -210,24 +204,30 @@ class AtomHistory(QWidget):
         super().__init__()
 
 class PlotPanel(FigureCanvasQTAgg):
-    def __init__(self,hlabel="",vlabel=""):
+    def __init__(self,hlabel="",vlabel="",title=""):
         fig = Figure()
         self.axes = fig.add_subplot(111)
         super(FigureCanvasQTAgg,self).__init__(fig)
         self._plot_ref = None
         self.hlabel = hlabel
         self.vlabel = vlabel
+        self.title = title
 
     def clear(self):
         if self._plot_ref:
-            self.axes.clear()
+            self.axes.cla()
+            self._plot_ref = None
+
+    def set_labels(self):
+        self.axes.set_title(self.title)
+        self.axes.set_ylabel(self.vlabel)
+        self.axes.set_xlabel(self.hlabel)
 
 class ImgPlotPanel(PlotPanel):
     def plot(self,img):
         if self._plot_ref == None:
             self._plot_ref = self.axes.imshow(img)
-            self.axes.set_ylabel(self.vlabel)
-            self.axes.set_xlabel(self.hlabel)
+            self.set_labels()
         else:
             self._plot_ref.set_data(img)
         self.draw()
@@ -236,11 +236,10 @@ class LinePlotPanel(PlotPanel):
     def plot(self,ydata):
         if self._plot_ref == None:
             self._plot_ref, = self.axes.plot(ydata)
-            self.axes.set_ylabel(self.vlabel)
-            self.axes.set_xlabel(self.hlabel)
+            self.set_labels()
         else:
             self._plot_ref.set_ydata(ydata)
-            self.axes.margins(0,0.05)
+        self.axes.margins(0,0.05)
         self.draw()
 
 class RotatedLinePlotPanel(PlotPanel):
@@ -248,11 +247,10 @@ class RotatedLinePlotPanel(PlotPanel):
         xdata = np.arange(len(ydata))
         if self._plot_ref == None:
             self._plot_ref, = self.axes.plot(-np.flip(ydata),xdata)
-            self.axes.set_ylabel(self.vlabel)
-            self.axes.set_xlabel(self.hlabel)
+            self.set_labels()
         else:
             self._plot_ref.set_data(-np.flip(ydata),xdata)
-            self.axes.margins(0.05,0)
+        self.axes.margins(0.05,0)
         self.draw()
 
 # Maybe hard, need to iterate through xvars in same order that the data is being taken
@@ -279,10 +277,14 @@ class CamConnBar(QWidget):
         # self.andor = CameraButton(cp.andor_params,self.cn)
 
     def setup_layout(self):
-        self.layout = QHBoxLayout()
-        self.layout.addWidget(self.xy_basler_button)
-        self.layout.addWidget(self.z_basler_button)
-        # self.layout.addWidget(self.andor)
+        self.layout = QVBoxLayout()
+        label = QLabel("Camera connections")
+        buttonlayout = QHBoxLayout()
+        buttonlayout.addWidget(self.xy_basler_button)
+        buttonlayout.addWidget(self.z_basler_button)
+        # buttonlayout.addWidget(self.andor)
+        self.layout.addWidget(label)
+        self.layout.addLayout(buttonlayout)
         self.setLayout(self.layout)
 
 class CameraButton(QPushButton):
