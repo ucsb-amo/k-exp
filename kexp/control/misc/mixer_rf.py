@@ -3,6 +3,7 @@ from kexp.control.artiq.mirny import Mirny
 from kexp.control.artiq.TTL import TTL
 from kexp.config import ExptParams
 from artiq.experiment import kernel, delay, parallel, portable, TFloat
+from artiq.experiment import *
 import numpy as np
 
 dv = -0.1
@@ -19,6 +20,7 @@ class mixer_rf():
     def init(self):
         self.rf_sw.off()
         self.mirny.init()
+        delay(1*ms)
         self.mirny.set(frequency=self.params.frequency_mirny_carrier)
         self.mirny.on()
         self.dds.on()
