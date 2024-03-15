@@ -14,11 +14,8 @@ CHECK_PERIOD = 2.0
 N_NOTIFY = CHECK_PERIOD // CHECK_EVERY
     
 class CameraNanny():
-    def __init__(self):
-        super().__init__()
-        self.camera_db = dict()
 
-    def persistent_get_camera(self,camera_params):
+    def persistent_get_camera(self,camera_params) -> DummyCamera:
         got_camera = False
         count = 1
         while not got_camera:
@@ -32,21 +29,23 @@ class CameraNanny():
             else:
                 return camera
 
-    def get_camera(self,camera_params:camera_params.CameraParams):
+    def get_camera(self,camera_params:camera_params.CameraParams) -> DummyCamera:
         camera_select = camera_params.camera_select
-        if camera_select in self.camera_db.keys():
-            camera = self.camera_db[camera_select]
-            not_open = not camera.is_opened()
+        if type(camera_select) == bytes: 
+            camera_select = camera_select.decode()
+        if camera_select in self.__dict__.keys():
+            camera = vars(self)[camera_select]
+            if not camera.is_opened():
+                camera.open()
         else:
-            not_open = True
-        if not_open:
             camera = self.open(camera_params)
+            vars(self)[camera_select] = camera
         return camera
 
     def open(self,camera_params:camera_params.CameraParams):
         camera_type = camera_params.camera_type
-        if type(camera_type) == bytes: camera_type = camera_type.decode()
-
+        if type(camera_type) == bytes: 
+            camera_type = camera_type.decode()
         try:
             if camera_type == "basler":
                 camera = BaslerUSB(BaslerSerialNumber=camera_params.serial_no,
@@ -60,15 +59,15 @@ class CameraNanny():
             camera = DummyCamera()
             print(e)
             print(f"There was an issue opening the requested camera (key: {camera_params.camera_select}).")
-        self.camera_db[camera_params.camera_select] = camera
+        vars(self)[camera_params.camera_select] = camera
         return camera
     
     def close_all(self):
-        cameras = self.camera_db
-        for k in self.camera_db:
-            if cameras[k].is_opened():
+        for k in vars(self).keys():
+            obj = vars(self)[k]
+            if type(obj) == BaslerUSB or type(obj) == AndorEMCCD:
                 try:
-                    cameras[k].close()
+                    obj.close()
                 except Exception as e:
                     print(e)
                     print(f"An error occurred closing camera {k}.")
