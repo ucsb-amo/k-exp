@@ -31,15 +31,16 @@ class CameraNanny():
 
     def get_camera(self,camera_params:camera_params.CameraParams) -> DummyCamera:
         camera_select = camera_params.camera_select
+        need_to_open = True
         if type(camera_select) == bytes: 
             camera_select = camera_select.decode()
         if camera_select in self.__dict__.keys():
             camera = vars(self)[camera_select]
-            if not camera.is_opened():
-                camera.open()
-        else:
+            need_to_open = not camera.is_opened()
+        if need_to_open:
             camera = self.open(camera_params)
-            vars(self)[camera_select] = camera
+            if type(camera) != DummyCamera:
+                vars(self)[camera_select] = camera
         return camera
 
     def open(self,camera_params:camera_params.CameraParams):
@@ -59,7 +60,6 @@ class CameraNanny():
             camera = DummyCamera()
             print(e)
             print(f"There was an issue opening the requested camera (key: {camera_params.camera_select}).")
-        vars(self)[camera_params.camera_select] = camera
         return camera
     
     def close_all(self):

@@ -1,3 +1,3 @@
 call %kpy%
-python %code%/k-exp/kexp/util/data/run_camera_mother.py
+python %code%/k-exp/kexp/util/data/camera_mother.py
 pause

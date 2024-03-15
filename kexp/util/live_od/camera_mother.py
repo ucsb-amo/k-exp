@@ -10,7 +10,7 @@ import pypylon.pylon as py
 from kexp.util.data.load_atomdata import unpack_group
 
 from kexp.control.cameras.dummy_cam import DummyCamera
-from kexp.control.cameras.camera_nanny import CameraNanny
+from kexp.util.live_od.camera_nanny import CameraNanny
 
 from kexp.base.sub.scribe import CHECK_PERIOD, Scribe
 
@@ -33,10 +33,12 @@ class CameraMother(QThread):
     
     new_camera_baby = pyqtSignal(str,str)
 
-    def __init__(self,output_queue:Queue=None,start_watching=True,manage_babies=True,N_runs:int=None):
+    def __init__(self,output_queue:Queue=None,start_watching=True,
+                 manage_babies=True,N_runs:int=None,
+                 camera_nanny=CameraNanny()):
         super().__init__()
+
         self.latest_file = ""
-        self.camera_nanny = CameraNanny()
 
         if N_runs == None:
             self.N_runs = - 1
@@ -53,6 +55,8 @@ class CameraMother(QThread):
         else:
             pass
 
+        self.camera_nanny = camera_nanny
+
     def run(self):
         self.watch_for_new_file()
 
@@ -62,7 +66,7 @@ class CameraMother(QThread):
         f.close()
         return run_id
 
-    def watch_for_new_file(self,manage_babies=False,Nimg=None):
+    def watch_for_new_file(self,manage_babies=False):
         new_file_bool = False
         attempts = -1
         print("Mother is watching...")
@@ -142,7 +146,8 @@ class DataHandler(QThread,Scribe):
 class CameraBaby(QThread,Scribe):
     image_captured = pyqtSignal(int)
     camera_grab_start = pyqtSignal(int)
-    death_signal = pyqtSignal()
+    honorable_death_signal = pyqtSignal()
+    dishonorable_death_signal = pyqtSignal()
 
     def __init__(self,data_filepath,name,output_queue:Queue,
                  camera_nanny:CameraNanny):
@@ -186,7 +191,7 @@ class CameraBaby(QThread,Scribe):
     def honorable_death(self):
         print(f"{self.name}: All images captured.")
         print(f"{self.name} has died honorably.")
-        self.death_signal.emit()
+        self.honorable_death_signal.emit()
         return True
     
     def dishonorable_death(self,delete_data=True):
@@ -204,7 +209,7 @@ class CameraBaby(QThread,Scribe):
         print(msg)
         print(f"{self.name} has died dishonorably.")
         self.update_run_id()
-        self.death_signal.emit()
+        self.dishonorable_death_signal.emit()
         return True
 
     def read_params(self):
