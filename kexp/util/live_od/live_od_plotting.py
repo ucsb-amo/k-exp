@@ -13,7 +13,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
 class Analyzer():
-
     def __init__(self):
         self.imgs = []
         self.crop_type = 'gm'
@@ -72,19 +71,33 @@ class ODviewer(QWidget):
                                                   title='x-integrated OD (sum_od_y)')
     
     def setup_layout(self):
+        
+        # self.img_atoms_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        # self.img_light_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        # self.img_dark_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        self.od_plot.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
+        self.sum_od_y_plot.setSizePolicy(QSizePolicy.Policy.Minimum,QSizePolicy.Policy.Minimum)
+        self.sum_od_x_plot.setSizePolicy(QSizePolicy.Policy.Minimum,QSizePolicy.Policy.Minimum)
 
         self.layout = QVBoxLayout()
+
         images = QHBoxLayout()
         images.addWidget(self.img_atoms_plot)
         images.addWidget(self.img_light_plot)
         images.addWidget(self.img_dark_plot)
+        # images.setStretch(0,0)
         self.layout.addLayout(images)
+
         OD_grid = QGridLayout()
-        OD_grid.addWidget(self.od_plot,0,0,3,3)
-        OD_grid.addWidget(self.sum_od_y_plot,0,3,3,1)
-        OD_grid.addWidget(self.sum_od_x_plot,4,0,1,3)
+        OD_grid.addWidget(self.od_plot,0,1,3,3)
+        OD_grid.addWidget(self.sum_od_y_plot,0,4,3,1)
+        OD_grid.addWidget(self.sum_od_x_plot,4,1,1,3)
         self.layout.addLayout(OD_grid)
+
         self.setLayout(self.layout)
+        self.img_atoms_plot.setFixedHeight(400)
+        self.img_light_plot.setFixedHeight(400)
+        self.img_dark_plot.setFixedHeight(400)
 
 class Plotter(QThread):
     def __init__(self,plotwindow:ODviewer,analyzer:Analyzer):
@@ -110,8 +123,9 @@ class AtomHistory(QWidget):
     def __init__(self):
         super().__init__()
 
-class PlotPanel(FigureCanvasQTAgg):
+class PlotPanel(FigureCanvasQTAgg,QWidget):
     def __init__(self,hlabel="",vlabel="",title=""):
+        super().__init__()
         fig = Figure()
         self.axes = fig.add_subplot(111)
         super(FigureCanvasQTAgg,self).__init__(fig)
@@ -119,6 +133,7 @@ class PlotPanel(FigureCanvasQTAgg):
         self.hlabel = hlabel
         self.vlabel = vlabel
         self.title = title
+        self.ydatalim = 0
 
     def clear(self):
         if self._plot_ref:
@@ -129,6 +144,13 @@ class PlotPanel(FigureCanvasQTAgg):
         self.axes.set_title(self.title)
         self.axes.set_ylabel(self.vlabel)
         self.axes.set_xlabel(self.hlabel)
+
+    def fix_ylim(self,ydata,flip_axes=False):
+        self.ydatalim = np.max([self.ydatalim,np.max(ydata)])
+        if not flip_axes:
+            self.axes.set_ylim([0,self.ydatalim])
+        else:
+            self.axes.set_xlim([0,self.ydatalim])
 
 class ImgPlotPanel(PlotPanel):
     def plot(self,img):
@@ -142,24 +164,20 @@ class ImgPlotPanel(PlotPanel):
 class LinePlotPanel(PlotPanel):
     def plot(self,ydata):
         if self._plot_ref == None:
-            ymax = 0
             self._plot_ref, = self.axes.plot(ydata)
             self.set_labels()
         else:
             self._plot_ref.set_ydata(ydata)
-        ymax = np.max([ymax,np.max(ydata)])
-        self.axes.set_ylim([0,ymax])
+        self.fix_ylim(ydata)
         self.draw()
 
 class RotatedLinePlotPanel(PlotPanel):
     def plot(self,ydata):
         xdata = np.arange(len(ydata))
         if self._plot_ref == None:
-            ymax = 0
             self._plot_ref, = self.axes.plot(np.flip(ydata),xdata)
             self.set_labels()
         else:
             self._plot_ref.set_data(np.flip(ydata),xdata)
-        ymax = np.max([ymax,np.max(ydata)])
-        self.axes.set_xlim([0,ymax])
+        self.fix_ylim(ydata,flip_axes=True)
         self.draw()
