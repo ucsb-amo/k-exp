@@ -31,6 +31,10 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.setup_shutter(mode="closed")
         self.close()
 
+    def Open(self):
+        self.setup_shutter(mode="open")
+        self.open()
+
     def grab(self):
         """Starts the camera waiting for a trigger to take a single image.
 
