@@ -159,7 +159,21 @@ class ExptParams():
         self.v_pd_tweezer_1064_ramp_end = 1.7
         self.n_tweezer_1064_ramp_steps = 100
 
+        # RF
+        self.t_rf_state_xfer_sweep = 60.e-3
+        self.frequency_mirny_carrier = 495.e6
+        self.frequency_rf_state_xfer_sweep_start = 450.e6
+        self.frequency_rf_state_xfer_sweep_end = 470.e6
+        self.dt_rf_state_xfer_sweep = 10000.e-6
+
         self.compute_derived()
+
+    def compute_rf_sweep_params(self):
+        n_rf_state_xfer_sweep = int(self.t_rf_state_xfer_sweep // self.dt_rf_state_xfer_sweep)
+        self.frequency_rf_state_xfer_sweep_list = np.linspace(
+            self.frequency_rf_state_xfer_sweep_start,
+            self.frequency_rf_state_xfer_sweep_end,
+            n_rf_state_xfer_sweep)
         
     def compute_lightsheet_ramp_params(self):
         self.v_pd_lightsheet_ramp_list = np.linspace(

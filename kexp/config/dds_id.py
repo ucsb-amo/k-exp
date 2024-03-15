@@ -57,6 +57,7 @@ class dds_frame():
         self.dds_array = [[DDS(uru,ch,dac_device=self._dac_frame.dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
+        self.rf_sideband = self.dds_assign(0,0,default_freq=50.e6,default_amp=0.1)
         self.push = self.dds_assign(2,0, ao_order = 1, transition = 'D2',
                                     default_detuning = self.p.detune_push,
                                     default_amp = self.p.amp_push)

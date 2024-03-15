@@ -8,9 +8,9 @@ from artiq.coredevice import adf5356
 
 from kexp.util.artiq.async_print import aprint
 
-DAC_CH_DEFAULT = -1
+dv = -0.1
 
-class DDS():
+class Mirny():
     def __init__(self, mirny_idx, ch, frequency=0., power_level=3):
       
         self.mirny_idx = mirny_idx
@@ -36,9 +36,16 @@ class DDS():
         self.mirny_device.sw.on()
 
     @kernel
+    def set(self,frequency=dv):
+        if frequency != dv:
+            self.frequency = frequency
+        self.mirny_device.set_output_power_mu(self.power_level)
+        self.mirny_device.set_frequency(f=self.frequency)
+
+    @kernel
     def init(self):
         self.cpld_device.init()
-        delay(1*ms)
+        delay(10*ms)
         self.mirny_device.init()
         delay(1*ms)
         self.mirny_device.set_output_power_mu(self.power_level)
