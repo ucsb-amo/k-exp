@@ -14,8 +14,6 @@ CHECK_PERIOD = 2.0
 N_NOTIFY = CHECK_PERIOD // CHECK_EVERY
     
 class CameraNanny():
-    def __init__(self):
-        super().__init__()
 
     def persistent_get_camera(self,camera_params) -> DummyCamera:
         got_camera = False
@@ -35,13 +33,11 @@ class CameraNanny():
         camera_select = camera_params.camera_select
         if type(camera_select) == bytes: 
             camera_select = camera_select.decode()
-
         if camera_select in self.__dict__.keys():
             camera = vars(self)[camera_select]
-            not_open = not camera.is_opened()
+            if not camera.is_opened():
+                camera.open()
         else:
-            not_open = True
-        if not_open:
             camera = self.open(camera_params)
             vars(self)[camera_select] = camera
         return camera
@@ -63,6 +59,7 @@ class CameraNanny():
             camera = DummyCamera()
             print(e)
             print(f"There was an issue opening the requested camera (key: {camera_params.camera_select}).")
+        vars(self)[camera_params.camera_select] = camera
         return camera
     
     def close_all(self):
