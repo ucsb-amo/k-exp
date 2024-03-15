@@ -12,20 +12,17 @@ class tof(EnvExperiment, Base):
         self.xvar('rf_yes',[0,1])
         # self.xvar('t_wait',np.linspace(20,10.e3,10)*1.e-6)
 
+        self.p.frequency_rf_state_xfer_sweep_start = 440.e6
+        self.p.frequency_rf_state_xfer_sweep_start = 470.e6
+        self.p.t_rf_state_xfer_sweep = 50.e-3
+
         self.p.t_mot_load = 1.
 
         self.finish_build()
 
     @kernel
     def scan_kernel(self):
-
-        self.dds.d1_3d_r.dds_device.init()
-        self.dds.d1_3d_c.dds_device.init()
-        self.dds.d2_3d_c.dds_device.init()
-        self.dds.d2_3d_r.dds_device.init()
-        self.dds.d2_2d_c.dds_device.init()
-        self.dds.d2_2d_r.dds_device.init()
-        self.dds.push.dds_device.init()
+        self.dds.init_cooling()
 
         self.core.break_realtime()
 
@@ -47,25 +44,15 @@ class tof(EnvExperiment, Base):
         self.release()
         self.flash_cooler()
 
-        self.dds.d1_3d_r.dds_device.power_down()
-        self.dds.d1_3d_c.dds_device.power_down()
-        self.dds.d2_3d_c.dds_device.power_down()
-        self.dds.d2_3d_r.dds_device.power_down()
-        self.dds.d2_2d_c.dds_device.power_down()
-        self.dds.d2_2d_r.dds_device.power_down()
-        self.dds.push.dds_device.power_down()
+        self.dds.power_down_cooling()
 
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
         delay(self.p.t_lightsheet_hold)
         
         if self.p.rf_yes:
-            self.ttl.antenna_rf_sw.on()
-            self.ttl.antenna_rf_sweep_trig.pulse(t=100.e-6)
-            delay(1500.e-3)
-            self.ttl.antenna_rf_sw.off()
+            self.rf.sweep()
         else:
-            delay(1500.e-3)
-        
+            delay(self.p.t_rf_state_xfer_sweep)
 
         self.lightsheet.off()
         
