@@ -47,5 +47,5 @@ class Mirny():
         self.cpld_device.init()
         delay(10*ms)
         self.mirny_device.init()
-        delay(1*ms)
+        delay(10*ms)
         self.mirny_device.set_output_power_mu(self.power_level)
