@@ -30,11 +30,11 @@ class tof(EnvExperiment, Base):
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(3.,7.,3)*1.e-3)
         
-        # self.xvar('t_tof',np.linspace(3000,18000,8)*1.e-6)
+        self.xvar('t_tof',np.linspace(3000,18000,8)*1.e-6)
         # self.xvar('t_tweezer_hold',np.linspace(.100,20.,2)*1.e-3)
         # self.xvar('t_lightsheet_hold',np.linspace(5000,40000,5)*1.e-6)
 
-        self.xvar('t_cooler_flash_imaging',np.linspace(0,10,8)*1.e-6)
+        # self.xvar('t_cooler_flash_imaging',np.linspace(0,10,8)*1.e-6)
 
         self.p.t_mot_load = 1.
         # self.p.t_tof = 20.e-6
@@ -59,8 +59,6 @@ class tof(EnvExperiment, Base):
         self.gm_ramp(self.p.t_gmramp)
 
         self.release()
-
-        self.flash_cooler()
 
         # self.tweezer.on()
         
