@@ -158,6 +158,7 @@ class dds_frame():
             this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame.dac_device)
             self.dds_array[uru][ch] = this_dds
 
+    @kernel
     def power_down_cooling(self):
         self.d1_3d_r.dds_device.power_down()
         self.d1_3d_c.dds_device.power_down()
@@ -167,6 +168,7 @@ class dds_frame():
         self.d2_2d_r.dds_device.power_down()
         self.push.dds_device.power_down()
 
+    @kernel
     def init_cooling(self):
         self.d1_3d_r.dds_device.init()
         self.d1_3d_c.dds_device.init()
