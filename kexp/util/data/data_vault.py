@@ -35,6 +35,7 @@ class DataSaver():
                 f.attrs["expt_file"] = ""
 
             f.close()
+            print("Parameters saved, data closed.")
             self._update_run_id(expt.run_info)
             os.chdir(pwd)
 
