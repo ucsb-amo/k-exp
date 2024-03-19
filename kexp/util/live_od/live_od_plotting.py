@@ -72,9 +72,9 @@ class ODviewer(QWidget):
     
     def setup_layout(self):
         
-        # self.img_atoms_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
-        # self.img_light_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
-        # self.img_dark_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        self.img_atoms_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        self.img_light_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        self.img_dark_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
         self.od_plot.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
         self.sum_od_y_plot.setSizePolicy(QSizePolicy.Policy.Minimum,QSizePolicy.Policy.Minimum)
         self.sum_od_x_plot.setSizePolicy(QSizePolicy.Policy.Minimum,QSizePolicy.Policy.Minimum)
@@ -95,9 +95,16 @@ class ODviewer(QWidget):
         self.layout.addLayout(OD_grid)
 
         self.setLayout(self.layout)
-        self.img_atoms_plot.setFixedHeight(400)
-        self.img_light_plot.setFixedHeight(400)
-        self.img_dark_plot.setFixedHeight(400)
+        IMG_SIZE = 250
+        OD_SIZE = 600
+        self.img_atoms_plot.setFixedSize(IMG_SIZE,IMG_SIZE)
+        self.img_light_plot.setFixedSize(IMG_SIZE,IMG_SIZE)
+        self.img_dark_plot.setFixedSize(IMG_SIZE,IMG_SIZE)
+        self.od_plot.setFixedSize(OD_SIZE,OD_SIZE)
+        self.sum_od_y_plot.setFixedHeight(self.od_plot.height())
+        self.sum_od_y_plot.setFixedWidth(150)
+        self.sum_od_x_plot.setFixedWidth(self.od_plot.width())
+        self.sum_od_x_plot.setFixedHeight(150)
 
 class Plotter(QThread):
     def __init__(self,plotwindow:ODviewer,analyzer:Analyzer):
@@ -124,11 +131,20 @@ class AtomHistory(QWidget):
         super().__init__()
 
 class PlotPanel(FigureCanvasQTAgg,QWidget):
-    def __init__(self,hlabel="",vlabel="",title=""):
+    def __init__(self,hlabel="",vlabel="",title="",height=0,width=0):
         super().__init__()
         fig = Figure()
         self.axes = fig.add_subplot(111)
         super(FigureCanvasQTAgg,self).__init__(fig)
+
+        if height and (width==0):
+            fig.set_figheight(height)
+        if width and (height==0):
+            fig.set_figwidth(width)
+        if width and height:
+            fig.set_figheight(height)
+            fig.set_figwidth(width)
+
         self._plot_ref = None
         self.hlabel = hlabel
         self.vlabel = vlabel
