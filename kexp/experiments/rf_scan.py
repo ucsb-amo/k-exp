@@ -10,13 +10,18 @@ class tof(EnvExperiment, Base):
         
         self.xvar('imaging_state',[1,2])
         self.xvar('rf_yes',[0,1])
+        # self.p.rf_yes = 1
         # self.xvar('t_wait',np.linspace(20,10.e3,10)*1.e-6)
 
-        self.p.frequency_rf_state_xfer_sweep_start = 440.e6
-        self.p.frequency_rf_state_xfer_sweep_start = 470.e6
-        self.p.t_rf_state_xfer_sweep = 50.e-3
+        # self.params.frequency_mirny_carrier = 500.e6
+        # self.p.frequency_rf_state_xfer_sweep_start = 450.7e6
+        # self.p.frequency_rf_state_xfer_sweep_start = 470.7e6
+        self.p.t_rf_state_xfer_sweep = 1000.e-3
+        # self.p.dt_rf_state_xfer_sweep = 100.e-6
 
         self.p.t_mot_load = 1.
+
+        self.p.N_repeats = [1,1]
 
         self.finish_build()
 
@@ -50,9 +55,14 @@ class tof(EnvExperiment, Base):
         delay(self.p.t_lightsheet_hold)
         
         if self.p.rf_yes:
-            self.rf.sweep()
+            # self.rf.sweep()
+            self.ttl.antenna_rf_sw.on()
+            self.ttl.antenna_rf_sweep_trig.pulse(100.e-6)
+            delay(2*s)
+            self.ttl.antenna_rf_sw.off()
         else:
-            delay(self.p.t_rf_state_xfer_sweep)
+            # delay(self.p.t_rf_state_xfer_sweep)
+            delay(2*s)
 
         self.lightsheet.off()
         
