@@ -51,7 +51,7 @@ class BaslerUSB(pylon.InstantCamera):
     def open(self):
         self.Open()
 
-    def grab(self,timeout_s=10):
+    def grab(self,timeout_s=15):
         """Starts the camera waiting for a trigger to take a single image.
 
         Returns:
