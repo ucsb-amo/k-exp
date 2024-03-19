@@ -30,8 +30,9 @@ class MainWindow(QWidget):
         self.data_handler = DataHandler(self.queue,data_filepath=file)
 
         self.the_baby.camera_grab_start.connect(self.grab_start_msg)
+        self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number)
+        self.the_baby.camera_grab_start.connect(self.data_handler.start)
 
-        self.the_baby.image_captured.connect(self.data_handler.start)
         self.the_baby.image_captured.connect(self.gotem_msg)
 
         self.data_handler.got_image_from_queue.connect(self.analyzer.got_img)
@@ -48,6 +49,7 @@ class MainWindow(QWidget):
         font.setPointSize(16)
         self.output_window = QPlainTextEdit()
         self.output_window.setFont(font)
+        self.output_window.setReadOnly(True)
 
         self.camera_conn_bar = CamConnBar(self.camera_nanny,self.output_window)
         
@@ -80,7 +82,7 @@ class MainWindow(QWidget):
             self.img_count = 0
 
     def update_crop(self):
-        self.analyzer.crop_type = self.crop_dropdown.currentText()
+        self.analyzer.crop_type = self.roi_select.crop_dropdown.currentText()
 
     def msg(self,msg):
         self.output_window.appendPlainText(msg)
@@ -120,6 +122,7 @@ def main():
 
     # Set the window position at the top of the screen
     window.setGeometry(window.x(), 0, window.width(), window.height())
+    window.setFixedSize(800,1370)
 
     window.show()
     sys.exit(app.exec())
