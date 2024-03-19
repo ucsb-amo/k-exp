@@ -15,7 +15,7 @@ class Scribe():
     def wait_for_data_available(self,close=True,openmode='r+',check_period=CHECK_PERIOD):
         """Blocks until the file at self.datapath is available.
         """       
-        t0 = time.time()
+        count = 0
         while True:
             try:
                 f = h5py.File(self.data_filepath,openmode)
@@ -25,7 +25,11 @@ class Scribe():
             except Exception as e:
                 if "Unable to open file" in str(e) or "Invalid file name" in str(e):
                     # file is busy -- wait for available
+                    count += 1
                     time.sleep(check_period)
+                    if count == N_NOTIFY:
+                        count = 0
+                        print("Can't open data. Is another process using it?")
                 else:
                     raise e
                 
