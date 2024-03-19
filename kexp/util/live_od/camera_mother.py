@@ -132,16 +132,24 @@ class DataHandler(QThread,Scribe):
         self.queue = queue
         self.data_filepath = data_filepath
 
+    def get_img_number(self,N_img):
+        self.N_img = N_img
+
     def run(self):
         self.write_image_to_dataset()
 
     def write_image_to_dataset(self):
         self.dataset = self.wait_for_data_available(close=False)
-        img, img_t, idx = self.queue.get()
-        self.got_image_from_queue.emit(img)
-        self.dataset['data']['images'][idx] = img
-        self.dataset['data']['image_timestamps'][idx] = img_t
-        self.dataset.close()
+        while True:
+            img, img_t, idx = self.queue.get(timeout=15)
+            self.got_image_from_queue.emit(img)
+            self.dataset['data']['images'][idx] = img
+            self.dataset['data']['image_timestamps'][idx] = img_t
+            print(f"saved {idx+1}/{self.N_img}")
+            if idx == (self.N_img - 1):
+                print('data closed!')
+                self.dataset.close()
+                break
 
 class CameraBaby(QThread,Scribe):
     image_captured = pyqtSignal(int)
