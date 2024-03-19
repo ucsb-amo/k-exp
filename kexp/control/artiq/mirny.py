@@ -11,12 +11,13 @@ from kexp.util.artiq.async_print import aprint
 dv = -0.1
 
 class Mirny():
-    def __init__(self, mirny_idx, ch, frequency=0., power_level=3):
+    def __init__(self, mirny_idx, ch, frequency=0., power_level=0., att_dB=4.):
       
         self.mirny_idx = mirny_idx
         self.ch = ch
         self.frequency = frequency
         self.power_level = power_level
+        self.att_dB = att_dB
         self.key = ""
 
         self.mirny_device = adf5356.ADF5356
@@ -39,13 +40,19 @@ class Mirny():
     def set(self,frequency=dv):
         if frequency != dv:
             self.frequency = frequency
-        self.mirny_device.set_output_power_mu(self.power_level)
         self.mirny_device.set_frequency(f=self.frequency)
+        self.mirny_device.set_output_power_mu(self.power_level)
+        self.mirny_device.set_att(0.)
 
     @kernel
     def init(self):
         self.cpld_device.init()
-        delay(10*ms)
+        delay(5*ms)
         self.mirny_device.init()
-        delay(10*ms)
-        self.mirny_device.set_output_power_mu(self.power_level)
+        delay(5*ms)
+
+    @kernel
+    def set_att(self,att_dB=dv):
+        if att_dB != dv:
+            self.att_dB = att_dB
+        self.mirny_device.set_att(self.att_dB)
