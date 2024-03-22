@@ -54,11 +54,14 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
     plt.tight_layout()
     plt.show()
 
-def plot_mixOD(ad,xvarformat="1.2f",lines=False):
+def plot_mixOD(ad,xvarformat="1.2f",lines=False,max_od=0.):
     # Extract necessary information
     od = ad.od
     xvarnames = ad.xvarnames
     xvars = ad.xvars
+
+    if od_max == 0.:
+        od_max = np.max(od)
 
     # Calculate the dimensions of the stitched image
     n, px, py = od.shape
@@ -74,7 +77,8 @@ def plot_mixOD(ad,xvarformat="1.2f",lines=False):
     # Plot each image and label with xvar value
     for i in range(n):
         img = od[i]
-        ax.imshow(img, extent=[x_pos, x_pos + px, 0, py], aspect='auto')
+        ax.imshow(img, extent=[x_pos, x_pos + px, 0, py], aspect='auto',
+                  vmin=0.,vmax=od_max)
         ax.axvline()
         x_pos += px
 
