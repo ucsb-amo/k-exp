@@ -60,8 +60,8 @@ def plot_mixOD(ad,xvarformat="1.2f",lines=False,max_od=0.):
     xvarnames = ad.xvarnames
     xvars = ad.xvars
 
-    if od_max == 0.:
-        od_max = np.max(od)
+    if max_od == 0.:
+        max_od = np.max(od)
 
     # Calculate the dimensions of the stitched image
     n, px, py = od.shape
@@ -78,7 +78,7 @@ def plot_mixOD(ad,xvarformat="1.2f",lines=False,max_od=0.):
     for i in range(n):
         img = od[i]
         ax.imshow(img, extent=[x_pos, x_pos + px, 0, py], aspect='auto',
-                  vmin=0.,vmax=od_max)
+                  vmin=0.,vmax=max_od)
         ax.axvline()
         x_pos += px
 
