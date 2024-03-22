@@ -7,13 +7,16 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
                      xvar1format="",
                      xvar2format="",
                      xvar1mult=1.,
-                     xvar2mult=1.):
+                     xvar2mult=1.,
+                     od_max=0.):
     if not xvar1format:
         xvar1format = xvarformat
     if not xvar2format:
         xvar2format = xvarformat
     # Extract necessary attributes
     od = ad.od
+    if od_max == 0.:
+        od_max = np.max(od)
     xvars = ad.xvars
     xvarnames = ad.xvarnames
     
@@ -33,7 +36,7 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
         for j in range(num_var2_values):
             ax = axes[i, j]
             img = od.take(indices=[i], axis=var1_idx).take(indices=[j], axis=var2_idx).squeeze()
-            ax.imshow(img)
+            ax.imshow(img,vmin=0.,vmax=od_max)
             ax.set_xticks([])
             ax.set_yticks([])
     
