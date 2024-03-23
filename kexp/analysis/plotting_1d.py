@@ -58,7 +58,7 @@ def plot_mixOD(ad:atomdata,xvarformat="1.2f",lines=False,max_od=0.):
 
     return fig, ax
 
-def plot_sumod_fits(ad:atomdata,axis=0,
+def plot_sum_od_fits(ad:atomdata,axis=0,
                     xvarformat='3.3g'):
     if axis == 0:
         fits = ad.cloudfit_x
