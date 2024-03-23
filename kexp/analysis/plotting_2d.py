@@ -119,8 +119,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
 
     fig.supylabel(f"{ad.xvarnames[0]}")
     fig.supxlabel(f"{ad.xvarnames[1]}")
-    fig.suptitle(f"Run ID: {ad.run_info.run_id}\n\
-                y-integrated OD: "+ f"xvar0 = {ad.xvarnames[0]}, xvar0 = {ad.xvarnames[1]}")
+    fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
     plt.show() 
 
     return fig, ax
