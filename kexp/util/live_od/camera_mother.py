@@ -139,9 +139,14 @@ class DataHandler(QThread,Scribe):
         self.write_image_to_dataset()
 
     def write_image_to_dataset(self):
+        TIMEOUT = 30
         self.dataset = self.wait_for_data_available(close=False)
         while True:
-            img, img_t, idx = self.queue.get(timeout=15)
+            try:
+                img, img_t, idx = self.queue.get(timeout=TIMEOUT)
+            except Exception as e:
+                print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
+                self.dataset.close()
             self.got_image_from_queue.emit(img)
             self.dataset['data']['images'][idx] = img
             self.dataset['data']['image_timestamps'][idx] = img_t

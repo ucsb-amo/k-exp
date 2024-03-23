@@ -46,11 +46,11 @@ class ExptParams():
         self.t_magnet_off_pretrigger = 0.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
-        self.t_optical_pumping = 50.e-6
+        self.t_optical_pumping = 30.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_load = 10.e-3
-        self.t_lightsheet_hold = 20.e-3
+        self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
         self.t_tweezer_hold = 1.e-3
         self.t_tweezer_1064_ramp = 10.e-3
@@ -132,7 +132,7 @@ class ExptParams():
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
         self.amp_optical_pumping_op = 0.25
-        self.v_zshim_current_op = 9.99
+        self.v_zshim_current_op = 3.0
         self.detune_optical_pumping_r_op = 0.0
         self.amp_optical_pumping_r_op = 0.3
 
@@ -164,16 +164,29 @@ class ExptParams():
         self.frequency_mirny_carrier = 495.e6
         self.frequency_rf_state_xfer_sweep_start = 450.e6
         self.frequency_rf_state_xfer_sweep_end = 470.e6
-        self.dt_rf_state_xfer_sweep = 10000.e-6
+
+        self.n_rf_state_xfer_sweep_steps = 1000
+
+        self.v_vco_rf_state_xfer_sweep_center = 7.15
+        self.v_vco_rf_state_xfer_sweep_fullwidth = 0.1
+        self.t_rf_state_xfer_sweep = 100.e-3
 
         self.compute_derived()
 
     def compute_rf_sweep_params(self):
-        n_rf_state_xfer_sweep = int(self.t_rf_state_xfer_sweep // self.dt_rf_state_xfer_sweep)
+        self.dt_rf_state_xfer_sweep = self.t_rf_state_xfer_sweep / self.n_rf_state_xfer_sweep_steps
+
         self.frequency_rf_state_xfer_sweep_list = np.linspace(
             self.frequency_rf_state_xfer_sweep_start,
             self.frequency_rf_state_xfer_sweep_end,
-            n_rf_state_xfer_sweep)
+            self.n_rf_state_xfer_sweep_steps)
+        
+        self.__v_vco_rf_state_xfer_sweep_start = self.v_vco_rf_state_xfer_sweep_center - self.v_vco_rf_state_xfer_sweep_fullwidth/2
+        self.__v_vco_rf_state_xfer_sweep_end = self.v_vco_rf_state_xfer_sweep_center + self.v_vco_rf_state_xfer_sweep_fullwidth/2
+        
+        self.v_vco_rf_state_xfer_sweep_list = np.linspace(self.__v_vco_rf_state_xfer_sweep_start,
+                                                            self.__v_vco_rf_state_xfer_sweep_end,
+                                                            self.n_rf_state_xfer_sweep_steps)
         
     def compute_lightsheet_ramp_params(self):
         self.v_pd_lightsheet_ramp_list = np.linspace(
