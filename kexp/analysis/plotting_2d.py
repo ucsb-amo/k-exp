@@ -8,7 +8,8 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
                      xvar2format="",
                      xvar1mult=1.,
                      xvar2mult=1.,
-                     od_max=0.):
+                     od_max=0.,
+                     figsize=[]):
     if not xvar1format:
         xvar1format = xvarformat
     if not xvar2format:
@@ -29,7 +30,10 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
     num_var2_values = len(var2_values)
     
     # Create the plot grid
-    fig, axes = plt.subplots(num_var1_values, num_var2_values)
+    if figsize:
+        fig, axes = plt.subplots(num_var1_values, num_var2_values, figsize=figsize)
+    else:
+        fig, axes = plt.subplots(num_var1_values, num_var2_values)
     
     # Plot each image in the grid
     for i in range(num_var1_values):
@@ -54,56 +58,4 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
     plt.tight_layout()
     plt.show()
 
-def plot_mixOD(ad,xvarformat="1.2f",lines=False,max_od=0.):
-    # Extract necessary information
-    od = ad.od
-    xvarnames = ad.xvarnames
-    xvars = ad.xvars
-
-    if max_od == 0.:
-        max_od = np.max(od)
-
-    # Calculate the dimensions of the stitched image
-    n, px, py = od.shape
-    total_width = n * px
-    max_height = py
-
-    # Create a figure and axis for plotting
-    fig, ax = plt.subplots(figsize=(10, 6))
-
-    # Initialize x position for each image
-    x_pos = 0
-
-    # Plot each image and label with xvar value
-    for i in range(n):
-        img = od[i]
-        ax.imshow(img, extent=[x_pos, x_pos + px, 0, py], aspect='auto',
-                  vmin=0.,vmax=max_od)
-        ax.axvline()
-        x_pos += px
-
-    # Set axis labels and title
-    ax.set_xlabel(xvarnames[0])
-    ax.set_title(f"Run ID: {ad.run_info.run_id}")
-
-    # Set the x-axis limits to show all images
-    ax.set_xlim(0, total_width)
-
-    # Remove y-axis ticks and labels
-    ax.yaxis.set_visible(False)
-    ax.xaxis.set_ticks([])
-
-    # Set ticks at the center of each sub-image and rotate them vertically
-    tick_positions = np.arange(px/2, total_width, px)
-    ax.set_xticks(tick_positions)
-    xvarticks = [f"{val:{xvarformat}}" for val in xvars[0]]
-    ax.set_xticklabels(xvarticks, rotation='vertical', ha='center')
-    plt.minorticks_off()
-
-    if lines:
-        for pos in np.arange(px, total_width, px):
-            ax.axvline(pos, color='white', linewidth=0.5)
-
-    # Show the plot
-    fig.tight_layout()
-    plt.show()
+    return fig, ax
