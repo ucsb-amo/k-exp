@@ -194,7 +194,8 @@ class CameraBaby(QThread,Scribe):
             print('camera ready acknowledged')
             self.grab_loop()
         except Exception as e:
-            print(e)
+            # print(e)
+            raise(e)
         self.death()
 
     def create_camera(self):

@@ -95,12 +95,14 @@ class ODviewer(QWidget):
         self.layout.addLayout(OD_grid)
 
         self.setLayout(self.layout)
-        IMG_SIZE = 250
-        OD_SIZE = 600
+        IMG_SIZE = 125
+        OD_SIZE = 450
+        self.od_plot.setMinimumHeight(10)
+        self.od_plot.setMinimumWidth(10)
         self.img_atoms_plot.setFixedSize(IMG_SIZE,IMG_SIZE)
         self.img_light_plot.setFixedSize(IMG_SIZE,IMG_SIZE)
         self.img_dark_plot.setFixedSize(IMG_SIZE,IMG_SIZE)
-        self.od_plot.setFixedSize(OD_SIZE,OD_SIZE)
+        # self.od_plot.setFixedSize(OD_SIZE,OD_SIZE)
         self.sum_od_y_plot.setFixedHeight(self.od_plot.height())
         self.sum_od_y_plot.setFixedWidth(150)
         self.sum_od_x_plot.setFixedWidth(self.od_plot.width())

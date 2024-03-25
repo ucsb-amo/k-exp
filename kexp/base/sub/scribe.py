@@ -98,7 +98,7 @@ class Scribe():
             while True:
                 try:
                     self.dataset.close()
-                    self.wait_for_data_available(check_period=0.25)
+                    self.wait_for_data_available(check_period=0.25,close=True)
                     os.remove(self.data_filepath)
                     break
                 except Exception as e:

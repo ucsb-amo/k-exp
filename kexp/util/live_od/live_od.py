@@ -138,7 +138,7 @@ def main():
 
     # Set the window position at the top of the screen
     window.setGeometry(window.x(), 0, window.width(), window.height())
-    window.setFixedSize(800,1370)
+    # window.setFixedSize(800,1370)
 
     window.show()
     sys.exit(app.exec())
