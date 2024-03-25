@@ -38,7 +38,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.setup_shutter(mode="open")
         self.open()
 
-    def start_grab(self, output_queue:Queue, N_img,
+    def start_grab(self, N_img, output_queue:Queue,
                     timeout=10., missing_frame="skip", return_info=False, buff_size=None):
         """
         Snap `nframes` images (with preset image read mode parameters)

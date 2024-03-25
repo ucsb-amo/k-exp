@@ -18,7 +18,7 @@ class CamConnBar(QWidget):
     def setup_camera_buttons(self):
         self.xy_basler_button = CameraButton(cp.xy_basler_params,self.cn,self.output_window)
         self.z_basler_button = CameraButton(cp.z_basler_params,self.cn,self.output_window)
-        # self.andor = CameraButton(cp.andor_params,self.cn,self.output_window)
+        self.andor = CameraButton(cp.andor_params,self.cn,self.output_window)
 
     def setup_layout(self):
         self.layout = QVBoxLayout()
@@ -26,7 +26,7 @@ class CamConnBar(QWidget):
         buttonlayout = QHBoxLayout()
         buttonlayout.addWidget(self.xy_basler_button)
         buttonlayout.addWidget(self.z_basler_button)
-        # buttonlayout.addWidget(self.andor)
+        buttonlayout.addWidget(self.andor)
         self.layout.addWidget(label)
         self.layout.addLayout(buttonlayout)
         self.setLayout(self.layout)
