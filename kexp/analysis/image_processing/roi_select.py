@@ -24,7 +24,7 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [500, 1450]
         roiy = [200, 950]
     elif crop_type == 'lightsheet':
-        roix = [1000,1060]
+        roix = [1000,1080]
         roiy = [470,880]
     elif crop_type == 'lightsheet_long':
         roix = [900,1000]
