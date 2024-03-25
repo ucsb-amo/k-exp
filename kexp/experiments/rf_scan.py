@@ -10,7 +10,7 @@ class rf_scan(EnvExperiment, Base):
 
         # self.xvar('imaging_state',[1,2])
         # self.xvar('v_vco_rf_state_xfer_sweep_fullwidth',np.linspace(0.05,0.15,8))
-        # self.xvar('v_vco_rf_state_xfer_sweep_center',np.linspace(6.8,8.,40))
+        self.xvar('v_vco_rf_state_xfer_sweep_center',np.linspace(6.8,8.,40))
         # self.xvar('v_vco_rf_state_xfer_sweep_center',np.linspace(7.2,7.37,8))
 
         # self.xvar('n_rf_state_xfer_sweep_steps',np.linspace(10,1500,15,dtype=int))
@@ -25,15 +25,14 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.imaging_state = 1.
         self.p.rf_yes = 1.
-        self.p.v_vco_rf_state_xfer_sweep_center = 7.257 # 7.257
-        # self.p.v_vco_rf_state_xfer_sweep_fullwidth = 0.08
-        self.p.v_vco_rf_state_xfer_sweep_fullwidth = 0.3
+        # self.p.v_vco_rf_state_xfer_sweep_center = 7.257 # 7.257
+        self.p.v_vco_rf_state_xfer_sweep_fullwidth = 0.06
         self.p.t_rf_state_xfer_sweep = 30.e-3
         self.p.n_rf_state_xfer_sweep_steps = 1500
 
-        self.p.t_optical_pumping = 125.e-6
+        # self.p.t_optical_pumping = 125.e-6
 
-        self.xvar('frequency_detuned_imaging_F1',4.58e08 - 2.86e6 + np.linspace(-15.,15.,15)*1.e6)
+        # self.xvar('frequency_detuned_imaging_F1',4.58e08 - 2.86e6 + np.linspace(-15.,15.,15)*1.e6)
 
         # self.xvar('t_lightsheet_hold',np.linspace(10.,100.,12)*1.e-3)
         # self.xvar('v_vco_rf_state_xfer_sweep_center',[6.8,7.257])
@@ -77,7 +76,7 @@ class rf_scan(EnvExperiment, Base):
 
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
         # self.set_shims()
-        # self.set_zshim_magnet_current(self.p.v_zshim_current_op)
+        self.set_zshim_magnet_current(9.99)
         delay(self.p.t_lightsheet_hold)
         
         if self.p.rf_yes:
