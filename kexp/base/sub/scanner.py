@@ -273,8 +273,12 @@ class Scanner():
         """
         for xvar in self.scan_xvars:
             vars(self.params)[xvar.key] = xvar.values
-        self.params.compute_derived()
-        self.compute_new_derived()
+        try:
+            self.params.compute_derived()
+            self.compute_new_derived()
+        except Exception as e:
+            print(e)
+            print('Derived parameters were not updated.')
 
 class xvar():
     def __init__(self,key:str,values:np.ndarray,position=0):

@@ -88,7 +88,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
         raise ValueError("Axis must be 0 (x) or 1 (y)")
     
     ydata = [[fit.ydata for fit in fitt] for fitt in fits]
-    yfitdata = [[fit.ydata for fit in fitt] for fitt in fits]
+    yfitdata = [[fit.y_fitdata for fit in fitt] for fitt in fits]
     
     n0 = ad.od.shape[0]
     n1 = ad.od.shape[1]

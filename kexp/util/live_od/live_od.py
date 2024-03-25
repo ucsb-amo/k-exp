@@ -47,6 +47,7 @@ class MainWindow(QWidget):
         self.the_baby.honorable_death_signal.connect(self.camera_mother.start)
         self.the_baby.dishonorable_death_signal.connect(self.camera_mother.start)
 
+        self.the_baby.honorable_death_signal.connect(self.reset)
         self.the_baby.dishonorable_death_signal.connect(self.reset)
 
         self.the_baby.start()
@@ -87,8 +88,8 @@ class MainWindow(QWidget):
         self.img_count_run += 1
         self.msg(f'gotem! ({self.img_count_run}/{self.data_handler.N_img})')
         if self.img_count == 3:
-            self.msg('new OD!')
             self.plotter.run()
+            self.msg('new OD!')
             self.img_count = 0
         
     def reset(self):
