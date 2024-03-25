@@ -36,6 +36,9 @@ class Scribe():
                         print("Can't open data. Is another process using it?")
                 else:
                     raise e
+            if timeout > 0.:
+                if time.time() - t0 > timeout:
+                    raise ValueError("Timed out waiting for data to be available.")        
                 
     def wait_for_camera_ready(self,timeout=-1.):
         count = 1
@@ -66,14 +69,14 @@ class Scribe():
 
     def mark_camera_ready(self):
         while True:
-            self.dataset = self.wait_for_data_available(close=False)
+            self.dataset = self.wait_for_data_available(close=False,timeout=20.)
             self.dataset.attrs['camera_ready'] = 1
             self.dataset.close()
             break
 
     def check_camera_ready_ack(self):
         while True:
-            self.dataset = self.wait_for_data_available(close=False)
+            self.dataset = self.wait_for_data_available(close=False,timeout=20.)
             if self.dataset.attrs['camera_ready_ack']:
                 print('Received ready acknowledgement.')
                 self.dataset.close()
@@ -83,8 +86,8 @@ class Scribe():
                 time.sleep(WAIT_PERIOD)
         return self.dataset
         
-    def write_data(self, expt_filepath):
-        self.dataset = self.wait_for_data_available(close=False)
+    def write_data(self, expt_filepath, timeout=20.):
+        self.dataset = self.wait_for_data_available(close=False,timeout=timeout)
         self.ds.save_data(self, expt_filepath, self.dataset)
         print("Done!")
 
