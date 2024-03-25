@@ -2,6 +2,9 @@ from pypylon import pylon
 from artiq.experiment import *
 import numpy as np
 
+from queue import Queue
+from PyQt6.QtCore import QThread, pyqtSignal
+
 from kexp.config.camera_params import xy_basler_params
 
 class BaslerUSB(pylon.InstantCamera):
@@ -50,23 +53,24 @@ class BaslerUSB(pylon.InstantCamera):
 
     def open(self):
         self.Open()
-
-    def grab(self,timeout_s=15):
-        """Starts the camera waiting for a trigger to take a single image.
-
-        Returns:
-            grab_success (bool): A boolean indicating whether or not the frame grab was successful.
-            img (np.ndarray): The frame that was grabbed. dtype = np.uint8.
-            img_t (float): The timestamp of the grame that was grabbed.
-        """        
-        img = []
-        img_t = []
-
-        grab_result = self.GrabOne(int(timeout_s*1000))
-        img = np.uint8(grab_result.GetArray())
-        img_t = grab_result.TimeStamp
-
-        return img, img_t
     
     def is_opened(self):
         return self.IsOpen()
+    
+    def start_grab(self,N_img,output_queue:Queue,on_image_captured:pyqtSignal,timeout=10.):
+        Nimg = int(N_img)
+        self.StartGrabbingMax(Nimg, pylon.GrabStrategy_LatestImages)
+        count = 0
+        while self.IsGrabbing():
+            grab = self.RetrieveResult(int(timeout*1000), pylon.TimeoutHandling_ThrowException)
+            if grab.GrabSucceeded():
+                print(f'gotem (img {count+1}/{Nimg})')
+                img = np.uint8(grab.GetArray())
+                img_t = grab.TimeStamp
+                output_queue.put((img,img_t,count))
+                if isinstance(on_image_captured,pyqtSignal):
+                    on_image_captured.emit(count)
+                count += 1
+            if count >= Nimg:
+                break
+        self.StopGrabbing()

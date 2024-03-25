@@ -2,6 +2,9 @@ from pylablib.devices import Andor
 from pylablib.devices.interface.camera import trim_frames
 import numpy as np
 
+from queue import Queue
+from PyQt6.QtCore import QThread, pyqtSignal
+
 from pylablib.devices.Andor.atmcd32d_lib import wlib as lib
 
 class AndorEMCCD(Andor.AndorSDK2Camera):
@@ -35,19 +38,8 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.setup_shutter(mode="open")
         self.open()
 
-    def grab(self):
-        """Starts the camera waiting for a trigger to take a single image.
-
-        Returns:
-            grab_success (bool): A boolean indicating whether or not the frame grab was successful.
-            img (np.ndarray): The frame that was grabbed. dtype = np.uint16.
-            img_t (float): The timestamp of the grame that was grabbed.
-        """
-        img = self.grab_andor(nframes=1,frame_timeout=10.)
-        img_t = 0.
-        return img, img_t
-
-    def grab_andor(self, nframes=1, frame_timeout=5., missing_frame="skip", return_info=False, buff_size=None):
+    def start_grab(self, output_queue:Queue, on_image_captured:pyqtSignal,
+                    N_img, timeout=10., missing_frame="skip", return_info=False, buff_size=None):
         """
         Snap `nframes` images (with preset image read mode parameters)
         Modified from pylablib.devices.interface.camera.
@@ -63,25 +55,30 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         if self.get_frame_format()=="array":
             try:
                 self.set_frame_format("chunks")
-                result=self.grab(nframes=nframes,frame_timeout=frame_timeout,missing_frame=missing_frame,return_info=return_info,buff_size=buff_size)
+                result=self.grab(nframes=N_img,frame_timeout=timeout,missing_frame=missing_frame,return_info=return_info,buff_size=buff_size)
                 return tuple(np.concatenate(r,axis=0) for r in result) if return_info else np.concatenate(result,axis=0)
             finally:
                 self.set_frame_format("array")
-        acq_params=self._get_grab_acquisition_parameters(nframes,buff_size)
+        acq_params=self._get_grab_acquisition_parameters(N_img,buff_size)
         frames,info,nacq=[],[],0
         self.start_acquisition(**acq_params)
         try:
-            while nacq<nframes:
-                self.wait_for_frame(timeout=frame_timeout)
-                # print(f'gotem (img {nacq+1}/{nframes})') # added this line to give print statements
+            while nacq<N_img:
+                self.wait_for_frame(timeout=timeout)
+                print(f'gotem (img {nacq+1}/{N_img})') # added this line to give print statements
                 if return_info:
                     new_frames,new_info,rng=self.read_multiple_images(missing_frame=missing_frame,return_info=True,return_rng=True)
                     info+=new_info
                 else:
                     new_frames,rng=self.read_multiple_images(missing_frame=missing_frame,return_rng=True)
+                for frame in new_frames:
+                        img_timestamp = 0.
+                        output_queue.put((frame,img_timestamp,nacq))
+                        if isinstance(on_image_captured,pyqtSignal):
+                            on_image_captured.emit(nacq)
                 frames+=new_frames
                 nacq+=rng[1]-rng[0]
-            frames,info=trim_frames(frames,nframes,(info if return_info else None),chunks=self.get_frame_format()=="chunks")
+            frames,info=trim_frames(frames,N_img,(info if return_info else None),chunks=self.get_frame_format()=="chunks")
             return (frames,info) if return_info else frames
         finally:
             self.stop_acquisition()
