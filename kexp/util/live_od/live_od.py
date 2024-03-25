@@ -37,6 +37,7 @@ class MainWindow(QWidget):
         self.the_baby.camera_grab_start.connect(self.grab_start_msg)
         self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number)
         self.the_baby.camera_grab_start.connect(self.data_handler.start)
+        self.the_baby.camera_grab_start.connect(self.reset)
 
         self.data_handler.got_image_from_queue.connect(self.analyzer.got_img)
         self.data_handler.got_image_from_queue.connect(self.count_images)
@@ -47,8 +48,8 @@ class MainWindow(QWidget):
         self.the_baby.honorable_death_signal.connect(self.camera_mother.start)
         self.the_baby.dishonorable_death_signal.connect(self.camera_mother.start)
 
-        self.the_baby.honorable_death_signal.connect(self.reset)
-        self.the_baby.dishonorable_death_signal.connect(self.reset)
+        # self.the_baby.honorable_death_signal.connect(self.reset)
+        # self.the_baby.dishonorable_death_signal.connect(self.reset)
 
         self.the_baby.start()
 
