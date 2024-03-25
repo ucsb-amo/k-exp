@@ -15,7 +15,11 @@ class MainWindow(QWidget):
         super().__init__()
         self.queue = Queue()
         self.camera_nanny = CameraNanny()
-        self.camera_mother = CameraMother(start_watching=False, manage_babies=False, output_queue=self.queue, camera_nanny=self.camera_nanny)
+        self.camera_mother = CameraMother(start_watching=False,
+                                           manage_babies=False,
+                                           output_queue=self.queue,
+                                             camera_nanny=self.camera_nanny,
+                                               N_runs=1)
         self.setup_widgets()
         self.setup_layout()
 
@@ -40,6 +44,9 @@ class MainWindow(QWidget):
 
         self.the_baby.honorable_death_signal.connect(lambda: self.msg(f'Run complete. {name} has died honorably.'))
         self.the_baby.dishonorable_death_signal.connect(lambda: self.msg(f'{name} has died dishonorably. Incomplete data deleted.'))
+        
+        self.the_baby.honorable_death_signal.connect(self.camera_mother.start)
+        self.the_baby.dishonorable_death_signal.connect(self.camera_mother.start)
 
         self.the_baby.start()
 

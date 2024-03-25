@@ -126,6 +126,7 @@ class CameraMother(QThread):
 
 class DataHandler(QThread,Scribe):
     got_image_from_queue = pyqtSignal(np.ndarray)
+    timeout = pyqtSignal()
 
     def __init__(self,queue:Queue,data_filepath):
         super().__init__()
@@ -141,20 +142,22 @@ class DataHandler(QThread,Scribe):
     def write_image_to_dataset(self):
         TIMEOUT = 30
         self.dataset = self.wait_for_data_available(close=False)
-        while True:
-            try:
+        try:
+            while True:
                 img, img_t, idx = self.queue.get(timeout=TIMEOUT)
-            except Exception as e:
-                print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
-                self.dataset.close()
-            self.got_image_from_queue.emit(img)
-            self.dataset['data']['images'][idx] = img
-            self.dataset['data']['image_timestamps'][idx] = img_t
-            print(f"saved {idx+1}/{self.N_img}")
-            if idx == (self.N_img - 1):
-                print('data closed!')
-                self.dataset.close()
-                break
+                TIMEOUT = 10
+                self.got_image_from_queue.emit(img)
+                self.dataset['data']['images'][idx] = img
+                self.dataset['data']['image_timestamps'][idx] = img_t
+                print(f"saved {idx+1}/{self.N_img}")
+                if idx == (self.N_img - 1):
+                    print('data closed!')
+                    self.dataset.close()
+                    break
+        except Exception as e:
+            print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
+            self.dataset.close()
+            self.timeout.emit()
 
 class CameraBaby(QThread,Scribe):
     image_captured = pyqtSignal(int)
@@ -190,36 +193,23 @@ class CameraBaby(QThread,Scribe):
             self.check_camera_ready_ack() # opens data and closes
             print('camera ready acknowledged')
             self.grab_loop()
-            self.dataset.close()
-            self.death()
         except Exception as e:
             print(e)
-            self.dataset.close()
-            self.death()
+        self.death()
 
     def create_camera(self):
         self.camera = self.camera_nanny.persistent_get_camera(self.camera_params)
         # self.camera = vars(self.camera_nanny)[self.camera_params.camera_select]
 
     def honorable_death(self):
+        self.dataset.close()
         print(f"{self.name}: All images captured.")
         print(f"{self.name} has died honorably.")
         self.honorable_death_signal.emit()
         return True
     
     def dishonorable_death(self,delete_data=True):
-        msg = "Something went wrong. "
-        if delete_data:
-            msg += "Destroying incomplete data."
-            while True:
-                try:
-                    self.dataset.close()
-                    self.wait_for_data_available(check_period=0.25)
-                    os.remove(self.data_filepath)
-                    break
-                except Exception as e:
-                    print(e)
-        print(msg)
+        self.remove_incomplete_data(delete_data)
         print(f"{self.name} has died dishonorably.")
         self.update_run_id()
         self.dishonorable_death_signal.emit()
