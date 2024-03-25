@@ -206,12 +206,14 @@ class CameraBaby(QThread,Scribe):
         print(f"{self.name}: All images captured.")
         print(f"{self.name} has died honorably.")
         self.honorable_death_signal.emit()
+        time.sleep(0.1)
         return True
     
     def dishonorable_death(self,delete_data=True):
+        self.update_run_id()
         self.remove_incomplete_data(delete_data)
         print(f"{self.name} has died dishonorably.")
-        self.update_run_id()
+        time.sleep(0.1)
         self.dishonorable_death_signal.emit()
         return True
 
@@ -221,18 +223,12 @@ class CameraBaby(QThread,Scribe):
         self.dataset.close()
 
     def grab_loop(self):
+        TIMEOUT = 10.
         Nimg = int(self.params.N_img)
-        count = 0
         self.camera_grab_start.emit(Nimg)
-        while True:
-            img, img_timestamp = self.camera.grab()
-            self.queue.put((img,img_timestamp,count))
-            count += 1
-            print(f"gotem (img {count}/{Nimg})")
-            self.image_captured.emit(count)
-            if count >= Nimg:
-                self.death = self.honorable_death
-                break
+        self.camera.start_grab(Nimg,output_queue=self.queue,
+                         timeout=TIMEOUT)
+        self.death = self.honorable_death
 
     def update_run_id(self):
         pwd = os.getcwd()

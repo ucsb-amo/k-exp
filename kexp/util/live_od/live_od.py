@@ -27,6 +27,7 @@ class MainWindow(QWidget):
         self.camera_mother.start()
 
         self.img_count = 0
+        self.img_count_run = 0
 
     def create_camera_baby(self,file,name):
         self.the_baby = CameraBaby(file, name, self.queue,
@@ -37,8 +38,6 @@ class MainWindow(QWidget):
         self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number)
         self.the_baby.camera_grab_start.connect(self.data_handler.start)
 
-        self.the_baby.image_captured.connect(self.gotem_msg)
-
         self.data_handler.got_image_from_queue.connect(self.analyzer.got_img)
         self.data_handler.got_image_from_queue.connect(self.count_images)
 
@@ -48,14 +47,10 @@ class MainWindow(QWidget):
         self.the_baby.honorable_death_signal.connect(self.camera_mother.start)
         self.the_baby.dishonorable_death_signal.connect(self.camera_mother.start)
 
-        self.the_baby.honorable_death_signal.connect(self.reset_plotter)
-        self.the_baby.dishonorable_death_signal.connect(self.reset_plotter)
+        self.the_baby.honorable_death_signal.connect(self.reset)
+        self.the_baby.dishonorable_death_signal.connect(self.reset)
 
         self.the_baby.start()
-
-    def reset_plotter(self):
-        self.analyzer.imgs = []
-        self.img_count = 0
 
     def setup_widgets(self):
 
@@ -90,10 +85,17 @@ class MainWindow(QWidget):
 
     def count_images(self):
         self.img_count += 1
+        self.img_count_run += 1
+        self.msg(f'gotem! ({self.img_count_run}/{self.data_handler.N_img})')
         if self.img_count == 3:
             self.plotter.run()
             self.msg('new OD!')
             self.img_count = 0
+        
+    def reset(self):
+        self.img_count = 0
+        self.img_count_run = 0
+        self.analyzer.imgs = []
 
     def update_crop(self):
         self.analyzer.crop_type = self.roi_select.crop_dropdown.currentText()

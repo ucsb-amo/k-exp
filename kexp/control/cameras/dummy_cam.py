@@ -13,7 +13,7 @@ class DummyCamera():
     def is_opened(self):
         return False
     
-    def grab(self) -> np.ndarray:
+    def start_grab(self) -> np.ndarray:
         return None
     
     def open(self):
