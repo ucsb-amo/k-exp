@@ -34,6 +34,8 @@ class MainWindow(QWidget):
                                    self.camera_nanny)
         self.data_handler = DataHandler(self.queue,data_filepath=file)
 
+        self.the_baby.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
+
         self.the_baby.camera_grab_start.connect(self.grab_start_msg)
         self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number)
         self.the_baby.camera_grab_start.connect(self.data_handler.start)
