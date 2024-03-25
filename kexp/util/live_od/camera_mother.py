@@ -133,6 +133,9 @@ class DataHandler(QThread,Scribe):
         self.queue = queue
         self.data_filepath = data_filepath
 
+    def get_save_data_bool(self,save_data_bool):
+        self.save_data = save_data_bool
+
     def get_img_number(self,N_img):
         self.N_img = N_img
 
@@ -141,27 +144,32 @@ class DataHandler(QThread,Scribe):
 
     def write_image_to_dataset(self):
         TIMEOUT = 30
-        self.dataset = self.wait_for_data_available(close=False)
+        if self.save_data:
+            self.dataset = self.wait_for_data_available(close=False)
         try:
             while True:
                 img, img_t, idx = self.queue.get(timeout=TIMEOUT)
                 TIMEOUT = 10
                 self.got_image_from_queue.emit(img)
-                self.dataset['data']['images'][idx] = img
-                self.dataset['data']['image_timestamps'][idx] = img_t
-                print(f"saved {idx+1}/{self.N_img}")
+                if self.save_data:
+                    self.dataset['data']['images'][idx] = img
+                    self.dataset['data']['image_timestamps'][idx] = img_t
+                    print(f"saved {idx+1}/{self.N_img}")
                 if idx == (self.N_img - 1):
-                    print('data closed!')
-                    self.dataset.close()
+                    if self.save_data:
+                        self.dataset.close()
+                        print('data closed!')
                     break
         except Exception as e:
             print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
-            self.dataset.close()
+            if self.save_data:
+                self.dataset.close()
             self.timeout.emit()
 
 class CameraBaby(QThread,Scribe):
     image_captured = pyqtSignal(int)
     camera_grab_start = pyqtSignal(int)
+    save_data_bool_signal = pyqtSignal(int)
     honorable_death_signal = pyqtSignal()
     dishonorable_death_signal = pyqtSignal()
 
@@ -171,8 +179,10 @@ class CameraBaby(QThread,Scribe):
 
         from kexp.config.expt_params import ExptParams
         from kexp.config.camera_params import CameraParams
+        from kexp.util.data.run_info import RunInfo
         self.params = ExptParams()
         self.camera_params = CameraParams()
+        self.run_info = RunInfo()
         self.name = name
 
         self.camera_nanny = camera_nanny
@@ -194,8 +204,8 @@ class CameraBaby(QThread,Scribe):
             print('camera ready acknowledged')
             self.grab_loop()
         except Exception as e:
-            # print(e)
-            raise(e)
+            print(e)
+            # raise(e)
         self.death()
 
     def create_camera(self):
@@ -221,6 +231,8 @@ class CameraBaby(QThread,Scribe):
     def read_params(self):
         unpack_group(self.dataset,'camera_params',self.camera_params)
         unpack_group(self.dataset,'params',self.params)
+        unpack_group(self.dataset,'run_info',self.run_info)
+        self.save_data_bool_signal.emit(self.run_info.save_data)
         self.dataset.close()
 
     def grab_loop(self):

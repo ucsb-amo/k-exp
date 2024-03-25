@@ -34,6 +34,8 @@ class MainWindow(QWidget):
                                    self.camera_nanny)
         self.data_handler = DataHandler(self.queue,data_filepath=file)
 
+        self.the_baby.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
+
         self.the_baby.camera_grab_start.connect(self.grab_start_msg)
         self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number)
         self.the_baby.camera_grab_start.connect(self.data_handler.start)
@@ -45,13 +47,18 @@ class MainWindow(QWidget):
         self.the_baby.honorable_death_signal.connect(lambda: self.msg(f'Run complete. {name} has died honorably.'))
         self.the_baby.dishonorable_death_signal.connect(lambda: self.msg(f'{name} has died dishonorably. Incomplete data deleted.'))
         
-        self.the_baby.honorable_death_signal.connect(self.camera_mother.start)
-        self.the_baby.dishonorable_death_signal.connect(self.camera_mother.start)
+        self.the_baby.honorable_death_signal.connect(self.restart_mother)
+        self.the_baby.dishonorable_death_signal.connect(self.restart_mother)
 
         # self.the_baby.honorable_death_signal.connect(self.reset)
         # self.the_baby.dishonorable_death_signal.connect(self.reset)
 
         self.the_baby.start()
+
+    def restart_mother(self):
+        import time
+        time.sleep(1.)
+        self.camera_mother.start()
 
     def setup_widgets(self):
 

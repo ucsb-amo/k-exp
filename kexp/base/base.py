@@ -10,12 +10,12 @@ from kexp.util.data import DataSaver, RunInfo
 from kexp.util.artiq.async_print import aprint
 
 class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
-    def __init__(self,setup_camera=True,absorption_image=True,camera_select="xy_basler"):
+    def __init__(self,setup_camera=True,absorption_image=True,save_data=True,camera_select="xy_basler"):
         Scanner.__init__(self)
         super().__init__()
 
         self.setup_camera = setup_camera
-        self.run_info = RunInfo(self)
+        self.run_info = RunInfo(self,save_data)
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
 
         self.params = ExptParams()
@@ -104,22 +104,28 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.switch_all_dds(0) # turn all DDS off to start experiment
         if beat_ref_on:
             self.dds.beatlock_ref.on()
-        if init_rf:
-            self.rf.init()
+        # if init_rf:
+        #     self.rf.init()
         self.core.break_realtime() # add slack before scheduling experiment events
 
     def prepare_image_array(self):
-        print(self.camera_params.camera_type)
-        if self.camera_params.camera_type == 'andor':
-            dtype = np.uint16
-        elif self.camera_params.camera_type == 'basler':
-            dtype = np.uint8
+        if self.run_info.save_data:
+            print(self.camera_params.camera_type)
+            if self.camera_params.camera_type == 'andor':
+                dtype = np.uint16
+            elif self.camera_params.camera_type == 'basler':
+                dtype = np.uint8
+            else:
+                dtype = np.uint8
+            self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=dtype)
+            self.image_timestamps = np.zeros((self.params.N_img,))
         else:
-            dtype = np.uint8
-        self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=dtype)
-        self.image_timestamps = np.zeros((self.params.N_img,))
+            self.images = np.array([0])
+            self.image_timestamps = np.array([0])
 
     def end(self,expt_filepath):
-        if self.setup_camera:
+        if self.run_info.save_data:
             self.cleanup_scanned()
             self.write_data(expt_filepath,timeout=20.)
+        else:
+            self.remove_incomplete_data()
