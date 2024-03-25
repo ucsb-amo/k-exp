@@ -122,4 +122,4 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     def end(self,expt_filepath):
         if self.setup_camera:
             self.cleanup_scanned()
-            self.write_data(expt_filepath)
+            self.write_data(expt_filepath,timeout=20.)
