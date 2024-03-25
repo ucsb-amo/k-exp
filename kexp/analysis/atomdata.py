@@ -1,11 +1,11 @@
 from kexp.analysis.image_processing.compute_ODs import *
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_dist
 from kexp.util.data.data_vault import DataSaver
-from kexp.util.data.run_info import RunInfo
 import numpy as np
 from kamo.atom_properties.k39 import Potassium39
 
 class atomdata():
+    
     '''
     Use to store and do basic analysis on data for every experiment.
 

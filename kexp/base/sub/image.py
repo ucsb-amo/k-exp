@@ -176,7 +176,7 @@ class Image():
         Sets the detuning of the beat-locked imaging laser (in Hz).
 
         Imaging detuning is controlled by two things -- the Vescent offset lock
-        and a 100 MHz double pass (+1 order).
+        and a double pass (+1 order).
 
         The offset lock has a multiplier, N, that determines the offset lock
         frequency relative to the lock point of the D2 laser locked at the

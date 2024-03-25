@@ -57,6 +57,7 @@ class dds_frame():
         self.dds_array = [[DDS(uru,ch,dac_device=self._dac_frame.dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
+        self.rf_sideband = self.dds_assign(0,0,default_freq=50.e6,default_amp=0.2)
         self.push = self.dds_assign(2,0, ao_order = 1, transition = 'D2',
                                     default_detuning = self.p.detune_push,
                                     default_amp = self.p.amp_push)
@@ -156,6 +157,26 @@ class dds_frame():
             freq, amp, v_pd = 0., 0., 0.
             this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame.dac_device)
             self.dds_array[uru][ch] = this_dds
+
+    @kernel
+    def power_down_cooling(self):
+        self.d1_3d_r.dds_device.power_down()
+        self.d1_3d_c.dds_device.power_down()
+        self.d2_3d_c.dds_device.power_down()
+        self.d2_3d_r.dds_device.power_down()
+        self.d2_2d_c.dds_device.power_down()
+        self.d2_2d_r.dds_device.power_down()
+        self.push.dds_device.power_down()
+
+    @kernel
+    def init_cooling(self):
+        self.d1_3d_r.dds_device.init()
+        self.d1_3d_c.dds_device.init()
+        self.d2_3d_c.dds_device.init()
+        self.d2_3d_r.dds_device.init()
+        self.d2_2d_c.dds_device.init()
+        self.d2_2d_r.dds_device.init()
+        self.push.dds_device.init()
 
     def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):
         """Define an amplitude ramp profile and append to the specified DDSManager object.

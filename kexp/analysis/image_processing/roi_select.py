@@ -24,8 +24,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [500, 1450]
         roiy = [200, 950]
     elif crop_type == 'lightsheet':
-        roix = [935,1025]
-        roiy = [400,800]
+        roix = [1000,1060]
+        roiy = [470,880]
     elif crop_type == 'lightsheet_long':
         roix = [900,1000]
         roiy = [300,1050]
@@ -36,8 +36,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [220,250]
         roiy = [240,270]
     else:
-        roix = [0,np.shape(OD)[len(np.shape(OD))-1]-1]
-        roiy = [0,np.shape(OD)[len(np.shape(OD))-2]-1]
+        roix = [0,np.shape(OD)[len(np.shape(OD))-1]]
+        roiy = [0,np.shape(OD)[len(np.shape(OD))-2]]
 
     if Nvars == 1:
         cropOD = OD[:, roiy[0]:roiy[1], roix[0]:roix[1] ]

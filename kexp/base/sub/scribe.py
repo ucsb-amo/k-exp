@@ -1,6 +1,7 @@
 from kexp.util.data import DataSaver
 import h5py, time
 import numpy as np
+import os
 
 CHECK_PERIOD = 0.05
 WAIT_PERIOD = 0.1
@@ -12,10 +13,13 @@ class Scribe():
         self.ds = DataSaver()
         self.data_filepath = ""
 
-    def wait_for_data_available(self,close=True,openmode='r+',check_period=CHECK_PERIOD):
+    def wait_for_data_available(self,close=True,openmode='r+',
+                                check_period=CHECK_PERIOD,
+                                timeout=-1.):
         """Blocks until the file at self.datapath is available.
-        """       
+        """
         t0 = time.time()
+        count = 0
         while True:
             try:
                 f = h5py.File(self.data_filepath,openmode)
@@ -23,48 +27,74 @@ class Scribe():
                     f.close()
                 return f
             except Exception as e:
-                if "Unable to open file" in str(e):
+                if "Unable to open file" in str(e) or "Invalid file name" in str(e):
                     # file is busy -- wait for available
+                    count += 1
                     time.sleep(check_period)
+                    if count == N_NOTIFY:
+                        count = 0
+                        print("Can't open data. Is another process using it?")
                 else:
                     raise e
                 
-    def wait_for_camera_ready(self):
+    def wait_for_camera_ready(self,timeout=-1.):
         count = 1
+        t0 = time.time()
         while True:
             if np.mod(count,N_NOTIFY*3) == 0:
                 print('Is CameraMother running?')
                 count = 1
             elif np.mod(count,N_NOTIFY) == 0:
                 print('Waiting for camera ready.') 
+            
+            if timeout > 0.:
+                if time.time() - t0 > timeout:
+                    self.dataset.close()
+                    self.remove_incomplete_data()
+                    raise ValueError("Waiting for camera ready timed out.")
 
-            data_obj = self.wait_for_data_available(close=False)
-            if data_obj.attrs['camera_ready']:
-                data_obj.attrs['camera_ready_ack'] = 1
+            self.dataset = self.wait_for_data_available(close=False)
+            if self.dataset.attrs['camera_ready']:
+                self.dataset.attrs['camera_ready_ack'] = 1
                 break
             else:
-                data_obj.close()
+                self.dataset.close()
                 count += 1
             time.sleep(CHECK_PERIOD)
 
     def mark_camera_ready(self):
         while True:
-            data_obj = self.wait_for_data_available(close=False)
-            data_obj.attrs['camera_ready'] = 1
-            data_obj.close()
+            self.dataset = self.wait_for_data_available(close=False)
+            self.dataset.attrs['camera_ready'] = 1
+            self.dataset.close()
             break
 
     def check_camera_ready_ack(self):
         while True:
-            data_obj = self.wait_for_data_available(close=False)
-            if data_obj.attrs['camera_ready_ack']:
+            self.dataset = self.wait_for_data_available(close=False)
+            if self.dataset.attrs['camera_ready_ack']:
+                self.dataset.close()
                 break
             else:
-                data_obj.close()
+                self.dataset.close()
                 time.sleep(WAIT_PERIOD)
-        return data_obj
+        return self.dataset
         
     def write_data(self, expt_filepath):
-        self.wait_for_data_available()
-        self.ds.save_data(self, expt_filepath)
+        self.dataset = self.wait_for_data_available(close=False)
+        self.ds.save_data(self, expt_filepath, self.dataset)
         print("Done!")
+
+    def remove_incomplete_data(self,delete_data_bool=True):
+        msg = "Something went wrong."
+        if delete_data_bool:
+            msg += " Destroying incomplete data."
+            while True:
+                try:
+                    self.dataset.close()
+                    self.wait_for_data_available(check_period=0.25)
+                    os.remove(self.data_filepath)
+                    break
+                except Exception as e:
+                    print(e)
+        print(msg)

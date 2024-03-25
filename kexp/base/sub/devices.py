@@ -8,6 +8,7 @@ from artiq.coredevice.dma import CoreDMA
 from kexp.config.dds_id import dds_frame, N_uru, DDSManager
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
+from kexp.control.artiq.mirny import Mirny
 from kexp.config.expt_params import ExptParams
 
 from jax import AD9910Manager
@@ -16,6 +17,7 @@ from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.control.misc.awg_tweezer import tweezer
+from kexp.control.misc.mixer_rf import mixer_rf
 
 import numpy as np
 
@@ -50,6 +52,10 @@ class Devices():
         self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
+
+        self.mirny = Mirny(0,0,self.params.frequency_mirny_carrier,power_level=3)
+        self.mirny.get_devices(self)
+        self.rf = mixer_rf(self.mirny,self.dds.rf_sideband,self.ttl.antenna_rf_sw,self.params)
 
         # magnet coils
         self.inner_coil = hbridge_magnet(max_current=170.,

@@ -24,7 +24,7 @@ class ExptParams():
 
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 27.e6
-        self.frequency_detuned_imaging_F1 = 4.58e08
+        self.frequency_detuned_imaging_F1 = 4.58e08 - 2.86e6
         self.amp_imaging_fluor = 0.260
         self.amp_imaging_abs = 0.24
         
@@ -46,15 +46,16 @@ class ExptParams():
         self.t_magnet_off_pretrigger = 0.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
-        self.t_optical_pumping = 50.e-6
+        self.t_optical_pumping = 30.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_load = 10.e-3
-        self.t_lightsheet_hold = 20.e-3
+        self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
         self.t_tweezer_hold = 1.e-3
         self.t_tweezer_1064_ramp = 10.e-3
         self.t_mot_reload = 2.
+        self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
 
         # DAC controlled AO amplitudes
@@ -132,7 +133,7 @@ class ExptParams():
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
         self.amp_optical_pumping_op = 0.25
-        self.v_zshim_current_op = 9.99
+        self.v_zshim_current_op = 3.0
         self.detune_optical_pumping_r_op = 0.0
         self.amp_optical_pumping_r_op = 0.3
 
@@ -159,7 +160,34 @@ class ExptParams():
         self.v_pd_tweezer_1064_ramp_end = 1.7
         self.n_tweezer_1064_ramp_steps = 100
 
+        # RF
+        self.t_rf_state_xfer_sweep = 60.e-3
+        self.frequency_mirny_carrier = 495.e6
+        self.frequency_rf_state_xfer_sweep_start = 450.e6
+        self.frequency_rf_state_xfer_sweep_end = 470.e6
+
+        self.n_rf_state_xfer_sweep_steps = 1000
+
+        self.v_vco_rf_state_xfer_sweep_center = 7.15
+        self.v_vco_rf_state_xfer_sweep_fullwidth = 0.1
+        self.t_rf_state_xfer_sweep = 100.e-3
+
         self.compute_derived()
+
+    def compute_rf_sweep_params(self):
+        self.dt_rf_state_xfer_sweep = self.t_rf_state_xfer_sweep / self.n_rf_state_xfer_sweep_steps
+
+        self.frequency_rf_state_xfer_sweep_list = np.linspace(
+            self.frequency_rf_state_xfer_sweep_start,
+            self.frequency_rf_state_xfer_sweep_end,
+            self.n_rf_state_xfer_sweep_steps)
+        
+        self.__v_vco_rf_state_xfer_sweep_start = self.v_vco_rf_state_xfer_sweep_center - self.v_vco_rf_state_xfer_sweep_fullwidth/2
+        self.__v_vco_rf_state_xfer_sweep_end = self.v_vco_rf_state_xfer_sweep_center + self.v_vco_rf_state_xfer_sweep_fullwidth/2
+        
+        self.v_vco_rf_state_xfer_sweep_list = np.linspace(self.__v_vco_rf_state_xfer_sweep_start,
+                                                            self.__v_vco_rf_state_xfer_sweep_end,
+                                                            self.n_rf_state_xfer_sweep_steps)
         
     def compute_lightsheet_ramp_params(self):
         self.v_pd_lightsheet_ramp_list = np.linspace(

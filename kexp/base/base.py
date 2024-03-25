@@ -9,9 +9,6 @@ from kexp.util.data import DataSaver, RunInfo
 
 from kexp.util.artiq.async_print import aprint
 
-def nothing():
-    pass
-
 class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     def __init__(self,setup_camera=True,absorption_image=True,camera_select="xy_basler"):
         Scanner.__init__(self)
@@ -23,7 +20,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.params = ExptParams()
         self.p = self.params
-        self.compute_new_derived = nothing
+        self.compute_new_derived = self.nothing
 
         self.prepare_devices(expt_params=self.params)
 
@@ -38,8 +35,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True,
-                     compute_new_derived=nothing):
+    def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True):
         """
         To be called at the end of build. 
         
@@ -57,11 +53,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         parameters that the user created in the experiment file at each step in
         a scan. This must be an RPC -- no kernel decorator.
         """
-        if compute_new_derived == nothing:
-            compute_new_derived = self.compute_new_derived
-        else:
-            self.compute_new_derived = compute_new_derived
-
         if not self.xvarnames:
             self.xvar("dummy",[0])
         if self.xvarnames and not self.scan_xvars:
@@ -69,7 +60,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
                 self.xvar(key,vars(self.params)[key])
         
         self.repeat_xvars(N_repeats=N_repeats)
-        
         
         if shuffle:
             self.shuffle_xvars()
@@ -88,14 +78,13 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.generate_assignment_kernels()
 
         if self.setup_camera:
-            self.wait_for_camera_ready()
+            self.wait_for_camera_ready(timeout=10.)
             print("Camera is ready.")
 
-    def compute_new_derived(self):
-        pass
-
     @kernel
-    def init_kernel(self, run_id = True, init_dds = True, init_dac = True, dds_set = True, dds_off = True, beat_ref_on=True):
+    def init_kernel(self, run_id = True, init_dds = True, init_dac = True,
+                     dds_set = True, dds_off = True, beat_ref_on=True,
+                     init_rf = True):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         self.core.reset() # clears RTIO
@@ -115,6 +104,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.switch_all_dds(0) # turn all DDS off to start experiment
         if beat_ref_on:
             self.dds.beatlock_ref.on()
+        if init_rf:
+            self.rf.init()
         self.core.break_realtime() # add slack before scheduling experiment events
 
     def prepare_image_array(self):
