@@ -34,7 +34,7 @@ class tof(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_ramp',np.linspace(3.,7.,3)*1.e-3)
         
         # self.xvar('imaging_state',[1,2])
-        self.xvar('t_tof',np.linspace(20,500,12)*1.e-6)
+        self.xvar('t_tof',np.linspace(20.,20.,15)*1.e-6)
         # self.xvar('frequency_detuned_imaging_F1_offset',np.linspace(-10,15.,15)*1.e6)
         # self.xvar('frequency_detuned_imaging_offset',np.linspace(-3,3.,15)*1.e6)
         # self.xvar('t_tweezer_hold',np.linspace(.100,20.,2)*1.e-3)
@@ -45,6 +45,8 @@ class tof(EnvExperiment, Base):
         # self.xvar('t_mot_load',np.linspace(50.,100.,2)*1.e-3)
 
         # self.xvar('imaging_state',[1.,2.])
+
+        self.p.t_lightsheet_hold = 20.e-3
 
         self.p.t_mot_load = 1.
         # self.p.t_tof = 20.e-6
