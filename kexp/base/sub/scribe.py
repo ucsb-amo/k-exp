@@ -56,6 +56,8 @@ class Scribe():
             self.dataset = self.wait_for_data_available(close=False)
             if self.dataset.attrs['camera_ready']:
                 self.dataset.attrs['camera_ready_ack'] = 1
+                print('Acknowledged camera ready signal.')
+                self.dataset.close()
                 break
             else:
                 self.dataset.close()
@@ -73,6 +75,7 @@ class Scribe():
         while True:
             self.dataset = self.wait_for_data_available(close=False)
             if self.dataset.attrs['camera_ready_ack']:
+                print('Received ready acknowledgement.')
                 self.dataset.close()
                 break
             else:
