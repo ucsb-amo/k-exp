@@ -206,12 +206,14 @@ class CameraBaby(QThread,Scribe):
         print(f"{self.name}: All images captured.")
         print(f"{self.name} has died honorably.")
         self.honorable_death_signal.emit()
+        time.sleep(0.1)
         return True
     
     def dishonorable_death(self,delete_data=True):
         self.update_run_id()
         self.remove_incomplete_data(delete_data)
         print(f"{self.name} has died dishonorably.")
+        time.sleep(0.1)
         self.dishonorable_death_signal.emit()
         return True
 
@@ -224,8 +226,7 @@ class CameraBaby(QThread,Scribe):
         TIMEOUT = 10.
         Nimg = int(self.params.N_img)
         self.camera_grab_start.emit(Nimg)
-        self.camera.grab(Nimg,output_queue=self.queue,
-                         on_image_captured=self.image_captured,
+        self.camera.start_grab(Nimg,output_queue=self.queue,
                          timeout=TIMEOUT)
         self.death = self.honorable_death
 
