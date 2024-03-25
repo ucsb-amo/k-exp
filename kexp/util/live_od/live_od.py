@@ -48,7 +48,14 @@ class MainWindow(QWidget):
         self.the_baby.honorable_death_signal.connect(self.camera_mother.start)
         self.the_baby.dishonorable_death_signal.connect(self.camera_mother.start)
 
+        self.the_baby.honorable_death_signal.connect(self.reset_plotter)
+        self.the_baby.dishonorable_death_signal.connect(self.reset_plotter)
+
         self.the_baby.start()
+
+    def reset_plotter(self):
+        self.analyzer.imgs = []
+        self.img_count = 0
 
     def setup_widgets(self):
 
@@ -84,8 +91,8 @@ class MainWindow(QWidget):
     def count_images(self):
         self.img_count += 1
         if self.img_count == 3:
-            self.msg('new OD!')
             self.plotter.run()
+            self.msg('new OD!')
             self.img_count = 0
 
     def update_crop(self):
