@@ -38,8 +38,8 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.setup_shutter(mode="open")
         self.open()
 
-    def start_grab(self, output_queue:Queue, on_image_captured:pyqtSignal,
-                    N_img, timeout=10., missing_frame="skip", return_info=False, buff_size=None):
+    def start_grab(self, output_queue:Queue, N_img,
+                    timeout=10., missing_frame="skip", return_info=False, buff_size=None):
         """
         Snap `nframes` images (with preset image read mode parameters)
         Modified from pylablib.devices.interface.camera.
@@ -74,8 +74,6 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
                 for frame in new_frames:
                         img_timestamp = 0.
                         output_queue.put((frame,img_timestamp,nacq))
-                        if isinstance(on_image_captured,pyqtSignal):
-                            on_image_captured.emit(nacq)
                 frames+=new_frames
                 nacq+=rng[1]-rng[0]
             frames,info=trim_frames(frames,N_img,(info if return_info else None),chunks=self.get_frame_format()=="chunks")
