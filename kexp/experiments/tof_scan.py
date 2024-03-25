@@ -8,9 +8,9 @@ class tof(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')
 
-        self.p.imaging_state = 1.
+        self.p.imaging_state = 2.
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 40.e-6
 
         # self.xvar('detune_push',np.linspace(-4.,4.,5))
         # self.xvar('amp_push',np.linspace(.05,.188,5))
@@ -34,8 +34,9 @@ class tof(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_ramp',np.linspace(3.,7.,3)*1.e-3)
         
         # self.xvar('imaging_state',[1,2])
-        # self.xvar('t_tof',np.linspace(20,500,6)*1.e-6)
-        self.xvar('frequency_detuned_imaging_F1',4.58e08+np.linspace(-25,25.,20)*1.e6)
+        self.xvar('t_tof',np.linspace(20,500,12)*1.e-6)
+        # self.xvar('frequency_detuned_imaging_F1_offset',np.linspace(-10,15.,15)*1.e6)
+        # self.xvar('frequency_detuned_imaging_offset',np.linspace(-3,3.,15)*1.e6)
         # self.xvar('t_tweezer_hold',np.linspace(.100,20.,2)*1.e-3)
         # self.xvar('t_lightsheet_hold',np.linspace(5000,40000,5)*1.e-6)
 
@@ -43,9 +44,14 @@ class tof(EnvExperiment, Base):
 
         # self.xvar('t_mot_load',np.linspace(50.,100.,2)*1.e-3)
 
+        # self.xvar('imaging_state',[1.,2.])
+
         self.p.t_mot_load = 1.
         # self.p.t_tof = 20.e-6
         self.p.N_repeats = 1
+
+        self.p.frequency_detuned_imaging_F1_offset = 0.
+        self.p.frequency_detuned_imaging_offset = 0.
         
         # self.camera_params.em_gain = 100
         # self.camera_params.exposure_time = 5.e-6
@@ -54,15 +60,17 @@ class tof(EnvExperiment, Base):
 
         # self.p.amp_imaging_abs = 0.5
 
+        self.p.t_bias_off_wait = 20.e-3
+
         self.finish_build()
 
     @kernel
     def scan_kernel(self):
 
         if self.p.imaging_state == 1:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
+            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1 + self.p.frequency_detuned_imaging_F1_offset)
         else:
-            self.set_imaging_detuning()
+            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging+self.p.frequency_detuned_imaging_offset)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -91,13 +99,13 @@ class tof(EnvExperiment, Base):
         # self.tweezer.off()
 
         # self.set_zshim_magnet_current()
-        # delay(15*ms)
-        
+        # delay(self.p.t_bias_off_wait)
+
         self.lightsheet.off()
 
         delay(self.p.t_tof)
         # self.flash_repump()
-        self.flash_cooler()
+        # self.flash_cooler()
         self.abs_image()
 
         # self.tweezer.off()

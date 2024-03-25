@@ -24,7 +24,7 @@ class ExptParams():
 
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 27.e6
-        self.frequency_detuned_imaging_F1 = 4.58e08
+        self.frequency_detuned_imaging_F1 = 4.58e08 - 2.86e6
         self.amp_imaging_fluor = 0.260
         self.amp_imaging_abs = 0.24
         
@@ -55,6 +55,7 @@ class ExptParams():
         self.t_tweezer_hold = 1.e-3
         self.t_tweezer_1064_ramp = 10.e-3
         self.t_mot_reload = 2.
+        self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
 
         # DAC controlled AO amplitudes
