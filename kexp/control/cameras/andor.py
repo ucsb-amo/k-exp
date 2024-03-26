@@ -93,3 +93,9 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
                 else:
                     self._start_temperature=0
             self.set_temperature(self._start_temperature,enable_cooler=True)
+
+    def stop_grab(self):
+        try:
+            self.stop_acquisition()
+        except:
+            pass

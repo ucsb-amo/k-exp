@@ -74,3 +74,9 @@ class BaslerUSB(pylon.InstantCamera):
             if count >= Nimg:
                 break
         self.StopGrabbing()
+
+    def stop_grab(self):
+        try:
+            self.StopGrabbing()
+        except:
+            pass
