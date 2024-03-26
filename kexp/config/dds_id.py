@@ -166,6 +166,8 @@ class dds_frame():
         self.d2_3d_r.dds_device.power_down()
         self.d2_2d_c.dds_device.power_down()
         self.d2_2d_r.dds_device.power_down()
+        self.op_r.dds_device.power_down()
+        self.optical_pumping.dds_device.power_down()
         self.push.dds_device.power_down()
 
     @kernel
@@ -176,6 +178,8 @@ class dds_frame():
         self.d2_3d_r.dds_device.init()
         self.d2_2d_c.dds_device.init()
         self.d2_2d_r.dds_device.init()
+        self.op_r.dds_device.init()
+        self.optical_pumping.dds_device.init()
         self.push.dds_device.init()
 
     def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):
