@@ -2,7 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 from kexp.analysis import atomdata
 
-def plot_mixOD(ad:atomdata,xvarformat="1.2f",lines=False,max_od=0.):
+def plot_mixOD(ad:atomdata,
+               xvarformat="1.2f",
+               xvarmult = 1.,
+               lines=False,
+               max_od=0.,
+               figsize=[]):
     # Extract necessary information
     od = ad.od
     xvarnames = ad.xvarnames
@@ -17,7 +22,10 @@ def plot_mixOD(ad:atomdata,xvarformat="1.2f",lines=False,max_od=0.):
     max_height = py
 
     # Create a figure and axis for plotting
-    fig, ax = plt.subplots(figsize=(10, 6))
+    if figsize:
+        fig, ax = plt.subplots(figsize=figsize)
+    else:
+        fig, ax = plt.subplots()
 
     # Initialize x position for each image
     x_pos = 0
@@ -44,7 +52,7 @@ def plot_mixOD(ad:atomdata,xvarformat="1.2f",lines=False,max_od=0.):
     # Set ticks at the center of each sub-image and rotate them vertically
     tick_positions = np.arange(px/2, total_width, px)
     ax.set_xticks(tick_positions)
-    xvarticks = [f"{val:{xvarformat}}" for val in xvars[0]]
+    xvarticks = [f"{val*xvarmult:{xvarformat}}" for val in xvars[0]]
     ax.set_xticklabels(xvarticks, rotation='vertical', ha='center')
     plt.minorticks_off()
 
@@ -59,7 +67,9 @@ def plot_mixOD(ad:atomdata,xvarformat="1.2f",lines=False,max_od=0.):
     return fig, ax
 
 def plot_sum_od_fits(ad:atomdata,axis=0,
-                    xvarformat='3.3g'):
+                    xvarformat='3.3g',
+                    xvarmult=1.,
+                    figsize=[]):
     if axis == 0:
         fits = ad.cloudfit_x
         label = "x"
@@ -71,7 +81,12 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     
     ymax = np.max([np.max(fit.ydata) for fit in fits])
 
-    fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,layout='constrained')
+    if figsize:
+        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
+                               figsize=figsize,layout='constrained')
+    else:
+        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
+                           layout='constrained')
 
     Nr = ad.params.N_repeats[0]
     Ns = ad.params.N_shots
@@ -88,7 +103,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
             ax[i].plot(xdata*1.e6,ydata)
             ax[i].plot(xdata*1.e6,yfit)
             ax[i].set_ylim([0,1.1*ymax])
-            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}")
+            ax[i].set_xlabel(f"{xvar[i]*xvarmult:{xvarformat}}")
             ax[i].set_xticks([])
 
             if i != 0:
@@ -117,7 +132,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
                     ax[j,i].set_yticks([])
 
                 if j == Nr-1:
-                    ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}")
+                    ax[j,i].set_xlabel(f"{xvar[idx]*xvarmult:{xvarformat}}")
 
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
     fig.supxlabel(ad.xvarnames[0])
@@ -128,7 +143,9 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     return fig, ax
 
 def plot_fit_residuals(ad:atomdata,axis=0,
-                       xvarformat='1.3g'):
+                       xvarformat='1.3g',
+                        xvarmult=1.,
+                        figsize=[]):
     if axis == 0:
         fits = ad.cloudfit_x
         label = "x"
@@ -143,7 +160,12 @@ def plot_fit_residuals(ad:atomdata,axis=0,
     xdata = fits[0].xdata
     sum_od_residuals = np.asarray(fits_ydata) - np.asarray(fits_yfitdata)
     print(sum_od_residuals.shape)
-    fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots)
+
+    if figsize:
+        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
+                               figsize=figsize)
+    else:
+        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots)
 
     bools = ~np.isinf(sum_od_residuals) & ~np.isnan(sum_od_residuals)
     ylimmin = np.min(sum_od_residuals[bools])
@@ -157,7 +179,7 @@ def plot_fit_residuals(ad:atomdata,axis=0,
     if ad.params.N_repeats == 1:
         for i in range(Ns):
             ax[i].plot(xdata,sum_od_residuals[i])
-            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}")
+            ax[i].set_xlabel(f"{xvar[i]*xvarmult:{xvarformat}}")
             ax[i].set_ylim(ylimmin,ylimmax)
             ax[i].set_xticks([])
             ax[i].set_yticks([])
@@ -166,7 +188,7 @@ def plot_fit_residuals(ad:atomdata,axis=0,
             for i in range(Ns):
                 idx = j + i*Nr
                 ax[j,i].plot(xdata,sum_od_residuals[idx])
-                ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}")
+                ax[j,i].set_xlabel(f"{xvar[idx]*xvarmult:{xvarformat}}")
                 ax[j,i].set_ylim(ylimmin,ylimmax)
                 ax[j,i].set_xticks([])
                 ax[j,i].set_yticks([])
