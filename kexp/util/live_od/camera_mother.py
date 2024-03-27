@@ -198,14 +198,16 @@ class CameraBaby(QThread,Scribe):
             self.read_params() # closes
             self.create_camera() # checks for camera
             print('camera created')
-            self.mark_camera_ready() # opens and closes data
+            if self.camera.is_opened():
+                self.mark_camera_ready() # opens and closes data
+            else:
+                raise ValueError("Camera not ready")
             print('camera marked as ready')
             self.check_camera_ready_ack() # opens data and closes
             print('camera ready acknowledged')
             self.grab_loop()
         except Exception as e:
             print(e)
-            # raise(e)
         self.death()
 
     def create_camera(self):
