@@ -15,23 +15,23 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [750, 1400]
         roiy = [400, 700]
     elif crop_type == 'gm':
-        roix = [550,1400]
+        roix = [600,1460]
         roiy = [150,1000]
     elif crop_type == 'gm2':
         roix = [500,1300]
-        roiy = [500,1200] 
+        roiy = [500,1200]
     elif crop_type == 'fluor_gm':
         roix = [500, 1450]
         roiy = [200, 950]
     elif crop_type == 'lightsheet':
         roix = [1000,1080]
         roiy = [470,880]
-    elif crop_type == 'lightsheet_long':
-        roix = [900,1000]
-        roiy = [300,1050]
+    elif crop_type == 'lightsheet_zaxis':
+        roix = [750,970]
+        roiy = [500,780]
     elif crop_type == 'lightsheet_short':
-        roix = [900,1010]
-        roiy = [750,1050]
+        roix = [1020,1080]
+        roiy = [600,740]
     elif crop_type == 'tweezer':
         roix = [220,250]
         roiy = [240,270]
