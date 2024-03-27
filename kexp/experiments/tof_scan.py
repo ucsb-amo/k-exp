@@ -10,7 +10,7 @@ class tof(EnvExperiment, Base):
 
         self.p.imaging_state = 2.
 
-        self.p.t_tof = 40.e-6
+        self.p.t_tof = 100.e-6
 
         # self.xvar('detune_push',np.linspace(-4.,4.,5))
         # self.xvar('amp_push',np.linspace(.05,.188,5))
@@ -24,8 +24,8 @@ class tof(EnvExperiment, Base):
 
         # self.xvar('v_zshim_current_gm',np.linspace(.7,1.,10))
         # self.xvar('v_xshim_current_gm',np.linspace(.0,2.,5))
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(.2,.7,5))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.4,5))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.6,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.6,8))
         # self.xvar('pfrac_d1_c_gm',np.linspace(.4,.9,5))
         # self.xvar('pfrac_d1_r_gm',np.linspace(.3,.5,5))
         # self.xvar('t_gm',np.linspace(1.,8.,5)*1.e-3)
@@ -34,11 +34,11 @@ class tof(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_ramp',np.linspace(3.,7.,3)*1.e-3)
         
         # self.xvar('imaging_state',[1,2])
-        # self.xvar('t_tof',np.linspace(20.,20.,15)*1.e-6)
+        # self.xvar('t_tof',np.linspace(3000.,3000.,3)*1.e-6)
         # self.xvar('frequency_detuned_imaging_F1_offset',np.linspace(-10,15.,15)*1.e6)
         # self.xvar('frequency_detuned_imaging_offset',np.linspace(-3,3.,15)*1.e6)
         # self.xvar('t_tweezer_hold',np.linspace(.100,20.,2)*1.e-3)
-        self.xvar('t_lightsheet_hold',np.linspace(5000,40000,5)*1.e-6)
+        # self.xvar('t_lightsheet_hold',np.linspace(5000,40000,5)*1.e-6)
 
         # self.xvar('t_cooler_flash_imaging',np.linspace(0,10,8)*1.e-6)
 
@@ -46,15 +46,30 @@ class tof(EnvExperiment, Base):
 
         # self.xvar('imaging_state',[1.,2.])
 
+        # self.xvar('detune_d1_c_d1cmot',np.linspace(8.,9.5,6))
+        # self.xvar('detune_d2_r_d1cmot',np.linspace(-3.5,-2.,6))
+
+        # self.xvar('detune_d1_c_sweep_d1cmot_end',np.linspace(5.,8.,8))
+        # self.xvar('detune_d2_r_sweep_d1cmot_end',np.linspace(1.,-2.,8))
+        # self.xvar('t_d1cmot',np.linspace(2.,8.,10)*1.e-3)
+        # self.p.detune_d1_c_sweep_d1cmot_end = 6.3
+        # self.p.detune_d2_r_sweep_d1cmot_end = -2.
+
+        # self.xvar('do_optical_pumping',[0.,1.])
+        # self.xvar('t_tof',np.linspace(11.,14.,6)*1.e-3)
+        self.xvar('t_tof',np.linspace(50.,500.,6)*1.e-6)
+        # self.xvar('t_optical_pumping',np.linspace(1.,15,8)*1.e-6)
+        # self.xvar('amp_optical_pumping_op',np.linspace(0.075,0.15,3))
+        # self.xvar('amp_optical_pumping_r_op',np.linspace(0.2,0.3,3))
+
+        # self.xvar('reload_2d',[0,1]*10)
+
         self.p.t_lightsheet_hold = 20.e-3
 
         self.p.t_mot_load = 1.
-        # self.p.t_tof = 20.e-6
-        self.p.N_repeats = 1
+        self.p.t_tof = 12.e-3
+        # self.p.N_repeats = [1,2]
 
-        self.p.frequency_detuned_imaging_F1_offset = 0.
-        self.p.frequency_detuned_imaging_offset = 0.
-        
         # self.camera_params.em_gain = 100
         # self.camera_params.exposure_time = 5.e-6
         # self.p.t_imaging_pulse = 5.e-6
@@ -62,31 +77,41 @@ class tof(EnvExperiment, Base):
 
         # self.p.amp_imaging_abs = 0.5
 
-        self.p.t_bias_off_wait = 20.e-3
+        # self.p.t_bias_off_wait = 20.e-3
+
+        self.p.t_optical_pumping = 100.e-6
+
+        self.p.do_optical_pumping = 1.
 
         self.finish_build()
 
     @kernel
     def scan_kernel(self):
 
-        if self.p.imaging_state == 1:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1 + self.p.frequency_detuned_imaging_F1_offset)
-        else:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging+self.p.frequency_detuned_imaging_offset)
+        self.dds.init_cooling()
 
+        if self.p.imaging_state == 1:
+            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
+        else:
+            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
+
+        self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot * s)
+        self.cmot_d1(self.p.t_d1cmot)
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm, v_yshim_current=self.p.v_yshim_current_gm, v_xshim_current=self.p.v_xshim_current_gm)
+
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 
+        self.dds.power_down_cooling()
+
         # self.tweezer.on()
         
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        # self.set_zshim_magnet_current(9.99)
+        # self.set_zshim_magnet_current(3.)
         delay(self.p.t_lightsheet_hold)
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
@@ -105,9 +130,15 @@ class tof(EnvExperiment, Base):
 
         self.lightsheet.off()
 
+        # self.set_zshim_magnet_current(self.p.v_zshim_current_gm)
+
         delay(self.p.t_tof)
-        self.flash_repump()
+        # if self.p.do_optical_pumping:
+        #     self.optical_pumping(t=self.p.t_optical_pumping)
+        # else:
+        #     self.flash_repump(t=self.p.t_optical_pumping)
         # self.flash_cooler()
+        self.flash_repump()
         self.abs_image()
 
         # self.tweezer.off()

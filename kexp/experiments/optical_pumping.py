@@ -8,12 +8,16 @@ class tof(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')
 
-        self.xvar('imaging_state',[1,2])
+        # self.xvar('imaging_state',[1,2])
 
         # self.xvar('amp_optical_pumping_op',np.linspace(0.0,0.3,4))
-        # self.xvar('amp_optical_pumping_r_op',np.linspace(0.0,0.3,4))
+        # self.xvar('amp_optical_pumping_r_op',np.linspace(0.15,0.3,4))
         
-        # self.xvar('v_zshim_current_op',np.linspace(1.0,3.,4))
+        # self.xvar('v_zshim_current_op',np.linspace(1.0,9.99,10))
+
+        self.xvar('t_lightsheet_hold',np.linspace(100,40000,10)*1.e-6)
+
+        # self.xvar('t_optical_pumping',np.linspace(.1,10.,10)*1.e-6)
 
         # t_max_us = 5.
         # self.xvar('t_optical_pumping',np.linspace(.1,t_max_us,10)*1.e-6)
@@ -23,12 +27,16 @@ class tof(EnvExperiment, Base):
         # self.xvar('t_optical_pumping_bias_rampup',np.linspace(0.,t_max_ms,4)*1.e-3)
         # self.p.t_optical_pumping_bias_rampup_total = t_max_ms * 1.e-3
 
-        self.xvar('t_optical_pumping_bias_rampup',np.linspace(0.,1000.,10)*1.e-6)
+        # self.xvar('t_optical_pumping_bias_rampup',np.linspace(0.,1000.,10)*1.e-6)
 
         # self.xvar('do_optical_pumping',[0,1])
 
+        # self.xvar('t_tof',np.linspace(20.,5000.,10)*1.e-6)
+
         # self.p.amp_optical_pumping_op = 0.0
         # self.p.amp_optical_pumping_r_op = 0.0
+
+        self.p.t_tof = 1.e-6
 
         self.p.t_optical_pumping = 4.e-6
         # self.p.t_optical_pumping_bias_rampup
@@ -37,7 +45,7 @@ class tof(EnvExperiment, Base):
         self.p.v_zshim_current_op = 3.
         self.p.t_mot_load = 1.
 
-        # self.p.imaging_state = 1.
+        self.p.imaging_state = 1.
 
         # self.p.N_repeats = [1,1]
 
@@ -45,6 +53,7 @@ class tof(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+        self.dds.init_cooling()
 
         self.core.break_realtime()
 
@@ -53,7 +62,7 @@ class tof(EnvExperiment, Base):
         else:
             self.set_imaging_detuning()
 
-        
+        self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
@@ -65,20 +74,22 @@ class tof(EnvExperiment, Base):
 
         self.release()
         # self.flash_cooler()
+        self.flash_repump()
 
-        self.optical_pumping(t=self.p.t_optical_pumping,
-                             t_bias_rampup=self.p.t_optical_pumping_bias_rampup)
+        # self.optical_pumping(t=self.p.t_optical_pumping,
+        #                      t_bias_rampup=self.p.t_optical_pumping_bias_rampup,
+        #                      amp_optical_pumping_r=0.)
         # delay(self.p.t_op_total - self.p.t_optical_pumping)
         # delay(self.p.t_optical_pumping_bias_rampup_total - self.p.t_optical_pumping_bias_rampup)
 
-        # self.dds.power_down_cooling()
+        self.dds.power_down_cooling()
 
-        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        # delay(self.p.t_lightsheet_hold)
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        delay(self.p.t_lightsheet_hold)
         
         # self.set_zshim_magnet_current()
         # delay(15*ms)
-        # self.lightsheet.off()
+        self.lightsheet.off()
         
         delay(self.p.t_tof)
         self.abs_image()
@@ -86,7 +97,6 @@ class tof(EnvExperiment, Base):
     @kernel
     def run(self):
         self.init_kernel()
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()
 
