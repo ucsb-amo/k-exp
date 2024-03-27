@@ -17,7 +17,7 @@ from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.control.misc.awg_tweezer import tweezer
-from kexp.control.misc.mixer_rf import mixer_rf
+from kexp.control.misc.doubled_rf import doubled_rf
 
 import numpy as np
 
@@ -30,6 +30,7 @@ class Devices():
         # for syntax highlighting
 
         self.params = expt_params
+        self.params.compute_derived()
 
         self.core = Core
         zotino = Zotino
@@ -53,9 +54,7 @@ class Devices():
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
 
-        self.mirny = Mirny(0,0,self.params.frequency_mirny_carrier,power_level=3)
-        self.mirny.get_devices(self)
-        self.rf = mixer_rf(self.mirny,self.dds.rf_sideband,self.ttl.antenna_rf_sw,self.params)
+        self.rf = doubled_rf(dds_ch=self.dds.antenna_rf, expt_params=self.params)
 
         # magnet coils
         self.inner_coil = hbridge_magnet(max_current=170.,
