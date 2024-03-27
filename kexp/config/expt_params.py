@@ -46,8 +46,8 @@ class ExptParams():
         self.t_magnet_off_pretrigger = 0.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
-        self.t_optical_pumping = 30.e-6
-        self.t_optical_pumping_bias_rampup = 2.e-3
+        self.t_optical_pumping = 5.e-6
+        self.t_optical_pumping_bias_rampup = 100.e-6
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
@@ -107,6 +107,12 @@ class ExptParams():
         self.detune_d2_r_d1cmot = -3.
         self.amp_d2_r_d1cmot = 0.047
 
+        self.detune_d1_c_sweep_d1cmot_start = 9.
+        self.detune_d1_c_sweep_d1cmot_end = 7.
+        self.detune_d2_r_sweep_d1cmot_start = -3.
+        self.detune_d2_r_sweep_d1cmot_end = -5.
+        self.n_d1cmot_detuning_sweep_steps = 200
+
         self.i_cmot = 25.
         
         #GM
@@ -132,10 +138,10 @@ class ExptParams():
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
-        self.amp_optical_pumping_op = 0.25
+        self.amp_optical_pumping_op = 0.12
         self.v_zshim_current_op = 3.0
         self.detune_optical_pumping_r_op = 0.0
-        self.amp_optical_pumping_r_op = 0.3
+        self.amp_optical_pumping_r_op = 0.23
 
         #ODT
         # self.amp_lightsheet = 0.6
@@ -162,32 +168,34 @@ class ExptParams():
 
         # RF
         self.t_rf_state_xfer_sweep = 60.e-3
-        self.frequency_mirny_carrier = 495.e6
-        self.frequency_rf_state_xfer_sweep_start = 450.e6
-        self.frequency_rf_state_xfer_sweep_end = 470.e6
+        self.amp_rf_source = 0.99
+        self.frequency_rf_state_xfer_sweep_center = 461.7e6
+        self.frequency_rf_state_xfer_sweep_fullwidth = 2.e6
 
         self.n_rf_state_xfer_sweep_steps = 1000
 
-        self.v_vco_rf_state_xfer_sweep_center = 7.15
-        self.v_vco_rf_state_xfer_sweep_fullwidth = 0.1
-        self.t_rf_state_xfer_sweep = 100.e-3
+        # self.v_vco_rf_state_xfer_sweep_center = 7.15
+        # self.v_vco_rf_state_xfer_sweep_fullwidth = 0.1
 
         self.compute_derived()
 
     def compute_rf_sweep_params(self):
         self.dt_rf_state_xfer_sweep = self.t_rf_state_xfer_sweep / self.n_rf_state_xfer_sweep_steps
 
+        self._frequency_rf_state_xfer_sweep_start = self.frequency_rf_state_xfer_sweep_center - self.frequency_rf_state_xfer_sweep_fullwidth
+        self._frequency_rf_state_xfer_sweep_end = self.frequency_rf_state_xfer_sweep_center + self.frequency_rf_state_xfer_sweep_fullwidth
+        
         self.frequency_rf_state_xfer_sweep_list = np.linspace(
-            self.frequency_rf_state_xfer_sweep_start,
-            self.frequency_rf_state_xfer_sweep_end,
+            self._frequency_rf_state_xfer_sweep_start,
+            self._frequency_rf_state_xfer_sweep_end,
             self.n_rf_state_xfer_sweep_steps)
         
-        self.__v_vco_rf_state_xfer_sweep_start = self.v_vco_rf_state_xfer_sweep_center - self.v_vco_rf_state_xfer_sweep_fullwidth/2
-        self.__v_vco_rf_state_xfer_sweep_end = self.v_vco_rf_state_xfer_sweep_center + self.v_vco_rf_state_xfer_sweep_fullwidth/2
+        # self.__v_vco_rf_state_xfer_sweep_start = self.v_vco_rf_state_xfer_sweep_center - self.v_vco_rf_state_xfer_sweep_fullwidth/2
+        # self.__v_vco_rf_state_xfer_sweep_end = self.v_vco_rf_state_xfer_sweep_center + self.v_vco_rf_state_xfer_sweep_fullwidth/2
         
-        self.v_vco_rf_state_xfer_sweep_list = np.linspace(self.__v_vco_rf_state_xfer_sweep_start,
-                                                            self.__v_vco_rf_state_xfer_sweep_end,
-                                                            self.n_rf_state_xfer_sweep_steps)
+        # self.v_vco_rf_state_xfer_sweep_list = np.linspace(self.__v_vco_rf_state_xfer_sweep_start,
+        #                                                     self.__v_vco_rf_state_xfer_sweep_end,
+        #                                                     self.n_rf_state_xfer_sweep_steps)
         
     def compute_lightsheet_ramp_params(self):
         self.v_pd_lightsheet_ramp_list = np.linspace(
@@ -212,6 +220,18 @@ class ExptParams():
         self.v_pd_r_gmramp_list = cal.power_fraction_to_vva(self.pfrac_r_gmramp_list).transpose()
 
         self.dt_gmramp = self.t_gmramp / self.n_gmramp_steps
+
+    def compute_d1cmot_detuning_ramp(self):
+        self.detune_d2_r_list_d1cmot = np.linspace(
+            self.detune_d2_r_sweep_d1cmot_start,
+            self.detune_d2_r_sweep_d1cmot_end,
+            self.n_d1cmot_detuning_sweep_steps
+        )
+        self.detune_d1_c_list_d1cmot = np.linspace(
+            self.detune_d1_c_sweep_d1cmot_start,
+            self.detune_d1_c_sweep_d1cmot_end,
+            self.n_d1cmot_detuning_sweep_steps
+        )
 
     def compute_d1_vvas(self):
         cal = DDS_VVA_Calibration()
