@@ -108,18 +108,19 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
             ax[i0,i1].set_yticklabels([])
             
             if i1 == 0:
-                ax[i0][i1].set_ylabel(f"{ad.xvars[0][i0]:{xvar0format}}")
+                ax[i0][i1].set_ylabel(f"{ad.xvars[0][i0]*xvar0mult:{xvar0format}}")
             else:
                 ax[i0][i1].set_yticks([])
                 
             if i0 == n0-1:
-                ax[i0][i1].set_xlabel(f"{ad.xvars[1][i1]:{xvar1format}}")
+                ax[i0][i1].set_xlabel(f"{ad.xvars[1][i1]*xvar1mult:{xvar1format}}", rotation='vertical')
             else:
                 ax[i0,i1].set_xticks([])
 
     fig.supylabel(f"{ad.xvarnames[0]}")
     fig.supxlabel(f"{ad.xvarnames[1]}")
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
+    fig.tight_layout()
     plt.show() 
 
     return fig, ax

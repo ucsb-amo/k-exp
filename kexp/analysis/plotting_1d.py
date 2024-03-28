@@ -88,7 +88,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
             ax[i].plot(xdata*1.e6,ydata)
             ax[i].plot(xdata*1.e6,yfit)
             ax[i].set_ylim([0,1.1*ymax])
-            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}")
+            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}",rotation='vertical')
             ax[i].set_xticks([])
 
             if i != 0:
@@ -117,13 +117,15 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
                     ax[j,i].set_yticks([])
 
                 if j == Nr-1:
-                    ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}")
+                    ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}",rotation='vertical')
 
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
     fig.supxlabel(ad.xvarnames[0])
 
     fig.set_figheight(3)
     fig.set_figwidth(18)
+
+    fig.tight_layout()
 
     return fig, ax
 
@@ -157,7 +159,7 @@ def plot_fit_residuals(ad:atomdata,axis=0,
     if ad.params.N_repeats == 1:
         for i in range(Ns):
             ax[i].plot(xdata,sum_od_residuals[i])
-            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}")
+            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}",rotation='vertical')
             ax[i].set_ylim(ylimmin,ylimmax)
             ax[i].set_xticks([])
             ax[i].set_yticks([])
@@ -166,10 +168,18 @@ def plot_fit_residuals(ad:atomdata,axis=0,
             for i in range(Ns):
                 idx = j + i*Nr
                 ax[j,i].plot(xdata,sum_od_residuals[idx])
-                ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}")
                 ax[j,i].set_ylim(ylimmin,ylimmax)
+
                 ax[j,i].set_xticks([])
-                ax[j,i].set_yticks([])
+                
+                if i != 0:
+                    ax[j,i].set_yticklabels([])
+                else:
+                    ax[j,i].set_yticks([])
+
+                if j == Nr-1:
+                    ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}",rotation='vertical')
+
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label} fit residuals")
     fig.supxlabel(ad.xvarnames[0])
     fig.set_figwidth(18)
