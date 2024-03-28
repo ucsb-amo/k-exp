@@ -200,3 +200,4 @@ def plot_fit_residuals(ad:atomdata,axis=0,
     plt.show()
 
     return fig, ax
+

@@ -6,3 +6,6 @@ __all__ = [ basename(f)[:-3] for f in modules if isfile(f) and not f.endswith('_
 from .atomdata import atomdata
 import kexp.analysis.image_processing
 import kexp.analysis.fitting
+from .plotting_1d import *
+from .plotting_2d import *
+from .standard_experiments import *
