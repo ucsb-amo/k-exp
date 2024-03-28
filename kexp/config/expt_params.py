@@ -88,8 +88,8 @@ class ExptParams():
 
         self.i_mot = 24.0
         self.v_zshim_current = 0.2
-        self.v_xshim_current = 0.92
-        self.v_yshim_current = 0.56
+        self.v_xshim_current = 0.993
+        self.v_yshim_current = 0.955
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
