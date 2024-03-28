@@ -18,7 +18,7 @@ class CamConnBar(QWidget):
     def setup_camera_buttons(self):
         self.xy_basler_button = CameraButton(cp.xy_basler_params,self.cn,self.output_window)
         self.z_basler_button = CameraButton(cp.z_basler_params,self.cn,self.output_window)
-        self.andor = CameraButton(cp.andor_params,self.cn,self.output_window)
+        self.andor = CameraButton(cp.andor_params,self.cn,self.output_window,open_camera_on_start=False)
 
     def setup_layout(self):
         self.layout = QVBoxLayout()
@@ -34,7 +34,8 @@ class CamConnBar(QWidget):
 class CameraButton(QPushButton):
     def __init__(self,camera_params:cp.CameraParams,
                  camera_nanny:CameraNanny,
-                 output_window:QPlainTextEdit):
+                 output_window:QPlainTextEdit,
+                 open_camera_on_start:bool=True):
         super().__init__()
         self.camera_params = camera_params
         self.camera_name = self.camera_params.camera_select
@@ -43,7 +44,8 @@ class CameraButton(QPushButton):
         self.output_window = output_window
         
         self.setText(self.camera_name)
-        self.open_camera()
+        if open_camera_on_start:
+            self.open_camera()
 
         self.is_grabbing = False
 

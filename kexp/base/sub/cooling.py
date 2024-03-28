@@ -464,6 +464,7 @@ class Cooling():
             amp_optical_pumping_r = self.params.amp_optical_pumping_r_op
 
         if t_bias_rampup:
+            delay(-t_bias_rampup)
             self.set_zshim_magnet_current(v_zshim_current)
             delay(t_bias_rampup)
         self.dds.optical_pumping.set_dds_gamma(delta=detune_optical_pumping, 

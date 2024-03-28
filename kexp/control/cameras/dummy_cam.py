@@ -16,6 +16,9 @@ class DummyCamera():
     def start_grab(self) -> np.ndarray:
         return None
     
+    def stop_grab(self):
+        pass
+    
     def open(self):
         pass
 

@@ -1,6 +1,4 @@
 from kexp.control.artiq.DDS import DDS
-from kexp.control.artiq.mirny import Mirny
-from kexp.control.artiq.TTL import TTL
 from kexp.config import ExptParams
 from artiq.experiment import kernel, delay, parallel, portable, TFloat
 from artiq.experiment import *
@@ -9,44 +7,34 @@ import numpy as np
 dv = -0.1
 dv_list = np.linspace(0.,1.,5)
 
-class mixer_rf():
-    def __init__(self, mirny_ch:Mirny, dds_ch:DDS, ttl_rf_sw:TTL, expt_params:ExptParams = ExptParams):
-        self.mirny = mirny_ch
+d_exptparams = ExptParams()
+
+class doubled_rf():
+    def __init__(self, dds_ch:DDS, expt_params:ExptParams = d_exptparams):
         self.dds = dds_ch
-        self.rf_sw = ttl_rf_sw
         self.params = expt_params
 
-    @kernel
-    def init(self):
-        self.rf_sw.off()
-        self.mirny.init()
-        delay(1*ms)
-        self.mirny.set(frequency=self.params.frequency_mirny_carrier)
-        self.mirny.on()
-        self.dds.on()
+        self.params.frequency_rf_state_xfer_sweep_list = dv_list
+        self.params.dt_rf_state_xfer_sweep = dv
 
     @kernel
     def set_rf(self,frequency=dv):
         if frequency == dv:
-            frequency = self.params.frequency_rf_state_xfer_sweep_start
-        freq_mirny = self.params.frequency_mirny_carrier
-        freq_dds = freq_mirny - frequency
-        # print(frequency,freq_mirny,freq_dds)
-        if freq_dds < 0:
-            freq_dds = -freq_dds
-        self.dds.set_dds(frequency=freq_dds)
+            frequency = self.params.frequency_rf_state_xfer_sweep_list[0]
+        self.dds.dds_device.set(frequency=frequency/2,amplitude=self.params.amp_rf_source)
 
     @kernel
     def on(self):
-        self.mirny.on()
-        self.dds.on()
-        self.rf_sw.on()
+        self.dds.dds_device.sw.on()
 
     @kernel
     def off(self):
-        self.rf_sw.off()
-        self.mirny.off()
-        self.dds.off()
+        self.dds.dds_device.sw.off()
+
+
+    @kernel
+    def set_amplitude(self,amp):
+        self.dds.set_dds(amplitude=amp)
 
     @kernel
     def sweep(self,frequency_sweep_list=dv_list):
@@ -63,6 +51,7 @@ class mixer_rf():
         if frequency_sweep_list == dv_list:
             frequency_sweep_list = self.params.frequency_rf_state_xfer_sweep_list
 
+        self.set_rf(frequency=frequency_sweep_list[0])
         self.on()
         for f in frequency_sweep_list:
             self.set_rf(frequency=f)

@@ -198,14 +198,16 @@ class CameraBaby(QThread,Scribe):
             self.read_params() # closes
             self.create_camera() # checks for camera
             print('camera created')
-            self.mark_camera_ready() # opens and closes data
+            if self.camera.is_opened():
+                self.mark_camera_ready() # opens and closes data
+            else:
+                raise ValueError("Camera not ready")
             print('camera marked as ready')
             self.check_camera_ready_ack() # opens data and closes
             print('camera ready acknowledged')
             self.grab_loop()
         except Exception as e:
             print(e)
-            # raise(e)
         self.death()
 
     def create_camera(self):
@@ -213,14 +215,16 @@ class CameraBaby(QThread,Scribe):
         # self.camera = vars(self.camera_nanny)[self.camera_params.camera_select]
 
     def honorable_death(self):
+        self.camera.stop_grab()
         self.dataset.close()
         print(f"{self.name}: All images captured.")
         print(f"{self.name} has died honorably.")
-        self.honorable_death_signal.emit()
         time.sleep(0.1)
+        self.honorable_death_signal.emit()
         return True
     
     def dishonorable_death(self,delete_data=True):
+        self.camera.stop_grab()
         self.update_run_id()
         self.remove_incomplete_data(delete_data)
         print(f"{self.name} has died dishonorably.")
