@@ -2,6 +2,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
+from kexp.analysis import atomdata
 
 def get_B(f_mf0_mf1_transition,
           F0=2.,mF0=0.,F1=1.,mF1=1.):
@@ -18,13 +19,17 @@ def get_B(f_mf0_mf1_transition,
 
         return find_xval(f_mf0_mf1_transition,f_transitions,B)
 
-def rabi_oscillation(ad,plot_bool=True,
+def rabi_oscillation(ad,rf_frequency_hz,
+                     plot_bool=True,
                      pi_time_at_peak=True):
     """Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
     frequency and pi-pulse time, and produces a plot.
 
+    xvar: rf pulse time.
+
     Args:
         ad (atomdata)
+        rf_frequency_hz (float): The RF drive frequency in Hz.
         plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
         pi_time_at_peak (bool, optional): If True, assumes the initial
         population is zero and extracts the pi-pulse time as the location of the
@@ -33,7 +38,7 @@ def rabi_oscillation(ad,plot_bool=True,
 
     Returns:
         t_pi: The pi pulse time in seconds.
-    """    
+    """
 
     # Define the Rabi oscillation function
     def _fit_func_rabi_oscillation(t, Omega, phi, B, A):
@@ -47,13 +52,15 @@ def rabi_oscillation(ad,plot_bool=True,
     populations = rel_amps  # replace with your atom populations
 
     # Fit the data
-    popt, pcov = curve_fit(_fit_func_rabi_oscillation, times, populations, p0=[1000., np.pi, 10., 0.])
+    popt, _ = curve_fit(_fit_func_rabi_oscillation, times, populations, p0=[1000., np.pi, 10., 0.])
 
     y_fit = _fit_func_rabi_oscillation(times, *popt)
 
     # Print the fit parameters
     print(r"Fit function: f(t) = A * (cos(Omega t / 2 + phi))**2 + B")
     print(f"Omega = {popt[0]},\n phi = {popt[1]},\n B = {popt[2]},\n A = {popt[3]}")
+
+    rabi_frequency_hz = popt[0] / (2*np.pi)
 
     if plot_bool:
     # Plot the data and the fit
@@ -64,8 +71,9 @@ def rabi_oscillation(ad,plot_bool=True,
         plt.legend()
         title = f"Run ID: {ad.run_info.run_id}\n"
         title += r"f(t) = $A \ \cos^2(\Omega t / 2 + \phi) + B$"
-        title += f"\n$\\Omega = 2\\pi \\times {popt[0]/1.e3:1.2f}$ kHz\n"
-        title += f"RF frequency = {ad.params.frequency_rf/1.e6:1.2f} MHz"
+        title += f"\n$\\Omega = 2\\pi \\times {rabi_frequency_hz/1.e3:1.2f}$ kHz\n"
+        title += f"RF frequency = {rf_frequency_hz/1.e6:1.2f} MHz"
+
         plt.title(title)
         plt.show()
 
@@ -80,29 +88,41 @@ def rabi_oscillation_2d(ad,
                         plot_bool=True,
                         subplots_bool=True,
                         pi_time_at_peak=True,
-                        detect_dips=False):
+                        detect_dips=False,
+                        xvar0format='1.2f',xvar0mult=1.e-6,xvar0unit='MHz'):
     """Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
     frequency and pi-pulse time, and produces a plot.
 
-    Data must be taken with the rf frequency as the first xvar, and the pulse
-    time as the second.
+    xvar0: rf frequency
+    xvar1: pulse time
 
     Args:
         ad (atomdata)
         plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
+        subplots_bool (bool, optional): If True, plots subplots for each set of
+        scans over pulse time at fixed RF frequency. Includes fits.
         pi_time_at_peak (bool, optional): If True, assumes the initial
         population is zero and extracts the pi-pulse time as the location of the
         first peak in the fitted oscillation. If False, identifies the minimum
         as the pi-pulse time. Defaults to True.
+        xvar0format (str, optional): Defaults to '1.2f'
+        xvar0mult (float, optional): Defaults to 1.e-6 (to convert Hz to MHz)
+        xvar0unit (str, optional): Defaults to 'MHz'.
 
     Returns:
-        t_pi: The pi pulse time in seconds.
+        rabi_frequencies_hz (np.array): The Rabi frequency in Hz.
+        t_pi (np.array): The pi pulse times in seconds.
+        rf_frequencies (np.array): The RF frequencies at which each Rabi
+        frequency / pi pulse time was measured.
     """    
+    
+    rabi_frequencies_hz = []
+    t_pis = []
 
     rel_amps = np.asarray([[np.max(sumod_x)-np.min(sumod_x) for sumod_x in sumod_for_this_field] for sumod_for_this_field in ad.sum_od_x])
     if detect_dips:
         rel_amps = -rel_amps
-
+ 
     xvar0_idx = 0
 
     # Define the Rabi oscillation function
@@ -129,6 +149,13 @@ def rabi_oscillation_2d(ad,
         print(r"Fit function: f(t) = A * (cos(Omega t / 2 + phi))**2 + B")
         print(f"Omega = {popt[0]},\n phi = {popt[1]},\n B = {popt[2]},\n A = {popt[3]}")
 
+        rabi_frequencies_hz.append(popt[0]/(2*np.pi))
+
+        if not pi_time_at_peak:
+            y_fit = -y_fit
+        peak_idx, _ = find_peaks(y_fit)
+        t_pis.append(times[peak_idx][0])
+
         if subplots_bool:
         # Plot the data and the fit
             ax[xvar0_idx].scatter(times*1.e6, populations, label='Data')
@@ -138,47 +165,48 @@ def rabi_oscillation_2d(ad,
             ax[xvar0_idx].legend()
             # title = f"Run ID: {ad.run_info.run_id}\n"
             # title += r"f(t) = $A \ \cos^2(\Omega t / 2 + \phi) + B$"
-            title = f"$\\Omega = 2\\pi \\times {popt[0]/1.e3:1.2f}$ kHz\n"
-            title += f"\nRF frequency = {ad.xvars[0][xvar0_idx]/1.e6:1.2f} MHz"
+            title = f"$\\Omega = 2\\pi \\times {rabi_frequencies_hz/1.e3:1.2f}$ kHz\n"
+            title += f"\nRF frequency = {ad.xvars[0][xvar0_idx]*xvar0mult:{xvar0format}} {xvar0unit}"
             ax[xvar0_idx].set_title(title)
-
-        if subplots_bool:
-            title = f"Run ID: {ad.run_info.run_id}"
-            title += f"\nscanned var = {ad.xvarnames[0]}"
-            fig.suptitle(title)
-            fig.supxlabel(ad.xvarnames[0])
-            fig.tight_layout()
-            plt.show()
-
-        plt.show()
-
-        if plot_bool:
-            plt.figure()
-            title = f"Run ID: {ad.run_info.run_id}"
-            title += f"\nRabi frequency vs. {ad.xvarnames[0]}"
-            
-
-        if not pi_time_at_peak:
-            y_fit = -y_fit
-        peak_idx, _ = find_peaks(y_fit)
-        t_pi = times[peak_idx][0]
-
+        
         xvar0_idx += 1
 
-    return t_pi
+    if subplots_bool:
+        title = f"Run ID: {ad.run_info.run_id}"
+        title += f"\nscanned var = {ad.xvarnames[0]}"
+        fig.suptitle(title)
+        fig.supxlabel(ad.xvarnames[0])
+        fig.tight_layout()
+        plt.show()
+
+    if plot_bool:
+        rabi_fig = plt.figure()
+        title = f"Run ID: {ad.run_info.run_id}"
+        title += f"\nRabi frequency vs. {ad.xvarnames[0]}"
+        rabi_fig.title(title)
+        rabi_fig.scatter(ad.xvars[0],rabi_frequencies_hz/1.e3)
+        rabi_fig.xlabel(f'{ad.xvarnames[0]*xvar0mult:{xvar0format}}')
+        rabi_fig.ylabel(r'Rabi frequency = \Omega / 2 \pi (kHz)')
+        rabi_fig.show()
+
+    rf_frequencies = ad.xvars[0]
+
+    return rabi_frequencies_hz, t_pis, rf_frequencies
 
 def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                  plot_bool=True,
+                 find_field=True,
                  detect_dips=False,
-                 xvar_of_interest='',
+                 param_of_interest='',
                  peak_index=-1,
                  peak_prominence=10):
     """Analyzes the sum_od_x for each shot and produces an array of the max-min
     OD ("signal") vs. the RF center frequency. Extracts the peak signal from each 
     of these arrays, and finds the frequency where it occurs. Based on expected
     microwave frequency for the known transition (specified by user), looks up
-    the magnitude of magnetic field. Produces a plot of the magnetic field vs.
-    the scanned variable (the first xvar).
+    the magnitude of magnetic field. 
+    
+    Produces a plot of the magnetic field vs. the scanned variable.
 
     Args:
         ad (atomdata): _description_
@@ -190,7 +218,12 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         for each value of the scanned xvar. Defaults to True.
         detect_dips (bool, optional): If True, inverts the signal to identify a
         loss signal. Defaults to False.
-        set_xvar
+        param_of_interest (str, optional): If specified, adds the key and value
+        of the param with that key to the title.
+        peak_index (int, optional): The index of the peak corresponding to the
+        state specified by the quantum numbers F0, mF0, F1, mF1.
+        peak_prominence (float, optional): Specifies how prominent a peak has to
+        be in order to be counted.
     """
     
     sm_sum_ods = [sumod_x for sumod_x in ad.sum_od_x]
@@ -201,12 +234,15 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     
     peak_idx, _ = find_peaks(rel_amps,prominence=peak_prominence)
     x_peaks = ad.xvars[0][peak_idx]
-    try:
-        this_transition = x_peaks[peak_index]
-        print(this_transition)
-        B_measured = get_B(this_transition,F0,mF0,F1,mF1)
-    except Exception as e:
-        print(e)
+    if find_field:
+        try:
+            this_transition = x_peaks[peak_index]
+            print(this_transition)
+            B_measured = get_B(this_transition,F0,mF0,F1,mF1)
+        except Exception as e:
+            print(e)
+            B_measured = None
+    else:
         B_measured = None
 
     if plot_bool:
@@ -219,8 +255,11 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         plt.ylabel("peak sumOD - min sumOD")
         plt.xlabel(f"{ad.xvarnames[0]}")
         title = f"Run ID: {ad.run_info.run_id}"
-        # if set_xvar:
-            # title += f"\n{}={ad.params.v_zshim_current_op} V"
+        if param_of_interest:
+            try:
+                title += f"\n{param_of_interest}={vars(ad.params)[param_of_interest]}"
+            except:
+                pass
         if B_measured:
             title += f"\nB = {B_measured:1.3f} G"
 
@@ -234,6 +273,7 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                  subplots_bool=True,
                  detect_dips=False,
                  average_multiple_peaks=False,
+                 peak_idx = -1,
                  peak_prominence=10):
     """Analyzes the sum_od_x for each shot and produces an array of the max-min
     OD ("signal") for each value of the scanned variable vs. the RF center
@@ -256,6 +296,10 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         average_multiple_peaks (bool, optional): If True, averages multiple
         peaks detected to obtain the center frequency. Use at your own risk --
         be sure that only one feature is visible. Defaults to False.
+        peak_idx (int, optional): state specified by the quantum numbers F0,
+        mF0, F1, mF1. Default is the last peak.
+        peak_prominence (float, optional): Specifies how prominent a peak has to
+        be in order to be counted.
     """    
     
     # if frequency_scan_axis == 1:
