@@ -65,7 +65,6 @@ def rabi_oscillation(ad,rf_frequency_hz,
 
     try:
         # Fit the data
-        raise ValueError('beans')
         popt, _ = curve_fit(_fit_func_rabi_oscillation, times, populations,
                             p0=[fit_guess_frequency, fit_guess_phase, fit_guess_amp, fit_guess_offset])
 
