@@ -295,6 +295,21 @@ class atomdata():
 
         return xvars
     
+    # def switch_axes(self,axis0,axis1):
+    #     """Swaps axis0 and axis1 in the images, ods, xvarnames, and xvars. Does
+    #     not change the order of params derived from the paramaters in xvarnames.
+
+    #     Args:
+    #         axis0 (int): The index of one of the axes to be switched.
+    #         axis1 (int): The index of the other axis to be switched.
+    #     """
+    #     def swap(struct):
+    #         struct = np.swapaxes(struct,axis0,axis1)
+        
+    #     swap(self.img_atoms)
+    #     swap(self.img_light)
+    #     swap(self.img_dark)
+    
     ## Unshuffling
     
     def unshuffle_ad(self):
@@ -338,4 +353,4 @@ class atomdata():
     ### data saving
 
     def save_data(self):
-        self._ds.save_data(self)    
+        self._ds.save_data(self)
