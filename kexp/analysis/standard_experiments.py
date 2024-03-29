@@ -348,7 +348,8 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                  detect_dips=False,
                  average_multiple_peaks=False,
                  peak_idx = -1,
-                 peak_prominence=10):
+                 peak_prominence=10,
+                 subplots_figsize=[]):
     """Analyzes the sum_od_x for each shot and produces an array of the max-min
     OD ("signal") for each value of the scanned variable vs. the RF center
     frequency. Extracts the peak signal from each of these arrays, and finds the
@@ -356,6 +357,9 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     known transition (specified by user), looks up the magnitude of magnetic
     field. Produces a plot of the magnetic field vs. the scanned variable (the
     first xvar).
+
+    xvar0: scanned variable
+    xvar1: rf frequency
 
     Args:
         ad (atomdata): _description_
@@ -388,10 +392,14 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     xvar0_idx = 0
 
     B_measured_array = []
+    transition_peaks = []
 
     if subplots_bool:
         plt.figure()
-        fig, ax = plt.subplots(1,len(ad.xvars[0]))
+        if subplots_figsize:
+            fig, ax = plt.subplots(1,len(ad.xvars[0]),figsize=subplots_figsize)
+        else:
+            fig, ax = plt.subplots(1,len(ad.xvars[0]))
 
     for rel_amp in rel_amps:
 
@@ -404,6 +412,7 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
 
         try:
             f_this_transition = x_peaks[-1]
+            transition_peaks.append(f_this_transition)
             B_measured = get_B(f_this_transition,F0,mF0,F1,mF1)
             B_measured_array.append(B_measured)
         except Exception as e:
@@ -431,7 +440,7 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         title = f"Run ID: {ad.run_info.run_id}"
         title += f"\nscanned var = {ad.xvarnames[0]}"
         fig.suptitle(title)
-        fig.supxlabel(ad.xvarnames[0])
+        fig.supxlabel(ad.xvarnames[1])
         fig.tight_layout()
         plt.show()
 
@@ -443,3 +452,5 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         plt.ylabel('measured B field (G)')
         plt.title(title)
         plt.show()
+
+    return B_measured_array, transition_peaks
