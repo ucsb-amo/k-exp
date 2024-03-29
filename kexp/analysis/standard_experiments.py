@@ -284,18 +284,19 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
 
     Args:
         ad (atomdata): _description_
-        F0 (int, optional): Defaults to 2.
-        mF0 (int, optional): Defaults to 0.
-        F1 (int, optional): Defaults to 2.
-        mF1 (int, optional): Defaults to 1.
+        F0 (int, optional): The F quantum number of the initial state. Defaults to 2.
+        mF0 (int, optional): The mF quantum number of the inital state. Defaults to 0.
+        F1 (int, optional): The F quantum number of the final state. Defaults to 2.
+        mF1 (int, optional): The mF quantum number of the inital state. Defaults to 1.
         plot_bool (bool, optional): If True, plots the signal vs. frequency
         for each value of the scanned xvar. Defaults to True.
         detect_dips (bool, optional): If True, inverts the signal to identify a
         loss signal. Defaults to False.
         param_of_interest (str, optional): If specified, adds the key and value
         of the param with that key to the title.
-        transition_peak_idx (int, optional): The index of the peak corresponding to the
-        state specified by the quantum numbers F0, mF0, F1, mF1.
+        transition_peak_idx (int, optional): state specified by the quantum numbers F0,
+        mF0, F1, mF1. Indexes as a list, with the peaks from lowest to highest
+        frequency. Default is the last peak (-1).
         peak_prominence (float, optional): Specifies how prominent a peak has to
         be in order to be counted.
     """
@@ -363,10 +364,10 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
 
     Args:
         ad (atomdata): _description_
-        F0 (int, optional): Defaults to 2.
-        mF0 (int, optional): Defaults to 0.
-        F1 (int, optional): Defaults to 2.
-        mF1 (int, optional): Defaults to 1.
+        F0 (int, optional): The F quantum number of the initial state. Defaults to 2.
+        mF0 (int, optional): The mF quantum number of the inital state. Defaults to 0.
+        F1 (int, optional): The F quantum number of the final state. Defaults to 2.
+        mF1 (int, optional): The mF quantum number of the inital state. Defaults to 1.
         subplots_bool (bool, optional): If True, plots the signal vs. frequency
         for each value of the scanned xvar. Defaults to True.
         detect_dips (bool, optional): If True, inverts the signal to identify a
@@ -375,7 +376,8 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         peaks detected to obtain the center frequency. Use at your own risk --
         be sure that only one feature is visible. Defaults to False.
         transition_peak_idx (int, optional): state specified by the quantum numbers F0,
-        mF0, F1, mF1. Default is the last peak.
+        mF0, F1, mF1. Indexes as a list, with the peaks from lowest to highest
+        frequency. Default is the last peak (-1).
         peak_prominence (float, optional): Specifies how prominent a peak has to
         be in order to be counted.
     """    
