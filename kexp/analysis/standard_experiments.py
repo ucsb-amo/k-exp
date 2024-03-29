@@ -272,7 +272,7 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                  find_field=True,
                  detect_dips=False,
                  param_of_interest='',
-                 peak_index=-1,
+                 transition_peak_idx=-1,
                  peak_prominence=10):
     """Analyzes the sum_od_x for each shot and produces an array of the max-min
     OD ("signal") vs. the RF center frequency. Extracts the peak signal from each 
@@ -294,7 +294,7 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         loss signal. Defaults to False.
         param_of_interest (str, optional): If specified, adds the key and value
         of the param with that key to the title.
-        peak_index (int, optional): The index of the peak corresponding to the
+        transition_peak_idx (int, optional): The index of the peak corresponding to the
         state specified by the quantum numbers F0, mF0, F1, mF1.
         peak_prominence (float, optional): Specifies how prominent a peak has to
         be in order to be counted.
@@ -310,7 +310,7 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     x_peaks = ad.xvars[0][peak_idx]
     if find_field:
         try:
-            this_transition = x_peaks[peak_index]
+            this_transition = x_peaks[transition_peak_idx]
             print(this_transition)
             B_measured = get_B(this_transition,F0,mF0,F1,mF1)
         except Exception as e:
@@ -347,7 +347,7 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                  subplots_bool=True,
                  detect_dips=False,
                  average_multiple_peaks=False,
-                 peak_idx = -1,
+                 transition_peak_idx = -1,
                  peak_prominence=10,
                  subplots_figsize=[]):
     """Analyzes the sum_od_x for each shot and produces an array of the max-min
@@ -374,7 +374,7 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         average_multiple_peaks (bool, optional): If True, averages multiple
         peaks detected to obtain the center frequency. Use at your own risk --
         be sure that only one feature is visible. Defaults to False.
-        peak_idx (int, optional): state specified by the quantum numbers F0,
+        transition_peak_idx (int, optional): state specified by the quantum numbers F0,
         mF0, F1, mF1. Default is the last peak.
         peak_prominence (float, optional): Specifies how prominent a peak has to
         be in order to be counted.
@@ -404,14 +404,18 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     for rel_amp in rel_amps:
 
         peak_idx, _ = find_peaks(rel_amp,prominence=peak_prominence)
-        x_peaks = ad.xvars[1][peak_idx]
-    
-        if average_multiple_peaks:
-            x_peaks = np.average(x_peaks, weights=rel_amp[peak_idx])
-            x_peaks = np.array([x_peaks])
+
+        if peak_idx.size > 0:
+            x_peaks = ad.xvars[1][peak_idx]
+        
+            if average_multiple_peaks:
+                x_peaks = np.average(x_peaks, weights=rel_amp[peak_idx])
+                x_peaks = np.array([x_peaks])
+        else:
+            x_peaks = np.array([])
 
         try:
-            f_this_transition = x_peaks[-1]
+            f_this_transition = x_peaks[transition_peak_idx]
             transition_peaks.append(f_this_transition)
             B_measured = get_B(f_this_transition,F0,mF0,F1,mF1)
             B_measured_array.append(B_measured)
