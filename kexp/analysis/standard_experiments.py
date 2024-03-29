@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from kexp.analysis import atomdata
 
+dv = -1000.
+
 def get_B(f_mf0_mf1_transition,
           F0=2.,mF0=0.,F1=1.,mF1=1.):
 
@@ -21,7 +23,11 @@ def get_B(f_mf0_mf1_transition,
 
 def rabi_oscillation(ad,rf_frequency_hz,
                      plot_bool=True,
-                     pi_time_at_peak=True):
+                     pi_time_at_peak=True,
+                     fit_guess_frequency=1.e3,
+                     fit_guess_phase=np.pi/2,
+                     fit_guess_amp=dv,
+                     fit_guess_offset=dv):
     """Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
     frequency and pi-pulse time, and produces a plot.
 
@@ -51,16 +57,29 @@ def rabi_oscillation(ad,rf_frequency_hz,
     rel_amps = [np.max(sumod_x)-np.min(sumod_x) for sumod_x in sm_sum_ods]
     populations = rel_amps  # replace with your atom populations
 
-    # Fit the data
-    popt, _ = curve_fit(_fit_func_rabi_oscillation, times, populations, p0=[1000., np.pi, 10., 0.])
+    # default fit guesses
+    if fit_guess_amp == dv:
+        fit_guess_amp = (np.max(populations) - np.min(populations))/2
+    if fit_guess_offset == dv:
+        fit_guess_offset = np.min(populations)
 
-    y_fit = _fit_func_rabi_oscillation(times, *popt)
+    try:
+        # Fit the data
+        raise ValueError('beans')
+        popt, _ = curve_fit(_fit_func_rabi_oscillation, times, populations,
+                            p0=[fit_guess_frequency, fit_guess_phase, fit_guess_amp, fit_guess_offset])
 
-    # Print the fit parameters
-    print(r"Fit function: f(t) = A * (cos(Omega t / 2 + phi))**2 + B")
-    print(f"Omega = {popt[0]},\n phi = {popt[1]},\n B = {popt[2]},\n A = {popt[3]}")
+        y_fit = _fit_func_rabi_oscillation(times, *popt)
 
-    rabi_frequency_hz = popt[0] / (2*np.pi)
+        # Print the fit parameters
+        print(r"Fit function: f(t) = A * (cos(Omega t / 2 + phi))**2 + B")
+        print(f"Omega = {popt[0]},\n phi = {popt[1]},\n B = {popt[2]},\n A = {popt[3]}")
+
+        rabi_frequency_hz = popt[0] / (2*np.pi)
+    except:
+        y_fit = np.array([None]*len(times))
+        popt = [None]*4
+        rabi_frequency_hz = None
 
     if plot_bool:
     # Plot the data and the fit
@@ -71,16 +90,20 @@ def rabi_oscillation(ad,rf_frequency_hz,
         plt.legend()
         title = f"Run ID: {ad.run_info.run_id}\n"
         title += r"f(t) = $A \ \cos^2(\Omega t / 2 + \phi) + B$"
-        title += f"\n$\\Omega = 2\\pi \\times {rabi_frequency_hz/1.e3:1.3f}$ kHz\n"
-        title += f"RF frequency = {rf_frequency_hz/1.e6:1.2f} MHz"
+        if rabi_frequency_hz:
+            title += f"\n$\\Omega = 2\\pi \\times {rabi_frequency_hz/1.e3:1.3f}$ kHz"
+        title += f"\nRF frequency = {rf_frequency_hz/1.e6:1.2f} MHz"
 
         plt.title(title)
         plt.show()
 
-    if not pi_time_at_peak:
-        y_fit = -y_fit
-    peak_idx, _ = find_peaks(y_fit)
-    t_pi = times[peak_idx][0]
+    try:
+        if not pi_time_at_peak:
+            y_fit = -y_fit
+        peak_idx, _ = find_peaks(y_fit)
+        t_pi = times[peak_idx][0]
+    except:
+        t_pi = None
 
     return t_pi
 
@@ -91,7 +114,11 @@ def rabi_oscillation_2d(ad:atomdata,
                         detect_dips=False,
                         xvar0format='1.4f',xvar0mult=1.e-6,xvar0unit='MHz',
                         subplots_figsize=[],
-                        plot_figsize=[]):
+                        plot_figsize=[],
+                        fit_guess_frequency=1000.,
+                        fit_guess_phase=np.pi/2,
+                        fit_guess_amp=dv,
+                        fit_guess_offset=dv):
     """Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
     frequency and pi-pulse time, and produces a plot.
 
@@ -146,30 +173,41 @@ def rabi_oscillation_2d(ad:atomdata,
 
         populations = rel_amp
 
-        popt, pcov = curve_fit(_fit_func_rabi_oscillation, times, populations,
-                                p0=[2000., np.pi, 10., 5.])
+        # default fit guesses
+        if fit_guess_amp == dv:
+            fit_guess_amp = (np.max(populations) - np.min(populations))/2
+        if fit_guess_offset == dv:
+            fit_guess_offset = np.min(populations)
 
-        y_fit = _fit_func_rabi_oscillation(times, *popt)
+        # Fit the data
+        try:
+            raise ValueError('beans')
+            popt, _ = curve_fit(_fit_func_rabi_oscillation, times, populations,
+                                p0=[fit_guess_frequency, fit_guess_phase, fit_guess_amp, fit_guess_offset])
+            y_fit = _fit_func_rabi_oscillation(times, *popt)
+            rabi_frequencies_hz.append(popt[0]/(2*np.pi))
+        except:
+            y_fit = np.array([None]*len(times))
+            rabi_frequencies_hz.append(None)
 
-        rabi_frequencies_hz.append(popt[0]/(2*np.pi))
-
-        if not pi_time_at_peak:
-            y_fit = -y_fit
-        peak_idx, _ = find_peaks(y_fit)
-        if peak_idx.size > 0:
+        try:
+            if not pi_time_at_peak:
+                y_fit = -y_fit
+            peak_idx, _ = find_peaks(y_fit)
             t_pis.append(times[peak_idx][0])
-        else:
-            t_pis.append([0.])
+        except:
+            t_pis.append([None])
 
         if subplots_bool:
         # Plot the data and the fit
             ax[xvar0_idx].scatter(times*1.e6, populations, label='Data')
             ax[xvar0_idx].plot(times*1.e6, y_fit, 'k-', label='Fit')
-            title = f"$f_R = {rabi_frequencies_hz[xvar0_idx]/1.e3:1.2f}$"
+            if rabi_frequencies_hz[xvar0_idx]:
+                title = f"$f_R = {rabi_frequencies_hz[xvar0_idx]/1.e3:1.2f}$"
+                ax[xvar0_idx].set_title(title)
             xlabel = f"{ad.xvarnames[1]}"
             xlabel += f"\n\n{ad.xvars[0][xvar0_idx]*xvar0mult:{xvar0format}}"
             ax[xvar0_idx].set_xlabel(xlabel)
-            ax[xvar0_idx].set_title(title)
             if xvar0_idx != 0:
                 ax[xvar0_idx].set_yticks([])
         
@@ -194,6 +232,9 @@ def rabi_oscillation_2d(ad:atomdata,
         fig.supxlabel(f"{ad.xvarnames[0]} ({xvar0unit})")
         fig.tight_layout()
         plt.show()
+
+    if np.all([f_rabi == None for f_rabi in rabi_frequencies_hz]):
+        plot_bool = False
 
     if plot_bool:
         if plot_figsize:
@@ -383,10 +424,11 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         fig.tight_layout()
         plt.show()
 
-    plt.figure()
-    title = f"Run ID: {ad.run_info.run_id}"
-    plt.scatter(ad.xvars[0],B_measured_array)
-    plt.xlabel(f"{ad.xvarnames[0]} V")
-    plt.ylabel('measured B field (G)')
-    plt.title(title)
-    plt.show()
+    if not np.all([B == None for B in B_measured_array]):
+        plt.figure()
+        title = f"Run ID: {ad.run_info.run_id}"
+        plt.scatter(ad.xvars[0],B_measured_array)
+        plt.xlabel(f"{ad.xvarnames[0]} V")
+        plt.ylabel('measured B field (G)')
+        plt.title(title)
+        plt.show()
