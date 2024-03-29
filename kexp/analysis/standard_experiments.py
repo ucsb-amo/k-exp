@@ -112,13 +112,14 @@ def rabi_oscillation_2d(ad:atomdata,
                         subplots_bool=True,
                         pi_time_at_peak=True,
                         detect_dips=False,
-                        xvar0format='1.4f',xvar0mult=1.e-6,xvar0unit='MHz',
+                        xvar0format='1.5f',xvar0mult=1.e-6,xvar0unit='MHz',
                         subplots_figsize=[],
                         plot_figsize=[],
                         fit_guess_frequency=1000.,
-                        fit_guess_phase=np.pi/2,
+                        fit_guess_phase=np.pi,
                         fit_guess_amp=dv,
-                        fit_guess_offset=dv):
+                        fit_guess_offset=dv,
+                        rabi_freq_threshold=500.):
     """Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
     frequency and pi-pulse time, and produces a plot.
 
@@ -139,6 +140,12 @@ def rabi_oscillation_2d(ad:atomdata,
         xvar0unit (str, optional): Defaults to 'MHz'.
         subplots_figsize (tuple, optional): 
         plot_figsize (tuple, optional):
+        fit_guess_frequency,
+        fit_guess_phase,
+        fit_guess_amp,
+        fit_guess_offset,
+        rabi_freq_threshold (float, optional): The threshold below which a fit
+        resulting in this rabi frequency will be discarded.
 
     Returns:
         rabi_frequencies_hz (np.array): The Rabi frequency in Hz.
@@ -181,11 +188,14 @@ def rabi_oscillation_2d(ad:atomdata,
 
         # Fit the data
         try:
-            raise ValueError('beans')
             popt, _ = curve_fit(_fit_func_rabi_oscillation, times, populations,
-                                p0=[fit_guess_frequency, fit_guess_phase, fit_guess_amp, fit_guess_offset])
+                                p0=[fit_guess_frequency, fit_guess_phase, fit_guess_amp, fit_guess_offset],
+                                )
             y_fit = _fit_func_rabi_oscillation(times, *popt)
-            rabi_frequencies_hz.append(popt[0]/(2*np.pi))
+            f_rabi = popt[0]/(2*np.pi)
+            if f_rabi < rabi_freq_threshold:
+                raise ValueError(f"Fitted Rabi frequency ({f_rabi/1.e3} kHz) below threshold ({rabi_freq_threshold/1.e3} kHz)")
+            rabi_frequencies_hz.append(f_rabi)
         except:
             y_fit = np.array([None]*len(times))
             rabi_frequencies_hz.append(None)
@@ -237,6 +247,8 @@ def rabi_oscillation_2d(ad:atomdata,
         plot_bool = False
 
     if plot_bool:
+        idx = (rabi_frequencies_hz != None)
+        rabi_frequencies_hz[idx] = rabi_frequencies_hz[idx]/1.e3
         if plot_figsize:
             rabi_fig = plt.figure(figsize=plot_figsize)
         else:
@@ -245,7 +257,7 @@ def rabi_oscillation_2d(ad:atomdata,
         title += r"$f(t) = A \ \cos^2(\Omega t / 2 + \phi) + B$"
         title += f"\nRabi frequency vs. {ad.xvarnames[0]}"
         plt.title(title)
-        plt.scatter(ad.xvars[0],rabi_frequencies_hz/1.e3)
+        plt.scatter(ad.xvars[0],rabi_frequencies_hz)
         # plt.xlabel(f'{ad.xvars[0]*xvar0mult:{xvar0format}}')
         plt.xlabel(ad.xvarnames[0])
         plt.ylabel(r'Rabi frequency = $\Omega / 2 \pi$ (kHz)')
