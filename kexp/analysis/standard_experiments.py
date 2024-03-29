@@ -71,7 +71,7 @@ def rabi_oscillation(ad,rf_frequency_hz,
         plt.legend()
         title = f"Run ID: {ad.run_info.run_id}\n"
         title += r"f(t) = $A \ \cos^2(\Omega t / 2 + \phi) + B$"
-        title += f"\n$\\Omega = 2\\pi \\times {rabi_frequency_hz/1.e3:1.2f}$ kHz\n"
+        title += f"\n$\\Omega = 2\\pi \\times {rabi_frequency_hz/1.e3:1.3f}$ kHz\n"
         title += f"RF frequency = {rf_frequency_hz/1.e6:1.2f} MHz"
 
         plt.title(title)
@@ -84,12 +84,14 @@ def rabi_oscillation(ad,rf_frequency_hz,
 
     return t_pi
 
-def rabi_oscillation_2d(ad,
+def rabi_oscillation_2d(ad:atomdata,
                         plot_bool=True,
                         subplots_bool=True,
                         pi_time_at_peak=True,
                         detect_dips=False,
-                        xvar0format='1.2f',xvar0mult=1.e-6,xvar0unit='MHz'):
+                        xvar0format='1.4f',xvar0mult=1.e-6,xvar0unit='MHz',
+                        subplots_figsize=[],
+                        plot_figsize=[]):
     """Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
     frequency and pi-pulse time, and produces a plot.
 
@@ -108,6 +110,8 @@ def rabi_oscillation_2d(ad,
         xvar0format (str, optional): Defaults to '1.2f'
         xvar0mult (float, optional): Defaults to 1.e-6 (to convert Hz to MHz)
         xvar0unit (str, optional): Defaults to 'MHz'.
+        subplots_figsize (tuple, optional): 
+        plot_figsize (tuple, optional):
 
     Returns:
         rabi_frequencies_hz (np.array): The Rabi frequency in Hz.
@@ -129,65 +133,83 @@ def rabi_oscillation_2d(ad,
     def _fit_func_rabi_oscillation(t, Omega, phi, B, A):
         return A * np.abs(np.cos(0.5 * Omega * t + phi))**2 + B
 
-    # Suppose these are your data
-    times = ad.xvars[0]  # replace with your pulse times
+    times = ad.xvars[1]
 
     if subplots_bool:
         plt.figure()
-        fig, ax = plt.subplots(1,len(ad.xvars[0]))
+        if subplots_figsize:
+            fig, ax = plt.subplots(1,len(ad.xvars[0]),figsize=subplots_figsize)
+        else:
+            fig, ax = plt.subplots(1,len(ad.xvars[0]),figsize=(15,3))
 
     for rel_amp in rel_amps:
 
-        populations = rel_amp  # replace with your atom populations
+        populations = rel_amp
 
-        # Fit the data
-        popt, pcov = curve_fit(_fit_func_rabi_oscillation, times, populations, p0=[1000., np.pi, 10., 0.])
+        popt, pcov = curve_fit(_fit_func_rabi_oscillation, times, populations,
+                                p0=[2000., np.pi, 10., 5.])
 
         y_fit = _fit_func_rabi_oscillation(times, *popt)
-
-        # Print the fit parameters
-        print(r"Fit function: f(t) = A * (cos(Omega t / 2 + phi))**2 + B")
-        print(f"Omega = {popt[0]},\n phi = {popt[1]},\n B = {popt[2]},\n A = {popt[3]}")
 
         rabi_frequencies_hz.append(popt[0]/(2*np.pi))
 
         if not pi_time_at_peak:
             y_fit = -y_fit
         peak_idx, _ = find_peaks(y_fit)
-        t_pis.append(times[peak_idx][0])
+        if peak_idx.size > 0:
+            t_pis.append(times[peak_idx][0])
+        else:
+            t_pis.append([0.])
 
         if subplots_bool:
         # Plot the data and the fit
             ax[xvar0_idx].scatter(times*1.e6, populations, label='Data')
             ax[xvar0_idx].plot(times*1.e6, y_fit, 'k-', label='Fit')
-            ax[xvar0_idx].set_ylabel('max(sum od x) - min(sum od x)')
-            ax[xvar0_idx].set_xlabel('t (us)')
-            ax[xvar0_idx].legend()
-            # title = f"Run ID: {ad.run_info.run_id}\n"
-            # title += r"f(t) = $A \ \cos^2(\Omega t / 2 + \phi) + B$"
-            title = f"$\\Omega = 2\\pi \\times {rabi_frequencies_hz/1.e3:1.2f}$ kHz\n"
-            title += f"\nRF frequency = {ad.xvars[0][xvar0_idx]*xvar0mult:{xvar0format}} {xvar0unit}"
+            title = f"$f_R = {rabi_frequencies_hz[xvar0_idx]/1.e3:1.2f}$"
+            xlabel = f"{ad.xvarnames[1]}"
+            xlabel += f"\n\n{ad.xvars[0][xvar0_idx]*xvar0mult:{xvar0format}}"
+            ax[xvar0_idx].set_xlabel(xlabel)
             ax[xvar0_idx].set_title(title)
+            if xvar0_idx != 0:
+                ax[xvar0_idx].set_yticks([])
         
         xvar0_idx += 1
 
+    rabi_frequencies_hz = np.array(rabi_frequencies_hz)
+
     if subplots_bool:
-        title = f"Run ID: {ad.run_info.run_id}"
-        title += f"\nscanned var = {ad.xvarnames[0]}"
+        ymax = 0
+        ymin = 100000
+        for ax0 in ax:
+            this_ymin, this_ymax = ax0.get_ylim()
+            if this_ymax > ymax:
+                ymax = this_ymax
+            if this_ymin < ymin:
+                ymin = this_ymin
+        [ax0.set_ylim([ymin,ymax]) for ax0 in ax]
+        title = f"Run ID: {ad.run_info.run_id}\n"
+        title += r"$y(t) = A \ \cos^2(\Omega t / 2 + \phi) + B$"
+        title += f"\n$f_{{Rabi}} = \\Omega / 2\\pi$ (kHz)"
         fig.suptitle(title)
-        fig.supxlabel(ad.xvarnames[0])
+        fig.supxlabel(f"{ad.xvarnames[0]} ({xvar0unit})")
         fig.tight_layout()
         plt.show()
 
     if plot_bool:
-        rabi_fig = plt.figure()
-        title = f"Run ID: {ad.run_info.run_id}"
+        if plot_figsize:
+            rabi_fig = plt.figure(figsize=plot_figsize)
+        else:
+            rabi_fig = plt.figure()
+        title = f"Run ID: {ad.run_info.run_id}\n"
+        title += r"$f(t) = A \ \cos^2(\Omega t / 2 + \phi) + B$"
         title += f"\nRabi frequency vs. {ad.xvarnames[0]}"
-        rabi_fig.title(title)
-        rabi_fig.scatter(ad.xvars[0],rabi_frequencies_hz/1.e3)
-        rabi_fig.xlabel(f'{ad.xvarnames[0]*xvar0mult:{xvar0format}}')
-        rabi_fig.ylabel(r'Rabi frequency = \Omega / 2 \pi (kHz)')
-        rabi_fig.show()
+        plt.title(title)
+        plt.scatter(ad.xvars[0],rabi_frequencies_hz/1.e3)
+        # plt.xlabel(f'{ad.xvars[0]*xvar0mult:{xvar0format}}')
+        plt.xlabel(ad.xvarnames[0])
+        plt.ylabel(r'Rabi frequency = $\Omega / 2 \pi$ (kHz)')
+        plt.tight_layout()
+        plt.show()
 
     rf_frequencies = ad.xvars[0]
 
@@ -247,7 +269,7 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
 
     if plot_bool:
         plt.figure()
-        plt.scatter(ad.xvars[0],rel_amps)
+        plt.plot(ad.xvars[0],rel_amps)
         yylim = plt.ylim()
         plt.vlines(x=x_peaks,
                 ymin=yylim[0],ymax=yylim[1],
