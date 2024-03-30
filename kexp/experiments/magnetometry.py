@@ -28,14 +28,14 @@ class rf_scan(EnvExperiment, Base):
         # self.p.v_xshim_current_measure = 0.17
 
         # self.p.i_outer_coil = 8.93
-        self.xvar('i_outer_coil',np.linspace(1.,15.,4))
+        self.xvar('i_outer_coil',np.linspace(1.,15.,3))
 
         # self.xvar('v_yshim_current_measure',0.993 + np.linspace(-0.2,0.7,6))
         # self.xvar('v_xshim_current_measure',np.linspace(0.0,0.15,5))
 
         # self.xvar('frequency_rf_state_xfer_sweep_center',(462.129591 + np.linspace(-0.5,0.1,50))*1.e6)
         # scan_range = (447.147761+np.linspace(-0.3,0.3,63))*1.e6
-        scan_range = np.linspace(445.,461.6,80)*1.e6
+        scan_range = np.linspace(440.,461.6,80)*1.e6
         self.xvar('frequency_rf_state_xfer_sweep_center',scan_range)
         self.p.frequency_rf_state_xfer_sweep_fullwidth = np.diff(scan_range)[0]*2
 
