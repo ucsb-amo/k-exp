@@ -11,7 +11,7 @@ def get_B(f_mf0_mf1_transition,
 
         from kamo.atom_properties.k39 import Potassium39
         k = Potassium39()
-        B = np.linspace(0.,10.,20000)
+        B = np.linspace(0.,600.,1000000)
         f_transitions = abs(k.get_microwave_transition_frequency(4,0,.5,F0,mF0,F1,mF1,B)) * 1.e6
 
         def find_xval(y_val,y_vec,x_vec):
@@ -271,6 +271,7 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                  plot_bool=True,
                  find_field=True,
                  detect_dips=False,
+                 average_multiple_peaks=False,
                  param_of_interest='',
                  transition_peak_idx=-1,
                  peak_prominence=10):
@@ -309,6 +310,9 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     
     peak_idx, _ = find_peaks(rel_amps,prominence=peak_prominence)
     x_peaks = ad.xvars[0][peak_idx]
+    if average_multiple_peaks:
+        x_peaks = np.average(x_peaks, weights=rel_amps[peak_idx])
+        x_peaks = np.array([x_peaks])
     if find_field:
         try:
             this_transition = x_peaks[transition_peak_idx]
@@ -342,7 +346,7 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     plt.tight_layout()
     plt.show()
 
-    return x_peaks
+    return B_measured, x_peaks
 
 def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                  subplots_bool=True,
@@ -392,9 +396,12 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         rel_amps = -rel_amps
 
     xvar0_idx = 0
+    ymax = 0
+    ymin = 100000
 
     B_measured_array = []
     transition_peaks = []
+    all_peaks = []
 
     if subplots_bool:
         plt.figure()
@@ -415,6 +422,7 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                 x_peaks = np.array([x_peaks])
         else:
             x_peaks = np.array([])
+        all_peaks.append(x_peaks)
 
         try:
             f_this_transition = x_peaks[transition_peak_idx]
@@ -430,11 +438,11 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         if subplots_bool:
             ax[xvar0_idx].plot(ad.xvars[1]/1.e6,rel_amp)
             ax[xvar0_idx].tick_params('x',labelrotation=90)
-            ax[xvar0_idx].set_yticklabels([])
-            yylim = ax[xvar0_idx].get_ylim()
-            ax[xvar0_idx].vlines(x=x_peaks/1.e6,
-                    ymin=yylim[0],ymax=yylim[1],
-                    colors='k',linestyles='--')
+            if xvar0_idx != 0:
+                ax[xvar0_idx].set_yticklabels([])
+            else:
+                ax[xvar0_idx].set_ylabel("maxOD-minOD")
+
             title = f"{ad.xvars[0][xvar0_idx]:1.3f} V"
             if B_measured:
                 title += f"\nB = {B_measured:1.3f} G"
@@ -443,6 +451,22 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         xvar0_idx += 1
 
     if subplots_bool:
+
+        for ax0 in ax:
+                this_ymin, this_ymax = ax0.get_ylim()
+                if this_ymax > ymax:
+                    ymax = this_ymax
+                if this_ymin < ymin:
+                    ymin = this_ymin
+
+        for i in range(len(ax)):
+            ax[i].set_ylim([ymin,ymax])
+            these_peaks = all_peaks[i]
+            if these_peaks:
+                ax[i].vlines(x=these_peaks/1.e6,
+                        ymin=ymin,ymax=ymax,
+                        colors='k',linestyles='--')
+
         title = f"Run ID: {ad.run_info.run_id}"
         title += f"\nscanned var = {ad.xvarnames[0]}"
         fig.suptitle(title)
@@ -458,5 +482,7 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         plt.ylabel('measured B field (G)')
         plt.title(title)
         plt.show()
+
+    
 
     return B_measured_array, transition_peaks
