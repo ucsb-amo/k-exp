@@ -140,6 +140,8 @@ class ExptParams():
         self.detune_optical_pumping_op = 0.0
         self.amp_optical_pumping_op = 0.12
         self.v_zshim_current_op = 3.0
+        self.v_yshim_current_op = 2.0
+        self.v_xshim_current_op = 0.17
         self.detune_optical_pumping_r_op = 0.0
         self.amp_optical_pumping_r_op = 0.23
 
