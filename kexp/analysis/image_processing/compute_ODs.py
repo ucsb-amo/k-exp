@@ -41,9 +41,15 @@ def compute_ODs(img_atoms,img_light,img_dark,crop_type='mot',Nvars=1):
     return ODsraw, ODs, sum_od_x, sum_od_y
 
 def compute_OD(atoms,light,dark):
+    
+    dtype = atoms.dtype
+    if dtype == np.dtype('uint8'):
+        new_dtype = np.uint16
+    elif dtype == np.dtype('uint16'):
+        new_dtype = np.uint16
 
-    atoms_only = atoms - dark
-    light_only = light - dark
+    atoms_only = atoms.astype(new_dtype) - dark.astype(new_dtype)
+    light_only = light.astype(new_dtype) - dark.astype(new_dtype)
 
     atoms_only[atoms_only < 0] = 0
     light_only[light_only < 0] = 0
