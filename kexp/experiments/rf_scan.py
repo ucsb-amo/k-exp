@@ -45,14 +45,19 @@ class rf_scan(EnvExperiment, Base):
 
         # self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(450.,479.697,100)*1.e6)
         # self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(454.,470.,54)*1.e6)
-        self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(430.,485.,100)*1.e6)
-        self.p.frequency_rf_state_xfer_sweep_fullwidth = 0.4e6 #0.3e6
+        # self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(430.,485.,100)*1.e6)
+        # self.p.frequency_rf_state_xfer_sweep_fullwidth = 0.4e6 #0.3e6
+
+        self.xvar('v_xshim_current_gm',np.linspace(0.,2.,10))
+        self.xvar('v_yshim_current_gm',np.linspace(0.,2.,10))
 
         self.p.v_zshim_current_op = 9.99
         self.p.t_mot_load = 0.25
 
         # self.p.v_zshim_current_op = 9.99
         self.p.t_bias_off_wait = 2.e-3
+
+        self.p.t_tof = 12.e-3
 
         # self.p.amp_optical_pumping_op = 0.
         # self.p.amp_optical_pumping_r_op = 0.
@@ -85,10 +90,10 @@ class rf_scan(EnvExperiment, Base):
         self.release()
 
         # delay(-self.p.t_cooler_flash_imaging)
-        self.flash_cooler()
+        # self.flash_cooler()
 
         # if self.p.do_optical_pumping:
-        self.dds.power_down_cooling()
+        # self.dds.power_down_cooling()
         # self.optical_pumping(t=self.p.t_optical_pumping)
         # else:
         #     self.flash_repump(t=self.p.t_optical_pumping)
@@ -96,15 +101,15 @@ class rf_scan(EnvExperiment, Base):
 
         # self.flash_cooler()
 
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
         # self.set_shims()
-        self.set_zshim_magnet_current(self.p.v_zshim_current_op)
-        delay(20*ms)
+        # self.set_zshim_magnet_current(self.p.v_zshim_current_op)
+        # delay(20*ms)
         # delay(self.p.t_lightsheet_hold)
 
-        self.ttl.pd_scope_trig.on()
-        self.rf.sweep()
-        self.ttl.pd_scope_trig.off()
+        # self.ttl.pd_scope_trig.on()
+        # self.rf.sweep()
+        # self.ttl.pd_scope_trig.off()
         
         # if self.p.rf_yes:
         #     self.dac.vco_rf.set(self.p.v_vco_rf_state_xfer_sweep_list[0])
@@ -116,11 +121,12 @@ class rf_scan(EnvExperiment, Base):
         # else:
         #     delay(self.p.t_rf_state_xfer_sweep)
         
-        self.set_zshim_magnet_current()
-        delay(self.p.t_bias_off_wait)
-        self.lightsheet.off()
+        # self.set_zshim_magnet_current()
+        # delay(self.p.t_bias_off_wait)
+        # self.lightsheet.off()
         
         delay(self.p.t_tof)
+        self.flash_repump()
         self.abs_image()
 
     @kernel

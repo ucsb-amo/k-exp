@@ -38,11 +38,11 @@ class tof(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging_F1_offset',np.linspace(-10,15.,15)*1.e6)
         # self.xvar('frequency_detuned_imaging_offset',np.linspace(-3,3.,15)*1.e6)
         # self.xvar('t_tweezer_hold',np.linspace(.100,20.,2)*1.e-3)
-        # self.xvar('t_lightsheet_hold',np.linspace(5000,40000,5)*1.e-6)
+        # self.xvar('t_lightsheet_hold',np.linspace(10,200,20)*1.e-3)
 
         # self.xvar('t_cooler_flash_imaging',np.linspace(0,10,8)*1.e-6)
 
-        # self.xvar('t_mot_load',np.linspace(50.,100.,2)*1.e-3)
+        # self.xvar('t_mot_load',np.linspace(1.,200.,10)*1.e-3)
 
         # self.xvar('imaging_state',[1.,2.])
 
@@ -56,18 +56,18 @@ class tof(EnvExperiment, Base):
         # self.p.detune_d2_r_sweep_d1cmot_end = -2.
 
         # self.xvar('do_optical_pumping',[0.,1.])
-        # self.xvar('t_tof',np.linspace(11.,14.,6)*1.e-3)
-        self.xvar('t_tof',np.linspace(50.,500.,6)*1.e-6)
-        # self.xvar('t_optical_pumping',np.linspace(1.,15,8)*1.e-6)
+        # self.xvar('t_tof',np.linspace(11.,14.,6)*1.e-3) #gm
+        self.xvar('t_tof',np.linspace(50.,500.,6)*1.e-6) #lightsheet
+        # self.xvar('t_optical_pumping',np.linspace(1.,300.,15)*1.e-6)
         # self.xvar('amp_optical_pumping_op',np.linspace(0.075,0.15,3))
         # self.xvar('amp_optical_pumping_r_op',np.linspace(0.2,0.3,3))
 
         # self.xvar('reload_2d',[0,1]*10)
 
-        self.p.t_lightsheet_hold = 20.e-3
+        self.p.t_lightsheet_hold = 40.e-3
 
         self.p.t_mot_load = 1.
-        self.p.t_tof = 12.e-3
+        # self.p.t_tof = 12.e-3
         # self.p.N_repeats = [1,2]
 
         # self.camera_params.em_gain = 100
@@ -106,7 +106,14 @@ class tof(EnvExperiment, Base):
 
         self.release()
 
+        # if not self.p.do_optical_pumping:
+        # self.flash_repump(8.e-6)
+        # delay(22.e-3)
+
         self.dds.power_down_cooling()
+
+        # if self.p.do_optical_pumping:
+        # self.optical_pumping(self.p.t_optical_pumping)
 
         # self.tweezer.on()
         
