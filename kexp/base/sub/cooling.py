@@ -286,6 +286,53 @@ class Cooling():
         
         delay(t)
 
+    @kernel
+    def cmot_d1_sweep(self,t,
+            detune_d1_c_list = dvlist,
+            v_pd_d1_c = dv,
+            amp_d1_c = dv,
+            detune_d2_r_list = dvlist,
+            amp_d2_r = dv,
+            i_supply = dv):
+        
+        ### Start Defaults ###
+        if detune_d1_c_list == dvlist:
+            detune_d1_c_list = self.params.detune_d1_c_list_d1cmot
+        if v_pd_d1_c == dv:
+            v_pd_d1_c = self.params.v_pd_d1_c_d1cmot
+        if amp_d1_c == dv:
+            amp_d1_c = self.params.amp_d1_3d_c
+        if detune_d2_r_list == dvlist:
+            detune_d2_r_list = self.params.detune_d2_r_list_d1cmot
+        if amp_d2_r == dv:
+            amp_d2_r = self.params.amp_d2_r_d1cmot
+        if i_supply == dv:
+            i_supply = self.params.i_cmot
+        ### End Defaults ###
+            
+        dt = t / self.params.n_d1cmot_detuning_sweep_steps
+        self.inner_coil.on(i_supply,wait_for_analog=True)
+
+        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c_list[0],
+                                       v_pd=v_pd_d1_c)
+        delay(self.params.t_rtio)
+        self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r_list[0],
+                                       amplitude=amp_d2_r)
+
+        # with parallel:
+        self.dds.d2_3d_r.on()
+        self.dds.d1_3d_c.on()
+        delay(self.params.t_rtio)
+        self.dds.d2_3d_c.off()
+        self.dds.d1_3d_r.off()
+
+        for i in range(self.params.n_d1cmot_detuning_sweep_steps):
+            self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c_list[i])
+            self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r_list[i])
+            delay(dt)
+        
+        delay(t)
+
     #GM with only D1, turning B field off
     @kernel
     def gm(self,t,
