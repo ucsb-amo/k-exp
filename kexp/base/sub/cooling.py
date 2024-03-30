@@ -447,6 +447,8 @@ class Cooling():
                         detune_optical_pumping=dv,
                         amp_optical_pumping=dv,
                         v_zshim_current=dv,
+                        v_yshim_current=dv,
+                        v_xshim_current=dv,
                         detune_optical_pumping_r=dv,
                         amp_optical_pumping_r=dv):
         
@@ -458,6 +460,10 @@ class Cooling():
             amp_optical_pumping = self.params.amp_optical_pumping_op
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current_op
+        if v_yshim_current == dv:
+            v_yshim_current = self.params.v_yshim_current_op
+        if v_xshim_current == dv:
+            v_xshim_current = self.params.v_xshim_current_op
         if detune_optical_pumping_r == dv:
             detune_optical_pumping_r = self.params.detune_optical_pumping_r_op
         if amp_optical_pumping_r == dv:
@@ -465,7 +471,9 @@ class Cooling():
 
         if t_bias_rampup:
             delay(-t_bias_rampup)
-            self.set_zshim_magnet_current(v_zshim_current)
+            self.set_shims(v_zshim_current=v_zshim_current,
+                           v_yshim_current=v_yshim_current,
+                           v_xshim_current=v_xshim_current)
             delay(t_bias_rampup)
         self.dds.optical_pumping.set_dds_gamma(delta=detune_optical_pumping, 
                                        amplitude=amp_optical_pumping)
@@ -511,7 +519,6 @@ class Cooling():
         self.inner_coil.off()
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
-        
 
     ## AOM group control
 
