@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QPlainTextEdit, QComboBox, QSizePolicy)
-from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal, QThread
+from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal, QThread, QObject
 from PyQt6.QtGui import QIcon, QFont
 from queue import Queue
 import numpy as np
@@ -12,10 +12,15 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 
-class Analyzer():
-    def __init__(self):
+class Analyzer(QObject):
+
+    analyzed = pyqtSignal()
+
+    def __init__(self,plotting_queue:Queue):
+        super().__init__()
         self.imgs = []
-        self.crop_type = 'gm'
+        self.crop_type = ''
+        self.plotting_queue = plotting_queue
 
     def got_img(self,img):
         self.imgs.append(np.asarray(img))
@@ -28,8 +33,6 @@ class Analyzer():
         self.img_light = self.imgs[1]
         self.img_dark = self.imgs[2]
 
-        self.fix_datatype()
-
         self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
             compute_ODs(self.img_atoms,
                         self.img_light,
@@ -40,16 +43,13 @@ class Analyzer():
         self.sum_od_x = self.sum_od_x[0]
         self.sum_od_y = self.sum_od_y[0]
 
-    def fix_datatype(self):
-        dtype = self.img_atoms.dtype
-        if dtype == np.dtype('uint8'):
-            self.img_atoms = self.img_atoms.astype(np.int16)
-            self.img_light = self.img_light.astype(np.int16)
-            self.img_dark = self.img_dark.astype(np.int16)
-        elif dtype == np.dtype('uint16'):
-            self.img_atoms = self.img_atoms.astype(np.int32)
-            self.img_light = self.img_light.astype(np.int32)
-            self.img_dark = self.img_dark.astype(np.int32)
+        self.analyzed.emit()
+        self.plotting_queue.put((self.img_atoms,
+                           self.img_light,
+                           self.img_dark,
+                           self.od,
+                           self.sum_od_x,
+                           self.sum_od_y))
 
 class ODviewer(QWidget):
     def __init__(self):
@@ -109,18 +109,29 @@ class ODviewer(QWidget):
         self.sum_od_x_plot.setFixedHeight(150)
 
 class Plotter(QThread):
-    def __init__(self,plotwindow:ODviewer,analyzer:Analyzer):
+    def __init__(self,
+                  plotwindow:ODviewer,
+                  plotting_queue:Queue):
         super().__init__()
         self.plotwindow = plotwindow
-        self.analyzer = analyzer
+        self.plotting_queue = plotting_queue
 
     def run(self):
-        self.plotwindow.img_atoms_plot.plot(self.analyzer.img_atoms)
-        self.plotwindow.img_light_plot.plot(self.analyzer.img_light)
-        self.plotwindow.img_dark_plot.plot(self.analyzer.img_dark)
-        self.plotwindow.od_plot.plot(self.analyzer.od)
-        self.plotwindow.sum_od_x_plot.plot(self.analyzer.sum_od_x)
-        self.plotwindow.sum_od_y_plot.plot(self.analyzer.sum_od_y)
+        while True:
+            to_plot = self.plotting_queue.get()
+            self.img_atoms = to_plot[0]
+            self.img_light = to_plot[1]
+            self.img_dark = to_plot[2]
+            self.od = to_plot[3]
+            self.sum_od_x = to_plot[4]
+            self.sum_od_y = to_plot[5]
+
+            self.plotwindow.img_atoms_plot.plot(self.img_atoms)
+            self.plotwindow.img_light_plot.plot(self.img_light)
+            self.plotwindow.img_dark_plot.plot(self.img_dark)
+            self.plotwindow.od_plot.plot(self.od)
+            self.plotwindow.sum_od_x_plot.plot(self.sum_od_x)
+            self.plotwindow.sum_od_y_plot.plot(self.sum_od_y)
 
     def clear(self):
         for k in vars(self.plotwindow).keys():

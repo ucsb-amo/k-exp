@@ -74,9 +74,13 @@ class MainWindow(QWidget):
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_crop)
 
         self.viewer_window = ODviewer()
-        self.analyzer = Analyzer()
 
-        self.plotter = Plotter(self.viewer_window,self.analyzer)
+        self.plotting_queue = Queue()
+        self.analyzer = Analyzer(self.plotting_queue)
+        self.plotter = Plotter(self.viewer_window,self.plotting_queue)
+        self.plotter.start()
+
+        self.analyzer.analyzed.connect(lambda: self.msg('new OD!'))
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.plotter.clear)
 
     def setup_layout(self):
@@ -96,8 +100,6 @@ class MainWindow(QWidget):
         self.img_count_run += 1
         self.msg(f'gotem! ({self.img_count_run}/{self.data_handler.N_img})')
         if self.img_count == 3:
-            self.plotter.run()
-            self.msg('new OD!')
             self.img_count = 0
         
     def reset(self):

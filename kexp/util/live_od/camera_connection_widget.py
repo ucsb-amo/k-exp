@@ -40,7 +40,7 @@ class CameraButton(QPushButton):
         self.camera_params = camera_params
         self.camera_name = self.camera_params.camera_select
         self.cn = camera_nanny
-        self.camera = DummyCamera
+        self.camera = DummyCamera()
         self.output_window = output_window
         
         self.setText(self.camera_name)
@@ -86,7 +86,7 @@ class CameraButton(QPushButton):
             self._set_color_success()
 
     def _set_color_loading(self):
-        self.setStyleSheet("background-color: yellow")
+        self.setStyleSheet("background-color: orchid")
 
     def _set_color_failed(self):
         self.setStyleSheet("background-color: red")
@@ -109,7 +109,7 @@ class ROISelector(QWidget):
     def setup_widgets(self):
         self.label = QLabel("ROI Selection")
         self.crop_dropdown = QComboBox()
-        self.crop_dropdown.addItems(['gm','mot','cmot','bigmot','lightsheet',
+        self.crop_dropdown.addItems(['','gm','mot','cmot','bigmot','lightsheet',
                                          'gm2','lightsheet_long',
                                          'lightsheet_short','tweezer'])
         
