@@ -44,9 +44,11 @@ def compute_OD(atoms,light,dark):
     
     dtype = atoms.dtype
     if dtype == np.dtype('uint8'):
-        new_dtype = np.uint16
+        new_dtype = np.int16
     elif dtype == np.dtype('uint16'):
-        new_dtype = np.uint16
+        new_dtype = np.int32
+    else:
+        new_dtype = np.int32
 
     atoms_only = atoms.astype(new_dtype) - dark.astype(new_dtype)
     light_only = light.astype(new_dtype) - dark.astype(new_dtype)
