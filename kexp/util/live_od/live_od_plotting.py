@@ -183,30 +183,39 @@ class PlotPanel(FigureCanvasQTAgg,QWidget):
 
 class ImgPlotPanel(PlotPanel):
     def plot(self,img):
-        if self._plot_ref == None:
-            self._plot_ref = self.axes.imshow(img)
-            self.set_labels()
-        else:
-            self._plot_ref.set_data(img)
-        self.draw()
+        try:
+            if self._plot_ref == None:
+                self._plot_ref = self.axes.imshow(img)
+                self.set_labels()
+            else:
+                self._plot_ref.set_data(img)
+            self.draw()
+        except Exception as e:
+            print(e)
 
 class LinePlotPanel(PlotPanel):
     def plot(self,ydata):
-        if self._plot_ref == None:
-            self._plot_ref, = self.axes.plot(ydata)
-            self.set_labels()
-        else:
-            self._plot_ref.set_ydata(ydata)
-        self.fix_ylim(ydata)
-        self.draw()
+        try:
+            if self._plot_ref == None:
+                self._plot_ref, = self.axes.plot(ydata)
+                self.set_labels()
+            else:
+                self._plot_ref.set_ydata(ydata)
+            self.fix_ylim(ydata)
+            self.draw()
+        except Exception as e:
+            print(e)
 
 class RotatedLinePlotPanel(PlotPanel):
     def plot(self,ydata):
-        xdata = np.arange(len(ydata))
-        if self._plot_ref == None:
-            self._plot_ref, = self.axes.plot(np.flip(ydata),xdata)
-            self.set_labels()
-        else:
-            self._plot_ref.set_data(np.flip(ydata),xdata)
-        self.fix_ylim(ydata,flip_axes=True)
-        self.draw()
+        try:
+            xdata = np.arange(len(ydata))
+            if self._plot_ref == None:
+                self._plot_ref, = self.axes.plot(np.flip(ydata),xdata)
+                self.set_labels()
+            else:
+                self._plot_ref.set_data(np.flip(ydata),xdata)
+            self.fix_ylim(ydata,flip_axes=True)
+            self.draw()
+        except Exception as e:
+            print(e)
