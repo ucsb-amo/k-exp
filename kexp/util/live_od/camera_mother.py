@@ -173,6 +173,7 @@ class DataHandler(QThread,Scribe):
 
 class CameraBaby(QThread,Scribe):
     image_captured = pyqtSignal(int)
+    camera_connect = pyqtSignal(str)
     camera_grab_start = pyqtSignal(int)
     save_data_bool_signal = pyqtSignal(int)
     honorable_death_signal = pyqtSignal()
@@ -217,6 +218,10 @@ class CameraBaby(QThread,Scribe):
 
     def create_camera(self):
         self.camera = self.camera_nanny.persistent_get_camera(self.camera_params)
+        camera_select = self.camera_params.camera_select
+        if type(camera_select) == bytes: 
+            camera_select = camera_select.decode()
+        self.camera_connect.emit(camera_select)
         # self.camera = vars(self.camera_nanny)[self.camera_params.camera_select]
 
     def honorable_death(self):
