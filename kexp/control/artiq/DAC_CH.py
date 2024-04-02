@@ -31,12 +31,12 @@ class DAC_CH():
 
     @rpc(flags={'async'})
     def max_voltage_error(self):
-        raise ValueError(self.errmessage)
+        print(self.errmessage)
 
     @rpc(flags={'async'})
     def handle_dac_error(self,v):
         if ( v <= -10.) | (v >= 10.):
-            raise ValueError("DAC voltage must be between -10 and 10 V (noninclusive).")
+            print("DAC voltage must be between -10 and 10 V (noninclusive).")
         
     @kernel
     def load(self):
