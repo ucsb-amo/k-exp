@@ -443,9 +443,12 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
             else:
                 ax[xvar0_idx].set_ylabel("maxOD-minOD")
 
-            title = f"{ad.xvars[0][xvar0_idx]:1.3f} V"
+            title = f"xvar0 = {ad.xvars[0][xvar0_idx]:1.3f}"
+
             if B_measured:
                 title += f"\nB = {B_measured:1.3f} G"
+            else:
+                title += "\n"
             ax[xvar0_idx].set_title(title)
 
         xvar0_idx += 1
@@ -462,13 +465,14 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         for i in range(len(ax)):
             ax[i].set_ylim([ymin,ymax])
             these_peaks = all_peaks[i]
-            if these_peaks:
-                ax[i].vlines(x=these_peaks/1.e6,
-                        ymin=ymin,ymax=ymax,
-                        colors='k',linestyles='--')
+            for peak in these_peaks:
+                if peak:
+                    ax[i].vlines(x=peak/1.e6,
+                            ymin=ymin,ymax=ymax,
+                            colors='k',linestyles='--')
 
         title = f"Run ID: {ad.run_info.run_id}"
-        title += f"\nscanned var = {ad.xvarnames[0]}"
+        title += f"\nxvar0 = {ad.xvarnames[0]}"
         fig.suptitle(title)
         fig.supxlabel(ad.xvarnames[1])
         fig.tight_layout()
@@ -478,7 +482,7 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         plt.figure()
         title = f"Run ID: {ad.run_info.run_id}"
         plt.scatter(ad.xvars[0],B_measured_array)
-        plt.xlabel(f"{ad.xvarnames[0]} V")
+        plt.xlabel(f"{ad.xvarnames[0]}")
         plt.ylabel('measured B field (G)')
         plt.title(title)
         plt.show()
