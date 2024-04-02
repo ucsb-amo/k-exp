@@ -26,6 +26,8 @@ class MainWindow(QWidget):
         self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
         self.camera_mother.start()
 
+        self.last_camera = ""
+
         self.img_count = 0
         self.img_count_run = 0
 
@@ -35,6 +37,8 @@ class MainWindow(QWidget):
         self.data_handler = DataHandler(self.queue,data_filepath=file)
 
         self.the_baby.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
+
+        self.the_baby.camera_connect.connect(self.check_new_camera)
 
         self.the_baby.camera_grab_start.connect(self.grab_start_msg)
         self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number)
@@ -54,6 +58,11 @@ class MainWindow(QWidget):
         # self.the_baby.dishonorable_death_signal.connect(self.reset)
 
         self.the_baby.start()
+
+    def check_new_camera(self,camera_select):
+        if self.last_camera != camera_select:
+            self.plotter.clear()
+            self.last_camera = camera_select
 
     def restart_mother(self):
         import time
