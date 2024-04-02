@@ -221,7 +221,7 @@ class CameraBaby(QThread,Scribe):
         camera_select = self.camera_params.camera_select
         if type(camera_select) == bytes: 
             camera_select = camera_select.decode()
-        self.camera_connect(camera_select)
+        self.camera_connect.emit(camera_select)
         # self.camera = vars(self.camera_nanny)[self.camera_params.camera_select]
 
     def honorable_death(self):
