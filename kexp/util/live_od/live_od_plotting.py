@@ -162,7 +162,7 @@ class PlotPanel(FigureCanvasQTAgg,QWidget):
         self.hlabel = hlabel
         self.vlabel = vlabel
         self.title = title
-        self.ydatalim = 0
+        self.ydatalim = 1.
 
     def clear(self):
         if self._plot_ref:
