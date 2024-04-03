@@ -14,7 +14,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         # init the parent class
         super().__init__(temperature=-60,fan_mode="full")
         # run startup setting methods
-        self.set_EMCCD_gain(gain=30)
+        self.set_EMCCD_gain(gain=gain)
         self.set_exposure(ExposureTime)
         self.set_trigger_mode("ext")
         self.setup_shutter(mode="open")
