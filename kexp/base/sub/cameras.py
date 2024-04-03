@@ -43,6 +43,9 @@ class Cameras():
                                              absorption_bool=absorption_image)
                 case "andor":
                     ttl = self.ttl.andor
+                    self.assign_camera_stuff(camera_select,
+                                             camera_ttl=ttl,
+                                             absorption_bool=absorption_image)
                 case _:
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
             self.assign_camera_stuff(camera_select,camera_ttl=ttl,absorption_bool=absorption_image)
