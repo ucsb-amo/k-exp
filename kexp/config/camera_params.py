@@ -85,8 +85,8 @@ class AndorParams(CameraParams):
         self.__amp_absorption__ = amp_absorption
         self.__amp_fluorescence__ = amp_fluorescence
 
-        self.em_gain_fluor = 290.
-        self.em_gain_abs = 0.
+        self.__em_gain_fluor = 290.
+        self.__em_gain_abs = 0.
 
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
@@ -95,11 +95,11 @@ class AndorParams(CameraParams):
         if absorption_bool:
             self.amp_imaging = self.__amp_absorption__
             self.exposure_time = self.__exposure_time_abs__
-            self.em_gain = self.em_gain_abs
+            self.em_gain = self.__em_gain_abs
         else:
             self.amp_imaging = self.__amp_fluorescence__
             self.exposure_time = self.__exposure_time_fluor__
-            self.em_gain = self.em_gain_fluor
+            self.em_gain = self.__em_gain_fluor
 
 andor_params = AndorParams(camera_select='andor')
 xy_basler_params = BaslerParams(serial_number='40316451',camera_select='xy_basler')
