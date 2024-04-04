@@ -114,6 +114,7 @@ class Cooling():
         delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
+        self.dac.anti_zshim_current_control.set(v=0.)
         self.set_shims(v_xshim_current,v_yshim_current,v_zshim_current)
         with parallel:
             self.switch_d2_3d(1)
@@ -493,6 +494,7 @@ class Cooling():
                         t_bias_rampup=dv,
                         detune_optical_pumping=dv,
                         amp_optical_pumping=dv,
+                        v_anti_zshim_current=dv,
                         v_zshim_current=dv,
                         v_yshim_current=dv,
                         v_xshim_current=dv,
@@ -505,8 +507,10 @@ class Cooling():
             detune_optical_pumping = self.params.detune_optical_pumping_op
         if amp_optical_pumping == dv:
             amp_optical_pumping = self.params.amp_optical_pumping_op
+        if v_anti_zshim_current == dv:
+            v_anti_zshim_current = self.params.v_anti_zshim_current_op
         if v_zshim_current == dv:
-            v_zshim_current = self.params.v_zshim_current_op
+            v_zshim_current = self.params.v_zshim_current_gm
         if v_yshim_current == dv:
             v_yshim_current = self.params.v_yshim_current_op
         if v_xshim_current == dv:
@@ -517,7 +521,8 @@ class Cooling():
             amp_optical_pumping_r = self.params.amp_optical_pumping_r_op
 
         if t_bias_rampup:
-            delay(-t_bias_rampup)
+            # delay(-t_bias_rampup)
+            self.dac.anti_zshim_current_control.set(v_anti_zshim_current,load_dac=False)
             self.set_shims(v_zshim_current=v_zshim_current,
                            v_yshim_current=v_yshim_current,
                            v_xshim_current=v_xshim_current)

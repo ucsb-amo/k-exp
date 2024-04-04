@@ -25,8 +25,6 @@ class ExptParams():
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 27.e6
         self.frequency_detuned_imaging_F1 = 4.58e08 - 2.86e6
-        self.amp_imaging_fluor = 0.260
-        self.amp_imaging_abs = 0.24
         
         self.t_repump_flash_imaging = 2.e-6
         self.detune_d2_r_imaging = 0.
@@ -46,8 +44,8 @@ class ExptParams():
         self.t_magnet_off_pretrigger = 0.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
-        self.t_optical_pumping = 5.e-6
-        self.t_optical_pumping_bias_rampup = 100.e-6
+        self.t_optical_pumping = 100.e-6
+        self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
@@ -139,6 +137,7 @@ class ExptParams():
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
         self.amp_optical_pumping_op = 0.12
+        self.v_anti_zshim_current_op = 1.5
         self.v_zshim_current_op = 3.0
         self.v_yshim_current_op = 2.0
         self.v_xshim_current_op = 0.17
