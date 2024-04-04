@@ -1,5 +1,7 @@
 from PyQt6.QtWidgets import (
-    QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QPushButton, QPlainTextEdit, QComboBox, QSizePolicy)
+    QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
+      QPushButton, QPlainTextEdit, QComboBox, QSizePolicy, QDoubleSpinBox,
+      QSpinBox)
 from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal, QThread, QObject
 from PyQt6.QtGui import QIcon, QFont
 from queue import Queue
@@ -7,10 +9,13 @@ import numpy as np
 from kexp.analysis.image_processing import compute_ODs
 
 import matplotlib
+import matplotlib.pyplot as plt
 matplotlib.use('QtAgg')
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+
+dv = -100.
 
 class Analyzer(QObject):
 
@@ -54,6 +59,9 @@ class Analyzer(QObject):
 class ODviewer(QWidget):
     def __init__(self):
         super().__init__()
+
+        self.Nimg = 0
+
         self.setup_widgets()
         self.setup_layout()
 
@@ -69,33 +77,70 @@ class ODviewer(QWidget):
         self.sum_od_y_plot = RotatedLinePlotPanel(vlabel='Position (pixels)',
                                                   hlabel='Integrated OD',
                                                   title='x-integrated OD (sum_od_y)')
+        
+        self.max_OD_spinner = QDoubleSpinBox()
+        self.max_OD_spinner_label = QLabel("Max OD")
+        self.max_OD_spinner.setValue(2.0)
+        self.max_OD_spinner.setMinimum(0.)
+        self.max_OD_spinner.setSingleStep(0.1)
+
+        self.min_OD_spinner = QDoubleSpinBox()
+        self.min_OD_spinner_label = QLabel("Min OD")
+        self.min_OD_spinner.setMinimum(0.)
+        self.min_OD_spinner.setSingleStep(0.1)
+
+        self.image_count_label = QLabel(f"Image Count: / {self.Nimg} ")
+        self.clear_axes_button = QPushButton("Clear Axes")
     
     def setup_layout(self):
         
-        self.img_atoms_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
-        self.img_light_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
-        self.img_dark_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        # self.img_atoms_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        # self.img_light_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        # self.img_dark_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
+        self.image_count_label.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)
         self.od_plot.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
-        self.sum_od_y_plot.setSizePolicy(QSizePolicy.Policy.Minimum,QSizePolicy.Policy.Minimum)
+        self.sum_od_y_plot.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Minimum)
         self.sum_od_x_plot.setSizePolicy(QSizePolicy.Policy.Minimum,QSizePolicy.Policy.Minimum)
 
         self.layout = QVBoxLayout()
-
+        
         images = QHBoxLayout()
         images.addWidget(self.img_atoms_plot)
         images.addWidget(self.img_light_plot)
         images.addWidget(self.img_dark_plot)
-        # images.setStretch(0,0)
-        self.layout.addLayout(images)
+
+        self.image_count_label.setFixedWidth(200)
+        self.clear_axes_button.setFixedWidth(200)
+        top_row_corner = QVBoxLayout()
+        top_row_corner.addWidget(self.image_count_label)
+        top_row_corner.addWidget(self.clear_axes_button)
+
+        top_row = QHBoxLayout()
+        top_row.addLayout(images)
+        top_row.addLayout(top_row_corner)
+        self.layout.addLayout(top_row)
+
+        max_spinner_layout = QHBoxLayout()
+        max_spinner_layout.addWidget(self.max_OD_spinner)
+        max_spinner_layout.addWidget(self.max_OD_spinner_label)
+
+        min_spinner_layout = QHBoxLayout()
+        min_spinner_layout.addWidget(self.min_OD_spinner)
+        min_spinner_layout.addWidget(self.min_OD_spinner_label)
+
+        spinner_layout = QVBoxLayout()
+        spinner_layout.addLayout(max_spinner_layout)
+        spinner_layout.addLayout(min_spinner_layout)
 
         OD_grid = QGridLayout()
         OD_grid.addWidget(self.od_plot,0,1,3,3)
         OD_grid.addWidget(self.sum_od_y_plot,0,4,3,1)
         OD_grid.addWidget(self.sum_od_x_plot,4,1,1,3)
+        OD_grid.addLayout(spinner_layout,4,4,1,1)
         self.layout.addLayout(OD_grid)
 
         self.setLayout(self.layout)
-        IMG_SIZE = 125
+        IMG_SIZE = 200
         OD_SIZE = 450
         self.od_plot.setMinimumHeight(10)
         self.od_plot.setMinimumWidth(10)
@@ -108,6 +153,12 @@ class ODviewer(QWidget):
         self.sum_od_x_plot.setFixedWidth(self.od_plot.width())
         self.sum_od_x_plot.setFixedHeight(150)
 
+    def get_img_number(self,Nimg):
+        self.Nimg = Nimg
+
+    def update_image_count(self,count):
+        self.image_count_label.setText(f"Image count: {int(count)}/{int(self.Nimg)}")
+
 class Plotter(QThread):
     def __init__(self,
                   plotwindow:ODviewer,
@@ -115,6 +166,8 @@ class Plotter(QThread):
         super().__init__()
         self.plotwindow = plotwindow
         self.plotting_queue = plotting_queue
+
+        self.plotwindow.clear_axes_button.clicked.connect(self.clear)
 
     def run(self):
         while True:
@@ -129,7 +182,9 @@ class Plotter(QThread):
             self.plotwindow.img_atoms_plot.plot(self.img_atoms)
             self.plotwindow.img_light_plot.plot(self.img_light)
             self.plotwindow.img_dark_plot.plot(self.img_dark)
-            self.plotwindow.od_plot.plot(self.od)
+            self.plotwindow.od_plot.plot(self.od,
+                                         min_od=self.plotwindow.min_OD_spinner.value(),
+                                         max_od=self.plotwindow.max_OD_spinner.value())
             self.plotwindow.sum_od_x_plot.plot(self.sum_od_x)
             self.plotwindow.sum_od_y_plot.plot(self.sum_od_y)
 
@@ -138,6 +193,7 @@ class Plotter(QThread):
             obj = vars(self.plotwindow)[k]
             if issubclass(type(obj),PlotPanel):
                 obj.clear()
+                obj.draw()
 
 class AtomHistory(QWidget):
     def __init__(self):
@@ -182,13 +238,19 @@ class PlotPanel(FigureCanvasQTAgg,QWidget):
             self.axes.set_xlim([0,self.ydatalim])
 
 class ImgPlotPanel(PlotPanel):
-    def plot(self,img):
+    def plot(self,img,max_od=dv,min_od=dv):
         try:
             if self._plot_ref == None:
-                self._plot_ref = self.axes.imshow(img)
+                if max_od == dv and min_od == dv:
+                    self._plot_ref = self.axes.imshow(img)
+                else:
+                    self._plot_ref = self.axes.imshow(img,vmin=min_od,vmax=max_od)
                 self.set_labels()
             else:
                 self._plot_ref.set_data(img)
+                if not (max_od == dv and min_od == dv):
+                    self._plot_ref.set_clim(vmin=min_od,vmax=max_od)
+
             self.draw()
         except Exception as e:
             print(e)

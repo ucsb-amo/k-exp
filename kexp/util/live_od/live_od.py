@@ -42,6 +42,7 @@ class MainWindow(QWidget):
 
         self.the_baby.camera_grab_start.connect(self.grab_start_msg)
         self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number)
+        self.the_baby.camera_grab_start.connect(self.plotter.plotwindow.get_img_number)
         self.the_baby.camera_grab_start.connect(self.data_handler.start)
         self.the_baby.camera_grab_start.connect(self.reset)
 
@@ -107,7 +108,7 @@ class MainWindow(QWidget):
     def count_images(self):
         self.img_count += 1
         self.img_count_run += 1
-        self.msg(f'gotem! ({self.img_count_run}/{self.data_handler.N_img})')
+        self.plotter.plotwindow.update_image_count(self.img_count_run)
         if self.img_count == 3:
             self.img_count = 0
         

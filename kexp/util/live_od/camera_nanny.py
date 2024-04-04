@@ -37,7 +37,6 @@ class CameraNanny():
         if camera_select in self.__dict__.keys():
             camera = vars(self)[camera_select]
             need_to_open = not camera.is_opened()
-            camera_params = self.update_params(camera,camera_params)
         if need_to_open:
             camera = self.open(camera_params)
             if type(camera) != DummyCamera:
@@ -49,7 +48,8 @@ class CameraNanny():
         if type(camera_type) == bytes: 
             camera_type = camera_type.decode()
         if camera_type == "basler":
-            camera.ExposureTime.SetValue(camera_params.exposure_time*1.e6)
+            # camera.ExposureTime.SetValue(camera_params.exposure_time*1.e6)
+            pass
         elif camera_type == "andor":
             camera.set_EMCCD_gain(camera_params.em_gain)
             camera.set_exposure(camera_params.exposure_time)
