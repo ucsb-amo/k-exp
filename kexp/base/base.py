@@ -83,8 +83,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
     @kernel
     def init_kernel(self, run_id = True, init_dds = True, init_dac = True,
-                     dds_set = True, dds_off = True, beat_ref_on=True,
-                     init_rf = True):
+                     dds_set = True, dds_off = True, beat_ref_on=True):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         self.core.reset() # clears RTIO
