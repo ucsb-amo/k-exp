@@ -10,11 +10,11 @@ import numpy as np
 class test(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('dummy',[1]*1000)
+        self.xvar('dummy',[1]*200)
 
-        self.camera_params.em_gain = 100.
+        self.camera_params.em_gain = 200.
         self.camera_params.exposure_time = 10.e-6
         self.camera_params.amp_imaging = 0.5
         self.p.t_imaging_pulse = 10.e-6
