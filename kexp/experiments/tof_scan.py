@@ -11,14 +11,14 @@ class tof(EnvExperiment, Base):
         self.p.imaging_state = 2.
 
         
-        self.xvar('beans',[1,2]*300)
+        # self.xvar('beans',[1,2]*300)
 
         # self.p.t_lightsheet_hold = 5.e-3
 
         # self.xvar('t_lightsheet_hold',np.linspace(5.,5.,1000)*1.e-3)
         # self.xvar('t_lightsheet_rampup',np.linspace(2.,15.,10)*1.e-3)
         
-        # self.xvar('t_tweezer_hold',np.linspace(15.,200.,25)*1.e-3)
+        self.xvar('t_tweezer_hold',np.linspace(5.,50.,20)*1.e-3)
         
 
         # self.xvar('t_tof',np.linspace(9.,14.,10)*1.e-3) #gm
@@ -26,7 +26,7 @@ class tof(EnvExperiment, Base):
         # self.p.t_tof = 200.e-6
         
 
-        self.camera_params.em_gain = 290.
+        self.camera_params.em_gain = 2.
         self.camera_params.exposure_time = 10.e-6
         self.camera_params.amp_imaging = 0.5
         self.p.t_imaging_pulse = 10.e-6
@@ -35,12 +35,12 @@ class tof(EnvExperiment, Base):
         self.camera_params.t_camera_trigger = 100.e-9
 
         self.p.t_tweezer_1064_ramp = 10.e-3
-        self.p.t_tweezer_hold = 30.e-3
+        # self.p.t_tweezer_hold = 30.e-3
 
         self.p.t_mot_load = .5
         
         self.p.t_lightsheet_rampup = 10.e-3
-        self.p.t_lightsheet_hold = 50.e-3
+        self.p.t_lightsheet_hold = 40.e-3
 
         self.p.t_tof = 50.e-6
 
@@ -80,26 +80,26 @@ class tof(EnvExperiment, Base):
         #     delay(self.p.t_lightsheet_hold)
         #     self.lightsheet.off()
 
-        if self.p.beans == 1:
-            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
-            delay(self.p.t_tweezer_hold)
-            self.tweezer.off()
+        # if self.p.beans == 1:
+        #     self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+        #     delay(self.p.t_tweezer_hold)
+        #     self.tweezer.off()
 
-        if self.p.beans == 2:
-            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-            delay(self.p.t_lightsheet_hold)
-            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
-            # self.lightsheet.off()
-            self.lightsheet.ramp_down(t=self.p.t_tweezer_1064_ramp)
-            delay(10.e-3)
-            self.tweezer.off()
+        # if self.p.beans == 2:
+        #     self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        #     delay(self.p.t_lightsheet_hold)
+        #     self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+        #     # self.lightsheet.off()
+        #     self.lightsheet.ramp_down(t=self.p.t_tweezer_1064_ramp)
+        #     delay(10.e-3)
+        #     self.tweezer.off()
         
         # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
         # delay(self.p.t_lightsheet_hold)
-        # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
         # self.lightsheet.off()
-        # delay(self.p.t_tweezer_hold)
-        # self.tweezer.off()
+        delay(self.p.t_tweezer_hold)
+        self.tweezer.off()
 
 
         # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
