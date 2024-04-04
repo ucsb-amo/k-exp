@@ -92,9 +92,9 @@ class Scribe():
         print("Done!")
 
     def remove_incomplete_data(self,delete_data_bool=True):
-        msg = "Something went wrong."
+        # msg = "Something went wrong."
         if delete_data_bool:
-            msg += " Destroying incomplete data."
+            msg = "Destroying incomplete data."
             while True:
                 try:
                     self.dataset.close()
@@ -103,4 +103,4 @@ class Scribe():
                     break
                 except Exception as e:
                     print(e)
-        print(msg)
+            print(msg)
