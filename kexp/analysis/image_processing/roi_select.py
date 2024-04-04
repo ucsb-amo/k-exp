@@ -33,8 +33,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [1020,1080]
         roiy = [600,740]
     elif crop_type == 'tweezer':
-        roix = [220,250]
-        roiy = [240,270]
+        roix = [950,1150]
+        roiy = [630,700]
     else:
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]]
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]]
