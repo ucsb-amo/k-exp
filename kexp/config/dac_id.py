@@ -20,7 +20,7 @@ class dac_frame():
         self.vva_lightsheet = self.assign_dac_ch(1,v=5.0)
         self.vva_d1_3d_c = self.assign_dac_ch(2,p.v_pd_d1_c_gm)
         self.vva_d1_3d_r = self.assign_dac_ch(3,p.v_pd_d1_r_gm)
-        self.mot2D_current_control = self.assign_dac_ch(4)
+        self.anti_zshim_current_control = self.assign_dac_ch(4,v=0.0)
         self.xshim_current_control = self.assign_dac_ch(5,p.v_xshim_current)
         self.yshim_current_control = self.assign_dac_ch(6,p.v_yshim_current)
         self.zshim_current_control = self.assign_dac_ch(7,p.v_zshim_current)
