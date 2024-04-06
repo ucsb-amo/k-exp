@@ -6,7 +6,7 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
         self.p.imaging_state = 2.
 
@@ -17,15 +17,15 @@ class tof(EnvExperiment, Base):
         # self.xvar('t_lightsheet_hold',np.linspace(5.,40.,20)*1.e-3)
         # self.xvar('t_lightsheet_rampup',np.linspace(2.,15.,10)*1.e-3)
         
-        # self.xvar('t_tweezer_hold',np.linspace(5.,50.,20)*1.e-3)
-        self.xvar('t_tweezer_1064_ramp',np.linspace(2.,50.,20)*1.e-3)
+        self.xvar('t_tweezer_hold',np.linspace(10.,10.,1000)*1.e-3)
+        # self.xvar('t_tweezer_1064_ramp',np.linspace(2.,50.,20)*1.e-3)
 
         # self.xvar('t_tof',np.linspace(9.,14.,10)*1.e-3) #gm
         # self.xvar('t_tof',np.linspace(20.,1000.,20)*1.e-6) #lightsheet
         self.p.t_tof = 30.e-6
 
-        # self.p.t_tweezer_1064_ramp = 10.e-3
-        self.p.t_tweezer_hold = 10.e-3
+        self.p.t_tweezer_1064_ramp = 20.e-3
+        # self.p.t_tweezer_hold = 10.e-3
 
         self.p.t_mot_load = .5
         
@@ -33,6 +33,7 @@ class tof(EnvExperiment, Base):
         self.p.t_lightsheet_hold = 40.e-3
 
         self.camera_params.amp_imaging = 0.55
+        # self.camera_params.t_light_only_image_delay = 
 
         # self.p.t_tof = 1.e-6
 
