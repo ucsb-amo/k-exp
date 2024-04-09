@@ -6,24 +6,23 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         self.p.imaging_state = 2.
 
-        # self.xvar('beans',[1,2]*300)
+        self.xvar('beans',[2]*300)
 
         # self.p.t_lightsheet_hold = 5.e-3
 
         # self.xvar('t_lightsheet_hold',np.linspace(5.,40.,20)*1.e-3)
         # self.xvar('t_lightsheet_rampup',np.linspace(2.,15.,10)*1.e-3)
         
-        self.xvar('t_tweezer_hold',np.linspace(10.,10.,1000)*1.e-3)
+        # self.xvar('t_tweezer_hold',np.linspace(10.,10.,1000)*1.e-3)
         # self.xvar('t_tweezer_1064_ramp',np.linspace(2.,50.,20)*1.e-3)
 
-        # self.xvar('t_tof',np.linspace(9.,14.,10)*1.e-3) #gm
+        # self.xvar('t_tof',np.linspace(10.,10.,1000)*1.e-3) #gm
         # self.xvar('t_tof',np.linspace(20.,1000.,20)*1.e-6) #lightsheet
-        self.p.t_tof = 30.e-6
-
+        self.p.t_tof = 50.e-6
         self.p.t_tweezer_1064_ramp = 20.e-3
         # self.p.t_tweezer_hold = 10.e-3
 
@@ -32,12 +31,12 @@ class tof(EnvExperiment, Base):
         self.p.t_lightsheet_rampup = 10.e-3
         self.p.t_lightsheet_hold = 40.e-3
 
-        self.camera_params.amp_imaging = 0.55
+        # self.camera_params.amp_imaging = 0.55
         # self.camera_params.t_light_only_image_delay = 
 
         # self.p.t_tof = 1.e-6
 
-        self.finish_build(shuffle=False)
+        self.finish_build(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -69,9 +68,9 @@ class tof(EnvExperiment, Base):
         # self.optical_pumping(self.p.t_optical_pumping)
 
         # if self.p.beans == 0:
-        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        # delay(self.p.t_lightsheet_hold)
-        # self.lightsheet.off()
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        delay(self.p.t_lightsheet_hold)
+        self.lightsheet.off()
 
         # if self.p.beans == 1:
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
@@ -79,13 +78,13 @@ class tof(EnvExperiment, Base):
         # self.tweezer.off()
 
         # if self.p.beans == 2:
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        delay(self.p.t_lightsheet_hold)
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
-        # self.lightsheet.off()
-        self.lightsheet.ramp_down(t=self.p.t_tweezer_1064_ramp)
-        delay(10.e-3)
-        self.tweezer.off()
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        # delay(self.p.t_lightsheet_hold)
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+        # # self.lightsheet.off()
+        # self.lightsheet.ramp_down(t=self.p.t_tweezer_1064_ramp)
+        # delay(10.e-3)
+        # self.tweezer.off()
 
         # if self.p.beans == 1:
         #     self.dds.mot_killer.on()
