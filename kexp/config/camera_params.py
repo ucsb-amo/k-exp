@@ -72,7 +72,7 @@ class AndorParams(CameraParams):
         self.magnification = 1. # needs to be figured out and updated
         self.exposure_delay = 0. # needs to be updated from docs
         self.connection_delay = 8.0
-        self.t_camera_trigger = 10.e-6
+        self.t_camera_trigger = 100.e-9
         self.t_readout_time = 512 * 3.3e-6
         self.em_gain = 1.
         self.vs_speed = 2
@@ -86,7 +86,7 @@ class AndorParams(CameraParams):
         self.__amp_fluorescence__ = amp_fluorescence
 
         self.__em_gain_fluor = 290.
-        self.__em_gain_abs = 250.
+        self.__em_gain_abs = 3.
 
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
