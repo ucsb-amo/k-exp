@@ -30,11 +30,14 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [750,970]
         roiy = [500,780]
     elif crop_type == 'lightsheet_short':
-        roix = [1020,1080]
-        roiy = [600,740]
-    elif crop_type == 'tweezer':
+        roix = [1020,1050]
+        roiy = [600,680]
+    elif crop_type == 'xy_tweezer':
         roix = [950,1150]
         roiy = [630,700]
+    elif crop_type == 'andor_tweezer':
+        roix = [220,320]
+        roiy = [230,330]
     else:
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]]
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]]
