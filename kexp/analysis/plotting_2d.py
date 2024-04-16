@@ -8,7 +8,7 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
                      xvar1format="",
                      xvar0mult=1.,
                      xvar1mult=1.,
-                     od_max=0.,
+                     max_od=0.,
                      figsize=[]):
     if not xvar0format:
         xvar0format = xvarformat
@@ -16,8 +16,8 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
         xvar1format = xvarformat
     # Extract necessary attributes
     od = ad.od
-    if od_max == 0.:
-        od_max = np.max(od)
+    if max_od == 0.:
+        max_od = np.max(od)
     xvars = ad.xvars
     xvarnames = ad.xvarnames
     
@@ -40,16 +40,18 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
         for j in range(num_var2_values):
             ax = axes[i, j]
             img = od.take(indices=[i], axis=var1_idx).take(indices=[j], axis=var2_idx).squeeze()
-            ax.imshow(img,vmin=0.,vmax=od_max)
+            ax.imshow(img,vmin=0.,vmax=max_od)
             ax.set_xticks([])
             ax.set_yticks([])
     
     # Label each side of the grid with the corresponding element of xvarnames
     # Label along the appropriate side with the value of the corresponding independent variable
             if i == num_var1_values - 1:
-                ax.set_xlabel(f'{var2_values[j]*xvar1mult:{xvar1format}}')
+                ax.set_xlabel(f'{var2_values[j]*xvar1mult:{xvar1format}}',rotation=90)
             if j == 0:
                 ax.set_ylabel(f'{var1_values[i]*xvar0mult:{xvar0format}}')
+
+            ax.tick_params('x',labelrotation=90)
     
     fig.supylabel(xvarnames[var1_idx])
     fig.supxlabel(xvarnames[var2_idx])
@@ -66,7 +68,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
                      xvar1format='',
                      xvar0mult=1.,
                      xvar1mult=1.,
-                     od_max=0.,
+                     max_od=0.,
                      figsize=[]):
     
     if not xvar0format:
@@ -75,8 +77,8 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
         xvar1format = xvarformat
     # Extract necessary attributes
     od = ad.od
-    if od_max == 0.:
-        od_max = np.max(od)
+    if max_od == 0.:
+        max_od = np.max(od)
 
     if axis == 0:
         fits = ad.cloudfit_x
