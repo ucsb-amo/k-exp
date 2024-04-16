@@ -160,27 +160,32 @@ class dds_frame():
 
     @kernel
     def power_down_cooling(self):
-        self.d1_3d_r.dds_device.power_down()
-        self.d1_3d_c.dds_device.power_down()
-        self.d2_3d_c.dds_device.power_down()
-        self.d2_3d_r.dds_device.power_down()
-        self.d2_2d_c.dds_device.power_down()
-        self.d2_2d_r.dds_device.power_down()
-        # self.op_r.dds_device.power_down()
-        # self.optical_pumping.dds_device.power_down()
-        self.push.dds_device.power_down()
+        self.d1_3d_r.dds_device.set(amplitude=0.)
+        self.d1_3d_c.dds_device.set(amplitude=0.)
+        self.d2_3d_c.dds_device.set(amplitude=0.)
+        self.d2_3d_r.dds_device.set(amplitude=0.)
+        self.d2_2d_c.dds_device.set(amplitude=0.)
+        self.d2_2d_r.dds_device.set(amplitude=0.)
+        self.push.dds_device.set(amplitude=0.)
+
+        self.d1_3d_r.off()
+        self.d1_3d_c.off()
+        self.d2_3d_c.off()
+        self.d2_3d_r.off()
+        self.d2_2d_c.off()
+        self.d2_2d_r.off()
+        self.push.off()
 
     @kernel
     def init_cooling(self):
-        self.d1_3d_r.dds_device.init()
-        self.d1_3d_c.dds_device.init()
-        self.d2_3d_c.dds_device.init()
-        self.d2_3d_r.dds_device.init()
-        self.d2_2d_c.dds_device.init()
-        self.d2_2d_r.dds_device.init()
-        # self.op_r.dds_device.init()
-        # self.optical_pumping.dds_device.init()
-        self.push.dds_device.init()
+        self.d1_3d_r.set_dds(set_stored=True)
+        self.d1_3d_c.set_dds(set_stored=True)
+        self.d2_3d_c.set_dds(set_stored=True)
+        self.d2_3d_r.set_dds(set_stored=True)
+        self.d2_2d_c.set_dds(set_stored=True)
+        self.d2_2d_r.set_dds(set_stored=True)
+        self.op_r.set_dds(set_stored=True)
+        self.push.set_dds(set_stored=True)
 
     def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):
         """Define an amplitude ramp profile and append to the specified DDSManager object.
