@@ -103,8 +103,8 @@ def mixOD_grid(ad,
         plt.figure(figsize=figsize)
     else:
         plt.figure(figsize=(10, 8))
-    plt.imshow(full_image)
-    plt.title("Stitched Image Grid")
+    plt.imshow(full_image,vmin=0.,vmax=max_od)
+    plt.title(f"Run ID: {ad.run_info.run_id}")
     plt.xlabel(xvarnames[1])  # Label x-axis with the second x-variable name
     plt.ylabel(xvarnames[0])  # Label y-axis with the first x-variable name
 
