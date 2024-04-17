@@ -72,7 +72,6 @@ def mixOD_grid(ad,
                 figsize=[]):
 
     # Assuming you have already loaded your 'ad' object
-    # Extract relevant attributes
     if not xvar0format:
         xvar0format = xvarformat
     if not xvar1format:
@@ -109,8 +108,11 @@ def mixOD_grid(ad,
     plt.ylabel(xvarnames[0])  # Label y-axis with the first x-variable name
 
     # Set ticks and labels for x and y axes
-    plt.xticks(np.arange(0.5 * py, grid_cols * py, py), f"{xvars[1]*xvar1mult:{xvar1format}}", rotation=90)
-    plt.yticks(np.arange(0.5 * px, grid_rows * px, px), f"{xvars[0]*xvar0mult:{xvar0format}}")
+    plt.xticks(np.arange(0.5 * py, grid_cols * py, py), 
+               [f"{x*xvar1mult:{xvar1format}}" for x in xvars[1]],
+                 rotation=90)
+    plt.yticks(np.arange(0.5 * px, grid_rows * px, px),
+            [f"{x*xvar0mult:{xvar0format}}" for x in xvars[0]])
 
     plt.show()
 
