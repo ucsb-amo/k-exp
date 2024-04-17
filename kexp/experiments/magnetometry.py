@@ -8,39 +8,44 @@ class rf_scan(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')
 
-        self.p.imaging_state = 1.
-        self.p.t_rf_state_xfer_sweep = 100.e-3
+        self.p.imaging_state = 2.
+        # self.xvar('imaging_state',[2,1])
+        self.p.t_rf_state_xfer_sweep = 80.e-3
         self.p.n_rf_state_xfer_sweep_steps = 1000
+        # self.p.frequency_rf_sweep_state_prep_center = 459.43e6
+        # self.p.frequency_rf_sweep_state_prep_fullwidth = 506.329e3
+        self.p.frequency_rf_sweep_state_prep_fullwidth = 75.949e3
 
         self.p.t_lightsheet_rampup = 10.e-3
 
+        # self.p.v_pd_lightsheet_rampup_end = 2.7
+
+        # self.xvar('t_rf_state_xfer_sweep',np.linspace(.5,10.,15)*1.e-3)
+
+        # self.xvar('frequency_rf_sweep_state_prep_center', 459.5e6 + np.linspace(-.2,.2,20)*1.e6)
+        # self.xvar('frequency_rf_sweep_state_prep_center', 461.e6 + np.linspace(-20.,20.,80)*1.e6)
+        self.xvar('frequency_rf_sweep_state_prep_center', 461.e6 + np.linspace(-5.,5.,80)*1.e6)
+        self.p.do_sweep = 1
+        # self.xvar('do_sweep',[0,1])
+        # self.xvar('frequency_rf_sweep_state_prep_fullwidth',np.linspace(20.,500.,15)*1.e3)
+        # self.p.frequency_rf_sweep_state_prep_fullwidth = 150.e3
+
         # self.xvar('v_zshim_current_op',np.linspace(0.86,0.94,6))
 
-        self.xvar('frequency_rf_state_xfer_sweep_center',(461.7+np.linspace(-0.15,0.15,75))*1.e6)
-        self.p.frequency_rf_state_xfer_sweep_fullwidth = 7.e3
+        # self.xvar('frequency_rf_state_xfer_sweep_center',(461.7+np.linspace(-0.15,0.15,75))*1.e6)
+        # self.p.frequency_rf_state_xfer_sweep_fullwidth = 7.e3
 
         # self.xvar('frequency_rf_state_xfer_sweep_center',(475.14+np.linspace(-.1,.1,20))*1.e6)
         # self.p.frequency_rf_state_xfer_sweep_fullwidth = 7.e3
 
-        # self.p.v_zshim_current_measure = self.p.v_
-        # self.p.v_yshim_current_measure = 2.0
-        # self.p.v_xshim_current_measure = 0.17
-
         # self.p.i_outer_coil = 8.
         # self.xvar('i_outer_coil',np.linspace(8.,25.,5))
         # self.p.i_outer_coil = 13.924
-
         # self.xvar('v_yshim_current_measure',0.993 + np.linspace(-0.2,0.7,6))
         # self.xvar('v_xshim_current_measure',np.linspace(0.0,0.15,5))
 
-        # self.xvar('frequency_rf_state_xfer_sweep_center',(462.129591 + np.linspace(-0.5,0.1,50))*1.e6)
-        # scan_range = (447.147761+np.linspace(-0.3,0.3,63))*1.e6
-        # scan_range = 461.7e6 + np.linspace(-4.,4.,100)*1.e6
-        # self.xvar('frequency_rf_state_xfer_sweep_center',scan_range)
-        # self.p.frequency_rf_state_xfer_sweep_fullwidth = np.diff(scan_range)[0]*1.1
-
-        # self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(440.,500.,200)*1.e6)
-        # self.p.frequency_rf_state_xfer_sweep_fullwidth = 300.0e3
+        # self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(440.,500.,100)*1.e6)
+        # self.p.frequency_rf_state_xfer_sweep_fullwidth = 600.0e3
 
         ### shows both 1,0->2,0 and 1,0->2,1 at low fields
         # self.xvar('frequency_rf_state_xfer_sweep_center',(461.7+np.linspace(-0.05,0.25,42))*1.e6)
@@ -59,16 +64,28 @@ class rf_scan(EnvExperiment, Base):
         # self.p.frequency_rf_state_xfer_sweep_fullwidth = 150.e3
         ###
 
+        ### v = 3.0 z shim, v_x=0.17, v_y = 0.17 (optical pumping field) see all states, wider range
+        # self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(451.05,473.45,85)*1.e6)
+        # self.p.frequency_rf_state_xfer_sweep_fullwidth = 150.e3
+        ###
+
         # self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(484,488,100)*1.e6)
         # self.p.frequency_rf_state_xfer_sweep_fullwidth = 38.e3
 
-        self.p.t_optical_pumping = 100.e-6
+        # self.xvar('t_lightsheet_hold', np.linspace(100.,1000.,10)*1.e-3)
+
+        # self.p.i_outer_coil = 83.3
+
+        self.p.t_optical_pumping = 20.e-6
 
         self.p.t_lightsheet_hold = 1.e-3
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
         self.p.t_repump_flash_imaging = 10.e-6
+        self.p.t_tof = 20.e-6
+
+        # self.p.N_repeats = [1,2]
 
         self.finish_build()
 
@@ -88,50 +105,56 @@ class rf_scan(EnvExperiment, Base):
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
         
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                          v_xshim_current=self.p.v_xshim_current_gm)
+        # self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
+        #                 v_yshim_current=self.p.v_yshim_current_gm,
+        #                   v_xshim_current=self.p.v_xshim_current_gm2
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 
         self.flash_cooler()
-        # self.flash_repump()
+        # self.flash_repump(t=self.p.t_repump_flash_imaging)
 
         self.dds.power_down_cooling()
 
-        # delay(.5e-3*s)
+        self.set_shims(v_zshim_current=0.,
+                       v_yshim_current=self.p.v_zshim_current_gm,
+                        v_xshim_current=self.p.v_zshim_current_gm)
 
-        # self.dac.anti_zshim_current_control.set(3.10)
-        # self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-        #                 v_yshim_current=self.p.v_yshim_current_op,
-        #                   v_xshim_current=self.p.v_xshim_current_op)
-        # delay(self.p.t_optical_pumping_bias_rampup)
+        
 
-        # self.optical_pumping(self.p.t_optical_pumping,t_bias_rampup=0.)
+        # self.optical_pumping(self.p.t_optical_pumping,v_anti_zshim_current=9.99,v_zshim_current=0.)
+
+        # self.outer_coil.on(i_supply=self.p.i_outer_coil,wait_for_analog=True)
         
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        # self.outer_coil.on(i_supply=self.p.i_outer_coil)
-        # self.set_shims()
-        
-        delay(self.p.t_lightsheet_hold)
 
-        self.ttl.pd_scope_trig.on()
-        self.rf.sweep()
-        self.ttl.pd_scope_trig.off()
+        # delay(30*ms)
+        if self.p.do_sweep:
+            self.rf.sweep(frequency_sweep_list=self.p.frequency_rf_sweep_state_prep_list)
+
+        # delay(10*ms)
+
+        # self.dac.anti_zshim_current_control.set(0.)
+        # self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
+        #                v_yshim_current=self.p.v_zshim_current_gm,
+        #                 v_xshim_current=self.p.v_zshim_current_gm)
+        
+        # delay(self.p.t_lightsheet_hold)
+        # self.outer_coil.off()
+
+        # self.rf.sweep(frequency_sweep_list=self.p.frequency_rf_state_xfer_sweep_list)
 
         # delay(20.e-3)
-        # self.dac.anti_zshim_current_control.set(0.0)
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-                       v_yshim_current=self.p.v_yshim_current_op,
-                        v_xshim_current=self.p.v_xshim_current_op)
+        # self.dac.anti_zshim_current_control.set(0.)
+        # self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
+        #                v_yshim_current=self.p.v_zshim_current_gm,
+        #                 v_xshim_current=self.p.v_zshim_current_gm)
                        
-        # self.outer_coil.off()
-        # delay(self.p.t_bias_off_wait)
-        delay(10.e-3)
+        # delay(10.e-3)
         self.lightsheet.off()
-        
+
         delay(self.p.t_tof)
         self.abs_image()
 

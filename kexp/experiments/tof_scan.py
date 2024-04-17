@@ -20,7 +20,9 @@ class tof(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(10.,10.,1000)*1.e-3)
         # self.xvar('t_tweezer_1064_ramp',np.linspace(2.,50.,20)*1.e-3)
 
-        self.xvar('t_tof',np.linspace(0.1,10.,6)*1.e-3) #gm
+        self.xvar('i_mot',np.linspace(20.,50.,6))
+
+        self.xvar('t_tof',np.linspace(15.,18.,6)*1.e-3) #gm
         # self.xvar('t_tof',np.linspace(20.,1000.,20)*1.e-6) #lightsheet
         self.p.t_tof = 50.e-6
         self.p.t_tweezer_1064_ramp = 20.e-3
@@ -51,7 +53,7 @@ class tof(EnvExperiment, Base):
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot)
+        self.cmot_d1(self.p.t_d1cmot,i_supply=self.p.i_mot)
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
@@ -125,7 +127,7 @@ class tof(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe()
+        self.mot_observe(i_supply=24.)
 
     def analyze(self):
         import os

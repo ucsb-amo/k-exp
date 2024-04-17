@@ -12,9 +12,9 @@ class test(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('dummy',[1]*200)
+        self.xvar('dummy',[1]*2)
 
-        self.camera_params.em_gain = 200.
+        self.camera_params.em_gain = 2.
         self.camera_params.exposure_time = 10.e-6
         self.camera_params.amp_imaging = 0.5
         self.p.t_imaging_pulse = 10.e-6
