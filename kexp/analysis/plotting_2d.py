@@ -62,6 +62,58 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
 
     return fig, ax
 
+def mixOD_grid(ad,
+                xvarformat="1.2g",
+                xvar0format="",
+                xvar1format="",
+                xvar0mult=1.,
+                xvar1mult=1.,
+                max_od=0.,
+                figsize=[]):
+
+    # Assuming you have already loaded your 'ad' object
+    # Extract relevant attributes
+    if not xvar0format:
+        xvar0format = xvarformat
+    if not xvar1format:
+        xvar1format = xvarformat
+    # Extract necessary attributes
+    od = ad.od
+    if max_od == 0.:
+        max_od = np.max(od)
+        
+    xvarnames = ad.xvarnames
+    xvars = ad.xvars
+
+    # Get dimensions
+    n_1, n_2, px, py = od.shape
+
+    # Create a grid to hold the stitched images
+    grid_rows = n_1
+    grid_cols = n_2
+    full_image = np.zeros((grid_rows * px, grid_cols * py))
+
+    # Stitch the images into the grid
+    for i in range(n_1):
+        for j in range(n_2):
+            full_image[i * px: (i + 1) * px, j * py: (j + 1) * py] = od[i, j]
+
+    # Create a figure and plot the stitched image
+    if figsize:
+        plt.figure(figsize=figsize)
+    else:
+        plt.figure(figsize=(10, 8))
+    plt.imshow(full_image)
+    plt.title("Stitched Image Grid")
+    plt.xlabel(xvarnames[1])  # Label x-axis with the second x-variable name
+    plt.ylabel(xvarnames[0])  # Label y-axis with the first x-variable name
+
+    # Set ticks and labels for x and y axes
+    plt.xticks(np.arange(0.5 * py, grid_cols * py, py), f"{xvars[1]*xvar1mult:{xvar1format}}", rotation=90)
+    plt.yticks(np.arange(0.5 * px, grid_rows * px, px), f"{xvars[0]*xvar0mult:{xvar0format}}")
+
+    plt.show()
+
 def plot_sum_od_fits(ad:atomdata,axis=0,
                      xvarformat='1.3f',
                      xvar0format='',
