@@ -10,7 +10,7 @@ class tof(EnvExperiment, Base):
 
         self.p.imaging_state = 2.
 
-        self.xvar('t_tof',np.linspace(10.,17.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(0.1,30.,10)*1.e-3)
 
         self.p.t_mot_load = .5
 

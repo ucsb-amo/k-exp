@@ -32,7 +32,7 @@ class rf_scan(EnvExperiment, Base):
         # self.p.v_yshim_current_measure = 2.
         # self.p.v_xshim_current_measure = self.p.v_xshim_current
 
-        self.p.v_zshim_current_op = 3.0
+        self.p.v_zshim_current_op = 0.0
         self.p.v_yshim_current_op = 2.0
         self.p.v_xshim_current_op = 0.17
         # self.p.v_xshim_current_measure = 1.6
@@ -49,8 +49,8 @@ class rf_scan(EnvExperiment, Base):
         ###
 
         ### v = 3.0 z shim, v_x=0.17, v_y = 0.17, all states
-        # self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(456.05,467.45,100)*1.e6)
-        # self.p.frequency_rf_state_xfer_sweep_fullwidth = 100.e3
+        self.xvar('frequency_rf_state_xfer_sweep_center',np.linspace(456.05,467.45,100)*1.e6)
+        self.p.frequency_rf_state_xfer_sweep_fullwidth = 115.151e3
         ###
 
         ### v = 3.0 z shim, v_x=0.17, v_y = 0.17, 1,1 --> 2,0 transition only
@@ -59,10 +59,10 @@ class rf_scan(EnvExperiment, Base):
         ###
 
         # self.xvar('frequency_rf_state_xfer_sweep_fullwidth',np.linspace(5.,500.,40)*1.e3)
-        self.xvar('t_rf_state_xfer_sweep',np.linspace(50.,200.,40)*1.e-3)
+        # self.xvar('t_rf_state_xfer_sweep',np.linspace(50.,200.,40)*1.e-3)
 
         self.p.frequency_rf_state_xfer_sweep_center = 467.2390656e6
-        self.p.frequency_rf_state_xfer_sweep_fullwidth = 500.e3
+        # self.p.frequency_rf_state_xfer_sweep_fullwidth = 500.e3
         self.p.t_optical_pumping = 100.e-6
 
         self.p.t_mot_load = 0.3

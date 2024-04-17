@@ -6,11 +6,11 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
 
-        self.xvar('beans',[2]*300)
+        # self.xvar('beans',[2]*300)
 
         # self.p.t_lightsheet_hold = 5.e-3
 
@@ -20,7 +20,7 @@ class tof(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(10.,10.,1000)*1.e-3)
         # self.xvar('t_tweezer_1064_ramp',np.linspace(2.,50.,20)*1.e-3)
 
-        # self.xvar('t_tof',np.linspace(10.,10.,1000)*1.e-3) #gm
+        self.xvar('t_tof',np.linspace(0.1,10.,6)*1.e-3) #gm
         # self.xvar('t_tof',np.linspace(20.,1000.,20)*1.e-6) #lightsheet
         self.p.t_tof = 50.e-6
         self.p.t_tweezer_1064_ramp = 20.e-3
@@ -68,9 +68,9 @@ class tof(EnvExperiment, Base):
         # self.optical_pumping(self.p.t_optical_pumping)
 
         # if self.p.beans == 0:
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        delay(self.p.t_lightsheet_hold)
-        self.lightsheet.off()
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        # delay(self.p.t_lightsheet_hold)
+        # self.lightsheet.off()
 
         # if self.p.beans == 1:
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)

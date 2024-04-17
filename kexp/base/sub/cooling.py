@@ -370,7 +370,7 @@ class Cooling():
         # ### End Defaults ###
        
         delay(-t_magnet_off_pretrigger)
-        self.inner_coil.off()
+        self.inner_coil.igbt_ttl.off()
         delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
@@ -674,6 +674,8 @@ class Cooling():
         self.core.break_realtime()
 
         self.inner_coil.on(i_supply)
+
+        self.dac.anti_zshim_current_control.set(v=0.)
 
         self.dds.imaging.on()
 
