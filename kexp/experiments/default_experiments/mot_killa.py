@@ -79,6 +79,8 @@ class rf_scan(EnvExperiment, Base):
         self.cmot_d1(self.p.t_d1cmot * s)
         
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
+        # self.outer_coil.set_current(i_supply=0.)
+        # self.outer_coil.set_voltage(v_supply=5.)
 
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,
@@ -104,6 +106,8 @@ class rf_scan(EnvExperiment, Base):
         
         self.inner_coil.igbt_ttl.on()
 
+        # delay(10.e-3)
+
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
         delay(self.p.t_magtrap)
 
@@ -115,13 +119,24 @@ class rf_scan(EnvExperiment, Base):
         
         delay(20.e-3)
 
+        self.inner_coil.off()
+
+        # for i in self.p.feshbach_field_ramp_list:
+        #     self.outer_coil.set_current(i_supply=i)
+        #     delay(self.p.dt_feshbach_field_ramp)
+
         self.outer_coil.on(i_supply=self.p.evap1_current)
 
         delay(30.e-3)
 
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
+
         self.outer_coil.set_current(i_supply=self.p.evap2_current)
+
         self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+    
+        # delay(self.p.t_lightsheet_hold)
+
         self.outer_coil.off()
 
         delay(1.5e-3)
