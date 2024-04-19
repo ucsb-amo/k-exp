@@ -32,11 +32,16 @@ class lightsheet():
         self.params = expt_params
 
     @kernel
+    def init(self):
+        self.paint_amp_dac.set(v=-9.99,load_dac=True)
+        self.ttl.off()
+
+    @kernel
     def set_paint_amp(self,paint_fraction=dv,load_dac=True):
         if paint_fraction == dv:
             paint_fraction = 0.
         v_dac = DAC_PAINT_FULLSCALE * (2 * paint_fraction - 1)
-        self.vva_dac.set(v=v_dac,load_dac=load_dac)
+        self.paint_amp_dac.set(v=v_dac,load_dac=load_dac)
 
     @kernel
     def set_power(self,v_lightsheet_vva=dv,load_dac=True):
@@ -63,6 +68,21 @@ class lightsheet():
     def ramp_down(self,t,v_ramp_list=dv_list):
         if v_ramp_list == dv_list:
             v_ramp_list = self.params.v_pd_lightsheet_ramp_down_list
+
+        n_ramp = len(v_ramp_list)
+        dt_ramp = t / n_ramp
+
+        self.vva_dac.set(v=v_ramp_list[0])
+        self.on()
+        delay(dt_ramp)
+        for v in v_ramp_list[1:]:
+            self.vva_dac.set(v=v)
+            delay(dt_ramp)
+
+    @kernel
+    def ramp_down2(self,t,v_ramp_list=dv_list):
+        if v_ramp_list == dv_list:
+            v_ramp_list = self.params.v_pd_lightsheet_ramp_down2_list
 
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp

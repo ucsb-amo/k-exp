@@ -47,6 +47,8 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 10.e-3
+        self.t_lightsheet_rampdown = 1500.e-3
+        self.t_lightsheet_rampdown2 = 1000.e-3
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
@@ -55,7 +57,8 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap_ramp = 10.e-3
+        self.t_magtrap_ramp = 40.e-3
+        self.t_feshbach_field_ramp = 80.e-3
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -80,12 +83,12 @@ class ExptParams():
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
-        self.v_pd_d1_c_mot = .5
+        self.v_pd_d1_c_mot = 5.0
 
         self.detune_d1_r_mot = 0.
-        self.v_pd_d1_r_mot = 5.5
+        self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 24.0
+        self.i_mot = 33.0
         self.v_zshim_current = 0.2
         self.v_xshim_current = 0.993
         self.v_yshim_current = 0.955
@@ -112,7 +115,7 @@ class ExptParams():
         self.detune_d2_r_sweep_d1cmot_end = -5.
         self.n_d1cmot_detuning_sweep_steps = 200
 
-        self.i_cmot = 25.
+        self.i_cmot = 33.
         
         #GM
         self.detune_gm = 9.
@@ -155,6 +158,14 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_start = 0.0
         self.v_pd_lightsheet_rampup_end = 4.0
 
+        self.n_lightsheet_rampdown_steps = 1000
+        self.v_pd_lightsheet_rampdown_start = 4.0
+        self.v_pd_lightsheet_rampdown_end = .75
+
+        self.n_lightsheet_rampdown2_steps = 1000
+        self.v_pd_lightsheet_rampdown2_start = .75
+        self.v_pd_lightsheet_rampdown2_end = .1
+
         #1227
         self.frequency_ao_1227 = 80.e6
         self.amp_1227 = .45
@@ -186,6 +197,11 @@ class ExptParams():
         self.i_magtrap_ramp_end = 0.0
         self.n_magtrap_ramp_steps = 1000
 
+        # feshbach field ramp
+        self.i_feshbach_field_ramp_start = 130.
+        self.i_feshbach_field_ramp_end = 250.0
+        self.n_feshbach_field_ramp_steps = 1000
+
         self.compute_derived()
 
     def compute_rf_sweep_params(self):
@@ -215,10 +231,17 @@ class ExptParams():
 
     def compute_lightsheet_ramp_down_params(self):
         self.v_pd_lightsheet_ramp_down_list = np.linspace(
-            self.v_pd_lightsheet_rampup_end,
-            self.v_pd_lightsheet_rampup_start,
-            self.n_lightsheet_rampup_steps)
-        self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
+            self.v_pd_lightsheet_rampdown_start,
+            self.v_pd_lightsheet_rampdown_end,
+            self.n_lightsheet_rampdown_steps)
+        self.dt_lightsheet_ramp = self.t_lightsheet_rampdown / self.n_lightsheet_rampdown_steps
+
+    def compute_lightsheet_ramp_down2_params(self):
+        self.v_pd_lightsheet_ramp_down2_list = np.linspace(
+            self.v_pd_lightsheet_rampdown2_start,
+            self.v_pd_lightsheet_rampdown2_end,
+            self.n_lightsheet_rampdown2_steps)
+        self.dt_lightsheet_ramp = self.t_lightsheet_rampdown2 / self.n_lightsheet_rampdown2_steps
 
     def compute_gmramp_params(self):
         self.pfrac_c_gmramp_list = np.linspace(self.pfrac_c_gmramp_start, self.pfrac_c_gmramp_end, self.n_gmramp_steps).transpose()
@@ -259,6 +282,10 @@ class ExptParams():
     def compute_magtrap_ramp_params(self):
         self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end, self.n_magtrap_ramp_steps).transpose()
         self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps
+
+    def compute_feshbach_field_ramp_params(self):
+        self.feshbach_field_ramp_list = np.linspace(self.i_feshbach_field_ramp_start,self.i_feshbach_field_ramp_end, self.n_feshbach_field_ramp_steps).transpose()
+        self.dt_feshbach_field_ramp = self.t_feshbach_field_ramp / self.n_feshbach_field_ramp_steps
 
     def compute_derived(self):
         '''loop through methods (except built in ones) and compute all derived quantities'''

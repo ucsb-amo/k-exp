@@ -105,6 +105,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.dds.beatlock_ref.on()
         # if init_rf:
         #     self.rf.init()
+        self.lightsheet.init()
         self.core.break_realtime() # add slack before scheduling experiment events
 
     def prepare_image_array(self):
