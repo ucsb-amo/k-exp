@@ -6,14 +6,16 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
+        self.xvar('beans',[0]*300)
+
         self.p.i_magtrap_init = 30.
 
-        self.p.t_magtrap = 30.e-3
+        self.p.t_magtrap = 40.e-3
 
         self.p.i_magtrap_ramp_start = 74.
         self.p.i_magtrap_ramp_end = 0.
@@ -46,16 +48,16 @@ class rf_scan(EnvExperiment, Base):
 
         # self.xvar('evap2_current',np.linspace(10.9,12.3,6))
 
-        self.xvar('t_tof',np.linspace(100.,4000.,15)*1.e-6)
+        # self.xvar('t_tof',np.linspace(100.,4000.,15)*1.e-6)
 
         # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
         # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
 
-        self.p.t_lightsheet_hold = 500.e-3
+        self.p.t_lightsheet_hold = 1.5e-3
 
         self.p.t_lightsheet_rampup = 25.e-3
 
-        self.p.t_tof = 3000.e-6
+        self.p.t_tof = 500.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
@@ -106,8 +108,6 @@ class rf_scan(EnvExperiment, Base):
         
         self.inner_coil.igbt_ttl.on()
 
-        # delay(10.e-3)
-
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
         delay(self.p.t_magtrap)
 
@@ -125,29 +125,33 @@ class rf_scan(EnvExperiment, Base):
         #     self.outer_coil.set_current(i_supply=i)
         #     delay(self.p.dt_feshbach_field_ramp)
 
-        self.outer_coil.on(i_supply=self.p.evap1_current)
+        # self.outer_coil.on(i_supply=self.p.evap1_current)
 
-        delay(30.e-3)
+        # delay(30.e-3)
 
-        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
+        # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
-        self.outer_coil.set_current(i_supply=self.p.evap2_current)
+        # self.outer_coil.set_current(i_supply=self.p.evap2_current)
 
-        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+        # self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
     
-        # delay(self.p.t_lightsheet_hold)
+        delay(self.p.t_lightsheet_hold)
 
-        self.outer_coil.off()
+        # self.outer_coil.off()
 
-        delay(1.5e-3)
+        # delay(1.5e-3)
 
-        self.ttl.pd_scope_trig.off()
+        self.dds.mot_killer.on()
+
+        # self.ttl.pd_scope_trig.off()
 
         self.lightsheet.off()
     
         delay(self.p.t_tof)
         self.flash_repump()
         self.abs_image()
+
+        self.dds.mot_killer.off()
 
     @kernel
     def run(self):
