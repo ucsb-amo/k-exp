@@ -10,21 +10,27 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
-        self.p.t_rf_state_xfer_sweep = 80.e-3
-        self.p.n_rf_state_xfer_sweep_steps = 1000
+        self.p.t_rf_state_xfer_sweep = 150.e-3
+        self.p.n_rf_state_xfer_sweep_steps = 1500
         # self.p.frequency_rf_sweep_state_prep_center = 459.43e6
         # self.p.frequency_rf_sweep_state_prep_fullwidth = 506.329e3
-        self.p.frequency_rf_sweep_state_prep_fullwidth = 75.949e3
+        self.p.frequency_rf_sweep_state_prep_fullwidth = 1037.974e3
+        # self.xvar('frequency_rf_sweep_state_prep_fullwidth', np.linspace(700.,1200.,30)*1.e3)
 
         self.p.t_lightsheet_rampup = 10.e-3
 
         # self.p.v_pd_lightsheet_rampup_end = 2.7
 
+        # self.xvar('i_outer_coil',np.linspace(10.,65.,7))
+        # self.xvar('i_outer_coil',np.linspace(53, 64, 5))
+
         # self.xvar('t_rf_state_xfer_sweep',np.linspace(.5,10.,15)*1.e-3)
 
         # self.xvar('frequency_rf_sweep_state_prep_center', 459.5e6 + np.linspace(-.2,.2,20)*1.e6)
         # self.xvar('frequency_rf_sweep_state_prep_center', 461.e6 + np.linspace(-20.,20.,80)*1.e6)
-        self.xvar('frequency_rf_sweep_state_prep_center', 461.e6 + np.linspace(-5.,5.,80)*1.e6)
+        # self.xvar('frequency_rf_sweep_state_prep_center', 461.e6 + np.linspace(-5.,5.,80)*1.e6)
+        self.xvar('frequency_rf_sweep_state_prep_center', np.linspace(460.,480.,30)*1.e6)
+        # self.p.frequency_rf_state_xfer_sweep_center = 476.e6
         self.p.do_sweep = 1
         # self.xvar('do_sweep',[0,1])
         # self.xvar('frequency_rf_sweep_state_prep_fullwidth',np.linspace(20.,500.,15)*1.e3)
@@ -73,8 +79,7 @@ class rf_scan(EnvExperiment, Base):
         # self.p.frequency_rf_state_xfer_sweep_fullwidth = 38.e3
 
         # self.xvar('t_lightsheet_hold', np.linspace(100.,1000.,10)*1.e-3)
-
-        # self.p.i_outer_coil = 83.3
+        self.p.i_outer_coil = 60.
 
         self.p.t_optical_pumping = 20.e-6
 
@@ -105,9 +110,9 @@ class rf_scan(EnvExperiment, Base):
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
         
-        # self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-        #                 v_yshim_current=self.p.v_yshim_current_gm,
-        #                   v_xshim_current=self.p.v_xshim_current_gm2
+        self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
+                        v_yshim_current=self.p.v_yshim_current_gm,
+                          v_xshim_current=self.p.v_xshim_current_gm)
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
@@ -122,37 +127,26 @@ class rf_scan(EnvExperiment, Base):
                        v_yshim_current=self.p.v_zshim_current_gm,
                         v_xshim_current=self.p.v_zshim_current_gm)
 
-        
-
         # self.optical_pumping(self.p.t_optical_pumping,v_anti_zshim_current=9.99,v_zshim_current=0.)
 
-        # self.outer_coil.on(i_supply=self.p.i_outer_coil,wait_for_analog=True)
-        
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
-        # delay(30*ms)
+        self.outer_coil.on(i_supply=self.p.i_outer_coil,wait_for_analog=True)
+
+        delay(50*ms)
         if self.p.do_sweep:
             self.rf.sweep(frequency_sweep_list=self.p.frequency_rf_sweep_state_prep_list)
 
         # delay(10*ms)
 
-        # self.dac.anti_zshim_current_control.set(0.)
-        # self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-        #                v_yshim_current=self.p.v_zshim_current_gm,
-        #                 v_xshim_current=self.p.v_zshim_current_gm)
+        self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
+                       v_yshim_current=self.p.v_zshim_current_gm,
+                        v_xshim_current=self.p.v_zshim_current_gm)
         
         # delay(self.p.t_lightsheet_hold)
-        # self.outer_coil.off()
-
-        # self.rf.sweep(frequency_sweep_list=self.p.frequency_rf_state_xfer_sweep_list)
-
-        # delay(20.e-3)
-        # self.dac.anti_zshim_current_control.set(0.)
-        # self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-        #                v_yshim_current=self.p.v_zshim_current_gm,
-        #                 v_xshim_current=self.p.v_zshim_current_gm)
+        self.outer_coil.igbt_ttl.off()
                        
-        # delay(10.e-3)
+        delay(10.e-3)
         self.lightsheet.off()
 
         delay(self.p.t_tof)

@@ -6,25 +6,33 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         self.p.imaging_state = 2.
+
+        self.p.do_optical_pumping = 1.
 
         # self.xvar('beans',[2]*300)
 
         # self.p.t_lightsheet_hold = 5.e-3
 
-        # self.xvar('t_lightsheet_hold',np.linspace(5.,40.,20)*1.e-3)
+        self.xvar('t_lightsheet_hold',np.linspace(100.,100.,300)*1.e-3)
         # self.xvar('t_lightsheet_rampup',np.linspace(2.,15.,10)*1.e-3)
         
         # self.xvar('t_tweezer_hold',np.linspace(10.,10.,1000)*1.e-3)
         # self.xvar('t_tweezer_1064_ramp',np.linspace(2.,50.,20)*1.e-3)
 
-        self.xvar('i_mot',np.linspace(20.,50.,6))
+        # self.p.i_mot = 40.
+        # self.xvar('i_mot',np.linspace(20.,45.,8))
 
-        self.xvar('t_tof',np.linspace(15.,18.,6)*1.e-3) #gm
+        # self.xvar('t_tof',np.linspace(15.,18.,10)*1.e-3) #gm
+        # self.xvar('t_tof',np.linspace(1.,3.,10)*1.e-3) #gm
         # self.xvar('t_tof',np.linspace(20.,1000.,20)*1.e-6) #lightsheet
-        self.p.t_tof = 50.e-6
+        
+        # self.xvar('imaging_state',[1,2])
+        # self.xvar('t_optical_pumping',np.linspace(0,500,6)*1.e-6)
+        
+        self.p.t_tof = 1.e-6
         self.p.t_tweezer_1064_ramp = 20.e-3
         # self.p.t_tweezer_hold = 10.e-3
 
@@ -37,6 +45,8 @@ class tof(EnvExperiment, Base):
         # self.camera_params.t_light_only_image_delay = 
 
         # self.p.t_tof = 1.e-6
+
+        self.p.N_repeats = 1
 
         self.finish_build(shuffle=True)
 
@@ -52,6 +62,7 @@ class tof(EnvExperiment, Base):
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
+        # self.hybrid_mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot,i_supply=self.p.i_mot)
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
@@ -63,16 +74,34 @@ class tof(EnvExperiment, Base):
 
         self.release()
 
+        self.flash_cooler()
+
+        self.dds.power_down_cooling()
+
+        # self.set_shims(v_zshim_current=3.,
+        #                v_yshim_current=self.p.v_yshim_current_op,
+        #                v_xshim_current=self.p.v_xshim_current_op)
+        # delay(self.p.t_optical_pumping_bias_rampup)
+
+        # if self.p.do_optical_pumping:
+        #     self.optical_pumping(t=self.p.t_optical_pumping,
+        #                         t_bias_rampup=0.)
+            
+        # self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
+        #                 v_yshim_current=self.p.v_yshim_current_gm,
+        #                   v_xshim_current=self.p.v_xshim_current_gm)
+        # delay(self.p.t_optical_pumping_bias_rampup)
+
         # self.dds.mot_killer.on()
 
-        # self.dds.power_down_cooling()
+
 
         # self.optical_pumping(self.p.t_optical_pumping)
 
         # if self.p.beans == 0:
-        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        # delay(self.p.t_lightsheet_hold)
-        # self.lightsheet.off()
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        delay(self.p.t_lightsheet_hold)
+        self.lightsheet.off()
 
         # if self.p.beans == 1:
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
@@ -127,7 +156,7 @@ class tof(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe(i_supply=24.)
+        self.mot_observe(i_supply=self.p.i_mot)
 
     def analyze(self):
         import os

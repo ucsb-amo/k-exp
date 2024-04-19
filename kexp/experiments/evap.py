@@ -16,51 +16,54 @@ class rf_scan(EnvExperiment, Base):
         self.p.frequency_rf_sweep_state_prep_fullwidth = 122.448e3
         self.p.do_sweep = 1
 
-        # self.xvar('frequency_rf_sweep_state_prep_center', 461.7e6 + np.linspace(-3.,3.,50)*1.e6)
-
-        # self.xvar('t_magtrap', np.linspace(10.,100.,20)*1.e-3)
-        # self.xvar('t_lightsheet_rampup', np.linspace(10.,60.,10)*1.e-3)
-
-        # self.xvar('beans',[0,1]*300)
-
-        # self.xvar('t_lightsheet_hold',np.linspace(5.,200.,10)*1.e-3)
-
-        # self.p.t_magtrap_ramp_start = 5.e-3
-        # self.p.t_magtrap_ramp_end = 75.e-3
-
-        # self.xvar('t_magtrap_ramp',np.linspace(self.p.t_magtrap_ramp_start,self.p.t_magtrap_ramp_end,6))
-
         self.p.i_magtrap_ramp_start = 74.
         self.p.i_magtrap_ramp_end = 0.
-        # self.xvar('i_magtrap_ramp_start', np.linspace(30.,80.,10))
 
-        # self.xvar('t_tof',np.linspace(100.,500.,10)*1.e-6)
+        self.p.i_feshbach_field_ramp_start = 20.
+        # self.p.i_feshbach_field_ramp_end = 90.
 
-        # self.xvar('feshbach_current',np.linspace(130.,250.,40))
-
-        # self.xvar('i_outer_shim', np.linspace(0.,5.,10))
-
-        # self.xvar('beans',[0,1]*1000)
-
-        self.p.i_feshbach_field_ramp_start = 30.
-        self.p.i_feshbach_field_ramp_end = 90.
+        self.p.evap2_current = 18.9
 
         # self.xvar('i_feshbach_field_ramp_end',np.linspace(32.,70.,80))
 
-        self.xvar('i_feshbach_field_ramp_start',np.linspace(30.,70.,80))
+        # self.xvar('i_feshbach_field_ramp_start',np.linspace(30.,15.,10))
+
+        self.p.t_lightsheet_ramp_end = 100.e-3
+        # self.xvar('t_lightsheet_rampup',np.linspace(10.e-3,self.p.t_lightsheet_ramp_end,10))
+
+        # self.xvar('paint_fraction',np.linspace(0.,.36,20))
+
+        # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.75,.1,20))
+
+        # self.xvar('evap2_current',np.linspace(20.,15.,10))
+
+        self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
+
+        # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
+        # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
+
+        self.p.i_magtrap_init = 30.
+
+        self.p.v_pd_lightsheet_rampdown_end = .75
+
+        self.p.v_pd_lightsheet_rampdown2_end = .55
 
         self.p.t_magtrap = 30.e-3
 
         self.p.t_lightsheet_hold = 500.e-3
 
+        self.p.t_lightsheet_rampup = 25.e-3
+
+        self.p.paint_fraction = 0.
+
         self.p.t_spin_polarization_time = 30.e-3
 
-        self.p.t_tof = 5.e-6
+        self.p.t_tof = 50.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
 
-        self.finish_build(shuffle=False)
+        self.finish_build(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -78,7 +81,7 @@ class rf_scan(EnvExperiment, Base):
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
         
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
+        self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
 
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,
@@ -101,7 +104,12 @@ class rf_scan(EnvExperiment, Base):
         self.ttl.pd_scope_trig.on()
         self.inner_coil.igbt_ttl.on()
 
+        delay(10.e-3)
+
+        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
         delay(self.p.t_magtrap)
+
+        # self.lightsheet.set_paint_amp(paint_fraction=self.p.paint_fraction)
 
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
@@ -109,26 +117,28 @@ class rf_scan(EnvExperiment, Base):
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
 
-        # delay(60.e-3)
-
         self.inner_coil.off()
 
-        delay(20.e-3)
+        # delay(20.e-3)
 
         self.outer_coil.on(i_supply=self.p.i_feshbach_field_ramp_start)
 
         delay(30.e-3)
 
-        # for i in self.p.feshbach_field_ramp_list:
-        #     self.outer_coil.set_current(i_supply=i)
-        #     delay(self.p.dt_feshbach_field_ramp)
+        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
-        delay(1000.e-3*s)
+        self.outer_coil.set_current(i_supply=self.p.evap2_current)
+
+        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
     
         # delay(self.p.t_lightsheet_hold)
+
         self.outer_coil.off()
+
         delay(5.e-3)
+
         self.ttl.pd_scope_trig.off()
+
         self.lightsheet.off()
 
         
