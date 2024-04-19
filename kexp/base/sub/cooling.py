@@ -206,7 +206,7 @@ class Cooling():
                                  v_pd=v_pd_d1_c)
         delay(self.params.t_rtio)
         self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r,
-                                 amplitude=v_pd_d1_r)
+                                 v_pd=v_pd_d1_r)
         self.set_shims()
         with parallel:
             self.switch_d2_3d(1)
@@ -568,7 +568,7 @@ class Cooling():
 
     @kernel
     def release(self):
-        self.inner_coil.off()
+        self.inner_coil.igbt_ttl.off()
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
