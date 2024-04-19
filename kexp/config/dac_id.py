@@ -24,7 +24,7 @@ class dac_frame():
         self.xshim_current_control = self.assign_dac_ch(5,p.v_xshim_current)
         self.yshim_current_control = self.assign_dac_ch(6,p.v_yshim_current)
         self.zshim_current_control = self.assign_dac_ch(7,p.v_zshim_current)
-        self.inner_coil_supply_current = self.assign_dac_ch(8,max_v=5.6)
+        self.inner_coil_supply_current = self.assign_dac_ch(8,max_v=5.8)
         self.outer_coil_supply_current = self.assign_dac_ch(9)
         self.outer_coil_supply_voltage = self.assign_dac_ch(10)
         self.inner_coil_supply_voltage = self.assign_dac_ch(11)
