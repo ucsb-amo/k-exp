@@ -7,11 +7,12 @@ from kexp.analysis import atomdata
 dv = -1000.
 
 def get_B(f_mf0_mf1_transition,
-          F0=2.,mF0=0.,F1=1.,mF1=1.):
+          F0=2.,mF0=0.,F1=1.,mF1=1.,
+          min_B=0.,max_B=600.):
 
         from kamo.atom_properties.k39 import Potassium39
         k = Potassium39()
-        B = np.linspace(0.,600.,1000000)
+        B = np.linspace(min_B,max_B,1000000)
         f_transitions = abs(k.get_microwave_transition_frequency(4,0,.5,F0,mF0,F1,mF1,B)) * 1.e6
 
         def find_xval(y_val,y_vec,x_vec):
@@ -274,6 +275,8 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                  average_multiple_peaks=False,
                  param_of_interest='',
                  transition_peak_idx=-1,
+                 min_B = 0.,
+                 max_B = 600.,
                  peak_prominence=10):
     """Analyzes the sum_od_x for each shot and produces an array of the max-min
     OD ("signal") vs. the RF center frequency. Extracts the peak signal from each 
@@ -298,6 +301,12 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         transition_peak_idx (int, optional): state specified by the quantum numbers F0,
         mF0, F1, mF1. Indexes as a list, with the peaks from lowest to highest
         frequency. Default is the last peak (-1).
+        min_B (float, optional): the minimum B value in Gauss to use for the
+        calculation, useful if the transition frequency is non-monatonic with
+        magnetic field. Defaults to 0.
+        max_B (float, optional): the maximum B value in Gauss to use for the
+        calculation, useful if the transition frequency is non-monatonic with
+        magnetic field. Defaults to 600.
         peak_prominence (float, optional): Specifies how prominent a peak has to
         be in order to be counted.
     """
@@ -317,7 +326,7 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         try:
             this_transition = x_peaks[transition_peak_idx]
             print(this_transition)
-            B_measured = get_B(this_transition,F0,mF0,F1,mF1)
+            B_measured = get_B(this_transition,F0,mF0,F1,mF1,min_B=min_B,max_B=max_B)
         except Exception as e:
             print(e)
             B_measured = None
@@ -354,6 +363,8 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                  average_multiple_peaks=False,
                  transition_peak_idx = -1,
                  peak_prominence=10,
+                 min_B = 0.,
+                 max_B = 600.,
                  subplots_figsize=[]):
     """Analyzes the sum_od_x for each shot and produces an array of the max-min
     OD ("signal") for each value of the scanned variable vs. the RF center
@@ -382,6 +393,12 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         transition_peak_idx (int, optional): state specified by the quantum numbers F0,
         mF0, F1, mF1. Indexes as a list, with the peaks from lowest to highest
         frequency. Default is the last peak (-1).
+        min_B (float, optional): the minimum B value in Gauss to use for the
+        calculation, useful if the transition frequency is non-monatonic with
+        magnetic field. Defaults to 0.
+        max_B (float, optional): the maximum B value in Gauss to use for the
+        calculation, useful if the transition frequency is non-monatonic with
+        magnetic field. Defaults to 600.
         peak_prominence (float, optional): Specifies how prominent a peak has to
         be in order to be counted.
     """    
@@ -427,7 +444,7 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         try:
             f_this_transition = x_peaks[transition_peak_idx]
             transition_peaks.append(f_this_transition)
-            B_measured = get_B(f_this_transition,F0,mF0,F1,mF1)
+            B_measured = get_B(f_this_transition,F0,mF0,F1,mF1,min_B=min_B,max_B=max_B)
             B_measured_array.append(B_measured)
         except Exception as e:
             print(e)
