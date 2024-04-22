@@ -158,7 +158,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_start = 0.0
         self.v_pd_lightsheet_rampup_end = 4.0
 
-        self.n_lightsheet_rampdown_steps = 1000
+        self.n_lightsheet_rampdown_steps = 10000
         self.v_pd_lightsheet_rampdown_start = 4.0
         self.v_pd_lightsheet_rampdown_end = .75
 
