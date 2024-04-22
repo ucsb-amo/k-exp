@@ -6,12 +6,12 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.xvar('beans',[0]*300)
+        # self.xvar('beans',[0]*300)
 
         self.p.i_magtrap_init = 30.
 
@@ -53,11 +53,13 @@ class rf_scan(EnvExperiment, Base):
         # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
         # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
 
+        self.xvar('t_tweezer_hold', np.linspace(15.,40.,20)*1.e-3)
+
         self.p.t_lightsheet_hold = 1.5e-3
 
         self.p.t_lightsheet_rampup = 25.e-3
 
-        self.p.t_tof = 500.e-6
+        self.p.t_tof = 10.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
@@ -102,24 +104,29 @@ class rf_scan(EnvExperiment, Base):
 
         self.dds.power_down_cooling()
 
-        self.set_shims(v_zshim_current=0.,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                          v_xshim_current=self.p.v_xshim_current_gm)
+        # self.set_shims(v_zshim_current=0.,
+        #                 v_yshim_current=self.p.v_yshim_current_gm,
+        #                   v_xshim_current=self.p.v_xshim_current_gm)
         
-        self.inner_coil.igbt_ttl.on()
+        # self.inner_coil.igbt_ttl.on()
 
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-        delay(self.p.t_magtrap)
+        # self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
+        # delay(self.p.t_magtrap)
 
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
-        for i in self.p.magtrap_ramp_list:
-            self.inner_coil.set_current(i_supply=i)
-            delay(self.p.dt_magtrap_ramp)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+
+        # for i in self.p.magtrap_ramp_list:
+        #     self.inner_coil.set_current(i_supply=i)
+        #     delay(self.p.dt_magtrap_ramp)
         
-        delay(20.e-3)
+        # delay(20.e-3)
 
-        self.inner_coil.off()
+        # self.inner_coil.off()
+        
+        delay(self.p.t_tweezer_hold)
+        self.tweezer.off()
 
         # for i in self.p.feshbach_field_ramp_list:
         #     self.outer_coil.set_current(i_supply=i)
@@ -135,23 +142,23 @@ class rf_scan(EnvExperiment, Base):
 
         # self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
     
-        delay(self.p.t_lightsheet_hold)
+        # delay(self.p.t_lightsheet_hold)
 
         # self.outer_coil.off()
 
         # delay(1.5e-3)
 
-        self.dds.mot_killer.on()
+        # self.dds.mot_killer.on()
 
         # self.ttl.pd_scope_trig.off()
 
-        self.lightsheet.off()
+        # self.lightsheet.off()
     
         delay(self.p.t_tof)
         self.flash_repump()
         self.abs_image()
 
-        self.dds.mot_killer.off()
+        # self.dds.mot_killer.off()
 
     @kernel
     def run(self):
