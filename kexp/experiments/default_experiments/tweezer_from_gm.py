@@ -6,11 +6,11 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
         self.p.imaging_state = 2.
 
-        self.xvar('t_tweezer_hold', np.linspace(30.,200.,20)*1.e-3)
+        self.xvar('t_tweezer_hold', np.linspace(50.,50.,500)*1.e-3)
 
         self.p.t_lightsheet_hold = 1.5e-3
 
@@ -20,6 +20,9 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
+
+        self.camera_params.em_gain = 290.
+        self.camera_params.amp_imaging = 0.25
 
         self.finish_build(shuffle=True)
 
@@ -34,7 +37,7 @@ class rf_scan(EnvExperiment, Base):
         else:
             self.set_imaging_detuning()
 
-        self.switch_d2_2(d1)
+        self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
@@ -52,7 +55,7 @@ class rf_scan(EnvExperiment, Base):
         self.dds.power_down_cooling()
 
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
-        delay(5.e-3)
+        # delay(5.e-3)
         
         delay(self.p.t_tweezer_hold)
 
