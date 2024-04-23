@@ -25,13 +25,19 @@ class tweezer():
     @kernel
     def on(self):
         self.ttl.on()
-        self.vva_dac.set(v=0.)
+        # self.vva_dac.set(v=0.)
         # self.vva_dac.set(v=5.)
 
     @kernel
     def off(self):
         self.ttl.off()
-        self.vva_dac.set(v=0.)
+        # self.vva_dac.set(v=0.)
+
+    @kernel
+    def set_power(self,v_tweezer_vva=dv,load_dac=True):
+        if v_tweezer_vva == dv:
+            v_tweezer_vva = self.params.v_pd_tweezer_1064
+        self.vva_dac.set(v=v_tweezer_vva,load_dac=load_dac)
 
     @kernel
     def ramp(self,t,v_ramp_list=dv_list):
