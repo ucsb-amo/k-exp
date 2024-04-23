@@ -11,51 +11,14 @@ class rf_scan(EnvExperiment, Base):
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        # self.xvar('i_magtrap_init',np.linspace(20.,70.,20))
-
-        self.p.i_magtrap_init = 33.
+        self.p.i_magtrap_init = 30.
 
         self.p.t_magtrap = 30.e-3
 
         self.p.i_magtrap_ramp_start = 74.
         self.p.i_magtrap_ramp_end = 0.
 
-        self.p.i_feshbach_field_ramp_start = 0.
-        self.p.i_feshbach_field_ramp_end = 13.2
-        self.p.t_feshbach_field_ramp = 30.e-3
-
-        self.p.v_pd_lightsheet_rampdown_end = .67
-        self.p.t_lightsheet_rampdown = 1.4*s
-
-        self.p.v_pd_lightsheet_rampdown2_start = self.p.v_pd_lightsheet_rampdown_end
-        self.p.v_pd_lightsheet_rampdown2_end = .53
-        self.p.t_lightsheet_rampdown2 = 1.9*s
-
-        # self.p.evap1_current = 12.2
-        # self.p.evap2_current = 11.5
-
-        self.xvar('evap1_current',np.linspace(11.,13.9,6))
-
-        # self.xvar('i_feshbach_field_ramp_start',np.linspace(30.,15.,10))
-
-        # self.p.t_lightsheet_ramp_end = 100.e-3
-        # self.xvar('t_lightsheet_rampup',np.linspace(10.e-3,self.p.t_lightsheet_ramp_end,10))
-        # self.xvar('t_lightsheet_rampdown',np.linspace(.5,2.,6))
-
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.9,.6,6))
-        # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.6,.51,6))
-        # self.xvar('t_lightsheet_rampdown2',np.linspace(.5,2.,6))
-
-        self.xvar('evap2_current',np.linspace(10.9,12.3,6))
-
-        # self.xvar('t_tof',np.linspace(100.,4000.,15)*1.e-6)
-
-        # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
-        # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
-
-        self.p.t_lightsheet_hold = 500.e-3
-
-        self.p.t_lightsheet_rampup = 25.e-3
+        self.xvar('t_tof',np.linspace(50.,7000.,15)*1.e-6)
 
         self.p.t_tof = 3000.e-6
 
@@ -94,8 +57,6 @@ class rf_scan(EnvExperiment, Base):
 
         self.ttl.pd_scope_trig.on()
 
-        # self.outer_coil.igbt_ttl.on()
-
         self.flash_cooler()
 
         self.dds.power_down_cooling()
@@ -109,31 +70,9 @@ class rf_scan(EnvExperiment, Base):
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
         delay(self.p.t_magtrap)
 
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-
-        for i in self.p.magtrap_ramp_list:
-            self.inner_coil.set_current(i_supply=i)
-            delay(self.p.dt_magtrap_ramp)
-        
-        self.outer_coil.set_current(i_supply=self.p.evap1_current)
-        self.outer_coil.set_voltage(v_supply=9.)
-        delay(20.e-3)
-
         self.inner_coil.off()
-        self.outer_coil.on(i_supply=self.p.evap1_current)
-
-        delay(30.e-3)
-
-        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
-        self.outer_coil.set_current(i_supply=self.p.evap2_current)
-        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
-        self.outer_coil.off()
-
-        delay(1.5e-3)
 
         self.ttl.pd_scope_trig.off()
-
-        self.lightsheet.off()
     
         delay(self.p.t_tof)
         self.flash_repump()
