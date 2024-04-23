@@ -174,7 +174,7 @@ class ExptParams():
         self.n_tweezer_ramp_steps = 50
 
         #1064 tweezer
-        self.v_pd_1064 = 1.7
+        self.v_pd_tweezer_1064 = 1.7
         self.v_pd_tweezer_1064_ramp_start = 0.35
         self.v_pd_tweezer_1064_ramp_end = 1.7
         self.n_tweezer_1064_ramp_steps = 100
