@@ -6,19 +6,20 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
 
         # self.xvar('t_lightsheet_hold',np.linspace(30.,3000.,15)*1.e-3)
-        self.xvar('dummy',[0]*300)
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 10.e-6
 
         self.p.t_mot_load = .5
         
         self.p.t_lightsheet_rampup = 10.e-3
-        self.p.t_lightsheet_hold = 50.e-3
+        self.p.t_lightsheet_hold = 40.e-3
+
+        self.p.N_repeats = 1
 
         self.finish_build(shuffle=True)
 

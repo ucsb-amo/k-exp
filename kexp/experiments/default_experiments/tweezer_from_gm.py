@@ -15,6 +15,8 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 50.e-3
 
+        self.p.t_tweezer_1064_ramp = 10.e-3
+
         self.p.t_lightsheet_rampup = 25.e-3
 
         self.p.t_tof = 1.e-6
@@ -43,6 +45,8 @@ class rf_scan(EnvExperiment, Base):
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
 
+        self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
+
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
@@ -55,8 +59,18 @@ class rf_scan(EnvExperiment, Base):
 
         self.dds.power_down_cooling()
 
+        self.set_shims(v_zshim_current=0.,
+                        v_yshim_current=self.p.v_yshim_current_gm,
+                          v_xshim_current=self.p.v_xshim_current_gm)
+        
+        # self.inner_coil.igbt_ttl.on()
+        # self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
+        # delay(self.p.t_magtrap)
+
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
         # delay(5.e-3)
+
+        # self.inner_coil.igbt_ttl.off()
         
         delay(self.p.t_tweezer_hold)
 

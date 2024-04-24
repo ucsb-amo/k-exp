@@ -13,15 +13,14 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_magtrap = 30.e-3
 
-        self.p.t_tof = 25.e-6
-
-        self.p.v_pd_lightsheet_rampup_end = 2.
-        self.xvar('v_pd_lightsheet_rampup_end',np.linspace(1.3,4.,10))
+        self.p.t_tof = 20.e-6
+        # self.xvar('t_tof',np.linspace(10.,200.,10)*1.e-6)
 
         self.p.i_outer_coil = 50.
-        # self.xvar('i_outer_coil',np.linspace(0.,30.,10))
+        self.xvar('i_outer_coil',np.linspace(0.,100.,20))
 
-        self.xvar
+        self.p.v_pd_lightsheet_rampup_end = 2.0
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(1.5,3.25,10))
 
         self.finish_build(shuffle=True)
 
@@ -56,8 +55,6 @@ class rf_scan(EnvExperiment, Base):
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
-        self.ttl.pd_scope_trig.on()
-
         self.flash_cooler()
 
         self.dds.power_down_cooling()
@@ -78,6 +75,7 @@ class rf_scan(EnvExperiment, Base):
         for i in self.p.magtrap_ramp_list:
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
+        delay(30*ms)
         self.inner_coil.off()
     
         delay(self.p.t_lightsheet_hold)

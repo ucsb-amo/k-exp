@@ -38,7 +38,7 @@ class ExptParams():
         self.t_tof = 20.e-6
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
-        self.t_mot_load = 2.
+        self.t_mot_load = 0.5
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 7.5e-3
         self.t_magnet_off_pretrigger = 0.e-3
@@ -47,8 +47,8 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 10.e-3
-        self.t_lightsheet_rampdown = 1500.e-3
-        self.t_lightsheet_rampdown2 = 1000.e-3
+        self.t_lightsheet_rampdown = 1.4
+        self.t_lightsheet_rampdown2 = 1.7
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
@@ -161,11 +161,11 @@ class ExptParams():
 
         self.n_lightsheet_rampdown_steps = 10000
         self.v_pd_lightsheet_rampdown_start = 4.0
-        self.v_pd_lightsheet_rampdown_end = .75
+        self.v_pd_lightsheet_rampdown_end = .84
 
         self.n_lightsheet_rampdown2_steps = 1000
-        self.v_pd_lightsheet_rampdown2_start = self.v_pd_lightsheet_rampdown_end
-        self.v_pd_lightsheet_rampdown2_end = .1
+        
+        self.v_pd_lightsheet_rampdown2_end = .53
 
         #1227
         self.frequency_ao_1227 = 80.e6
@@ -239,6 +239,7 @@ class ExptParams():
         self.dt_lightsheet_ramp = self.t_lightsheet_rampdown / self.n_lightsheet_rampdown_steps
 
     def compute_lightsheet_ramp_down2_params(self):
+        self.v_pd_lightsheet_rampdown2_start = self.v_pd_lightsheet_rampdown_end
         self.v_pd_lightsheet_ramp_down2_list = np.linspace(
             self.v_pd_lightsheet_rampdown2_start,
             self.v_pd_lightsheet_rampdown2_end,
