@@ -7,7 +7,8 @@ def plot_mixOD(ad:atomdata,
                xvarmult = 1.,
                lines=False,
                max_od=0.,
-               figsize=[]):
+               figsize=[],
+               aspect='auto'):
     # Extract necessary information
     od = ad.od
     xvarnames = ad.xvarnames
@@ -33,10 +34,12 @@ def plot_mixOD(ad:atomdata,
     # Plot each image and label with xvar value
     for i in range(n):
         img = od[i]
-        ax.imshow(img, extent=[x_pos, x_pos + px, 0, py], aspect='auto',
+        ax.imshow(img, extent=[x_pos, x_pos + px, 0, py],
                   vmin=0.,vmax=max_od)
         ax.axvline()
         x_pos += px
+
+    plt.gca().set_aspect(aspect)
 
     # Set axis labels and title
     ax.set_xlabel(xvarnames[0])

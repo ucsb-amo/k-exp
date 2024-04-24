@@ -57,6 +57,7 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
+        self.t_magtrap = 40.e-3
         self.t_magtrap_ramp = 40.e-3
         self.t_feshbach_field_ramp = 80.e-3
 
@@ -163,7 +164,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampdown_end = .75
 
         self.n_lightsheet_rampdown2_steps = 1000
-        self.v_pd_lightsheet_rampdown2_start = .75
+        self.v_pd_lightsheet_rampdown2_start = self.v_pd_lightsheet_rampdown_end
         self.v_pd_lightsheet_rampdown2_end = .1
 
         #1227
@@ -193,7 +194,8 @@ class ExptParams():
         self.n_rf_state_xfer_sweep_steps = 1000
 
         # mag trap
-        self.i_magtrap_ramp_start = 30.
+        self.i_magtrap_init = 33.
+        self.i_magtrap_ramp_start = 74.
         self.i_magtrap_ramp_end = 0.0
         self.n_magtrap_ramp_steps = 1000
 

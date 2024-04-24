@@ -675,6 +675,8 @@ class Cooling():
 
         self.inner_coil.on(i_supply)
 
+        self.outer_coil.off()
+
         self.dac.anti_zshim_current_control.set(v=0.)
 
         self.dds.imaging.on()

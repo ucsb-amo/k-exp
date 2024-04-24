@@ -154,7 +154,7 @@ class DataHandler(QThread,Scribe):
         try:
             while True:
                 img, img_t, idx = self.queue.get(timeout=TIMEOUT)
-                TIMEOUT = 10
+                TIMEOUT = 20
                 self.got_image_from_queue.emit(img)
                 if self.save_data:
                     self.dataset['data']['images'][idx] = img

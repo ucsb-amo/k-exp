@@ -6,17 +6,18 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 2.
 
-        self.xvar('t_tweezer_hold', np.linspace(50.,50.,500)*1.e-3)
+        self.xvar('t_tweezer_hold', np.linspace(40.,400.,20)*1.e-3)
+        # self.xvar('t_tof', np.linspace(1.,50.,15)*1.e-6)
 
-        self.p.t_lightsheet_hold = 1.5e-3
+        self.p.t_tweezer_hold = 50.e-3
 
         self.p.t_lightsheet_rampup = 25.e-3
 
-        self.p.t_tof = 30.e-6
+        self.p.t_tof = 1.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3

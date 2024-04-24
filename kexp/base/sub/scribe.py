@@ -27,7 +27,7 @@ class Scribe():
                     f.close()
                 return f
             except Exception as e:
-                if "Unable to open file" in str(e) or "Invalid file name" in str(e):
+                if "Unable to" in str(e) or "Invalid file name" in str(e):
                     # file is busy -- wait for available
                     count += 1
                     time.sleep(check_period)

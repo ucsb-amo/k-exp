@@ -269,6 +269,7 @@ def rabi_oscillation_2d(ad:atomdata,
     return rabi_frequencies_hz, t_pis, rf_frequencies
 
 def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
+                    axis = 0,
                  plot_bool=True,
                  find_field=True,
                  detect_dips=False,
@@ -292,6 +293,8 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         mF0 (int, optional): The mF quantum number of the inital state. Defaults to 0.
         F1 (int, optional): The F quantum number of the final state. Defaults to 2.
         mF1 (int, optional): The mF quantum number of the inital state. Defaults to 1.
+        axis (int, optional): The axis of the sumod to use for the peak finding.
+        Defaults to 0 (x).
         plot_bool (bool, optional): If True, plots the signal vs. frequency
         for each value of the scanned xvar. Defaults to True.
         detect_dips (bool, optional): If True, inverts the signal to identify a
@@ -310,9 +313,12 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         peak_prominence (float, optional): Specifies how prominent a peak has to
         be in order to be counted.
     """
-    
-    sm_sum_ods = [sumod_x for sumod_x in ad.sum_od_x]
-    rel_amps = [np.max(sumod_x)-np.min(sumod_x) for sumod_x in sm_sum_ods]
+    if axis == 0:
+        sumdist = ad.sum_od_x
+    elif axis == 1:
+        sumdist = ad.sum_od_y
+    sm_sum_ods = [dist for dist in sumdist]
+    rel_amps = [np.max(dist)-np.min(dist) for dist in sm_sum_ods]
 
     if detect_dips:
         rel_amps = - rel_amps
@@ -358,6 +364,7 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     return B_measured, x_peaks
 
 def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
+                    axis=0,
                  subplots_bool=True,
                  detect_dips=False,
                  average_multiple_peaks=False,
@@ -383,6 +390,8 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
         mF0 (int, optional): The mF quantum number of the inital state. Defaults to 0.
         F1 (int, optional): The F quantum number of the final state. Defaults to 2.
         mF1 (int, optional): The mF quantum number of the inital state. Defaults to 1.
+        axis (int, optional): The axis of the sumod to use for the peak finding.
+        Defaults to 0 (x).
         subplots_bool (bool, optional): If True, plots the signal vs. frequency
         for each value of the scanned xvar. Defaults to True.
         detect_dips (bool, optional): If True, inverts the signal to identify a
@@ -407,8 +416,13 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     #     scanned_xvar_axis = 0
     # elif frequency_scan_axis == 0:
     #     scanned_xvar_axis = 1
+    
+    if axis == 0:
+        sumdist = ad.sum_od_x
+    elif axis == 1:
+        sumdist = ad.sum_od_y
 
-    rel_amps = np.asarray([[np.max(sumod_x)-np.min(sumod_x) for sumod_x in sumod_for_this_field] for sumod_for_this_field in ad.sum_od_x])
+    rel_amps = np.asarray([[np.max(sumod)-np.min(sumod) for sumod in sumod_for_this_field] for sumod_for_this_field in sumdist])
     if detect_dips:
         rel_amps = -rel_amps
 
