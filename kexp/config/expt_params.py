@@ -154,13 +154,13 @@ class ExptParams():
         # self.frequency_ao_lightsheet = 80.e6
         self.amp_painting = 1.0
         self.frequency_painting = 100.e3
-        self.v_pd_lightsheet = 5.
+        self.v_pd_lightsheet = 4.
         self.n_lightsheet_rampup_steps = 100
         self.v_pd_lightsheet_rampup_start = 0.0
-        self.v_pd_lightsheet_rampup_end = 4.0
+        self.v_pd_lightsheet_rampup_end = 4.
 
         self.n_lightsheet_rampdown_steps = 10000
-        self.v_pd_lightsheet_rampdown_start = 4.0
+        
         self.v_pd_lightsheet_rampdown_end = .84
 
         self.n_lightsheet_rampdown2_steps = 1000
@@ -232,6 +232,7 @@ class ExptParams():
         self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
 
     def compute_lightsheet_ramp_down_params(self):
+        self.v_pd_lightsheet_rampdown_start = self.v_pd_lightsheet_rampup_end
         self.v_pd_lightsheet_ramp_down_list = np.linspace(
             self.v_pd_lightsheet_rampdown_start,
             self.v_pd_lightsheet_rampdown_end,

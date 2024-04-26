@@ -6,12 +6,12 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.xvar('beans',[0,1,2])
+        # self.xvar('beans',[0,1]*300)
 
         # self.xvar('i_magtrap_init',np.linspace(20.,70.,20))
 
@@ -24,14 +24,16 @@ class rf_scan(EnvExperiment, Base):
         self.p.v_pd_lightsheet_rampdown_end = .84
         self.p.t_lightsheet_rampdown = 1.4*s
 
-        self.p.v_pd_lightsheet_rampdown2_start = self.p.v_pd_lightsheet_rampdown_end
-        self.p.v_pd_lightsheet_rampdown2_end = .53
+        self.p.v_pd_lightsheet_rampdown2_end = 0.54
         self.p.t_lightsheet_rampdown2 = 1.7*s
 
-        self.p.evap1_current = 13.5
-        self.p.evap2_current = 12.4
+        self.p.evap1_current = 14.3
+        self.p.evap2_current = 13.2
 
-        # self.xvar('evap1_current',np.linspace(11.6,14.3,6))
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(0.6,0.9,8))
+        # self.xvar('t_tof',np.linspace(200.,1000.,6)*1.e-6)
+
+        # self.xvar('evap1_current',np.linspace(11.5,14.3,6))
 
         # self.xvar('i_feshbach_field_ramp_start',np.linspace(30.,15.,10))
 
@@ -45,23 +47,22 @@ class rf_scan(EnvExperiment, Base):
 
         # self.xvar('evap2_current',np.linspace(11.5,14.3,6))
 
-        # self.xvar('t_tof',np.linspace(10.,1500.,15)*1.e-6)
+        self.xvar('t_tof',np.linspace(1.,30.,10)*1.e-6)
 
         # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
         # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
 
         self.p.t_lightsheet_hold = 500.e-3
 
-        self.p.t_tweezer_1064_ramp = 150.e-3
+        self.p.t_tweezer_1064_ramp = 200.e-3
 
         self.p.t_tweezer_hold = 50.e-3
 
         self.p.t_lightsheet_rampup = 25.e-3
 
-        self.camera_params.em_gain = 290.
-        # self.camera_params.amp_imaging = 0.25
+        self.camera_params.amp_imaging = 0.25
 
-        self.p.t_tof = 150.e-6
+        self.p.t_tof = 10.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
@@ -73,6 +74,8 @@ class rf_scan(EnvExperiment, Base):
         self.dds.init_cooling()
 
         self.core.break_realtime()
+
+        self.dds.mot_killer.on()
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
@@ -96,8 +99,6 @@ class rf_scan(EnvExperiment, Base):
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
-        # self.outer_coil.igbt_ttl.on()
-
         self.flash_cooler()
 
         self.dds.power_down_cooling()
@@ -106,53 +107,44 @@ class rf_scan(EnvExperiment, Base):
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
         
+        self.ttl.pd_scope_trig.on()
         self.inner_coil.igbt_ttl.on()
-
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
         delay(self.p.t_magtrap)
 
+        # ramp up lightsheet
+        
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
+        # rampdown magtrap
         for i in self.p.magtrap_ramp_list:
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
-        
+
         self.outer_coil.set_current(i_supply=self.p.evap1_current)
         self.outer_coil.set_voltage(v_supply=9.)
         delay(20.e-3)
-
         self.inner_coil.off()
 
-        if self.p.beans == 0:
-            self.outer_coil.on(i_supply=self.p.evap1_current)
+        self.outer_coil.on(i_supply=self.p.evap1_current)
 
-            delay(30.e-3)
-            self.ttl.pd_scope_trig.on()
-            self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
-            self.ttl.pd_scope_trig.off()
+        delay(30.e-3)
+        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
-            self.outer_coil.set_current(i_supply=self.p.evap2_current)
-            self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
-            self.outer_coil.off()
+        self.outer_coil.set_current(i_supply=self.p.evap2_current)
+        # delay(30.e-3)
 
-            delay(1.5e-3)
-
-        elif self.p.beans == 1:
-            self.outer_coil.on(i_supply=self.p.evap1_current)
-
-            delay(30.e-3)
-
-            self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
-            self.outer_coil.off()
-
-            delay(1.5e-3)
-
-        elif self.p.beans == 2:
-            delay(self.p.t_lightsheet_hold)
-
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+        
+        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+        
+        self.outer_coil.off()
         self.ttl.pd_scope_trig.off()
+        delay(1.5e-3)
 
         self.lightsheet.off()
+
+        # self.tweezer.off()
     
         delay(self.p.t_tof)
         self.flash_repump()

@@ -101,3 +101,4 @@ class lightsheet():
     @kernel
     def off(self):
         self.ttl.off()
+        self.vva_dac.set(v=0.)

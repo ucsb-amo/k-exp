@@ -10,13 +10,13 @@ class tof(EnvExperiment, Base):
 
         self.p.imaging_state = 2.
 
-        self.p.do_optical_pumping = 1.
+        self.p.do_optical_pumping = 0.
 
         # self.xvar('beans',[2]*300)
 
         # self.p.t_lightsheet_hold = 5.e-3
 
-        self.xvar('t_lightsheet_hold',np.linspace(100.,100.,300)*1.e-3)
+        # self.xvar('t_lightsheet_hold',np.linspace(100.,100.,300)*1.e-3)
         # self.xvar('t_lightsheet_rampup',np.linspace(2.,15.,10)*1.e-3)
         
         # self.xvar('t_tweezer_hold',np.linspace(10.,10.,1000)*1.e-3)
@@ -25,14 +25,14 @@ class tof(EnvExperiment, Base):
         # self.p.i_mot = 40.
         # self.xvar('i_mot',np.linspace(20.,45.,8))
 
-        # self.xvar('t_tof',np.linspace(15.,18.,10)*1.e-3) #gm
+        self.xvar('t_tof',np.linspace(15.,18.,10)*1.e-3) #gm
         # self.xvar('t_tof',np.linspace(1.,3.,10)*1.e-3) #gm
         # self.xvar('t_tof',np.linspace(20.,1000.,20)*1.e-6) #lightsheet
         
         # self.xvar('imaging_state',[1,2])
         # self.xvar('t_optical_pumping',np.linspace(0,500,6)*1.e-6)
         
-        self.p.t_tof = 1.e-6
+        # self.p.t_tof = 1.e-6
         self.p.t_tweezer_1064_ramp = 20.e-3
         # self.p.t_tweezer_hold = 10.e-3
 
@@ -99,9 +99,9 @@ class tof(EnvExperiment, Base):
         # self.optical_pumping(self.p.t_optical_pumping)
 
         # if self.p.beans == 0:
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        delay(self.p.t_lightsheet_hold)
-        self.lightsheet.off()
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        # delay(self.p.t_lightsheet_hold)
+        # self.lightsheet.off()
 
         # if self.p.beans == 1:
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)

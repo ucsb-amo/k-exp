@@ -6,11 +6,13 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select="z_basler",save_data=True)
 
         self.p.imaging_state = 2.
 
-        # self.xvar('t_lightsheet_hold',np.linspace(30.,3000.,15)*1.e-3)
+        # self.xvar('dummy',[1,1])
+
+        self.xvar('t_lightsheet_hold',np.linspace(50.,3000.,15)*1.e-3)
 
         self.p.t_tof = 10.e-6
 

@@ -31,7 +31,7 @@ class tweezer():
     @kernel
     def off(self):
         self.ttl.off()
-        # self.vva_dac.set(v=0.)
+        self.vva_dac.set(v=0.)
 
     @kernel
     def set_power(self,v_tweezer_vva=dv,load_dac=True):

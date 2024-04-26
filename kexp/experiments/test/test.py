@@ -12,6 +12,21 @@ class test(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=False)
 
+        self.f = 1.e3
+        tf = 30.
+
+        fs = 2*self.f
+        N = np.int(fs * tf)
+        
+        self.t = np.linspace(0.,tf,N)
+        
+        self.v_pd = 0.5*np.sin(2*np.pi*self.f*self.t)+1.
+        self.dt = tf / N
+
+        # self.p.v_pd_tweezer_1064_ramp_start = 0.
+        self.p.v_pd_tweezer_1064_ramp_start = 0.
+        self.p.v_pd_tweezer_1064_ramp_end = 1.
+
         self.finish_build()
 
     @kernel
@@ -19,10 +34,16 @@ class test(EnvExperiment, Base):
 
         self.init_kernel()
 
-        self.set_shims(v_xshim_current=self.p.v_xshim_current_op,
-                       v_yshim_current=self.p.v_yshim_current_op,
-                       v_zshim_current=self.p.v_zshim_current_gm)
-        
-        # self.set_shims(v_xshim_current=self.p.v_xshim_current_op,
-        #                v_yshim_current=self.p.v_yshim_current_op,
-        #                v_zshim_current=0.9)
+        # self.tweezer.on()
+        # for v in self.v_pd:
+        #     self.tweezer.set_power(v_tweezer_vva=v)
+        #     delay(self.dt)
+        # self.tweezer.off()
+
+        for _ in range(50):
+            self.tweezer.ramp(0.25)
+            self.tweezer.off()
+            delay(0.25)
+
+        # self.tweezer.on()
+        # self.tweezer.set_power(v_tweezer_vva=2.5)

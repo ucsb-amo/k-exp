@@ -69,7 +69,7 @@ class AndorParams(CameraParams):
         self.camera_select = camera_select
         self.camera_type = "andor"
         self.pixel_size_m = 16.e-6
-        self.magnification = 25.
+        self.magnification = 50.
         self.exposure_delay = 0. # needs to be updated from docs
         self.connection_delay = 8.0
         self.t_camera_trigger = 100.e-9
