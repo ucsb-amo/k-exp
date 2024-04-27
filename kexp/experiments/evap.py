@@ -6,7 +6,7 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
@@ -25,15 +25,16 @@ class rf_scan(EnvExperiment, Base):
         self.p.t_lightsheet_rampdown = 1.4*s
 
         self.p.v_pd_lightsheet_rampdown2_end = 0.54
+        # self.p.v_pd_lightsheet_rampdown2_end = 0.
         self.p.t_lightsheet_rampdown2 = 1.7*s
 
         self.p.evap1_current = 14.3
-        self.p.evap2_current = 13.2
+        self.p.evap2_current = 11.5
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(0.6,0.9,8))
         # self.xvar('t_tof',np.linspace(200.,1000.,6)*1.e-6)
 
-        # self.xvar('evap1_current',np.linspace(11.5,14.3,6))
+        self.xvar('evap1_current',np.linspace(11.5,14.3,6))
 
         # self.xvar('i_feshbach_field_ramp_start',np.linspace(30.,15.,10))
 
@@ -45,9 +46,9 @@ class rf_scan(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.6,.51,6))
         # self.xvar('t_lightsheet_rampdown2',np.linspace(.5,2.,6))
 
-        # self.xvar('evap2_current',np.linspace(11.5,14.3,6))
+        self.xvar('evap2_current',np.linspace(11.5,14.3,6))
 
-        self.xvar('t_tof',np.linspace(1.,30.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(1.,200.,15)*1.e-6)
 
         # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
         # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
@@ -61,6 +62,7 @@ class rf_scan(EnvExperiment, Base):
         self.p.t_lightsheet_rampup = 25.e-3
 
         self.camera_params.amp_imaging = 0.25
+        self.camera_params.exposure_time = 25.e-6
 
         self.p.t_tof = 10.e-6
 
@@ -132,7 +134,7 @@ class rf_scan(EnvExperiment, Base):
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
         self.outer_coil.set_current(i_supply=self.p.evap2_current)
-        # delay(30.e-3)
+        # # delay(30.e-3)
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
         

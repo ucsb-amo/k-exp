@@ -26,6 +26,7 @@ class rf_scan(EnvExperiment, Base):
 
         self.camera_params.em_gain = 290.
         self.camera_params.amp_imaging = 0.25
+        self.camera_params.exposure_time = 20.e-6
 
         self.finish_build(shuffle=True)
 
