@@ -13,12 +13,21 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_magtrap = 30.e-3
 
-        # self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)ar 
-        self.p.t_tof = 10.e-6
         
-        self.xvar('dummy',[0]*5)
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(1.3,4.,12))
-        self.p.v_pd_lightsheet_rampup_end = 0.638
+        # self.xvar('t_lightsheet_hold',np.linspace(100.,2000.,20)*1.e-3)
+        self.xvar('t_lightsheet_rampup',np.linspace(10.,1000.,8)*1.e-3)
+        # self.xvar('i_magtrap_ramp_start',np.linspace(40.,95.,8))
+        # self.xvar('i_magtrap_init',np.linspace(40.,95.,8))
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,3.5,8))
+
+        self.xvar('t_tof',np.linspace(50.,500.,5)*1.e-6)
+        self.p.t_tof = 50.e-6
+
+        self.p.t_lightsheet_rampup = 200.e-3
+        
+        # self.xvar('dummy',[0]*5)
+        
+        # self.p.v_pd_lightsheet_rampup_end = 0.638
 
         self.p.N_repeats = 1
 

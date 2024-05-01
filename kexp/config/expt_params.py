@@ -54,6 +54,7 @@ class ExptParams():
         self.t_tweezer_ramp = 5.e-3
         self.t_tweezer_hold = 1.e-3
         self.t_tweezer_1064_ramp = 10.e-3
+        self.t_tweezer_1064_rampdown = 1.
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
@@ -154,13 +155,13 @@ class ExptParams():
         # self.frequency_ao_lightsheet = 80.e6
         self.amp_painting = 1.0
         self.frequency_painting = 100.e3
-        self.v_pd_lightsheet = 4.
+        self.v_pd_lightsheet = 3.
         self.n_lightsheet_rampup_steps = 100
         self.v_pd_lightsheet_rampup_start = 0.0
-        self.v_pd_lightsheet_rampup_end = 4.
+        self.v_pd_lightsheet_rampup_end = 3.
 
         self.n_lightsheet_rampdown_steps = 10000
-        
+
         self.v_pd_lightsheet_rampdown_end = .84
 
         self.n_lightsheet_rampdown2_steps = 1000
@@ -179,6 +180,9 @@ class ExptParams():
         self.v_pd_tweezer_1064_ramp_start = 0.35
         self.v_pd_tweezer_1064_ramp_end = 1.7
         self.n_tweezer_1064_ramp_steps = 100
+        
+        self.v_pd_tweezer_1064_rampdown_end = 1.7
+        self.n_tweezer_1064_rampdown_steps = 100
 
         # RF
         self.t_rf_sweep_state_prep = 100.e-3
@@ -282,6 +286,11 @@ class ExptParams():
     def compute_tweezer_1064_ramp_params(self):
         self.v_pd_tweezer_1064_ramp_list = np.linspace(self.v_pd_tweezer_1064_ramp_start,self.v_pd_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()
         self.dt_tweezer_1064_ramp = self.t_tweezer_1064_ramp / self.n_tweezer_1064_ramp_steps
+
+    def compute_tweezer_1064_rampdown_params(self):
+        self.v_pd_tweezer_1064_rampdown_start = self.v_pd_tweezer_1064_ramp_end
+        self.v_pd_tweezer_1064_rampdown_list = np.linspace(self.v_pd_tweezer_1064_rampdown_start,self.v_pd_tweezer_1064_rampdown_end, self.n_tweezer_1064_rampdown_steps).transpose()
+        self.dt_tweezer_1064_rampdown = self.t_tweezer_1064_rampdown / self.n_tweezer_1064_rampdown_steps
 
     def compute_magtrap_ramp_params(self):
         self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end, self.n_magtrap_ramp_steps).transpose()
