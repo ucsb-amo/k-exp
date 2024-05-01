@@ -11,21 +11,21 @@ class rf_scan(EnvExperiment, Base):
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.xvar('beans',[0,1,3]*300)
+        self.xvar('beans',[0,1,2,3]*300)
 
         # self.xvar('t_tof',np.linspace(50.,7000.,15)*1.e-6)
         self.p.t_magtrap = 100.e-3
         self.p.i_magtrap_init = 33.
         self.p.t_tweezer_hold = 50.e-3
-        self.p.t_lightsheet_hold = 300.e-3
+        self.p.t_lightsheet_hold = 800.e-3
 
         self.p.t_tof = 1.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
 
-        self.camera_params.amp_imaging = 0.25
-        self.camera_params.exposure_time = 20.e-6
+        # self.camera_params.amp_imaging = 0.25
+        # self.camera_params.exposure_time = 20.e-6
 
         self.finish_build(shuffle=False)
 
@@ -57,7 +57,7 @@ class rf_scan(EnvExperiment, Base):
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
-        self.ttl.pd_scope_trig.on()
+        # self.ttl.pd_scope_trig.on()
 
         self.flash_cooler()
 
@@ -81,24 +81,12 @@ class rf_scan(EnvExperiment, Base):
             self.inner_coil.igbt_ttl.on()
             self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
             delay(self.p.t_magtrap)
-
-            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-
-            for i in self.p.magtrap_ramp_list:
-                self.inner_coil.set_current(i_supply=i)
-                delay(self.p.dt_magtrap_ramp)
-
-            delay(3000.e-3)
             self.inner_coil.off()
-            self.lightsheet.off()
-
+            
         elif self.p.beans == 3:
-            self.inner_coil.igbt_ttl.on()
-            self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-            delay(self.p.t_magtrap)
-            self.inner_coil.off()
+            pass
 
-        self.ttl.pd_scope_trig.off()
+        # self.ttl.pd_scope_trig.off()
     
         delay(self.p.t_tof)
         self.flash_repump()
