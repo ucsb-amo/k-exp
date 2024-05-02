@@ -17,7 +17,7 @@ class dac_frame():
         p = ExptParams()
 
         self.lightsheet_mod_amp = self.assign_dac_ch(0)
-        self.vva_lightsheet = self.assign_dac_ch(1,v=5.0)
+        self.vva_lightsheet = self.assign_dac_ch(1,v=9.7)
         self.vva_d1_3d_c = self.assign_dac_ch(2,p.v_pd_d1_c_gm)
         self.vva_d1_3d_r = self.assign_dac_ch(3,p.v_pd_d1_r_gm)
         self.anti_zshim_current_control = self.assign_dac_ch(4,v=0.0)
@@ -28,7 +28,7 @@ class dac_frame():
         self.outer_coil_supply_current = self.assign_dac_ch(9)
         self.outer_coil_supply_voltage = self.assign_dac_ch(10)
         self.inner_coil_supply_voltage = self.assign_dac_ch(11)
-        self.vva_tweezer = self.assign_dac_ch(12,v=5.0)
+        self.vva_tweezer = self.assign_dac_ch(12,v=9.7)
         self.vco_rf = self.assign_dac_ch(13,v=0.)
 
         self._write_dac_keys()

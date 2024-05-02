@@ -52,7 +52,7 @@ class ExptParams():
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
-        self.t_tweezer_hold = 1.e-3
+        self.t_tweezer_hold = 30.e-3
         self.t_tweezer_1064_ramp = 10.e-3
         self.t_tweezer_1064_rampdown = 1.
         self.t_mot_reload = 2.
@@ -155,33 +155,26 @@ class ExptParams():
         # self.frequency_ao_lightsheet = 80.e6
         self.amp_painting = 1.0
         self.frequency_painting = 100.e3
-        self.v_pd_lightsheet = 3.
-        self.n_lightsheet_rampup_steps = 100
-        self.v_pd_lightsheet_rampup_start = 0.0
-        self.v_pd_lightsheet_rampup_end = 3.
+        self.v_pd_lightsheet = 8.88
+        self.n_lightsheet_rampup_steps = 1000
+        self.v_pd_lightsheet_rampup_start = 0.035
+        self.v_pd_lightsheet_rampup_end = 8.88
 
         self.n_lightsheet_rampdown_steps = 10000
 
-        self.v_pd_lightsheet_rampdown_end = .84
+        self.v_pd_lightsheet_rampdown_end = .864
 
         self.n_lightsheet_rampdown2_steps = 1000
         
-        self.v_pd_lightsheet_rampdown2_end = .53
-
-        #1227
-        self.frequency_ao_1227 = 80.e6
-        self.amp_1227 = .45
-        self.v_pd_tweezer_ramp_start = 0.15
-        self.v_pd_tweezer_ramp_end = 5.0
-        self.n_tweezer_ramp_steps = 50
+        self.v_pd_lightsheet_rampdown2_end = .152
 
         #1064 tweezer
-        self.v_pd_tweezer_1064 = 1.7
-        self.v_pd_tweezer_1064_ramp_start = 0.35
-        self.v_pd_tweezer_1064_ramp_end = 1.7
+        self.v_pd_tweezer_1064 = 4.5
+        self.v_pd_tweezer_1064_ramp_start = 0.024
+        self.v_pd_tweezer_1064_ramp_end = 4.5
         self.n_tweezer_1064_ramp_steps = 100
         
-        self.v_pd_tweezer_1064_rampdown_end = 1.7
+        self.v_pd_tweezer_1064_rampdown_end = 0.43821/2
         self.n_tweezer_1064_rampdown_steps = 100
 
         # RF
@@ -198,7 +191,7 @@ class ExptParams():
         self.n_rf_state_xfer_sweep_steps = 1000
 
         # mag trap
-        self.i_magtrap_init = 33.
+        self.i_magtrap_init = 40.
         self.i_magtrap_ramp_start = 74.
         self.i_magtrap_ramp_end = 0.0
         self.n_magtrap_ramp_steps = 1000
@@ -278,10 +271,6 @@ class ExptParams():
         self.v_pd_d1_c_d1cmot = cal.power_fraction_to_vva(self.pfrac_d1_c_d1cmot)
         self.v_pd_d1_c_gm = cal.power_fraction_to_vva(self.pfrac_d1_c_gm)
         self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
-
-    def compute_tweezer_ramp_params(self):
-        self.v_pd_tweezer_ramp_list = np.linspace(self.v_pd_tweezer_ramp_start,self.v_pd_tweezer_ramp_end, self.n_tweezer_ramp_steps).transpose()
-        self.dt_tweezer_ramp = self.t_tweezer_ramp / self.n_tweezer_ramp_steps
     
     def compute_tweezer_1064_ramp_params(self):
         self.v_pd_tweezer_1064_ramp_list = np.linspace(self.v_pd_tweezer_1064_ramp_start,self.v_pd_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()

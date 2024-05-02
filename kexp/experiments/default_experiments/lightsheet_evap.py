@@ -6,14 +6,14 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.p.N_repeats = [3]
+        # self.p.N_repeats = [3]
 
-        # self.xvar('beans',[0,1]*300)
+        self.xvar('beans',[0,1]*300)
 
         # self.xvar('i_magtrap_init',np.linspace(20.,70.,20))
 
@@ -27,18 +27,18 @@ class rf_scan(EnvExperiment, Base):
         # self.p.v_pd_lightsheet_rampdown_end = 1.25
         self.p.t_lightsheet_rampdown = 1.6*s
 
-        # self.p.v_pd_lightsheet_rampdown2_end = 0.22
-        self.p.v_pd_lightsheet_rampdown2_end = 0.
-        # self.p.t_lightsheet_rampdown2 = 1.5*s
-        self.p.t_lightsheet_rampdown2 = .01*s
+        self.p.v_pd_lightsheet_rampdown2_end = 0.22
+        # self.p.v_pd_lightsheet_rampdown2_end = 0.
+        self.p.t_lightsheet_rampdown2 = 1.5*s
+        # self.p.t_lightsheet_rampdown2 = .01*s
         self.p.n_lightsheet_rampdown2_steps = 100
 
         self.p.v_pd_tweezer_1064_rampdown_end = .41
         self.p.t_tweezer_1064_rampdown = .15*s
 
         self.p.evap1_current = 12.4
-        # self.p.evap2_current = 11.9
-        self.p.evap2_current = 16.4
+        self.p.evap2_current = 11.9
+        # self.p.evap2_current = 16.4
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(0.6,2.,15))
         # self.xvar('t_tof',np.linspace(50.,500.,6)*1.e-6)
@@ -61,28 +61,29 @@ class rf_scan(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(.02,.7,6))
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.38,.5,6))
 
-        self.xvar('t_tof',np.linspace(5.,5.,300)*1.e-6)
+        # self.xvar('t_tof',np.linspace(10.,2000.,8)*1.e-6)
 
         # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
         # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
 
         self.p.t_lightsheet_hold = 500.e-3
 
-        self.p.t_tweezer_1064_ramp = 250.e-3
+        # self.p.t_tweezer_1064_ramp = 250.e-3
+        self.p.t_tweezer_1064_ramp = 10.e-3
 
-        self.p.t_tweezer_hold = 30.e-3
+        self.p.t_tweezer_1064_hold = 30.e-3
 
         self.p.t_lightsheet_rampup = 200.e-3
 
-        self.camera_params.amp_imaging = 0.1
-        # self.camera_params.exposure_time = 25.e-6
+        # self.camera_params.amp_imaging = 0.25
+        self.camera_params.exposure_time = 25.e-6
 
-        self.p.t_tof = 2000.e-6
+        self.p.t_tof = 10.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
 
-        self.finish_build(shuffle=True)
+        self.finish_build(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -118,51 +119,56 @@ class rf_scan(EnvExperiment, Base):
 
         self.dds.power_down_cooling()
 
-        self.set_shims(v_zshim_current=0.,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                        v_xshim_current=self.p.v_xshim_current_gm)
-        
-        self.ttl.pd_scope_trig.on()
-        self.inner_coil.igbt_ttl.on()
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-        # delay(self.p.t_magtrap)
+        if self.p.beans == 0:
 
-        # ramp up lightsheet
-        
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+            self.set_shims(v_zshim_current=0.,
+                            v_yshim_current=self.p.v_yshim_current_gm,
+                            v_xshim_current=self.p.v_xshim_current_gm)
+            
+            self.ttl.pd_scope_trig.on()
+            self.inner_coil.igbt_ttl.on()
+            self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
+            # delay(self.p.t_magtrap)
 
-        # rampdown magtrap
-        for i in self.p.magtrap_ramp_list:
-            self.inner_coil.set_current(i_supply=i)
-            delay(self.p.dt_magtrap_ramp)
+            # ramp up lightsheet
+            
+            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
-        self.outer_coil.set_current(i_supply=self.p.evap1_current)
-        self.outer_coil.set_voltage(v_supply=9.)
-        delay(20.e-3)
-        self.inner_coil.off()
+            # rampdown magtrap
+            for i in self.p.magtrap_ramp_list:
+                self.inner_coil.set_current(i_supply=i)
+                delay(self.p.dt_magtrap_ramp)
 
-        self.outer_coil.on(i_supply=self.p.evap1_current)
+            self.outer_coil.set_current(i_supply=self.p.evap1_current)
+            self.outer_coil.set_voltage(v_supply=9.)
+            delay(20.e-3)
+            self.inner_coil.off()
 
-        delay(30.e-3)
-        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
+            self.outer_coil.on(i_supply=self.p.evap1_current)
 
-        self.outer_coil.set_current(i_supply=self.p.evap2_current)
-        delay(20.e-3)
+            delay(30.e-3)
+            self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
-        
-        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+            self.outer_coil.set_current(i_supply=self.p.evap2_current)
+            delay(20.e-3)
 
-        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
-        delay(self.p.t_tweezer_hold)
-        self.outer_coil.off()
-        self.ttl.pd_scope_trig.off()
-        delay(1.5e-3)
+            # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+            
+            self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
 
-        self.lightsheet.off()
+            # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
+            
+            self.outer_coil.off()
+            self.ttl.pd_scope_trig.off()
+            delay(1.5e-3)
 
-        self.tweezer.off()
-    
+            self.lightsheet.off()
+
+        elif self.p.beans == 1:
+            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+            delay(self.p.t_tweezer_1064_hold)
+            self.tweezer.off()
+
         delay(self.p.t_tof)
         self.flash_repump()
         self.abs_image()

@@ -6,7 +6,7 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select="z_basler",save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select="xy_basler",save_data=True)
 
         self.p.imaging_state = 2.
 
@@ -47,9 +47,11 @@ class tof(EnvExperiment, Base):
 
         self.flash_cooler()
 
+        self.ttl.pd_scope_trig.on()
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
         delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
+        self.ttl.pd_scope_trig.off()
 
         delay(self.p.t_tof)
         self.flash_repump()

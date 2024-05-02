@@ -15,15 +15,16 @@ class rf_scan(EnvExperiment, Base):
 
         
         # self.xvar('t_lightsheet_hold',np.linspace(100.,2000.,20)*1.e-3)
-        self.xvar('t_lightsheet_rampup',np.linspace(10.,1000.,8)*1.e-3)
-        # self.xvar('i_magtrap_ramp_start',np.linspace(40.,95.,8))
-        # self.xvar('i_magtrap_init',np.linspace(40.,95.,8))
+        # self.xvar('t_lightsheet_rampup',np.linspace(10.,1000.,8)*1.e-3)
+        self.xvar('i_magtrap_ramp_start',np.linspace(40.,95.,8))
+        self.xvar('i_magtrap_init',np.linspace(30.,95.,8))
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,3.5,8))
 
-        self.xvar('t_tof',np.linspace(50.,500.,5)*1.e-6)
-        self.p.t_tof = 50.e-6
+        # self.xvar('t_tof',np.linspace(10.,200.,5)*1.e-6)
+        self.p.t_tof = 100.e-6
 
         self.p.t_lightsheet_rampup = 200.e-3
+        self.p.t_lightsheet_hold = 800.e-3
         
         # self.xvar('dummy',[0]*5)
         
@@ -76,7 +77,7 @@ class rf_scan(EnvExperiment, Base):
         # magtrap start
         self.inner_coil.igbt_ttl.on()
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-        delay(self.p.t_magtrap)
+        # delay(self.p.t_magtrap)
 
         # ramp up ligthsheet over magtrap
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
@@ -85,7 +86,7 @@ class rf_scan(EnvExperiment, Base):
         for i in self.p.magtrap_ramp_list:
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
-
+        delay(30.e-3)
         self.inner_coil.off()
         self.ttl.pd_scope_trig.off()
 

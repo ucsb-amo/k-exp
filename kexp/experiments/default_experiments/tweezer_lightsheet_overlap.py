@@ -6,12 +6,12 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.xvar('beans',[0,1,2,3]*300)
+        self.xvar('beans',[0,1,2]*300)
 
         # self.xvar('t_tof',np.linspace(50.,7000.,15)*1.e-6)
         self.p.t_magtrap = 100.e-3
@@ -24,7 +24,7 @@ class rf_scan(EnvExperiment, Base):
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
 
-        # self.camera_params.amp_imaging = 0.25
+        self.camera_params.amp_imaging = 0.1
         # self.camera_params.exposure_time = 20.e-6
 
         self.finish_build(shuffle=False)
@@ -67,6 +67,7 @@ class rf_scan(EnvExperiment, Base):
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
         
+        self.ttl.pd_scope_trig.on()
         if self.p.beans == 0:
             self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
             delay(self.p.t_tweezer_hold)
@@ -86,7 +87,7 @@ class rf_scan(EnvExperiment, Base):
         elif self.p.beans == 3:
             pass
 
-        # self.ttl.pd_scope_trig.off()
+        self.ttl.pd_scope_trig.off()
     
         delay(self.p.t_tof)
         self.flash_repump()

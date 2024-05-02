@@ -12,38 +12,33 @@ class test(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=False)
 
-        self.f = 1.e3
-        tf = 30.
-
-        fs = 2*self.f
-        N = np.int(fs * tf)
-        
-        self.t = np.linspace(0.,tf,N)
-        
-        self.v_pd = 0.5*np.sin(2*np.pi*self.f*self.t)+1.
-        self.dt = tf / N
-
-        # self.p.v_pd_tweezer_1064_ramp_start = 0.
         self.p.v_pd_tweezer_1064_ramp_start = 0.
-        self.p.v_pd_tweezer_1064_ramp_end = 1.
+        self.p.v_pd_tweezer_1064_ramp_end = 4.
+        # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,500.,10)*1.e-3)
+        # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,10.,100)*1.e-3)
 
-        self.finish_build()
+        self.p.v_pd_lightsheet_rampup_start = 0.
+        self.p.v_pd_lightsheet_rampup_end = 8.88
+        self.xvar('t_lightsheet_rampup',np.linspace(10.,500.,10)*1.e-3)
+        # self.xvar('t_lightsheet_rampup',np.linspace(10.,10.,100)*1.e-3)
+
+        self.finish_build(shuffle=False)
+
+    @kernel
+    def scan_kernel(self):
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        
+        # self.tweezer.ramp(self.p.t_tweezer_1064_ramp)
+        # self.tweezer.off()
+        # delay(1.0)
+
+        self.lightsheet.ramp(self.p.t_lightsheet_rampup)
+        self.lightsheet.off()
+        delay(1.)
 
     @kernel
     def run(self):
 
         self.init_kernel()
 
-        # self.tweezer.on()
-        # for v in self.v_pd:
-        #     self.tweezer.set_power(v_tweezer_vva=v)
-        #     delay(self.dt)
-        # self.tweezer.off()
-
-        for _ in range(50):
-            self.tweezer.ramp(0.25)
-            self.tweezer.off()
-            delay(0.25)
-
-        # self.tweezer.on()
-        # self.tweezer.set_power(v_tweezer_vva=2.5)
+        self.scan()
