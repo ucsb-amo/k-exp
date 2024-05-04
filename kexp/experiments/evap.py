@@ -11,7 +11,7 @@ class rf_scan(EnvExperiment, Base):
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.p.N_repeats = [3]
+        # self.p.N_repeats = [3]
 
         # self.xvar('beans',[0,1]*300)
 
@@ -61,7 +61,7 @@ class rf_scan(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(.02,.7,6))
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.38,.5,6))
 
-        self.xvar('t_tof',np.linspace(5.,5.,300)*1.e-6)
+        self.xvar('t_tof',np.linspace(5.,5.,100)*1.e-6)
 
         # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
         # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
@@ -77,12 +77,12 @@ class rf_scan(EnvExperiment, Base):
         self.camera_params.amp_imaging = 0.1
         # self.camera_params.exposure_time = 25.e-6
 
-        self.p.t_tof = 2000.e-6
+        self.p.t_tof = 2.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
 
-        self.finish_build(shuffle=True)
+        self.finish_build(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -154,7 +154,7 @@ class rf_scan(EnvExperiment, Base):
         self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
-        delay(self.p.t_tweezer_hold)
+        # delay(self.p.t_tweezer_hold)
         self.outer_coil.off()
         self.ttl.pd_scope_trig.off()
         delay(1.5e-3)

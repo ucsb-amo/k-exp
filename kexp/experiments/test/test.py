@@ -14,12 +14,12 @@ class test(EnvExperiment, Base):
 
         self.p.v_pd_tweezer_1064_ramp_start = 0.
         self.p.v_pd_tweezer_1064_ramp_end = 4.
-        # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,500.,10)*1.e-3)
+        self.xvar('t_tweezer_1064_ramp',np.linspace(10.,500.,10)*1.e-3)
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,10.,100)*1.e-3)
 
         self.p.v_pd_lightsheet_rampup_start = 0.
         self.p.v_pd_lightsheet_rampup_end = 8.88
-        self.xvar('t_lightsheet_rampup',np.linspace(10.,500.,10)*1.e-3)
+        # self.xvar('t_lightsheet_rampup',np.linspace(10.,500.,10)*1.e-3)
         # self.xvar('t_lightsheet_rampup',np.linspace(10.,10.,100)*1.e-3)
 
         self.finish_build(shuffle=False)
@@ -28,12 +28,12 @@ class test(EnvExperiment, Base):
     def scan_kernel(self):
         self.ttl.pd_scope_trig.pulse(1.e-6)
         
-        # self.tweezer.ramp(self.p.t_tweezer_1064_ramp)
-        # self.tweezer.off()
+        self.tweezer.ramp(self.p.t_tweezer_1064_ramp)
+        self.tweezer.off()
         # delay(1.0)
 
-        self.lightsheet.ramp(self.p.t_lightsheet_rampup)
-        self.lightsheet.off()
+        # self.lightsheet.ramp(self.p.t_lightsheet_rampup)
+        # self.lightsheet.off()
         delay(1.)
 
     @kernel
