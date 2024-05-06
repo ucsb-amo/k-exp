@@ -5,13 +5,13 @@ from artiq.coredevice.core import Core
 from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
 
-from kexp.config.dds_id import dds_frame, N_uru, DDSManager
+from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
 from kexp.control.artiq.mirny import Mirny
 from kexp.config.expt_params import ExptParams
 
-from jax import AD9910Manager
+# from jax import AD9910Manager
 from kexp.control.cameras.dummy_cam import DummyCamera
 
 from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
@@ -50,7 +50,7 @@ class Devices():
 
         # set up dds_frame
         self.dds = dds_frame(dac_frame_obj=self.dac, core=self.core, expt_params=self.params)
-        self.dds.dds_manager = [DDSManager(self.core)]
+        # self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
 

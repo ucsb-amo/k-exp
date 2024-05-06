@@ -35,7 +35,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[],shuffle=True,cleanup_dds_profiles=True):
+    def finish_build(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of build. 
         
@@ -67,8 +67,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.params.N_img = self.get_N_img()
         self.prepare_image_array()
 
-        if cleanup_dds_profiles:
-            self.dds.cleanup_dds_profiles()
+        # if cleanup_dds_profiles:
+        #     self.dds.cleanup_dds_profiles()
 
         self.params.compute_derived()
         self.compute_new_derived()
