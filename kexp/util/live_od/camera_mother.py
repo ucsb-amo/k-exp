@@ -24,6 +24,7 @@ DATA_DIR = os.getenv("data")
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
 CHECK_DELAY = 0.25
 LOG_UPDATE_INTERVAL = 2.
+DEFAULT_TIMEOUT = 30.
 UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
 
 def nothing():
@@ -148,13 +149,13 @@ class DataHandler(QThread,Scribe):
         self.write_image_to_dataset()
 
     def write_image_to_dataset(self):
-        TIMEOUT = 30
+        TIMEOUT = 45.
         if self.save_data:
             self.dataset = self.wait_for_data_available(close=False)
         try:
             while True:
                 img, img_t, idx = self.queue.get(timeout=TIMEOUT)
-                TIMEOUT = 20
+                TIMEOUT = 30.
                 self.got_image_from_queue.emit(img)
                 if self.save_data:
                     self.dataset['data']['images'][idx] = img
@@ -251,11 +252,10 @@ class CameraBaby(QThread,Scribe):
         self.dataset.close()
 
     def grab_loop(self):
-        TIMEOUT = 10.
         Nimg = int(self.params.N_img)
         self.camera_grab_start.emit(Nimg)
         self.camera.start_grab(Nimg,output_queue=self.queue,
-                         timeout=TIMEOUT)
+                         timeout=DEFAULT_TIMEOUT)
         self.death = self.honorable_death
 
     def update_run_id(self):

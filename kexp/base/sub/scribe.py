@@ -8,6 +8,8 @@ WAIT_PERIOD = 0.1
 T_NOTIFY = 3
 N_NOTIFY = T_NOTIFY // CHECK_PERIOD
 
+DEFAULT_TIMEOUT = 30.
+
 class Scribe():
     def __init__(self):
         self.ds = DataSaver()
@@ -27,7 +29,7 @@ class Scribe():
                     f.close()
                 return f
             except Exception as e:
-                if "Unable to" in str(e) or "Invalid file name" in str(e):
+                if "Unable to" in str(e) or "Invalid file name" in str(e) or "cannot access" in str(e):
                     # file is busy -- wait for available
                     count += 1
                     time.sleep(check_period)
@@ -69,14 +71,14 @@ class Scribe():
 
     def mark_camera_ready(self):
         while True:
-            self.dataset = self.wait_for_data_available(close=False,timeout=20.)
+            self.dataset = self.wait_for_data_available(close=False,timeout=DEFAULT_TIMEOUT)
             self.dataset.attrs['camera_ready'] = 1
             self.dataset.close()
             break
 
     def check_camera_ready_ack(self):
         while True:
-            self.dataset = self.wait_for_data_available(close=False,timeout=20.)
+            self.dataset = self.wait_for_data_available(close=False,timeout=DEFAULT_TIMEOUT)
             if self.dataset.attrs['camera_ready_ack']:
                 print('Received ready acknowledgement.')
                 self.dataset.close()
@@ -86,7 +88,7 @@ class Scribe():
                 time.sleep(WAIT_PERIOD)
         return self.dataset
         
-    def write_data(self, expt_filepath, timeout=20.):
+    def write_data(self, expt_filepath, timeout=DEFAULT_TIMEOUT):
         self.dataset = self.wait_for_data_available(close=False,timeout=timeout)
         self.ds.save_data(self, expt_filepath, self.dataset)
         print("Done!")

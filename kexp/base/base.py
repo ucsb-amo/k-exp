@@ -127,6 +127,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         if self.setup_camera:
             if self.run_info.save_data:
                 self.cleanup_scanned()
-                self.write_data(expt_filepath,timeout=20.)
+                self.write_data(expt_filepath)
             else:
                 self.remove_incomplete_data()

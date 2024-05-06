@@ -67,7 +67,7 @@ class MainWindow(QWidget):
 
     def restart_mother(self):
         import time
-        time.sleep(1.)
+        time.sleep(0.25)
         self.camera_mother.start()
 
     def setup_widgets(self):
