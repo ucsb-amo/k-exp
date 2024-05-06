@@ -49,6 +49,7 @@ class ExptParams():
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_rampdown = 1.4
         self.t_lightsheet_rampdown2 = 1.7
+        self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
@@ -161,12 +162,13 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_end = 8.88
 
         self.n_lightsheet_rampdown_steps = 10000
-
         self.v_pd_lightsheet_rampdown_end = .864
 
         self.n_lightsheet_rampdown2_steps = 1000
-        
         self.v_pd_lightsheet_rampdown2_end = .152
+
+        self.n_lightsheet_rampdown3_steps = 1000
+        self.v_pd_lightsheet_rampdown3_end = .0
 
         #1064 tweezer
         self.v_pd_tweezer_1064 = 4.5
@@ -191,7 +193,7 @@ class ExptParams():
         self.n_rf_state_xfer_sweep_steps = 1000
 
         # mag trap
-        self.i_magtrap_init = 40.
+        self.i_magtrap_init = 33.
         self.i_magtrap_ramp_start = 74.
         self.i_magtrap_ramp_end = 0.0
         self.n_magtrap_ramp_steps = 1000
@@ -200,6 +202,11 @@ class ExptParams():
         self.i_feshbach_field_ramp_start = 130.
         self.i_feshbach_field_ramp_end = 250.0
         self.n_feshbach_field_ramp_steps = 1000
+
+        # evap
+        self.i_evap1_current = 12.4
+        self.i_evap2_current = 12.
+        self.i_evap3_current = 16.4
 
         self.compute_derived()
 
@@ -243,6 +250,14 @@ class ExptParams():
             self.v_pd_lightsheet_rampdown2_end,
             self.n_lightsheet_rampdown2_steps)
         self.dt_lightsheet_ramp = self.t_lightsheet_rampdown2 / self.n_lightsheet_rampdown2_steps
+
+    def compute_lightsheet_ramp_down3_params(self):
+        self.v_pd_lightsheet_rampdown3_start = self.v_pd_lightsheet_rampdown2_end
+        self.v_pd_lightsheet_ramp_down3_list = np.linspace(
+            self.v_pd_lightsheet_rampdown3_start,
+            self.v_pd_lightsheet_rampdown3_end,
+            self.n_lightsheet_rampdown3_steps)
+        self.dt_lightsheet_ramp = self.t_lightsheet_rampdown3 / self.n_lightsheet_rampdown3_steps
 
     def compute_gmramp_params(self):
         self.pfrac_c_gmramp_list = np.linspace(self.pfrac_c_gmramp_start, self.pfrac_c_gmramp_end, self.n_gmramp_steps).transpose()

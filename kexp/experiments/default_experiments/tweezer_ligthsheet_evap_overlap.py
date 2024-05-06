@@ -6,7 +6,7 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
@@ -23,48 +23,21 @@ class rf_scan(EnvExperiment, Base):
         self.p.i_feshbach_field_ramp_end = 13.2
         self.p.t_feshbach_field_ramp = 30.e-3
 
-        self.p.v_pd_lightsheet_rampdown_end = .96
+        self.p.v_pd_lightsheet_rampdown_end = .8
         # self.p.v_pd_lightsheet_rampdown_end = 1.25
-        self.p.t_lightsheet_rampdown = 1.6*s
+        self.p.t_lightsheet_rampdown = 1.4*s
 
-        self.p.v_pd_lightsheet_rampdown2_end = 0.22
+        self.p.v_pd_lightsheet_rampdown2_end = 0.186
         # self.p.v_pd_lightsheet_rampdown2_end = 0.
-        self.p.t_lightsheet_rampdown2 = 1.5*s
+        self.p.t_lightsheet_rampdown2 = 1.84*s
         # self.p.t_lightsheet_rampdown2 = .01*s
-        self.p.n_lightsheet_rampdown2_steps = 100
+        self.p.n_lightsheet_rampdown2_steps = 1000
 
         self.p.v_pd_tweezer_1064_rampdown_end = .41
         self.p.t_tweezer_1064_rampdown = .15*s
 
         self.p.evap1_current = 12.4
-        self.p.evap2_current = 11.9
-        # self.p.evap2_current = 16.4
-
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(0.6,2.,15))
-        # self.xvar('t_tof',np.linspace(50.,500.,6)*1.e-6)
-
-        # self.xvar('evap1_current',np.linspace(11.5,15.3,6))
-        # self.xvar('evap2_current',np.linspace(11.5,13.4,6))
-
-        # self.xvar('i_feshbach_field_ramp_start',np.linspace(30.,15.,10))
-
-        # self.p.t_lightsheet_ramp_end = 100.e-3
-        # self.xvar('t_lightsheet_rampup',np.linspace(10.e-3,self.p.t_lightsheet_ramp_end,10))
-        # self.xvar('t_lightsheet_rampdown',np.linspace(.5,2.,6))
-
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,.6,6))
-        # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.15,.25,6))
-        # self.xvar('t_lightsheet_rampdown2',np.linspace(.01,.3,6))
-
-        # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,500.,6)*1.e-3)
-
-        # self.xvar('t_tweezer_1064_rampdown',np.linspace(.02,.7,6))
-        # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.38,.5,6))
-
-        # self.xvar('t_tof',np.linspace(10.,2000.,8)*1.e-6)
-
-        # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
-        # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
+        self.p.evap2_current = 12.
 
         self.p.t_lightsheet_hold = 500.e-3
 
@@ -75,10 +48,10 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_lightsheet_rampup = 200.e-3
 
-        # self.camera_params.amp_imaging = 0.25
-        self.camera_params.exposure_time = 25.e-6
+        self.camera_params.amp_imaging = 0.1
+        self.camera_params.exposure_time = 15.e-6
 
-        self.p.t_tof = 10.e-6
+        self.p.t_tof = 3.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3

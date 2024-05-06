@@ -14,16 +14,16 @@ class rf_scan(EnvExperiment, Base):
         self.p.t_magtrap = 30.e-3
 
         
-        # self.xvar('t_lightsheet_hold',np.linspace(100.,2000.,20)*1.e-3)
+        self.xvar('t_lightsheet_hold',np.linspace(100.,2000.,20)*1.e-3)
         # self.xvar('t_lightsheet_rampup',np.linspace(10.,1000.,8)*1.e-3)
-        self.xvar('i_magtrap_ramp_start',np.linspace(40.,95.,8))
-        self.xvar('i_magtrap_init',np.linspace(30.,95.,8))
+        # self.xvar('i_magtrap_ramp_start',np.linspace(40.,95.,8))
+        # self.xvar('i_magtrap_init',np.linspace(30.,95.,8))
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,3.5,8))
 
         # self.xvar('t_tof',np.linspace(10.,200.,5)*1.e-6)
         self.p.t_tof = 100.e-6
 
-        self.p.t_lightsheet_rampup = 200.e-3
+        self.p.t_lightsheet_rampup = 150.e-3
         self.p.t_lightsheet_hold = 800.e-3
         
         # self.xvar('dummy',[0]*5)
@@ -51,7 +51,6 @@ class rf_scan(EnvExperiment, Base):
         self.cmot_d1(self.p.t_d1cmot * s)
         
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
-        self.inner_coil.set_voltage(v_supply=9.)
 
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,

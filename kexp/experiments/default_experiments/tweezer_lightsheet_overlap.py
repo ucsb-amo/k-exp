@@ -11,13 +11,13 @@ class rf_scan(EnvExperiment, Base):
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.xvar('beans',[1,2,3]*300)
+        self.xvar('beans',[1,2]*300)
 
         # self.xvar('t_tof',np.linspace(50.,7000.,15)*1.e-6)
         self.p.t_magtrap = 100.e-3
         self.p.i_magtrap_init = 33.
         self.p.t_tweezer_hold = 50.e-3
-        self.p.t_lightsheet_hold = 800.e-3
+        self.p.t_lightsheet_hold = 1500.e-3
 
         self.p.t_tof = 5.e-6
 
@@ -30,7 +30,7 @@ class rf_scan(EnvExperiment, Base):
         self.finish_build(shuffle=False)
 
     @kernel
-    def scan_kernel(self):
+    def scan_kernel(self): 
         self.dds.init_cooling()
 
         self.core.break_realtime()
