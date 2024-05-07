@@ -6,7 +6,7 @@ import numpy as np
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
@@ -61,7 +61,7 @@ class rf_scan(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(.02,.7,6))
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.38,.5,6))
 
-        self.xvar('t_tof',np.linspace(10.,2500.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(5.,1000.,10)*1.e-6)
 
         # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
         # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
@@ -78,6 +78,8 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
+
+        self.camera_params.amp_imaging = .08
 
         self.finish_build(shuffle=False)
 
@@ -141,12 +143,12 @@ class rf_scan(EnvExperiment, Base):
         delay(30.e-3)
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
-        self.outer_coil.set_current(i_supply=self.p.i_evap2_current)
-        delay(20.e-3)
+        # self.outer_coil.set_current(i_supply=self.p.i_evap2_current)
+        # delay(20.e-3)
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
         
-        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+        # self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
         # delay(self.p.t_tweezer_hold)

@@ -24,10 +24,6 @@ class rf_scan(EnvExperiment, Base):
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
 
-        self.camera_params.em_gain = 290.
-        self.camera_params.amp_imaging = 0.25
-        self.camera_params.exposure_time = 20.e-6
-
         self.finish_build(shuffle=True)
 
     @kernel

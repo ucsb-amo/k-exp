@@ -6,7 +6,7 @@ import numpy as np
 class tweezer_evap(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
@@ -33,19 +33,19 @@ class tweezer_evap(EnvExperiment, Base):
         # self.p.t_lightsheet_rampdown2 = .01*s
         self.p.n_lightsheet_rampdown2_steps = 1000
 
-        self.p.v_pd_tweezer_1064_rampdown_end = .41
-        self.p.t_tweezer_1064_rampdown = .15*s
+        self.p.v_pd_tweezer_1064_rampdown_end = .18
+        self.p.t_tweezer_1064_rampdown = .500*s
 
         self.p.i_evap1_current = 12.4
         self.p.i_evap2_current = 12.
-        self.p.i_evap3_current = 16.
+        self.p.i_evap3_current = 25.4
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(0.6,2.,15))
         # self.xvar('t_tof',np.linspace(50.,500.,6)*1.e-6)
 
         # self.xvar('evap1_current',np.linspace(11.5,15.3,6))
         # self.xvar('evap2_current',np.linspace(11.,13.,6))
-        # self.xvar('evap3_current',np.linspace(13.,17.,6))
+        # self.xvar('evap3_current',np.linspace(11.,35.,6))
 
         # self.xvar('i_feshbach_field_ramp_start',np.linspace(30.,15.,10))
 
@@ -57,35 +57,37 @@ class tweezer_evap(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.13,.2,6))
         # self.xvar('t_lightsheet_rampdown2',np.linspace(1.2,2.,6))
 
-        # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,500.,6)*1.e-3)
+        # self.xvar('t_tweezer_1064_ramp',np.linspace(50.,800.,6)*1.e-3)
+        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(.15,1.,6))
 
-        # self.xvar('t_tweezer_1064_rampdown',np.linspace(.02,.7,6))
-        # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.38,.5,6))
+        # self.xvar('t_tweezer_1064_rampdown',np.linspace(.5,.8,6))
+        # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.05,.25,6))
 
-        # self.xvar('t_tweezer_hold',np.linspace(1.,20.,6)*1.e-6)
+        # self.xvar('t_tweezer_hold',np.linspace(.0,100.,10)*1.e-3)
 
-        self.xvar('t_tof',np.linspace(1.,1.,300)*1.e-6)
+        self.xvar('t_tof',np.linspace(1.,20.,10)*1.e-6)
 
         # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
         # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
 
         self.p.t_lightsheet_hold = 500.e-3
 
-        self.p.t_tweezer_1064_ramp = 250.e-3
+        self.p.t_tweezer_1064_ramp = 500.e-3
+        self.p.v_pd_tweezer_1064_ramp_end = .5
 
         self.p.t_tweezer_hold = 5.e-3
 
         self.p.t_lightsheet_rampup = 200.e-3
 
-        self.p.t_tof = 1.e-6
+        self.p.t_tof = 20.e-6
 
         self.camera_params.amp_imaging = .08
-        self.camera_params.exposure_time = 15.e-6
+        self.camera_params.exposure_time = 5.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
 
-        self.finish_build(shuffle=False)
+        self.finish_build(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -156,14 +158,13 @@ class tweezer_evap(EnvExperiment, Base):
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
+        self.lightsheet.off()
 
-        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
-        delay(self.p.t_tweezer_hold)
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
+        # delay(self.p.t_tweezer_hold)
         self.outer_coil.off()
         self.ttl.pd_scope_trig.off()
         delay(1.5e-3)
-
-        self.lightsheet.off()
 
         self.tweezer.off()
     
