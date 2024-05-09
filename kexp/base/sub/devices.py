@@ -82,6 +82,7 @@ class Devices():
         
         self.tweezer = tweezer(self.dac.vva_tweezer,
                                sw_ttl=self.ttl.awg,
+                               awg_trg_ttl = self.ttl.awg_trigger,
                                expt_params=self.params)
 
         # camera placeholder
