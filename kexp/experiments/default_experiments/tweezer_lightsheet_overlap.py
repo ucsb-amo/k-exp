@@ -19,13 +19,10 @@ class rf_scan(EnvExperiment, Base):
         self.p.t_tweezer_hold = 50.e-3
         self.p.t_lightsheet_hold = 1500.e-3
 
-        self.p.t_tof = 5.e-6
+        self.p.t_tof = 100.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
-
-        # self.camera_params.amp_imaging = 0.1
-        # self.camera_params.exposure_time = 20.e-6
 
         self.finish_build(shuffle=False)
 

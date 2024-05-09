@@ -21,7 +21,7 @@ class rf_scan(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,3.5,8))
 
         # self.xvar('t_tof',np.linspace(10.,200.,5)*1.e-6)
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 10.e-6
 
         self.p.t_lightsheet_rampup = 150.e-3
         self.p.t_lightsheet_hold = 800.e-3
