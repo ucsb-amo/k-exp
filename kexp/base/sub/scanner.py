@@ -2,8 +2,10 @@ from kexp.config import ExptParams
 from artiq.experiment import *
 import numpy as np
 from kexp.control.artiq.dummy_core import DummyCore
-from artiq.language.core import kernel_from_string
+from artiq.language.core import kernel_from_string, now_mu
 from artiq.experiment import delay
+
+RPC_DELAY = 10.e-3
 
 dv = -100.
 dvlist = np.array([])
@@ -80,8 +82,14 @@ class Scanner():
 
     @kernel
     def pre_scan(self):
-        """This method is run in scan_base before the scan loop.
+        """This method is run in scan before the scan loop.
         """        
+        pass
+
+    @kernel
+    def init_scan_kernel(self):
+        """This method is run between each shot just before scan_kernel.
+        """
         pass
 
     @kernel
@@ -103,15 +111,22 @@ class Scanner():
         scanning = True
 
         while scanning:
-
+            
+            self.core.wait_until_mu(now_mu())
             self.update_params_from_xvars()
-            self.write_host_params_to_kernel()
+            delay(RPC_DELAY)
 
+            self.write_host_params_to_kernel()
             self.core.break_realtime()
+
+            self.init_scan_kernel()
+
             self.scan_kernel()
+
             delay(self.params.t_recover)
             self.core.break_realtime()
 
+            self.core.wait_until_mu(now_mu())
             scanning = self.step_scan()
 
             self.core.break_realtime()
