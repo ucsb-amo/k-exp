@@ -3,6 +3,8 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
+from artiq.language.core import now_mu
+
 class tweezer_evap(EnvExperiment, Base):
 
     def build(self):
@@ -15,29 +17,11 @@ class tweezer_evap(EnvExperiment, Base):
 
         # self.xvar('beans',[0,1]*300)
 
-        # self.xvar('i_magtrap_init',np.linspace(20.,70.,20))
-
-        self.p.t_magtrap = 30.e-3
-
-        self.p.i_feshbach_field_ramp_start = 0.
-        self.p.i_feshbach_field_ramp_end = 13.2
-        self.p.t_feshbach_field_ramp = 30.e-3
-
-        self.p.v_pd_lightsheet_rampdown_end = .8
-        # self.p.v_pd_lightsheet_rampdown_end = 1.25
-        self.p.t_lightsheet_rampdown = 1.4*s
-
-        self.p.v_pd_lightsheet_rampdown2_end = 0.186
-        # self.p.v_pd_lightsheet_rampdown2_end = 0.
-        self.p.t_lightsheet_rampdown2 = 1.84*s
-        # self.p.t_lightsheet_rampdown2 = .01*s
-        self.p.n_lightsheet_rampdown2_steps = 1000
-
         self.p.v_pd_tweezer_1064_rampdown_end = .18
         self.p.t_tweezer_1064_rampdown = .500*s
 
-        self.p.i_evap1_current = 12.4
-        self.p.i_evap2_current = 12.
+        # self.p.i_evap1_current = 12.4
+        # self.p.i_evap2_current = 12.
         self.p.i_evap3_current = 25.4
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(0.6,2.,15))
@@ -58,19 +42,14 @@ class tweezer_evap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown2',np.linspace(1.2,2.,6))
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(50.,800.,6)*1.e-3)
-        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(.15,1.,6))
+        self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(.15,4.5,6))
 
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(.5,.8,6))
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.05,.25,6))
 
-        # self.xvar('t_tweezer_hold',np.linspace(.0,100.,10)*1.e-3)
+        self.xvar('t_tweezer_hold',np.linspace(.0,100.,6)*1.e-3)
 
-        self.xvar('t_tof',np.linspace(1.,20.,10)*1.e-6)
-
-        # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
-        # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
-
-        self.p.t_lightsheet_hold = 500.e-3
+        # self.xvar('t_tof',np.linspace(1.,20.,10)*1.e-6)
 
         self.p.t_tweezer_1064_ramp = 500.e-3
         self.p.v_pd_tweezer_1064_ramp_end = .5
@@ -79,10 +58,10 @@ class tweezer_evap(EnvExperiment, Base):
 
         self.p.t_lightsheet_rampup = 200.e-3
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 3.e-6
 
-        self.camera_params.amp_imaging = .08
-        self.camera_params.exposure_time = 5.e-6
+        # self.camera_params.amp_imaging = .08
+        # self.camera_params.exposure_time = 5.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
@@ -93,12 +72,11 @@ class tweezer_evap(EnvExperiment, Base):
     def scan_kernel(self):
         self.dds.init_cooling()
 
+        self.core.wait_until_mu(now_mu())
+        self.tweezer.set_static_tweezers(self.p.f_list,self.p.amp_list)
         self.core.break_realtime()
 
-        if self.p.imaging_state == 1.:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
-        else:
-            self.set_imaging_detuning()
+        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -157,11 +135,13 @@ class tweezer_evap(EnvExperiment, Base):
 
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
+        delay(self.p.t_tweezer_hold)
+
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
         self.lightsheet.off()
 
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
-        # delay(self.p.t_tweezer_hold)
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
+        
         self.outer_coil.off()
         self.ttl.pd_scope_trig.off()
         delay(1.5e-3)

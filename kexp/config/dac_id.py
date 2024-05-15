@@ -30,6 +30,8 @@ class dac_frame():
         self.inner_coil_supply_voltage = self.assign_dac_ch(11)
         self.vva_tweezer = self.assign_dac_ch(12,v=9.7)
         self.vco_rf = self.assign_dac_ch(13,v=0.)
+        # self.vva_ry_405 = self.assign_dac_ch(14)
+        # self.vva_ry_980 = self.assign_dac_ch(15)
 
         self._write_dac_keys()
         

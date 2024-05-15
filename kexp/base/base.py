@@ -4,6 +4,9 @@ import numpy as np
 from kexp.config import ExptParams
 from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
 from kexp.util.data import DataSaver, RunInfo
+from artiq.language.core import kernel_from_string, now_mu
+
+RPC_DELAY = 10.e-3
 
 # also import the andor camera parameters
 
@@ -34,6 +37,16 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.sort_N = []
 
         self.ds = DataSaver()
+
+    @kernel
+    def init_scan_kernel(self):
+        self.dds.init_cooling()
+        self.core.break_realtime()
+
+        if self.p.imaging_state == 1.:
+            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
+        else:
+            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
 
     def finish_build(self,N_repeats=[],shuffle=True):
         """
@@ -106,6 +119,10 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         # if init_rf:
         #     self.rf.init()
         self.lightsheet.init()
+
+        self.core.wait_until_mu(now_mu())
+        self.tweezer.awg_init()
+        
         self.core.break_realtime() # add slack before scheduling experiment events
 
     def prepare_image_array(self):
@@ -124,6 +141,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.image_timestamps = np.array([0])
 
     def end(self,expt_filepath):
+
+        self.tweezer.close()
+        
         if self.setup_camera:
             if self.run_info.save_data:
                 self.cleanup_scanned()
