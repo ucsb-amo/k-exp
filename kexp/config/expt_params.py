@@ -182,10 +182,10 @@ class ExptParams():
 
         self.n_tweezers = 3
 
-        self.aod_center_freq = 75.e6
+        self.frequency_aod_center = 75.e6
 
         #frequency of outer most tweezers, to be added / subtracted from the center frequency of 75 MHz
-        self.tweezer_1064_max_freq = 2.e6
+        self.frequency_tweezer_array_width = 2.e6
 
         # RF
         self.t_rf_sweep_state_prep = 100.e-3
@@ -302,9 +302,9 @@ class ExptParams():
         self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
     
     def compute_tweezer_1064_freqs(self):
-        self.min_f = self.aod_center_freq - self.tweezer_1064_max_freq
-        self.max_f = self.aod_center_freq + self.tweezer_1064_max_freq
-        self.f_list = np.linspace(self.min_f, self.max_f,self.n_tweezers)
+        min_f = self.frequency_aod_center - self.frequency_tweezer_array_width
+        max_f = self.frequency_aod_center + self.frequency_tweezer_array_width
+        self.f_list = np.linspace(min_f, max_f, self.n_tweezers)
 
     def compute_tweezer_1064_amps(self):
         self.amp_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers,self.n_tweezers)
