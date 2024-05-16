@@ -306,10 +306,10 @@ class ExptParams():
     def compute_tweezer_1064_freqs(self):
         min_f = self.frequency_aod_center - self.frequency_tweezer_array_width
         max_f = self.frequency_aod_center + self.frequency_tweezer_array_width
-        self.f_list = np.linspace(min_f, max_f, self.n_tweezers)
+        self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
 
     def compute_tweezer_1064_amps(self):
-        self.amp_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers,self.n_tweezers)
+        self.amp_tweezer_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers,self.n_tweezers)
 
     def compute_tweezer_1064_ramp_params(self):
         self.v_pd_tweezer_1064_ramp_list = np.linspace(self.v_pd_tweezer_1064_ramp_start,self.v_pd_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()
