@@ -155,11 +155,12 @@ class ExptParams():
         #ODT
         # self.amp_lightsheet = 0.6
         # self.frequency_ao_lightsheet = 80.e6
+        self.v_pd_lightsheet_pd_minimum = 0.035
         self.amp_painting = 1.0
         self.frequency_painting = 100.e3
         self.v_pd_lightsheet = 8.88
         self.n_lightsheet_rampup_steps = 1000
-        self.v_pd_lightsheet_rampup_start = 0.035
+        self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 8.88
 
         self.n_lightsheet_rampdown_steps = 10000
@@ -172,8 +173,9 @@ class ExptParams():
         self.v_pd_lightsheet_rampdown3_end = .0
 
         #1064 tweezer
+        self.v_pd_tweezer_1064_pd_minimum = 0.024
         self.v_pd_tweezer_1064 = 4.5
-        self.v_pd_tweezer_1064_ramp_start = 0.024
+        self.v_pd_tweezer_1064_ramp_start = self.v_pd_tweezer_1064_pd_minimum
         self.v_pd_tweezer_1064_ramp_end = 4.5
         self.n_tweezer_1064_ramp_steps = 100
         
@@ -214,9 +216,9 @@ class ExptParams():
 
         # rydberg
         self.frequency_ao_ry_405 = 250.0e6
-        self.frequency_ao_ry_980 = 200.0e6
+        self.frequency_ao_ry_980 = 80.0e6
         self.amp_ao_ry_405 = 0.2
-        self.amp_ao_ry_980 = 0.87
+        self.amp_ao_ry_980 = 0.285
 
         # evap
         self.i_evap1_current = 13.
