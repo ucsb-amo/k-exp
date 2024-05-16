@@ -48,6 +48,12 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         else:
             self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
 
+        self.core.wait_until_mu(now_mu())
+        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
+        self.core.break_realtime()
+
+        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+
     def finish_build(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of build. 
@@ -122,7 +128,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.core.wait_until_mu(now_mu())
         self.tweezer.awg_init()
-        
+
         self.core.break_realtime() # add slack before scheduling experiment events
 
     def prepare_image_array(self):
@@ -142,7 +148,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
     def end(self,expt_filepath):
 
-        self.tweezer.close()
+        # self.tweezer.close()
         
         if self.setup_camera:
             if self.run_info.save_data:
