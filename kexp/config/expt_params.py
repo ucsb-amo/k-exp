@@ -50,7 +50,7 @@ class ExptParams():
         self.t_lightsheet_rampup = 10.e-3
         self.t_lightsheet_rampdown = 1.1
         self.t_lightsheet_rampdown2 = .7
-        self.t_lightsheet_rampdown3 = .01
+        self.t_lightsheet_rampdown3 = .02
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
@@ -164,7 +164,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_end = 8.88
 
         self.n_lightsheet_rampdown_steps = 10000
-        self.v_pd_lightsheet_rampdown_end = 1.8
+        self.v_pd_lightsheet_rampdown_end = 1.36
 
         self.n_lightsheet_rampdown2_steps = 1000
         self.v_pd_lightsheet_rampdown2_end = .18
@@ -184,11 +184,10 @@ class ExptParams():
 
         self.n_tweezers = 3
 
-        self.tweezer_1064_min_freq = 72.e6
-        self.tweezer_1064_max_freq = 78.e6
+        self.frequency_aod_center = 75.e6
 
-        self.tweezer_1064_min_amp = .3333
-        self.tweezer_1064_max_amp = .3333
+        #frequency of outer most tweezers, to be added / subtracted from the center frequency of 75 MHz
+        self.frequency_tweezer_array_width = 2.e6
 
         # RF
         self.t_rf_sweep_state_prep = 100.e-3
@@ -305,10 +304,12 @@ class ExptParams():
         self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
     
     def compute_tweezer_1064_freqs(self):
-        self.f_list = np.linspace(self.tweezer_1064_min_freq,self.tweezer_1064_max_freq,self.n_tweezers)
+        min_f = self.frequency_aod_center - self.frequency_tweezer_array_width
+        max_f = self.frequency_aod_center + self.frequency_tweezer_array_width
+        self.f_list = np.linspace(min_f, max_f, self.n_tweezers)
 
     def compute_tweezer_1064_amps(self):
-        self.amp_list = np.linspace(self.tweezer_1064_min_amp,self.tweezer_1064_max_amp,self.n_tweezers)
+        self.amp_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers,self.n_tweezers)
 
     def compute_tweezer_1064_ramp_params(self):
         self.v_pd_tweezer_1064_ramp_list = np.linspace(self.v_pd_tweezer_1064_ramp_start,self.v_pd_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()
@@ -324,6 +325,8 @@ class ExptParams():
         self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps
 
     def compute_feshbach_field_ramp_params(self):
+        self.i_feshbach_field_ramp_start = self.i_evap1_current
+        self.i_feshbach_field_ramp_end = self.i_evap2_current
         self.feshbach_field_ramp_list = np.linspace(self.i_feshbach_field_ramp_start,self.i_feshbach_field_ramp_end, self.n_feshbach_field_ramp_steps).transpose()
         self.dt_feshbach_field_ramp = self.t_feshbach_field_ramp / self.n_feshbach_field_ramp_steps
 
