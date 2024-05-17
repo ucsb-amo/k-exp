@@ -8,7 +8,7 @@ from artiq.language.core import now_mu
 class tweezer_evap(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
@@ -24,7 +24,7 @@ class tweezer_evap(EnvExperiment, Base):
         # self.p.i_evap2_current = 12.
         self.p.i_evap3_current = 25.4
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(0.6,2.,15))
+        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(0.6,2.,6))
         # self.xvar('t_tof',np.linspace(50.,500.,6)*1.e-6)
 
         # self.xvar('evap1_current',np.linspace(11.5,15.3,6))
@@ -42,14 +42,14 @@ class tweezer_evap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown2',np.linspace(1.2,2.,6))
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(50.,800.,6)*1.e-3)
-        self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(.15,4.5,6))
+        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(.15,4.5,6))
 
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(.5,.8,6))
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.05,.25,6))
 
-        self.xvar('t_tweezer_hold',np.linspace(.0,100.,6)*1.e-3)
+        # self.xvar('t_tweezer_hold',np.linspace(.0,100.,6)*1.e-3)
 
-        # self.xvar('t_tof',np.linspace(1.,20.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(1.,100.,6)*1.e-6)
 
         self.p.t_tweezer_1064_ramp = 500.e-3
         self.p.v_pd_tweezer_1064_ramp_end = .5
@@ -73,10 +73,8 @@ class tweezer_evap(EnvExperiment, Base):
         self.dds.init_cooling()
 
         self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(self.p.f_list,self.p.amp_list)
+        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
         self.core.break_realtime()
-
-        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -122,22 +120,22 @@ class tweezer_evap(EnvExperiment, Base):
 
         self.outer_coil.on(i_supply=self.p.i_evap1_current)
 
-        delay(30.e-3)
+        delay(20.e-3)
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
-        self.outer_coil.set_current(i_supply=self.p.i_evap2_current)
-        delay(20.e-3)
+        # self.outer_coil.set_current(i_supply=self.p.i_evap2_current)
+        # delay(20.e-3)
         
-        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+        # self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
 
-        self.outer_coil.set_current(i_supply=self.p.i_evap3_current)
-        delay(20.e-3)
+        # self.outer_coil.set_current(i_supply=self.p.i_evap3_current)
+        # delay(20.e-3)
 
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
-        delay(self.p.t_tweezer_hold)
+        # delay(self.p.t_tweezer_hold)
 
-        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
+        # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
         self.lightsheet.off()
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
@@ -146,7 +144,7 @@ class tweezer_evap(EnvExperiment, Base):
         self.ttl.pd_scope_trig.off()
         delay(1.5e-3)
 
-        self.tweezer.off()
+        # self.tweezer.off()
     
         delay(self.p.t_tof)
         self.flash_repump()
