@@ -62,7 +62,7 @@ class Devices():
                                          v_control_dac=self.dac.inner_coil_supply_voltage,
                                          i_control_dac=self.dac.inner_coil_supply_current,
                                          igbt_ttl=self.ttl.inner_coil_igbt,
-                                         contactor_ttl=self.ttl.inner_coil_contactor,
+                                         contactor_ttl=self.ttl.coil_contactor_placeholder,
                                          hbridge_ttl=self.ttl.hbridge_helmholtz,
                                          expt_params=self.params)
                                       
@@ -71,18 +71,20 @@ class Devices():
                                       v_control_dac=self.dac.outer_coil_supply_voltage,
                                       i_control_dac=self.dac.outer_coil_supply_current,
                                       igbt_ttl=self.ttl.outer_coil_igbt,
-                                      contactor_ttl=self.ttl.outer_coil_contactor,
+                                      contactor_ttl=self.ttl.coil_contactor_placeholder,
                                       expt_params=self.params)
         
         # painted ligthsheet
         self.lightsheet = lightsheet(vva_dac=self.dac.vva_lightsheet,
                                      paint_amp_dac=self.dac.lightsheet_mod_amp,
                                      sw_ttl=self.ttl.lightsheet_sw,
+                                     pid_int_hold_ttl = self.ttl.lightsheet_pid_int_hold,
                                      expt_params=self.params)
         
         self.tweezer = tweezer(self.dac.vva_tweezer,
                                sw_ttl=self.ttl.awg,
                                awg_trg_ttl = self.ttl.awg_trigger,
+                               pid_int_hold_ttl = self.ttl.tweezer_pid_int_hold,
                                expt_params=self.params)
 
         # camera placeholder
