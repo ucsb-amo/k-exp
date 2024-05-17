@@ -13,7 +13,9 @@ dv = -1.
 dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
-    def __init__(self, vva_dac:DAC_CH, sw_ttl:TTL, awg_trg_ttl:TTL, expt_params:ExptParams):
+    def __init__(self, vva_dac:DAC_CH, sw_ttl:TTL,
+                  awg_trg_ttl:TTL, pid_int_hold_ttl:TTL,
+                  expt_params:ExptParams):
         """Controls the tweezers.
 
         Args:
@@ -23,11 +25,16 @@ class tweezer():
         self.vva_dac = vva_dac
         self.sw_ttl = sw_ttl
         self.awg_trg_ttl = awg_trg_ttl
+        self.pid_int_hold_ttl = pid_int_hold_ttl
         self.params = expt_params
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
 
     @kernel
-    def on(self):
+    def on(self,zero_integrator=False):
+        if zero_integrator:
+            t = 20.e-3 # found empirically
+            self.vva_dac.set(v=-2.)
+            delay(t)
         self.sw_ttl.on()
 
     @kernel
@@ -36,9 +43,9 @@ class tweezer():
         self.vva_dac.set(v=0.)
 
     @kernel 
-    def pulse(self):
+    def pulse(self,t=1.e-6):
         self.awg_trg_ttl.on()
-        delay(1.e-6)
+        delay(t)
         self.awg_trg_ttl.off()
 
     @kernel
@@ -48,16 +55,20 @@ class tweezer():
         self.vva_dac.set(v=v_tweezer_vva,load_dac=load_dac)
 
     @kernel
-    def ramp(self,t,v_ramp_list=dv_list):
+    def ramp(self,t,v_ramp_list=dv_list,zero_integrator=True):
         if v_ramp_list == dv_list:
             v_ramp_list = self.params.v_pd_tweezer_1064_ramp_list
 
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
 
-        self.vva_dac.set(v=v_ramp_list[0])
-        self.on()
+        if zero_integrator:
+            self.on(zero_integrator=True)
+        else:
+            self.on(zero_integrator=False)
+        self.vva_dac.set(v=v_ramp_list[0])        
         delay(dt_ramp)
+        
         for v in v_ramp_list[1:]:
             self.vva_dac.set(v=v)
             delay(dt_ramp)
@@ -116,6 +127,13 @@ class tweezer():
         if len(freq_list) != len(amp_list):
             raise ValueError('Amplitude and frequency lists are not of equal length')
 
+        # for tweezer_idx in range(len(self.core_list)):
+        #     if tweezer_idx < len(freq_list):
+        #         self.dds[tweezer_idx].amp(0.)
+        #     else:
+        #         pass
+        # self.dds.exec_at_trg()
+
         for tweezer_idx in range(len(self.core_list)):
             if tweezer_idx < len(freq_list):
                 self.dds[tweezer_idx].amp(amp_list[tweezer_idx])
@@ -124,7 +142,14 @@ class tweezer():
                 pass
         self.dds.exec_at_trg()
 
+        # for tweezer_idx in range(len(self.core_list)):
+        #     if tweezer_idx < len(freq_list):
+        #         self.dds[tweezer_idx].amp(0.)
+        #     else:
+        #         pass
+        # self.dds.exec_at_trg()
+
         self.dds.write_to_card()
 
-    def close(self):
-        self.card.close(self.card._handle)
+    # def close(self):
+    #     self.card.close(self.card._handle)
