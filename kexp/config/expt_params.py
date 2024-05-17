@@ -173,10 +173,10 @@ class ExptParams():
         self.v_pd_lightsheet_rampdown3_end = .0
 
         #1064 tweezer
-        self.v_pd_tweezer_1064_pd_minimum = 0.024
-        self.v_pd_tweezer_1064 = 4.5
-        self.v_pd_tweezer_1064_ramp_start = self.v_pd_tweezer_1064_pd_minimum
-        self.v_pd_tweezer_1064_ramp_end = 4.5
+        self.v_pd_tweezer_1064_pd_minimum = 0.01
+        self.v_pd_tweezer_1064 = 5.8
+        self.v_pd_tweezer_1064_ramp_start = .0
+        self.v_pd_tweezer_1064_ramp_end = 5.8
         self.n_tweezer_1064_ramp_steps = 100
         
         self.v_pd_tweezer_1064_rampdown_end = 0.43821/2
@@ -187,7 +187,7 @@ class ExptParams():
         self.frequency_aod_center = 75.e6
 
         #frequency of outer most tweezers, to be added / subtracted from the center frequency of 75 MHz
-        self.frequency_tweezer_array_width = 2.e6
+        self.frequency_tweezer_array_width = 1.e6
 
         # RF
         self.t_rf_sweep_state_prep = 100.e-3
