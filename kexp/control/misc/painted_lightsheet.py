@@ -14,7 +14,9 @@ dv_list = np.linspace(0.,1.,5)
 DAC_PAINT_FULLSCALE = 9.99
 
 class lightsheet():
-    def __init__(self, vva_dac:DAC_CH, paint_amp_dac:DAC_CH, sw_ttl:TTL, expt_params:ExptParams):
+    def __init__(self, vva_dac:DAC_CH, paint_amp_dac:DAC_CH,
+                  sw_ttl:TTL, pid_int_hold_ttl:TTL,
+                  expt_params:ExptParams):
         """Controls the light sheet beam.
 
         Args:
@@ -29,12 +31,14 @@ class lightsheet():
         self.vva_dac = vva_dac
         self.paint_amp_dac = paint_amp_dac
         self.ttl = sw_ttl
+        self.pid_int_hold_ttl = pid_int_hold_ttl
         self.params = expt_params
 
     @kernel
     def init(self):
         self.paint_amp_dac.set(v=-9.99,load_dac=True)
         self.ttl.off()
+        self.pid_int_hold_ttl.on()
 
     @kernel
     def set_paint_amp(self,paint_fraction=dv,load_dac=True):
@@ -96,9 +100,13 @@ class lightsheet():
 
     @kernel
     def on(self):
-        self.ttl.on()
+        with parallel:
+            self.ttl.on()
+            self.pid_int_hold_ttl.off()
 
     @kernel
     def off(self):
-        self.ttl.off()
-        self.vva_dac.set(v=0.)
+        with parallel:
+            self.ttl.off()
+            self.pid_int_hold_ttl.on()
+            self.vva_dac.set(v=self.params.v_pd_lightsheet_pd_minimum)
