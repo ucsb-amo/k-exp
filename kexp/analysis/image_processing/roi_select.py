@@ -24,14 +24,14 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [500, 1450]
         roiy = [200, 950]
     elif crop_type == 'lightsheet':
-        roix = [850,940]
+        roix = [870,960]
         roiy = [470,880]
     elif crop_type == 'lightsheet_zaxis':
         roix = [750,970]
         roiy = [500,780]
     elif crop_type == 'lightsheet_short':
-        roix = [860,940]
-        roiy = [660,760]
+        roix = [870,960]
+        roiy = [650,740]
     elif crop_type == 'xy_tweezer':
         roix = [950,1150]
         roiy = [630,700]
