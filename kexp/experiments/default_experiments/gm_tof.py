@@ -10,10 +10,11 @@ class tof(EnvExperiment, Base):
 
         self.p.imaging_state = 2.
 
-        self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
 
+        self.p.N_repeats = 3
 
-        self.p.t_mot_load = 1000*1.e-3
+        self.p.t_mot_load = .3
 
         self.finish_build(shuffle=True)
 
@@ -33,7 +34,9 @@ class tof(EnvExperiment, Base):
                           v_xshim_current=self.p.v_xshim_current_gm)
 
         self.gm(self.p.t_gm * s)
+        self.ttl.pd_scope_trig.on()
         self.gm_ramp(self.p.t_gmramp)
+        self.ttl.pd_scope_trig.off()
 
         self.release()
 

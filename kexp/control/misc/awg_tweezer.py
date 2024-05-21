@@ -32,15 +32,15 @@ class tweezer():
     @kernel
     def on(self,zero_integrator=False):
         if zero_integrator:
-            t = 20.e-3 # found empirically
-            self.vva_dac.set(v=-2.)
+            t = 5.e-3 # found empirically
+            self.vva_dac.set(v=6.)
             delay(t)
         self.sw_ttl.on()
 
     @kernel
     def off(self):
         self.sw_ttl.off()
-        self.vva_dac.set(v=0.)
+        self.vva_dac.set(v=5.5)
 
     @kernel 
     def pulse(self,t=1.e-6):
@@ -127,13 +127,6 @@ class tweezer():
         if len(freq_list) != len(amp_list):
             raise ValueError('Amplitude and frequency lists are not of equal length')
 
-        # for tweezer_idx in range(len(self.core_list)):
-        #     if tweezer_idx < len(freq_list):
-        #         self.dds[tweezer_idx].amp(0.)
-        #     else:
-        #         pass
-        # self.dds.exec_at_trg()
-
         for tweezer_idx in range(len(self.core_list)):
             if tweezer_idx < len(freq_list):
                 self.dds[tweezer_idx].amp(amp_list[tweezer_idx])
@@ -141,13 +134,6 @@ class tweezer():
             else:
                 pass
         self.dds.exec_at_trg()
-
-        # for tweezer_idx in range(len(self.core_list)):
-        #     if tweezer_idx < len(freq_list):
-        #         self.dds[tweezer_idx].amp(0.)
-        #     else:
-        #         pass
-        # self.dds.exec_at_trg()
 
         self.dds.write_to_card()
 

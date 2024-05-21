@@ -10,9 +10,9 @@ class tof(EnvExperiment, Base):
 
         self.p.imaging_state = 2.
 
-        self.xvar('t_tof',np.linspace(100.,700.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(230.,700.,10)*1.e-6)
 
-        self.p.t_mot_load = 1000*1.e-3
+        self.p.t_mot_load = .5
 
         self.finish_build(shuffle=True)
 

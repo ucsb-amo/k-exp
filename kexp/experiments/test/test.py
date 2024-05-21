@@ -21,18 +21,21 @@ class test(EnvExperiment, Base):
 
         self.p.v_pd_lightsheet_rampup_start = 0.
         self.p.v_pd_lightsheet_rampup_end = 5.
-        self.xvar('t_lightsheet_rampup',np.linspace(10.,500.,10)*1.e-3)
+        # self.xvar('t_lightsheet_rampup',np.linspace(10.,500.,10)*1.e-3)
         # self.xvar('t_lightsheet_rampup',np.linspace(10.,10.,100)*1.e-3)
 
         self.p.v_pd_tweezer_1064_rampdown_start = self.p.v_pd_tweezer_1064_ramp_end
         self.p.v_pd_tweezer_1064_rampdown_end = 0.
 
         # self.xvar('dummy',[0.]*200)
-        self.xvar('t_tweezer_1064_ramp',np.linspace(.01,.5,10))
-        # self.xvar('frequency_tweezer_array_width',np.linspace(1.1e6,1.1e6,10))
+        # self.xvar('t_tweezer_1064_ramp',np.linspace(.01,.5,10))
+        self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,2.e6,5))
         self.p.t_delay = 400.e-3
-        self.p.t_tweezer_1064_ramp = .5
-        self.p.frequency_tweezer_array_width = 1.1e6
+        self.p.t_tweezer_1064_ramp = .2
+        self.p.frequency_tweezer_array_width = .7e6
+        self.p.n_tweezers = 2
+        self.p.v_pd_tweezer_1064_ramp_start = 5.8
+        self.p.v_pd_tweezer_1064_ramp_end = 2.1
    
         self.finish_build(shuffle=False)
 
@@ -50,14 +53,14 @@ class test(EnvExperiment, Base):
         # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.ramp(self.p.t_tweezer_1064_ramp,zero_integrator=True)
         # self.tweezer.on()
-        delay(.1)
+        delay(5.)
         # self.tweezer.ramp(t=500.e-3,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
         # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.off()
         # delay(1.0)
 
-        self.lightsheet.ramp(self.p.t_lightsheet_rampup)
-        self.lightsheet.off()
+        # self.lightsheet.ramp(self.p.t_lightsheet_rampup)
+        # self.lightsheet.off()
         delay(self.p.t_delay)
 
     @kernel

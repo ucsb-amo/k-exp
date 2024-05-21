@@ -8,7 +8,12 @@ class tweezer_evap(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.xvar('t_tof',np.linspace(1.,15.,6)*1.e-6)
+        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.3,3.5,20))
+        # self.xvar('t_tof',np.linspace(1.,50.,6)*1.e-6)
+
+        self.p.t_tof = 50.e-6
+
+        self.p.t_lightsheet_rampup = 400.e-3
 
         self.finish_build(shuffle=False)
 

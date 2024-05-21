@@ -11,23 +11,61 @@ class tof_scan(EnvExperiment, Base):
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.p.t_magtrap = 30.e-3
+        self.p.t_mot_load = .5
 
+        # self.xvar('t_mot_load',np.linspace(.1,2.,10))
         
-        # self.xvar('t_lightsheet_hold',np.linspace(100.,2000.,20)*1.e-3)
-        # self.xvar('t_lightsheet_rampup',np.linspace(10.,1000.,8)*1.e-3)
-        # self.xvar('i_magtrap_ramp_start',np.linspace(40.,95.,8))
-        # self.xvar('i_magtrap_init',np.linspace(30.,95.,8))
+        # self.xvar('i_2d_mot',np.linspace(0.,5.,20))
+        # self.xvar('detune_d2_c_2dmot',np.linspace(-2.,0.,6))
+        # self.xvar('detune_d2_r_2dmot',np.linspace(-4.,-1.,6))
+        # self.xvar('detune_push',np.linspace(-6.,0.,6))
+        # self.xvar('amp_push',np.linspace(.04,.188,6))
+
+        # self.xvar('detune_d2_c_mot',np.linspace(-3.,0.,6))
+        # self.xvar('detune_d2_r_mot',np.linspace(-5.,-3.,6))
+        # self.xvar('amp_d2_c_mot',np.linspace(.05,.188,6))
+        # self.xvar('amp_d2_r_mot',np.linspace(.05,.188,6))
+        # self.xvar('i_mot',np.linspace(10.,30.,20))
+        # self.xvar('v_zshim_current',np.linspace(.3,.8,6))
+        # self.xvar('v_xshim_current',np.linspace(2.0,9.5,8))
+        # self.xvar('v_yshim_current',np.linspace(7.0,9.99,8))
+
+        # self.xvar('detune_d1_c_d1cmot',np.linspace(8.,12.,6))
+        # self.xvar('detune_d2_r_d1cmot',np.linspace(-3.5,-2.,6))
+        # self.xvar('pfrac_d1_c_d1cmot',np.linspace(.7,.999,6))
+        # self.xvar('amp_d2_r_d1cmot',np.linspace(.03,.05,6))
+        # self.xvar('t_d1cmot',np.linspace(1.,15.,8)*1.e-3)
+        # self.xvar('i_cmot',np.linspace(15.,35.,8))
+
+        # self.xvar('detune_gm',np.linspace(7,12.,8))
+        # self.xvar('t_gm',np.linspace(.05,5.,8)*1.e-3)
+        # self.xvar('pfrac_d1_c_gm',np.linspace(.7,.99,8))
+        # self.xvar('pfrac_d1_r_gm',np.linspace(.3,.99,8))
+
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.4,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(.03,.4,8))
+        # self.xvar('t_gmramp',np.linspace(3.,8.,20)*1.e-3)
+
+        # self.xvar('i_magtrap_init',np.linspace(15.,95.,8))
+        # self.xvar('i_magtrap_ramp_start',np.linspace(60.,96.,8))
+
+        self.xvar('t_magtrap_ramp',np.linspace(10.,200.,8)*1.e-3)
+        # self.xvar('t_lightsheet_hold',np.linspace(50.,1500.,8)*1.e-3)
+        
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,3.5,8))
 
-        self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.4,8))
-        self.xvar('pfrac_r_gmramp_end',np.linspace(.03,.4,8))
+        # self.xvar('t_tof',np.linspace(4.,13.,10)*1.e-3)
 
-        # self.xvar('t_tof',np.linspace(10.,200.,5)*1.e-6)
-        self.p.t_tof = 50.e-6
+        self.p.i_magtrap_ramp_start = 75.
+        
+        self.p.t_tof = 10.e-6
 
-        self.p.t_lightsheet_rampup = 150.e-3
-        self.p.t_lightsheet_hold = 800.e-3
+        self.p.t_magtrap = 200.e-3
+
+        self.p.n_lightsheet_rampup_steps = 100
+
+        self.p.t_lightsheet_rampup = 500.e-3
+        # self.p.t_lightsheet_hold = 1000.e-3
         
         # self.xvar('dummy',[0]*5)
         
@@ -41,13 +79,6 @@ class tof_scan(EnvExperiment, Base):
     def scan_kernel(self):
         self.dds.init_cooling()
 
-        self.core.break_realtime()
-
-        if self.p.imaging_state == 1.:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
-        else:
-            self.set_imaging_detuning()
-
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -59,13 +90,13 @@ class tof_scan(EnvExperiment, Base):
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
         self.gm(self.p.t_gm * s)
+
+        self.ttl.pd_scope_trig.on()
         self.gm_ramp(self.p.t_gmramp)
 
         # self.release()
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
-
-        self.ttl.pd_scope_trig.on()
 
         self.flash_cooler()
 
@@ -74,8 +105,7 @@ class tof_scan(EnvExperiment, Base):
         self.set_shims(v_zshim_current=0.,
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
-        
-        self.ttl.pd_scope_trig.on()
+
         # magtrap start
         self.inner_coil.igbt_ttl.on()
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
@@ -90,6 +120,7 @@ class tof_scan(EnvExperiment, Base):
             delay(self.p.dt_magtrap_ramp)
         delay(30.e-3)
         self.inner_coil.off()
+
         self.ttl.pd_scope_trig.off()
 
         delay(self.p.t_lightsheet_hold)

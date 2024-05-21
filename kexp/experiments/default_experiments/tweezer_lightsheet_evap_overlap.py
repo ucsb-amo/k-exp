@@ -8,7 +8,7 @@ from artiq.language.core import now_mu
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
@@ -18,10 +18,13 @@ class rf_scan(EnvExperiment, Base):
         self.xvar('beans',[0,1]*300)
 
         self.p.t_tweezer_1064_ramp = 10.e-3
+        self.p.t_tweezer_hold = 40.e-3
+        self.p.frequency_tweezer_array_width = 0.
+        self.p.n_tweezers = 1
 
-        self.p.t_tweezer_1064_hold = 30.e-3
+        self.p.v_pd_tweezer_1064_ramp_end = 4.5
 
-        self.p.t_lightsheet_rampup = 200.e-3
+        # self.p.t_lightsheet_rampup = 200.e-3
 
         self.p.t_tof = 3.e-6
 
@@ -30,10 +33,6 @@ class rf_scan(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         self.dds.init_cooling()
-
-        self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(self.p.f_list,self.p.amp_list)
-        self.core.break_realtime()
 
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.switch_d2_2d(1)
@@ -57,11 +56,11 @@ class rf_scan(EnvExperiment, Base):
 
         self.dds.power_down_cooling()
 
-        if self.p.beans == 0:
-
-            self.set_shims(v_zshim_current=0.,
+        self.set_shims(v_zshim_current=0.,
                             v_yshim_current=self.p.v_yshim_current_gm,
                             v_xshim_current=self.p.v_xshim_current_gm)
+
+        if self.p.beans == 0:
             
             self.ttl.pd_scope_trig.on()
             self.inner_coil.igbt_ttl.on()
@@ -102,8 +101,8 @@ class rf_scan(EnvExperiment, Base):
             self.lightsheet.off()
 
         elif self.p.beans == 1:
-            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
-            delay(self.p.t_tweezer_1064_hold)
+            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,zero_integrator=False)
+            delay(self.p.t_tweezer_hold)
             self.tweezer.off()
 
         delay(self.p.t_tof)

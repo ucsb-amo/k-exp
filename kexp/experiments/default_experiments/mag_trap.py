@@ -13,7 +13,7 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_magtrap = 50.e-3
         # self.xvar('t_tof',np.linspace(10.,7000.,15)*1.e-6)
-        self.xvar('t_magtrap',np.linspace(15.,100.,20)*1.e-3)
+        self.xvar('t_magtrap',np.linspace(15.,800.,20)*1.e-3)
 
         self.p.t_tof = 5.e-6
 
