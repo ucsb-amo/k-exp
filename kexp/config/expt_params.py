@@ -47,7 +47,7 @@ class ExptParams():
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 400.e-3
+        self.t_lightsheet_rampup = 600.e-3
         self.t_lightsheet_rampdown = 1.1
         self.t_lightsheet_rampdown2 = .7
         self.t_lightsheet_rampdown3 = .02
@@ -61,7 +61,7 @@ class ExptParams():
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
         self.t_magtrap = 40.e-3
-        self.t_magtrap_ramp = 40.e-3
+        self.t_magtrap_ramp = 200.e-3
         self.t_feshbach_field_ramp = 80.e-3
 
         # DAC controlled AO amplitudes
@@ -138,13 +138,13 @@ class ExptParams():
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.15
-        self.pfrac_r_gmramp_end = 0.24
+        self.pfrac_c_gmramp_end = 0.35
+        self.pfrac_r_gmramp_end = 0.189
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 60.
-        self.i_magtrap_ramp_start = 60.
+        self.i_magtrap_init = 33.
+        self.i_magtrap_ramp_start = 66.
         self.i_magtrap_ramp_end = 0.0
         self.n_magtrap_ramp_steps = 1000
 

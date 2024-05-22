@@ -46,26 +46,30 @@ class tof_scan(EnvExperiment, Base):
         # self.xvar('pfrac_r_gmramp_end',np.linspace(.03,.4,8))
         # self.xvar('t_gmramp',np.linspace(3.,8.,20)*1.e-3)
 
-        # self.xvar('i_magtrap_init',np.linspace(15.,95.,8))
-        # self.xvar('i_magtrap_ramp_start',np.linspace(60.,96.,8))
+        # self.xvar('i_magtrap_init',np.linspace(15.,96.,10))
+        # self.xvar('i_magtrap_ramp_start',np.linspace(30.,96.,10))
+        # self.xvar('t_magtrap_ramp',np.linspace(10.,500.,20)*1.e-3)
 
-        self.xvar('t_magtrap_ramp',np.linspace(10.,200.,8)*1.e-3)
+        # self.xvar('t_lightsheet_rampup',np.linspace(20.,1000.,8)*1.e-3)
         # self.xvar('t_lightsheet_hold',np.linspace(50.,1500.,8)*1.e-3)
-        
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,3.5,8))
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,8.5,8))
+
+        # self.xvar('i_evap1_current',np.linspace(11.,13.,8))
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(4.,.6,8))
+        # self.xvar('t_lightsheet_rampdown',np.linspace(1.5,.6,8))
+
+        self.xvar('i_magtrap_shim',np.linspace(0.,2.,20))
 
         # self.xvar('t_tof',np.linspace(4.,13.,10)*1.e-3)
-
-        self.p.i_magtrap_ramp_start = 75.
         
-        self.p.t_tof = 10.e-6
+        self.p.t_tof = 3.e-6
 
         self.p.t_magtrap = 200.e-3
 
         self.p.n_lightsheet_rampup_steps = 100
 
-        self.p.t_lightsheet_rampup = 500.e-3
-        # self.p.t_lightsheet_hold = 1000.e-3
+        self.p.t_lightsheet_rampup = 600.e-3
+        self.p.t_lightsheet_hold = 500.e-3
         
         # self.xvar('dummy',[0]*5)
         
@@ -85,6 +89,8 @@ class tof_scan(EnvExperiment, Base):
         self.cmot_d1(self.p.t_d1cmot * s)
         
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
+        self.outer_coil.set_current(i_supply=self.p.i_magtrap_shim)
+        self.outer_coil.set_voltage(v_supply=9.)
 
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,
@@ -108,23 +114,35 @@ class tof_scan(EnvExperiment, Base):
 
         # magtrap start
         self.inner_coil.igbt_ttl.on()
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-        # delay(self.p.t_magtrap)
+        self.outer_coil.igbt_ttl.on()
+        # self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
+        delay(self.p.t_magtrap)
 
         # ramp up ligthsheet over magtrap
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+
+        # delay(self.p.t_lightsheet_hold)
         
         # ramp down magtrap
-        for i in self.p.magtrap_ramp_list:
-            self.inner_coil.set_current(i_supply=i)
-            delay(self.p.dt_magtrap_ramp)
-        delay(30.e-3)
+        # for i in self.p.magtrap_ramp_list:
+        #     self.inner_coil.set_current(i_supply=i)
+        #     delay(self.p.dt_magtrap_ramp)
+        
+        # self.outer_coil.set_current(i_supply=self.p.i_evap1_current)
+        # self.outer_coil.set_voltage(v_supply=9.)
+        # delay(30.e-3)
         self.inner_coil.off()
+        self.outer_coil.off()
 
+        # self.outer_coil.on(i_supply=self.p.i_evap1_current)
+        # delay(20.e-3)
+        # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
+
+        # self.outer_coil.off()
         self.ttl.pd_scope_trig.off()
+        delay(3.5e-3)
 
-        delay(self.p.t_lightsheet_hold)
-        self.lightsheet.off()
+        # self.lightsheet.off()
     
         delay(self.p.t_tof)
         self.flash_repump()
