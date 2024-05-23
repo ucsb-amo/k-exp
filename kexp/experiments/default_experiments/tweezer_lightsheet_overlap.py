@@ -7,15 +7,15 @@ from artiq.language.core import now_mu
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='z_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.xvar('beans',[2,3]*300)
+        self.xvar('beans',[1,2,3]*300)
 
         # self.xvar('t_tof',np.linspace(50.,7000.,15)*1.e-6)
-        self.p.t_magtrap = 200.e-3
+        self.p.t_magtrap = 25.e-3
         self.p.i_magtrap_init = 30.
         self.p.t_tweezer_1064_ramp = 10.e-3
         self.p.t_lightsheet_rampup = 200.e-3
@@ -100,7 +100,8 @@ class rf_scan(EnvExperiment, Base):
 
         elif self.p.beans == 2:
             self.inner_coil.igbt_ttl.on()
-            # self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
+            delay(self.p.t_lightsheet_rampup)
+            self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
             delay(self.p.t_magtrap)
             self.inner_coil.off()
             

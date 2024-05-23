@@ -143,8 +143,8 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 33.
-        self.i_magtrap_ramp_start = 66.
+        self.i_magtrap_init = 28.
+        self.i_magtrap_ramp_start = 56.7
         self.i_magtrap_ramp_end = 0.0
         self.n_magtrap_ramp_steps = 1000
 
