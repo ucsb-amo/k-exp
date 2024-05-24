@@ -15,12 +15,12 @@ class rf_scan(EnvExperiment, Base):
         self.xvar('beans',[0,1]*300)
 
         # self.xvar('t_tof',np.linspace(50.,7000.,15)*1.e-6)
-        self.p.t_magtrap = 25.e-3
-        self.p.i_magtrap_init = 30.
-        self.p.t_tweezer_1064_ramp = 15.e-3
+        # self.p.t_magtrap = 25.e-3
+        # self.p.i_magtrap_init = 30.
+        self.p.t_tweezer_1064_ramp = 150.e-3
         self.p.t_lightsheet_rampup = 200.e-3
         self.p.t_tweezer_hold = 40.e-3
-        self.p.t_lightsheet_hold = 1000.e-3
+        self.p.t_lightsheet_hold = 100.e-3
 
         # self.p.n_magtrap_ramp_steps = 4
 
@@ -29,7 +29,7 @@ class rf_scan(EnvExperiment, Base):
         # self.p.frequency_tweezer_array_width = 0.
         # self.p.n_tweezers = 1
 
-        self.p.t_tof = 5.e-6
+        self.p.t_tof = 2.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
@@ -69,25 +69,10 @@ class rf_scan(EnvExperiment, Base):
         
         self.ttl.pd_scope_trig.on()
         if self.p.beans == 0:
-            # self.inner_coil.igbt_ttl.on()
+            self.inner_coil.igbt_ttl.on()
             # self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
 
             self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,zero_integrator=True)
-
-            # for i in self.p.magtrap_ramp_list:
-            #     self.inner_coil.set_current(i_supply=i)
-            #     delay(self.p.dt_magtrap_ramp)
-            # delay(30.e-3)
-            # self.inner_coil.off()
-
-            delay(self.p.t_tweezer_hold)
-            self.tweezer.off()
-
-        elif self.p.beans == 1:
-            self.inner_coil.igbt_ttl.on()
-            self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-
-            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
             for i in self.p.magtrap_ramp_list:
                 self.inner_coil.set_current(i_supply=i)
@@ -95,13 +80,33 @@ class rf_scan(EnvExperiment, Base):
             delay(30.e-3)
             self.inner_coil.off()
 
+            delay(self.p.t_tweezer_hold)
+            self.tweezer.off()
+
+        elif self.p.beans == 1:
+            self.inner_coil.igbt_ttl.on()
+
+            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+
+            for i in self.p.magtrap_ramp_list:
+                self.inner_coil.set_current(i_supply=i)
+                delay(self.p.dt_magtrap_ramp)
+
+            delay(self.p.t_magtrap)
+            self.inner_coil.off()
+
             delay(self.p.t_lightsheet_hold)
             self.lightsheet.off()
 
         elif self.p.beans == 2:
             self.inner_coil.igbt_ttl.on()
+
             delay(self.p.t_lightsheet_rampup)
-            self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
+
+            for i in self.p.magtrap_ramp_list:
+                self.inner_coil.set_current(i_supply=i)
+                delay(self.p.dt_magtrap_ramp)
+                
             delay(self.p.t_magtrap)
             self.inner_coil.off()
             

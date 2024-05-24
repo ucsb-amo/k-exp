@@ -48,8 +48,8 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 200.e-3
-        self.t_lightsheet_rampdown = 1.1
-        self.t_lightsheet_rampdown2 = .7
+        self.t_lightsheet_rampdown = 1.
+        self.t_lightsheet_rampdown2 = .5
         self.t_lightsheet_rampdown3 = .02
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
@@ -62,7 +62,8 @@ class ExptParams():
         self.t_recover = 40.e-3
         self.t_magtrap = 500.e-3
         self.t_magtrap_ramp = 600.e-3
-        self.t_feshbach_field_ramp = 80.e-3
+        self.t_feshbach_field_rampup = 60.e-3
+        self.t_feshbach_field_ramp = 10.e-3
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -138,13 +139,13 @@ class ExptParams():
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.35
-        self.pfrac_r_gmramp_end = 0.189
+        self.pfrac_c_gmramp_end = 0.3
+        self.pfrac_r_gmramp_end = 0.136
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 28.
-        self.i_magtrap_ramp_end = 66.
+        self.i_magtrap_init = 26.
+        self.i_magtrap_ramp_end = 95.
         self.n_magtrap_ramp_steps = 1000
 
         #Optical Pumping
@@ -172,7 +173,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampdown_end = 1.
 
         self.n_lightsheet_rampdown2_steps = 1000
-        self.v_pd_lightsheet_rampdown2_end = .18
+        self.v_pd_lightsheet_rampdown2_end = .17
 
         self.n_lightsheet_rampdown3_steps = 1000
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -207,10 +208,10 @@ class ExptParams():
         self.frequency_rf_state_xfer_sweep_fullwidth = 2.e6
         self.n_rf_state_xfer_sweep_steps = 1000
 
-        # feshbach field ramp
-        self.i_feshbach_field_ramp_start = 130.
-        self.i_feshbach_field_ramp_end = 250.0
-        self.n_feshbach_field_ramp_steps = 1000
+        # feshbach field rampup
+        self.i_feshbach_field_rampup_start = 0.
+        self.n_feshbach_field_rampup_steps = 100
+        self.n_feshbach_field_ramp_steps = 100
 
         # rydberg
         self.frequency_ao_ry_405 = 250.0e6
@@ -219,8 +220,8 @@ class ExptParams():
         self.amp_ao_ry_980 = 0.285
 
         # evap
-        self.i_evap1_current = 13.
-        self.i_evap2_current = 13.5
+        self.i_evap1_current = 12.6
+        self.i_evap2_current = 10.4
         self.i_evap3_current = 16.4
 
         self.compute_derived()
@@ -335,6 +336,11 @@ class ExptParams():
         self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end, self.n_magtrap_ramp_steps).transpose()
         self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps
 
+    def compute_feshbach_field_rampup_params(self):
+        self.i_feshbach_field_rampup_end = self.i_evap1_current
+        self.feshbach_field_rampup_list = np.linspace(self.i_feshbach_field_rampup_start,self.i_feshbach_field_rampup_end, self.n_feshbach_field_rampup_steps).transpose()
+        self.dt_feshbach_field_rampup = self.t_feshbach_field_rampup / self.n_feshbach_field_rampup_steps
+    
     def compute_feshbach_field_ramp_params(self):
         self.i_feshbach_field_ramp_start = self.i_evap1_current
         self.i_feshbach_field_ramp_end = self.i_evap2_current
