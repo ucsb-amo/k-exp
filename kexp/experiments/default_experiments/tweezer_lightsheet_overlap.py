@@ -12,22 +12,22 @@ class rf_scan(EnvExperiment, Base):
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.xvar('beans',[1,2,3]*300)
+        self.xvar('beans',[0,1]*300)
 
         # self.xvar('t_tof',np.linspace(50.,7000.,15)*1.e-6)
         self.p.t_magtrap = 25.e-3
         self.p.i_magtrap_init = 30.
-        self.p.t_tweezer_1064_ramp = 10.e-3
+        self.p.t_tweezer_1064_ramp = 15.e-3
         self.p.t_lightsheet_rampup = 200.e-3
         self.p.t_tweezer_hold = 40.e-3
         self.p.t_lightsheet_hold = 1000.e-3
 
-        self.p.n_magtrap_ramp_steps = 4
+        # self.p.n_magtrap_ramp_steps = 4
 
-        self.p.v_pd_tweezer_1064_ramp_end = 4.5
+        # self.p.v_pd_tweezer_1064_ramp_end = 4.5
 
-        self.p.frequency_tweezer_array_width = 0.
-        self.p.n_tweezers = 1
+        # self.p.frequency_tweezer_array_width = 0.
+        # self.p.n_tweezers = 1
 
         self.p.t_tof = 5.e-6
 
@@ -72,7 +72,7 @@ class rf_scan(EnvExperiment, Base):
             # self.inner_coil.igbt_ttl.on()
             # self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
 
-            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,zero_integrator=False)
+            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,zero_integrator=True)
 
             # for i in self.p.magtrap_ramp_list:
             #     self.inner_coil.set_current(i_supply=i)

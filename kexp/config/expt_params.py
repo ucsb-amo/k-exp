@@ -47,7 +47,7 @@ class ExptParams():
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 600.e-3
+        self.t_lightsheet_rampup = 200.e-3
         self.t_lightsheet_rampdown = 1.1
         self.t_lightsheet_rampdown2 = .7
         self.t_lightsheet_rampdown3 = .02
@@ -60,8 +60,8 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap = 40.e-3
-        self.t_magtrap_ramp = 200.e-3
+        self.t_magtrap = 500.e-3
+        self.t_magtrap_ramp = 600.e-3
         self.t_feshbach_field_ramp = 80.e-3
 
         # DAC controlled AO amplitudes
@@ -144,8 +144,7 @@ class ExptParams():
 
         # mag trap
         self.i_magtrap_init = 28.
-        self.i_magtrap_ramp_start = 56.7
-        self.i_magtrap_ramp_end = 0.0
+        self.i_magtrap_ramp_end = 66.
         self.n_magtrap_ramp_steps = 1000
 
         #Optical Pumping
@@ -180,20 +179,20 @@ class ExptParams():
 
         #1064 tweezer
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
-        self.v_pd_tweezer_1064 = 1.5
-        self.v_pd_tweezer_1064_ramp_start = 4.5
-        self.v_pd_tweezer_1064_ramp_end = 1.5
-        self.n_tweezer_1064_ramp_steps = 100
+        self.v_pd_tweezer_1064 = 2.1
+        self.v_pd_tweezer_1064_ramp_start = 5.8
+        self.v_pd_tweezer_1064_ramp_end = 2.1
+        self.n_tweezer_1064_ramp_steps = 1000
         
-        self.v_pd_tweezer_1064_rampdown_end = 0.43821/2
+        self.v_pd_tweezer_1064_rampdown_end = 5.
         self.n_tweezer_1064_rampdown_steps = 100
 
-        self.n_tweezers = 3
+        self.n_tweezers = 2
 
         self.frequency_aod_center = 75.e6
 
         #frequency of outer most tweezers, to be added / subtracted from the center frequency of 75 MHz
-        self.frequency_tweezer_array_width = 1.e6
+        self.frequency_tweezer_array_width = .9e6
 
         # RF
         self.t_rf_sweep_state_prep = 100.e-3
@@ -332,6 +331,7 @@ class ExptParams():
         self.dt_tweezer_1064_rampdown = self.t_tweezer_1064_rampdown / self.n_tweezer_1064_rampdown_steps
 
     def compute_magtrap_ramp_params(self):
+        self.i_magtrap_ramp_start = self.i_magtrap_init
         self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end, self.n_magtrap_ramp_steps).transpose()
         self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps
 

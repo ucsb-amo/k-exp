@@ -20,6 +20,9 @@ def crop_OD(OD,crop_type='',Nvars=1):
     elif crop_type == 'gm2':
         roix = [500,1300]
         roiy = [500,1200]
+    elif crop_type == 'magtrap':
+        roix = [500,1300]
+        roiy = [500,1200]
     elif crop_type == 'fluor_gm':
         roix = [500, 1450]
         roiy = [200, 950]
@@ -31,7 +34,7 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roiy = [500,780]
     elif crop_type == 'lightsheet_short':
         roix = [870,960]
-        roiy = [650,740]
+        roiy = [620,750]
     elif crop_type == 'xy_tweezer':
         roix = [950,1150]
         roiy = [630,700]

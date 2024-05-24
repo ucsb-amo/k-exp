@@ -29,7 +29,7 @@ class test(EnvExperiment, Base):
 
         # self.xvar('dummy',[0.]*200)
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.01,.5,10))
-        self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,2.e6,5))
+        self.xvar('frequency_tweezer_array_width',np.linspace(.9e6,2.e6,5))
         self.p.t_delay = 400.e-3
         self.p.t_tweezer_1064_ramp = .2
         self.p.frequency_tweezer_array_width = .7e6
