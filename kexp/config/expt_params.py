@@ -64,6 +64,7 @@ class ExptParams():
         self.t_magtrap_ramp = 600.e-3
         self.t_feshbach_field_rampup = 60.e-3
         self.t_feshbach_field_ramp = 10.e-3
+        self.t_feshbach_field_decay = 13.e-3
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -181,11 +182,11 @@ class ExptParams():
         #1064 tweezer
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
         self.v_pd_tweezer_1064 = 2.1
-        self.v_pd_tweezer_1064_ramp_start = 5.8
+        self.v_pd_tweezer_1064_ramp_start = 8.96
         self.v_pd_tweezer_1064_ramp_end = 2.1
-        self.n_tweezer_1064_ramp_steps = 1000
+        self.n_tweezer_1064_ramp_steps = 50
         
-        self.v_pd_tweezer_1064_rampdown_end = 5.
+        self.v_pd_tweezer_1064_rampdown_end = 8.96
         self.n_tweezer_1064_rampdown_steps = 100
 
         self.n_tweezers = 2

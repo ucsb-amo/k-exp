@@ -33,7 +33,7 @@ class tweezer():
     def on(self,zero_integrator=False):
         if zero_integrator:
             t = 5.e-3 # found empirically
-            self.vva_dac.set(v=6.)
+            self.vva_dac.set(v=9.5)
             delay(t)
         self.sw_ttl.on()
 

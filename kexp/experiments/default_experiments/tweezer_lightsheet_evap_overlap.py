@@ -23,8 +23,8 @@ class rf_scan(EnvExperiment, Base):
         # self.p.t_lightsheet_rampup = 200.e-3
 
         self.p.t_tof = 3.e-6
-
-        # self.camera_params.amp_imaging = .08
+        self.camera_params.amp_imaging = .08
+        self.camera_params.em_gain = 200.
 
         self.finish_build(shuffle=False)
 
