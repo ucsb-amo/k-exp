@@ -39,7 +39,8 @@ class Cooling():
                      detune_d2_r = dv,
                      amp_d2_r = dv,
                      detune_push = dv,
-                     amp_push = dv):
+                     amp_push = dv,
+                     i_supply = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -54,6 +55,8 @@ class Cooling():
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
+        if i_supply == dv:
+            i_supply = self.params.i_2d_mot
         ### End Defaults ###
 
         self.dds.d2_2d_c.set_dds_gamma(delta=detune_d2_c,
@@ -64,6 +67,9 @@ class Cooling():
         delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
+        
+        self.dac.supply_current_2dmot.set(v=i_supply)
+
         with parallel:
             self.switch_d2_2d(1)
         delay(t)
@@ -114,7 +120,6 @@ class Cooling():
         delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
-        self.dac.anti_zshim_current_control.set(v=0.)
         self.set_shims(v_xshim_current,v_yshim_current,v_zshim_current)
         with parallel:
             self.switch_d2_3d(1)
@@ -267,7 +272,7 @@ class Cooling():
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_d1cmot
         if i_supply == dv:
-            i_supply = self.params.i_cmot
+            i_supply = self.params.i_mot
         ### End Defaults ###
             
         self.inner_coil.on(i_supply,wait_for_analog=True)
@@ -494,7 +499,6 @@ class Cooling():
                         t_bias_rampup=dv,
                         detune_optical_pumping=dv,
                         amp_optical_pumping=dv,
-                        v_anti_zshim_current=dv,
                         v_zshim_current=dv,
                         v_yshim_current=dv,
                         v_xshim_current=dv,
@@ -507,8 +511,6 @@ class Cooling():
             detune_optical_pumping = self.params.detune_optical_pumping_op
         if amp_optical_pumping == dv:
             amp_optical_pumping = self.params.amp_optical_pumping_op
-        if v_anti_zshim_current == dv:
-            v_anti_zshim_current = self.params.v_anti_zshim_current_op
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current_gm
         if v_yshim_current == dv:
@@ -522,7 +524,6 @@ class Cooling():
 
         if t_bias_rampup:
             # delay(-t_bias_rampup)
-            self.dac.anti_zshim_current_control.set(v_anti_zshim_current,load_dac=False)
             self.set_shims(v_zshim_current=v_zshim_current,
                            v_yshim_current=v_yshim_current,
                            v_xshim_current=v_xshim_current)
@@ -691,8 +692,8 @@ class Cooling():
         delay(1*ms)
         self.switch_d2_2d(1)
 
-        self.dds.ry_405.on()
-        self.dds.ry_980.on()
+        # self.dds.ry_405.on()
+        # self.dds.ry_980.on()
 
         self.dds.beatlock_ref.on()
 
@@ -701,8 +702,6 @@ class Cooling():
         self.inner_coil.on(i_supply)
 
         self.outer_coil.off()
-
-        self.dac.anti_zshim_current_control.set(v=0.)
 
         self.dds.imaging.on()
 

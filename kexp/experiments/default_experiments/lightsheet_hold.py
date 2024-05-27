@@ -12,13 +12,16 @@ class tof(EnvExperiment, Base):
 
         # self.xvar('dummy',[1,1])
 
-        self.xvar('t_lightsheet_hold',np.linspace(50.,3000.,10)*1.e-3)
+        self.xvar('t_lightsheet_hold',np.linspace(50.,2000.,10)*1.e-3)
+
+        self.p.v_pd_lightsheet_rampup_start = 0.
+        self.p.v_pd_lightsheet_rampup_end = 4.5
 
         self.p.t_tof = 10.e-6
 
         self.p.t_mot_load = .5
         
-        self.p.t_lightsheet_rampup = 10.e-3
+        self.p.t_lightsheet_rampup = 15.e-3
         self.p.t_lightsheet_hold = 40.e-3
 
         self.camera_params.amp_imaging = .3

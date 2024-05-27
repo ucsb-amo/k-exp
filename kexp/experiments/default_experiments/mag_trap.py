@@ -11,11 +11,14 @@ class rf_scan(EnvExperiment, Base):
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.p.t_magtrap = 50.e-3
-        # self.xvar('t_tof',np.linspace(10.,7000.,15)*1.e-6)
-        self.xvar('t_magtrap',np.linspace(15.,100.,20)*1.e-3)
+        self.p.t_magtrap_hold = 100.e-3
+        # self.xvar('t_tof',np.linspace(7.,12.,15)*1.e-3)
+        # self.xvar('i_magtrap_init',np.linspace(20.,34.,8))
+        self.xvar('i_magtrap_ramp_start',np.linspace(28.,95.,8))
+        self.xvar('t_magtrap',np.linspace(0.,20.,8)*1.e-3)
+        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,8.,20))
 
-        self.p.t_tof = 5.e-6
+        self.p.t_tof = 5.e-3
 
         self.finish_build(shuffle=True)
 
@@ -60,8 +63,11 @@ class rf_scan(EnvExperiment, Base):
         
         self.inner_coil.igbt_ttl.on()
 
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
         delay(self.p.t_magtrap)
+
+        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
+        delay(20.e-3)
+        delay(self.p.t_magtrap_hold)        
 
         self.inner_coil.off()
 

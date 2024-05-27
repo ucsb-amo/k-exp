@@ -12,7 +12,7 @@ class ExptParams():
         self.N_shots_with_repeats = 1
 
         #Magnet
-        self.t_keysight_analog_response = 10.e-3
+        self.t_keysight_analog_response = 27.2e-3
         self.t_hbridge_switch_delay = 80.e-3
         self.t_contactor_close_delay = 25.e-3
         self.t_contactor_open_delay = 12.e-3
@@ -41,15 +41,15 @@ class ExptParams():
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 0.5
         self.t_d2cmot = 50.e-3
-        self.t_d1cmot = 7.5e-3
+        self.t_d1cmot = 10.e-3
         self.t_magnet_off_pretrigger = 0.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 10.e-3
-        self.t_lightsheet_rampdown = 1.1
-        self.t_lightsheet_rampdown2 = .7
+        self.t_lightsheet_rampup = 200.e-3
+        self.t_lightsheet_rampdown = 1.
+        self.t_lightsheet_rampdown2 = .5
         self.t_lightsheet_rampdown3 = .02
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
@@ -71,21 +71,23 @@ class ExptParams():
         self.amp_d1_3d_r = 0.3
 
         #push beam
-        self.detune_push = 0.
-        self.amp_push = 0.12
+        self.detune_push = -2.4
+        self.amp_push = 0.13
 
         #2D MOT
-        self.detune_d2_c_2dmot = -.6
+        self.detune_d2_c_2dmot = -1.2
         self.amp_d2_c_2dmot = 0.188
 
         self.detune_d2_r_2dmot = -2.4
         self.amp_d2_r_2dmot = 0.188
 
+        self.i_2d_mot = 2.11
+
         #MOT
-        self.detune_d2_c_mot = -2.2
+        self.detune_d2_c_mot = -2.4
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -3.5
+        self.detune_d2_r_mot = -4.2
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -94,10 +96,10 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 33.0
-        self.v_zshim_current = 0.2
-        self.v_xshim_current = 0.993
-        self.v_yshim_current = 0.955
+        self.i_mot = 20.0
+        self.v_zshim_current = 0.45
+        self.v_xshim_current = 4.1
+        self.v_yshim_current = 7.
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -109,11 +111,11 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 9.
-        self.pfrac_d1_c_d1cmot = .8
+        self.detune_d1_c_d1cmot = 10.4
+        self.pfrac_d1_c_d1cmot = .95
 
-        self.detune_d2_r_d1cmot = -3.
-        self.amp_d2_r_d1cmot = 0.047
+        self.detune_d2_r_d1cmot = -3.2
+        self.amp_d2_r_d1cmot = 0.042
 
         self.detune_d1_c_sweep_d1cmot_start = 9.
         self.detune_d1_c_sweep_d1cmot_end = 7.
@@ -121,10 +123,10 @@ class ExptParams():
         self.detune_d2_r_sweep_d1cmot_end = -5.
         self.n_d1cmot_detuning_sweep_steps = 200
 
-        self.i_cmot = 33.
+        self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 9.
+        self.detune_gm = 10.4
         # self.amp_gm = 0.09
 
         self.v_zshim_current_gm = 0.75
@@ -134,15 +136,18 @@ class ExptParams():
         self.detune_d1_c_gm = self.detune_gm
         self.pfrac_d1_c_gm = .78 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .5
+        self.pfrac_d1_r_gm = .59
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_start = .78
-        self.pfrac_c_gmramp_end = 0.27
-        self.pfrac_r_gmramp_start = .5
-        self.pfrac_r_gmramp_end = 0.2
+        self.pfrac_c_gmramp_end = 0.3
+        self.pfrac_r_gmramp_end = 0.136
         self.n_gmramp_steps = 200
+
+        # mag trap
+        self.i_magtrap_init = 26.
+        self.i_magtrap_ramp_end = 95.
+        self.n_magtrap_ramp_steps = 1000
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -160,16 +165,16 @@ class ExptParams():
         self.v_pd_lightsheet_pd_minimum = 0.035
         self.amp_painting = 1.0
         self.frequency_painting = 100.e3
-        self.v_pd_lightsheet = 8.88
+        self.v_pd_lightsheet = 8.8
         self.n_lightsheet_rampup_steps = 1000
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 8.88
+        self.v_pd_lightsheet_rampup_end = 8.8
 
         self.n_lightsheet_rampdown_steps = 10000
-        self.v_pd_lightsheet_rampdown_end = 1.36
+        self.v_pd_lightsheet_rampdown_end = 1.
 
         self.n_lightsheet_rampdown2_steps = 1000
-        self.v_pd_lightsheet_rampdown2_end = .18
+        self.v_pd_lightsheet_rampdown2_end = .17
 
         self.n_lightsheet_rampdown3_steps = 1000
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -184,12 +189,12 @@ class ExptParams():
         self.v_pd_tweezer_1064_rampdown_end = 8.96
         self.n_tweezer_1064_rampdown_steps = 100
 
-        self.n_tweezers = 3
+        self.n_tweezers = 2
 
         self.frequency_aod_center = 75.e6
 
         #frequency of outer most tweezers, to be added / subtracted from the center frequency of 75 MHz
-        self.frequency_tweezer_array_width = 1.e6
+        self.frequency_tweezer_array_width = .9e6
 
         # RF
         self.t_rf_sweep_state_prep = 100.e-3
@@ -204,16 +209,10 @@ class ExptParams():
         self.frequency_rf_state_xfer_sweep_fullwidth = 2.e6
         self.n_rf_state_xfer_sweep_steps = 1000
 
-        # mag trap
-        self.i_magtrap_init = 33.
-        self.i_magtrap_ramp_start = 74.
-        self.i_magtrap_ramp_end = 0.0
-        self.n_magtrap_ramp_steps = 1000
-
-        # feshbach field ramp
-        self.i_feshbach_field_ramp_start = 130.
-        self.i_feshbach_field_ramp_end = 250.0
-        self.n_feshbach_field_ramp_steps = 1000
+        # feshbach field rampup
+        self.i_feshbach_field_rampup_start = 0.
+        self.n_feshbach_field_rampup_steps = 100
+        self.n_feshbach_field_ramp_steps = 100
 
         # rydberg
         self.frequency_ao_ry_405 = 250.0e6
@@ -222,8 +221,8 @@ class ExptParams():
         self.amp_ao_ry_980 = 0.285
 
         # evap
-        self.i_evap1_current = 13.
-        self.i_evap2_current = 13.5
+        self.i_evap1_current = 12.6
+        self.i_evap2_current = 10.4
         self.i_evap3_current = 16.4
 
         self.compute_derived()
@@ -278,6 +277,9 @@ class ExptParams():
         self.dt_lightsheet_ramp = self.t_lightsheet_rampdown3 / self.n_lightsheet_rampdown3_steps
 
     def compute_gmramp_params(self):
+        self.pfrac_c_gmramp_start = self.pfrac_d1_c_gm
+        self.pfrac_r_gmramp_start = self.pfrac_d1_r_gm
+
         self.pfrac_c_gmramp_list = np.linspace(self.pfrac_c_gmramp_start, self.pfrac_c_gmramp_end, self.n_gmramp_steps).transpose()
         self.pfrac_r_gmramp_list = np.linspace(self.pfrac_r_gmramp_start, self.pfrac_r_gmramp_end, self.n_gmramp_steps).transpose()
 
@@ -311,7 +313,15 @@ class ExptParams():
         self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
 
     def compute_tweezer_1064_amps(self):
-        self.amp_tweezer_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers,self.n_tweezers)
+        self.amp_tweezer_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers, self.n_tweezers)
+
+    # def compute_tweezer_1064_phases(self):
+    #     self.phase_tweezer_array = np.empty([self.n_tweezers])
+    #     for tweezer_idx in self.n_tweezers:
+    #         if tweezer_idx == 0:
+    #             self.phase_tweezer_array[0] =  360
+    #         else:
+    #             self.phase_tweezer_array[tweezer_idx] = 360 - 2*np.pi*
 
     def compute_tweezer_1064_ramp_params(self):
         self.v_pd_tweezer_1064_ramp_list = np.linspace(self.v_pd_tweezer_1064_ramp_start,self.v_pd_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()
@@ -323,9 +333,15 @@ class ExptParams():
         self.dt_tweezer_1064_rampdown = self.t_tweezer_1064_rampdown / self.n_tweezer_1064_rampdown_steps
 
     def compute_magtrap_ramp_params(self):
+        self.i_magtrap_ramp_start = self.i_magtrap_init
         self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end, self.n_magtrap_ramp_steps).transpose()
         self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps
 
+    def compute_feshbach_field_rampup_params(self):
+        self.i_feshbach_field_rampup_end = self.i_evap1_current
+        self.feshbach_field_rampup_list = np.linspace(self.i_feshbach_field_rampup_start,self.i_feshbach_field_rampup_end, self.n_feshbach_field_rampup_steps).transpose()
+        self.dt_feshbach_field_rampup = self.t_feshbach_field_rampup / self.n_feshbach_field_rampup_steps
+    
     def compute_feshbach_field_ramp_params(self):
         self.i_feshbach_field_ramp_start = self.i_evap1_current
         self.i_feshbach_field_ramp_end = self.i_evap2_current

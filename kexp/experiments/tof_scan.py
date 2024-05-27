@@ -11,21 +11,11 @@ class tof_scan(EnvExperiment, Base):
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
 
-        self.p.t_magtrap = 30.e-3
+        self.p.t_mot_load = .5
 
-        # self.xvar('t_mot_load',np.linspace(.1,2.,10))
-        
-        # self.xvar('t_lightsheet_hold',np.linspace(100.,2000.,20)*1.e-3)
-        # self.xvar('t_lightsheet_rampup',np.linspace(10.,1000.,8)*1.e-3)
-        # self.xvar('i_magtrap_ramp_start',np.linspace(40.,95.,8))
-        # self.xvar('i_magtrap_init',np.linspace(30.,95.,8))
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,3.5,8))
+        # self.p.t_magtrap = 200.e-3
 
-        self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.4,8))
-        self.xvar('pfrac_r_gmramp_end',np.linspace(.03,.4,8))
-
-        # self.xvar('t_tof',np.linspace(10.,200.,5)*1.e-6)
-        self.p.t_tof = 50.e-6
+        # self.p.n_lightsheet_rampup_steps = 100
 
         # self.xvar('detune_gm',np.linspace(7,12.,8))
         # self.xvar('t_gm',np.linspace(.05,5.,8)*1.e-3)
@@ -57,8 +47,13 @@ class tof_scan(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(2.,5.,3)*1.e-5)
 
         # self.xvar('i_evap2_current',np.linspace(100.,110.,3))
-
         self.xvar('i_evap2_current', np.linspace(4.,16.,10))
+        # self.xvar('i_evap2_current',np.linspace(9.,11.,8))
+        # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(0.16,0.2,6))
+        # self.xvar('t_lightsheet_rampdown2',np.linspace(2.,.1,6))
+        self.p.v_pd_lightsheet_rampdown2_end = 0.17
+        self.p.t_lightsheet_rampdown2 = .5
+        self.p.i_evap2_current = 10.4
         
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(8.3,4.,5))
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(0.16,0.2,6))
@@ -81,7 +76,6 @@ class tof_scan(EnvExperiment, Base):
         # self.p.t_magtrap = 200.e-3
 
         # self.p.n_lightsheet_rampup_steps = 100
-
         # self.p.t_lightsheet_rampup = 200.e-3
         # self.p.t_lightsheet_hold = 50.e-3
         
@@ -100,13 +94,6 @@ class tof_scan(EnvExperiment, Base):
     def scan_kernel(self):
         self.dds.init_cooling()
 
-        self.core.break_realtime()
-
-        if self.p.imaging_state == 1.:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
-        else:
-            self.set_imaging_detuning()
-
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -118,13 +105,13 @@ class tof_scan(EnvExperiment, Base):
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
         self.gm(self.p.t_gm * s)
+
+        self.ttl.pd_scope_trig.on()
         self.gm_ramp(self.p.t_gmramp)
 
         # self.release()
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
-
-        self.ttl.pd_scope_trig.on()
 
         self.flash_cooler()
 
@@ -133,21 +120,21 @@ class tof_scan(EnvExperiment, Base):
         self.set_shims(v_zshim_current=0.,
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
-        
-        self.ttl.pd_scope_trig.on()
+
         # magtrap start
         self.inner_coil.igbt_ttl.on()
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-        # delay(self.p.t_magtrap)
 
-        # ramp up ligthsheet over magtrap
+        # ramp up lightsheet over magtrap
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        
-        # ramp down magtrap
+
         for i in self.p.magtrap_ramp_list:
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
-        delay(30.e-3)
+        
+        self.outer_coil.set_current(i_supply=self.p.i_feshbach_field_rampup_start)
+        self.outer_coil.set_voltage(v_supply=9.)
+        delay(self.p.t_magtrap)
+
         self.inner_coil.off()
 
         # delay(self.p.t_lightsheet_hold)
@@ -158,7 +145,6 @@ class tof_scan(EnvExperiment, Base):
             self.outer_coil.set_current(i_supply=i)
             delay(self.p.dt_feshbach_field_rampup)
         delay(20.e-3)
-
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
         for i in self.p.feshbach_field_ramp_list:
@@ -176,7 +162,6 @@ class tof_scan(EnvExperiment, Base):
         self.ttl.pd_scope_trig.off()
         delay(self.p.t_feshbach_field_decay)
 
-        delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
 
         self.tweezer.off()

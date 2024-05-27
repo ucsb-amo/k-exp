@@ -114,8 +114,10 @@ class Image():
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
 
         self.dds.imaging.off()
+        self.dds.imaging.set_dds(amplitude=0.)
         delay(self.camera_params.t_dark_image_delay * s)
         self.trigger_camera()
+        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
     @kernel
     def fl_image(self, t=-1., with_light=True):

@@ -136,7 +136,6 @@ class tweezer_evap(EnvExperiment, Base):
         # delay(self.p.t_tweezer_hold)
 
         # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
-        self.lightsheet.off()
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
         
@@ -144,6 +143,7 @@ class tweezer_evap(EnvExperiment, Base):
         self.ttl.pd_scope_trig.off()
         delay(1.5e-3)
 
+        self.lightsheet.off()
         # self.tweezer.off()
     
         delay(self.p.t_tof)
