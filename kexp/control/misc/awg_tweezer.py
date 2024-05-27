@@ -32,8 +32,8 @@ class tweezer():
     @kernel
     def on(self,zero_integrator=False):
         if zero_integrator:
-            t = 20.e-3 # found empirically
-            self.vva_dac.set(v=-2.)
+            t = 5.e-3 # found empirically
+            self.vva_dac.set(v=9.5)
             delay(t)
         self.sw_ttl.on()
 
