@@ -106,17 +106,18 @@ class Image():
     def abs_image(self):
 
         self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        self.pulse_imaging_light(self.camera_params.exposure_time * s)
 
         delay(self.camera_params.t_light_only_image_delay * s)
         
         self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        self.pulse_imaging_light(self.camera_params.exposure_time * s)
 
         self.dds.imaging.off()
         self.dds.imaging.set_dds(amplitude=0.)
         delay(self.camera_params.t_dark_image_delay * s)
         self.trigger_camera()
+        delay(self.camera_params.exposure_time * s)
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
     @kernel
