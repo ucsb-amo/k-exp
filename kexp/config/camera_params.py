@@ -75,8 +75,9 @@ class AndorParams(CameraParams):
         self.t_camera_trigger = 100.e-9
         self.t_readout_time = 512 * 3.3e-6
         self.em_gain = 1.
-        self.vs_speed = 2
+        self.vs_speed = 3
         self.vs_amp = 2
+        self.preamp = 2
 
         self.resolution = resolution
 
