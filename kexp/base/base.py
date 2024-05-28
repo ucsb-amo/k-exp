@@ -23,7 +23,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.params = ExptParams()
         self.p = self.params
-        self.compute_new_derived = self.nothing
 
         self.prepare_devices(expt_params=self.params)
 
@@ -112,6 +111,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         if self.setup_camera:
             self.wait_for_camera_ready(timeout=10.)
             print("Camera is ready.")
+    
+    def compute_new_derived(self):
+        pass
 
     @kernel
     def init_kernel(self, run_id = True, init_dds = True, init_dac = True,
