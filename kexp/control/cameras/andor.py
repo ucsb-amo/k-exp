@@ -8,7 +8,7 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from pylablib.devices.Andor.atmcd32d_lib import wlib as lib
 
 class AndorEMCCD(Andor.AndorSDK2Camera):
-    def __init__(self, ExposureTime=0., gain = 30, vs_speed:int=2, vs_amp:int=1,
+    def __init__(self, ExposureTime=0., gain = 30, vs_speed:int=3, vs_amp:int=2,
                  preamp_gain = 0):
         # overwrite a broken method in the parent class
         self._initial_setup_temperature = self._initial_setup_temperature_fixed
