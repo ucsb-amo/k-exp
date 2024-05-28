@@ -54,6 +54,7 @@ class CameraNanny():
             camera.set_EMCCD_gain(camera_params.em_gain)
             camera.set_exposure(camera_params.exposure_time)
             camera.set_amp_mode(preamp=camera_params.preamp)
+            camera.set_hsspeed(camera_params.hs_speed)
 
     def open(self,camera_params:camera_params.CameraParams):
         camera_type = camera_params.camera_type
@@ -66,6 +67,7 @@ class CameraNanny():
             elif camera_type == "andor":
                 camera = AndorEMCCD(ExposureTime=camera_params.exposure_time,
                                     gain = camera_params.em_gain,
+                                    hs_speed=camera_params.hs_speed,
                                     vs_speed=camera_params.vs_speed,
                                     vs_amp=camera_params.vs_amp,
                                     preamp=camera_params.preamp)
