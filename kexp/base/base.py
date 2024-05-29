@@ -37,35 +37,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.ds = DataSaver()
 
-    @kernel
-    def init_scan_kernel(self):
-        self.dds.init_cooling()
-        self.core.break_realtime()
-
-        if self.p.imaging_state == 1.:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
-        else:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
-
-        self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
-        self.core.break_realtime()
-
-        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
-
-        # self.dds.d2_2d_c.set_dds_gamma(delta=self.p.detune_d2_c_2dmot,
-        #                          amplitude=self.p.amp_d2_c_2dmot)
-        # delay(self.params.t_rtio)
-        # self.dds.d2_2d_r.set_dds_gamma(delta=self.p.detune_d2_r_2dmot,
-        #                          amplitude=self.p.amp_d2_r_2dmot)
-        # delay(self.params.t_rtio)
-        # self.dds.push.set_dds_gamma(delta=self.p.detune_push,
-        #                          amplitude=self.p.amp_push)
-        
-        # self.dac.supply_current_2dmot.set(v=self.p.i_2d_mot)
-        # self.switch_d2_2d(1)
-        # delay(1.)
-
     def finish_build(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of build. 
@@ -146,6 +117,35 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         if setup_awg:
             self.tweezer.awg_init()
         self.core.break_realtime() # add slack before scheduling experiment events
+
+    @kernel
+    def init_scan_kernel(self):
+        self.dds.init_cooling()
+        self.core.break_realtime()
+
+        if self.p.imaging_state == 1.:
+            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
+        else:
+            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
+
+        self.core.wait_until_mu(now_mu())
+        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
+        self.core.break_realtime()
+
+        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+
+        # self.dds.d2_2d_c.set_dds_gamma(delta=self.p.detune_d2_c_2dmot,
+        #                          amplitude=self.p.amp_d2_c_2dmot)
+        # delay(self.params.t_rtio)
+        # self.dds.d2_2d_r.set_dds_gamma(delta=self.p.detune_d2_r_2dmot,
+        #                          amplitude=self.p.amp_d2_r_2dmot)
+        # delay(self.params.t_rtio)
+        # self.dds.push.set_dds_gamma(delta=self.p.detune_push,
+        #                          amplitude=self.p.amp_push)
+        
+        # self.dac.supply_current_2dmot.set(v=self.p.i_2d_mot)
+        # self.switch_d2_2d(1)
+        # delay(1.)
 
     def prepare_image_array(self):
         if self.run_info.save_data:
