@@ -183,11 +183,11 @@ class ExptParams():
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
         self.amp_tweezer = .45
         self.v_pd_tweezer_1064 = 2.1
-        self.v_pd_tweezer_1064_ramp_start = 8.96
+        self.v_pd_tweezer_1064_ramp_start = 0.
         self.v_pd_tweezer_1064_ramp_end = 2.1
-        self.n_tweezer_1064_ramp_steps = 50
+        self.n_tweezer_1064_ramp_steps = 200
         
-        self.v_pd_tweezer_1064_rampdown_end = 8.96
+        self.v_pd_tweezer_1064_rampdown_end = 0.
         self.n_tweezer_1064_rampdown_steps = 100
 
         self.n_tweezers = 2
