@@ -55,6 +55,7 @@ class CameraNanny():
             camera.set_exposure(camera_params.exposure_time)
             camera.set_amp_mode(preamp=camera_params.preamp)
             camera.set_hsspeed(camera_params.hs_speed)
+            # camera.setup_shutter("closed")
 
     def open(self,camera_params:camera_params.CameraParams):
         camera_type = camera_params.camera_type
@@ -71,7 +72,9 @@ class CameraNanny():
                                     vs_speed=camera_params.vs_speed,
                                     vs_amp=camera_params.vs_amp,
                                     preamp=camera_params.preamp)
+                # camera.setup_shutter("closed")
         except Exception as e:
+            # raise(e)
             camera = DummyCamera()
             print(e)
             print(f"There was an issue opening the requested camera (key: {camera_params.camera_select}).")
@@ -86,5 +89,6 @@ class CameraNanny():
                 except Exception as e:
                     print(e)
                     print(f"An error occurred closing camera {k}.")
+
 
     
