@@ -78,13 +78,13 @@ class Devices():
         self.lightsheet = lightsheet(vva_dac=self.dac.vva_lightsheet,
                                      paint_amp_dac=self.dac.lightsheet_mod_amp,
                                      sw_ttl=self.ttl.lightsheet_sw,
-                                     pid_int_hold_ttl = self.ttl.lightsheet_pid_int_hold,
+                                     pid_int_zero_ttl = self.ttl.lightsheet_pid_int_zero,
                                      expt_params=self.params)
         
         self.tweezer = tweezer(self.dac.vva_tweezer,
                                sw_ttl=self.ttl.awg,
                                awg_trg_ttl = self.ttl.awg_trigger,
-                               pid_int_hold_ttl = self.ttl.tweezer_pid_int_hold,
+                               pid_int_zero_ttl = self.ttl.tweezer_pid_int_zero,
                                expt_params=self.params)
 
         # camera placeholder

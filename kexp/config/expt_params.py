@@ -181,6 +181,7 @@ class ExptParams():
 
         #1064 tweezer
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
+        self.amp_tweezer = .45
         self.v_pd_tweezer_1064 = 2.1
         self.v_pd_tweezer_1064_ramp_start = 8.96
         self.v_pd_tweezer_1064_ramp_end = 2.1

@@ -14,7 +14,7 @@ dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
     def __init__(self, vva_dac:DAC_CH, sw_ttl:TTL,
-                  awg_trg_ttl:TTL, pid_int_hold_ttl:TTL,
+                  awg_trg_ttl:TTL, pid_int_zero_ttl:TTL,
                   expt_params:ExptParams):
         """Controls the tweezers.
 
@@ -25,22 +25,21 @@ class tweezer():
         self.vva_dac = vva_dac
         self.sw_ttl = sw_ttl
         self.awg_trg_ttl = awg_trg_ttl
-        self.pid_int_hold_ttl = pid_int_hold_ttl
+        self.pid_int_zero_ttl = pid_int_zero_ttl
         self.params = expt_params
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
 
     @kernel
-    def on(self,zero_integrator=False):
-        if zero_integrator:
-            t = 5.e-3 # found empirically
-            self.vva_dac.set(v=9.5)
-            delay(t)
-        self.sw_ttl.on()
+    def on(self):
+        with parallel:
+            self.sw_ttl.on()
+            self.zero_and_pause_pid()
 
     @kernel
     def off(self):
+        self.zero_and_pause_pid()
+        self.vva_dac.set(v=0.)
         self.sw_ttl.off()
-        self.vva_dac.set(v=5.5)
 
     @kernel 
     def pulse(self,t=1.e-6):
@@ -62,16 +61,16 @@ class tweezer():
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
 
-        if zero_integrator:
-            self.on(zero_integrator=True)
-        else:
-            self.on(zero_integrator=False)
-        self.vva_dac.set(v=v_ramp_list[0])        
+        self.vva_dac.set(v=v_ramp_list[0])
+        self.on()
         delay(dt_ramp)
-        
         for v in v_ramp_list[1:]:
             self.vva_dac.set(v=v)
             delay(dt_ramp)
+    
+    @kernel
+    def zero_and_pause_pid(self):
+        self.pid_int_zero_ttl.pulse(10.e-9)
     
     def awg_init(self):
         self.card = spcm.Card(self._awg_ip)

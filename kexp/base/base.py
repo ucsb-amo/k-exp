@@ -117,7 +117,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
     @kernel
     def init_kernel(self, run_id = True, init_dds = True, init_dac = True,
-                     dds_set = True, dds_off = True, beat_ref_on=True):
+                     dds_set = True, dds_off = True, beat_ref_on=True,
+                     init_lightsheet = True, setup_awg = True):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         self.core.reset() # clears RTIO
@@ -139,11 +140,11 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.dds.beatlock_ref.on()
         # if init_rf:
         #     self.rf.init()
-        self.lightsheet.init()
-
+        if init_lightsheet:
+            self.lightsheet.init()
         self.core.wait_until_mu(now_mu())
-        self.tweezer.awg_init()
-
+        if setup_awg:
+            self.tweezer.awg_init()
         self.core.break_realtime() # add slack before scheduling experiment events
 
     def prepare_image_array(self):

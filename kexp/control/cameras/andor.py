@@ -38,7 +38,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         lib.SetVSAmplitude(vs_amp)
 
     def set_hsspeed(self, hs_speed:int = 0):
-        lib.SetHSSpeed(hs_speed)
+        lib.SetHSSpeed(0, hs_speed)
 
     def Close(self):
         self.setup_shutter(mode="closed")
