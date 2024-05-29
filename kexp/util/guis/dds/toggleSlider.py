@@ -41,10 +41,10 @@ class AnimatedToggle(QCheckBox):
 
         self.animation = QPropertyAnimation(self, b"handle_position", self)
         self.animation.setEasingCurve(QEasingCurve.Type.InOutCubic)
-        self.animation.setDuration(200)  # time in ms
+        self.animation.setDuration(100)  # time in ms
 
         self.pulse_anim = QPropertyAnimation(self, b"pulse_radius", self)
-        self.pulse_anim.setDuration(350)  # time in ms
+        self.pulse_anim.setDuration(100)  # time in ms
         self.pulse_anim.setStartValue(10)
         self.pulse_anim.setEndValue(20)
 

@@ -259,7 +259,7 @@ class DDSChannel(QWidget):
         return_code = builder.one_on(self.dds)
 
         return_code = 0
-        t = 2000
+        t = 500
         if return_code == 0: 
             EXECUTE_LOGIC = False
             self.turn_on_toggle()
@@ -519,7 +519,7 @@ class DDSControlGrid(QWidget):
     def set_all_off(self):
     # Implement All Off settings logic here
         builder = DDSGUIExptBuilder()
-        builder.all_off()
+        builder.all_off(self.dds_channels)
         EXECUTE_LOGIC = False
          # Loop through all the DDSChannel instances and turn off their toggles
         for channel in self.dds_channels:
@@ -529,7 +529,7 @@ class DDSControlGrid(QWidget):
     def initialize(self):
         # Initalize all CH. 
         builder = DDSGUIExptBuilder()
-        return_code = builder.startup()
+        return_code = builder.startup(self.dds_channels)
         if return_code == 0:
             self.init_button.setText("Initialized!")
             self.init_button.setStyleSheet(f"background-color: #FFA500")

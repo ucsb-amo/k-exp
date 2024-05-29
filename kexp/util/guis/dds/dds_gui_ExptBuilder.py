@@ -28,87 +28,143 @@ class DDSGUIExptBuilder():
         returncode = self.run_expt()
         return returncode
     
-    def startup(self):
+    def startup(self,dds_channels):
+        get_lines = []
+        init_lines = []
+        for ch in dds_channels:
+            dds = ch.dds
+            dds: DDS
+            get_lines += f"""
+        self.setattr_device("{dds.cpld_name}")
+        self.setattr_device("{dds.name}")"""
+            init_lines += f"""
+        self.{dds.cpld_name}.init()
+        self.{dds.name}.init()
+        delay(1*ms)"""
         script = textwrap.dedent(f"""
                     from artiq.experiment import *
                     from kexp import Base
                     class StartUp(EnvExperiment,Base):
                         def build(self):
-                            Base.__init__(self,setup_camera=False)
+                            self.core = self.get_device("core")
+                            self.dac = self.get_device("zotino0")
+                            {get_lines}
                         @kernel
                         def run(self):
-                            self.init_kernel()
+                            self.core.break_realtime()
+                            {init_lines}
                     """)
         returncode = self.execute(script)
         return(returncode)
 
-    def one_on(self, dds):
+    def one_on(self, dds:DDS):
+        dac_load_line = ""
+        dac_control_line = ""
+        if dds.dac_control_bool:
+            dac_load_line = f"""self.dac = self.get_device("{dds.dac_device}")"""
+            dac_control_line = f"self.dac.set([{dds.dac_ch}],[{dds.v_pd}])"
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from kexp import Base
-        class StartUp(EnvExperiment,Base):
+        class StartUp(EnvExperiment):
             def build(self):
-                Base.__init__(self,setup_camera=False)
+                self.core = self.get_device("core")
+                self.dds = self.get_device("{dds.name}")
+                {dac_load_line}
             @kernel
             def run(self):
-                self.init_kernel(init_dds=False,dds_set=False,dds_off=False)
-                self.dds.dds_array[{dds.urukul_idx}][{dds.ch}].set_dds(frequency={dds.frequency},amplitude={dds.amplitude},v_pd={dds.v_pd})
-                self.dds.dds_array[{dds.urukul_idx}][{dds.ch}].on()
+                self.core.break_realtime()
+                self.dds.set(frequency={dds.frequency},amplitude={dds.amplitude})
+                {dac_control_line}
+                self.dds.sw.on()
         """)
         returncode = self.execute(script)
-        return(returncode)   
+        return(returncode)  
 
-    def one_off(self,dds):
+    def one_off(self,dds:DDS):
+        dac_load_line = ""
+        dac_control_line = ""
+        if dds.dac_control_bool:
+            dac_load_line = f"""self.dac = self.get_device("{dds.dac_device}")"""
+            dac_control_line = f"self.dac.set([{dds.dac_ch}],[0.])"
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from kexp import Base
-        class StartUp(EnvExperiment,Base):
+        class StartUp(EnvExperiment):
             def build(self):
-                Base.__init__(self,setup_camera=False)
+                self.core = self.get_device("core")
+                self.dds = self.get_device("{dds.name}")
+                {dac_load_line}
             @kernel
             def run(self):
-                self.init_kernel(init_dds=False,dds_set=False,dds_off=False)
-                self.dds.dds_array[{dds.urukul_idx}][{dds.ch}].off()
+                self.core.break_realtime()
+                self.dds.set(frequency={dds.frequency},amplitude=0.)
+                {dac_control_line}
+                self.dds.sw.off()
         """)
         returncode = self.execute(script)
         return(returncode)
 
-    def all_off(self):
+    def all_off(self, dds_channels):
+        dac_control_line = ""
+        set_lines = []
+        get_lines = []
+        for ch in dds_channels:
+            dds = ch.dds
+            dds: DDS
+            if dds.dac_control_bool:
+                dac_control_line = f"self.dac.set([{dds.dac_ch}],[0.])"
+            get_lines += f"""
+        self.setattr_device("{dds.name}")"""
+            set_lines += f"""
+        self.{dds.name}.set(frequency={dds.frequency},amplitude=0.)
+        self.{dds.name}.sw.off()
+        {dac_control_line}
+        delay(1*ms)"""
+            
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from kexp import Base
-        class all_off(EnvExperiment,Base):         
+        class all_on(EnvExperiment): 
             def build(self):
-                Base.__init__(self,setup_camera=False)
+                self.core = self.get_device("core")
+                self.dac = self.get_device("zotino0")
+                {get_lines}
+
             @kernel
             def run(self):
-                self.init_kernel(init_dds=False,dds_set=False,dds_off=False)
-                for dds in self.dds.dds_list:
-                    dds.off()
-                    delay(1*ms)
+                self.core.break_realtime()
+                {set_lines}
         """)
         returncode = self.execute(script)
         return(returncode)
 
     def all_on(self, dds_channels): 
-        lines = []
+        dac_control_line = ""
+        set_lines = []
+        get_lines = []
         for ch in dds_channels:
             dds = ch.dds
-            lines += f"""
-        self.dds.dds_array[{dds.urukul_idx}][{dds.ch}].set_dds(frequency={dds.frequency},amplitude={dds.amplitude},v_pd={dds.v_pd})
-        self.dds.dds_array[{dds.urukul_idx}][{dds.ch}].on()
+            dds: DDS
+            if dds.dac_control_bool:
+                dac_control_line = f"self.dac.set([{dds.dac_ch}],[{dds.v_pd}])"
+            get_lines += f"""
+        self.setattr_device({dds.name})"""
+            set_lines += f"""
+        self.{dds.name}.set(frequency={dds.frequency},amplitude={dds.amplitude})
+        self.{dds.name}.sw.on()
+        {dac_control_line}
         delay(1*ms)"""
-
+            
         script = textwrap.dedent(f"""
         from artiq.experiment import *
-        from kexp import Base
-        class all_on(EnvExperiment,Base): 
+        class all_on(EnvExperiment): 
             def build(self):
-                Base.__init__(self,setup_camera=False)
+                self.core = self.get_device("core")
+                self.dac = self.get_device("zotino0")
+                {get_lines}
+
             @kernel
             def run(self):
-                self.init_kernel(init_dds=False,dds_set=False,dds_off=False)
-                {lines}
+                self.core.break_realtime()
+                {set_lines}
         """)
         returncode = self.execute(script)
         return(returncode)
