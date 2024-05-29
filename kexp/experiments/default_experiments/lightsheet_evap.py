@@ -13,20 +13,12 @@ class tweezer_evap(EnvExperiment, Base):
 
         self.p.t_tof = 50.e-6
 
-        self.p.t_lightsheet_rampup = 400.e-3
+        self.p.t_lightsheet_rampup = 200.e-3
 
         self.finish_build(shuffle=False)
 
     @kernel
     def scan_kernel(self):
-        self.dds.init_cooling()
-
-        self.core.break_realtime()
-
-        if self.p.imaging_state == 1.:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
-        else:
-            self.set_imaging_detuning()
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -55,7 +47,6 @@ class tweezer_evap(EnvExperiment, Base):
         
         self.ttl.pd_scope_trig.on()
         self.inner_coil.igbt_ttl.on()
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
 
         # ramp up lightsheet
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
@@ -67,13 +58,23 @@ class tweezer_evap(EnvExperiment, Base):
 
         self.outer_coil.set_current(i_supply=self.p.i_evap1_current)
         self.outer_coil.set_voltage(v_supply=9.)
-        delay(20.e-3)
+
+        delay(self.p.t_magtrap)
         self.inner_coil.off()
 
-        self.outer_coil.on(i_supply=self.p.i_evap1_current)
+        self.outer_coil.on()
 
-        delay(30.e-3)
+        for i in self.p.feshbach_field_rampup_list:
+            self.outer_coil.set_current(i_supply=i)
+            delay(self.p.dt_feshbach_field_rampup)
+        delay(20.e-3)
+
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
+
+        for i in self.p.feshbach_field_ramp_list:
+            self.outer_coil.set_current(i_supply=i)
+            delay(self.p.dt_feshbach_field_ramp)
+        delay(20.e-3)
 
         # self.outer_coil.set_current(i_supply=self.p.i_evap2_current)
         # delay(20.e-3)
@@ -82,7 +83,7 @@ class tweezer_evap(EnvExperiment, Base):
 
         self.outer_coil.off()
         self.ttl.pd_scope_trig.off()
-        delay(1.5e-3)
+        delay(self.p.t_feshbach_field_decay)
 
         self.lightsheet.off()
     

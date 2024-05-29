@@ -37,7 +37,6 @@ class rf_scan(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.dds.init_cooling()
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -71,16 +70,15 @@ class rf_scan(EnvExperiment, Base):
         # magtrap start
         self.inner_coil.igbt_ttl.on()
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-        # delay(self.p.t_magtrap)
 
         # ramp up ligthsheet over magtrap
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-        
-        # ramp down magtrap
+
         for i in self.p.magtrap_ramp_list:
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
         delay(30.e-3)
+
         self.inner_coil.off()
         self.ttl.pd_scope_trig.off()
 

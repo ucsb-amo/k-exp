@@ -48,7 +48,7 @@ class tof_scan(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(2.,5.,3)*1.e-5)
 
         # self.xvar('i_evap2_current',np.linspace(100.,110.,3))
-        self.xvar('i_evap2_current', np.linspace(5.,120.,10))
+        # self.xvar('i_evap2_current', np.linspace(5.,120.,10))
         # self.xvar('i_evap2_current',np.linspace(9.,11.,8))
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(0.16,0.2,6))
         # self.xvar('t_lightsheet_rampdown2',np.linspace(2.,.1,6))
@@ -56,7 +56,7 @@ class tof_scan(EnvExperiment, Base):
         self.p.t_lightsheet_rampdown2 = .5
         self.p.i_evap2_current = 10.4
         
-        self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(8.3,4.,5))
+        self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(0.,5.,5))
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(0.16,0.2,6))
         # self.xvar('t_lightsheet_rampdown2',np.linspace(1.,.01,4))
         self.p.v_pd_lightsheet_rampdown2_end = 0.
@@ -96,7 +96,6 @@ class tof_scan(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.dds.init_cooling()
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -126,7 +125,7 @@ class tof_scan(EnvExperiment, Base):
                           v_xshim_current=self.p.v_xshim_current_gm)
 
         # magtrap start
-        self.inner_coil.igbt_ttl.on()
+        self.inner_coil.on()
 
         # ramp up lightsheet over magtrap
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
@@ -137,13 +136,10 @@ class tof_scan(EnvExperiment, Base):
         
         self.outer_coil.set_current(i_supply=self.p.i_feshbach_field_rampup_start)
         self.outer_coil.set_voltage(v_supply=9.)
+
         delay(self.p.t_magtrap)
-
         self.inner_coil.off()
-
-        # delay(self.p.t_lightsheet_hold)
-
-        self.outer_coil.on(i_supply=self.p.i_feshbach_field_rampup_start)
+        self.outer_coil.on()
 
         for i in self.p.feshbach_field_rampup_list:
             self.outer_coil.set_current(i_supply=i)
@@ -167,7 +163,6 @@ class tof_scan(EnvExperiment, Base):
         delay(self.p.t_feshbach_field_decay)
 
         self.lightsheet.off()
-
         self.tweezer.off()
     
         delay(self.p.t_tof)
