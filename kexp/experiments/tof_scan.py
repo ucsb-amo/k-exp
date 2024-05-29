@@ -10,6 +10,7 @@ class tof_scan(EnvExperiment, Base):
 
         self.p.imaging_state = 2.
         # self.xvar('imaging_state',[2,1])
+        # self.xvar('dummy',[1]*2)
 
         self.p.t_mot_load = .5
 
@@ -43,11 +44,11 @@ class tof_scan(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown',np.linspace(2.,.1,6))
         self.p.t_lightsheet_rampdown = 1.
 
-        self.xvar('t_tweezer_1064_ramp',np.linspace(1.,500.,15)*1.e-3)
+        # self.xvar('t_tweezer_1064_ramp',np.linspace(1.,500.,15)*1.e-3)
         # self.xvar('t_tweezer_hold',np.linspace(2.,5.,3)*1.e-5)
 
         # self.xvar('i_evap2_current',np.linspace(100.,110.,3))
-        self.xvar('i_evap2_current', np.linspace(4.,16.,10))
+        self.xvar('i_evap2_current', np.linspace(5.,120.,10))
         # self.xvar('i_evap2_current',np.linspace(9.,11.,8))
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(0.16,0.2,6))
         # self.xvar('t_lightsheet_rampdown2',np.linspace(2.,.1,6))
@@ -55,14 +56,15 @@ class tof_scan(EnvExperiment, Base):
         self.p.t_lightsheet_rampdown2 = .5
         self.p.i_evap2_current = 10.4
         
-        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(8.3,4.,5))
+        self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(8.3,4.,5))
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(0.16,0.2,6))
         # self.xvar('t_lightsheet_rampdown2',np.linspace(1.,.01,4))
         self.p.v_pd_lightsheet_rampdown2_end = 0.
         self.p.t_lightsheet_rampdown2 = .01
         self.p.i_evap2_current = 107.
         self.p.t_tweezer_hold = 2.e-5
-        self.p.t_tweezer_1064_ramp = 1.e-3
+        # self.p.t_tweezer_1064_ramp = 1.e-3
+        self.p.t_tweezer_1064_ramp = 500.e-3
         self.p.v_pd_tweezer_1064_ramp_end = 7.
 
         # self.xvar('i_magtrap_shim',np.linspace(0.,2.,20))
@@ -84,6 +86,8 @@ class tof_scan(EnvExperiment, Base):
         # self.p.v_pd_lightsheet_rampup_end = 0.638
 
         self.camera_params.amp_imaging = .07
+        self.p.t_imaging_pulse = 10.e-6
+        self.camera_params.exposure_time = 10.e-6
         self.camera_params.em_gain = 290.
 
         self.p.N_repeats = 1

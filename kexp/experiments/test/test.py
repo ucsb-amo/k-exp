@@ -27,36 +27,39 @@ class test(EnvExperiment, Base):
         self.p.v_pd_tweezer_1064_rampdown_start = self.p.v_pd_tweezer_1064_ramp_end
         self.p.v_pd_tweezer_1064_rampdown_end = 0.
 
-        # self.xvar('dummy',[0.]*200)
-        # self.xvar('t_tweezer_1064_ramp',np.linspace(.01,.5,10))
-        self.xvar('frequency_tweezer_array_width',np.linspace(.9e6,2.e6,5))
+        self.xvar('dummy',[0.]*200)
+        self.xvar('t_tweezer_1064_ramp',np.linspace(.1,.5,10))
+        # self.xvar('frequency_tweezer_array_width',np.linspace(.9e6,2.e6,5))
         self.p.t_delay = 400.e-3
-        self.p.t_tweezer_1064_ramp = .2
-        self.p.frequency_tweezer_array_width = .7e6
+        # self.p.t_tweezer_1064_ramp = .2s
+        self.p.frequency_tweezer_array_width = .9e6
         self.p.n_tweezers = 2
-        self.p.v_pd_tweezer_1064_ramp_start = 5.8
-        self.p.v_pd_tweezer_1064_ramp_end = 2.1
+        self.p.v_pd_tweezer_1064_ramp_start = 0.
+        self.p.v_pd_tweezer_1064_ramp_end = 4.
    
         self.finish_build(shuffle=False)
 
     @kernel
     def scan_kernel(self):
 
-        # self.tweezer.set_static_tweezers
+        self.dds.tweezer.set_dds(frequency=80.e6,amplitude=self.p.amp_tweezer)
+        self.dds.tweezer.on()
+
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.ttl.pd_scope_trig_2.pulse(1.e-6)
-        delay(100.e-3)
-        
-        # self.tweezer.vva_dac.set(v=3.)
+        # delay(100.e-3)
 
         # self.tweezer.sw_ttl.on()
         # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
-        self.tweezer.ramp(self.p.t_tweezer_1064_ramp,zero_integrator=True)
+
+        self.tweezer.ramp(self.p.t_tweezer_1064_ramp)
+        self.tweezer.off()
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.tweezer.on()
-        delay(5.)
+        delay(1.)
         # self.tweezer.ramp(t=500.e-3,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
         # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
-        self.tweezer.off()
+        
         # delay(1.0)
 
         # self.lightsheet.ramp(self.p.t_lightsheet_rampup)

@@ -12,20 +12,25 @@ class test(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('dummy',[1]*2)
+        self.xvar('dummy',[1]*10)
 
         self.camera_params.em_gain = 290.
-        self.camera_params.exposure_time = 100.e-6
-        self.camera_params.amp_imaging = 0.07
+        self.camera_params.exposure_time = 5.e-6
+        self.camera_params.amp_imaging = 0.08
         self.camera_params.t_dark_image_delay = 0.2
         self.camera_params.t_light_only_image_delay = 0.2
         self.camera_params.t_camera_trigger = 100.e-9
+        self.p.t_imaging_pulse = 5.e-6
+
+        # self.xvar('t_imaging_pulse',np.linspace(1.,25.,10)*1.e-6)
 
         self.finish_build()
 
     @kernel
     def scan_kernel(self):
         self.abs_image()
+        delay(0.2*s)
+
         # self.dds.imaging.on()
         # self.ttl.camera.pulse(10.e-6)
         # delay(1.)
