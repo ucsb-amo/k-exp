@@ -33,21 +33,8 @@ class igbt_magnet():
         self.v_control_dac.load()
 
     @kernel
-    def on(self,i_supply=0.,v_supply=V_SUPPLY_DEFAULT,contactor=False,
-           wait_for_analog=False,
-           pretrigger=False,
-           load_dac=True):
-
-        if contactor:
-            self.open_contactor(pretrigger=pretrigger)
-
+    def on(self):
         self.igbt_ttl.on()
-        self.set_current(i_supply,load_dac=False)
-        self.set_voltage(v_supply,load_dac=False)
-        if load_dac:
-            self.load_dac()
-        if wait_for_analog:
-            delay(self.params.t_keysight_analog_response)
 
     @kernel
     def off(self,contactor=False,load_dac=True):
