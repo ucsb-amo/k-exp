@@ -72,10 +72,10 @@ class AndorParams(CameraParams):
         self.magnification = 50.
         self.exposure_delay = 0. # needs to be updated from docs
         self.connection_delay = 8.0
-        self.t_camera_trigger = 100.e-9
+        self.t_camera_trigger = 200.e-9
         self.t_readout_time = 512 * 3.3e-6
         self.em_gain = 1.
-        self.hs_speed = 1
+        self.hs_speed = 0
         self.vs_speed = 1
         self.vs_amp = 3
         self.preamp = 2
