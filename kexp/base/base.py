@@ -105,6 +105,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             delay(1*ms)
             self.set_all_dds() # set DDS to default values
             self.set_imaging_detuning()
+            # self.dds.tweezer.set_dds(frequency=80.e6,amplitude=self.p.amp_tweezer)
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
         if beat_ref_on:
@@ -127,6 +128,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
         else:
             self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
+
+        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
         self.core.wait_until_mu(now_mu())
         self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)

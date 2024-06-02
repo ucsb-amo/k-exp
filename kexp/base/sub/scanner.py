@@ -116,7 +116,9 @@ class Scanner():
             self.update_params_from_xvars()
             delay(RPC_DELAY)
 
+            self.core.wait_until_mu(now_mu())
             self.write_host_params_to_kernel()
+            delay(RPC_DELAY)
             self.core.break_realtime()
 
             self.init_scan_kernel()

@@ -110,7 +110,9 @@ class Cooling():
             v_xshim_current = self.params.v_xshim_current
         ### End Defaults ###
             
-        self.inner_coil.on(i_supply,wait_for_analog=True)
+        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_voltage(i_supply)
+        self.inner_coil.on()
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
@@ -150,7 +152,9 @@ class Cooling():
             v_zshim_current = self.params.v_zshim_current
         ### End Defaults ###
             
-        self.inner_coil.on(i_supply)
+        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_voltage(i_supply)
+        self.inner_coil.on()
         
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
@@ -199,7 +203,9 @@ class Cooling():
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current
 
-        self.inner_coil.on(i_supply,wait_for_analog=True)
+        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_voltage(i_supply)
+        self.inner_coil.on()
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
@@ -241,7 +247,9 @@ class Cooling():
             i_supply = self.params.i_cmot
         ### End Defaults ###
             
-        self.inner_coil.on(i_supply,wait_for_analog=True)
+        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_voltage(i_supply)
+        self.inner_coil.on()
 
         self.dds.d2_3d_c.set_dds_gamma(delta=detune_d2_c,
                                        amplitude=amp_d2_c)
@@ -275,7 +283,9 @@ class Cooling():
             i_supply = self.params.i_mot
         ### End Defaults ###
             
-        self.inner_coil.on(i_supply,wait_for_analog=True)
+        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_voltage(i_supply)
+        self.inner_coil.on()
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
                                        v_pd=v_pd_d1_c)
@@ -317,7 +327,9 @@ class Cooling():
         ### End Defaults ###
             
         dt = t / self.params.n_d1cmot_detuning_sweep_steps
-        self.inner_coil.on(i_supply,wait_for_analog=True)
+        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_voltage(i_supply)
+        self.inner_coil.on()
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c_list[0],
                                        v_pd=v_pd_d1_c)
@@ -699,7 +711,9 @@ class Cooling():
 
         self.core.break_realtime()
 
-        self.inner_coil.on(i_supply)
+        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_voltage(9.)
+        self.inner_coil.on()
 
         self.outer_coil.off()
 

@@ -17,14 +17,20 @@ class rf_scan(EnvExperiment, Base):
 
         self.xvar('beans',[0,1]*300)
 
-        self.p.t_tweezer_1064_ramp = 200.e-3
-        self.p.t_tweezer_hold = 40.e-3
+        self.p.v_pd_tweezer_1064_ramp_end = 9.
+        # self.p.t_tweezer_1064_ramp = 10.e-3
+        self.p.t_tweezer_hold = 20.e-3
+
+        self.p.n_tweezers = 7
+        self.p.frequency_tweezer_array_width = 5.e6
 
         # self.p.t_lightsheet_rampup = 200.e-3
 
         self.p.t_tof = 3.e-6
-        self.camera_params.amp_imaging = .08
-        self.camera_params.em_gain = 200.
+        self.camera_params.amp_imaging = .07
+        self.p.t_imaging_pulse = 5.e-6
+        self.camera_params.exposure_time = 5.e-6
+        self.camera_params.em_gain = 290.
 
         self.finish_build(shuffle=False)
 
@@ -55,13 +61,14 @@ class rf_scan(EnvExperiment, Base):
 
         self.dds.power_down_cooling()
 
-        self.set_shims(v_zshim_current=0.,
-                            v_yshim_current=self.p.v_yshim_current_gm,
-                            v_xshim_current=self.p.v_xshim_current_gm)
-
         if self.p.beans == 0:
-            
-            self.inner_coil.igbt_ttl.on()
+
+            self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
+                        v_yshim_current=self.p.v_yshim_current_magtrap,
+                          v_xshim_current=self.p.v_xshim_current_magtrap)
+
+            # magtrap start
+            self.inner_coil.on()
 
             # ramp up lightsheet over magtrap
             self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
@@ -71,14 +78,51 @@ class rf_scan(EnvExperiment, Base):
                 delay(self.p.dt_magtrap_ramp)
             
             self.outer_coil.set_current(i_supply=self.p.i_feshbach_field_rampup_start)
-            self.outer_coil.set_voltage(v_supply=9.)
+            self.outer_coil.set_voltage(v_supply=70.)
+
             delay(self.p.t_magtrap)
 
             self.inner_coil.off()
-
             # delay(self.p.t_lightsheet_hold)
+            self.outer_coil.on()
 
-            self.outer_coil.on(i_supply=self.p.i_feshbach_field_rampup_start)
+            for i in self.p.feshbach_field_rampup_list:
+                self.outer_coil.set_current(i_supply=i)
+                delay(self.p.dt_feshbach_field_rampup)
+            delay(20.e-3)
+            self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
+        
+            self.ttl.pd_scope_trig.on()
+            self.outer_coil.off()
+            delay(self.p.t_feshbach_field_decay)
+            self.ttl.pd_scope_trig.off()
+
+            self.lightsheet.off()
+
+        elif self.p.beans == 1:
+
+            self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
+                        v_yshim_current=self.p.v_yshim_current_magtrap,
+                          v_xshim_current=self.p.v_xshim_current_magtrap)
+
+            # magtrap start
+            self.inner_coil.on()
+
+            # ramp up lightsheet over magtrap
+            self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+
+            for i in self.p.magtrap_ramp_list:
+                self.inner_coil.set_current(i_supply=i)
+                delay(self.p.dt_magtrap_ramp)
+            
+            self.outer_coil.set_current(i_supply=self.p.i_feshbach_field_rampup_start)
+            self.outer_coil.set_voltage(v_supply=70.)
+
+            delay(self.p.t_magtrap)
+
+            self.inner_coil.off()
+            # delay(self.p.t_lightsheet_hold)
+            self.outer_coil.on()
 
             for i in self.p.feshbach_field_rampup_list:
                 self.outer_coil.set_current(i_supply=i)
@@ -86,31 +130,31 @@ class rf_scan(EnvExperiment, Base):
             delay(20.e-3)
             self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
-            # for i in self.p.feshbach_field_ramp_list:
-            #     self.outer_coil.set_current(i_supply=i)
-            #     delay(self.p.dt_feshbach_field_ramp)
-            # delay(20.e-3)
-            # self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+            
+            for i in self.p.feshbach_field_ramp_list:
+                self.outer_coil.set_current(i_supply=i)
+                delay(self.p.dt_feshbach_field_ramp)
+            delay(20.e-3)
+            
+            # delay(10.e-3)
+            self.tweezer.vva_dac.set(v=0.)
+            self.dds.tweezer.on()
+            self.ttl.awg.on()
+            self.tweezer.zero_and_pause_pid()
+            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
+            self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+
+            self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
+
+            # delay(self.p.t_tweezer_hold)
+            
+            self.ttl.pd_scope_trig.on()
             self.outer_coil.off()
+            delay(self.p.t_feshbach_field_decay)
             self.ttl.pd_scope_trig.off()
-            delay(1.5e-3)
 
             self.lightsheet.off()
-
-        elif self.p.beans == 1:
-            self.inner_coil.igbt_ttl.on()
-            # self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-
-            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,zero_integrator=True)
-
-            for i in self.p.magtrap_ramp_list:
-                self.inner_coil.set_current(i_supply=i)
-                delay(self.p.dt_magtrap_ramp)
-            delay(30.e-3)
-            self.inner_coil.off()
-
-            delay(self.p.t_tweezer_hold)
             self.tweezer.off()
 
         delay(self.p.t_tof)

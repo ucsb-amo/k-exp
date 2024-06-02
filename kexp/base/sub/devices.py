@@ -81,7 +81,8 @@ class Devices():
                                      pid_int_zero_ttl = self.ttl.lightsheet_pid_int_zero,
                                      expt_params=self.params)
         
-        self.tweezer = tweezer(self.dac.vva_tweezer,
+        self.tweezer = tweezer(ao_dds=self.dds.tweezer,
+                               vva_dac=self.dac.vva_tweezer,
                                sw_ttl=self.ttl.awg,
                                awg_trg_ttl = self.ttl.awg_trigger,
                                pid_int_zero_ttl = self.ttl.tweezer_pid_int_zero,

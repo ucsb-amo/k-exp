@@ -1,5 +1,6 @@
 from kexp.control.artiq.DAC_CH import DAC_CH
 from kexp.control.artiq.TTL import TTL
+from kexp.control.artiq.DDS import DDS
 from kexp.config import ExptParams
 from kexp.util.artiq.async_print import aprint
 import spcm
@@ -13,7 +14,7 @@ dv = -1.
 dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
-    def __init__(self, vva_dac:DAC_CH, sw_ttl:TTL,
+    def __init__(self, ao_dds:DDS, vva_dac:DAC_CH, sw_ttl:TTL,
                   awg_trg_ttl:TTL, pid_int_zero_ttl:TTL,
                   expt_params:ExptParams):
         """Controls the tweezers.
@@ -22,6 +23,7 @@ class tweezer():
             sw_ttl (TTL): TTL
             awg_trg_ttl (TTL): TTL
         """        
+        self.ao_dds = ao_dds
         self.vva_dac = vva_dac
         self.sw_ttl = sw_ttl
         self.awg_trg_ttl = awg_trg_ttl
@@ -32,11 +34,13 @@ class tweezer():
     @kernel
     def on(self):
         with parallel:
+            self.ao_dds.on()
             self.sw_ttl.on()
             self.zero_and_pause_pid()
 
     @kernel
     def off(self):
+        self.ao_dds.off()
         self.zero_and_pause_pid()
         self.vva_dac.set(v=0.)
         self.sw_ttl.off()
@@ -54,17 +58,15 @@ class tweezer():
         self.vva_dac.set(v=v_tweezer_vva,load_dac=load_dac)
 
     @kernel
-    def ramp(self,t,v_ramp_list=dv_list,zero_integrator=True):
+    def ramp(self,t,v_ramp_list=dv_list):
         if v_ramp_list == dv_list:
             v_ramp_list = self.params.v_pd_tweezer_1064_ramp_list
 
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
 
-        self.vva_dac.set(v=v_ramp_list[0])
-        self.on()
-        delay(dt_ramp)
-        for v in v_ramp_list[1:]:
+        # self.on()
+        for v in v_ramp_list:
             self.vva_dac.set(v=v)
             delay(dt_ramp)
     
@@ -73,6 +75,7 @@ class tweezer():
         self.pid_int_zero_ttl.pulse(10.e-9)
     
     def awg_init(self):
+
         self.card = spcm.Card(self._awg_ip)
 
         self.card.open(self._awg_ip)

@@ -42,8 +42,8 @@ class test(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.dds.tweezer.set_dds(frequency=80.e6,amplitude=self.p.amp_tweezer)
-        self.dds.tweezer.on()
+        # self.dds.tweezer.set_dds(frequency=80.e6,amplitude=self.p.amp_tweezer)
+        # self.dds.tweezer.on()
 
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.ttl.pd_scope_trig_2.pulse(1.e-6)
