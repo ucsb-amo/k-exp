@@ -17,12 +17,12 @@ class rf_scan(EnvExperiment, Base):
 
         self.xvar('beans',[0,1]*300)
 
-        self.p.v_pd_tweezer_1064_ramp_end = 9.
+        self.p.v_pd_tweezer_1064_ramp_end = 8.
         # self.p.t_tweezer_1064_ramp = 10.e-3
         self.p.t_tweezer_hold = 20.e-3
 
-        self.p.n_tweezers = 7
-        self.p.frequency_tweezer_array_width = 5.e6
+        self.p.n_tweezers = 2
+        self.p.frequency_tweezer_array_width = 1.e6
 
         # self.p.t_lightsheet_rampup = 200.e-3
 
@@ -91,6 +91,13 @@ class rf_scan(EnvExperiment, Base):
                 delay(self.p.dt_feshbach_field_rampup)
             delay(20.e-3)
             self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
+
+            for i in self.p.feshbach_field_ramp_list:
+                self.outer_coil.set_current(i_supply=i)
+                delay(self.p.dt_feshbach_field_ramp)
+            delay(20.e-3)
+
+            delay(self.p.t_tweezer_1064_ramp)
         
             self.ttl.pd_scope_trig.on()
             self.outer_coil.off()
@@ -145,7 +152,7 @@ class rf_scan(EnvExperiment, Base):
 
             self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
 
-            self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
+            # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
 
             # delay(self.p.t_tweezer_hold)
             

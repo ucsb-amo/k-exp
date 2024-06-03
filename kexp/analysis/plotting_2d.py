@@ -159,7 +159,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     for i0 in range(n0):
         for i1 in range(n1):
             ax[i0][i1].plot(ydata[i0][i1])
-            ax[i0][i1].plot(yfitdata[i0][i1])
+            # ax[i0][i1].plot(yfitdata[i0][i1])
             ax[i0][i1].set_ylim(0,ymax)
             ax[i0,i1].set_yticklabels([])
             

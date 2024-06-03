@@ -48,9 +48,9 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 300.e-3
-        self.t_lightsheet_rampdown = 1.3
-        self.t_lightsheet_rampdown2 = .08
-        self.t_lightsheet_rampdown3 = .01
+        self.t_lightsheet_rampdown = 1.
+        self.t_lightsheet_rampdown2 = .1
+        self.t_lightsheet_rampdown3 = .1
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
@@ -176,12 +176,12 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_end = 9.
 
         self.n_lightsheet_rampdown_steps = 10000
-        self.v_pd_lightsheet_rampdown_end = 3.5
+        self.v_pd_lightsheet_rampdown_end = 5.5
 
-        self.n_lightsheet_rampdown2_steps = 100
+        self.n_lightsheet_rampdown2_steps = 1000
         self.v_pd_lightsheet_rampdown2_end = 3.4
 
-        self.n_lightsheet_rampdown3_steps = 100
+        self.n_lightsheet_rampdown3_steps = 1000
         self.v_pd_lightsheet_rampdown3_end = .0
 
         #1064 tweezer
@@ -189,11 +189,11 @@ class ExptParams():
         self.amp_tweezer = .45
         self.v_pd_tweezer_1064 = 5.
         self.v_pd_tweezer_1064_ramp_start = 0.
-        self.v_pd_tweezer_1064_ramp_end = 5.
-        self.n_tweezer_1064_ramp_steps = 200
+        self.v_pd_tweezer_1064_ramp_end = 4.8
+        self.n_tweezer_1064_ramp_steps = 1000
         
         self.v_pd_tweezer_1064_rampdown_end = 1.6
-        self.n_tweezer_1064_rampdown_steps = 100
+        self.n_tweezer_1064_rampdown_steps = 1000
 
         self.v_pd_tweezer_1064_rampdown2_end = 0.07
         self.n_tweezer_1064_rampdown2_steps = 100
@@ -204,6 +204,9 @@ class ExptParams():
 
         #frequency of outer most tweezers, to be added / subtracted from the center frequency of 75 MHz
         self.frequency_tweezer_array_width = .9e6
+
+        self.amp_tweezer_auto_compute = True
+        self.amp_tweezer_list = [.3,.3]
 
         # RF
         self.t_rf_sweep_state_prep = 100.e-3
@@ -231,7 +234,7 @@ class ExptParams():
 
         # evap
         self.i_evap1_current = 13.
-        self.i_evap2_current = 31.3
+        self.i_evap2_current = 33.
         self.i_evap3_current = 16.4
 
         self.compute_derived()
@@ -322,7 +325,10 @@ class ExptParams():
         self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
 
     def compute_tweezer_1064_amps(self):
-        self.amp_tweezer_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers, self.n_tweezers)
+        if self.amp_tweezer_auto_compute:
+            self.amp_tweezer_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers, self.n_tweezers)
+        else:
+            self.amp_tweezer_list = self.amp_tweezer_list
 
     # def compute_tweezer_1064_phases(self):
     #     self.phase_tweezer_array = np.empty([self.n_tweezers])
