@@ -48,16 +48,16 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 300.e-3
-        self.t_lightsheet_rampdown = 1.
-        self.t_lightsheet_rampdown2 = .1
-        self.t_lightsheet_rampdown3 = .1
+        self.t_lightsheet_rampdown = .6
+        self.t_lightsheet_rampdown2 = .2
+        self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
         self.t_tweezer_hold = 30.e-3
-        self.t_tweezer_1064_ramp = 300.e-3
-        self.t_tweezer_1064_rampdown = .08
-        self.t_tweezer_1064_rampdown2 = .05
+        self.t_tweezer_1064_ramp = 500.e-3
+        self.t_tweezer_1064_rampdown = .1
+        self.t_tweezer_1064_rampdown2 = .25
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
@@ -175,11 +175,11 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.
 
-        self.n_lightsheet_rampdown_steps = 10000
-        self.v_pd_lightsheet_rampdown_end = 5.5
+        self.n_lightsheet_rampdown_steps = 1000
+        self.v_pd_lightsheet_rampdown_end = 2.8
 
         self.n_lightsheet_rampdown2_steps = 1000
-        self.v_pd_lightsheet_rampdown2_end = 3.4
+        self.v_pd_lightsheet_rampdown2_end = .2
 
         self.n_lightsheet_rampdown3_steps = 1000
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -189,13 +189,13 @@ class ExptParams():
         self.amp_tweezer = .45
         self.v_pd_tweezer_1064 = 5.
         self.v_pd_tweezer_1064_ramp_start = 0.
-        self.v_pd_tweezer_1064_ramp_end = 4.8
+        self.v_pd_tweezer_1064_ramp_end = 5.8
         self.n_tweezer_1064_ramp_steps = 1000
         
-        self.v_pd_tweezer_1064_rampdown_end = 1.6
+        self.v_pd_tweezer_1064_rampdown_end = .8
         self.n_tweezer_1064_rampdown_steps = 1000
 
-        self.v_pd_tweezer_1064_rampdown2_end = 0.07
+        self.v_pd_tweezer_1064_rampdown2_end = 0.05
         self.n_tweezer_1064_rampdown2_steps = 100
 
         self.n_tweezers = 2
@@ -203,10 +203,10 @@ class ExptParams():
         self.frequency_aod_center = 75.e6
 
         #frequency of outer most tweezers, to be added / subtracted from the center frequency of 75 MHz
-        self.frequency_tweezer_array_width = .9e6
+        self.frequency_tweezer_array_width = .7e6
 
-        self.amp_tweezer_auto_compute = True
-        self.amp_tweezer_list = [.3,.3]
+        self.amp_tweezer_auto_compute = False
+        self.amp_tweezer_list = [.2,.215]
 
         # RF
         self.t_rf_sweep_state_prep = 100.e-3
@@ -233,8 +233,9 @@ class ExptParams():
         self.amp_ao_ry_980 = 0.285
 
         # evap
-        self.i_evap1_current = 13.
-        self.i_evap2_current = 33.
+        self.i_evap1_current = 9.5
+        self.i_evap2_current = 31.3
+        self.i_tweezer_evap_current = 25.
         self.i_evap3_current = 16.4
 
         self.compute_derived()

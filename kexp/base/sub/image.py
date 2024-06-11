@@ -109,14 +109,14 @@ class Image():
             self.trigger_camera()
             with parallel:
                 self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-                self.flash_cooler(t=self.params.t_imaging_pulse)
+                # self.flash_cooler(t=self.params.t_imaging_pulse)
             delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
             delay(self.camera_params.t_light_only_image_delay * s)
             self.trigger_camera()
             with parallel:
                 self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-                self.flash_cooler(t=self.params.t_imaging_pulse)
+                # self.flash_cooler(t=self.params.t_imaging_pulse)
             delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
             delay(self.camera_params.t_dark_image_delay * s)
