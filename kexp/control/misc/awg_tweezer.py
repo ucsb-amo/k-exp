@@ -15,7 +15,7 @@ dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
     def __init__(self, ao_dds:DDS, vva_dac:DAC_CH, sw_ttl:TTL,
-                  awg_trg_ttl:TTL, pid_int_zero_ttl:TTL,
+                  awg_trg_ttl:TTL, pid_int_hold_zero_ttl:TTL,
                   expt_params:ExptParams):
         """Controls the tweezers.
 
@@ -27,7 +27,7 @@ class tweezer():
         self.vva_dac = vva_dac
         self.sw_ttl = sw_ttl
         self.awg_trg_ttl = awg_trg_ttl
-        self.pid_int_zero_ttl = pid_int_zero_ttl
+        self.pid_int_hold_zero = pid_int_hold_zero_ttl
         self.params = expt_params
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
 
@@ -36,12 +36,12 @@ class tweezer():
         with parallel:
             self.ao_dds.on()
             self.sw_ttl.on()
-            self.zero_and_pause_pid()
+            self.pid_int_hold_zero.off()
 
     @kernel
     def off(self):
         self.ao_dds.off()
-        self.zero_and_pause_pid()
+        self.pid_int_hold_zero.on()
         self.vva_dac.set(v=0.)
         self.sw_ttl.off()
 
@@ -69,10 +69,6 @@ class tweezer():
         for v in v_ramp_list:
             self.vva_dac.set(v=v)
             delay(dt_ramp)
-    
-    @kernel
-    def zero_and_pause_pid(self):
-        self.pid_int_zero_ttl.pulse(10.e-9)
     
     def awg_init(self):
 

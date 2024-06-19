@@ -15,7 +15,7 @@ DAC_PAINT_FULLSCALE = 9.99
 
 class lightsheet():
     def __init__(self, vva_dac:DAC_CH, paint_amp_dac:DAC_CH,
-                  sw_ttl:TTL, pid_int_zero_ttl:TTL,
+                  sw_ttl:TTL, pid_int_hold_zero_ttl:TTL,
                   expt_params:ExptParams):
         """Controls the light sheet beam.
 
@@ -31,7 +31,7 @@ class lightsheet():
         self.vva_dac = vva_dac
         self.paint_amp_dac = paint_amp_dac
         self.ttl = sw_ttl
-        self.pid_int_zero_ttl = pid_int_zero_ttl
+        self.pid_int_zero_ttl = pid_int_hold_zero_ttl
         self.params = expt_params
 
     @kernel

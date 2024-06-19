@@ -23,7 +23,7 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 27.e6
+        self.frequency_detuned_imaging = 19.4e6
         self.frequency_detuned_imaging_F1 = 431.54e6 + 17.e6
         self.imaging_state = 2.
         
@@ -195,7 +195,7 @@ class ExptParams():
         self.v_pd_tweezer_1064_rampdown_end = .8
         self.n_tweezer_1064_rampdown_steps = 1000
 
-        self.v_pd_tweezer_1064_rampdown2_end = 0.05
+        self.v_pd_tweezer_1064_rampdown2_end = 0.04
         self.n_tweezer_1064_rampdown2_steps = 100
 
         self.n_tweezers = 2

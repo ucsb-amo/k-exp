@@ -202,7 +202,7 @@ class Image():
         Sets the detuning of the beat-locked imaging laser (in Hz).
 
         Imaging detuning is controlled by two things -- the Vescent offset lock
-        and a double pass (+1 order).
+        and a double pass (-1 order).
 
         The offset lock has a multiplier, N, that determines the offset lock
         frequency relative to the lock point of the D2 laser locked at the
@@ -226,7 +226,7 @@ class Image():
 
         f_ao_shift = self.dds.imaging.frequency * 2
 
-        f_offset = f_ao_shift - detuning + f_shift_resonance
+        f_offset = - detuning + f_shift_resonance + f_ao_shift
 
         if f_offset < f_minimum_offset_frequency:
             try: 
