@@ -238,6 +238,10 @@ class ExptParams():
         self.i_tweezer_evap_current = 25.
         self.i_evap3_current = 16.4
 
+        # high field imaging
+        self._slope_imaging_frequency_per_iouter_current = -4.08715595e+06
+        self._yintercept_imaging_frequency_per_iouter_current = 2.88188071e+08
+
         self.compute_derived()
 
     def compute_rf_sweep_params(self):
@@ -256,7 +260,6 @@ class ExptParams():
             self._frequency_rf_sweep_state_prep_start,
             self._frequency_rf_sweep_state_prep_end,
             self.n_rf_sweep_state_prep_steps)
-        
         
     def compute_lightsheet_ramp_params(self):
         self.v_pd_lightsheet_ramp_list = np.linspace(
