@@ -99,15 +99,15 @@ class CameraMother(QThread):
             print("Mother is watching...")
 
     def check_files(self):
-        try:
-            folderpath=os.path.join(DATA_DIR,'*','*.hdf5')
-            list_of_files = glob.glob(folderpath)
-            list_of_files.sort(key=lambda x: os.path.getmtime(x))
-            latest_file = list_of_files[-1]
-        except Exception as e:
-            if isinstance(e,IndexError):
-                print(e)
-                raise ValueError("You probably need to re-map network drives.")
+        # try:
+        folderpath=os.path.join(DATA_DIR,'*','*.hdf5')
+        list_of_files = glob.glob(folderpath)
+        list_of_files.sort(key=lambda x: os.path.getmtime(x))
+        latest_file = list_of_files[-1]
+        # except Exception as e:
+        #     if isinstance(e,IndexError):
+        #         print(e)
+        #         raise ValueError("You probably need to re-map network drives.")
         new_file_bool, run_id = self.check_if_file_new(latest_file)
         return new_file_bool, latest_file, run_id
     
