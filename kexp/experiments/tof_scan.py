@@ -21,9 +21,9 @@ class tof_scan(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',scanrange)
         # self.xvar('i_evap1_current',np.linspace(170.,190.,4))
         # self.xvar('frequency_detuned_imaging',np.linspace(-510.,-380.,25)*1.e6)
-        # self.xvar('frequency_detuned_imaging',np.linspace(0.,470.,100)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.linspace(410.,515.,15)*1.e6)
         # self.p.frequency_detuned_imaging_F1 = 437.e6
-        # self.p.frequency_detuned_imaging = 410.e6
+        # self.p.frequency_detuned_imaging = 462.e6
         # self.xvar('dummy',[1.]*2)
 
         self.p.t_mot_load = .5
@@ -65,17 +65,17 @@ class tof_scan(EnvExperiment, Base):
         # self.xvar('frequency_rf_sweep_state_prep_center',154.2e6 + np.linspace(-40.,40.,80)*1.e6)
         # self.p.do_sweep = 1
 
-        # self.xvar('i_evap1_current',np.linspace(178.,190.,10))
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,5.,6))
-        # self.p.v_pd_lightsheet_rampdown_end = 2.8
+        # self.xvar('i_evap1_current',np.linspace(178.,187.,10))
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.5,3.,8))
+        self.p.v_pd_lightsheet_rampdown_end = 2.3
         # self.xvar('t_lightsheet_rampdown',np.linspace(2.,.02,30))
         # self.p.t_lightsheet_rampdown = .6
-        self.p.i_evap1_current = 187.
+        self.p.i_evap1_current = 184.
 
-        self.xvar('i_evap2_current',np.linspace(170.,185.,25))
+        # self.xvar('i_evap2_current',np.linspace(172.,183.,5))
         # self.xvar('i_evap2_current', np.linspace(28.,34.,10))
         # self.xvar('i_evap2_current',np.linspace(7.,70.,40))
-        # self.p.i_evap2_current = 178
+        self.p.i_evap2_current = 178
 
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,8.,8))
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,1000.,6)*1.e-3)
@@ -103,15 +103,16 @@ class tof_scan(EnvExperiment, Base):
 
         # self.p.i_tweezer_evap_current = 25.
 
-        # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.033,.5,6)) 
+        # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.033,2.,6)) ###########################
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.02,.4,6))
         # self.p.t_tweezer_1064_rampdown2 = 250.e-3
         # self.p.v_pd_tweezer_1064_rampdown2_end = 0.034 
+        self.p.v_pd_tweezer_1064_rampdown2_end = 1.
 
         # self.xvar('t_tweezer_hold',np.linspace(.0,3.,20))
 
         # self.xvar('t_feshbach_field_decay',np.linspace(.5,3.,20)*1.e-3)
-        # self.p.t_feshbach_field_decay = 20.e-3
+        self.p.t_feshbach_field_decay = 20.e-3
 
         # self.xvar('dummy',[0]*200)
 
@@ -121,9 +122,9 @@ class tof_scan(EnvExperiment, Base):
         # self.p.amp_tweezer_auto_compute = False
         # self.p.amp_tweezer_list = [.2,.215]
 
-        # self.xvar('t_tof',np.linspace(5.,500.,5)*1.e-6) 
+        # self.xvar('t_tof',np.linspace(5.,15.,20)*1.e-6) 
         
-        self.p.t_tof = 2.e-6
+        self.p.t_tof = 5.e-6
 
         # self.p.t_magtrap = 200.e-3
 
@@ -136,8 +137,8 @@ class tof_scan(EnvExperiment, Base):
 
         self.camera_params.amp_imaging = .07
         # self.xvar('amp_imaging',np.linspace(0.00,0.10,2))
-        # self.p.t_imaging_pulse = 6.e-6
-        # self.camera_params.exposure_time = 6.e-6
+        # self.p.t_imaging_pulse = 20.e-6
+        # self.camera_params.exposure_time = 20.e-6
         # self.camera_params.em_gain = 290.
 
         self.p.N_repeats = 1
@@ -177,6 +178,7 @@ class tof_scan(EnvExperiment, Base):
                           v_xshim_current=self.p.v_xshim_current_magtrap)
 
         # magtrap start
+        self.ttl.pd_scope_trig.pulse(1*us)
         self.inner_coil.on()
 
         # ramp up lightsheet over magtrap
@@ -215,10 +217,10 @@ class tof_scan(EnvExperiment, Base):
         self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
-        # self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
 
-        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
-
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
+#######################
         # self.outer_coil.set_current(i_supply=self.p.i_tweezer_evap_current)
 
         # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
@@ -226,19 +228,19 @@ class tof_scan(EnvExperiment, Base):
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown2_list)
         
-        self.ttl.pd_scope_trig.on()
-        self.outer_coil.off()
-        delay(self.p.t_feshbach_field_decay)
-        self.ttl.pd_scope_trig.off()
-
+        # self.ttl.pd_scope_trig.on()
+        # self.outer_coil.off()
+        # delay(self.p.t_feshbach_field_decay)
+        # self.ttl.pd_scope_trig.off()
+#######################
         self.lightsheet.off()
         self.tweezer.off()
     
         delay(self.p.t_tof)
-        self.flash_repump()
+        # self.flash_repump()
         self.abs_image()
 
-        # self.outer_coil.off()
+        self.outer_coil.off()
 
     @kernel
     def run(self):

@@ -195,9 +195,7 @@ class tof_scan(EnvExperiment, Base):
         
         # delay(10.e-3)
         self.tweezer.vva_dac.set(v=0.)
-        self.dds.tweezer.on()
-        self.ttl.awg.on()
-        self.tweezer.zero_and_pause_pid()
+        self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
         self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)

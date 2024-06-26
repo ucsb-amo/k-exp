@@ -24,13 +24,6 @@ class tof(EnvExperiment, Base):
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        # self.cmot_d1(self.p.t_d1cmot)
-        # self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-        #                 v_yshim_current=self.p.v_yshim_current_gm,
-        #                   v_xshim_current=self.p.v_xshim_current_gm)
-
-        # self.gm(self.p.t_gm * s)
-        # self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 

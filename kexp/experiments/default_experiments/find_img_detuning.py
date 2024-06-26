@@ -3,18 +3,20 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class img_detuning(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
 
-        self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
+        self.xvar('frequency_detuned_imaging',np.linspace(10.,27.,15)*1.e6)
+
+        self.p.t_tof = 10.e-3
 
         self.p.N_repeats = 3
 
-        self.p.t_mot_load = .3
+        self.p.t_mot_load = .05
 
         self.finish_build(shuffle=True)
 
