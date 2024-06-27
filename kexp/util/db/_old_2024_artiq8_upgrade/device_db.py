@@ -7,13 +7,7 @@ device_db = {
         "type": "local",
         "module": "artiq.coredevice.core",
         "class": "Core",
-        "arguments": {
-            "host": core_addr,
-            "ref_period": 1e-09,
-            "analyzer_proxy": "core_analyzer",
-            "target": "cortexa9",
-            "satellite_cpu_targets": {}
-        },
+        "arguments": {"host": core_addr, "ref_period": 1e-09, "target": "cortexa9"},
     },
     "core_log": {
         "type": "controller",
@@ -27,13 +21,6 @@ device_db = {
         "port_proxy": 1383,
         "port": 1384,
         "command": "aqctl_moninj_proxy --port-proxy {port_proxy} --port-control {port} --bind {bind} " + core_addr
-    },
-    "core_analyzer": {
-        "type": "controller",
-        "host": "::1",
-        "port_proxy": 1385,
-        "port": 1386,
-        "command": "aqctl_coreanalyzer_proxy --port-proxy {port_proxy} --port-control {port} --bind {bind} " + core_addr
     },
     "core_cache": {
         "type": "local",
@@ -154,8 +141,8 @@ device_db["mirny0_cpld"] = {
     "class": "Mirny",
     "arguments": {
         "spi_device": "spi_mirny0",
-        "refclk": 125000000.0,
-        "clk_sel": "mmcx"
+        "refclk": 100000000.0,
+        "clk_sel": 0
     },
 }
 
@@ -217,8 +204,7 @@ device_db["urukul0_cpld"] = {
         "sync_device": None,
         "io_update_device": "ttl_urukul0_io_update",
         "refclk": 125000000.0,
-        "clk_sel": 2,
-        "clk_div": 0
+        "clk_sel": 2
     }
 }
 
@@ -228,7 +214,6 @@ device_db["urukul0_ch0"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 4,
         "cpld_device": "urukul0_cpld",
         "sw_device": "ttl_urukul0_sw0"
@@ -241,7 +226,6 @@ device_db["urukul0_ch1"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 5,
         "cpld_device": "urukul0_cpld",
         "sw_device": "ttl_urukul0_sw1"
@@ -254,7 +238,6 @@ device_db["urukul0_ch2"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 6,
         "cpld_device": "urukul0_cpld",
         "sw_device": "ttl_urukul0_sw2"
@@ -267,7 +250,6 @@ device_db["urukul0_ch3"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 7,
         "cpld_device": "urukul0_cpld",
         "sw_device": "ttl_urukul0_sw3"
@@ -332,8 +314,7 @@ device_db["urukul1_cpld"] = {
         "sync_device": None,
         "io_update_device": "ttl_urukul1_io_update",
         "refclk": 125000000.0,
-        "clk_sel": 2,
-        "clk_div": 0
+        "clk_sel": 2
     }
 }
 
@@ -343,7 +324,6 @@ device_db["urukul1_ch0"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 4,
         "cpld_device": "urukul1_cpld",
         "sw_device": "ttl_urukul1_sw0"
@@ -356,7 +336,6 @@ device_db["urukul1_ch1"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 5,
         "cpld_device": "urukul1_cpld",
         "sw_device": "ttl_urukul1_sw1"
@@ -369,7 +348,6 @@ device_db["urukul1_ch2"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 6,
         "cpld_device": "urukul1_cpld",
         "sw_device": "ttl_urukul1_sw2"
@@ -382,7 +360,6 @@ device_db["urukul1_ch3"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 7,
         "cpld_device": "urukul1_cpld",
         "sw_device": "ttl_urukul1_sw3"
@@ -392,28 +369,28 @@ device_db["urukul1_ch3"] = {
 device_db["ttl0"] = {
     "type": "local",
     "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
+    "class": "TTLInOut",
     "arguments": {"channel": 0x000013},
 }
 
 device_db["ttl1"] = {
     "type": "local",
     "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
+    "class": "TTLInOut",
     "arguments": {"channel": 0x000014},
 }
 
 device_db["ttl2"] = {
     "type": "local",
     "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
+    "class": "TTLInOut",
     "arguments": {"channel": 0x000015},
 }
 
 device_db["ttl3"] = {
     "type": "local",
     "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
+    "class": "TTLInOut",
     "arguments": {"channel": 0x000016},
 }
 
@@ -526,8 +503,7 @@ device_db["sampler0"] = {
     "arguments": {
         "spi_adc_device": "spi_sampler0_adc",
         "spi_pgia_device": "spi_sampler0_pgia",
-        "cnv_device": "ttl_sampler0_cnv",
-        "hw_rev": "v2.2"
+        "cnv_device": "ttl_sampler0_cnv"
     }
 }
 
@@ -559,24 +535,7 @@ device_db["zotino0"] = {
         "clr_device": "ttl_zotino0_clr"
     }
 }
-
-device_db["led0"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x000029}
-}
-
-device_db["led1"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x00002a}
-}
-
 # DEST#1 peripherals
-
-device_db["core"]["arguments"]["satellite_cpu_targets"][1] = "rv32g"
 
 device_db["ttl16"] = {
     "type": "local",
@@ -748,8 +707,7 @@ device_db["urukul2_cpld"] = {
         "sync_device": None,
         "io_update_device": "ttl_urukul2_io_update",
         "refclk": 125000000.0,
-        "clk_sel": 2,
-        "clk_div": 0
+        "clk_sel": 2
     }
 }
 
@@ -759,7 +717,6 @@ device_db["urukul2_ch0"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 4,
         "cpld_device": "urukul2_cpld",
         "sw_device": "ttl_urukul2_sw0"
@@ -772,7 +729,6 @@ device_db["urukul2_ch1"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 5,
         "cpld_device": "urukul2_cpld",
         "sw_device": "ttl_urukul2_sw1"
@@ -785,7 +741,6 @@ device_db["urukul2_ch2"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 6,
         "cpld_device": "urukul2_cpld",
         "sw_device": "ttl_urukul2_sw2"
@@ -798,7 +753,6 @@ device_db["urukul2_ch3"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 7,
         "cpld_device": "urukul2_cpld",
         "sw_device": "ttl_urukul2_sw3"
@@ -863,8 +817,7 @@ device_db["urukul3_cpld"] = {
         "sync_device": None,
         "io_update_device": "ttl_urukul3_io_update",
         "refclk": 125000000.0,
-        "clk_sel": 2,
-        "clk_div": 0
+        "clk_sel": 2
     }
 }
 
@@ -874,7 +827,6 @@ device_db["urukul3_ch0"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 4,
         "cpld_device": "urukul3_cpld",
         "sw_device": "ttl_urukul3_sw0"
@@ -887,7 +839,6 @@ device_db["urukul3_ch1"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 5,
         "cpld_device": "urukul3_cpld",
         "sw_device": "ttl_urukul3_sw1"
@@ -900,7 +851,6 @@ device_db["urukul3_ch2"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 6,
         "cpld_device": "urukul3_cpld",
         "sw_device": "ttl_urukul3_sw2"
@@ -913,7 +863,6 @@ device_db["urukul3_ch3"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 7,
         "cpld_device": "urukul3_cpld",
         "sw_device": "ttl_urukul3_sw3"
@@ -978,8 +927,7 @@ device_db["urukul4_cpld"] = {
         "sync_device": None,
         "io_update_device": "ttl_urukul4_io_update",
         "refclk": 125000000.0,
-        "clk_sel": 2,
-        "clk_div": 0
+        "clk_sel": 2
     }
 }
 
@@ -989,7 +937,6 @@ device_db["urukul4_ch0"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 4,
         "cpld_device": "urukul4_cpld",
         "sw_device": "ttl_urukul4_sw0"
@@ -1002,7 +949,6 @@ device_db["urukul4_ch1"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 5,
         "cpld_device": "urukul4_cpld",
         "sw_device": "ttl_urukul4_sw1"
@@ -1015,7 +961,6 @@ device_db["urukul4_ch2"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 6,
         "cpld_device": "urukul4_cpld",
         "sw_device": "ttl_urukul4_sw2"
@@ -1028,7 +973,6 @@ device_db["urukul4_ch3"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 7,
         "cpld_device": "urukul4_cpld",
         "sw_device": "ttl_urukul4_sw3"
@@ -1093,8 +1037,7 @@ device_db["urukul5_cpld"] = {
         "sync_device": None,
         "io_update_device": "ttl_urukul5_io_update",
         "refclk": 125000000.0,
-        "clk_sel": 2,
-        "clk_div": 0
+        "clk_sel": 2
     }
 }
 
@@ -1104,7 +1047,6 @@ device_db["urukul5_ch0"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 4,
         "cpld_device": "urukul5_cpld",
         "sw_device": "ttl_urukul5_sw0"
@@ -1117,7 +1059,6 @@ device_db["urukul5_ch1"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 5,
         "cpld_device": "urukul5_cpld",
         "sw_device": "ttl_urukul5_sw1"
@@ -1130,7 +1071,6 @@ device_db["urukul5_ch2"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 6,
         "cpld_device": "urukul5_cpld",
         "sw_device": "ttl_urukul5_sw2"
@@ -1143,7 +1083,6 @@ device_db["urukul5_ch3"] = {
     "class": "AD9910",
     "arguments": {
         "pll_n": 32,
-        "pll_en": 1,
         "chip_select": 7,
         "cpld_device": "urukul5_cpld",
         "sw_device": "ttl_urukul5_sw3"
@@ -1204,670 +1143,4 @@ device_db["ttl39"] = {
     "module": "artiq.coredevice.ttl",
     "class": "TTLOut",
     "arguments": {"channel": 0x01002f},
-}
-
-device_db["led2"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x010030}
-}
-
-device_db["led3"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x010031}
-}
-
-device_db["led4"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x010032}
-}
-
-# DEST#2 peripherals
-
-device_db["core"]["arguments"]["satellite_cpu_targets"][2] = "rv32g"
-
-device_db["ttl40"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLInOut",
-    "arguments": {"channel": 0x020000},
-}
-
-device_db["ttl41"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLInOut",
-    "arguments": {"channel": 0x020001},
-}
-
-device_db["ttl42"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLInOut",
-    "arguments": {"channel": 0x020002},
-}
-
-device_db["ttl43"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLInOut",
-    "arguments": {"channel": 0x020003},
-}
-
-device_db["ttl44"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLInOut",
-    "arguments": {"channel": 0x020004},
-}
-
-device_db["ttl45"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLInOut",
-    "arguments": {"channel": 0x020005},
-}
-
-device_db["ttl46"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLInOut",
-    "arguments": {"channel": 0x020006},
-}
-
-device_db["ttl47"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLInOut",
-    "arguments": {"channel": 0x020007},
-}
-
-device_db["ttl48"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020008},
-}
-
-device_db["ttl49"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020009},
-}
-
-device_db["ttl50"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02000a},
-}
-
-device_db["ttl51"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02000b},
-}
-
-device_db["ttl52"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02000c},
-}
-
-device_db["ttl53"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02000d},
-}
-
-device_db["ttl54"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02000e},
-}
-
-device_db["ttl55"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02000f},
-}
-
-device_db["ttl56"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020010},
-}
-
-device_db["ttl57"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020011},
-}
-
-device_db["ttl58"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020012},
-}
-
-device_db["ttl59"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020013},
-}
-
-device_db["ttl60"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020014},
-}
-
-device_db["ttl61"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020015},
-}
-
-device_db["ttl62"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020016},
-}
-
-device_db["ttl63"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020017},
-}
-
-device_db["ttl64"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020018},
-}
-
-device_db["ttl65"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020019},
-}
-
-device_db["ttl66"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02001a},
-}
-
-device_db["ttl67"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02001b},
-}
-
-device_db["ttl68"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02001c},
-}
-
-device_db["ttl69"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02001d},
-}
-
-device_db["ttl70"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02001e},
-}
-
-device_db["ttl71"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02001f},
-}
-
-device_db["ttl72"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020020},
-}
-
-device_db["ttl73"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020021},
-}
-
-device_db["ttl74"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020022},
-}
-
-device_db["ttl75"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020023},
-}
-
-device_db["ttl76"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020024},
-}
-
-device_db["ttl77"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020025},
-}
-
-device_db["ttl78"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020026},
-}
-
-device_db["ttl79"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020027},
-}
-
-device_db["ttl80"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020028},
-}
-
-device_db["ttl81"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020029},
-}
-
-device_db["ttl82"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02002a},
-}
-
-device_db["ttl83"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02002b},
-}
-
-device_db["ttl84"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02002c},
-}
-
-device_db["ttl85"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02002d},
-}
-
-device_db["ttl86"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02002e},
-}
-
-device_db["ttl87"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x02002f},
-}
-
-device_db["led5"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020030}
-}
-
-device_db["led6"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020031}
-}
-
-device_db["led7"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x020032}
-}
-
-# DEST#5 peripherals
-
-device_db["core"]["arguments"]["satellite_cpu_targets"][5] = "rv32g"
-
-device_db["shuttler0_led0"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x050000}
-}
-
-device_db["shuttler0_led1"] = {
-    "type": "local",
-    "module": "artiq.coredevice.ttl",
-    "class": "TTLOut",
-    "arguments": {"channel": 0x050001}
-}
-
-device_db["shuttler0_config"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "Config",
-    "arguments": {"channel": 0x050002},
-}
-
-device_db["shuttler0_trigger"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "Trigger",
-    "arguments": {"channel": 0x050003},
-}
-
-device_db["shuttler0_dcbias0"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050004},
-}
-
-device_db["shuttler0_dds0"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050005},
-}
-
-device_db["shuttler0_dcbias1"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050006},
-}
-
-device_db["shuttler0_dds1"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050007},
-}
-
-device_db["shuttler0_dcbias2"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050008},
-}
-
-device_db["shuttler0_dds2"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050009},
-}
-
-device_db["shuttler0_dcbias3"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x05000a},
-}
-
-device_db["shuttler0_dds3"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x05000b},
-}
-
-device_db["shuttler0_dcbias4"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x05000c},
-}
-
-device_db["shuttler0_dds4"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x05000d},
-}
-
-device_db["shuttler0_dcbias5"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x05000e},
-}
-
-device_db["shuttler0_dds5"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x05000f},
-}
-
-device_db["shuttler0_dcbias6"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050010},
-}
-
-device_db["shuttler0_dds6"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050011},
-}
-
-device_db["shuttler0_dcbias7"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050012},
-}
-
-device_db["shuttler0_dds7"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050013},
-}
-
-device_db["shuttler0_dcbias8"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050014},
-}
-
-device_db["shuttler0_dds8"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050015},
-}
-
-device_db["shuttler0_dcbias9"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050016},
-}
-
-device_db["shuttler0_dds9"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050017},
-}
-
-device_db["shuttler0_dcbias10"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050018},
-}
-
-device_db["shuttler0_dds10"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050019},
-}
-
-device_db["shuttler0_dcbias11"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x05001a},
-}
-
-device_db["shuttler0_dds11"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x05001b},
-}
-
-device_db["shuttler0_dcbias12"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x05001c},
-}
-
-device_db["shuttler0_dds12"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x05001d},
-}
-
-device_db["shuttler0_dcbias13"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x05001e},
-}
-
-device_db["shuttler0_dds13"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x05001f},
-}
-
-device_db["shuttler0_dcbias14"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050020},
-}
-
-device_db["shuttler0_dds14"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050021},
-}
-
-device_db["shuttler0_dcbias15"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DCBias",
-    "arguments": {"channel": 0x050022},
-}
-
-device_db["shuttler0_dds15"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "DDS",
-    "arguments": {"channel": 0x050023},
-}
-
-device_db["shuttler0_spi0"] = {
-    "type": "local",
-    "module": "artiq.coredevice.spi2",
-    "class": "SPIMaster",
-    "arguments": {"channel": 0x050024},
-}
-
-device_db["shuttler0_relay"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "Relay",
-    "arguments": {"spi_device": "shuttler0_spi0"},
-}
-
-device_db["shuttler0_spi1"] = {
-    "type": "local",
-    "module": "artiq.coredevice.spi2",
-    "class": "SPIMaster",
-    "arguments": {"channel": 0x050025},
-}
-
-device_db["shuttler0_adc"] = {
-    "type": "local",
-    "module": "artiq.coredevice.shuttler",
-    "class": "ADC",
-    "arguments": {"spi_device": "shuttler0_spi1"},
 }
