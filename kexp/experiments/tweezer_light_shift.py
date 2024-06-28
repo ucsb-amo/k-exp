@@ -3,7 +3,7 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class tof_scan(EnvExperiment, Base):
+class tweezer_lightshift(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
@@ -12,7 +12,8 @@ class tof_scan(EnvExperiment, Base):
 
         self.p.t_mot_load = .75
 
-        self.p.v_pd_tweezer_1064_rampdown2_end = 0.126 
+        # self.p.v_pd_tweezer_1064_rampdown2_end = 0.126
+        self.p.v_pd_tweezer_1064_rampdown2_end = 0.75
         # self.p.t_tof = 2.e-6
 
         self.camera_params.amp_imaging = .079
@@ -22,12 +23,15 @@ class tof_scan(EnvExperiment, Base):
 
         self.p.t_feshbach_field_decay = 20.e-3
 
-        # self.xvar('amp_imaging',np.linspace(0.03, 0.125, 20))
-        # self.xvar('amp_imaging',np.logspace( np.log10(0.03), np.log10(0.125), 25))
+        self.xvar('tweezer_on_during_imaging_bool',[0,1])
 
-        self.xvar('frequency_detuned_imaging',np.linspace(0.,40.,20)*1.e6)
+        self.p.f0 = self.p.frequency_detuned_imaging
+        self.xvar('frequency_detuned_imaging',self.p.f0 + np.linspace(-10.,52.,30)*1.e6)
 
         # self.xvar('t_tof', np.linspace(2,15,15)*1.e-6)
+
+        self.p.frequency_shift_repump = 0.
+        self.p.detune_repump_linewidths = 0.
 
         self.p.N_repeats = 1
 
@@ -117,14 +121,20 @@ class tof_scan(EnvExperiment, Base):
         delay(self.p.t_feshbach_field_decay)
         self.ttl.pd_scope_trig.off()
 
+        self.p.frequency_shift_repump = (self.p.frequency_detuned_imaging - self.p.f0)
+        self.p.detune_repump_linewidths = self.p.frequency_shift_repump / 6.e6
+
+        if not self.p.tweezer_on_during_imaging_bool:
+            self.tweezer.off()
         self.lightsheet.off()
         # self.tweezer.off()
     
         delay(self.p.t_tof)
-        self.flash_repump()
+        self.flash_repump(detune=self.p.detune_repump_linewidths)
         self.abs_image()
 
-        self.tweezer.off()
+        if self.p.tweezer_on_during_imaging_bool:
+            self.tweezer.off()
 
         # self.outer_coil.off()
 

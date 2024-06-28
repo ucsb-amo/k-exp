@@ -6,20 +6,39 @@ import numpy as np
 class tof(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select="andor",save_data=True)
 
         self.p.imaging_state = 2.
 
-        self.xvar('t_tof',np.linspace(10.,16.,10)*1.e-3)
+        # self.xvar('dummy',[1,1])
 
-        self.p.N_repeats = 3
+        self.xvar('t_lightsheet_hold',np.linspace(50.,2000.,10)*1.e-3)
 
-        self.p.t_mot_load = .3
+        self.p.v_pd_lightsheet_rampup_start = 0.
+        self.p.v_pd_lightsheet_rampup_end = 4.5
+
+        self.p.t_tof = 3.e-6
+        self.camera_params.amp_imaging = .07
+        self.p.t_imaging_pulse = 5.e-6
+        self.camera_params.exposure_time = 5.e-6
+        self.camera_params.em_gain = 290.
+        self.p.t_mot_load = .5
+        
+        self.p.t_lightsheet_rampup = 15.e-3
+        self.p.t_lightsheet_hold = 40.e-3
+
+        self.camera_params.amp_imaging = .3
+
+        self.p.N_repeats = 1
 
         self.finish_build(shuffle=True)
 
     @kernel
     def scan_kernel(self):
+
+        self.dds.init_cooling()
+
+        self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -30,11 +49,17 @@ class tof(EnvExperiment, Base):
                           v_xshim_current=self.p.v_xshim_current_gm)
 
         self.gm(self.p.t_gm * s)
-        self.ttl.pd_scope_trig.on()
         self.gm_ramp(self.p.t_gmramp)
-        self.ttl.pd_scope_trig.off()
 
         self.release()
+
+        self.flash_cooler()
+
+        self.ttl.pd_scope_trig.on()
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        delay(self.p.t_lightsheet_hold)
+        self.lightsheet.off()
+        self.ttl.pd_scope_trig.off()
 
         delay(self.p.t_tof)
         self.flash_repump()

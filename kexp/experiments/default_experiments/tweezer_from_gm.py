@@ -18,11 +18,19 @@ class rf_scan(EnvExperiment, Base):
         self.p.t_tweezer_1064_ramp = 10.e-3
 
         self.p.t_lightsheet_rampup = 25.e-3
+        
+        self.p.t_tof = 3.e-6
+        self.camera_params.amp_imaging = .07
+        self.p.t_imaging_pulse = 5.e-6
+        self.camera_params.exposure_time = 5.e-6
+        self.camera_params.em_gain = 290.
 
-        self.p.t_tof = 1.e-6
 
         self.p.t_mot_load = 0.5
         self.p.t_bias_off_wait = 2.e-3
+        
+
+
 
         self.finish_build(shuffle=True)
 

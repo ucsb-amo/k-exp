@@ -217,6 +217,8 @@ class Image():
         if detuning == dv:
             detuning = self.params.frequency_detuned_imaging
 
+        beat_sign = 1 # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
+
         self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging,amplitude=amp)
 
         f_minimum_offset_frequency = 150.e6
@@ -224,9 +226,10 @@ class Image():
         f_hyperfine_splitting_4s_MHz = 461.7 * 1.e6
         f_shift_resonance = f_hyperfine_splitting_4s_MHz / 2
 
-        f_ao_shift = self.dds.imaging.frequency * 2
+        f_ao_shift = self.dds.imaging.frequency * self.dds.imaging.aom_order * 2
 
-        f_offset = - detuning + f_shift_resonance + f_ao_shift
+        #f_offset = beat_sign * ( detuning - (f_shift_resonance + f_ao_shift) )
+        f_offset = beat_sign * (detuning - f_ao_shift - f_shift_resonance)
 
         if f_offset < f_minimum_offset_frequency:
             try: 

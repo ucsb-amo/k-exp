@@ -23,8 +23,8 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 19.4e6
-        self.frequency_detuned_imaging_F1 = 431.54e6 + 17.e6
+        self.frequency_detuned_imaging = 6.e6
+        self.frequency_detuned_imaging_F1 = 460.e6
         self.imaging_state = 2.
         
         self.t_repump_flash_imaging = 10.e-6
