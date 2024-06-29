@@ -22,9 +22,9 @@ class tof_scan(EnvExperiment, Base):
         # self.xvar('i_evap1_current',np.linspace(170.,190.,4))
         # self.xvar('frequency_detuned_imaging',np.linspace(-510.,-380.,25)*1.e6)
         # self.xvar('frequency_detuned_imaging',np.linspace(410.,515.,30)*1.e6)
-        self.xvar('frequency_detuned_imaging',np.arange(430.,470.,5)*1.e6)
+        self.xvar('frequency_detuned_imaging',np.arange(500.,1500.,8)*1.e6)
         # self.p.frequency_detuned_imaging_F1 = 437.e6
-        # self.p.frequency_detuned_imaging = 404.e6
+        # self.p.frequency_detuned_imaging = 458.e6
         # self.xvar('dummy',[1.]*500)
 
         self.p.t_mot_load = .5
@@ -137,8 +137,8 @@ class tof_scan(EnvExperiment, Base):
         
         # self.xvar('dummy_z',[0]*500)
 
-        self.camera_params.amp_imaging = .04
-        # self.xvar('amp_imaging',np.linspace(0.00,0.10,2))
+        self.camera_params.amp_imaging = .085
+        # self.xvar('amp_imaging',np.linspace(0.06,0.1,10))
         # self.p.t_imaging_pulse = 20.e-6
         # self.camera_params.exposure_time = 20.e-6
         # self.camera_params.em_gain = 290.
@@ -149,6 +149,8 @@ class tof_scan(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        # self.set_imaging_detuning(amp=self.p.amp_imaging)
 
         # self.set_high_field_imaging(i_outer = self.p.feshbach_field_ramp_list[-1])
 
@@ -230,10 +232,10 @@ class tof_scan(EnvExperiment, Base):
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown2_list)
         
-        self.ttl.pd_scope_trig.on()
-        self.outer_coil.off()
-        delay(self.p.t_feshbach_field_decay)
-        self.ttl.pd_scope_trig.off()
+        # self.ttl.pd_scope_trig.on()
+        # self.outer_coil.off()
+        # delay(self.p.t_feshbach_field_decay)
+        # self.ttl.pd_scope_trig.off()
 
         self.lightsheet.off()
         self.tweezer.off()
@@ -242,7 +244,7 @@ class tof_scan(EnvExperiment, Base):
         # self.flash_repump()
         self.abs_image()
 
-        # self.outer_coil.off()
+        self.outer_coil.off()
 
     @kernel
     def run(self):
