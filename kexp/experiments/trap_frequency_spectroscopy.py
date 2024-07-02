@@ -2,43 +2,42 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base
 import numpy as np
+from artiq.language.core import now_mu
 
-class tweezer_lightshift(EnvExperiment, Base):
+class trap_frequency_spectroscopy(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 1.
+        self.p.t_mot_load = 1.
 
-        self.p.t_mot_load = .75
-
-        # self.p.v_pd_tweezer_1064_rampdown2_end = 0.126
-        self.p.v_pd_tweezer_1064_rampdown2_end = 0.75
-        # self.p.t_tof = 2.e-6
+        self.p.t_tof = 4.e-6
 
         self.camera_params.amp_imaging = 0.09
-        self.p.t_imaging_pulse = 25.e-6
-        self.camera_params.exposure_time = 25.e-6
-        self.camera_params.em_gain = 290.
+        self.camera_params.exposure_time = 12.e-6
+        self.params.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.xvar('tweezer_on_during_imaging_bool',[0,1])
+        self.p.v_pd_lightsheet_rampdown_end = 6.
 
-        self.p.f0 = self.p.frequency_detuned_imaging
-        self.xvar('frequency_detuned_imaging',self.p.f0 + np.linspace(-10.,52.,30)*1.e6)
-
-        # self.xvar('t_tof', np.linspace(2,15,15)*1.e-6)
-
-        self.p.frequency_shift_repump = 0.
-        self.p.detune_repump_linewidths = 0.
-
-        self.p.N_repeats = 1
-
+        self.p.n_tweezers = 1
+        self.xvar('freq_tweezer_modulation', np.linspace(0,500,10)*1e3)
+        #both amplitude and frequency arrays should have 2 elements
+        self.p.amp_tweezer_list = [0.2]
+       
+        # print(self.p.frequency_tweezer_list)
+        
         self.finish_build(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        # self.set_imaging_detuning(amp=self.p.amp_imaging)
+        freq_tweezer_mod_list = self.p.frequency_aod_center + np.array([-1*self.p.freq_tweezer_modulation, 0., self.p.freq_tweezer_modulation])
+        amp_tweezer_mod_list = [0.2,0.2,0.2]
+
+        self.core.wait_until_mu(now_mu())
+        self.tweezer.set_static_tweezers(freq_tweezer_mod_list, amp_tweezer_mod_list)
+        self.core.break_realtime()
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -55,7 +54,7 @@ class tweezer_lightshift(EnvExperiment, Base):
         
         self.gm_ramp(self.p.t_gmramp)
 
-        # self.release()
+        self.release()
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
@@ -68,6 +67,7 @@ class tweezer_lightshift(EnvExperiment, Base):
                           v_xshim_current=self.p.v_xshim_current_magtrap)
 
         # magtrap start
+        self.ttl.pd_scope_trig.pulse(1*us)
         self.inner_coil.on()
 
         # ramp up lightsheet over magtrap
@@ -83,25 +83,28 @@ class tweezer_lightshift(EnvExperiment, Base):
         delay(self.p.t_magtrap)
 
         self.inner_coil.off()
+
         # delay(self.p.t_lightsheet_hold)
+        
         self.outer_coil.on()
 
         for i in self.p.feshbach_field_rampup_list:
             self.outer_coil.set_current(i_supply=i)
             delay(self.p.dt_feshbach_field_rampup)
         delay(20.e-3)
-        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
+        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
         
         for i in self.p.feshbach_field_ramp_list:
             self.outer_coil.set_current(i_supply=i)
             delay(self.p.dt_feshbach_field_ramp)
         delay(20.e-3)
-        
-        # delay(10.e-3)
+
         self.tweezer.vva_dac.set(v=0.)
         self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+
+        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
 
         self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
 
@@ -113,32 +116,26 @@ class tweezer_lightshift(EnvExperiment, Base):
         # delay(10.e-3)
 
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown2_list)
-
+        
         self.ttl.pd_scope_trig.on()
         self.outer_coil.off()
         delay(self.p.t_feshbach_field_decay)
         self.ttl.pd_scope_trig.off()
 
-        # self.p.frequency_shift_repump = (self.p.frequency_detuned_imaging - self.p.f0)
-        # self.p.detune_repump_linewidths = self.p.frequency_shift_repump / 6.e6
-
-        if not self.p.tweezer_on_during_imaging_bool:
-            self.tweezer.off()
         self.lightsheet.off()
-        # self.tweezer.off()
+        self.tweezer.off()
     
         delay(self.p.t_tof)
-        # self.flash_repump(detune=self.p.detune_repump_linewidths)
+        # self.flash_repump()
         self.abs_image()
-
-        if self.p.tweezer_on_during_imaging_bool:
-            self.tweezer.off()
 
         # self.outer_coil.off()
 
     @kernel
     def run(self):
         self.init_kernel()
+
+        self.dds.ry_405.on()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()

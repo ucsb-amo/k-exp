@@ -10,7 +10,7 @@ class img_detuning(EnvExperiment, Base):
 
         self.p.imaging_state = 2.
 
-        self.xvar('frequency_detuned_imaging',np.linspace(10.,27.,15)*1.e6)
+        self.xvar('frequency_detuned_imaging',np.arange(40.,100.,2)*1.e6)
 
         self.p.t_tof = 10.e-3
 

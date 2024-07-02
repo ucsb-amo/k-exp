@@ -10,35 +10,33 @@ class rf_scan(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
-        self.p.imaging_state = 2.
+        self.p.imaging_state = 1.
         # self.xvar('imaging_state',[2,1])
 
         # self.p.N_repeats = [3]
 
         self.xvar('beans',[0,1]*300)
 
-        self.p.v_pd_tweezer_1064_ramp_end = 8.
+        # self.p.v_pd_tweezer_1064_ramp_end = 8.
         # self.p.t_tweezer_1064_ramp = 10.e-3
-        self.p.t_tweezer_hold = 20.e-3
+        # self.p.t_tweezer_hold = 20.e-3
 
-        self.p.n_tweezers = 2
-        self.p.frequency_tweezer_array_width = 1.e6
+        # self.p.n_tweezers = 2
+        # self.p.frequency_tweezer_array_width = 1.e6
 
         # self.p.t_lightsheet_rampup = 200.e-3
 
-        self.p.t_tof = 3.e-6
-        self.camera_params.amp_imaging = .07
-        self.p.t_imaging_pulse = 5.e-6
-        self.camera_params.exposure_time = 5.e-6
-        self.camera_params.em_gain = 290.
+        self.p.t_tof = 5.e-6
+        self.camera_params.amp_imaging = .09
+        # self.p.t_imaging_pulse = 5.e-6
+        # self.camera_params.exposure_time = 5.e-6
+        # self.camera_params.em_gain = 290.
 
         self.finish_build(shuffle=False)
 
     @kernel
     def scan_kernel(self):
-        self.dds.init_cooling()
 
-        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -145,9 +143,7 @@ class rf_scan(EnvExperiment, Base):
             
             # delay(10.e-3)
             self.tweezer.vva_dac.set(v=0.)
-            self.dds.tweezer.on()
-            self.ttl.awg.on()
-            self.tweezer.zero_and_pause_pid()
+            self.tweezer.on()
             self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
             self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
@@ -165,7 +161,7 @@ class rf_scan(EnvExperiment, Base):
             self.tweezer.off()
 
         delay(self.p.t_tof)
-        self.flash_repump()
+        # self.flash_repump()
         self.abs_image()
 
     @kernel

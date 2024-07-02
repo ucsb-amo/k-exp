@@ -8,26 +8,28 @@ class rf_scan(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.imaging_state = 2.
+        self.p.imaging_state = 1.
         # self.xvar('imaging_state',[2,1])
+        # self.xvar('frequency_detuned_imaging',np.linspace(20.,80.,40)*1.e6)
 
-        self.p.t_magtrap = 30.e-3
+        # self.xvar('t_lightsheet_hold',np.linspace(10.,2000.,20)*1.e-3)
+        # self.xvar('t_lightsheet_rampup',np.linspace(100.,1000.,8)*1.e-3)
+        # self.xvar('t_magtrap',np.linspace(0.,1000.,8)*1.e-3)
+        # self.xvar('t_magtrap_ramp',np.linspace(12.,1000.,8)*1.e-3)
+        # self.xvar('i_magtrap_ramp_end',np.linspace(20.,95.,8))
+        # self.xvar('i_magtrap_init',np.linspace(10.,30.,8))
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.,9.,6))
 
-        self.xvar('t_lightsheet_hold',np.linspace(10.,2000.,20)*1.e-3)
-        # self.xvar('t_lightsheet_rampup',np.linspace(400.,1500.,8)*1.e-3)
-        # self.xvar('i_magtrap_ramp_start',np.linspace(20.,95.,8))
-        # self.xvar('i_magtrap_init',np.linspace(20.,95.,8))
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,3.5,8))
+        self.p.t_magtrap = .01
+        self.p.t_magtrap_ramp = 1.
 
         # self.xvar('t_tof',np.linspace(10.,200.,5)*1.e-6)
-        self.p.t_tof = 10.e-6
-
-        self.p.t_lightsheet_rampup = 200.e-3
         self.p.t_lightsheet_hold = .5
+        self.p.t_tof = 200.e-6
 
         # self.p.t_magtrap_ramp = 100.e-3
         
-        # self.xvar('dummy',[0]*5)
+        self.xvar('dummy',[0]*20)
         
         # self.p.v_pd_lightsheet_rampup_end = 0.638
 
@@ -48,45 +50,43 @@ class rf_scan(EnvExperiment, Base):
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
-        
         self.gm(self.p.t_gm * s)
-
-        self.ttl.pd_scope_trig.on()
-
         self.gm_ramp(self.p.t_gmramp)
 
         # self.release()
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
+        self.ttl.pd_scope_trig.on()
+
         self.flash_cooler()
 
         self.dds.power_down_cooling()
 
-        self.set_shims(v_zshim_current=0.,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                          v_xshim_current=self.p.v_xshim_current_gm)
+        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
+                        v_yshim_current=self.p.v_yshim_current_magtrap,
+                          v_xshim_current=self.p.v_xshim_current_magtrap)
         
-        # magtrap start
-        self.inner_coil.igbt_ttl.on()
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
+        self.inner_coil.on()
 
-        # ramp up ligthsheet over magtrap
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
         for i in self.p.magtrap_ramp_list:
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
-        delay(30.e-3)
+
+        delay(self.p.t_magtrap)        
 
         self.inner_coil.off()
-        self.ttl.pd_scope_trig.off()
 
         delay(self.p.t_lightsheet_hold)
+
+        self.ttl.pd_scope_trig.off()
+
         self.lightsheet.off()
     
         delay(self.p.t_tof)
-        self.flash_repump()
+        # self.flash_repump()
         self.abs_image()
 
     @kernel
