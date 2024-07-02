@@ -23,7 +23,7 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 6.e6
+        self.frequency_detuned_imaging = 61.5e6
         self.frequency_detuned_imaging_F1 = 460.e6
         self.imaging_state = 2.
         
@@ -61,11 +61,11 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap = 800.e-3
-        self.t_magtrap_ramp = 500.e-3
+        self.t_magtrap = 1.
+        self.t_magtrap_ramp = 1.
         self.t_feshbach_field_rampup = 100.e-3
         self.t_feshbach_field_ramp = 200.e-3
-        self.t_feshbach_field_decay = 3.e-3
+        self.t_feshbach_field_decay = 20.e-3
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -146,8 +146,8 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 29.
-        self.i_magtrap_ramp_end = 66.
+        self.i_magtrap_init = 24.
+        self.i_magtrap_ramp_end = 84.
         self.n_magtrap_ramp_steps = 1000
 
         self.v_zshim_current_magtrap = 0.
@@ -176,7 +176,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_end = 9.
 
         self.n_lightsheet_rampdown_steps = 1000
-        self.v_pd_lightsheet_rampdown_end = 2.8
+        self.v_pd_lightsheet_rampdown_end = 2.3
 
         self.n_lightsheet_rampdown2_steps = 1000
         self.v_pd_lightsheet_rampdown2_end = .2
@@ -202,8 +202,9 @@ class ExptParams():
 
         self.frequency_aod_center = 75.e6
 
-        #frequency of outer most tweezers, to be added / subtracted from the center frequency of 75 MHz
-        self.frequency_tweezer_array_width = .7e6
+        #frequency spacing between each tweezer in the array
+        #tweezers uniformly distributed around center frequency of AOD
+        self.frequency_tweezer_spacing = .7e6*2
 
         self.amp_tweezer_auto_compute = False
         self.amp_tweezer_list = [.2,.215]
@@ -232,11 +233,16 @@ class ExptParams():
         self.amp_ao_ry_405 = 0.2
         self.amp_ao_ry_980 = 0.285
 
-        # evap
-        self.i_evap1_current = 9.5
-        self.i_evap2_current = 31.3
-        self.i_tweezer_evap_current = 25.
-        self.i_evap3_current = 16.4
+        # low field evap
+        # self.i_evap1_current = 9.5
+        # self.i_evap2_current = 31.3
+        # self.i_tweezer_evap_current = 25.
+        # self.i_evap3_current = 16.4
+
+        # high field evap
+        self.i_evap1_current = 184.
+        self.i_evap2_current = 179.
+        self.i_tweezer_evap_current = 181.
 
         # high field imaging
         self._slope_imaging_frequency_per_iouter_current = -4.08715595e+06
@@ -323,10 +329,16 @@ class ExptParams():
         self.v_pd_d1_c_gm = cal.power_fraction_to_vva(self.pfrac_d1_c_gm)
         self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
     
+    # def compute_tweezer_1064_freqs(self):
+    #     min_f = self.frequency_aod_center - self.frequency_tweezer_spacing
+    #     max_f = self.frequency_aod_center + self.frequency_tweezer_spacing
+    #     self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
+
     def compute_tweezer_1064_freqs(self):
-        min_f = self.frequency_aod_center - self.frequency_tweezer_array_width
-        max_f = self.frequency_aod_center + self.frequency_tweezer_array_width
+        min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
+        max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
         self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
+
 
     def compute_tweezer_1064_amps(self):
         if self.amp_tweezer_auto_compute:
