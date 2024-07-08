@@ -119,6 +119,11 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.tweezer.awg_init()
         self.core.break_realtime() # add slack before scheduling experiment events
 
+        self.dds.ry_405.set_dds(set_stored=True)
+        self.dds.ry_980.set_dds(set_stored=True)
+        self.dds.ry_405.on()
+        self.dds.ry_980.on()
+
     @kernel
     def init_scan_kernel(self):
         self.dds.init_cooling()
@@ -137,19 +142,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.pid_int_hold_zero.on()
-
-        # self.dds.d2_2d_c.set_dds_gamma(delta=self.p.detune_d2_c_2dmot,
-        #                          amplitude=self.p.amp_d2_c_2dmot)
-        # delay(self.params.t_rtio)
-        # self.dds.d2_2d_r.set_dds_gamma(delta=self.p.detune_d2_r_2dmot,
-        #                          amplitude=self.p.amp_d2_r_2dmot)
-        # delay(self.params.t_rtio)
-        # self.dds.push.set_dds_gamma(delta=self.p.detune_push,
-        #                          amplitude=self.p.amp_push)
-        
-        # self.dac.supply_current_2dmot.set(v=self.p.i_2d_mot)
-        # self.switch_d2_2d(1)
-        # delay(1.)
 
     def prepare_image_array(self):
         if self.run_info.save_data:

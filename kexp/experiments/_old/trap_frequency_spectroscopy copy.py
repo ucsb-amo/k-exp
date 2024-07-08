@@ -20,33 +20,53 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
 
         self.p.v_pd_lightsheet_rampdown_end = 6.
 
-        # self.xvar('freq_tweezer_modulation',np.linspace(0.,50.,1)*1.e3)
-        self.p.freq_tweezer_modulation = 100.
+        self.p.frequency_tweezer_list = [self.p.frequency_aod_center,0.,0.]
+        self.p.amp_tweezer_list = [0.2,0.,0.]
+       
+        self.xvar('freq_tweezer_modulation',np.linspace(4.,8.,20)*1.e3)
 
         self.p.t_tweezer_hold = 50.e-3
 
         self.p.N_repeats = 1
 
-        self.p.freq_mod_depth = 100.
-
         import vxi11
-        self.fg = vxi11.Instrument("192.168.1.91")
+        self.awg = vxi11.Instrument("192.168.1.91")
         
         self.finish_build(shuffle=True)
 
-    def set_afg_fm_frequency(self,freq_fm):
-        self.fg.write(f"C2:MDWV CARR,FRQ,{freq_fm:1.0f}")
-
-    def set_mod_depth(self,freq_mod_depth):
-        self.fg.write(f"C1:MDWV CARR,DEVI,{freq_mod_depth:1.0f}")
+    def set_awg_fm_frequency(self,freq_fm,freq_fm_mod_depth=1.e6):
+        # self.awg.write(f"C1:MDWV CARR,DEVI,{freq_fm_mod_depth:1.0f}")
+        self.awg.write(f"C2:MDWV CARR,FRQ,{freq_fm:1.0f}")
 
     @kernel
     def scan_kernel(self):
 
         self.core.wait_until_mu(now_mu())
-        self.set_afg_fm_frequency(freq_fm=self.p.freq_tweezer_modulation)
-        self.set_mod_depth(0.)
+        self.set_awg_fm_frequency(freq_fm=self.p.freq_tweezer_modulation)
         delay(50*ms)
+
+        # kill modulation
+        self.dac.fm_tweezer.set(-9.99)
+
+        # self.core.wait_until_mu(now_mu())
+        # self.setup_tweezers()
+        # self.core.break_realtime()
+
+        # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+        # self.tweezer.pid_int_hold_zero.on()
+
+        #####
+        # freq_tweezer_mod_list = self.p.frequency_aod_center \
+        #     + self.p.freq_tweezer_modulation * np.array([-1., 0., 1.])
+        # # amp_tweezer_mod_list = [0.02,0.2,0.02]
+        # amp_tweezer_mod_list = [0.2,0.2,0.2]
+
+        # self.core.wait_until_mu(now_mu())
+        # self.tweezer.set_static_tweezers(freq_tweezer_mod_list, amp_tweezer_mod_list)
+        # self.core.break_realtime()
+        ####
+
+        # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -115,14 +135,10 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
 
         self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
         self.lightsheet.off()
-        # delay(10*ms)
+        delay(10*ms)
 
         # turn on modulation
-        self.core.wait_until_mu(now_mu())
-        if self.p.freq_tweezer_modulation != 0.:
-            self.set_mod_depth(freq_mod_depth=self.p.freq_mod_depth)
-            # pass
-        delay(50*ms)
+        self.dac.fm_tweezer.set(9.99)
         
         delay(self.p.t_tweezer_hold)
         
@@ -136,6 +152,8 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         delay(self.p.t_tof)
         # self.flash_repump()
         self.abs_image()
+
+        # self.outer_coil.off()
 
     @kernel
     def run(self):

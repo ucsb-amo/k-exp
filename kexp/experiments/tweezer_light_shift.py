@@ -12,9 +12,8 @@ class tweezer_lightshift(EnvExperiment, Base):
 
         self.p.t_mot_load = .75
 
-        # self.p.v_pd_tweezer_1064_rampdown2_end = 0.126
-        self.p.v_pd_tweezer_1064_rampdown2_end = 0.75
-        # self.p.t_tof = 2.e-6
+        self.p.v_pd_lightsheet_rampdown_end = 6.
+        self.p.v_pd_tweezer_1064_ramp_end = 5.8
 
         self.camera_params.amp_imaging = 0.09
         self.p.t_imaging_pulse = 25.e-6
@@ -23,13 +22,10 @@ class tweezer_lightshift(EnvExperiment, Base):
 
         self.xvar('tweezer_on_during_imaging_bool',[0,1])
 
-        self.p.f0 = self.p.frequency_detuned_imaging
-        self.xvar('frequency_detuned_imaging',self.p.f0 + np.linspace(-10.,52.,30)*1.e6)
+        self.p.f0 = self.p.frequency_detuned_imaging_F1
+        self.xvar('frequency_detuned_imaging_F1',self.p.f0 + np.arange(100.,200.,6)*1.e6)
 
         # self.xvar('t_tof', np.linspace(2,15,15)*1.e-6)
-
-        self.p.frequency_shift_repump = 0.
-        self.p.detune_repump_linewidths = 0.
 
         self.p.N_repeats = 1
 
@@ -38,7 +34,7 @@ class tweezer_lightshift(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # self.set_imaging_detuning(amp=self.p.amp_imaging)
+        self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -91,7 +87,6 @@ class tweezer_lightshift(EnvExperiment, Base):
             delay(self.p.dt_feshbach_field_rampup)
         delay(20.e-3)
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
-
         
         for i in self.p.feshbach_field_ramp_list:
             self.outer_coil.set_current(i_supply=i)
@@ -105,36 +100,20 @@ class tweezer_lightshift(EnvExperiment, Base):
 
         self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
 
-        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
-
-        # self.outer_coil.set_current(i_supply=self.p.i_tweezer_evap_current)
-
-        # self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
-        # delay(10.e-3)
-
-        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown2_list)
-
         self.ttl.pd_scope_trig.on()
         self.outer_coil.off()
         delay(self.p.t_feshbach_field_decay)
         self.ttl.pd_scope_trig.off()
 
-        # self.p.frequency_shift_repump = (self.p.frequency_detuned_imaging - self.p.f0)
-        # self.p.detune_repump_linewidths = self.p.frequency_shift_repump / 6.e6
-
         if not self.p.tweezer_on_during_imaging_bool:
             self.tweezer.off()
         self.lightsheet.off()
-        # self.tweezer.off()
     
         delay(self.p.t_tof)
-        # self.flash_repump(detune=self.p.detune_repump_linewidths)
         self.abs_image()
 
         if self.p.tweezer_on_during_imaging_bool:
             self.tweezer.off()
-
-        # self.outer_coil.off()
 
     @kernel
     def run(self):

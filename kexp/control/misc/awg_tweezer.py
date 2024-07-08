@@ -120,7 +120,7 @@ class tweezer():
 
         Raises:
             ValueError: _description_
-        """        
+        """
 
         if len(freq_list) != len(amp_list):
             raise ValueError('Amplitude and frequency lists are not of equal length')
@@ -132,7 +132,7 @@ class tweezer():
             else:
                 pass
         self.dds.exec_at_trg()
-
+        
         self.dds.write_to_card()
 
     # def close(self):

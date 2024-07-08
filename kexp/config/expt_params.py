@@ -23,7 +23,7 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 61.5e6
+        self.frequency_detuned_imaging = 64.e6
         self.frequency_detuned_imaging_F1 = 460.e6
         self.imaging_state = 2.
         
@@ -48,7 +48,7 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 300.e-3
-        self.t_lightsheet_rampdown = .6
+        self.t_lightsheet_rampdown = .8
         self.t_lightsheet_rampdown2 = .2
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
@@ -338,7 +338,6 @@ class ExptParams():
         min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
         max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
         self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
-
 
     def compute_tweezer_1064_amps(self):
         if self.amp_tweezer_auto_compute:

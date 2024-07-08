@@ -704,8 +704,8 @@ class Cooling():
         delay(1*ms)
         self.switch_d2_2d(1)
 
-        # self.dds.ry_405.on()
-        # self.dds.ry_980.on()
+        self.dds.ry_405.on()
+        self.dds.ry_980.on()
 
         self.dds.beatlock_ref.on()
 
