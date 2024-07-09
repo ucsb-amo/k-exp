@@ -47,9 +47,9 @@ def crop_OD(OD,crop_type='',Nvars=1):
     elif crop_type == 'andor_tweezer_smol':
         roix = [245,340]
         roiy = [255,300]
-    elif crop_type == 'lightsheet_wide':
-        roix = [860,1100]
-        roiy = [350,800]
+    elif crop_type == 'single_tweezer':
+        roix = [270,310]
+        roiy = [245,310]
     else:
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]]
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]]

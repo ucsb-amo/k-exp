@@ -4,6 +4,10 @@ from kexp import Base
 import numpy as np
 from artiq.language.core import now_mu
 
+from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
+
+T32 = 1<<32
+
 class trap_frequency_spectroscopy(EnvExperiment, Base):
 
     def build(self):
@@ -20,33 +24,68 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
 
         self.p.v_pd_lightsheet_rampdown_end = 6.
 
-        # self.xvar('freq_tweezer_modulation',np.linspace(0.,50.,1)*1.e3)
-        self.p.freq_tweezer_modulation = 100.
+        self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,5.,4))
+        # self.p.v_pd_tweezer_1064_ramp_end = 2.
 
-        self.p.t_tweezer_hold = 50.e-3
+        # self.xvar('v_modulation_depth',np.linspace(0.1,1.5,6))
+        self.p.v_modulation_depth = 1.25
 
-        self.p.N_repeats = 1
+        self.xvar('freq_tweezer_modulation',np.linspace(10.,70.,30)*1.e3)
+        self.p.freq_tweezer_modulation = 2.95e3
 
-        self.p.freq_mod_depth = 100.
+        # self.xvar('t_fm',np.linspace(1.,20.,5)*1.e-3)
+        self.p.t_fm = 12.e-3
 
-        import vxi11
-        self.fg = vxi11.Instrument("192.168.1.91")
+        self.fm = False
+
+        self.p.t_tweezer_hold = 30.e-3
+
+        self.sh_dds = self.get_device("shuttler0_dds0")
+        self.sh_dds: DDS
+        self.sh_trigger = self.get_device("shuttler0_trigger")
+        self.sh_trigger: Trigger
+        self.sh_relay = self.get_device("shuttler0_relay")
+        self.sh_relay: Relay
         
         self.finish_build(shuffle=True)
-
-    def set_afg_fm_frequency(self,freq_fm):
-        self.fg.write(f"C2:MDWV CARR,FRQ,{freq_fm:1.0f}")
-
-    def set_mod_depth(self,freq_mod_depth):
-        self.fg.write(f"C1:MDWV CARR,DEVI,{freq_mod_depth:1.0f}")
 
     @kernel
     def scan_kernel(self):
 
-        self.core.wait_until_mu(now_mu())
-        self.set_afg_fm_frequency(freq_fm=self.p.freq_tweezer_modulation)
-        self.set_mod_depth(0.)
-        delay(50*ms)
+        ###
+        frequency = self.p.freq_tweezer_modulation
+
+        n0 = shuttler_volt_to_mu(self.p.v_modulation_depth)
+        n1 = 0.
+        n2 = 0.
+        n3 = 0.
+        r0 = 0.
+        r1 = frequency
+        r2 = 0.
+
+        T = 8.e-9
+        g = 1.64676
+        q0 = n0/g
+        q1 = n1/g
+        q2 = n2/g
+        q3 = n3/g
+
+        b0 = np.int32(q0)
+        b1 = np.int32(q1 * T + q2 * T**2 / 2 + q3 * T**3 / 6)
+        b2 = np.int64(q2 * T**2 + q3 * T**3)
+        b3 = np.int64(q3 * T**3)
+
+        c0 = np.int32(r0)
+        c1 = np.int32((r1 * T + r2 * T**2) * T32)
+        c2 = np.int32(r2 * T**2)
+
+        self.sh_dds.set_waveform(b0=b0, b1=b1, b2=b2, b3=b3, c0=c0, c1=c1, c2=c2)
+        self.sh_trigger.trigger(0b11)
+
+        self.sh_relay.init()
+        self.sh_relay.enable(0b00)
+
+        ###
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -60,7 +99,6 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
                           v_xshim_current=self.p.v_xshim_current_gm)
         self.gm(self.p.t_gm * s)
 
-        
         self.gm_ramp(self.p.t_gmramp)
 
         self.release()
@@ -115,14 +153,14 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
 
         self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
         self.lightsheet.off()
-        # delay(10*ms)
 
         # turn on modulation
-        self.core.wait_until_mu(now_mu())
-        if self.p.freq_tweezer_modulation != 0.:
-            self.set_mod_depth(freq_mod_depth=self.p.freq_mod_depth)
-            # pass
-        delay(50*ms)
+        if self.fm:
+            self.sh_relay.enable(0b11)
+            delay(self.p.t_fm)
+            self.sh_relay.enable(0b00)
+        else:
+            delay(self.p.t_fm)
         
         delay(self.p.t_tweezer_hold)
         
