@@ -55,7 +55,9 @@ class Devices():
         self.get_ttl_devices()
 
         # set up dds_frame
-        self.dds = dds_frame(dac_frame_obj=self.dac, core=self.core, expt_params=self.params)
+        self.dds = dds_frame(dac_frame_obj=self.dac,
+                             shuttler_frame_obj=self.shuttler,
+                              core=self.core, expt_params=self.params)
         # self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
