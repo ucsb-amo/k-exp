@@ -88,8 +88,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
     @kernel
     def init_kernel(self, run_id = True, init_dds = True, init_dac = True,
-                     dds_set = True, dds_off = True, beat_ref_on=True,
-                     init_lightsheet = True, setup_awg = True):
+                    init_shuttler = True, dds_set = True, dds_off = True, 
+                    beat_ref_on=True, init_lightsheet = True, setup_awg = True):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         self.core.reset() # clears RTIO
@@ -98,6 +98,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             delay(self.params.t_rtio)
             self.dac.dac_device.init() # initializes DAC
             delay(self.params.t_rtio)
+        if init_shuttler:
+            self.shuttler.init()
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
             self.init_all_dds() # initializes DDS channels
