@@ -5,6 +5,7 @@ from artiq.experiment import kernel
 
 from kexp.control import DDS, DummyCore
 from kexp.config.dac_id import dac_frame
+from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 from kexp.config.dds_calibration import DDS_VVA_Calibration
 
@@ -35,7 +36,8 @@ class dds_frame():
     '''
     def __init__(self, expt_params:ExptParams=d_exptparams,
                   dac_frame_obj:dac_frame = [],
-                    core = DummyCore()):
+                  shuttler_frame_obj:shuttler_frame = [],
+                  core = DummyCore()):
         
         self.p = expt_params
 
