@@ -1,0 +1,1 @@
+from .magnets import i_outer_to_magnetic_field
