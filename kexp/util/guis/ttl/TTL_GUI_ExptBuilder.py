@@ -79,7 +79,7 @@ class TTLGUIExptBuilder():
         returncode = self.run_expt()
         return returncode
     
-    def execute_all_ttl_off(self, START_TTL, NUM_TTL):
+    def execute_all_ttl_off(self, TTL_IDX_LIST):
 
         script = textwrap.dedent(f"""
             from artiq.experiment import *
@@ -88,7 +88,7 @@ class TTLGUIExptBuilder():
                     # Specify the TTL device you want to control
                     self.core = self.get_device("core")
                     self.beans = []
-                    for ch in range({START_TTL},{NUM_TTL}):
+                    for ch in {TTL_IDX_LIST}:
                         self.beans.append(self.get_device("ttl"+str(ch)))
                 
                 @kernel
