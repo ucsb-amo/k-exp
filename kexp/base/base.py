@@ -87,17 +87,16 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         pass
 
     @kernel
-    def init_kernel(self, run_id = True, init_dds = True, init_dac = True,
+    def init_kernel(self, run_id = True, init_dds =  True, init_dac = True,
                      dds_set = True, dds_off = True, beat_ref_on=True,
                      init_lightsheet = True, setup_awg = True):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
+        if setup_awg:
+            self.tweezer.awg_init()
         self.core.reset() # clears RTIO
-        delay(1*s)
         if init_dac:
-            delay(self.params.t_rtio)
             self.dac.dac_device.init() # initializes DAC
-            delay(self.params.t_rtio)
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
             self.init_all_dds() # initializes DDS channels
@@ -105,19 +104,12 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             delay(1*ms)
             self.set_all_dds() # set DDS to default values
             self.set_imaging_detuning()
-            # self.dds.tweezer.set_dds(frequency=80.e6,amplitude=self.p.amp_tweezer)
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
         if beat_ref_on:
             self.dds.beatlock_ref.on()
-        # if init_rf:
-        #     self.rf.init()
         if init_lightsheet:
             self.lightsheet.init()
-        self.core.wait_until_mu(now_mu())
-        if setup_awg:
-            self.tweezer.awg_init()
-        self.core.break_realtime() # add slack before scheduling experiment events
 
         self.dds.ry_405.set_dds(set_stored=True)
         self.dds.ry_980.set_dds(set_stored=True)
