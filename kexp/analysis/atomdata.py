@@ -4,6 +4,12 @@ from kexp.util.data.data_vault import DataSaver
 import numpy as np
 from kamo.atom_properties.k39 import Potassium39
 
+class analysis_tags():
+    def __init__(self,crop_type,absorption_analysis,unshuffle_xvars):
+        self.crop_type = crop_type
+        self.absorption_analysis = absorption_analysis
+        self.unshuffle_xvars = unshuffle_xvars
+
 class atomdata():
     
     '''
@@ -19,11 +25,16 @@ class atomdata():
     This class also handles saving parameters from expt.params to the dataset.
     '''
     def __init__(self, xvarnames, images, image_timestamps, params, camera_params,
-                  run_info, sort_idx, sort_N, expt_text, unshuffle_xvars = True, crop_type='mot'):
+                  run_info, sort_idx, sort_N, expt_text,
+                    unshuffle_xvars = True, crop_type='',
+                    transpose_idx=[]):
 
         self._ds = DataSaver()
         self.run_info = run_info
         absorption_analysis = self.run_info.absorption_image
+        self._analysis_tags = analysis_tags(crop_type,
+                                            absorption_analysis,
+                                            unshuffle_xvars)
     
         self.images = images
         self.img_timestamps = image_timestamps
@@ -40,18 +51,93 @@ class atomdata():
 
         self.atom = Potassium39()
 
-        if absorption_analysis:
+        self._sort_images()
+        if transpose_idx:
+            self.transpose_data(transpose_idx)
+        else:
+            self.analyze()
+
+    def transpose_data(self,new_xvar_idx=[]):
+        """Swaps xvar order, then reruns the analysis.
+
+        Args:
+            new_xvar_idx (list): The list of indices specifying the new order of
+            the original xvars. 
+            
+            For example, in a run with four xvars, specifying [0,2,1,3] means
+            that the second and third xvar will be swapped, while the first and
+            fourth remain unchanged.
+
+            No list needs to be provided for the case of one or two xvars. In
+            the case of one xvar, does nothing.
+
+            new_var_idx can also be set to True in the case of one or two xvars,
+            for convenience.
+        """        
+        Nvars = len(self.xvars)
+
+        if new_xvar_idx == [] or new_xvar_idx == True:
+            if Nvars == 1:
+                print('There is only one variable -- no dimensions to permute.')
+                pass
+            elif Nvars == 2:
+                new_xvar_idx = [1,0] # by default, flip for just two vars
+            else:
+                raise ValueError('For more than two variables, you must specify the new xvar order.')
+        elif len(new_xvar_idx) != Nvars:
+            raise ValueError('You must specify a list of axis indices that match the number of xvars.')
+
+        # for things of a listlike nature which have one element per xvar, and so
+        # should have the elements along the first dimension reorderd according
+        # to the new_xvar_idx (instead of their axes swapped).
+        listlike_keys = ['xvars','sort_idx','xvarnames','sort_N']
+        for key in listlike_keys:
+            attr = vars(self)[key]
+            new_attr = [attr[i] for i in new_xvar_idx]
+            if isinstance(attr,np.ndarray):
+                new_attr = np.array(new_attr)
+            vars(self)[key] = new_attr
+
+        # for things of an ndarraylike nature which have one axis per xvar, and
+        # so should have the order of their axes switched.
+        ndarraylike_keys = ['img_atoms','img_light','img_dark','img_tstamps']
+        for key in ndarraylike_keys:
+            attr = vars(self)[key]
+            # figure out how many extra indices each has. add them to the new
+            # axis index list without changing their order.
+            ndim = np.ndim(attr)
+            dims_to_add = ndim - Nvars
+            axes_idx_to_add = [Nvars+i for i in range(dims_to_add)]
+            new_idx = np.concatenate( (new_xvar_idx, axes_idx_to_add) ).astype(int)
+            
+            attr = np.transpose(attr,new_idx)
+            vars(self)[key] = attr
+
+        self.analyze()
+    
+    def _sort_images(self):
+        if self._analysis_tags.absorption_analysis:
             self._sort_images_absorption()
+        else:
+            self._sort_images_fluor()
+
+    def analyze(self,crop_type='',unshuffle_xvars=None,absorption_analysis=None):
+        if not crop_type:
+            crop_type = self._analysis_tags.crop_type
+        if not unshuffle_xvars:
+            unshuffle_xvars = self._analysis_tags.unshuffle_xvars
+        if not absorption_analysis:
+            absorption_analysis = self._analysis_tags.absorption_analysis
+
+        if absorption_analysis:
             self._analyze_absorption_images(crop_type)
             self.atom_cross_section = self.atom.get_cross_section()
             self.atom_number_density = self.od / self.atom_cross_section * (self.camera_params.pixel_size_m / self.camera_params.magnification)**2
             self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
         else:
-            self._sort_images_fluor()
             self._analyze_fluorescence_images()
         self._remap_fit_results()
-        
-
+    
         if unshuffle_xvars:
             self.unshuffle_ad()
 
@@ -95,6 +181,7 @@ class atomdata():
         expt: EnvExperiment
             The experiment object, called to save datasets.
 
+            
         crop_type: str
             Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
             options: 'mot'.
