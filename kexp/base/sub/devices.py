@@ -62,7 +62,7 @@ class Devices():
                                          v_control_dac=self.dac.inner_coil_supply_voltage,
                                          i_control_dac=self.dac.inner_coil_supply_current,
                                          igbt_ttl=self.ttl.inner_coil_igbt,
-                                         contactor_ttl=self.ttl.coil_contactor_placeholder,
+                                         discharge_igbt_ttl=self.ttl.inner_coil_discharge_igbt,
                                          hbridge_ttl=self.ttl.hbridge_helmholtz,
                                          expt_params=self.params)
                                       
@@ -71,7 +71,7 @@ class Devices():
                                       v_control_dac=self.dac.outer_coil_supply_voltage,
                                       i_control_dac=self.dac.outer_coil_supply_current,
                                       igbt_ttl=self.ttl.outer_coil_igbt,
-                                      contactor_ttl=self.ttl.coil_contactor_placeholder,
+                                      discharge_igbt_ttl=self.ttl.outer_coil_discharge_igbt,
                                       expt_params=self.params)
         
         # painted ligthsheet
@@ -120,10 +120,10 @@ class Devices():
     def init_all_dds(self):
         for dds in self.dds.dds_list:
             dds.dds_device.init()
-            delay(1*ms)
+            delay(100*us)
 
     @kernel
     def init_all_cpld(self):
         for dds in self.dds.dds_list:
             dds.cpld_device.init()
-            delay(1*ms)
+            delay(100*us)

@@ -37,6 +37,7 @@ class ExptParams():
 
         #Cooling timing
         self.t_tof = 20.e-6
+        self.t_discharge_igbt = 2.e-3
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 0.5
