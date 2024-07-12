@@ -25,18 +25,18 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         self.p.v_pd_lightsheet_rampdown_end = 6.
 
         self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,5.,4))
-        # self.p.v_pd_tweezer_1064_ramp_end = 2.
+        self.p.v_pd_tweezer_1064_ramp_end = 3.
 
         # self.xvar('v_modulation_depth',np.linspace(0.1,1.5,6))
         self.p.v_modulation_depth = 1.25
 
-        self.xvar('freq_tweezer_modulation',np.linspace(10.,70.,30)*1.e3)
-        self.p.freq_tweezer_modulation = 2.95e3
+        self.xvar('freq_tweezer_modulation',np.linspace(10.,100.,50)*1.e3)
+        # self.p.freq_tweezer_modulation = 2.95e3
 
         # self.xvar('t_fm',np.linspace(1.,20.,5)*1.e-3)
         self.p.t_fm = 12.e-3
 
-        self.fm = False
+        self.fm = True
 
         self.p.t_tweezer_hold = 30.e-3
 
@@ -51,6 +51,8 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        self.outer_coil.discharge()
 
         ###
         frequency = self.p.freq_tweezer_modulation
@@ -83,7 +85,7 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         self.sh_trigger.trigger(0b11)
 
         self.sh_relay.init()
-        self.sh_relay.enable(0b00)
+        self.sh_relay.enable(0b00),''
 
         ###
 
@@ -114,7 +116,7 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
                           v_xshim_current=self.p.v_xshim_current_magtrap)
 
         # magtrap start
-        self.ttl.pd_scope_trig.pulse(1*us)
+        # self.ttl.pd_scope_trig.pulse(1*us)
         self.inner_coil.on()
 
         # ramp up lightsheet over magtrap
@@ -123,18 +125,15 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         for i in self.p.magtrap_ramp_list:
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
-        
-        self.outer_coil.set_current(i_supply=self.p.i_feshbach_field_rampup_start)
-        self.outer_coil.set_voltage(v_supply=70.)
 
         delay(self.p.t_magtrap)
 
         self.inner_coil.off()
-
-        # delay(self.p.t_lightsheet_hold)
         
-        self.outer_coil.on()
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
+        self.outer_coil.on()
+        self.outer_coil.set_voltage(v_supply=70.)
         for i in self.p.feshbach_field_rampup_list:
             self.outer_coil.set_current(i_supply=i)
             delay(self.p.dt_feshbach_field_rampup)
@@ -164,16 +163,17 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         
         delay(self.p.t_tweezer_hold)
         
-        self.ttl.pd_scope_trig.on()
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.off()
         delay(self.p.t_feshbach_field_decay)
-        self.ttl.pd_scope_trig.off()
 
         self.tweezer.off()
     
         delay(self.p.t_tof)
         # self.flash_repump()
         self.abs_image()
+
+        self.outer_coil.discharge()
 
     @kernel
     def run(self):

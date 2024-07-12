@@ -62,9 +62,10 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap = 1.
-        self.t_magtrap_ramp = 1.
-        self.t_feshbach_field_rampup = 100.e-3
+        self.t_magtrap = .65
+        self.t_magtrap_ramp = .65
+        self.t_magtrap_rampdown = .2
+        self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 200.e-3
         self.t_feshbach_field_decay = 20.e-3
 
@@ -150,10 +151,11 @@ class ExptParams():
         self.i_magtrap_init = 24.
         self.i_magtrap_ramp_end = 84.
         self.n_magtrap_ramp_steps = 1000
+        self.n_magtrap_rampdown_steps = 1000
 
         self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 0.3
-        self.v_yshim_current_magtrap = 5.7
+        self.v_xshim_current_magtrap = 0.167
+        self.v_yshim_current_magtrap = 6.67
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -372,6 +374,11 @@ class ExptParams():
         self.i_magtrap_ramp_start = self.i_magtrap_init
         self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end, self.n_magtrap_ramp_steps).transpose()
         self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps
+
+    def compute_magtrap_rampdown_params(self):
+        self.i_magtrap_rampdown_start = self.i_magtrap_ramp_end
+        self.magtrap_rampdown_list = np.linspace(self.i_magtrap_rampdown_start,0, self.n_magtrap_rampdown_steps).transpose()
+        self.dt_magtrap_rampdown = self.t_magtrap_rampdown / self.n_magtrap_ramp_steps
 
     def compute_feshbach_field_rampup_params(self):
         self.i_feshbach_field_rampup_end = self.i_evap1_current
