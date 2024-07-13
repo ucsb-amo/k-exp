@@ -9,4 +9,7 @@ def tweezer_power_from_vpd(v_pd,aod_amplitude,n_tweezers):
     T_OBJECTIVE = 0.74
     slope_mW_per_vpd = 39.43830286087527
     y_intercept_vpd = -3.056741637492236
+
+def aod_diffraction_efficiency_from_awg_amp(amp):
+    pass
     
