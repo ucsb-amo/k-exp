@@ -40,11 +40,20 @@ class TOF():
         self.phase_space_density = 0.
         self.compute_phase_space_density()
 
-    def compute_phase_space_density(self,num_tweezers=2,tweezer_waist=3.6e-6,trap_wavelength=1064.e-9):
+    def compute_phase_space_density(self,
+                                    num_tweezers=2,
+                                    tweezer_waist=3.6e-6,
+                                    trap_wavelength=1064.e-9,
+                                    tweezer_final_frequency=2400.):
         import kamo.constants as c
+        # phase_space_density = self.average_atom_number / num_tweezers \
+        #     / (np.sqrt(2) * np.pi) * (trap_wavelength / tweezer_waist) \
+        #     * ( c.hbar**2/(c.kB * self.T * c.m_K * self.sigma_r0**2) )**(3/2)
+        # self.phase_space_density = phase_space_density
+
         phase_space_density = self.average_atom_number / num_tweezers \
             / (np.sqrt(2) * np.pi) * (trap_wavelength / tweezer_waist) \
-            * ( c.hbar**2/(c.kB * self.T * c.m_K * self.sigma_r0**2) )**(3/2)
+            * ( (c.hbar * 2 * np.pi * tweezer_final_frequency)/(c.kB * self.T) )**(3)
         self.phase_space_density = phase_space_density
 
 def get_B(f_mf0_mf1_transition,
