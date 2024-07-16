@@ -24,7 +24,7 @@ class ExptParams():
 
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 64.e6
-        self.frequency_detuned_imaging_F1 = 460.e6
+        self.frequency_detuned_imaging_F1 = 458.e6
         self.imaging_state = 2.
         
         self.t_repump_flash_imaging = 10.e-6
@@ -246,8 +246,8 @@ class ExptParams():
 
         # high field evap
         self.i_evap1_current = 192.
-        self.i_evap2_current = 182.
-        self.i_tweezer_evap_current = 189.3
+        self.i_evap2_current = 184.
+        self.i_tweezer_evap_current = 187.
 
         # high field imaging
         self._slope_imaging_frequency_per_iouter_current = -4.08715595e+06

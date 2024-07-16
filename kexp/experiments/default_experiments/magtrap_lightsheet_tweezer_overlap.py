@@ -23,7 +23,7 @@ class tof_scan(EnvExperiment, Base):
 
         self.p.t_lightsheet_hold = 100.e-3
 
-        self.camera_params.amp_imaging = 0.5
+        # self.camera_params.amp_imaging = 0.5
         # self.camera_params.exposure_time = 25.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
 
