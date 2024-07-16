@@ -106,7 +106,7 @@ class dds_frame():
                                       default_amp=self.p.amp_ao_ry_980) #500.0mVpp which is ~-2dBm for the 980 G&H
         self.tweezer = self.dds_assign(0,3, ao_order = 1,
                                     default_freq = 80.e6,
-                                    dac_ch_vpd = self._dac_frame.vva_tweezer.ch,
+                                    dac_ch_vpd = self._dac_frame.v_pd_tweezer.ch,
                                     default_amp = self.p.amp_tweezer)
 
         self.write_dds_keys()

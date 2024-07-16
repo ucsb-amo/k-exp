@@ -112,7 +112,8 @@ class ROISelector(QWidget):
         self.crop_dropdown.addItems(['','gm','mot','cmot','bigmot','lightsheet',
                                          'gm2','lightsheet_long',
                                          'lightsheet_short','andor_tweezer','xy_tweezer',
-                                         'andor_tweezer_small','lightsheet_wide'])
+                                         'andor_tweezer_small','andor_tweezer_small',
+                                         'lightsheet_wide','single_tweezer'])
         
     def setup_layout(self):
         self.layout = QVBoxLayout()

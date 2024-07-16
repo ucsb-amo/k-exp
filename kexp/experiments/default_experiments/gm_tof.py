@@ -8,7 +8,7 @@ class tof(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.imaging_state = 2.
+        self.p.imaging_state = 1.
 
         self.xvar('t_tof',np.linspace(10.,16.,10)*1.e-3)
 
@@ -37,7 +37,7 @@ class tof(EnvExperiment, Base):
         self.release()
 
         delay(self.p.t_tof)
-        self.flash_repump()
+        # self.flash_repump()
         self.abs_image()
        
     @kernel

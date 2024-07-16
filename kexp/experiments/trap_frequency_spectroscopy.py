@@ -13,28 +13,32 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.p.imaging_state = 1.
+        self.p.imaging_state = 2.
         self.p.t_mot_load = 1.
 
-        self.p.t_tof = 4.e-6
+        self.p.t_tof = 5.e-6
 
-        self.camera_params.amp_imaging = 0.09
-        self.camera_params.exposure_time = 12.e-6
+        # self.camera_params.amp_imaging = 0.075
+        self.camera_params.amp_imaging = 0.055
+        self.camera_params.exposure_time = 30.e-6
         self.params.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.p.v_pd_lightsheet_rampdown_end = 6.
+        # self.p.v_pd_lightsheet_rampdown_end = 6.
 
-        self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,5.,4))
-        self.p.v_pd_tweezer_1064_ramp_end = 3.
+        # self.xvar('frequency_detuned_imaging',np.arange(400.,440.,3)*1.e6)
+        self.p.frequency_detuned_imaging = 420.e6
 
-        # self.xvar('v_modulation_depth',np.linspace(0.1,1.5,6))
-        self.p.v_modulation_depth = 1.25
+        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,5.,4))
+        # self.p.v_pd_tweezer_1064_ramp_end = 3.
 
-        self.xvar('freq_tweezer_modulation',np.linspace(10.,100.,50)*1.e3)
+        # self.xvar('v_modulation_depth',np.linspace(0.05,0.3,4))
+        self.p.v_modulation_depth = 2.0
+
+        self.xvar('freq_tweezer_modulation',np.arange(100.,4.e3,72.))
         # self.p.freq_tweezer_modulation = 2.95e3
 
-        # self.xvar('t_fm',np.linspace(1.,20.,5)*1.e-3)
-        self.p.t_fm = 12.e-3
+        self.xvar('t_fm',np.linspace(1.,24.,4)*1.e-3)
+        # self.p.t_fm = 24.e-3
 
         self.fm = True
 
@@ -85,7 +89,7 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         self.sh_trigger.trigger(0b11)
 
         self.sh_relay.init()
-        self.sh_relay.enable(0b00),''
+        self.sh_relay.enable(0b00)
 
         ###
 
@@ -128,16 +132,22 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
 
         delay(self.p.t_magtrap)
 
+        for i in self.p.magtrap_rampdown_list:
+            self.inner_coil.set_current(i_supply=i)
+            delay(self.p.dt_magtrap_rampdown)
+
         self.inner_coil.off()
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-
         self.outer_coil.on()
+        delay(1.e-3)
         self.outer_coil.set_voltage(v_supply=70.)
+
         for i in self.p.feshbach_field_rampup_list:
             self.outer_coil.set_current(i_supply=i)
             delay(self.p.dt_feshbach_field_rampup)
         delay(20.e-3)
+
+        # delay(self.p.t_lightsheet_hold)
 
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
         
@@ -151,7 +161,18 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
         self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
-        self.lightsheet.off()
+
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
+
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        for i in self.p.feshbach_field_ramp2_list:
+            self.outer_coil.set_current(i_supply=i)
+            delay(self.p.dt_feshbach_field_ramp2)
+        delay(20.e-3)
+
+        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown3, v_ramp_list=self.p.v_pd_lightsheet_ramp_down3_list)
+
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown2_list)
 
         # turn on modulation
         if self.fm:
@@ -164,16 +185,17 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         delay(self.p.t_tweezer_hold)
         
         # self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.outer_coil.off()
-        delay(self.p.t_feshbach_field_decay)
+        
+        # delay(self.p.t_feshbach_field_decay)
 
+        self.lightsheet.off()
         self.tweezer.off()
     
         delay(self.p.t_tof)
         # self.flash_repump()
         self.abs_image()
 
-        self.outer_coil.discharge()
+        self.outer_coil.off()
 
     @kernel
     def run(self):

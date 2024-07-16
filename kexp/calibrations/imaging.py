@@ -1,6 +1,8 @@
 import numpy as np
+from artiq.experiment import portable, TFloat
 
-def high_field_imaging_detuning(i_outer):
+@portable
+def high_field_imaging_detuning(i_outer) -> TFloat:
     # values from k-jam\analysis\measurements\imaging_frequency_vs_iouter.ipynb
     # current values from runID 10735
     slope_imaging_frequency_per_iouter_current = 986259.0013349565

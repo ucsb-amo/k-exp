@@ -12,6 +12,7 @@ import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
+from kexp.calibrations import high_field_imaging_detuning
 
 dv = -10.e9
 
@@ -251,8 +252,7 @@ class Image():
     @kernel(flags={"fast-math"})
     def set_high_field_imaging(self, i_outer, imaging_amp = dv):
 
-        detuning = self.params._slope_imaging_frequency_per_iouter_current * i_outer \
-                    + self.params._yintercept_imaging_frequency_per_iouter_current
+        detuning = high_field_imaging_detuning(i_outer=i_outer)
         
         self.set_imaging_detuning(detuning, amp=imaging_amp)
     ###
