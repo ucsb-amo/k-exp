@@ -19,7 +19,7 @@ class tof_scan(EnvExperiment, Base):
 
         self.p.t_mot_load = .75
 
-        self.p.t_tof = 30.e-6
+        self.p.t_tof = 200.e-6
 
         self.p.t_lightsheet_hold = 100.e-3
 
@@ -77,6 +77,8 @@ class tof_scan(EnvExperiment, Base):
 
             self.inner_coil.off()
 
+            delay(self.p.t_tof)
+
         elif self.p.beans == 1:
 
             self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
@@ -107,7 +109,7 @@ class tof_scan(EnvExperiment, Base):
             self.lightsheet.off()
         # self.tweezer.off()
     
-        delay(self.p.t_tof)
+            delay(self.p.t_tof)
         # self.flash_repump()
         self.abs_image()
 
