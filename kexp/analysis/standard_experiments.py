@@ -44,7 +44,7 @@ class TOF():
                                     num_tweezers=2,
                                     tweezer_waist=3.6e-6,
                                     trap_wavelength=1064.e-9,
-                                    tweezer_final_frequency=2340.):
+                                    tweezer_final_frequency=1895.):
         import kamo.constants as c
         # phase_space_density = self.average_atom_number / num_tweezers \
         #     / (np.sqrt(2) * np.pi) * (trap_wavelength / tweezer_waist) \

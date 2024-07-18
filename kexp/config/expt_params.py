@@ -48,7 +48,7 @@ class ExptParams():
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 650.e-3
+        self.t_lightsheet_rampup = 500.e-3
         self.t_lightsheet_rampdown = .8
         self.t_lightsheet_rampdown2 = .01
         self.t_lightsheet_rampdown3 = .01
@@ -63,7 +63,7 @@ class ExptParams():
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
         self.t_magtrap = .22
-        self.t_magtrap_ramp = .5
+        self.t_magtrap_ramp = .62
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 200.e-3
@@ -145,18 +145,18 @@ class ExptParams():
         #Discrete GM ramp
         #v_pd values for start and end of ramp
         self.pfrac_c_gmramp_end = 0.35
-        self.pfrac_r_gmramp_end = 0.3
+        self.pfrac_r_gmramp_end = 0.194
         self.n_gmramp_steps = 200
 
         # mag trap
         self.i_magtrap_init = 23.
-        self.i_magtrap_ramp_end = 75.
+        self.i_magtrap_ramp_end = 95.
         self.n_magtrap_ramp_steps = 1000
         self.n_magtrap_rampdown_steps = 1000
 
         self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 0.167
-        self.v_yshim_current_magtrap = 6.2
+        self.v_xshim_current_magtrap = 0.22
+        self.v_yshim_current_magtrap = 5.6
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -245,7 +245,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 192.
+        self.i_evap1_current = 191.5
         self.i_evap2_current = 184.
         self.i_tweezer_evap_current = 187.
 

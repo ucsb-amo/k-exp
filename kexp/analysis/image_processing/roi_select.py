@@ -27,13 +27,13 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [500, 1450]
         roiy = [200, 950]
     elif crop_type == 'lightsheet':
-        roix = [870,960]
+        roix = [880,970]
         roiy = [470,880]
     elif crop_type == 'lightsheet_zaxis':
         roix = [750,970]
         roiy = [500,780]
     elif crop_type == 'lightsheet_short':
-        roix = [870,960]
+        roix = [880,970]
         roiy = [610,750]
     elif crop_type == 'xy_tweezer':
         roix = [950,1150]
@@ -45,8 +45,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [150,350]
         roiy = [210,350]
     elif crop_type == 'andor_tweezer_smol':
-        roix = [245,340]
-        roiy = [265,315]
+        roix = [207,237]
+        roiy = [274,288]
     elif crop_type == 'single_tweezer':
         # roix = [255,325]
         # roiy = [245,320]

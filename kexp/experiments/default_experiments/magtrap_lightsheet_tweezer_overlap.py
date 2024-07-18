@@ -110,7 +110,40 @@ class tof_scan(EnvExperiment, Base):
         # self.tweezer.off()
     
             delay(self.p.t_tof)
-        # self.flash_repump()
+
+        elif self.p.beans == 2:
+
+            self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
+                            v_yshim_current=self.p.v_yshim_current_magtrap,
+                            v_xshim_current=self.p.v_xshim_current_magtrap)
+
+            # magtrap start
+            self.ttl.pd_scope_trig.pulse(1.e-6)
+            self.inner_coil.on()
+
+            # ramp up tweezers over magtrap
+            self.tweezer.vva_dac.set(v=0.)
+            self.tweezer.on()
+            self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+
+            for i in self.p.magtrap_ramp_list:
+                self.inner_coil.set_current(i_supply=i)
+                delay(self.p.dt_magtrap_ramp)
+
+            delay(self.p.t_magtrap)
+
+            for i in self.p.magtrap_rampdown_list:
+                self.inner_coil.set_current(i_supply=i)
+                delay(self.p.dt_magtrap_rampdown)
+
+            self.inner_coil.off()
+
+            delay(self.p.t_lightsheet_hold)
+
+            self.tweezer.off()
+    
+            delay(self.p.t_tof)
+
         self.abs_image()
 
     @kernel
