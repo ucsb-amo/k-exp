@@ -10,7 +10,7 @@ class tof(EnvExperiment, Base):
 
         self.p.imaging_state = 1.
 
-        self.xvar('t_tof',np.linspace(10.,16.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(13.,19.,10)*1.e-3)
 
         self.p.N_repeats = 3
 

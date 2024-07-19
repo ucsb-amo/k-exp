@@ -16,7 +16,7 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roiy = [400, 700]
     elif crop_type == 'gm':
         roix = [500,1250]
-        roiy = [300,1000]
+        roiy = [200,1000]
     elif crop_type == 'gm2':
         roix = [500,1300]
         roiy = [500,1200]
@@ -39,19 +39,19 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [950,1150]
         roiy = [630,700]
     elif crop_type == 'andor_tweezer':
-        roix = [202,242]
-        roiy = [261,301]
-    elif crop_type == 'andor_tweezer_big':
-        roix = [150,350]
-        roiy = [210,350]
+        roix = [210,240]
+        roiy = [253,283]
+    elif crop_type == 'andor_lightsheet':
+        roix = [100,400]
+        roiy = [180,400]
     elif crop_type == 'andor_tweezer_smol':
-        roix = [207,237]
-        roiy = [274,288]
+        roix = [212,238]
+        roiy = [259,275]
     elif crop_type == 'single_tweezer':
         # roix = [255,325]
         # roiy = [245,320]
-        roix = [207,237]
-        roiy = [260,290]
+        roix = [218,232]
+        roiy = [259,275]
     elif crop_type == 'single_tweezer_tight':
         roix = [214,230]
         roiy = [268,284]

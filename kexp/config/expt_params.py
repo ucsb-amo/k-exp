@@ -48,17 +48,17 @@ class ExptParams():
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 500.e-3
-        self.t_lightsheet_rampdown = .8
+        self.t_lightsheet_rampup = 332.e-3
+        self.t_lightsheet_rampdown = .4
         self.t_lightsheet_rampdown2 = .01
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = 5.e-3
         self.t_tweezer_hold = 30.e-3
-        self.t_tweezer_1064_ramp = 1000.e-3
-        self.t_tweezer_1064_rampdown = .1
-        self.t_tweezer_1064_rampdown2 = .25
+        self.t_tweezer_1064_ramp = .8
+        self.t_tweezer_1064_rampdown = .14
+        self.t_tweezer_1064_rampdown2 = .2
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
@@ -180,10 +180,10 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_end = 9.99
 
         self.n_lightsheet_rampdown_steps = 1000
-        self.v_pd_lightsheet_rampdown_end = 3.
+        self.v_pd_lightsheet_rampdown_end = 3.14
 
         self.n_lightsheet_rampdown2_steps = 1000
-        self.v_pd_lightsheet_rampdown2_end = .01
+        self.v_pd_lightsheet_rampdown2_end = .0
 
         self.n_lightsheet_rampdown3_steps = 1000
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -193,13 +193,13 @@ class ExptParams():
         self.amp_tweezer = .45
         self.v_pd_tweezer_1064 = 5.
         self.v_pd_tweezer_1064_ramp_start = 0.
-        self.v_pd_tweezer_1064_ramp_end = 5.
+        self.v_pd_tweezer_1064_ramp_end = 8.4
         self.n_tweezer_1064_ramp_steps = 1000
         
-        self.v_pd_tweezer_1064_rampdown_end = .45
-        self.n_tweezer_1064_rampdown_steps = 1000
+        self.v_pd_tweezer_1064_rampdown_end = .7
+        self.n_tweezer_1064_rampdown_steps = 100
 
-        self.v_pd_tweezer_1064_rampdown2_end = 0.04
+        self.v_pd_tweezer_1064_rampdown2_end = 0.025
         self.n_tweezer_1064_rampdown2_steps = 100
 
         self.n_tweezers = 2
@@ -245,9 +245,9 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 191.5
-        self.i_evap2_current = 184.
-        self.i_tweezer_evap_current = 187.
+        self.i_evap1_current = 191.
+        self.i_evap2_current = 183.
+        self.i_tweezer_evap_current = 190.2
 
         # high field imaging
         self._slope_imaging_frequency_per_iouter_current = -4.08715595e+06
