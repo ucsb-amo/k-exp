@@ -4,6 +4,10 @@ from kexp.util.data.data_vault import DataSaver
 import numpy as np
 from kamo.atom_properties.k39 import Potassium39
 
+from kexp.util.data.run_info import RunInfo
+from kexp.config.expt_params import ExptParams
+from kexp.config.camera_params import CameraParams
+
 class analysis_tags():
     def __init__(self,crop_type,absorption_analysis,unshuffle_xvars):
         self.crop_type = crop_type
@@ -24,8 +28,9 @@ class atomdata():
 
     This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, xvarnames, images, image_timestamps, params, camera_params,
-                  run_info, sort_idx, sort_N, expt_text,
+    def __init__(self, xvarnames, images, image_timestamps,
+                  params: ExptParams, camera_params:CameraParams,
+                  run_info: RunInfo, sort_idx, sort_N, expt_text,
                     unshuffle_xvars = True, crop_type='',
                     transpose_idx=[]):
 
