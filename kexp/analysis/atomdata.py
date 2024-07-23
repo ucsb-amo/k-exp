@@ -129,13 +129,17 @@ class atomdata():
             self._analysis_tags.averaged = True
         else:
             print('Atomdata is already repeat averaged. To revert to original atomdata, use Atomdata.revert_repeats().')
-        import gc
-        gc.collect()
                 
     def _avg_repeated_ndarray(self,arr:np.ndarray,xvar_idx,N_repeats_for_this_xvar=-1):
         i = xvar_idx
         if N_repeats_for_this_xvar == - 1:
-            N = self.params.N_repeats[i]
+            # N = self.params.N_repeats[i]
+            _, _, counts = np.unique(self.xvars[xvar_idx], return_counts=True)
+            ucounts = np.unique(counts)
+            if ucounts.size == 1:
+                N = ucounts[0]
+            else:
+                raise ValueError('Number of repeats per value of an xvar must be the same for all values.')
         else:
             N = N_repeats_for_this_xvar
         arr = np.mean( arr.reshape(*arr.shape[0:i],-1,N,*arr.shape[(i+1):]), axis=i+1, dtype=np.float64)
@@ -149,8 +153,6 @@ class atomdata():
             self._analysis_tags.averaged = False
         else:
             print("Atomdata is not repeat averaged. To average, use Atomdata.avg_repeats().")
-        import gc
-        gc.collect()
 
     def transpose_data(self,new_xvar_idx=[], reanalyze=True):
         """Swaps xvar order, then reruns the analysis.
@@ -218,9 +220,6 @@ class atomdata():
             self.analyze(unshuffle_xvars=False)
 
         self._analysis_tags.transposed = not self._analysis_tags.transposed
-
-        import gc
-        gc.collect()
 
     ### Analysis
 
