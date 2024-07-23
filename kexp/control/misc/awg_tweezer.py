@@ -33,10 +33,11 @@ class tweezer():
 
     @kernel
     def on(self):
+        self.vva_dac.set(v=.0)
         with parallel:
             self.ao_dds.on()
             self.sw_ttl.on()
-            self.pid_int_hold_zero.off()
+            self.pid_int_hold_zero.pulse(1.e-6)
 
     @kernel
     def off(self):

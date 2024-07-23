@@ -4,26 +4,33 @@ from kexp import Base
 import numpy as np
 from kexp.calibrations import high_field_imaging_detuning
 
+from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
+
+T32 = 1<<32
+
 class tof_scan(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.p.imaging_state = 1.
-        self.xvar('frequency_detuned_imaging',np.arange(400.,420.,3)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.arange(420.,450.,3)*1.e6)
         # self.p.frequency_detuned_imaging = 429.e6
-        # self.p.frequency_detuned_imaging = 425.e6
+        self.p.frequency_detuned_imaging = 412.e6
 
         self.p.t_mot_load = .75
 
-        # self.xvar('i_evap1_current',np.linspace(190.,194.,8))
-        # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
+        self.xvar('freq_tweezer_modulation',np.linspace(290.e3,295.e3,1))
+        # self.xvar('freq_tweezer_modulation',[])
+        # self.xvar('v_modulation_depth',np.linspace(2.8,3.2,10))
+        # self.p.freq_tweezer_modulation = 2.93e3
+        self.p.v_modulation_depth = 0.
 
         # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.025,.08,10)) 
 
         # self.xvar('t_tof',np.linspace(100.,350.,10)*1.e-6)
-        self.p.t_tof = 20.e-6
-        self.p.N_repeats = [1]
+        self.p.t_tof = 5.e-6
+        self.p.N_repeats = [3]
         
         # self.xvar('dummy_z',[0]*50)
 
@@ -42,6 +49,13 @@ class tof_scan(EnvExperiment, Base):
 
         # self.p.N_repeats = 2
 
+        self.sh_dds = self.get_device("shuttler0_dds0")
+        self.sh_dds: DDS
+        self.sh_trigger = self.get_device("shuttler0_trigger")
+        self.sh_trigger: Trigger
+        self.sh_relay = self.get_device("shuttler0_relay")
+        self.sh_relay: Relay
+
         self.finish_build(shuffle=True)
 
     @kernel
@@ -51,6 +65,40 @@ class tof_scan(EnvExperiment, Base):
         # self.set_high_field_imaging(i_outer = self.p.i_evap2_current)
 
         self.outer_coil.discharge()
+
+        frequency = self.p.freq_tweezer_modulation
+
+        n0 = shuttler_volt_to_mu(self.p.v_modulation_depth)
+        n1 = 0.
+        n2 = 0.
+        n3 = 0.
+        r0 = 0.
+        r1 = frequency
+        r2 = 0.
+
+        T = 8.e-9
+        g = 1.64676
+        q0 = n0/g
+        q1 = n1/g
+        q2 = n2/g
+        q3 = n3/g
+
+        b0 = np.int32(q0)
+        b1 = np.int32(q1 * T + q2 * T**2 / 2 + q3 * T**3 / 6)
+        b2 = np.int64(q2 * T**2 + q3 * T**3)
+        b3 = np.int64(q3 * T**3)
+
+        c0 = np.int32(r0)
+        c1 = np.int32((r1 * T + r2 * T**2) * T32)
+        c2 = np.int32(r2 * T**2)
+
+        self.sh_dds.set_waveform(b0=b0, b1=b1, b2=b2, b3=b3, c0=c0, c1=c1, c2=c2)
+        self.sh_trigger.trigger(0b11)
+
+        self.sh_relay.init()
+        self.sh_relay.enable(0b00)
+
+        self.sh_relay.enable(0b11)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -137,6 +185,8 @@ class tof_scan(EnvExperiment, Base):
 
         self.lightsheet.off()
         self.tweezer.off()
+
+        self.sh_relay.enable(0b00)
     
         delay(self.p.t_tof)
         # self.flash_repump()

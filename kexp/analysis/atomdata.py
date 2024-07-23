@@ -141,7 +141,7 @@ class atomdata():
         i = xvar_idx
         if N_repeats_for_this_xvar == - 1:
             # N = self.params.N_repeats[i]
-            _, _, counts = np.unique(self.xvars[xvar_idx], return_counts=True)
+            _, counts = np.unique(self.xvars[xvar_idx], return_counts=True)
             ucounts = np.unique(counts)
             if ucounts.size == 1:
                 N = ucounts[0]
