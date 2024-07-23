@@ -13,6 +13,8 @@ class analysis_tags():
         self.crop_type = crop_type
         self.absorption_analysis = absorption_analysis
         self.unshuffle_xvars = unshuffle_xvars
+        self.transposed = False
+        self.averaged = False
 
 class atomdata():
     
@@ -59,6 +61,7 @@ class atomdata():
         self._sort_images()
 
         if transpose_idx:
+            self._analysis_tags.transposed = True
             self.transpose_data(transpose_idx=False,reanalyze=False)
 
         self.compute_raw_ods()
@@ -88,22 +91,46 @@ class atomdata():
             xvars_to_avg (list, optional): A list of xvar indices to average.
             reanalyze (bool, optional): _description_. Defaults to True.
         """        
+        if not self._analysis_tags.unshuffle_xvars:
+            raise ValueError("Can only average repeats on runs loaded with unshuffle_xvars = True. Set unshuffle_xvars = True and reload data.")
+        
+        if not self._analysis_tags.averaged:
+            if not xvars_to_avg:
+                xvars_to_avg = list(range(len(self.xvars)))
+            if not isinstance(xvars_to_avg,list):
+                xvars_to_avg = [xvars_to_avg]
 
-        if not xvars_to_avg:
-            xvars_to_avg = list(range(len(self.xvars)))
-        if not isinstance(xvars_to_avg,list):
-            xvars_to_avg = [xvars_to_avg]
+            from copy import deepcopy
+            # deepcopy necessary, since will overwrite xvars index by index later
+            self._xvars_stored = deepcopy(self.xvars)
 
-        avg_keys = ['od_raw']
-        for xvar_idx in xvars_to_avg:
+            avg_keys = ['od_raw']
+            
             for key in avg_keys:
                 array = vars(self)[key]
-                array = self._avg_repeated_ndarray( array, xvar_idx )
-                vars(self)[key] = array
-            self.xvars[xvar_idx] = np.unique(self.xvars[xvar_idx])
+                # save the old information
+                newkey = "_" + key + "_stored"
+                # deepcopy actually unnecessary, since changing entire
+                # reference (not just an index assignment)
+                vars(self)[newkey] = deepcopy(array)
+                
+            for xvar_idx in xvars_to_avg:
+                for key in avg_keys:
+                    array = vars(self)[key]
+                    array = self._avg_repeated_ndarray( array, xvar_idx )
+                    vars(self)[key] = array
+                # write in the unaveraged xvars
+                self.xvars[xvar_idx] = np.unique(self.xvars[xvar_idx])
 
-        if reanalyze:
-            self.analyze_ods(unshuffle_xvars=False)
+            if reanalyze:
+                # don't unshuffle xvars again -- that will be confusing
+                self.analyze_ods(unshuffle_xvars=False)
+
+            self._analysis_tags.averaged = True
+        else:
+            print('Atomdata is already repeat averaged. To revert to original atomdata, use Atomdata.revert_repeats().')
+        import gc
+        gc.collect()
                 
     def _avg_repeated_ndarray(self,arr:np.ndarray,xvar_idx,N_repeats_for_this_xvar=-1):
         i = xvar_idx
@@ -113,6 +140,17 @@ class atomdata():
             N = N_repeats_for_this_xvar
         arr = np.mean( arr.reshape(*arr.shape[0:i],-1,N,*arr.shape[(i+1):]), axis=i+1, dtype=np.float64)
         return arr
+    
+    def revert_repeats(self):
+        if self._analysis_tags.averaged:
+            self.xvars = self._xvars_stored
+            self.od_raw = self._od_raw_stored
+            self.analyze_ods(unshuffle_xvars=False)
+            self._analysis_tags.averaged = False
+        else:
+            print("Atomdata is not repeat averaged. To average, use Atomdata.avg_repeats().")
+        import gc
+        gc.collect()
 
     def transpose_data(self,new_xvar_idx=[], reanalyze=True):
         """Swaps xvar order, then reruns the analysis.
@@ -178,6 +216,11 @@ class atomdata():
 
         if reanalyze:
             self.analyze(unshuffle_xvars=False)
+
+        self._analysis_tags.transposed = not self._analysis_tags.transposed
+
+        import gc
+        gc.collect()
 
     ### Analysis
 
