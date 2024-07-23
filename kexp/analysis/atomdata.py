@@ -32,7 +32,7 @@ class atomdata():
                   params: ExptParams, camera_params:CameraParams,
                   run_info: RunInfo, sort_idx, sort_N, expt_text,
                     unshuffle_xvars = True, crop_type='',
-                    transpose_idx=[]):
+                    transpose_idx=[], avg_repeats=False):
 
         self._ds = DataSaver()
         self.run_info = run_info
@@ -57,12 +57,64 @@ class atomdata():
         self.atom = Potassium39()
 
         self._sort_images()
-        if transpose_idx:
-            self.transpose_data(transpose_idx)
-        else:
-            self.analyze()
 
-    def transpose_data(self,new_xvar_idx=[]):
+        if transpose_idx:
+            self.transpose_data(transpose_idx=False,reanalyze=False)
+
+        self.compute_raw_ods()
+
+        if avg_repeats:
+            self.avg_repeats(reanalyze=False)
+
+        self.analyze_ods()
+
+    def _sort_images(self):
+        if self._analysis_tags.absorption_analysis:
+            self._sort_images_absorption()
+        else:
+            self._sort_images_fluor()
+
+    def compute_atom_number(self):
+        self.atom_cross_section = self.atom.get_cross_section()
+        self.atom_number_density = self.od / self.atom_cross_section * (self.camera_params.pixel_size_m / self.camera_params.magnification)**2
+        self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
+
+    def avg_repeats(self,xvars_to_avg=[],reanalyze=True):
+        """
+        Averages the images along the axes specified in xvars_to_avg. Uses
+        absorption imaging analysis.
+
+        Args:
+            xvars_to_avg (list, optional): A list of xvar indices to average.
+            reanalyze (bool, optional): _description_. Defaults to True.
+        """        
+
+        if not xvars_to_avg:
+            xvars_to_avg = list(range(len(self.xvars)))
+        if not isinstance(xvars_to_avg,list):
+            xvars_to_avg = [xvars_to_avg]
+
+        avg_keys = ['od_raw']
+        for xvar_idx in xvars_to_avg:
+            for key in avg_keys:
+                array = vars(self)[key]
+                array = self._avg_repeated_ndarray( array, xvar_idx )
+                vars(self)[key] = array
+            self.xvars[xvar_idx] = np.unique(self.xvars[xvar_idx])
+
+        if reanalyze:
+            self.analyze_ods(unshuffle_xvars=False)
+                
+    def _avg_repeated_ndarray(self,arr:np.ndarray,xvar_idx,N_repeats_for_this_xvar=-1):
+        i = xvar_idx
+        if N_repeats_for_this_xvar == - 1:
+            N = self.params.N_repeats[i]
+        else:
+            N = N_repeats_for_this_xvar
+        arr = np.mean( arr.reshape(*arr.shape[0:i],-1,N,*arr.shape[(i+1):]), axis=i+1, dtype=np.float64)
+        return arr
+
+    def transpose_data(self,new_xvar_idx=[], reanalyze=True):
         """Swaps xvar order, then reruns the analysis.
 
         Args:
@@ -95,13 +147,19 @@ class atomdata():
         # for things of a listlike nature which have one element per xvar, and so
         # should have the elements along the first dimension reorderd according
         # to the new_xvar_idx (instead of their axes swapped).
+        def reorder_listlike(struct,keys):
+            for key in keys:
+                attr = vars(struct)[key]
+                new_attr = [attr[i] for i in new_xvar_idx]
+                if isinstance(attr,np.ndarray):
+                    new_attr = np.array(new_attr)
+                vars(struct)[key] = new_attr
+
         listlike_keys = ['xvars','sort_idx','xvarnames','sort_N']
-        for key in listlike_keys:
-            attr = vars(self)[key]
-            new_attr = [attr[i] for i in new_xvar_idx]
-            if isinstance(attr,np.ndarray):
-                new_attr = np.array(new_attr)
-            vars(self)[key] = new_attr
+        reorder_listlike(self,listlike_keys)
+
+        param_keys = ['N_repeats']
+        reorder_listlike(self.params,param_keys)
 
         # for things of an ndarraylike nature which have one axis per xvar, and
         # so should have the order of their axes switched.
@@ -118,37 +176,47 @@ class atomdata():
             attr = np.transpose(attr,new_idx)
             vars(self)[key] = attr
 
-        self.analyze()
-    
-    def _sort_images(self):
-        if self._analysis_tags.absorption_analysis:
-            self._sort_images_absorption()
-        else:
-            self._sort_images_fluor()
+        if reanalyze:
+            self.analyze(unshuffle_xvars=False)
 
-    def analyze(self,crop_type='',unshuffle_xvars=None,absorption_analysis=None):
+    ### Analysis
+
+    def compute_raw_ods(self):
+        if self._analysis_tags.absorption_analysis:
+            self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark)
+        else:
+            self.od_raw = self.img_atoms.astype(np.int16) - self.img_light.astype(np.int16)
+
+    def analyze_ods(self,crop_type='',unshuffle_xvars=-1,absorption_analysis=-1):
+
         if not crop_type:
             crop_type = self._analysis_tags.crop_type
-        if not unshuffle_xvars:
+        if unshuffle_xvars == -1:
             unshuffle_xvars = self._analysis_tags.unshuffle_xvars
-        if not absorption_analysis:
+        if absorption_analysis == -1:
             absorption_analysis = self._analysis_tags.absorption_analysis
 
         if absorption_analysis:
             self._analyze_absorption_images(crop_type)
-            self.atom_cross_section = self.atom.get_cross_section()
-            self.atom_number_density = self.od / self.atom_cross_section * (self.camera_params.pixel_size_m / self.camera_params.magnification)**2
-            self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
+            self.compute_atom_number()
         else:
             self._analyze_fluorescence_images()
         self._remap_fit_results()
     
         if unshuffle_xvars:
             self.unshuffle_ad()
+            self.xvars = self._unpack_xvars() # re-unpack xvars to get unshuffled xvars
 
-        self.xvars = self._unpack_xvars() # re-unpack xvars to get unshuffled xvars
+    def analyze(self,crop_type='',unshuffle_xvars=-1,absorption_analysis=-1):
+        if not crop_type:
+            crop_type = self._analysis_tags.crop_type
+        if unshuffle_xvars == -1:
+            unshuffle_xvars = self._analysis_tags.unshuffle_xvars
+        if absorption_analysis == -1:
+            absorption_analysis = self._analysis_tags.absorption_analysis
 
-    ### Analysis
+        self.compute_raw_ods()
+        self.analyze_ods(crop_type,unshuffle_xvars,absorption_analysis)
 
     def _analyze_absorption_images(self,crop_type='mot'):
         '''
@@ -165,12 +233,8 @@ class atomdata():
             options: 'mot', 'bigmot', 'cmot', 'gm'. If another string is
             supplied, defaults to full ROI.
         '''
-        self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
-            compute_ODs(self.img_atoms,
-                        self.img_light,
-                        self.img_dark,
-                        crop_type,
-                        self.Nvars)
+        
+        self.od, self.sum_od_x, self.sum_od_y = process_ODs(self.od_raw, crop_type, self.Nvars)
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
 
@@ -191,12 +255,6 @@ class atomdata():
             Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
             options: 'mot'.
         '''
-        self.img_atoms = self.img_atoms.astype(np.int16)
-        self.img_light = self.img_light.astype(np.int16)
-
-        self.od_raw = self.img_atoms - self.img_light
-        # self.od_raw = self.img_atoms
-        # self.od = roi.crop_OD(self.od_raw,crop_type)
         self.od = self.od_raw
         self.sum_od_x = np.sum(self.od,self.Nvars)
         self.sum_od_y = np.sum(self.od,self.Nvars+1)
@@ -377,21 +435,6 @@ class atomdata():
             self.xvardims[i] = np.int32(len(xvars[i]))
 
         return xvars
-    
-    # def switch_axes(self,axis0,axis1):
-    #     """Swaps axis0 and axis1 in the images, ods, xvarnames, and xvars. Does
-    #     not change the order of params derived from the paramaters in xvarnames.
-
-    #     Args:
-    #         axis0 (int): The index of one of the axes to be switched.
-    #         axis1 (int): The index of the other axis to be switched.
-    #     """
-    #     def swap(struct):
-    #         struct = np.swapaxes(struct,axis0,axis1)
-        
-    #     swap(self.img_atoms)
-    #     swap(self.img_light)
-    #     swap(self.img_dark)
     
     ## Unshuffling
     
