@@ -108,19 +108,21 @@ class atomdata():
                 xvars_to_avg = [xvars_to_avg]
 
             from copy import deepcopy
-            # deepcopy necessary, since will overwrite xvars index by index later
-            self._xvars_stored = deepcopy(self.xvars)
+            # self._xvars_stored = deepcopy(self.xvars)
+            def store_values(struct,keylist):
+                for key in keylist:
+                    array = vars(struct)[key]
+                    # save the old information
+                    newkey = "_" + key + "_stored"
+                    vars(struct)[newkey] = deepcopy(array)
+
+            self._store_keys = ['xvars','xvardims','od_raw']
+            store_values(self,self._store_keys)
+
+            self._store_param_keys = ['N_repeats']
+            store_values(self.params,self._store_param_keys)
 
             avg_keys = ['od_raw']
-            
-            for key in avg_keys:
-                array = vars(self)[key]
-                # save the old information
-                newkey = "_" + key + "_stored"
-                # deepcopy actually unnecessary, since changing entire
-                # reference (not just an index assignment)
-                vars(self)[newkey] = deepcopy(array)
-                
             for xvar_idx in xvars_to_avg:
                 for key in avg_keys:
                     array = vars(self)[key]
@@ -128,7 +130,10 @@ class atomdata():
                     vars(self)[key] = array
                 # write in the unaveraged xvars
                 self.xvars[xvar_idx] = np.unique(self.xvars[xvar_idx])
+                self.xvardims[xvar_idx] = self.xvars[xvar_idx].shape[0]
 
+            self.params.N_repeats = np.ones(len(self.xvars),dtype=int)
+        
             if reanalyze:
                 # don't unshuffle xvars again -- that will be confusing
                 self.analyze_ods(unshuffle_xvars=False)
@@ -154,8 +159,14 @@ class atomdata():
     
     def revert_repeats(self):
         if self._analysis_tags.averaged:
-            self.xvars = self._xvars_stored
-            self.od_raw = self._od_raw_stored
+
+            def retrieve_values(struct,keylist):
+                for key in keylist:
+                    newkey = "_" + key + "_stored"
+                    vars(struct)[key] = vars(struct)[newkey]
+            retrieve_values(self,self._store_keys)
+            retrieve_values(self.params,self._store_param_keys)
+
             self.analyze_ods(unshuffle_xvars=False)
             self._analysis_tags.averaged = False
         else:
