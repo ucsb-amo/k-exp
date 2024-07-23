@@ -1,7 +1,40 @@
 import numpy as np
 import kexp.analysis.image_processing.roi_select as roi
 
-def compute_ODs(img_atoms,img_light,img_dark,crop_type='mot',Nvars=1):
+def process_ODs(raw_ODs,crop_type='mot',Nvars=1):
+    '''
+    From an ndarray of ODs (dimensions n1 x n2 x ... x nN x px x py, where ni is
+    the length of the ith xvar, and px and py are the dimensions in pixels of
+    the images), crops to a preset ROI based on in what stage of cooling the
+    images were taken. Then computes transverse-integrated "sum_od" for each
+    axis.
+
+    Parameters
+    ----------
+    raw_ODs: ndarray 
+        An n1 x n2 x ... x nN x px x py ndarray of uncropped ODs.
+
+    crop_type: str
+        Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
+        options: 'mot', 'cmot', 'gm', 'odt'.
+
+    Nvars: int
+
+    Returns
+    -------
+    ODs: ArrayLike
+        The cropped ODs
+    summedODx: ArrayLike summedODy: ArrayLike
+    summedODy: ArrayLike
+    '''
+    ODs = roi.crop_OD(raw_ODs,crop_type,Nvars)
+
+    sum_od_y = np.sum(ODs,Nvars+1)
+    sum_od_x = np.sum(ODs,Nvars)
+
+    return ODs, sum_od_x, sum_od_y
+
+def compute_OD(atoms,light,dark):
     '''
     From a list of images (length 3*n, where n is the number of runs), computes
     OD. Crops to a preset ROI based on in what stage of cooling the images were
@@ -31,16 +64,6 @@ def compute_ODs(img_atoms,img_light,img_dark,crop_type='mot',Nvars=1):
     summedODx: ArrayLike
     summedODy: ArrayLike
     '''
-
-    ODsraw = compute_OD(img_atoms,img_light,img_dark)
-    ODs = roi.crop_OD(ODsraw,crop_type,Nvars)
-
-    sum_od_y = np.sum(ODs,Nvars+1)
-    sum_od_x = np.sum(ODs,Nvars)
-
-    return ODsraw, ODs, sum_od_x, sum_od_y
-
-def compute_OD(atoms,light,dark):
     
     dtype = atoms.dtype
     if dtype == np.dtype('uint8'):
