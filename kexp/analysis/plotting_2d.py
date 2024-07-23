@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from kexp.analysis import atomdata
 
-def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
+def plot_image_grid(ad:atomdata,
                     xvarformat="1.2f",
                      xvar0format="",
                      xvar1format="",
@@ -22,6 +22,8 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
     xvarnames = ad.xvarnames
     
     # Get the values of the two independent variables
+    var1_idx = 0
+    var2_idx = 1
     var1_values = xvars[var1_idx]
     var2_values = xvars[var2_idx]
     
@@ -39,7 +41,8 @@ def plot_image_grid(ad:atomdata, var1_idx=0, var2_idx=1,
     for i in range(num_var1_values):
         for j in range(num_var2_values):
             ax = axes[i, j]
-            img = od.take(indices=[i], axis=var1_idx).take(indices=[j], axis=var2_idx).squeeze()
+            # img = od.take(indices=[i], axis=var1_idx).take(indices=[j], axis=var2_idx).squeeze()
+            img = od[i][j]
             ax.imshow(img,vmin=0.,vmax=max_od)
             ax.set_xticks([])
             ax.set_yticks([])
