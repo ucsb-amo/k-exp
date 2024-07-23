@@ -3,13 +3,6 @@ import os
 
 from pylablib.devices import Newport
 
-from PyQt6.QtCore import Qt, QSize, QMargins, pyqtSignal
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import (
-    QApplication, QLabel, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLineEdit, QPushButton, QMainWindow, QFileDialog, QFrame, QSpacerItem,
-    QSizePolicy, QMessageBox, QDoubleSpinBox, QSpinBox)
-
 import numpy as np
 
 CONTROLLER_HOSTNAME = "192.168.1.80"
@@ -34,14 +27,12 @@ class motor_axis():
         self.position = 0
 
 class controller():
-    
-    axis_moved = pyqtSignal(int)
 
     def __init__(self):
         self.setup_axes()
 
     def setup_axes(self):
-        self.axes = dict()
+        
         n_obj = dict()
         n_obj['+y'] = motor_axis(1,1)
         n_obj['+z'] = motor_axis(1,2)
@@ -56,6 +47,7 @@ class controller():
         s_obj['+z'] = motor_axis(3,3)
         s_obj['-z'] = motor_axis(3,4)
         
+        self.axes = dict()
         self.axes['n'] = n_obj
         self.axes['s'] = s_obj
 
@@ -100,80 +92,21 @@ class controller():
         elif '-' in axis:
             sign = -1
 
-        
+        axes_to_move = []
+        if 'x' in axis:
+            if '+' in axis:
+                axes_to_move.append(objective['+x'])
+            elif '-' in axis:
+                axes_to_move.append(objective['+x'])
+        elif 'y' in axis:
+            axes_to_move.append(objective['y'])
+            N_steps = ysign * N_steps
+        elif 'z' in axis:
+            if '+' in axis:
+                axes_to_move.append(objective['+z'])
+            elif '-' in axis:
+                axes_to_move.append(objective['-z'])
 
-class objective_panel(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setup_widgets()
-        self.setup_layout()
-
-    def setup_widgets(self):
-        self.n_obj_buttons = dict()
-
-        self.s_obj_buttons = dict()
-
-    def setup_layout(self):
-        self.layout
-
-class motor_panel(QWidget):
-    def __init__(self,axis,N_steps_spinner:QSpinBox,
-                 translation_bool,
-                 controller:controller):
-        super().__init__()
-        
-        self.position = QSpinBox()
-        self.button = QPushButton(axis)
-        self.setup_widgets()
-
-        if translation_bool:
-            self.button.clicked.connect(
-                lambda: controller.translate(N_steps_spinner.value()))
-        else:
-            self.button.clicked.connect(
-                lambda: 
-            )
-
-    def setup_widgets(self):
-        self.position.setValue(0)
-        self.position.setSingleStep(50)
-
-    def setup_layout(self):
-        self.layout = QHBoxLayout()
-        self.layout.addWidget(self.position)
-        self.layout.addWidget(self.button)
-            
-class main_window(QWidget):
-    def __init__(self):
-        super().__init__()
-        
-        self.stage = Newport.Picomotor8742(CONTROLLER_HOSTNAME,multiaddr=True,scan=False)
-        self.setup_layout()
-
-    def setup_layout(self):
-        self.grid = QHBoxLayout(self)
-        for panel in self.panels:
-            self.grid.addWidget(panel)
-        self.layout = self.grid
-
-def close_connection(stage):
-    stage.close()
-
-def main():
-    app = QApplication(sys.argv)
-    
-    window = QWidget()
-    grid = main_window()
-    # app.aboutToQuit.connect(close_connection(grid.stage))
-
-    window.setLayout(grid.layout)
-    window.setWindowTitle("ODT Mirror Control")
-    window.setWindowIcon(QIcon('banana-icon.png'))
-
-    # window.setFixedSize(266, 200)
-
-    window.show()
-    sys.exit(app.exec())
-
-if __name__ == "__main__":
-    main()
+        for axis in axes_to_move:
+            axis: motor_axis
+            axis.move(sign * N_steps)
