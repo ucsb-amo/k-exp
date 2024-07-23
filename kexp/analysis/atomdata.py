@@ -249,7 +249,7 @@ class atomdata():
             self._analyze_absorption_images(crop_type)
             self.compute_atom_number()
         else:
-            self._analyze_fluorescence_images()
+            self._analyze_fluorescence_images(crop_type)
         self._remap_fit_results()
     
         if unshuffle_xvars:
@@ -287,7 +287,7 @@ class atomdata():
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
 
-    def _analyze_fluorescence_images(self,crop_type='tweezer'):
+    def _analyze_fluorescence_images(self,crop_type=''):
         '''
         Saves the images, image timestamps (in ns), computes a subtracted image,
         and performs gaussian fits to the profiles. Note: the subtracted image
@@ -304,7 +304,7 @@ class atomdata():
             Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
             options: 'mot'.
         '''
-        self.od = self.od_raw
+        self.od = roi.crop_OD(self.od_raw,crop_type,self.Nvars)
         self.sum_od_x = np.sum(self.od,self.Nvars)
         self.sum_od_y = np.sum(self.od,self.Nvars+1)
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
