@@ -20,10 +20,10 @@ class tof_scan(EnvExperiment, Base):
 
         self.p.t_mot_load = .75
 
-        self.xvar('freq_tweezer_modulation',np.linspace(290.e3,295.e3,1))
+        # self.xvar('freq_tweezer_modulation',np.linspace(290.e3,295.e3,1))
         # self.xvar('freq_tweezer_modulation',[])
         # self.xvar('v_modulation_depth',np.linspace(2.8,3.2,10))
-        # self.p.freq_tweezer_modulation = 2.93e3
+        self.p.freq_tweezer_modulation = 2.93e3
         self.p.v_modulation_depth = 0.
 
         # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.025,.08,10)) 
@@ -32,7 +32,7 @@ class tof_scan(EnvExperiment, Base):
         self.p.t_tof = 5.e-6
         self.p.N_repeats = [3]
         
-        # self.xvar('dummy_z',[0]*50)
+        self.xvar('dummy_z',[0]*5)
 
         self.p.n_tweezers = 1
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
