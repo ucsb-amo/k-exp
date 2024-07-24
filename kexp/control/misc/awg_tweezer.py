@@ -10,7 +10,7 @@ from artiq.experiment import kernel, delay
 
 import numpy as np
 
-dv = -1.
+dv = -1000.
 dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
@@ -61,25 +61,34 @@ class tweezer():
         self.vva_dac.set(v=v_tweezer_vva,load_dac=load_dac)
 
     @kernel
-    def ramp(self,t,v_ramp_list=dv_list,painting=False):
+    def ramp(self,t,v_ramp_list=dv_list,v_awg_am=dv,painting=False):
 
         v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
 
         if v_ramp_list == dv_list:
             v_ramp_list = self.params.v_pd_tweezer_1064_ramp_list
 
+        if v_awg_am == dv:
+            v_awg_am = self.params.v_awg_am_fixed_paint_amplitude
+            static_paint = True
+        else:
+            static_paint = False
+
         if not painting:
             self.paint_amp_dac.set(v=-7.)
         else:
-            # convert your list of vpds (propto trap power) to fractional power
-            p_frac_list = v_ramp_list / v_pd_max
-            # trap frequency propto sqrt( P / h^3 ), where P is power and h is painting
-            # amplitude. To keep constant frequency, h should decrease by a factor equal
-            # to the cube root of the fraction by which P changes
-            paint_amp_frac_list = p_frac_list**(1/3)
-            # rescale to between -6V (fraction painting = 0) and +6V (fraction painting
-            # = 1) for the AWG input
-            v_awg_amp_mod_list = (paint_amp_frac_list - 0.5)*12 
+            if static_paint:
+                v_awg_amp_mod_list = [v_awg_am]*len(v_ramp_list)
+            else:
+                # convert your list of vpds (propto trap power) to fractional power
+                p_frac_list = v_ramp_list / v_pd_max
+                # trap frequency propto sqrt( P / h^3 ), where P is power and h is painting
+                # amplitude. To keep constant frequency, h should decrease by a factor equal
+                # to the cube root of the fraction by which P changes
+                paint_amp_frac_list = p_frac_list**(1/3)
+                # rescale to between -6V (fraction painting = 0) and +6V (fraction painting
+                # = 1) for the AWG input
+                v_awg_amp_mod_list = (paint_amp_frac_list - 0.5)*12 
         
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
