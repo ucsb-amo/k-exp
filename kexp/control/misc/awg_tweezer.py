@@ -86,10 +86,15 @@ class tweezer():
 
         # for v in v_ramp_list:
         for i in range(len(v_ramp_list)):
-            self.vva_dac.set(v=v_ramp_list[i])
+            self.vva_dac.set(v=v_ramp_list[i],load_dac=False)
             if painting:
-                self.paint_amp_dac.set(v=v_awg_amp_mod_list[i])
+                self.paint_amp_dac.set(v=v_awg_amp_mod_list[i],load_dac=False)
+            self.vva_dac.load()
             delay(dt_ramp)
+
+    @kernel
+    def painting_off(self):
+        self.paint_amp_dac.set(v=-7.)
     
     def awg_init(self):
 
