@@ -4,67 +4,62 @@ from kexp import Base
 import numpy as np
 from kexp.calibrations import high_field_imaging_detuning
 
-from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
-
-T32 = 1<<32
-
 class tof_scan(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.p.imaging_state = 1.
-        # self.xvar('frequency_detuned_imaging',np.arange(420.,450.,3)*1.e6)
-        # self.p.frequency_detuned_imaging = 429.e6
-        self.p.frequency_detuned_imaging = 412.e6
+        self.xvar('frequency_detuned_imaging',np.arange(400.,440.,3)*1.e6)
+        self.p.frequency_detuned_imaging = 429.e6
+        # self.p.frequency_detuned_imaging = 425.e6
+        # self.p.frequency_detuned_imaging = 418.e6
 
         self.p.t_mot_load = .75
 
-        # self.xvar('freq_tweezer_modulation',np.linspace(100.e3,536.e3,20))
-        # self.xvar('freq_tweezer_modulation',[])
-        # self.xvar('v_modulation_depth',np.linspace(2.8,3.2,10))
-        self.p.freq_tweezer_modulation = 2.15e3
-        self.p.v_modulation_depth = 6.
+        # self.xvar('i_evap1_current',np.linspace(190.,194.,8))
+        # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
 
-        # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(5.,9.9,20))
-        # self.p.v_pd_tweezer_1064_ramp_end = 9.5
-        # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.7,7.,10)) 
-        # self.p.v_pd_tweezer_1064_rampdown_end = 4.9
-        # self.xvar('i_evap2_current',np.linspace(179.,194.,20))
-        # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.001,.5,8))
-        # self.p.t_tweezer_1064_rampdown = .15
-        # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.03,2.,10)) 
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(2.,8.,20))
+
+        # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(7.,9.9,10))
+        self.p.v_pd_tweezer_1064_ramp_end = 9.2
+        # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,500.,20)*1.e-3)
+
+        # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.2,1.,10)) 
+        self.p.v_pd_tweezer_1064_rampdown_end = .4
+        # self.xvar('i_evap2_current',np.linspace(179.,194.,10))
+        # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.1,1.,10))
+        self.p.t_tweezer_1064_rampdown = .5
+
+        # self.xvar('i_forced_evap_ramp_end',np.linspace(20.,50.,10))
+        # self.xvar('t_forced_evap_ramp',np.linspace(.1,1.5,10))
+
+        # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.03,.1,8)) 
         # self.p.v_pd_tweezer_1064_rampdown2_end = .4
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.01,.4,8))
         # self.p.t_tweezer_1064_rampdown2 = .34
 
-        # self.xvar('t_tof',np.linspace(5.,100.,10)*1.e-6)
-        self.p.t_tof = 20.e-6
+        # self.xvar('t_tof',np.linspace(100.,350.,10)*1.e-6)
+        self.p.t_tof = 10.e-6
         self.p.N_repeats = [1]
         
-        # self.xvar('dummy_z',[0]*5)
+        # self.xvar('dummy_z',[0]*50)
 
         self.p.n_tweezers = 1
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
         # self.p.frequency_tweezer_array_width = .7e6
         # self.p.amp_tweezer_auto_compute = False
         # self.xvar('amp_tweezer_list')
-        self.p.amp_tweezer_list = [.17]
+        self.p.amp_tweezer_list = [.15]
 
         # self.xvar('amp_imaging',np.linspace(.03,.08,15))
         # self.xvar('amp_imaging',np.linspace(.04,.09,20))
-        self.camera_params.amp_imaging = 0.05
+        self.camera_params.amp_imaging = 0.048
         self.camera_params.exposure_time = 10.e-6
         self.params.t_imaging_pulse = self.camera_params.exposure_time
 
         # self.p.N_repeats = 2
-
-        self.sh_dds = self.get_device("shuttler0_dds0")
-        self.sh_dds: DDS
-        self.sh_trigger = self.get_device("shuttler0_trigger")
-        self.sh_trigger: Trigger
-        self.sh_relay = self.get_device("shuttler0_relay")
-        self.sh_relay: Relay
 
         self.finish_build(shuffle=True)
 
@@ -75,40 +70,6 @@ class tof_scan(EnvExperiment, Base):
         # self.set_high_field_imaging(i_outer = self.p.i_evap2_current)
 
         self.outer_coil.discharge()
-
-        frequency = self.p.freq_tweezer_modulation
-
-        n0 = shuttler_volt_to_mu(self.p.v_modulation_depth)
-        n1 = 0.
-        n2 = 0.
-        n3 = 0.
-        r0 = 0.
-        r1 = frequency
-        r2 = 0.
-
-        T = 8.e-9
-        g = 1.64676
-        q0 = n0/g
-        q1 = n1/g
-        q2 = n2/g
-        q3 = n3/g
-
-        b0 = np.int32(q0)
-        b1 = np.int32(q1 * T + q2 * T**2 / 2 + q3 * T**3 / 6)
-        b2 = np.int64(q2 * T**2 + q3 * T**3)
-        b3 = np.int64(q3 * T**3)
-
-        c0 = np.int32(r0)
-        c1 = np.int32((r1 * T + r2 * T**2) * T32)
-        c2 = np.int32(r2 * T**2)
-
-        self.sh_dds.set_waveform(b0=b0, b1=b1, b2=b2, b3=b3, c0=c0, c1=c1, c2=c2)
-        self.sh_trigger.trigger(0b11)
-
-        self.sh_relay.init()
-        self.sh_relay.enable(0b00)
-
-        self.sh_relay.enable(0b11)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -183,6 +144,11 @@ class tof_scan(EnvExperiment, Base):
         #     delay(self.p.dt_feshbach_field_ramp2)
         # delay(20.e-3)
 
+        # for i in self.p.forced_evap_ramp_list:
+        #     self.inner_coil.set_current(i_supply=i)
+        #     delay(self.p.dt_forced_evap_ramp)
+        # delay(30.e-3)
+
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown2_list)
         
         # self.outer_coil.set_current(i_supply=180.)
@@ -195,8 +161,6 @@ class tof_scan(EnvExperiment, Base):
 
         self.lightsheet.off()
         self.tweezer.off()
-
-        self.sh_relay.enable(0b00)
     
         delay(self.p.t_tof)
         # self.flash_repump()

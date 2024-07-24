@@ -2,54 +2,50 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base
 import numpy as np
+from kexp.calibrations import high_field_imaging_detuning
 
-class rf_scan(EnvExperiment, Base):
+class tof_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
-        self.p.imaging_state = 2.
+        self.p.imaging_state = 1.
+        # self.xvar('imaging_state',[2,1])
+        # self.xvar('frequency_detuned_imaging',np.arange(400.,440.,3)*1.e6)
+        # self.p.frequency_detuned_imaging = 421.e6
+        # self.xvar('dummy',[1.]*2)
 
-        self.xvar('t_tweezer_hold', np.linspace(40.,400.,20)*1.e-3)
-        # self.xvar('t_tof', np.linspace(1.,50.,15)*1.e-6)
+        self.xvar('beans',[1,2]*300)
 
-        self.p.t_tweezer_hold = 50.e-3
+        self.p.n_tweezers = 1
+        self.p.amp_tweezer_list = [.15]
 
-        self.p.t_tweezer_1064_ramp = 10.e-3
+        # self.p.t_tweezer_1064_ramp = 15.e-3
 
-        self.p.t_lightsheet_rampup = 25.e-3
-        
-        self.p.t_tof = 3.e-6
-        self.camera_params.amp_imaging = .07
-        self.p.t_imaging_pulse = 5.e-6
-        self.camera_params.exposure_time = 5.e-6
-        self.camera_params.em_gain = 290.
+        self.p.t_mot_load = .75
 
+        self.p.t_tof = 5.e-6
 
-        self.p.t_mot_load = 0.5
-        self.p.t_bias_off_wait = 2.e-3
-        
+        self.p.t_lightsheet_hold = 100.e-3
 
+        self.camera_params.amp_imaging = 0.04
+        self.camera_params.exposure_time = 10.e-6
+        self.params.t_imaging_pulse = self.camera_params.exposure_time
 
+        # self.p.N_repeats = 2
 
-        self.finish_build(shuffle=True)
+        self.finish_build(shuffle=False)
 
     @kernel
     def scan_kernel(self):
-        self.dds.init_cooling()
 
-        self.core.break_realtime()
-
-        if self.p.imaging_state == 1.:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
-        else:
-            self.set_imaging_detuning()
+        self.outer_coil.discharge()
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
-
+        
         self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
 
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
@@ -58,31 +54,39 @@ class rf_scan(EnvExperiment, Base):
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
-        self.release()
+        # self.release()
+        self.switch_d2_3d(0)
+        self.switch_d1_3d(0)
 
         self.flash_cooler()
 
         self.dds.power_down_cooling()
 
-        self.set_shims(v_zshim_current=0.,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                          v_xshim_current=self.p.v_xshim_current_gm)
-        
-        # self.inner_coil.igbt_ttl.on()
-        # self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-        # delay(self.p.t_magtrap)
+        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
+                            v_yshim_current=self.p.v_yshim_current_magtrap,
+                            v_xshim_current=self.p.v_xshim_current_magtrap)
 
+        # magtrap start
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.inner_coil.on()
+
+        self.tweezer.vva_dac.set(v=0.)
+        self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
-        # delay(5.e-3)
 
-        # self.inner_coil.igbt_ttl.off()
+        for i in self.p.magtrap_ramp_list:
+                self.inner_coil.set_current(i_supply=i)
+                delay(self.p.dt_magtrap_ramp)
+
+        delay(self.p.t_magtrap)
+
+        self.inner_coil.off()
         
-        delay(self.p.t_tweezer_hold)
-
+        delay(20.e-3)
         self.tweezer.off()
     
         delay(self.p.t_tof)
-        self.flash_repump()
+
         self.abs_image()
 
     @kernel

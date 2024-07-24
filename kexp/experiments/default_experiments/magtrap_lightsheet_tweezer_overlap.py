@@ -17,16 +17,19 @@ class tof_scan(EnvExperiment, Base):
 
         self.xvar('beans',[1,2]*300)
 
+        self.p.n_tweezers = 1
+        self.p.amp_tweezer_list = [.15]
+
         self.p.t_mot_load = .75
 
         self.p.t_tof = 200.e-6
         self.p.t_magtrap_tof = 20.e-6
         self.p.t_lightsheet_tof = 10.e-6
-        self.p.t_tweezer_tof = 20.e-6
+        self.p.t_tweezer_tof = 10.e-6
 
         self.p.t_lightsheet_hold = 100.e-3
 
-        self.camera_params.amp_imaging = 0.078
+        self.camera_params.amp_imaging = 0.05
         self.camera_params.exposure_time = 5.e-6
         self.params.t_imaging_pulse = self.camera_params.exposure_time
 
@@ -117,6 +120,11 @@ class tof_scan(EnvExperiment, Base):
             delay(20.e-3)
 
             self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
+
+            self.ttl.pd_scope_trig.on()
+            self.outer_coil.off()
+            delay(self.p.t_feshbach_field_decay)
+            self.ttl.pd_scope_trig.off()
 
             self.lightsheet.off()
     

@@ -49,12 +49,12 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 332.e-3
-        self.t_lightsheet_rampdown = .05
+        self.t_lightsheet_rampdown = 1.
         self.t_lightsheet_rampdown2 = .01
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
-        self.t_tweezer_ramp = .124
+        self.t_tweezer_ramp = .27
         self.t_tweezer_hold = 30.e-3
         self.t_tweezer_1064_ramp = .8
         self.t_tweezer_1064_rampdown = .072
@@ -62,8 +62,8 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap = .22
-        self.t_magtrap_ramp = .62
+        self.t_magtrap = .75
+        self.t_magtrap_ramp = .8
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 200.e-3
@@ -150,8 +150,8 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 23.
-        self.i_magtrap_ramp_end = 95.
+        self.i_magtrap_init = 24.
+        self.i_magtrap_ramp_end = 90.
         self.n_magtrap_ramp_steps = 1000
         self.n_magtrap_rampdown_steps = 1000
 
@@ -181,7 +181,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_end = 9.99
 
         self.n_lightsheet_rampdown_steps = 1000
-        self.v_pd_lightsheet_rampdown_end = 4.5
+        self.v_pd_lightsheet_rampdown_end = 4.84
 
         self.n_lightsheet_rampdown2_steps = 1000
         self.v_pd_lightsheet_rampdown2_end = .0
@@ -194,7 +194,7 @@ class ExptParams():
         self.amp_tweezer = .45
         self.v_pd_tweezer_1064 = 5.
         self.v_pd_tweezer_1064_ramp_start = 0.
-        self.v_pd_tweezer_1064_ramp_end = 7.9
+        self.v_pd_tweezer_1064_ramp_end = 9.2
         self.n_tweezer_1064_ramp_steps = 1000
         
         self.v_pd_tweezer_1064_rampdown_end = .7
@@ -246,7 +246,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 191.5
+        self.i_evap1_current = 191.4
         self.i_evap2_current = 181.3
         self.i_tweezer_evap_current = 190.6
 

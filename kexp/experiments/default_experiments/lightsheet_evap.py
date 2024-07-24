@@ -8,17 +8,42 @@ class tweezer_evap(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.3,3.5,20))
+        self.p.imaging_state = 1.
+
+        # self.xvar('i_magtrap_init',np.linspace(20.,38.,8))
+        # self.xvar('i_magtrap_ramp_end',np.linspace(28.,95.,8))
+
+        self.xvar('t_magtrap',np.linspace(0.1,1000.,8)*1.e-3)
+        self.xvar('t_magtrap_ramp',np.linspace(10.,1500.,8)*1.e-3)
+
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.3,3.5,20))
+
+        # self.xvar('i_evap1_current',np.linspace(190.,195.,8))
+        # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.5,8))
+
+        # self.p.i_evap1_current = 193.4
+        # self.p.t_lightsheet_rampdown = .14
+
+        # self.xvar('dummy_z',[0]*50)
+
+        self.p.N_repeats = [3,1]
+
         # self.xvar('t_tof',np.linspace(1.,50.,6)*1.e-6)
+        self.p.t_tof = 500.e-6
 
-        self.p.t_tof = 50.e-6
+        # self.p.t_lightsheet_rampup = 200.e-3
 
-        self.p.t_lightsheet_rampup = 200.e-3
+        # self.xvar('amp_imaging',np.linspace(.2,.5,20))
+        self.p.amp_imaging = .3
 
         self.finish_build(shuffle=False)
 
     @kernel
     def scan_kernel(self):
+
+        self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1, amp=self.p.amp_imaging)
+
+        self.outer_coil.discharge()
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -41,28 +66,32 @@ class tweezer_evap(EnvExperiment, Base):
 
         self.dds.power_down_cooling()
 
-        self.set_shims(v_zshim_current=0.,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                        v_xshim_current=self.p.v_xshim_current_gm)
-        
-        self.ttl.pd_scope_trig.on()
-        self.inner_coil.igbt_ttl.on()
+        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
+                        v_yshim_current=self.p.v_yshim_current_magtrap,
+                          v_xshim_current=self.p.v_xshim_current_magtrap)
 
-        # ramp up lightsheet
+        # magtrap start
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.inner_coil.on()
+
+        # ramp up lightsheet over magtrap
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
-        # rampdown magtrap
         for i in self.p.magtrap_ramp_list:
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
 
-        self.outer_coil.set_current(i_supply=self.p.i_evap1_current)
-        self.outer_coil.set_voltage(v_supply=9.)
-
         delay(self.p.t_magtrap)
-        self.inner_coil.off()
 
+        for i in self.p.magtrap_rampdown_list:
+            self.inner_coil.set_current(i_supply=i)
+            delay(self.p.dt_magtrap_rampdown)
+
+        self.inner_coil.off()
+        
         self.outer_coil.on()
+        delay(1.e-3)
+        self.outer_coil.set_voltage(v_supply=70.)
 
         for i in self.p.feshbach_field_rampup_list:
             self.outer_coil.set_current(i_supply=i)
@@ -71,16 +100,6 @@ class tweezer_evap(EnvExperiment, Base):
 
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
 
-        for i in self.p.feshbach_field_ramp_list:
-            self.outer_coil.set_current(i_supply=i)
-            delay(self.p.dt_feshbach_field_ramp)
-        delay(20.e-3)
-
-        # self.outer_coil.set_current(i_supply=self.p.i_evap2_current)
-        # delay(20.e-3)
-        
-        # self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
-
         self.outer_coil.off()
         self.ttl.pd_scope_trig.off()
         delay(self.p.t_feshbach_field_decay)
@@ -88,7 +107,7 @@ class tweezer_evap(EnvExperiment, Base):
         self.lightsheet.off()
     
         delay(self.p.t_tof)
-        self.flash_repump()
+        # self.flash_repump()
         self.abs_image()
 
     @kernel

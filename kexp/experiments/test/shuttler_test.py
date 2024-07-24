@@ -13,9 +13,9 @@ class tof_scan(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=False,camera_select='andor',save_data=False)
 
-        self.xvar('freq_tweezer_modulation',np.linspace(100.e3,1000.e3,30))
-        # self.p.freq_tweezer_modulation = 2.95e3
-        self.p.v_modulation_depth = 4.99
+        # self.xvar('freq_tweezer_modulation',np.linspace(100.e3,1000.e3,30))
+        self.p.freq_tweezer_modulation = 215.e3
+        self.p.v_modulation_depth = 6.
 
         self.sh_dds = self.get_device("shuttler0_dds0")
         self.sh_dds: DDS
@@ -63,16 +63,17 @@ class tof_scan(EnvExperiment, Base):
 
         self.tweezer.vva_dac.set(v=.0)
         self.tweezer.on()
-        self.tweezer.vva_dac.set(v=1.)
+        self.tweezer.vva_dac.set(v=5.)
 
         self.sh_relay.init()
+        delay(1.)
         self.sh_relay.enable(0b11)
         self.ttl.pd_scope_trig.pulse(1.e-3)
 
         delay(2.)
 
         self.sh_relay.enable(0b00)
-        self.tweezer.off()
+        # self.tweezer.off()
 
     @kernel
     def run(self):
