@@ -86,7 +86,8 @@ class Devices():
                                sw_ttl=self.ttl.awg,
                                awg_trg_ttl = self.ttl.awg_trigger,
                                pid_int_hold_zero_ttl = self.ttl.tweezer_pid_int_hold_zero,
-                               expt_params=self.params)
+                               painting_dac = self.dac.tweezer_paint_amp,
+                               expt_params = self.params)
 
         # camera placeholder
         self.camera = DummyCamera()
