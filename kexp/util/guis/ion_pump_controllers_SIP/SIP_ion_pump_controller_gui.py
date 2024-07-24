@@ -16,6 +16,8 @@ class ion_pump_data_dealer():
 
     def decode_pressure(self,data):
         return self.decode_current(data) / self.nA_per_torr
+    
+        print('beans')
 
     def decode_current(self,data):
         '''
