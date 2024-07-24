@@ -160,7 +160,7 @@ class MainWindow(QMainWindow):
         decoded_string = codecs.decode(buffer, 'utf-8')
         #print(buffer)
         #print(decoded_string)
-        time.sleep(0.1)
+        # time.sleep(0.1)
         # Decode the input bytes to string
         decoded_string = str(buffer)
         # Split the string by '/'
