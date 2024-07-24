@@ -61,7 +61,7 @@ class tweezer():
         self.vva_dac.set(v=v_tweezer_vva,load_dac=load_dac)
 
     @kernel
-    def ramp(self,t,v_ramp_list=dv_list,v_awg_am=dv,painting=False):
+    def ramp(self,t,v_ramp_list=dv_list,v_awg_am=dv,painting=False,keep_trap_frequency_constant=True):
 
         v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
 
@@ -70,14 +70,11 @@ class tweezer():
 
         if v_awg_am == dv:
             v_awg_am = self.params.v_awg_am_fixed_paint_amplitude
-            static_paint = True
-        else:
-            static_paint = False
 
         if not painting:
             self.paint_amp_dac.set(v=-7.)
         else:
-            if static_paint:
+            if not keep_trap_frequency_constant:
                 v_awg_amp_mod_list = [v_awg_am]*len(v_ramp_list)
             else:
                 # convert your list of vpds (propto trap power) to fractional power
