@@ -32,6 +32,7 @@ class dac_frame():
         self.vco_rf = self.assign_dac_ch(13,v=0.)
         self.vva_ry_405 = self.assign_dac_ch(14)
         self.vva_ry_980 = self.assign_dac_ch(15)
+        self.tweezer_paint_amp = self.assign_dac_ch(16)
 
         self._write_dac_keys()
         
