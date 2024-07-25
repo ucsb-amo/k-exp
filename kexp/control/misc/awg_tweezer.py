@@ -66,7 +66,9 @@ class tweezer():
         self.vva_dac.set(v=v_tweezer_vva,load_dac=load_dac)
 
     @kernel
-    def ramp(self,t,v_ramp_list=dv_list,v_awg_am_max=dv,painting=False,keep_trap_frequency_constant=True):
+    def ramp(self,t,v_ramp_list=dv_list,
+             v_awg_am_max=dv,painting=False,
+             keep_trap_frequency_constant=True):
 
         v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
 
@@ -74,13 +76,13 @@ class tweezer():
             v_ramp_list = self.params.v_pd_tweezer_1064_ramp_list
 
         if v_awg_am_max == dv:
-            v_awg_am_max = self.params.v_awg_am_amp_max
+            v_awg_am_max = self.params.v_tweezer_paint_amp_max
 
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
 
         # prep an array of the same length
-        v_awg_amp_mod_list = self.params.v_awg_am_amp_max
+        v_awg_amp_mod_list = self.params.v_pd_tweezer_1064_ramp_list
 
         if not painting:
             self.paint_amp_dac.set(v=-7.)
