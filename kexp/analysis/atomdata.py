@@ -17,7 +17,6 @@ class analysis_tags():
         self.averaged = False
 
 class atomdata():
-    
     '''
     Use to store and do basic analysis on data for every experiment.
 
@@ -119,7 +118,7 @@ class atomdata():
             self._store_keys = ['xvars','xvardims','od_raw']
             store_values(self,self._store_keys)
 
-            self._store_param_keys = ['N_repeats']
+            self._store_param_keys = ['N_repeats',*self.xvarnames]
             store_values(self.params,self._store_param_keys)
 
             avg_keys = ['od_raw']
@@ -130,6 +129,7 @@ class atomdata():
                     vars(self)[key] = array
                 # write in the unaveraged xvars
                 self.xvars[xvar_idx] = np.unique(self.xvars[xvar_idx])
+                vars(self.params)[self.xvarnames[xvar_idx]] = self.xvars[xvar_idx]
                 self.xvardims[xvar_idx] = self.xvars[xvar_idx].shape[0]
 
             self.params.N_repeats = np.ones(len(self.xvars),dtype=int)
