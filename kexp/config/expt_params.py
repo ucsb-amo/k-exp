@@ -214,6 +214,8 @@ class ExptParams():
         self.amp_tweezer_auto_compute = False
         self.amp_tweezer_list = [.2,.215]
 
+        self.v_awg_am_fixed_paint_amplitude = 6.
+
         # RF
         self.t_rf_sweep_state_prep = 100.e-3
         self.frequency_rf_sweep_state_prep_center = 459.3543e6

@@ -22,12 +22,12 @@ class tof_scan(EnvExperiment, Base):
 
         # self.xvar('freq_tweezer_modulation',np.linspace(100.e3,536.e3,20))
         # self.xvar('freq_tweezer_modulation',[])
-        # self.xvar('v_modulation_depth',np.linspace(2.8,3.2,10))
-        self.p.freq_tweezer_modulation = 2.15e3
-        self.p.v_modulation_depth = 6.
+        # self.xvar('v_awg_am_fixed_paint_amplitude',np.linspace(-6.,6.,10))
+        # self.p.freq_tweezer_modulation = 2.15e3
+        self.p.v_awg_am_fixed_paint_amplitude = 6.
 
         # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(5.,9.9,20))
-        # self.p.v_pd_tweezer_1064_ramp_end = 9.5
+        self.p.v_pd_tweezer_1064_ramp_end = 9.5
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.7,7.,10)) 
         # self.p.v_pd_tweezer_1064_rampdown_end = 4.9
         # self.xvar('i_evap2_current',np.linspace(179.,194.,20))
@@ -39,7 +39,7 @@ class tof_scan(EnvExperiment, Base):
         # self.p.t_tweezer_1064_rampdown2 = .34
 
         # self.xvar('t_tof',np.linspace(5.,100.,10)*1.e-6)
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 10.e-6
         self.p.N_repeats = [1]
         
         # self.xvar('dummy_z',[0]*5)
@@ -57,7 +57,7 @@ class tof_scan(EnvExperiment, Base):
         self.camera_params.exposure_time = 10.e-6
         self.params.t_imaging_pulse = self.camera_params.exposure_time
 
-        # self.p.N_repeats = 2
+        self.p.N_repeats = 5
 
         self.sh_dds = self.get_device("shuttler0_dds0")
         self.sh_dds: DDS
@@ -74,41 +74,43 @@ class tof_scan(EnvExperiment, Base):
         # self.set_imaging_detuning(amp=self.p.amp_imaging)
         # self.set_high_field_imaging(i_outer = self.p.i_evap2_current)
 
-        self.outer_coil.discharge()
+        # self.outer_coil.discharge()
 
-        frequency = self.p.freq_tweezer_modulation
+        ### Shuttler stuff
+        # frequency = self.p.freq_tweezer_modulation
 
-        n0 = shuttler_volt_to_mu(self.p.v_modulation_depth)
-        n1 = 0.
-        n2 = 0.
-        n3 = 0.
-        r0 = 0.
-        r1 = frequency
-        r2 = 0.
+        # n0 = shuttler_volt_to_mu(self.p.v_modulation_depth)
+        # n1 = 0.
+        # n2 = 0.
+        # n3 = 0.
+        # r0 = 0.
+        # r1 = frequency
+        # r2 = 0.
 
-        T = 8.e-9
-        g = 1.64676
-        q0 = n0/g
-        q1 = n1/g
-        q2 = n2/g
-        q3 = n3/g
+        # T = 8.e-9
+        # g = 1.64676
+        # q0 = n0/g
+        # q1 = n1/g
+        # q2 = n2/g
+        # q3 = n3/g
 
-        b0 = np.int32(q0)
-        b1 = np.int32(q1 * T + q2 * T**2 / 2 + q3 * T**3 / 6)
-        b2 = np.int64(q2 * T**2 + q3 * T**3)
-        b3 = np.int64(q3 * T**3)
+        # b0 = np.int32(q0)
+        # b1 = np.int32(q1 * T + q2 * T**2 / 2 + q3 * T**3 / 6)
+        # b2 = np.int64(q2 * T**2 + q3 * T**3)
+        # b3 = np.int64(q3 * T**3)
 
-        c0 = np.int32(r0)
-        c1 = np.int32((r1 * T + r2 * T**2) * T32)
-        c2 = np.int32(r2 * T**2)
+        # c0 = np.int32(r0)
+        # c1 = np.int32((r1 * T + r2 * T**2) * T32)
+        # c2 = np.int32(r2 * T**2)
 
-        self.sh_dds.set_waveform(b0=b0, b1=b1, b2=b2, b3=b3, c0=c0, c1=c1, c2=c2)
-        self.sh_trigger.trigger(0b11)
+        # self.sh_dds.set_waveform(b0=b0, b1=b1, b2=b2, b3=b3, c0=c0, c1=c1, c2=c2)
+        # self.sh_trigger.trigger(0b11)
 
-        self.sh_relay.init()
-        self.sh_relay.enable(0b00)
+        # self.sh_relay.init()
+        # self.sh_relay.enable(0b00)
 
-        self.sh_relay.enable(0b11)
+        # self.sh_relay.enable(0b11)
+        ###
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -171,8 +173,8 @@ class tof_scan(EnvExperiment, Base):
         delay(20.e-3)
 
         self.tweezer.vva_dac.set(v=0.)
-        self.tweezer.on()
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+        self.tweezer.on(painting=True)
+        self.tweezer.static_modulated_ramp(t=self.p.t_tweezer_1064_ramp)
 
         self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
 

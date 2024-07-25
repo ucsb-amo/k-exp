@@ -34,8 +34,13 @@ class tweezer():
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
 
     @kernel
-    def on(self):
+    def on(self,painting=False,v_awg_am=dv):
+        if v_awg_am == dv:
+            v_awg_am = self.params.v_awg_am_fixed_paint_amplitude
+
         self.vva_dac.set(v=.0)
+        if painting:
+            self.paint_amp_dac.set(v=v_awg_am)
         with parallel:
             self.ao_dds.on()
             self.sw_ttl.on()
@@ -71,11 +76,18 @@ class tweezer():
         if v_awg_am == dv:
             v_awg_am = self.params.v_awg_am_fixed_paint_amplitude
 
+        n_ramp = len(v_ramp_list)
+        dt_ramp = t / n_ramp
+
+        # prep an array of the same length
+        v_awg_amp_mod_list = self.params.v_awg_am_fixed_paint_amplitude
+
         if not painting:
             self.paint_amp_dac.set(v=-7.)
         else:
             if not keep_trap_frequency_constant:
-                v_awg_amp_mod_list = [v_awg_am]*len(v_ramp_list)
+                # prep an empty list of just ones
+                v_awg_amp_mod_list[:] = v_awg_am
             else:
                 # convert your list of vpds (propto trap power) to fractional power
                 p_frac_list = v_ramp_list / v_pd_max
@@ -86,16 +98,28 @@ class tweezer():
                 # rescale to between -6V (fraction painting = 0) and +6V (fraction painting
                 # = 1) for the AWG input
                 v_awg_amp_mod_list = (paint_amp_frac_list - 0.5)*12 
-        
-        n_ramp = len(v_ramp_list)
-        dt_ramp = t / n_ramp
 
         # for v in v_ramp_list:
-        for i in range(len(v_ramp_list)):
+        for i in range(n_ramp):
             self.vva_dac.set(v=v_ramp_list[i],load_dac=False)
             if painting:
                 self.paint_amp_dac.set(v=v_awg_amp_mod_list[i],load_dac=False)
             self.vva_dac.load()
+            delay(dt_ramp)
+
+    @kernel
+    def static_modulated_ramp(self,t,v_ramp_list=dv_list,v_awg_am=dv):
+        if v_ramp_list == dv_list:
+            v_ramp_list = self.params.v_pd_tweezer_1064_ramp_list
+
+        if v_awg_am == dv:
+            v_awg_am = self.params.v_awg_am_fixed_paint_amplitude
+
+        n_ramp = len(v_ramp_list)
+        dt_ramp = t / n_ramp
+
+        for v in v_ramp_list:
+            self.vva_dac.set(v=v)
             delay(dt_ramp)
 
     @kernel
