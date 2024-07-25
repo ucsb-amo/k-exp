@@ -46,7 +46,7 @@ class GaussianFit(Fit):
         '''
         amplitude_guess = np.max(y) - np.min(y)
         x_center_guess = x[np.argmax(y)]
-        sigma_guess = np.abs(x_center_guess - x[np.argmin(np.abs(self.ydata_smoothed - 0.65*np.max(y)))])
+        sigma_guess = np.abs(x_center_guess - x[np.argmin(np.abs(self.ydata_smoothed - 0.35*np.max(y)))])
         y_offset_guess = np.min(y)
         popt, pcov = curve_fit(self._fit_func, x, y,
                                 p0=[amplitude_guess, sigma_guess, x_center_guess, y_offset_guess],

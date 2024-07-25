@@ -46,7 +46,7 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roiy = [253,284]
     elif crop_type == 'andor_tweezer_wide_putin':
         roix = [180,251]
-        roiy = [248,278]
+        roiy = [248,279]
     elif crop_type == 'andor_lightsheet':
         roix = [100,400]
         roiy = [180,400]
