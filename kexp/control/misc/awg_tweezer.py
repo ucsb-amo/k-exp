@@ -66,28 +66,28 @@ class tweezer():
         self.vva_dac.set(v=v_tweezer_vva,load_dac=load_dac)
 
     @kernel
-    def ramp(self,t,v_ramp_list=dv_list,v_awg_am=dv,painting=False,keep_trap_frequency_constant=True):
+    def ramp(self,t,v_ramp_list=dv_list,v_awg_am_max=dv,painting=False,keep_trap_frequency_constant=True):
 
         v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
 
         if v_ramp_list == dv_list:
             v_ramp_list = self.params.v_pd_tweezer_1064_ramp_list
 
-        if v_awg_am == dv:
-            v_awg_am = self.params.v_awg_am_fixed_paint_amplitude
+        if v_awg_am_max == dv:
+            v_awg_am_max = self.params.v_awg_am_amp_max
 
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
 
         # prep an array of the same length
-        v_awg_amp_mod_list = self.params.v_awg_am_fixed_paint_amplitude
+        v_awg_amp_mod_list = self.params.v_awg_am_amp_max
 
         if not painting:
             self.paint_amp_dac.set(v=-7.)
         else:
             if not keep_trap_frequency_constant:
                 # prep an empty list of just ones
-                v_awg_amp_mod_list[:] = v_awg_am
+                v_awg_amp_mod_list[:] = v_awg_am_max
             else:
                 # convert your list of vpds (propto trap power) to fractional power
                 p_frac_list = v_ramp_list / v_pd_max
@@ -95,9 +95,10 @@ class tweezer():
                 # amplitude. To keep constant frequency, h should decrease by a factor equal
                 # to the cube root of the fraction by which P changes
                 paint_amp_frac_list = p_frac_list**(1/3)
-                # rescale to between -6V (fraction painting = 0) and +6V (fraction painting
-                # = 1) for the AWG input
-                v_awg_amp_mod_list = (paint_amp_frac_list - 0.5)*12 
+                # rescale to between -6V (fraction painting = 0) and the maximum
+                # painting amplitude specified (fraction painting = 1) for the
+                # AWG input
+                v_awg_amp_mod_list = (paint_amp_frac_list - 0.5)*(v_awg_am_max - (-6)) + (v_awg_am_max + (-6))/2
 
         # for v in v_ramp_list:
         for i in range(n_ramp):

@@ -22,9 +22,9 @@ class tof_scan(EnvExperiment, Base):
 
         # self.xvar('freq_tweezer_modulation',np.linspace(100.e3,536.e3,20))
         # self.xvar('freq_tweezer_modulation',[])
-        # self.xvar('v_awg_am_fixed_paint_amplitude',np.linspace(-6.,6.,10))
+        # self.xvar('v_awg_am_max',np.linspace(-6.,6.,10))
         # self.p.freq_tweezer_modulation = 2.15e3
-        self.p.v_awg_am_fixed_paint_amplitude = 6.
+        self.p.v_awg_am_max = 6.
 
         # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(5.,9.9,20))
         self.p.v_pd_tweezer_1064_ramp_end = 9.5
