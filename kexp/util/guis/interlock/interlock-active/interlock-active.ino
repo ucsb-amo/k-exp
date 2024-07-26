@@ -30,6 +30,8 @@ const float tempLowerBound = 280;
 const float flowLowerBound = 3.0;
 const float flowUpperBound = 8.0;
 
+bool isTripped = false;
+
 
 // Number of terminals.
 const int NUM_PINS = 5;
@@ -42,7 +44,8 @@ const int NUM_PINS = 5;
 void setup() {
   // Initialize serial communication at 9600 bits per second.
   Serial.begin(9600);
-
+  delay(500);
+  //Serial.println("Starting interlock");
   //Open the failsafe relay, if the PLC loses power, this will close which will short the magnetsf
   digitalWrite(safPin, HIGH);
   digitalWrite(relayPin, HIGH);
@@ -54,43 +57,70 @@ void setup() {
 }
 
 void loop() {
-
+  //Serial.begin(9600);
   //RTD is at terminal 0
   float v = readAndPrint(TERMINALS[0]);
   //convert voltage to temperature
   // when v= 1.465, t = 293k
   float temp = tempBase*v/voltBase;
-  Serial.println(temp,5);
+  Serial.print("/Temp is ");
+  Serial.print(temp,5);
+  Serial.println("k/");
 
   //Get flow meter voltages
   flows[0] = readAndPrint(TERMINALS[2]);
   flows[1] = readAndPrint(TERMINALS[3]);
   flows[2] = readAndPrint(TERMINALS[4]);
   flows[3] = readAndPrint(TERMINALS[5]);
-
+  
 
   ///If temp too high or low shut off magnets
   if (temp>tempUpperBound|| temp < tempLowerBound )
   {
     Serial.println("SHUTTING OFF POWER SUPPLY DUE TO TEMPERATURE");
     digitalWrite(safPin, LOW);
+    isTripped = true; 
   }
 
   ///Keeping flows as voltages
   for(int i=0; i<4; i++)
   {
+    Serial.print("/Flowmeter ");
+    Serial.print(i+1);
+    Serial.print(" reads ");
+    Serial.print(flows[i]);
+    Serial.println("V/");
     if(flows[i]<flowLowerBound || flows[i]>flowUpperBound)
     {
       Serial.print("SHUTTING OFF POWER SUPPLY DUE TO FLOW RATE of flowmeter ");
       Serial.print(i+1);
-      Serial.println(" being too high");
+      Serial.println(" being out of bounds");
       digitalWrite(safPin, LOW);
+      isTripped = true;
     }
+    delay(200);
   }
 
+  if (Serial.available() > 0) {
+    // read the incoming byte:
+    int incomingByte = Serial.read();    
+    // say what you got:
+    Serial.print("I received: ");
+    Serial.println(incomingByte, DEC);
+    ///Manually switch magnets back on, if tripped, will imediiately switch off
+    if(incomingByte == 79)
+    {
+        isTripped = false;
+        digitalWrite(safPin, HIGH);
+    }
+  }
+  if(isTripped)
+  {
+    Serial.println("I TRIPPED");
+  }
 
   // Delay for half a second before reading the terminals again.
-  delay(500);
+  //delay(500);
 }
 
 // This function reads the value from the specified pin, converts it to voltage, and prints the result.

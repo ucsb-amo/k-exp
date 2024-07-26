@@ -31,6 +31,10 @@ import time
 import re
 import codecs
 import csv
+
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 #import space
 
 
@@ -47,20 +51,34 @@ class MainWindow(QMainWindow):
         self.comPort = serial.Serial(port='COM5', baudrate=9600, timeout=1) 
         
         self.setWindowTitle("Interlock GUI")
-        button = QPushButton("RESET INTERLOCK!")
-        button.setCheckable(True)
-        button.clicked.connect(self.the_button_was_clicked)
-        button.setStyleSheet("""
+        # button = QPushButton("RESET INTERLOCK!")
+        # button.setCheckable(True)
+        # button.clicked.connect(self.the_button_was_clicked)
+        # button.setStyleSheet("""
+        #     QPushButton {
+        #         background-color: red;
+        #         color: white;
+        #         font-size: 24px;
+        #         font-weight: bold;
+        #         padding: 10px 20px;
+        #     }
+        # """)
+
+        self.button = QPushButton("Interlock Active")
+        self.button.setStyleSheet("""
             QPushButton {
-                background-color: red;
+                background-color: green;
                 color: white;
                 font-size: 24px;
                 font-weight: bold;
                 padding: 10px 20px;
             }
         """)
+        self.button.setEnabled(False)
+
+
         layout = QVBoxLayout()
-        layout.addWidget(button)
+        layout.addWidget(self.button)
         
         # Set the central widget of the Window.
         #self.setLeftWidget(button)
@@ -71,29 +89,30 @@ class MainWindow(QMainWindow):
         #self.setCentralWidget(self.plot_graph)
         self.plot_graph.setBackground("w")
         pen = pg.mkPen(color=(255, 0, 0))
-        self.plot_graph.setTitle("Chiller temperature and flow rate", color="b", size="20pt")
+        #self.plot_graph.setTitle("Chiller temperature and flow rate", color="b", size="20pt")
         styles = {"color": "red", "font-size": "18px"}
-        self.plot_graph.setLabel("left", "Temperature / K", **styles)
-        self.plot_graph.setLabel("right", "Flow Rate / V", **styles)
-        self.plot_graph.setLabel("bottom", "Time / S", **styles)
+        self.plot_graph.setLabel("left", "Temperature (C)", **styles)
+        self.plot_graph.setLabel("right", "Flow Rate (V)", **styles)
+        self.plot_graph.setLabel("bottom", "Time (s)", **styles)
         self.plot_graph.addLegend()
         self.plot_graph.showGrid(x=True, y=True)
-        self.plot_graph.setYRange(270, 310)
+        self.plot_graph.setYRange(0, 40)
         
-        self.plot_graph.getAxis('right').setLabel('Flow Meter value/V', color='blue')
-        self.plot_graph.getAxis('left').setLabel('Temp/K', color='red')
+        self.plot_graph.getAxis('right').setLabel('Flow Meter value (v)', color='blue')
+        self.plot_graph.getAxis('left').setLabel('Temp (c)', color='red')
 
         self.right_view = pg.ViewBox()
         self.plot_graph.scene().addItem(self.right_view)
         self.plot_graph.getAxis('right').linkToView(self.right_view)
         self.right_view.setXLink(self.plot_graph)
 
+        self.has_sent_email = False
 
         self.plot_graph.getViewBox().sigResized.connect(self.update_views)
 
         self.right_view.setYRange(3, 8, padding=0)
 
-        self.time = list(range(1001))
+        self.time = list(range(-1000,1))
         self.temperature = [0 for _ in range(1001)]
         self.flows = []
         for i in range(4):
@@ -115,11 +134,11 @@ class MainWindow(QMainWindow):
         self.line_4 = pg.PlotCurveItem(
             self.time,
             self.flows[2] , 
-            name="Flow meter 3", pen = 'orange')
+            name="Flow meter 3", pen = 'cyan')
         self.line_5 = pg.PlotCurveItem(
             self.time,
             self.flows[3] ,
-            name="Flow meter 4", pen = 'yellow')
+            name="Flow meter 4", pen = 'purple')
         self.right_view.addItem(self.line_2)
         self.right_view.addItem(self.line_3)
         self.right_view.addItem(self.line_4)
@@ -156,8 +175,30 @@ class MainWindow(QMainWindow):
 
     #Function that reads the PLCs serial output and parses to strings readable by the GUI
     def read_PLC(self):
-        buffer = self.comPort.read(200)
-        decoded_string = codecs.decode(buffer, 'utf-8')
+        buffer = None
+        try:
+            buffer = self.comPort.read(200)
+            decoded_string = codecs.decode(buffer, 'utf-8')
+        except:
+        # if not buffer:
+            print("No data received from serial port.")
+            #interlock is tripped
+            self.button.setText("No serial from PLC - loss of power?")
+            if not self.has_sent_email:
+                self.send_email()
+                self.has_sent_email = True
+            self.button.setStyleSheet("""
+                QPushButton {
+                    background-color: orange;
+                    color: white;
+                    font-size: 24px;
+                    font-weight: bold;
+                    padding: 10px 20px;
+                }
+            """)
+            self.button.setEnabled(True)
+            self.button.clicked.connect(self.the_button_was_clicked)
+
         #print(buffer)
         #print(decoded_string)
         # time.sleep(0.1)
@@ -183,6 +224,11 @@ class MainWindow(QMainWindow):
                 if temp_match:
                     value = float(temp_match.group(1))
                     data_array.append([time.time(),'Temp',0, value])
+            elif 'TRIPPED' in segment:
+                tripped = re.search(r'I TRIPPED', segment)    
+                #print("TRIPPED")
+                if tripped:
+                    data_array.append('I-T')
         return data_array
 
     def update_views(self):
@@ -194,26 +240,82 @@ class MainWindow(QMainWindow):
         #self.time.append(self.time[-1] + 1)
         ##Function needs to grab data until it gets all neccessary types
         data_inc = self.read_PLC()
-        for i in range(5):
-            print(data_inc[i])
-            if(data_inc[i][2] == 0):
-                self.temperature = self.temperature[1:]
-                self.temperature.append(data_inc[i][3])
-            else:
-                self.flows[data_inc[i][2]-1] = self.flows[data_inc[i][2]-1][1:]
-                self.flows[data_inc[i][2]-1].append(data_inc[i][3])
-                #print(data_inc[i][3])
+        if data_inc:     
+            for i in range(5):
+                if(data_inc[i] != 'I-T'):
+                    print(data_inc[i])
+                    if(data_inc[i][2] == 0):
+                        self.temperature = self.temperature[1:]
+                        self.temperature.append(data_inc[i][3]-273)
+                    else:
+                        self.flows[data_inc[i][2]-1] = self.flows[data_inc[i][2]-1][1:]
+                        self.flows[data_inc[i][2]-1].append(data_inc[i][3])
+                    #print(data_inc[i][3])
+                elif(data_inc[i] == 'I-T'):
+                    #interlock is tripped
+                    self.button.setText("Interlock Tripped")
+                    if not self.has_sent_email:
+                        self.send_email()
+                        self.has_sent_email = True
+                    self.button.setStyleSheet("""
+                        QPushButton {
+                            background-color: red;
+                            color: white;
+                            font-size: 24px;
+                            font-weight: bold;
+                            padding: 10px 20px;
+                        }
+                    """)
+                    self.button.setEnabled(True)
+                    self.button.clicked.connect(self.the_button_was_clicked)
         print("Next dataset")
         self.line.setData(self.time, self.temperature)
         self.line_2.setData(self.time, self.flows[0])
         self.line_3.setData(self.time, self.flows[1])
         self.line_4.setData(self.time, self.flows[2])
         self.line_5.setData(self.time, self.flows[3])
-
+    #infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com
+    
     def the_button_was_clicked(self):
         print("Interlock reset")
         self.comPort.write(b'O')
+        self.has_sent_email = False
         #print(time.time())
+        self.button.setText("Interlock Active")
+        self.button.setStyleSheet("""
+            QPushButton {
+                background-color: green;
+                color: white;
+                font-size: 24px;
+                font-weight: bold;
+                padding: 10px 20px;
+            }
+        """)
+        self.button.setEnabled(False)
+        self.button.clicked.disconnect(self.the_button_was_clicked)
+
+    def send_email(self):
+        # # Create a MIME object
+        msg = MIMEMultipart()
+        msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
+        msg['To'] = 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'
+        msg['Subject'] = 'K-Interlock Tripped'
+        # Attach the message to the MIME object
+        msg.attach(MIMEText('K-Interlock tripped due to too high temperature, too low flowrate or loss of power!', 'plain'))
+        
+        # Set up the SMTP server
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
+        server.login('harry.who.is.ultra.cold@gmail.com', 'ocha pqjr ywua zvwa')
+        
+        # Send the email
+        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
+        
+        # Close the server connection
+        server.quit()
+        
+        print("Email sent successfully!")
+        pass
 
     def save_to_csv(self):
         filename = 'plot_data.csv'
