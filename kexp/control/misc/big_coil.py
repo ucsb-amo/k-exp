@@ -57,7 +57,7 @@ class igbt_magnet():
         self.i_control_dac.set(v=v_dac_current,load_dac=load_dac)
         
     @kernel
-    def set_voltage(self,v_supply,load_dac=True):
+    def set_voltage(self,v_supply=70.,load_dac=True):
         v_dac_voltage = self.supply_voltage_to_dac_voltage(v_supply)
         self.v_control_dac.set(v=v_dac_voltage,load_dac=load_dac)
 
