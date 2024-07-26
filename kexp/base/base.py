@@ -80,7 +80,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.generate_assignment_kernels()
 
         if self.setup_camera:
-            self.wait_for_camera_ready(timeout=10.)
+            self.wait_for_camera_ready(timeout=20.)
             print("Camera is ready.")
     
     def compute_new_derived(self):
