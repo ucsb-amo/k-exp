@@ -16,7 +16,7 @@ class dac_frame():
         from kexp.config import ExptParams
         p = ExptParams()
 
-        self.lightsheet_mod_amp = self.assign_dac_ch(0)
+        self.lightsheet_paint_amp = self.assign_dac_ch(0)
         self.vva_lightsheet = self.assign_dac_ch(1,v=9.7)
         self.vva_d1_3d_c = self.assign_dac_ch(2,p.v_pd_d1_c_gm)
         self.vva_d1_3d_r = self.assign_dac_ch(3,p.v_pd_d1_r_gm)
@@ -39,7 +39,7 @@ class dac_frame():
     def assign_dac_ch(self,ch,v=0.,max_v=9.99) -> DAC_CH:
         if ch in FORBIDDEN_CH:
             raise ValueError(f"DAC channel {ch} is forbidden.")
-        this_dac_ch = DAC_CH(ch,self.dac_device,max_v=max_v)
+        this_dac_ch = DAC_CH(ch,self.dac_device, max_v=max_v)
         this_dac_ch.v = v
         self.dac_ch_list.append(this_dac_ch)
         return this_dac_ch

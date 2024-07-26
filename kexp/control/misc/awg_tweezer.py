@@ -6,7 +6,7 @@ from kexp.util.artiq.async_print import aprint
 import spcm
 from spcm import units
 
-from artiq.experiment import kernel, delay
+from artiq.experiment import kernel, delay, parallel
 
 import numpy as np
 
@@ -34,13 +34,16 @@ class tweezer():
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
 
     @kernel
-    def on(self,painting=False,v_awg_am=dv):
+    def on(self,paint=False,v_awg_am=dv):
         if v_awg_am == dv:
-            v_awg_am = self.params.v_awg_am_fixed_paint_amplitude
+            v_awg_am = self.params.v_tweezer_paint_amp_max
 
         self.vva_dac.set(v=.0)
-        if painting:
+        delay(300.e-6)
+        if paint:
             self.paint_amp_dac.set(v=v_awg_am)
+        else:
+            self.paint_amp_dac.set(v=-7.)
         with parallel:
             self.ao_dds.on()
             self.sw_ttl.on()
@@ -65,12 +68,46 @@ class tweezer():
             v_tweezer_vva = self.params.v_pd_tweezer_1064
         self.vva_dac.set(v=v_tweezer_vva,load_dac=load_dac)
 
-    @kernel
-    def ramp(self,t,v_ramp_list=dv_list,
-             v_awg_am_max=dv,painting=False,
+    @kernel(flags={"fast-math"})
+    def ramp(self,t,
+             v_ramp_list=dv_list,
+             paint=False,
+             v_awg_am_max=dv,
+             v_pd_max=dv,
              keep_trap_frequency_constant=True):
+        """Ramps the voltage that controls the tweezer power according to v_ramp_list.
+        
+        If painting is enabled, paints the tweezer by controlling the amplitude
+        of the FM source waveform, which in turn controls the FM modulation
+        depth.
 
-        v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
+        Args:
+            t (float): The ramp time.
+
+            v_ramp_list (nd.nparray(float), optional): The list of voltages to
+            be ramped. This should be the voltage that controls the tweezer
+            power. Defaults to ExptParams.v_pd_tweezer_1064_ramp_list.
+
+            v_awg_am_max (float, optional): The voltage that corresponds to the
+            maximum desired painting amplitude. Defaults to
+            ExptParams.v_tweezer_paint_amp_max.
+
+            v_pd_max (float, optional): The voltage corresponding to the maximum
+            tweezer power used during the ramp. The trap frequency at this power
+            and at maximum painting amplitude is the one which is kept constant
+            if keep_trap_frequency_constant == True. Defaults to
+            ExptParams.v_pd_tweezer_1064_ramp_end (the endpoint of the ramp up).
+
+            paint (bool, optional): If True, enables painting. If False, sets
+            the paint amplitude control voltage to -7., which should disable
+            painting entirely. Defaults to False.
+
+            keep_trap_frequency_constant (bool, optional): If True, the painting
+            amplitude will be adjusted along with the tweezer power in order to
+            keep the trap frequency constant, and equal to the trap frequency at
+            maximum power (v_pd_max) and maximum painting amplitude
+            (v_awg_am_max). Defaults to True.
+        """        
 
         if v_ramp_list == dv_list:
             v_ramp_list = self.params.v_pd_tweezer_1064_ramp_list
@@ -78,52 +115,62 @@ class tweezer():
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_tweezer_paint_amp_max
 
+        if v_pd_max == dv:
+            v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
+
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
 
-        # prep an array of the same length
-        v_awg_amp_mod_list = self.params.v_pd_tweezer_1064_ramp_list
+        # initialize an array of the same length, but just ones. 
+        # can't initialize a new array, since np functions return a value into
+        # kernel without type hinting output class
+        v_awg_amp_mod_list = v_ramp_list / v_ramp_list
 
-        if not painting:
-            self.paint_amp_dac.set(v=-7.)
+        if not paint:
+            self.painting_off()
         else:
             if not keep_trap_frequency_constant:
-                # prep an empty list of just ones
-                v_awg_amp_mod_list[:] = v_awg_am_max
+                # set the mod amp list to all the same value
+                # it was just ones before, multiply by the value
+                v_awg_amp_mod_list = v_awg_amp_mod_list * v_awg_am_max
             else:
-                # convert your list of vpds (propto trap power) to fractional power
-                p_frac_list = v_ramp_list / v_pd_max
-                # trap frequency propto sqrt( P / h^3 ), where P is power and h is painting
-                # amplitude. To keep constant frequency, h should decrease by a factor equal
-                # to the cube root of the fraction by which P changes
-                paint_amp_frac_list = p_frac_list**(1/3)
-                # rescale to between -6V (fraction painting = 0) and the maximum
-                # painting amplitude specified (fraction painting = 1) for the
-                # AWG input
-                v_awg_amp_mod_list = (paint_amp_frac_list - 0.5)*(v_awg_am_max - (-6)) + (v_awg_am_max + (-6))/2
+                p_frac = v_ramp_list / v_pd_max
+                paint_amp_frac = p_frac**(1/3)
+                v_awg_amp_mod_list = (paint_amp_frac - 0.5)*(v_awg_am_max - (-6)) \
+                            + (v_awg_am_max + (-6))/2
 
-        # for v in v_ramp_list:
+        # add a delay to add slack after doing all this math
+        delay(500.e-6)
+
         for i in range(n_ramp):
             self.vva_dac.set(v=v_ramp_list[i],load_dac=False)
-            if painting:
+            if paint:
                 self.paint_amp_dac.set(v=v_awg_amp_mod_list[i],load_dac=False)
             self.vva_dac.load()
             delay(dt_ramp)
 
-    @kernel
-    def static_modulated_ramp(self,t,v_ramp_list=dv_list,v_awg_am=dv):
-        if v_ramp_list == dv_list:
-            v_ramp_list = self.params.v_pd_tweezer_1064_ramp_list
+    @kernel(flags={"fast-math"})
+    def v_pd_to_painting_amp_voltage(self,v_pd=dv_list,
+                                        v_awg_am_max=dv,
+                                        v_pd_max=dv):
+        if v_awg_am_max == dv:
+            v_awg_am_max = self.params.v_tweezer_paint_amp_max
 
-        if v_awg_am == dv:
-            v_awg_am = self.params.v_awg_am_fixed_paint_amplitude
+        if v_pd_max == dv:
+            v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
 
-        n_ramp = len(v_ramp_list)
-        dt_ramp = t / n_ramp
-
-        for v in v_ramp_list:
-            self.vva_dac.set(v=v)
-            delay(dt_ramp)
+        p_frac = v_pd / v_pd_max
+        # trap frequency propto sqrt( P / h^3 ), where P is power and h is painting
+        # amplitude. To keep constant frequency, h should decrease by a factor equal
+        # to the cube root of the fraction by which P changes
+        paint_amp_frac = p_frac**(1/3)
+        # rescale to between -6V (fraction painting = 0) and the maximum
+        # painting amplitude specified (fraction painting = 1) for the
+        # AWG input
+        v_awg_amp_mod = (paint_amp_frac - 0.5)*(v_awg_am_max - (-6)) \
+                            + (v_awg_am_max + (-6))/2
+        return v_awg_amp_mod
+        
 
     @kernel
     def painting_off(self):

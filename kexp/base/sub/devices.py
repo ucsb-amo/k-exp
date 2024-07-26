@@ -76,7 +76,7 @@ class Devices():
         
         # painted ligthsheet
         self.lightsheet = lightsheet(vva_dac=self.dac.vva_lightsheet,
-                                     paint_amp_dac=self.dac.lightsheet_mod_amp,
+                                     paint_amp_dac=self.dac.lightsheet_paint_amp,
                                      sw_ttl=self.ttl.lightsheet_sw,
                                      pid_int_hold_zero_ttl = self.ttl.lightsheet_pid_int_hold_zero,
                                      expt_params=self.params)
