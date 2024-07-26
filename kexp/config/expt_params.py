@@ -66,7 +66,7 @@ class ExptParams():
         self.t_magtrap_ramp = .8
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 200.e-3
-        self.t_feshbach_field_ramp = 200.e-3
+        self.t_feshbach_field_ramp = 100.e-3
         self.t_feshbach_field_ramp2 = 50.e-3
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
@@ -173,8 +173,8 @@ class ExptParams():
         # self.amp_lightsheet = 0.6
         # self.frequency_ao_lightsheet = 80.e6
         self.v_pd_lightsheet_pd_minimum = 0.035
-        self.amp_painting = 1.0
-        self.frequency_painting = 100.e3
+        self.v_lightsheet_paint_amp_max = 6.0
+
         self.v_pd_lightsheet = 8.8
         self.n_lightsheet_rampup_steps = 1000
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
