@@ -7,7 +7,7 @@ from kexp.calibrations import high_field_imaging_detuning
 class tof_scan(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=False,camera_select='andor',save_data=True)
 
         # self.p.imaging_state = 1.
         # self.xvar('frequency_detuned_imaging',np.arange(400.,440.,3)*1.e6)
@@ -31,16 +31,16 @@ class tof_scan(EnvExperiment, Base):
         # self.xvar('i_evap2_current',np.linspace(179.,194.,20))
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.1,1.,8))
         self.p.t_tweezer_1064_rampdown = .5
-        self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.03,.1,8)) 
+        # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.03,.1,8)) 
         # self.p.v_pd_tweezer_1064_rampdown2_end = .4
-        self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.01,.4,8))
+        # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.01,.4,8))
         # self.p.t_tweezer_1064_rampdown2 = .34
 
         # self.xvar('t_tof',np.linspace(100.,350.,10)*1.e-6)
         self.p.t_tof = 200.e-6
         self.p.N_repeats = [1]
         
-        # self.xvar('dummy_z',[0]*50)
+        self.xvar('dummy_z',[0]*2)
 
         self.p.n_tweezers = 1
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
@@ -93,7 +93,6 @@ class tof_scan(EnvExperiment, Base):
                           v_xshim_current=self.p.v_xshim_current_magtrap)
 
         # magtrap start
-        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.inner_coil.on()
 
         # ramp up lightsheet over magtrap
@@ -113,14 +112,17 @@ class tof_scan(EnvExperiment, Base):
         
         self.outer_coil.on()
         delay(1.e-3)
-        self.outer_coil.set_voltage(v_supply=70.)
+        self.outer_coil.set_voltage()
+
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
         for i in self.p.feshbach_field_rampup_list:
             self.outer_coil.set_current(i_supply=i)
             delay(self.p.dt_feshbach_field_rampup)
         delay(20.e-3)
 
-        self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
+                             v_ramp_list=self.p.v_pd_lightsheet_ramp_down_list)
         
         for i in self.p.feshbach_field_ramp_list:
             self.outer_coil.set_current(i_supply=i)
@@ -131,7 +133,8 @@ class tof_scan(EnvExperiment, Base):
         self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
-        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+                             v_ramp_list=self.p.v_pd_lightsheet_ramp_down2_list)
 
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list)
 

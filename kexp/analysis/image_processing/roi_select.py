@@ -57,7 +57,7 @@ def crop_OD(OD,crop_type='',Nvars=1):
         # roix = [255,325]
         # roiy = [245,320]
         roix = [207,226]
-        roiy = [250,273]
+        roiy = [253,270]
     else:
         print('no matching roi found, defaulting to whole image')
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]]

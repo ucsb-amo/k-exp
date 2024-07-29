@@ -31,7 +31,7 @@ class tof(EnvExperiment, Base):
     def scan_kernel(self):
         self.core.break_realtime()
         
-        self.outer_coil.i_control_dac.set(self.p.keysight_500A_dac) 
+        self.outer_coil.i_control_dac.set(self.p.keysight_500A_dac)
         delay(100*ms)
         self.ttl.pd_scope_trig.on()
         self.core.break_realtime()
