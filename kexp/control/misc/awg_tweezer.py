@@ -6,6 +6,8 @@ from kexp.util.artiq.async_print import aprint
 import spcm
 from spcm import units
 
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+
 from artiq.experiment import kernel, delay, parallel
 
 import numpy as np
@@ -62,6 +64,7 @@ class tweezer():
         self.ao1_dds.off()
         self.pid1_int_hold_zero.on()
         self.pid1_dac.set(v=0.)
+        self.pid2_enable_ttl.off()
         self.sw_ttl.off()
 
     @kernel 
@@ -71,10 +74,10 @@ class tweezer():
         self.awg_trg_ttl.off()
 
     @kernel
-    def set_power(self,v_tweezer_vva=dv,load_dac=True):
-        if v_tweezer_vva == dv:
-            v_tweezer_vva = self.params.v_pd_tweezer_1064
-        self.pid1_dac.set(v=v_tweezer_vva,load_dac=load_dac)
+    def set_power(self,v_pd=dv,load_dac=True):
+        if v_pd == dv:
+            v_pd = self.params.v_pd_tweezer_1064
+        self.pid1_dac.set(v=v_pd,load_dac=load_dac)
 
     @kernel(flags={"fast-math"})
     def ramp(self,t,
@@ -82,7 +85,8 @@ class tweezer():
              paint=False,
              v_awg_am_max=dv,
              v_pd_max=dv,
-             keep_trap_frequency_constant=True):
+             keep_trap_frequency_constant=True,
+             low_power=False):
         """Ramps the voltage that controls the tweezer power according to v_ramp_list.
         
         If painting is enabled, paints the tweezer by controlling the amplitude
@@ -129,6 +133,13 @@ class tweezer():
         n_ramp = len(v_ramp_list)
         dt_ramp = t / n_ramp
 
+        if low_power:
+            pid_dac = self.pid2_dac
+            v_awg_am_max = tweezer_vpd1_to_vpd2(v_awg_am_max)
+            pid_dac.set(v=v_ramp_list[0])
+        else:
+            pid_dac = self.pid1_dac
+
         # initialize an array of the same length, but just ones. 
         # can't initialize a new array, since np functions return a value into
         # kernel without type hinting output class
@@ -149,12 +160,15 @@ class tweezer():
 
         # add a delay to add slack after doing all this math
         delay(500.e-6)
-
+        if low_power:
+            self.pid2_enable_ttl.on()
+        else:
+            self.pid2_enable_ttl.off()
         for i in range(n_ramp):
-            self.pid1_dac.set(v=v_ramp_list[i],load_dac=False)
+            pid_dac.set(v=v_ramp_list[i],load_dac=False)
             if paint:
                 self.paint_amp_dac.set(v=v_awg_amp_mod_list[i],load_dac=False)
-            self.pid1_dac.load()
+            pid_dac.load()
             delay(dt_ramp)
 
     @kernel(flags={"fast-math"})
