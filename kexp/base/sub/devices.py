@@ -8,6 +8,7 @@ from artiq.coredevice.dma import CoreDMA
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
+from kexp.config.sampler_id import sampler_frame
 from kexp.control.artiq.mirny import Mirny
 from kexp.config.expt_params import ExptParams
 
@@ -40,6 +41,10 @@ class Devices():
         self.core = self.get_device("core")
         self.core_dma = self.get_device("core_dma")
         zotino = self.get_device("zotino0")
+        sampler = self.get_device("sampler0")
+
+        # sampler channels
+        self.sampler = sampler_frame(sampler_device=sampler)
 
         # dac channels
         self.dac = dac_frame(dac_device=zotino)
@@ -81,11 +86,14 @@ class Devices():
                                      pid_int_hold_zero_ttl = self.ttl.lightsheet_pid_int_hold_zero,
                                      expt_params=self.params)
         
-        self.tweezer = tweezer(ao_dds=self.dds.tweezer,
-                               vva_dac=self.dac.v_pd_tweezer,
-                               sw_ttl=self.ttl.awg,
+        self.tweezer = tweezer(ao1_dds=self.dds.tweezer_pid_1,
+                               pid1_dac=self.dac.v_pd_tweezer_pid1,
+                               ao2_dds=self.dds.tweezer_pid_2,
+                               pid2_dac=self.dac.v_pd_tweezer_pid2,
+                               sw_ttl=self.ttl.aod_rf_sw,
                                awg_trg_ttl = self.ttl.awg_trigger,
-                               pid_int_hold_zero_ttl = self.ttl.tweezer_pid_int_hold_zero,
+                               pid1_int_hold_zero_ttl = self.ttl.tweezer_pid1_int_hold_zero,
+                               pid2_enable_ttl=self.ttl.tweezer_pid2_enable,
                                painting_dac = self.dac.tweezer_paint_amp,
                                expt_params = self.params)
 
