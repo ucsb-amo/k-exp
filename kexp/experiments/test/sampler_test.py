@@ -1,60 +1,59 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base
+# from kexp import Base
 import numpy as np
 
 from artiq.coredevice.sampler import Sampler
+from artiq.coredevice.zotino import Zotino
 
-class samp(EnvExperiment, Base):
+class samp(EnvExperiment):
 
     def build(self):
-        Base.__init__(self,save_data=False,
-                      setup_camera=False,
-                      camera_select='xy_basler')
+        # Base.__init__(self,save_data=False,
+        #               setup_camera=False,
+        #               camera_select='xy_basler')
+
+        self.core = self.get_device("core")
+
+        self.dac = self.get_device("zotino0")
+        self.dac: Zotino
         
         self.sampler = self.get_device("sampler0")
         self.sampler: Sampler
         self.data = np.zeros(8)
-        self.finish_build(shuffle=False)
-
-    # @kernel
-    # def scan_kernel(self):
-    #     self.data
+        # self.finish_build(shuffle=False)
 
     @kernel
     def run(self):
-        data1 = [0.,0.,0.,0.,0.,0.,0.,0.]
-        data2 = [0.,0.,0.,0.,0.,0.,0.,0.]
-        self.init_kernel()
+        self.core.reset()
         self.sampler.init()
+        self.dac.init()
 
         self.core.break_realtime()
 
-        v = [1.,0.,7.,3.,5.]
-        self.dac.set(28,v[0])
+        ch = 0
+
+        v = [0.,1.,2.,3.,4.,5.,6.,7.]
+        # self.dac.write_dac(ch,v[0])
+        # self.dac.write_dac(ch,1.5)
+        # self.dac.load()
 
         n_ch = 8
         for i in range(n_ch):
             self.sampler.set_gain_mu(i,0)
         
         self.core.break_realtime()
-        n_samples = 4
+        n_samples = 8
         sample = [0.]*n_ch
 
         for n in range(n_samples):
-            delay(100*us)
+
+            # self.core.break_realtime()
+            # self.dac.write_dac(ch,v[n])
+            # self.dac.load()
+            # self.core.break_realtime()
+
+            delay(1000*ms)
             self.sampler.sample(sample)
             print(sample[0])
-
-            self.core.break_realtime()
-            self.dac.set(28,v[n+1])
-            self.core.break_realtime()
-            # delay(1*s)
-
-    def analyze(self):
-
-        import os
-        expt_filepath = os.path.abspath(__file__)
-        self.end(expt_filepath)
-
 
