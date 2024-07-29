@@ -15,7 +15,7 @@ def aod_diffraction_efficiency_from_awg_amp(amp):
     pass
 
 @portable(flags={"fast-math"})
-def vpd2_per_vpd1(vpd_pid1) -> TFloat:
+def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:
     #Calibration coefficients are from
     #k-jam\analysis\measurements\PID1_vs_PID2.ipynb
     slope = 9.79299
