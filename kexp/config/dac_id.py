@@ -28,11 +28,13 @@ class dac_frame():
         self.outer_coil_supply_current = self.assign_dac_ch(9)
         self.outer_coil_supply_voltage = self.assign_dac_ch(10)
         self.inner_coil_supply_voltage = self.assign_dac_ch(11)
-        self.v_pd_tweezer = self.assign_dac_ch(12,v=9.7)
+        self.v_pd_tweezer_pid1 = self.assign_dac_ch(12,v=9.7)
         self.vco_rf = self.assign_dac_ch(13,v=0.)
         self.vva_ry_405 = self.assign_dac_ch(14)
         self.vva_ry_980 = self.assign_dac_ch(15)
         self.tweezer_paint_amp = self.assign_dac_ch(16)
+        self.v_pd_tweezer_pid2 = self.assign_dac_ch(17,v=9.7)
+        self.test_dac = self.assign_dac_ch(30)
 
         self._write_dac_keys()
         

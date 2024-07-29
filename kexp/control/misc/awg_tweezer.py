@@ -14,8 +14,13 @@ dv = -1000.
 dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
-    def __init__(self, ao_dds:DDS, vva_dac:DAC_CH, sw_ttl:TTL,
-                  awg_trg_ttl:TTL, pid_int_hold_zero_ttl:TTL,
+    def __init__(self,
+                  ao1_dds:DDS, pid1_dac:DAC_CH,
+                  ao2_dds:DDS, pid2_dac:DAC_CH,
+                  sw_ttl:TTL,
+                  awg_trg_ttl:TTL,
+                  pid1_int_hold_zero_ttl:TTL,
+                  pid2_enable_ttl:TTL,
                   painting_dac:DAC_CH,
                   expt_params:ExptParams):
         """Controls the tweezers.
@@ -24,11 +29,14 @@ class tweezer():
             sw_ttl (TTL): TTL
             awg_trg_ttl (TTL): TTL
         """        
-        self.ao_dds = ao_dds
-        self.vva_dac = vva_dac
+        self.ao1_dds = ao1_dds
+        self.pid1_dac = pid1_dac
+        self.ao2_dds = ao2_dds
+        self.pid2_dac = pid2_dac
         self.sw_ttl = sw_ttl
         self.awg_trg_ttl = awg_trg_ttl
-        self.pid_int_hold_zero = pid_int_hold_zero_ttl
+        self.pid1_int_hold_zero = pid1_int_hold_zero_ttl
+        self.pid2_enable_ttl = pid2_enable_ttl
         self.paint_amp_dac = painting_dac
         self.params = expt_params
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
@@ -38,22 +46,22 @@ class tweezer():
         if v_awg_am == dv:
             v_awg_am = self.params.v_tweezer_paint_amp_max
 
-        self.vva_dac.set(v=.0)
+        self.pid1_dac.set(v=.0)
         delay(300.e-6)
         if paint:
             self.paint_amp_dac.set(v=v_awg_am)
         else:
             self.paint_amp_dac.set(v=-7.)
         with parallel:
-            self.ao_dds.on()
+            self.ao1_dds.on()
             self.sw_ttl.on()
-            self.pid_int_hold_zero.pulse(1.e-6)
+            self.pid1_int_hold_zero.pulse(1.e-6)
 
     @kernel
     def off(self):
-        self.ao_dds.off()
-        self.pid_int_hold_zero.on()
-        self.vva_dac.set(v=0.)
+        self.ao1_dds.off()
+        self.pid1_int_hold_zero.on()
+        self.pid1_dac.set(v=0.)
         self.sw_ttl.off()
 
     @kernel 
@@ -66,7 +74,7 @@ class tweezer():
     def set_power(self,v_tweezer_vva=dv,load_dac=True):
         if v_tweezer_vva == dv:
             v_tweezer_vva = self.params.v_pd_tweezer_1064
-        self.vva_dac.set(v=v_tweezer_vva,load_dac=load_dac)
+        self.pid1_dac.set(v=v_tweezer_vva,load_dac=load_dac)
 
     @kernel(flags={"fast-math"})
     def ramp(self,t,
@@ -143,10 +151,10 @@ class tweezer():
         delay(500.e-6)
 
         for i in range(n_ramp):
-            self.vva_dac.set(v=v_ramp_list[i],load_dac=False)
+            self.pid1_dac.set(v=v_ramp_list[i],load_dac=False)
             if paint:
                 self.paint_amp_dac.set(v=v_awg_amp_mod_list[i],load_dac=False)
-            self.vva_dac.load()
+            self.pid1_dac.load()
             delay(dt_ramp)
 
     @kernel(flags={"fast-math"})
