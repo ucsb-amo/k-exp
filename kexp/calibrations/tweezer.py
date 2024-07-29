@@ -16,6 +16,6 @@ def aod_diffraction_efficiency_from_awg_amp(amp):
 
 @portable(flags={"fast-math"})
 def vpd2_per_vpd1(vpd_pid1) -> TFloat:
-    v_pd_pid1_measured = 1.0
-    v_pd_pid2_measured = 9.5
-    return (v_pd_pid2_measured/v_pd_pid1_measured) * vpd_pid1
+    slope = 9.79299
+    y_intercept = -0.136599
+    return vpd_pid1*slope + y_intercept
