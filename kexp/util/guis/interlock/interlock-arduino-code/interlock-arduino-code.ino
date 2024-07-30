@@ -77,7 +77,7 @@ void loop() {
   ///If temp too high or low shut off magnets
   if (temp>tempUpperBound|| temp < tempLowerBound )
   {
-    Serial.println("SHUTTING OFF POWER SUPPLY DUE TO TEMPERATURE");
+    //Serial.println("SHUTTING OFF POWER SUPPLY DUE TO TEMPERATURE");
     digitalWrite(safPin, LOW);
     isTripped = true; 
   }
@@ -92,9 +92,9 @@ void loop() {
     Serial.println("V/");
     if(flows[i]<flowLowerBound || flows[i]>flowUpperBound)
     {
-      Serial.print("SHUTTING OFF POWER SUPPLY DUE TO FLOW RATE of flowmeter ");
-      Serial.print(i+1);
-      Serial.println(" being out of bounds");
+      // Serial.print("SHUTTING OFF POWER SUPPLY DUE TO FLOW RATE of flowmeter ");
+      // Serial.print(i+1);
+      // Serial.println(" being out of bounds");
       digitalWrite(safPin, LOW);
       isTripped = true;
     }
@@ -102,11 +102,11 @@ void loop() {
   }
 
   if (Serial.available() > 0) {
-    // read the incoming byte:
+    // read the incoming byte: bite 
     int incomingByte = Serial.read();    
     // say what you got:
-    Serial.print("I received: ");
-    Serial.println(incomingByte, DEC);
+    //Serial.print("I received: ");
+    //Serial.println(incomingByte, DEC);
     ///Manually switch magnets back on, if tripped, will imediiately switch off
     if(incomingByte == 79)
     {
