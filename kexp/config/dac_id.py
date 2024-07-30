@@ -52,6 +52,7 @@ class dac_frame():
         for key in self.__dict__.keys():
             if isinstance(self.__dict__[key],DAC_CH):
                 self.__dict__[key].key = key
+                self.__dict__[key].set_errmessage()
 
     def dac_by_ch(self,ch) -> DAC_CH:
         ch_list = [dac.ch for dac in self.dac_ch_list]

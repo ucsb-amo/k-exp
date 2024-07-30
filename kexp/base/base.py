@@ -133,7 +133,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.core.break_realtime()
 
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
-        self.tweezer.pid_int_hold_zero.on()
+        self.tweezer.pid1_int_hold_zero.on()
 
     def prepare_image_array(self):
         if self.run_info.save_data:

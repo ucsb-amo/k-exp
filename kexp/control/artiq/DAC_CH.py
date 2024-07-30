@@ -14,7 +14,8 @@ class DAC_CH():
             self.max_v = max_v
         self.key = ""
 
-        self.errmessage = f"Attempted to set dac ch {self.key} to a voltage > specified maximum voltage ({max_v:1.3f}) for that channel. DAC voltage was replaced by zero for these instances."
+    def set_errmessage(self):
+        self.errmessage = f"Attempted to set dac ch {self.key} to a voltage > specified maximum voltage ({self.max_v:1.3f}) for that channel. DAC voltage was replaced by zero for these instances."
 
     @kernel
     def set(self,v=dv,load_dac=True):
