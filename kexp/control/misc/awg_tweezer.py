@@ -48,6 +48,7 @@ class tweezer():
         if v_awg_am == dv:
             v_awg_am = self.params.v_tweezer_paint_amp_max
 
+        self.ao2_dds.on()
         self.pid1_dac.set(v=.0)
         delay(300.e-6)
         if paint:
@@ -62,6 +63,7 @@ class tweezer():
     @kernel
     def off(self):
         self.ao1_dds.off()
+        self.ao2_dds.off()
         self.pid1_int_hold_zero.on()
         self.pid1_dac.set(v=0.)
         self.pid2_enable_ttl.off()
@@ -135,8 +137,7 @@ class tweezer():
 
         if low_power:
             pid_dac = self.pid2_dac
-            v_awg_am_max = tweezer_vpd1_to_vpd2(v_awg_am_max)
-            pid_dac.set(v=v_ramp_list[0])
+            v_pd_max = tweezer_vpd1_to_vpd2(v_awg_am_max)
         else:
             pid_dac = self.pid1_dac
 
@@ -160,6 +161,7 @@ class tweezer():
 
         # add a delay to add slack after doing all this math
         delay(500.e-6)
+        pid_dac.set(v=v_ramp_list[0])
         if low_power:
             self.pid2_enable_ttl.on()
         else:

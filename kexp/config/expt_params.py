@@ -199,10 +199,10 @@ class ExptParams():
         self.n_tweezer_1064_ramp_steps = 1000
         
         self.v_pd_tweezer_1064_rampdown_end = .7
-        self.n_tweezer_1064_rampdown_steps = 100
+        self.n_tweezer_1064_rampdown_steps = 1000
 
         self.v_pd_tweezer_1064_rampdown2_end = 0.025
-        self.n_tweezer_1064_rampdown2_steps = 100
+        self.n_tweezer_1064_rampdown2_steps = 1000
 
         self.n_tweezers = 2
 
@@ -377,14 +377,15 @@ class ExptParams():
         self.dt_tweezer_1064_rampdown = self.t_tweezer_1064_rampdown / self.n_tweezer_1064_rampdown_steps
 
     def compute_tweezer_1064_rampdown2_params(self):
-        self.v_pd_tweezer_1064_rampdown2_start = self.v_pd_tweezer_1064_rampdown_end
+        from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+        self.v_pd_tweezer_1064_rampdown2_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown_end)
         self.v_pd_tweezer_1064_rampdown2_list = np.linspace(self.v_pd_tweezer_1064_rampdown2_start,self.v_pd_tweezer_1064_rampdown2_end, self.n_tweezer_1064_rampdown2_steps).transpose()
         self.dt_tweezer_1064_rampdown2 = self.t_tweezer_1064_rampdown2 / self.n_tweezer_1064_rampdown2_steps
 
     def compute_magtrap_ramp_params(self):
         self.i_magtrap_ramp_start = self.i_magtrap_init
-        self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end, self.n_magtrap_ramp_steps).transpose()
-        self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps
+        self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end,self.n_magtrap_ramp_steps).transpose()
+        self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps 
 
     def compute_magtrap_rampdown_params(self):
         self.i_magtrap_rampdown_start = self.i_magtrap_ramp_end
