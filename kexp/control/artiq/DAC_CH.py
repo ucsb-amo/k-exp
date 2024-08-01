@@ -45,10 +45,10 @@ class DAC_CH():
     def load(self):
         self.dac_device.load()
 
-    @kernel
-    def linear_ramp(self,t,start,end,n):
-        v0 = start
-        vf = end
+    @kernel(flags={"fast-math"})
+    def linear_ramp(self,t,v_start,v_end,n):
+        v0 = v_start
+        vf = v_end
         dv = (vf-v0)/(n-1)
         dt = t/n
         for i in range(n):
