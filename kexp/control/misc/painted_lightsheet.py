@@ -9,6 +9,7 @@ from artiq.experiment import kernel, delay, TFloat
 import numpy as np
 
 dv = -102.
+di = 0
 dv_list = np.linspace(0.,54.,10)
 
 DAC_PAINT_FULLSCALE = 9.99
@@ -56,6 +57,7 @@ class lightsheet():
     def ramp(self,t,
              v_start=dv,
              v_end=dv,
+             n_steps=di,
              paint=False,
              v_awg_am_max=dv,
              v_pd_max=dv,
@@ -65,7 +67,7 @@ class lightsheet():
             v_start = self.params.v_pd_lightsheet_rampup_start
         if v_end == dv:
             v_end = self.params.v_pd_lightsheet_rampup_end
-        if n_steps == dv:
+        if n_steps == di:
             n_steps = self.params.n_lightsheet_rampup_steps
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_lightsheet_paint_amp_max

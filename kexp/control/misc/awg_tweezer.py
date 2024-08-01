@@ -86,7 +86,7 @@ class tweezer():
     def ramp(self,t,
              v_start=dv,
              v_end=dv,
-             n_steps=dv,
+             n_steps=di,
              paint=False,
              v_awg_am_max=dv,
              v_pd_max=dv,
@@ -130,7 +130,7 @@ class tweezer():
             v_start = 0.
         if v_end == dv:
             v_end = self.params.v_pd_tweezer_1064_ramp_end
-        if n_steps == dv:
+        if n_steps == di:
             n_steps = self.params.n_tweezer_ramp_steps
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_tweezer_paint_amp_max

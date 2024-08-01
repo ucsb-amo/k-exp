@@ -5,6 +5,7 @@ from artiq.experiment import *
 import numpy as np
 
 dv = -0.1
+di = 0
 dv_list = np.linspace(0.,1.,5)
 
 d_exptparams = ExptParams()
@@ -37,7 +38,7 @@ class doubled_rf():
         self.dds.set_dds(amplitude=amp)
 
     @kernel(flags={"fast-math"})
-    def sweep(self,t,frequency_start=dv,frequency_end=dv,n_steps=dv):
+    def sweep(self,t,frequency_start=dv,frequency_end=dv,n_steps=di):
         """Sweeps the lower sideband freuqency over the specified range.
 
         The sweep time is controlled by ExptParams.t_rf_state_xfer_sweep, and
@@ -54,7 +55,7 @@ class doubled_rf():
             frequency_start = self.params._frequency_rf_state_xfer_sweep_start
         if frequency_end == dv:
             frequency_end = self.params._frequency_rf_state_xfer_sweep_end
-        if n_steps == dv:
+        if n_steps == di:
             n_steps = self.params.n_rf_sweep_steps
 
         f0 = frequency_start
