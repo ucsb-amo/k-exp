@@ -59,6 +59,7 @@ class ExptParams():
         self.t_tweezer_1064_ramp = .8
         self.t_tweezer_1064_rampdown = .072
         self.t_tweezer_1064_rampdown2 = .322
+        self.t_tweezer_1064_rampdown3 = .322
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
@@ -203,6 +204,9 @@ class ExptParams():
 
         self.v_pd_tweezer_1064_rampdown2_end = 0.025
         self.n_tweezer_1064_rampdown2_steps = 1000
+
+        self.v_pd_tweezer_1064_rampdown3_end = 0.025
+        self.n_tweezer_1064_rampdown3_steps = 1000
 
         self.n_tweezers = 2
 
@@ -381,6 +385,11 @@ class ExptParams():
         self.v_pd_tweezer_1064_rampdown2_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown_end)
         self.v_pd_tweezer_1064_rampdown2_list = np.linspace(self.v_pd_tweezer_1064_rampdown2_start,self.v_pd_tweezer_1064_rampdown2_end, self.n_tweezer_1064_rampdown2_steps).transpose()
         self.dt_tweezer_1064_rampdown2 = self.t_tweezer_1064_rampdown2 / self.n_tweezer_1064_rampdown2_steps
+
+    def compute_tweezer_1064_rampdown2_params(self):
+        self.v_pd_tweezer_1064_rampdown3_start = self.v_pd_tweezer_1064_rampdown2_end
+        self.v_pd_tweezer_1064_rampdown3_list = np.linspace(self.v_pd_tweezer_1064_rampdown3_start,self.v_pd_tweezer_1064_rampdown3_end, self.n_tweezer_1064_rampdown3_steps).transpose()
+        self.dt_tweezer_1064_rampdown3 = self.t_tweezer_1064_rampdown3 / self.n_tweezer_1064_rampdown3_steps
 
     def compute_magtrap_ramp_params(self):
         self.i_magtrap_ramp_start = self.i_magtrap_init
