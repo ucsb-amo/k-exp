@@ -2,19 +2,18 @@ import numpy as np
 from artiq.experiment import kernel
 from artiq.coredevice.zotino import Zotino
 from kexp.control.artiq.DAC_CH import DAC_CH
-from kexp.control.artiq.DDS import DDS
+from kexp.config.expt_params import ExptParams
 
 FORBIDDEN_CH = []
 
 class dac_frame():
-    def __init__(self, dac_device = Zotino):
+    def __init__(self, expt_params = ExptParams(), dac_device = Zotino):
 
         self.dac_device = dac_device
 
         self.dac_ch_list = []
 
-        from kexp.config import ExptParams
-        p = ExptParams()
+        p = expt_params
 
         self.lightsheet_paint_amp = self.assign_dac_ch(0)
         self.vva_lightsheet = self.assign_dac_ch(1,v=9.7)

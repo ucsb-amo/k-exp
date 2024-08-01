@@ -47,7 +47,7 @@ class Devices():
         self.sampler = sampler_frame(sampler_device=sampler)
 
         # dac channels
-        self.dac = dac_frame(dac_device=zotino)
+        self.dac = dac_frame(expt_params=self.params, dac_device=zotino)
 
         # ttl channels
         self.ttl = ttl_frame()

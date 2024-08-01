@@ -1,7 +1,9 @@
 from artiq.experiment import kernel, rpc
 from artiq.coredevice.zotino import Zotino
 
-dv = -100.
+from kexp.util.artiq.async_print import aprint
+
+dv = -10432.
 
 class DAC_CH():
     def __init__(self,ch,dac_device=Zotino,max_v=dv):
@@ -26,7 +28,7 @@ class DAC_CH():
             else:
                 self.v = v
                 
-        self.dac_device.write_dac(self.ch,float(self.v))
+        self.dac_device.write_dac(self.ch,self.v)
         if load_dac:
             self.dac_device.load()
 
