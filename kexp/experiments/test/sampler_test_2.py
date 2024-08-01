@@ -24,10 +24,10 @@ class samp(EnvExperiment, Base):
     def run(self):
         self.init_kernel()
 
-        self.dds.tweezer_pid_1.on()
-        self.dds.tweezer_pid_1.set_dds(set_stored=True)
-        self.dds.tweezer_pid_2.on()
-        self.dds.tweezer_pid_2.set_dds(set_stored=True)
+        # self.dds.tweezer_pid_1.on()
+        # self.dds.tweezer_pid_1.set_dds(set_stored=True)
+        # self.dds.tweezer_pid_2.on()
+        # self.dds.tweezer_pid_2.set_dds(set_stored=True)
 
         self.sampl.init()
         self.sampl.set_gain_mu(0,0)
