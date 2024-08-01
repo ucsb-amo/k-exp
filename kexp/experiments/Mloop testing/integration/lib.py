@@ -1,3 +1,22 @@
+##This class takes in experiment paremeter variables and what MLoop thinks they should be, and then generates, and then sends an experiment 
+##
+
+import mloop
+#Imports for M-LOOP
+import mloop.interfaces as mli
+import mloop.controllers as mlc
+import mloop.visualizations as mlv
+#Other imports
+import numpy as np
+import time
+from subprocess import PIPE, run
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import os
+
+
+
+
 class ExptBuilder():
     def __init__(self):
         self.__code_path__ = os.environ.get('code')
@@ -87,3 +106,62 @@ class ExptBuilder():
     #         self.write_experiment_to_file(program)
     #         returncode = self.run_expt()
     #         return returncode
+
+
+
+
+
+#This sits on top of MLoop and configure how it interacts with the experiment builder
+
+
+#jared absorbed two photon
+
+class CustomInterface(mli.Interface):
+    
+    #Initialization of the interface, including this method is optional
+    def __init__(self):
+        #You must include the super command to call the parent class, Interface, constructor 
+        super(CustomInterface,self).__init__()
+        eBuilder = ExptBuilder()
+        #jared
+        #jared P
+        #jared Potassium
+        #jared Phase plate
+        #jared Photon
+        #jared P
+        #jared
+        
+    #You must include the get_next_cost_dict method in your class
+    #this method is called whenever M-LOOP wants to run an experiment
+    def get_next_cost_dict(self,params_dict):
+        
+        eBuilder =  ExptBuilder()
+        #Get parameters from the provided dictionary
+        params = params_dict['params']
+        #eBuilder.execute_test('detune_gm',params[0])
+        eb.write_experiment_to_file(eb.test_expt('detune_gm',params))
+        eb.run_expt()
+
+        time.sleep(20e-3)
+        # cost = externalCostFunction.calcCost(params[0])\
+        cost = getCost()
+        print(cost)
+        # print(externalCostFunction.calcCost(-2))
+
+
+
+        #I'm not sure how uncertainty will be handled, I think it may be easier to just use the built in noise function of MLoop
+        uncer = 0
+
+        #The bad value says if the experiment run failed. Bad should be set to true sometimes, obviously when a full run fails, but also I think some
+        #quantification of noise could be useful to prevent things like atom count noise with extremely weak imaging light as talked about in the 26th K notes
+        #
+        bad = False
+
+        #time delay between each run, tb removed when actual experiments run
+        # time.sleep(1)
+        
+        #The cost, uncertainty and bad boolean must all be returned as a dictionary
+        #You can include other variables you want to record as well if you want
+        cost_dict = {'cost':cost, 'uncer':uncer, 'bad':bad}
+        return cost_dict
