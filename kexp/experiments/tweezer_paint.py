@@ -46,20 +46,20 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.01,.5,8))
         self.p.t_tweezer_1064_rampdown = .01
 
-        # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.05,.09,10)) 
+        # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.04,.09,10)) 
         self.p.v_pd_tweezer_1064_rampdown2_end = .06
 
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.01,.15,8))
-        self.p.t_tweezer_1064_rampdown2 = .107
+        self.p.t_tweezer_1064_rampdown2 = .05
 
-        # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.1,2.,20)) 
+        self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.2,.9,10)) 
         self.p.v_pd_tweezer_1064_rampdown3_end = .5
 
-        # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.1,.4,15))
-        self.p.t_tweezer_1064_rampdown3 = .25
+        # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.06,.4,8))
+        self.p.t_tweezer_1064_rampdown3 = .3
         
         # self.xvar('i_tweezer_evap_current',np.linspace(191.,194.5,8))
-        self.p.i_tweezer_evap_current = 193.5
+        self.p.i_tweezer_evap_current = 193.8
         # self.p.t_feshbach_field_ramp2 = .5
 
         # self.xvar('v_pd_tweezer_1064_adiabatic_stretch_ramp_end',np.linspace(self.p.v_pd_tweezer_1064_rampdown3_end,9.,10))
@@ -69,9 +69,9 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(.05,1.,5))
         self.p.t_tweezer_hold = 100.e-3
 
-        self.xvar('t_tof',np.linspace(10.,400.,5)*1.e-6)
-        self.p.t_tof = 50.e-6
-        self.p.N_repeats = [3]
+        # self.xvar('t_tof',np.linspace(10.,400.,5)*1.e-6)
+        self.p.t_tof = 400.e-6
+        self.p.N_repeats = [20]
         
         # self.xvar('dummy_z',[0]*5)
 
@@ -107,6 +107,7 @@ class tweezer_paint(EnvExperiment, Base):
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
+        
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
