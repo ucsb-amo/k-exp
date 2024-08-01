@@ -60,6 +60,7 @@ class ExptParams():
         self.t_tweezer_1064_rampdown = .072
         self.t_tweezer_1064_rampdown2 = .322
         self.t_tweezer_1064_rampdown3 = .322
+        self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
@@ -68,7 +69,7 @@ class ExptParams():
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 100.e-3
-        self.t_feshbach_field_ramp2 = 30.e-3
+        self.t_feshbach_field_ramp2 = 20.e-3
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
@@ -207,6 +208,9 @@ class ExptParams():
 
         self.v_pd_tweezer_1064_rampdown3_end = 0.025
         self.n_tweezer_1064_rampdown3_steps = 1000
+
+        self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
+        self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
 
         self.n_tweezers = 2
 
@@ -390,6 +394,11 @@ class ExptParams():
         self.v_pd_tweezer_1064_rampdown3_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown2_end)
         self.v_pd_tweezer_1064_rampdown3_list = np.linspace(self.v_pd_tweezer_1064_rampdown3_start,self.v_pd_tweezer_1064_rampdown3_end, self.n_tweezer_1064_rampdown3_steps).transpose()
         self.dt_tweezer_1064_rampdown3 = self.t_tweezer_1064_rampdown3 / self.n_tweezer_1064_rampdown3_steps
+
+    def compute_tweezer_1064_adiabatic_stretch_ramp_params(self):
+        self.v_pd_tweezer_1064_adiabatic_stretch_ramp_start = self.v_pd_tweezer_1064_rampdown3_end
+        self.v_pd_tweezer_1064_adiabatic_stretch_ramp_list = np.linspace(self.v_pd_tweezer_1064_adiabatic_stretch_ramp_start,self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end, self.n_tweezer_1064_adiabatic_stretch_ramp_steps).transpose()
+        self.dt_tweezer_1064_adiabatic_stretch_ramp = self.t_tweezer_1064_adiabatic_stretch_ramp / self.n_tweezer_1064_adiabatic_stretch_ramp_steps
 
     def compute_magtrap_ramp_params(self):
         self.i_magtrap_ramp_start = self.i_magtrap_init
