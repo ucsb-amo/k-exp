@@ -6,6 +6,7 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 
 dv = -1.
+di = 0
 dv_list = np.linspace(0.,1.,5)
 
 V_FULLSCALE_DAC = 10.
@@ -72,8 +73,8 @@ class igbt_magnet():
         return (v_supply/self.max_voltage) * V_FULLSCALE_DAC
     
     @kernel(flags={"fast-math"})
-    def ramp(self,t,i_start,i_end,n_steps=dv,t_analog_delay=T_ANALOG_DELAY):
-        if n_steps == dv:
+    def ramp(self,t,i_start,i_end,n_steps=di,t_analog_delay=T_ANALOG_DELAY):
+        if n_steps == di:
             n_steps = self.params.n_field_ramp_steps
         v_start = self.supply_current_to_dac_voltage(i_start)
         v_end = self.supply_current_to_dac_voltage(i_end)
