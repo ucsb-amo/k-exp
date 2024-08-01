@@ -72,7 +72,9 @@ class igbt_magnet():
         return (v_supply/self.max_voltage) * V_FULLSCALE_DAC
     
     @kernel(flags={"fast-math"})
-    def ramp(self,t,i_start,i_end,n_steps,t_analog_delay=T_ANALOG_DELAY):
+    def ramp(self,t,i_start,i_end,n_steps=dv,t_analog_delay=T_ANALOG_DELAY):
+        if n_steps == dv:
+            n_steps = self.params.n_field_ramp_steps
         v_start = self.supply_current_to_dac_voltage(i_start)
         v_end = self.supply_current_to_dac_voltage(i_end)
         self.i_control_dac.linear_ramp(t,v_start,v_end,n_steps)

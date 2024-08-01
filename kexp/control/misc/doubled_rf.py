@@ -37,7 +37,7 @@ class doubled_rf():
         self.dds.set_dds(amplitude=amp)
 
     @kernel(flags={"fast-math"})
-    def sweep(self,t,frequency_start,frequency_end,n_steps):
+    def sweep(self,t,frequency_start=dv,frequency_end=dv,n_steps=dv):
         """Sweeps the lower sideband freuqency over the specified range.
 
         The sweep time is controlled by ExptParams.t_rf_state_xfer_sweep, and
@@ -55,7 +55,7 @@ class doubled_rf():
         if frequency_end == dv:
             frequency_end = self.params._frequency_rf_state_xfer_sweep_end
         if n_steps == dv:
-            n_steps = self.params.n_rf_state_xfer_sweep_steps
+            n_steps = self.params.n_rf_sweep_steps
 
         f0 = frequency_start
         ff = frequency_end
