@@ -17,14 +17,14 @@ dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
     def __init__(self,
-                  ao1_dds:DDS, pid1_dac:DAC_CH,
-                  ao2_dds:DDS, pid2_dac:DAC_CH,
-                  sw_ttl:TTL,
-                  awg_trg_ttl:TTL,
-                  pid1_int_hold_zero_ttl:TTL,
-                  pid2_enable_ttl:TTL,
-                  painting_dac:DAC_CH,
-                  expt_params:ExptParams):
+                  ao1_dds=DDS, pid1_dac=DAC_CH,
+                  ao2_dds=DDS, pid2_dac=DAC_CH,
+                  sw_ttl=TTL,
+                  awg_trg_ttl=TTL,
+                  pid1_int_hold_zero_ttl=TTL,
+                  pid2_enable_ttl=TTL,
+                  painting_dac=DAC_CH,
+                  expt_params=ExptParams):
         """Controls the tweezers.
 
         Args:
@@ -127,11 +127,11 @@ class tweezer():
         """        
 
         if v_start == dv:
-            v_start = self.params.v_pd_tweezer_1064_ramp_start
+            v_start = 0.
         if v_end == dv:
             v_end = self.params.v_pd_tweezer_1064_ramp_end
         if n_steps == dv:
-            n_steps = self.params.n_tweezer_1064_ramp_steps
+            n_steps = self.params.n_tweezer_ramp_steps
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_tweezer_paint_amp_max
         if v_pd_max == dv:

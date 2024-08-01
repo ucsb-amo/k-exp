@@ -14,9 +14,9 @@ dv_list = np.linspace(0.,54.,10)
 DAC_PAINT_FULLSCALE = 9.99
 
 class lightsheet():
-    def __init__(self, pid_dac:DAC_CH, paint_amp_dac:DAC_CH,
-                  sw_ttl:TTL, pid_int_hold_zero_ttl:TTL,
-                  expt_params:ExptParams):
+    def __init__(self, pid_dac = DAC_CH, paint_amp_dac = DAC_CH,
+                  sw_ttl = TTL, pid_int_hold_zero_ttl = TTL,
+                  expt_params = ExptParams):
         """Controls the light sheet beam.
 
         Args:

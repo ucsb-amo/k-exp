@@ -4,6 +4,8 @@ from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
 from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
+from kexp.control.misc.awg_tweezer import tweezer
+from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.config.expt_params import ExptParams
 import numpy as np
 
@@ -20,6 +22,8 @@ class Cooling():
         self.dac = dac_frame()
         self.inner_coil = hbridge_magnet()
         self.outer_coil = igbt_magnet()
+        self.tweezer = tweezer()
+        self.lightsheet = lightsheet()
         self.params = ExptParams()
 
     ## cooling stages
