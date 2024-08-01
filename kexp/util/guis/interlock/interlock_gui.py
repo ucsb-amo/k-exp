@@ -325,8 +325,8 @@ class MainWindow(QMainWindow):
         subdir = 'interlock_logs'
         filename = 'plot_data.csv'
         savedir = os.path.join(data_dir,subdir,filename)
-        with open(filename, 'w', newline='') as savedir:
-            writer = csv.writer(savedir)
+        with open(savedir, 'w', newline='') as file:
+            writer = csv.writer(file)
             writer.writerow(['x', 'y1', 'y2'])
             for i in range(len(self.time)):
                 writer.writerow([self.time[i], self.temperature[i], self.flows[0][i], self.flows[1][i], self.flows[2][i], self.flows[3][i]])
