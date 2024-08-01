@@ -87,7 +87,7 @@ class tweezer_paint(EnvExperiment, Base):
         self.camera_params.amp_imaging = 0.106
         self.camera_params.exposure_time = 10.e-6
         self.params.t_imaging_pulse = self.camera_params.exposure_time
-        self.camera_params.em_gain = 450
+        self.camera_params.em_gain = 299
 
         self.finish_build(shuffle=True)
 
@@ -164,7 +164,7 @@ class tweezer_paint(EnvExperiment, Base):
 
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
                              v_list=self.p.v_pd_lightsheet_ramp_down2_list)
-
+        self.ttl.pd_scope_trig.pulse(t=1.e-6)
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
                           v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list,
                           paint=True,keep_trap_frequency_constant=True)
@@ -176,9 +176,9 @@ class tweezer_paint(EnvExperiment, Base):
     
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
                           v_ramp_list=self.p.v_pd_tweezer_1064_rampdown2_list,
-                          paint=True,keep_trap_frequency_constant=True,low_power=False)
+                          paint=True,keep_trap_frequency_constant=True)
 
-        self.ttl.pd_scope_trig.pulse(t=1.e-6)
+        
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
                           v_ramp_list=self.p.v_pd_tweezer_1064_rampdown3_list,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)

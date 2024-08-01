@@ -68,7 +68,7 @@ class ExptParams():
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 100.e-3
-        self.t_feshbach_field_ramp2 = 50.e-3
+        self.t_feshbach_field_ramp2 = 30.e-3
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
@@ -381,13 +381,13 @@ class ExptParams():
         self.dt_tweezer_1064_rampdown = self.t_tweezer_1064_rampdown / self.n_tweezer_1064_rampdown_steps
 
     def compute_tweezer_1064_rampdown2_params(self):
-        from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
-        self.v_pd_tweezer_1064_rampdown2_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown_end)
+        self.v_pd_tweezer_1064_rampdown2_start = self.v_pd_tweezer_1064_rampdown_end
         self.v_pd_tweezer_1064_rampdown2_list = np.linspace(self.v_pd_tweezer_1064_rampdown2_start,self.v_pd_tweezer_1064_rampdown2_end, self.n_tweezer_1064_rampdown2_steps).transpose()
         self.dt_tweezer_1064_rampdown2 = self.t_tweezer_1064_rampdown2 / self.n_tweezer_1064_rampdown2_steps
 
-    def compute_tweezer_1064_rampdown2_params(self):
-        self.v_pd_tweezer_1064_rampdown3_start = self.v_pd_tweezer_1064_rampdown2_end
+    def compute_tweezer_1064_rampdown3_params(self):
+        from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+        self.v_pd_tweezer_1064_rampdown3_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown2_end)
         self.v_pd_tweezer_1064_rampdown3_list = np.linspace(self.v_pd_tweezer_1064_rampdown3_start,self.v_pd_tweezer_1064_rampdown3_end, self.n_tweezer_1064_rampdown3_steps).transpose()
         self.dt_tweezer_1064_rampdown3 = self.t_tweezer_1064_rampdown3 / self.n_tweezer_1064_rampdown3_steps
 

@@ -144,20 +144,21 @@ class tweezer():
         # initialize an array of the same length, but just ones. 
         # can't initialize a new array, since np functions return a value into
         # kernel without type hinting output class
-        v_awg_amp_mod_list = v_ramp_list / v_ramp_list
+        # v_awg_amp_mod_list = v_ramp_list / v_ramp_list
 
         if not paint:
             self.painting_off()
-        else:
-            if not keep_trap_frequency_constant:
-                # set the mod amp list to all the same value
-                # it was just ones before, multiply by the value
-                v_awg_amp_mod_list = v_awg_amp_mod_list * v_awg_am_max
-            else:
-                p_frac = v_ramp_list / v_pd_max
-                paint_amp_frac = p_frac**(1/3)
-                v_awg_amp_mod_list = (paint_amp_frac - 0.5)*(v_awg_am_max - (-6)) \
-                            + (v_awg_am_max + (-6))/2
+        # else:
+        #     if not keep_trap_frequency_constant:
+        #         # set the mod amp list to all the same value
+        #         # it was just ones before, multiply by the value
+        #         # v_awg_amp_mod_list = v_awg_amp_mod_list * v_awg_am_max
+        #         pass
+        #     else:
+        #         p_frac = v_ramp_list / v_pd_max
+        #         paint_amp_frac = p_frac**(1/3)
+        #         v_awg_amp_mod_list = (paint_amp_frac - 0.5)*(v_awg_am_max - (-6)) \
+        #                     + (v_awg_am_max + (-6))/2
 
         # add a delay to add slack after doing all this math
         delay(500.e-6)
@@ -169,7 +170,7 @@ class tweezer():
         for i in range(n_ramp):
             pid_dac.set(v=v_ramp_list[i],load_dac=False)
             if paint:
-                self.paint_amp_dac.set(v=v_awg_amp_mod_list[i],load_dac=False)
+                self.paint_amp_dac.set(v=((v_ramp_list[i] / v_pd_max)**(1/3)  - .5)*(v_awg_am_max - (-6)) + (v_awg_am_max + (-6))/2,load_dac=False)
             pid_dac.load()
             delay(dt_ramp)
 
