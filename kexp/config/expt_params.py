@@ -178,39 +178,27 @@ class ExptParams():
         self.v_lightsheet_paint_amp_max = 6.0
 
         self.v_pd_lightsheet = 8.8
-        self.n_lightsheet_rampup_steps = 1000
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.99
-
-        self.n_lightsheet_rampdown_steps = 1000
         self.v_pd_lightsheet_rampdown_end = 4.84
-
-        self.n_lightsheet_rampdown2_steps = 1000
         self.v_pd_lightsheet_rampdown2_end = .0
-
-        self.n_lightsheet_rampdown3_steps = 1000
         self.v_pd_lightsheet_rampdown3_end = .0
+        self.n_lightsheet_ramp_steps = 1000
 
         #1064 tweezer
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
         self.amp_tweezer_pid1 = .45
         self.amp_tweezer_pid2 = .45
         self.v_pd_tweezer_1064 = 5.
-        self.v_pd_tweezer_1064_ramp_start = 0.
+
         self.v_pd_tweezer_1064_ramp_end = 9.2
-        self.n_tweezer_1064_ramp_steps = 1000
-        
         self.v_pd_tweezer_1064_rampdown_end = .7
-        self.n_tweezer_1064_rampdown_steps = 1000
-
         self.v_pd_tweezer_1064_rampdown2_end = 0.025
-        self.n_tweezer_1064_rampdown2_steps = 1000
-
         self.v_pd_tweezer_1064_rampdown3_end = 0.025
-        self.n_tweezer_1064_rampdown3_steps = 1000
+        self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
-        self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
+        # self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
 
         self.n_tweezers = 2
 
@@ -226,23 +214,24 @@ class ExptParams():
         self.v_tweezer_paint_amp_max = 6.
 
         # RF
+        self.amp_rf_source = 0.99
+        self.n_rf_sweep_steps = 1000
+
         self.t_rf_sweep_state_prep = 100.e-3
         self.frequency_rf_sweep_state_prep_center = 459.3543e6
         self.frequency_rf_sweep_state_prep_fullwidth = 30.e3
-        self.n_rf_sweep_state_prep_steps = 1000
-
+        
         # RF
         self.t_rf_state_xfer_sweep = 60.e-3
-        self.amp_rf_source = 0.99
         self.frequency_rf_state_xfer_sweep_center = 461.7e6
         self.frequency_rf_state_xfer_sweep_fullwidth = 2.e6
-        self.n_rf_state_xfer_sweep_steps = 1000
 
         # feshbach field rampup
-        self.i_feshbach_field_rampup_start = 0.
-        self.n_feshbach_field_rampup_steps = 100
-        self.n_feshbach_field_ramp_steps = 100
-        self.n_feshbach_field_ramp2_steps = 100
+        # self.i_feshbach_field_rampup_start = 0.
+        self.n_field_ramp_steps = 100
+        # self.n_feshbach_field_rampup_steps = 100
+        # self.n_feshbach_field_ramp_steps = 100
+        # self.n_feshbach_field_ramp2_steps = 100
 
         # rydberg
         self.frequency_ao_ry_405 = 250.0e6
@@ -253,13 +242,13 @@ class ExptParams():
         # low field evap
         # self.i_evap1_current = 9.5
         # self.i_evap2_current = 31.3
-        # self.i_tweezer_evap_current = 25.
+        # self.i_evap3_current = 25.
         # self.i_evap3_current = 16.4
 
         # high field evap
         self.i_evap1_current = 191.4
         self.i_evap2_current = 181.3
-        self.i_tweezer_evap_current = 190.6
+        self.i_evap3_current = 190.6
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.
@@ -293,29 +282,29 @@ class ExptParams():
         #     self._frequency_rf_sweep_state_prep_end,
         #     self.n_rf_sweep_state_prep_steps)
         
-    def compute_magnet_ramp_connections(self):
-        self.i_magtrap_ramp_start = self.i_magtrap_init
-        self.i_magtrap_rampdown_start = self.i_magtrap_ramp_end
-        self.i_feshbach_field_rampup_end = self.i_evap1_current
-        self.i_feshbach_field_ramp_start = self.i_evap1_current
-        self.i_feshbach_field_ramp_end = self.i_evap2_current
-        self.i_feshbach_field_ramp2_start = self.i_evap2_current
-        self.i_feshbach_field_ramp2_end = self.i_tweezer_evap_current
-        self.i_forced_evap_ramp_start = self.i_forced_evap_ramp_init
+    # def compute_magnet_ramp_connections(self):
+        # self.i_magtrap_ramp_start = self.i_magtrap_init
+        # self.i_magtrap_rampdown_start = self.i_magtrap_ramp_end
+        # self.i_feshbach_field_rampup_end = self.i_evap1_current
+        # self.i_feshbach_field_ramp_start = self.i_evap1_current
+        # self.i_feshbach_field_ramp_end = self.i_evap2_current
+        # self.i_feshbach_field_ramp2_start = self.i_evap2_current
+        # self.i_feshbach_field_ramp2_end = self.i_evap3_current
+        # self.i_forced_evap_ramp_start = self.i_forced_evap_ramp_init
         
-    def compute_optical_trap_ramp_connections(self):
-        self.v_pd_lightsheet_rampdown_start = self.v_pd_lightsheet_rampup_end
-        self.v_pd_lightsheet_rampdown2_start = self.v_pd_lightsheet_rampdown_end
-        self.v_pd_lightsheet_rampdown3_start = self.v_pd_lightsheet_rampdown2_end
+    # def compute_optical_trap_ramp_connections(self):
+        # self.v_pd_lightsheet_rampdown_start = self.v_pd_lightsheet_rampup_end
+        # self.v_pd_lightsheet_rampdown2_start = self.v_pd_lightsheet_rampdown_end
+        # self.v_pd_lightsheet_rampdown3_start = self.v_pd_lightsheet_rampdown2_end
 
-        self.v_pd_tweezer_1064_rampdown_start = self.v_pd_tweezer_1064_ramp_end
-        self.v_pd_tweezer_1064_rampdown2_start = self.v_pd_tweezer_1064_rampdown_end
-        from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
-        self.v_pd_tweezer_1064_rampdown3_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown2_end)
-        self.v_pd_tweezer_1064_adiabatic_stretch_ramp_start = self.v_pd_tweezer_1064_rampdown3_end
+        # self.v_pd_tweezer_1064_rampdown_start = self.v_pd_tweezer_1064_ramp_end
+        # self.v_pd_tweezer_1064_rampdown2_start = self.v_pd_tweezer_1064_rampdown_end
+        # from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+        # self.v_pd_tweezer_1064_rampdown3_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown2_end)
+        # self.v_pd_tweezer_1064_adiabatic_stretch_ramp_start = self.v_pd_tweezer_1064_rampdown3_end
 
-        self.i_feshbach_field_ramp_start = self.i_evap1_current
-        self.i_feshbach_field_ramp_end = self.i_evap2_current
+        # self.i_feshbach_field_ramp_start = self.i_evap1_current
+        # self.i_feshbach_field_ramp_end = self.i_evap2_current
         
     # def compute_lightsheet_ramp_params(self):
         # self.v_pd_lightsheet_ramp_list = np.linspace(
