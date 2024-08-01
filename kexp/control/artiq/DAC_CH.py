@@ -1,4 +1,4 @@
-from artiq.experiment import kernel, rpc
+from artiq.experiment import kernel, rpc, delay
 from artiq.coredevice.zotino import Zotino
 
 from kexp.util.artiq.async_print import aprint
@@ -44,3 +44,13 @@ class DAC_CH():
     @kernel
     def load(self):
         self.dac_device.load()
+
+    @kernel
+    def linear_ramp(self,t,start,end,n):
+        v0 = start
+        vf = end
+        dv = (vf-v0)/(n-1)
+        dt = t/n
+        for i in range(n):
+            self.set(v=v0+i*dv)
+            delay(dt)
