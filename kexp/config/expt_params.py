@@ -178,39 +178,27 @@ class ExptParams():
         self.v_lightsheet_paint_amp_max = 6.0
 
         self.v_pd_lightsheet = 8.8
-        self.n_lightsheet_rampup_steps = 1000
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.99
-
-        self.n_lightsheet_rampdown_steps = 1000
         self.v_pd_lightsheet_rampdown_end = 4.84
-
-        self.n_lightsheet_rampdown2_steps = 1000
         self.v_pd_lightsheet_rampdown2_end = .0
-
-        self.n_lightsheet_rampdown3_steps = 1000
         self.v_pd_lightsheet_rampdown3_end = .0
+        self.n_lightsheet_ramp_steps = 1000
 
         #1064 tweezer
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
         self.amp_tweezer_pid1 = .45
         self.amp_tweezer_pid2 = .45
         self.v_pd_tweezer_1064 = 5.
-        self.v_pd_tweezer_1064_ramp_start = 0.
+
         self.v_pd_tweezer_1064_ramp_end = 9.2
-        self.n_tweezer_1064_ramp_steps = 1000
-        
         self.v_pd_tweezer_1064_rampdown_end = .7
-        self.n_tweezer_1064_rampdown_steps = 1000
-
         self.v_pd_tweezer_1064_rampdown2_end = 0.025
-        self.n_tweezer_1064_rampdown2_steps = 1000
-
         self.v_pd_tweezer_1064_rampdown3_end = 0.025
-        self.n_tweezer_1064_rampdown3_steps = 1000
+        self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
-        self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
+        # self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
 
         self.n_tweezers = 2
 
@@ -226,23 +214,24 @@ class ExptParams():
         self.v_tweezer_paint_amp_max = 6.
 
         # RF
+        self.amp_rf_source = 0.99
+        self.n_rf_sweep_steps = 1000
+
         self.t_rf_sweep_state_prep = 100.e-3
         self.frequency_rf_sweep_state_prep_center = 459.3543e6
         self.frequency_rf_sweep_state_prep_fullwidth = 30.e3
-        self.n_rf_sweep_state_prep_steps = 1000
-
+        
         # RF
         self.t_rf_state_xfer_sweep = 60.e-3
-        self.amp_rf_source = 0.99
         self.frequency_rf_state_xfer_sweep_center = 461.7e6
         self.frequency_rf_state_xfer_sweep_fullwidth = 2.e6
-        self.n_rf_state_xfer_sweep_steps = 1000
 
         # feshbach field rampup
-        self.i_feshbach_field_rampup_start = 0.
-        self.n_feshbach_field_rampup_steps = 100
-        self.n_feshbach_field_ramp_steps = 100
-        self.n_feshbach_field_ramp2_steps = 100
+        # self.i_feshbach_field_rampup_start = 0.
+        self.n_field_ramp_steps = 100
+        # self.n_feshbach_field_rampup_steps = 100
+        # self.n_feshbach_field_ramp_steps = 100
+        # self.n_feshbach_field_ramp2_steps = 100
 
         # rydberg
         self.frequency_ao_ry_405 = 250.0e6
@@ -253,13 +242,13 @@ class ExptParams():
         # low field evap
         # self.i_evap1_current = 9.5
         # self.i_evap2_current = 31.3
-        # self.i_tweezer_evap_current = 25.
+        # self.i_evap3_current = 25.
         # self.i_evap3_current = 16.4
 
         # high field evap
         self.i_evap1_current = 191.4
         self.i_evap2_current = 181.3
-        self.i_tweezer_evap_current = 190.6
+        self.i_evap3_current = 190.6
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.
@@ -273,52 +262,80 @@ class ExptParams():
         self.compute_derived()
 
     def compute_rf_sweep_params(self):
-        self.dt_rf_state_xfer_sweep = self.t_rf_state_xfer_sweep / self.n_rf_state_xfer_sweep_steps
+        
         self._frequency_rf_state_xfer_sweep_start = self.frequency_rf_state_xfer_sweep_center - self.frequency_rf_state_xfer_sweep_fullwidth
         self._frequency_rf_state_xfer_sweep_end = self.frequency_rf_state_xfer_sweep_center + self.frequency_rf_state_xfer_sweep_fullwidth
-        self.frequency_rf_state_xfer_sweep_list = np.linspace(
-            self._frequency_rf_state_xfer_sweep_start,
-            self._frequency_rf_state_xfer_sweep_end,
-            self.n_rf_state_xfer_sweep_steps)
-        
-        self.dt_rf_sweep_state_prep = self.t_rf_sweep_state_prep / self.n_rf_sweep_state_prep_steps
+
         self._frequency_rf_sweep_state_prep_start = self.frequency_rf_sweep_state_prep_center - self.frequency_rf_sweep_state_prep_fullwidth
         self._frequency_rf_sweep_state_prep_end = self.frequency_rf_sweep_state_prep_center + self.frequency_rf_sweep_state_prep_fullwidth
-        self.frequency_rf_sweep_state_prep_list = np.linspace(
-            self._frequency_rf_sweep_state_prep_start,
-            self._frequency_rf_sweep_state_prep_end,
-            self.n_rf_sweep_state_prep_steps)
+
+        # self.dt_rf_state_xfer_sweep = self.t_rf_state_xfer_sweep / self.n_rf_state_xfer_sweep_steps
+        # self.dt_rf_sweep_state_prep = self.t_rf_sweep_state_prep / self.n_rf_sweep_state_prep_steps
+
+        # self.frequency_rf_state_xfer_sweep_list = np.linspace(
+        #     self._frequency_rf_state_xfer_sweep_start,
+        #     self._frequency_rf_state_xfer_sweep_end,
+        #     self.n_rf_state_xfer_sweep_steps)
         
-    def compute_lightsheet_ramp_params(self):
-        self.v_pd_lightsheet_ramp_list = np.linspace(
-            self.v_pd_lightsheet_rampup_start,
-            self.v_pd_lightsheet_rampup_end,
-            self.n_lightsheet_rampup_steps)
-        self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
+        # self.frequency_rf_sweep_state_prep_list = np.linspace(
+        #     self._frequency_rf_sweep_state_prep_start,
+        #     self._frequency_rf_sweep_state_prep_end,
+        #     self.n_rf_sweep_state_prep_steps)
+        
+    # def compute_magnet_ramp_connections(self):
+        # self.i_magtrap_ramp_start = self.i_magtrap_init
+        # self.i_magtrap_rampdown_start = self.i_magtrap_ramp_end
+        # self.i_feshbach_field_rampup_end = self.i_evap1_current
+        # self.i_feshbach_field_ramp_start = self.i_evap1_current
+        # self.i_feshbach_field_ramp_end = self.i_evap2_current
+        # self.i_feshbach_field_ramp2_start = self.i_evap2_current
+        # self.i_feshbach_field_ramp2_end = self.i_evap3_current
+        # self.i_forced_evap_ramp_start = self.i_forced_evap_ramp_init
+        
+    # def compute_optical_trap_ramp_connections(self):
+        # self.v_pd_lightsheet_rampdown_start = self.v_pd_lightsheet_rampup_end
+        # self.v_pd_lightsheet_rampdown2_start = self.v_pd_lightsheet_rampdown_end
+        # self.v_pd_lightsheet_rampdown3_start = self.v_pd_lightsheet_rampdown2_end
 
-    def compute_lightsheet_ramp_down_params(self):
-        self.v_pd_lightsheet_rampdown_start = self.v_pd_lightsheet_rampup_end
-        self.v_pd_lightsheet_ramp_down_list = np.linspace(
-            self.v_pd_lightsheet_rampdown_start,
-            self.v_pd_lightsheet_rampdown_end,
-            self.n_lightsheet_rampdown_steps)
-        self.dt_lightsheet_ramp = self.t_lightsheet_rampdown / self.n_lightsheet_rampdown_steps
+        # self.v_pd_tweezer_1064_rampdown_start = self.v_pd_tweezer_1064_ramp_end
+        # self.v_pd_tweezer_1064_rampdown2_start = self.v_pd_tweezer_1064_rampdown_end
+        # from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+        # self.v_pd_tweezer_1064_rampdown3_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown2_end)
+        # self.v_pd_tweezer_1064_adiabatic_stretch_ramp_start = self.v_pd_tweezer_1064_rampdown3_end
 
-    def compute_lightsheet_ramp_down2_params(self):
-        self.v_pd_lightsheet_rampdown2_start = self.v_pd_lightsheet_rampdown_end
-        self.v_pd_lightsheet_ramp_down2_list = np.linspace(
-            self.v_pd_lightsheet_rampdown2_start,
-            self.v_pd_lightsheet_rampdown2_end,
-            self.n_lightsheet_rampdown2_steps)
-        self.dt_lightsheet_ramp = self.t_lightsheet_rampdown2 / self.n_lightsheet_rampdown2_steps
+        # self.i_feshbach_field_ramp_start = self.i_evap1_current
+        # self.i_feshbach_field_ramp_end = self.i_evap2_current
+        
+    # def compute_lightsheet_ramp_params(self):
+        # self.v_pd_lightsheet_ramp_list = np.linspace(
+        #     self.v_pd_lightsheet_rampup_start,
+        #     self.v_pd_lightsheet_rampup_end,
+        #     self.n_lightsheet_rampup_steps)
+        # self.dt_lightsheet_ramp = self.t_lightsheet_rampup / self.n_lightsheet_rampup_steps
 
-    def compute_lightsheet_ramp_down3_params(self):
-        self.v_pd_lightsheet_rampdown3_start = self.v_pd_lightsheet_rampdown2_end
-        self.v_pd_lightsheet_ramp_down3_list = np.linspace(
-            self.v_pd_lightsheet_rampdown3_start,
-            self.v_pd_lightsheet_rampdown3_end,
-            self.n_lightsheet_rampdown3_steps)
-        self.dt_lightsheet_ramp = self.t_lightsheet_rampdown3 / self.n_lightsheet_rampdown3_steps
+    # def compute_lightsheet_ramp_down_params(self):
+    #     self.v_pd_lightsheet_rampdown_start = self.v_pd_lightsheet_rampup_end
+        # self.v_pd_lightsheet_ramp_down_list = np.linspace(
+        #     self.v_pd_lightsheet_rampdown_start,
+        #     self.v_pd_lightsheet_rampdown_end,
+        #     self.n_lightsheet_rampdown_steps)
+        # self.dt_lightsheet_ramp = self.t_lightsheet_rampdown / self.n_lightsheet_rampdown_steps
+
+    # def compute_lightsheet_ramp_down2_params(self):
+    #     self.v_pd_lightsheet_rampdown2_start = self.v_pd_lightsheet_rampdown_end
+        # self.v_pd_lightsheet_ramp_down2_list = np.linspace(
+        #     self.v_pd_lightsheet_rampdown2_start,
+        #     self.v_pd_lightsheet_rampdown2_end,
+        #     self.n_lightsheet_rampdown2_steps)
+        # self.dt_lightsheet_ramp = self.t_lightsheet_rampdown2 / self.n_lightsheet_rampdown2_steps
+
+    # def compute_lightsheet_ramp_down3_params(self):
+    #     self.v_pd_lightsheet_rampdown3_start = self.v_pd_lightsheet_rampdown2_end
+        # self.v_pd_lightsheet_ramp_down3_list = np.linspace(
+        #     self.v_pd_lightsheet_rampdown3_start,
+        #     self.v_pd_lightsheet_rampdown3_end,
+        #     self.n_lightsheet_rampdown3_steps)
+        # self.dt_lightsheet_ramp = self.t_lightsheet_rampdown3 / self.n_lightsheet_rampdown3_steps
 
     def compute_gmramp_params(self):
         self.pfrac_c_gmramp_start = self.pfrac_d1_c_gm
@@ -375,62 +392,62 @@ class ExptParams():
     #         else:
     #             self.phase_tweezer_array[tweezer_idx] = 360 - 2*np.pi*
 
-    def compute_tweezer_1064_ramp_params(self):
-        self.v_pd_tweezer_1064_ramp_list = np.linspace(self.v_pd_tweezer_1064_ramp_start,self.v_pd_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()
-        self.dt_tweezer_1064_ramp = self.t_tweezer_1064_ramp / self.n_tweezer_1064_ramp_steps
+    # def compute_tweezer_1064_ramp_params(self):
+        # self.v_pd_tweezer_1064_ramp_list = np.linspace(self.v_pd_tweezer_1064_ramp_start,self.v_pd_tweezer_1064_ramp_end, self.n_tweezer_1064_ramp_steps).transpose()
+        # self.dt_tweezer_1064_ramp = self.t_tweezer_1064_ramp / self.n_tweezer_1064_ramp_steps
 
-    def compute_tweezer_1064_rampdown_params(self):
-        self.v_pd_tweezer_1064_rampdown_start = self.v_pd_tweezer_1064_ramp_end
-        self.v_pd_tweezer_1064_rampdown_list = np.linspace(self.v_pd_tweezer_1064_rampdown_start,self.v_pd_tweezer_1064_rampdown_end, self.n_tweezer_1064_rampdown_steps).transpose()
-        self.dt_tweezer_1064_rampdown = self.t_tweezer_1064_rampdown / self.n_tweezer_1064_rampdown_steps
+    # def compute_tweezer_1064_rampdown_params(self):
+    #     self.v_pd_tweezer_1064_rampdown_start = self.v_pd_tweezer_1064_ramp_end
+        # self.v_pd_tweezer_1064_rampdown_list = np.linspace(self.v_pd_tweezer_1064_rampdown_start,self.v_pd_tweezer_1064_rampdown_end, self.n_tweezer_1064_rampdown_steps).transpose()
+        # self.dt_tweezer_1064_rampdown = self.t_tweezer_1064_rampdown / self.n_tweezer_1064_rampdown_steps
 
-    def compute_tweezer_1064_rampdown2_params(self):
-        self.v_pd_tweezer_1064_rampdown2_start = self.v_pd_tweezer_1064_rampdown_end
-        self.v_pd_tweezer_1064_rampdown2_list = np.linspace(self.v_pd_tweezer_1064_rampdown2_start,self.v_pd_tweezer_1064_rampdown2_end, self.n_tweezer_1064_rampdown2_steps).transpose()
-        self.dt_tweezer_1064_rampdown2 = self.t_tweezer_1064_rampdown2 / self.n_tweezer_1064_rampdown2_steps
+    # def compute_tweezer_1064_rampdown2_params(self):
+    #     self.v_pd_tweezer_1064_rampdown2_start = self.v_pd_tweezer_1064_rampdown_end
+        # self.v_pd_tweezer_1064_rampdown2_list = np.linspace(self.v_pd_tweezer_1064_rampdown2_start,self.v_pd_tweezer_1064_rampdown2_end, self.n_tweezer_1064_rampdown2_steps).transpose()
+        # self.dt_tweezer_1064_rampdown2 = self.t_tweezer_1064_rampdown2 / self.n_tweezer_1064_rampdown2_steps
 
-    def compute_tweezer_1064_rampdown3_params(self):
-        from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
-        self.v_pd_tweezer_1064_rampdown3_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown2_end)
-        self.v_pd_tweezer_1064_rampdown3_list = np.linspace(self.v_pd_tweezer_1064_rampdown3_start,self.v_pd_tweezer_1064_rampdown3_end, self.n_tweezer_1064_rampdown3_steps).transpose()
-        self.dt_tweezer_1064_rampdown3 = self.t_tweezer_1064_rampdown3 / self.n_tweezer_1064_rampdown3_steps
+    # def compute_tweezer_1064_rampdown3_params(self):
+    #     from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+    #     self.v_pd_tweezer_1064_rampdown3_start = tweezer_vpd1_to_vpd2(self.v_pd_tweezer_1064_rampdown2_end)
+        # self.v_pd_tweezer_1064_rampdown3_list = np.linspace(self.v_pd_tweezer_1064_rampdown3_start,self.v_pd_tweezer_1064_rampdown3_end, self.n_tweezer_1064_rampdown3_steps).transpose()
+        # self.dt_tweezer_1064_rampdown3 = self.t_tweezer_1064_rampdown3 / self.n_tweezer_1064_rampdown3_steps
 
-    def compute_tweezer_1064_adiabatic_stretch_ramp_params(self):
-        self.v_pd_tweezer_1064_adiabatic_stretch_ramp_start = self.v_pd_tweezer_1064_rampdown3_end
-        self.v_pd_tweezer_1064_adiabatic_stretch_ramp_list = np.linspace(self.v_pd_tweezer_1064_adiabatic_stretch_ramp_start,self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end, self.n_tweezer_1064_adiabatic_stretch_ramp_steps).transpose()
-        self.dt_tweezer_1064_adiabatic_stretch_ramp = self.t_tweezer_1064_adiabatic_stretch_ramp / self.n_tweezer_1064_adiabatic_stretch_ramp_steps
+    # def compute_tweezer_1064_adiabatic_stretch_ramp_params(self):
+    #     self.v_pd_tweezer_1064_adiabatic_stretch_ramp_start = self.v_pd_tweezer_1064_rampdown3_end
+        # self.v_pd_tweezer_1064_adiabatic_stretch_ramp_list = np.linspace(self.v_pd_tweezer_1064_adiabatic_stretch_ramp_start,self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end, self.n_tweezer_1064_adiabatic_stretch_ramp_steps).transpose()
+        # self.dt_tweezer_1064_adiabatic_stretch_ramp = self.t_tweezer_1064_adiabatic_stretch_ramp / self.n_tweezer_1064_adiabatic_stretch_ramp_steps
 
-    def compute_magtrap_ramp_params(self):
-        self.i_magtrap_ramp_start = self.i_magtrap_init
-        self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end,self.n_magtrap_ramp_steps).transpose()
-        self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps 
+    # def compute_magtrap_ramp_params(self):
+    #     self.i_magtrap_ramp_start = self.i_magtrap_init
+        # self.magtrap_ramp_list = np.linspace(self.i_magtrap_ramp_start,self.i_magtrap_ramp_end,self.n_magtrap_ramp_steps).transpose()
+        # self.dt_magtrap_ramp = self.t_magtrap_ramp / self.n_magtrap_ramp_steps 
 
-    def compute_magtrap_rampdown_params(self):
-        self.i_magtrap_rampdown_start = self.i_magtrap_ramp_end
-        self.magtrap_rampdown_list = np.linspace(self.i_magtrap_rampdown_start,0, self.n_magtrap_rampdown_steps).transpose()
-        self.dt_magtrap_rampdown = self.t_magtrap_rampdown / self.n_magtrap_ramp_steps
+    # def compute_magtrap_rampdown_params(self):
+    #     self.i_magtrap_rampdown_start = self.i_magtrap_ramp_end
+        # self.magtrap_rampdown_list = np.linspace(self.i_magtrap_rampdown_start,0, self.n_magtrap_rampdown_steps).transpose()
+        # self.dt_magtrap_rampdown = self.t_magtrap_rampdown / self.n_magtrap_ramp_steps
 
-    def compute_feshbach_field_rampup_params(self):
-        self.i_feshbach_field_rampup_end = self.i_evap1_current
-        self.feshbach_field_rampup_list = np.linspace(self.i_feshbach_field_rampup_start,self.i_feshbach_field_rampup_end, self.n_feshbach_field_rampup_steps).transpose()
-        self.dt_feshbach_field_rampup = self.t_feshbach_field_rampup / self.n_feshbach_field_rampup_steps
+    # def compute_feshbach_field_rampup_params(self):
+    #     self.i_feshbach_field_rampup_end = self.i_evap1_current
+        # self.feshbach_field_rampup_list = np.linspace(self.i_feshbach_field_rampup_start,self.i_feshbach_field_rampup_end, self.n_feshbach_field_rampup_steps).transpose()
+        # self.dt_feshbach_field_rampup = self.t_feshbach_field_rampup / self.n_feshbach_field_rampup_steps
     
-    def compute_feshbach_field_ramp_params(self):
-        self.i_feshbach_field_ramp_start = self.i_evap1_current
-        self.i_feshbach_field_ramp_end = self.i_evap2_current
-        self.feshbach_field_ramp_list = np.linspace(self.i_feshbach_field_ramp_start,self.i_feshbach_field_ramp_end, self.n_feshbach_field_ramp_steps).transpose()
-        self.dt_feshbach_field_ramp = self.t_feshbach_field_ramp / self.n_feshbach_field_ramp_steps
+    # def compute_feshbach_field_ramp_params(self):
+    #     self.i_feshbach_field_ramp_start = self.i_evap1_current
+    #     self.i_feshbach_field_ramp_end = self.i_evap2_current
+        # self.feshbach_field_ramp_list = np.linspace(self.i_feshbach_field_ramp_start,self.i_feshbach_field_ramp_end, self.n_feshbach_field_ramp_steps).transpose()
+        # self.dt_feshbach_field_ramp = self.t_feshbach_field_ramp / self.n_feshbach_field_ramp_steps
 
-    def compute_feshbach_field_ramp2_params(self):
-        self.i_feshbach_field_ramp2_start = self.i_evap2_current
-        self.i_feshbach_field_ramp2_end = self.i_tweezer_evap_current
-        self.feshbach_field_ramp2_list = np.linspace(self.i_feshbach_field_ramp2_start,self.i_feshbach_field_ramp2_end, self.n_feshbach_field_ramp2_steps).transpose()
-        self.dt_feshbach_field_ramp2 = self.t_feshbach_field_ramp2 / self.n_feshbach_field_ramp2_steps
+    # def compute_feshbach_field_ramp2_params(self):
+    #     self.i_feshbach_field_ramp2_start = self.i_evap2_current
+    #     self.i_feshbach_field_ramp2_end = self.i_tweezer_evap_current
+        # self.feshbach_field_ramp2_list = np.linspace(self.i_feshbach_field_ramp2_start,self.i_feshbach_field_ramp2_end, self.n_feshbach_field_ramp2_steps).transpose()
+        # self.dt_feshbach_field_ramp2 = self.t_feshbach_field_ramp2 / self.n_feshbach_field_ramp2_steps
     
-    def compute_forced_evap_params(self):
-        self.i_forced_evap_ramp_start = self.i_forced_evap_ramp_init
-        self.forced_evap_ramp_list = np.linspace(self.i_forced_evap_ramp_start,self.i_forced_evap_ramp_end, self.n_forced_evap_ramp_steps).transpose()
-        self.dt_forced_evap_ramp = self.t_forced_evap_ramp / self.n_forced_evap_ramp_steps
+    # def compute_forced_evap_params(self):
+    #     self.i_forced_evap_ramp_start = self.i_forced_evap_ramp_init
+        # self.forced_evap_ramp_list = np.linspace(self.i_forced_evap_ramp_start,self.i_forced_evap_ramp_end, self.n_forced_evap_ramp_steps).transpose()
+        # self.dt_forced_evap_ramp = self.t_forced_evap_ramp / self.n_forced_evap_ramp_steps
 
     def compute_derived(self):
         '''loop through methods (except built in ones) and compute all derived quantities'''
