@@ -6,16 +6,18 @@ from kexp.calibrations import high_field_imaging_detuning
 
 from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
 
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+
 T32 = 1<<32
 
 class tweezer_paint(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         # self.xvar('frequency_detuned_imaging',np.arange(400.,450.,3)*1.e6)
-        self.p.frequency_detuned_imaging = 433.e6 # 150a0
-        # self.p.frequency_detuned_imaging = 428.e6 # 150a0
+        # self.p.frequency_detuned_imaging = 433.e6 # 150a0
+        self.p.frequency_detuned_imaging = 424.e6 # 150a0
         # self.p.frequency_detuned_imaging = 412.e6 # NI
 
         self.p.t_mot_load = .75
@@ -27,7 +29,7 @@ class tweezer_paint(EnvExperiment, Base):
 
         # self.xvar('freq_tweezer_modulation',np.linspace(100.e3,536.e3,20))
         # self.xvar('freq_tweezer_modulation',[])
-        self.xvar('v_tweezer_paint_amp_max',np.linspace(0.,6.,10))
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(0.,6.,10))
         # self.p.freq_tweezer_modulation = 2.15e3
         self.p.v_tweezer_paint_amp_max = 4.
 
@@ -52,14 +54,14 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.01,.15,8))
         self.p.t_tweezer_1064_rampdown2 = .05
 
-        # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.2,.9,10)) 
-        self.p.v_pd_tweezer_1064_rampdown3_end = .5
+        # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.3,2.,6)) 
+        self.p.v_pd_tweezer_1064_rampdown3_end = .3
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.06,.4,8))
         self.p.t_tweezer_1064_rampdown3 = .3
         
-        # self.xvar('i_tweezer_evap_current',np.linspace(191.,194.5,8))
-        self.p.i_tweezer_evap_current = 193.8
+        # self.xvar('i_evap3_current',np.linspace(191.,194.5,8))
+        self.p.i_evap3_current = 193.8
         # self.p.t_feshbach_field_ramp2 = .5
 
         # self.xvar('v_pd_tweezer_1064_adiabatic_stretch_ramp_end',np.linspace(self.p.v_pd_tweezer_1064_rampdown3_end,9.,10))
@@ -69,11 +71,11 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(.05,1.,5))
         self.p.t_tweezer_hold = 100.e-3
 
-        self.xvar('t_tof',np.linspace(50.,1000.,6)*1.e-6)
-        self.p.t_tof = 400.e-6
-        self.p.N_repeats = [5]
+        self.xvar('t_tof',np.linspace(100.,600.,5)*1.e-6)
+        self.p.t_tof = 200.e-6
+        self.p.N_repeats = [1]
         
-        # self.xvar('dummy_z',[0]*5)
+        # self.xvar('dummy_z',[0]*100)
 
         self.p.n_tweezers = 1
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
@@ -82,12 +84,14 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('amp_tweezer_list')
         self.p.amp_tweezer_list = [.17]
 
-        # self.xvar('amp_imaging',np.linspace(.06,.19,15))
+        # self.xvar('amp_imaging',np.linspace(.06,.3,15))
         # self.xvar('amp_imaging',np.linspace(.04,.09,20))
-        self.camera_params.amp_imaging = 0.106
-        self.camera_params.exposure_time = 10.e-6
-        self.params.t_imaging_pulse = self.camera_params.exposure_time
-        self.camera_params.em_gain = 299
+        # self.camera_params.amp_imaging = 0.106
+        self.camera_params.amp_imaging = 0.248
+        # self.camera_params.exposure_time = 20.e-6
+        # self.camera_params.exposure_time = 10.e-6
+        # self.params.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.em_gain = 299
 
         self.finish_build(shuffle=True)
 
@@ -203,14 +207,13 @@ class tweezer_paint(EnvExperiment, Base):
                              i_start=self.p.i_evap2_current,
                              i_end=self.p.i_evap3_current)
         
-        from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown_end),
+                          v_start=self.p.v_pd_tweezer_1064_rampdown_end,
                           v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
         
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
-                          v_start=self.p.v_pd_tweezer_1064_rampdown2_end,
+                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
@@ -220,7 +223,7 @@ class tweezer_paint(EnvExperiment, Base):
         #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.lightsheet.off()
-        self.tweezer.off()
+        # self.tweezer.off()
     
         delay(self.p.t_tof)
         self.abs_image()
