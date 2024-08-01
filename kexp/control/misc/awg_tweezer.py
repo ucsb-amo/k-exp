@@ -8,7 +8,7 @@ from spcm import units
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 
-from artiq.experiment import kernel, delay, parallel
+from artiq.experiment import kernel, delay, parallel, TFloat
 
 import numpy as np
 
@@ -48,9 +48,10 @@ class tweezer():
         if v_awg_am == dv:
             v_awg_am = self.params.v_tweezer_paint_amp_max
 
-        self.ao2_dds.on()
         self.pid1_dac.set(v=.0)
         delay(300.e-6)
+        self.ao2_dds.on()
+
         if paint:
             self.paint_amp_dac.set(v=v_awg_am)
         else:
@@ -141,43 +142,30 @@ class tweezer():
         else:
             pid_dac = self.pid1_dac
 
-        # initialize an array of the same length, but just ones. 
-        # can't initialize a new array, since np functions return a value into
-        # kernel without type hinting output class
-        # v_awg_amp_mod_list = v_ramp_list / v_ramp_list
-
         if not paint:
             self.painting_off()
-        # else:
-        #     if not keep_trap_frequency_constant:
-        #         # set the mod amp list to all the same value
-        #         # it was just ones before, multiply by the value
-        #         # v_awg_amp_mod_list = v_awg_amp_mod_list * v_awg_am_max
-        #         pass
-        #     else:
-        #         p_frac = v_ramp_list / v_pd_max
-        #         paint_amp_frac = p_frac**(1/3)
-        #         v_awg_amp_mod_list = (paint_amp_frac - 0.5)*(v_awg_am_max - (-6)) \
-        #                     + (v_awg_am_max + (-6))/2
 
-        # add a delay to add slack after doing all this math
-        delay(500.e-6)
         pid_dac.set(v=v_ramp_list[0])
         if low_power:
             self.pid2_enable_ttl.on()
         else:
             self.pid2_enable_ttl.off()
+        delay(500.e-6)
         for i in range(n_ramp):
             pid_dac.set(v=v_ramp_list[i],load_dac=False)
             if paint:
-                self.paint_amp_dac.set(v=((v_ramp_list[i] / v_pd_max)**(1/3)  - .5)*(v_awg_am_max - (-6)) + (v_awg_am_max + (-6))/2,load_dac=False)
+                if keep_trap_frequency_constant:
+                    v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v_ramp_list[i],v_pd_max=v_pd_max)
+                else:
+                    v_awg_amp_mod = v_awg_am_max
+                self.paint_amp_dac.set(v_awg_amp_mod,load_dac=True)
             pid_dac.load()
             delay(dt_ramp)
 
     @kernel(flags={"fast-math"})
-    def v_pd_to_painting_amp_voltage(self,v_pd=dv_list,
+    def v_pd_to_painting_amp_voltage(self,v_pd=dv,
                                         v_awg_am_max=dv,
-                                        v_pd_max=dv):
+                                        v_pd_max=dv) -> TFloat:
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_tweezer_paint_amp_max
 
