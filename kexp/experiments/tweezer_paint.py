@@ -27,7 +27,7 @@ class tweezer_paint(EnvExperiment, Base):
 
         # self.xvar('freq_tweezer_modulation',np.linspace(100.e3,536.e3,20))
         # self.xvar('freq_tweezer_modulation',[])
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(1.,6.,6))
+        self.xvar('v_tweezer_paint_amp_max',np.linspace(0.,6.,10))
         # self.p.freq_tweezer_modulation = 2.15e3
         self.p.v_tweezer_paint_amp_max = 4.
 
@@ -52,7 +52,7 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.01,.15,8))
         self.p.t_tweezer_1064_rampdown2 = .05
 
-        self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.2,.9,10)) 
+        # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.2,.9,10)) 
         self.p.v_pd_tweezer_1064_rampdown3_end = .5
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.06,.4,8))
@@ -69,9 +69,9 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(.05,1.,5))
         self.p.t_tweezer_hold = 100.e-3
 
-        # self.xvar('t_tof',np.linspace(10.,400.,5)*1.e-6)
+        self.xvar('t_tof',np.linspace(50.,1000.,6)*1.e-6)
         self.p.t_tof = 400.e-6
-        self.p.N_repeats = [20]
+        self.p.N_repeats = [5]
         
         # self.xvar('dummy_z',[0]*5)
 
