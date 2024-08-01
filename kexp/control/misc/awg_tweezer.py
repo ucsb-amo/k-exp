@@ -84,7 +84,9 @@ class tweezer():
 
     @kernel(flags={"fast-math"})
     def ramp(self,t,
-             v_ramp_list=dv_list,
+             v_start=dv,
+             v_end=dv,
+             n_steps=dv,
              paint=False,
              v_awg_am_max=dv,
              v_pd_max=dv,
@@ -124,17 +126,19 @@ class tweezer():
             (v_awg_am_max). Defaults to True.
         """        
 
-        if v_ramp_list == dv_list:
-            v_ramp_list = self.params.v_pd_tweezer_1064_ramp_list
-
+        if v_start == dv:
+            v_start = self.params.v_pd_tweezer_1064_ramp_start
+        if v_end == dv:
+            v_end = self.params.v_pd_tweezer_1064_ramp_end
+        if n_steps == dv:
+            n_steps = self.params.n_tweezer_1064_ramp_steps
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_tweezer_paint_amp_max
-
         if v_pd_max == dv:
             v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
 
-        n_ramp = len(v_ramp_list)
-        dt_ramp = t / n_ramp
+        dt_ramp = t / n_steps
+        dv = (v_end - v_start)/(n_steps - 1)
 
         if low_power:
             pid_dac = self.pid2_dac
@@ -145,27 +149,30 @@ class tweezer():
         if not paint:
             self.painting_off()
 
-        pid_dac.set(v=v_ramp_list[0])
+        pid_dac.set(v=v_start)
         if low_power:
             self.pid2_enable_ttl.on()
         else:
             self.pid2_enable_ttl.off()
         delay(500.e-6)
-        for i in range(n_ramp):
-            pid_dac.set(v=v_ramp_list[i],load_dac=False)
+        for i in range(n_steps):
+            v = v_start + i * dv
+            pid_dac.set(v=v,load_dac=False)
+
             if paint:
                 if keep_trap_frequency_constant:
-                    v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v_ramp_list[i],v_pd_max=v_pd_max)
+                    v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v,v_pd_max)
                 else:
                     v_awg_amp_mod = v_awg_am_max
-                self.paint_amp_dac.set(v_awg_amp_mod,load_dac=True)
+                self.paint_amp_dac.set(v_awg_amp_mod,load_dac=False)
+                
             pid_dac.load()
             delay(dt_ramp)
 
     @kernel(flags={"fast-math"})
     def v_pd_to_painting_amp_voltage(self,v_pd=dv,
-                                        v_awg_am_max=dv,
-                                        v_pd_max=dv) -> TFloat:
+                                        v_pd_max=dv,
+                                        v_awg_am_max=dv) -> TFloat:
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_tweezer_paint_amp_max
 

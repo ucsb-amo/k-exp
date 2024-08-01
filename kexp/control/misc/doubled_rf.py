@@ -17,11 +17,12 @@ class doubled_rf():
         self.params.frequency_rf_state_xfer_sweep_list = dv_list
         self.params.dt_rf_state_xfer_sweep = dv
 
-    @kernel
+    @kernel(flags={"fast-math"})
     def set_rf(self,frequency=dv):
         if frequency == dv:
-            frequency = self.params.frequency_rf_state_xfer_sweep_list[0]
-        self.dds.dds_device.set(frequency=frequency/2,amplitude=self.params.amp_rf_source)
+            frequency = self.params._frequency_rf_state_xfer_sweep_start
+        self.dds.dds_device.set(frequency=frequency/2,
+                                amplitude=self.params.amp_rf_source)
 
     @kernel
     def on(self):
@@ -31,13 +32,12 @@ class doubled_rf():
     def off(self):
         self.dds.dds_device.sw.off()
 
-
     @kernel
     def set_amplitude(self,amp):
         self.dds.set_dds(amplitude=amp)
 
-    @kernel
-    def sweep(self,frequency_sweep_list=dv_list):
+    @kernel(flags={"fast-math"})
+    def sweep(self,t,frequency_start,frequency_end,n_steps):
         """Sweeps the lower sideband freuqency over the specified range.
 
         The sweep time is controlled by ExptParams.t_rf_state_xfer_sweep, and
@@ -45,17 +45,28 @@ class doubled_rf():
         Adjust those to change the ramp times.
 
         Args:
-            frequency_sweep_list (1D array, optional): The list of frequencies
-            (in Hz) to be swept over.
+            t (float): The time (in seconds) for the sweep.
+            frequency_start (float, optional): The initial frequency (in Hz) for the sweep.
+            frequency_end (float, optional): The end frequency (in Hz) for the sweep.
+            n_steps (int, optional): The number of steps for the frequency sweep.
         """        
-        if frequency_sweep_list == dv_list:
-            frequency_sweep_list = self.params.frequency_rf_state_xfer_sweep_list
+        if frequency_start == dv:
+            frequency_start = self.params._frequency_rf_state_xfer_sweep_start
+        if frequency_end == dv:
+            frequency_end = self.params._frequency_rf_state_xfer_sweep_end
+        if n_steps == dv:
+            n_steps = self.params.n_rf_state_xfer_sweep_steps
 
-        self.set_rf(frequency=frequency_sweep_list[0])
+        f0 = frequency_start
+        ff = frequency_end
+        df = (ff-f0)/(n_steps-1)
+        dt = t / n_steps
+
+        self.set_rf(frequency=f0)
         self.on()
-        for f in frequency_sweep_list:
-            self.set_rf(frequency=f)
-            delay(self.params.dt_rf_state_xfer_sweep)
+        for i in range(n_steps):
+            self.set_rf(frequency=f0+i*df)
+            delay(dt)
         self.off()
 
     

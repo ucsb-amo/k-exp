@@ -8,19 +8,19 @@ from artiq.experiment import kernel, delay, TFloat
 
 import numpy as np
 
-dv0 = -102.
+dv = -102.
 dv_list = np.linspace(0.,54.,10)
 
 DAC_PAINT_FULLSCALE = 9.99
 
 class lightsheet():
-    def __init__(self, vva_dac:DAC_CH, paint_amp_dac:DAC_CH,
+    def __init__(self, pid_dac:DAC_CH, paint_amp_dac:DAC_CH,
                   sw_ttl:TTL, pid_int_hold_zero_ttl:TTL,
                   expt_params:ExptParams):
         """Controls the light sheet beam.
 
         Args:
-            vva_dac (DAC_CH): A DAC channel that controls a VVA to attenuate the
+            pid_dac (DAC_CH): A DAC channel that controls a VVA to attenuate the
             overall RF that reaches the amp (and thus the AO.) 
             paint_amp_dac (DAC_CH): DAC_CH, voltage controls the painting amplitude via
             controlling the modulation depth. -9.99 V is minimal painting, 9.99
@@ -28,7 +28,7 @@ class lightsheet():
             sw_ttl (TTL): TTL channel, controls an RF
             switch between AWG and amplifier.
         """        
-        self.vva_dac = vva_dac
+        self.pid_dac = pid_dac
         self.paint_amp_dac = paint_amp_dac
         self.ttl = sw_ttl
         self.pid_int_zero_ttl = pid_int_hold_zero_ttl
@@ -40,63 +40,72 @@ class lightsheet():
         self.ttl.off()
 
     # @kernel
-    # def set_paint_amp(self,paint_fraction=dv0,load_dac=True):
-    #     if paint_fraction == dv0:
+    # def set_paint_amp(self,paint_fraction=dv,load_dac=True):
+    #     if paint_fraction == dv:
     #         paint_fraction = 0.
     #     v_dac = DAC_PAINT_FULLSCALE * (2 * paint_fraction - 1)
     #     self.paint_amp_dac.set(v=v_dac,load_dac=load_dac)
 
     @kernel
-    def set_power(self,v_lightsheet_vva=dv0,load_dac=True):
-        if v_lightsheet_vva == dv0:
+    def set_power(self,v_lightsheet_vva=dv,load_dac=True):
+        if v_lightsheet_vva == dv:
             v_lightsheet_vva = self.params.v_pd_lightsheet
-        self.vva_dac.set(v=v_lightsheet_vva,load_dac=load_dac)
+        self.pid_dac.set(v=v_lightsheet_vva,load_dac=load_dac)
     
-    @kernel
-    def ramp(self,t,v_list=dv_list,
+    @kernel(flags={"fast-math"})
+    def ramp(self,t,
+             v_start=dv,
+             v_end=dv,
              paint=False,
-             v_awg_am_max=dv0,
-             v_pd_max=dv0,
+             v_awg_am_max=dv,
+             v_pd_max=dv,
              keep_trap_frequency_constant=True):
-
-        if v_list == dv_list:
-            v_list = self.params.v_pd_lightsheet_ramp_list
-        if v_awg_am_max == dv0:
+        
+        if v_start == dv:
+            v_start = self.params.v_pd_lightsheet_rampup_start
+        if v_end == dv:
+            v_end = self.params.v_pd_lightsheet_rampup_end
+        if n_steps == dv:
+            n_steps = self.params.n_lightsheet_rampup_steps
+        if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_lightsheet_paint_amp_max
-        if v_pd_max == dv0:
+        if v_pd_max == dv:
             v_pd_max = self.params.v_pd_lightsheet_rampup_end
 
-        n_ramp = len(v_list)
-        dt_ramp = t / n_ramp
+        dt_ramp = t / n_steps
+        dv = (v_end - v_start)/(n_steps - 1)
 
         if not paint:
             self.painting_off()
 
-        self.vva_dac.set(v=v_list[0],load_dac=True)
+        self.pid_dac.set(v=v_start,load_dac=True)
 
-        self.vva_dac.load()
+        self.pid_dac.load()
         self.on(paint=paint)
         delay(dt_ramp)
 
-        for i in range(len(v_list)):
-            self.vva_dac.set(v=v_list[i],load_dac=False)
+        for i in range(n_steps):
+            v = v_start + i*dv
+            self.pid_dac.set(v=v,load_dac=False)
+
             if paint:
                 if keep_trap_frequency_constant:
-                    v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v_list[i])
+                    v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v)
                 else:
                     v_awg_amp_mod = v_awg_am_max
-                self.paint_amp_dac.set(v_awg_amp_mod,load_dac=True)
-            self.vva_dac.load()
+                self.paint_amp_dac.set(v_awg_amp_mod,load_dac=False)
+
+            self.pid_dac.load()
             delay(dt_ramp)
 
     @kernel(flags={"fast-math"})
-    def v_pd_to_painting_amp_voltage(self,v_pd=dv0,
-                                        v_awg_am_max=dv0,
-                                        v_pd_max=dv0) -> TFloat:
-        if v_awg_am_max == dv0:
+    def v_pd_to_painting_amp_voltage(self,v_pd=dv,
+                                        v_pd_max=dv,
+                                        v_awg_am_max=dv) -> TFloat:
+        if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_lightsheet_paint_amp_max
 
-        if v_pd_max == dv0:
+        if v_pd_max == dv:
             v_pd_max = self.params.v_pd_lightsheet_rampup_end
 
         p_frac = v_pd / v_pd_max
@@ -120,8 +129,8 @@ class lightsheet():
         self.pid_int_zero_ttl.pulse(10.e-9)
 
     @kernel
-    def on(self, paint=False, v_awg_am=dv0):
-        if v_awg_am == dv0:
+    def on(self, paint=False, v_awg_am=dv):
+        if v_awg_am == dv:
             v_awg_am = self.params.v_tweezer_paint_amp_max
         if paint:
             self.paint_amp_dac.set(v=v_awg_am)
@@ -132,5 +141,5 @@ class lightsheet():
     @kernel
     def off(self):
         self.ttl.off()
-        self.vva_dac.set(v=self.params.v_pd_lightsheet_pd_minimum)
+        self.pid_dac.set(v=self.params.v_pd_lightsheet_pd_minimum)
         self.zero_pid()
