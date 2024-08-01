@@ -128,26 +128,17 @@ class tweezer_paint(EnvExperiment, Base):
 
         # ramp up lightsheet over magtrap
         
-        self.lightsheet.ramp(self.p.t_lightsheet_rampup,
-                             self.p.v_pd_lightsheet_rampup_start,
-                             self.p.v_pd_lightsheet_rampup_end)
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
 
-        # for i in self.p.magtrap_ramp_list:
-        #     self.inner_coil.set_current(i_supply=i)
-        #     delay(self.p.dt_magtrap_ramp)
-        self.inner_coil.ramp(t=self.p.t_magtrap_ramp,
-                             i_start=self.p.i_magtrap_init,
-                             i_end=self.p.i_magtrap_ramp_end)
+        for i in self.p.magtrap_ramp_list:
+            self.inner_coil.set_current(i_supply=i)
+            delay(self.p.dt_magtrap_ramp)
 
         delay(self.p.t_magtrap)
 
-        # for i in self.p.magtrap_rampdown_list:
-        #     self.inner_coil.set_current(i_supply=i)
-        #     delay(self.p.dt_magtrap_rampdown)
-        self.inner_coil.ramp(t=self.p.t_magtrap_rampdown,
-                             i_start=self.p.i_magtrap_ramp_end,
-                             i_end=0.,
-                             n_steps=self.p.n_magtrap_ramp_steps)
+        for i in self.p.magtrap_rampdown_list:
+            self.inner_coil.set_current(i_supply=i)
+            delay(self.p.dt_magtrap_rampdown)
 
         self.inner_coil.off()
         
@@ -155,74 +146,61 @@ class tweezer_paint(EnvExperiment, Base):
         delay(1.e-3)
         self.outer_coil.set_voltage()
 
-        # for i in self.p.feshbach_field_rampup_list:
-        #     self.outer_coil.set_current(i_supply=i)
-        #     delay(self.p.dt_feshbach_field_rampup)
-        # delay(20.e-3)
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
-                             i_start=0.,
-                             i_end=self.p.i_evap1_current)
+        for i in self.p.feshbach_field_rampup_list:
+            self.outer_coil.set_current(i_supply=i)
+            delay(self.p.dt_feshbach_field_rampup)
+        delay(20.e-3)
 
-        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
-        #                      v_list=self.p.v_pd_lightsheet_ramp_down_list)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
-                             v_start=self.p.v_pd_lightsheet_rampup_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown_end)
+                             v_list=self.p.v_pd_lightsheet_ramp_down_list)
         
-        # for i in self.p.feshbach_field_ramp_list:
-        #     self.outer_coil.set_current(i_supply=i)
-        #     delay(self.p.dt_feshbach_field_ramp)
-        # delay(20.e-3)
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
-                             i_start=self.p.i_evap1_current,
-                             i_end=self.p.i_evap2_current)
+        for i in self.p.feshbach_field_ramp_list:
+            self.outer_coil.set_current(i_supply=i)
+            delay(self.p.dt_feshbach_field_ramp)
+        delay(20.e-3)
 
         self.tweezer.on(paint=True)
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
-                          v_start=0.,
-                          v_end=self.p.v_pd_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False)
 
-        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-        #                      v_list=self.p.v_pd_lightsheet_ramp_down2_list)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
-
+                             v_list=self.p.v_pd_lightsheet_ramp_down2_list)
         self.ttl.pd_scope_trig.pulse(t=1.e-6)
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
-                          v_start=self.p.v_pd_tweezer_1064_ramp_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown_end,
+                          v_ramp_list=self.p.v_pd_tweezer_1064_rampdown_list,
                           paint=True,keep_trap_frequency_constant=True)
 
-        # for i in self.p.feshbach_field_ramp2_list:
-        #     self.outer_coil.set_current(i_supply=i)
-        #     delay(self.p.dt_feshbach_field_ramp2)
-        # delay(30.e-3)
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
-                             i_start=self.p.i_evap2_current,
-                             i_end=self.p.i_evap3_current)
-        
-        from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+        for i in self.p.feshbach_field_ramp2_list:
+            self.outer_coil.set_current(i_supply=i)
+            delay(self.p.dt_feshbach_field_ramp2)
+        delay(30.e-3)
+    
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown_end),
-                          v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
+                          v_ramp_list=self.p.v_pd_tweezer_1064_rampdown2_list,
                           paint=True,keep_trap_frequency_constant=True)
+
         
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
-                          v_start=self.p.v_pd_tweezer_1064_rampdown2_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
+                          v_ramp_list=self.p.v_pd_tweezer_1064_rampdown3_list,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
-        #                   v_start=self.p.v_pd_tweezer_1064_rampdown3_end,
-        #                   v_end=self.p.v_pd_tweezer_1064_adiabatic_stretch_ramp_end,
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_adiabatic_stretch_ramp,
+        #                   v_ramp_list=self.p.v_pd_tweezer_1064_adiabatic_stretch_ramp_list,
         #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
+        
+        # self.outer_coil.set_current(i_supply=self.p.i_tweezer_evap_current)
+        # delay(30.e-3)
+
+        # self.ttl.pd_scope_trig.on()
+        # self.outer_coil.off()
+        # delay(self.p.t_feshbach_field_decay)
+        # self.ttl.pd_scope_trig.off()
 
         self.lightsheet.off()
         self.tweezer.off()
     
         delay(self.p.t_tof)
+        # self.flash_repump()
         self.abs_image()
 
         self.outer_coil.off()

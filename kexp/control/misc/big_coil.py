@@ -9,9 +9,7 @@ dv = -1.
 dv_list = np.linspace(0.,1.,5)
 
 V_FULLSCALE_DAC = 10.
-V_SUPPLY_DEFAULT = 70.
-
-T_ANALOG_DELAY = 30.e-3
+V_SUPPLY_DEFAULT = 10.
 
 class igbt_magnet():
     def __init__(self,
@@ -59,7 +57,7 @@ class igbt_magnet():
         self.i_control_dac.set(v=v_dac_current,load_dac=load_dac)
         
     @kernel
-    def set_voltage(self,v_supply=V_SUPPLY_DEFAULT,load_dac=True):
+    def set_voltage(self,v_supply=70.,load_dac=True):
         v_dac_voltage = self.supply_voltage_to_dac_voltage(v_supply)
         self.v_control_dac.set(v=v_dac_voltage,load_dac=load_dac)
 
@@ -70,15 +68,6 @@ class igbt_magnet():
     @portable(flags={"fast-math"})
     def supply_voltage_to_dac_voltage(self,v_supply) -> TFloat:
         return (v_supply/self.max_voltage) * V_FULLSCALE_DAC
-    
-    @kernel(flags={"fast-math"})
-    def ramp(self,t,i_start,i_end,n_steps=dv,t_analog_delay=T_ANALOG_DELAY):
-        if n_steps == dv:
-            n_steps = self.params.n_field_ramp_steps
-        v_start = self.supply_current_to_dac_voltage(i_start)
-        v_end = self.supply_current_to_dac_voltage(i_end)
-        self.i_control_dac.linear_ramp(t,v_start,v_end,n_steps)
-        delay(t_analog_delay)
         
     # @kernel
     # def open_discharge_igbt(self):
@@ -101,7 +90,7 @@ class igbt_magnet():
         self.on()
         self.set_current(0.)
         self.set_voltage(0.)
-        delay(T_ANALOG_DELAY)
+        delay(30.e-3)
         self.off()
 
 class hbridge_magnet(igbt_magnet):
