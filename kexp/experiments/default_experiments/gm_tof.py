@@ -14,10 +14,12 @@ class tof(EnvExperiment, Base):
 
         self.p.t_tof = 13.e-3
 
-        self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.4,5))
-        self.xvar('pfrac_r_gmramp_end',np.linspace(.03,.4,4))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.4,5))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(.03,.4,4))
 
-        self.p.N_repeats = [2,3]
+        self.xvar('amp_imaging',np.linspace(.03,1.,15))
+
+        self.p.N_repeats = 2
 
         self.p.t_mot_load = .4
 
