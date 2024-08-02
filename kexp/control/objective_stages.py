@@ -33,6 +33,7 @@ class controller():
 
     def setup_axes(self):
         
+        # note the axes here indicate the axes about which the motor drives rotation of the stage
         n_obj = dict()
         n_obj['+y'] = motor_axis(1,1)
         n_obj['+z'] = motor_axis(1,2)
@@ -65,12 +66,14 @@ class controller():
             sign = -1
 
         axes_to_move = []
+        # in order to translate in x, drive the motors which control rotation about z
         if 'x' in axis:
             axes_to_move.append(objective['+z'])
             axes_to_move.append(objective['-z'])
         elif 'y' in axis:
             axes_to_move.append(objective['y'])
             N_steps = ysign * N_steps
+        # in order to translate in z, drive the motors which control rotation about x
         elif 'z' in axis:
             axes_to_move.append(objective['+x'])
             axes_to_move.append(objective['-x'])
@@ -97,7 +100,7 @@ class controller():
             if '+' in axis:
                 axes_to_move.append(objective['+x'])
             elif '-' in axis:
-                axes_to_move.append(objective['+x'])
+                axes_to_move.append(objective['-x'])
         elif 'y' in axis:
             axes_to_move.append(objective['y'])
             N_steps = ysign * N_steps
@@ -110,3 +113,27 @@ class controller():
         for axis in axes_to_move:
             axis: motor_axis
             axis.move(sign * N_steps)
+    
+    def translate_together_x(self,N_steps):
+        if N_steps <= 0:
+            self.translate(N_steps=N_steps,obj='n',axis='-x')
+            self.translate(N_steps=N_steps,obj='s',axis='-x')
+        elif N_steps > 0:
+            self.translate(N_steps=N_steps,obj='n',axis='+x')
+            self.translate(N_steps=N_steps,obj='s',axis='+x')
+
+    def translate_together_y(self,N_steps):
+        if N_steps <= 0:
+            self.translate(N_steps=N_steps,obj='n',axis='-y')
+            self.translate(N_steps=N_steps,obj='s',axis='-y')
+        elif N_steps > 0:
+            self.translate(N_steps=N_steps,obj='n',axis='+y')
+            self.translate(N_steps=N_steps,obj='s',axis='+y')
+
+    def translate_together_z(self,N_steps):
+        if N_steps <= 0:
+            self.translate(N_steps=N_steps,obj='n',axis='-z')
+            self.translate(N_steps=N_steps,obj='s',axis='-z')
+        elif N_steps > 0:
+            self.translate(N_steps=N_steps,obj='n',axis='+z')
+            self.translate(N_steps=N_steps,obj='s',axis='+z')
