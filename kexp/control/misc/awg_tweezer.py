@@ -12,6 +12,8 @@ from artiq.experiment import kernel, delay, parallel, TFloat
 
 import numpy as np
 
+# di = 666420695318008 #causes failure
+di = 0
 dv = -1000.
 dv_list = np.linspace(0.,1.,5)
 
@@ -138,7 +140,7 @@ class tweezer():
             v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
 
         dt_ramp = t / n_steps
-        dv = (v_end - v_start)/(n_steps - 1)
+        delta_v = (v_end - v_start)/(n_steps - 1)
 
         if low_power:
             pid_dac = self.pid2_dac
@@ -154,19 +156,15 @@ class tweezer():
             self.pid2_enable_ttl.on()
         else:
             self.pid2_enable_ttl.off()
-        delay(500.e-6)
         for i in range(n_steps):
-            v = v_start + i * dv
-            pid_dac.set(v=v,load_dac=False)
-
+            v = v_start + i * delta_v
             if paint:
                 if keep_trap_frequency_constant:
                     v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v,v_pd_max)
                 else:
                     v_awg_amp_mod = v_awg_am_max
                 self.paint_amp_dac.set(v_awg_amp_mod,load_dac=False)
-                
-            pid_dac.load()
+            pid_dac.set(v=v,load_dac=True)
             delay(dt_ramp)
 
     @kernel(flags={"fast-math"})

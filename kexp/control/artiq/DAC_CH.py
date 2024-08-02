@@ -49,8 +49,8 @@ class DAC_CH():
     def linear_ramp(self,t,v_start,v_end,n):
         v0 = v_start
         vf = v_end
-        dv = (vf-v0)/(n-1)
+        delta_v = (vf-v0)/(n-1)
         dt = t/n
         for i in range(n):
-            self.set(v=v0+i*dv)
+            self.set(v=v0+i*delta_v)
             delay(dt)

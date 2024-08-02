@@ -68,14 +68,14 @@ class lightsheet():
         if v_end == dv:
             v_end = self.params.v_pd_lightsheet_rampup_end
         if n_steps == di:
-            n_steps = self.params.n_lightsheet_rampup_steps
+            n_steps = self.params.n_lightsheet_ramp_steps
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_lightsheet_paint_amp_max
         if v_pd_max == dv:
             v_pd_max = self.params.v_pd_lightsheet_rampup_end
 
         dt_ramp = t / n_steps
-        dv = (v_end - v_start)/(n_steps - 1)
+        delta_v = (v_end - v_start)/(n_steps - 1)
 
         if not paint:
             self.painting_off()
@@ -87,7 +87,7 @@ class lightsheet():
         delay(dt_ramp)
 
         for i in range(n_steps):
-            v = v_start + i*dv
+            v = v_start + i*delta_v
             self.pid_dac.set(v=v,load_dac=False)
 
             if paint:
