@@ -53,10 +53,33 @@ class ExptBuilder():
             self.write_experiment_to_file(program)
             #returncode = self.run_expt()
             return True
+    
+    def generate_assignment_lines(self, varnames, values):
+        """Generates strings which can be formatted into an experiment string to
+        assign the ExptParams parameter with key varnames[i] to values[i]
+
+        Args:
+            varnames (list(str)): A list of ExptParam keys.
+            values (list(float)): A list of values, one per key in varnames.
+
+        Returns:
+            string: a string containing the assignment statements.
+        """
+        lines = ""
+        for i in range(len(varnames)):
+             lines += f"""
+                    self.p.{varnames[i]} = {float(values[i])}"""
+        return lines
+
 
   
     # func. for generating exp, here GM TOF is copied in
     def test_expt(self, varname, var):
+
+        N_REPEATS = 3
+    
+        assignment_lines = self.generate_assignment_lines(varname,var)
+
         script = textwrap.dedent(f"""
             from artiq.experiment import *
             from artiq.experiment import delay
@@ -72,11 +95,9 @@ class ExptBuilder():
 
                     self.p.t_tof = 450*1.e-6
 
-                    self.xvar('{varname[0]}', [{var[0]}])
-                    self.xvar('{varname[1]}', [{var[1]}])
-                    self.xvar('{varname[2]}', [{var[2]}])
-                    self.xvar('{varname[3]}', [{var[3]}])
-                    self.xvar('{varname[4]}', [{var[4]}])
+                    {assignment_lines}
+
+                    self.xvar('dummy',[0]*{N_REPEATS:1.0f})
 
                     self.p.t_mot_load = .07
                     
