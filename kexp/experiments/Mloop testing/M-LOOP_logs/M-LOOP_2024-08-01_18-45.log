@@ -1,0 +1,155 @@
+2024-08-01 18:45:57,082 mloop                INFO     M-LOOP version 3.3.4
+2024-08-01 18:45:57,082 mloop                DEBUG    M-LOOP Logger configured.
+2024-08-01 18:45:57,082 mloop.interfaces     DEBUG    Creating interface.
+2024-08-01 18:45:57,082 mloop.controllers    DEBUG    Controller init completed.
+2024-08-01 18:45:57,082 mloop.learners.1     DEBUG    Learner init completed.
+2024-08-01 18:45:57,089 mloop.learners.2     DEBUG    Learner init completed.
+2024-08-01 18:45:57,090 mloop.controllers    INFO     Optimization started.
+2024-08-01 18:45:57,092 mloop.interfaces     DEBUG    Entering main loop of interface.
+2024-08-01 18:45:57,092 mloop.controllers    DEBUG    ML learner started.
+2024-08-01 18:45:57,153 mloop.controllers    DEBUG    Starting training optimization.
+2024-08-01 18:45:57,153 mloop.controllers    INFO     Run: 0 (training)
+2024-08-01 18:45:57,155 mloop.controllers    INFO     params [ 5.61846796 14.42588117  0.33240487  0.13392926 15.02170012  2.63055229]
+2024-08-01 18:46:09,507 mloop.interfaces     DEBUG    Interface ended
+2024-08-01 18:46:10,218 mloop.controllers    ERROR    The interface raised an error with traceback:
+  File "c:\Users\jarjarbinks\.venv\kpy\lib\site-packages\mloop\interfaces.py", line 133, in run
+    cost_dict = self.get_next_cost_dict(params_dict)
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 169, in get_next_cost_dict
+    cost = getCost()
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 30, in getCost
+    atomnumber = getAtomNumber()
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 25, in getAtomNumber
+    ad = load_atomdata(0,crop_type='gm',average_repeats = True)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\util\data\load_atomdata.py", line 71, in load_atomdata
+    ad = atomdata(xvarnames,images,image_timestamps,params,camera_params,run_info,
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\atomdata.py", line 71, in __init__
+    self.analyze_ods()
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\atomdata.py", line 260, in analyze_ods
+    self._analyze_absorption_images(crop_type)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\atomdata.py", line 297, in _analyze_absorption_images
+    self.od, self.sum_od_x, self.sum_od_y = process_ODs(self.od_raw, crop_type, self.Nvars)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\image_processing\compute_ODs.py", line 30, in process_ODs
+    ODs = roi.crop_OD(raw_ODs,crop_type,Nvars)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\image_processing\roi_select.py", line 73, in crop_OD
+    return cropOD
+
+2024-08-01 18:46:10,218 mloop.controllers    WARNING  Controller ended due to exception of some kind. Starting shut down...
+2024-08-01 18:46:10,222 mloop.controllers    DEBUG    ML learner end set.
+2024-08-01 18:46:11,111 mloop.controllers    DEBUG    ML learner joined
+2024-08-01 18:46:11,111 mloop.controllers    INFO     Machine learning learner did not provide best and/or all minima.
+2024-08-01 18:46:11,111 mloop.controllers    DEBUG    Learner end event set.
+2024-08-01 18:46:11,111 mloop.controllers    DEBUG    Interface end event set.
+2024-08-01 18:46:11,170 mloop.learners.1     DEBUG    Learner end signal received. Ending
+2024-08-01 18:46:12,173 mloop.controllers    DEBUG    Learner joined.
+2024-08-01 18:46:12,173 mloop.controllers    DEBUG    Interface joined.
+2024-08-01 18:46:12,174 mloop.controllers    WARNING  Safely shut down. Below are results found before exception.
+2024-08-01 18:46:12,175 mloop.controllers    INFO     Optimization ended because:
+2024-08-01 18:46:12,175 mloop.controllers    INFO     	* Error occurred.
+2024-08-01 18:46:12,176 mloop.controllers    INFO     Results:
+2024-08-01 18:46:12,176 mloop.controllers    INFO     	* Best parameters found: nan
+2024-08-01 18:46:12,177 mloop.controllers    INFO     	* Best cost returned: inf +/- nan
+2024-08-01 18:46:12,178 mloop.controllers    INFO     	* Best run index: nan
+2024-08-01 18:47:16,453 mloop.interfaces     DEBUG    Creating interface.
+2024-08-01 18:47:16,453 mloop.controllers    DEBUG    Controller init completed.
+2024-08-01 18:47:16,454 mloop.learners.3     DEBUG    Learner init completed.
+2024-08-01 18:47:16,454 mloop.learners.4     DEBUG    Learner init completed.
+2024-08-01 18:47:16,455 mloop.controllers    INFO     Optimization started.
+2024-08-01 18:47:16,465 mloop.interfaces     DEBUG    Entering main loop of interface.
+2024-08-01 18:47:16,465 mloop.controllers    DEBUG    ML learner started.
+2024-08-01 18:47:16,541 mloop.controllers    DEBUG    Starting training optimization.
+2024-08-01 18:47:16,541 mloop.controllers    INFO     Run: 0 (training)
+2024-08-01 18:47:16,543 mloop.controllers    INFO     params [14.04739711 29.36354148  0.42423977  0.11344951 13.14173801  2.53234977]
+2024-08-01 18:47:31,788 mloop.interfaces     DEBUG    Interface ended
+2024-08-01 18:47:32,638 mloop.controllers    ERROR    The interface raised an error with traceback:
+  File "c:\Users\jarjarbinks\.venv\kpy\lib\site-packages\mloop\interfaces.py", line 133, in run
+    cost_dict = self.get_next_cost_dict(params_dict)
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 169, in get_next_cost_dict
+    cost = getCost()
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 30, in getCost
+    atomnumber = getAtomNumber()
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 25, in getAtomNumber
+    ad = load_atomdata(0,crop_type='gm',average_repeats = True)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\util\data\load_atomdata.py", line 71, in load_atomdata
+    ad = atomdata(xvarnames,images,image_timestamps,params,camera_params,run_info,
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\atomdata.py", line 71, in __init__
+    self.analyze_ods()
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\atomdata.py", line 260, in analyze_ods
+    self._analyze_absorption_images(crop_type)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\atomdata.py", line 297, in _analyze_absorption_images
+    self.od, self.sum_od_x, self.sum_od_y = process_ODs(self.od_raw, crop_type, self.Nvars)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\image_processing\compute_ODs.py", line 30, in process_ODs
+    ODs = roi.crop_OD(raw_ODs,crop_type,Nvars)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\image_processing\roi_select.py", line 73, in crop_OD
+    return cropOD
+
+2024-08-01 18:47:32,638 mloop.controllers    WARNING  Controller ended due to exception of some kind. Starting shut down...
+2024-08-01 18:47:32,638 mloop.controllers    DEBUG    ML learner end set.
+2024-08-01 18:47:33,061 mloop.controllers    DEBUG    ML learner joined
+2024-08-01 18:47:33,061 mloop.controllers    INFO     Machine learning learner did not provide best and/or all minima.
+2024-08-01 18:47:33,061 mloop.controllers    DEBUG    Learner end event set.
+2024-08-01 18:47:33,061 mloop.controllers    DEBUG    Interface end event set.
+2024-08-01 18:47:33,559 mloop.learners.3     DEBUG    Learner end signal received. Ending
+2024-08-01 18:47:34,564 mloop.controllers    DEBUG    Learner joined.
+2024-08-01 18:47:34,564 mloop.controllers    DEBUG    Interface joined.
+2024-08-01 18:47:34,564 mloop.controllers    WARNING  Safely shut down. Below are results found before exception.
+2024-08-01 18:47:34,564 mloop.controllers    INFO     Optimization ended because:
+2024-08-01 18:47:34,564 mloop.controllers    INFO     	* Error occurred.
+2024-08-01 18:47:34,564 mloop.controllers    INFO     Results:
+2024-08-01 18:47:34,564 mloop.controllers    INFO     	* Best parameters found: nan
+2024-08-01 18:47:34,564 mloop.controllers    INFO     	* Best cost returned: inf +/- nan
+2024-08-01 18:47:34,564 mloop.controllers    INFO     	* Best run index: nan
+2024-08-01 18:48:21,061 mloop.interfaces     DEBUG    Creating interface.
+2024-08-01 18:48:21,062 mloop.controllers    DEBUG    Controller init completed.
+2024-08-01 18:48:21,063 mloop.learners.5     DEBUG    Learner init completed.
+2024-08-01 18:48:21,064 mloop.learners.6     DEBUG    Learner init completed.
+2024-08-01 18:48:21,064 mloop.controllers    INFO     Optimization started.
+2024-08-01 18:48:21,067 mloop.interfaces     DEBUG    Entering main loop of interface.
+2024-08-01 18:48:21,067 mloop.controllers    DEBUG    ML learner started.
+2024-08-01 18:48:21,129 mloop.controllers    DEBUG    Starting training optimization.
+2024-08-01 18:48:21,129 mloop.controllers    INFO     Run: 0 (training)
+2024-08-01 18:48:21,145 mloop.controllers    INFO     params [ 7.79606877 21.73137747  0.1063916  21.43295901  1.90537094]
+2024-08-01 18:48:21,145 mloop.interfaces     DEBUG    Interface ended
+2024-08-01 18:48:22,150 mloop.controllers    ERROR    The interface raised an error with traceback:
+  File "c:\Users\jarjarbinks\.venv\kpy\lib\site-packages\mloop\interfaces.py", line 133, in run
+    cost_dict = self.get_next_cost_dict(params_dict)
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 164, in get_next_cost_dict
+    eBuilder.write_experiment_to_file(eBuilder.test_expt(self.var_names,params))
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 80, in test_expt
+    self.xvar('{varname[5]}', [{var[1]}])
+
+2024-08-01 18:48:22,152 mloop.controllers    WARNING  Controller ended due to exception of some kind. Starting shut down...
+2024-08-01 18:48:22,152 mloop.controllers    DEBUG    ML learner end set.
+2024-08-01 18:48:23,520 mloop.controllers    DEBUG    ML learner joined
+2024-08-01 18:48:23,520 mloop.controllers    INFO     Machine learning learner did not provide best and/or all minima.
+2024-08-01 18:48:23,520 mloop.controllers    DEBUG    Learner end event set.
+2024-08-01 18:48:23,520 mloop.controllers    DEBUG    Interface end event set.
+2024-08-01 18:48:24,083 mloop.learners.5     DEBUG    Learner end signal received. Ending
+2024-08-01 18:48:25,089 mloop.controllers    DEBUG    Learner joined.
+2024-08-01 18:48:25,089 mloop.controllers    DEBUG    Interface joined.
+2024-08-01 18:48:25,089 mloop.controllers    WARNING  Safely shut down. Below are results found before exception.
+2024-08-01 18:48:25,089 mloop.controllers    INFO     Optimization ended because:
+2024-08-01 18:48:25,089 mloop.controllers    INFO     	* Error occurred.
+2024-08-01 18:48:25,089 mloop.controllers    INFO     Results:
+2024-08-01 18:48:25,089 mloop.controllers    INFO     	* Best parameters found: nan
+2024-08-01 18:48:25,096 mloop.controllers    INFO     	* Best cost returned: inf +/- nan
+2024-08-01 18:48:25,096 mloop.controllers    INFO     	* Best run index: nan

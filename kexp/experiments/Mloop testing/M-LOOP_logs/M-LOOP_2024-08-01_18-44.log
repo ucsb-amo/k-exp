@@ -1,0 +1,23 @@
+2024-08-01 18:44:08,450 mloop                INFO     M-LOOP version 3.3.4
+2024-08-01 18:44:08,452 mloop                DEBUG    M-LOOP Logger configured.
+2024-08-01 18:44:08,452 mloop.interfaces     DEBUG    Creating interface.
+2024-08-01 18:44:08,453 mloop.controllers    DEBUG    Controller init completed.
+2024-08-01 18:44:08,454 mloop.learners.1     DEBUG    Learner init completed.
+2024-08-01 18:44:08,454 mloop.learners.2     DEBUG    Learner init completed.
+2024-08-01 18:44:08,455 mloop.controllers    INFO     Optimization started.
+2024-08-01 18:44:08,457 mloop.interfaces     DEBUG    Entering main loop of interface.
+2024-08-01 18:44:08,457 mloop.controllers    DEBUG    ML learner started.
+2024-08-01 18:44:08,512 mloop.controllers    DEBUG    Starting training optimization.
+2024-08-01 18:44:08,516 mloop.controllers    INFO     Run: 0 (training)
+2024-08-01 18:44:08,518 mloop.controllers    INFO     params [10.55790802 25.75710831  0.22359514  0.14132467 14.27685752  1.52972381]
+2024-08-01 18:45:14,838 mloop.controllers    WARNING  !!! Do not give the interrupt signal again !!! 
+ M-LOOP stopped with keyboard interupt or system exit. Please wait at least 1 minute for the threads to safely shut down. 
+ 
+2024-08-01 18:45:14,839 mloop.controllers    WARNING  Closing down controller.
+2024-08-01 18:45:14,840 mloop.controllers    DEBUG    ML learner end set.
+2024-08-01 18:45:16,211 mloop.controllers    DEBUG    ML learner joined
+2024-08-01 18:45:16,211 mloop.controllers    INFO     Machine learning learner did not provide best and/or all minima.
+2024-08-01 18:45:16,211 mloop.controllers    DEBUG    Learner end event set.
+2024-08-01 18:45:16,211 mloop.controllers    DEBUG    Interface end event set.
+2024-08-01 18:45:16,745 mloop.learners.1     DEBUG    Learner end signal received. Ending
+2024-08-01 18:45:17,751 mloop.controllers    DEBUG    Learner joined.

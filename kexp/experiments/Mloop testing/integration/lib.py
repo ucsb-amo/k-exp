@@ -13,8 +13,22 @@ from subprocess import PIPE, run
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import os
+import textwrap
 
+from kexp.util.data.load_atomdata import load_atomdata
+from kexp.analysis.plotting_1d import *
 
+#Cost Calculator!
+def getAtomNumber():
+
+        #Load the data given a run id.
+        ad = load_atomdata(0,crop_type='gm',average_repeats = True)
+        return sum(ad.atom_number)/len(ad.atom_number) 
+
+#Cost function is just the negative of the atom number
+def getCost():
+    atomnumber = getAtomNumber()
+    return -1*atomnumber
 
 
 class ExptBuilder():
@@ -40,6 +54,7 @@ class ExptBuilder():
             #returncode = self.run_expt()
             return True
 
+  
     # func. for generating exp, here GM TOF is copied in
     def test_expt(self, varname, var):
         script = textwrap.dedent(f"""
@@ -57,9 +72,13 @@ class ExptBuilder():
 
                     self.p.t_tof = 450*1.e-6
 
-                    self.xvar('{varname}', [{var}]*3)
+                    self.xvar('{varname[0]}', [{var[0]}])
+                    self.xvar('{varname[1]}', [{var[1]}])
+                    self.xvar('{varname[2]}', [{var[2]}])
+                    self.xvar('{varname[3]}', [{var[3]}])
+                    self.xvar('{varname[4]}', [{var[4]}])
 
-                    self.p.t_mot_load = .5
+                    self.p.t_mot_load = .07
                     
 
                     self.finish_build(shuffle=True)
@@ -119,7 +138,7 @@ class ExptBuilder():
 class CustomInterface(mli.Interface):
     
     #Initialization of the interface, including this method is optional
-    def __init__(self):
+    def __init__(self,var_names):
         #You must include the super command to call the parent class, Interface, constructor 
         super(CustomInterface,self).__init__()
         eBuilder = ExptBuilder()
@@ -130,6 +149,8 @@ class CustomInterface(mli.Interface):
         #jared Photon
         #jared P
         #jared
+        self.var_names = var_names
+
         
     #You must include the get_next_cost_dict method in your class
     #this method is called whenever M-LOOP wants to run an experiment
@@ -139,8 +160,8 @@ class CustomInterface(mli.Interface):
         #Get parameters from the provided dictionary
         params = params_dict['params']
         #eBuilder.execute_test('detune_gm',params[0])
-        eb.write_experiment_to_file(eb.test_expt('detune_gm',params))
-        eb.run_expt()
+        eBuilder.write_experiment_to_file(eBuilder.test_expt(self.var_names,params))
+        eBuilder.run_expt()
 
         time.sleep(20e-3)
         # cost = externalCostFunction.calcCost(params[0])\
