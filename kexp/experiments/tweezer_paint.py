@@ -13,11 +13,11 @@ T32 = 1<<32
 class tweezer_paint(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.xvar('frequency_detuned_imaging',np.arange(400.,450.,3)*1.e6)
-        # self.p.frequency_detuned_imaging = 433.e6 # 150a0
-        self.p.frequency_detuned_imaging = 424.e6 # 150a0
+        self.p.frequency_detuned_imaging = 433.e6 # 150a0
+        # self.p.frequency_detuned_imaging = 424.e6 # 150a0
         # self.p.frequency_detuned_imaging = 412.e6 # NI
 
         self.p.t_mot_load = .75
@@ -71,7 +71,7 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(.05,1.,5))
         self.p.t_tweezer_hold = 100.e-3
 
-        self.xvar('t_tof',np.linspace(100.,600.,5)*1.e-6)
+        self.xvar('t_tof',np.linspace(10.,80.,2)*1.e-6)
         self.p.t_tof = 200.e-6
         self.p.N_repeats = [1]
         
@@ -87,11 +87,15 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('amp_imaging',np.linspace(.06,.3,15))
         # self.xvar('amp_imaging',np.linspace(.04,.09,20))
         # self.camera_params.amp_imaging = 0.106
-        self.camera_params.amp_imaging = 0.248
+        # # self.camera_params.amp_imaging = 0.248
         # self.camera_params.exposure_time = 20.e-6
         # self.camera_params.exposure_time = 10.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 299
+
+        self.p.n_tweezer_ramp_steps = 100
+
+        self.p.t_lightsheet_hold = 100.e-3
 
         self.finish_build(shuffle=True)
 
@@ -155,6 +159,8 @@ class tweezer_paint(EnvExperiment, Base):
 
         self.inner_coil.off()
         
+        delay(self.p.t_lightsheet_hold)
+        
         self.outer_coil.on()
         delay(1.e-3)
         self.outer_coil.set_voltage()
@@ -172,6 +178,7 @@ class tweezer_paint(EnvExperiment, Base):
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
+        delay(10.e-3)
         
         # for i in self.p.feshbach_field_ramp_list:
         #     self.outer_coil.set_current(i_supply=i)
@@ -187,43 +194,43 @@ class tweezer_paint(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False)
 
+        # # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        # #                      v_list=self.p.v_pd_lightsheet_ramp_down2_list)
         # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-        #                      v_list=self.p.v_pd_lightsheet_ramp_down2_list)
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
 
-        self.ttl.pd_scope_trig.pulse(t=1.e-6)
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
-                          v_start=self.p.v_pd_tweezer_1064_ramp_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown_end,
-                          paint=True,keep_trap_frequency_constant=True)
+        # self.ttl.pd_scope_trig.pulse(t=1.e-6)
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
+        #                   v_start=self.p.v_pd_tweezer_1064_ramp_end,
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown_end,
+        #                   paint=True,keep_trap_frequency_constant=True)
 
-        # for i in self.p.feshbach_field_ramp2_list:
-        #     self.outer_coil.set_current(i_supply=i)
-        #     delay(self.p.dt_feshbach_field_ramp2)
-        # delay(30.e-3)
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
-                             i_start=self.p.i_evap2_current,
-                             i_end=self.p.i_evap3_current)
+        # # for i in self.p.feshbach_field_ramp2_list:
+        # #     self.outer_coil.set_current(i_supply=i)
+        # #     delay(self.p.dt_feshbach_field_ramp2)
+        # # delay(30.e-3)
+        # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
+        #                      i_start=self.p.i_evap2_current,
+        #                      i_end=self.p.i_evap3_current)
         
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
-                          v_start=self.p.v_pd_tweezer_1064_rampdown_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
-                          paint=True,keep_trap_frequency_constant=True)
-        
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
-                          v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
-                          paint=True,keep_trap_frequency_constant=True,low_power=True)
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
+        #                   v_start=self.p.v_pd_tweezer_1064_rampdown_end,
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
+        #                   paint=True,keep_trap_frequency_constant=True)
         
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
-        #                   v_start=self.p.v_pd_tweezer_1064_rampdown3_end,
-        #                   v_end=self.p.v_pd_tweezer_1064_adiabatic_stretch_ramp_end,
+        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
         #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
+        
+        # # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
+        # #                   v_start=self.p.v_pd_tweezer_1064_rampdown3_end,
+        # #                   v_end=self.p.v_pd_tweezer_1064_adiabatic_stretch_ramp_end,
+        # #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.lightsheet.off()
-        # self.tweezer.off()
+        self.tweezer.off()
     
         delay(self.p.t_tof)
         self.abs_image()
