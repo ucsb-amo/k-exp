@@ -17,18 +17,12 @@ def crop_OD(OD,crop_type='',Nvars=1):
     elif crop_type == 'gm':
         roix = [500,1250]
         roiy = [200,1000]
-    elif crop_type == 'gm2':
-        roix = [500,1300]
-        roiy = [500,1200]
     elif crop_type == 'magtrap':
         roix = [500,1300]
         roiy = [500,1200]
-    elif crop_type == 'fluor_gm':
-        roix = [500, 1450]
-        roiy = [200, 950]
     elif crop_type == 'lightsheet':
-        roix = [880,970]
-        roiy = [470,880]
+        roix = [870,960]
+        roiy = [500,800]
     elif crop_type == 'lightsheet_zaxis':
         roix = [750,970]
         roiy = [500,780]

@@ -12,26 +12,41 @@ class rf_scan(EnvExperiment, Base):
         # self.xvar('imaging_state',[2,1])
         # self.xvar('frequency_detuned_imaging',np.linspace(20.,80.,40)*1.e6)
 
-        # self.xvar('t_lightsheet_hold',np.linspace(10.,2000.,20)*1.e-3)
-        # self.xvar('t_lightsheet_rampup',np.linspace(100.,1000.,8)*1.e-3)
-        # self.xvar('t_magtrap',np.linspace(0.,1000.,8)*1.e-3)
-        # self.xvar('t_magtrap_ramp',np.linspace(12.,1000.,8)*1.e-3)
-        # self.xvar('i_magtrap_ramp_end',np.linspace(20.,95.,8))
-        # self.xvar('i_magtrap_init',np.linspace(10.,30.,8))
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.,9.,6))
-        
+        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,2.,6))
+        # self.p.v_zshim_current_magtrap = 0.
 
-        # self.xvar('t_tof',np.linspace(10.,200.,5)*1.e-6)
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,10))
+        # self.p.v_xshim_current_magtrap = 0.
+
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.5,10))
+        # self.p.v_yshim_current_magtrap = 5.2
+
+        # self.xvar('i_magtrap_init',np.linspace(18.,30.,10))
+        # self.p.i_magtrap_init = 22.
+
+        # self.xvar('t_lightsheet_rampup',np.linspace(100.,1000.,8)*1.e-3)
+
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.,9.,6))
+
+        # self.xvar('t_magtrap_ramp',np.linspace(12.,2500.,8)*1.e-3)
+        # self.p.t_magtrap_ramp = .367
+
+        # self.xvar('i_magtrap_ramp_end',np.linspace(70.,95.,20))
+        # self.p.i_magtrap_ramp_end = 88.
+
+        # self.xvar('t_magtrap',np.linspace(0.001,2500.,8)*1.e-3)
+        # self.p.t_magtrap = 1.4
+
+        # self.xvar('t_tof',np.linspace(200.,800.,8)*1.e-6)
         self.p.t_lightsheet_hold = .1
-        self.p.t_tof = 200.e-6
+        self.p.t_tof = 1000.e-6
+        self.p.N_repeats = [1]
+
+        # self.xvar('beans',[0,1])
 
         # self.p.t_magtrap_ramp = 100.e-3
         
         # self.xvar('dummy',[0]*20)
-        
-        # self.p.v_pd_lightsheet_rampup_end = 0.638
-
-        self.p.N_repeats = 1
 
         self.finish_build(shuffle=True)
 
@@ -48,6 +63,7 @@ class rf_scan(EnvExperiment, Base):
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
+        
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
@@ -61,30 +77,32 @@ class rf_scan(EnvExperiment, Base):
 
         self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
                         v_yshim_current=self.p.v_yshim_current_magtrap,
-                          v_xshim_current=self.p.v_xshim_current_magtrap)
+                        v_xshim_current=self.p.v_xshim_current_magtrap)
 
         # magtrap start
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.ttl.pd_scope_trig.pulse(t=1.e-6)
         self.inner_coil.on()
 
         # ramp up lightsheet over magtrap
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
+        
+        self.lightsheet.ramp(self.p.t_lightsheet_rampup,
+                             self.p.v_pd_lightsheet_rampup_start,
+                             self.p.v_pd_lightsheet_rampup_end)
 
-        for i in self.p.magtrap_ramp_list:
-            self.inner_coil.set_current(i_supply=i)
-            delay(self.p.dt_magtrap_ramp)
+        self.inner_coil.ramp(t=self.p.t_magtrap_ramp,
+                             i_start=self.p.i_magtrap_init,
+                             i_end=self.p.i_magtrap_ramp_end)
 
         delay(self.p.t_magtrap)
 
-        for i in self.p.magtrap_rampdown_list:
-            self.inner_coil.set_current(i_supply=i)
-            delay(self.p.dt_magtrap_rampdown)
+        self.inner_coil.ramp(t=self.p.t_magtrap_rampdown,
+                             i_start=self.p.i_magtrap_ramp_end,
+                             i_end=0.,
+                             n_steps=self.p.n_magtrap_ramp_steps)
 
         self.inner_coil.off()
-
+        
         delay(self.p.t_lightsheet_hold)
-
-        self.ttl.pd_scope_trig.off()
 
         self.lightsheet.off()
     

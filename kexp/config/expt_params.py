@@ -64,8 +64,8 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap = .75
-        self.t_magtrap_ramp = .8
+        self.t_magtrap = 1.4
+        self.t_magtrap_ramp = .367
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 100.e-3
@@ -152,14 +152,14 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 24.
+        self.i_magtrap_init = 22.
         self.i_magtrap_ramp_end = 90.
         self.n_magtrap_ramp_steps = 1000
         self.n_magtrap_rampdown_steps = 1000
 
         self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 0.22
-        self.v_yshim_current_magtrap = 5.6
+        self.v_xshim_current_magtrap = 0.
+        self.v_yshim_current_magtrap = 5.2
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0

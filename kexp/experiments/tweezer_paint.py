@@ -16,16 +16,19 @@ class tweezer_paint(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.xvar('frequency_detuned_imaging',np.arange(400.,450.,3)*1.e6)
-        self.p.frequency_detuned_imaging = 433.e6 # 150a0
-        # self.p.frequency_detuned_imaging = 424.e6 # 150a0
+        # self.p.frequency_detuned_imaging = 433.e6 # 150a0
+        self.p.frequency_detuned_imaging = 424.e6 # 150a0
         # self.p.frequency_detuned_imaging = 412.e6 # NI
 
         self.p.t_mot_load = .75
 
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(8.5,9.99,5))
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,6.5,20))
-        self.p.v_pd_lightsheet_rampdown_end = 5.358
+        # self.xvar('i_evap1_current',np.linspace(190.,194.,8))
+        # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
+
+        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,7.5,20))
+        self.p.v_pd_lightsheet_rampdown_end = 4.
 
         # self.xvar('freq_tweezer_modulation',np.linspace(100.e3,536.e3,20))
         # self.xvar('freq_tweezer_modulation',[])
@@ -64,18 +67,14 @@ class tweezer_paint(EnvExperiment, Base):
         self.p.i_evap3_current = 193.8
         # self.p.t_feshbach_field_ramp2 = .5
 
-        # self.xvar('v_pd_tweezer_1064_adiabatic_stretch_ramp_end',np.linspace(self.p.v_pd_tweezer_1064_rampdown3_end,9.,10))
-        self.p.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 5.
-        self.p.t_tweezer_1064_adiabatic_stretch_ramp = .5
-
         # self.xvar('t_tweezer_hold',np.linspace(.05,1.,5))
         self.p.t_tweezer_hold = 100.e-3
 
-        self.xvar('t_tof',np.linspace(10.,80.,2)*1.e-6)
-        self.p.t_tof = 200.e-6
+        # self.xvar('t_tof',np.linspace(10.,80.,2)*1.e-6)
+        self.p.t_tof = 50.e-6
         self.p.N_repeats = [1]
         
-        # self.xvar('dummy_z',[0]*100)
+        # self.xvar('dummy_z',[0]*500)
 
         self.p.n_tweezers = 1
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
@@ -159,8 +158,6 @@ class tweezer_paint(EnvExperiment, Base):
 
         self.inner_coil.off()
         
-        delay(self.p.t_lightsheet_hold)
-        
         self.outer_coil.on()
         delay(1.e-3)
         self.outer_coil.set_voltage()
@@ -178,7 +175,6 @@ class tweezer_paint(EnvExperiment, Base):
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
-        delay(10.e-3)
         
         # for i in self.p.feshbach_field_ramp_list:
         #     self.outer_coil.set_current(i_supply=i)
@@ -188,19 +184,20 @@ class tweezer_paint(EnvExperiment, Base):
                              i_start=self.p.i_evap1_current,
                              i_end=self.p.i_evap2_current)
 
+        self.ttl.pd_scope_trig.pulse(t=1.e-6)
         self.tweezer.on(paint=True)
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
                           v_start=0.,
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False)
 
-        # # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-        # #                      v_list=self.p.v_pd_lightsheet_ramp_down2_list)
         # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-        #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
-        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        #                      v_list=self.p.v_pd_lightsheet_ramp_down2_list)
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+                             v_start=self.p.v_pd_lightsheet_rampdown_end,
+                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
 
-        # self.ttl.pd_scope_trig.pulse(t=1.e-6)
+        
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
         #                   v_start=self.p.v_pd_tweezer_1064_ramp_end,
         #                   v_end=self.p.v_pd_tweezer_1064_rampdown_end,
