@@ -1,0 +1,58 @@
+INFO     Optimization started.
+INFO     Run: 0 (training)
+INFO     params [ 8.39488758 26.69545288  0.10545506 13.79663341  2.53894171]
+0  1 values of detune_gm. 1 values of i_cmot. 1 values of amp_d2_c_d2cmot. 1 values of i_mot. 1 values of i_2d_mot. 1 total shots. 3 total images expected.
+basler
+Waiting for camera ready.
+[Errno 0] Unable to synchronously open file (unable to lock file, errno = 0, error message = 'No error', Win32 GetLastError() = 33)
+[Errno 0] Unable to synchronously open file (unable to lock file, errno = 0, error message = 'No error', Win32 GetLastError() = 33)
+[Errno 0] Unable to synchronously open file (unable to lock file, errno = 0, error message = 'No error', Win32 GetLastError() = 33)
+Acknowledged camera ready signal.
+Camera is ready.
+ Run ID: 11809
+Parameters saved, data closed.
+Done!
+ WARNING:pint.util:Redefining 'S' (<class 'pint.delegates.txt_defparser.plain.UnitDefinition'>)
+WARNING:pint.util:Redefining 'Frac' (<class 'pint.delegates.txt_defparser.plain.UnitDefinition'>)
+WARNING:pint.util:Redefining 'Fracs' (<class 'pint.delegates.txt_defparser.plain.UnitDefinition'>)
+
+ERROR    The interface raised an error with traceback:
+  File "c:\Users\jarjarbinks\.venv\kpy\lib\site-packages\mloop\interfaces.py", line 133, in run
+    cost_dict = self.get_next_cost_dict(params_dict)
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 168, in get_next_cost_dict
+    cost = getCost()
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 30, in getCost
+    atomnumber = getAtomNumber()
+
+  File "c:\Users\jarjarbinks\code\k-exp\kexp\experiments\Mloop testing\integration\lib.py", line 25, in getAtomNumber
+    ad = load_atomdata(0,crop_type='gm',average_repeats = True)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\util\data\load_atomdata.py", line 71, in load_atomdata
+    ad = atomdata(xvarnames,images,image_timestamps,params,camera_params,run_info,
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\atomdata.py", line 71, in __init__
+    self.analyze_ods()
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\atomdata.py", line 260, in analyze_ods
+    self._analyze_absorption_images(crop_type)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\atomdata.py", line 297, in _analyze_absorption_images
+    self.od, self.sum_od_x, self.sum_od_y = process_ODs(self.od_raw, crop_type, self.Nvars)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\image_processing\compute_ODs.py", line 30, in process_ODs
+    ODs = roi.crop_OD(raw_ODs,crop_type,Nvars)
+
+  File "c:\users\jarjarbinks\code\k-exp\kexp\analysis\image_processing\roi_select.py", line 73, in crop_OD
+    return cropOD
+
+WARNING  Controller ended due to exception of some kind. Starting shut down...
+INFO     Machine learning learner did not provide best and/or all minima.
+WARNING  Safely shut down. Below are results found before exception.
+INFO     Optimization ended because:
+INFO     	* Error occurred.
+INFO     Results:
+INFO     	* Best parameters found: nan
+INFO     	* Best cost returned: inf +/- nan
+INFO     	* Best run index: nan
