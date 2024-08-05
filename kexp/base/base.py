@@ -123,7 +123,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
-        else:
+        elif self.p.imaging_state == 2.:
             self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
