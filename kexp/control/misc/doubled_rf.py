@@ -15,13 +15,18 @@ class doubled_rf():
         self.dds = dds_ch
         self.params = expt_params
 
-        self.params.frequency_rf_state_xfer_sweep_list = dv_list
-        self.params.dt_rf_state_xfer_sweep = dv
-
     @kernel(flags={"fast-math"})
     def set_rf(self,frequency=dv):
+        """Sets the lower sideband frequency of the frequency doubled RF to be
+        equal to the specified frequency.
+
+        Args:
+            frequency (float): Defaults to the start point of the sweep
+            (center-fullwidth/2).
+        """        
         if frequency == dv:
-            frequency = self.params._frequency_rf_state_xfer_sweep_start
+            frequency = self.params.frequency_rf_state_xfer_sweep_center \
+                - self.params.frequency_rf_state_xfer_sweep_fullwidth/2
         self.dds.dds_device.set(frequency=frequency/2,
                                 amplitude=self.params.amp_rf_source)
 
@@ -38,28 +43,25 @@ class doubled_rf():
         self.dds.set_dds(amplitude=amp)
 
     @kernel(flags={"fast-math"})
-    def sweep(self,t,frequency_start=dv,frequency_end=dv,n_steps=di):
-        """Sweeps the lower sideband freuqency over the specified range.
-
-        The sweep time is controlled by ExptParams.t_rf_state_xfer_sweep, and
-        the sweep step time is controlled by ExptParams.dt_rf_state_xfer_sweep.
-        Adjust those to change the ramp times.
+    def sweep(self,t,frequency_center=dv,frequency_sweep_fullwidth=dv,n_steps=di):
+        """Sweeps the lower sideband frequency of the frequency doubled DDS over
+        the specified range.
 
         Args:
             t (float): The time (in seconds) for the sweep.
-            frequency_start (float, optional): The initial frequency (in Hz) for the sweep.
-            frequency_end (float, optional): The end frequency (in Hz) for the sweep.
+            frequency_center (float, optional): The center frequency (in Hz) for the sweep range.
+            frequency_sweep_fullwidth (float, optional): The full width (in Hz) of the sweep range.
             n_steps (int, optional): The number of steps for the frequency sweep.
         """        
-        if frequency_start == dv:
-            frequency_start = self.params._frequency_rf_state_xfer_sweep_start
-        if frequency_end == dv:
-            frequency_end = self.params._frequency_rf_state_xfer_sweep_end
+        if frequency_center == dv:
+            frequency_center = self.params.frequency_rf_state_xfer_sweep_center
+        if frequency_sweep_fullwidth == dv:
+            frequency_sweep_fullwidth = self.params.frequency_rf_state_xfer_sweep_fullwidth
         if n_steps == di:
             n_steps = self.params.n_rf_sweep_steps
 
-        f0 = frequency_start
-        ff = frequency_end
+        f0 = frequency_center - frequency_sweep_fullwidth / 2
+        ff = frequency_center + frequency_sweep_fullwidth / 2
         df = (ff-f0)/(n_steps-1)
         dt = t / n_steps
 
