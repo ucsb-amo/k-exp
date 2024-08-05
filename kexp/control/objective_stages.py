@@ -116,24 +116,24 @@ class controller():
     
     def translate_together_x(self,N_steps):
         if N_steps <= 0:
-            self.translate(N_steps=N_steps,obj='n',axis='-x')
-            self.translate(N_steps=N_steps,obj='s',axis='-x')
+            self.translate(N_steps=-N_steps,obj='n',axis='-x')
+            self.translate(N_steps=-N_steps,obj='s',axis='-x')
         elif N_steps > 0:
             self.translate(N_steps=N_steps,obj='n',axis='+x')
             self.translate(N_steps=N_steps,obj='s',axis='+x')
 
     def translate_together_y(self,N_steps):
         if N_steps <= 0:
-            self.translate(N_steps=N_steps,obj='n',axis='-y')
-            self.translate(N_steps=N_steps,obj='s',axis='-y')
+            self.translate(N_steps=-N_steps,obj='n',axis='-y')
+            self.translate(N_steps=-N_steps,obj='s',axis='-y')
         elif N_steps > 0:
             self.translate(N_steps=N_steps,obj='n',axis='+y')
             self.translate(N_steps=N_steps,obj='s',axis='+y')
 
     def translate_together_z(self,N_steps):
         if N_steps <= 0:
-            self.translate(N_steps=N_steps,obj='n',axis='-z')
-            self.translate(N_steps=N_steps,obj='s',axis='-z')
+            self.translate(N_steps=-N_steps,obj='n',axis='-z')
+            self.translate(N_steps=-N_steps,obj='s',axis='-z')
         elif N_steps > 0:
             self.translate(N_steps=N_steps,obj='n',axis='+z')
             self.translate(N_steps=N_steps,obj='s',axis='+z')
