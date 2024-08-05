@@ -52,6 +52,29 @@ class GaussianFit(Fit):
                                 p0=[amplitude_guess, sigma_guess, x_center_guess, y_offset_guess],
                                 bounds=((0,0,-np.inf,0),(np.inf,np.inf,np.inf,np.inf)))
         return popt
+    
+class BECFit(Fit):
+    def __init__(self,xdata,ydata):
+        super().__init__(xdata,ydata,savgol_window=20)
+
+    def _fit_func(self, x, g_amp, g_sigma, g_center, tf_trap_coeff, tf_center, tf_offset):
+        return g_amp * np.exp( -(x-g_center)**2 / (2 * g_sigma**2) ) + tf_trap_coeff * (x - tf_center)**2 + tf_offset
+    
+    def _fit(self, x, y):
+
+        delta_x = x[-1]-x[0]
+
+        g_amp_guess = (np.max(y) - np.min(y)) / 2
+        g_sigma_guess = delta_x/6
+        g_center_guess = x[np.argmax(y)]
+        tf_trap_coeff = c.m_K * (2 * np.pi * 500.)**2 / 2
+        tf_center_guess = x[np.argmax(y)]
+        tf_offset_guess = np.min(y)
+
+        popt, pcov = curve_fit(self._fit_func, x, y,
+                               p0 = [g_amp_guess, g_sigma_guess, g_center_guess, tf_trap_coeff, tf_center_guess, tf_offset_guess],
+                               bounds = ((0,0,x[0]-delta_x,0,x[0]-delta_x,0),(np.inf,np.inf,x[-1]+delta_x,np.inf,x[-1]+delta_x,np.inf)))
+        return popt
 
 class GaussianTemperatureFit(Fit):
     def __init__(self, xdata, ydata):
