@@ -60,7 +60,7 @@ class Cooling():
         if amp_push == dv:
             amp_push = self.params.amp_push
         if i_supply == dv:
-            i_supply = self.params.i_2d_mot
+            i_supply = self.params.v_2d_mot_current
         ### End Defaults ###
 
         self.dds.d2_2d_c.set_dds_gamma(delta=detune_d2_c,
