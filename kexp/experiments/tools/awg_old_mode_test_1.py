@@ -235,12 +235,13 @@ def vConfigureSequence(sequence : spcm.Sequence):
             next_step_index, seqment_index, loops, flags = sequence.step_memory(i)
             print("Step {}: next {}, segment {}, loops {}, flags 0b{:b}".format(i, next_step_index, seqment_index, loops, abs(flags)))
 
+ip = 'TCPIP::192.168.1.83::INSTR'
 
 card : spcm.Card
 # with spcm.Card('/dev/spcm0') as card:                         # if you want to open a specific card
-# with spcm.Card('TCPIP::192.168.1.10::inst0::INSTR') as card:  # if you want to open a remote card
+with spcm.Card(ip) as card:  # if you want to open a remote card
 # with spcm.Card(serial_number=12345) as card:                  # if you want to open a card by its serial number
-with spcm.Card(card_type=spcm.SPCM_TYPE_AO) as card:             # if you want to open the first card of a specific type
+# with spcm.Card(card_type=spcm.SPCM_TYPE_AO) as card:             # if you want to open the first card of a specific type
     
     # setup card mode
     card.card_mode(spcm.SPC_REP_STD_SEQUENCE)
@@ -309,7 +310,6 @@ with spcm.Card(card_type=spcm.SPCM_TYPE_AO) as card:             # if you want t
                 # switch to next sequence
                 # (before it is possible to overwrite the segment data of the new used segments with new values)
                 step = 0
-
                 # --- change the next step value from the sequence end entry in the actual sequence
                 next_step_index, segment_index, loops, flags = sequence.step_memory(sequence_actual + LAST_STEP_OFFSET)
                 sequence.step_memory(sequence_actual + LAST_STEP_OFFSET, sequence_next, segment_index, loops, flags)
