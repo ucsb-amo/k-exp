@@ -82,11 +82,11 @@ class atomdata():
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
     def recrop(self,crop_type=''):
-        if crop_type != self._analysis_tags.crop_type:
-            self.analyze_ods(crop_type=crop_type,unshuffle_xvars=False)
-            self._analysis_tags.crop_type = crop_type
-        else:
-            raise ValueError(f'The specified crop_type ({crop_type}) already applied ({self._analysis_tags.crop_type}).')
+        # if crop_type != self._analysis_tags.crop_type:
+        self.analyze_ods(crop_type=crop_type,unshuffle_xvars=False)
+        self._analysis_tags.crop_type = crop_type
+        # else:
+        #     raise ValueError(f'The specified crop_type ({crop_type}) already applied ({self._analysis_tags.crop_type}).')
 
     def avg_repeats(self,xvars_to_avg=[],reanalyze=True):
         """
