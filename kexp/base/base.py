@@ -92,8 +92,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
                      init_lightsheet = True, setup_awg = True):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
-        if setup_awg:
-            self.tweezer.awg_init()
+        # if setup_awg:
+        #     self.tweezer.awg_init()
         self.core.reset() # clears RTIO
         if init_dac:
             self.dac.dac_device.init() # initializes DAC
@@ -128,9 +128,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-        self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
-        self.core.break_realtime()
+        # self.core.wait_until_mu(now_mu())
+        # self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
+        # self.core.break_realtime()
 
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
