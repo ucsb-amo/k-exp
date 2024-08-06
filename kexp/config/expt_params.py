@@ -154,8 +154,8 @@ class ExptParams():
         # mag trap
         self.i_magtrap_init = 22.
         self.i_magtrap_ramp_end = 90.
-        self.n_magtrap_ramp_steps = 1000
-        self.n_magtrap_rampdown_steps = 1000
+        # self.n_magtrap_ramp_steps = 1000
+        # self.n_magtrap_rampdown_steps = 1000
 
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.
@@ -228,7 +228,7 @@ class ExptParams():
 
         # feshbach field rampup
         # self.i_feshbach_field_rampup_start = 0.
-        self.n_field_ramp_steps = 100
+        self.n_field_ramp_steps = 1000
         # self.n_feshbach_field_rampup_steps = 100
         # self.n_feshbach_field_ramp_steps = 100
         # self.n_feshbach_field_ramp2_steps = 100
@@ -252,7 +252,7 @@ class ExptParams():
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.
-        self.n_forced_evap_ramp_steps = 1000
+        # self.n_forced_evap_ramp_steps = 1000
         self.i_forced_evap_ramp_end = 40.
 
         # high field imaging
