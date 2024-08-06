@@ -201,7 +201,7 @@ class Image():
                 detuning = self.params.frequency_detuned_imaging
             
 
-        beat_sign = 1 # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
+        beat_sign = -1 # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
 
         self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging,amplitude=amp)
 
