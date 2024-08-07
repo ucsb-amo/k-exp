@@ -23,7 +23,7 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 64.e6
+        self.frequency_detuned_imaging = 14.7e6
         self.frequency_detuned_imaging_F1 = 458.e6
         self.imaging_state = 2.
         
@@ -64,9 +64,12 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap = 1.4
-        self.t_magtrap_ramp = .367
-        self.t_magtrap_rampdown = .2
+        # self.t_magtrap = 1.4
+        # self.t_magtrap_ramp = .367
+        # self.t_magtrap_rampdown = .2
+        self.t_magtrap_ramp = 75.e-3
+        self.t_magtrap = 0.
+        self.t_magtrap_rampdown = 75.e-3
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 100.e-3
         self.t_feshbach_field_ramp2 = 20.e-3
