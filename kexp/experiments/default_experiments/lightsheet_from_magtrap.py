@@ -30,7 +30,7 @@ class rf_scan(EnvExperiment, Base):
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
-        self.lightsheet_from_magtrap()
+        self.magtrap_and_load_lightsheet()
         
         delay(self.p.t_lightsheet_hold)
 

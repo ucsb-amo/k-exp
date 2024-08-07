@@ -598,7 +598,7 @@ class Cooling():
             self.dds.op_r.off()
 
     @kernel
-    def lightsheet_from_magtrap(self,
+    def magtrap_and_load_lightsheet(self,
                                 t_lightsheet_ramp=dv,
                                 t_magtrap_ramp=dv,
                                 t_magtrap_rampdown=dv,

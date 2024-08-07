@@ -132,7 +132,7 @@ class tweezer_paint(EnvExperiment, Base):
         self.gm_ramp(self.p.t_gmramp)
 
         # mag trap on, ramp up lightsheet, ramp down mag trap
-        self.lightsheet_from_magtrap()
+        self.magtrap_and_load_lightsheet()
 
         # feshbach field on, ramp up to field 1        
         self.outer_coil.on()
