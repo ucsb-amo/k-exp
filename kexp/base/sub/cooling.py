@@ -426,6 +426,10 @@ class Cooling():
             v_xshim_current = self.params.v_xshim_current_gm
         
         # ### End Defaults ###
+
+        self.set_shims(v_zshim_current=v_zshim_current,
+                        v_yshim_current=v_yshim_current,
+                          v_xshim_current=v_xshim_current)
        
         delay(-t_magnet_off_pretrigger)
         self.inner_coil.igbt_ttl.off()
@@ -633,9 +637,9 @@ class Cooling():
 
         self.dds.power_down_cooling()
 
-        self.set_shims(v_zshim_current=self.params.v_zshim_current_magtrap,
-                        v_yshim_current=self.params.v_yshim_current_magtrap,
-                        v_xshim_current=self.params.v_xshim_current_magtrap)
+        self.set_shims(v_zshim_current=v_zshim_current,
+                        v_yshim_current=v_yshim_current,
+                        v_xshim_current=v_xshim_current)
 
         # magtrap start
         self.ttl.pd_scope_trig.pulse(t=1.e-6)
@@ -643,16 +647,16 @@ class Cooling():
 
         # ramp up lightsheet over magtrap
         
-        self.lightsheet.ramp(self.params.t_lightsheet_rampup,
-                             self.params.v_pd_lightsheet_rampup_start,
-                             self.params.v_pd_lightsheet_rampup_end)
+        self.lightsheet.ramp(t_lightsheet_ramp,
+                             v_pd_lightsheet_ramp_start,
+                             v_pd_lightsheet_ramp_end)
 
-        self.inner_coil.ramp(t=self.params.t_magtrap_ramp,
-                             i_start=self.params.i_magtrap_init,
-                             i_end=self.params.i_magtrap_ramp_end)
+        self.inner_coil.ramp(t=t_magtrap_ramp,
+                             i_start=i_magtrap_init,
+                             i_end=i_magtrap_ramp_end)
 
-        self.inner_coil.ramp(t=self.params.t_magtrap_rampdown,
-                             i_start=self.params.i_magtrap_ramp_end,
+        self.inner_coil.ramp(t=t_magtrap_rampdown,
+                             i_start=i_magtrap_ramp_end,
                              i_end=0.)
 
         self.inner_coil.off()
