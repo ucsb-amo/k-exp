@@ -8,7 +8,7 @@ from spcm import units
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 
-from artiq.experiment import kernel, delay, parallel, TFloat
+from artiq.experiment import kernel, delay, parallel, TFloat, portable
 
 import numpy as np
 
@@ -167,7 +167,7 @@ class tweezer():
             pid_dac.set(v=v,load_dac=True)
             delay(dt_ramp)
 
-    @kernel(flags={"fast-math"})
+    @portable
     def v_pd_to_painting_amp_voltage(self,v_pd=dv,
                                         v_pd_max=dv,
                                         v_awg_am_max=dv) -> TFloat:
