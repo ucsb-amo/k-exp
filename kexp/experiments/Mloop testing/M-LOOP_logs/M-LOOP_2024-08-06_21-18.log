@@ -1,0 +1,28 @@
+2024-08-06 21:18:27,250 mloop                INFO     M-LOOP version 3.3.4
+2024-08-06 21:18:27,250 mloop                DEBUG    M-LOOP Logger configured.
+2024-08-06 21:18:27,250 mloop.interfaces     DEBUG    Creating interface.
+2024-08-06 21:18:27,250 mloop.controllers    DEBUG    Controller init completed.
+2024-08-06 21:18:27,254 mloop.learners.1     DEBUG    Learner init completed.
+2024-08-06 21:18:27,254 mloop.learners.2     DEBUG    Learner init completed.
+2024-08-06 21:18:27,255 mloop.controllers    INFO     Optimization started.
+2024-08-06 21:18:27,259 mloop.interfaces     DEBUG    Entering main loop of interface.
+2024-08-06 21:18:27,259 mloop.controllers    DEBUG    ML learner started.
+2024-08-06 21:18:27,346 mloop.controllers    DEBUG    Starting training optimization.
+2024-08-06 21:18:27,346 mloop.controllers    INFO     Run: 0 (training)
+2024-08-06 21:18:27,346 mloop.controllers    INFO     params [-1.16720719e+00  5.00092670e-02 -9.57044859e-01 -3.79881725e+00
+  1.89799959e-01  1.65509570e-01  2.91682117e+00 -1.78028380e+00
+ -3.37742417e+00  6.51911751e-02  1.81131911e-02  1.83919294e+01]
+2024-08-06 21:18:45,641 mloop.controllers    INFO     cost -2104058.604719816 +/- 0.0
+2024-08-06 21:18:45,641 mloop.controllers    INFO     Run: 1 (training)
+2024-08-06 21:18:45,643 mloop.controllers    INFO     params [-3.08396062  0.18789249 -3.04692271 -4.83746782  0.06146753  0.12732655
+  1.25206325 -5.20794836 -3.98674989  0.07908486  0.15380145 24.95293069]
+2024-08-06 21:18:46,647 mloop.controllers    WARNING  !!! Do not give the interrupt signal again !!! 
+ M-LOOP stopped with keyboard interupt or system exit. Please wait at least 1 minute for the threads to safely shut down. 
+ 
+2024-08-06 21:18:46,648 mloop.controllers    WARNING  Closing down controller.
+2024-08-06 21:18:46,649 mloop.controllers    DEBUG    ML learner end set.
+2024-08-06 21:18:48,314 mloop.controllers    DEBUG    ML learner joined
+2024-08-06 21:18:48,314 mloop.controllers    DEBUG    Learner end event set.
+2024-08-06 21:18:48,314 mloop.controllers    DEBUG    Interface end event set.
+2024-08-06 21:18:48,655 mloop.learners.1     DEBUG    Learner end signal received. Ending
+2024-08-06 21:18:49,655 mloop.controllers    DEBUG    Learner joined.

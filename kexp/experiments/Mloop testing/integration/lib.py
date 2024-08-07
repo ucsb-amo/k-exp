@@ -76,7 +76,7 @@ class ExptBuilder():
     # func. for generating exp, here GM TOF is copied in
     def test_expt(self, varname, var):
 
-        N_REPEATS = 3
+        N_REPEATS = 1
     
         assignment_lines = self.generate_assignment_lines(varname,var)
 
@@ -96,11 +96,9 @@ class ExptBuilder():
             class magtrap_mloop_test(EnvExperiment, Base):
 
                 def build(self):
-                    Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+                    Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-                    self.p.frequency_detuned_imaging = 424.e6 
-
-                    self.p.t_mot_load = .75
+                    self.p.t_mot_load = .1
 
                     # self.xvar("t_tof", np.linspace(0.1,10,20)*1.e-3)
                     self.p.t_tof = 200.e-6
@@ -108,6 +106,10 @@ class ExptBuilder():
                     {assignment_lines}
                     
                     self.xvar('dummy',[0]*{N_REPEATS:1.0f})
+
+                    self.p.N_repeats = 10
+                    
+                    self.p.amp_imaging = 0.35
                                  
                     self.p.t_magtrap = 0.5
 
@@ -116,12 +118,13 @@ class ExptBuilder():
                 @kernel
                 def scan_kernel(self):
 
+                    self.set_imaging_detuning(amp=self.p.amp_imaging)
                     self.switch_d2_2d(1)
                     self.mot(self.p.t_mot_load)
                     self.dds.push.off()
                     self.cmot_d1(self.p.t_d1cmot * s)
                     
-                    self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
+                    # self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
 
                     self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                                     v_yshim_current=self.p.v_yshim_current_gm,
@@ -157,8 +160,9 @@ class ExptBuilder():
                     
                     self.inner_coil.off()
 
-
                     delay(self.p.t_tof)
+
+                    self.flash_repump()
 
                     self.abs_image()
 

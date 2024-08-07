@@ -1,3 +1,4 @@
+
 from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base
@@ -15,28 +16,33 @@ class magtrap_mloop_test(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        # self.p.imaging_state = 1.
-        
-        # self.p.frequency_detuned_imaging = 46.e6 
-
         self.p.t_mot_load = .1
 
         # self.xvar("t_tof", np.linspace(0.1,10,20)*1.e-3)
         self.p.t_tof = 200.e-6
 
-        # self.xvar("frequency_detuned_imaging", np.linspace(0,80.,20)*1.e6)
-        # self.xvar("t_magtrap", np.linspace(0.01,1,20))
-        self.p.t_magtrap = 0.5
 
-        # self.camera_params.t_dark_image_delay = 100.e-3
+        self.p.detune_push = -2.3120488243287673
+        self.p.amp_push = 0.09890585837150817
+        self.p.detune_d2_c_2dmot = -1.9802434736578176
+        self.p.detune_d2_r_2dmot = -4.846765662737338
+        self.p.amp_d2_c_2dmot = 0.18263016155384784
+        self.p.amp_d2_r_2dmot = 0.19569622373254905
+        self.p.v_2d_mot_current = 2.2697854841055416
+        self.p.detune_d2_c_mot = 0.17841321603206595
+        self.p.detune_d2_r_mot = -2.6987735908601467
+        self.p.amp_d2_c_mot = 0.13215679332834804
+        self.p.amp_d2_r_mot = 0.17799732013632824
+        self.p.i_mot = 18.38466900706649
 
-        # self.xvar("amp_imaging", np.linspace(0.1,0.5,30))
+        self.xvar('dummy',[0]*1)
+
+        self.p.N_repeats = 10
+
         self.p.amp_imaging = 0.35
 
-        self.p.N_repeats = 2
+        self.p.t_magtrap = 0.5
 
-        self.xvar("dummy", np.linspace(1,100000000,30))
-    
         self.finish_build(shuffle=True)
 
     @kernel
@@ -47,13 +53,13 @@ class magtrap_mloop_test(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
-        
+
         # self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
 
         self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
                         v_yshim_current=self.p.v_yshim_current_gm,
-                          v_xshim_current=self.p.v_xshim_current_gm)
-        
+                        v_xshim_current=self.p.v_xshim_current_gm)
+
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
@@ -66,7 +72,7 @@ class magtrap_mloop_test(EnvExperiment, Base):
 
         self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
                         v_yshim_current=self.p.v_yshim_current_magtrap,
-                          v_xshim_current=self.p.v_xshim_current_magtrap)
+                        v_xshim_current=self.p.v_xshim_current_magtrap)
 
         # magtrap start
         self.inner_coil.on()
@@ -77,11 +83,11 @@ class magtrap_mloop_test(EnvExperiment, Base):
         #     self.inner_coil.set_current(i_supply=i)
         #     delay(self.p.dt_magtrap_ramp)
         self.inner_coil.ramp(t=self.p.t_magtrap_ramp,
-                             i_start=self.p.i_magtrap_init,
-                             i_end=self.p.i_magtrap_ramp_end)
-        
+                            i_start=self.p.i_magtrap_init,
+                            i_end=self.p.i_magtrap_ramp_end)
+
         delay(self.p.t_magtrap)
-        
+
         self.inner_coil.off()
 
         delay(self.p.t_tof)
@@ -96,8 +102,9 @@ class magtrap_mloop_test(EnvExperiment, Base):
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()
-        
+
     def analyze(self):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
+
