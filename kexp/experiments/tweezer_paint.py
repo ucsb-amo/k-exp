@@ -77,19 +77,20 @@ class tweezer_paint(EnvExperiment, Base):
 
         # self.xvar('v_pd_tweezer_1064_adiabatic_stretch_ramp_end',np.linspace())
 
-        self.xvar('t_tof',np.linspace(25.,900.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(25.,900.,9)*1.e-6)
         # self.xvar('t_tof',np.linspace(0.1,10.,10)*1.e-3)
-        # self.p.t_tof = 500.e-6
+        self.p.t_tof = 50.e-6
         self.p.N_repeats = [10]
 
-        self.p.t_magtrap_ramp = 0.01
-        self.p.t_magtrap = 0.
-        self.p.t_magtrap_rampdown = 0.01
+        # self.xvar('t_magtrap_ramp',np.linspace(5.,100.,5)*1.e-3)
 
-        self.p.t_feshbach_field_rampup = 20.e-3
-        # self.xvar('t_feshbach_field_ramp2',np.linspace(5.,20.,5)*1.e-3)
-        self.p.t_feshbach_field_ramp = 10.e-3
-        self.p.t_feshbach_field_ramp2 = 10.e-3
+        self.p.t_magtrap_ramp = 75.e-3
+        self.p.t_magtrap = 0.
+        self.p.t_magtrap_rampdown = 75.e-3
+
+        self.p.t_feshbach_field_rampup = 100.e-3
+        self.p.t_feshbach_field_ramp = 15.e-3
+        self.p.t_feshbach_field_ramp2 = 15.e-3
         
         # self.xvar('dummy_z',[0]*500)
 
@@ -111,13 +112,14 @@ class tweezer_paint(EnvExperiment, Base):
 
         self.p.n_tweezer_ramp_steps = 100
 
-        self.p.t_lightsheet_hold = 100.e-3
+        # self.p.t_lightsheet_rampup = 500.e-3
+        # self.xvar('t_lightsheet_rampup',np.linspace(0.05,0.5,10))
 
         self.finish_build(shuffle=True)
 
     @kernel
     def scan_kernel(self):
-
+        
         # self.set_imaging_detuning(amp=self.p.amp_imaging)
         self.set_high_field_imaging(i_outer = self.p.i_evap3_current)
 
@@ -126,48 +128,11 @@ class tweezer_paint(EnvExperiment, Base):
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
         
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
-
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                          v_xshim_current=self.p.v_xshim_current_gm)
-        
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
-        # self.release()
-        self.switch_d2_3d(0)
-        self.switch_d1_3d(0)
-
-        self.flash_cooler()
-
-        self.dds.power_down_cooling()
-
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
-                        v_yshim_current=self.p.v_yshim_current_magtrap,
-                          v_xshim_current=self.p.v_xshim_current_magtrap)
-
-        # magtrap start
-        self.inner_coil.on()
-
-        # ramp up lightsheet over magtrap
-        self.lightsheet.ramp(self.p.t_lightsheet_rampup,
-                             self.p.v_pd_lightsheet_rampup_start,
-                             self.p.v_pd_lightsheet_rampup_end)
-
-        # mag trap ramp up
-        self.inner_coil.ramp(t=self.p.t_magtrap_ramp,
-                             i_start=self.p.i_magtrap_init,
-                             i_end=self.p.i_magtrap_ramp_end)
-
-        # magtrap + lightsheet hold
-        delay(self.p.t_magtrap)
-
-        # mag trap ramp down
-        self.inner_coil.ramp(t=self.p.t_magtrap_rampdown,
-                             i_start=self.p.i_magtrap_ramp_end,
-                             i_end=0.)
-        self.inner_coil.off()
+        # mag trap on, ramp up lightsheet, ramp down mag trap
+        self.lightsheet_from_magtrap()
 
         # feshbach field on, ramp up to field 1        
         self.outer_coil.on()

@@ -22,7 +22,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.xvar('t_magtrap_hold',np.linspace(1.,100.,15)*1.e-3)
 
-        self.p.t_tof = 5.e-3
+        self.p.t_tof = 10.e-3
 
         self.p.N_repeats = [1]
 
@@ -37,12 +37,6 @@ class mag_trap(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
-        
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
-
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                          v_xshim_current=self.p.v_xshim_current_gm)
         
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
@@ -63,13 +57,10 @@ class mag_trap(EnvExperiment, Base):
         self.ttl.pd_scope_trig.pulse(t=1.e-6)
         self.inner_coil.on()
 
-        # delay(self.p.t_lightsheet_rampup)
-
         self.inner_coil.ramp(t=self.p.t_magtrap_ramp,
                              i_start=self.p.i_magtrap_init,
                              i_end=self.p.i_magtrap_ramp_end)
 
-        # delay(self.p.t_magtrap)
         delay(self.p.t_magtrap_hold)
 
         self.inner_coil.off()
