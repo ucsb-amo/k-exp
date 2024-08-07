@@ -393,7 +393,10 @@ class Cooling():
             v_pd_d1_r = dv,
             amp_d1_r = dv,
             detune_d1 = dv,
-            t_magnet_off_pretrigger = dv):
+            t_magnet_off_pretrigger = dv,
+            v_zshim_current=dv,
+            v_yshim_current=dv,
+            v_xshim_current=dv):
         
         ### Start Defaults ###
         if detune_d1 != dv:
@@ -415,6 +418,12 @@ class Cooling():
             amp_d1_r = self.params.amp_d1_3d_r
         if t_magnet_off_pretrigger == dv:
             t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
+        if v_zshim_current == dv:
+            v_zshim_current = self.params.v_zshim_current_gm
+        if v_yshim_current == dv:
+            v_yshim_current = self.params.v_yshim_current_gm
+        if v_xshim_current == dv:
+            v_xshim_current = self.params.v_xshim_current_gm
         
         # ### End Defaults ###
        
@@ -584,7 +593,7 @@ class Cooling():
             self.dds.optical_pumping.off()
             self.dds.op_r.off()
 
-        @kernel
+    @kernel
     def lightsheet_from_magtrap(self,
                                 t_lightsheet_ramp=dv,
                                 t_magtrap_ramp=dv,
