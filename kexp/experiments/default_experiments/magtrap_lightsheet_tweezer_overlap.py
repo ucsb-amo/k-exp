@@ -110,8 +110,7 @@ class tof_scan(EnvExperiment, Base):
 
             self.inner_coil.ramp(t=self.p.t_magtrap_rampdown,
                              i_start=self.p.i_magtrap_ramp_end,
-                             i_end=0.,
-                             n_steps=self.p.n_magtrap_ramp_steps)
+                             i_end=0.)
 
             self.inner_coil.off()
 
@@ -159,8 +158,7 @@ class tof_scan(EnvExperiment, Base):
 
             self.inner_coil.ramp(t=self.p.t_magtrap_rampdown,
                              i_start=self.p.i_magtrap_ramp_end,
-                             i_end=0.,
-                             n_steps=self.p.n_magtrap_ramp_steps)
+                             i_end=0.)
 
             self.inner_coil.off()
             
