@@ -434,70 +434,6 @@ class Cooling():
             self.switch_d2_3d(0)
         delay(t)
 
-    @kernel
-    def lightsheet_from_magtrap(self,
-                                t_lightsheet_ramp=dv,
-                                t_magtrap_ramp=dv,
-                                t_magtrap_rampdown=dv,
-                                v_pd_lightsheet_ramp_start=dv,
-                                v_pd_lightsheet_ramp_end=dv,
-                                i_magtrap_init=dv,
-                                i_magtrap_ramp_end=dv,
-                                v_zshim_current=dv,
-                                v_yshim_current=dv,
-                                v_xshim_current=dv):
-        if t_lightsheet_ramp == dv:
-            t_lightsheet_ramp = self.params.t_lightsheet_rampup
-        if t_magtrap_ramp == dv:
-            t_magtrap_ramp = self.params.t_magtrap_ramp
-        if t_magtrap_rampdown == dv:
-            t_magtrap_rampdown = self.params.t_magtrap_rampdown
-        if v_pd_lightsheet_ramp_start == dv:
-            v_pd_lightsheet_ramp_start = self.params.v_pd_lightsheet_rampup_start
-        if v_pd_lightsheet_ramp_end == dv:
-            v_pd_lightsheet_ramp_end = self.params.v_pd_lightsheet_rampup_end
-        if i_magtrap_init == dv:
-            i_magtrap_init = self.params.i_mot
-        if i_magtrap_ramp_end == dv:
-            i_magtrap_ramp_end = self.params.i_magtrap_ramp_end
-        if v_zshim_current == dv:
-            v_zshim_current = self.params.v_zshim_current_magtrap
-        if v_yshim_current == dv:
-            v_yshim_current = self.params.v_yshim_current_magtrap
-        if v_xshim_current == dv:
-            v_xshim_current = self.params.v_xshim_current_magtrap
-
-        self.switch_d2_3d(0)
-        self.switch_d1_3d(0)
-
-        self.flash_cooler()
-
-        self.dds.power_down_cooling()
-
-        self.set_shims(v_zshim_current=self.params.v_zshim_current_magtrap,
-                        v_yshim_current=self.params.v_yshim_current_magtrap,
-                        v_xshim_current=self.params.v_xshim_current_magtrap)
-
-        # magtrap start
-        self.ttl.pd_scope_trig.pulse(t=1.e-6)
-        self.inner_coil.on()
-
-        # ramp up lightsheet over magtrap
-        
-        self.lightsheet.ramp(self.params.t_lightsheet_rampup,
-                             self.params.v_pd_lightsheet_rampup_start,
-                             self.params.v_pd_lightsheet_rampup_end)
-
-        self.inner_coil.ramp(t=self.params.t_magtrap_ramp,
-                             i_start=self.params.i_magtrap_init,
-                             i_end=self.params.i_magtrap_ramp_end)
-
-        self.inner_coil.ramp(t=self.params.t_magtrap_rampdown,
-                             i_start=self.params.i_magtrap_ramp_end,
-                             i_end=0.)
-
-        self.inner_coil.off()
-
     # @kernel
     # def gm_ramp(self,t,t_ramp,
     #         detune_d1_c = dv,
@@ -647,33 +583,70 @@ class Cooling():
             delay(t)
             self.dds.optical_pumping.off()
             self.dds.op_r.off()
-        
-    @kernel
-    def tweezer_1227_ramp(self, t_tweezer_ramp = dv,
-            v_pd_tweezer_ramp_list = dvlist):
-        
-        ### Start Defaults ###
-        
-        if v_pd_tweezer_ramp_list == dvlist:
-            v_pd_tweezer_ramp_list = self.params.v_pd_tweezer_ramp_list
 
-        # check for list length agreement
-        N_elem = len(v_pd_tweezer_ramp_list)
+        @kernel
+    def lightsheet_from_magtrap(self,
+                                t_lightsheet_ramp=dv,
+                                t_magtrap_ramp=dv,
+                                t_magtrap_rampdown=dv,
+                                v_pd_lightsheet_ramp_start=dv,
+                                v_pd_lightsheet_ramp_end=dv,
+                                i_magtrap_init=dv,
+                                i_magtrap_ramp_end=dv,
+                                v_zshim_current=dv,
+                                v_yshim_current=dv,
+                                v_xshim_current=dv):
+        if t_lightsheet_ramp == dv:
+            t_lightsheet_ramp = self.params.t_lightsheet_rampup
+        if t_magtrap_ramp == dv:
+            t_magtrap_ramp = self.params.t_magtrap_ramp
+        if t_magtrap_rampdown == dv:
+            t_magtrap_rampdown = self.params.t_magtrap_rampdown
+        if v_pd_lightsheet_ramp_start == dv:
+            v_pd_lightsheet_ramp_start = self.params.v_pd_lightsheet_rampup_start
+        if v_pd_lightsheet_ramp_end == dv:
+            v_pd_lightsheet_ramp_end = self.params.v_pd_lightsheet_rampup_end
+        if i_magtrap_init == dv:
+            i_magtrap_init = self.params.i_mot
+        if i_magtrap_ramp_end == dv:
+            i_magtrap_ramp_end = self.params.i_magtrap_ramp_end
+        if v_zshim_current == dv:
+            v_zshim_current = self.params.v_zshim_current_magtrap
+        if v_yshim_current == dv:
+            v_yshim_current = self.params.v_yshim_current_magtrap
+        if v_xshim_current == dv:
+            v_xshim_current = self.params.v_xshim_current_magtrap
+
+        self.switch_d2_3d(0)
+        self.switch_d1_3d(0)
+
+        self.flash_cooler()
+
+        self.dds.power_down_cooling()
+
+        self.set_shims(v_zshim_current=self.params.v_zshim_current_magtrap,
+                        v_yshim_current=self.params.v_yshim_current_magtrap,
+                        v_xshim_current=self.params.v_xshim_current_magtrap)
+
+        # magtrap start
+        self.ttl.pd_scope_trig.pulse(t=1.e-6)
+        self.inner_coil.on()
+
+        # ramp up lightsheet over magtrap
         
-        if t_tweezer_ramp == dv:
-            t_tweezer_ramp = self.params.t_tweezer_ramp
-            dt_tweezer_ramp = self.params.dt_tweezer_ramp
-        else:
-            dt_tweezer_ramp = t_tweezer_ramp / N_elem
+        self.lightsheet.ramp(self.params.t_lightsheet_rampup,
+                             self.params.v_pd_lightsheet_rampup_start,
+                             self.params.v_pd_lightsheet_rampup_end)
 
-        ### End Defaults ###
+        self.inner_coil.ramp(t=self.params.t_magtrap_ramp,
+                             i_start=self.params.i_magtrap_init,
+                             i_end=self.params.i_magtrap_ramp_end)
 
-        self.dds.tweezer.set_dds(frequency=self.params.frequency_ao_1227,
-                                 v_pd=v_pd_tweezer_ramp_list[0])
-        self.dds.tweezer.on()
-        for n in range(N_elem):
-            self.dds.tweezer.set_dds(v_pd=v_pd_tweezer_ramp_list[n])
-            delay(dt_tweezer_ramp)
+        self.inner_coil.ramp(t=self.params.t_magtrap_rampdown,
+                             i_start=self.params.i_magtrap_ramp_end,
+                             i_end=0.)
+
+        self.inner_coil.off()
 
     @kernel
     def release(self):
