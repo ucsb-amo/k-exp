@@ -77,10 +77,19 @@ class tweezer_paint(EnvExperiment, Base):
 
         # self.xvar('v_pd_tweezer_1064_adiabatic_stretch_ramp_end',np.linspace())
 
-        self.xvar('t_tof',np.linspace(25.,500.,5)*1.e-6)
+        self.xvar('t_tof',np.linspace(25.,900.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(0.1,10.,10)*1.e-3)
-        self.p.t_tof = 25.e-6
-        self.p.N_repeats = [4]
+        # self.p.t_tof = 500.e-6
+        self.p.N_repeats = [10]
+
+        self.p.t_magtrap_ramp = 0.01
+        self.p.t_magtrap = 0.
+        self.p.t_magtrap_rampdown = 0.01
+
+        self.p.t_feshbach_field_rampup = 20.e-3
+        # self.xvar('t_feshbach_field_ramp2',np.linspace(5.,20.,5)*1.e-3)
+        self.p.t_feshbach_field_ramp = 10.e-3
+        self.p.t_feshbach_field_ramp2 = 10.e-3
         
         # self.xvar('dummy_z',[0]*500)
 
