@@ -11,30 +11,20 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='z_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.imaging_state = 1.
+        
+        self.camera_params.amp_imaging = .5
 
-        # self.xvar('frequency_detuned_imaging',np.arange(400.,450.,3)*1.e6)
-        # self.p.frequency_detuned_imaging = 433.e6 # 150a0
-        # self.p.frequency_detuned_imaging = 428.e6 # 150a0
-        # self.p.frequency_detuned_imaging = 412.e6 # NI
+        self.p.t_magtrap_ramp = 75.e-3
+        self.p.t_magtrap = 0.
+        self.p.t_magtrap_rampdown = 75.e-3
 
-        self.p.t_mot_load = .75
+        self.xvar('t_magtrap_hold',np.linspace(1.,100.,15)*1.e-3)
 
-        # self.xvar('t_tof',np.linspace(.02,5.,6)*1.e-3)
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 5.e-3
+
         self.p.N_repeats = [1]
-        
-        self.xvar('dummy_z',[0]*50)
-
-        # self.xvar('amp_imaging',np.linspace(.2,.5,15))
-        self.camera_params.amp_imaging = .4
-        
-        # self.camera_params.amp_imaging = 0.106
-        self.camera_params.exposure_time = 20.e-6
-        self.params.t_imaging_pulse = self.camera_params.exposure_time
-        # self.camera_params.amp_imaging = 0.106
 
         self.finish_build(shuffle=True)
 
@@ -73,22 +63,19 @@ class mag_trap(EnvExperiment, Base):
         self.ttl.pd_scope_trig.pulse(t=1.e-6)
         self.inner_coil.on()
 
-        delay(self.p.t_lightsheet_rampup)
+        # delay(self.p.t_lightsheet_rampup)
 
-        for i in self.p.magtrap_ramp_list:
-            self.inner_coil.set_current(i_supply=i)
-            delay(self.p.dt_magtrap_ramp)
+        self.inner_coil.ramp(t=self.p.t_magtrap_ramp,
+                             i_start=self.p.i_magtrap_init,
+                             i_end=self.p.i_magtrap_ramp_end)
 
-        delay(self.p.t_magtrap)
-
-        # for i in self.p.magtrap_rampdown_list:
-        #     self.inner_coil.set_current(i_supply=i)
-        #     delay(self.p.dt_magtrap_rampdown)
+        # delay(self.p.t_magtrap)
+        delay(self.p.t_magtrap_hold)
 
         self.inner_coil.off()
 
         delay(self.p.t_tof)
-        # self.flash_repump()
+        self.flash_repump()
         self.abs_image()
 
     @kernel
