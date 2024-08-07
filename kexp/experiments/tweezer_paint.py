@@ -44,8 +44,8 @@ class tweezer_paint(EnvExperiment, Base):
         self.p.i_evap2_current = 191.9
 
         ## v_pd 6.5, paint amp 6. gives long lifetime at 200-300 kHz painting
-        self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(4.,9.9,6))
-        # self.p.v_pd_tweezer_1064_ramp_end = 6.
+        # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(6.,9.9,6))
+        self.p.v_pd_tweezer_1064_ramp_end = 8.
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,200.,10)*1.e-3)
         self.p.t_tweezer_1064_ramp = .09
@@ -65,7 +65,7 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.16,.9,6)) 
         self.p.v_pd_tweezer_1064_rampdown3_end = .16
 
-        # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.06,.4,10))
+        # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.06,.4,4))
         self.p.t_tweezer_1064_rampdown3 = .35
         
         # self.xvar('i_evap3_current',np.linspace(191.,194.5,8))
@@ -73,14 +73,14 @@ class tweezer_paint(EnvExperiment, Base):
         # self.p.t_feshbach_field_ramp2 = .5
 
         # self.xvar('t_tweezer_hold',np.linspace(1.,1000.,10)*1.e-3)
-        self.p.t_tweezer_hold = 125.e-3
+        # self.p.t_tweezer_hold = 125.e-3
 
         # self.xvar('v_pd_tweezer_1064_adiabatic_stretch_ramp_end',np.linspace())
 
-        self.xvar('t_tof',np.linspace(25.,150.,5)*1.e-6)
+        self.xvar('t_tof',np.linspace(25.,500.,5)*1.e-6)
         # self.xvar('t_tof',np.linspace(0.1,10.,10)*1.e-3)
-        self.p.t_tof = 10.e-6
-        self.p.N_repeats = [1]
+        self.p.t_tof = 25.e-6
+        self.p.N_repeats = [4]
         
         # self.xvar('dummy_z',[0]*500)
 
@@ -90,10 +90,6 @@ class tweezer_paint(EnvExperiment, Base):
         # self.p.amp_tweezer_auto_compute = False
         # self.xvar('amp_tweezer_list')
         self.p.amp_tweezer_list = [.17]
-
-        self.p.t_magtrap_ramp = 0.01
-        self.p.t_magtrap = 0.
-        self.p.t_magtrap_rampdown = 0.01
 
         # self.xvar('amp_imaging',np.linspace(.06,.2,15))
         # self.xvar('amp_imaging',np.linspace(.04,.09,20))
@@ -114,7 +110,7 @@ class tweezer_paint(EnvExperiment, Base):
     def scan_kernel(self):
 
         # self.set_imaging_detuning(amp=self.p.amp_imaging)
-        self.set_high_field_imaging(i_outer = self.p.i_sqeeze_current)
+        self.set_high_field_imaging(i_outer = self.p.i_evap3_current)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -217,8 +213,6 @@ class tweezer_paint(EnvExperiment, Base):
                           v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
-
-        delay(self.p.t_tweezer_hold)
 
         self.lightsheet.off()
         
