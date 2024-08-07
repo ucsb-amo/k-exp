@@ -10,8 +10,7 @@ class TOF():
     def __init__(self,
                  atomdata,
                  sigma_fit_axis,
-                 shot_idx=0,
-                 include_idx=[]):
+                 shot_idx=0):
         
         ad = atomdata
         
@@ -31,13 +30,13 @@ class TOF():
 
         self.t_tof = ad.params.t_tof
 
-        idx = np.array(range(len(self.t_tof)))
-        if include_idx:
-            idx = np.intersect1d(idx, np.asarray(include_idx))
+        # idx = np.array(range(len(self.t_tof)))
+        # if include_idx:
+        #     idx = np.intersect1d(idx, np.asarray(include_idx))
 
-        self.t_tof = self.t_tof[idx]
-        self.sigmas = self.sigmas[idx]
-        self.atom_numbers = self.atom_numbers[idx]
+        # self.t_tof = self.t_tof[idx]
+        # self.sigmas = self.sigmas[idx]
+        # self.atom_numbers = self.atom_numbers[idx]
         
         from kexp.analysis.fitting.gaussian import GaussianTemperatureFit
         
