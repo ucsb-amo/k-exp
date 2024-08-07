@@ -29,9 +29,18 @@ class TOF():
             self.xvar = ad.xvars[0]
 
         self.t_tof = ad.params.t_tof
+
+        # idx = np.array(range(len(self.t_tof)))
+        # if include_idx:
+        #     idx = np.intersect1d(idx, np.asarray(include_idx))
+
+        # self.t_tof = self.t_tof[idx]
+        # self.sigmas = self.sigmas[idx]
+        # self.atom_numbers = self.atom_numbers[idx]
         
         from kexp.analysis.fitting.gaussian import GaussianTemperatureFit
-        self.fit = GaussianTemperatureFit(self.t_tof,self.sigmas)
+        
+        self.fit = GaussianTemperatureFit(self.t_tof, self.sigmas)
         
         self.sigma_r0 = self.fit.y_fitdata[0]
         self.average_atom_number = np.mean(self.atom_numbers)
@@ -44,7 +53,7 @@ class TOF():
                                     num_tweezers=2,
                                     tweezer_waist=3.6e-6,
                                     trap_wavelength=1064.e-9,
-                                    tweezer_final_frequency=1895.):
+                                    tweezer_final_frequency=455.):
         import kamo.constants as c
         # phase_space_density = self.average_atom_number / num_tweezers \
         #     / (np.sqrt(2) * np.pi) * (trap_wavelength / tweezer_waist) \

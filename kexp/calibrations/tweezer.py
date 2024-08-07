@@ -20,4 +20,4 @@ def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:
     #k-jam\analysis\measurements\PID1_vs_PID2.ipynb
     slope = 122.90285714612557
     y_intercept = -2.2843809526103716
-    return vpd_pid1*slope + y_intercept
+    return vpd_pid1 * slope + y_intercept

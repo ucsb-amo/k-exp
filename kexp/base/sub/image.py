@@ -105,44 +105,23 @@ class Image():
 
     @kernel
     def abs_image(self):
-        
-        if self.params.imaging_state == 1:
-            self.trigger_camera()
-            with parallel:
-                self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-                # self.flash_cooler(t=self.params.t_imaging_pulse)
-            delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
-            delay(self.camera_params.t_light_only_image_delay * s)
-            self.trigger_camera()
-            with parallel:
-                self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-                # self.flash_cooler(t=self.params.t_imaging_pulse)
-            delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
-            delay(self.camera_params.t_dark_image_delay * s)
-            self.dds.imaging.off()
-            self.dds.imaging.set_dds(amplitude=0.)
-            self.trigger_camera()
-            delay(self.camera_params.exposure_time)
-            self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        delay(self.camera_params.t_light_only_image_delay * s)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
-        if self.params.imaging_state == 2:
-            self.trigger_camera()
-            self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-            delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        delay(self.camera_params.t_dark_image_delay * s)
+        self.dds.imaging.off()
+        self.dds.imaging.set_dds(amplitude=0.)
+        self.trigger_camera()
+        delay(self.camera_params.exposure_time)
+        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-            delay(self.camera_params.t_light_only_image_delay * s)
-            self.trigger_camera()
-            self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-            delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
-
-            delay(self.camera_params.t_dark_image_delay * s)
-            self.dds.imaging.off()
-            self.dds.imaging.set_dds(amplitude=0.)
-            self.trigger_camera()
-            delay(self.camera_params.exposure_time)
-            self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
     @kernel
     def fl_image(self, t=-1., with_light=True):
@@ -216,9 +195,13 @@ class Image():
         if amp == dv:
             amp = self.camera_params.amp_imaging
         if detuning == dv:
-            detuning = self.params.frequency_detuned_imaging
+            if self.params.imaging_state == 1.:
+                detuning = self.params.frequency_detuned_imaging_F1
+            elif self.params.imaging_state == 2.:
+                detuning = self.params.frequency_detuned_imaging
+            
 
-        beat_sign = 1 # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
+        beat_sign = -1 # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
 
         self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging,amplitude=amp)
 
