@@ -631,6 +631,8 @@ class Cooling():
                                 t_magtrap_rampdown=dv,
                                 v_pd_lightsheet_ramp_start=dv,
                                 v_pd_lightsheet_ramp_end=dv,
+                                paint_lightsheet=False,
+                                v_awg_paint_amp_lightsheet=dv,
                                 i_magtrap_init=dv,
                                 i_magtrap_ramp_end=dv,
                                 v_zshim_current=dv,
@@ -646,6 +648,8 @@ class Cooling():
             v_pd_lightsheet_ramp_start = self.params.v_pd_lightsheet_rampup_start
         if v_pd_lightsheet_ramp_end == dv:
             v_pd_lightsheet_ramp_end = self.params.v_pd_lightsheet_rampup_end
+        if v_awg_paint_amp_lightsheet == dv:
+            v_awg_paint_amp_lightsheet = self.params.v_lightsheet_paint_amp_max
         if i_magtrap_init == dv:
             i_magtrap_init = self.params.i_mot
         if i_magtrap_ramp_end == dv:
@@ -666,7 +670,10 @@ class Cooling():
 
         self.lightsheet.ramp(t_lightsheet_ramp,
                             v_pd_lightsheet_ramp_start,
-                            v_pd_lightsheet_ramp_end)
+                            v_pd_lightsheet_ramp_end,
+                            paint=paint_lightsheet,
+                            v_awg_am_max=v_awg_paint_amp_lightsheet,
+                            keep_trap_frequency_constant=False)
 
         self.inner_coil.ramp(t=t_magtrap_ramp,
                             i_start=i_magtrap_init,
