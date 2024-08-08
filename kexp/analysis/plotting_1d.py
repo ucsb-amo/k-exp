@@ -35,7 +35,7 @@ def plot_mixOD(ad:atomdata,
     for i in range(n):
         img = od[i]
         ax.imshow(img, extent=[x_pos, x_pos + px, 0, py],
-                  vmin=0.,vmax=max_od)
+                  vmin=0.,vmax=max_od, origin='lower')
         ax.axvline()
         x_pos += px
 
