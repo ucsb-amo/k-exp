@@ -92,11 +92,11 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
                            layout='constrained')
 
     Nr = ad.params.N_repeats[0]
-    Ns = ad.params.N_shots
+    Ns = int(len(ad.xvars[0]) / Nr)
 
     xvar = ad.xvars[0]
 
-    if ad.params.N_repeats == 1:
+    if ad.params.N_repeats == 1 or Ns == 1:
         for i in range(Ns):
 
             yfit = fits[i].y_fitdata

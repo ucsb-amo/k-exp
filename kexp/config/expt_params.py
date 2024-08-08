@@ -64,9 +64,12 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap = 1.4
-        self.t_magtrap_ramp = .367
-        self.t_magtrap_rampdown = .2
+        # self.t_magtrap = 1.4
+        # self.t_magtrap_ramp = .367
+        # self.t_magtrap_rampdown = .2
+        self.t_magtrap_ramp = 75.e-3
+        self.t_magtrap = 0.
+        self.t_magtrap_rampdown = 75.e-3
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 100.e-3
         self.t_feshbach_field_ramp2 = 20.e-3
