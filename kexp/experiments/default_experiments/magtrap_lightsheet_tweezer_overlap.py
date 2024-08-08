@@ -9,13 +9,14 @@ class tof_scan(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
-        self.p.imaging_state = 1.
+        # self.p.imaging_state = 1.
         # self.xvar('imaging_state',[2,1])
         # self.xvar('frequency_detuned_imaging',np.arange(400.,440.,3)*1.e6)
         # self.p.frequency_detuned_imaging = 421.e6
         # self.xvar('dummy',[1.]*2)
 
         self.xvar('beans',[0,1,2]*300)
+        # self.p.beans = 0.
 
         self.p.n_tweezers = 1
         self.p.amp_tweezer_list = [.15]
@@ -23,12 +24,16 @@ class tof_scan(EnvExperiment, Base):
         self.p.t_mot_load = .75
 
         self.p.t_tof = 200.e-6
-        self.p.t_gm_tof = 100.e-6
+        self.p.t_gm_tof = 3.e-3
         self.p.t_magtrap_tof = 20.e-6
         self.p.t_lightsheet_tof = 10.e-6
         self.p.t_tweezer_tof = 10.e-6
 
         self.p.t_lightsheet_hold = 100.e-3
+
+
+        self.camera_params.amp_imaging = 0.4
+        # self.xvar('amp_imaging',np.linspace(0.1,0.5,10))
 
         # self.camera_params.amp_imaging = 0.05
         # self.camera_params.exposure_time = 5.e-6
@@ -40,6 +45,8 @@ class tof_scan(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        # self.set_imaging_detuning(amp=self.p.amp_imaging)
 
         self.outer_coil.discharge()
 
@@ -195,6 +202,7 @@ class tof_scan(EnvExperiment, Base):
         
             delay(self.p.t_tweezer_tof)
 
+        self.flash_repump()
         self.abs_image()
 
     @kernel
