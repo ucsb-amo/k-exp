@@ -101,7 +101,7 @@ class ExptBuilder():
                     self.p.t_mot_load = .2
 
                     # self.xvar("t_tof", np.linspace(0.1,10,20)*1.e-3)
-                    self.p.t_tof = 500.e-6
+                    self.p.t_tof = 5000.e-6
 
                     {assignment_lines}
                     
