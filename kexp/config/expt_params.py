@@ -23,7 +23,7 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 16.e6 # zero-field
+        self.frequency_detuned_imaging = 14.0e6 # zero-field
         self.frequency_detuned_imaging_F1 = 458.e6
         self.imaging_state = 2.
         
