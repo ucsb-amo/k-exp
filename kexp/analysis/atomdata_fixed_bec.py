@@ -425,6 +425,12 @@ class atomdata():
         print(index)
         for i in range(len(flat_img_atoms)):
             #find index from img_dims
+            #need mapping from 1D index to ND index
+            #first D is a mod of the XVar length, 
+            #Then mod of the YVar length into the XVar
+            #Then Z into Y
+            #T into Z ...
+            
 
 
 
