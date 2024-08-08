@@ -78,7 +78,12 @@ class atomdata():
 
     def compute_atom_number(self):
         self.atom_cross_section = self.atom.get_cross_section()
-        self.atom_number_density = self.od / self.atom_cross_section * (self.camera_params.pixel_size_m / self.camera_params.magnification)**2
+        integrated_od_to_atom_number = 1 / (self.atom_cross_section * (self.camera_params.pixel_size_m / self.camera_params.magnification)**2)
+        
+        self.atom_number_fit_area_x = self.fit_area_x * integrated_od_to_atom_number
+        self.atom_number_fit_area_y = self.fit_area_y * integrated_od_to_atom_number
+
+        self.atom_number_density = self.od * integrated_od_to_atom_number
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
     def recrop(self,crop_type=''):
