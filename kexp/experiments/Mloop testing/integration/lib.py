@@ -98,10 +98,10 @@ class ExptBuilder():
                 def build(self):
                     Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-                    self.p.t_mot_load = .1
+                    self.p.t_mot_load = .2
 
                     # self.xvar("t_tof", np.linspace(0.1,10,20)*1.e-3)
-                    self.p.t_tof = 200.e-6
+                    self.p.t_tof = 500.e-6
 
                     {assignment_lines}
                     
