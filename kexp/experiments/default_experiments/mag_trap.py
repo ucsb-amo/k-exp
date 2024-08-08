@@ -13,25 +13,38 @@ class mag_trap(EnvExperiment, Base):
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        
-        self.camera_params.amp_imaging = .5
+        # self.xvar('t_magtrap_hold',np.linspace(1.,100.,15)*1.e-3)
 
-        self.p.t_magtrap_ramp = 75.e-3
-        self.p.t_magtrap = 0.
-        self.p.t_magtrap_rampdown = 75.e-3
+        self.p.N_repeats = [5]
+        self.p.imaging_state = 2.
+        # self.xvar('frequency_detuned_imaging',np.linspace(11.,21.,10)*1.e6)
 
-        self.xvar('t_magtrap_hold',np.linspace(1.,100.,15)*1.e-3)
+        self.p.t_magtrap_hold = 100.e-3
+        self.xvar('t_tof',np.linspace(4.,12.,15)*1.e-3)
+        # self.xvar('i_magtrap_init',np.linspace(20.,34.,8))
+        # self.xvar('i_magtrap_ramp_start',np.linspace(28.,95.,8))
+        # self.xvar('t_magtrap',np.linspace(0.,20.,8)*1.e-3)
+        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,8.,20))
 
-        self.p.t_tof = 10.e-3
+        # self.p.detune_push = -4.17116726
+        # self.p.amp_push = 0.16738739
+        # self.p.detune_d2_c_2dmot = -1.73040681
+        # self.p.detune_d2_r_2dmot = -3.08733172
+        # self.p.amp_d2_c_2dmot = 0.2
+        # self.p.amp_d2_r_2dmot = 0.17571287
+        # self.p.v_2d_mot_current = 2.11158112
+        # self.p.detune_d2_c_mot = -2.37056453
+        # self.p.detune_d2_r_mot = -3.94081539
+        # self.p.amp_d2_c_mot = 0.2
+        # self.p.amp_d2_r_mot = 0.15113752
+        # self.p.i_mot = 22.75847018
 
-        self.p.N_repeats = [1]
+        self.p.t_tof = 8.e-3
 
         self.finish_build(shuffle=True)
 
     @kernel
     def scan_kernel(self):
-
-        # self.set_imaging_detuning(amp=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
