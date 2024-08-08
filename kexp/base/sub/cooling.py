@@ -678,6 +678,58 @@ class Cooling():
         self.inner_coil.off()
 
     @kernel
+    def magtrap_and_load_lightsheet_paint(self,
+                                t_lightsheet_ramp=dv,
+                                t_magtrap_ramp=dv,
+                                t_magtrap_rampdown=dv,
+                                v_pd_lightsheet_ramp_start=dv,
+                                v_pd_lightsheet_ramp_end=dv,
+                                i_magtrap_init=dv,
+                                i_magtrap_ramp_end=dv,
+                                v_zshim_current=dv,
+                                v_yshim_current=dv,
+                                v_xshim_current=dv):
+        if t_lightsheet_ramp == dv:
+            t_lightsheet_ramp = self.params.t_lightsheet_rampup
+        if t_magtrap_ramp == dv:
+            t_magtrap_ramp = self.params.t_magtrap_ramp
+        if t_magtrap_rampdown == dv:
+            t_magtrap_rampdown = self.params.t_magtrap_rampdown
+        if v_pd_lightsheet_ramp_start == dv:
+            v_pd_lightsheet_ramp_start = self.params.v_pd_lightsheet_rampup_start
+        if v_pd_lightsheet_ramp_end == dv:
+            v_pd_lightsheet_ramp_end = self.params.v_pd_lightsheet_rampup_end
+        if i_magtrap_init == dv:
+            i_magtrap_init = self.params.i_mot
+        if i_magtrap_ramp_end == dv:
+            i_magtrap_ramp_end = self.params.i_magtrap_ramp_end
+        if v_zshim_current == dv:
+            v_zshim_current = self.params.v_zshim_current_magtrap
+        if v_yshim_current == dv:
+            v_yshim_current = self.params.v_yshim_current_magtrap
+        if v_xshim_current == dv:
+            v_xshim_current = self.params.v_xshim_current_magtrap
+
+        self.start_magtrap(v_zshim_current=v_zshim_current,
+                           v_yshim_current=v_yshim_current,
+                           v_xshim_current=v_xshim_current)
+
+        # ramp up lightsheet over magtrap
+        
+
+        self.lightsheet.ramp(t=t_lightsheet_ramp,
+                                 paint=True,keep_trap_frequency_constant=True)
+
+        self.inner_coil.ramp(t=t_magtrap_ramp,
+                            i_start=i_magtrap_init,
+                            i_end=i_magtrap_ramp_end)
+
+        self.inner_coil.ramp(t=t_magtrap_rampdown,
+                            i_start=i_magtrap_ramp_end,
+                            i_end=0.)
+        self.inner_coil.off()
+
+    @kernel
     def magtrap(self,
                 t_magtrap_ramp=dv,
                 i_magtrap_init=dv,
