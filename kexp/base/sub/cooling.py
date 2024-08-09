@@ -725,7 +725,7 @@ class Cooling():
         
 
         self.lightsheet.ramp(t=t_lightsheet_ramp,
-                                 paint=True,keep_trap_frequency_constant=True)
+                                 paint=True,keep_trap_frequency_constant=False)
 
         self.inner_coil.ramp(t=t_magtrap_ramp,
                             i_start=i_magtrap_init,
