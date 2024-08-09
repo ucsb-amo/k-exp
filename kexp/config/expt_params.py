@@ -24,7 +24,7 @@ class ExptParams():
 
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 14.0e6
-        self.frequency_detuned_imaging_F1 = 458.e6
+        self.frequency_detuned_imaging_F1 = 400.e6
         self.imaging_state = 2.
         
         self.t_repump_flash_imaging = 10.e-6
