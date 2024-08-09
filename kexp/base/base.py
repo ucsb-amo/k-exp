@@ -56,7 +56,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         a scan. This must be an RPC -- no kernel decorator.
         """
         if not self.xvarnames:
-            self.xvar("dummy",[0])
+            self.xvar("dummy",[0]*2)
         if self.xvarnames and not self.scan_xvars:
             for key in self.xvarnames:
                 self.xvar(key,vars(self.params)[key])
