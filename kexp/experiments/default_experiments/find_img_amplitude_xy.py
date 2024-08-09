@@ -3,13 +3,13 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class img_detuning_calibration(EnvExperiment, Base):
+class img_amp_calibration(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
-        self.xvar('frequency_detuned_imaging',np.arange(-20.,20.,2)*1.e6)
+        self.xvar('amp_imaging',np.linspace(0.1,0.5,10))
         self.p.t_tof = 10.e-3
         self.p.N_repeats = 3
         self.p.t_mot_load = .05
@@ -17,6 +17,8 @@ class img_detuning_calibration(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        self.set_imaging_detuning(amp=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
