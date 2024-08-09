@@ -45,12 +45,6 @@ class tof_scan(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
-        
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
-
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                          v_xshim_current=self.p.v_xshim_current_gm)
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 

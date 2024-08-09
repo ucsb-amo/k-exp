@@ -2,25 +2,29 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base
 import numpy as np
+from kexp.util.artiq.async_print import aprint
 
 class rf_scan(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.camera_params.amp_imaging = .5
-
-        self.xvar('t_tof',np.linspace(20.,1000.,20)*1.e-6)
+        # self.xvar('t_tof',np.linspace(20.,1000.,15)*1.e-6)
         self.p.t_lightsheet_hold = .1
-        self.p.t_tof = 10.e-6
-        self.p.N_repeats = 1
+        self.p.t_tof = 400.e-6
+        self.p.N_repeats = 10
+
+        self.p.t_lightsheet_rampup = 1.
+
+        self.p.v_pd_lightsheet_rampup_end = 9.99
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.5,9.99,5))
+        self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,1))
+        # self.xvar('t_lightsheet_rampup',np.linspace(0.1,1.,8))
 
         self.finish_build(shuffle=True)
 
     @kernel
     def scan_kernel(self):
-
-        # self.set_imaging_detuning(amp=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -30,6 +34,7 @@ class rf_scan(EnvExperiment, Base):
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.magtrap_and_load_lightsheet()
         
         delay(self.p.t_lightsheet_hold)
@@ -41,6 +46,10 @@ class rf_scan(EnvExperiment, Base):
         self.abs_image()
 
         # self.lightsheet.off()
+
+    @kernel
+    def pre_scan(self):
+        self.tweezer.on()
 
     @kernel
     def run(self):
