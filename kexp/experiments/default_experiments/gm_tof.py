@@ -37,7 +37,6 @@ class tof(EnvExperiment, Base):
     @kernel
     def run(self):
         self.init_kernel()
-        self.tweezer.on()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()
