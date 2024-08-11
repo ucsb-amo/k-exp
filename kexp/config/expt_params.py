@@ -209,10 +209,14 @@ class ExptParams():
 
         #frequency spacing between each tweezer in the array
         #tweezers uniformly distributed around center frequency of AOD
-        self.frequency_tweezer_spacing = .7e6*2
+        # self.frequency_tweezer_spacing = .7e6*2
+        self.frequency_tweezer_spacing = 6.e6*2
+        self.frequency_tweezer_list = np.array([70.4e6,72.e6,78.e6])
 
+        self.frequency_tweezer_auto_compute = False
         self.amp_tweezer_auto_compute = False
-        self.amp_tweezer_list = [.2,.215]
+        # self.amp_tweezer_list = [.2,.215]
+        self.amp_tweezer_list = [.4,.4]
 
         self.v_tweezer_paint_amp_max = 6.
 
@@ -296,9 +300,12 @@ class ExptParams():
         self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
 
     def compute_tweezer_1064_freqs(self):
-        min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
-        max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
-        self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
+        if self.frequency_tweezer_auto_compute:
+            min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
+            max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
+            self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
+        else:
+            self.frequency_tweezer_list = self.frequency_tweezer_list
 
     def compute_tweezer_1064_amps(self):
         if self.amp_tweezer_auto_compute:
