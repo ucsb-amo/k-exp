@@ -211,7 +211,7 @@ class ExptParams():
         #tweezers uniformly distributed around center frequency of AOD
         # self.frequency_tweezer_spacing = .7e6*2
         self.frequency_tweezer_spacing = 6.e6*2
-        self.frequency_tweezer_list = np.array([70.4e6,72.e6,78.e6])
+        self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
 
         self.frequency_tweezer_auto_compute = False
         self.amp_tweezer_auto_compute = False
