@@ -20,13 +20,14 @@ class tof_scan(EnvExperiment, Base):
 
         # self.p.v_lightsheet_paint_amp_max = 4
 
-        self.xvar("beans", [0,1]*200)
+        self.p.beans = 0
+        # self.xvar("beans", [0,1]*200)
 
-        # self.xvar('v_lightsheet_paint_amp_max',np.linspace(-7.,6.,20))
+        self.xvar('v_lightsheet_paint_amp_max',np.linspace(-7.,6.,20))
 
         self.p.t_tof = 10.e-6
         self.p.t_lightsheet_hold = .1
-        self.p.N_repeats = [1]
+        self.p.N_repeats = [10]
 
         self.sh_dds = self.get_device("shuttler0_dds0")
         self.sh_dds: DDS

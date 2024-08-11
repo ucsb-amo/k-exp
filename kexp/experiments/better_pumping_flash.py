@@ -8,7 +8,7 @@ from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shutt
 
 T32 = 1<<32
 
-class mag_trap(EnvExperiment, Base):
+class better_pumping_flash(EnvExperiment, Base):
 
     def build(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
@@ -21,14 +21,55 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_magtrap_hold',np.linspace(10.,80.,8)*1.e-3)
         self.p.t_magtrap_hold = 150.e-3
 
+        
+
+        self.p.t_tof = 10.e-3
+        # self.xvar('t_tof',np.linspace(5.,10.,8)*1.e-3)
+
+        # self.xvar('do_pumping',[0,1])
+        self.p.do_pumping = 1.
+        self.p.use_op_repump = 0.
+        # self.p.detune_optical_pumping_r_op = -9.2
+        self.p.amp_optical_pumping_r_op = 0.5
+        self.xvar('use_op_repump',[0,1])
+        # self.p.t_cooler_flash_imaging = 3.e-6
+
         self.p.t_op_cooler_flash = 200.e-6
+        # self.xvar('t_op_cooler_flash',np.linspace(50.,500.,10)*1.e-6)
 
-        self.p.t_tof = 5.e-3
-        self.xvar('t_tof',np.linspace(5.,10.,8)*1.e-3)
-
-        self.p.N_repeats = 10
+        self.p.N_repeats = [20]
 
         self.finish_build(shuffle=True)
+
+    @kernel
+    def pump(self):
+        delay(2.e-3)
+        if self.p.do_pumping:
+            self.dds.optical_pumping.set_dds(set_stored=True)
+            self.dds.op_r.set_dds(set_stored=True)
+            self.dds.optical_pumping.on()
+            if self.p.use_op_repump:
+                self.dds.op_r.on()
+            delay(self.p.t_op_cooler_flash)
+            self.dds.op_r.off()
+            self.dds.optical_pumping.off()
+            self.flash_cooler()
+        else:
+            delay(self.p.t_op_cooler_flash)
+            self.flash_cooler()
+
+    # @kernel
+    # def pump(self):
+    #     delay(2.e-3)
+    #     if self.p.do_pumping:
+    #         self.dds.optical_pumping.set_dds(set_stored=True)
+    #         self.dds.optical_pumping.on()
+    #         delay(self.p.t_op_cooler_flash)
+    #         self.dds.optical_pumping.off()
+    #         self.flash_cooler()
+    #     else:
+    #         delay(self.p.t_op_cooler_flash)
+    #         self.flash_cooler()
 
     @kernel
     def scan_kernel(self):
@@ -47,7 +88,8 @@ class mag_trap(EnvExperiment, Base):
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
-        self.flash_cooler()
+        # self.flash_cooler()
+        self.pump()
 
         self.dds.power_down_cooling()
 
