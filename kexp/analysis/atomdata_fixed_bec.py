@@ -360,11 +360,15 @@ class atomdata():
     def _sort_images_absorption(self):
 
         self._split_images_abs()
+        #print(self._img_atoms[34][511])
 
         # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
         img_dims = np.shape(self.images[0])
+        #print(img_dims)
         sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
-
+        #print('hef')
+        #print(self.xvardims)
+        #print(sorted_img_dims)
         dtype = self.images.dtype
         self.img_atoms = np.zeros(sorted_img_dims,dtype=dtype)
         self.img_light = np.zeros(sorted_img_dims,dtype=dtype)
@@ -376,60 +380,80 @@ class atomdata():
         #---idea -flatten array 
         #loop thru flattened fing, with each boundary decided by how far in N it has gotten\
        
-
-        if self.Nvars == 1:
-            self.img_atoms = self._img_atoms
-            self.img_light = self._img_light
-            self.img_dark = self._img_dark
-            for i in range(self.xvardims[0]):
-                self.img_tstamps[i] = list([self._img_atoms_tstamp[i],
-                                    self._img_light_tstamp[i],
-                                    self._img_dark_tstamp[i]])
-            if len(self.xvars[0]) == 1:
-                self.img_atoms = np.array([self.img_atoms])
-                self.img_light = np.array([self.img_light])
-                self.img_dark = np.array([self.img_dark])
+        # print(self.xvardims[0])
+        # if self.Nvars == 1:
+        #     self.img_atoms = self._img_atoms
+        #     self.img_light = self._img_light
+        #     self.img_dark = self._img_dark
+        #     for i in range(self.xvardims[0]):
+        #         self.img_tstamps[i] = list([self._img_atoms_tstamp[i],
+        #                             self._img_light_tstamp[i],
+        #                             self._img_dark_tstamp[i]])
+        #     if len(self.xvars[0]) == 1:
+        #         self.img_atoms = np.array([self.img_atoms])
+        #         self.img_light = np.array([self.img_light])
+        #         self.img_dark = np.array([self.img_dark])
         
-        if self.Nvars == 2:
-            n1 = self.xvardims[0]
-            n2 = self.xvardims[1]
-            for i1 in range(n1):
-                for i2 in range(n2):
-                    idx = i1*n2 + i2
-                    self.img_atoms[i1][i2] = self._img_atoms[idx]
-                    self.img_light[i1][i2] = self._img_light[idx]
-                    self.img_dark[i1][i2] = self._img_dark[idx]
-                    self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
-                                                     self._img_light_tstamp[idx],
-                                                     self._img_dark_tstamp[idx]]
+        # if self.Nvars == 2:
+        #     n1 = self.xvardims[0]
+        #     n2 = self.xvardims[1]
+        #     for i1 in range(n1):
+        #         for i2 in range(n2):
+        #             idx = i1*n2 + i2
+        #             self.img_atoms[i1][i2] = self._img_atoms[idx]
+        #             self.img_light[i1][i2] = self._img_light[idx]
+        #             self.img_dark[i1][i2] = self._img_dark[idx]
+        #             self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
+        #                                              self._img_light_tstamp[idx],
+        #                                              self._img_dark_tstamp[idx]]
                     
-        if self.Nvars == 3:
-            n1 = self.xvardims[0]
-            n2 = self.xvardims[1]
-            n3 = self.xvardims[2]
-            for i1 in range(n1):
-                for i2 in range(n2):
-                        for i3 in range(n3):
-                            idx = (i1*n2 + i2)*n3 + i3 #standard 3d indexing
-                            self.img_atoms[i1][i2][i3] = self._img_atoms[idx]
-                            self.img_light[i1][i2][i3] = self._img_light[idx]
-                            self.img_dark[i1][i2][i3] = self._img_dark[idx]
-                            self.img_tstamps[i1][i2][i3] = [self._img_atoms_tstamp[idx],
-                                                            self._img_light_tstamp[idx],
-                                                            self._img_dark_tstamp[idx]]
+        # if self.Nvars == 3:
+        #     n1 = self.xvardims[0]
+        #     n2 = self.xvardims[1]
+        #     n3 = self.xvardims[2]
+        #     for i1 in range(n1):
+        #         for i2 in range(n2):
+        #                 for i3 in range(n3):
+        #                     idx = (i1*n2 + i2)*n3 + i3 #standard 3d indexing
+        #                     self.img_atoms[i1][i2][i3] = self._img_atoms[idx]
+        #                     self.img_light[i1][i2][i3] = self._img_light[idx]
+        #                     self.img_dark[i1][i2][i3] = self._img_dark[idx]
+        #                     self.img_tstamps[i1][i2][i3] = [self._img_atoms_tstamp[idx],
+        #                                                     self._img_light_tstamp[idx],
+        #                                                     self._img_dark_tstamp[idx]]
 
-        flat_img_atoms = self._img_atoms_tstamp.flatten()
-        flat_img_light = self._img_light_tstamp.flatten()
-        flat_img_dark = self._img_dark_tstamp.flatten()
-        index = np.zeros(sorted_img_dims,dtype=dtype)
-        print(index)
-        for i in range(len(flat_img_atoms)):
-            #find index from img_dims
-            #need mapping from 1D index to ND index
-            #first D is a mod of the XVar length, 
-            #Then mod of the YVar length into the XVar
-            #Then Z into Y
-            #T into Z ...
+        #flat_img_atoms = self._img_atoms_tstamp.flatten()
+        # flat_img_light = self._img_light_tstamp.flatten()
+        # flat_img_dark = self._img_dark_tstamp.flatten()
+        # index = np.zeros(sorted_img_dims,dtype=dtype)
+        # print(index)
+        # for i in range(len(flat_img_atoms)):
+        #     #find index from img_dims
+        #     #need mapping from 1D index to ND index
+        #     #first D is a mod of the XVar length, 
+        #     #Then mod of the YVar length into the XVar
+        #     #Then Z into Y
+        #     #T into Z ...
+
+        ###rd 3
+        ##loop thro dimensions
+        ##need to create flattened 
+
+
+        ######This code should do what the above code does?
+        flat_img_atoms = (self._img_atoms.flatten())
+        flat_img_light = (self._img_light.flatten())
+        flat_img_dark = (self._img_dark.flatten())
+        flat_img_tstamp = np.concatenate((self._img_atoms_tstamp.flatten(),self._img_light_tstamp.flatten(),self._img_dark_tstamp.flatten()))
+        self.img_atoms = flat_img_atoms.reshape(sorted_img_dims)
+        self.img_light = flat_img_light.reshape(sorted_img_dims)
+        self.img_dark = flat_img_dark.reshape(sorted_img_dims)        
+        tstamp_dim = tuple(self.xvardims)+(3,)
+        self.img_tstamps = flat_img_tstamp.reshape(tstamp_dim)
+        
+ 
+        #for i in range(self.Nvars):
+
             
             
 
