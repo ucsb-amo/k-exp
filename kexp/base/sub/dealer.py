@@ -35,8 +35,7 @@ class Dealer():
 
         error_msg = "self.params.repeats must have either have one element or length equal to the number of xvarnames"
         if isinstance(self.params.N_repeats,int):
-            self.params.N_repeats = np.ones(Nvars)
-            self.params.N_repeats[0] = self.params.N_repeats
+            self.params.N_repeats = [self.params.N_repeats] * Nvars
         elif isinstance(self.params.N_repeats,list):
             if len(self.params.N_repeats) == 1:
                 N_repeat = self.params.N_repeats[0]
