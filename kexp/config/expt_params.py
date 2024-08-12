@@ -203,7 +203,7 @@ class ExptParams():
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
         # self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
 
-        self.n_tweezers = 2
+        self.n_tweezers = 3
 
         self.frequency_aod_center = 75.e6
 
@@ -214,9 +214,9 @@ class ExptParams():
         self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
 
         self.frequency_tweezer_auto_compute = False
-        self.amp_tweezer_auto_compute = False
+        self.amp_tweezer_auto_compute = True
         # self.amp_tweezer_list = [.2,.215]
-        self.amp_tweezer_list = [.4,.4]
+        # self.amp_tweezer_list = [.4,.4]
 
         self.v_tweezer_paint_amp_max = 6.
 
@@ -308,8 +308,10 @@ class ExptParams():
             self.frequency_tweezer_list = self.frequency_tweezer_list
 
     def compute_tweezer_1064_amps(self):
+        if not self.frequency_tweezer_auto_compute:
+            self.n_tweezers = len(self.frequency_tweezer_list)
         if self.amp_tweezer_auto_compute:
-            self.amp_tweezer_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers, self.n_tweezers)
+            self.amp_tweezer_list = np.ones(self.n_tweezers) / self.n_tweezers
         else:
             self.amp_tweezer_list = self.amp_tweezer_list
 
