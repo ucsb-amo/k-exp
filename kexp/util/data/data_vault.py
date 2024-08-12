@@ -10,7 +10,7 @@ run_id_path = os.path.join(data_dir,"run_id.py")
 code_dir = os.getenv("code")
 params_path = os.path.join(code_dir,"k-exp","kexp","config","expt_params.py")
 cooling_path = os.path.join(code_dir,"k-exp","kexp","base","sub","cooling.py")
-imaging_path = os.path.join(code_dir,"k-exp","kexp","config","imaging.py")
+imaging_path = os.path.join(code_dir,"k-exp","kexp","base","sub","image.py")
 
 class DataSaver():
 

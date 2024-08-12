@@ -78,10 +78,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.data_filepath = self.ds.create_data_file(self)
 
         self.generate_assignment_kernels()
-
-        if self.setup_camera:
-            self.wait_for_camera_ready(timeout=20.)
-            print("Camera is ready.")
     
     def compute_new_derived(self):
         pass
@@ -90,6 +86,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     def init_kernel(self, run_id = True, init_dds =  True, init_dac = True,
                      dds_set = True, dds_off = True, beat_ref_on=True,
                      init_lightsheet = True, setup_awg = True):
+        if self.setup_camera:
+            self.wait_for_camera_ready(timeout=30.)
+            print("Camera is ready.")
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         if setup_awg:
