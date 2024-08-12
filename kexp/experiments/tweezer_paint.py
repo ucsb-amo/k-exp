@@ -13,7 +13,7 @@ T32 = 1<<32
 class tweezer_paint(EnvExperiment, Base):
 
     def build(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
         # self.p.imaging_state = 1.
         # self.xvar('frequency_detuned_imaging',np.arange(-630.,-500.,10)*1.e6)
@@ -46,7 +46,7 @@ class tweezer_paint(EnvExperiment, Base):
         self.p.i_evap2_current = 191.9
 
         ## v_pd 6.5, paint amp 6. gives long lifetime at 200-300 kHz painting
-        self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(5.,9.9,10))
+        # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(5.,9.9,10))
         self.p.v_pd_tweezer_1064_ramp_end = 9.
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,200.,10)*1.e-3)
@@ -94,7 +94,7 @@ class tweezer_paint(EnvExperiment, Base):
         self.p.t_feshbach_field_ramp = 15.e-3
         self.p.t_feshbach_field_ramp2 = 15.e-3
         
-        # self.xvar('dummy_z',[0]*5)
+        self.xvar('dummy_z',[0]*500)
 
         self.p.n_tweezers = 3
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
