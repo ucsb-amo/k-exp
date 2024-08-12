@@ -7,6 +7,11 @@ import h5py
 data_dir = os.getenv("data")
 run_id_path = os.path.join(data_dir,"run_id.py")
 
+code_dir = os.getenv("code")
+params_path = os.path.join(code_dir,"k-exp","kexp","config","expt_params.py")
+cooling_path = os.path.join(code_dir,"k-exp","kexp","base","sub","cooling.py")
+imaging_path = os.path.join(code_dir,"k-exp","kexp","config","imaging.py")
+
 class DataSaver():
 
     def save_data(self,expt,expt_filepath="",data_object=None):
@@ -33,6 +38,18 @@ class DataSaver():
                 f.attrs["expt_file"] = expt_text
             else:
                 f.attrs["expt_file"] = ""
+
+            with open(params_path) as params_file:
+                params_file = params_file.read()
+            f.attrs["params_file"] = params_file
+
+            with open(cooling_path) as cooling_file:
+                cooling_file = cooling_file.read()
+            f.attrs["cooling_file"] = cooling_file
+
+            with open(imaging_path) as imaging_file:
+                imaging_file = imaging_file.read()
+            f.attrs["imaging_file"] = imaging_file
 
             f.close()
             print("Parameters saved, data closed.")

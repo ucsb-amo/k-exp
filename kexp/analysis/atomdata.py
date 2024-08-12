@@ -32,7 +32,7 @@ class atomdata():
     def __init__(self, xvarnames, images, image_timestamps,
                   params: ExptParams, camera_params:CameraParams,
                   run_info: RunInfo, sort_idx, sort_N, 
-                  expt_text, params_text,
+                  expt_text, params_text, cooling_text, imaging_text,
                     unshuffle_xvars = True, crop_type='',
                     transpose_idx=[], avg_repeats=False):
 
@@ -50,6 +50,8 @@ class atomdata():
 
         self.experiment = expt_text
         self.params_file = params_text
+        self.cooling_file = cooling_text
+        self.imaging_file = imaging_text
 
         self.xvarnames = xvarnames
         self.xvars = self._unpack_xvars()
