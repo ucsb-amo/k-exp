@@ -441,6 +441,8 @@ class atomdata():
 
 
         ######This code should do what the above code does?
+
+        ###Essentially puts each image object into the expected place in a matrix which first dimensions are the dependant variables
         flat_img_atoms = (self._img_atoms.flatten())
         flat_img_light = (self._img_light.flatten())
         flat_img_dark = (self._img_dark.flatten())
