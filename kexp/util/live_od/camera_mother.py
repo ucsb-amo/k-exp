@@ -18,11 +18,13 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 from queue import Queue
 
+from datetime import datetime
+
 import sys
 
 DATA_DIR = os.getenv("data")
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
-CHECK_DELAY = 0.25
+CHECK_DELAY = 0.2
 LOG_UPDATE_INTERVAL = 2.
 DEFAULT_TIMEOUT = 30.
 UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
@@ -99,15 +101,16 @@ class CameraMother(QThread):
             print("Mother is watching...")
 
     def check_files(self):
-        # try:
-        folderpath=os.path.join(DATA_DIR,'*','*.hdf5')
-        list_of_files = glob.glob(folderpath)
-        list_of_files.sort(key=lambda x: os.path.getmtime(x))
-        latest_file = list_of_files[-1]
-        # except Exception as e:
-        #     if isinstance(e,IndexError):
-        #         print(e)
-        #         raise ValueError("You probably need to re-map network drives.")
+        try:
+            datefolder = datetime.today().strftime('%Y-%m-%d')
+            folderpath=os.path.join(DATA_DIR,datefolder,'*.hdf5')
+            latest_file = max(glob.iglob(folderpath),key=os.path.getmtime)
+        except Exception as e:
+            if isinstance(e,IndexError):
+                print(e)
+                raise ValueError("You probably need to re-map network drives.")
+            else:
+                raise(e)
         new_file_bool, run_id = self.check_if_file_new(latest_file)
         return new_file_bool, latest_file, run_id
     
