@@ -99,11 +99,11 @@ class tweezer_paint(EnvExperiment, Base):
         self.p.n_tweezers = 3
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
         # self.p.frequency_tweezer_spacing = 2.5e6
-        self.p.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
+        self.p.frequency_tweezer_list = [72.e6,78.e6]
         self.p.frequency_tweezer_auto_compute = False
         self.p.amp_tweezer_auto_compute = False
         # self.xvar('amp_tweezer_list')
-        self.p.amp_tweezer_list = [.33,.33,.33]
+        self.p.amp_tweezer_list = [.5,.5]
 
         # self.xvar('amp_imaging',np.linspace(.06,.2,15))
         # self.xvar('amp_imaging',np.linspace(.04,.09,20))
@@ -165,9 +165,9 @@ class tweezer_paint(EnvExperiment, Base):
                           paint=False,keep_trap_frequency_constant=False)
 
         # # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         # # tweezer evap 1 with constant trap frequency
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
