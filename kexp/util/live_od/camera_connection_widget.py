@@ -27,6 +27,7 @@ class CamConnBar(QWidget):
         buttonlayout = QHBoxLayout()
         buttonlayout.addWidget(self.xy_basler_button)
         buttonlayout.addWidget(self.z_basler_button)
+        buttonlayout.addWidget(self.x_basler_button)
         buttonlayout.addWidget(self.andor)
         self.layout.addWidget(label)
         self.layout.addLayout(buttonlayout)
