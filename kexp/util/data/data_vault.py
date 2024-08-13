@@ -4,6 +4,8 @@ import os
 import copy
 import h5py
 
+from kexp.util.data.server_talk import check_for_mapped_data_dir
+
 data_dir = os.getenv("data")
 run_id_path = os.path.join(data_dir,"run_id.py")
 
@@ -61,6 +63,8 @@ class DataSaver():
         if expt.setup_camera:
 
             pwd = os.getcwd()
+
+            check_for_mapped_data_dir()
             os.chdir(data_dir)
 
             fpath, folder = self._data_path(expt.run_info)
