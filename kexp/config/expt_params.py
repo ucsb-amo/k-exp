@@ -324,8 +324,8 @@ class ExptParams():
     #             phase_ij = 0
     #             for j in range(1,tweezer_idx):
     #                 phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*(1/len(self.frequency_tweezer_list))
-    #             phase_i = phase_ij
-    #             self.phase_tweezer_array[tweezer_idx] = 
+    #             phase_i = (phase_ij % 2*np.pi) * 360
+    #             self.phase_tweezer_array[tweezer_idx] = phase_i
 
     def compute_derived(self):
         '''loop through methods (except built in ones) and compute all derived quantities'''
