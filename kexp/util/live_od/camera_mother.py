@@ -2,7 +2,6 @@ import time
 import numpy as np
 import os
 import h5py
-import glob
 import names
 
 import pypylon.pylon as py
@@ -11,16 +10,13 @@ from kexp.util.data.load_atomdata import unpack_group
 
 from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.util.live_od.camera_nanny import CameraNanny
+from kexp.util.data.server_talk import get_latest_data_file
 
 from kexp.base.sub.scribe import CHECK_PERIOD, Scribe
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from queue import Queue
-
-from datetime import datetime
-
-import sys
 
 DATA_DIR = os.getenv("data")
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
@@ -79,7 +75,7 @@ class CameraMother(QThread):
             if new_file_bool:
                 count += 1
                 file, name = self.new_file(latest_file, run_id)
-                self.new_camera_baby.emit(file,name)
+                self.new_camera_baby.emit(file, name)
                 self.handle_baby_creation(file, name, manage_babies)
             if count == self.N_runs:
                 break
@@ -101,16 +97,7 @@ class CameraMother(QThread):
             print("Mother is watching...")
 
     def check_files(self):
-        try:
-            datefolder = datetime.today().strftime('%Y-%m-%d')
-            folderpath=os.path.join(DATA_DIR,datefolder,'*.hdf5')
-            latest_file = max(glob.iglob(folderpath),key=os.path.getmtime)
-        except Exception as e:
-            if isinstance(e,IndexError):
-                print(e)
-                raise ValueError("You probably need to re-map network drives.")
-            else:
-                raise(e)
+        latest_file = get_latest_data_file()
         new_file_bool, run_id = self.check_if_file_new(latest_file)
         return new_file_bool, latest_file, run_id
     
