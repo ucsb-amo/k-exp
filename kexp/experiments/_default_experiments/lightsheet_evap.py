@@ -3,38 +3,47 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class tweezer_light_shift(EnvExperiment, Base):
+class tweezer_evap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 1.
 
-        self.p.t_mot_load = .75
+        # self.xvar('i_magtrap_init',np.linspace(20.,38.,8))
+        # self.xvar('i_magtrap_ramp_end',np.linspace(28.,95.,8))
 
-        self.p.v_pd_lightsheet_rampdown_end = 6.
-        self.p.v_pd_tweezer_1064_ramp_end = 5.8
+        self.xvar('t_magtrap',np.linspace(0.1,1000.,8)*1.e-3)
+        self.xvar('t_magtrap_ramp',np.linspace(10.,1500.,8)*1.e-3)
 
-        self.camera_params.amp_imaging = 0.09
-        self.p.t_imaging_pulse = 25.e-6
-        self.camera_params.exposure_time = 25.e-6
-        self.camera_params.em_gain = 290.
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.3,3.5,20))
 
-        self.xvar('tweezer_on_during_imaging_bool',[0,1])
+        # self.xvar('i_evap1_current',np.linspace(190.,195.,8))
+        # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.5,8))
 
-        self.p.f0 = self.p.frequency_detuned_imaging_F1
-        self.xvar('frequency_detuned_imaging_F1',self.p.f0 + np.arange(100.,200.,6)*1.e6)
+        # self.p.i_evap1_current = 193.4
+        # self.p.t_lightsheet_rampdown = .14
 
-        # self.xvar('t_tof', np.linspace(2,15,15)*1.e-6)
+        # self.xvar('dummy_z',[0]*50)
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = [3,1]
 
-        self.finish_prepare(shuffle=True)
+        # self.xvar('t_tof',np.linspace(1.,50.,6)*1.e-6)
+        self.p.t_tof = 500.e-6
+
+        # self.p.t_lightsheet_rampup = 200.e-3
+
+        # self.xvar('amp_imaging',np.linspace(.2,.5,20))
+        self.p.amp_imaging = .3
+
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
+        self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1, amp=self.p.amp_imaging)
+
+        self.outer_coil.discharge()
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -47,8 +56,6 @@ class tweezer_light_shift(EnvExperiment, Base):
                         v_yshim_current=self.p.v_yshim_current_gm,
                           v_xshim_current=self.p.v_xshim_current_gm)
         self.gm(self.p.t_gm * s)
-
-        
         self.gm_ramp(self.p.t_gmramp)
 
         # self.release()
@@ -64,6 +71,7 @@ class tweezer_light_shift(EnvExperiment, Base):
                           v_xshim_current=self.p.v_xshim_current_magtrap)
 
         # magtrap start
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.inner_coil.on()
 
         # ramp up lightsheet over magtrap
@@ -72,48 +80,35 @@ class tweezer_light_shift(EnvExperiment, Base):
         for i in self.p.magtrap_ramp_list:
             self.inner_coil.set_current(i_supply=i)
             delay(self.p.dt_magtrap_ramp)
-        
-        self.outer_coil.set_current(i_supply=self.p.i_feshbach_field_rampup_start)
-        self.outer_coil.set_voltage(v_supply=70.)
 
         delay(self.p.t_magtrap)
 
+        for i in self.p.magtrap_rampdown_list:
+            self.inner_coil.set_current(i_supply=i)
+            delay(self.p.dt_magtrap_rampdown)
+
         self.inner_coil.off()
-        # delay(self.p.t_lightsheet_hold)
+        
         self.outer_coil.on()
+        delay(1.e-3)
+        self.outer_coil.set_voltage(v_supply=70.)
 
         for i in self.p.feshbach_field_rampup_list:
             self.outer_coil.set_current(i_supply=i)
             delay(self.p.dt_feshbach_field_rampup)
         delay(20.e-3)
+
         self.lightsheet.ramp_down(t=self.p.t_lightsheet_rampdown)
-        
-        for i in self.p.feshbach_field_ramp_list:
-            self.outer_coil.set_current(i_supply=i)
-            delay(self.p.dt_feshbach_field_ramp)
-        delay(20.e-3)
-        
-        # delay(10.e-3)
-        self.tweezer.vva_dac.set(v=0.)
-        self.tweezer.on()
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
 
-        self.lightsheet.ramp_down2(t=self.p.t_lightsheet_rampdown2)
-
-        self.ttl.pd_scope_trig.on()
         self.outer_coil.off()
-        delay(self.p.t_feshbach_field_decay)
         self.ttl.pd_scope_trig.off()
+        delay(self.p.t_feshbach_field_decay)
 
-        if not self.p.tweezer_on_during_imaging_bool:
-            self.tweezer.off()
         self.lightsheet.off()
     
         delay(self.p.t_tof)
+        # self.flash_repump()
         self.abs_image()
-
-        if self.p.tweezer_on_during_imaging_bool:
-            self.tweezer.off()
 
     @kernel
     def run(self):

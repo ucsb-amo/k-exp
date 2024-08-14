@@ -12,7 +12,7 @@ T32 = 1<<32
 
 class tweezer_paint(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.p.imaging_state = 1.
@@ -121,7 +121,7 @@ class tweezer_paint(EnvExperiment, Base):
         # self.p.t_lightsheet_rampup = 500.e-3
         # self.xvar('t_lightsheet_rampup',np.linspace(0.05,0.5,10))
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

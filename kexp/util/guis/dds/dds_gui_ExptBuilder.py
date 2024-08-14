@@ -17,7 +17,7 @@ class DDSGUIExptBuilder():
 
     def run_expt(self):
         expt_path = self.__temp_exp_path__
-        run_expt_command = r"%kpy% & artiq_run " + expt_path
+        run_expt_command = r"%kpy% & ar " + expt_path
         result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
         print(result.returncode, result.stdout, result.stderr)
         os.remove(self.__temp_exp_path__)
