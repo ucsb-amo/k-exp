@@ -9,7 +9,7 @@ import numpy as np
 
 class test(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.xvar('dummy',[1]*2)
@@ -22,7 +22,7 @@ class test(EnvExperiment, Base):
         self.camera_params.t_light_only_image_delay = 0.2
         self.camera_params.t_camera_trigger = 100.e-9
 
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def scan_kernel(self):

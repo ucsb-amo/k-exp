@@ -9,7 +9,7 @@ import numpy as np
 
 class test(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.xvar('dummy',[1]*10)
@@ -24,7 +24,7 @@ class test(EnvExperiment, Base):
 
         # self.xvar('t_imaging_pulse',np.linspace(1.,25.,10)*1.e-6)
 
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def scan_kernel(self):
