@@ -3,7 +3,7 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class tof_scan(EnvExperiment, Base):
+class low_field_tweezer_evap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)

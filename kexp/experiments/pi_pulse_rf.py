@@ -3,7 +3,7 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class rf_scan(EnvExperiment, Base):
+class pi_pulse_rf(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')

@@ -5,7 +5,7 @@ import numpy as np
 
 from kexp.control import objective_stages
 
-class stage_scan(EnvExperiment, Base):
+class scan_stages(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)

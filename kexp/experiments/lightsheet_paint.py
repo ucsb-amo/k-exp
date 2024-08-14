@@ -9,7 +9,7 @@ from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shutt
 
 T32 = 1<<32
 
-class tof_scan(EnvExperiment, Base):
+class lightsheet_paint(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)

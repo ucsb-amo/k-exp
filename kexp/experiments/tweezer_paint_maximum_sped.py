@@ -10,7 +10,7 @@ from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 
 T32 = 1<<32
 
-class tweezer_paint(EnvExperiment, Base):
+class tweezer_paint_maximum_sped(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)

@@ -3,7 +3,7 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class thermal_lensing(EnvExperiment, Base):
+class reveal_thermal_lensing(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='z_basler',save_data=True)

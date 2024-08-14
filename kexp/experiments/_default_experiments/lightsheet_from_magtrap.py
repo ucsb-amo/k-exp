@@ -4,7 +4,7 @@ from kexp import Base
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 
-class rf_scan(EnvExperiment, Base):
+class lightsheet_from_magtrap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)

@@ -4,7 +4,7 @@ from kexp import Base
 import numpy as np
 from kexp.calibrations import high_field_imaging_detuning
 
-class tof_scan(EnvExperiment, Base):
+class forced_evap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
