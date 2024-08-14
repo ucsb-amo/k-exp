@@ -7,7 +7,7 @@ from artiq.language.core import now_mu
 
 class rf_scan(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
         self.p.imaging_state = 1.
@@ -32,7 +32,7 @@ class rf_scan(EnvExperiment, Base):
         # self.camera_params.exposure_time = 5.e-6
         # self.camera_params.em_gain = 290.
 
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
