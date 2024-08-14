@@ -4,7 +4,7 @@ import os
 
 import numpy as np
 
-class measure_beam_powers(EnvExperiment, Base):
+class measure_beam_powers_low_power(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self, setup_camera = False)
