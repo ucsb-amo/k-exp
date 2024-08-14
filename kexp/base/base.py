@@ -37,12 +37,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.ds = DataSaver()
 
-    def prepare(self):
-        self.finish_build()
-
-    def finish_build(self,N_repeats=[],shuffle=True):
+    def finish_prepare(self,N_repeats=[],shuffle=True):
         """
-        To be called at the end of build. 
+        To be called at the end of prepare. 
         
         Automatically adds repeats either if specified in N_repeats argument or
         if previously specified in self.params.N_repeats. 
