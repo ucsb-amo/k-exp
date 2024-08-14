@@ -7,7 +7,7 @@ from artiq.coredevice.mirny import Mirny
 
 class tof(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')
         
         self.mirny = ADF5356
@@ -57,7 +57,7 @@ class tof(EnvExperiment, Base):
 
         # self.p.amp_imaging_abs = 0.5
 
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def scan_kernel(self):

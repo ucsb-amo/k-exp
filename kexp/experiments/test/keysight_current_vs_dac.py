@@ -9,7 +9,7 @@ import time
 
 class tof(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,save_data=False,setup_camera=False,camera_select='xy_basler')
 
         self.sampler = self.get_device("sampler0")
@@ -25,7 +25,7 @@ class tof(EnvExperiment, Base):
         self.results = np.zeros(self.N,dtype=float)
         self.idx = 0
         
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

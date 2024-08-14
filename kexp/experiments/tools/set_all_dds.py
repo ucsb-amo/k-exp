@@ -2,7 +2,7 @@ from artiq.experiment import *
 from kexp import Base
 
 class dds_set(EnvExperiment, Base):
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False)
 
     @kernel

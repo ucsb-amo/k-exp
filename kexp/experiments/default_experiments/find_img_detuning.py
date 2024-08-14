@@ -5,7 +5,7 @@ import numpy as np
 
 class img_detuning_calibration(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
@@ -13,7 +13,7 @@ class img_detuning_calibration(EnvExperiment, Base):
         self.p.t_tof = 10.e-3
         self.p.N_repeats = 3
         self.p.t_mot_load = .05
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

@@ -10,7 +10,7 @@ T32 = 1<<32
 
 class tof_scan(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False,camera_select='andor',save_data=False)
 
         # self.xvar('freq_tweezer_modulation',np.linspace(100.e3,1000.e3,30))
@@ -26,7 +26,7 @@ class tof_scan(EnvExperiment, Base):
         self.sh_relay = self.get_device("shuttler0_relay")
         self.sh_relay: Relay
 
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

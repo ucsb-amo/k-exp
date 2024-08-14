@@ -9,14 +9,14 @@ import numpy as np
 
 class test(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False)
         self.params.frequency_mirny_carrier = 500.e6
         self.params.t_rf_state_xfer_sweep = 4.
         self.params.dt_rf_state_xfer_sweep = 0.05
         self.p.frequency_rf_state_xfer_sweep_start = 450.e6
         self.p.frequency_rf_state_xfer_sweep_end = 470.e6
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def run(self):

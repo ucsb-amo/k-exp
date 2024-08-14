@@ -9,7 +9,7 @@ from kexp.util.artiq.async_print import aprint
 
 class samp(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,save_data=False,setup_camera=False)
 
         self.sampl = self.get_device('sampler0')
@@ -18,7 +18,7 @@ class samp(EnvExperiment, Base):
 
         self.samples = np.zeros(8,dtype=float)
 
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def run(self):

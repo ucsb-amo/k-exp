@@ -5,7 +5,7 @@ import numpy as np
 
 class tweezer_evap(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.3,3.5,20))
@@ -19,7 +19,7 @@ class tweezer_evap(EnvExperiment, Base):
 
         self.p.t_lightsheet_rampup = 200.e-3
 
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

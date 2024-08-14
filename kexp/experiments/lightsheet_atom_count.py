@@ -5,7 +5,7 @@ import numpy as np
 
 class atom_count(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
@@ -18,7 +18,7 @@ class atom_count(EnvExperiment, Base):
 
         self.p.N_repeats = 2
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

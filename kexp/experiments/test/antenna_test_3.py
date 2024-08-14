@@ -7,7 +7,7 @@ import numpy as np
 
 class tof(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False,camera_select='xy_basler',save_data=False)
 
         self.p.frequency_rf_state_xfer_sweep_center = 400.e6
@@ -15,7 +15,7 @@ class tof(EnvExperiment, Base):
         self.p.t_rf_state_xfer_sweep = 5.
         self.p.n_rf_state_xfer_sweep_steps = 1000
         
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def scan_kernel(self):

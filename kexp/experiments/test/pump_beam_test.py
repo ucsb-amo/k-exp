@@ -5,10 +5,10 @@ import numpy as np
 
 class pumping_flash_calibration(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False,camera_select='xy_basler',save_data=False)
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

@@ -5,7 +5,7 @@ import numpy as np
 
 class tweezer_evap(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 1.
@@ -36,7 +36,7 @@ class tweezer_evap(EnvExperiment, Base):
         # self.xvar('amp_imaging',np.linspace(.2,.5,20))
         self.p.amp_imaging = .3
 
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

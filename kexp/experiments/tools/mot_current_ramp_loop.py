@@ -5,7 +5,7 @@ import numpy as np
 import msvcrt
 
 class MOTCurrentRamp(EnvExperiment,Base):
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False)
         self.core_dma = self.get_device("core_dma")
         self.ch = self.dac_ch_3Dmot_current_control

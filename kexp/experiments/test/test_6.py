@@ -2,7 +2,7 @@ from artiq.experiment import *
 
 class test(EnvExperiment):
 
-    def build(self):
+    def prepare(self):
         self.core = self.get_device("core")
         self.dac = self.get_device("zotino0")
 

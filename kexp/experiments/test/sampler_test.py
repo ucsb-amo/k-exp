@@ -8,7 +8,7 @@ from artiq.coredevice.zotino import Zotino
 
 class samp(EnvExperiment):
 
-    def build(self):
+    def prepare(self):
         # Base.__init__(self,save_data=False,
         #               setup_camera=False,
         #               camera_select='xy_basler')
@@ -21,7 +21,7 @@ class samp(EnvExperiment):
         self.sampler = self.get_device("sampler0")
         self.sampler: Sampler
         self.data = np.zeros(8)
-        # self.finish_build(shuffle=False)
+        # self.finish_prepare(shuffle=False)
 
     @kernel
     def run(self):

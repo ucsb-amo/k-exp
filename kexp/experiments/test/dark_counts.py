@@ -12,10 +12,10 @@ import numpy as np
 
 class test(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self, setup_camera=True, camera_select="andor")
         self.xvar('dummy',[0.]*5)
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

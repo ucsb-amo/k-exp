@@ -9,7 +9,7 @@ import numpy as np
 
 class test(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False,save_data=False)
 
         # self.p.v_pd_tweezer_1064_ramp_start = 
@@ -37,7 +37,7 @@ class test(EnvExperiment, Base):
         self.p.v_pd_tweezer_1064_ramp_start = 0.
         self.p.v_pd_tweezer_1064_ramp_end = 4.
    
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

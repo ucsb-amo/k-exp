@@ -5,7 +5,7 @@ import numpy as np
 
 class rf_scan(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.camera_params.amp_imaging = 0.5
@@ -27,7 +27,7 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_tof = 1.e-6
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

@@ -12,7 +12,7 @@ import numpy as np
 
 class test(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False)
 
         self.xvar('dummy',[1]*2)
@@ -26,7 +26,7 @@ class test(EnvExperiment, Base):
         self.f_list3 = np.linspace(73.,77.,5)*1.e6
         self.amp_list0 = np.linspace(.0,.0,5)
 
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

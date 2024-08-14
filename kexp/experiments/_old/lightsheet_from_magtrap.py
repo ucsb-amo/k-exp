@@ -5,7 +5,7 @@ import numpy as np
 
 class rf_scan(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
@@ -58,7 +58,7 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_bias_off_wait = 2.e-3
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

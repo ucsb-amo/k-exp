@@ -4,9 +4,9 @@ from kexp.base.base import Base
 import numpy as np
 
 class TweezerOn(EnvExperiment, Base):
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False)
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def scan_kernel(self):

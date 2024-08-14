@@ -8,7 +8,7 @@ import numpy as np
 
 class scan_optical_pumping(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         # Base.__init__(self,setup_camera=True,andor_imaging=False,absorption_image=False)
         Base.__init__(self)
 
@@ -46,7 +46,7 @@ class scan_optical_pumping(EnvExperiment, Base):
         self.xvarnames = ['imaging_state','v_magtrap']
         # self.xvarnames = ['quantization_field_bool','t_optical_pumping','imaging_state']
 
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def run(self):

@@ -6,7 +6,7 @@ from kexp.calibrations import high_field_imaging_detuning
 
 class tof_scan(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.p.imaging_state = 1.
@@ -67,7 +67,7 @@ class tof_scan(EnvExperiment, Base):
 
         # self.p.N_repeats = 2
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

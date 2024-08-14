@@ -6,7 +6,7 @@ import numpy as np
 
 class mot_observe(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self, setup_camera = False)
 
     @kernel

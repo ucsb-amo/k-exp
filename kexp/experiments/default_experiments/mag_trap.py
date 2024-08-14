@@ -10,7 +10,7 @@ T32 = 1<<32
 
 class mag_trap(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         # self.xvar('i_magtrap_init',np.linspace(20.,40.,8))
@@ -28,7 +28,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.N_repeats = 10
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

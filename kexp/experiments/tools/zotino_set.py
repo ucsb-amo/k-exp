@@ -4,7 +4,7 @@ from kexp.base.base import Base
 import numpy as np
 
 class ZotinoSet(EnvExperiment, Base):
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False)
 
     @kernel

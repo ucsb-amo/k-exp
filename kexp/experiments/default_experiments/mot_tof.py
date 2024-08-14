@@ -5,7 +5,7 @@ import numpy as np
 
 class tof(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
@@ -14,7 +14,7 @@ class tof(EnvExperiment, Base):
 
         self.p.t_mot_load = .5
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

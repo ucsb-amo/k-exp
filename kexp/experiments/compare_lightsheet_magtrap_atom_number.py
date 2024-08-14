@@ -5,7 +5,7 @@ import numpy as np
 
 class count_atoms(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.camera_params.amp_imaging = .5
@@ -20,7 +20,7 @@ class count_atoms(EnvExperiment, Base):
 
         self.p.N_repeats = [10]
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

@@ -5,7 +5,7 @@ import numpy as np
 
 class pumping_flash_calibration(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         # self.xvar('t_tof',np.linspace(2.,10.,5)*1.e-3)
@@ -32,7 +32,7 @@ class pumping_flash_calibration(EnvExperiment, Base):
 
         self.p.N_repeats = [20]
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def pump(self):

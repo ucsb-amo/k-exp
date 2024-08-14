@@ -12,14 +12,14 @@ import numpy as np
 
 class test(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False)
 
         # self.xvar('dummy',[1]*30)
         # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(0.98,0.1))
         self.p.v_pd_tweezer_1064_rampdown2_end = 0.098
 
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

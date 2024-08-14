@@ -5,7 +5,7 @@ from artiq.coredevice.zotino import Zotino
 
 class Sampler_Single_Sample(EnvExperiment):
     """Sampler Single Sample"""
-    def build(self): #this code runs on the host device
+    def prepare(self): #this code runs on the host device
 
         self.setattr_device("core")                 #saves core device drivers as attributes
         self.setattr_device("sampler0")             #saves sampler device drivers as attributes

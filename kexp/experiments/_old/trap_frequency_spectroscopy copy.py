@@ -6,7 +6,7 @@ from artiq.language.core import now_mu
 
 class trap_frequency_spectroscopy(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 1.
@@ -32,7 +32,7 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         import vxi11
         self.awg = vxi11.Instrument("192.168.1.91")
         
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     def set_awg_fm_frequency(self,freq_fm,freq_fm_mod_depth=1.e6):
         # self.awg.write(f"C1:MDWV CARR,DEVI,{freq_fm_mod_depth:1.0f}")

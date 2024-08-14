@@ -8,7 +8,7 @@ import numpy as np
 
 class image_at_bias_field(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self)
 
         self.run_info._run_description = "mot tof"
@@ -43,7 +43,7 @@ class image_at_bias_field(EnvExperiment, Base):
 
         self.xvarnames = ['img_detuning','xvar_v_zshim_current_op']
 
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def run(self):

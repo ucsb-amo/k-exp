@@ -9,7 +9,7 @@ import numpy as np
 
 class test(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=False)
 
         self.mirny = ADF5356

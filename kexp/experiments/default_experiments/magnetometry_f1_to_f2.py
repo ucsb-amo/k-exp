@@ -5,7 +5,7 @@ import numpy as np
 
 class rf_scan(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 2.
@@ -30,7 +30,7 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_tof = 5.e-6
 
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def scan_kernel(self):        

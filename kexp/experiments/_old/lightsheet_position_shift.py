@@ -5,7 +5,7 @@ import numpy as np
 
 class rf_scan(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
@@ -22,7 +22,7 @@ class rf_scan(EnvExperiment, Base):
         self.p.v_pd_lightsheet_rampup_end = 2.0
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(1.5,3.25,10))
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

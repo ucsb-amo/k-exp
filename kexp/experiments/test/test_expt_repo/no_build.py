@@ -19,7 +19,7 @@ class test2(EnvExperiment,Base):
         f2 = np.linspace(78.e6,88.e6,2)
         self.params.frequency_tweezer_list = np.concatenate((f1,f2))
 
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def run(self):

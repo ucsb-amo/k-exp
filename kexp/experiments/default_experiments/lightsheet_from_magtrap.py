@@ -6,7 +6,7 @@ from kexp.util.artiq.async_print import aprint
 
 class rf_scan(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         # self.xvar('t_tof',np.linspace(20.,1000.,15)*1.e-6)
@@ -21,7 +21,7 @@ class rf_scan(EnvExperiment, Base):
         self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,1))
         # self.xvar('t_lightsheet_rampup',np.linspace(0.1,1.,8))
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

@@ -5,7 +5,7 @@ from artiq.experiment import delay, parallel, sequential, delay_mu
 import numpy as np
 
 class quarto_ramp_test(EnvExperiment):
-    def build(self):
+    def prepare(self):
         self.core = self.get_device("core")
         self.core: Core
         self.ttl = self.get_device("ttl4")

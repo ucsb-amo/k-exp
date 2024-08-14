@@ -5,7 +5,7 @@ import numpy as np
 
 class rf_scan(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')
 
         self.p.imaging_state = 1.
@@ -70,7 +70,7 @@ class rf_scan(EnvExperiment, Base):
 
         self.p.t_optical_pumping_bias_rampup = 3.e-3
 
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def scan_kernel(self):

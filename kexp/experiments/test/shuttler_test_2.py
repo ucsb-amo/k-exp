@@ -12,7 +12,7 @@ T32 = 1 << 32
 
 class test(EnvExperiment):
 
-    def build(self):
+    def prepare(self):
 
         ch = 0
 

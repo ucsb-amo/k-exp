@@ -7,7 +7,7 @@ import numpy as np
 
 class tof(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')
         
         self.mirny = ADF5356
@@ -23,7 +23,7 @@ class tof(EnvExperiment, Base):
         self.p.N_mirny_ramp = 5
         self.p.dt_mirny_ramp = self.p.t_mirny_ramp / self.p.N_mirny_ramp
 
-        self.finish_build(compute_new_derived=self.recompute)
+        self.finish_prepare(compute_new_derived=self.recompute)
 
     def recompute(self):
         self.p.freq_mirny_list = np.linspace(self.p.freq_mirny_ramp_start,
