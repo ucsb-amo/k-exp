@@ -13,7 +13,7 @@ T32 = 1<<32
 class tweezer_paint(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.p.imaging_state = 1.
         # self.xvar('frequency_detuned_imaging',np.arange(-630.,-500.,10)*1.e6)
@@ -94,16 +94,18 @@ class tweezer_paint(EnvExperiment, Base):
         self.p.t_feshbach_field_ramp = 15.e-3
         self.p.t_feshbach_field_ramp2 = 15.e-3
         
-        self.xvar('dummy_z',[0]*500)
+        # self.xvar('dummy_z',[0]*500)
+
+        self.xvar('frequency_tweezer_list',np.array([[70.e6],[71.e6],[72.e6],[78.e6],[79.e6],[80.e6]]))
 
         self.p.n_tweezers = 3
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
         # self.p.frequency_tweezer_spacing = 2.5e6
-        self.p.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
+        self.p.frequency_tweezer_list = [72.e6,78.e6]
         self.p.frequency_tweezer_auto_compute = False
         self.p.amp_tweezer_auto_compute = False
         # self.xvar('amp_tweezer_list')
-        self.p.amp_tweezer_list = [.33,.33,.33]
+        self.p.amp_tweezer_list = [.5]
 
         # self.xvar('amp_imaging',np.linspace(.06,.2,15))
         # self.xvar('amp_imaging',np.linspace(.04,.09,20))
@@ -165,9 +167,9 @@ class tweezer_paint(EnvExperiment, Base):
                           paint=False,keep_trap_frequency_constant=False)
 
         # # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         # # tweezer evap 1 with constant trap frequency
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
