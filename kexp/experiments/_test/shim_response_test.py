@@ -3,7 +3,7 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class pumping_flash_calibration(EnvExperiment, Base):
+class shim_response_test(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False,camera_select='xy_basler',save_data=False)

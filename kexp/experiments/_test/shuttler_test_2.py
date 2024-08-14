@@ -10,7 +10,7 @@ import numpy as np
 
 T32 = 1 << 32
 
-class test(EnvExperiment):
+class shuttler_test_2(EnvExperiment):
 
     def prepare(self):
 

@@ -7,7 +7,7 @@ from artiq.coredevice.sampler import Sampler
 import vxi11
 import time
 
-class tof(EnvExperiment, Base):
+class keysight_current_vs_dac(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,save_data=False,setup_camera=False,camera_select='xy_basler')

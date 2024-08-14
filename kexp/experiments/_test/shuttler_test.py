@@ -8,7 +8,7 @@ from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shutt
 
 T32 = 1<<32
 
-class tof_scan(EnvExperiment, Base):
+class shuttler_test(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False,camera_select='andor',save_data=False)

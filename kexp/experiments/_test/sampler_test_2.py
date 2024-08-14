@@ -7,7 +7,7 @@ from artiq.coredevice.sampler import Sampler
 
 from kexp.util.artiq.async_print import aprint
 
-class samp(EnvExperiment, Base):
+class sampler_test_2(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,save_data=False,setup_camera=False)

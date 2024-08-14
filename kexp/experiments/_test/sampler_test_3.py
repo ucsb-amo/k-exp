@@ -3,7 +3,7 @@ from artiq.coredevice.zotino import Zotino
 
 #This code takes a single sample from all 8 sampler channels simultaneously 
 
-class Sampler_Single_Sample(EnvExperiment):
+class sampler_test_3(EnvExperiment):
     """Sampler Single Sample"""
     def prepare(self): #this code runs on the host device
 

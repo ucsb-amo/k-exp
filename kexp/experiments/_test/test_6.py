@@ -1,6 +1,6 @@
 from artiq.experiment import *
 
-class test(EnvExperiment):
+class test_6(EnvExperiment):
 
     def prepare(self):
         self.core = self.get_device("core")

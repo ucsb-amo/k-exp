@@ -5,7 +5,7 @@ from artiq.coredevice.adf5356 import ADF5356
 from artiq.coredevice.mirny import Mirny
 import numpy as np
 
-class tof(EnvExperiment, Base):
+class antenna_test_2(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler')

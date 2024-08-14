@@ -6,7 +6,7 @@ import numpy as np
 from artiq.coredevice.sampler import Sampler
 from artiq.coredevice.zotino import Zotino
 
-class samp(EnvExperiment):
+class sampler_test(EnvExperiment):
 
     def prepare(self):
         # Base.__init__(self,save_data=False,

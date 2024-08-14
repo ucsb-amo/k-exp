@@ -7,7 +7,7 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-class test(EnvExperiment, Base):
+class sideband_mirny(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False)

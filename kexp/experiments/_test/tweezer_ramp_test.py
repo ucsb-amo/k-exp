@@ -10,7 +10,7 @@ RPC_DELAY = 10.e-3
 
 import numpy as np
 
-class test(EnvExperiment, Base):
+class tweezer_ramp_test(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False)
