@@ -2,7 +2,7 @@ import numpy as np
 import os
 import glob
 import h5py
-from kexp.analysis.atomdata_fixed_bec import atomdata
+from kexp.analysis.atomdata import atomdata
 from kexp.config.expt_params import ExptParams
 from kexp.util.data.run_info import RunInfo
 from kexp.config.camera_params import CameraParams
