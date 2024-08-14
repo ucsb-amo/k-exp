@@ -10,7 +10,7 @@ RPC_DELAY = 10.e-3
 
 import numpy as np
 
-class test2(EnvExperiment,Base):
+class no_build(EnvExperiment,Base):
 
     def prepare(self):
         Base.setup(self,setup_camera=False,save_data=False)

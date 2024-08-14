@@ -7,7 +7,7 @@ from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
-class test(EnvExperiment, Base):
+class andor_test_2(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
