@@ -3,6 +3,7 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 from kexp.calibrations import high_field_imaging_detuning
+from artiq.language.core import now_mu
 
 from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
 
@@ -94,16 +95,16 @@ class tweezer_paint(EnvExperiment, Base):
         self.p.t_feshbach_field_ramp = 15.e-3
         self.p.t_feshbach_field_ramp2 = 15.e-3
         
-        # self.xvar('dummy_z',[0]*500)
+        # self.xvar('dummy_z',[0]*10)
 
-        self.xvar('frequency_tweezer_list',np.array([[70.e6],[71.e6],[72.e6],[78.e6],[79.e6],[80.e6]]))
+        self.xvar('f_list',np.concatenate([np.linspace(69.e6,72.e6,3),np.linspace(78.e6,81.e6,3)]))
 
-        self.p.n_tweezers = 3
+        self.p.n_tweezers = 2
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
         # self.p.frequency_tweezer_spacing = 2.5e6
-        self.p.frequency_tweezer_list = [72.e6,78.e6]
+        self.p.frequency_tweezer_list = [72.e6]
         self.p.frequency_tweezer_auto_compute = False
-        self.p.amp_tweezer_auto_compute = False
+        self.p.amp_tweezer_auto_compute = True
         # self.xvar('amp_tweezer_list')
         self.p.amp_tweezer_list = [.5]
 
@@ -126,6 +127,10 @@ class tweezer_paint(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
+        self.core.wait_until_mu(now_mu())
+        self.tweezer.set_static_tweezers(freq_list=self.p.f_list,amp_list=[.5])
+        delay(100.e-3)
+        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         # self.set_imaging_detuning(amp=self.p.amp_imaging)
         self.set_high_field_imaging(i_outer = self.p.i_evap2_current)
 
