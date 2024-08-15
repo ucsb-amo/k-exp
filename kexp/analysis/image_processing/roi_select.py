@@ -60,14 +60,22 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]]
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]]
 
-    cropOD = "OD[" + ", ".join(":" for _ in range(Nvars)) + ", " + \
-                f"{roiy[0]}:{roiy[1]}, {roix[0]}:{roix[1]}" + "]"
+    # cropOD = "OD[" + ", ".join(":" for _ in range(Nvars)) + ", " + \
+    #             f"{roiy[0]}:{roiy[1]}, {roix[0]}:{roix[1]}" + "]"
 
-    # if Nvars == 1:
-    #     cropOD = OD[:, roiy[0]:roiy[1], roix[0]:roix[1] ]
-    # if Nvars == 2:
-    #     cropOD = OD[:, :, roiy[0]:roiy[1], roix[0]:roix[1] ]
-    # if Nvars == 3:
-    #     cropOD = OD[:, :, :, roiy[0]:roiy[1], roix[0]:roix[1] ]
+    if Nvars == 1:
+        cropOD = OD[:, roiy[0]:roiy[1], roix[0]:roix[1] ]
+    if Nvars == 2:
+        cropOD = OD[:, :, roiy[0]:roiy[1], roix[0]:roix[1] ]
+    if Nvars == 3:
+        cropOD = OD[:, :, :, roiy[0]:roiy[1], roix[0]:roix[1] ]
+    if Nvars == 4:
+        cropOD = OD[:, :, :, :, roiy[0]:roiy[1], roix[0]:roix[1] ]
+    if Nvars == 5:
+        cropOD = OD[:, :, :, :, :, roiy[0]:roiy[1], roix[0]:roix[1] ]
+    if Nvars == 6:
+        cropOD = OD[:, :, :, :, :, :, roiy[0]:roiy[1], roix[0]:roix[1] ]
+
+    #cropOD = np.take(OD, roiy[0]:roiy[1], roix[0]:roix[1] )
 
     return cropOD
