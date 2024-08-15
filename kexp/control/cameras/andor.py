@@ -27,7 +27,11 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.set_read_mode("image")
         self.set_cooler_mode(mode=1)
         self.set_amp_mode(preamp=preamp)
+        self.activate_cameralink(0)
         # self.set_fast_trigger_mode(mode=1)
+
+    def activate_cameralink(self,state=1):
+        lib.SetCameraLinkMode(state)
 
     def set_emccd_advanced(self):
         lib.SetEMAdvanced(1)
