@@ -23,8 +23,8 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 14.7e6
-        self.frequency_detuned_imaging_F1 = 458.e6
+        self.frequency_detuned_imaging = 14.0e6
+        self.frequency_detuned_imaging_F1 = 400.e6
         self.imaging_state = 2.
         
         self.t_repump_flash_imaging = 10.e-6
@@ -177,13 +177,13 @@ class ExptParams():
         #ODT
         # self.amp_lightsheet = 0.6
         # self.frequency_ao_lightsheet = 80.e6
-        self.v_pd_lightsheet_pd_minimum = 0.035
+        self.v_pd_lightsheet_pd_minimum = 0.046
         self.v_lightsheet_paint_amp_max = 6.0
 
-        self.v_pd_lightsheet = 8.8
+        self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.99
-        self.v_pd_lightsheet_rampdown_end = 4.84
+        self.v_pd_lightsheet_rampup_end = 8.58
+        self.v_pd_lightsheet_rampdown_end = 4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -203,16 +203,20 @@ class ExptParams():
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
         # self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
 
-        self.n_tweezers = 2
+        self.n_tweezers = 3
 
         self.frequency_aod_center = 75.e6
 
         #frequency spacing between each tweezer in the array
         #tweezers uniformly distributed around center frequency of AOD
-        self.frequency_tweezer_spacing = .7e6*2
+        # self.frequency_tweezer_spacing = .7e6*2
+        self.frequency_tweezer_spacing = 6.e6*2
+        self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
 
-        self.amp_tweezer_auto_compute = False
-        self.amp_tweezer_list = [.2,.215]
+        self.frequency_tweezer_auto_compute = False
+        self.amp_tweezer_auto_compute = True
+        # self.amp_tweezer_list = [.2,.215]
+        # self.amp_tweezer_list = [.4,.4]
 
         self.v_tweezer_paint_amp_max = 6.
 
@@ -296,13 +300,18 @@ class ExptParams():
         self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
 
     def compute_tweezer_1064_freqs(self):
-        min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
-        max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
-        self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
+        if self.frequency_tweezer_auto_compute:
+            min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
+            max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
+            self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
+        else:
+            self.frequency_tweezer_list = self.frequency_tweezer_list
 
     def compute_tweezer_1064_amps(self):
+        if not self.frequency_tweezer_auto_compute:
+            self.n_tweezers = len(self.frequency_tweezer_list)
         if self.amp_tweezer_auto_compute:
-            self.amp_tweezer_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers, self.n_tweezers)
+            self.amp_tweezer_list = np.ones(self.n_tweezers) / self.n_tweezers
         else:
             self.amp_tweezer_list = self.amp_tweezer_list
 
@@ -312,7 +321,11 @@ class ExptParams():
     #         if tweezer_idx == 0:
     #             self.phase_tweezer_array[0] =  360
     #         else:
-    #             self.phase_tweezer_array[tweezer_idx] = 360 - 2*np.pi*
+    #             phase_ij = 0
+    #             for j in range(1,tweezer_idx):
+    #                 phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*(1/len(self.frequency_tweezer_list))
+    #             phase_i = (phase_ij % 2*np.pi) * 360
+    #             self.phase_tweezer_array[tweezer_idx] = phase_i
 
     def compute_derived(self):
         '''loop through methods (except built in ones) and compute all derived quantities'''

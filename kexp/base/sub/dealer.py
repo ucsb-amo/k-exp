@@ -38,7 +38,9 @@ class Dealer():
             self.params.N_repeats = [self.params.N_repeats] * Nvars
         elif isinstance(self.params.N_repeats,list):
             if len(self.params.N_repeats) == 1:
-                self.params.N_repeats = self.params.N_repeats * Nvars
+                N_repeat = self.params.N_repeats[0]
+                self.params.N_repeats = np.ones(Nvars)
+                self.params.N_repeats[0] = N_repeat
             elif len(self.params.N_repeats) != Nvars:
                 raise ValueError(error_msg)
         elif isinstance(self.params.N_repeats,np.ndarray):

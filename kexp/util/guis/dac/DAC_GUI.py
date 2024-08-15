@@ -198,10 +198,10 @@ class DACControlGrid(QWidget):
         self.button.clicked.connect(self.handle_button_click)
         self.layout.addWidget(self.button)
         
-        result = QMessageBox.warning(self, "Warning", "Set DAC output to defaults?",
-                                      QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.No)
-        if result == QMessageBox.StandardButton.Ok:
-            self.handle_button_click()
+        # result = QMessageBox.warning(self, "Warning", "Set DAC output to defaults?",
+        #                               QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.No)
+        # if result == QMessageBox.StandardButton.Ok:
+        #     self.handle_button_click()
 
         # Create the "Set All to Zero" button
         zero_button = QPushButton("Set All to Zero", parent=self)

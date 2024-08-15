@@ -88,7 +88,7 @@ class Devices():
         
         self.tweezer = tweezer(ao1_dds=self.dds.tweezer_pid_1,
                                pid1_dac=self.dac.v_pd_tweezer_pid1,
-                               ao2_dds=self.dds.tweezer_pid_2,
+                            #    ao2_dds=self.dds.tweezer_pid_2,
                                pid2_dac=self.dac.v_pd_tweezer_pid2,
                                sw_ttl=self.ttl.aod_rf_sw,
                                awg_trg_ttl = self.ttl.awg_trigger,

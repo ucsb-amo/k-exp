@@ -107,5 +107,6 @@ andor_params = AndorParams(camera_select='andor',
                            amp_absorption=0.14)
 xy_basler_params = BaslerParams(serial_number='40316451',camera_select='xy_basler',
                                 amp_absorption=0.248)
+x_basler_params = BaslerParams(serial_number='40320384',camera_select='x_basler')
 z_basler_params = BaslerParams(serial_number='40416468',camera_select='z_basler',
                                amp_absorption=0.5,amp_fluorescence=0.5)

@@ -1,4 +1,3 @@
 call %kpy%
-B:
-cd %data%
-artiq_master --experiment-subdir %code%/k-exp/kexp/experiments --device-db %db% 
+cd %code%\\k-exp\\kexp\\experiments
+artiq_master --device-db %db%  --repository %code%\\k-exp\\kexp --experiment-subdir experiments

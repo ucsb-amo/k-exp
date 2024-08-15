@@ -108,10 +108,10 @@ class dds_frame():
                                     default_freq = 80.e6,
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid1.ch,
                                     default_amp = self.p.amp_tweezer_pid1)
-        self.tweezer_pid_2 = self.dds_assign(1,0, ao_order = 1,
-                                    default_freq = 80.e6,
-                                    dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
-                                    default_amp = self.p.amp_tweezer_pid2)
+        # self.tweezer_pid_2 = self.dds_assign(1,0, ao_order = 1,
+        #                             default_freq = 80.e6,
+        #                             dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
+        #                             default_amp = self.p.amp_tweezer_pid2)
 
         self.write_dds_keys()
         self.make_dds_array()

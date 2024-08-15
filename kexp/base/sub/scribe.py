@@ -2,6 +2,7 @@ from kexp.util.data import DataSaver
 import h5py, time
 import numpy as np
 import os
+from artiq.experiment import TBool, rpc
 
 CHECK_PERIOD = 0.05
 WAIT_PERIOD = 0.1
@@ -43,7 +44,7 @@ class Scribe():
                 if time.time() - t0 > timeout:
                     raise ValueError("Timed out waiting for data to be available.")        
                 
-    def wait_for_camera_ready(self,timeout=-1.):
+    def wait_for_camera_ready(self,timeout=-1.) -> TBool:
         count = 1
         t0 = time.time()
         while True:
@@ -69,6 +70,7 @@ class Scribe():
                 self.dataset.close()
                 count += 1
             time.sleep(CHECK_PERIOD)
+        return True
 
     def mark_camera_ready(self):
         while True:

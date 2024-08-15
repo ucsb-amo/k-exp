@@ -37,9 +37,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[],shuffle=True):
+    def finish_prepare(self,N_repeats=[],shuffle=True):
         """
-        To be called at the end of build. 
+        To be called at the end of prepare. 
         
         Automatically adds repeats either if specified in N_repeats argument or
         if previously specified in self.params.N_repeats. 
@@ -56,7 +56,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         a scan. This must be an RPC -- no kernel decorator.
         """
         if not self.xvarnames:
-            self.xvar("dummy",[0])
+            self.xvar("dummy",[0]*2)
         if self.xvarnames and not self.scan_xvars:
             for key in self.xvarnames:
                 self.xvar(key,vars(self.params)[key])
@@ -78,10 +78,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.data_filepath = self.ds.create_data_file(self)
 
         self.generate_assignment_kernels()
-
-        if self.setup_camera:
-            self.wait_for_camera_ready(timeout=20.)
-            print("Camera is ready.")
     
     def compute_new_derived(self):
         pass
@@ -90,10 +86,13 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     def init_kernel(self, run_id = True, init_dds =  True, init_dac = True,
                      dds_set = True, dds_off = True, beat_ref_on=True,
                      init_lightsheet = True, setup_awg = True):
+        if self.setup_camera:
+            self.wait_for_camera_ready(timeout=30.)
+            print("Camera is ready.")
         if run_id:
             print(self._ridstr) # prints run ID to terminal
-        # if setup_awg:
-        #     self.tweezer.awg_init()
+        if setup_awg:
+            self.tweezer.awg_init()
         self.core.reset() # clears RTIO
         if init_dac:
             self.dac.dac_device.init() # initializes DAC
@@ -128,9 +127,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-        # self.core.wait_until_mu(now_mu())
-        # self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
-        # self.core.break_realtime()
+        self.core.wait_until_mu(now_mu())
+        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
+        self.core.break_realtime()
 
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)

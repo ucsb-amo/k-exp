@@ -3,9 +3,9 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class rf_scan(EnvExperiment, Base):
+class magnetometry(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         # Base.__init__(self,setup_camera=True,camera_select='xy_basler')
         Base.__init__(self,setup_camera=True,camera_select='andor')
 
@@ -98,7 +98,7 @@ class rf_scan(EnvExperiment, Base):
 
         # self.p.N_repeats = [1,2]
 
-        self.finish_build()
+        self.finish_prepare()
 
     @kernel
     def scan_kernel(self):
