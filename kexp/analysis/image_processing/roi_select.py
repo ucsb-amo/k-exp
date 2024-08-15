@@ -78,4 +78,5 @@ def crop_OD(OD,crop_type='',Nvars=1):
 
     #cropOD = np.take(OD, roiy[0]:roiy[1], roix[0]:roix[1] )
 
+    #cropOD = OD["".join(":" for _ in range(Nvars)) + ", ", roiy[0]:roiy[1], roix[0]:roix[1] ]
     return cropOD
