@@ -4,10 +4,9 @@ import os
 import copy
 import h5py
 
-from kexp.util.data.server_talk import check_for_mapped_data_dir
+from kexp.util.data.server_talk import check_for_mapped_data_dir, get_run_id
 
 data_dir = os.getenv("data")
-run_id_path = os.path.join(data_dir,"run_id.py")
 
 code_dir = os.getenv("code")
 params_path = os.path.join(code_dir,"k-exp","kexp","config","expt_params.py")
@@ -147,15 +146,7 @@ class DataSaver():
         os.chdir(pwd)
 
     def _get_rid(self):
-        pwd = os.getcwd()
-        os.chdir(data_dir)
-
-        with open(run_id_path,'r') as f:
-            rid = f.read()
-
-        os.chdir(pwd)
-
-        return int(rid)
+        get_run_id()
 
 class DataVault():
     def __init__(self,atomdata_list=[],datalist_path=[]):
