@@ -653,7 +653,7 @@ class Cooling():
         if v_awg_paint_amp_lightsheet == dv:
             v_awg_paint_amp_lightsheet = self.params.v_lightsheet_paint_amp_max
         if i_magtrap_init == dv:
-            i_magtrap_init = self.params.i_mot
+            i_magtrap_init = self.params.i_magtrap_init
         if i_magtrap_ramp_end == dv:
             i_magtrap_ramp_end = self.params.i_magtrap_ramp_end
         if v_zshim_current == dv:
@@ -697,7 +697,7 @@ class Cooling():
         if t_magtrap_ramp == dv:
             t_magtrap_ramp = self.params.t_magtrap_ramp
         if i_magtrap_init == dv:
-            i_magtrap_init = self.params.i_mot
+            i_magtrap_init = self.params.i_magtrap_init
         if i_magtrap_ramp_end == dv:
             i_magtrap_ramp_end = self.params.i_magtrap_ramp_end
         if v_zshim_current == dv:
