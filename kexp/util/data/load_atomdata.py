@@ -34,13 +34,12 @@ def load_atomdata(idx=0, crop_type='', path = "", unshuffle_xvars=True,
 
     if path == "":
         latest_file = st.get_latest_data_file()
+        latest_rid = st.run_id_from_filepath(latest_file)
         if idx == 0:
             file = latest_file
         if idx <= 0:
-            latest_rid = st.run_id_from_filepath(latest_file)
             file = st.recurse_find_data_file(latest_rid+idx)
         if idx > 0:
-            latest_rid = st.run_id_from_filepath(latest_file)
             if latest_rid - idx < 10000:
                 file = st.recurse_find_data_file(idx)
             else:
@@ -51,6 +50,8 @@ def load_atomdata(idx=0, crop_type='', path = "", unshuffle_xvars=True,
         else:
             raise ValueError("The provided path is not a hdf5 file.")
         
+    rid = st.run_id_from_filepath(file)
+    print(f"run id {rid}")
     f = h5py.File(file,'r')
     
     params = ExptParams()
