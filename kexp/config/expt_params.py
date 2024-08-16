@@ -304,12 +304,15 @@ class ExptParams():
             min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
             max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
             self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
-        else:
-            self.frequency_tweezer_list = self.frequency_tweezer_list
+        # else:
+        #     self.frequency_tweezer_list = self.frequency_tweezer_list
 
     def compute_tweezer_1064_amps(self):
         if not self.frequency_tweezer_auto_compute:
-            self.n_tweezers = len(self.frequency_tweezer_list)
+            if isinstance(self.frequency_tweezer_list,float):
+                self.n_tweezers = 1
+            else:
+                self.n_tweezers = len(self.frequency_tweezer_list)
         if self.amp_tweezer_auto_compute:
             self.amp_tweezer_list = np.ones(self.n_tweezers) / self.n_tweezers
         else:
