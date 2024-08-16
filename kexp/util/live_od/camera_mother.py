@@ -10,7 +10,7 @@ from kexp.util.data.load_atomdata import unpack_group
 
 from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.util.live_od.camera_nanny import CameraNanny
-from kexp.util.data.server_talk import get_latest_data_file
+from kexp.util.data.server_talk import get_latest_data_file, run_id_from_filepath
 
 from kexp.base.sub.scribe import CHECK_PERIOD, Scribe
 
@@ -103,8 +103,7 @@ class CameraMother(QThread):
     
     def check_if_file_new(self,latest_filepath):
         if latest_filepath != self.latest_file:
-            data_dir_depth_idx = len(DATA_DIR.split('\\')[0:-1]) - 2
-            rid = int(latest_filepath.split("_")[data_dir_depth_idx].split("\\")[-1])
+            rid = run_id_from_filepath(latest_filepath)
             if rid == self.read_run_id():
                 new_file_bool = True
                 self.latest_file = latest_filepath

@@ -32,7 +32,7 @@ class Scribe():
             except Exception as e:
                 if "Unable to" in str(e) or "Invalid file name" in str(e) or "cannot access" in str(e):
                     # file is busy -- wait for available
-                    print(e)
+                    # print(e)
                     count += 1
                     time.sleep(check_period)
                     if count == N_NOTIFY:

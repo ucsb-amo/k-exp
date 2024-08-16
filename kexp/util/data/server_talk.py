@@ -83,3 +83,13 @@ def get_run_id():
         rid = f.read()
     os.chdir(pwd)
     return int(rid)
+
+def update_run_id(run_info):
+    pwd = os.getcwd()
+    os.chdir(DATA_DIR)
+
+    line = f"{run_info.run_id + 1}"
+    with open(RUN_ID_PATH,'w') as f:
+        f.write(line)
+
+    os.chdir(pwd)
