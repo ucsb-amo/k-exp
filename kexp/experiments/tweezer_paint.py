@@ -14,7 +14,7 @@ T32 = 1<<32
 class tweezer_paint(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
         # self.p.imaging_state = 1.
         # self.xvar('frequency_detuned_imaging',np.arange(-630.,-500.,10)*1.e6)
@@ -29,7 +29,7 @@ class tweezer_paint(EnvExperiment, Base):
 
         self.p.t_mot_load = .75
 
-        # self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,1))
+        # self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,10))
 
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.5,9.99,6))
         self.p.v_pd_lightsheet_rampup_end = 9.2
@@ -41,7 +41,7 @@ class tweezer_paint(EnvExperiment, Base):
         self.p.v_pd_lightsheet_rampdown_end = 3.
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.,6.,10))
-        self.p.v_tweezer_paint_amp_max = -7.
+        self.p.v_tweezer_paint_amp_max = -2.
 
         # self.xvar('i_evap2_current',np.linspace(191.,194.,8))
         self.p.i_evap2_current = 191.9
@@ -171,7 +171,7 @@ class tweezer_paint(EnvExperiment, Base):
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
                           v_start=0.,
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
-                          paint=False,keep_trap_frequency_constant=False)
+                          paint=True,keep_trap_frequency_constant=False)
 
         # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
