@@ -19,8 +19,11 @@ def plot_mixOD(ad:atomdata,
 
     # Calculate the dimensions of the stitched image
     n, px, py = od.shape
-    total_width = n * px
-    max_height = py
+    n_repeats = int(ad.params.N_repeats)
+    n_shots = int(n / n_repeats)
+
+    total_width = n_shots * px
+    max_height = n_repeats * py
 
     # Create a figure and axis for plotting
     if figsize:
@@ -30,13 +33,21 @@ def plot_mixOD(ad:atomdata,
 
     # Initialize x position for each image
     x_pos = 0
+    y_pos = 0
+
+    # print(n_shots)
+    # print(n_repeats)
 
     # Plot each image and label with xvar value
-    for i in range(n):
-        img = od[i]
-        ax.imshow(img, extent=[x_pos, x_pos + px, 0, py],
-                  vmin=0.,vmax=max_od, origin='lower')
-        ax.axvline()
+    for i in range(n_shots):
+        for j in range(n_repeats):
+            idx = j + i*n_repeats
+            img = od[idx]
+            ax.imshow(img, extent=[x_pos, x_pos+px, y_pos, y_pos+py],
+                    vmin=0.,vmax=max_od, origin='lower')
+            ax.axvline()
+            y_pos += py
+        y_pos = 0
         x_pos += px
 
     plt.gca().set_aspect(aspect)
@@ -47,6 +58,7 @@ def plot_mixOD(ad:atomdata,
 
     # Set the x-axis limits to show all images
     ax.set_xlim(0, total_width)
+    ax.set_ylim(0, max_height)
 
     # Remove y-axis ticks and labels
     ax.yaxis.set_visible(False)
@@ -55,7 +67,8 @@ def plot_mixOD(ad:atomdata,
     # Set ticks at the center of each sub-image and rotate them vertically
     tick_positions = np.arange(px/2, total_width, px)
     ax.set_xticks(tick_positions)
-    xvarticks = [f"{val*xvarmult:{xvarformat}}" for val in xvars[0]]
+    xvarticks = np.array([f"{val*xvarmult:{xvarformat}}" for val in xvars[0]])
+    xvarticks = xvarticks[::n_repeats]
     ax.set_xticklabels(xvarticks, rotation='vertical', ha='center')
     plt.minorticks_off()
 
@@ -86,10 +99,10 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
 
     if figsize:
         fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
-                               figsize=figsize,layout='constrained')
+                               figsize=figsize,layout='tight')
     else:
         fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
-                           layout='constrained')
+                           layout='tight')
 
     Nr = ad.params.N_repeats[0]
     Ns = int(len(ad.xvars[0]) / Nr)
@@ -116,9 +129,8 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
             else:
                 ax[i].set_yticks([])
     else:
-        for j in range(Nr):
-            for i in range(Ns):
-
+        for i in range(Ns):
+            for j in range(Nr):
                 idx = j + i*Nr
 
                 yfit = fits[idx].y_fitdata
@@ -143,10 +155,8 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
     fig.supxlabel(ad.xvarnames[0])
 
-    fig.set_figheight(3)
-    fig.set_figwidth(18)
-
-    fig.tight_layout()
+    fig.set_figheight(figsize[0])
+    fig.set_figwidth(figsize[1])
 
     return fig, ax
 
