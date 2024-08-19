@@ -3,7 +3,7 @@ from artiq.experiment import delay, delay_mu
 import numpy as np
 from kexp.config import ExptParams
 from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
-from kexp.util.data import DataSaver, RunInfo
+from kexp.util.data import DataSaver, RunInfo, server_talk
 from artiq.language.core import kernel_from_string, now_mu
 
 RPC_DELAY = 10.e-3
@@ -160,3 +160,4 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
                 self.write_data(expt_filepath)
             else:
                 self.remove_incomplete_data()
+        server_talk.play_random_sound()

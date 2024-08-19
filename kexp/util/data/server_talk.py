@@ -3,12 +3,15 @@ import subprocess
 from datetime import datetime, timedelta
 import glob
 import numpy as np
+import random
+import winsound
 
 DATA_DIR = os.getenv("data")
 DATA_DIR_FILE_DEPTH_IDX = len(DATA_DIR.split('\\')[0:-1]) - 2
 MAP_BAT_PATH = "\"G:\\Shared drives\\Weld Lab Shared Drive\\Infrastructure\\map_network_drives_PeterRecommended.bat\""
 FIRST_DATA_FOLDER_DATE = datetime(2023,6,22)
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
+SOUNDS_DIR = os.path.join(DATA_DIR,'done_sounds')
 
 def check_for_mapped_data_dir(data_dir=DATA_DIR):
     if not os.path.exists(data_dir):
@@ -93,3 +96,8 @@ def update_run_id(run_info):
         f.write(line)
 
     os.chdir(pwd)
+
+def play_random_sound():
+    files = [f for f in os.listdir(SOUNDS_DIR) if os.path.isfile(os.path.join(SOUNDS_DIR, f))]
+    file = random.choice(files)
+    winsound.PlaySound(os.path.join(SOUNDS_DIR,file), winsound.SND_FILENAME)
