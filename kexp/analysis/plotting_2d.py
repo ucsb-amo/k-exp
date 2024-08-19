@@ -72,7 +72,8 @@ def mixOD_grid(ad,
                 xvar0mult=1.,
                 xvar1mult=1.,
                 max_od=0.,
-                figsize=[]):
+                figsize=[],
+                aspect='auto'):
 
     # Assuming you have already loaded your 'ad' object
     if not xvar0format:
@@ -116,6 +117,8 @@ def mixOD_grid(ad,
                  rotation=90)
     plt.yticks(np.arange(0.5 * px, grid_rows * px, px),
             [f"{x*xvar0mult:{xvar0format}}" for x in xvars[0]])
+    
+    plt.gca().set_aspect(aspect)
 
     plt.show()
 

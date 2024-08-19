@@ -155,9 +155,6 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
     fig.supxlabel(ad.xvarnames[0])
 
-    fig.set_figheight(figsize[0])
-    fig.set_figwidth(figsize[1])
-
     return fig, ax
 
 def plot_fit_residuals(ad:atomdata,axis=0,
