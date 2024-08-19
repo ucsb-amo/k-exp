@@ -53,8 +53,8 @@ def recurse_find_data_file(r_id,days_ago=0):
         file_with_rid = files[files_mask]
 
         if len(file_with_rid) > 1:
-            print(file_with_rid)
-            raise ValueError(f"There are two data files with run ID {r_id:1.0f}")
+            print(f"There are two data files with run ID {r_id:1.0f}. Choosing the more recent one.")
+            file_with_rid = max(file_with_rid,key=os.path.getmtime)
         elif len(file_with_rid) == 1:
             file_with_rid = file_with_rid[0]
         

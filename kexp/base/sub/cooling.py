@@ -394,6 +394,7 @@ class Cooling():
             v_pd_d1_r = dv,
             amp_d1_r = dv,
             detune_d1 = dv,
+            t_shim_change_pretrigger = dv,
             t_magnet_off_pretrigger = dv,
             v_zshim_current=dv,
             v_yshim_current=dv,
@@ -417,6 +418,8 @@ class Cooling():
             v_pd_d1_r = self.params.v_pd_d1_r_gm
         if amp_d1_r == dv:
             amp_d1_r = self.params.amp_d1_3d_r
+        if t_shim_change_pretrigger == dv:
+            t_shim_change_pretrigger = self.params.t_shim_change_pretrigger
         if t_magnet_off_pretrigger == dv:
             t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
         if v_zshim_current == dv:
@@ -428,13 +431,14 @@ class Cooling():
         
         # ### End Defaults ###
 
+        delay(-t_magnet_off_pretrigger)
         self.set_shims(v_zshim_current=v_zshim_current,
                         v_yshim_current=v_yshim_current,
                           v_xshim_current=v_xshim_current)
+        delay(t_magnet_off_pretrigger)
        
         delay(-t_magnet_off_pretrigger)
         self.inner_coil.igbt_ttl.off()
-        self.inner_coil.set_current(self.params.i_magtrap_init)
         delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
