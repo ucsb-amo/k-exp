@@ -95,8 +95,11 @@ class ExptBuilder():
                         self.p.t_tof = 10.e-6
                         self.p.t_lightsheet_rampup = 200.e-3
                         self.p.t_lightsheet_hold = 100.e-3
-                        {assignment_lines}                        
-                        self.xvar('dummy',[0]*{N_REPEATS:1.0f})
+                                 
+                        {assignment_lines}      
+                                         
+
+
                         self.p.N_repeats = 2
 
                         self.finish_build(shuffle=True)
