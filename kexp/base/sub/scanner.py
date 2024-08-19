@@ -33,6 +33,9 @@ class Scanner():
         # self._param_keylist_int64s = []
         self._param_keylist_arrays = []
 
+    def logspace(self,start,end,n):
+        return np.logspace(np.log10(start),np.log10(end),int(n))
+
     def xvar(self,key,values):
         """Adds an xvar to the experiment.
 
