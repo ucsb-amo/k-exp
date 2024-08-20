@@ -49,7 +49,7 @@ class ExptParams():
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 332.e-3
+        self.t_lightsheet_rampup = 0.3
         self.t_lightsheet_rampdown = .7
         self.t_lightsheet_rampdown2 = .01
         self.t_lightsheet_rampdown3 = .01
@@ -69,7 +69,7 @@ class ExptParams():
         # self.t_magtrap_ramp = .367
         # self.t_magtrap_rampdown = .2
         self.t_magtrap_ramp = 75.e-3
-        self.t_magtrap = 0.
+        self.t_magtrap = 0.0
         self.t_magtrap_rampdown = 75.e-3
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 100.e-3
@@ -156,7 +156,7 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 22.
+        self.i_magtrap_init = 27.
         self.i_magtrap_ramp_end = 90.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
