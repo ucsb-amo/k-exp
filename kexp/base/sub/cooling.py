@@ -43,6 +43,18 @@ class Cooling():
         self.dds.d2_3d_r.off()
 
     @kernel
+    def pump_to_F1(self):
+        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
+                        v_yshim_current=self.p.v_yshim_current_magtrap,
+                        v_xshim_current=self.p.v_xshim_current_magtrap)
+        delay(2.e-3)
+        self.dds.optical_pumping.set_dds(set_stored=True)
+        self.dds.optical_pumping.on()
+        delay(200.e-6)
+        self.dds.optical_pumping.off()
+        self.flash_cooler()
+
+    @kernel
     def flash_cooler(self,t=dv,detune=dv,amp=dv):
         if t == dv:
             t = self.params.t_cooler_flash_imaging
@@ -618,7 +630,7 @@ class Cooling():
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
-        self.flash_cooler()
+        self.pump_to_F1()
 
         self.dds.power_down_cooling()
         
@@ -684,6 +696,8 @@ class Cooling():
         self.inner_coil.ramp(t=t_magtrap_ramp,
                             i_start=i_magtrap_init,
                             i_end=i_magtrap_ramp_end)
+        
+        delay(self.params.t_magtrap)
 
         self.inner_coil.ramp(t=t_magtrap_rampdown,
                             i_start=i_magtrap_ramp_end,
