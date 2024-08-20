@@ -18,11 +18,13 @@ class bring_magtrap_to_gm(EnvExperiment, Base):
 
         # self.xvar("i_outer_magtrap", np.linspace(0.,1.,20))
         # self.xvar("t_tof", np.linspace(10.,500,20)*1.e-6) 
-        self.xvar('v_zshim_current',np.linspace(0.1,0.6,10))
+        # self.xvar('v_zshim_current',[0.13,0.45])
+        # self.xvar('v_xshim_current',np.linspace(0.,9.,10))
+        # self.xvar('v_yshim_current',np.linspace(0.,9.,10))
 
         self.p.t_mot_load = 0.3
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 3
 
         self.p.t_tof = 5.e-3
 
