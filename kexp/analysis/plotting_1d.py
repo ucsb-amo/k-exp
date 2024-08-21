@@ -123,11 +123,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
             ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}",rotation='vertical')
 
             ax[i].set_xticks([])
-
-            if i != 0:
-                ax[i].set_yticklabels([])
-            else:
-                ax[i].set_yticks([])
+            ax[i].set_yticks([])
     else:
         for i in range(Ns):
             for j in range(Nr):
@@ -142,14 +138,9 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
                 ax[j,i].set_ylim([0,1.1*ymax])
 
                 ax[j,i].set_xticks([])
-                
-                if i != 0:
-                    ax[j,i].set_yticklabels([])
-                else:
-                    ax[j,i].set_yticks([])
+                ax[j,i].set_yticks([])
 
                 if j == Nr-1:
-
                     ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}",rotation='vertical')
                     
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
