@@ -7,9 +7,11 @@ from kexp.config.expt_params import ExptParams
 from kexp.util.data.run_info import RunInfo
 from kexp.config.camera_params import CameraParams
 
+import kexp.util.data.server_talk as st
+
 data_dir = os.getenv("data")
 
-def load_atomdata(idx=0, crop_type='', path = [], unshuffle_xvars=True,
+def load_atomdata(idx=0, crop_type='', path = "", unshuffle_xvars=True,
                   transpose_idx = [], average_repeats = False) -> atomdata:
     '''
     Returns the atomdata stored in the `idx`th newest pickle file at `path`.
@@ -29,25 +31,27 @@ def load_atomdata(idx=0, crop_type='', path = [], unshuffle_xvars=True,
     -------
     ad: atomdata
     '''
-    if path == []:
-        folderpath=os.path.join(data_dir,'*','*.hdf5')
-        list_of_files = glob.glob(folderpath)
+
+    if path == "":
+        latest_file = st.get_latest_data_file()
+        latest_rid = st.run_id_from_filepath(latest_file)
+        if idx == 0:
+            file = latest_file
         if idx <= 0:
-            list_of_files.sort(key=lambda x: os.path.getmtime(x))
-            list_of_files = np.flip(list_of_files)
-            file = list_of_files[-idx]
+            file = st.recurse_find_data_file(latest_rid+idx)
         if idx > 0:
-            run_id = idx
-            data_dir_depth_idx = len(data_dir.split('\\')[0:-1]) - 2 # accounts for data directory depth
-            rids = [int(file.split("_")[data_dir_depth_idx].split("\\")[-1]) for file in list_of_files]
-            rid_idx = rids.index(run_id)
-            file = list_of_files[rid_idx]
+            if latest_rid - idx < 10000:
+                file = st.recurse_find_data_file(idx)
+            else:
+                file = st.all_glob_find_data_file(idx)
     else:
         if path.endswith('.hdf5'):
             file = path
         else:
             raise ValueError("The provided path is not a hdf5 file.")
         
+    rid = st.run_id_from_filepath(file)
+    print(f"run id {rid}")
     f = h5py.File(file,'r')
     
     params = ExptParams()
@@ -59,12 +63,13 @@ def load_atomdata(idx=0, crop_type='', path = [], unshuffle_xvars=True,
     images = f['data']['images'][()]
     image_timestamps = f['data']['image_timestamps'][()]
     xvarnames = f.attrs['xvarnames'][()]
-    expt_text = f.attrs['expt_file']
     try:
+        expt_text = f.attrs['expt_file']
         params_text = f.attrs['params_file']
         cooling_text = f.attrs['cooling_file']
         imaging_text = f.attrs['imaging_file']
     except:
+        expt_text = ""
         params_text = ""
         cooling_text = ""
         imaging_text = ""

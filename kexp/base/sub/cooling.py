@@ -43,6 +43,18 @@ class Cooling():
         self.dds.d2_3d_r.off()
 
     @kernel
+    def pump_to_F1(self):
+        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
+                        v_yshim_current=self.p.v_yshim_current_magtrap,
+                        v_xshim_current=self.p.v_xshim_current_magtrap)
+        delay(2.e-3)
+        self.dds.optical_pumping.set_dds(set_stored=True)
+        self.dds.optical_pumping.on()
+        delay(200.e-6)
+        self.dds.optical_pumping.off()
+        self.flash_cooler()
+
+    @kernel
     def flash_cooler(self,t=dv,detune=dv,amp=dv):
         if t == dv:
             t = self.params.t_cooler_flash_imaging
@@ -394,6 +406,7 @@ class Cooling():
             v_pd_d1_r = dv,
             amp_d1_r = dv,
             detune_d1 = dv,
+            t_shim_change_pretrigger = dv,
             t_magnet_off_pretrigger = dv,
             v_zshim_current=dv,
             v_yshim_current=dv,
@@ -417,6 +430,8 @@ class Cooling():
             v_pd_d1_r = self.params.v_pd_d1_r_gm
         if amp_d1_r == dv:
             amp_d1_r = self.params.amp_d1_3d_r
+        if t_shim_change_pretrigger == dv:
+            t_shim_change_pretrigger = self.params.t_shim_change_pretrigger
         if t_magnet_off_pretrigger == dv:
             t_magnet_off_pretrigger = self.params.t_magnet_off_pretrigger
         if v_zshim_current == dv:
@@ -428,13 +443,14 @@ class Cooling():
         
         # ### End Defaults ###
 
+        delay(-t_magnet_off_pretrigger)
         self.set_shims(v_zshim_current=v_zshim_current,
                         v_yshim_current=v_yshim_current,
                           v_xshim_current=v_xshim_current)
+        delay(t_magnet_off_pretrigger)
        
         delay(-t_magnet_off_pretrigger)
         self.inner_coil.igbt_ttl.off()
-        self.inner_coil.set_current(self.params.i_magtrap_init)
         delay(t_magnet_off_pretrigger)
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
@@ -614,7 +630,7 @@ class Cooling():
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
-        self.flash_cooler()
+        self.pump_to_F1()
 
         self.dds.power_down_cooling()
         
@@ -653,7 +669,7 @@ class Cooling():
         if v_awg_paint_amp_lightsheet == dv:
             v_awg_paint_amp_lightsheet = self.params.v_lightsheet_paint_amp_max
         if i_magtrap_init == dv:
-            i_magtrap_init = self.params.i_mot
+            i_magtrap_init = self.params.i_magtrap_init
         if i_magtrap_ramp_end == dv:
             i_magtrap_ramp_end = self.params.i_magtrap_ramp_end
         if v_zshim_current == dv:
@@ -680,6 +696,8 @@ class Cooling():
         self.inner_coil.ramp(t=t_magtrap_ramp,
                             i_start=i_magtrap_init,
                             i_end=i_magtrap_ramp_end)
+        
+        delay(self.params.t_magtrap)
 
         self.inner_coil.ramp(t=t_magtrap_rampdown,
                             i_start=i_magtrap_ramp_end,
@@ -697,7 +715,7 @@ class Cooling():
         if t_magtrap_ramp == dv:
             t_magtrap_ramp = self.params.t_magtrap_ramp
         if i_magtrap_init == dv:
-            i_magtrap_init = self.params.i_mot
+            i_magtrap_init = self.params.i_magtrap_init
         if i_magtrap_ramp_end == dv:
             i_magtrap_ramp_end = self.params.i_magtrap_ramp_end
         if v_zshim_current == dv:

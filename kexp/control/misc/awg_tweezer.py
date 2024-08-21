@@ -19,7 +19,7 @@ dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
     def __init__(self,
-                  ao1_dds=DDS, pid1_dac=DAC_CH,
+                  ao1_dds=DDS, pid1_dac=DAC_CH, 
                   ao2_dds=DDS, pid2_dac=DAC_CH,
                   sw_ttl=TTL,
                   awg_trg_ttl=TTL,
@@ -35,7 +35,7 @@ class tweezer():
         """        
         self.ao1_dds = ao1_dds
         self.pid1_dac = pid1_dac
-        # self.ao2_dds = ao2_dds
+        self.ao2_dds = ao2_dds
         self.pid2_dac = pid2_dac
         self.sw_ttl = sw_ttl
         self.awg_trg_ttl = awg_trg_ttl
@@ -52,7 +52,7 @@ class tweezer():
 
         self.pid1_dac.set(v=.0)
         delay(300.e-6)
-        # self.ao2_dds.on()
+        self.ao2_dds.on()
 
         if paint:
             self.paint_amp_dac.set(v=v_awg_am)
@@ -66,7 +66,7 @@ class tweezer():
     @kernel
     def off(self):
         self.ao1_dds.off()
-        # self.ao2_dds.off()
+        self.ao2_dds.off()
         self.pid1_int_hold_zero.on()
         self.pid1_dac.set(v=0.)
         self.pid2_enable_ttl.off()
@@ -245,7 +245,10 @@ class tweezer():
         Raises:
             ValueError: _description_
         """
-
+        if isinstance(freq_list,float):
+            print('is a float!')
+            freq_list = [freq_list]
+        
         if len(freq_list) != len(amp_list):
             raise ValueError('Amplitude and frequency lists are not of equal length')
 

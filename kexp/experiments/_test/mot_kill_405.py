@@ -3,35 +3,44 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class gm_tof(EnvExperiment, Base):
+class mot_kill_405(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
-        self.xvar('t_tof',np.linspace(12.,18.,5)*1.e-3)
-        
         self.p.imaging_state = 2.
-        self.p.t_tof = 10.e-3
-        self.p.t_mot_load = .1
+
+        # self.xvar('t_tof',np.linspace(230.,700.,10)*1.e-6)
+        self.p.t_tof = 400.e-6
+
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=True)
+        self.xvar('dummy',[1,0]*1000000)
+
+        self.p.t_mot_load = .25
+
+        self.camera_params.amp_imaging = 0.35
+
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
 
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        t = 100.e-6
+        if self.p.dummy == 1:
+            self.dds.mot_killer.on()
+
+        self.dds.init_cooling()
+
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot)
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 
-        delay(self.p.t_tof)
+        self.dds.mot_killer.off() 
 
+        delay(self.p.t_tof)
         self.flash_repump()
         self.abs_image()
        

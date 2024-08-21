@@ -11,7 +11,7 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
 
         # self.xvar('t_tof',np.linspace(20.,1000.,15)*1.e-6)
         self.p.t_lightsheet_hold = .1
-        self.p.t_tof = 400.e-6
+        self.p.t_tof = 1000.e-6
         self.p.N_repeats = 10
 
         self.p.t_lightsheet_rampup = 1.

@@ -44,11 +44,12 @@ class ExptParams():
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
         self.t_magnet_off_pretrigger = 0.e-3
+        self.t_shim_change_pretrigger = 2.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 332.e-3
+        self.t_lightsheet_rampup = 0.3
         self.t_lightsheet_rampdown = .7
         self.t_lightsheet_rampdown2 = .01
         self.t_lightsheet_rampdown3 = .01
@@ -68,7 +69,7 @@ class ExptParams():
         # self.t_magtrap_ramp = .367
         # self.t_magtrap_rampdown = .2
         self.t_magtrap_ramp = 75.e-3
-        self.t_magtrap = 0.
+        self.t_magtrap = 0.0
         self.t_magtrap_rampdown = 75.e-3
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 100.e-3
@@ -107,7 +108,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 20.0
-        self.v_zshim_current = 0.45
+        self.v_zshim_current = 0.13
         self.v_xshim_current = 4.1
         self.v_yshim_current = 7.
 
@@ -155,7 +156,7 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 22.
+        self.i_magtrap_init = 27.
         self.i_magtrap_ramp_end = 90.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
@@ -304,12 +305,15 @@ class ExptParams():
             min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
             max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
             self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
-        else:
-            self.frequency_tweezer_list = self.frequency_tweezer_list
+        # else:
+        #     self.frequency_tweezer_list = self.frequency_tweezer_list
 
     def compute_tweezer_1064_amps(self):
         if not self.frequency_tweezer_auto_compute:
-            self.n_tweezers = len(self.frequency_tweezer_list)
+            if isinstance(self.frequency_tweezer_list,float):
+                self.n_tweezers = 1
+            else:
+                self.n_tweezers = len(self.frequency_tweezer_list)
         if self.amp_tweezer_auto_compute:
             self.amp_tweezer_list = np.ones(self.n_tweezers) / self.n_tweezers
         else:

@@ -29,7 +29,7 @@ class tweezer_paint(EnvExperiment, Base):
 
         self.p.t_mot_load = .75
 
-        # self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,1))
+        # self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,10))
 
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.5,9.99,6))
         self.p.v_pd_lightsheet_rampup_end = 9.2
@@ -40,15 +40,15 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,6.,6))
         self.p.v_pd_lightsheet_rampdown_end = 3.
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.,6.,10))
-        self.p.v_tweezer_paint_amp_max = 6.
+        self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.,6.,10))
+        self.p.v_tweezer_paint_amp_max = -2.
 
         # self.xvar('i_evap2_current',np.linspace(191.,194.,8))
         self.p.i_evap2_current = 191.9
 
         ## v_pd 6.5, paint amp 6. gives long lifetime at 200-300 kHz painting
         # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(5.,9.9,10))
-        self.p.v_pd_tweezer_1064_ramp_end = 9.
+        self.p.v_pd_tweezer_1064_ramp_end = 8.2
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,200.,10)*1.e-3)
         self.p.t_tweezer_1064_ramp = .09
@@ -95,18 +95,18 @@ class tweezer_paint(EnvExperiment, Base):
         self.p.t_feshbach_field_ramp = 15.e-3
         self.p.t_feshbach_field_ramp2 = 15.e-3
         
-        # self.xvar('dummy_z',[0]*10)
+        # self.xvar('dummy_z',[0]*100)
 
-        self.xvar('f_list',np.concatenate([np.linspace(69.e6,72.e6,3),np.linspace(78.e6,81.e6,3)]))
+        # self.xvar('f_list',np.concatenate([np.linspace(69.e6,72.e6,3),np.linspace(78.e6,81.e6,3)]))
 
         self.p.n_tweezers = 2
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
         # self.p.frequency_tweezer_spacing = 2.5e6
-        self.p.frequency_tweezer_list = [72.e6]
+        self.p.frequency_tweezer_list = [72.e6,78.5e6]
         self.p.frequency_tweezer_auto_compute = False
         self.p.amp_tweezer_auto_compute = True
         # self.xvar('amp_tweezer_list')
-        self.p.amp_tweezer_list = [.5]
+        # self.p.amp_tweezer_list = [.5]
 
         # self.xvar('amp_imaging',np.linspace(.06,.2,15))
         # self.xvar('amp_imaging',np.linspace(.04,.09,20))
@@ -127,15 +127,16 @@ class tweezer_paint(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
-        self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(freq_list=self.p.f_list,amp_list=[.5])
-        delay(100.e-3)
-        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+        # self.core.wait_until_mu(now_mu())
+        # self.tweezer.set_static_tweezers(freq_list=self.p.f_list,amp_list=[.5])
+        # delay(100.e-3)
+        # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         # self.set_imaging_detuning(amp=self.p.amp_imaging)
         self.set_high_field_imaging(i_outer = self.p.i_evap2_current)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
+        self.ttl.pd_scope_trig.pulse(t=1.e-6)  
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
         
@@ -145,7 +146,8 @@ class tweezer_paint(EnvExperiment, Base):
         # mag trap on, ramp up lightsheet, ramp down mag trap
         self.magtrap_and_load_lightsheet()
 
-        # feshbach field on, ramp up to field 1        
+        # feshbach field on, ramp up to field 1  
+        # self.ttl.pd_scope_trig.pulse(t=1.e-6)      
         self.outer_coil.on()
         delay(1.e-3)
         self.outer_coil.set_voltage()
@@ -164,17 +166,17 @@ class tweezer_paint(EnvExperiment, Base):
                              i_end=self.p.i_evap2_current)
 
         # tweezer ramp up, constant paint amplitude
-        self.ttl.pd_scope_trig.pulse(t=1.e-6)
+        # self.ttl.pd_scope_trig.pulse(t=1.e-6)
         self.tweezer.on(paint=False)
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
                           v_start=0.,
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
-                          paint=False,keep_trap_frequency_constant=False)
+                          paint=True,keep_trap_frequency_constant=False)
 
-        # # lightsheet ramp down (to off)
-        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-        #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
-        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        # lightsheet ramp down (to off)
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+                             v_start=self.p.v_pd_lightsheet_rampdown_end,
+                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         # # tweezer evap 1 with constant trap frequency
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
@@ -202,6 +204,8 @@ class tweezer_paint(EnvExperiment, Base):
         self.lightsheet.off()
         
         self.tweezer.off()
+
+        # self.outer_coil.off()
     
         delay(self.p.t_tof)
         self.abs_image()
