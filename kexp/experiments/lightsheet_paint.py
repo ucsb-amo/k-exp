@@ -9,9 +9,9 @@ from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shutt
 
 T32 = 1<<32
 
-class tof_scan(EnvExperiment, Base):
+class lightsheet_paint(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.camera_params.amp_imaging = 0.5
@@ -20,13 +20,14 @@ class tof_scan(EnvExperiment, Base):
 
         # self.p.v_lightsheet_paint_amp_max = 4
 
-        self.xvar("beans", [0,1]*200)
+        self.p.beans = 0
+        # self.xvar("beans", [0,1]*200)
 
-        # self.xvar('v_lightsheet_paint_amp_max',np.linspace(-7.,6.,20))
+        self.xvar('v_lightsheet_paint_amp_max',np.linspace(-7.,6.,20))
 
         self.p.t_tof = 10.e-6
         self.p.t_lightsheet_hold = .1
-        self.p.N_repeats = [1]
+        self.p.N_repeats = [10]
 
         self.sh_dds = self.get_device("shuttler0_dds0")
         self.sh_dds: DDS
@@ -35,7 +36,7 @@ class tof_scan(EnvExperiment, Base):
         self.sh_relay = self.get_device("shuttler0_relay")
         self.sh_relay: Relay
 
-        self.finish_build(shuffle=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

@@ -3,24 +3,24 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class count_atoms(EnvExperiment, Base):
+class compare_lightsheet_magtrap_atom_number(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.camera_params.amp_imaging = .5
+        # self.camera_params.amp_imaging = .5
 
         self.p.t_lightsheet_hold = .1
-        self.p.t_tof_magtrap = 5.e-3
-        self.p.t_tof_lightsheet = 150.e-6
+        self.p.t_tof_magtrap = 7.e-3
+        self.p.t_tof_lightsheet = 800.e-6
 
-        # self.xvar('lightsheet_bool',[1,0])
+        # self.xvar('lightsheet_bool',[0])
 
-        self.p.lightsheet_bool = 0
+        self.p.lightsheet_bool = 1.
 
-        self.p.N_repeats = [10]
+        self.p.N_repeats = [3]
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

@@ -3,9 +3,9 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 
-class thermal_lensing(EnvExperiment, Base):
+class reveal_thermal_lensing(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='z_basler',save_data=True)
 
         self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(0.5,4.0,10))
@@ -16,7 +16,7 @@ class thermal_lensing(EnvExperiment, Base):
 
         self.p.N_repeats = 1
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

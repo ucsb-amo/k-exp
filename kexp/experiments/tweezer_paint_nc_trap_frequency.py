@@ -10,9 +10,9 @@ from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 
 T32 = 1<<32
 
-class tweezer_paint(EnvExperiment, Base):
+class tweezer_paint_nc_trap_frequency(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.p.imaging_state = 1.
@@ -105,7 +105,7 @@ class tweezer_paint(EnvExperiment, Base):
 
         self.p.t_lightsheet_hold = 100.e-3
 
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

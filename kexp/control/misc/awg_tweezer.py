@@ -19,7 +19,7 @@ dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
     def __init__(self,
-                  ao1_dds=DDS, pid1_dac=DAC_CH,
+                  ao1_dds=DDS, pid1_dac=DAC_CH, 
                   ao2_dds=DDS, pid2_dac=DAC_CH,
                   sw_ttl=TTL,
                   awg_trg_ttl=TTL,
@@ -245,7 +245,10 @@ class tweezer():
         Raises:
             ValueError: _description_
         """
-
+        if isinstance(freq_list,float):
+            print('is a float!')
+            freq_list = [freq_list]
+        
         if len(freq_list) != len(amp_list):
             raise ValueError('Amplitude and frequency lists are not of equal length')
 
