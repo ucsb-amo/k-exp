@@ -12,6 +12,11 @@ import time
 from subprocess import PIPE, run
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import numpy as np
+# %matplotlib inline
+
+# %load_ext autoreload
+# %autoreload 2
 import os
 import textwrap
 
@@ -23,12 +28,22 @@ def getAtomNumber():
 
         #Load the data given a run id.
         ad = load_atomdata(0,crop_type='gm',average_repeats = True)
-        return sum(ad.atom_number)/len(ad.atom_number) 
+        # peakDensity = findPeakOD(ad.od[0])
+        # print(peakDensity)
+        return np.max(ad.atom_number_density)*sum(ad.atom_number)/len(ad.atom_number) 
 
 #Cost function is just the negative of the atom number
 def getCost():
     atomnumber = getAtomNumber()
     return -1*atomnumber
+
+def findPeakOD(img):
+     brightest = 0
+     for i in range(len(img[0])):
+          for j in range(len(img[0][0])):
+               if img[i][j] > brightest:
+                    brightest = img[i][j]
+                    return brightest
 
 
 class ExptBuilder():
