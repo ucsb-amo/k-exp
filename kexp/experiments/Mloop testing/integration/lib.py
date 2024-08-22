@@ -23,7 +23,9 @@ def getAtomNumber():
 
         #Load the data given a run id.
         ad = load_atomdata(0,crop_type='gm',average_repeats = True)
-        return sum(ad.atom_number)/len(ad.atom_number) 
+        # peakDensity = findPeakOD(ad.od[0])
+        # print(peakDensity)
+        return np.max(ad.atom_number_density)*sum(ad.atom_number)/len(ad.atom_number) 
 
 #Cost function is just the negative of the atom number
 def getCost():
@@ -85,25 +87,23 @@ class ExptBuilder():
             from artiq.experiment import delay
             from kexp import Base
             import numpy as np
+            class mot_tof(EnvExperiment, Base):
 
-            class tof(EnvExperiment, Base):
-
-                def build(self):
+                def prepare(self):
                     Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
                     self.p.imaging_state = 2.
                     self.p.t_tof = 800.e-6
-                    #self.xvar('t_tof',np.linspace(230.,700.,10)*1.e-6)
                     self.xvar('dummy',[0]*3)
                                  
                     {assignment_lines} 
-                    
+
                     self.p.N_repeats = 10
 
 
                     self.p.t_mot_load = .05
 
-                    self.finish_build(shuffle=True)
+                    self.finish_prepare(shuffle=True)
 
                 @kernel
                 def scan_kernel(self):
@@ -132,7 +132,6 @@ class ExptBuilder():
                     import os
                     expt_filepath = os.path.abspath(__file__)
                     self.end(expt_filepath)
-
         """)
         return script
 
@@ -179,7 +178,7 @@ class CustomInterface(mli.Interface):
         eBuilder.write_experiment_to_file(eBuilder.test_expt(self.var_names,params))
         eBuilder.run_expt()
 
-        time.sleep(20e-3)
+        time.sleep(200e-3)
         # cost = externalCostFunction.calcCost(params[0])\
         cost = getCost()
         print(cost)

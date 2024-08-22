@@ -12,11 +12,6 @@ import time
 from subprocess import PIPE, run
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import numpy as np
-# %matplotlib inline
-
-# %load_ext autoreload
-# %autoreload 2
 import os
 import textwrap
 
@@ -27,7 +22,7 @@ from kexp.analysis.plotting_1d import *
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = load_atomdata(0,crop_type='gm',average_repeats = True)
+        ad = load_atomdata(0,crop_type='lightsheet',average_repeats = True)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.max(ad.atom_number_density)*sum(ad.atom_number)/len(ad.atom_number) 
@@ -36,14 +31,6 @@ def getAtomNumber():
 def getCost():
     atomnumber = getAtomNumber()
     return -1*atomnumber
-
-def findPeakOD(img):
-     brightest = 0
-     for i in range(len(img[0])):
-          for j in range(len(img[0][0])):
-               if img[i][j] > brightest:
-                    brightest = img[i][j]
-                    return brightest
 
 
 class ExptBuilder():
@@ -95,199 +82,86 @@ class ExptBuilder():
     
         assignment_lines = self.generate_assignment_lines(varname,var)
         script = textwrap.dedent(f"""
-                from artiq.experiment import *
-                from artiq.experiment import delay
-                from kexp import Base
-                import numpy as np
+            from artiq.experiment import *
+            from artiq.experiment import delay
+            from kexp import Base
+            import numpy as np
+            class mot_tof(EnvExperiment, Base):
 
-                class atom_count(EnvExperiment, Base):
+                def prepare(self):
+                    Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-                    def build(self):
-                        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
-
-                        self.p.imaging_state = 2.
-                        self.p.t_magtrap = 30.e-3
-                        self.p.t_tof = 10.e-6
-                        self.p.t_lightsheet_rampup = 200.e-3
-                        self.p.t_lightsheet_hold = 100.e-3
+                    self.p.imaging_state = 2.
+                    self.p.t_tof = 800.e-6
+                    self.xvar('dummy',[0]*1)
                                  
-                        {assignment_lines}      
-                                         
+                    {assignment_lines} 
+
+                    self.p.N_repeats = 10
 
 
-                        self.p.N_repeats = 2
+                    self.p.t_mot_load = .05
 
-                        self.finish_build(shuffle=True)
+                    self.finish_prepare(shuffle=True)
 
-                    @kernel
-                    def scan_kernel(self):
-
-                        self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging,
-                                                amp=self.p.amp_imaging)
-
-                        self.switch_d2_2d(1)
-                        self.mot(self.p.t_mot_load)
-                        self.dds.push.off()
-                        self.cmot_d1(self.p.t_d1cmot * s)
-                        
-                        self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
-
-                        self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-                                        v_yshim_current=self.p.v_yshim_current_gm,
-                                        v_xshim_current=self.p.v_xshim_current_gm)
-                        
-                        self.gm(self.p.t_gm * s)
-
-                        self.ttl.pd_scope_trig.on()
-
-                        self.gm_ramp(self.p.t_gmramp)
-
-                        # self.release()
-                        self.switch_d2_3d(0)
-                        self.switch_d1_3d(0)
-
-                        self.flash_cooler()
-
-                        self.dds.power_down_cooling()
-
-                        self.set_shims(v_zshim_current=0.,
-                                        v_yshim_current=self.p.v_yshim_current_gm,
-                                        v_xshim_current=self.p.v_xshim_current_gm)
-                        
-                        # magtrap start
-                        self.inner_coil.igbt_ttl.on()
-                        self.inner_coil.set_current(i_supply=self.p.i_magtrap_ramp_start)
-
-                        # ramp up ligthsheet over magtrap
-                        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-
-                        for i in self.p.magtrap_ramp_list:
-                            self.inner_coil.set_current(i_supply=i)
-                            delay(self.p.dt_magtrap_ramp)
-                        delay(30.e-3)
-
-                        self.inner_coil.off()
-                        self.ttl.pd_scope_trig.off()
-
-                        delay(self.p.t_lightsheet_hold)
-                        self.lightsheet.off()
+                @kernel
+                def scan_kernel(self):
+                    self.set_high_field_imaging(i_outer = self.p.i_evap2_current)
+                    self.switch_d2_2d(1)
+                    self.mot(self.p.t_mot_load)
+                    self.dds.push.off()
+                    self.cmot_d1(self.p.t_d1cmot * s)
                     
-                        delay(self.p.t_tof)
-                        self.flash_repump()
-                        self.abs_image()
+                    self.gm(self.p.t_gm * s)
+                    self.gm_ramp(self.p.t_gmramp)
 
-                    @kernel
-                    def run(self):
-                        self.init_kernel()
-                        self.load_2D_mot(self.p.t_2D_mot_load_delay)
-                        self.scan()
-                        self.mot_observe()
 
-                    def analyze(self):
-                        import os
-                        expt_filepath = os.path.abspath(__file__)
-                        self.end(expt_filepath)
+                    self.magtrap_and_load_lightsheet()
+                    
+                    delay(self.p.t_lightsheet_hold)
+                    # feshbach field on, ramp up to field 1  
+                    self.outer_coil.on()
+                    delay(1.e-3)
+                    self.outer_coil.set_voltage()
+                    self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
+                                        i_start=0.,
+                                        i_end=self.p.i_evap1_current)
+                    
+                    # lightsheet evap 1
+                    self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
+                                        v_start=self.p.v_pd_lightsheet_rampup_end,
+                                        v_end=self.p.v_pd_lightsheet_rampdown_end)
+                    
+                    # feshbach field ramp to field 2
+                    self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp,
+                                        i_start=self.p.i_evap1_current,
+                                        i_end=self.p.i_evap2_current)
+
+                    self.lightsheet.off()
+                
+                    delay(self.p.t_tof)
+                    self.flash_repump()
+                    self.abs_image()
+                    self.outer_coil.off()
+
+                    self.outer_coil.discharge()
+
+
+                @kernel
+                def run(self):
+                    self.init_kernel()
+                    self.load_2D_mot(self.p.t_2D_mot_load_delay)
+                    self.scan()
+                    self.mot_observe()
+
+                def analyze(self):
+                    import os
+                    expt_filepath = os.path.abspath(__file__)
+                    self.end(expt_filepath)
+
         """)
         return script
-        #     from artiq.experiment import *
-        #     from artiq.experiment import delay
-        #     from kexp import Base
-        #     import numpy as np
-        #     from kexp.calibrations import high_field_imaging_detuning
-
-        #     from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
-
-        #     from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
-
-        #     T32 = 1<<32
-
-        #     class magtrap_mloop_test(EnvExperiment, Base):
-
-        #         def build(self):
-        #             Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
-
-        #             self.p.t_mot_load = .2
-
-        #             # self.xvar("t_tof", np.linspace(0.1,10,20)*1.e-3)
-        #             self.p.t_tof = 5000.e-6
-
-        #             {assignment_lines}
-                    
-        #             self.xvar('dummy',[0]*{N_REPEATS:1.0f})
-
-        #             self.p.N_repeats = 10
-                    
-        #             self.p.amp_imaging = 0.35
-                                 
-        #             self.p.t_magtrap = 0.5
-
-        #             self.finish_build(shuffle=True)
-
-        #         @kernel
-        #         def scan_kernel(self):
-
-        #             self.set_imaging_detuning(amp=self.p.amp_imaging)
-        #             self.switch_d2_2d(1)
-        #             self.mot(self.p.t_mot_load)
-        #             self.dds.push.off()
-        #             self.cmot_d1(self.p.t_d1cmot * s)
-                    
-        #             # self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
-
-        #             self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-        #                             v_yshim_current=self.p.v_yshim_current_gm,
-        #                             v_xshim_current=self.p.v_xshim_current_gm)
-                    
-        #             self.gm(self.p.t_gm * s)
-        #             self.gm_ramp(self.p.t_gmramp)
-
-        #             self.switch_d2_3d(0)
-        #             self.switch_d1_3d(0)
-
-        #             self.flash_cooler()
-
-        #             self.dds.power_down_cooling()
-
-        #             self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
-        #                             v_yshim_current=self.p.v_yshim_current_magtrap,
-        #                             v_xshim_current=self.p.v_xshim_current_magtrap)
-
-        #             # magtrap start
-        #             self.inner_coil.on()
-
-        #             delay(self.p.t_lightsheet_rampup)
-
-        #             # for i in self.p.magtrap_ramp_list:
-        #             #     self.inner_coil.set_current(i_supply=i)
-        #             #     delay(self.p.dt_magtrap_ramp)
-        #             self.inner_coil.ramp(t=self.p.t_magtrap_ramp,
-        #                                 i_start=self.p.i_magtrap_init,
-        #                                 i_end=self.p.i_magtrap_ramp_end)
-                    
-        #             delay(self.p.t_magtrap)
-                    
-        #             self.inner_coil.off()
-
-        #             delay(self.p.t_tof)
-
-        #             self.flash_repump()
-
-        #             self.abs_image()
-
-        #         @kernel
-        #         def run(self):
-        #             self.init_kernel()
-        #             self.load_2D_mot(self.p.t_2D_mot_load_delay)
-        #             self.scan()
-        #             self.mot_observe()
-                    
-        #         def analyze(self):
-        #             import os
-        #             expt_filepath = os.path.abspath(__file__)
-        #             self.end(expt_filepath)
-
-        # """)
-        # return script
+        
 
     # def execute_test(self, channel, duration):
     #         program = self.pulse_ttl_expt(channel, duration)
