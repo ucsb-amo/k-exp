@@ -244,7 +244,7 @@ class ExptParams():
         # rydberg
         self.frequency_ao_ry_405 = 250.0e6
         self.frequency_ao_ry_980 = 80.0e6
-        self.amp_ao_ry_405 = 0.2
+        self.amp_ao_ry_405 = 0.23
         self.amp_ao_ry_980 = 0.285
 
         # low field evap
