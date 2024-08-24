@@ -28,7 +28,7 @@ class mot_kill_405(EnvExperiment, Base):
 
         t = 100.e-6
         if self.p.dummy == 1:
-            self.dds.mot_killer.on()
+            self.dds.ry_405.on()
 
         self.dds.init_cooling()
 
@@ -38,11 +38,11 @@ class mot_kill_405(EnvExperiment, Base):
 
         self.release()
 
-        self.dds.mot_killer.off() 
-
         delay(self.p.t_tof)
         self.flash_repump()
         self.abs_image()
+
+        self.dds.ry_405.off()
        
     @kernel
     def run(self):

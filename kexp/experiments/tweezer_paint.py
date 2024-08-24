@@ -40,7 +40,7 @@ class tweezer_paint(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,6.,6))
         self.p.v_pd_lightsheet_rampdown_end = 3.
 
-        self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.,6.,10))
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.,6.,10))
         self.p.v_tweezer_paint_amp_max = -2.
 
         # self.xvar('i_evap2_current',np.linspace(191.,194.,8))
@@ -82,6 +82,7 @@ class tweezer_paint(EnvExperiment, Base):
 
         # self.xvar('t_tof',np.linspace(25.,900.,9)*1.e-6)
         # self.xvar('t_tof',np.linspace(0.1,10.,10)*1.e-3)
+        self.xvar('amp_imaging',np.linspace(0.1,0.5,10))
         self.p.t_tof = 15.e-6
         self.p.N_repeats = [1]
 
@@ -99,10 +100,11 @@ class tweezer_paint(EnvExperiment, Base):
 
         # self.xvar('f_list',np.concatenate([np.linspace(69.e6,72.e6,3),np.linspace(78.e6,81.e6,3)]))
 
-        self.p.n_tweezers = 2
+        # self.p.n_tweezers = 2
         # self.xvar('frequency_tweezer_array_width',np.linspace(.2e6,1.e6,6))
         # self.p.frequency_tweezer_spacing = 2.5e6
-        self.p.frequency_tweezer_list = [72.e6,78.5e6]
+        # self.p.frequency_tweezer_list = [72.e6,78.5e6]
+        self.p.frequency_tweezer_list = [72.e6]
         self.p.frequency_tweezer_auto_compute = False
         self.p.amp_tweezer_auto_compute = True
         # self.xvar('amp_tweezer_list')
@@ -110,14 +112,12 @@ class tweezer_paint(EnvExperiment, Base):
 
         # self.xvar('amp_imaging',np.linspace(.06,.2,15))
         # self.xvar('amp_imaging',np.linspace(.04,.09,20))
-        self.camera_params.amp_imaging = 0.09
+        # self.camera_params.amp_imaging = 0.09
         # # self.camera_params.amp_imaging = 0.248
         # self.camera_params.exposure_time = 20.e-6
         # self.camera_params.exposure_time = 10.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         self.camera_params.em_gain = 300
-
-        self.p.n_tweezer_ramp_steps = 100
 
         # self.p.t_lightsheet_rampup = 500.e-3
         # self.xvar('t_lightsheet_rampup',np.linspace(0.05,0.5,10))
@@ -126,6 +126,8 @@ class tweezer_paint(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        self.set_imaging_detuning(amp=self.p.amp_imaging)
         
         # self.core.wait_until_mu(now_mu())
         # self.tweezer.set_static_tweezers(freq_list=self.p.f_list,amp_list=[.5])

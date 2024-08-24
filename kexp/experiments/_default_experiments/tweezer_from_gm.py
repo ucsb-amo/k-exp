@@ -28,9 +28,9 @@ class tweezer_from_gm(EnvExperiment, Base):
 
         self.p.t_lightsheet_hold = 100.e-3
 
-        self.camera_params.amp_imaging = 0.04
-        self.camera_params.exposure_time = 10.e-6
-        self.params.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.amp_imaging = 0.04
+        # self.camera_params.exposure_time = 10.e-6
+        # self.params.t_imaging_pulse = self.camera_params.exposure_time
 
         # self.p.N_repeats = 2
 
@@ -52,29 +52,32 @@ class tweezer_from_gm(EnvExperiment, Base):
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
-        self.flash_cooler()
+        self.pump_to_F1()
 
         self.dds.power_down_cooling()
 
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
-                            v_yshim_current=self.p.v_yshim_current_magtrap,
-                            v_xshim_current=self.p.v_xshim_current_magtrap)
-
         # magtrap start
         self.ttl.pd_scope_trig.pulse(1.e-6)
+
         self.inner_coil.on()
 
-        self.tweezer.vva_dac.set(v=0.)
         self.tweezer.on()
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
+                          v_start=0.,
+                          v_end=self.p.v_pd_tweezer_1064_ramp_end)
 
-        for i in self.p.magtrap_ramp_list:
-                self.inner_coil.set_current(i_supply=i)
-                delay(self.p.dt_magtrap_ramp)
+        # for i in self.p.magtrap_ramp_list:
+        #         self.inner_coil.set_current(i_supply=i)
+        #         delay(self.p.dt_magtrap_ramp)
+        # self.inner_coil.ramp(t=self.p.t_magtrap_ramp,
+        #                         i_start=self.p.i_magtrap_init,
+        #                         i_end=self.p.i_magtrap_ramp_end)
+        # # delay(self.p.t_magtrap)
+        # self.inner_coil.ramp(t=self.p.t_magtrap_rampdown,
+        #                         i_start=self.p.i_magtrap_ramp_end,
+        #                         i_end=0.)
 
-        delay(self.p.t_magtrap)
-
-        self.inner_coil.off()
+        # self.inner_coil.off()
         
         delay(20.e-3)
         self.tweezer.off()
