@@ -42,6 +42,7 @@ class Devices():
         self.core_dma = self.get_device("core_dma")
         zotino = self.get_device("zotino0")
         sampler = self.get_device("sampler0")
+        self.grabber = self.get_device("grabber0")
 
         # sampler channels
         self.sampler = sampler_frame(sampler_device=sampler)
