@@ -64,7 +64,8 @@ class CameraNanny():
         try:
             if camera_type == "basler":
                 camera = BaslerUSB(BaslerSerialNumber=camera_params.serial_no,
-                                    ExposureTime=camera_params.exposure_time)
+                                    ExposureTime=camera_params.exposure_time,
+                                    TriggerSource=camera_params.trigger_source)
             elif camera_type == "andor":
                 camera = AndorEMCCD(ExposureTime=camera_params.exposure_time,
                                     gain = camera_params.em_gain,

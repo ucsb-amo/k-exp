@@ -36,8 +36,13 @@ class Cameras():
                     self.assign_camera_stuff(camera_select,
                                             camera_ttl=ttl,
                                             absorption_bool=absorption_image)
+                case "xy2_basler":
+                    ttl = self.ttl.z_basler
+                    self.assign_camera_stuff(camera_select,
+                                            camera_ttl=ttl,
+                                            absorption_bool=absorption_image)
                 case "x_basler":
-                    ttl = self.ttl.basler
+                    ttl = self.ttl.z_basler
                     self.assign_camera_stuff(camera_select,
                                             camera_ttl=ttl,
                                             absorption_bool=absorption_image)
