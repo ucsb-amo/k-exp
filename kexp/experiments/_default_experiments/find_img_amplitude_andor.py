@@ -9,16 +9,17 @@ class img_amp_calibration(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 2.
-        self.xvar('amp_imaging',np.linspace(0.1,0.5,10))
+        self.xvar('amp_imaging',np.linspace(0.05,0.2,10))
         self.p.t_tof = 10.e-6
-        self.p.N_repeats = 1
-        self.p.t_mot_load = .1
-        self.p.t_tweezer_1064_ramp = 0.010
+        self.p.N_repeats = 3
+        self.p.t_mot_load = .25
+        # self.p.v_pd_lightsheet_rampup_end = 4.16
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
+        self.set_high_field_imaging(i_outer=self.p.i_evap1_current)
         self.set_imaging_detuning(amp=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
@@ -31,16 +32,26 @@ class img_amp_calibration(EnvExperiment, Base):
         self.release()
 
         self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.tweezer.on()
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
-                          v_start=0.,
-                          v_end=self.p.v_pd_tweezer_1064_ramp_end)
-        delay(25.e-3)
-        self.tweezer.off()
+        self.magtrap_and_load_lightsheet()
 
+        self.outer_coil.on()
+        delay(1.e-3)
+        self.outer_coil.set_voltage()
+        self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
+                             i_start=0.,
+                             i_end=self.p.i_evap1_current)
+
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
+                             v_start=self.p.v_pd_lightsheet_rampup_end,
+                             v_end=self.p.v_pd_lightsheet_rampdown_end)
+
+        self.lightsheet.off()
+    
         delay(self.p.t_tof)
-        # self.flash_repump()
         self.abs_image()
+
+        self.outer_coil.off()
+        self.outer_coil.discharge()
        
     @kernel
     def run(self):

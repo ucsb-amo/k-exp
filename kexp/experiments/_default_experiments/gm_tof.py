@@ -6,9 +6,9 @@ import numpy as np
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy2_basler',save_data=True)
 
-        self.xvar('t_tof',np.linspace(12.,18.,5)*1.e-3)
+        self.xvar('t_tof',np.linspace(2.,10.,5)*1.e-3)
         
         self.p.imaging_state = 2.
         self.p.t_tof = 10.e-3
