@@ -9,15 +9,16 @@ from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy2_basler',save_data=True)
 
-        self.xvar('amp_imaging',np.linspace(0.05,0.2,10))
+        # self.xvar('amp_imaging',np.linspace(0.05,0.35,10))
 
-        # self.xvar('t_tof',np.linspace(20.,1000.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(1.,20.,10)*1.e-6)
+        self.xvar('t_tof',[17.e-6,10.e-3])
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(1.,9.,10))
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,6.,10))
         self.p.frequency_tweezer_list = [70.e6]
-        self.p.t_tof = 20.e-6
+        # self.p.t_tof = 17.e-6
         self.p.N_repeats = 1
 
         self.p.t_magtrap_ramp = 75.e-3
@@ -84,7 +85,7 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -114,16 +115,16 @@ class tweezer_load(EnvExperiment, Base):
                              i_start=self.p.i_evap1_current,
                              i_end=self.p.i_evap2_current)
         
-        # self.tweezer.on(paint=False)
-        # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
-        #                   v_start=0.,
-        #                   v_end=self.p.v_pd_tweezer_1064_ramp_end,
-        #                   paint=False,keep_trap_frequency_constant=False)
+        self.tweezer.on(paint=False)
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
+                          v_start=0.,
+                          v_end=self.p.v_pd_tweezer_1064_ramp_end,
+                          paint=False,keep_trap_frequency_constant=False)
         
         # lightsheet ramp down (to off)
-        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-        #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
-        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+                             v_start=self.p.v_pd_lightsheet_rampdown_end,
+                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         # tweezer evap 1 with constant trap frequency
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
@@ -151,7 +152,7 @@ class tweezer_load(EnvExperiment, Base):
         
         self.lightsheet.off()
 
-        # delay(self.p.t_tweezer_hold)
+        delay(self.p.t_tweezer_hold)
 
         self.tweezer.off()
     
