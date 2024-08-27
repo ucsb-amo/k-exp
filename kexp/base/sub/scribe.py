@@ -6,10 +6,10 @@ from artiq.experiment import TBool, rpc
 
 CHECK_PERIOD = 0.05
 WAIT_PERIOD = 0.1
-T_NOTIFY = 3
+T_NOTIFY = 5
 N_NOTIFY = T_NOTIFY // CHECK_PERIOD
 
-DEFAULT_TIMEOUT = 30.
+DEFAULT_TIMEOUT = 20.
 
 class Scribe():
     def __init__(self):

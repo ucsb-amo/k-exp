@@ -87,7 +87,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
                      dds_set = True, dds_off = True, beat_ref_on=True,
                      init_lightsheet = True, setup_awg = True):
         if self.setup_camera:
-            self.wait_for_camera_ready(timeout=30.)
+            self.wait_for_camera_ready(timeout=15.)
             print("Camera is ready.")
         if run_id:
             print(self._ridstr) # prints run ID to terminal

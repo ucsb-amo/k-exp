@@ -57,8 +57,8 @@ class BaslerUSB(pylon.InstantCamera):
     def is_opened(self):
         return self.IsOpen()
     
-    def start_grab(self,N_img,output_queue:Queue,timeout=20.):
-        this_timeout = 30.
+    def start_grab(self,N_img,output_queue:Queue,timeout=10.):
+        this_timeout = 20.
         Nimg = int(N_img)
         self.StartGrabbingMax(Nimg, pylon.GrabStrategy_LatestImages)
         count = 0
