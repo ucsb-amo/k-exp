@@ -111,7 +111,7 @@ xy_basler_params = BaslerParams(serial_number='40316451',camera_select='xy_basle
                                 amp_absorption=0.18)
 xy2_basler_params = BaslerParams(serial_number='40411037',camera_select='xy2_basler',
                                  trigger_source='Line2',
-                                 amp_absorption=0.35)
+                                 amp_absorption=0.33)
 x_basler_params = BaslerParams(serial_number='40320384',camera_select='x_basler',
                                trigger_source='Line2')
 z_basler_params = BaslerParams(serial_number='40416468',camera_select='z_basler',

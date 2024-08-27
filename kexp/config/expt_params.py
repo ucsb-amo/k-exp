@@ -44,12 +44,12 @@ class ExptParams():
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
         self.t_magnet_off_pretrigger = 0.e-3
-        self.t_shim_change_pretrigger = 2.e-3
+        self.t_shim_change_pretrigger = 0.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 0.3
+        self.t_lightsheet_rampup = 1.0
         self.t_lightsheet_rampdown = .7
         self.t_lightsheet_rampdown2 = .01
         self.t_lightsheet_rampdown3 = .01
@@ -183,7 +183,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 8.58
+        self.v_pd_lightsheet_rampup_end = 9.99
         self.v_pd_lightsheet_rampdown_end = 4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -204,7 +204,7 @@ class ExptParams():
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
         # self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
 
-        self.n_tweezers = 3
+        self.n_tweezers = 1
 
         self.frequency_aod_center = 75.e6
 
@@ -212,7 +212,8 @@ class ExptParams():
         #tweezers uniformly distributed around center frequency of AOD
         # self.frequency_tweezer_spacing = .7e6*2
         self.frequency_tweezer_spacing = 6.e6*2
-        self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
+        # self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
+        self.frequency_tweezer_list = [72.e6]
 
         self.frequency_tweezer_auto_compute = False
         self.amp_tweezer_auto_compute = True
