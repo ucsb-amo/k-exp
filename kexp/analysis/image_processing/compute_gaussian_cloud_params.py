@@ -1,7 +1,7 @@
 import numpy as np
 from kexp.analysis.fitting import GaussianFit
 
-def fit_gaussian_sum_dist(sum_dist,camera_params) -> list[GaussianFit]:
+def fit_gaussian_sum_dist(sum_dist:np.ndarray,camera_params) -> list[GaussianFit]:
     '''
     Performs a guassian fit on each summedOD in the input list.
 
@@ -20,40 +20,19 @@ def fit_gaussian_sum_dist(sum_dist,camera_params) -> list[GaussianFit]:
     fits: ArrayLike
         An array of GaussianFit objects.
     '''
-    sh = sum_dist.shape[:-1:]
-    fits = np.empty(sh,dtype=GaussianFit)
 
-    xaxis = camera_params.pixel_size_m / camera_params.magnification * np.arange(sum_dist.shape[len(sh)])
+    xaxis = camera_params.pixel_size_m / camera_params.magnification * np.arange(sum_dist.shape[-1])
 
-    if len(sh) == 1:
-        for i in range(sum_dist.shape[0]):
-            try:
-                fit = GaussianFit(xaxis, sum_dist[i])
-                fits[i] = fit
-            except Exception as e:
-                # print(e)
-                pass
-    elif len(sh) == 2:
-        for ix in range(sum_dist.shape[0]):
-            for iy in range(sum_dist.shape[1]):
-                try:
-                    fit = GaussianFit(xaxis, sum_dist[ix][iy])
-                    fits[ix][iy] = fit
-                except Exception as e:
-                    # print(e)
-                    pass
-    elif len(sh) == 3:
-        for ix in range(sum_dist.shape[0]):
-            for iy in range(sum_dist.shape[1]):
-                for iz in range(sum_dist.shape[2]):
-                    try:
-                        fit = GaussianFit(xaxis, sum_dist[ix][iy][iz])
-                        fits[ix][iy][iz] = fit
-                    except Exception as e:
-                        # print(e)
-                        pass
-    else:
-        print("The data is more than 3D -- update everthing to support 4D.")
+    # reshape to effectively a list of sumODs:
+    sum_dist_list = sum_dist.reshape(-1,sum_dist.shape[-1])
+    # prep a fit array of len == # sum ODs
+    fits = np.empty(sum_dist_list.shape[:-1],dtype=GaussianFit)
+    # iterate over sumODs, fit each and store in fits
+    for i in range(sum_dist_list.shape[0]):
+        this_sum_dist = sum_dist_list[i]
+        fits[i] = GaussianFit(xaxis,this_sum_dist)
+    # reshape back to the n-dim'nal sumOD shape
+    fits = fits.reshape(sum_dist.shape[:-1])
 
     return fits
 
