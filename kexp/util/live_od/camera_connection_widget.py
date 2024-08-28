@@ -122,7 +122,9 @@ class ROISelector(QWidget):
                                          'andor_single_tweezer',
                                          'andor_lightsheet',
                                          'andor_tweezer_wide_putin',
-                                         'andor_tweezer_smol'])
+                                         'andor_tweezer_smol',
+                                         'xy2_tweezer',
+                                         'xy2_lightsheet'])
         
     def setup_layout(self):
         self.layout = QVBoxLayout()
