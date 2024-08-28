@@ -30,7 +30,8 @@ class BaslerParams(CameraParams):
                  resolution = (1200,1920,),
                  t_light_only_image_delay=25.e-3,
                  t_dark_image_delay=15.e-3,
-                 camera_select = ""):
+                 camera_select = "",
+                 magnification = 0.75):
         super().__init__()
         self.camera_select = camera_select
         self.camera_type = "basler"
@@ -40,7 +41,7 @@ class BaslerParams(CameraParams):
         self.resolution = resolution
 
         self.pixel_size_m = 3.45 * 1.e-6
-        self.magnification = 0.75
+        self.magnification = magnification
         self.exposure_delay = 17 * 1.e-6
 
         self.__exposure_time_fluor__ = exposure_time_fluor
@@ -66,12 +67,13 @@ class AndorParams(CameraParams):
                  resolution = (512,512,),
                  t_light_only_image_delay=25.e-3,
                  t_dark_image_delay=25.e-3,
-                 camera_select = ""):
+                 camera_select = "",
+                 magnification = 50./3):
         super().__init__()
         self.camera_select = camera_select
         self.camera_type = "andor"
         self.pixel_size_m = 16.e-6
-        self.magnification = 50./3
+        self.magnification = magnification
         self.exposure_delay = 0. # needs to be updated from docs
         self.connection_delay = 8.0
         self.t_camera_trigger = 200.e-9
@@ -106,12 +108,15 @@ class AndorParams(CameraParams):
             self.em_gain = self.__em_gain_fluor
 
 andor_params = AndorParams(camera_select='andor',
-                           amp_absorption=0.1)
+                           amp_absorption=0.1,
+                           magnification=21.5)
 xy_basler_params = BaslerParams(serial_number='40316451',camera_select='xy_basler',
-                                amp_absorption=0.18)
+                                amp_absorption=0.18,
+                                magnification=0.5)
 xy2_basler_params = BaslerParams(serial_number='40411037',camera_select='xy2_basler',
                                  trigger_source='Line2',
-                                 amp_absorption=0.33)
+                                 amp_absorption=0.33,
+                                 magnification=2.1)
 x_basler_params = BaslerParams(serial_number='40320384',camera_select='x_basler',
                                trigger_source='Line2')
 z_basler_params = BaslerParams(serial_number='40416468',camera_select='z_basler',
