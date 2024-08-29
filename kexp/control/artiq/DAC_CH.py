@@ -1,7 +1,9 @@
-from artiq.experiment import kernel, rpc
+from artiq.experiment import kernel, rpc, delay
 from artiq.coredevice.zotino import Zotino
 
-dv = -100.
+from kexp.util.artiq.async_print import aprint
+
+dv = -10432.
 
 class DAC_CH():
     def __init__(self,ch,dac_device=Zotino,max_v=dv):
@@ -14,7 +16,8 @@ class DAC_CH():
             self.max_v = max_v
         self.key = ""
 
-        self.errmessage = f"Attempted to set dac ch {self.key} to a voltage > specified maximum voltage ({max_v:1.3f}) for that channel. DAC voltage was replaced by zero for these instances."
+    def set_errmessage(self):
+        self.errmessage = f"Attempted to set dac ch {self.key} to a voltage > specified maximum voltage ({self.max_v:1.3f}) for that channel. DAC voltage was replaced by zero for these instances."
 
     @kernel
     def set(self,v=dv,load_dac=True):
@@ -25,7 +28,7 @@ class DAC_CH():
             else:
                 self.v = v
                 
-        self.dac_device.write_dac(self.ch,float(self.v))
+        self.dac_device.write_dac(self.ch,self.v)
         if load_dac:
             self.dac_device.load()
 
@@ -41,3 +44,13 @@ class DAC_CH():
     @kernel
     def load(self):
         self.dac_device.load()
+
+    @kernel(flags={"fast-math"})
+    def linear_ramp(self,t,v_start,v_end,n):
+        v0 = v_start
+        vf = v_end
+        delta_v = (vf-v0)/(n-1)
+        dt = t/n
+        for i in range(n):
+            self.set(v=v0+i*delta_v)
+            delay(dt)

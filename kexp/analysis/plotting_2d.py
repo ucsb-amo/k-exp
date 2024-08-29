@@ -43,7 +43,7 @@ def plot_image_grid(ad:atomdata,
             ax = axes[i, j]
             # img = od.take(indices=[i], axis=var1_idx).take(indices=[j], axis=var2_idx).squeeze()
             img = od[i][j]
-            ax.imshow(img,vmin=0.,vmax=max_od)
+            ax.imshow(img,vmin=0.,vmax=max_od, origin='lower')
             ax.set_xticks([])
             ax.set_yticks([])
     
@@ -72,7 +72,8 @@ def mixOD_grid(ad,
                 xvar0mult=1.,
                 xvar1mult=1.,
                 max_od=0.,
-                figsize=[]):
+                figsize=[],
+                aspect='auto'):
 
     # Assuming you have already loaded your 'ad' object
     if not xvar0format:
@@ -105,7 +106,7 @@ def mixOD_grid(ad,
         plt.figure(figsize=figsize)
     else:
         plt.figure(figsize=(10, 8))
-    plt.imshow(full_image,vmin=0.,vmax=max_od)
+    plt.imshow(full_image,vmin=0.,vmax=max_od, origin='lower')
     plt.title(f"Run ID: {ad.run_info.run_id}")
     plt.xlabel(xvarnames[1])  # Label x-axis with the second x-variable name
     plt.ylabel(xvarnames[0])  # Label y-axis with the first x-variable name
@@ -116,6 +117,8 @@ def mixOD_grid(ad,
                  rotation=90)
     plt.yticks(np.arange(0.5 * px, grid_rows * px, px),
             [f"{x*xvar0mult:{xvar0format}}" for x in xvars[0]])
+    
+    plt.gca().set_aspect(aspect)
 
     plt.show()
 
@@ -162,7 +165,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     for i0 in range(n0):
         for i1 in range(n1):
             ax[i0][i1].plot(ydata[i0][i1])
-            # ax[i0][i1].plot(yfitdata[i0][i1])
+            ax[i0][i1].plot(yfitdata[i0][i1])
             ax[i0][i1].set_ylim(0,ymax)
             ax[i0,i1].set_yticklabels([])
             

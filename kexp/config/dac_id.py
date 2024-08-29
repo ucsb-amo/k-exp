@@ -2,19 +2,18 @@ import numpy as np
 from artiq.experiment import kernel
 from artiq.coredevice.zotino import Zotino
 from kexp.control.artiq.DAC_CH import DAC_CH
-from kexp.control.artiq.DDS import DDS
+from kexp.config.expt_params import ExptParams
 
 FORBIDDEN_CH = []
 
 class dac_frame():
-    def __init__(self, dac_device = Zotino):
+    def __init__(self, expt_params = ExptParams(), dac_device = Zotino):
 
         self.dac_device = dac_device
 
         self.dac_ch_list = []
 
-        from kexp.config import ExptParams
-        p = ExptParams()
+        p = expt_params
 
         self.lightsheet_paint_amp = self.assign_dac_ch(0)
         self.vva_lightsheet = self.assign_dac_ch(1,v=9.7)
@@ -24,8 +23,8 @@ class dac_frame():
         self.xshim_current_control = self.assign_dac_ch(5,p.v_xshim_current)
         self.yshim_current_control = self.assign_dac_ch(6,p.v_yshim_current)
         self.zshim_current_control = self.assign_dac_ch(7,p.v_zshim_current)
-        self.inner_coil_supply_current = self.assign_dac_ch(8,max_v=5.8)
-        self.outer_coil_supply_current = self.assign_dac_ch(9)
+        self.inner_coil_supply_current = self.assign_dac_ch(8,max_v=5.9)
+        self.outer_coil_supply_current = self.assign_dac_ch(9,max_v=7.)
         self.outer_coil_supply_voltage = self.assign_dac_ch(10)
         self.inner_coil_supply_voltage = self.assign_dac_ch(11)
         self.v_pd_tweezer_pid1 = self.assign_dac_ch(12,v=9.7)
@@ -33,7 +32,7 @@ class dac_frame():
         self.vva_ry_405 = self.assign_dac_ch(14)
         self.vva_ry_980 = self.assign_dac_ch(15)
         self.tweezer_paint_amp = self.assign_dac_ch(16)
-        self.v_pd_tweezer_pid2 = self.assign_dac_ch(17,v=9.7)
+        self.v_pd_tweezer_pid2 = self.assign_dac_ch(17,v=6.,max_v=6.64)
         self.test_dac = self.assign_dac_ch(30)
 
         self._write_dac_keys()
@@ -52,6 +51,7 @@ class dac_frame():
         for key in self.__dict__.keys():
             if isinstance(self.__dict__[key],DAC_CH):
                 self.__dict__[key].key = key
+                self.__dict__[key].set_errmessage()
 
     def dac_by_ch(self,ch) -> DAC_CH:
         ch_list = [dac.ch for dac in self.dac_ch_list]

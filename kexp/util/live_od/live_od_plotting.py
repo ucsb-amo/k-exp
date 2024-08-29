@@ -243,9 +243,9 @@ class ImgPlotPanel(PlotPanel):
         try:
             if self._plot_ref == None:
                 if max_od == dv and min_od == dv:
-                    self._plot_ref = self.axes.imshow(img)
+                    self._plot_ref = self.axes.imshow(img, origin='lower')
                 else:
-                    self._plot_ref = self.axes.imshow(img,vmin=min_od,vmax=max_od)
+                    self._plot_ref = self.axes.imshow(img,vmin=min_od,vmax=max_od, origin='lower')
                 self.set_labels()
             else:
                 self._plot_ref.set_data(img)

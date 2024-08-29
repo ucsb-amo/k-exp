@@ -212,6 +212,7 @@ class MainWindow(QMainWindow):
         # Parse each segment
         for segment in data_segments:
             #print(segment)
+
             if 'Flowmeter' in segment:
                 #print("jeff")
                 flowmeter_match = re.search(r'Flowmeter (\d) reads ([\d\.]+)V', segment)
@@ -306,11 +307,12 @@ class MainWindow(QMainWindow):
         # Set up the SMTP server
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
-        server.login('harry.who.is.ultra.cold@gmail.com', 'ocha pqjr ywua zvwa')
+        server.login('harry.who.is.ultra.cold@gmail.com', 'dvlw elsd mhqb mzfo')
         
         # Send the email
         server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
-        
+        #server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
+
         # Close the server connection
         server.quit()
         
@@ -323,8 +325,8 @@ class MainWindow(QMainWindow):
         subdir = 'interlock_logs'
         filename = 'plot_data.csv'
         savedir = os.path.join(data_dir,subdir,filename)
-        with open(filename, 'w', newline='') as savedir:
-            writer = csv.writer(savedir)
+        with open(savedir, 'w', newline='') as file:
+            writer = csv.writer(file)
             writer.writerow(['x', 'y1', 'y2'])
             for i in range(len(self.time)):
                 writer.writerow([self.time[i], self.temperature[i], self.flows[0][i], self.flows[1][i], self.flows[2][i], self.flows[3][i]])

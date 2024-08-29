@@ -42,12 +42,13 @@ class Devices():
         self.core_dma = self.get_device("core_dma")
         zotino = self.get_device("zotino0")
         sampler = self.get_device("sampler0")
+        self.grabber = self.get_device("grabber0")
 
         # sampler channels
         self.sampler = sampler_frame(sampler_device=sampler)
 
         # dac channels
-        self.dac = dac_frame(dac_device=zotino)
+        self.dac = dac_frame(expt_params=self.params, dac_device=zotino)
 
         # ttl channels
         self.ttl = ttl_frame()
@@ -80,7 +81,7 @@ class Devices():
                                       expt_params=self.params)
         
         # painted ligthsheet
-        self.lightsheet = lightsheet(vva_dac=self.dac.vva_lightsheet,
+        self.lightsheet = lightsheet(pid_dac=self.dac.vva_lightsheet,
                                      paint_amp_dac=self.dac.lightsheet_paint_amp,
                                      sw_ttl=self.ttl.lightsheet_sw,
                                      pid_int_hold_zero_ttl = self.ttl.lightsheet_pid_int_hold_zero,

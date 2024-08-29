@@ -1,4 +1,4 @@
 call %kpy%
-cd %code%/k-exp/kexp/experiments/tools
-artiq_run mot_observe.py
+cd %code%/k-exp/kexp/experiments/_tools
+ar mot_observe.py
 pause

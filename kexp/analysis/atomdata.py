@@ -31,7 +31,8 @@ class atomdata():
     '''
     def __init__(self, xvarnames, images, image_timestamps,
                   params: ExptParams, camera_params:CameraParams,
-                  run_info: RunInfo, sort_idx, sort_N, expt_text,
+                  run_info: RunInfo, sort_idx, sort_N, 
+                  expt_text, params_text, cooling_text, imaging_text,
                     unshuffle_xvars = True, crop_type='',
                     transpose_idx=[], avg_repeats=False):
 
@@ -48,6 +49,9 @@ class atomdata():
         self.camera_params = camera_params
 
         self.experiment = expt_text
+        self.params_file = params_text
+        self.cooling_file = cooling_text
+        self.imaging_file = imaging_text
 
         self.xvarnames = xvarnames
         self.xvars = self._unpack_xvars()
@@ -78,15 +82,20 @@ class atomdata():
 
     def compute_atom_number(self):
         self.atom_cross_section = self.atom.get_cross_section()
-        self.atom_number_density = self.od / self.atom_cross_section * (self.camera_params.pixel_size_m / self.camera_params.magnification)**2
+        dx_pixel = self.camera_params.pixel_size_m / self.camera_params.magnification
+        
+        self.atom_number_fit_area_x = self.fit_area_x * dx_pixel / self.atom_cross_section
+        self.atom_number_fit_area_y = self.fit_area_y * dx_pixel / self.atom_cross_section
+
+        self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
     def recrop(self,crop_type=''):
-        if crop_type != self._analysis_tags.crop_type:
-            self.analyze_ods(crop_type=crop_type,unshuffle_xvars=False)
-            self._analysis_tags.crop_type = crop_type
-        else:
-            raise ValueError(f'The specified crop_type ({crop_type}) already applied ({self._analysis_tags.crop_type}).')
+        # if crop_type != self._analysis_tags.crop_type:
+        self.analyze_ods(crop_type=crop_type,unshuffle_xvars=False)
+        self._analysis_tags.crop_type = crop_type
+        # else:
+        #     raise ValueError(f'The specified crop_type ({crop_type}) already applied ({self._analysis_tags.crop_type}).')
 
     def avg_repeats(self,xvars_to_avg=[],reanalyze=True):
         """
@@ -258,10 +267,11 @@ class atomdata():
 
         if absorption_analysis:
             self._analyze_absorption_images(crop_type)
+            self._remap_fit_results()
             self.compute_atom_number()
         else:
             self._analyze_fluorescence_images(crop_type)
-        self._remap_fit_results()
+            self._remap_fit_results()
     
         if unshuffle_xvars:
             self.unshuffle_ad()

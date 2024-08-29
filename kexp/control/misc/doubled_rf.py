@@ -5,6 +5,7 @@ from artiq.experiment import *
 import numpy as np
 
 dv = -0.1
+di = 0
 dv_list = np.linspace(0.,1.,5)
 
 d_exptparams = ExptParams()
@@ -14,14 +15,20 @@ class doubled_rf():
         self.dds = dds_ch
         self.params = expt_params
 
-        self.params.frequency_rf_state_xfer_sweep_list = dv_list
-        self.params.dt_rf_state_xfer_sweep = dv
-
-    @kernel
+    @kernel(flags={"fast-math"})
     def set_rf(self,frequency=dv):
+        """Sets the lower sideband frequency of the frequency doubled RF to be
+        equal to the specified frequency.
+
+        Args:
+            frequency (float): Defaults to the start point of the sweep
+            (center-fullwidth/2).
+        """        
         if frequency == dv:
-            frequency = self.params.frequency_rf_state_xfer_sweep_list[0]
-        self.dds.dds_device.set(frequency=frequency/2,amplitude=self.params.amp_rf_source)
+            frequency = self.params.frequency_rf_state_xfer_sweep_center \
+                - self.params.frequency_rf_state_xfer_sweep_fullwidth/2
+        self.dds.dds_device.set(frequency=frequency/2,
+                                amplitude=self.params.amp_rf_source)
 
     @kernel
     def on(self):
@@ -31,31 +38,38 @@ class doubled_rf():
     def off(self):
         self.dds.dds_device.sw.off()
 
-
     @kernel
     def set_amplitude(self,amp):
         self.dds.set_dds(amplitude=amp)
 
-    @kernel
-    def sweep(self,frequency_sweep_list=dv_list):
-        """Sweeps the lower sideband freuqency over the specified range.
-
-        The sweep time is controlled by ExptParams.t_rf_state_xfer_sweep, and
-        the sweep step time is controlled by ExptParams.dt_rf_state_xfer_sweep.
-        Adjust those to change the ramp times.
+    @kernel(flags={"fast-math"})
+    def sweep(self,t,frequency_center=dv,frequency_sweep_fullwidth=dv,n_steps=di):
+        """Sweeps the lower sideband frequency of the frequency doubled DDS over
+        the specified range.
 
         Args:
-            frequency_sweep_list (1D array, optional): The list of frequencies
-            (in Hz) to be swept over.
+            t (float): The time (in seconds) for the sweep.
+            frequency_center (float, optional): The center frequency (in Hz) for the sweep range.
+            frequency_sweep_fullwidth (float, optional): The full width (in Hz) of the sweep range.
+            n_steps (int, optional): The number of steps for the frequency sweep.
         """        
-        if frequency_sweep_list == dv_list:
-            frequency_sweep_list = self.params.frequency_rf_state_xfer_sweep_list
+        if frequency_center == dv:
+            frequency_center = self.params.frequency_rf_state_xfer_sweep_center
+        if frequency_sweep_fullwidth == dv:
+            frequency_sweep_fullwidth = self.params.frequency_rf_state_xfer_sweep_fullwidth
+        if n_steps == di:
+            n_steps = self.params.n_rf_sweep_steps
 
-        self.set_rf(frequency=frequency_sweep_list[0])
+        f0 = frequency_center - frequency_sweep_fullwidth / 2
+        ff = frequency_center + frequency_sweep_fullwidth / 2
+        df = (ff-f0)/(n_steps-1)
+        dt = t / n_steps
+
+        self.set_rf(frequency=f0)
         self.on()
-        for f in frequency_sweep_list:
-            self.set_rf(frequency=f)
-            delay(self.params.dt_rf_state_xfer_sweep)
+        for i in range(n_steps):
+            self.set_rf(frequency=f0+i*df)
+            delay(dt)
         self.off()
 
     
