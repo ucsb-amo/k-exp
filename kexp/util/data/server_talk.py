@@ -27,13 +27,13 @@ def get_latest_date_folder(days_ago=0):
     date = datetime.today() - timedelta(days=days_ago)
     date_str = date.strftime('%Y-%m-%d')
     folderpath=os.path.join(DATA_DIR,date_str)
-    if not os.path.exists(folderpath):
+    if not os.path.exists(folderpath) or not os.listdir(folderpath):
         folderpath = get_latest_date_folder(days_ago+1)
     return folderpath
     
 def get_latest_data_file():
     check_for_mapped_data_dir()
-    folderpath = get_latest_date_folder(0)
+    folderpath = get_latest_date_folder()
     pattern = os.path.join(folderpath,'*.hdf5')
     latest_file = max(glob.iglob(pattern),key=os.path.getmtime)
     return latest_file
