@@ -322,13 +322,14 @@ class ExptParams():
 
     # def compute_tweezer_1064_phases(self):
     #     self.phase_tweezer_array = np.empty([self.n_tweezers])
-    #     for tweezer_idx in self.n_tweezers:
+    #     fraction_power =  1/len(self.frequency_tweezer_list)
+    #     for tweezer_idx in range(self.n_tweezers):
     #         if tweezer_idx == 0:
     #             self.phase_tweezer_array[0] =  360
     #         else:
     #             phase_ij = 0
     #             for j in range(1,tweezer_idx):
-    #                 phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*(1/len(self.frequency_tweezer_list))
+    #                 phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*fraction_power
     #             phase_i = (phase_ij % 2*np.pi) * 360
     #             self.phase_tweezer_array[tweezer_idx] = phase_i
 

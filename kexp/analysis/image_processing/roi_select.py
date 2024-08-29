@@ -39,8 +39,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [210,271]
         roiy = [253,284]
     elif crop_type == 'andor_tweezer_wide_putin':
-        roix = [170,261]
-        roiy = [237,305]
+        roix = [180,260]
+        roiy = [220,250]
     elif crop_type == 'andor_lightsheet':
         roix = [110,360]
         roiy = [180,400]
@@ -48,8 +48,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [140,330]
         roiy = [200,370]
     elif crop_type == 'andor_tweezer_smol':
-        roix = [180,220]
-        roiy = [270,310]
+        roix = [200,220]
+        roiy = [220,250]
     elif crop_type == 'andor_single_tweezer':
         roix = [170,240]
         roiy = [250,330]
@@ -57,8 +57,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [1101,1300]
         roiy = [401,1200]
     elif crop_type == 'xy2_tweezer':
-        roix = [1110,1200]
-        roiy = [540,620]
+        roix = [660,770]
+        roiy = [1050,1200]
     else:
         print('no matching roi found, defaulting to whole image')
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]]
