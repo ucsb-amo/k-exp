@@ -128,7 +128,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
         self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
+        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
         self.core.break_realtime()
 
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
