@@ -11,7 +11,7 @@ class ttl_frame():
         self.outer_coil_discharge_igbt = self.ttl_assign(0)
         self.tweezer_pid2_enable = self.ttl_assign(1)
         self.lightsheet_sw = self.ttl_assign(4)
-        self.xy_basler = self.ttl_assign(5)
+        self.basler = self.ttl_assign(5)
         self.inner_coil_igbt = self.ttl_assign(6)
         self.andor = self.ttl_assign(7)
         self.outer_coil_igbt = self.ttl_assign(8)

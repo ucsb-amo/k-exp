@@ -8,7 +8,7 @@ from spcm import units
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 
-from artiq.experiment import kernel, delay, parallel, TFloat
+from artiq.experiment import kernel, delay, parallel, TFloat, portable
 
 import numpy as np
 
@@ -19,7 +19,7 @@ dv_list = np.linspace(0.,1.,5)
 
 class tweezer():
     def __init__(self,
-                  ao1_dds=DDS, pid1_dac=DAC_CH,
+                  ao1_dds=DDS, pid1_dac=DAC_CH, 
                   ao2_dds=DDS, pid2_dac=DAC_CH,
                   sw_ttl=TTL,
                   awg_trg_ttl=TTL,
@@ -167,7 +167,7 @@ class tweezer():
             pid_dac.set(v=v,load_dac=True)
             delay(dt_ramp)
 
-    @kernel(flags={"fast-math"})
+    @portable
     def v_pd_to_painting_amp_voltage(self,v_pd=dv,
                                         v_pd_max=dv,
                                         v_awg_am_max=dv) -> TFloat:
@@ -235,7 +235,7 @@ class tweezer():
         # Start command including enable of trigger engine
         self.card.start(spcm.M2CMD_CARD_ENABLETRIGGER)
 
-    def set_static_tweezers(self, freq_list, amp_list):
+    def set_static_tweezers(self, freq_list, amp_list, phase_list):
         """_summary_
 
         Args:
@@ -245,7 +245,10 @@ class tweezer():
         Raises:
             ValueError: _description_
         """
-
+        if isinstance(freq_list,float):
+            print('is a float!')
+            freq_list = [freq_list]
+        
         if len(freq_list) != len(amp_list):
             raise ValueError('Amplitude and frequency lists are not of equal length')
 
@@ -253,6 +256,7 @@ class tweezer():
             if tweezer_idx < len(freq_list):
                 self.dds[tweezer_idx].amp(amp_list[tweezer_idx])
                 self.dds[tweezer_idx].freq(freq_list[tweezer_idx])
+                self.dds[tweezer_idx].phase(phase_list[tweezer_idx])
             else:
                 pass
         self.dds.exec_at_trg()

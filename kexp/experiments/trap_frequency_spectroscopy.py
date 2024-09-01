@@ -10,7 +10,7 @@ T32 = 1<<32
 
 class trap_frequency_spectroscopy(EnvExperiment, Base):
 
-    def build(self):
+    def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 2.
@@ -51,7 +51,7 @@ class trap_frequency_spectroscopy(EnvExperiment, Base):
         self.sh_relay = self.get_device("shuttler0_relay")
         self.sh_relay: Relay
         
-        self.finish_build(shuffle=True)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

@@ -23,8 +23,8 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 64.e6
-        self.frequency_detuned_imaging_F1 = 458.e6
+        self.frequency_detuned_imaging = 14.0e6
+        self.frequency_detuned_imaging_F1 = 400.e6
         self.imaging_state = 2.
         
         self.t_repump_flash_imaging = 10.e-6
@@ -44,11 +44,12 @@ class ExptParams():
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
         self.t_magnet_off_pretrigger = 0.e-3
+        self.t_shim_change_pretrigger = 0.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 332.e-3
+        self.t_lightsheet_rampup = 1.0
         self.t_lightsheet_rampdown = .7
         self.t_lightsheet_rampdown2 = .01
         self.t_lightsheet_rampdown3 = .01
@@ -64,9 +65,12 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap = 1.4
-        self.t_magtrap_ramp = .367
-        self.t_magtrap_rampdown = .2
+        # self.t_magtrap = 1.4
+        # self.t_magtrap_ramp = .367
+        # self.t_magtrap_rampdown = .2
+        self.t_magtrap_ramp = 75.e-3
+        self.t_magtrap = 0.0
+        self.t_magtrap_rampdown = 75.e-3
         self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 100.e-3
         self.t_feshbach_field_ramp2 = 20.e-3
@@ -104,7 +108,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 20.0
-        self.v_zshim_current = 0.45
+        self.v_zshim_current = 0.13
         self.v_xshim_current = 4.1
         self.v_yshim_current = 7.
 
@@ -152,10 +156,10 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 22.
+        self.i_magtrap_init = 27.
         self.i_magtrap_ramp_end = 90.
-        self.n_magtrap_ramp_steps = 1000
-        self.n_magtrap_rampdown_steps = 1000
+        # self.n_magtrap_ramp_steps = 1000
+        # self.n_magtrap_rampdown_steps = 1000
 
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.
@@ -174,13 +178,13 @@ class ExptParams():
         #ODT
         # self.amp_lightsheet = 0.6
         # self.frequency_ao_lightsheet = 80.e6
-        self.v_pd_lightsheet_pd_minimum = 0.035
+        self.v_pd_lightsheet_pd_minimum = 0.046
         self.v_lightsheet_paint_amp_max = 6.0
 
-        self.v_pd_lightsheet = 8.8
+        self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.99
-        self.v_pd_lightsheet_rampdown_end = 4.84
+        self.v_pd_lightsheet_rampdown_end = 4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -200,16 +204,21 @@ class ExptParams():
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
         # self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
 
-        self.n_tweezers = 2
+        self.n_tweezers = 1
 
         self.frequency_aod_center = 75.e6
 
         #frequency spacing between each tweezer in the array
         #tweezers uniformly distributed around center frequency of AOD
-        self.frequency_tweezer_spacing = .7e6*2
+        # self.frequency_tweezer_spacing = .7e6*2
+        self.frequency_tweezer_spacing = 6.e6*2
+        # self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
+        self.frequency_tweezer_list = [72.e6]
 
-        self.amp_tweezer_auto_compute = False
-        self.amp_tweezer_list = [.2,.215]
+        self.frequency_tweezer_auto_compute = False
+        self.amp_tweezer_auto_compute = True
+        # self.amp_tweezer_list = [.2,.215]
+        # self.amp_tweezer_list = [.4,.4]
 
         self.v_tweezer_paint_amp_max = 6.
 
@@ -228,7 +237,7 @@ class ExptParams():
 
         # feshbach field rampup
         # self.i_feshbach_field_rampup_start = 0.
-        self.n_field_ramp_steps = 100
+        self.n_field_ramp_steps = 1000
         # self.n_feshbach_field_rampup_steps = 100
         # self.n_feshbach_field_ramp_steps = 100
         # self.n_feshbach_field_ramp2_steps = 100
@@ -236,7 +245,7 @@ class ExptParams():
         # rydberg
         self.frequency_ao_ry_405 = 250.0e6
         self.frequency_ao_ry_980 = 80.0e6
-        self.amp_ao_ry_405 = 0.2
+        self.amp_ao_ry_405 = 0.23
         self.amp_ao_ry_980 = 0.285
 
         # low field evap
@@ -252,7 +261,7 @@ class ExptParams():
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.
-        self.n_forced_evap_ramp_steps = 1000
+        # self.n_forced_evap_ramp_steps = 1000
         self.i_forced_evap_ramp_end = 40.
 
         # high field imaging
@@ -293,23 +302,35 @@ class ExptParams():
         self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
 
     def compute_tweezer_1064_freqs(self):
-        min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
-        max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
-        self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
+        if self.frequency_tweezer_auto_compute:
+            min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
+            max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
+            self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
+        # else:
+        #     self.frequency_tweezer_list = self.frequency_tweezer_list
 
     def compute_tweezer_1064_amps(self):
+        if not self.frequency_tweezer_auto_compute:
+            if isinstance(self.frequency_tweezer_list,float):
+                self.n_tweezers = 1
+            else:
+                self.n_tweezers = len(self.frequency_tweezer_list)
         if self.amp_tweezer_auto_compute:
-            self.amp_tweezer_list = np.linspace(1 / self.n_tweezers, 1 / self.n_tweezers, self.n_tweezers)
+            self.amp_tweezer_list = np.ones(self.n_tweezers) / self.n_tweezers
         else:
             self.amp_tweezer_list = self.amp_tweezer_list
 
-    # def compute_tweezer_1064_phases(self):
-    #     self.phase_tweezer_array = np.empty([self.n_tweezers])
-    #     for tweezer_idx in self.n_tweezers:
-    #         if tweezer_idx == 0:
-    #             self.phase_tweezer_array[0] =  360
-    #         else:
-    #             self.phase_tweezer_array[tweezer_idx] = 360 - 2*np.pi*
+    def compute_tweezer_1064_phases(self):
+        self.phase_tweezer_array = np.empty([self.n_tweezers])
+        for tweezer_idx in range(self.n_tweezers):
+            if tweezer_idx == 0:
+                self.phase_tweezer_array[0] =  360
+            else:
+                phase_ij = 0
+                for j in range(1,tweezer_idx):
+                    phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*self.amp_tweezer_list[tweezer_idx]
+                phase_i = (phase_ij % 2*np.pi) * 360
+                self.phase_tweezer_array[tweezer_idx] = phase_i
 
     def compute_derived(self):
         '''loop through methods (except built in ones) and compute all derived quantities'''

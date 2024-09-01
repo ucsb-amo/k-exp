@@ -89,9 +89,9 @@ class dds_frame():
                                     dac_ch_vpd = self._dac_frame.vva_d1_3d_r.ch,
                                     default_detuning = self.p.detune_d1_r_gm,
                                     default_amp = self.p.amp_d1_3d_r)
-        self.imaging = self.dds_assign(4,1, ao_order = -1,
+        self.imaging = self.dds_assign(4,1, ao_order = 1,
                                     default_freq = self.p.frequency_ao_imaging,
-                                    default_amp = 0.5)
+                                    default_amp = 0.54)
         self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1',
                                     default_detuning = self.p.detune_optical_pumping_op,
                                     default_amp = self.p.amp_optical_pumping_op)

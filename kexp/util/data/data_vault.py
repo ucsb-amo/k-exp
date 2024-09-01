@@ -4,8 +4,14 @@ import os
 import copy
 import h5py
 
+from kexp.util.data.server_talk import check_for_mapped_data_dir, get_run_id, update_run_id
+
 data_dir = os.getenv("data")
-run_id_path = os.path.join(data_dir,"run_id.py")
+
+code_dir = os.getenv("code")
+params_path = os.path.join(code_dir,"k-exp","kexp","config","expt_params.py")
+cooling_path = os.path.join(code_dir,"k-exp","kexp","base","sub","cooling.py")
+imaging_path = os.path.join(code_dir,"k-exp","kexp","base","sub","image.py")
 
 class DataSaver():
 
@@ -34,6 +40,18 @@ class DataSaver():
             else:
                 f.attrs["expt_file"] = ""
 
+            with open(params_path) as params_file:
+                params_file = params_file.read()
+            f.attrs["params_file"] = params_file
+
+            with open(cooling_path) as cooling_file:
+                cooling_file = cooling_file.read()
+            f.attrs["cooling_file"] = cooling_file
+
+            with open(imaging_path) as imaging_file:
+                imaging_file = imaging_file.read()
+            f.attrs["imaging_file"] = imaging_file
+
             f.close()
             print("Parameters saved, data closed.")
             self._update_run_id(expt.run_info)
@@ -44,6 +62,8 @@ class DataSaver():
         if expt.setup_camera:
 
             pwd = os.getcwd()
+
+            check_for_mapped_data_dir()
             os.chdir(data_dir)
 
             fpath, folder = self._data_path(expt.run_info)
@@ -116,25 +136,10 @@ class DataSaver():
         return filepath, filepath_folder
 
     def _update_run_id(self,run_info):
-        pwd = os.getcwd()
-        os.chdir(data_dir)
-
-        line = f"{run_info.run_id + 1}"
-        with open(run_id_path,'w') as f:
-            f.write(line)
-
-        os.chdir(pwd)
+        update_run_id(run_info)
 
     def _get_rid(self):
-        pwd = os.getcwd()
-        os.chdir(data_dir)
-
-        with open(run_id_path,'r') as f:
-            rid = f.read()
-
-        os.chdir(pwd)
-
-        return int(rid)
+        return get_run_id()
 
 class DataVault():
     def __init__(self,atomdata_list=[],datalist_path=[]):
