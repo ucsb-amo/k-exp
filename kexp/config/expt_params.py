@@ -72,7 +72,7 @@ class ExptParams():
         self.t_magtrap = 0.0
         self.t_magtrap_rampdown = 75.e-3
         self.t_feshbach_field_rampup = 200.e-3
-        self.t_feshbach_field_ramp = 100.e-3
+        self.t_feshbach_field_ramp = 20.e-3
         self.t_feshbach_field_ramp2 = 20.e-3
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
@@ -320,17 +320,17 @@ class ExptParams():
         else:
             self.amp_tweezer_list = self.amp_tweezer_list
 
-    # def compute_tweezer_1064_phases(self):
-    #     self.phase_tweezer_array = np.empty([self.n_tweezers])
-    #     for tweezer_idx in self.n_tweezers:
-    #         if tweezer_idx == 0:
-    #             self.phase_tweezer_array[0] =  360
-    #         else:
-    #             phase_ij = 0
-    #             for j in range(1,tweezer_idx):
-    #                 phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*(1/len(self.frequency_tweezer_list))
-    #             phase_i = (phase_ij % 2*np.pi) * 360
-    #             self.phase_tweezer_array[tweezer_idx] = phase_i
+    def compute_tweezer_1064_phases(self):
+        self.phase_tweezer_array = np.empty([self.n_tweezers])
+        for tweezer_idx in range(self.n_tweezers):
+            if tweezer_idx == 0:
+                self.phase_tweezer_array[0] =  360
+            else:
+                phase_ij = 0
+                for j in range(1,tweezer_idx):
+                    phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*self.amp_tweezer_list[tweezer_idx]
+                phase_i = (phase_ij % 2*np.pi) * 360
+                self.phase_tweezer_array[tweezer_idx] = phase_i
 
     def compute_derived(self):
         '''loop through methods (except built in ones) and compute all derived quantities'''

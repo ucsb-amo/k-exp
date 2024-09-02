@@ -235,7 +235,7 @@ class tweezer():
         # Start command including enable of trigger engine
         self.card.start(spcm.M2CMD_CARD_ENABLETRIGGER)
 
-    def set_static_tweezers(self, freq_list, amp_list):
+    def set_static_tweezers(self, freq_list, amp_list, phase_list):
         """_summary_
 
         Args:
@@ -256,6 +256,7 @@ class tweezer():
             if tweezer_idx < len(freq_list):
                 self.dds[tweezer_idx].amp(amp_list[tweezer_idx])
                 self.dds[tweezer_idx].freq(freq_list[tweezer_idx])
+                self.dds[tweezer_idx].phase(phase_list[tweezer_idx])
             else:
                 pass
         self.dds.exec_at_trg()
