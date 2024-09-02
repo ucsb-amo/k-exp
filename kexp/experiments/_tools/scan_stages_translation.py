@@ -45,82 +45,57 @@ class stage_scan(EnvExperiment, Base):
         self.os_control.translate_together_z(N_steps=self.p.n_steps_z)
         self.core.break_realtime()
 
+        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
         
-        self.inner_coil.set_current(i_supply=self.p.i_magtrap_init)
-
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_gm,
-                        v_yshim_current=self.p.v_yshim_current_gm,
-                          v_xshim_current=self.p.v_xshim_current_gm)
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
-        # self.release()
-        self.switch_d2_3d(0)
-        self.switch_d1_3d(0)
+        self.magtrap_and_load_lightsheet()
 
-        self.flash_cooler()
-
-        self.dds.power_down_cooling()
-
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
-                        v_yshim_current=self.p.v_yshim_current_magtrap,
-                          v_xshim_current=self.p.v_xshim_current_magtrap)
-
-        # magtrap start
-        self.inner_coil.on()
-
-        # ramp up lightsheet over magtrap
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampup)
-
-        for i in self.p.magtrap_ramp_list:
-            self.inner_coil.set_current(i_supply=i)
-            delay(self.p.dt_magtrap_ramp)
-
-        delay(self.p.t_magtrap)
-
-        for i in self.p.magtrap_rampdown_list:
-            self.inner_coil.set_current(i_supply=i)
-            delay(self.p.dt_magtrap_rampdown)
-
-        self.inner_coil.off()
-        
+        # feshbach field on, ramp up to field 1  
         self.outer_coil.on()
         delay(1.e-3)
         self.outer_coil.set_voltage()
-
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-
-        for i in self.p.feshbach_field_rampup_list:
-            self.outer_coil.set_current(i_supply=i)
-            delay(self.p.dt_feshbach_field_rampup)
-        delay(20.e-3)
-
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
-                             v_ramp_list=self.p.v_pd_lightsheet_ramp_down_list)
+        self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
+                             i_start=0.,
+                             i_end=self.p.i_evap1_current)
         
-        for i in self.p.feshbach_field_ramp_list:
-            self.outer_coil.set_current(i_supply=i)
-            delay(self.p.dt_feshbach_field_ramp)
-        delay(20.e-3)
-
-        self.tweezer.vva_dac.set(v=0.)
-        self.tweezer.on()
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp)
-
+        # lightsheet evap 1
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
+                             v_start=self.p.v_pd_lightsheet_rampup_end,
+                             v_end=self.p.v_pd_lightsheet_rampdown_end)
+        
+        # feshbach field ramp to field 2
+        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp,
+                             i_start=self.p.i_evap1_current,
+                             i_end=self.p.i_evap2_current)
+        
+        self.tweezer.on(paint=False)
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
+                          v_start=0.,
+                          v_end=self.p.v_pd_tweezer_1064_ramp_end,
+                          paint=False,keep_trap_frequency_constant=False)
+        
+        # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_ramp_list=self.p.v_pd_lightsheet_ramp_down2_list)
-
+                             v_start=self.p.v_pd_lightsheet_rampdown_end,
+                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        
         self.lightsheet.off()
+
         self.tweezer.off()
     
         delay(self.p.t_tof)
         self.abs_image()
 
         self.outer_coil.off()
+        self.outer_coil.discharge()
 
         # revert stages to origin before next shot
         self.core.wait_until_mu(now_mu())
