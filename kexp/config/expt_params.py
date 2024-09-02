@@ -72,7 +72,7 @@ class ExptParams():
         self.t_magtrap = 0.0
         self.t_magtrap_rampdown = 75.e-3
         self.t_feshbach_field_rampup = 200.e-3
-        self.t_feshbach_field_ramp = 100.e-3
+        self.t_feshbach_field_ramp = 20.e-3
         self.t_feshbach_field_ramp2 = 20.e-3
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
