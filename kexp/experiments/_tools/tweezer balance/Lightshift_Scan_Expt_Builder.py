@@ -19,7 +19,7 @@ class ExptBuilder():
         with open(self.__temp_exp_path__, 'w') as file:
             file.write(program)
     
-    def set_dac_expt(self,v_pid_dac_value):
+    def lightshift_expt(self, f_list, a_list, f_img_detuning_list):
         script = textwrap.dedent(f"""
         from artiq.experiment import *
         class unsaturate_tweezers(EnvExperiment):
