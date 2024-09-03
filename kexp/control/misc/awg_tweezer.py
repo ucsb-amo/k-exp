@@ -265,3 +265,56 @@ class tweezer():
 
     # def close(self):
     #     self.card.close(self.card._handle)
+
+    def move_tweezer(self,which_tweezer,distance):
+        """_summary_
+
+        Args:
+            which_tweezer (int): index of tweezer (frequency) to move
+            distance (float): distance in meters to move the tweezer
+        """
+        # compute tweezer movement params
+        dpf = 5.135e-12 # meter per Hz
+
+        # set acceleration of movement
+        acc_f = self.params.tweezer_acceleration / dpf
+
+        # time necessary to move half the desired distance (accelerate to here)
+        t_tot = np.sqrt(abs(distance) / (2*self.params.tweezer_acceleration))
+
+        # how much time per linear ramp
+        dt = t_tot / self.params.n_tweezer_move_steps
+
+        # change in slope of linear ramp per dt
+        df = acc_f*dt
+
+        # compute list of linear ramp slopes
+        acceleration_array = []
+        decceleration_array = []
+
+        for n in range(1,self.params.n_tweezer_move_steps+1):
+            acceleration_array.append(df*n)
+            decceleration_array.append(df*(self.params.n_tweezer_move_steps-n))
+
+        slopes = np.concatenate([np.array(acceleration_array),np.array(decceleration_array)])
+
+        if distance < 0:
+            slopes = -1*slopes
+
+        # execute single movement
+        # start trigger timer, which outputs trigger events at a given rate
+        self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
+        self.dds.trg_timer(dt)
+        self.dds.exec_at_trg()
+        self.dds.write_to_card()
+
+        # write slopes to card
+        for slope in slopes:
+            self.dds.frequency_slope(which_tweezer,slope)
+            self.dds.exec_at_trg()
+        self.dds.write_to_card()
+
+        # reset trigger mode to external at the end
+        self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
+        self.dds.exec_at_trg()
+        self.dds.write_to_card()

@@ -72,7 +72,7 @@ class ExptParams():
         self.t_magtrap = 0.0
         self.t_magtrap_rampdown = 75.e-3
         self.t_feshbach_field_rampup = 200.e-3
-        self.t_feshbach_field_ramp = 100.e-3
+        self.t_feshbach_field_ramp = 20.e-3
         self.t_feshbach_field_ramp2 = 20.e-3
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
@@ -183,7 +183,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.99
+        self.v_pd_lightsheet_rampup_end = 9.9
         self.v_pd_lightsheet_rampdown_end = 4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -195,7 +195,7 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 9.2
+        self.v_pd_tweezer_1064_ramp_end = 9.9
         self.v_pd_tweezer_1064_rampdown_end = .7
         self.v_pd_tweezer_1064_rampdown2_end = 0.025
         self.v_pd_tweezer_1064_rampdown3_end = 0.025
@@ -220,7 +220,11 @@ class ExptParams():
         # self.amp_tweezer_list = [.2,.215]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = 6.
+        self.v_tweezer_paint_amp_max = -2.
+
+        # tweezer movement
+        self.tweezer_acceleration = .075 # meter / s^2
+        self.n_tweezer_move_steps = 1000
 
         # RF
         self.amp_rf_source = 0.99
@@ -254,10 +258,15 @@ class ExptParams():
         # self.i_evap3_current = 25.
         # self.i_evap3_current = 16.4
 
-        # high field evap
-        self.i_evap1_current = 191.4
-        self.i_evap2_current = 181.3
-        self.i_evap3_current = 190.6
+        # # non-painted high field evap
+        # self.i_evap1_current = 191.4
+        # self.i_evap2_current = 181.3
+        # self.i_evap3_current = 190.6
+
+        # painted high field evap
+        self.i_evap1_current = 193.
+        self.i_evap2_current = 193.4
+        self.i_evap3_current = 192.3
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.
