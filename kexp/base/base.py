@@ -85,7 +85,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     @kernel
     def init_kernel(self, run_id = True, init_dds =  True, init_dac = True,
                      dds_set = True, dds_off = True, beat_ref_on=True,
-                     init_lightsheet = True, setup_awg = True):
+                     init_shuttler = True, init_lightsheet = True, setup_awg = True):
         if self.setup_camera:
             self.wait_for_camera_ready(timeout=15.)
             print("Camera is ready.")
@@ -96,6 +96,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.core.reset() # clears RTIO
         if init_dac:
             self.dac.dac_device.init() # initializes DAC
+            delay(self.params.t_rtio)
+        if init_shuttler:
+            self.shuttler.init()
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
             self.init_all_dds() # initializes DDS channels

@@ -264,10 +264,6 @@ class ExptParams():
         # self.n_forced_evap_ramp_steps = 1000
         self.i_forced_evap_ramp_end = 40.
 
-        # high field imaging
-        self._slope_imaging_frequency_per_iouter_current = -4.08715595e+06
-        self._yintercept_imaging_frequency_per_iouter_current = 2.88188071e+08
-
         self.compute_derived()
 
     def compute_gmramp_params(self):
