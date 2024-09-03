@@ -11,19 +11,8 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        # self.xvar('beans',[0.]*10)
-
-        # self.xvar('amp_imaging',np.linspace(0.05,0.35,10))
-
-        # self.xvar('t_tof',np.linspace(1000.,2500.,10)*1.e-6)
-        # self.xvar('t_tof',[17.e-6,10.e-3])
-        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(1.,9.,10))
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,6.,10))
         self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
-        # self.p.frequency_tweezer_list = [71.0e6,76.e6,80.e6]
-
         a_list = [.52,.29,.1775]
-        # a_list = [0.49442252, 0.34649619, 0.1590813]
         def normalize_alist(alist):
             sum = np.sum(alist)
             return a_list/sum
@@ -99,6 +88,10 @@ class tweezer_load(EnvExperiment, Base):
         self.camera_params.amp_imaging = .08
 
         self.finish_prepare(shuffle=True)
+
+    @kernel
+    def tickle_trap(self):
+        self.shuttler.tweezer_fm.sine(frequency=self.p.)
 
     @kernel
     def scan_kernel(self):
