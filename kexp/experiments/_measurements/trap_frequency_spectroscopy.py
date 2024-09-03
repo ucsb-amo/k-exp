@@ -15,7 +15,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('amp_imaging',np.linspace(0.05,0.35,10))
 
-        self.xvar('t_tof',np.linspace(1000.,2500.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(1000.,2500.,10)*1.e-6)
         # self.xvar('t_tof',[17.e-6,10.e-3])
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(1.,9.,10))
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,6.,10))
