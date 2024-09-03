@@ -22,7 +22,7 @@ class shuttler_frame():
 
         ### Channel assignment
 
-        self.tweezer_fm = self._assign_ch(1)
+        self.tweezer_mod = self._assign_ch(1)
 
         ###
 
@@ -63,4 +63,5 @@ class shuttler_frame():
     def init(self):
         for ch in range(16):
             self.set_gain(ch,0)
+            delay(10.e-6)
         self._relay.init()
