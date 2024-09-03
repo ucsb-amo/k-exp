@@ -99,6 +99,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             delay(self.params.t_rtio)
         if init_shuttler:
             self.shuttler.init()
+            self.core.break_realtime()
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
             self.init_all_dds() # initializes DDS channels
