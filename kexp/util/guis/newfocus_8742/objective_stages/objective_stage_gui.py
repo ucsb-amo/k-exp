@@ -13,10 +13,10 @@ from PyQt6.QtWidgets import (
 import numpy as np
 
 CONTROLLER_HOSTNAME = "192.168.1.80"
-N_MIRRORS = 2
-MIRROR_NAMES = ["turning","kick-up"]
-AXES_LISTS = [[1,2],[3,4]]
-AXES_NAME_LIST = [["x","y"],["x","y"]]
+N_OBJECTIVES = 2
+OBJECTIVE_NAMES = ["n","s"]
+AXES_LISTS = [[1,2,3],[4,5,6]]
+AXES_NAME_LIST = [["x","y",'z'],["x","y",'z']]
 
 class motor_axis():
     def __init__(self,controller_addr,motor_idx,stage_obj:Newport.Picomotor8742):
@@ -74,14 +74,14 @@ class controller():
 
         axes_to_move = []
         if 'x' in axis:
-            axes_to_move.append(objective['+x'])
-            axes_to_move.append(objective['-x'])
+            axes_to_move.append(objective['+z'])
+            axes_to_move.append(objective['-z'])
         elif 'y' in axis:
             axes_to_move.append(objective['y'])
             N_steps = ysign * N_steps
         elif 'z' in axis:
-            axes_to_move.append(objective['+z'])
-            axes_to_move.append(objective['-z'])
+            axes_to_move.append(objective['+x'])
+            axes_to_move.append(objective['-x'])
 
         for axis in axes_to_move:
             axis: motor_axis

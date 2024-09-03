@@ -3,7 +3,7 @@ from artiq.experiment import delay, delay_mu
 import numpy as np
 from kexp.config import ExptParams
 from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
-from kexp.util.data import DataSaver, RunInfo
+from kexp.util.data import DataSaver, RunInfo, server_talk
 from artiq.language.core import kernel_from_string, now_mu
 
 RPC_DELAY = 10.e-3
@@ -37,9 +37,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.ds = DataSaver()
 
-    def finish_build(self,N_repeats=[],shuffle=True):
+    def finish_prepare(self,N_repeats=[],shuffle=True):
         """
-        To be called at the end of build. 
+        To be called at the end of prepare. 
         
         Automatically adds repeats either if specified in N_repeats argument or
         if previously specified in self.params.N_repeats. 
@@ -56,7 +56,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         a scan. This must be an RPC -- no kernel decorator.
         """
         if not self.xvarnames:
-            self.xvar("dummy",[0])
+            self.xvar("dummy",[0]*2)
         if self.xvarnames and not self.scan_xvars:
             for key in self.xvarnames:
                 self.xvar(key,vars(self.params)[key])
@@ -78,24 +78,23 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.data_filepath = self.ds.create_data_file(self)
 
         self.generate_assignment_kernels()
-
-        if self.setup_camera:
-            self.wait_for_camera_ready(timeout=10.)
-            print("Camera is ready.")
     
     def compute_new_derived(self):
         pass
 
     @kernel
-    def init_kernel(self, run_id = True, init_dds = True, init_dac = True,
-                    init_shuttler = True, dds_set = True, dds_off = True, 
-                    beat_ref_on=True, init_lightsheet = True, setup_awg = True):
+    def init_kernel(self, run_id = True, init_dds =  True, init_dac = True,
+                     dds_set = True, dds_off = True, beat_ref_on=True,
+                     init_shuttler = True, init_lightsheet = True, setup_awg = True):
+        if self.setup_camera:
+            self.wait_for_camera_ready(timeout=15.)
+            print("Camera is ready.")
         if run_id:
             print(self._ridstr) # prints run ID to terminal
+        if setup_awg:
+            self.tweezer.awg_init()
         self.core.reset() # clears RTIO
-        delay(1*s)
         if init_dac:
-            delay(self.params.t_rtio)
             self.dac.dac_device.init() # initializes DAC
             delay(self.params.t_rtio)
         if init_shuttler:
@@ -107,19 +106,12 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             delay(1*ms)
             self.set_all_dds() # set DDS to default values
             self.set_imaging_detuning()
-            # self.dds.tweezer.set_dds(frequency=80.e6,amplitude=self.p.amp_tweezer)
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
         if beat_ref_on:
             self.dds.beatlock_ref.on()
-        # if init_rf:
-        #     self.rf.init()
         if init_lightsheet:
             self.lightsheet.init()
-        self.core.wait_until_mu(now_mu())
-        if setup_awg:
-            self.tweezer.awg_init()
-        self.core.break_realtime() # add slack before scheduling experiment events
 
         self.dds.ry_405.set_dds(set_stored=True)
         self.dds.ry_980.set_dds(set_stored=True)
@@ -133,17 +125,18 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
-        else:
+        elif self.p.imaging_state == 2.:
             self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
         self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list)
+        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
         self.core.break_realtime()
 
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
-        self.tweezer.pid_int_hold_zero.on()
+        self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
+        self.tweezer.pid1_int_hold_zero.on()
 
     def prepare_image_array(self):
         if self.run_info.save_data:
@@ -170,3 +163,4 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
                 self.write_data(expt_filepath)
             else:
                 self.remove_incomplete_data()
+        server_talk.play_random_sound()

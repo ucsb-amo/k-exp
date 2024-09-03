@@ -2,7 +2,6 @@ import time
 import numpy as np
 import os
 import h5py
-import glob
 import names
 
 import pypylon.pylon as py
@@ -11,6 +10,7 @@ from kexp.util.data.load_atomdata import unpack_group
 
 from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.util.live_od.camera_nanny import CameraNanny
+from kexp.util.data.server_talk import get_latest_data_file, run_id_from_filepath
 
 from kexp.base.sub.scribe import CHECK_PERIOD, Scribe
 
@@ -18,11 +18,9 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 from queue import Queue
 
-import sys
-
 DATA_DIR = os.getenv("data")
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
-CHECK_DELAY = 0.25
+CHECK_DELAY = 0.2
 LOG_UPDATE_INTERVAL = 2.
 DEFAULT_TIMEOUT = 30.
 UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
@@ -77,7 +75,7 @@ class CameraMother(QThread):
             if new_file_bool:
                 count += 1
                 file, name = self.new_file(latest_file, run_id)
-                self.new_camera_baby.emit(file,name)
+                self.new_camera_baby.emit(file, name)
                 self.handle_baby_creation(file, name, manage_babies)
             if count == self.N_runs:
                 break
@@ -99,22 +97,13 @@ class CameraMother(QThread):
             print("Mother is watching...")
 
     def check_files(self):
-        # try:
-        folderpath=os.path.join(DATA_DIR,'*','*.hdf5')
-        list_of_files = glob.glob(folderpath)
-        list_of_files.sort(key=lambda x: os.path.getmtime(x))
-        latest_file = list_of_files[-1]
-        # except Exception as e:
-        #     if isinstance(e,IndexError):
-        #         print(e)
-        #         raise ValueError("You probably need to re-map network drives.")
+        latest_file = get_latest_data_file()
         new_file_bool, run_id = self.check_if_file_new(latest_file)
         return new_file_bool, latest_file, run_id
     
     def check_if_file_new(self,latest_filepath):
         if latest_filepath != self.latest_file:
-            data_dir_depth_idx = len(DATA_DIR.split('\\')[0:-1]) - 2
-            rid = int(latest_filepath.split("_")[data_dir_depth_idx].split("\\")[-1])
+            rid = run_id_from_filepath(latest_filepath)
             if rid == self.read_run_id():
                 new_file_bool = True
                 self.latest_file = latest_filepath
@@ -149,13 +138,13 @@ class DataHandler(QThread,Scribe):
         self.write_image_to_dataset()
 
     def write_image_to_dataset(self):
-        TIMEOUT = 45.
+        TIMEOUT = 20.
         if self.save_data:
-            self.dataset = self.wait_for_data_available(close=False)
+            self.dataset = self.wait_for_data_available(close=False,timeout=TIMEOUT)
         try:
             while True:
                 img, img_t, idx = self.queue.get(timeout=TIMEOUT)
-                TIMEOUT = 30.
+                TIMEOUT = 10.
                 self.got_image_from_queue.emit(img)
                 if self.save_data:
                     self.dataset['data']['images'][idx] = img

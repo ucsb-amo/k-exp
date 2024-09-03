@@ -12,6 +12,7 @@ import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
+from kexp.calibrations import high_field_imaging_detuning
 
 dv = -10.e9
 
@@ -35,34 +36,6 @@ class Image():
         delay(t)
         self.dds.imaging.off()
         # self.dds.d2_3d_r.off()
-
-    @kernel
-    def flash_repump(self,t=dv,detune=dv,amp=dv):
-        if t == dv:
-            t = self.params.t_repump_flash_imaging
-        if detune == dv:
-            detune = self.params.detune_d2_r_imaging
-        if amp == dv:
-            amp = self.params.amp_d2_r_imaging
-
-        self.dds.d2_3d_r.set_dds_gamma(delta=detune,amplitude=amp)
-        self.dds.d2_3d_r.on()
-        delay(t)
-        self.dds.d2_3d_r.off()
-
-    @kernel
-    def flash_cooler(self,t=dv,detune=dv,amp=dv):
-        if t == dv:
-            t = self.params.t_cooler_flash_imaging
-        if detune == dv:
-            detune = self.params.detune_d2_c_imaging
-        if amp == dv:
-            amp = self.params.amp_d2_c_imaging
-
-        self.dds.d2_3d_c.set_dds_gamma(delta=detune,amplitude=amp)
-        self.dds.d2_3d_c.on()
-        delay(t)
-        self.dds.d2_3d_c.off()
 
     @kernel
     def pulse_resonant_mot_beams(self,t):
@@ -104,44 +77,23 @@ class Image():
 
     @kernel
     def abs_image(self):
-        
-        if self.params.imaging_state == 1:
-            self.trigger_camera()
-            with parallel:
-                self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-                # self.flash_cooler(t=self.params.t_imaging_pulse)
-            delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
-            delay(self.camera_params.t_light_only_image_delay * s)
-            self.trigger_camera()
-            with parallel:
-                self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-                # self.flash_cooler(t=self.params.t_imaging_pulse)
-            delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
-            delay(self.camera_params.t_dark_image_delay * s)
-            self.dds.imaging.off()
-            self.dds.imaging.set_dds(amplitude=0.)
-            self.trigger_camera()
-            delay(self.camera_params.exposure_time)
-            self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        delay(self.camera_params.t_light_only_image_delay * s)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
-        if self.params.imaging_state == 2:
-            self.trigger_camera()
-            self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-            delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        delay(self.camera_params.t_dark_image_delay * s)
+        self.dds.imaging.off()
+        self.dds.imaging.set_dds(amplitude=0.)
+        self.trigger_camera()
+        delay(self.camera_params.exposure_time)
+        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-            delay(self.camera_params.t_light_only_image_delay * s)
-            self.trigger_camera()
-            self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-            delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
-
-            delay(self.camera_params.t_dark_image_delay * s)
-            self.dds.imaging.off()
-            self.dds.imaging.set_dds(amplitude=0.)
-            self.trigger_camera()
-            delay(self.camera_params.exposure_time)
-            self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
     @kernel
     def fl_image(self, t=-1., with_light=True):
@@ -215,9 +167,13 @@ class Image():
         if amp == dv:
             amp = self.camera_params.amp_imaging
         if detuning == dv:
-            detuning = self.params.frequency_detuned_imaging
+            if self.params.imaging_state == 1.:
+                detuning = self.params.frequency_detuned_imaging_F1
+            elif self.params.imaging_state == 2.:
+                detuning = self.params.frequency_detuned_imaging
+            
 
-        beat_sign = 1 # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
+        beat_sign = -1 # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
 
         self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging,amplitude=amp)
 
@@ -251,8 +207,7 @@ class Image():
     @kernel(flags={"fast-math"})
     def set_high_field_imaging(self, i_outer, imaging_amp = dv):
 
-        detuning = self.params._slope_imaging_frequency_per_iouter_current * i_outer \
-                    + self.params._yintercept_imaging_frequency_per_iouter_current
+        detuning = high_field_imaging_detuning(i_outer=i_outer)
         
         self.set_imaging_detuning(detuning, amp=imaging_amp)
     ###

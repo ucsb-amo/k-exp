@@ -6,6 +6,65 @@ from kexp.analysis import atomdata
 
 dv = -1000.
 
+class TOF():
+    def __init__(self,
+                 atomdata,
+                 sigma_fit_axis,
+                 shot_idx=0):
+        
+        ad = atomdata
+        
+        if sigma_fit_axis == 'y':
+            cloudfits = ad.cloudfit_y
+        elif sigma_fit_axis == 'x':
+            cloudfits = ad.cloudfit_x
+
+        if ad.Nvars == 1:
+            self.sigmas = ad._extract_attr(cloudfits,'sigma')
+            self.atom_numbers = ad.atom_number[:]
+        elif ad.Nvars == 2:
+            self.sigmas = ad._extract_attr(cloudfits[shot_idx],'sigma')
+            self.atom_numbers = ad.atom_number[:]
+            self.xvarname = ad.xvarnames[0]
+            self.xvar = ad.xvars[0]
+
+        self.t_tof = ad.params.t_tof
+
+        # idx = np.array(range(len(self.t_tof)))
+        # if include_idx:
+        #     idx = np.intersect1d(idx, np.asarray(include_idx))
+
+        # self.t_tof = self.t_tof[idx]
+        # self.sigmas = self.sigmas[idx]
+        # self.atom_numbers = self.atom_numbers[idx]
+        
+        from kexp.analysis.fitting.gaussian import GaussianTemperatureFit
+        
+        self.fit = GaussianTemperatureFit(self.t_tof, self.sigmas)
+        
+        self.sigma_r0 = self.fit.y_fitdata[0]
+        self.average_atom_number = np.mean(self.atom_numbers)
+        self.T = self.fit.T
+        
+        self.phase_space_density = 0.
+        self.compute_phase_space_density()
+
+    def compute_phase_space_density(self,
+                                    num_tweezers=2,
+                                    tweezer_waist=3.6e-6,
+                                    trap_wavelength=1064.e-9,
+                                    tweezer_final_frequency=455.):
+        import kamo.constants as c
+        # phase_space_density = self.average_atom_number / num_tweezers \
+        #     / (np.sqrt(2) * np.pi) * (trap_wavelength / tweezer_waist) \
+        #     * ( c.hbar**2/(c.kB * self.T * c.m_K * self.sigma_r0**2) )**(3/2)
+        # self.phase_space_density = phase_space_density
+
+        phase_space_density = self.average_atom_number / num_tweezers \
+            / (np.sqrt(2) * np.pi) * (trap_wavelength / tweezer_waist) \
+            * ( (c.hbar * 2 * np.pi * tweezer_final_frequency)/(c.kB * self.T) )**(3)
+        self.phase_space_density = phase_space_density
+
 def get_B(f_mf0_mf1_transition,
           F0=2.,mF0=0.,F1=1.,mF1=1.,
           min_B=0.,max_B=600.):

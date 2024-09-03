@@ -24,21 +24,24 @@ class CameraParams():
 
 class BaslerParams(CameraParams):
     def __init__(self,serial_number='40320384',
+                 trigger_source='Line1',
                  exposure_time_fluor = 500.e-6, exposure_time_abs = 19.e-6,
-                 amp_absorption = 0.25,amp_fluorescence=0.5,
+                 amp_absorption = 0.248,amp_fluorescence=0.5,
                  resolution = (1200,1920,),
                  t_light_only_image_delay=25.e-3,
-                 t_dark_image_delay=10.e-3,
-                 camera_select = ""):
+                 t_dark_image_delay=15.e-3,
+                 camera_select = "",
+                 magnification = 0.75):
         super().__init__()
         self.camera_select = camera_select
         self.camera_type = "basler"
         self.serial_no = serial_number
+        self.trigger_source = trigger_source
 
         self.resolution = resolution
 
         self.pixel_size_m = 3.45 * 1.e-6
-        self.magnification = 0.75
+        self.magnification = magnification
         self.exposure_delay = 17 * 1.e-6
 
         self.__exposure_time_fluor__ = exposure_time_fluor
@@ -59,17 +62,18 @@ class BaslerParams(CameraParams):
 
 class AndorParams(CameraParams):
     def __init__(self,
-                 exposure_time_fluor = 10.e-3, exposure_time_abs = 5.e-6,
-                 amp_absorption = 0.09, amp_fluorescence=0.5,
+                 exposure_time_fluor = 10.e-3, exposure_time_abs = 10.e-6,
+                 amp_absorption = 0.106, amp_fluorescence=0.5,
                  resolution = (512,512,),
                  t_light_only_image_delay=25.e-3,
                  t_dark_image_delay=25.e-3,
-                 camera_select = ""):
+                 camera_select = "",
+                 magnification = 50./3):
         super().__init__()
         self.camera_select = camera_select
         self.camera_type = "andor"
         self.pixel_size_m = 16.e-6
-        self.magnification = 50.
+        self.magnification = magnification
         self.exposure_delay = 0. # needs to be updated from docs
         self.connection_delay = 8.0
         self.t_camera_trigger = 200.e-9
@@ -87,8 +91,8 @@ class AndorParams(CameraParams):
         self.__amp_absorption__ = amp_absorption
         self.__amp_fluorescence__ = amp_fluorescence
 
-        self.__em_gain_fluor = 290.
-        self.__em_gain_abs = 290.
+        self.__em_gain_fluor = 300.
+        self.__em_gain_abs = 300.
 
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
@@ -104,8 +108,16 @@ class AndorParams(CameraParams):
             self.em_gain = self.__em_gain_fluor
 
 andor_params = AndorParams(camera_select='andor',
-                           amp_absorption=0.079)
+                           amp_absorption=0.1,
+                           magnification=21.5)
 xy_basler_params = BaslerParams(serial_number='40316451',camera_select='xy_basler',
-                                amp_absorption=0.5)
+                                amp_absorption=0.18,
+                                magnification=0.5)
+xy2_basler_params = BaslerParams(serial_number='40411037',camera_select='xy2_basler',
+                                 trigger_source='Line2',
+                                 amp_absorption=0.33,
+                                 magnification=2.1)
+x_basler_params = BaslerParams(serial_number='40320384',camera_select='x_basler',
+                               trigger_source='Line2')
 z_basler_params = BaslerParams(serial_number='40416468',camera_select='z_basler',
                                amp_absorption=0.5,amp_fluorescence=0.5)

@@ -14,8 +14,11 @@ from kexp.config.ttl_id import ttl_frame
 
 import os
 
-NUM_TTL = 40
-START_TTL = 4
+import numpy as np
+
+IGNORE_IDX = range(40,48)
+TTL_IDX = np.array(range(88))
+TTL_IDX = list( TTL_IDX[ [idx not in IGNORE_IDX for idx in TTL_IDX] ] )
 
 CODE_DIR = os.environ.get("code")
 CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","ttl_config.py")
@@ -59,14 +62,14 @@ class InputBox(QWidget):
 
         self.toggle = AnimatedToggle(checked_color=QColor("#0000FF"), pulse_checked_color=QColor("#6495ED"))
 
-        self.toggle.setFixedSize(QSize(60, 40))
+        self.toggle.setFixedSize(QSize(30, 20))
         elements_layout.addWidget(self.toggle)
 
         pulse_label = QLabel(f" _/\_ ", parent=container)
         elements_layout.addWidget(pulse_label)
 
         input_box = QLineEdit(parent=container)
-        input_box.setFixedWidth(50)
+        input_box.setFixedWidth(30)
         input_box.setText('0.0')
         elements_layout.addWidget(input_box)
 
@@ -168,7 +171,7 @@ class TTLControlGrid(QWidget):
         # Variables allow for extension of grid
 
         # Maintains the X x 8 layout of the grid
-        num_rows = int(NUM_TTL/8)
+        num_rows = int(len(TTL_IDX)/8)
 
         ttls = ttl_frame()
         ttl_id_channels = [ttl.ch for ttl in ttls.ttl_list]
@@ -214,8 +217,8 @@ class TTLControlGrid(QWidget):
             row_layout = QVBoxLayout()
             self.grid_layout.addLayout(row_layout)
             for j in range(8):
-                channel = i * 8 + j + START_TTL
-                if channel < NUM_TTL:
+                channel = TTL_IDX[i * 8 + j]
+                if channel <= TTL_IDX[-1]:
                     input_box = InputBox(channel)
                     
                     if channel in ttl_id_channels:
@@ -247,7 +250,7 @@ class TTLControlGrid(QWidget):
                 self.toggle_states[channel] = False
                 input_box.do_it = True
         builder = TTLGUIExptBuilder()
-        builder.execute_all_ttl_off(START_TTL, NUM_TTL)
+        builder.execute_all_ttl_off(TTL_IDX)
 
     def save_settings(self):
         pass

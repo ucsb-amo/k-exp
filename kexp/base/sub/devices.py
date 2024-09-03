@@ -9,6 +9,7 @@ from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
 from kexp.config.shuttler_id import shuttler_frame
+from kexp.config.sampler_id import sampler_frame
 from kexp.control.artiq.mirny import Mirny
 from kexp.config.expt_params import ExptParams
 
@@ -43,9 +44,14 @@ class Devices():
         self.core = self.get_device("core")
         self.core_dma = self.get_device("core_dma")
         zotino = self.get_device("zotino0")
+        sampler = self.get_device("sampler0")
+        self.grabber = self.get_device("grabber0")
+
+        # sampler channels
+        self.sampler = sampler_frame(sampler_device=sampler)
 
         # dac channels
-        self.dac = dac_frame(dac_device=zotino)
+        self.dac = dac_frame(expt_params=self.params, dac_device=zotino)
 
         self.shuttler = shuttler_frame()
         self.get_shuttler_devices()
@@ -70,7 +76,7 @@ class Devices():
                                          v_control_dac=self.dac.inner_coil_supply_voltage,
                                          i_control_dac=self.dac.inner_coil_supply_current,
                                          igbt_ttl=self.ttl.inner_coil_igbt,
-                                         contactor_ttl=self.ttl.coil_contactor_placeholder,
+                                         discharge_igbt_ttl=self.ttl.inner_coil_discharge_igbt,
                                          hbridge_ttl=self.ttl.hbridge_helmholtz,
                                          expt_params=self.params)
                                       
@@ -79,22 +85,26 @@ class Devices():
                                       v_control_dac=self.dac.outer_coil_supply_voltage,
                                       i_control_dac=self.dac.outer_coil_supply_current,
                                       igbt_ttl=self.ttl.outer_coil_igbt,
-                                      contactor_ttl=self.ttl.coil_contactor_placeholder,
+                                      discharge_igbt_ttl=self.ttl.outer_coil_discharge_igbt,
                                       expt_params=self.params)
         
         # painted ligthsheet
-        self.lightsheet = lightsheet(vva_dac=self.dac.vva_lightsheet,
-                                     paint_amp_dac=self.dac.lightsheet_mod_amp,
+        self.lightsheet = lightsheet(pid_dac=self.dac.vva_lightsheet,
+                                     paint_amp_dac=self.dac.lightsheet_paint_amp,
                                      sw_ttl=self.ttl.lightsheet_sw,
                                      pid_int_hold_zero_ttl = self.ttl.lightsheet_pid_int_hold_zero,
                                      expt_params=self.params)
         
-        self.tweezer = tweezer(ao_dds=self.dds.tweezer,
-                               vva_dac=self.dac.vva_tweezer,
-                               sw_ttl=self.ttl.awg,
+        self.tweezer = tweezer(ao1_dds=self.dds.tweezer_pid_1,
+                               pid1_dac=self.dac.v_pd_tweezer_pid1,
+                               ao2_dds=self.dds.tweezer_pid_2,
+                               pid2_dac=self.dac.v_pd_tweezer_pid2,
+                               sw_ttl=self.ttl.aod_rf_sw,
                                awg_trg_ttl = self.ttl.awg_trigger,
-                               pid_int_hold_zero_ttl = self.ttl.tweezer_pid_int_hold_zero,
-                               expt_params=self.params)
+                               pid1_int_hold_zero_ttl = self.ttl.tweezer_pid1_int_hold_zero,
+                               pid2_enable_ttl=self.ttl.tweezer_pid2_enable,
+                               painting_dac = self.dac.tweezer_paint_amp,
+                               expt_params = self.params)
 
         # camera placeholder
         self.camera = DummyCamera()
@@ -139,10 +149,10 @@ class Devices():
     def init_all_dds(self):
         for dds in self.dds.dds_list:
             dds.dds_device.init()
-            delay(1*ms)
+            delay(100*us)
 
     @kernel
     def init_all_cpld(self):
         for dds in self.dds.dds_list:
             dds.cpld_device.init()
-            delay(1*ms)
+            delay(100*us)

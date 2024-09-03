@@ -14,7 +14,7 @@ class TTLGUIExptBuilder():
 
     def run_expt(self):
         expt_path = self.__temp_exp_path__
-        run_expt_command = r"%kpy% & artiq_run " + expt_path
+        run_expt_command = r"%kpy% & ar " + expt_path
         result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
         print(result.returncode, result.stdout, result.stderr)
         os.remove(self.__temp_exp_path__)
@@ -79,7 +79,7 @@ class TTLGUIExptBuilder():
         returncode = self.run_expt()
         return returncode
     
-    def execute_all_ttl_off(self, START_TTL, NUM_TTL):
+    def execute_all_ttl_off(self, TTL_IDX_LIST):
 
         script = textwrap.dedent(f"""
             from artiq.experiment import *
@@ -88,7 +88,7 @@ class TTLGUIExptBuilder():
                     # Specify the TTL device you want to control
                     self.core = self.get_device("core")
                     self.beans = []
-                    for ch in range({START_TTL},{NUM_TTL}):
+                    for ch in {TTL_IDX_LIST}:
                         self.beans.append(self.get_device("ttl"+str(ch)))
                 
                 @kernel

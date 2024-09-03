@@ -6,22 +6,25 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 
 dv = -1.
+di = 0
 dv_list = np.linspace(0.,1.,5)
 
 V_FULLSCALE_DAC = 10.
-V_SUPPLY_DEFAULT = 10.
+V_SUPPLY_DEFAULT = 70.
+
+T_ANALOG_DELAY = 30.e-3
 
 class igbt_magnet():
     def __init__(self,
                  v_control_dac = DAC_CH, i_control_dac = DAC_CH,
-                 igbt_ttl = TTL, contactor_ttl = TTL, expt_params:ExptParams = ExptParams,
+                 igbt_ttl = TTL, discharge_igbt_ttl = TTL, expt_params:ExptParams = ExptParams,
                  max_current = 0., max_voltage = 0.):
         self.max_voltage = max_voltage
         self.max_current = max_current
         self.v_control_dac = v_control_dac
         self.i_control_dac = i_control_dac
         self.igbt_ttl = igbt_ttl
-        self.contactor_ttl = contactor_ttl
+        self.discharge_igbt_ttl = discharge_igbt_ttl
         self.params = expt_params
 
     @kernel
@@ -37,16 +40,13 @@ class igbt_magnet():
         self.igbt_ttl.on()
 
     @kernel
-    def off(self,contactor=False,load_dac=True):
+    def off(self,discharge_igbt=False,load_dac=True):
 
         self.igbt_ttl.off()
         self.set_current(i_supply=0.,load_dac=False)
         self.set_voltage(v_supply=0.,load_dac=False)
         if load_dac:
             self.load_dac()
-
-        if contactor:
-            self.close_contactor()
 
     @kernel
     def set_current(self,i_supply,load_dac=True):
@@ -60,7 +60,7 @@ class igbt_magnet():
         self.i_control_dac.set(v=v_dac_current,load_dac=load_dac)
         
     @kernel
-    def set_voltage(self,v_supply,load_dac=True):
+    def set_voltage(self,v_supply=V_SUPPLY_DEFAULT,load_dac=True):
         v_dac_voltage = self.supply_voltage_to_dac_voltage(v_supply)
         self.v_control_dac.set(v=v_dac_voltage,load_dac=load_dac)
 
@@ -71,68 +71,52 @@ class igbt_magnet():
     @portable(flags={"fast-math"})
     def supply_voltage_to_dac_voltage(self,v_supply) -> TFloat:
         return (v_supply/self.max_voltage) * V_FULLSCALE_DAC
-        
-    @kernel
-    def open_contactor(self,pretrigger=False):
-        """Opens the contactor, and guarantees that the next event occurs after
-        the contactor has opened.
-
-        Args:
-            pretrigger (bool, optional): Selects whether or not the event is
-            pretriggered. Defaults to False.
-        """        
-        if pretrigger:
-            delay(-self.params.t_contactor_open_delay)
-        self.contactor_ttl.off()
-        if pretrigger:
-            delay(self.params.t_contactor_open_delay)
-        else:
-            delay(self.params.t_contactor_open_delay)
-
-    @kernel
-    def close_contactor(self):
-        """Closes the contactor. Does not do any timeline fuckery.
-        """
-        self.contactor_ttl.on()
     
+    @kernel(flags={"fast-math"})
+    def ramp(self,t,i_start,i_end,n_steps=di,t_analog_delay=T_ANALOG_DELAY):
+        if n_steps == di:
+            n_steps = self.params.n_field_ramp_steps
+        v_start = self.supply_current_to_dac_voltage(i_start)
+        v_end = self.supply_current_to_dac_voltage(i_end)
+        self.i_control_dac.linear_ramp(t,v_start,v_end,n_steps)
+        delay(t_analog_delay)
+        
+    # @kernel
+    # def open_discharge_igbt(self):
+    #     """Opens the discharge_igbt.
+    #     """
+    #     self.discharge_igbt_ttl.off()
+
+    # @kernel
+    # def close_discharge_igbt(self):
+    #     """Closes the discharge_igbt. Does not do any timeline fuckery.
+    #     """
+    #     self.discharge_igbt_ttl.on()
+    
+    # @kernel
+    # def discharge_igbt_pulse(self,t):
+    #     self.discharge_igbt_ttl.pulse(t)
+
     @kernel
-    def contactor_pulse(self,t,delay_for_complete=False,pretrigger=False):
-        '''
-        Closes the contactor time t. Minimum close time is t_close, otherwise
-        the contactor does nothing.
-
-        Leaves the timeline cursor at the now_mu() + t if pretriggered, or
-        now_mu() + t + t_on_delay_max + t_off_delay if not.
-        '''
-        t_close = t
-        t_on_delay_max = self.params.t_contactor_close_delay
-        t_off_delay = self.params.t_contactor_open_delay
-        if t_close < t_off_delay:
-            aprint("pulse time is too short for the contactor, probably didn't close")
-        t_ttl = t + t_on_delay_max - t_off_delay
-
-        if pretrigger and delay_for_complete:
-            delay(-t_on_delay_max)
-
-        self.contactor_ttl.pulse(t_ttl)
-
-        if delay_for_complete:
-            if not pretrigger:
-                delay(t_on_delay_max)
-            delay(t_off_delay)
+    def discharge(self):
+        self.on()
+        self.set_current(0.)
+        self.set_voltage(0.)
+        delay(T_ANALOG_DELAY)
+        self.off()
 
 class hbridge_magnet(igbt_magnet):
     def __init__(self,
                  v_control_dac = DAC_CH, i_control_dac = DAC_CH,
-                 hbridge_ttl = TTL, igbt_ttl = TTL, contactor_ttl = TTL,
+                 hbridge_ttl = TTL, igbt_ttl = TTL, discharge_igbt_ttl = TTL,
                  expt_params = ExptParams, max_current = 0., max_voltage = 0.):
-        super().__init__(v_control_dac,i_control_dac,igbt_ttl,contactor_ttl,expt_params,max_current,max_voltage)
+        super().__init__(v_control_dac,i_control_dac,igbt_ttl,discharge_igbt_ttl,expt_params,max_current,max_voltage)
         self.max_current = max_current
         self.max_voltage = max_voltage
         self.v_control_dac = v_control_dac
         self.i_control_dac = i_control_dac
         self.igbt_ttl = igbt_ttl
-        self.contactor_ttl = contactor_ttl
+        self.discharge_igbt_ttl = discharge_igbt_ttl
         self.h_bridge_ttl = hbridge_ttl
         self.params = expt_params
 

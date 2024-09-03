@@ -7,23 +7,24 @@ class ttl_frame():
     def __init__(self):
 
         self.ttl_list = []
-
+        
+        self.outer_coil_discharge_igbt = self.ttl_assign(0)
+        self.tweezer_pid2_enable = self.ttl_assign(1)
         self.lightsheet_sw = self.ttl_assign(4)
-        self.xy_basler = self.ttl_assign(5)
+        self.basler = self.ttl_assign(5)
         self.inner_coil_igbt = self.ttl_assign(6)
         self.andor = self.ttl_assign(7)
         self.outer_coil_igbt = self.ttl_assign(8)
         self.hbridge_helmholtz = self.ttl_assign(9)
         self.z_basler = self.ttl_assign(10)
-        self.tweezer_pid_int_hold_zero = self.ttl_assign(11)
+        self.tweezer_pid1_int_hold_zero = self.ttl_assign(11)
         self.lightsheet_pid_int_hold_zero = self.ttl_assign(12)
-        self.awg = self.ttl_assign(13)
+        self.aod_rf_sw = self.ttl_assign(13)
         self.awg_trigger = self.ttl_assign(14)
+        self.inner_coil_discharge_igbt = self.ttl_assign(15)
         self.pd_scope_trig = self.ttl_assign(16)
         self.pd_scope_trig_2 = self.ttl_assign(17)
         # self.machine_table_trig = self.ttl_assign(25)
-
-        self.coil_contactor_placeholder = self.ttl_assign(39)
 
         self._write_ttl_keys()
 
@@ -40,7 +41,7 @@ class ttl_frame():
             ch_idx = ch_list.index(ch)
             return self.ttl_list[ch_idx]
         else:
-            raise ValueError(f"DAC ch {ch} not assigned in dac_id.")
+            raise ValueError(f"TTL ch {ch} not assigned in ttl_id.")
     
     def _write_ttl_keys(self):
         '''Adds the assigned keys to the DDS objects so that the user-defined

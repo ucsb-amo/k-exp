@@ -6,7 +6,7 @@ from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal, QThread, QObject
 from PyQt6.QtGui import QIcon, QFont
 from queue import Queue
 import numpy as np
-from kexp.analysis.image_processing import compute_ODs
+from kexp.analysis.image_processing import compute_OD, process_ODs
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -38,10 +38,11 @@ class Analyzer(QObject):
         self.img_light = self.imgs[1]
         self.img_dark = self.imgs[2]
 
-        self.od_raw, self.od, self.sum_od_x, self.sum_od_y = \
-            compute_ODs(self.img_atoms,
+        self.od_raw = compute_OD(self.img_atoms,
                         self.img_light,
-                        self.img_dark,
+                        self.img_dark)
+        self.od, self.sum_od_x, self.sum_od_y = \
+            process_ODs(self.od_raw,
                         self.crop_type)
         self.od_raw = self.od_raw[0]
         self.od = self.od[0]
@@ -242,9 +243,9 @@ class ImgPlotPanel(PlotPanel):
         try:
             if self._plot_ref == None:
                 if max_od == dv and min_od == dv:
-                    self._plot_ref = self.axes.imshow(img)
+                    self._plot_ref = self.axes.imshow(img, origin='lower')
                 else:
-                    self._plot_ref = self.axes.imshow(img,vmin=min_od,vmax=max_od)
+                    self._plot_ref = self.axes.imshow(img,vmin=min_od,vmax=max_od, origin='lower')
                 self.set_labels()
             else:
                 self._plot_ref.set_data(img)
