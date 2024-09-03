@@ -149,10 +149,10 @@ class Devices():
     def init_all_dds(self):
         for dds in self.dds.dds_list:
             dds.dds_device.init()
-            delay(100*us)
+            delay(10*us)
 
     @kernel
     def init_all_cpld(self):
-        for dds in self.dds.dds_list:
-            dds.cpld_device.init()
-            delay(100*us)
+        for ddss in self.dds.dds_array:
+            ddss[0].cpld_device.init()
+            delay(10*us)
