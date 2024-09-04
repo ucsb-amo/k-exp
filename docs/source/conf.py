@@ -26,6 +26,9 @@ exclude_patterns = []
 # python setup
 import os
 import sys
+
+autodoc_mock_imports  = ["artiq","spcm","pylablib"]
+
 sys.path.insert(0, os.path.abspath('../..'))
 
 # -- Options for HTML output -------------------------------------------------
