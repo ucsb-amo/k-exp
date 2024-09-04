@@ -1,9 +1,8 @@
 from kexp.config import ExptParams
 from artiq.experiment import *
 import numpy as np
-from kexp.control.artiq.dummy_core import DummyCore
 from artiq.language.core import kernel_from_string, now_mu
-from artiq.experiment import delay, kernel, portable, TFloat
+from artiq.experiment import delay, kernel, portable, TFloat, TArray, TBool, TInt32, TInt64
 
 RPC_DELAY = 10.e-3
 
@@ -21,7 +20,7 @@ class Scanner():
         self.Nvars = 0
         self.update_nvars()
         self.compute_new_derived = nothing
-        self.core = DummyCore()
+        self.core = []
 
         self._xvar_writer_floats = []
         self._xvar_writer_int32s = []

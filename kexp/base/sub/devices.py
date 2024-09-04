@@ -1,5 +1,5 @@
+from artiq.experiment import delay_mu, delay, kernel, portable, TArray
 from artiq.experiment import *
-from artiq.experiment import delay_mu, delay
 from artiq.coredevice.ttl import TTLOut
 from artiq.coredevice.core import Core
 from artiq.coredevice.zotino import Zotino
