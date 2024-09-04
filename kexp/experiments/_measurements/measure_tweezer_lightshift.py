@@ -12,9 +12,12 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('frequency_detuned_imaging',\
-                  high_field_imaging_detuning(self.p.i_evap2_current) \
-                    + np.arange(-30.,40.,3.)*1.e6)
+        self.xvar('frequency_detuned_imaging',
+                  self.p.frequency_detuned_imaging_F1
+                    + np.arange(0.,120.,3.)*1.e6)
+        # self.xvar('frequency_detuned_imaging',\
+        #           high_field_imaging_detuning(self.p.i_evap2_current) \
+        #             + np.arange(-20.,40.,3.)*1.e6)
 
         self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
         a_list = [0.52658228, 0.29367089, 0.17974684]
@@ -74,7 +77,7 @@ class tweezer_load(EnvExperiment, Base):
                              v_start=self.p.v_pd_lightsheet_rampdown_end,
                              v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
-        # # tweezer evap 1 with constant trap frequency
+        # tweezer evap 1 with constant trap frequency
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
         #                   v_start=self.p.v_pd_tweezer_1064_ramp_end,
         #                   v_end=self.p.v_pd_tweezer_1064_rampdown_end,
@@ -98,7 +101,10 @@ class tweezer_load(EnvExperiment, Base):
         #                   v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
         #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
         
+        self.outer_coil.off()
         self.lightsheet.off()
+
+        delay(20.e-3)
 
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
