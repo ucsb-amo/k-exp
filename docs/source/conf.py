@@ -30,7 +30,6 @@ import sys
 autodoc_mock_imports  = ["artiq",
                          "spcm",
                          "pylablib",
-                         "numpy",
                          "kamo",
                          "h5py",
                          "winsound",
