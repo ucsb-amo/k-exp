@@ -115,9 +115,9 @@ p_vs_vva = [(5.,182.),
 
 p_vs_vva.sort(key=lambda x: x[1])
 
-p_vva = [d[1] for d in p_vs_vva]
+p_vva = np.array([d[1] for d in p_vs_vva])
 p_vva = p_vva / np.max(p_vva)
-v_vva = [d[0] for d in p_vs_vva]
+v_vva = np.array([d[0] for d in p_vs_vva])
     
 class DDS_VVA_Calibration():
 
