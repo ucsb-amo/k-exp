@@ -352,18 +352,26 @@ class atomdata():
             print("Unable to extract fit parameters. The gaussian fit must have failed")
 
     def _extract_attr(self,ndarray,attr):
-        dims = np.shape(ndarray)
-        frame = np.empty(dims,dtype=float)
-        if len(dims) == 1:
-            for (i0,), fit in np.ndenumerate(ndarray):
-                frame[i0] = vars(fit)[attr]
-        elif len(dims) == 2:
-            for (i0,i1), fit in np.ndenumerate(ndarray):
-                frame[i0][i1] = vars(fit)[attr]
-        elif len(dims) == 3:
-            for (i0,i1,i2), fit in np.ndenumerate(ndarray):
-                frame[i0][i1][i2] = vars(fit)[attr]
-        return frame
+        # dims = np.shape(ndarray)
+        # frame = np.empty(dims,dtype=float)
+        # if len(dims) == 1:
+        #     for (i0,), fit in np.ndenumerate(ndarray):
+        #         frame[i0] = vars(fit)[attr]
+        # elif len(dims) == 2:
+        #     for (i0,i1), fit in np.ndenumerate(ndarray):
+        #         frame[i0][i1] = vars(fit)[attr]
+        # elif len(dims) == 3:
+        #     for (i0,i1,i2), fit in np.ndenumerate(ndarray):
+        #         frame[i0][i1][i2] = vars(fit)[attr]
+        linarray = np.reshape(ndarray,np.size(ndarray))
+        vals = [vars(y)[attr] for y in linarray]
+        return np.reshape(vals,ndarray.shape+(-1,))
+        # return frame
+
+    def _map(self,ndarray,func):
+        linarray = np.reshape(ndarray,np.size(ndarray))
+        vals = [func(y) for y in linarray]
+        return np.reshape(vals,ndarray.shape+(-1,))
 
     ### image handling, sorting by xvars
 
