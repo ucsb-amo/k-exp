@@ -1,7 +1,10 @@
 import os
 
-DATA_DIR = os.getenv("data")
-RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
+try:
+    DATA_DIR = os.getenv("data")
+    RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
+except:
+    pass
 
 def update_run_id():
     pwd = os.getcwd()

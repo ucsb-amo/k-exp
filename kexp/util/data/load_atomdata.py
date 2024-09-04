@@ -9,7 +9,10 @@ from kexp.config.camera_params import CameraParams
 
 import kexp.util.data.server_talk as st
 
-data_dir = os.getenv("data")
+try:
+    data_dir = os.getenv("data")
+except:
+    pass
 
 def load_atomdata(idx=0, crop_type='', path = "", unshuffle_xvars=True,
                   transpose_idx = [], average_repeats = False) -> atomdata:

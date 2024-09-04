@@ -6,12 +6,15 @@ import h5py
 
 from kexp.util.data.server_talk import check_for_mapped_data_dir, get_run_id, update_run_id
 
-data_dir = os.getenv("data")
+try:
+    data_dir = os.getenv("data")
 
-code_dir = os.getenv("code")
-params_path = os.path.join(code_dir,"k-exp","kexp","config","expt_params.py")
-cooling_path = os.path.join(code_dir,"k-exp","kexp","base","sub","cooling.py")
-imaging_path = os.path.join(code_dir,"k-exp","kexp","base","sub","image.py")
+    code_dir = os.getenv("code")
+    params_path = os.path.join(code_dir,"k-exp","kexp","config","expt_params.py")
+    cooling_path = os.path.join(code_dir,"k-exp","kexp","base","sub","cooling.py")
+    imaging_path = os.path.join(code_dir,"k-exp","kexp","base","sub","image.py")
+except:
+    pass
 
 class DataSaver():
 

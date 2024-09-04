@@ -43,7 +43,8 @@ autodoc_mock_imports  = ["artiq",
                          "PyQt6_sip",
                          "pyqtgraph",
                          "pyserial",
-                         "scipy"]
+                         "scipy",
+                         "vxi11"]
 
 sys.path.insert(0, os.path.abspath('../..'))
 

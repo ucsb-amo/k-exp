@@ -18,12 +18,14 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 from queue import Queue
 
-DATA_DIR = os.getenv("data")
-RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
-CHECK_DELAY = 0.2
-LOG_UPDATE_INTERVAL = 2.
-DEFAULT_TIMEOUT = 30.
-UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
+try:
+    DATA_DIR = os.getenv("data")
+    RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
+    CHECK_DELAY = 0.2
+    LOG_UPDATE_INTERVAL = 2.
+    DEFAULT_TIMEOUT = 30.
+    UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
+except:
 
 def nothing():
     pass
