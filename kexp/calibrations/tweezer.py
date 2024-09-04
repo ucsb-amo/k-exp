@@ -21,3 +21,7 @@ def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:
     slope =  123.42857154500274
     y_intercept =  -2.7238095329863836
     return vpd_pid1 * slope + y_intercept
+
+# distance per MHz:
+cat_eye_xpf =  5.7e-6 # m/MHz
+non_cat_eye_xpf =  5.2e-6 # m/MHz
