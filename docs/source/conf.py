@@ -27,7 +27,7 @@ exclude_patterns = []
 import os
 import sys
 
-autodoc_mock_imports  = ["artiq","spcm","pylablib","numpy"]
+autodoc_mock_imports  = ["artiq","spcm","pylablib","numpy","kamo","h5py"]
 
 sys.path.insert(0, os.path.abspath('../..'))
 
