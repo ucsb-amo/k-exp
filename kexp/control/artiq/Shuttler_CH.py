@@ -1,4 +1,4 @@
-from artiq.experiment import delay, kernel
+from artiq.experiment import delay, kernel, portable
 from artiq.experiment import *
 
 from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu

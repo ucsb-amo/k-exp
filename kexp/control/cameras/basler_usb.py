@@ -1,5 +1,4 @@
 from pypylon import pylon
-from artiq.experiment import *
 import numpy as np
 
 from queue import Queue

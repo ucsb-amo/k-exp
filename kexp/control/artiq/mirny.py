@@ -1,5 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay_mu, delay, parallel
+from artiq.experiment import portable, kernel
 from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np

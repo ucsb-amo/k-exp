@@ -1,4 +1,4 @@
-from artiq.experiment import delay, kernel
+from artiq.experiment import delay, kernel, portable
 from artiq.coredevice.ttl import TTLOut
 import artiq.experiment
 

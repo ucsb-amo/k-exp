@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay, delay_mu, parallel, sequential
+from artiq.experiment import delay, delay_mu, parallel, sequential, kernel, portable
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame

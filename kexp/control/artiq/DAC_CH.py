@@ -1,4 +1,4 @@
-from artiq.experiment import kernel, rpc, delay
+from artiq.experiment import kernel, rpc, delay, portable
 from artiq.coredevice.zotino import Zotino
 
 from kexp.util.artiq.async_print import aprint

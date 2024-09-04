@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay_mu, delay, parallel, portable
+from artiq.experiment import delay_mu, delay, parallel, portable, kernel, TFloat
 from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np

@@ -1,7 +1,7 @@
 import numpy as np
 
 from artiq.coredevice import ad53xx
-from artiq.experiment import kernel
+from artiq.experiment import kernel, portable
 
 from kexp.control import DDS, DummyCore
 from kexp.config.dac_id import dac_frame

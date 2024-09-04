@@ -4,7 +4,7 @@ from kexp.control.artiq.TTL import TTL
 from kexp.config import ExptParams
 from kexp.util.artiq.async_print import aprint
 
-from artiq.experiment import kernel, delay, TFloat
+from artiq.experiment import kernel, delay, TFloat, portable
 
 import numpy as np
 

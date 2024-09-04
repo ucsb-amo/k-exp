@@ -2,7 +2,7 @@ from kexp.util.data import DataSaver
 import h5py, time
 import numpy as np
 import os
-from artiq.experiment import TBool, rpc
+from artiq.experiment import TBool, rpc, portable, kernel
 
 CHECK_PERIOD = 0.05
 WAIT_PERIOD = 0.1

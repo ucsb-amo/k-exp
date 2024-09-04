@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential
+from artiq.experiment import delay, parallel, sequential, kernel, portable
 
 from kexp.config import ExptParams
 

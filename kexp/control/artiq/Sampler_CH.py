@@ -1,4 +1,4 @@
-from artiq.experiment import delay, kernel, TFloat
+from artiq.experiment import delay, kernel, TFloat, portable
 from artiq.coredevice.sampler import Sampler
 import numpy as np
 
