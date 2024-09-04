@@ -10,5 +10,5 @@ class Quarto_Triggered_Ramp():
         self.COM = COM
         self.conn = serial.Serial(port=self.COM,baudrate=BAUDRATE,bytesize=8, timeout=2)
 
-    def update_linear_ramp(self,vi,vf,N,t):
+    # def update_linear_ramp(self,vi,vf,N,t):
         

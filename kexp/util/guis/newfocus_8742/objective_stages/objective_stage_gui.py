@@ -130,9 +130,10 @@ class motor_panel(QWidget):
             self.button.clicked.connect(
                 lambda: controller.translate(N_steps_spinner.value()))
         else:
-            self.button.clicked.connect(
-                lambda: 
-            )
+            # self.button.clicked.connect(
+            #     lambda: 
+            # )
+            pass
 
     def setup_widgets(self):
         self.position.setValue(0)
