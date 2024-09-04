@@ -1,9 +1,9 @@
 import numpy as np
 
-from artiq.coredevice import ad53xx
+from artiq.coredevice import ad53xx, core
 from artiq.experiment import kernel, portable
 
-from kexp.control import DDS, DummyCore
+from kexp.control import DDS
 from kexp.config.dac_id import dac_frame
 from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
@@ -38,7 +38,7 @@ class dds_frame():
     def __init__(self, expt_params:ExptParams=d_exptparams,
                   dac_frame_obj:dac_frame = [],
                   shuttler_frame_obj:shuttler_frame = [],
-                  core = DummyCore()):
+                  core:core.Core = []):
         
         self.p = expt_params
 
