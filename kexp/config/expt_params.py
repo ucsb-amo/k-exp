@@ -57,23 +57,23 @@ class ExptParams():
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = .27
         self.t_tweezer_hold = 30.e-3
-        self.t_tweezer_1064_ramp = .8
-        self.t_tweezer_1064_rampdown = .072
-        self.t_tweezer_1064_rampdown2 = .322
-        self.t_tweezer_1064_rampdown3 = .322
+        self.t_tweezer_1064_ramp = .13
+        self.t_tweezer_1064_rampdown = .09
+        self.t_tweezer_1064_rampdown2 = 0.5
+        self.t_tweezer_1064_rampdown3 = .3
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        # self.t_magtrap = 1.4
-        # self.t_magtrap_ramp = .367
-        # self.t_magtrap_rampdown = .2
+        self.t_magtrap = 0.
+        self.t_magtrap_ramp = .367
+        self.t_magtrap_rampdown = .2
         self.t_magtrap_ramp = 75.e-3
         self.t_magtrap = 0.0
         self.t_magtrap_rampdown = 75.e-3
-        self.t_feshbach_field_rampup = 200.e-3
-        self.t_feshbach_field_ramp = 20.e-3
-        self.t_feshbach_field_ramp2 = 20.e-3
+        self.t_feshbach_field_rampup = 100.e-3
+        self.t_feshbach_field_ramp = 15.e-3
+        self.t_feshbach_field_ramp2 = 15.e-3
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
@@ -183,7 +183,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.9
+        self.v_pd_lightsheet_rampup_end = 9.99
         self.v_pd_lightsheet_rampdown_end = 4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -195,7 +195,7 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 9.9
+        self.v_pd_tweezer_1064_ramp_end = 9.2
         self.v_pd_tweezer_1064_rampdown_end = .7
         self.v_pd_tweezer_1064_rampdown2_end = 0.025
         self.v_pd_tweezer_1064_rampdown3_end = 0.025
@@ -220,11 +220,7 @@ class ExptParams():
         # self.amp_tweezer_list = [.2,.215]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = -2.
-
-        # tweezer movement
-        self.tweezer_acceleration = .075 # meter / s^2
-        self.n_tweezer_move_steps = 1000
+        self.v_tweezer_paint_amp_max = 6.
 
         # RF
         self.amp_rf_source = 0.99
@@ -258,24 +254,15 @@ class ExptParams():
         # self.i_evap3_current = 25.
         # self.i_evap3_current = 16.4
 
-        # # non-painted high field evap
-        # self.i_evap1_current = 191.4
-        # self.i_evap2_current = 181.3
-        # self.i_evap3_current = 190.6
-
-        # painted high field evap
-        self.i_evap1_current = 193.
-        self.i_evap2_current = 193.4
-        self.i_evap3_current = 192.3
+        # high field evap
+        self.i_evap1_current = 191.4
+        self.i_evap2_current = 181.3
+        self.i_evap3_current = 190.6
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.
         # self.n_forced_evap_ramp_steps = 1000
         self.i_forced_evap_ramp_end = 40.
-
-        # high field imaging
-        self._slope_imaging_frequency_per_iouter_current = -4.08715595e+06
-        self._yintercept_imaging_frequency_per_iouter_current = 2.88188071e+08
 
         self.compute_derived()
 

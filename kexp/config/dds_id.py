@@ -5,6 +5,7 @@ from artiq.experiment import kernel
 
 from kexp.control import DDS, DummyCore
 from kexp.config.dac_id import dac_frame
+from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 from kexp.config.dds_calibration import DDS_VVA_Calibration
 
@@ -30,20 +31,16 @@ def dds_empty_frame(x=None):
 class dds_frame():
     '''
     Associates each dds with a instance of the DDS class for use in experiments.
-    Also, records the AOM order so that AOM frequencies can be determined from
-    detunings.
+    Also, records the AO order, DAC channels associated with VVA/PID set points,
+    associated transition for detuning calulations, and default
+    frequency/amplitudes.
     '''
     def __init__(self, expt_params:ExptParams=d_exptparams,
                   dac_frame_obj:dac_frame = [],
-                    core = DummyCore()):
+                  shuttler_frame_obj:shuttler_frame = [],
+                  core = DummyCore()):
         
         self.p = expt_params
-
-        self.core = core
-        # self.dds_manager = [DDSManager]
-        self.dds_amp_calibration = DDS_Amplitude_Calibration()
-        self.dds_vva_calibration = DDS_VVA_Calibration()
-        self.ramp_dt = RAMP_STEP_TIME
 
         self._N_uru = N_uru
         self._N_ch = N_ch
@@ -84,7 +81,6 @@ class dds_frame():
                                     dac_ch_vpd = self._dac_frame.vva_d1_3d_c.ch,
                                     default_detuning = self.p.detune_d1_c_gm,
                                     default_amp = self.p.amp_d1_3d_c)
-        
         self.d1_3d_r = self.dds_assign(4,0, ao_order = 1, transition = 'D1',
                                     dac_ch_vpd = self._dac_frame.vva_d1_3d_r.ch,
                                     default_detuning = self.p.detune_d1_r_gm,
@@ -113,6 +109,12 @@ class dds_frame():
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
                                     default_amp = self.p.amp_tweezer_pid2)
 
+        self.core = core
+        # self.dds_manager = [DDSManager]
+        self.dds_amp_calibration = DDS_Amplitude_Calibration()
+        self.dds_vva_calibration = DDS_VVA_Calibration()
+        self.ramp_dt = RAMP_STEP_TIME
+
         self.write_dds_keys()
         self.make_dds_array()
         self.dds_list = np.array(self.dds_array).flatten()
@@ -120,14 +122,30 @@ class dds_frame():
     def dds_assign(self, uru, ch, 
                    default_freq=dv, default_detuning=dv, default_amp=dv, 
                    ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
-        '''
-        Makes a DDS object, sets the aom order, and
-        returns the DDS() object.
+        """Instantiates and returns a DDS object for the given urukul and channel.
 
-        Returns
-        -------
-        DDS
-        '''
+        Args:
+            uru (int): The urukul card index. 0-indexed.
+            ch (int): The channel of this DDS. 0-indexed.
+            default_freq (float, optional): The default frequency (in Hz) to
+            which this DDS channel should turn on.
+            default_detuning (float, optional): The default detuning (in
+            linewidths) to which this DDS channel should turn on.
+            default_amp (_type_, optional): The default amplitude (0 to 1) to
+            which this DDS channel should turn on.
+            ao_order (int, optional): Specifies the AO order (if applicable) as
+            either +1 or -1.
+            double_pass (bool, optional): Specifies if the AO is set up as a
+            double pass for detuning calculations. Defaults to True.
+            transition (str, optional): If the AO controls near-resonant light,
+            specify the transition ('D1' or 'D2'). Defaults to 'None'.
+            dac_ch_vpd (int, optional): If controlling an AO with a VVA in line
+            with the DDS, this should specify the DAC channel number which
+            controls that VVA. For no DAC control, leave as -1.
+
+        Returns:
+            DDS
+        """        
 
         dds0 = DDS(urukul_idx=uru,ch=ch,
                    frequency=default_freq,
@@ -151,13 +169,19 @@ class dds_frame():
         return dds0
     
     def write_dds_keys(self):
-        '''Adds the assigned keys to the DDS objects so that the user-defined
-        names (keys) are available with the DDS objects.'''
+        """Adds the assigned keys to the DDS objects so that the user-defined
+        names (keys) are available with the DDS objects."""
         for key in self.__dict__.keys():
             if isinstance(self.__dict__[key],DDS):
                 self.__dict__[key].key = key
     
     def make_dds_array(self):
+        """Creates an array of shape (N_uru,N_ch) containing DDS objects for
+        each channel.
+
+        First loops through the DDS objects that were explicitly assigned as
+        attributes using dds_assign, then fills in the remaining DDS channels.
+        """        
         dds_linlist = [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
         for dds in dds_linlist:
             self.dds_array[dds.urukul_idx][dds.ch] = dds
@@ -174,6 +198,9 @@ class dds_frame():
 
     @kernel
     def power_down_cooling(self):
+        """Turn off the near-resonant light for long hold times to avoid light
+        leakage interacting with the atoms.
+        """        
         self.d1_3d_r.dds_device.set(amplitude=0.)
         self.d1_3d_c.dds_device.set(amplitude=0.)
         self.d2_3d_c.dds_device.set(amplitude=0.)
@@ -192,6 +219,9 @@ class dds_frame():
 
     @kernel
     def init_cooling(self):
+        """See 'power_down_cooling`. Reboots the DDS cores for the near-resonant
+        light and sets them to their defaults.
+        """   
         self.d1_3d_r.set_dds(set_stored=True)
         self.d1_3d_c.set_dds(set_stored=True)
         self.d2_3d_c.set_dds(set_stored=True)

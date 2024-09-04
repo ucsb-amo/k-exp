@@ -33,12 +33,19 @@ class Fit():
         self.xdata = xdata
         self.ydata = ydata
 
+        self.popt = []
         self.y_fitdata = []
         
         try:
             self.ydata_smoothed = savgol_filter(self.ydata,savgol_window,savgol_degree)
         except:
             self.ydata_smoothed = copy.deepcopy(self.ydata)
+
+    # def get_plot_fitdata(self):
+    #     Nsample = len(self.xdata)*500
+    #     xplot = np.linspace(self.xdata[0],self.xdata[-1],Nsample)
+    #     yplot = self._fit_func(xplot,*self.popt)
+    #     return (xplot, yplot)
 
     def _fit_func(self,x):
         pass
@@ -47,9 +54,12 @@ class Fit():
         pass
 
     def plot_fit(self):
-        fig = plt.figure()
+        plt.figure()
         plt.plot(self.xdata,self.ydata,'.',markersize=4)
-        plt.plot(self.xdata,self.y_fitdata,'--')
+        # xplot, yplot = self.get_plot_fitdata()
+        xplot = self.xdata
+        yplot = self.y_fitdata
+        plt.plot(xplot,yplot,'--')
         plt.legend(["Data","Fit"])
 
     def remove_infnan(self,xdata,ydata):

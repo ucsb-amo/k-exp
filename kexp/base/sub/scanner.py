@@ -96,6 +96,12 @@ class Scanner():
         pass
 
     @kernel
+    def cleanup_scan_kernel(self):
+        """This method is run just after each scan_kernel completes.
+        """
+        pass
+        
+    @kernel
     def scan(self):
         """
         Runs the scan_kernel function for each value of the xvars specified.
@@ -127,6 +133,8 @@ class Scanner():
             self.init_scan_kernel()
 
             self.scan_kernel()
+
+            self.cleanup_scan_kernel()
 
             delay(self.params.t_recover)
             self.core.break_realtime()
