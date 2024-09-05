@@ -365,7 +365,10 @@ class atomdata():
         #         frame[i0][i1][i2] = vars(fit)[attr]
         linarray = np.reshape(ndarray,np.size(ndarray))
         vals = [vars(y)[attr] for y in linarray]
-        return np.reshape(vals,ndarray.shape+(-1,))
+        out = np.reshape(vals,ndarray.shape+(-1,))
+        if out.ndim == 2 and out.shape[-1] == 1:
+            out = out.flatten()
+        return out
         # return frame
 
     def _map(self,ndarray,func):
