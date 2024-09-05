@@ -7,25 +7,32 @@ from kexp.util.artiq.async_print import aprint
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 
-class tweezer_load(EnvExperiment, Base):
+class measure_lightshift(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.xvar('frequency_detuned_imaging',
                   self.p.frequency_detuned_imaging_F1
-                    + np.arange(0.,120.,3.)*1.e6)
+                    + np.arange(-100.,200.,3.)*1.e6)
         # self.xvar('frequency_detuned_imaging',\
         #           high_field_imaging_detuning(self.p.i_evap2_current) \
-        #             + np.arange(-20.,40.,3.)*1.e6)
+        #             + np.arange(-100.,100.,3.)*1.e6)
+        # self.p.frequency_detuned_imaging = high_field_imaging_detuning(self.p.i_evap2_current)
 
-        self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
-        a_list = [0.52658228, 0.29367089, 0.17974684]
+        # self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
+        self.p.frequency_tweezer_list = [71.3e6]
+        # a_list = [0.52658228, 0.29367089, 0.17974684]
+        a_list = [.5]
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
-        self.p.t_tof = 10.e-6
-        self.p.N_repeats = 3
+        self.p.t_tof = 20.e-6
+        self.p.N_repeats = 5
+
+        self.camera_params.amp_imaging = .12
+        self.camera_params.exposure_time = 10.e-6
+        self.p.t_imaging_pulse = self.camera_params.exposure_time
 
         self.p.t_mot_load = .75
         self.finish_prepare(shuffle=True)
@@ -83,12 +90,12 @@ class tweezer_load(EnvExperiment, Base):
         #                   v_end=self.p.v_pd_tweezer_1064_rampdown_end,
         #                   paint=True,keep_trap_frequency_constant=True)
 
-        # # feshbach field ramp to field 3
+        # feshbach field ramp to field 3
         # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
         #                      i_start=self.p.i_evap2_current,
         #                      i_end=self.p.i_evap3_current)
         
-        # # tweezer evap 2 with constant trap frequency
+        # tweezer evap 2 with constant trap frequency
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
         #                   v_start=self.p.v_pd_tweezer_1064_rampdown_end,
         #                   v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
@@ -103,6 +110,7 @@ class tweezer_load(EnvExperiment, Base):
         
         self.outer_coil.off()
         self.lightsheet.off()
+        # self.tweezer.off()
 
         delay(20.e-3)
 
