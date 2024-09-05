@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.config.shuttler_id &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.config.shuttler_id</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.config.shuttler_id</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">portable</span>
+
+<span class="kn">from</span> <span class="nn">artiq.coredevice.zotino</span> <span class="kn">import</span> <span class="n">Zotino</span>
+<span class="kn">from</span> <span class="nn">artiq.coredevice.shuttler</span> <span class="kn">import</span> <span class="n">DCBias</span><span class="p">,</span> <span class="n">DDS</span><span class="p">,</span> <span class="n">Relay</span><span class="p">,</span> <span class="n">Trigger</span><span class="p">,</span> <span class="n">Config</span><span class="p">,</span> <span class="n">shuttler_volt_to_mu</span>
+
+<span class="kn">from</span> <span class="nn">kexp.control.artiq.Shuttler_CH</span> <span class="kn">import</span> <span class="n">Shuttler_CH</span>
+
+<div class="viewcode-block" id="shuttler_frame">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.shuttler_id.shuttler_frame">[docs]</a>
+<span class="k">class</span> <span class="nc">shuttler_frame</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1">### Setup</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_STATE_BASE</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="o">&lt;&lt;</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">)])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shuttler_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_relay_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">Config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_trigger</span> <span class="o">=</span> <span class="n">Trigger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_relay</span> <span class="o">=</span> <span class="n">Relay</span>
+
+        <span class="c1">### Channel assignment</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer_mod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assign_ch</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1">###</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_dds_keys</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_write_dds_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Adds the assigned keys to the DDS objects so that the user-defined</span>
+<span class="sd">        names (keys) are available with the DDS objects.&#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">],</span><span class="n">Shuttler_CH</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+
+    <span class="k">def</span> <span class="nf">_assign_ch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Shuttler_CH</span><span class="p">:</span>
+        <span class="n">shuttler_ch</span> <span class="o">=</span> <span class="n">Shuttler_CH</span><span class="p">(</span><span class="n">ch</span><span class="p">,</span> <span class="n">relay_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_relay_state</span><span class="p">)</span>
+        <span class="n">shuttler_ch</span><span class="o">.</span><span class="n">_relay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relay</span>
+        <span class="n">shuttler_ch</span><span class="o">.</span><span class="n">_trigger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trigger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shuttler_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">shuttler_ch</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">shuttler_ch</span>
+    
+    <span class="nd">@portable</span>
+    <span class="k">def</span> <span class="nf">_relay_state_to_int</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_STATE_BASE</span> <span class="o">@</span> <span class="bp">self</span><span class="o">.</span><span class="n">_relay_state</span>
+
+<div class="viewcode-block" id="shuttler_frame.update_relay">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.shuttler_id.shuttler_frame.update_relay">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">update_relay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">chs</span><span class="p">,</span><span class="n">states</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_relay_state</span><span class="p">[</span><span class="n">chs</span><span class="p">]</span> <span class="o">=</span> <span class="n">states</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_relay</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_relay_state_to_int</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="shuttler_frame.trigger">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.shuttler_id.shuttler_frame.trigger">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">trigger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_trigger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_relay_state_to_int</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="shuttler_frame.set_gain">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.shuttler_id.shuttler_frame.set_gain">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">set_gain</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ch</span><span class="p">,</span><span class="n">gain_mu</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">set_gain</span><span class="p">(</span><span class="n">ch</span><span class="p">,</span><span class="n">gain_mu</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="shuttler_frame.init">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.shuttler_id.shuttler_frame.init">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">16</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_gain</span><span class="p">(</span><span class="n">ch</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="mf">10.e-6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_relay</span><span class="o">.</span><span class="n">init</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

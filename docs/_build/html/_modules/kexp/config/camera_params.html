@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.config.camera_params &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.config.camera_params</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.config.camera_params</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="CameraParams">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.camera_params.CameraParams">[docs]</a>
+<span></span><span class="k">class</span> <span class="nc">CameraParams</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_type</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_select</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_m</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">magnification</span> <span class="o">=</span> <span class="mi">13</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exposure_delay</span> <span class="o">=</span> <span class="mf">0.</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">exposure_time</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection_delay</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_camera_trigger</span> <span class="o">=</span> <span class="mf">2.e-6</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_imaging</span> <span class="o">=</span> <span class="mf">0.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_light_only_image_delay</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_dark_image_delay</span> <span class="o">=</span> <span class="mf">0.</span>
+    
+<div class="viewcode-block" id="CameraParams.select_absorption">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.camera_params.CameraParams.select_absorption">[docs]</a>
+    <span class="k">def</span> <span class="nf">select_absorption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">absorption_bool</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+<div class="viewcode-block" id="BaslerParams">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.camera_params.BaslerParams">[docs]</a>
+<span class="k">class</span> <span class="nc">BaslerParams</span><span class="p">(</span><span class="n">CameraParams</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">serial_number</span><span class="o">=</span><span class="s1">&#39;40320384&#39;</span><span class="p">,</span>
+                 <span class="n">trigger_source</span><span class="o">=</span><span class="s1">&#39;Line1&#39;</span><span class="p">,</span>
+                 <span class="n">exposure_time_fluor</span> <span class="o">=</span> <span class="mf">500.e-6</span><span class="p">,</span> <span class="n">exposure_time_abs</span> <span class="o">=</span> <span class="mf">19.e-6</span><span class="p">,</span>
+                 <span class="n">amp_absorption</span> <span class="o">=</span> <span class="mf">0.248</span><span class="p">,</span><span class="n">amp_fluorescence</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">resolution</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1200</span><span class="p">,</span><span class="mi">1920</span><span class="p">,),</span>
+                 <span class="n">t_light_only_image_delay</span><span class="o">=</span><span class="mf">25.e-3</span><span class="p">,</span>
+                 <span class="n">t_dark_image_delay</span><span class="o">=</span><span class="mf">15.e-3</span><span class="p">,</span>
+                 <span class="n">camera_select</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">magnification</span> <span class="o">=</span> <span class="mf">0.75</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_select</span> <span class="o">=</span> <span class="n">camera_select</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_type</span> <span class="o">=</span> <span class="s2">&quot;basler&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serial_no</span> <span class="o">=</span> <span class="n">serial_number</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger_source</span> <span class="o">=</span> <span class="n">trigger_source</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">resolution</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_m</span> <span class="o">=</span> <span class="mf">3.45</span> <span class="o">*</span> <span class="mf">1.e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">magnification</span> <span class="o">=</span> <span class="n">magnification</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exposure_delay</span> <span class="o">=</span> <span class="mi">17</span> <span class="o">*</span> <span class="mf">1.e-6</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__exposure_time_fluor__</span> <span class="o">=</span> <span class="n">exposure_time_fluor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__exposure_time_abs__</span> <span class="o">=</span> <span class="n">exposure_time_abs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__amp_absorption__</span> <span class="o">=</span> <span class="n">amp_absorption</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__amp_fluorescence__</span> <span class="o">=</span> <span class="n">amp_fluorescence</span> 
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_light_only_image_delay</span> <span class="o">=</span> <span class="n">t_light_only_image_delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_dark_image_delay</span> <span class="o">=</span> <span class="n">t_dark_image_delay</span>
+
+<div class="viewcode-block" id="BaslerParams.select_absorption">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.camera_params.BaslerParams.select_absorption">[docs]</a>
+    <span class="k">def</span> <span class="nf">select_absorption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">absorption_bool</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">absorption_bool</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amp_imaging</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__amp_absorption__</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exposure_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__exposure_time_abs__</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amp_imaging</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__amp_fluorescence__</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exposure_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__exposure_time_fluor__</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AndorParams">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.camera_params.AndorParams">[docs]</a>
+<span class="k">class</span> <span class="nc">AndorParams</span><span class="p">(</span><span class="n">CameraParams</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">exposure_time_fluor</span> <span class="o">=</span> <span class="mf">10.e-3</span><span class="p">,</span> <span class="n">exposure_time_abs</span> <span class="o">=</span> <span class="mf">10.e-6</span><span class="p">,</span>
+                 <span class="n">amp_absorption</span> <span class="o">=</span> <span class="mf">0.106</span><span class="p">,</span> <span class="n">amp_fluorescence</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                 <span class="n">resolution</span> <span class="o">=</span> <span class="p">(</span><span class="mi">512</span><span class="p">,</span><span class="mi">512</span><span class="p">,),</span>
+                 <span class="n">t_light_only_image_delay</span><span class="o">=</span><span class="mf">25.e-3</span><span class="p">,</span>
+                 <span class="n">t_dark_image_delay</span><span class="o">=</span><span class="mf">25.e-3</span><span class="p">,</span>
+                 <span class="n">camera_select</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+                 <span class="n">magnification</span> <span class="o">=</span> <span class="mf">50.</span><span class="o">/</span><span class="mi">3</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_select</span> <span class="o">=</span> <span class="n">camera_select</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_type</span> <span class="o">=</span> <span class="s2">&quot;andor&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_m</span> <span class="o">=</span> <span class="mf">16.e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">magnification</span> <span class="o">=</span> <span class="n">magnification</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">exposure_delay</span> <span class="o">=</span> <span class="mf">0.</span> <span class="c1"># needs to be updated from docs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">connection_delay</span> <span class="o">=</span> <span class="mf">8.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_camera_trigger</span> <span class="o">=</span> <span class="mf">200.e-9</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_readout_time</span> <span class="o">=</span> <span class="mi">512</span> <span class="o">*</span> <span class="mf">3.3e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">em_gain</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hs_speed</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vs_speed</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vs_amp</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">preamp</span> <span class="o">=</span> <span class="mi">2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">resolution</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__exposure_time_fluor__</span> <span class="o">=</span> <span class="n">exposure_time_fluor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__exposure_time_abs__</span> <span class="o">=</span> <span class="n">exposure_time_abs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__amp_absorption__</span> <span class="o">=</span> <span class="n">amp_absorption</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__amp_fluorescence__</span> <span class="o">=</span> <span class="n">amp_fluorescence</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__em_gain_fluor</span> <span class="o">=</span> <span class="mf">300.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__em_gain_abs</span> <span class="o">=</span> <span class="mf">300.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_light_only_image_delay</span> <span class="o">=</span> <span class="n">t_light_only_image_delay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_dark_image_delay</span> <span class="o">=</span> <span class="n">t_dark_image_delay</span>
+
+<div class="viewcode-block" id="AndorParams.select_absorption">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.camera_params.AndorParams.select_absorption">[docs]</a>
+    <span class="k">def</span> <span class="nf">select_absorption</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">absorption_bool</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">absorption_bool</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amp_imaging</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__amp_absorption__</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exposure_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__exposure_time_abs__</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">em_gain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__em_gain_abs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amp_imaging</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__amp_fluorescence__</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">exposure_time</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__exposure_time_fluor__</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">em_gain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__em_gain_fluor</span></div>
+</div>
+
+
+<span class="n">andor_params</span> <span class="o">=</span> <span class="n">AndorParams</span><span class="p">(</span><span class="n">camera_select</span><span class="o">=</span><span class="s1">&#39;andor&#39;</span><span class="p">,</span>
+                           <span class="n">amp_absorption</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                           <span class="n">magnification</span><span class="o">=</span><span class="mf">21.5</span><span class="p">)</span>
+<span class="n">xy_basler_params</span> <span class="o">=</span> <span class="n">BaslerParams</span><span class="p">(</span><span class="n">serial_number</span><span class="o">=</span><span class="s1">&#39;40316451&#39;</span><span class="p">,</span><span class="n">camera_select</span><span class="o">=</span><span class="s1">&#39;xy_basler&#39;</span><span class="p">,</span>
+                                <span class="n">amp_absorption</span><span class="o">=</span><span class="mf">0.18</span><span class="p">,</span>
+                                <span class="n">magnification</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">xy2_basler_params</span> <span class="o">=</span> <span class="n">BaslerParams</span><span class="p">(</span><span class="n">serial_number</span><span class="o">=</span><span class="s1">&#39;40411037&#39;</span><span class="p">,</span><span class="n">camera_select</span><span class="o">=</span><span class="s1">&#39;xy2_basler&#39;</span><span class="p">,</span>
+                                 <span class="n">trigger_source</span><span class="o">=</span><span class="s1">&#39;Line2&#39;</span><span class="p">,</span>
+                                 <span class="n">amp_absorption</span><span class="o">=</span><span class="mf">0.33</span><span class="p">,</span>
+                                 <span class="n">magnification</span><span class="o">=</span><span class="mf">2.1</span><span class="p">)</span>
+<span class="n">x_basler_params</span> <span class="o">=</span> <span class="n">BaslerParams</span><span class="p">(</span><span class="n">serial_number</span><span class="o">=</span><span class="s1">&#39;40320384&#39;</span><span class="p">,</span><span class="n">camera_select</span><span class="o">=</span><span class="s1">&#39;x_basler&#39;</span><span class="p">,</span>
+                               <span class="n">trigger_source</span><span class="o">=</span><span class="s1">&#39;Line2&#39;</span><span class="p">)</span>
+<span class="n">z_basler_params</span> <span class="o">=</span> <span class="n">BaslerParams</span><span class="p">(</span><span class="n">serial_number</span><span class="o">=</span><span class="s1">&#39;40416468&#39;</span><span class="p">,</span><span class="n">camera_select</span><span class="o">=</span><span class="s1">&#39;z_basler&#39;</span><span class="p">,</span>
+                               <span class="n">amp_absorption</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span><span class="n">amp_fluorescence</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

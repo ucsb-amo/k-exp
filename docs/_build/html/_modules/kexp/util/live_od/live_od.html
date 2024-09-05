@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.util.live_od.live_od &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.util.live_od.live_od</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.util.live_od.live_od</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">PyQt6.QtWidgets</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QApplication</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QHBoxLayout</span><span class="p">,</span> <span class="n">QPlainTextEdit</span><span class="p">,</span> <span class="n">QComboBox</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">PyQt6.QtGui</span> <span class="kn">import</span> <span class="n">QIcon</span><span class="p">,</span> <span class="n">QFont</span>
+<span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Queue</span>
+
+<span class="kn">from</span> <span class="nn">kexp.util.live_od.live_od_plotting</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="kn">from</span> <span class="nn">kexp.util.live_od.camera_mother</span> <span class="kn">import</span> <span class="n">CameraMother</span><span class="p">,</span> <span class="n">CameraBaby</span><span class="p">,</span> <span class="n">DataHandler</span><span class="p">,</span> <span class="n">CameraNanny</span>
+<span class="kn">from</span> <span class="nn">kexp.util.live_od.camera_connection_widget</span> <span class="kn">import</span> <span class="n">CamConnBar</span><span class="p">,</span> <span class="n">ROISelector</span>
+
+<div class="viewcode-block" id="MainWindow">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow">[docs]</a>
+<span class="k">class</span> <span class="nc">MainWindow</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_nanny</span> <span class="o">=</span> <span class="n">CameraNanny</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_mother</span> <span class="o">=</span> <span class="n">CameraMother</span><span class="p">(</span><span class="n">start_watching</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                           <span class="n">manage_babies</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                           <span class="n">output_queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span>
+                                             <span class="n">camera_nanny</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_nanny</span><span class="p">,</span>
+                                               <span class="n">N_runs</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_widgets</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_layout</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_mother</span><span class="o">.</span><span class="n">new_camera_baby</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_camera_baby</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_mother</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_camera</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_count_run</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="MainWindow.create_camera_baby">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.create_camera_baby">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_camera_baby</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">file</span><span class="p">,</span><span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span> <span class="o">=</span> <span class="n">CameraBaby</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">camera_nanny</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_handler</span> <span class="o">=</span> <span class="n">DataHandler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span><span class="n">data_filepath</span><span class="o">=</span><span class="n">file</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">save_data_bool_signal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_handler</span><span class="o">.</span><span class="n">get_save_data_bool</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">camera_connect</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">check_new_camera</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">camera_grab_start</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grab_start_msg</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">camera_grab_start</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_handler</span><span class="o">.</span><span class="n">get_img_number</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">camera_grab_start</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plotter</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">get_img_number</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">camera_grab_start</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_handler</span><span class="o">.</span><span class="n">start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">camera_grab_start</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_handler</span><span class="o">.</span><span class="n">got_image_from_queue</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="o">.</span><span class="n">got_img</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_handler</span><span class="o">.</span><span class="n">got_image_from_queue</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">count_images</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">honorable_death_signal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Run complete. </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> has died honorably.&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">dishonorable_death_signal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1"> has died dishonorably. Incomplete data deleted.&#39;</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">honorable_death_signal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">restart_mother</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">dishonorable_death_signal</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">restart_mother</span><span class="p">)</span>
+
+        <span class="c1"># self.the_baby.honorable_death_signal.connect(self.reset)</span>
+        <span class="c1"># self.the_baby.dishonorable_death_signal.connect(self.reset)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">the_baby</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.check_new_camera">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.check_new_camera">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_new_camera</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">camera_select</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_camera</span> <span class="o">!=</span> <span class="n">camera_select</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plotter</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_camera</span> <span class="o">=</span> <span class="n">camera_select</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.restart_mother">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.restart_mother">[docs]</a>
+    <span class="k">def</span> <span class="nf">restart_mother</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">time</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_mother</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.setup_widgets">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.setup_widgets">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_widgets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="n">font</span> <span class="o">=</span> <span class="n">QFont</span><span class="p">()</span>
+        <span class="n">font</span><span class="o">.</span><span class="n">setPointSize</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_window</span> <span class="o">=</span> <span class="n">QPlainTextEdit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_window</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">font</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_window</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_conn_bar</span> <span class="o">=</span> <span class="n">CamConnBar</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_nanny</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">output_window</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">roi_select</span> <span class="o">=</span> <span class="n">ROISelector</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roi_select</span><span class="o">.</span><span class="n">crop_dropdown</span><span class="o">.</span><span class="n">currentIndexChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_crop</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">viewer_window</span> <span class="o">=</span> <span class="n">ODviewer</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotting_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span> <span class="o">=</span> <span class="n">Analyzer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plotting_queue</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotter</span> <span class="o">=</span> <span class="n">Plotter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">viewer_window</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">plotting_queue</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotter</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="o">.</span><span class="n">analyzed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">(</span><span class="s1">&#39;new OD!&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roi_select</span><span class="o">.</span><span class="n">crop_dropdown</span><span class="o">.</span><span class="n">currentIndexChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plotter</span><span class="o">.</span><span class="n">clear</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.setup_layout">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.setup_layout">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">top_row</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">top_row</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_conn_bar</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">top_row</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">roi_select</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">top_row</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">viewer_window</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_window</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.count_images">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.count_images">[docs]</a>
+    <span class="k">def</span> <span class="nf">count_images</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_count_run</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotter</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">update_image_count</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_count_run</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_count</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_count</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+        
+<div class="viewcode-block" id="MainWindow.reset">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_count_run</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="o">.</span><span class="n">imgs</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.update_crop">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.update_crop">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_crop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzer</span><span class="o">.</span><span class="n">crop_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">roi_select</span><span class="o">.</span><span class="n">crop_dropdown</span><span class="o">.</span><span class="n">currentText</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.msg">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.msg">[docs]</a>
+    <span class="k">def</span> <span class="nf">msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">msg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_window</span><span class="o">.</span><span class="n">appendPlainText</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.grab_start_msg">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.grab_start_msg">[docs]</a>
+    <span class="k">def</span> <span class="nf">grab_start_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Nimg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_img</span> <span class="o">=</span> <span class="n">Nimg</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Camera grabbing... Expecting </span><span class="si">{</span><span class="n">Nimg</span><span class="si">}</span><span class="s2"> images.&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="MainWindow.gotem_msg">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.MainWindow.gotem_msg">[docs]</a>
+    <span class="k">def</span> <span class="nf">gotem_msg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">count</span><span class="p">):</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;gotem (img </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">N_img</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">msg</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+</div>
+
+
+<span class="c1"># Maybe hard, need to iterate through xvars in same order that the data is being taken</span>
+<span class="c1"># or, once have communication working, just send over the xvars real time</span>
+<span class="c1">#</span>
+<span class="c1"># class XvarViewer(QWidget):</span>
+<span class="c1">#     def __init__(self,):</span>
+<span class="c1">#         super().__init__()</span>
+    
+<span class="c1">#     def setup_layout(self):</span>
+<span class="c1">#         self.layout = QVBoxLayout()</span>
+<span class="c1">#         label = QLabel(&quot;xvars&quot;)</span>
+
+<div class="viewcode-block" id="main">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od.main">[docs]</a>
+<span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="n">app</span> <span class="o">=</span> <span class="n">QApplication</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+
+    <span class="c1"># Set the style</span>
+    <span class="c1"># app.setStyle(&quot;Fusion&quot;)  # Set the style to Fusion</span>
+
+    <span class="n">mainwindow</span> <span class="o">=</span> <span class="n">MainWindow</span><span class="p">()</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">aboutToQuit</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">mainwindow</span><span class="o">.</span><span class="n">camera_nanny</span><span class="o">.</span><span class="n">close_all</span><span class="p">)</span>
+    <span class="n">window</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">mainwindow</span><span class="o">.</span><span class="n">layout</span><span class="p">)</span>
+    <span class="n">window</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;LiveOD&quot;</span><span class="p">)</span>
+    <span class="n">window</span><span class="o">.</span><span class="n">setWindowIcon</span><span class="p">(</span><span class="n">QIcon</span><span class="p">(</span><span class="s1">&#39;banana-icon.png&#39;</span><span class="p">))</span>
+
+    <span class="c1"># Set the window position at the top of the screen</span>
+    <span class="n">window</span><span class="o">.</span><span class="n">setGeometry</span><span class="p">(</span><span class="n">window</span><span class="o">.</span><span class="n">x</span><span class="p">(),</span> <span class="mi">0</span><span class="p">,</span> <span class="n">window</span><span class="o">.</span><span class="n">width</span><span class="p">(),</span> <span class="n">window</span><span class="o">.</span><span class="n">height</span><span class="p">())</span>
+    <span class="c1"># window.setFixedSize(800,1370)</span>
+
+    <span class="n">window</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">app</span><span class="o">.</span><span class="n">exec</span><span class="p">())</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

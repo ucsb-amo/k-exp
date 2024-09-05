@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.experiments.scan_stages &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.experiments.scan_stages</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.experiments.scan_stages</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">delay</span>
+<span class="kn">from</span> <span class="nn">kexp</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">kexp.control</span> <span class="kn">import</span> <span class="n">objective_stages</span>
+
+<div class="viewcode-block" id="scan_stages">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.scan_stages.scan_stages">[docs]</a>
+<span class="k">class</span> <span class="nc">scan_stages</span><span class="p">(</span><span class="n">EnvExperiment</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+
+<div class="viewcode-block" id="scan_stages.prepare">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.scan_stages.scan_stages.prepare">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Base</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">setup_camera</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">camera_select</span><span class="o">=</span><span class="s1">&#39;andor&#39;</span><span class="p">,</span><span class="n">save_data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_control</span> <span class="o">=</span> <span class="n">objective_stages</span><span class="o">.</span><span class="n">controller</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">imaging_state</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="c1"># self.xvar(&#39;imaging_state&#39;,[2,1])</span>
+        <span class="c1"># self.xvar(&#39;frequency_detuned_imaging&#39;,np.linspace(1370.,1530.,13)*1.e6)</span>
+        <span class="c1"># self.xvar(&#39;frequency_detuned_imaging&#39;,np.arange(400.,500.,6)*1.e6)</span>
+        <span class="c1"># self.p.frequency_detuned_imaging = 528.e6</span>
+        <span class="c1"># self.xvar(&#39;dummy&#39;,[1.]*500)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvar</span><span class="p">(</span><span class="s1">&#39;n_steps_x&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">2000.</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvar</span><span class="p">(</span><span class="s1">&#39;n_steps_y&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">2000.</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvar</span><span class="p">(</span><span class="s1">&#39;n_steps_z&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">2000.</span><span class="p">,</span><span class="mi">20</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_mot_load</span> <span class="o">=</span> <span class="mf">.5</span>
+
+        <span class="c1"># self.xvar(&#39;t_tof&#39;,np.linspace(5.,15.,20)*1.e-6) </span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_tof</span> <span class="o">=</span> <span class="mf">5.e-6</span>
+
+        <span class="c1"># self.p.t_magtrap = 200.e-3</span>
+
+        <span class="c1"># self.p.n_lightsheet_rampup_steps = 100</span>
+        <span class="c1"># self.p.t_lightsheet_rampup = 200.e-3</span>
+        <span class="c1"># self.xvar(&#39;t_lightsheet_hold&#39;,np.linspace(30.,1000.,6)*1.e-3)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_lightsheet_hold</span> <span class="o">=</span> <span class="mf">300.e-3</span>
+        
+        <span class="c1"># self.xvar(&#39;dummy_z&#39;,[0]*500)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">amp_imaging</span> <span class="o">=</span> <span class="mf">.09</span>
+        <span class="c1"># self.camera_params.amp_imaging = .085</span>
+        <span class="c1"># self.xvar(&#39;amp_imaging&#39;,np.linspace(0.06,0.1,10))</span>
+        <span class="c1"># self.p.t_imaging_pulse = 20.e-6</span>
+        <span class="c1"># self.camera_params.exposure_time = 20.e-6</span>
+        <span class="c1"># self.camera_params.em_gain = 290.</span>
+
+        <span class="c1"># self.p.N_repeats = 2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">finish_prepare</span><span class="p">(</span><span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="scan_stages.scan_kernel">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.scan_stages.scan_stages.scan_kernel">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">scan_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_control</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">N_steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">n_steps_x</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="s1">&#39;n&#39;</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;+x&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_control</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">N_steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">n_steps_x</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;-x&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_control</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">N_steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">n_steps_y</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="s1">&#39;n&#39;</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;+y&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_control</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">N_steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">n_steps_y</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;-y&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_control</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">N_steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">n_steps_z</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="s1">&#39;n&#39;</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;+z&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">os_control</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">N_steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">n_steps_z</span><span class="p">,</span> <span class="n">obj</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="s1">&#39;-z&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_2d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_mot_load</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmot_d1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_d1cmot</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">i_magtrap_init</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_zshim_current_gm</span><span class="p">,</span>
+                        <span class="n">v_yshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_yshim_current_gm</span><span class="p">,</span>
+                          <span class="n">v_xshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_xshim_current_gm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_gm</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gm_ramp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_gmramp</span><span class="p">)</span>
+
+        <span class="c1"># self.release()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d1_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">flash_cooler</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">power_down_cooling</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_zshim_current_magtrap</span><span class="p">,</span>
+                        <span class="n">v_yshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_yshim_current_magtrap</span><span class="p">,</span>
+                          <span class="n">v_xshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_xshim_current_magtrap</span><span class="p">)</span>
+
+        <span class="c1"># magtrap start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">pd_scope_trig</span><span class="o">.</span><span class="n">pulse</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">us</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="c1"># ramp up lightsheet over magtrap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_lightsheet_rampup</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">magtrap_ramp_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">dt_magtrap_ramp</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">i_feshbach_field_rampup_start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="n">v_supply</span><span class="o">=</span><span class="mf">70.</span><span class="p">)</span>
+
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_magtrap</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+
+        <span class="c1"># delay(self.p.t_lightsheet_hold)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">feshbach_field_rampup_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">dt_feshbach_field_rampup</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mf">20.e-3</span><span class="p">)</span>
+
+        <span class="c1"># delay(self.p.t_lightsheet_hold)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">ramp_down</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_lightsheet_rampdown</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">feshbach_field_ramp_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">dt_feshbach_field_ramp</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mf">20.e-3</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">vva_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_tweezer_1064_ramp</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">ramp_down2</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_lightsheet_rampdown2</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">pd_scope_trig</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_feshbach_field_decay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">pd_scope_trig</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+    
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_tof</span><span class="p">)</span>
+        <span class="c1"># self.flash_repump()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">abs_image</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="scan_stages.run">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.scan_stages.scan_stages.run">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_kernel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_2D_mot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_2D_mot_load_delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mot_observe</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="scan_stages.analyze">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.scan_stages.scan_stages.analyze">[docs]</a>
+    <span class="k">def</span> <span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">os</span>
+        <span class="n">expt_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="n">expt_filepath</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

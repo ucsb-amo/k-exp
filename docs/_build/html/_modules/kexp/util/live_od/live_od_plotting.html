@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.util.live_od.live_od_plotting &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.util.live_od.live_od_plotting</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.util.live_od.live_od_plotting</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">PyQt6.QtWidgets</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QApplication</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QHBoxLayout</span><span class="p">,</span> <span class="n">QGridLayout</span><span class="p">,</span>
+      <span class="n">QPushButton</span><span class="p">,</span> <span class="n">QPlainTextEdit</span><span class="p">,</span> <span class="n">QComboBox</span><span class="p">,</span> <span class="n">QSizePolicy</span><span class="p">,</span> <span class="n">QDoubleSpinBox</span><span class="p">,</span>
+      <span class="n">QSpinBox</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">PyQt6.QtCore</span> <span class="kn">import</span> <span class="n">Qt</span><span class="p">,</span> <span class="n">QSize</span><span class="p">,</span> <span class="n">QTimer</span><span class="p">,</span> <span class="n">pyqtSignal</span><span class="p">,</span> <span class="n">QThread</span><span class="p">,</span> <span class="n">QObject</span>
+<span class="kn">from</span> <span class="nn">PyQt6.QtGui</span> <span class="kn">import</span> <span class="n">QIcon</span><span class="p">,</span> <span class="n">QFont</span>
+<span class="kn">from</span> <span class="nn">queue</span> <span class="kn">import</span> <span class="n">Queue</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">kexp.analysis.image_processing</span> <span class="kn">import</span> <span class="n">compute_OD</span><span class="p">,</span> <span class="n">process_ODs</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s1">&#39;QtAgg&#39;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">matplotlib.backends.backend_qtagg</span> <span class="kn">import</span> <span class="n">FigureCanvasQTAgg</span>
+<span class="kn">from</span> <span class="nn">matplotlib.backends.backend_qt5agg</span> <span class="kn">import</span> <span class="n">FigureCanvasQTAgg</span>
+<span class="kn">from</span> <span class="nn">matplotlib.figure</span> <span class="kn">import</span> <span class="n">Figure</span>
+
+<span class="n">dv</span> <span class="o">=</span> <span class="o">-</span><span class="mf">100.</span>
+
+<div class="viewcode-block" id="Analyzer">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.Analyzer">[docs]</a>
+<span class="k">class</span> <span class="nc">Analyzer</span><span class="p">(</span><span class="n">QObject</span><span class="p">):</span>
+
+    <span class="n">analyzed</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">plotting_queue</span><span class="p">:</span><span class="n">Queue</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imgs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">crop_type</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotting_queue</span> <span class="o">=</span> <span class="n">plotting_queue</span>
+
+<div class="viewcode-block" id="Analyzer.got_img">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.Analyzer.got_img">[docs]</a>
+    <span class="k">def</span> <span class="nf">got_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">img</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">img</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">imgs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">imgs</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="Analyzer.analyze">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.Analyzer.analyze">[docs]</a>
+    <span class="k">def</span> <span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imgs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imgs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">imgs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">od_raw</span> <span class="o">=</span> <span class="n">compute_OD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">od</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span> <span class="o">=</span> \
+            <span class="n">process_ODs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">od_raw</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">crop_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">od_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">od_raw</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">od</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">od</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyzed</span><span class="o">.</span><span class="n">emit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotting_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">od</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span><span class="p">,</span>
+                           <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span><span class="p">))</span></div>
+</div>
+
+
+<div class="viewcode-block" id="ODviewer">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.ODviewer">[docs]</a>
+<span class="k">class</span> <span class="nc">ODviewer</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Nimg</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_widgets</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_layout</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ODviewer.setup_widgets">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.ODviewer.setup_widgets">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_widgets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms_plot</span> <span class="o">=</span> <span class="n">ImgPlotPanel</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Atoms + Light&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_light_plot</span> <span class="o">=</span> <span class="n">ImgPlotPanel</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Light only&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_dark_plot</span> <span class="o">=</span> <span class="n">ImgPlotPanel</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Dark&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">od_plot</span> <span class="o">=</span> <span class="n">ImgPlotPanel</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;OD&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x_plot</span> <span class="o">=</span> <span class="n">LinePlotPanel</span><span class="p">(</span><span class="n">hlabel</span><span class="o">=</span><span class="s1">&#39;Position (pixels)&#39;</span><span class="p">,</span>
+                                           <span class="n">vlabel</span><span class="o">=</span><span class="s1">&#39;Integrated OD&#39;</span><span class="p">,</span>
+                                           <span class="n">title</span><span class="o">=</span><span class="s1">&#39;y-integrated OD (sum_od_x)&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y_plot</span> <span class="o">=</span> <span class="n">RotatedLinePlotPanel</span><span class="p">(</span><span class="n">vlabel</span><span class="o">=</span><span class="s1">&#39;Position (pixels)&#39;</span><span class="p">,</span>
+                                                  <span class="n">hlabel</span><span class="o">=</span><span class="s1">&#39;Integrated OD&#39;</span><span class="p">,</span>
+                                                  <span class="n">title</span><span class="o">=</span><span class="s1">&#39;x-integrated OD (sum_od_y)&#39;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_OD_spinner</span> <span class="o">=</span> <span class="n">QDoubleSpinBox</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_OD_spinner_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Max OD&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_OD_spinner</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_OD_spinner</span><span class="o">.</span><span class="n">setMinimum</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_OD_spinner</span><span class="o">.</span><span class="n">setSingleStep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_OD_spinner</span> <span class="o">=</span> <span class="n">QDoubleSpinBox</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_OD_spinner_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="s2">&quot;Min OD&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_OD_spinner</span><span class="o">.</span><span class="n">setMinimum</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_OD_spinner</span><span class="o">.</span><span class="n">setSingleStep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_count_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image Count: / </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">Nimg</span><span class="si">}</span><span class="s2"> &quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_axes_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Clear Axes&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ODviewer.setup_layout">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.ODviewer.setup_layout">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="c1"># self.img_atoms_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)</span>
+        <span class="c1"># self.img_light_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)</span>
+        <span class="c1"># self.img_dark_plot.setSizePolicy(QSizePolicy.Policy.Fixed,QSizePolicy.Policy.Fixed)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_count_label</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">Fixed</span><span class="p">,</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">Fixed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">od_plot</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">Expanding</span><span class="p">,</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">Expanding</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y_plot</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">Expanding</span><span class="p">,</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">Minimum</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x_plot</span><span class="o">.</span><span class="n">setSizePolicy</span><span class="p">(</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">Minimum</span><span class="p">,</span><span class="n">QSizePolicy</span><span class="o">.</span><span class="n">Policy</span><span class="o">.</span><span class="n">Minimum</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+        
+        <span class="n">images</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">images</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_atoms_plot</span><span class="p">)</span>
+        <span class="n">images</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_light_plot</span><span class="p">)</span>
+        <span class="n">images</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_dark_plot</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_count_label</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_axes_button</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+        <span class="n">top_row_corner</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+        <span class="n">top_row_corner</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_count_label</span><span class="p">)</span>
+        <span class="n">top_row_corner</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clear_axes_button</span><span class="p">)</span>
+
+        <span class="n">top_row</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">top_row</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+        <span class="n">top_row</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">top_row_corner</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">top_row</span><span class="p">)</span>
+
+        <span class="n">max_spinner_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">max_spinner_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_OD_spinner</span><span class="p">)</span>
+        <span class="n">max_spinner_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_OD_spinner_label</span><span class="p">)</span>
+
+        <span class="n">min_spinner_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">min_spinner_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_OD_spinner</span><span class="p">)</span>
+        <span class="n">min_spinner_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_OD_spinner_label</span><span class="p">)</span>
+
+        <span class="n">spinner_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+        <span class="n">spinner_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">max_spinner_layout</span><span class="p">)</span>
+        <span class="n">spinner_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">min_spinner_layout</span><span class="p">)</span>
+
+        <span class="n">OD_grid</span> <span class="o">=</span> <span class="n">QGridLayout</span><span class="p">()</span>
+        <span class="n">OD_grid</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">od_plot</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">OD_grid</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y_plot</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">OD_grid</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x_plot</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">OD_grid</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">spinner_layout</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">OD_grid</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">)</span>
+        <span class="n">IMG_SIZE</span> <span class="o">=</span> <span class="mi">200</span>
+        <span class="n">OD_SIZE</span> <span class="o">=</span> <span class="mi">450</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">od_plot</span><span class="o">.</span><span class="n">setMinimumHeight</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">od_plot</span><span class="o">.</span><span class="n">setMinimumWidth</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms_plot</span><span class="o">.</span><span class="n">setFixedSize</span><span class="p">(</span><span class="n">IMG_SIZE</span><span class="p">,</span><span class="n">IMG_SIZE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_light_plot</span><span class="o">.</span><span class="n">setFixedSize</span><span class="p">(</span><span class="n">IMG_SIZE</span><span class="p">,</span><span class="n">IMG_SIZE</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_dark_plot</span><span class="o">.</span><span class="n">setFixedSize</span><span class="p">(</span><span class="n">IMG_SIZE</span><span class="p">,</span><span class="n">IMG_SIZE</span><span class="p">)</span>
+        <span class="c1"># self.od_plot.setFixedSize(OD_SIZE,OD_SIZE)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y_plot</span><span class="o">.</span><span class="n">setFixedHeight</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">od_plot</span><span class="o">.</span><span class="n">height</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y_plot</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">150</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x_plot</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">od_plot</span><span class="o">.</span><span class="n">width</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x_plot</span><span class="o">.</span><span class="n">setFixedHeight</span><span class="p">(</span><span class="mi">150</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ODviewer.get_img_number">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.ODviewer.get_img_number">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_img_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">Nimg</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Nimg</span> <span class="o">=</span> <span class="n">Nimg</span></div>
+
+
+<div class="viewcode-block" id="ODviewer.update_image_count">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.ODviewer.update_image_count">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_image_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">count</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_count_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image count: </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">count</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nimg</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="Plotter">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.Plotter">[docs]</a>
+<span class="k">class</span> <span class="nc">Plotter</span><span class="p">(</span><span class="n">QThread</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                  <span class="n">plotwindow</span><span class="p">:</span><span class="n">ODviewer</span><span class="p">,</span>
+                  <span class="n">plotting_queue</span><span class="p">:</span><span class="n">Queue</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span> <span class="o">=</span> <span class="n">plotwindow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotting_queue</span> <span class="o">=</span> <span class="n">plotting_queue</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">clear_axes_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clear</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Plotter.run">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.Plotter.run">[docs]</a>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">to_plot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plotting_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span> <span class="o">=</span> <span class="n">to_plot</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span> <span class="o">=</span> <span class="n">to_plot</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span> <span class="o">=</span> <span class="n">to_plot</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">od</span> <span class="o">=</span> <span class="n">to_plot</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span> <span class="o">=</span> <span class="n">to_plot</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span> <span class="o">=</span> <span class="n">to_plot</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">img_atoms_plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">img_light_plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">img_dark_plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">od_plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">od</span><span class="p">,</span>
+                                         <span class="n">min_od</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">min_OD_spinner</span><span class="o">.</span><span class="n">value</span><span class="p">(),</span>
+                                         <span class="n">max_od</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">max_OD_spinner</span><span class="o">.</span><span class="n">value</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">sum_od_x_plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="o">.</span><span class="n">sum_od_y_plot</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Plotter.clear">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.Plotter.clear">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">plotwindow</span><span class="p">)[</span><span class="n">k</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">),</span><span class="n">PlotPanel</span><span class="p">):</span>
+                <span class="n">obj</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="n">obj</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AtomHistory">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.AtomHistory">[docs]</a>
+<span class="k">class</span> <span class="nc">AtomHistory</span><span class="p">(</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="PlotPanel">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.PlotPanel">[docs]</a>
+<span class="k">class</span> <span class="nc">PlotPanel</span><span class="p">(</span><span class="n">FigureCanvasQTAgg</span><span class="p">,</span><span class="n">QWidget</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">hlabel</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">vlabel</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="n">height</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span><span class="n">width</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">Figure</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">add_subplot</span><span class="p">(</span><span class="mi">111</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FigureCanvasQTAgg</span><span class="p">,</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">fig</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">height</span> <span class="ow">and</span> <span class="p">(</span><span class="n">width</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="n">height</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">width</span> <span class="ow">and</span> <span class="p">(</span><span class="n">height</span><span class="o">==</span><span class="mi">0</span><span class="p">):</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="n">width</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">width</span> <span class="ow">and</span> <span class="n">height</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="n">height</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="n">width</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hlabel</span> <span class="o">=</span> <span class="n">hlabel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vlabel</span> <span class="o">=</span> <span class="n">vlabel</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ydatalim</span> <span class="o">=</span> <span class="mf">1.</span>
+
+<div class="viewcode-block" id="PlotPanel.clear">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.PlotPanel.clear">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">cla</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="PlotPanel.set_labels">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.PlotPanel.set_labels">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">vlabel</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hlabel</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PlotPanel.fix_ylim">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.PlotPanel.fix_ylim">[docs]</a>
+    <span class="k">def</span> <span class="nf">fix_ylim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ydata</span><span class="p">,</span><span class="n">flip_axes</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ydatalim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">ydatalim</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">ydata</span><span class="p">)])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">flip_axes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ydatalim</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">ydatalim</span><span class="p">])</span></div>
+</div>
+
+
+<div class="viewcode-block" id="ImgPlotPanel">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.ImgPlotPanel">[docs]</a>
+<span class="k">class</span> <span class="nc">ImgPlotPanel</span><span class="p">(</span><span class="n">PlotPanel</span><span class="p">):</span>
+<div class="viewcode-block" id="ImgPlotPanel.plot">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.ImgPlotPanel.plot">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">img</span><span class="p">,</span><span class="n">max_od</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span><span class="n">min_od</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">max_od</span> <span class="o">==</span> <span class="n">dv</span> <span class="ow">and</span> <span class="n">min_od</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="n">vmin</span><span class="o">=</span><span class="n">min_od</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">max_od</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_labels</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">max_od</span> <span class="o">==</span> <span class="n">dv</span> <span class="ow">and</span> <span class="n">min_od</span> <span class="o">==</span> <span class="n">dv</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span><span class="o">.</span><span class="n">set_clim</span><span class="p">(</span><span class="n">vmin</span><span class="o">=</span><span class="n">min_od</span><span class="p">,</span><span class="n">vmax</span><span class="o">=</span><span class="n">max_od</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="LinePlotPanel">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.LinePlotPanel">[docs]</a>
+<span class="k">class</span> <span class="nc">LinePlotPanel</span><span class="p">(</span><span class="n">PlotPanel</span><span class="p">):</span>
+<div class="viewcode-block" id="LinePlotPanel.plot">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.LinePlotPanel.plot">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ydata</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span><span class="p">,</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ydata</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_labels</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span><span class="o">.</span><span class="n">set_ydata</span><span class="p">(</span><span class="n">ydata</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fix_ylim</span><span class="p">(</span><span class="n">ydata</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+</div>
+
+
+<div class="viewcode-block" id="RotatedLinePlotPanel">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.RotatedLinePlotPanel">[docs]</a>
+<span class="k">class</span> <span class="nc">RotatedLinePlotPanel</span><span class="p">(</span><span class="n">PlotPanel</span><span class="p">):</span>
+<div class="viewcode-block" id="RotatedLinePlotPanel.plot">
+<a class="viewcode-back" href="../../../../kexp.util.live_od.html#kexp.util.live_od.live_od_plotting.RotatedLinePlotPanel.plot">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ydata</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">xdata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ydata</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span><span class="p">,</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">ydata</span><span class="p">),</span><span class="n">xdata</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_labels</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_plot_ref</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">ydata</span><span class="p">),</span><span class="n">xdata</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fix_ylim</span><span class="p">(</span><span class="n">ydata</span><span class="p">,</span><span class="n">flip_axes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">draw</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

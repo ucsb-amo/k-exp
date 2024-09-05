@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.control.cameras package &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="kexp.control.misc package" href="kexp.control.misc.html" />
+    <link rel="prev" title="kexp.control.artiq package" href="kexp.control.artiq.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">kexp</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="kexp.html">kexp package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="kexp.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="kexp.analysis.html">kexp.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.base.html">kexp.base package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.calibrations.html">kexp.calibrations package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.config.html">kexp.config package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="kexp.control.html">kexp.control package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.experiments.html">kexp.experiments package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.util.html">kexp.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="kexp.html#module-kexp">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">kexp</a></li>
+          <li class="breadcrumb-item"><a href="kexp.html">kexp package</a></li>
+          <li class="breadcrumb-item"><a href="kexp.control.html">kexp.control package</a></li>
+      <li class="breadcrumb-item active">kexp.control.cameras package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/kexp.control.cameras.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="kexp-control-cameras-package">
+<h1>kexp.control.cameras package<a class="headerlink" href="#kexp-control-cameras-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-kexp.control.cameras.andor">
+<span id="kexp-control-cameras-andor-module"></span><h2>kexp.control.cameras.andor module<a class="headerlink" href="#module-kexp.control.cameras.andor" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.control.cameras.andor.</span></span><span class="sig-name descname"><span class="pre">AndorEMCCD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ExposureTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">30</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hs_speed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vs_speed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vs_amp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preamp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">AndorSDK2Camera</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD.Close">
+<span class="sig-name descname"><span class="pre">Close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD.Close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD.Close" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD.Open">
+<span class="sig-name descname"><span class="pre">Open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD.Open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD.Open" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD.set_cooler_mode">
+<span class="sig-name descname"><span class="pre">set_cooler_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD.set_cooler_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD.set_cooler_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD.set_emccd_advanced">
+<span class="sig-name descname"><span class="pre">set_emccd_advanced</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD.set_emccd_advanced"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD.set_emccd_advanced" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD.set_fast_trigger_mode">
+<span class="sig-name descname"><span class="pre">set_fast_trigger_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD.set_fast_trigger_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD.set_fast_trigger_mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD.set_hsspeed">
+<span class="sig-name descname"><span class="pre">set_hsspeed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hs_speed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD.set_hsspeed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD.set_hsspeed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD.set_vsamplitude">
+<span class="sig-name descname"><span class="pre">set_vsamplitude</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vs_amp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD.set_vsamplitude"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD.set_vsamplitude" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD.start_grab">
+<span class="sig-name descname"><span class="pre">start_grab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N_img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">missing_frame</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'skip'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buff_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD.start_grab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD.start_grab" title="Link to this definition"></a></dt>
+<dd><p>Snap <cite>nframes</cite> images (with preset image read mode parameters)
+Modified from pylablib.devices.interface.camera.</p>
+<p><cite>buff_size</cite> determines buffer size (if <code class="docutils literal notranslate"><span class="pre">None</span></code>, use the default size).
+Timeout is specified for a single-frame acquisition, not for the whole acquisition time.
+<cite>missing_frame</cite> determines what to do with frames which have been lost:
+can be <code class="docutils literal notranslate"><span class="pre">&quot;none&quot;</span></code> (replacing them with <code class="docutils literal notranslate"><span class="pre">None</span></code>), <code class="docutils literal notranslate"><span class="pre">&quot;zero&quot;</span></code> (replacing them with zero-filled frame),
+or <code class="docutils literal notranslate"><span class="pre">&quot;skip&quot;</span></code> (skipping them, while still keeping total returned frames number to <cite>n</cite>).
+If <code class="docutils literal notranslate"><span class="pre">return_info==True</span></code>, return tuple <code class="docutils literal notranslate"><span class="pre">(frames,</span> <span class="pre">infos)</span></code>, where <code class="docutils literal notranslate"><span class="pre">infos</span></code> is a list of frame info tuples (camera-dependent);
+if some frames are missing and <code class="docutils literal notranslate"><span class="pre">missing_frame!=&quot;skip&quot;</span></code>, the corresponding frame info is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.andor.AndorEMCCD.stop_grab">
+<span class="sig-name descname"><span class="pre">stop_grab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/andor.html#AndorEMCCD.stop_grab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.andor.AndorEMCCD.stop_grab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.control.cameras.basler_usb">
+<span id="kexp-control-cameras-basler-usb-module"></span><h2>kexp.control.cameras.basler_usb module<a class="headerlink" href="#module-kexp.control.cameras.basler_usb" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.control.cameras.basler_usb.BaslerUSB">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.control.cameras.basler_usb.</span></span><span class="sig-name descname"><span class="pre">BaslerUSB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ExposureTime</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">TriggerSource</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Line1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">TriggerMode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'On'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">BaslerSerialNumber</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'40316451'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/basler_usb.html#BaslerUSB"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.basler_usb.BaslerUSB" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">InstantCamera</span></code></p>
+<p>BaslerUSB is an InstantCamera object which initializes the connected Basler camera.
+Excercise caution if multiple cameras are connected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ExposureTime</strong> (<em>float</em>) – the exposure time in s. If below the minimum for the connected camera, sets to minimum value. (default: 0.)</p></li>
+<li><p><strong>TriggerSource</strong> (<em>str</em>) – picks the line that the camera triggers on. (default: ‘Line1’)</p></li>
+<li><p><strong>TriggerMode</strong> (<em>str</em>) – picks whether or not the camera waits for a trigger to capture frames. (default: ‘On’)</p></li>
+<li><p><strong>BaslerSerialNumber</strong> (<em>str</em>) – identifies which camera should be used via the serial number. (default: ExptParams.basler_serial_no_absorption)</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.basler_usb.BaslerUSB.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/basler_usb.html#BaslerUSB.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.basler_usb.BaslerUSB.close" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.basler_usb.BaslerUSB.is_opened">
+<span class="sig-name descname"><span class="pre">is_opened</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/basler_usb.html#BaslerUSB.is_opened"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.basler_usb.BaslerUSB.is_opened" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.basler_usb.BaslerUSB.open">
+<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/basler_usb.html#BaslerUSB.open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.basler_usb.BaslerUSB.open" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.basler_usb.BaslerUSB.start_grab">
+<span class="sig-name descname"><span class="pre">start_grab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N_img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/basler_usb.html#BaslerUSB.start_grab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.basler_usb.BaslerUSB.start_grab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.basler_usb.BaslerUSB.stop_grab">
+<span class="sig-name descname"><span class="pre">stop_grab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/basler_usb.html#BaslerUSB.stop_grab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.basler_usb.BaslerUSB.stop_grab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.control.cameras.dummy_cam">
+<span id="kexp-control-cameras-dummy-cam-module"></span><h2>kexp.control.cameras.dummy_cam module<a class="headerlink" href="#module-kexp.control.cameras.dummy_cam" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.control.cameras.dummy_cam.DummyCamera">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.control.cameras.dummy_cam.</span></span><span class="sig-name descname"><span class="pre">DummyCamera</span></span><a class="reference internal" href="_modules/kexp/control/cameras/dummy_cam.html#DummyCamera"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.dummy_cam.DummyCamera" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.dummy_cam.DummyCamera.Close">
+<span class="sig-name descname"><span class="pre">Close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/dummy_cam.html#DummyCamera.Close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.dummy_cam.DummyCamera.Close" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.dummy_cam.DummyCamera.Open">
+<span class="sig-name descname"><span class="pre">Open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/dummy_cam.html#DummyCamera.Open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.dummy_cam.DummyCamera.Open" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.dummy_cam.DummyCamera.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/dummy_cam.html#DummyCamera.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.dummy_cam.DummyCamera.close" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.dummy_cam.DummyCamera.is_opened">
+<span class="sig-name descname"><span class="pre">is_opened</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/dummy_cam.html#DummyCamera.is_opened"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.dummy_cam.DummyCamera.is_opened" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.dummy_cam.DummyCamera.open">
+<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/dummy_cam.html#DummyCamera.open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.dummy_cam.DummyCamera.open" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.dummy_cam.DummyCamera.start_grab">
+<span class="sig-name descname"><span class="pre">start_grab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ndarray</span></span></span><a class="reference internal" href="_modules/kexp/control/cameras/dummy_cam.html#DummyCamera.start_grab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.dummy_cam.DummyCamera.start_grab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.control.cameras.dummy_cam.DummyCamera.stop_grab">
+<span class="sig-name descname"><span class="pre">stop_grab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/control/cameras/dummy_cam.html#DummyCamera.stop_grab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.control.cameras.dummy_cam.DummyCamera.stop_grab" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.control.cameras">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-kexp.control.cameras" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="kexp.control.artiq.html" class="btn btn-neutral float-left" title="kexp.control.artiq package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="kexp.control.misc.html" class="btn btn-neutral float-right" title="kexp.control.misc package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

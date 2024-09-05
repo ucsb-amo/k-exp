@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.util.live_od package &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="kexp.util.guis.dds package" href="kexp.util.guis.dds.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">kexp</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="kexp.html">kexp package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="kexp.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="kexp.analysis.html">kexp.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.base.html">kexp.base package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.calibrations.html">kexp.calibrations package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.config.html">kexp.config package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.control.html">kexp.control package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.experiments.html">kexp.experiments package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="kexp.util.html">kexp.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="kexp.html#module-kexp">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">kexp</a></li>
+          <li class="breadcrumb-item"><a href="kexp.html">kexp package</a></li>
+          <li class="breadcrumb-item"><a href="kexp.util.html">kexp.util package</a></li>
+      <li class="breadcrumb-item active">kexp.util.live_od package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/kexp.util.live_od.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="kexp-util-live-od-package">
+<h1>kexp.util.live_od package<a class="headerlink" href="#kexp-util-live-od-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-kexp.util.live_od.camera_connection_widget">
+<span id="kexp-util-live-od-camera-connection-widget-module"></span><h2>kexp.util.live_od.camera_connection_widget module<a class="headerlink" href="#module-kexp.util.live_od.camera_connection_widget" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.CamConnBar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.camera_connection_widget.</span></span><span class="sig-name descname"><span class="pre">CamConnBar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_nanny</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_window</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#CamConnBar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.CamConnBar" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.CamConnBar.setup_camera_buttons">
+<span class="sig-name descname"><span class="pre">setup_camera_buttons</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#CamConnBar.setup_camera_buttons"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.CamConnBar.setup_camera_buttons" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.CamConnBar.setup_layout">
+<span class="sig-name descname"><span class="pre">setup_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#CamConnBar.setup_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.CamConnBar.setup_layout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.CameraButton">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.camera_connection_widget.</span></span><span class="sig-name descname"><span class="pre">CameraButton</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.config.html#kexp.config.camera_params.CameraParams" title="kexp.config.camera_params.CameraParams"><span class="pre">CameraParams</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_nanny</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#kexp.util.live_od.camera_nanny.CameraNanny" title="kexp.util.live_od.camera_nanny.CameraNanny"><span class="pre">CameraNanny</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_window</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">QPlainTextEdit</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_camera_on_start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#CameraButton"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.CameraButton" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QPushButton</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.CameraButton.button_pressed">
+<span class="sig-name descname"><span class="pre">button_pressed</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#CameraButton.button_pressed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.CameraButton.button_pressed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.CameraButton.close_camera">
+<span class="sig-name descname"><span class="pre">close_camera</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#CameraButton.close_camera"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.CameraButton.close_camera" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.CameraButton.msg">
+<span class="sig-name descname"><span class="pre">msg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">txt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#CameraButton.msg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.CameraButton.msg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.CameraButton.open_camera">
+<span class="sig-name descname"><span class="pre">open_camera</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#CameraButton.open_camera"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.CameraButton.open_camera" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.CameraButton.toggle_grabbing">
+<span class="sig-name descname"><span class="pre">toggle_grabbing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">success_bool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#CameraButton.toggle_grabbing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.CameraButton.toggle_grabbing" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.ROISelector">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.camera_connection_widget.</span></span><span class="sig-name descname"><span class="pre">ROISelector</span></span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#ROISelector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.ROISelector" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.ROISelector.setup_layout">
+<span class="sig-name descname"><span class="pre">setup_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#ROISelector.setup_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.ROISelector.setup_layout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_connection_widget.ROISelector.setup_widgets">
+<span class="sig-name descname"><span class="pre">setup_widgets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_connection_widget.html#ROISelector.setup_widgets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_connection_widget.ROISelector.setup_widgets" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.util.live_od.camera_mother">
+<span id="kexp-util-live-od-camera-mother-module"></span><h2>kexp.util.live_od.camera_mother module<a class="headerlink" href="#module-kexp.util.live_od.camera_mother" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.camera_mother.</span></span><span class="sig-name descname"><span class="pre">CameraBaby</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_nanny</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#kexp.util.live_od.camera_nanny.CameraNanny" title="kexp.util.live_od.camera_nanny.CameraNanny"><span class="pre">CameraNanny</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraBaby"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QThread</span></code>, <a class="reference internal" href="kexp.base.sub.html#kexp.base.sub.scribe.Scribe" title="kexp.base.sub.scribe.Scribe"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scribe</span></code></a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.camera_connect">
+<span class="sig-name descname"><span class="pre">camera_connect</span></span><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.camera_connect" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id1"><span class="problematic" id="id2">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.camera_grab_start">
+<span class="sig-name descname"><span class="pre">camera_grab_start</span></span><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.camera_grab_start" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id3"><span class="problematic" id="id4">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.create_camera">
+<span class="sig-name descname"><span class="pre">create_camera</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraBaby.create_camera"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.create_camera" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.dishonorable_death">
+<span class="sig-name descname"><span class="pre">dishonorable_death</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delete_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraBaby.dishonorable_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.dishonorable_death" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.dishonorable_death_signal">
+<span class="sig-name descname"><span class="pre">dishonorable_death_signal</span></span><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.dishonorable_death_signal" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id5"><span class="problematic" id="id6">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.grab_loop">
+<span class="sig-name descname"><span class="pre">grab_loop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraBaby.grab_loop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.grab_loop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.honorable_death">
+<span class="sig-name descname"><span class="pre">honorable_death</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraBaby.honorable_death"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.honorable_death" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.honorable_death_signal">
+<span class="sig-name descname"><span class="pre">honorable_death_signal</span></span><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.honorable_death_signal" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id7"><span class="problematic" id="id8">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.image_captured">
+<span class="sig-name descname"><span class="pre">image_captured</span></span><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.image_captured" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id9"><span class="problematic" id="id10">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.read_params">
+<span class="sig-name descname"><span class="pre">read_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraBaby.read_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.read_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraBaby.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.run" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.save_data_bool_signal">
+<span class="sig-name descname"><span class="pre">save_data_bool_signal</span></span><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.save_data_bool_signal" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id11"><span class="problematic" id="id12">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraBaby.update_run_id">
+<span class="sig-name descname"><span class="pre">update_run_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraBaby.update_run_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraBaby.update_run_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.camera_mother.</span></span><span class="sig-name descname"><span class="pre">CameraMother</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_queue:</span> <span class="pre">~queue.Queue</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_watching=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manage_babies=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N_runs:</span> <span class="pre">int</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_nanny=&lt;kexp.util.live_od.camera_nanny.CameraNanny</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraMother"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QThread</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother.check_files">
+<span class="sig-name descname"><span class="pre">check_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraMother.check_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother.check_files" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother.check_if_file_new">
+<span class="sig-name descname"><span class="pre">check_if_file_new</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latest_filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraMother.check_if_file_new"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother.check_if_file_new" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother.file_checking_timer">
+<span class="sig-name descname"><span class="pre">file_checking_timer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attempts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraMother.file_checking_timer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother.file_checking_timer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother.handle_baby_creation">
+<span class="sig-name descname"><span class="pre">handle_baby_creation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manage_babies</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraMother.handle_baby_creation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother.handle_baby_creation" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother.new_camera_baby">
+<span class="sig-name descname"><span class="pre">new_camera_baby</span></span><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother.new_camera_baby" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id13"><span class="problematic" id="id14">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother.new_file">
+<span class="sig-name descname"><span class="pre">new_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraMother.new_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother.new_file" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother.read_run_id">
+<span class="sig-name descname"><span class="pre">read_run_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraMother.read_run_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother.read_run_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraMother.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother.run" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.CameraMother.watch_for_new_file">
+<span class="sig-name descname"><span class="pre">watch_for_new_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manage_babies</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#CameraMother.watch_for_new_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.CameraMother.watch_for_new_file" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.DataHandler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.camera_mother.</span></span><span class="sig-name descname"><span class="pre">DataHandler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Queue</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_filepath</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#DataHandler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.DataHandler" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QThread</span></code>, <a class="reference internal" href="kexp.base.sub.html#kexp.base.sub.scribe.Scribe" title="kexp.base.sub.scribe.Scribe"><code class="xref py py-class docutils literal notranslate"><span class="pre">Scribe</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.DataHandler.get_img_number">
+<span class="sig-name descname"><span class="pre">get_img_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N_img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#DataHandler.get_img_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.DataHandler.get_img_number" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.DataHandler.get_save_data_bool">
+<span class="sig-name descname"><span class="pre">get_save_data_bool</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_data_bool</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#DataHandler.get_save_data_bool"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.DataHandler.get_save_data_bool" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.DataHandler.got_image_from_queue">
+<span class="sig-name descname"><span class="pre">got_image_from_queue</span></span><a class="headerlink" href="#kexp.util.live_od.camera_mother.DataHandler.got_image_from_queue" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id15"><span class="problematic" id="id16">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.DataHandler.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#DataHandler.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.DataHandler.run" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.DataHandler.timeout">
+<span class="sig-name descname"><span class="pre">timeout</span></span><a class="headerlink" href="#kexp.util.live_od.camera_mother.DataHandler.timeout" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id17"><span class="problematic" id="id18">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.DataHandler.write_image_to_dataset">
+<span class="sig-name descname"><span class="pre">write_image_to_dataset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#DataHandler.write_image_to_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.DataHandler.write_image_to_dataset" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_mother.nothing">
+<span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.camera_mother.</span></span><span class="sig-name descname"><span class="pre">nothing</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_mother.html#nothing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_mother.nothing" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-kexp.util.live_od.camera_nanny">
+<span id="kexp-util-live-od-camera-nanny-module"></span><h2>kexp.util.live_od.camera_nanny module<a class="headerlink" href="#module-kexp.util.live_od.camera_nanny" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_nanny.CameraNanny">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.camera_nanny.</span></span><span class="sig-name descname"><span class="pre">CameraNanny</span></span><a class="reference internal" href="_modules/kexp/util/live_od/camera_nanny.html#CameraNanny"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_nanny.CameraNanny" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_nanny.CameraNanny.close_all">
+<span class="sig-name descname"><span class="pre">close_all</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_nanny.html#CameraNanny.close_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_nanny.CameraNanny.close_all" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_nanny.CameraNanny.get_camera">
+<span class="sig-name descname"><span class="pre">get_camera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.config.html#kexp.config.camera_params.CameraParams" title="kexp.config.camera_params.CameraParams"><span class="pre">CameraParams</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="kexp.control.cameras.html#kexp.control.cameras.dummy_cam.DummyCamera" title="kexp.control.cameras.dummy_cam.DummyCamera"><span class="pre">DummyCamera</span></a></span></span><a class="reference internal" href="_modules/kexp/util/live_od/camera_nanny.html#CameraNanny.get_camera"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_nanny.CameraNanny.get_camera" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_nanny.CameraNanny.open">
+<span class="sig-name descname"><span class="pre">open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.config.html#kexp.config.camera_params.CameraParams" title="kexp.config.camera_params.CameraParams"><span class="pre">CameraParams</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_nanny.html#CameraNanny.open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_nanny.CameraNanny.open" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_nanny.CameraNanny.persistent_get_camera">
+<span class="sig-name descname"><span class="pre">persistent_get_camera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_params</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="kexp.control.cameras.html#kexp.control.cameras.dummy_cam.DummyCamera" title="kexp.control.cameras.dummy_cam.DummyCamera"><span class="pre">DummyCamera</span></a></span></span><a class="reference internal" href="_modules/kexp/util/live_od/camera_nanny.html#CameraNanny.persistent_get_camera"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_nanny.CameraNanny.persistent_get_camera" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.camera_nanny.CameraNanny.update_params">
+<span class="sig-name descname"><span class="pre">update_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.config.html#kexp.config.camera_params.CameraParams" title="kexp.config.camera_params.CameraParams"><span class="pre">CameraParams</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/camera_nanny.html#CameraNanny.update_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.camera_nanny.CameraNanny.update_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.util.live_od.live_od">
+<span id="kexp-util-live-od-live-od-module"></span><h2>kexp.util.live_od.live_od module<a class="headerlink" href="#module-kexp.util.live_od.live_od" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od.</span></span><span class="sig-name descname"><span class="pre">MainWindow</span></span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.check_new_camera">
+<span class="sig-name descname"><span class="pre">check_new_camera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_select</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.check_new_camera"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.check_new_camera" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.count_images">
+<span class="sig-name descname"><span class="pre">count_images</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.count_images"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.count_images" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.create_camera_baby">
+<span class="sig-name descname"><span class="pre">create_camera_baby</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.create_camera_baby"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.create_camera_baby" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.gotem_msg">
+<span class="sig-name descname"><span class="pre">gotem_msg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.gotem_msg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.gotem_msg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.grab_start_msg">
+<span class="sig-name descname"><span class="pre">grab_start_msg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Nimg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.grab_start_msg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.grab_start_msg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.msg">
+<span class="sig-name descname"><span class="pre">msg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.msg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.msg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.reset">
+<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.reset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.reset" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.restart_mother">
+<span class="sig-name descname"><span class="pre">restart_mother</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.restart_mother"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.restart_mother" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.setup_layout">
+<span class="sig-name descname"><span class="pre">setup_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.setup_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.setup_layout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.setup_widgets">
+<span class="sig-name descname"><span class="pre">setup_widgets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.setup_widgets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.setup_widgets" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.MainWindow.update_crop">
+<span class="sig-name descname"><span class="pre">update_crop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#MainWindow.update_crop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.MainWindow.update_crop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od.main">
+<span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od.html#main"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od.main" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-kexp.util.live_od.live_od_plotting">
+<span id="kexp-util-live-od-live-od-plotting-module"></span><h2>kexp.util.live_od.live_od_plotting module<a class="headerlink" href="#module-kexp.util.live_od.live_od_plotting" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.Analyzer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od_plotting.</span></span><span class="sig-name descname"><span class="pre">Analyzer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plotting_queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Queue</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#Analyzer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.Analyzer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.Analyzer.analyze">
+<span class="sig-name descname"><span class="pre">analyze</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#Analyzer.analyze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.Analyzer.analyze" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.Analyzer.analyzed">
+<span class="sig-name descname"><span class="pre">analyzed</span></span><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.Analyzer.analyzed" title="Link to this definition"></a></dt>
+<dd><p>int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pyqtSignal(<a href="#id19"><span class="problematic" id="id20">*</span></a>types, name</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str = …, revision</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.Analyzer.got_img">
+<span class="sig-name descname"><span class="pre">got_img</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#Analyzer.got_img"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.Analyzer.got_img" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.AtomHistory">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od_plotting.</span></span><span class="sig-name descname"><span class="pre">AtomHistory</span></span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#AtomHistory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.AtomHistory" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.ImgPlotPanel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od_plotting.</span></span><span class="sig-name descname"><span class="pre">ImgPlotPanel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#ImgPlotPanel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.ImgPlotPanel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#kexp.util.live_od.live_od_plotting.PlotPanel" title="kexp.util.live_od.live_od_plotting.PlotPanel"><code class="xref py py-class docutils literal notranslate"><span class="pre">PlotPanel</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.ImgPlotPanel.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_od</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_od</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#ImgPlotPanel.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.ImgPlotPanel.plot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.LinePlotPanel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od_plotting.</span></span><span class="sig-name descname"><span class="pre">LinePlotPanel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#LinePlotPanel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.LinePlotPanel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#kexp.util.live_od.live_od_plotting.PlotPanel" title="kexp.util.live_od.live_od_plotting.PlotPanel"><code class="xref py py-class docutils literal notranslate"><span class="pre">PlotPanel</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.LinePlotPanel.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ydata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#LinePlotPanel.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.LinePlotPanel.plot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.ODviewer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od_plotting.</span></span><span class="sig-name descname"><span class="pre">ODviewer</span></span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#ODviewer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.ODviewer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.ODviewer.get_img_number">
+<span class="sig-name descname"><span class="pre">get_img_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Nimg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#ODviewer.get_img_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.ODviewer.get_img_number" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.ODviewer.setup_layout">
+<span class="sig-name descname"><span class="pre">setup_layout</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#ODviewer.setup_layout"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.ODviewer.setup_layout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.ODviewer.setup_widgets">
+<span class="sig-name descname"><span class="pre">setup_widgets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#ODviewer.setup_widgets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.ODviewer.setup_widgets" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.ODviewer.update_image_count">
+<span class="sig-name descname"><span class="pre">update_image_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">count</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#ODviewer.update_image_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.ODviewer.update_image_count" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.PlotPanel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od_plotting.</span></span><span class="sig-name descname"><span class="pre">PlotPanel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#PlotPanel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.PlotPanel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">FigureCanvasQTAgg</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">QWidget</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.PlotPanel.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#PlotPanel.clear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.PlotPanel.clear" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.PlotPanel.fix_ylim">
+<span class="sig-name descname"><span class="pre">fix_ylim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ydata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flip_axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#PlotPanel.fix_ylim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.PlotPanel.fix_ylim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.PlotPanel.set_labels">
+<span class="sig-name descname"><span class="pre">set_labels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#PlotPanel.set_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.PlotPanel.set_labels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.Plotter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od_plotting.</span></span><span class="sig-name descname"><span class="pre">Plotter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plotwindow</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#kexp.util.live_od.live_od_plotting.ODviewer" title="kexp.util.live_od.live_od_plotting.ODviewer"><span class="pre">ODviewer</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotting_queue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Queue</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#Plotter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.Plotter" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">QThread</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.Plotter.clear">
+<span class="sig-name descname"><span class="pre">clear</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#Plotter.clear"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.Plotter.clear" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.Plotter.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#Plotter.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.Plotter.run" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.RotatedLinePlotPanel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.util.live_od.live_od_plotting.</span></span><span class="sig-name descname"><span class="pre">RotatedLinePlotPanel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vlabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#RotatedLinePlotPanel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.RotatedLinePlotPanel" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#kexp.util.live_od.live_od_plotting.PlotPanel" title="kexp.util.live_od.live_od_plotting.PlotPanel"><code class="xref py py-class docutils literal notranslate"><span class="pre">PlotPanel</span></code></a></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.util.live_od.live_od_plotting.RotatedLinePlotPanel.plot">
+<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ydata</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/util/live_od/live_od_plotting.html#RotatedLinePlotPanel.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.util.live_od.live_od_plotting.RotatedLinePlotPanel.plot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.util.live_od">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-kexp.util.live_od" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="kexp.util.guis.dds.html" class="btn btn-neutral float-left" title="kexp.util.guis.dds package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.analysis.image_processing.compute_ODs &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.analysis.image_processing.compute_ODs</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.analysis.image_processing.compute_ODs</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">kexp.analysis.image_processing.roi_select</span> <span class="k">as</span> <span class="nn">roi</span>
+
+<div class="viewcode-block" id="process_ODs">
+<a class="viewcode-back" href="../../../../kexp.analysis.image_processing.html#kexp.analysis.image_processing.compute_ODs.process_ODs">[docs]</a>
+<span class="k">def</span> <span class="nf">process_ODs</span><span class="p">(</span><span class="n">raw_ODs</span><span class="p">,</span><span class="n">crop_type</span><span class="o">=</span><span class="s1">&#39;mot&#39;</span><span class="p">,</span><span class="n">Nvars</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    From an ndarray of ODs (dimensions n1 x n2 x ... x nN x px x py, where ni is</span>
+<span class="sd">    the length of the ith xvar, and px and py are the dimensions in pixels of</span>
+<span class="sd">    the images), crops to a preset ROI based on in what stage of cooling the</span>
+<span class="sd">    images were taken. Then computes transverse-integrated &quot;sum_od&quot; for each</span>
+<span class="sd">    axis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    raw_ODs: ndarray </span>
+<span class="sd">        An n1 x n2 x ... x nN x px x py ndarray of uncropped ODs.</span>
+
+<span class="sd">    crop_type: str</span>
+<span class="sd">        Picks what crop settings to use for the ODs. Default: &#39;mot&#39;. Allowed</span>
+<span class="sd">        options: &#39;mot&#39;, &#39;cmot&#39;, &#39;gm&#39;, &#39;odt&#39;.</span>
+
+<span class="sd">    Nvars: int</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ODs: ArrayLike</span>
+<span class="sd">        The cropped ODs</span>
+<span class="sd">    summedODx: ArrayLike summedODy: ArrayLike</span>
+<span class="sd">    summedODy: ArrayLike</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">ODs</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">crop_OD</span><span class="p">(</span><span class="n">raw_ODs</span><span class="p">,</span><span class="n">crop_type</span><span class="p">,</span><span class="n">Nvars</span><span class="p">)</span>
+
+    <span class="n">sum_od_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ODs</span><span class="p">,</span><span class="n">Nvars</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">sum_od_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ODs</span><span class="p">,</span><span class="n">Nvars</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ODs</span><span class="p">,</span> <span class="n">sum_od_x</span><span class="p">,</span> <span class="n">sum_od_y</span></div>
+
+
+<div class="viewcode-block" id="compute_OD">
+<a class="viewcode-back" href="../../../../kexp.analysis.image_processing.html#kexp.analysis.image_processing.compute_ODs.compute_OD">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_OD</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span><span class="n">light</span><span class="p">,</span><span class="n">dark</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    From a list of images (length 3*n, where n is the number of runs), computes</span>
+<span class="sd">    OD. Crops to a preset ROI based on in what stage of cooling the images were</span>
+<span class="sd">    taken.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    img_atoms: list </span>
+<span class="sd">        An n x px x py list of images of n images, px x py pixels. Images with atoms+light.</span>
+
+<span class="sd">    img_light: list </span>
+<span class="sd">        An n x px x py list of images of n images, px x py pixels. Images with only light.</span>
+
+<span class="sd">    img_dark: list </span>
+<span class="sd">        An n x px x py list of images of n images, px x py pixels. Images with no light, no atoms.</span>
+
+<span class="sd">    crop_type: str</span>
+<span class="sd">        Picks what crop settings to use for the ODs. Default: &#39;mot&#39;. Allowed</span>
+<span class="sd">        options: &#39;mot&#39;, &#39;cmot&#39;, &#39;gm&#39;, &#39;odt&#39;.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ODsraw: ArrayLike</span>
+<span class="sd">        The uncropped ODs</span>
+<span class="sd">    ODs: ArrayLike</span>
+<span class="sd">        The cropped ODs</span>
+<span class="sd">    summedODx: ArrayLike</span>
+<span class="sd">    summedODy: ArrayLike</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="k">if</span> <span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;uint8&#39;</span><span class="p">):</span>
+        <span class="n">new_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span>
+    <span class="k">elif</span> <span class="n">dtype</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;uint16&#39;</span><span class="p">):</span>
+        <span class="n">new_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">new_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span>
+
+    <span class="n">atoms_only</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span> <span class="o">-</span> <span class="n">dark</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
+    <span class="n">light_only</span> <span class="o">=</span> <span class="n">light</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span> <span class="o">-</span> <span class="n">dark</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">new_dtype</span><span class="p">)</span>
+
+    <span class="n">atoms_only</span><span class="p">[</span><span class="n">atoms_only</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">light_only</span><span class="p">[</span><span class="n">light_only</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">It_over_I0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">atoms_only</span><span class="p">,</span> <span class="n">light_only</span><span class="p">,</span> 
+                    <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">atoms_only</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span> 
+                    <span class="n">where</span><span class="o">=</span> <span class="n">light_only</span><span class="o">!=</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="n">OD</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">It_over_I0</span><span class="p">,</span>
+                    <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">atoms_only</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">),</span> 
+                    <span class="n">where</span><span class="o">=</span> <span class="n">It_over_I0</span><span class="o">!=</span><span class="mi">0</span><span class="p">)</span>
+    
+    <span class="n">OD</span><span class="p">[</span><span class="n">OD</span><span class="o">&lt;</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">return</span> <span class="n">OD</span>  </div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

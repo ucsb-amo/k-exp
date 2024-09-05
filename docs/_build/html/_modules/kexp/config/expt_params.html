@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.config.expt_params &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.config.expt_params</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.config.expt_params</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">kexp.config.dds_calibration</span> <span class="kn">import</span> <span class="n">DDS_VVA_Calibration</span>
+
+<div class="viewcode-block" id="ExptParams">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.expt_params.ExptParams">[docs]</a>
+<span class="k">class</span> <span class="nc">ExptParams</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_rtio</span> <span class="o">=</span> <span class="mf">8.e-9</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_shots</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_repeats</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_img</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">N_shots_with_repeats</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1">#Magnet</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_keysight_analog_response</span> <span class="o">=</span> <span class="mf">27.2e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_hbridge_switch_delay</span> <span class="o">=</span> <span class="mf">80.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_contactor_close_delay</span> <span class="o">=</span> <span class="mf">25.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_contactor_open_delay</span> <span class="o">=</span> <span class="mf">12.e-3</span>
+
+        <span class="c1">#Imaging</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_imaging_pulse</span> <span class="o">=</span> <span class="mf">5.e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_light_only_image_delay</span> <span class="o">=</span> <span class="mf">100.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_dark_image_delay</span> <span class="o">=</span> <span class="mf">25.e-3</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_ao_imaging</span> <span class="o">=</span> <span class="mf">350.00e6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_detuned_imaging</span> <span class="o">=</span> <span class="mf">14.0e6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_detuned_imaging_F1</span> <span class="o">=</span> <span class="mf">400.e6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imaging_state</span> <span class="o">=</span> <span class="mf">2.</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_repump_flash_imaging</span> <span class="o">=</span> <span class="mf">10.e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_imaging</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d2_r_imaging</span> <span class="o">=</span> <span class="mf">0.065</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_cooler_flash_imaging</span> <span class="o">=</span> <span class="mf">15.e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_c_imaging</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d2_c_imaging</span> <span class="o">=</span> <span class="mf">0.065</span>
+
+        <span class="c1">#Cooling timing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tof</span> <span class="o">=</span> <span class="mf">20.e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_discharge_igbt</span> <span class="o">=</span> <span class="mf">2.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_mot_kill</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_2D_mot_load_delay</span> <span class="o">=</span> <span class="mf">1.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_mot_load</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_d2cmot</span> <span class="o">=</span> <span class="mf">50.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_d1cmot</span> <span class="o">=</span> <span class="mf">10.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_magnet_off_pretrigger</span> <span class="o">=</span> <span class="mf">0.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_shim_change_pretrigger</span> <span class="o">=</span> <span class="mf">0.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_gm</span> <span class="o">=</span> <span class="mf">3.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_gmramp</span> <span class="o">=</span> <span class="mf">5.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_optical_pumping</span> <span class="o">=</span> <span class="mf">200.e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_optical_pumping_bias_rampup</span> <span class="o">=</span> <span class="mf">2.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_lightsheet_rampup</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_lightsheet_rampdown</span> <span class="o">=</span> <span class="mf">.7</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_lightsheet_rampdown2</span> <span class="o">=</span> <span class="mf">.01</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_lightsheet_rampdown3</span> <span class="o">=</span> <span class="mf">.01</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_lightsheet_load</span> <span class="o">=</span> <span class="mf">10.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_lightsheet_hold</span> <span class="o">=</span> <span class="mf">40.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tweezer_ramp</span> <span class="o">=</span> <span class="mf">.27</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tweezer_hold</span> <span class="o">=</span> <span class="mf">30.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tweezer_1064_ramp</span> <span class="o">=</span> <span class="mf">.13</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tweezer_1064_rampdown</span> <span class="o">=</span> <span class="mf">.09</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tweezer_1064_rampdown2</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tweezer_1064_rampdown3</span> <span class="o">=</span> <span class="mf">.3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tweezer_1064_adiabatic_stretch_ramp</span> <span class="o">=</span> <span class="mf">.322</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_mot_reload</span> <span class="o">=</span> <span class="mf">2.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_bias_off_wait</span> <span class="o">=</span> <span class="mf">20.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_recover</span> <span class="o">=</span> <span class="mf">40.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_magtrap</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_magtrap_ramp</span> <span class="o">=</span> <span class="mf">.367</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_magtrap_rampdown</span> <span class="o">=</span> <span class="mf">.2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_magtrap_ramp</span> <span class="o">=</span> <span class="mf">75.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_magtrap</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_magtrap_rampdown</span> <span class="o">=</span> <span class="mf">75.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_feshbach_field_rampup</span> <span class="o">=</span> <span class="mf">100.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_feshbach_field_ramp</span> <span class="o">=</span> <span class="mf">15.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_feshbach_field_ramp2</span> <span class="o">=</span> <span class="mf">15.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_feshbach_field_decay</span> <span class="o">=</span> <span class="mf">20.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_forced_evap_ramp</span> <span class="o">=</span> <span class="mf">2.</span>
+
+        <span class="c1"># DAC controlled AO amplitudes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d1_3d_c</span> <span class="o">=</span> <span class="mf">0.3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d1_3d_r</span> <span class="o">=</span> <span class="mf">0.3</span>
+
+        <span class="c1">#push beam</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_push</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_push</span> <span class="o">=</span> <span class="mf">0.13</span>
+
+        <span class="c1">#2D MOT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_c_2dmot</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d2_c_2dmot</span> <span class="o">=</span> <span class="mf">0.188</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_2dmot</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d2_r_2dmot</span> <span class="o">=</span> <span class="mf">0.188</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_2d_mot_current</span> <span class="o">=</span> <span class="mf">2.11</span>
+
+        <span class="c1">#MOT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_c_mot</span> <span class="o">=</span> <span class="o">-</span><span class="mf">2.4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d2_c_mot</span> <span class="o">=</span> <span class="mf">0.188</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_mot</span> <span class="o">=</span> <span class="o">-</span><span class="mf">4.2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d2_r_mot</span> <span class="o">=</span> <span class="mf">0.188</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_c_mot</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_d1_c_mot</span> <span class="o">=</span> <span class="mf">5.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_r_mot</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_d1_r_mot</span> <span class="o">=</span> <span class="mf">5.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_mot</span> <span class="o">=</span> <span class="mf">20.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_zshim_current</span> <span class="o">=</span> <span class="mf">0.13</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_xshim_current</span> <span class="o">=</span> <span class="mf">4.1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_yshim_current</span> <span class="o">=</span> <span class="mf">7.</span>
+
+        <span class="c1">#D2 CMOT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_c_d2cmot</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.9</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d2_c_d2cmot</span> <span class="o">=</span> <span class="mf">0.14</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_d2cmot</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d2_r_d2cmot</span> <span class="o">=</span> <span class="mf">0.188</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_d2cmot_current</span> <span class="o">=</span> <span class="mf">.98</span>
+
+        <span class="c1">#D1 CMOT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_c_d1cmot</span> <span class="o">=</span> <span class="mf">10.4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_d1_c_d1cmot</span> <span class="o">=</span> <span class="mf">.95</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_d1cmot</span> <span class="o">=</span> <span class="o">-</span><span class="mf">3.2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_d2_r_d1cmot</span> <span class="o">=</span> <span class="mf">0.042</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_c_sweep_d1cmot_start</span> <span class="o">=</span> <span class="mf">9.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_c_sweep_d1cmot_end</span> <span class="o">=</span> <span class="mf">7.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_sweep_d1cmot_start</span> <span class="o">=</span> <span class="o">-</span><span class="mf">3.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_sweep_d1cmot_end</span> <span class="o">=</span> <span class="o">-</span><span class="mf">5.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_d1cmot_detuning_sweep_steps</span> <span class="o">=</span> <span class="mi">200</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_cmot</span> <span class="o">=</span> <span class="mf">20.</span>
+        
+        <span class="c1">#GM</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_gm</span> <span class="o">=</span> <span class="mf">10.4</span>
+        <span class="c1"># self.amp_gm = 0.09</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_zshim_current_gm</span> <span class="o">=</span> <span class="mf">0.75</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_xshim_current_gm</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_yshim_current_gm</span> <span class="o">=</span> <span class="mf">1.75</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_c_gm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">detune_gm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_d1_c_gm</span> <span class="o">=</span> <span class="mf">.78</span> <span class="c1"># there is an ND on this photodiode -- much higher power/volt than the repump</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_r_gm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">detune_gm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_d1_r_gm</span> <span class="o">=</span> <span class="mf">.59</span>
+
+        <span class="c1">#Discrete GM ramp</span>
+        <span class="c1">#v_pd values for start and end of ramp</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_c_gmramp_end</span> <span class="o">=</span> <span class="mf">0.35</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_r_gmramp_end</span> <span class="o">=</span> <span class="mf">0.194</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_gmramp_steps</span> <span class="o">=</span> <span class="mi">200</span>
+
+        <span class="c1"># mag trap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_magtrap_init</span> <span class="o">=</span> <span class="mf">27.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_magtrap_ramp_end</span> <span class="o">=</span> <span class="mf">90.</span>
+        <span class="c1"># self.n_magtrap_ramp_steps = 1000</span>
+        <span class="c1"># self.n_magtrap_rampdown_steps = 1000</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_zshim_current_magtrap</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_xshim_current_magtrap</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_yshim_current_magtrap</span> <span class="o">=</span> <span class="mf">5.2</span>
+
+        <span class="c1">#Optical Pumping</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_optical_pumping_op</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_optical_pumping_op</span> <span class="o">=</span> <span class="mf">0.22</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_anti_zshim_current_op</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_zshim_current_op</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_yshim_current_op</span> <span class="o">=</span> <span class="mf">2.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_xshim_current_op</span> <span class="o">=</span> <span class="mf">0.17</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_optical_pumping_r_op</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_optical_pumping_r_op</span> <span class="o">=</span> <span class="mf">0.25</span>
+
+        <span class="c1">#ODT</span>
+        <span class="c1"># self.amp_lightsheet = 0.6</span>
+        <span class="c1"># self.frequency_ao_lightsheet = 80.e6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_lightsheet_pd_minimum</span> <span class="o">=</span> <span class="mf">0.046</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_lightsheet_paint_amp_max</span> <span class="o">=</span> <span class="mf">6.0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_lightsheet</span> <span class="o">=</span> <span class="mf">7.56</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampup_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_lightsheet_pd_minimum</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampup_end</span> <span class="o">=</span> <span class="mf">9.9</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampdown_end</span> <span class="o">=</span> <span class="mf">.65</span> <span class="c1">#4.16</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampdown2_end</span> <span class="o">=</span> <span class="mf">.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampdown3_end</span> <span class="o">=</span> <span class="mf">.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_lightsheet_ramp_steps</span> <span class="o">=</span> <span class="mi">1000</span>
+
+        <span class="c1">#1064 tweezer</span>
+        <span class="c1"># self.v_pd_tweezer_1064_pd_minimum = 0.01</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_tweezer_pid1</span> <span class="o">=</span> <span class="mf">.45</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_tweezer_pid2</span> <span class="o">=</span> <span class="mf">.45</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_tweezer_1064</span> <span class="o">=</span> <span class="mf">5.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_tweezer_1064_ramp_end</span> <span class="o">=</span> <span class="mf">9.9</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_tweezer_1064_rampdown_end</span> <span class="o">=</span> <span class="mf">.3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_tweezer_1064_rampdown2_end</span> <span class="o">=</span> <span class="mf">.07</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_tweezer_1064_rampdown3_end</span> <span class="o">=</span> <span class="mf">.68</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tweezer_ramp_steps</span> <span class="o">=</span> <span class="mi">1000</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_tweezer_1064_adiabatic_stretch_ramp_end</span> <span class="o">=</span> <span class="mf">9.</span>
+        <span class="c1"># self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_aod_center</span> <span class="o">=</span> <span class="mf">75.e6</span>
+
+        <span class="c1">#frequency spacing between each tweezer in the array</span>
+        <span class="c1">#tweezers uniformly distributed around center frequency of AOD</span>
+        <span class="c1"># self.frequency_tweezer_spacing = .7e6*2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_spacing</span> <span class="o">=</span> <span class="mf">6.e6</span><span class="o">*</span><span class="mi">2</span>
+        <span class="c1"># self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_list</span> <span class="o">=</span> <span class="p">[</span><span class="mf">72.e6</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_auto_compute</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_tweezer_auto_compute</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># self.amp_tweezer_list = [.2,.215]</span>
+        <span class="c1"># self.amp_tweezer_list = [.4,.4]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_tweezer_paint_amp_max</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.222</span>
+
+        <span class="c1"># RF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_rf_source</span> <span class="o">=</span> <span class="mf">0.99</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_rf_sweep_steps</span> <span class="o">=</span> <span class="mi">1000</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_rf_sweep_state_prep</span> <span class="o">=</span> <span class="mf">100.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_rf_sweep_state_prep_center</span> <span class="o">=</span> <span class="mf">459.3543e6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_rf_sweep_state_prep_fullwidth</span> <span class="o">=</span> <span class="mf">30.e3</span>
+        
+        <span class="c1"># RF</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_rf_state_xfer_sweep</span> <span class="o">=</span> <span class="mf">60.e-3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_rf_state_xfer_sweep_center</span> <span class="o">=</span> <span class="mf">461.7e6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_rf_state_xfer_sweep_fullwidth</span> <span class="o">=</span> <span class="mf">2.e6</span>
+
+        <span class="c1"># feshbach field rampup</span>
+        <span class="c1"># self.i_feshbach_field_rampup_start = 0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_field_ramp_steps</span> <span class="o">=</span> <span class="mi">1000</span>
+        <span class="c1"># self.n_feshbach_field_rampup_steps = 100</span>
+        <span class="c1"># self.n_feshbach_field_ramp_steps = 100</span>
+        <span class="c1"># self.n_feshbach_field_ramp2_steps = 100</span>
+
+        <span class="c1"># rydberg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_ao_ry_405</span> <span class="o">=</span> <span class="mf">250.0e6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frequency_ao_ry_980</span> <span class="o">=</span> <span class="mf">80.0e6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_ao_ry_405</span> <span class="o">=</span> <span class="mf">0.23</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_ao_ry_980</span> <span class="o">=</span> <span class="mf">0.285</span>
+
+        <span class="c1"># low field evap</span>
+        <span class="c1"># self.i_evap1_current = 9.5</span>
+        <span class="c1"># self.i_evap2_current = 31.3</span>
+        <span class="c1"># self.i_evap3_current = 25.</span>
+        <span class="c1"># self.i_evap3_current = 16.4</span>
+
+        <span class="c1"># high field evap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_evap1_current</span> <span class="o">=</span> <span class="mf">193.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_evap2_current</span> <span class="o">=</span> <span class="mf">193.4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_evap3_current</span> <span class="o">=</span> <span class="mf">192.3</span>
+
+        <span class="c1"># forced evap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_forced_evap_ramp_init</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="c1"># self.n_forced_evap_ramp_steps = 1000</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_forced_evap_ramp_end</span> <span class="o">=</span> <span class="mf">40.</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_derived</span><span class="p">()</span>
+
+<div class="viewcode-block" id="ExptParams.compute_gmramp_params">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.expt_params.ExptParams.compute_gmramp_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_gmramp_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_c_gmramp_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_d1_c_gm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_r_gmramp_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_d1_r_gm</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_c_gmramp_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pfrac_c_gmramp_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_c_gmramp_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gmramp_steps</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_r_gmramp_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pfrac_r_gmramp_start</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pfrac_r_gmramp_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gmramp_steps</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+        <span class="n">cal</span> <span class="o">=</span> <span class="n">DDS_VVA_Calibration</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_c_gmramp_list</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">power_fraction_to_vva</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pfrac_c_gmramp_list</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_r_gmramp_list</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">power_fraction_to_vva</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pfrac_r_gmramp_list</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt_gmramp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_gmramp</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_gmramp_steps</span></div>
+
+
+<div class="viewcode-block" id="ExptParams.compute_d1cmot_detuning_ramp">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.expt_params.ExptParams.compute_d1cmot_detuning_ramp">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_d1cmot_detuning_ramp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_list_d1cmot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_sweep_d1cmot_start</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">detune_d2_r_sweep_d1cmot_end</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_d1cmot_detuning_sweep_steps</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_c_list_d1cmot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_c_sweep_d1cmot_start</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">detune_d1_c_sweep_d1cmot_end</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_d1cmot_detuning_sweep_steps</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ExptParams.compute_d1_vvas">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.expt_params.ExptParams.compute_d1_vvas">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_d1_vvas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">cal</span> <span class="o">=</span> <span class="n">DDS_VVA_Calibration</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_d1_c_d1cmot</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">power_fraction_to_vva</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pfrac_d1_c_d1cmot</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_d1_c_gm</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">power_fraction_to_vva</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pfrac_d1_c_gm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_d1_r_gm</span> <span class="o">=</span> <span class="n">cal</span><span class="o">.</span><span class="n">power_fraction_to_vva</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pfrac_d1_r_gm</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ExptParams.compute_tweezer_1064_freqs">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.expt_params.ExptParams.compute_tweezer_1064_freqs">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_tweezer_1064_freqs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_auto_compute</span><span class="p">:</span>
+            <span class="n">min_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_aod_center</span> <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_spacing</span>
+            <span class="n">max_f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_aod_center</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_spacing</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_f</span><span class="p">,</span> <span class="n">max_f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span><span class="p">)</span></div>
+
+        <span class="c1"># else:</span>
+        <span class="c1">#     self.frequency_tweezer_list = self.frequency_tweezer_list</span>
+
+<div class="viewcode-block" id="ExptParams.compute_tweezer_1064_amps">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.expt_params.ExptParams.compute_tweezer_1064_amps">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_tweezer_1064_amps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_auto_compute</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_list</span><span class="p">,</span><span class="nb">float</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency_tweezer_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp_tweezer_auto_compute</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amp_tweezer_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amp_tweezer_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">amp_tweezer_list</span></div>
+
+
+<div class="viewcode-block" id="ExptParams.compute_tweezer_1064_phases">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.expt_params.ExptParams.compute_tweezer_1064_phases">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_tweezer_1064_phases</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase_tweezer_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">tweezer_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_tweezers</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">tweezer_idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phase_tweezer_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span>  <span class="mi">360</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">phase_ij</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">tweezer_idx</span><span class="p">):</span>
+                    <span class="n">phase_ij</span> <span class="o">=</span> <span class="n">phase_ij</span> <span class="o">+</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="p">(</span><span class="n">tweezer_idx</span> <span class="o">-</span> <span class="n">j</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">amp_tweezer_list</span><span class="p">[</span><span class="n">tweezer_idx</span><span class="p">]</span>
+                <span class="n">phase_i</span> <span class="o">=</span> <span class="p">(</span><span class="n">phase_ij</span> <span class="o">%</span> <span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="mi">360</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">phase_tweezer_array</span><span class="p">[</span><span class="n">tweezer_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">phase_i</span></div>
+
+
+<div class="viewcode-block" id="ExptParams.compute_derived">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.expt_params.ExptParams.compute_derived">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_derived</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;loop through methods (except built in ones) and compute all derived quantities&#39;&#39;&#39;</span>
+        <span class="n">methods</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">m</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">m</span><span class="p">))</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">m</span> <span class="o">==</span> <span class="s1">&#39;compute_derived&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">methods</span><span class="p">:</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">m</span><span class="p">)()</span></div>
+</div>
+
+        
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

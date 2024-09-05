@@ -26,6 +26,7 @@ try:
     DEFAULT_TIMEOUT = 30.
     UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
 except:
+    pass
 
 def nothing():
     pass

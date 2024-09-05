@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.control.misc.painted_lightsheet &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.control.misc.painted_lightsheet</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.control.misc.painted_lightsheet</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">kexp.control.artiq.DAC_CH</span> <span class="kn">import</span> <span class="n">DAC_CH</span>
+<span class="kn">from</span> <span class="nn">kexp.control.artiq.DDS</span> <span class="kn">import</span> <span class="n">DDS</span>
+<span class="kn">from</span> <span class="nn">kexp.control.artiq.TTL</span> <span class="kn">import</span> <span class="n">TTL</span>
+<span class="kn">from</span> <span class="nn">kexp.config</span> <span class="kn">import</span> <span class="n">ExptParams</span>
+<span class="kn">from</span> <span class="nn">kexp.util.artiq.async_print</span> <span class="kn">import</span> <span class="n">aprint</span>
+
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">delay</span><span class="p">,</span> <span class="n">TFloat</span><span class="p">,</span> <span class="n">portable</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">dv</span> <span class="o">=</span> <span class="o">-</span><span class="mf">102.</span>
+<span class="n">di</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">dv_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">54.</span><span class="p">,</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="n">DAC_PAINT_FULLSCALE</span> <span class="o">=</span> <span class="mf">9.99</span>
+
+<div class="viewcode-block" id="lightsheet">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.painted_lightsheet.lightsheet">[docs]</a>
+<span class="k">class</span> <span class="nc">lightsheet</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pid_dac</span> <span class="o">=</span> <span class="n">DAC_CH</span><span class="p">,</span> <span class="n">paint_amp_dac</span> <span class="o">=</span> <span class="n">DAC_CH</span><span class="p">,</span>
+                  <span class="n">sw_ttl</span> <span class="o">=</span> <span class="n">TTL</span><span class="p">,</span> <span class="n">pid_int_hold_zero_ttl</span> <span class="o">=</span> <span class="n">TTL</span><span class="p">,</span>
+                  <span class="n">expt_params</span> <span class="o">=</span> <span class="n">ExptParams</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Controls the light sheet beam.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            pid_dac (DAC_CH): A DAC channel that controls a VVA to attenuate the</span>
+<span class="sd">            overall RF that reaches the amp (and thus the AO.) </span>
+<span class="sd">            paint_amp_dac (DAC_CH): DAC_CH, voltage controls the painting amplitude via</span>
+<span class="sd">            controlling the modulation depth. -9.99 V is minimal painting, 9.99</span>
+<span class="sd">            V is maximal painting. </span>
+<span class="sd">            sw_ttl (TTL): TTL channel, controls an RF</span>
+<span class="sd">            switch between AWG and amplifier.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid_dac</span> <span class="o">=</span> <span class="n">pid_dac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">paint_amp_dac</span> <span class="o">=</span> <span class="n">paint_amp_dac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span> <span class="o">=</span> <span class="n">sw_ttl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid_int_zero_ttl</span> <span class="o">=</span> <span class="n">pid_int_hold_zero_ttl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">expt_params</span>
+
+<div class="viewcode-block" id="lightsheet.init">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.painted_lightsheet.lightsheet.init">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">paint_amp_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=-</span><span class="mf">7.</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+    <span class="c1"># @kernel</span>
+    <span class="c1"># def set_paint_amp(self,paint_fraction=dv,load_dac=True):</span>
+    <span class="c1">#     if paint_fraction == dv:</span>
+    <span class="c1">#         paint_fraction = 0.</span>
+    <span class="c1">#     v_dac = DAC_PAINT_FULLSCALE * (2 * paint_fraction - 1)</span>
+    <span class="c1">#     self.paint_amp_dac.set(v=v_dac,load_dac=load_dac)</span>
+
+<div class="viewcode-block" id="lightsheet.set_power">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.painted_lightsheet.lightsheet.set_power">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">set_power</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">v_lightsheet_vva</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">v_lightsheet_vva</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_lightsheet_vva</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_lightsheet</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="n">v_lightsheet_vva</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="n">load_dac</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="lightsheet.ramp">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.painted_lightsheet.lightsheet.ramp">[docs]</a>
+    <span class="nd">@kernel</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fast-math&quot;</span><span class="p">})</span>
+    <span class="k">def</span> <span class="nf">ramp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span>
+             <span class="n">v_start</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+             <span class="n">v_end</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+             <span class="n">n_steps</span><span class="o">=</span><span class="n">di</span><span class="p">,</span>
+             <span class="n">paint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+             <span class="n">v_awg_am_max</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+             <span class="n">v_pd_max</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+             <span class="n">keep_trap_frequency_constant</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="n">v_start</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampup_start</span>
+        <span class="k">if</span> <span class="n">v_end</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampup_end</span>
+        <span class="k">if</span> <span class="n">n_steps</span> <span class="o">==</span> <span class="n">di</span><span class="p">:</span>
+            <span class="n">n_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">n_lightsheet_ramp_steps</span>
+        <span class="k">if</span> <span class="n">v_awg_am_max</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_awg_am_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_lightsheet_paint_amp_max</span>
+        <span class="k">if</span> <span class="n">v_pd_max</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampup_end</span>
+
+        <span class="n">dt_ramp</span> <span class="o">=</span> <span class="n">t</span> <span class="o">/</span> <span class="n">n_steps</span>
+        <span class="n">delta_v</span> <span class="o">=</span> <span class="p">(</span><span class="n">v_end</span> <span class="o">-</span> <span class="n">v_start</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">n_steps</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">paint</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">painting_off</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="n">v_start</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid_dac</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">paint</span><span class="o">=</span><span class="n">paint</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">dt_ramp</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span><span class="p">):</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="n">v_start</span> <span class="o">+</span> <span class="n">i</span><span class="o">*</span><span class="n">delta_v</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pid_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="n">v</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">paint</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">keep_trap_frequency_constant</span><span class="p">:</span>
+                    <span class="n">v_awg_amp_mod</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_to_painting_amp_voltage</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">v_awg_amp_mod</span> <span class="o">=</span> <span class="n">v_awg_am_max</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">paint_amp_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v_awg_amp_mod</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">pid_dac</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+            <span class="n">delay</span><span class="p">(</span><span class="n">dt_ramp</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lightsheet.v_pd_to_painting_amp_voltage">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.painted_lightsheet.lightsheet.v_pd_to_painting_amp_voltage">[docs]</a>
+    <span class="nd">@kernel</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fast-math&quot;</span><span class="p">})</span>
+    <span class="k">def</span> <span class="nf">v_pd_to_painting_amp_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">v_pd</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                        <span class="n">v_pd_max</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                        <span class="n">v_awg_am_max</span><span class="o">=</span><span class="n">dv</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TFloat</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">v_awg_am_max</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_awg_am_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_lightsheet_paint_amp_max</span>
+
+        <span class="k">if</span> <span class="n">v_pd_max</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampup_end</span>
+
+        <span class="n">p_frac</span> <span class="o">=</span> <span class="n">v_pd</span> <span class="o">/</span> <span class="n">v_pd_max</span>
+        <span class="c1"># trap frequency propto sqrt( P / h^3 ), where P is power and h is painting</span>
+        <span class="c1"># amplitude. To keep constant frequency, h should decrease by a factor equal</span>
+        <span class="c1"># to the cube root of the fraction by which P changes</span>
+        <span class="n">paint_amp_frac</span> <span class="o">=</span> <span class="n">p_frac</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span>
+        <span class="c1"># rescale to between -6V (fraction painting = 0) and the maximum</span>
+        <span class="c1"># painting amplitude specified (fraction painting = 1) for the</span>
+        <span class="c1"># AWG input</span>
+        <span class="n">v_awg_amp_mod</span> <span class="o">=</span> <span class="p">(</span><span class="n">paint_amp_frac</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">v_awg_am_max</span> <span class="o">-</span> <span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">))</span> \
+                            <span class="o">+</span> <span class="p">(</span><span class="n">v_awg_am_max</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>
+        <span class="k">return</span> <span class="n">v_awg_amp_mod</span></div>
+
+    
+<div class="viewcode-block" id="lightsheet.painting_off">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.painted_lightsheet.lightsheet.painting_off">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">painting_off</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">paint_amp_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=-</span><span class="mf">7.</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="lightsheet.zero_pid">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.painted_lightsheet.lightsheet.zero_pid">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">zero_pid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid_int_zero_ttl</span><span class="o">.</span><span class="n">pulse</span><span class="p">(</span><span class="mf">10.e-9</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="lightsheet.on">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.painted_lightsheet.lightsheet.on">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">v_awg_am</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">v_awg_am</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_awg_am</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_tweezer_paint_amp_max</span>
+        <span class="k">if</span> <span class="n">paint</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">paint_amp_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="n">v_awg_am</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">paint_amp_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=-</span><span class="mf">7.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">on</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="lightsheet.off">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.painted_lightsheet.lightsheet.off">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">off</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pid_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_lightsheet_pd_minimum</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zero_pid</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

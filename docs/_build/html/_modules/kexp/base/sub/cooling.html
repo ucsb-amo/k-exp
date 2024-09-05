@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.base.sub.cooling &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.base.sub.cooling</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.base.sub.cooling</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">delay</span><span class="p">,</span> <span class="n">delay_mu</span><span class="p">,</span> <span class="n">parallel</span><span class="p">,</span> <span class="n">sequential</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">portable</span>
+<span class="kn">from</span> <span class="nn">kexp.config.dds_id</span> <span class="kn">import</span> <span class="n">dds_frame</span>
+<span class="kn">from</span> <span class="nn">kexp.config.ttl_id</span> <span class="kn">import</span> <span class="n">ttl_frame</span>
+<span class="kn">from</span> <span class="nn">kexp.config.dac_id</span> <span class="kn">import</span> <span class="n">dac_frame</span>
+<span class="kn">from</span> <span class="nn">kexp.control.misc.big_coil</span> <span class="kn">import</span> <span class="n">igbt_magnet</span><span class="p">,</span> <span class="n">hbridge_magnet</span>
+<span class="kn">from</span> <span class="nn">kexp.control.misc.awg_tweezer</span> <span class="kn">import</span> <span class="n">tweezer</span>
+<span class="kn">from</span> <span class="nn">kexp.control.misc.painted_lightsheet</span> <span class="kn">import</span> <span class="n">lightsheet</span>
+<span class="kn">from</span> <span class="nn">kexp.config.expt_params</span> <span class="kn">import</span> <span class="n">ExptParams</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">kexp.util.artiq.async_print</span> <span class="kn">import</span> <span class="n">aprint</span>
+
+<span class="n">dv</span> <span class="o">=</span> <span class="mf">100.</span>
+<span class="n">dvlist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Cooling">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling">[docs]</a>
+<span class="k">class</span> <span class="nc">Cooling</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># just to get syntax highlighting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span> <span class="o">=</span> <span class="n">dds_frame</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span> <span class="o">=</span> <span class="n">ttl_frame</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac</span> <span class="o">=</span> <span class="n">dac_frame</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span> <span class="o">=</span> <span class="n">hbridge_magnet</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span> <span class="o">=</span> <span class="n">igbt_magnet</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span> <span class="o">=</span> <span class="n">tweezer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span> <span class="o">=</span> <span class="n">lightsheet</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">ExptParams</span><span class="p">()</span>
+
+    <span class="c1">## cooling stages</span>
+
+<div class="viewcode-block" id="Cooling.flash_repump">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.flash_repump">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">flash_repump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span><span class="n">detune</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span><span class="n">amp</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_repump_flash_imaging</span>
+        <span class="k">if</span> <span class="n">detune</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_r_imaging</span>
+        <span class="k">if</span> <span class="n">amp</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_r_imaging</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune</span><span class="p">,</span><span class="n">amplitude</span><span class="o">=</span><span class="n">amp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.pump_to_F1">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.pump_to_F1">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">pump_to_F1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_zshim_current_magtrap</span><span class="p">,</span>
+                        <span class="n">v_yshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_yshim_current_magtrap</span><span class="p">,</span>
+                        <span class="n">v_xshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_xshim_current_magtrap</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mf">2.e-3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">optical_pumping</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">optical_pumping</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mf">200.e-6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">optical_pumping</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flash_cooler</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.flash_cooler">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.flash_cooler">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">flash_cooler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span><span class="n">detune</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span><span class="n">amp</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_cooler_flash_imaging</span>
+        <span class="k">if</span> <span class="n">detune</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_c_imaging</span>
+        <span class="k">if</span> <span class="n">amp</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_c_imaging</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune</span><span class="p">,</span><span class="n">amplitude</span><span class="o">=</span><span class="n">amp</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.kill_mot">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.kill_mot">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">kill_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">parallel</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Cooling.load_2D_mot">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.load_2D_mot">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">load_2D_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span>
+                     <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+                     <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+                     <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+                     <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+                     <span class="n">detune_push</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+                     <span class="n">amp_push</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+                     <span class="n">i_supply</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_c_2dmot</span>
+        <span class="k">if</span> <span class="n">amp_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_c_2dmot</span>
+        <span class="k">if</span> <span class="n">detune_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_r_2dmot</span>
+        <span class="k">if</span> <span class="n">amp_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_r_2dmot</span>
+        <span class="k">if</span> <span class="n">detune_push</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_push</span>
+        <span class="k">if</span> <span class="n">amp_push</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_push</span>
+        <span class="k">if</span> <span class="n">i_supply</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_2d_mot_current</span>
+        <span class="c1">### End Defaults ###</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_2d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_c</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_c</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_2d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_r</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_r</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_push</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_push</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">supply_current_2dmot</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="n">i_supply</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">parallel</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_2d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Cooling.mot">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.mot">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_push</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_push</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_yshim_current</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_xshim_current</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_c_mot</span>
+        <span class="k">if</span> <span class="n">amp_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_c_mot</span>
+        <span class="k">if</span> <span class="n">detune_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_r_mot</span>
+        <span class="k">if</span> <span class="n">amp_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_r_mot</span>
+        <span class="k">if</span> <span class="n">detune_push</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_push</span>
+        <span class="k">if</span> <span class="n">amp_push</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_push</span>
+        <span class="k">if</span> <span class="n">i_supply</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_mot</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current</span>
+        <span class="k">if</span> <span class="n">v_yshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_yshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_yshim_current</span>
+        <span class="k">if</span> <span class="n">v_xshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_xshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_xshim_current</span>
+        <span class="c1">### End Defaults ###</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_c</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_c</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_r</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_r</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_push</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_push</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_xshim_current</span><span class="p">,</span><span class="n">v_yshim_current</span><span class="p">,</span><span class="n">v_zshim_current</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">parallel</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Cooling.mot_reload">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.mot_reload">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">mot_reload</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_c_mot</span>
+        <span class="k">if</span> <span class="n">amp_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_c_mot</span>
+        <span class="k">if</span> <span class="n">detune_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_r_mot</span>
+        <span class="k">if</span> <span class="n">amp_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_r_mot</span>
+        <span class="k">if</span> <span class="n">i_supply</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_mot</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current</span>
+        <span class="c1">### End Defaults ###</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_c</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_c</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_r</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_r</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Cooling.hybrid_mot">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.hybrid_mot">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">hybrid_mot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_pd_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d1_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_pd_d1_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_c_mot</span>
+        <span class="k">if</span> <span class="n">amp_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_c_mot</span>
+        <span class="k">if</span> <span class="n">detune_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_r_mot</span>
+        <span class="k">if</span> <span class="n">amp_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_r_mot</span>
+        <span class="c1">### End Defaults ###</span>
+
+        <span class="k">if</span> <span class="n">detune_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d1_c_mot</span>
+        <span class="k">if</span> <span class="n">v_pd_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_d1_c_mot</span>
+        <span class="k">if</span> <span class="n">detune_d1_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d1_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d1_r_mot</span>
+        <span class="k">if</span> <span class="n">v_pd_d1_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_d1_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_d1_r_mot</span>
+
+        <span class="k">if</span> <span class="n">i_supply</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_mot</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_c</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_c</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_r</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_r</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d1_c</span><span class="p">,</span>
+                                 <span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_c</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d1_r</span><span class="p">,</span>
+                                 <span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_r</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">parallel</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d1_3d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+    <span class="c1">#compress MOT by changing D2 detunings and raising B field</span>
+<div class="viewcode-block" id="Cooling.cmot_d2">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.cmot_d2">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">cmot_d2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_c_d2cmot</span>
+        <span class="k">if</span> <span class="n">amp_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_c_d2cmot</span>
+        <span class="k">if</span> <span class="n">detune_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_r_d2cmot</span>
+        <span class="k">if</span> <span class="n">amp_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_r_d2cmot</span>
+        <span class="k">if</span> <span class="n">i_supply</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_cmot</span>
+        <span class="c1">### End Defaults ###</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_c</span><span class="p">,</span>
+                                       <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_c</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_r</span><span class="p">,</span>
+                                       <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_r</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+    <span class="c1">#hybrid compressed MOT with only D2 repump and D1 cooler, setting B field to lower value</span>
+<div class="viewcode-block" id="Cooling.cmot_d1">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.cmot_d1">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">cmot_d1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span>
+            <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_pd_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d1_c_d1cmot</span>
+        <span class="k">if</span> <span class="n">v_pd_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_d1_c_d1cmot</span>
+        <span class="k">if</span> <span class="n">amp_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d1_3d_c</span>
+        <span class="k">if</span> <span class="n">detune_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_r_d1cmot</span>
+        <span class="k">if</span> <span class="n">amp_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_r_d1cmot</span>
+        <span class="k">if</span> <span class="n">i_supply</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_mot</span>
+        <span class="c1">### End Defaults ###</span>
+            
+        <span class="c1"># self.inner_coil.set_current(i_supply)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_magtrap_init</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d1_c</span><span class="p">,</span>
+                                       <span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_c</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_r</span><span class="p">,</span>
+                                       <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_r</span><span class="p">)</span>
+
+        <span class="c1"># with parallel:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Cooling.cmot_d1_sweep">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.cmot_d1_sweep">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">cmot_d1_sweep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span>
+            <span class="n">detune_d1_c_list</span> <span class="o">=</span> <span class="n">dvlist</span><span class="p">,</span>
+            <span class="n">v_pd_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d2_r_list</span> <span class="o">=</span> <span class="n">dvlist</span><span class="p">,</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d1_c_list</span> <span class="o">==</span> <span class="n">dvlist</span><span class="p">:</span>
+            <span class="n">detune_d1_c_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d1_c_list_d1cmot</span>
+        <span class="k">if</span> <span class="n">v_pd_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_d1_c_d1cmot</span>
+        <span class="k">if</span> <span class="n">amp_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d1_3d_c</span>
+        <span class="k">if</span> <span class="n">detune_d2_r_list</span> <span class="o">==</span> <span class="n">dvlist</span><span class="p">:</span>
+            <span class="n">detune_d2_r_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_r_list_d1cmot</span>
+        <span class="k">if</span> <span class="n">amp_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_r_d1cmot</span>
+        <span class="k">if</span> <span class="n">i_supply</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_cmot</span>
+        <span class="c1">### End Defaults ###</span>
+            
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">t</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">n_d1cmot_detuning_sweep_steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d1_c_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                       <span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_c</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_r_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                       <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_r</span><span class="p">)</span>
+
+        <span class="c1"># with parallel:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">n_d1cmot_detuning_sweep_steps</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d1_c_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_r_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">delay</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span>
+        
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+    <span class="c1">#GM with only D1, turning B field off</span>
+<div class="viewcode-block" id="Cooling.gm">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.gm">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">gm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span>
+            <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_pd_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d1_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_pd_d1_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d1_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d1</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">t_shim_change_pretrigger</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">t_magnet_off_pretrigger</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_zshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d1</span> <span class="o">!=</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="n">detune_d1</span>
+            <span class="n">detune_d1_r</span> <span class="o">=</span> <span class="n">detune_d1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">detune_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+                <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d1_c_gm</span>
+            <span class="k">if</span> <span class="n">detune_d1_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+                <span class="n">detune_d1_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d1_r_gm</span>
+        
+        <span class="k">if</span> <span class="n">v_pd_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_d1_c_gm</span>
+        <span class="k">if</span> <span class="n">amp_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d1_3d_c</span>
+        <span class="k">if</span> <span class="n">v_pd_d1_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_d1_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_d1_r_gm</span>
+        <span class="k">if</span> <span class="n">amp_d1_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d1_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d1_3d_r</span>
+        <span class="k">if</span> <span class="n">t_shim_change_pretrigger</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t_shim_change_pretrigger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_shim_change_pretrigger</span>
+        <span class="k">if</span> <span class="n">t_magnet_off_pretrigger</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t_magnet_off_pretrigger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_magnet_off_pretrigger</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current_gm</span>
+        <span class="k">if</span> <span class="n">v_yshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_yshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_yshim_current_gm</span>
+        <span class="k">if</span> <span class="n">v_xshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_xshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_xshim_current_gm</span>
+        
+        <span class="c1"># ### End Defaults ###</span>
+
+        <span class="n">delay</span><span class="p">(</span><span class="o">-</span><span class="n">t_magnet_off_pretrigger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="n">v_zshim_current</span><span class="p">,</span>
+                        <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">v_yshim_current</span><span class="p">,</span>
+                          <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">v_xshim_current</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t_magnet_off_pretrigger</span><span class="p">)</span>
+       
+        <span class="n">delay</span><span class="p">(</span><span class="o">-</span><span class="n">t_magnet_off_pretrigger</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">igbt_ttl</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t_magnet_off_pretrigger</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d1_c</span><span class="p">,</span> 
+                                       <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d1_c</span><span class="p">,</span>
+                                       <span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_c</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d1_r</span><span class="p">,</span> 
+                                       <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d1_r</span><span class="p">,</span>
+                                       <span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_r</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">parallel</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_d1_3d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span></div>
+
+
+    <span class="c1"># @kernel</span>
+    <span class="c1"># def gm_ramp(self,t,t_ramp,</span>
+    <span class="c1">#         detune_d1_c = dv,</span>
+    <span class="c1">#         v_pd_d1_c = dv,</span>
+    <span class="c1">#         detune_d1_r = dv,</span>
+    <span class="c1">#         v_pd_d1_r = dv,</span>
+    <span class="c1">#         detune_d1 = dv,</span>
+    <span class="c1">#         dds_mgr_idx = 0):</span>
+        
+    <span class="c1">#     ### Start Defaults ###</span>
+    <span class="c1">#     if detune_d1 != dv:</span>
+    <span class="c1">#         detune_d1_c = detune_d1</span>
+    <span class="c1">#         detune_d1_r = detune_d1</span>
+    <span class="c1">#     else:</span>
+    <span class="c1">#         if detune_d1_c == dv:</span>
+    <span class="c1">#             detune_d1_c = self.params.detune_d1_c_gm</span>
+    <span class="c1">#         if detune_d1_r == dv:</span>
+    <span class="c1">#             detune_d1_r = self.params.detune_d1_r_gm</span>
+        
+    <span class="c1">#     if v_pd_d1_c == dv:</span>
+    <span class="c1">#         v_pd_d1_c = self.params.v_pd_d1_c_gm</span>
+    <span class="c1">#     if v_pd_d1_r == dv:</span>
+    <span class="c1">#         v_pd_d1_r = self.params.v_pd_d1_r_gm</span>
+    <span class="c1">#     ### End Defaults ###</span>
+
+    <span class="c1">#     self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, </span>
+    <span class="c1">#                                    v_pd=v_pd_d1_c)</span>
+    <span class="c1">#     delay(self.params.t_rtio)</span>
+    <span class="c1">#     self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, </span>
+    <span class="c1">#                                    v_pd=v_pd_d1_r)</span>
+        
+    <span class="c1">#     self.dds.load_profile(dds_mgr_idx)</span>
+
+    <span class="c1">#     with parallel:</span>
+    <span class="c1">#         self.ttl.inner_coil_igbt.off()</span>
+    <span class="c1">#         self.switch_d1_3d(1)</span>
+    <span class="c1">#         self.switch_d2_3d(0)</span>
+    <span class="c1">#     delay(t)</span>
+    <span class="c1">#     self.dds.enable_profile(dds_mgr_idx)</span>
+    <span class="c1">#     delay(t_ramp)</span>
+    <span class="c1">#     # delay(t)</span>
+    <span class="c1">#     self.dds.disable_profile(dds_mgr_idx)</span>
+
+<div class="viewcode-block" id="Cooling.gm_ramp">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.gm_ramp">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">gm_ramp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t_gmramp</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_pd_d1_c_list</span> <span class="o">=</span> <span class="n">dvlist</span><span class="p">,</span>
+            <span class="n">amp_d1_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d1_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_pd_d1_r_list</span> <span class="o">=</span> <span class="n">dvlist</span><span class="p">,</span>
+            <span class="n">amp_d1_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d1</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d1</span> <span class="o">!=</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="n">detune_d1</span>
+            <span class="n">detune_d1_r</span> <span class="o">=</span> <span class="n">detune_d1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">detune_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+                <span class="n">detune_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d1_c_gm</span>
+            <span class="k">if</span> <span class="n">detune_d1_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+                <span class="n">detune_d1_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d1_r_gm</span>
+
+        <span class="k">if</span> <span class="n">amp_d1_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d1_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d1_3d_c</span>
+        <span class="k">if</span> <span class="n">amp_d1_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d1_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d1_3d_r</span>
+        
+        <span class="k">if</span> <span class="n">v_pd_d1_c_list</span> <span class="o">==</span> <span class="n">dvlist</span><span class="p">:</span>
+            <span class="n">v_pd_d1_c_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_c_gmramp_list</span>
+        <span class="k">if</span> <span class="n">v_pd_d1_r_list</span> <span class="o">==</span> <span class="n">dvlist</span><span class="p">:</span>
+            <span class="n">v_pd_d1_r_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_r_gmramp_list</span>
+
+        <span class="c1"># check for list length agreement</span>
+        <span class="n">N_elem</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">v_pd_d1_c_list</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">N_elem</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">v_pd_d1_r_list</span><span class="p">):</span>
+            <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="o">.</span><span class="n">Close</span><span class="p">()</span>
+            <span class="k">except</span><span class="p">:</span> <span class="k">pass</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;GM ramp v_pd lists must be of the same length.&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">t_gmramp</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t_gmramp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_gmramp</span>
+            <span class="n">dt_gmramp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">dt_gmramp</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">dt_gmramp</span> <span class="o">=</span> <span class="n">t_gmramp</span> <span class="o">/</span> <span class="n">N_elem</span>
+
+        <span class="c1">### End Defaults ###</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d1_c</span><span class="p">,</span>
+                                       <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d1_c</span><span class="p">,</span> 
+                                       <span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_c_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d1_r</span><span class="p">,</span> 
+                                       <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d1_r</span><span class="p">,</span>
+                                       <span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_r_list</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d1_3d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_elem</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_c_list</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd_d1_r_list</span><span class="p">[</span><span class="n">n</span><span class="p">])</span>
+            <span class="n">delay</span><span class="p">(</span><span class="n">dt_gmramp</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Cooling.optical_pumping">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.optical_pumping">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">optical_pumping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span>
+                        <span class="n">t_bias_rampup</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">detune_optical_pumping</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">amp_optical_pumping</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">v_zshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">detune_optical_pumping_r</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">amp_optical_pumping_r</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+        
+        <span class="k">if</span> <span class="n">t_bias_rampup</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t_bias_rampup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_optical_pumping_bias_rampup</span>
+        <span class="k">if</span> <span class="n">detune_optical_pumping</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_optical_pumping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_optical_pumping_op</span>
+        <span class="k">if</span> <span class="n">amp_optical_pumping</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_optical_pumping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_optical_pumping_op</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current_gm</span>
+        <span class="k">if</span> <span class="n">v_yshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_yshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_yshim_current_op</span>
+        <span class="k">if</span> <span class="n">v_xshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_xshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_xshim_current_op</span>
+        <span class="k">if</span> <span class="n">detune_optical_pumping_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_optical_pumping_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_optical_pumping_r_op</span>
+        <span class="k">if</span> <span class="n">amp_optical_pumping_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_optical_pumping_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_optical_pumping_r_op</span>
+
+        <span class="k">if</span> <span class="n">t_bias_rampup</span><span class="p">:</span>
+            <span class="c1"># delay(-t_bias_rampup)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="n">v_zshim_current</span><span class="p">,</span>
+                           <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">v_yshim_current</span><span class="p">,</span>
+                           <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">v_xshim_current</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="n">t_bias_rampup</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">optical_pumping</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_optical_pumping</span><span class="p">,</span> 
+                                       <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_optical_pumping</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">op_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_optical_pumping_r</span><span class="p">,</span>
+                              <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_optical_pumping_r</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">t</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">optical_pumping</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">op_r</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+            <span class="n">delay</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">optical_pumping</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">op_r</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.start_magtrap">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.start_magtrap">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">start_magtrap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                        <span class="n">v_zshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current_magtrap</span>
+        <span class="k">if</span> <span class="n">v_yshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_yshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_yshim_current_magtrap</span>
+        <span class="k">if</span> <span class="n">v_xshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_xshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_xshim_current_magtrap</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d1_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pump_to_F1</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">power_down_cooling</span><span class="p">()</span>
+        
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="n">v_zshim_current</span><span class="p">,</span>
+                        <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">v_yshim_current</span><span class="p">,</span>
+                        <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">v_xshim_current</span><span class="p">)</span>
+
+        <span class="c1"># magtrap start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.magtrap_and_load_lightsheet">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.magtrap_and_load_lightsheet">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">magtrap_and_load_lightsheet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                <span class="n">t_lightsheet_ramp</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">t_magtrap_ramp</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">t_magtrap_rampdown</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">v_pd_lightsheet_ramp_start</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">v_pd_lightsheet_ramp_end</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">paint_lightsheet</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                <span class="n">v_awg_paint_amp_lightsheet</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">i_magtrap_init</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">i_magtrap_ramp_end</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">v_zshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                                <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t_lightsheet_ramp</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t_lightsheet_ramp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_lightsheet_rampup</span>
+        <span class="k">if</span> <span class="n">t_magtrap_ramp</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t_magtrap_ramp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_magtrap_ramp</span>
+        <span class="k">if</span> <span class="n">t_magtrap_rampdown</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t_magtrap_rampdown</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_magtrap_rampdown</span>
+        <span class="k">if</span> <span class="n">v_pd_lightsheet_ramp_start</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_lightsheet_ramp_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampup_start</span>
+        <span class="k">if</span> <span class="n">v_pd_lightsheet_ramp_end</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_pd_lightsheet_ramp_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_pd_lightsheet_rampup_end</span>
+        <span class="k">if</span> <span class="n">v_awg_paint_amp_lightsheet</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_awg_paint_amp_lightsheet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_lightsheet_paint_amp_max</span>
+        <span class="k">if</span> <span class="n">i_magtrap_init</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_magtrap_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_magtrap_init</span>
+        <span class="k">if</span> <span class="n">i_magtrap_ramp_end</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_magtrap_ramp_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_magtrap_ramp_end</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current_magtrap</span>
+        <span class="k">if</span> <span class="n">v_yshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_yshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_yshim_current_magtrap</span>
+        <span class="k">if</span> <span class="n">v_xshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_xshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_xshim_current_magtrap</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_magtrap</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="n">v_zshim_current</span><span class="p">,</span>
+                           <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">v_yshim_current</span><span class="p">,</span>
+                           <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">v_xshim_current</span><span class="p">)</span>
+
+        <span class="c1"># ramp up lightsheet over magtrap</span>
+        
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">t_lightsheet_ramp</span><span class="p">,</span>
+                            <span class="n">v_pd_lightsheet_ramp_start</span><span class="p">,</span>
+                            <span class="n">v_pd_lightsheet_ramp_end</span><span class="p">,</span>
+                            <span class="n">paint</span><span class="o">=</span><span class="n">paint_lightsheet</span><span class="p">,</span>
+                            <span class="n">v_awg_am_max</span><span class="o">=</span><span class="n">v_awg_paint_amp_lightsheet</span><span class="p">,</span>
+                            <span class="n">keep_trap_frequency_constant</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t_magtrap_ramp</span><span class="p">,</span>
+                            <span class="n">i_start</span><span class="o">=</span><span class="n">i_magtrap_init</span><span class="p">,</span>
+                            <span class="n">i_end</span><span class="o">=</span><span class="n">i_magtrap_ramp_end</span><span class="p">)</span>
+        
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_magtrap</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t_magtrap_rampdown</span><span class="p">,</span>
+                            <span class="n">i_start</span><span class="o">=</span><span class="n">i_magtrap_ramp_end</span><span class="p">,</span>
+                            <span class="n">i_end</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.magtrap">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.magtrap">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">magtrap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">t_magtrap_ramp</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                <span class="n">i_magtrap_init</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                <span class="n">i_magtrap_ramp_end</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                <span class="n">v_zshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t_magtrap_ramp</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">t_magtrap_ramp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_magtrap_ramp</span>
+        <span class="k">if</span> <span class="n">i_magtrap_init</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_magtrap_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_magtrap_init</span>
+        <span class="k">if</span> <span class="n">i_magtrap_ramp_end</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_magtrap_ramp_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_magtrap_ramp_end</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current_magtrap</span>
+        <span class="k">if</span> <span class="n">v_yshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_yshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_yshim_current_magtrap</span>
+        <span class="k">if</span> <span class="n">v_xshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_xshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_xshim_current_magtrap</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_magtrap</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="n">v_zshim_current</span><span class="p">,</span>
+                           <span class="n">v_yshim_current</span><span class="o">=</span><span class="n">v_yshim_current</span><span class="p">,</span>
+                           <span class="n">v_xshim_current</span><span class="o">=</span><span class="n">v_xshim_current</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t_magtrap_ramp</span><span class="p">,</span>
+                            <span class="n">i_start</span><span class="o">=</span><span class="n">i_magtrap_init</span><span class="p">,</span>
+                            <span class="n">i_end</span><span class="o">=</span><span class="n">i_magtrap_ramp_end</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Cooling.release">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.release">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">igbt_ttl</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d1_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+    <span class="c1">## AOM group control</span>
+
+<div class="viewcode-block" id="Cooling.switch_d2_2d">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.switch_d2_2d">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">switch_d2_2d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">state</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">parallel</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_2d_c</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_2d_r</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">parallel</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_2d_c</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_2d_r</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.switch_d2_3d">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.switch_d2_3d">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">switch_d2_3d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">state</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">parallel</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">parallel</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.switch_d1_3d">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.switch_d1_3d">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">switch_d1_3d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">state</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">dac_load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">on</span><span class="p">(</span><span class="n">dac_load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">off</span><span class="p">(</span><span class="n">dac_load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">off</span><span class="p">(</span><span class="n">dac_load</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">load_dac</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">load</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.set_zshim_magnet_current">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.set_zshim_magnet_current">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">set_zshim_magnet_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span> <span class="n">load_dac</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current</span>
+        <span class="k">with</span> <span class="n">sequential</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">zshim_current_control</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">load_dac</span><span class="p">)</span></div>
+
+
+    <span class="c1">## Other</span>
+    
+<div class="viewcode-block" id="Cooling.mot_observe">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.mot_observe">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">mot_observe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">detune_push</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_push</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">frequency_ry_405</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_ry_405</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">frequency_ry_980</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">amp_ry_980</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        
+        <span class="c1">### Start Defaults ###</span>
+        <span class="k">if</span> <span class="n">detune_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_c_mot</span>
+        <span class="k">if</span> <span class="n">amp_d2_c</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_c_mot</span>
+        <span class="k">if</span> <span class="n">detune_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_d2_r_mot</span>
+        <span class="k">if</span> <span class="n">amp_d2_r</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_d2_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_d2_r_mot</span>
+        <span class="k">if</span> <span class="n">detune_push</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_push</span>
+        <span class="k">if</span> <span class="n">amp_push</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_push</span>
+        <span class="k">if</span> <span class="n">detune_push</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">detune_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">detune_push</span>
+        <span class="k">if</span> <span class="n">amp_push</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_push</span>
+        <span class="k">if</span> <span class="n">frequency_ry_405</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">frequency_ry_405</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">frequency_ao_ry_405</span>
+        <span class="k">if</span> <span class="n">amp_ry_405</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_ry_405</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_ao_ry_405</span>
+        <span class="k">if</span> <span class="n">frequency_ry_980</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">frequency_ry_980</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">frequency_ao_ry_980</span>
+        <span class="k">if</span> <span class="n">amp_ry_980</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">amp_ry_980</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">amp_ao_ry_980</span>
+        <span class="k">if</span> <span class="n">i_supply</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">i_supply</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">i_mot</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current</span>
+        <span class="c1">### End Defaults ###</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_c</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_c</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_d2_r</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_d2_r</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">set_dds_gamma</span><span class="p">(</span><span class="n">delta</span><span class="o">=</span><span class="n">detune_push</span><span class="p">,</span>
+                                 <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_push</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">ry_980</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="n">frequency_ry_405</span><span class="p">,</span>
+                                <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_ry_405</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">ry_405</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="n">frequency_ry_980</span><span class="p">,</span>
+                                <span class="n">amplitude</span><span class="o">=</span><span class="n">amp_ry_980</span><span class="p">)</span>
+        
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="n">v_zshim_current</span><span class="p">)</span>
+
+        <span class="n">delay</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">ms</span><span class="p">)</span>
+
+        <span class="c1"># # return to mot load state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">ms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d1_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">ms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">ms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_2d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">ry_405</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">ry_980</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">beatlock_ref</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">break_realtime</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="mf">9.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">imaging</span><span class="o">.</span><span class="n">on</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Cooling.set_shims">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.cooling.Cooling.set_shims">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">set_shims</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                  <span class="n">v_xshim_current</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+                  <span class="n">v_yshim_current</span> <span class="o">=</span> <span class="n">dv</span><span class="p">,</span>
+                  <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="n">dv</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">v_xshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_xshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_xshim_current</span>
+        <span class="k">if</span> <span class="n">v_yshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_yshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_yshim_current</span>
+        <span class="k">if</span> <span class="n">v_zshim_current</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">v_zshim_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">v_zshim_current</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">xshim_current_control</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span> <span class="o">=</span> <span class="n">v_xshim_current</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">yshim_current_control</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span> <span class="o">=</span> <span class="n">v_yshim_current</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">zshim_current_control</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span> <span class="o">=</span> <span class="n">v_zshim_current</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

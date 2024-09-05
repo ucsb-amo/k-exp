@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.base.sub.devices &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.base.sub.devices</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.base.sub.devices</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">delay_mu</span><span class="p">,</span> <span class="n">delay</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">portable</span><span class="p">,</span> <span class="n">TArray</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">artiq.coredevice.ttl</span> <span class="kn">import</span> <span class="n">TTLOut</span>
+<span class="kn">from</span> <span class="nn">artiq.coredevice.core</span> <span class="kn">import</span> <span class="n">Core</span>
+<span class="kn">from</span> <span class="nn">artiq.coredevice.zotino</span> <span class="kn">import</span> <span class="n">Zotino</span>
+<span class="kn">from</span> <span class="nn">artiq.coredevice.dma</span> <span class="kn">import</span> <span class="n">CoreDMA</span>
+
+<span class="kn">from</span> <span class="nn">kexp.config.dds_id</span> <span class="kn">import</span> <span class="n">dds_frame</span><span class="p">,</span> <span class="n">N_uru</span>
+<span class="kn">from</span> <span class="nn">kexp.config.ttl_id</span> <span class="kn">import</span> <span class="n">ttl_frame</span>
+<span class="kn">from</span> <span class="nn">kexp.config.dac_id</span> <span class="kn">import</span> <span class="n">dac_frame</span>
+<span class="kn">from</span> <span class="nn">kexp.config.shuttler_id</span> <span class="kn">import</span> <span class="n">shuttler_frame</span>
+<span class="kn">from</span> <span class="nn">kexp.config.sampler_id</span> <span class="kn">import</span> <span class="n">sampler_frame</span>
+<span class="kn">from</span> <span class="nn">kexp.control.artiq.mirny</span> <span class="kn">import</span> <span class="n">Mirny</span>
+<span class="kn">from</span> <span class="nn">kexp.config.expt_params</span> <span class="kn">import</span> <span class="n">ExptParams</span>
+
+<span class="kn">from</span> <span class="nn">kexp.control.artiq.Shuttler_CH</span> <span class="kn">import</span> <span class="n">Shuttler_CH</span>
+
+<span class="c1"># from jax import AD9910Manager</span>
+<span class="kn">from</span> <span class="nn">kexp.control.cameras.dummy_cam</span> <span class="kn">import</span> <span class="n">DummyCamera</span>
+
+<span class="kn">from</span> <span class="nn">kexp.control.misc.big_coil</span> <span class="kn">import</span> <span class="n">igbt_magnet</span><span class="p">,</span> <span class="n">hbridge_magnet</span>
+<span class="kn">from</span> <span class="nn">kexp.control.misc.painted_lightsheet</span> <span class="kn">import</span> <span class="n">lightsheet</span>
+<span class="kn">from</span> <span class="nn">kexp.control.misc.awg_tweezer</span> <span class="kn">import</span> <span class="n">tweezer</span>
+<span class="kn">from</span> <span class="nn">kexp.control.misc.doubled_rf</span> <span class="kn">import</span> <span class="n">doubled_rf</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">dv</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span>
+<span class="n">d_exptparams</span> <span class="o">=</span> <span class="n">ExptParams</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Devices">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.devices.Devices">[docs]</a>
+<span class="k">class</span> <span class="nc">Devices</span><span class="p">():</span>
+
+<div class="viewcode-block" id="Devices.prepare_devices">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.devices.Devices.prepare_devices">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare_devices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">expt_params</span><span class="p">:</span><span class="n">ExptParams</span><span class="o">=</span><span class="n">d_exptparams</span><span class="p">):</span>
+        <span class="c1"># for syntax highlighting</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">expt_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">compute_derived</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">core</span> <span class="o">=</span> <span class="n">Core</span>
+        <span class="n">zotino</span> <span class="o">=</span> <span class="n">Zotino</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core_dma</span> <span class="o">=</span> <span class="n">CoreDMA</span>
+
+        <span class="c1"># get em</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="s2">&quot;core&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core_dma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="s2">&quot;core_dma&quot;</span><span class="p">)</span>
+        <span class="n">zotino</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="s2">&quot;zotino0&quot;</span><span class="p">)</span>
+        <span class="n">sampler</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="s2">&quot;sampler0&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">grabber</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="s2">&quot;grabber0&quot;</span><span class="p">)</span>
+
+        <span class="c1"># sampler channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span> <span class="o">=</span> <span class="n">sampler_frame</span><span class="p">(</span><span class="n">sampler_device</span><span class="o">=</span><span class="n">sampler</span><span class="p">)</span>
+
+        <span class="c1"># dac channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac</span> <span class="o">=</span> <span class="n">dac_frame</span><span class="p">(</span><span class="n">expt_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="n">dac_device</span><span class="o">=</span><span class="n">zotino</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">shuttler</span> <span class="o">=</span> <span class="n">shuttler_frame</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_shuttler_devices</span><span class="p">()</span>
+
+        <span class="c1"># ttl channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span> <span class="o">=</span> <span class="n">ttl_frame</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_ttl_devices</span><span class="p">()</span>
+
+        <span class="c1"># set up dds_frame</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span> <span class="o">=</span> <span class="n">dds_frame</span><span class="p">(</span><span class="n">dac_frame_obj</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="p">,</span>
+                             <span class="n">shuttler_frame_obj</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shuttler</span><span class="p">,</span>
+                              <span class="n">core</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">core</span><span class="p">,</span> <span class="n">expt_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        <span class="c1"># self.dds.dds_manager = [DDSManager(self.core)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_dds_devices</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">dds_list</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">rf</span> <span class="o">=</span> <span class="n">doubled_rf</span><span class="p">(</span><span class="n">dds_ch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">antenna_rf</span><span class="p">,</span> <span class="n">expt_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="c1"># magnet coils</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span> <span class="o">=</span> <span class="n">hbridge_magnet</span><span class="p">(</span><span class="n">max_current</span><span class="o">=</span><span class="mf">170.</span><span class="p">,</span>
+                                         <span class="n">max_voltage</span><span class="o">=</span><span class="mf">80.</span><span class="p">,</span>
+                                         <span class="n">v_control_dac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">inner_coil_supply_voltage</span><span class="p">,</span>
+                                         <span class="n">i_control_dac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">inner_coil_supply_current</span><span class="p">,</span>
+                                         <span class="n">igbt_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">inner_coil_igbt</span><span class="p">,</span>
+                                         <span class="n">discharge_igbt_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">inner_coil_discharge_igbt</span><span class="p">,</span>
+                                         <span class="n">hbridge_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">hbridge_helmholtz</span><span class="p">,</span>
+                                         <span class="n">expt_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+                                      
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span> <span class="o">=</span> <span class="n">igbt_magnet</span><span class="p">(</span><span class="n">max_current</span><span class="o">=</span><span class="mf">500.</span><span class="p">,</span>
+                                      <span class="n">max_voltage</span><span class="o">=</span><span class="mf">80.</span><span class="p">,</span>
+                                      <span class="n">v_control_dac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">outer_coil_supply_voltage</span><span class="p">,</span>
+                                      <span class="n">i_control_dac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">outer_coil_supply_current</span><span class="p">,</span>
+                                      <span class="n">igbt_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">outer_coil_igbt</span><span class="p">,</span>
+                                      <span class="n">discharge_igbt_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">outer_coil_discharge_igbt</span><span class="p">,</span>
+                                      <span class="n">expt_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        
+        <span class="c1"># painted ligthsheet</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span> <span class="o">=</span> <span class="n">lightsheet</span><span class="p">(</span><span class="n">pid_dac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">vva_lightsheet</span><span class="p">,</span>
+                                     <span class="n">paint_amp_dac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">lightsheet_paint_amp</span><span class="p">,</span>
+                                     <span class="n">sw_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">lightsheet_sw</span><span class="p">,</span>
+                                     <span class="n">pid_int_hold_zero_ttl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">lightsheet_pid_int_hold_zero</span><span class="p">,</span>
+                                     <span class="n">expt_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span> <span class="o">=</span> <span class="n">tweezer</span><span class="p">(</span><span class="n">ao1_dds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">tweezer_pid_1</span><span class="p">,</span>
+                               <span class="n">pid1_dac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">v_pd_tweezer_pid1</span><span class="p">,</span>
+                               <span class="n">ao2_dds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">tweezer_pid_2</span><span class="p">,</span>
+                               <span class="n">pid2_dac</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">v_pd_tweezer_pid2</span><span class="p">,</span>
+                               <span class="n">sw_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">aod_rf_sw</span><span class="p">,</span>
+                               <span class="n">awg_trg_ttl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">awg_trigger</span><span class="p">,</span>
+                               <span class="n">pid1_int_hold_zero_ttl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">tweezer_pid1_int_hold_zero</span><span class="p">,</span>
+                               <span class="n">pid2_enable_ttl</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">tweezer_pid2_enable</span><span class="p">,</span>
+                               <span class="n">painting_dac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">tweezer_paint_amp</span><span class="p">,</span>
+                               <span class="n">expt_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="c1"># camera placeholder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera</span> <span class="o">=</span> <span class="n">DummyCamera</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Devices.get_ttl_devices">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.devices.Devices.get_ttl_devices">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_ttl_devices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">ttl</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">ttl_list</span><span class="p">:</span>
+            <span class="n">ttl</span><span class="o">.</span><span class="n">ttl_device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="n">ttl</span><span class="o">.</span><span class="n">name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Devices.get_dds_devices">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.devices.Devices.get_dds_devices">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_dds_devices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">dds</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">dds_list</span><span class="p">:</span>
+            <span class="n">dds</span><span class="o">.</span><span class="n">dds_device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="n">dds</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">dds</span><span class="o">.</span><span class="n">cpld_device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="n">dds</span><span class="o">.</span><span class="n">cpld_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Devices.get_shuttler_devices">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.devices.Devices.get_shuttler_devices">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_shuttler_devices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shuttler</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="s2">&quot;shuttler0_config&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shuttler</span><span class="o">.</span><span class="n">_relay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="s2">&quot;shuttler0_relay&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shuttler</span><span class="o">.</span><span class="n">_trigger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="s2">&quot;shuttler0_trigger&quot;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">shuttler_ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shuttler</span><span class="o">.</span><span class="n">shuttler_list</span><span class="p">:</span>
+            <span class="n">shuttler_ch</span><span class="o">.</span><span class="n">_dc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="n">shuttler_ch</span><span class="o">.</span><span class="n">_dc_name</span><span class="p">)</span>
+            <span class="n">shuttler_ch</span><span class="o">.</span><span class="n">_dds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="n">shuttler_ch</span><span class="o">.</span><span class="n">_dds_name</span><span class="p">)</span>
+            <span class="n">shuttler_ch</span><span class="o">.</span><span class="n">_relay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shuttler</span><span class="o">.</span><span class="n">_relay</span>
+            <span class="n">shuttler_ch</span><span class="o">.</span><span class="n">_trigger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shuttler</span><span class="o">.</span><span class="n">_trigger</span></div>
+
+
+<div class="viewcode-block" id="Devices.set_all_dds">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.devices.Devices.set_all_dds">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">set_all_dds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">dds</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">dds_list</span><span class="p">:</span>
+            <span class="n">dds</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">dds</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set_att</span><span class="p">(</span><span class="mf">0.</span> <span class="o">*</span> <span class="n">dB</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Devices.switch_all_dds">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.devices.Devices.switch_all_dds">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">switch_all_dds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">state</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">dds</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">dds_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">dds</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">state</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">dds</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Devices.init_all_dds">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.devices.Devices.init_all_dds">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">init_all_dds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">dds</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">dds_list</span><span class="p">:</span>
+            <span class="n">dds</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+            <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">us</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Devices.init_all_cpld">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.devices.Devices.init_all_cpld">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">init_all_cpld</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">ddss</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">dds_array</span><span class="p">:</span>
+            <span class="n">ddss</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cpld_device</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+            <span class="n">delay</span><span class="p">(</span><span class="mi">10</span><span class="o">*</span><span class="n">us</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

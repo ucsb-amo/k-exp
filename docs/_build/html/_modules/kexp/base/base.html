@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.base.base &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.base.base</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.base.base</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">delay</span><span class="p">,</span> <span class="n">delay_mu</span><span class="p">,</span> <span class="n">kernel</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">kexp.config</span> <span class="kn">import</span> <span class="n">ExptParams</span>
+<span class="kn">from</span> <span class="nn">kexp.base.sub</span> <span class="kn">import</span> <span class="n">Devices</span><span class="p">,</span> <span class="n">Cooling</span><span class="p">,</span> <span class="n">Image</span><span class="p">,</span> <span class="n">Dealer</span><span class="p">,</span> <span class="n">Cameras</span><span class="p">,</span> <span class="n">Scanner</span><span class="p">,</span> <span class="n">Scribe</span>
+<span class="kn">from</span> <span class="nn">kexp.util.data</span> <span class="kn">import</span> <span class="n">DataSaver</span><span class="p">,</span> <span class="n">RunInfo</span><span class="p">,</span> <span class="n">server_talk</span>
+<span class="kn">from</span> <span class="nn">artiq.language.core</span> <span class="kn">import</span> <span class="n">kernel_from_string</span><span class="p">,</span> <span class="n">now_mu</span>
+
+<span class="n">RPC_DELAY</span> <span class="o">=</span> <span class="mf">10.e-3</span>
+
+<span class="c1"># also import the andor camera parameters</span>
+
+<span class="kn">from</span> <span class="nn">kexp.util.artiq.async_print</span> <span class="kn">import</span> <span class="n">aprint</span>
+
+<div class="viewcode-block" id="Base">
+<a class="viewcode-back" href="../../../kexp.base.html#kexp.base.base.Base">[docs]</a>
+<span class="k">class</span> <span class="nc">Base</span><span class="p">(</span><span class="n">Devices</span><span class="p">,</span> <span class="n">Cooling</span><span class="p">,</span> <span class="n">Image</span><span class="p">,</span> <span class="n">Dealer</span><span class="p">,</span> <span class="n">Cameras</span><span class="p">,</span> <span class="n">Scanner</span><span class="p">,</span> <span class="n">Scribe</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">setup_camera</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">absorption_image</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">save_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">camera_select</span><span class="o">=</span><span class="s2">&quot;xy_basler&quot;</span><span class="p">):</span>
+        <span class="n">Scanner</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_camera</span> <span class="o">=</span> <span class="n">setup_camera</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_info</span> <span class="o">=</span> <span class="n">RunInfo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">save_data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ridstr</span> <span class="o">=</span> <span class="s2">&quot; Run ID: &quot;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">run_id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">ExptParams</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prepare_devices</span><span class="p">(</span><span class="n">expt_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">choose_camera</span><span class="p">(</span><span class="n">setup_camera</span><span class="p">,</span><span class="n">absorption_image</span><span class="p">,</span><span class="n">camera_select</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">images</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">image_timestamps</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_N</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ds</span> <span class="o">=</span> <span class="n">DataSaver</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Base.finish_prepare">
+<a class="viewcode-back" href="../../../kexp.base.html#kexp.base.base.Base.finish_prepare">[docs]</a>
+    <span class="k">def</span> <span class="nf">finish_prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">N_repeats</span><span class="o">=</span><span class="p">[],</span><span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        To be called at the end of prepare. </span>
+<span class="sd">        </span>
+<span class="sd">        Automatically adds repeats either if specified in N_repeats argument or</span>
+<span class="sd">        if previously specified in self.params.N_repeats. </span>
+<span class="sd">        </span>
+<span class="sd">        Shuffles xvars if specified (defaults to True). Computes the number of</span>
+<span class="sd">        images to be taken from the imaging method and the length of the xvar</span>
+<span class="sd">        arrays.</span>
+
+<span class="sd">        Computes derived parameters within ExptParams.</span>
+
+<span class="sd">        Accepts an additional compute_derived method that is user defined in the</span>
+<span class="sd">        experiment file. This is to allow for recomputation of derived</span>
+<span class="sd">        parameters that the user created in the experiment file at each step in</span>
+<span class="sd">        a scan. This must be an RPC -- no kernel decorator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xvar</span><span class="p">(</span><span class="s2">&quot;dummy&quot;</span><span class="p">,[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_xvars</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xvar</span><span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)[</span><span class="n">key</span><span class="p">])</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">repeat_xvars</span><span class="p">(</span><span class="n">N_repeats</span><span class="o">=</span><span class="n">N_repeats</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="n">shuffle</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shuffle_xvars</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_N_img</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prepare_image_array</span><span class="p">()</span>
+
+        <span class="c1"># if cleanup_dds_profiles:</span>
+        <span class="c1">#     self.dds.cleanup_dds_profiles()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">compute_derived</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_new_derived</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_filepath</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ds</span><span class="o">.</span><span class="n">create_data_file</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">generate_assignment_kernels</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="Base.compute_new_derived">
+<a class="viewcode-back" href="../../../kexp.base.html#kexp.base.base.Base.compute_new_derived">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_new_derived</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="Base.init_kernel">
+<a class="viewcode-back" href="../../../kexp.base.html#kexp.base.base.Base.init_kernel">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">init_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">init_dds</span> <span class="o">=</span>  <span class="kc">True</span><span class="p">,</span> <span class="n">init_dac</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                     <span class="n">dds_set</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">dds_off</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">beat_ref_on</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">init_shuttler</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">init_lightsheet</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">setup_awg</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_camera</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_camera_ready</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">15.</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Camera is ready.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">run_id</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ridstr</span><span class="p">)</span> <span class="c1"># prints run ID to terminal</span>
+        <span class="k">if</span> <span class="n">setup_awg</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">awg_init</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span> <span class="c1"># clears RTIO</span>
+        <span class="k">if</span> <span class="n">init_dac</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">init</span><span class="p">()</span> <span class="c1"># initializes DAC</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_rtio</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">init_shuttler</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shuttler</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">break_realtime</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">init_dds</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_all_cpld</span><span class="p">()</span> <span class="c1"># initializes DDS CPLDs</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_all_dds</span><span class="p">()</span> <span class="c1"># initializes DDS channels</span>
+        <span class="k">if</span> <span class="n">dds_set</span><span class="p">:</span>
+            <span class="n">delay</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">ms</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_all_dds</span><span class="p">()</span> <span class="c1"># set DDS to default values</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_imaging_detuning</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dds_off</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">switch_all_dds</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># turn all DDS off to start experiment</span>
+        <span class="k">if</span> <span class="n">beat_ref_on</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">beatlock_ref</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">init_lightsheet</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">ry_405</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">ry_980</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">ry_405</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">ry_980</span><span class="o">.</span><span class="n">on</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Base.init_scan_kernel">
+<a class="viewcode-back" href="../../../kexp.base.html#kexp.base.base.Base.init_scan_kernel">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">init_scan_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">init_cooling</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">break_realtime</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">imaging_state</span> <span class="o">==</span> <span class="mf">1.</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_imaging_detuning</span><span class="p">(</span><span class="n">detuning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">frequency_detuned_imaging_F1</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">imaging_state</span> <span class="o">==</span> <span class="mf">2.</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_imaging_detuning</span><span class="p">(</span><span class="n">detuning</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">frequency_detuned_imaging</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">imaging</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">amplitude</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">amp_imaging</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">wait_until_mu</span><span class="p">(</span><span class="n">now_mu</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">set_static_tweezers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">frequency_tweezer_list</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_tweezer_list</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">phase_tweezer_array</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">break_realtime</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">awg_trg_ttl</span><span class="o">.</span><span class="n">pulse</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="mf">1.e-6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">pid1_int_hold_zero</span><span class="o">.</span><span class="n">pulse</span><span class="p">(</span><span class="mf">1.e-6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">pid1_int_hold_zero</span><span class="o">.</span><span class="n">on</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Base.prepare_image_array">
+<a class="viewcode-back" href="../../../kexp.base.html#kexp.base.base.Base.prepare_image_array">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare_image_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">save_data</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">camera_type</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">camera_type</span> <span class="o">==</span> <span class="s1">&#39;andor&#39;</span><span class="p">:</span>
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint16</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">camera_type</span> <span class="o">==</span> <span class="s1">&#39;basler&#39;</span><span class="p">:</span>
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">uint8</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_img</span><span class="p">,)</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">resolution</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">image_timestamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_img</span><span class="p">,))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">image_timestamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Base.end">
+<a class="viewcode-back" href="../../../kexp.base.html#kexp.base.base.Base.end">[docs]</a>
+    <span class="k">def</span> <span class="nf">end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">expt_filepath</span><span class="p">):</span>
+
+        <span class="c1"># self.tweezer.close()</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_camera</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">save_data</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cleanup_scanned</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">write_data</span><span class="p">(</span><span class="n">expt_filepath</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_incomplete_data</span><span class="p">()</span>
+        <span class="n">server_talk</span><span class="o">.</span><span class="n">play_random_sound</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

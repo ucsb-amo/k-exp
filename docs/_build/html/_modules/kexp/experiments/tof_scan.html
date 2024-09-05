@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.experiments.tof_scan &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.experiments.tof_scan</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.experiments.tof_scan</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">delay</span>
+<span class="kn">from</span> <span class="nn">kexp</span> <span class="kn">import</span> <span class="n">Base</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">kexp.calibrations</span> <span class="kn">import</span> <span class="n">high_field_imaging_detuning</span>
+
+<div class="viewcode-block" id="tof_scan">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.tof_scan.tof_scan">[docs]</a>
+<span class="k">class</span> <span class="nc">tof_scan</span><span class="p">(</span><span class="n">EnvExperiment</span><span class="p">,</span> <span class="n">Base</span><span class="p">):</span>
+
+<div class="viewcode-block" id="tof_scan.prepare">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.tof_scan.tof_scan.prepare">[docs]</a>
+    <span class="k">def</span> <span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">Base</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">setup_camera</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">camera_select</span><span class="o">=</span><span class="s1">&#39;andor&#39;</span><span class="p">,</span><span class="n">save_data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># self.p.imaging_state = 1.</span>
+        <span class="c1"># self.xvar(&#39;frequency_detuned_imaging&#39;,np.arange(410.,440.,3)*1.e6)</span>
+        <span class="c1"># self.p.frequency_detuned_imaging = 413.e6</span>
+        <span class="c1"># self.p.frequency_detuned_imaging = 420.e6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">frequency_detuned_imaging</span> <span class="o">=</span> <span class="mf">429.e6</span>
+        <span class="c1"># self.xvar(&#39;dummy&#39;,[1.]*50)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_mot_load</span> <span class="o">=</span> <span class="mf">.75</span>
+
+        <span class="c1"># self.xvar(&#39;detune_gm&#39;,np.linspace(7,12.,8))</span>
+        <span class="c1"># self.xvar(&#39;t_gm&#39;,np.linspace(.05,5.,8)*1.e-3)</span>
+        <span class="c1"># self.xvar(&#39;pfrac_d1_c_gm&#39;,np.linspace(.7,.99,8))</span>
+        <span class="c1"># self.xvar(&#39;pfrac_d1_r_gm&#39;,np.linspace(.3,.99,8))</span>
+
+        <span class="c1"># self.xvar(&#39;pfrac_c_gmramp_end&#39;,np.linspace(.05,.4,10))</span>
+        <span class="c1"># self.xvar(&#39;pfrac_r_gmramp_end&#39;,np.linspace(.03,.4,10))</span>
+        <span class="c1"># self.xvar(&#39;t_gmramp&#39;,np.linspace(3.,8.,20)*1.e-3)</span>
+
+        <span class="c1"># self.xvar(&#39;i_magtrap_init&#39;,np.linspace(20.,38.,8))</span>
+        <span class="c1"># self.xvar(&#39;i_magtrap_ramp_end&#39;,np.linspace(28.,95.,8))</span>
+        <span class="c1"># self.xvar(&#39;t_magtrap&#39;,np.linspace(0.1,500.,10)*1.e-3)</span>
+        <span class="c1"># self.xvar(&#39;t_magtrap_ramp&#39;,np.linspace(10.,800.,8)*1.e-3)</span>
+        <span class="c1"># self.xvar(&#39;t_magtrap_rampdown&#39;,np.linspace(100.,250.,5)*1.e-3)</span>
+
+        <span class="c1"># self.p.t_magtrap = .1</span>
+        <span class="c1"># self.p.t_magtrap_ramp = .1</span>
+
+        <span class="c1"># self.xvar(&#39;v_zshim_current_magtrap&#39;,np.linspace(10.,800.,8)*1.e-3)</span>
+        <span class="c1"># self.xvar(&#39;v_xshim_current_magtrap&#39;,np.linspace(0.,2.,10))</span>
+        <span class="c1"># self.xvar(&#39;v_yshim_current_magtrap&#39;,np.linspace(3.,8.,20))</span>
+
+        <span class="c1"># self.xvar(&#39;t_lightsheet_rampup&#39;,np.linspace(20.,800.,6)*1.e-3)</span>
+        <span class="c1"># self.xvar(&#39;v_pd_lightsheet_rampup_end&#39;,np.linspace(6.,9.99,6))</span>
+        <span class="c1"># self.p.v_pd_lightsheet_rampup_end = 9.99</span>
+
+        <span class="c1"># self.xvar(&#39;t_feshbach_field_rampup&#39;,np.linspace(.005,.5,12))</span>
+
+        <span class="c1"># self.p.t_feshbach_field_rampup = .3</span>
+
+        <span class="c1"># self.p.t_rf_state_xfer_sweep = 100.e-3</span>
+        <span class="c1"># self.p.n_rf_state_xfer_sweep_steps = 2000</span>
+        <span class="c1"># # self.p.frequency_rf_sweep_state_prep_center = 459.3543e6</span>
+        <span class="c1"># self.p.frequency_rf_sweep_state_prep_fullwidth = 1000.e3</span>
+
+        <span class="c1"># self.xvar(&#39;frequency_rf_sweep_state_prep_center&#39;,154.2e6 + np.linspace(-40.,40.,80)*1.e6)</span>
+        <span class="c1"># self.p.do_sweep = 1</span>
+
+        <span class="c1"># self.xvar(&#39;i_evap1_current&#39;,np.linspace(190.,194.,8))</span>
+        <span class="c1"># self.xvar(&#39;i_evap1_current&#39;,np.linspace(144.,163.,8))</span>
+
+        <span class="c1"># self.xvar(&#39;v_pd_lightsheet_rampdown_end&#39;,np.linspace(2.,5.,8))</span>
+        <span class="c1"># self.p.v_pd_lightsheet_rampdown_end = 4.5</span>
+        <span class="c1"># self.xvar(&#39;t_lightsheet_rampdown&#39;,np.linspace(.02,1.,8))</span>
+        <span class="c1"># self.p.t_lightsheet_rampdown = .05</span>
+        <span class="c1"># self.p.i_evap1_current = 191.5</span>
+
+        <span class="c1"># self.xvar(&#39;i_evap2_current&#39;,np.linspace(179.,187.,8))</span>
+        <span class="c1"># self.xvar(&#39;i_evap2_current&#39;,np.linspace(133.,160.,8))</span>
+        <span class="c1"># self.xvar(&#39;i_evap2_current&#39;, np.linspace(28.,34.,10))</span>
+        <span class="c1"># self.xvar(&#39;i_evap2_current&#39;,np.linspace(7.,70.,40))</span>
+        <span class="c1"># self.p.i_evap2_current = 181.3</span>
+        <span class="c1"># self.p.i_evap2_current = 180.</span>
+
+        <span class="c1"># self.xvar(&#39;v_pd_tweezer_1064_ramp_end&#39;, np.linspace(5.,9.9,6))</span>
+        <span class="c1"># self.xvar(&#39;t_tweezer_1064_ramp&#39;,np.linspace(10.,200.,6)*1.e-3)</span>
+        <span class="c1"># self.xvar(&#39;t_tweezer_hold&#39;,np.linspace(1.,20.,20)*1.e-3)</span>
+        <span class="c1"># self.p.v_pd_tweezer_1064_ramp_end = 7.9</span>
+        <span class="c1"># self.p.t_tweezer_1064_ramp = .124</span>
+
+        <span class="c1"># self.xvar(&#39;v_pd_lightsheet_rampdown2_end&#39;,np.linspace(0.01,2.,6))</span>
+        <span class="c1"># self.xvar(&#39;t_lightsheet_rampdown2&#39;,np.linspace(.5,.01,6))</span>
+        <span class="c1"># self.p.v_pd_lightsheet_rampdown2_end = .2</span>
+        <span class="c1"># self.p.t_lightsheet_rampdown2 = .2    </span>
+
+        <span class="c1"># self.xvar(&#39;v_pd_lightsheet_rampdown3_end&#39;,np.linspace(0.,4.,8))</span>
+        <span class="c1"># self.xvar(&#39;t_lightsheet_rampdown3&#39;,np.linspace(0.02,1.5,8))</span>
+        <span class="c1"># self.p.v_pd_lightsheet_rampdown3_end = 0.</span>
+        <span class="c1"># self.p.t_lightsheet_rampdown3 = .01</span>
+
+        <span class="c1"># self.xvar(&#39;v_pd_tweezer_1064_rampdown_end&#39;,np.linspace(.2,2.,8))</span>
+        <span class="c1"># self.xvar(&#39;t_tweezer_1064_rampdown&#39;,np.linspace(0.001,.5,8))</span>
+        <span class="c1"># self.p.v_pd_tweezer_1064_rampdown_end = 1.6</span>
+        <span class="c1"># self.p.v_pd_tweezer_1064_rampdown_end = .7</span>
+        <span class="c1"># self.p.t_tweezer_1064_rampdown = 72.e-3</span>
+
+        <span class="c1"># self.xvar(&#39;i_tweezer_evap_current&#39;,np.linspace(185.,192.,6))</span>
+
+        <span class="c1"># self.p.i_tweezer_evap_current = 190.6</span>
+        <span class="c1"># self.p.i_tweezer_evap_current = 180.</span>
+
+        <span class="c1"># self.xvar(&#39;v_pd_tweezer_1064_rampdown2_end&#39;,np.linspace(.025,.04,5)) </span>
+        <span class="c1"># self.xvar(&#39;v_pd_tweezer_1064_rampdown2_end&#39;,np.linspace(.05,.11,5))</span>
+        <span class="c1"># self.xvar(&#39;t_tweezer_1064_rampdown2&#39;,np.linspace(0.01,.4,6))</span>
+        <span class="c1"># self.p.t_tweezer_1064_rampdown2 = .322</span>
+        <span class="c1"># self.p.v_pd_tweezer_1064_rampdown2_end = .025</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvar</span><span class="p">(</span><span class="s1">&#39;i_forced_evap_ramp_end&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">20.</span><span class="p">,</span><span class="mf">50.</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvar</span><span class="p">(</span><span class="s1">&#39;t_forced_evap_ramp&#39;</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">.1</span><span class="p">,</span><span class="mf">1.5</span><span class="p">,</span><span class="mi">10</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">n_tweezers</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># self.xvar(&#39;frequency_tweezer_array_width&#39;,np.linspace(.2e6,1.e6,6))</span>
+        <span class="c1"># self.p.frequency_tweezer_array_width = .7e6</span>
+        <span class="c1"># self.p.amp_tweezer_auto_compute = False</span>
+        <span class="c1"># self.xvar(&#39;amp_tweezer_list&#39;)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_tweezer_list</span> <span class="o">=</span> <span class="p">[</span><span class="mf">.17</span><span class="p">]</span>
+
+        <span class="c1"># self.xvar(&#39;t_tof&#39;,np.linspace(100.,550.,15)*1.e-6)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_tof</span> <span class="o">=</span> <span class="mf">100.e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">N_repeats</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># self.p.t_magtrap = 200.e-3</span>
+
+        <span class="c1"># self.p.n_lightsheet_rampup_steps = 100</span>
+        <span class="c1"># self.p.t_lightsheet_rampup = 200.e-3</span>
+        <span class="c1"># self.xvar(&#39;t_lightsheet_hold&#39;,np.linspace(30.,1000.,6)*1.e-3)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_lightsheet_hold</span> <span class="o">=</span> <span class="mf">100.e-3</span>
+        
+        <span class="c1"># self.xvar(&#39;dummy_z&#39;,[0]*500)</span>
+
+        <span class="c1"># self.xvar(&#39;amp_imaging&#39;,np.linspace(.03,.08,15))</span>
+        <span class="c1"># self.xvar(&#39;amp_imaging&#39;,np.linspace(.04,.09,20))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">amp_imaging</span> <span class="o">=</span> <span class="mf">0.058</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">exposure_time</span> <span class="o">=</span> <span class="mf">10.e-6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_imaging_pulse</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">exposure_time</span>
+
+        <span class="c1"># self.p.N_repeats = 2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">finish_prepare</span><span class="p">(</span><span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="tof_scan.scan_kernel">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.tof_scan.tof_scan.scan_kernel">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">scan_kernel</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c1"># self.set_imaging_detuning(amp=self.p.amp_imaging)</span>
+        <span class="c1"># self.set_high_field_imaging(i_outer = self.p.i_evap2_current)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">discharge</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_2d</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_mot_load</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cmot_d1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_d1cmot</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">i_magtrap_init</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_zshim_current_gm</span><span class="p">,</span>
+                        <span class="n">v_yshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_yshim_current_gm</span><span class="p">,</span>
+                          <span class="n">v_xshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_xshim_current_gm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_gm</span> <span class="o">*</span> <span class="n">s</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gm_ramp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_gmramp</span><span class="p">)</span>
+
+        <span class="c1"># self.release()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d2_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">switch_d1_3d</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">flash_cooler</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds</span><span class="o">.</span><span class="n">power_down_cooling</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_shims</span><span class="p">(</span><span class="n">v_zshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_zshim_current_magtrap</span><span class="p">,</span>
+                        <span class="n">v_yshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_yshim_current_magtrap</span><span class="p">,</span>
+                          <span class="n">v_xshim_current</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_xshim_current_magtrap</span><span class="p">)</span>
+
+        <span class="c1"># magtrap start</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ttl</span><span class="o">.</span><span class="n">pd_scope_trig</span><span class="o">.</span><span class="n">pulse</span><span class="p">(</span><span class="mf">1.e-6</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+
+        <span class="c1"># ramp up lightsheet over magtrap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_lightsheet_rampup</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">magtrap_ramp_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">dt_magtrap_ramp</span><span class="p">)</span>
+
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_magtrap</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">magtrap_rampdown_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">dt_magtrap_rampdown</span><span class="p">)</span>
+
+        <span class="c1"># self.inner_coil.off()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mf">1.e-3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="n">v_supply</span><span class="o">=</span><span class="mf">70.</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">feshbach_field_rampup_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">dt_feshbach_field_rampup</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mf">20.e-3</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">ramp_down</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_lightsheet_rampdown</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">feshbach_field_ramp_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">dt_feshbach_field_ramp</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mf">20.e-3</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">vva_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_tweezer_1064_ramp</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">ramp_down2</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_lightsheet_rampdown2</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">ramp</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_tweezer_1064_rampdown</span><span class="p">,</span><span class="n">v_ramp_list</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">v_pd_tweezer_1064_rampdown_list</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">feshbach_field_ramp2_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">dt_feshbach_field_ramp2</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mf">20.e-3</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">forced_evap_ramp_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">dt_forced_evap_ramp</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="mf">30.e-3</span><span class="p">)</span>
+
+        <span class="c1"># self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,v_ramp_list=self.p.v_pd_tweezer_1064_rampdown2_list)</span>
+        
+        <span class="c1"># self.outer_coil.set_current(i_supply=180.)</span>
+        <span class="c1"># delay(30.e-3)</span>
+
+        <span class="c1"># self.ttl.pd_scope_trig.on()</span>
+        <span class="c1"># self.outer_coil.off()</span>
+        <span class="c1"># delay(self.p.t_feshbach_field_decay)</span>
+        <span class="c1"># self.ttl.pd_scope_trig.off()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+    
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_tof</span><span class="p">)</span>
+        <span class="c1"># self.flash_repump()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">abs_image</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="tof_scan.run">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.tof_scan.tof_scan.run">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_kernel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_2D_mot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">t_2D_mot_load_delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mot_observe</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="tof_scan.analyze">
+<a class="viewcode-back" href="../../../kexp.experiments.html#kexp.experiments.tof_scan.tof_scan.analyze">[docs]</a>
+    <span class="k">def</span> <span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">os</span>
+        <span class="n">expt_filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="n">expt_filepath</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

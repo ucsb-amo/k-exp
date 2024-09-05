@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.control.artiq.DDS &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.control.artiq.DDS</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.control.artiq.DDS</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">delay_mu</span><span class="p">,</span> <span class="n">delay</span><span class="p">,</span> <span class="n">parallel</span><span class="p">,</span> <span class="n">portable</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">TFloat</span>
+<span class="kn">from</span> <span class="nn">artiq.language.core</span> <span class="kn">import</span> <span class="n">now_mu</span><span class="p">,</span> <span class="n">at_mu</span>
+<span class="kn">from</span> <span class="nn">kexp.util.db.device_db</span> <span class="kn">import</span> <span class="n">device_db</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">artiq.coredevice</span> <span class="kn">import</span> <span class="n">ad9910</span><span class="p">,</span> <span class="n">ad53xx</span>
+<span class="kn">from</span> <span class="nn">artiq.coredevice.urukul</span> <span class="kn">import</span> <span class="n">CPLD</span>
+
+<span class="kn">from</span> <span class="nn">kexp.util.artiq.async_print</span> <span class="kn">import</span> <span class="n">aprint</span>
+<span class="kn">from</span> <span class="nn">kexp.config.dds_calibration</span> <span class="kn">import</span> <span class="n">DDS_Amplitude_Calibration</span> <span class="k">as</span> <span class="n">dds_amp_cal</span>
+<span class="kn">from</span> <span class="nn">kexp.config.dds_calibration</span> <span class="kn">import</span> <span class="n">DDS_VVA_Calibration</span> <span class="k">as</span> <span class="n">dds_vva_cal</span>
+
+<span class="n">DAC_CH_DEFAULT</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+<div class="viewcode-block" id="DDS">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS">[docs]</a>
+<span class="k">class</span> <span class="nc">DDS</span><span class="p">():</span>
+
+   <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">urukul_idx</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">v_pd</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">dac_device</span><span class="o">=</span><span class="p">[]):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">urukul_idx</span> <span class="o">=</span> <span class="n">urukul_idx</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">ch</span> <span class="o">=</span> <span class="n">ch</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="n">frequency</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">=</span> <span class="n">amplitude</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">aom_order</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">double_pass</span> <span class="o">=</span> <span class="kc">True</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">v_pd</span> <span class="o">=</span> <span class="n">v_pd</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">dac_ch</span> <span class="o">=</span> <span class="n">DAC_CH_DEFAULT</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">dds_device</span> <span class="o">=</span> <span class="n">ad9910</span><span class="o">.</span><span class="n">AD9910</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;urukul</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">urukul_idx</span><span class="si">}</span><span class="s1">_ch</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ch</span><span class="si">}</span><span class="s1">&#39;</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">cpld_name</span> <span class="o">=</span> <span class="p">[]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">cpld_device</span> <span class="o">=</span> <span class="n">CPLD</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">bus_channel</span> <span class="o">=</span> <span class="p">[]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">ftw_per_hz</span> <span class="o">=</span> <span class="mi">0</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">read_db</span><span class="p">(</span><span class="n">device_db</span><span class="p">)</span>
+      
+      <span class="k">if</span> <span class="n">dac_device</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span> <span class="o">=</span> <span class="n">dac_device</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span> <span class="o">=</span> <span class="n">ad53xx</span><span class="o">.</span><span class="n">AD53xx</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">dac_control_bool</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac_ch</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">dds_amp_calibration</span> <span class="o">=</span> <span class="n">dds_amp_cal</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">dds_vva_calibration</span> <span class="o">=</span> <span class="n">dds_vva_cal</span><span class="p">()</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">_t_att_xfer_mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="mi">1592</span><span class="p">)</span> <span class="c1"># see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.10qxjvv6p35q</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_t_set_xfer_mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="mi">1248</span><span class="p">)</span> <span class="c1"># see https://docs.google.com/document/d/1V6nzPmvfU4wNXW1t9-mRdsaplHDKBebknPJM_UCvvwk/edit#heading=h.e1ucbs8kjf4z</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_t_ref_period_mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span> <span class="c1"># one clock cycle, 125 MHz --&gt; T = 8 ns (mu)</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">_t_set_delay_mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_set_xfer_mu</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_ref_period_mu</span> <span class="o">+</span> <span class="mi">1</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">_t_att_delay_mu</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_att_xfer_mu</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_ref_period_mu</span> <span class="o">+</span> <span class="mi">1</span>
+
+<div class="viewcode-block" id="DDS.update_dac_bool">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.update_dac_bool">[docs]</a>
+   <span class="nd">@portable</span>
+   <span class="k">def</span> <span class="nf">update_dac_bool</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">dac_control_bool</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dac_ch</span> <span class="o">!=</span> <span class="n">DAC_CH_DEFAULT</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DDS.detuning_to_frequency">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.detuning_to_frequency">[docs]</a>
+   <span class="nd">@portable</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fast-math&quot;</span><span class="p">})</span>
+   <span class="k">def</span> <span class="nf">detuning_to_frequency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">linewidths_detuned</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TFloat</span><span class="p">:</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">      Returns the DDS frequency value in MHz corresponding to detuning =</span>
+<span class="sd">      linewidths_detuned * Gamma from the resonant D1, D2 transitions. Gamma = 2</span>
+<span class="sd">      * pi * 6 MHz.</span>
+
+<span class="sd">      D1 AOMs give detuning relative to |g&gt; -&gt; |F&#39;=2&gt;.</span>
+<span class="sd">      D2 AOMs give detuning relative to |g&gt; -&gt; unresolved D2 peak.</span>
+
+<span class="sd">      Parameters</span>
+<span class="sd">      ----------</span>
+<span class="sd">      linewidths_detuned: float</span>
+<span class="sd">         Detuning in units of linewidth Gamma = 2 * pi * 6 MHz.</span>
+
+<span class="sd">      Returns</span>
+<span class="sd">      -------</span>
+<span class="sd">      float</span>
+<span class="sd">         The corresponding AOM frequency setting in Hz.</span>
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="n">linewidths_detuned</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">linewidths_detuned</span><span class="p">)</span>
+      <span class="n">f_shift_to_resonance_MHz</span> <span class="o">=</span> <span class="mf">461.7</span> <span class="o">/</span> <span class="mi">2</span> <span class="c1"># half the crossover detuning. Value from T.G. Tiecke.</span>
+      <span class="n">linewidth_MHz</span> <span class="o">=</span> <span class="mi">6</span>
+      <span class="n">detuning_MHz</span> <span class="o">=</span> <span class="n">linewidths_detuned</span> <span class="o">*</span> <span class="n">linewidth_MHz</span>
+      <span class="n">freq</span> <span class="o">=</span> <span class="p">(</span> <span class="n">f_shift_to_resonance_MHz</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">aom_order</span> <span class="o">*</span> <span class="n">detuning_MHz</span> <span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">double_pass</span><span class="p">:</span>
+         <span class="n">freq</span> <span class="o">=</span> <span class="n">freq</span> <span class="o">*</span> <span class="mi">2</span>
+      <span class="k">return</span> <span class="n">freq</span> <span class="o">*</span> <span class="mf">1.e6</span></div>
+
+   
+<div class="viewcode-block" id="DDS.frequency_to_detuning">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.frequency_to_detuning">[docs]</a>
+   <span class="nd">@portable</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fast-math&quot;</span><span class="p">})</span>
+   <span class="k">def</span> <span class="nf">frequency_to_detuning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">frequency</span><span class="p">,</span><span class="n">single_pass</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TFloat</span><span class="p">:</span>
+      <span class="n">frequency</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">frequency</span><span class="p">)</span> <span class="o">/</span> <span class="mf">1e6</span>
+      <span class="n">f_shift_to_resonance</span> <span class="o">=</span> <span class="mf">461.7</span> <span class="o">/</span> <span class="mi">2</span>
+      <span class="n">linewidth_MHz</span> <span class="o">=</span> <span class="mi">6</span>
+      <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">double_pass</span><span class="p">:</span>
+         <span class="n">double_pass_multiplier</span> <span class="o">=</span> <span class="mi">1</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">double_pass_multiplier</span> <span class="o">=</span> <span class="mi">2</span>
+      <span class="n">detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">aom_order</span> <span class="o">*</span> <span class="p">(</span><span class="n">double_pass_multiplier</span> <span class="o">*</span> <span class="n">frequency</span> <span class="o">-</span> <span class="n">f_shift_to_resonance</span><span class="p">)</span> <span class="o">/</span> <span class="n">linewidth_MHz</span>
+      <span class="k">return</span> <span class="n">detuning</span></div>
+
+   
+<div class="viewcode-block" id="DDS.set_dds_gamma">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.set_dds_gamma">[docs]</a>
+   <span class="nd">@kernel</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fast-math&quot;</span><span class="p">})</span>
+   <span class="k">def</span> <span class="nf">set_dds_gamma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delta</span><span class="o">=-</span><span class="mf">1000.</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">v_pd</span><span class="o">=-</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">      Sets the DDS frequency and attenuation. Uses delta (detuning) in units of</span>
+<span class="sd">      gamma, the linewidth of the D1 and D2 transition (Gamma = 2 * pi * 6 MHz).</span>
+
+<span class="sd">      Parameters:</span>
+<span class="sd">      -----------</span>
+<span class="sd">      delta: float</span>
+<span class="sd">         Detuning in units of linewidth Gamma = 2 * pi * 6 MHz. (default: use</span>
+<span class="sd">         stored self.frequency)</span>
+
+<span class="sd">      amplitude: float</span>
+<span class="sd">         </span>
+<span class="sd">      &#39;&#39;&#39;</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">update_dac_bool</span><span class="p">()</span>
+      <span class="n">delta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">delta</span> <span class="o">==</span> <span class="o">-</span><span class="mf">1000.</span><span class="p">:</span>
+         <span class="n">frequency</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="n">frequency</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">detuning_to_frequency</span><span class="p">(</span><span class="n">linewidths_detuned</span><span class="o">=</span><span class="n">delta</span><span class="p">)</span>
+
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac_control_bool</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="n">amplitude</span><span class="p">,</span> <span class="n">v_pd</span><span class="o">=</span><span class="n">v_pd</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="n">frequency</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="n">amplitude</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DDS.set_dds">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.set_dds">[docs]</a>
+   <span class="nd">@kernel</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fast-math&quot;</span><span class="p">})</span>
+   <span class="k">def</span> <span class="nf">set_dds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">frequency</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">amplitude</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">v_pd</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">set_stored</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39;Set the dds device. If frequency = 0, turn it off&#39;&#39;&#39;</span>
+
+      <span class="c1"># update dac_control_bool if not already updated</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">update_dac_bool</span><span class="p">()</span>
+
+      <span class="c1"># set unspecified parameters to default values if set_stored</span>
+      <span class="c1"># otherwise, set_dds will not set unspecified values to save time</span>
+      <span class="k">if</span> <span class="n">set_stored</span><span class="p">:</span>
+         <span class="k">if</span> <span class="n">frequency</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">frequency</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span>
+         <span class="k">if</span> <span class="n">amplitude</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">amplitude</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span>
+         <span class="k">if</span> <span class="n">v_pd</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="n">v_pd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_pd</span>
+
+         <span class="bp">self</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency</span><span class="p">,</span> <span class="n">amplitude</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span><span class="p">)</span>
+         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac_control_bool</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_dac_setpoint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">v_pd</span><span class="p">)</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="c1"># determine which values need to be set</span>
+         <span class="n">_set_freq</span> <span class="o">=</span> <span class="n">frequency</span> <span class="o">&gt;=</span> <span class="mf">0.</span>
+         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac_control_bool</span><span class="p">:</span>
+            <span class="n">_set_vpd</span> <span class="o">=</span> <span class="n">v_pd</span> <span class="o">&gt;</span> <span class="mf">0.</span>
+            <span class="n">_set_amp</span> <span class="o">=</span> <span class="p">(</span><span class="n">amplitude</span> <span class="o">&gt;=</span> <span class="mf">0.</span><span class="p">)</span>
+         <span class="k">else</span><span class="p">:</span>
+            <span class="n">_set_amp</span> <span class="o">=</span> <span class="p">(</span><span class="n">amplitude</span> <span class="o">&gt;=</span> <span class="mf">0.</span><span class="p">)</span>
+            <span class="n">_set_vpd</span> <span class="o">=</span> <span class="kc">False</span>
+         <span class="n">_set_freq_and_power</span> <span class="o">=</span> <span class="n">_set_freq</span> <span class="ow">and</span> <span class="p">(</span><span class="n">_set_amp</span> <span class="ow">or</span> <span class="n">_set_vpd</span><span class="p">)</span>
+
+         <span class="k">if</span> <span class="ow">not</span> <span class="n">frequency</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="n">frequency</span>
+         <span class="k">if</span> <span class="ow">not</span> <span class="n">amplitude</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span> <span class="o">=</span> <span class="n">amplitude</span>
+         <span class="k">if</span> <span class="ow">not</span> <span class="n">v_pd</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">v_pd</span> <span class="o">=</span> <span class="n">v_pd</span>
+
+         <span class="c1"># set the things which need to be set</span>
+         <span class="k">if</span> <span class="n">_set_freq_and_power</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac_control_bool</span><span class="p">:</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">update_dac_setpoint</span><span class="p">(</span><span class="n">v_pd</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency</span><span class="p">,</span><span class="n">amplitude</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span><span class="p">)</span>
+         <span class="k">elif</span> <span class="n">_set_freq</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency</span><span class="p">,</span><span class="n">amplitude</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span><span class="p">)</span>
+         <span class="k">if</span> <span class="ow">not</span> <span class="n">_set_freq_and_power</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_set_amp</span><span class="p">:</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">frequency</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">frequency</span><span class="p">,</span><span class="n">amplitude</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">amplitude</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">_set_vpd</span><span class="p">:</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">update_dac_setpoint</span><span class="p">(</span><span class="n">v_pd</span><span class="p">)</span></div>
+
+   
+<div class="viewcode-block" id="DDS.update_dac_setpoint">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.update_dac_setpoint">[docs]</a>
+   <span class="nd">@kernel</span>
+   <span class="k">def</span> <span class="nf">update_dac_setpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v_pd</span><span class="o">=-</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">dac_load</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+      <span class="k">if</span> <span class="n">v_pd</span> <span class="o">&lt;</span> <span class="mf">0.</span><span class="p">:</span>
+         <span class="n">v_pd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">v_pd</span>
+      <span class="k">else</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">v_pd</span> <span class="o">=</span> <span class="n">v_pd</span> <span class="c1"># code breaks without that line</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">write_dac</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac_ch</span><span class="p">,</span> <span class="n">voltage</span><span class="o">=</span><span class="n">v_pd</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">dac_load</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">load</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DDS.get_devices">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.get_devices">[docs]</a>
+   <span class="k">def</span> <span class="nf">get_devices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">expt</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">dds_device</span> <span class="o">=</span> <span class="n">expt</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">cpld_device</span> <span class="o">=</span> <span class="n">expt</span><span class="o">.</span><span class="n">get_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cpld_name</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DDS.off">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.off">[docs]</a>
+   <span class="nd">@kernel</span>
+   <span class="k">def</span> <span class="nf">off</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dac_update</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">dac_load</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">update_dac_bool</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">sw</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+      <span class="n">delay</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">us</span><span class="p">)</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac_control_bool</span> <span class="ow">and</span> <span class="n">dac_update</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">write_dac</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dac_ch</span><span class="p">,</span><span class="n">voltage</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+         <span class="k">if</span> <span class="n">dac_load</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">load</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DDS.on">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.on">[docs]</a>
+   <span class="nd">@kernel</span>
+   <span class="k">def</span> <span class="nf">on</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dac_update</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">dac_load</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">update_dac_bool</span><span class="p">()</span>
+      <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac_control_bool</span> <span class="ow">and</span> <span class="n">dac_update</span><span class="p">:</span>
+         <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">write_dac</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dac_ch</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">v_pd</span><span class="p">)</span>
+         <span class="k">if</span> <span class="n">dac_load</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">sw</span><span class="o">.</span><span class="n">on</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="DDS.init">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.init">[docs]</a>
+   <span class="nd">@kernel</span>
+   <span class="k">def</span> <span class="nf">init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">cpld_device</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+      <span class="n">delay</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">ms</span><span class="p">)</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+      <span class="n">delay</span><span class="p">(</span><span class="mi">1</span><span class="o">*</span><span class="n">ms</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="DDS.read_db">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.read_db">[docs]</a>
+   <span class="k">def</span> <span class="nf">read_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ddb</span><span class="p">):</span>
+<span class="w">      </span><span class="sd">&#39;&#39;&#39;read out info from ddb. ftw_per_hz comes from artiq.frontend.moninj, line 206-207&#39;&#39;&#39;</span>
+      <span class="n">v</span> <span class="o">=</span> <span class="n">device_db</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">cpld_name</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;arguments&quot;</span><span class="p">][</span><span class="s2">&quot;cpld_device&quot;</span><span class="p">]</span>
+      <span class="n">spi_dev</span> <span class="o">=</span> <span class="n">ddb</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cpld_name</span><span class="p">][</span><span class="s2">&quot;arguments&quot;</span><span class="p">][</span><span class="s2">&quot;spi_device&quot;</span><span class="p">]</span>
+      <span class="bp">self</span><span class="o">.</span><span class="n">bus_channel</span> <span class="o">=</span> <span class="n">ddb</span><span class="p">[</span><span class="n">spi_dev</span><span class="p">][</span><span class="s2">&quot;arguments&quot;</span><span class="p">][</span><span class="s2">&quot;channel&quot;</span><span class="p">]</span>
+      <span class="n">pll</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="s2">&quot;arguments&quot;</span><span class="p">][</span><span class="s2">&quot;pll_n&quot;</span><span class="p">]</span>
+      <span class="n">refclk</span> <span class="o">=</span> <span class="n">ddb</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">cpld_name</span><span class="p">][</span><span class="s2">&quot;arguments&quot;</span><span class="p">][</span><span class="s2">&quot;refclk&quot;</span><span class="p">]</span>
+
+      <span class="n">sysclk</span> <span class="o">=</span> <span class="n">refclk</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">pll</span>
+      <span class="n">max_freq</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">32</span>
+
+      <span class="bp">self</span><span class="o">.</span><span class="n">ftw_per_hz</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">sysclk</span> <span class="o">*</span> <span class="n">max_freq</span></div>
+
+
+<div class="viewcode-block" id="DDS.ftw_to_freq">
+<a class="viewcode-back" href="../../../../kexp.control.artiq.html#kexp.control.artiq.DDS.DDS.ftw_to_freq">[docs]</a>
+   <span class="k">def</span> <span class="nf">ftw_to_freq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ftw</span><span class="p">):</span>
+      <span class="k">return</span> <span class="n">ftw</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">ftw_per_hz</span></div>
+</div>
+
+   
+   
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

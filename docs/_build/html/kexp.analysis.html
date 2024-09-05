@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.analysis package &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="kexp.analysis.fitting package" href="kexp.analysis.fitting.html" />
+    <link rel="prev" title="kexp package" href="kexp.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">kexp</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="kexp.html">kexp package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="kexp.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">kexp.analysis package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.base.html">kexp.base package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.calibrations.html">kexp.calibrations package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.config.html">kexp.config package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.control.html">kexp.control package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.experiments.html">kexp.experiments package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.util.html">kexp.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="kexp.html#module-kexp">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">kexp</a></li>
+          <li class="breadcrumb-item"><a href="kexp.html">kexp package</a></li>
+      <li class="breadcrumb-item active">kexp.analysis package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/kexp.analysis.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="kexp-analysis-package">
+<h1>kexp.analysis package<a class="headerlink" href="#kexp-analysis-package" title="Link to this heading"></a></h1>
+<section id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="kexp.analysis.fitting.html">kexp.analysis.fitting package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.fitting.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.fitting.html#module-kexp.analysis.fitting.exponentials">kexp.analysis.fitting.exponentials module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.fitting.html#kexp.analysis.fitting.exponentials.ExponentialDecayFit"><code class="docutils literal notranslate"><span class="pre">ExponentialDecayFit</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.fitting.html#module-kexp.analysis.fitting.fit">kexp.analysis.fitting.fit module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.fitting.html#kexp.analysis.fitting.fit.Fit"><code class="docutils literal notranslate"><span class="pre">Fit</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="kexp.analysis.fitting.html#kexp.analysis.fitting.fit.Fit.plot_fit"><code class="docutils literal notranslate"><span class="pre">Fit.plot_fit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.analysis.fitting.html#kexp.analysis.fitting.fit.Fit.remove_infnan"><code class="docutils literal notranslate"><span class="pre">Fit.remove_infnan()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.fitting.html#module-kexp.analysis.fitting.gaussian">kexp.analysis.fitting.gaussian module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.fitting.html#kexp.analysis.fitting.gaussian.BECFit"><code class="docutils literal notranslate"><span class="pre">BECFit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.fitting.html#kexp.analysis.fitting.gaussian.GaussianFit"><code class="docutils literal notranslate"><span class="pre">GaussianFit</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.fitting.html#kexp.analysis.fitting.gaussian.GaussianTemperatureFit"><code class="docutils literal notranslate"><span class="pre">GaussianTemperatureFit</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.fitting.html#module-kexp.analysis.fitting.lorentzian">kexp.analysis.fitting.lorentzian module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.fitting.html#kexp.analysis.fitting.lorentzian.LorentzianFit"><code class="docutils literal notranslate"><span class="pre">LorentzianFit</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.fitting.html#module-kexp.analysis.fitting.parabolic">kexp.analysis.fitting.parabolic module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.fitting.html#kexp.analysis.fitting.parabolic.KinematicFit"><code class="docutils literal notranslate"><span class="pre">KinematicFit</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.fitting.html#module-kexp.analysis.fitting">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kexp.analysis.helper.html">kexp.analysis.helper package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.helper.html#module-kexp.analysis.helper">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="kexp.analysis.image_processing.html">kexp.analysis.image_processing package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.image_processing.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.image_processing.html#module-kexp.analysis.image_processing.compute_ODs">kexp.analysis.image_processing.compute_ODs module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.image_processing.html#kexp.analysis.image_processing.compute_ODs.compute_OD"><code class="docutils literal notranslate"><span class="pre">compute_OD()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.image_processing.html#kexp.analysis.image_processing.compute_ODs.process_ODs"><code class="docutils literal notranslate"><span class="pre">process_ODs()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.image_processing.html#module-kexp.analysis.image_processing.compute_gaussian_cloud_params">kexp.analysis.image_processing.compute_gaussian_cloud_params module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.image_processing.html#kexp.analysis.image_processing.compute_gaussian_cloud_params.fit_gaussian_sum_dist"><code class="docutils literal notranslate"><span class="pre">fit_gaussian_sum_dist()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.image_processing.html#module-kexp.analysis.image_processing.roi_select">kexp.analysis.image_processing.roi_select module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="kexp.analysis.image_processing.html#kexp.analysis.image_processing.roi_select.crop_OD"><code class="docutils literal notranslate"><span class="pre">crop_OD()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="kexp.analysis.image_processing.html#module-kexp.analysis.image_processing">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-kexp.analysis.atomdata">
+<span id="kexp-analysis-atomdata-module"></span><h2>kexp.analysis.atomdata module<a class="headerlink" href="#module-kexp.analysis.atomdata" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.analysis_tags">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.analysis.atomdata.</span></span><span class="sig-name descname"><span class="pre">analysis_tags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crop_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absorption_analysis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unshuffle_xvars</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#analysis_tags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.analysis_tags" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.analysis.atomdata.</span></span><span class="sig-name descname"><span class="pre">atomdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xvarnames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_timestamps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.config.html#kexp.config.expt_params.ExptParams" title="kexp.config.expt_params.ExptParams"><span class="pre">ExptParams</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.config.html#kexp.config.camera_params.CameraParams" title="kexp.config.camera_params.CameraParams"><span class="pre">CameraParams</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.util.data.html#kexp.util.data.run_info.RunInfo" title="kexp.util.data.run_info.RunInfo"><span class="pre">RunInfo</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expt_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cooling_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imaging_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unshuffle_xvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crop_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transpose_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_repeats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Use to store and do basic analysis on data for every experiment.</p>
+<p>xvarnames should be provided as a string indicating the params attribute
+corresponding to the the independent variable(s). They should be provided in
+the order over which they were looped, with the outermost loop first.</p>
+<p>Any attribute which does not start with ‘_’ will be saved to the dataset in
+_save_data().</p>
+<p>This class also handles saving parameters from expt.params to the dataset.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.analyze">
+<span class="sig-name descname"><span class="pre">analyze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crop_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unshuffle_xvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absorption_analysis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.analyze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.analyze" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.analyze_ods">
+<span class="sig-name descname"><span class="pre">analyze_ods</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crop_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unshuffle_xvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absorption_analysis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.analyze_ods"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.analyze_ods" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.avg_repeats">
+<span class="sig-name descname"><span class="pre">avg_repeats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xvars_to_avg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reanalyze</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.avg_repeats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.avg_repeats" title="Link to this definition"></a></dt>
+<dd><p>Averages the images along the axes specified in xvars_to_avg. Uses
+absorption imaging analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xvars_to_avg</strong> (<em>list</em><em>, </em><em>optional</em>) – A list of xvar indices to average.</p></li>
+<li><p><strong>reanalyze</strong> (<em>bool</em><em>, </em><em>optional</em>) – _description_. Defaults to True.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.compute_atom_number">
+<span class="sig-name descname"><span class="pre">compute_atom_number</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.compute_atom_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.compute_atom_number" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.compute_raw_ods">
+<span class="sig-name descname"><span class="pre">compute_raw_ods</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.compute_raw_ods"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.compute_raw_ods" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.recrop">
+<span class="sig-name descname"><span class="pre">recrop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crop_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.recrop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.recrop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.revert_repeats">
+<span class="sig-name descname"><span class="pre">revert_repeats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.revert_repeats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.revert_repeats" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.save_data">
+<span class="sig-name descname"><span class="pre">save_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.save_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.save_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.transpose_data">
+<span class="sig-name descname"><span class="pre">transpose_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_xvar_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reanalyze</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.transpose_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.transpose_data" title="Link to this definition"></a></dt>
+<dd><p>Swaps xvar order, then reruns the analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>new_xvar_idx</strong> (<em>list</em>) – The list of indices specifying the new order of</p></li>
+<li><p><strong>xvars.</strong> (<em>the original</em>)</p></li>
+<li><p><strong>example</strong> (<em>For</em>)</p></li>
+<li><p><strong>xvars</strong> (<em>new_var_idx can also be set to True in the case</em><em> of </em><em>one</em><em> or </em><em>two</em>)</p></li>
+<li><p><strong>[</strong><strong>0</strong> (<em>specifying</em>)</p></li>
+<li><p><strong>2</strong></p></li>
+<li><p><strong>1</strong></p></li>
+<li><p><strong>means</strong> (<em>3</em><em>]</em>)</p></li>
+<li><p><strong>swapped</strong> (<em>that the second and third xvar will be</em>)</p></li>
+<li><p><strong>and</strong> (<em>while the first</em>)</p></li>
+<li><p><strong>unchanged.</strong> (<em>fourth remain</em>)</p></li>
+<li><p><strong>In</strong> (<em>No list needs to be provided for the case</em><em> of </em><em>one</em><em> or </em><em>two xvars.</em>)</p></li>
+<li><p><strong>xvar</strong> (<em>the case</em><em> of </em><em>one</em>)</p></li>
+<li><p><strong>nothing.</strong> (<em>does</em>)</p></li>
+<li><p><strong>xvars</strong></p></li>
+</ul>
+</dd>
+</dl>
+<p>:param :
+:param for convenience.:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.atomdata.unshuffle_ad">
+<span class="sig-name descname"><span class="pre">unshuffle_ad</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.unshuffle_ad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.atomdata.unshuffle_ad" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.analysis.plotting_1d">
+<span id="kexp-analysis-plotting-1d-module"></span><h2>kexp.analysis.plotting_1d module<a class="headerlink" href="#module-kexp.analysis.plotting_1d" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.plotting_1d.plot_fit_residuals">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.plotting_1d.</span></span><span class="sig-name descname"><span class="pre">plot_fit_residuals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#kexp.analysis.atomdata.atomdata" title="kexp.analysis.atomdata.atomdata"><span class="pre">atomdata</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvarformat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1.3g'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvarmult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/plotting_1d.html#plot_fit_residuals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.plotting_1d.plot_fit_residuals" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.plotting_1d.plot_mixOD">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.plotting_1d.</span></span><span class="sig-name descname"><span class="pre">plot_mixOD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#kexp.analysis.atomdata.atomdata" title="kexp.analysis.atomdata.atomdata"><span class="pre">atomdata</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvarformat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1.2f'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvarmult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_od</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/plotting_1d.html#plot_mixOD"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.plotting_1d.plot_mixOD" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.plotting_1d.plot_sum_od_fits">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.plotting_1d.</span></span><span class="sig-name descname"><span class="pre">plot_sum_od_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#kexp.analysis.atomdata.atomdata" title="kexp.analysis.atomdata.atomdata"><span class="pre">atomdata</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvarformat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'3.3g'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvarmult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/plotting_1d.html#plot_sum_od_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.plotting_1d.plot_sum_od_fits" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-kexp.analysis.plotting_2d">
+<span id="kexp-analysis-plotting-2d-module"></span><h2>kexp.analysis.plotting_2d module<a class="headerlink" href="#module-kexp.analysis.plotting_2d" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.plotting_2d.mixOD_grid">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.plotting_2d.</span></span><span class="sig-name descname"><span class="pre">mixOD_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvarformat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1.2g'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar0format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar1format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar0mult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar1mult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_od</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/plotting_2d.html#mixOD_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.plotting_2d.mixOD_grid" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.plotting_2d.plot_image_grid">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.plotting_2d.</span></span><span class="sig-name descname"><span class="pre">plot_image_grid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#kexp.analysis.atomdata.atomdata" title="kexp.analysis.atomdata.atomdata"><span class="pre">atomdata</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvarformat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1.2f'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar0format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar1format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar0mult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar1mult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_od</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/plotting_2d.html#plot_image_grid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.plotting_2d.plot_image_grid" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.plotting_2d.plot_sum_od_fits">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.plotting_2d.</span></span><span class="sig-name descname"><span class="pre">plot_sum_od_fits</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#kexp.analysis.atomdata.atomdata" title="kexp.analysis.atomdata.atomdata"><span class="pre">atomdata</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvarformat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1.3f'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar0format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar1format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar0mult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar1mult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_od</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/plotting_2d.html#plot_sum_od_fits"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.plotting_2d.plot_sum_od_fits" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-kexp.analysis.standard_experiments">
+<span id="kexp-analysis-standard-experiments-module"></span><h2>kexp.analysis.standard_experiments module<a class="headerlink" href="#module-kexp.analysis.standard_experiments" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.analysis.standard_experiments.TOF">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.analysis.standard_experiments.</span></span><span class="sig-name descname"><span class="pre">TOF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atomdata</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma_fit_axis</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shot_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/standard_experiments.html#TOF"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.standard_experiments.TOF" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.standard_experiments.TOF.compute_phase_space_density">
+<span class="sig-name descname"><span class="pre">compute_phase_space_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_tweezers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tweezer_waist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.6e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trap_wavelength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.064e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tweezer_final_frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">455.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/standard_experiments.html#TOF.compute_phase_space_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.standard_experiments.TOF.compute_phase_space_density" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.standard_experiments.get_B">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.standard_experiments.</span></span><span class="sig-name descname"><span class="pre">get_B</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">f_mf0_mf1_transition</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mF0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mF1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/standard_experiments.html#get_B"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.standard_experiments.get_B" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.standard_experiments.magnetometry_1d">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.standard_experiments.</span></span><span class="sig-name descname"><span class="pre">magnetometry_1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mF0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mF1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_bool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">find_field</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_dips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average_multiple_peaks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">param_of_interest</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transition_peak_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_prominence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/standard_experiments.html#magnetometry_1d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.standard_experiments.magnetometry_1d" title="Link to this definition"></a></dt>
+<dd><p>Analyzes the sum_od_x for each shot and produces an array of the max-min
+OD (“signal”) vs. the RF center frequency. Extracts the peak signal from each
+of these arrays, and finds the frequency where it occurs. Based on expected
+microwave frequency for the known transition (specified by user), looks up
+the magnitude of magnetic field.</p>
+<p>Produces a plot of the magnetic field vs. the scanned variable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ad</strong> (<a class="reference internal" href="#kexp.analysis.atomdata" title="kexp.analysis.atomdata"><em>atomdata</em></a>) – _description_</p></li>
+<li><p><strong>F0</strong> (<em>int</em><em>, </em><em>optional</em>) – The F quantum number of the initial state. Defaults to 2.</p></li>
+<li><p><strong>mF0</strong> (<em>int</em><em>, </em><em>optional</em>) – The mF quantum number of the inital state. Defaults to 0.</p></li>
+<li><p><strong>F1</strong> (<em>int</em><em>, </em><em>optional</em>) – The F quantum number of the final state. Defaults to 2.</p></li>
+<li><p><strong>mF1</strong> (<em>int</em><em>, </em><em>optional</em>) – The mF quantum number of the inital state. Defaults to 1.</p></li>
+<li><p><strong>axis</strong> (<em>int</em><em>, </em><em>optional</em>) – The axis of the sumod to use for the peak finding.</p></li>
+<li><p><strong>0</strong> (<em>Defaults to</em>)</p></li>
+<li><p><strong>plot_bool</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, plots the signal vs. frequency</p></li>
+<li><p><strong>True.</strong> (<em>for each value</em><em> of </em><em>the scanned xvar. Defaults to</em>)</p></li>
+<li><p><strong>detect_dips</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, inverts the signal to identify a</p></li>
+<li><p><strong>False.</strong> (<em>loss signal. Defaults to</em>)</p></li>
+<li><p><strong>param_of_interest</strong> (<em>str</em><em>, </em><em>optional</em>) – If specified, adds the key and value</p></li>
+<li><p><strong>title.</strong> (<em>of the param with that key to the</em>)</p></li>
+<li><p><strong>transition_peak_idx</strong> (<em>int</em><em>, </em><em>optional</em>) – state specified by the quantum numbers F0,</p></li>
+<li><p><strong>mF0</strong></p></li>
+<li><p><strong>F1</strong></p></li>
+<li><p><strong>list</strong> (<em>mF1. Indexes as a</em>)</p></li>
+<li><p><strong>highest</strong> (<em>with the peaks from lowest to</em>)</p></li>
+<li><p><strong>peak</strong> (<em>frequency. Default is the last</em>)</p></li>
+<li><p><strong>min_B</strong> (<em>float</em><em>, </em><em>optional</em>) – the minimum B value in Gauss to use for the</p></li>
+<li><p><strong>calculation</strong></p></li>
+<li><p><strong>with</strong> (<em>useful if the transition frequency is non-monatonic</em>)</p></li>
+<li><p><strong>0.</strong> (<em>magnetic field. Defaults to</em>)</p></li>
+<li><p><strong>max_B</strong> (<em>float</em><em>, </em><em>optional</em>) – the maximum B value in Gauss to use for the</p></li>
+<li><p><strong>calculation</strong></p></li>
+<li><p><strong>with</strong></p></li>
+<li><p><strong>600.</strong> (<em>magnetic field. Defaults to</em>)</p></li>
+<li><p><strong>peak_prominence</strong> (<em>float</em><em>, </em><em>optional</em>) – Specifies how prominent a peak has to</p></li>
+<li><p><strong>counted.</strong> (<em>be in order to be</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.standard_experiments.magnetometry_2d">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.standard_experiments.</span></span><span class="sig-name descname"><span class="pre">magnetometry_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mF0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">F1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mF1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subplots_bool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_dips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">average_multiple_peaks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transition_peak_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_prominence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_B</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subplots_figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/standard_experiments.html#magnetometry_2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.standard_experiments.magnetometry_2d" title="Link to this definition"></a></dt>
+<dd><p>Analyzes the sum_od_x for each shot and produces an array of the max-min
+OD (“signal”) for each value of the scanned variable vs. the RF center
+frequency. Extracts the peak signal from each of these arrays, and finds the
+frequency where it occurs. Based on expected microwave frequency for the
+known transition (specified by user), looks up the magnitude of magnetic
+field. Produces a plot of the magnetic field vs. the scanned variable (the
+first xvar).</p>
+<p>xvar0: scanned variable
+xvar1: rf frequency</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ad</strong> (<a class="reference internal" href="#kexp.analysis.atomdata" title="kexp.analysis.atomdata"><em>atomdata</em></a>) – _description_</p></li>
+<li><p><strong>F0</strong> (<em>int</em><em>, </em><em>optional</em>) – The F quantum number of the initial state. Defaults to 2.</p></li>
+<li><p><strong>mF0</strong> (<em>int</em><em>, </em><em>optional</em>) – The mF quantum number of the inital state. Defaults to 0.</p></li>
+<li><p><strong>F1</strong> (<em>int</em><em>, </em><em>optional</em>) – The F quantum number of the final state. Defaults to 2.</p></li>
+<li><p><strong>mF1</strong> (<em>int</em><em>, </em><em>optional</em>) – The mF quantum number of the inital state. Defaults to 1.</p></li>
+<li><p><strong>axis</strong> (<em>int</em><em>, </em><em>optional</em>) – The axis of the sumod to use for the peak finding.</p></li>
+<li><p><strong>0</strong> (<em>Defaults to</em>)</p></li>
+<li><p><strong>subplots_bool</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, plots the signal vs. frequency</p></li>
+<li><p><strong>True.</strong> (<em>for each value</em><em> of </em><em>the scanned xvar. Defaults to</em>)</p></li>
+<li><p><strong>detect_dips</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, inverts the signal to identify a</p></li>
+<li><p><strong>False.</strong> (<em>be sure that only one feature is visible. Defaults to</em>)</p></li>
+<li><p><strong>average_multiple_peaks</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, averages multiple</p></li>
+<li><p><strong>--</strong> (<em>peaks detected to obtain the center frequency. Use at your own risk</em>)</p></li>
+<li><p><strong>False.</strong></p></li>
+<li><p><strong>transition_peak_idx</strong> (<em>int</em><em>, </em><em>optional</em>) – state specified by the quantum numbers F0,</p></li>
+<li><p><strong>mF0</strong></p></li>
+<li><p><strong>F1</strong></p></li>
+<li><p><strong>list</strong> (<em>mF1. Indexes as a</em>)</p></li>
+<li><p><strong>highest</strong> (<em>with the peaks from lowest to</em>)</p></li>
+<li><p><strong>peak</strong> (<em>frequency. Default is the last</em>)</p></li>
+<li><p><strong>min_B</strong> (<em>float</em><em>, </em><em>optional</em>) – the minimum B value in Gauss to use for the</p></li>
+<li><p><strong>calculation</strong></p></li>
+<li><p><strong>with</strong> (<em>useful if the transition frequency is non-monatonic</em>)</p></li>
+<li><p><strong>0.</strong> (<em>magnetic field. Defaults to</em>)</p></li>
+<li><p><strong>max_B</strong> (<em>float</em><em>, </em><em>optional</em>) – the maximum B value in Gauss to use for the</p></li>
+<li><p><strong>calculation</strong></p></li>
+<li><p><strong>with</strong></p></li>
+<li><p><strong>600.</strong> (<em>magnetic field. Defaults to</em>)</p></li>
+<li><p><strong>peak_prominence</strong> (<em>float</em><em>, </em><em>optional</em>) – Specifies how prominent a peak has to</p></li>
+<li><p><strong>counted.</strong> (<em>be in order to be</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.standard_experiments.rabi_oscillation">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.standard_experiments.</span></span><span class="sig-name descname"><span class="pre">rabi_oscillation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rf_frequency_hz</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_bool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pi_time_at_peak</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_guess_frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_guess_phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5707963267948966</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_guess_amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_guess_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/standard_experiments.html#rabi_oscillation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.standard_experiments.rabi_oscillation" title="Link to this definition"></a></dt>
+<dd><p>Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
+frequency and pi-pulse time, and produces a plot.</p>
+<p>xvar: rf pulse time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ad</strong> (<a class="reference internal" href="#kexp.analysis.atomdata" title="kexp.analysis.atomdata"><em>atomdata</em></a>)</p></li>
+<li><p><strong>rf_frequency_hz</strong> (<em>float</em>) – The RF drive frequency in Hz.</p></li>
+<li><p><strong>plot_bool</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, plots the data and fit. Defaults to True.</p></li>
+<li><p><strong>pi_time_at_peak</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, assumes the initial</p></li>
+<li><p><strong>the</strong> (<em>population is zero and extracts the pi-pulse time as the location of</em>)</p></li>
+<li><p><strong>False</strong> (<em>first peak in the fitted oscillation. If</em>)</p></li>
+<li><p><strong>minimum</strong> (<em>identifies the</em>)</p></li>
+<li><p><strong>True.</strong> (<em>as the pi-pulse time. Defaults to</em>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The pi pulse time in seconds.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>t_pi</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.analysis.standard_experiments.rabi_oscillation_2d">
+<span class="sig-prename descclassname"><span class="pre">kexp.analysis.standard_experiments.</span></span><span class="sig-name descname"><span class="pre">rabi_oscillation_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#kexp.analysis.atomdata.atomdata" title="kexp.analysis.atomdata.atomdata"><span class="pre">atomdata</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_bool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subplots_bool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pi_time_at_peak</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detect_dips</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar0format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1.5f'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar0mult</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xvar0unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'MHz'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subplots_figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_figsize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_guess_frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_guess_phase</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3.141592653589793</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_guess_amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fit_guess_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rabi_freq_threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/standard_experiments.html#rabi_oscillation_2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.standard_experiments.rabi_oscillation_2d" title="Link to this definition"></a></dt>
+<dd><p>Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
+frequency and pi-pulse time, and produces a plot.</p>
+<p>xvar0: rf frequency
+xvar1: pulse time</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ad</strong> (<a class="reference internal" href="#kexp.analysis.atomdata" title="kexp.analysis.atomdata"><em>atomdata</em></a>)</p></li>
+<li><p><strong>plot_bool</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, plots the data and fit. Defaults to True.</p></li>
+<li><p><strong>subplots_bool</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, plots subplots for each set of</p></li>
+<li><p><strong>fits.</strong> (<em>scans over pulse time at fixed RF frequency. Includes</em>)</p></li>
+<li><p><strong>pi_time_at_peak</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, assumes the initial</p></li>
+<li><p><strong>the</strong> (<em>population is zero and extracts the pi-pulse time as the location of</em>)</p></li>
+<li><p><strong>False</strong> (<em>first peak in the fitted oscillation. If</em>)</p></li>
+<li><p><strong>minimum</strong> (<em>identifies the</em>)</p></li>
+<li><p><strong>True.</strong> (<em>as the pi-pulse time. Defaults to</em>)</p></li>
+<li><p><strong>xvar0format</strong> (<em>str</em><em>, </em><em>optional</em>) – Defaults to ‘1.2f’</p></li>
+<li><p><strong>xvar0mult</strong> (<em>float</em><em>, </em><em>optional</em>) – Defaults to 1.e-6 (to convert Hz to MHz)</p></li>
+<li><p><strong>xvar0unit</strong> (<em>str</em><em>, </em><em>optional</em>) – Defaults to ‘MHz’.</p></li>
+<li><p><strong>subplots_figsize</strong> (<em>tuple</em><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>plot_figsize</strong> (<em>tuple</em><em>, </em><em>optional</em>)</p></li>
+<li><p><strong>fit_guess_frequency</strong></p></li>
+</ul>
+</dd>
+</dl>
+<p>:param :
+:param fit_guess_phase:
+:param :
+:param fit_guess_amp:
+:param :
+:param fit_guess_offset:
+:param :
+:param rabi_freq_threshold: The threshold below which a fit
+:type rabi_freq_threshold: float, optional
+:param resulting in this rabi frequency will be discarded.:</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The Rabi frequency in Hz.
+t_pi (np.array): The pi pulse times in seconds.
+rf_frequencies (np.array): The RF frequencies at which each Rabi
+frequency / pi pulse time was measured.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>rabi_frequencies_hz (np.array)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-kexp.analysis">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-kexp.analysis" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.analysis.</span></span><span class="sig-name descname"><span class="pre">atomdata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xvarnames</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">images</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">image_timestamps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.config.html#kexp.config.expt_params.ExptParams" title="kexp.config.expt_params.ExptParams"><span class="pre">ExptParams</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.config.html#kexp.config.camera_params.CameraParams" title="kexp.config.camera_params.CameraParams"><span class="pre">CameraParams</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.util.data.html#kexp.util.data.run_info.RunInfo" title="kexp.util.data.run_info.RunInfo"><span class="pre">RunInfo</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sort_N</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expt_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cooling_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imaging_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unshuffle_xvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crop_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transpose_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_repeats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Use to store and do basic analysis on data for every experiment.</p>
+<p>xvarnames should be provided as a string indicating the params attribute
+corresponding to the the independent variable(s). They should be provided in
+the order over which they were looped, with the outermost loop first.</p>
+<p>Any attribute which does not start with ‘_’ will be saved to the dataset in
+_save_data().</p>
+<p>This class also handles saving parameters from expt.params to the dataset.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.analyze">
+<span class="sig-name descname"><span class="pre">analyze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crop_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unshuffle_xvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absorption_analysis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.analyze"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.analyze" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.analyze_ods">
+<span class="sig-name descname"><span class="pre">analyze_ods</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crop_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unshuffle_xvars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absorption_analysis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.analyze_ods"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.analyze_ods" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.avg_repeats">
+<span class="sig-name descname"><span class="pre">avg_repeats</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xvars_to_avg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reanalyze</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.avg_repeats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.avg_repeats" title="Link to this definition"></a></dt>
+<dd><p>Averages the images along the axes specified in xvars_to_avg. Uses
+absorption imaging analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>xvars_to_avg</strong> (<em>list</em><em>, </em><em>optional</em>) – A list of xvar indices to average.</p></li>
+<li><p><strong>reanalyze</strong> (<em>bool</em><em>, </em><em>optional</em>) – _description_. Defaults to True.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.compute_atom_number">
+<span class="sig-name descname"><span class="pre">compute_atom_number</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.compute_atom_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.compute_atom_number" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.compute_raw_ods">
+<span class="sig-name descname"><span class="pre">compute_raw_ods</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.compute_raw_ods"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.compute_raw_ods" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.recrop">
+<span class="sig-name descname"><span class="pre">recrop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">crop_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.recrop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.recrop" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.revert_repeats">
+<span class="sig-name descname"><span class="pre">revert_repeats</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.revert_repeats"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.revert_repeats" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.save_data">
+<span class="sig-name descname"><span class="pre">save_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.save_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.save_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.transpose_data">
+<span class="sig-name descname"><span class="pre">transpose_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">new_xvar_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reanalyze</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.transpose_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.transpose_data" title="Link to this definition"></a></dt>
+<dd><p>Swaps xvar order, then reruns the analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>new_xvar_idx</strong> (<em>list</em>) – The list of indices specifying the new order of</p></li>
+<li><p><strong>xvars.</strong> (<em>the original</em>)</p></li>
+<li><p><strong>example</strong> (<em>For</em>)</p></li>
+<li><p><strong>xvars</strong> (<em>new_var_idx can also be set to True in the case</em><em> of </em><em>one</em><em> or </em><em>two</em>)</p></li>
+<li><p><strong>[</strong><strong>0</strong> (<em>specifying</em>)</p></li>
+<li><p><strong>2</strong></p></li>
+<li><p><strong>1</strong></p></li>
+<li><p><strong>means</strong> (<em>3</em><em>]</em>)</p></li>
+<li><p><strong>swapped</strong> (<em>that the second and third xvar will be</em>)</p></li>
+<li><p><strong>and</strong> (<em>while the first</em>)</p></li>
+<li><p><strong>unchanged.</strong> (<em>fourth remain</em>)</p></li>
+<li><p><strong>In</strong> (<em>No list needs to be provided for the case</em><em> of </em><em>one</em><em> or </em><em>two xvars.</em>)</p></li>
+<li><p><strong>xvar</strong> (<em>the case</em><em> of </em><em>one</em>)</p></li>
+<li><p><strong>nothing.</strong> (<em>does</em>)</p></li>
+<li><p><strong>xvars</strong></p></li>
+</ul>
+</dd>
+</dl>
+<p>:param :
+:param for convenience.:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.analysis.atomdata.unshuffle_ad">
+<span class="sig-name descname"><span class="pre">unshuffle_ad</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/analysis/atomdata.html#atomdata.unshuffle_ad"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.analysis.atomdata.unshuffle_ad" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="kexp.html" class="btn btn-neutral float-left" title="kexp package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="kexp.analysis.fitting.html" class="btn btn-neutral float-right" title="kexp.analysis.fitting package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

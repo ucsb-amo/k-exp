@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.analysis.atomdata &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.analysis.atomdata</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.analysis.atomdata</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">kexp.analysis.image_processing.compute_ODs</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">kexp.analysis.image_processing.compute_gaussian_cloud_params</span> <span class="kn">import</span> <span class="n">fit_gaussian_sum_dist</span>
+<span class="kn">from</span> <span class="nn">kexp.util.data.data_vault</span> <span class="kn">import</span> <span class="n">DataSaver</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">kamo.atom_properties.k39</span> <span class="kn">import</span> <span class="n">Potassium39</span>
+
+<span class="kn">from</span> <span class="nn">kexp.util.data.run_info</span> <span class="kn">import</span> <span class="n">RunInfo</span>
+<span class="kn">from</span> <span class="nn">kexp.config.expt_params</span> <span class="kn">import</span> <span class="n">ExptParams</span>
+<span class="kn">from</span> <span class="nn">kexp.config.camera_params</span> <span class="kn">import</span> <span class="n">CameraParams</span>
+
+<div class="viewcode-block" id="analysis_tags">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.analysis_tags">[docs]</a>
+<span class="k">class</span> <span class="nc">analysis_tags</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">crop_type</span><span class="p">,</span><span class="n">absorption_analysis</span><span class="p">,</span><span class="n">unshuffle_xvars</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">crop_type</span> <span class="o">=</span> <span class="n">crop_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">absorption_analysis</span> <span class="o">=</span> <span class="n">absorption_analysis</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unshuffle_xvars</span> <span class="o">=</span> <span class="n">unshuffle_xvars</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transposed</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">averaged</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="atomdata">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata">[docs]</a>
+<span class="k">class</span> <span class="nc">atomdata</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Use to store and do basic analysis on data for every experiment.</span>
+
+<span class="sd">    xvarnames should be provided as a string indicating the params attribute</span>
+<span class="sd">    corresponding to the the independent variable(s). They should be provided in</span>
+<span class="sd">    the order over which they were looped, with the outermost loop first.</span>
+
+<span class="sd">    Any attribute which does not start with &#39;_&#39; will be saved to the dataset in</span>
+<span class="sd">    _save_data().</span>
+
+<span class="sd">    This class also handles saving parameters from expt.params to the dataset.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xvarnames</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">image_timestamps</span><span class="p">,</span>
+                  <span class="n">params</span><span class="p">:</span> <span class="n">ExptParams</span><span class="p">,</span> <span class="n">camera_params</span><span class="p">:</span><span class="n">CameraParams</span><span class="p">,</span>
+                  <span class="n">run_info</span><span class="p">:</span> <span class="n">RunInfo</span><span class="p">,</span> <span class="n">sort_idx</span><span class="p">,</span> <span class="n">sort_N</span><span class="p">,</span> 
+                  <span class="n">expt_text</span><span class="p">,</span> <span class="n">params_text</span><span class="p">,</span> <span class="n">cooling_text</span><span class="p">,</span> <span class="n">imaging_text</span><span class="p">,</span>
+                    <span class="n">unshuffle_xvars</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">crop_type</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                    <span class="n">transpose_idx</span><span class="o">=</span><span class="p">[],</span> <span class="n">avg_repeats</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ds</span> <span class="o">=</span> <span class="n">DataSaver</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run_info</span> <span class="o">=</span> <span class="n">run_info</span>
+        <span class="n">absorption_analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">absorption_image</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span> <span class="o">=</span> <span class="n">analysis_tags</span><span class="p">(</span><span class="n">crop_type</span><span class="p">,</span>
+                                            <span class="n">absorption_analysis</span><span class="p">,</span>
+                                            <span class="n">unshuffle_xvars</span><span class="p">)</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">images</span> <span class="o">=</span> <span class="n">images</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_timestamps</span> <span class="o">=</span> <span class="n">image_timestamps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span> <span class="o">=</span> <span class="n">camera_params</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">experiment</span> <span class="o">=</span> <span class="n">expt_text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params_file</span> <span class="o">=</span> <span class="n">params_text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cooling_file</span> <span class="o">=</span> <span class="n">cooling_text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imaging_file</span> <span class="o">=</span> <span class="n">imaging_text</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span> <span class="o">=</span> <span class="n">xvarnames</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unpack_xvars</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span> <span class="o">=</span> <span class="n">sort_idx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_N</span> <span class="o">=</span> <span class="n">sort_N</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom</span> <span class="o">=</span> <span class="n">Potassium39</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sort_images</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">transpose_idx</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">transposed</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">transpose_data</span><span class="p">(</span><span class="n">transpose_idx</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">reanalyze</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_raw_ods</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">avg_repeats</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">avg_repeats</span><span class="p">(</span><span class="n">reanalyze</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyze_ods</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_sort_images</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">absorption_analysis</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sort_images_absorption</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sort_images_fluor</span><span class="p">()</span>
+
+<div class="viewcode-block" id="atomdata.compute_atom_number">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.compute_atom_number">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_atom_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_cross_section</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom</span><span class="o">.</span><span class="n">get_cross_section</span><span class="p">()</span>
+        <span class="n">dx_pixel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">pixel_size_m</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="o">.</span><span class="n">magnification</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_number_fit_area_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_area_x</span> <span class="o">*</span> <span class="n">dx_pixel</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom_cross_section</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_number_fit_area_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_area_y</span> <span class="o">*</span> <span class="n">dx_pixel</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom_cross_section</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_number_density</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">od</span> <span class="o">*</span> <span class="n">dx_pixel</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">atom_cross_section</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom_number_density</span><span class="p">,</span><span class="o">-</span><span class="mi">2</span><span class="p">),</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="atomdata.recrop">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.recrop">[docs]</a>
+    <span class="k">def</span> <span class="nf">recrop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">crop_type</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+        <span class="c1"># if crop_type != self._analysis_tags.crop_type:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyze_ods</span><span class="p">(</span><span class="n">crop_type</span><span class="o">=</span><span class="n">crop_type</span><span class="p">,</span><span class="n">unshuffle_xvars</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">crop_type</span> <span class="o">=</span> <span class="n">crop_type</span></div>
+
+        <span class="c1"># else:</span>
+        <span class="c1">#     raise ValueError(f&#39;The specified crop_type ({crop_type}) already applied ({self._analysis_tags.crop_type}).&#39;)</span>
+
+<div class="viewcode-block" id="atomdata.avg_repeats">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.avg_repeats">[docs]</a>
+    <span class="k">def</span> <span class="nf">avg_repeats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">xvars_to_avg</span><span class="o">=</span><span class="p">[],</span><span class="n">reanalyze</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Averages the images along the axes specified in xvars_to_avg. Uses</span>
+<span class="sd">        absorption imaging analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            xvars_to_avg (list, optional): A list of xvar indices to average.</span>
+<span class="sd">            reanalyze (bool, optional): _description_. Defaults to True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">unshuffle_xvars</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can only average repeats on runs loaded with unshuffle_xvars = True. Set unshuffle_xvars = True and reload data.&quot;</span><span class="p">)</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">averaged</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">xvars_to_avg</span><span class="p">:</span>
+                <span class="n">xvars_to_avg</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvars</span><span class="p">)))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">xvars_to_avg</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+                <span class="n">xvars_to_avg</span> <span class="o">=</span> <span class="p">[</span><span class="n">xvars_to_avg</span><span class="p">]</span>
+
+            <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+            <span class="c1"># self._xvars_stored = deepcopy(self.xvars)</span>
+            <span class="k">def</span> <span class="nf">store_values</span><span class="p">(</span><span class="n">struct</span><span class="p">,</span><span class="n">keylist</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keylist</span><span class="p">:</span>
+                    <span class="n">array</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">struct</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="c1"># save the old information</span>
+                    <span class="n">newkey</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s2">&quot;_stored&quot;</span>
+                    <span class="nb">vars</span><span class="p">(</span><span class="n">struct</span><span class="p">)[</span><span class="n">newkey</span><span class="p">]</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_store_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;xvars&#39;</span><span class="p">,</span><span class="s1">&#39;xvardims&#39;</span><span class="p">,</span><span class="s1">&#39;od_raw&#39;</span><span class="p">]</span>
+            <span class="n">store_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_store_keys</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_store_param_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;N_repeats&#39;</span><span class="p">,</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">]</span>
+            <span class="n">store_values</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_store_param_keys</span><span class="p">)</span>
+
+            <span class="n">avg_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;od_raw&#39;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">xvar_idx</span> <span class="ow">in</span> <span class="n">xvars_to_avg</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">avg_keys</span><span class="p">:</span>
+                    <span class="n">array</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="n">array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_avg_repeated_ndarray</span><span class="p">(</span> <span class="n">array</span><span class="p">,</span> <span class="n">xvar_idx</span> <span class="p">)</span>
+                    <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">array</span>
+                <span class="c1"># write in the unaveraged xvars</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="n">xvar_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="n">xvar_idx</span><span class="p">])</span>
+                <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)[</span><span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="n">xvar_idx</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="n">xvar_idx</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="n">xvar_idx</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="n">xvar_idx</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvars</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        
+            <span class="k">if</span> <span class="n">reanalyze</span><span class="p">:</span>
+                <span class="c1"># don&#39;t unshuffle xvars again -- that will be confusing</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">analyze_ods</span><span class="p">(</span><span class="n">unshuffle_xvars</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">averaged</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Atomdata is already repeat averaged. To revert to original atomdata, use Atomdata.revert_repeats().&#39;</span><span class="p">)</span></div>
+
+                
+    <span class="k">def</span> <span class="nf">_avg_repeated_ndarray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">arr</span><span class="p">:</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span><span class="n">xvar_idx</span><span class="p">,</span><span class="n">N_repeats_for_this_xvar</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="n">xvar_idx</span>
+        <span class="k">if</span> <span class="n">N_repeats_for_this_xvar</span> <span class="o">==</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># N = self.params.N_repeats[i]</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="n">xvar_idx</span><span class="p">],</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">ucounts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">ucounts</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">N</span> <span class="o">=</span> <span class="n">ucounts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Number of repeats per value of an xvar must be the same for all values.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="n">N_repeats_for_this_xvar</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span> <span class="n">arr</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">*</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">],</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="n">N</span><span class="p">,</span><span class="o">*</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">):]),</span> <span class="n">axis</span><span class="o">=</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">arr</span>
+    
+<div class="viewcode-block" id="atomdata.revert_repeats">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.revert_repeats">[docs]</a>
+    <span class="k">def</span> <span class="nf">revert_repeats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">averaged</span><span class="p">:</span>
+
+            <span class="k">def</span> <span class="nf">retrieve_values</span><span class="p">(</span><span class="n">struct</span><span class="p">,</span><span class="n">keylist</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keylist</span><span class="p">:</span>
+                    <span class="n">newkey</span> <span class="o">=</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s2">&quot;_stored&quot;</span>
+                    <span class="nb">vars</span><span class="p">(</span><span class="n">struct</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">struct</span><span class="p">)[</span><span class="n">newkey</span><span class="p">]</span>
+            <span class="n">retrieve_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_store_keys</span><span class="p">)</span>
+            <span class="n">retrieve_values</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">_store_param_keys</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">analyze_ods</span><span class="p">(</span><span class="n">unshuffle_xvars</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">averaged</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Atomdata is not repeat averaged. To average, use Atomdata.avg_repeats().&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="atomdata.transpose_data">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.transpose_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">transpose_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">new_xvar_idx</span><span class="o">=</span><span class="p">[],</span> <span class="n">reanalyze</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Swaps xvar order, then reruns the analysis.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            new_xvar_idx (list): The list of indices specifying the new order of</span>
+<span class="sd">            the original xvars. </span>
+<span class="sd">            </span>
+<span class="sd">            For example, in a run with four xvars, specifying [0,2,1,3] means</span>
+<span class="sd">            that the second and third xvar will be swapped, while the first and</span>
+<span class="sd">            fourth remain unchanged.</span>
+
+<span class="sd">            No list needs to be provided for the case of one or two xvars. In</span>
+<span class="sd">            the case of one xvar, does nothing.</span>
+
+<span class="sd">            new_var_idx can also be set to True in the case of one or two xvars,</span>
+<span class="sd">            for convenience.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">Nvars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvars</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">new_xvar_idx</span> <span class="o">==</span> <span class="p">[]</span> <span class="ow">or</span> <span class="n">new_xvar_idx</span> <span class="o">==</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">Nvars</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;There is only one variable -- no dimensions to permute.&#39;</span><span class="p">)</span>
+                <span class="k">pass</span>
+            <span class="k">elif</span> <span class="n">Nvars</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">new_xvar_idx</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="c1"># by default, flip for just two vars</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;For more than two variables, you must specify the new xvar order.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_xvar_idx</span><span class="p">)</span> <span class="o">!=</span> <span class="n">Nvars</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;You must specify a list of axis indices that match the number of xvars.&#39;</span><span class="p">)</span>
+
+        <span class="c1"># for things of a listlike nature which have one element per xvar, and so</span>
+        <span class="c1"># should have the elements along the first dimension reorderd according</span>
+        <span class="c1"># to the new_xvar_idx (instead of their axes swapped).</span>
+        <span class="k">def</span> <span class="nf">reorder_listlike</span><span class="p">(</span><span class="n">struct</span><span class="p">,</span><span class="n">keys</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+                <span class="n">attr</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">struct</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span>
+                <span class="n">new_attr</span> <span class="o">=</span> <span class="p">[</span><span class="n">attr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">new_xvar_idx</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">new_attr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">new_attr</span><span class="p">)</span>
+                <span class="nb">vars</span><span class="p">(</span><span class="n">struct</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_attr</span>
+
+        <span class="n">listlike_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;xvars&#39;</span><span class="p">,</span><span class="s1">&#39;sort_idx&#39;</span><span class="p">,</span><span class="s1">&#39;xvarnames&#39;</span><span class="p">,</span><span class="s1">&#39;sort_N&#39;</span><span class="p">]</span>
+        <span class="n">reorder_listlike</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">listlike_keys</span><span class="p">)</span>
+
+        <span class="n">param_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;N_repeats&#39;</span><span class="p">]</span>
+        <span class="n">reorder_listlike</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span><span class="n">param_keys</span><span class="p">)</span>
+
+        <span class="c1"># for things of an ndarraylike nature which have one axis per xvar, and</span>
+        <span class="c1"># so should have the order of their axes switched.</span>
+        <span class="n">ndarraylike_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;img_atoms&#39;</span><span class="p">,</span><span class="s1">&#39;img_light&#39;</span><span class="p">,</span><span class="s1">&#39;img_dark&#39;</span><span class="p">,</span><span class="s1">&#39;img_tstamps&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ndarraylike_keys</span><span class="p">:</span>
+            <span class="n">attr</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span>
+            <span class="c1"># figure out how many extra indices each has. add them to the new</span>
+            <span class="c1"># axis index list without changing their order.</span>
+            <span class="n">ndim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">attr</span><span class="p">)</span>
+            <span class="n">dims_to_add</span> <span class="o">=</span> <span class="n">ndim</span> <span class="o">-</span> <span class="n">Nvars</span>
+            <span class="n">axes_idx_to_add</span> <span class="o">=</span> <span class="p">[</span><span class="n">Nvars</span><span class="o">+</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">dims_to_add</span><span class="p">)]</span>
+            <span class="n">new_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span> <span class="p">(</span><span class="n">new_xvar_idx</span><span class="p">,</span> <span class="n">axes_idx_to_add</span><span class="p">)</span> <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+            
+            <span class="n">attr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span><span class="n">new_idx</span><span class="p">)</span>
+            <span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="p">)[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">attr</span>
+
+        <span class="k">if</span> <span class="n">reanalyze</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">analyze</span><span class="p">(</span><span class="n">unshuffle_xvars</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">transposed</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">transposed</span></div>
+
+
+    <span class="c1">### Analysis</span>
+
+<div class="viewcode-block" id="atomdata.compute_raw_ods">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.compute_raw_ods">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_raw_ods</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">absorption_analysis</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">od_raw</span> <span class="o">=</span> <span class="n">compute_OD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">od_raw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="atomdata.analyze_ods">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.analyze_ods">[docs]</a>
+    <span class="k">def</span> <span class="nf">analyze_ods</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">crop_type</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">unshuffle_xvars</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">absorption_analysis</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">crop_type</span><span class="p">:</span>
+            <span class="n">crop_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">crop_type</span>
+        <span class="k">if</span> <span class="n">unshuffle_xvars</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">unshuffle_xvars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">unshuffle_xvars</span>
+        <span class="k">if</span> <span class="n">absorption_analysis</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">absorption_analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">absorption_analysis</span>
+
+        <span class="k">if</span> <span class="n">absorption_analysis</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_analyze_absorption_images</span><span class="p">(</span><span class="n">crop_type</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remap_fit_results</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">compute_atom_number</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_analyze_fluorescence_images</span><span class="p">(</span><span class="n">crop_type</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_remap_fit_results</span><span class="p">()</span>
+    
+        <span class="k">if</span> <span class="n">unshuffle_xvars</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unshuffle_ad</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xvars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_unpack_xvars</span><span class="p">()</span> <span class="c1"># re-unpack xvars to get unshuffled xvars</span></div>
+
+
+<div class="viewcode-block" id="atomdata.analyze">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.analyze">[docs]</a>
+    <span class="k">def</span> <span class="nf">analyze</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">crop_type</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span><span class="n">unshuffle_xvars</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span><span class="n">absorption_analysis</span><span class="o">=-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">crop_type</span><span class="p">:</span>
+            <span class="n">crop_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">crop_type</span>
+        <span class="k">if</span> <span class="n">unshuffle_xvars</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">unshuffle_xvars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">unshuffle_xvars</span>
+        <span class="k">if</span> <span class="n">absorption_analysis</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="n">absorption_analysis</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_tags</span><span class="o">.</span><span class="n">absorption_analysis</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_raw_ods</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">analyze_ods</span><span class="p">(</span><span class="n">crop_type</span><span class="p">,</span><span class="n">unshuffle_xvars</span><span class="p">,</span><span class="n">absorption_analysis</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_analyze_absorption_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">crop_type</span><span class="o">=</span><span class="s1">&#39;mot&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Saves the images, image timestamps (in ns), computes ODs, summed ODs,</span>
+<span class="sd">        and gaussian fits to the OD profiles.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        expt: EnvExperiment</span>
+<span class="sd">            The experiment object, called to save datasets.</span>
+
+<span class="sd">        crop_type: str</span>
+<span class="sd">            Picks what crop settings to use for the ODs. Default: &#39;mot&#39;. Allowed</span>
+<span class="sd">            options: &#39;mot&#39;, &#39;bigmot&#39;, &#39;cmot&#39;, &#39;gm&#39;. If another string is</span>
+<span class="sd">            supplied, defaults to full ROI.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">od</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span> <span class="o">=</span> <span class="n">process_ODs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">od_raw</span><span class="p">,</span> <span class="n">crop_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cloudfit_x</span> <span class="o">=</span> <span class="n">fit_gaussian_sum_dist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cloudfit_y</span> <span class="o">=</span> <span class="n">fit_gaussian_sum_dist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_analyze_fluorescence_images</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">crop_type</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Saves the images, image timestamps (in ns), computes a subtracted image,</span>
+<span class="sd">        and performs gaussian fits to the profiles. Note: the subtracted image</span>
+<span class="sd">        is called &quot;od&quot; in order to provide compatability and ease of use to the</span>
+<span class="sd">        user. The computed difference is NOT an optical density.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        expt: EnvExperiment</span>
+<span class="sd">            The experiment object, called to save datasets.</span>
+
+<span class="sd">            </span>
+<span class="sd">        crop_type: str</span>
+<span class="sd">            Picks what crop settings to use for the ODs. Default: &#39;mot&#39;. Allowed</span>
+<span class="sd">            options: &#39;mot&#39;.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">od</span> <span class="o">=</span> <span class="n">roi</span><span class="o">.</span><span class="n">crop_OD</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">od_raw</span><span class="p">,</span><span class="n">crop_type</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">od</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">od</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cloudfit_x</span> <span class="o">=</span> <span class="n">fit_gaussian_sum_dist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_od_x</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cloudfit_y</span> <span class="o">=</span> <span class="n">fit_gaussian_sum_dist</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sum_od_y</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">camera_params</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_remap_fit_results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">fits_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cloudfit_x</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_sd_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_x</span><span class="p">,</span><span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_center_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_x</span><span class="p">,</span><span class="s1">&#39;x_center&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_amp_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_x</span><span class="p">,</span><span class="s1">&#39;amplitude&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_offset_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_x</span><span class="p">,</span><span class="s1">&#39;y_offset&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_area_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_x</span><span class="p">,</span><span class="s1">&#39;area&#39;</span><span class="p">)</span>
+
+            <span class="n">fits_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cloudfit_y</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_sd_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_y</span><span class="p">,</span><span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_center_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_y</span><span class="p">,</span><span class="s1">&#39;x_center&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_amp_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_y</span><span class="p">,</span><span class="s1">&#39;amplitude&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_offset_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_y</span><span class="p">,</span><span class="s1">&#39;y_offset&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_area_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">fits_y</span><span class="p">,</span><span class="s1">&#39;area&#39;</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to extract fit parameters. The gaussian fit must have failed&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_extract_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ndarray</span><span class="p">,</span><span class="n">attr</span><span class="p">):</span>
+        <span class="c1"># dims = np.shape(ndarray)</span>
+        <span class="c1"># frame = np.empty(dims,dtype=float)</span>
+        <span class="c1"># if len(dims) == 1:</span>
+        <span class="c1">#     for (i0,), fit in np.ndenumerate(ndarray):</span>
+        <span class="c1">#         frame[i0] = vars(fit)[attr]</span>
+        <span class="c1"># elif len(dims) == 2:</span>
+        <span class="c1">#     for (i0,i1), fit in np.ndenumerate(ndarray):</span>
+        <span class="c1">#         frame[i0][i1] = vars(fit)[attr]</span>
+        <span class="c1"># elif len(dims) == 3:</span>
+        <span class="c1">#     for (i0,i1,i2), fit in np.ndenumerate(ndarray):</span>
+        <span class="c1">#         frame[i0][i1][i2] = vars(fit)[attr]</span>
+        <span class="n">linarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ndarray</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ndarray</span><span class="p">))</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="nb">vars</span><span class="p">(</span><span class="n">y</span><span class="p">)[</span><span class="n">attr</span><span class="p">]</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">linarray</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="n">ndarray</span><span class="o">.</span><span class="n">shape</span><span class="o">+</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+        <span class="c1"># return frame</span>
+
+    <span class="k">def</span> <span class="nf">_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ndarray</span><span class="p">,</span><span class="n">func</span><span class="p">):</span>
+        <span class="n">linarray</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">ndarray</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">ndarray</span><span class="p">))</span>
+        <span class="n">vals</span> <span class="o">=</span> <span class="p">[</span><span class="n">func</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">linarray</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">vals</span><span class="p">,</span><span class="n">ndarray</span><span class="o">.</span><span class="n">shape</span><span class="o">+</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,))</span>
+
+    <span class="c1">### image handling, sorting by xvars</span>
+
+    <span class="k">def</span> <span class="nf">_sort_images_absorption</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_split_images_abs</span><span class="p">()</span>
+
+        <span class="c1"># construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x</span>
+        <span class="n">img_dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">sorted_img_dims</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">img_dims</span><span class="p">)</span>
+
+        <span class="n">dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="o">.</span><span class="n">dtype</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sorted_img_dims</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sorted_img_dims</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sorted_img_dims</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_tstamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_light</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_dark</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">img_tstamps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms_tstamp</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">_img_light_tstamp</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">_img_dark_tstamp</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span><span class="p">])</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">n1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">n2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">):</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">i1</span><span class="o">*</span><span class="n">n2</span> <span class="o">+</span> <span class="n">i2</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_light</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_dark</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">img_tstamps</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms_tstamp</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">_img_light_tstamp</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                                                     <span class="bp">self</span><span class="o">.</span><span class="n">_img_dark_tstamp</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span>
+                    
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">n1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">n2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">n3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">i3</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n3</span><span class="p">):</span>
+                            <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">i1</span><span class="o">*</span><span class="n">n2</span> <span class="o">+</span> <span class="n">i2</span><span class="p">)</span><span class="o">*</span><span class="n">n3</span> <span class="o">+</span> <span class="n">i3</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">][</span><span class="n">i3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">][</span><span class="n">i3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_light</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">img_dark</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">][</span><span class="n">i3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_dark</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">img_tstamps</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">][</span><span class="n">i3</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms_tstamp</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                                                            <span class="bp">self</span><span class="o">.</span><span class="n">_img_light_tstamp</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+                                                            <span class="bp">self</span><span class="o">.</span><span class="n">_img_dark_tstamp</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span>
+                    
+    <span class="k">def</span> <span class="nf">_split_images_abs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">atom_img_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">light_img_idx</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">dark_img_idx</span> <span class="o">=</span> <span class="mi">2</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">atom_img_idx</span><span class="p">::</span><span class="mi">3</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_light</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">light_img_idx</span><span class="p">::</span><span class="mi">3</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_dark</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">dark_img_idx</span><span class="p">::</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms_tstamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_timestamps</span><span class="p">[</span><span class="n">atom_img_idx</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_light_tstamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_timestamps</span><span class="p">[</span><span class="n">light_img_idx</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_dark_tstamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_timestamps</span><span class="p">[</span><span class="n">dark_img_idx</span><span class="p">::</span><span class="mi">3</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_sort_images_fluor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_split_images_fluor</span><span class="p">()</span>
+
+        <span class="c1"># construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x</span>
+        <span class="n">img_dims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">sorted_img_dims</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">img_dims</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sorted_img_dims</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">sorted_img_dims</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">img_tstamps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">),</span><span class="n">dtype</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_light</span>
+            <span class="c1"># if len(self.xvars[0]) == 1:</span>
+            <span class="c1">#     self.img_atoms = np.array([self.img_atoms])</span>
+            <span class="c1">#     self.img_light = np.array([self.img_light])</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">n1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">n2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">):</span>
+                    <span class="n">idx</span> <span class="o">=</span> <span class="n">i1</span><span class="o">*</span><span class="n">n2</span> <span class="o">+</span> <span class="n">i2</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_light</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">n1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">n2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">n3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">i2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n2</span><span class="p">):</span>
+                    <span class="k">for</span> <span class="n">i3</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n3</span><span class="p">):</span>
+                        <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">i1</span><span class="o">*</span><span class="n">n2</span> <span class="o">+</span> <span class="n">i2</span><span class="p">)</span><span class="o">*</span><span class="n">n3</span> <span class="o">+</span> <span class="n">i3</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">img_atoms</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">][</span><span class="n">i3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">img_light</span><span class="p">[</span><span class="n">i1</span><span class="p">][</span><span class="n">i2</span><span class="p">][</span><span class="n">i3</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_img_light</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                    
+    <span class="k">def</span> <span class="nf">_split_images_fluor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        
+        <span class="n">atom_img_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">light_img_idx</span> <span class="o">=</span> <span class="mi">1</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">atom_img_idx</span><span class="p">::</span><span class="mi">2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_light</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">light_img_idx</span><span class="p">::</span><span class="mi">2</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_atoms_tstamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_timestamps</span><span class="p">[</span><span class="n">atom_img_idx</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_img_light_tstamp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">img_timestamps</span><span class="p">[</span><span class="n">light_img_idx</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+    
+    <span class="k">def</span> <span class="nf">_unpack_xvars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># fetch the arrays for each xvar from parameters</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">,</span><span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">]</span>
+
+        <span class="n">xvarnames</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">xvarnames</span><span class="p">)</span>
+        <span class="n">xvars</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span><span class="p">):</span>
+            <span class="n">xvars</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">vars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)[</span><span class="n">xvarnames</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+        
+        <span class="c1"># figure out dimensions of each xvar</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span><span class="p">,</span><span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xvardims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">xvars</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">xvars</span>
+    
+    <span class="c1">## Unshuffling</span>
+    
+<div class="viewcode-block" id="atomdata.unshuffle_ad">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.unshuffle_ad">[docs]</a>
+    <span class="k">def</span> <span class="nf">unshuffle_ad</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unshuffle</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_unshuffle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_unshuffle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">struct</span><span class="p">):</span>
+
+        <span class="c1"># only unshuffle if list has been shuffled</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span><span class="p">):</span>
+            <span class="n">sort_N</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_N</span>
+            <span class="n">sort_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span>
+
+            <span class="n">protected_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;xvarnames&#39;</span><span class="p">,</span><span class="s1">&#39;sort_idx&#39;</span><span class="p">,</span><span class="s1">&#39;images&#39;</span><span class="p">,</span><span class="s1">&#39;img_timestamps&#39;</span><span class="p">,</span><span class="s1">&#39;sort_N&#39;</span><span class="p">,</span><span class="s1">&#39;sort_idx&#39;</span><span class="p">,</span><span class="s1">&#39;xvars&#39;</span><span class="p">,</span><span class="s1">&#39;N_repeats&#39;</span><span class="p">,</span><span class="s1">&#39;N_shots&#39;</span><span class="p">]</span>
+            <span class="n">ks</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+            <span class="n">sort_ks</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">ks</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">protected_keys</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">sort_ks</span><span class="p">:</span>
+                <span class="n">var</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">struct</span><span class="p">)[</span><span class="n">k</span><span class="p">]</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+                    <span class="n">var</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">sdims</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dims_to_sort</span><span class="p">(</span><span class="n">var</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">sdims</span><span class="p">:</span>
+                        <span class="n">N</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">N</span> <span class="ow">in</span> <span class="n">sort_N</span><span class="p">:</span>
+                            <span class="n">i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_N</span> <span class="o">==</span> <span class="n">N</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">shuf_idx</span> <span class="o">=</span> <span class="n">sort_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                            <span class="n">shuf_idx</span> <span class="o">=</span> <span class="n">shuf_idx</span><span class="p">[</span><span class="n">shuf_idx</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="c1"># remove padding [-1]s</span>
+                            <span class="n">unshuf_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">shuf_idx</span><span class="p">)</span>
+                            <span class="n">unshuf_idx</span><span class="p">[</span><span class="n">shuf_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+                            <span class="n">var</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">unshuf_idx</span><span class="p">,</span><span class="n">dim</span><span class="p">)</span>
+                            <span class="nb">vars</span><span class="p">(</span><span class="n">struct</span><span class="p">)[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span>
+            
+    <span class="k">def</span> <span class="nf">_dims_to_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">var</span><span class="p">):</span>
+        <span class="n">ndims</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="n">last_dim_to_sort</span> <span class="o">=</span> <span class="n">ndims</span>
+        <span class="k">if</span> <span class="n">last_dim_to_sort</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">last_dim_to_sort</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dims_to_sort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">last_dim_to_sort</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dims_to_sort</span>
+
+    <span class="c1">### data saving</span>
+
+<div class="viewcode-block" id="atomdata.save_data">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.atomdata.atomdata.save_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ds</span><span class="o">.</span><span class="n">save_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

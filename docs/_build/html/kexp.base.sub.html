@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.base.sub package &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="kexp.calibrations package" href="kexp.calibrations.html" />
+    <link rel="prev" title="kexp.base package" href="kexp.base.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">kexp</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="kexp.html">kexp package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="kexp.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="kexp.analysis.html">kexp.analysis package</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="kexp.base.html">kexp.base package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.calibrations.html">kexp.calibrations package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.config.html">kexp.config package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.control.html">kexp.control package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.experiments.html">kexp.experiments package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="kexp.util.html">kexp.util package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="kexp.html#module-kexp">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">kexp</a></li>
+          <li class="breadcrumb-item"><a href="kexp.html">kexp package</a></li>
+          <li class="breadcrumb-item"><a href="kexp.base.html">kexp.base package</a></li>
+      <li class="breadcrumb-item active">kexp.base.sub package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/kexp.base.sub.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="kexp-base-sub-package">
+<h1>kexp.base.sub package<a class="headerlink" href="#kexp-base-sub-package" title="Link to this heading"></a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
+</section>
+<section id="module-kexp.base.sub.cameras">
+<span id="kexp-base-sub-cameras-module"></span><h2>kexp.base.sub.cameras module<a class="headerlink" href="#module-kexp.base.sub.cameras" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.base.sub.cameras.Cameras">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.base.sub.cameras.</span></span><span class="sig-name descname"><span class="pre">Cameras</span></span><a class="reference internal" href="_modules/kexp/base/sub/cameras.html#Cameras"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cameras.Cameras" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cameras.Cameras.assign_camera_stuff">
+<span class="sig-name descname"><span class="pre">assign_camera_stuff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_select</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_ttl</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="kexp.control.artiq.html#kexp.control.artiq.TTL.TTL" title="kexp.control.artiq.TTL.TTL"><span class="pre">TTL</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">absorption_bool</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cameras.html#Cameras.assign_camera_stuff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cameras.Cameras.assign_camera_stuff" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cameras.Cameras.choose_camera">
+<span class="sig-name descname"><span class="pre">choose_camera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">setup_camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absorption_image</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera_select</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'xy_basler'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cameras.html#Cameras.choose_camera"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cameras.Cameras.choose_camera" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cameras.Cameras.get_camera_params">
+<span class="sig-name descname"><span class="pre">get_camera_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">camera_select</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="kexp.config.html#kexp.config.camera_params.CameraParams" title="kexp.config.camera_params.CameraParams"><span class="pre">CameraParams</span></a></span></span><a class="reference internal" href="_modules/kexp/base/sub/cameras.html#Cameras.get_camera_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cameras.Cameras.get_camera_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cameras.Cameras.nothing">
+<span class="sig-name descname"><span class="pre">nothing</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cameras.html#Cameras.nothing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cameras.Cameras.nothing" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.base.sub.cooling">
+<span id="kexp-base-sub-cooling-module"></span><h2>kexp.base.sub.cooling module<a class="headerlink" href="#module-kexp.base.sub.cooling" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.base.sub.cooling.</span></span><span class="sig-name descname"><span class="pre">Cooling</span></span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.cmot_d1">
+<span class="sig-name descname"><span class="pre">cmot_d1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_supply</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.cmot_d1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.cmot_d1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.cmot_d1_sweep">
+<span class="sig-name descname"><span class="pre">cmot_d1_sweep</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1_c_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([1.,</span> <span class="pre">1.,</span> <span class="pre">1.,</span> <span class="pre">1.,</span> <span class="pre">1.])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_r_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([1.,</span> <span class="pre">1.,</span> <span class="pre">1.,</span> <span class="pre">1.,</span> <span class="pre">1.])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_supply</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.cmot_d1_sweep"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.cmot_d1_sweep" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.cmot_d2">
+<span class="sig-name descname"><span class="pre">cmot_d2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_supply</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.cmot_d2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.cmot_d2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.flash_cooler">
+<span class="sig-name descname"><span class="pre">flash_cooler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.flash_cooler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.flash_cooler" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.flash_repump">
+<span class="sig-name descname"><span class="pre">flash_repump</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.flash_repump"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.flash_repump" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.gm">
+<span class="sig-name descname"><span class="pre">gm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_d1_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d1_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_shim_change_pretrigger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_magnet_off_pretrigger</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_yshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_xshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.gm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.gm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.gm_ramp">
+<span class="sig-name descname"><span class="pre">gm_ramp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_gmramp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_d1_c_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([1.,</span> <span class="pre">1.,</span> <span class="pre">1.,</span> <span class="pre">1.,</span> <span class="pre">1.])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_d1_r_list</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">array([1.,</span> <span class="pre">1.,</span> <span class="pre">1.,</span> <span class="pre">1.,</span> <span class="pre">1.])</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d1_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.gm_ramp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.gm_ramp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.hybrid_mot">
+<span class="sig-name descname"><span class="pre">hybrid_mot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_d1_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d1_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_d1_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_supply</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.hybrid_mot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.hybrid_mot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.kill_mot">
+<span class="sig-name descname"><span class="pre">kill_mot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.kill_mot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.kill_mot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.load_2D_mot">
+<span class="sig-name descname"><span class="pre">load_2D_mot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_push</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_push</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_supply</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.load_2D_mot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.load_2D_mot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.magtrap">
+<span class="sig-name descname"><span class="pre">magtrap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_magtrap_ramp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_magtrap_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_magtrap_ramp_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_yshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_xshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.magtrap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.magtrap" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.magtrap_and_load_lightsheet">
+<span class="sig-name descname"><span class="pre">magtrap_and_load_lightsheet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_lightsheet_ramp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_magtrap_ramp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_magtrap_rampdown</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_lightsheet_ramp_start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_pd_lightsheet_ramp_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">paint_lightsheet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_awg_paint_amp_lightsheet</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_magtrap_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_magtrap_ramp_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_yshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_xshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.magtrap_and_load_lightsheet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.magtrap_and_load_lightsheet" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.mot">
+<span class="sig-name descname"><span class="pre">mot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_push</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_push</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_supply</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_yshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_xshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.mot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.mot" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.mot_observe">
+<span class="sig-name descname"><span class="pre">mot_observe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detune_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_push</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_push</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency_ry_405</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_ry_405</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency_ry_980</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_ry_980</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_supply</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.mot_observe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.mot_observe" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.mot_reload">
+<span class="sig-name descname"><span class="pre">mot_reload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_d2_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i_supply</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.mot_reload"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.mot_reload" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.optical_pumping">
+<span class="sig-name descname"><span class="pre">optical_pumping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_bias_rampup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_optical_pumping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_optical_pumping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_yshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_xshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detune_optical_pumping_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp_optical_pumping_r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.optical_pumping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.optical_pumping" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.pump_to_F1">
+<span class="sig-name descname"><span class="pre">pump_to_F1</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.pump_to_F1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.pump_to_F1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.release">
+<span class="sig-name descname"><span class="pre">release</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.release"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.release" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.set_shims">
+<span class="sig-name descname"><span class="pre">set_shims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v_xshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_yshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.set_shims"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.set_shims" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.set_zshim_magnet_current">
+<span class="sig-name descname"><span class="pre">set_zshim_magnet_current</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_dac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.set_zshim_magnet_current"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.set_zshim_magnet_current" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.start_magtrap">
+<span class="sig-name descname"><span class="pre">start_magtrap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v_zshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_yshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v_xshim_current</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.start_magtrap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.start_magtrap" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.switch_d1_3d">
+<span class="sig-name descname"><span class="pre">switch_d1_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load_dac</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.switch_d1_3d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.switch_d1_3d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.switch_d2_2d">
+<span class="sig-name descname"><span class="pre">switch_d2_2d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.switch_d2_2d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.switch_d2_2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.cooling.Cooling.switch_d2_3d">
+<span class="sig-name descname"><span class="pre">switch_d2_3d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/cooling.html#Cooling.switch_d2_3d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.cooling.Cooling.switch_d2_3d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.base.sub.dealer">
+<span id="kexp-base-sub-dealer-module"></span><h2>kexp.base.sub.dealer module<a class="headerlink" href="#module-kexp.base.sub.dealer" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.base.sub.dealer.Dealer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.base.sub.dealer.</span></span><span class="sig-name descname"><span class="pre">Dealer</span></span><a class="reference internal" href="_modules/kexp/base/sub/dealer.html#Dealer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.dealer.Dealer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.dealer.Dealer.repeat_xvars">
+<span class="sig-name descname"><span class="pre">repeat_xvars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">N_repeats</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/dealer.html#Dealer.repeat_xvars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.dealer.Dealer.repeat_xvars" title="Link to this definition"></a></dt>
+<dd><p>For each xvar in the scan_xvars list, replaces xvar.values with
+np.repeat(xvar.values,self.params.N_repeats).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>(</strong><strong>int/list/ndarray</strong> (<em>N_repeats</em>)</p></li>
+<li><p><strong>optional</strong><strong>)</strong> (<em>The number</em><em> of </em><em>repeats to be</em>)</p></li>
+<li><p><strong>of</strong> (<em>implemented. Can be omitted to use the stored value</em>)</p></li>
+<li><p><strong>one</strong> (<em>self.params.N_repeats. Must be either int</em><em> or </em><em>list/array</em><em> of </em><em>length</em>)</p></li>
+</ul>
+</dd>
+</dl>
+<p>:param :
+:param or a list/array with one element per element of self.xvarnames.:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.dealer.Dealer.shuffle_xvars">
+<span class="sig-name descname"><span class="pre">shuffle_xvars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sort_preshuffle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/dealer.html#Dealer.shuffle_xvars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.dealer.Dealer.shuffle_xvars" title="Link to this definition"></a></dt>
+<dd><p>For each attribute of self.params with key specified in self.xvarnames,
+replaces the corresponding array with a shuffled version of that array.
+The shuffle orders are stored in self.sort_idx to be used in re-sorting
+derived arrays.</p>
+<p>Example: self.xvarnames = [‘t_tof’]. User specifies self.params.t_tof =
+[4.,6.,8.]. This function might rewrite-in-place self.params.t_tof =
+[8.,4.,6.], and record self.sort_idx = [3,1,2].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sort_preshuffle</strong> (<em>bool</em><em>, </em><em>optional</em>) – If True, each xvar will be sorted</p></li>
+<li><p><strong>shuffled</strong> (<em>so that its elements are sequential before being</em>)</p></li>
+<li><p><strong>that</strong> (<em>such</em>)</p></li>
+<li><p><strong>un-shuffled</strong> (<em>when</em>)</p></li>
+<li><p><strong>True.</strong> (<em>the elements are in order. Defaults to</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.base.sub.devices">
+<span id="kexp-base-sub-devices-module"></span><h2>kexp.base.sub.devices module<a class="headerlink" href="#module-kexp.base.sub.devices" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.base.sub.devices.Devices">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.base.sub.devices.</span></span><span class="sig-name descname"><span class="pre">Devices</span></span><a class="reference internal" href="_modules/kexp/base/sub/devices.html#Devices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.devices.Devices" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.devices.Devices.get_dds_devices">
+<span class="sig-name descname"><span class="pre">get_dds_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/devices.html#Devices.get_dds_devices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.devices.Devices.get_dds_devices" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.devices.Devices.get_shuttler_devices">
+<span class="sig-name descname"><span class="pre">get_shuttler_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/devices.html#Devices.get_shuttler_devices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.devices.Devices.get_shuttler_devices" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.devices.Devices.get_ttl_devices">
+<span class="sig-name descname"><span class="pre">get_ttl_devices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/devices.html#Devices.get_ttl_devices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.devices.Devices.get_ttl_devices" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.devices.Devices.init_all_cpld">
+<span class="sig-name descname"><span class="pre">init_all_cpld</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/devices.html#Devices.init_all_cpld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.devices.Devices.init_all_cpld" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.devices.Devices.init_all_dds">
+<span class="sig-name descname"><span class="pre">init_all_dds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/devices.html#Devices.init_all_dds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.devices.Devices.init_all_dds" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.devices.Devices.prepare_devices">
+<span class="sig-name descname"><span class="pre">prepare_devices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expt_params:</span> <span class="pre">~kexp.config.expt_params.ExptParams</span> <span class="pre">=</span> <span class="pre">&lt;kexp.config.expt_params.ExptParams</span> <span class="pre">object&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/devices.html#Devices.prepare_devices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.devices.Devices.prepare_devices" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.devices.Devices.set_all_dds">
+<span class="sig-name descname"><span class="pre">set_all_dds</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/devices.html#Devices.set_all_dds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.devices.Devices.set_all_dds" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.devices.Devices.switch_all_dds">
+<span class="sig-name descname"><span class="pre">switch_all_dds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/devices.html#Devices.switch_all_dds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.devices.Devices.switch_all_dds" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.base.sub.image">
+<span id="kexp-base-sub-image-module"></span><h2>kexp.base.sub.image module<a class="headerlink" href="#module-kexp.base.sub.image" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.base.sub.image.</span></span><span class="sig-name descname"><span class="pre">Image</span></span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image.abs_image">
+<span class="sig-name descname"><span class="pre">abs_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image.abs_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image.abs_image" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image.fl_image">
+<span class="sig-name descname"><span class="pre">fl_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">with_light</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image.fl_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image.fl_image" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image.get_N_img">
+<span class="sig-name descname"><span class="pre">get_N_img</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image.get_N_img"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image.get_N_img" title="Link to this definition"></a></dt>
+<dd><p>Computes the number of images to be taken during the sequence from the
+length of the specified xvars, stores in self.params.N_img. For
+absorption imaging, 3 images per shot. For fluorescence imaging, 2
+images per shot.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image.pulse_D1_beams">
+<span class="sig-name descname"><span class="pre">pulse_D1_beams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image.pulse_D1_beams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image.pulse_D1_beams" title="Link to this definition"></a></dt>
+<dd><p>Sets D1 GM beams to resonance and turns them on for time t.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>float</em>) – Time (in seconds) to hold the resonant MOT beams on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image.pulse_imaging_light">
+<span class="sig-name descname"><span class="pre">pulse_imaging_light</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image.pulse_imaging_light"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image.pulse_imaging_light" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image.pulse_resonant_mot_beams">
+<span class="sig-name descname"><span class="pre">pulse_resonant_mot_beams</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image.pulse_resonant_mot_beams"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image.pulse_resonant_mot_beams" title="Link to this definition"></a></dt>
+<dd><p>Sets D2 3D MOT beams to resonance and turns them on for time t.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>t</strong> (<em>float</em>) – Time (in seconds) to hold the resonant MOT beams on.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image.set_high_field_imaging">
+<span class="sig-name descname"><span class="pre">set_high_field_imaging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i_outer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imaging_amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-10000000000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image.set_high_field_imaging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image.set_high_field_imaging" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image.set_imaging_detuning">
+<span class="sig-name descname"><span class="pre">set_imaging_detuning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">detuning</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-10000000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">amp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-10000000000.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image.set_imaging_detuning"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image.set_imaging_detuning" title="Link to this definition"></a></dt>
+<dd><p>Sets the detuning of the beat-locked imaging laser (in Hz).</p>
+<p>Imaging detuning is controlled by two things – the Vescent offset lock
+and a double pass (-1 order).</p>
+<p>The offset lock has a multiplier, N, that determines the offset lock
+frequency relative to the lock point of the D2 laser locked at the
+crossover feature for the D2 transition. Offset = N * reference freqeuency.</p>
+<p>The reference frequency is provided by a DDS channel (dds_frame.beatlock_ref).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.image.Image.trigger_camera">
+<span class="sig-name descname"><span class="pre">trigger_camera</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/image.html#Image.trigger_camera"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.image.Image.trigger_camera" title="Link to this definition"></a></dt>
+<dd><p>Written to pretrigger camera such that the camera exposure begins at the
+timeline cursor position where this is called. Returns the timeline
+cursor to this position after pretrigger.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.base.sub.scanner">
+<span id="kexp-base-sub-scanner-module"></span><h2>kexp.base.sub.scanner module<a class="headerlink" href="#module-kexp.base.sub.scanner" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.base.sub.scanner.</span></span><span class="sig-name descname"><span class="pre">Scanner</span></span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.cleanup_scanned">
+<span class="sig-name descname"><span class="pre">cleanup_scanned</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.cleanup_scanned"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.cleanup_scanned" title="Link to this definition"></a></dt>
+<dd><p>Sets the parameters in ExptParams to the lists that were used to take
+the data.</p>
+<p>These are put in in the order the data was taken – no unshuffling is
+done.</p>
+<p>This is good for recordkeeping, and ensures backward compatability with
+analysis code.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.fetch_array">
+<span class="sig-name descname"><span class="pre">fetch_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.fetch_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.fetch_array" title="Link to this definition"></a></dt>
+<dd><p>Returns the value of the ith experiment parameter with datatype
+ndarray.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<em>int</em>) – index of the ith ndarray experiment paramter in the list</p></li>
+<li><p><strong>self._param_keylist_arrays.</strong></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The value of the ith ndarray ExptParam attribute.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>TFloat</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.fetch_float">
+<span class="sig-name descname"><span class="pre">fetch_float</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.fetch_float"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.fetch_float" title="Link to this definition"></a></dt>
+<dd><p>Returns the value of the ith experiment parameter with datatype
+float.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<em>int</em>) – index of the ith float experiment paramter in the list</p></li>
+<li><p><strong>self._param_keylist_floats.</strong></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The value of the ith float ExptParam attribute.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>TFloat</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.fetch_int32">
+<span class="sig-name descname"><span class="pre">fetch_int32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.fetch_int32"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.fetch_int32" title="Link to this definition"></a></dt>
+<dd><p>Returns the value of the ith experiment parameter with datatype
+int32.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>i</strong> (<em>int</em>) – index of the ith ndarray experiment paramter in the list</p></li>
+<li><p><strong>self._param_keylist_int32s.</strong></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The value of the ith int32 ExptParam attribute.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>TFloat</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.generate_assignment_kernels">
+<span class="sig-name descname"><span class="pre">generate_assignment_kernels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.generate_assignment_kernels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.generate_assignment_kernels" title="Link to this definition"></a></dt>
+<dd><p>Generates a list of kernel functions for each param datatype (int32,
+int64, ndarray, and float ) – one for each ExptParam attribute. These
+can be called in the kernel to update the kernel experiment params with
+values from the host ExptParams returned by an RPC (the “fetch” functions).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.init_scan_kernel">
+<span class="sig-name descname"><span class="pre">init_scan_kernel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.init_scan_kernel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.init_scan_kernel" title="Link to this definition"></a></dt>
+<dd><p>This method is run between each shot just before scan_kernel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.logspace">
+<span class="sig-name descname"><span class="pre">logspace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.logspace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.logspace" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.new_param_check">
+<span class="sig-name descname"><span class="pre">new_param_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xvar</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.new_param_check"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.new_param_check" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.param_police">
+<span class="sig-name descname"><span class="pre">param_police</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xvar</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.param_police"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.param_police" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.pre_scan">
+<span class="sig-name descname"><span class="pre">pre_scan</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.pre_scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.pre_scan" title="Link to this definition"></a></dt>
+<dd><p>This method is run in scan before the scan loop.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.scan">
+<span class="sig-name descname"><span class="pre">scan</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.scan" title="Link to this definition"></a></dt>
+<dd><p>Runs the scan_kernel function for each value of the xvars specified.</p>
+<p>The xvars are scanned as if looping over nested for loops, with the last
+xvar as the innermost loop.</p>
+<p>On each step of the scan, the host ExptParams is updated with the next
+values of the xvars and derived parameters are recomputed. Then, the
+updated host ExptParams values are written into the corresponding kernel
+ExptParams.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.scan_kernel">
+<span class="sig-name descname"><span class="pre">scan_kernel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.scan_kernel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.scan_kernel" title="Link to this definition"></a></dt>
+<dd><p>The kernel function to be scanned in the experiment.</p>
+<p>It should correspond to a single “shot” (single set of images to
+generate one OD).</p>
+<p>The scan kernel should accept no arguments.</p>
+<p>Any parameters being scanned should be referenced in the scan kernel as
+an attribute of the experiment parameters attribute of the experiment
+class.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.step_scan">
+<span class="sig-name descname"><span class="pre">step_scan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.step_scan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.step_scan" title="Link to this definition"></a></dt>
+<dd><p>Advances the counters of the xvars to the next step in the scan.</p>
+<p>Advances counters as if the xvars were looped over in nested for loops,
+with the last xvar being the innermost loop.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.update_nvars">
+<span class="sig-name descname"><span class="pre">update_nvars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.update_nvars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.update_nvars" title="Link to this definition"></a></dt>
+<dd><p>Updates the number of xvars to be scanned.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.update_params_from_xvars">
+<span class="sig-name descname"><span class="pre">update_params_from_xvars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.update_params_from_xvars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.update_params_from_xvars" title="Link to this definition"></a></dt>
+<dd><p>Updates the host ExptParams attributes and recomputes derived
+parameters according to the current values of the scanned xvars.</p>
+<p>Does not update the values of the kernel ExptParams – to do so, use
+write_host_params_to_kernel().</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.write_host_params_to_kernel">
+<span class="sig-name descname"><span class="pre">write_host_params_to_kernel</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.write_host_params_to_kernel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.write_host_params_to_kernel" title="Link to this definition"></a></dt>
+<dd><p>Loops over all experiment params, and assigns the values of the
+kernel ExptParam attributes to those of the of the host ExptParam
+attributes.</p>
+<p>Must have run generate_assignment_kernels() in build first.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.Scanner.xvar">
+<span class="sig-name descname"><span class="pre">xvar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#Scanner.xvar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.Scanner.xvar" title="Link to this definition"></a></dt>
+<dd><p>Adds an xvar to the experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>key</strong> (<em>str</em>) – The key of the ExptParams attribute to scan.</p></li>
+<li><p><strong>values</strong> (<em>ndarray</em>) – Values to scan over. Can be n-dimensional, scan will step over first index.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.nothing">
+<span class="sig-prename descclassname"><span class="pre">kexp.base.sub.scanner.</span></span><span class="sig-name descname"><span class="pre">nothing</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#nothing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.nothing" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.base.sub.scanner.xvar">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.base.sub.scanner.</span></span><span class="sig-name descname"><span class="pre">xvar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">position</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scanner.html#xvar"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scanner.xvar" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+</dd></dl>
+
+</section>
+<section id="module-kexp.base.sub.scribe">
+<span id="kexp-base-sub-scribe-module"></span><h2>kexp.base.sub.scribe module<a class="headerlink" href="#module-kexp.base.sub.scribe" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="kexp.base.sub.scribe.Scribe">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">kexp.base.sub.scribe.</span></span><span class="sig-name descname"><span class="pre">Scribe</span></span><a class="reference internal" href="_modules/kexp/base/sub/scribe.html#Scribe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scribe.Scribe" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scribe.Scribe.check_camera_ready_ack">
+<span class="sig-name descname"><span class="pre">check_camera_ready_ack</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scribe.html#Scribe.check_camera_ready_ack"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scribe.Scribe.check_camera_ready_ack" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scribe.Scribe.mark_camera_ready">
+<span class="sig-name descname"><span class="pre">mark_camera_ready</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scribe.html#Scribe.mark_camera_ready"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scribe.Scribe.mark_camera_ready" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scribe.Scribe.remove_incomplete_data">
+<span class="sig-name descname"><span class="pre">remove_incomplete_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delete_data_bool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scribe.html#Scribe.remove_incomplete_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scribe.Scribe.remove_incomplete_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scribe.Scribe.wait_for_camera_ready">
+<span class="sig-name descname"><span class="pre">wait_for_camera_ready</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scribe.html#Scribe.wait_for_camera_ready"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scribe.Scribe.wait_for_camera_ready" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scribe.Scribe.wait_for_data_available">
+<span class="sig-name descname"><span class="pre">wait_for_data_available</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">close</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">openmode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'r+'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_period</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-1.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scribe.html#Scribe.wait_for_data_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scribe.Scribe.wait_for_data_available" title="Link to this definition"></a></dt>
+<dd><p>Blocks until the file at self.datapath is available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="kexp.base.sub.scribe.Scribe.write_data">
+<span class="sig-name descname"><span class="pre">write_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expt_filepath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/kexp/base/sub/scribe.html#Scribe.write_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#kexp.base.sub.scribe.Scribe.write_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-kexp.base.sub">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-kexp.base.sub" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="kexp.base.html" class="btn btn-neutral float-left" title="kexp.base package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="kexp.calibrations.html" class="btn btn-neutral float-right" title="kexp.calibrations package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

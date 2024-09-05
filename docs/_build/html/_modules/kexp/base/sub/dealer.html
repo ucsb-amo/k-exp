@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.base.sub.dealer &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.base.sub.dealer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.base.sub.dealer</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">delay</span><span class="p">,</span> <span class="n">parallel</span><span class="p">,</span> <span class="n">sequential</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">portable</span>
+
+<span class="kn">from</span> <span class="nn">kexp.config</span> <span class="kn">import</span> <span class="n">ExptParams</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="Dealer">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.dealer.Dealer">[docs]</a>
+<span class="k">class</span> <span class="nc">Dealer</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_N</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">ExptParams</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xvarnames</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scan_xvars</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="Dealer.repeat_xvars">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.dealer.Dealer.repeat_xvars">[docs]</a>
+    <span class="k">def</span> <span class="nf">repeat_xvars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">N_repeats</span><span class="o">=</span><span class="p">[]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For each xvar in the scan_xvars list, replaces xvar.values with</span>
+<span class="sd">        np.repeat(xvar.values,self.params.N_repeats).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        N_repeats (int/list/ndarray, optional): The number of repeats to be</span>
+<span class="sd">        implemented. Can be omitted to use the stored value of</span>
+<span class="sd">        self.params.N_repeats. Must be either int or list/array of length one,</span>
+<span class="sd">        or a list/array with one element per element of self.xvarnames.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">Nvars</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Nvars</span>
+
+        <span class="c1"># allow user to overwrite repeats number when repeat_xvars called</span>
+        <span class="k">if</span> <span class="n">N_repeats</span> <span class="o">!=</span> <span class="p">[]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span> <span class="o">=</span> <span class="n">N_repeats</span>
+
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="s2">&quot;self.params.repeats must have either have one element or length equal to the number of xvarnames&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">,</span><span class="nb">int</span><span class="p">):</span>
+            <span class="n">N_repeat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Nvars</span><span class="p">)]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">N_repeat</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">N_repeat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">Nvars</span><span class="p">)]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">N_repeat</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">)</span> <span class="o">!=</span> <span class="n">Nvars</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">,</span><span class="n">Nvars</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">)</span> <span class="o">!=</span> <span class="n">Nvars</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">xvar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_xvars</span><span class="p">:</span>
+            <span class="n">xvar</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">xvar</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">N_repeats</span><span class="p">[</span><span class="n">xvar</span><span class="o">.</span><span class="n">position</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Dealer.shuffle_xvars">
+<a class="viewcode-back" href="../../../../kexp.base.sub.html#kexp.base.sub.dealer.Dealer.shuffle_xvars">[docs]</a>
+    <span class="k">def</span> <span class="nf">shuffle_xvars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">sort_preshuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        For each attribute of self.params with key specified in self.xvarnames,</span>
+<span class="sd">        replaces the corresponding array with a shuffled version of that array.</span>
+<span class="sd">        The shuffle orders are stored in self.sort_idx to be used in re-sorting</span>
+<span class="sd">        derived arrays.</span>
+
+<span class="sd">        Example: self.xvarnames = [&#39;t_tof&#39;]. User specifies self.params.t_tof =</span>
+<span class="sd">        [4.,6.,8.]. This function might rewrite-in-place self.params.t_tof =</span>
+<span class="sd">        [8.,4.,6.], and record self.sort_idx = [3,1,2].</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sort_preshuffle (bool, optional): If True, each xvar will be sorted</span>
+<span class="sd">            so that its elements are sequential before being shuffled, such that</span>
+<span class="sd">            when un-shuffled, the elements are in order. Defaults to True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
+        <span class="n">sort_idx</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">len_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># loop through xvars</span>
+        <span class="k">for</span> <span class="n">xvar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_xvars</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sort_preshuffle</span><span class="p">:</span>
+                <span class="n">xvar</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">xvar</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+
+            <span class="c1"># create list of scramble indices for each xvar</span>
+            <span class="c1"># use same index list for xvars of same length</span>
+            <span class="c1">### Note: with new xvar class, this is not necessary. Update later.</span>
+            <span class="k">if</span> <span class="n">xvar</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">len_list</span><span class="p">:</span>
+                <span class="n">match_idx</span> <span class="o">=</span> <span class="n">len_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">xvar</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">sort_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sort_idx</span><span class="p">[</span><span class="n">match_idx</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">sort_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">xvar</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="p">)</span>
+                <span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">sort_idx</span><span class="p">[</span><span class="n">xvar</span><span class="o">.</span><span class="n">position</span><span class="p">])</span>
+                <span class="n">xvar</span><span class="o">.</span><span class="n">sort_idx</span> <span class="o">=</span> <span class="n">sort_idx</span><span class="p">[</span><span class="n">xvar</span><span class="o">.</span><span class="n">position</span><span class="p">]</span>
+            <span class="n">len_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">xvar</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        
+        <span class="c1"># shuffle arrays with the scrambled indices</span>
+        <span class="k">for</span> <span class="n">xvar</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scan_xvars</span><span class="p">:</span>
+            <span class="n">scrambled_list</span> <span class="o">=</span> <span class="n">xvar</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">sort_idx</span><span class="p">[</span><span class="n">xvar</span><span class="o">.</span><span class="n">position</span><span class="p">])</span>
+            <span class="n">xvar</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">scrambled_list</span>
+
+        <span class="c1"># remove duplicates (shouldn&#39;t exist anyway), sort into lists</span>
+        <span class="n">sort_idx_w_duplicates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">len_list</span><span class="p">,</span><span class="n">sort_idx</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sort_N</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">sort_idx_w_duplicates</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">elem</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sort_N</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sort_N</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># pad with [-1]s to allow saving in hdf5 (avoid staggered array)</span>
+        <span class="n">maxN</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_N</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span><span class="p">)):</span>
+            <span class="n">N_to_pad</span> <span class="o">=</span> <span class="n">maxN</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_idx</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">N_to_pad</span><span class="p">)</span></div>
+
+
+    <span class="c1"># def shuffle_derived(self):</span>
+    <span class="c1">#     &#39;&#39;&#39;</span>
+    <span class="c1">#     Loop through all the attributes of params which are not in the list of</span>
+    <span class="c1">#     protected keys. For each attribute which has a dimension of size equal</span>
+    <span class="c1">#     to the length of one of the xvars specified in xvarnames, scramble that</span>
+    <span class="c1">#     axis of the attribute in the same way that the xvar of matching length</span>
+    <span class="c1">#     was scrambled.</span>
+    <span class="c1">#     &#39;&#39;&#39;</span>
+    <span class="c1">#     sort_N = self.sort_N</span>
+    <span class="c1">#     if not isinstance(sort_N,np.ndarray):</span>
+    <span class="c1">#         sort_N = np.array(sort_N)</span>
+    <span class="c1">#     sort_idx = self.sort_idx</span>
+
+    <span class="c1">#     protected_keys = [&#39;xvarnames&#39;,&#39;sort_idx&#39;,&#39;images&#39;,&#39;img_timestamps&#39;,&#39;sort_N&#39;,&#39;sort_idx&#39;,&#39;xvars&#39;,&#39;N_repeats&#39;,&#39;N_shots&#39;]</span>
+    <span class="c1">#     # get a list of the variable keys (that are not protected)</span>
+    <span class="c1">#     ks = self.params.__dict__.keys()</span>
+    <span class="c1">#     sort_ks = [k for k in ks if k not in protected_keys if k not in self.xvarnames]</span>
+    <span class="c1">#     # loop over the keys</span>
+    <span class="c1">#     for k in sort_ks:</span>
+    <span class="c1">#         # get the value of the attribute with that key</span>
+    <span class="c1">#         var = vars(self.params)[k]</span>
+    <span class="c1">#         # cast arrays as np.ndarrays</span>
+    <span class="c1">#         if isinstance(var,list):</span>
+    <span class="c1">#             var = np.array(var)</span>
+    <span class="c1">#         if isinstance(var,np.ndarray):</span>
+    <span class="c1">#             # get a list of the dimensions to check for sorting, loop over them</span>
+    <span class="c1">#             sdims = self._dims_to_sort(var)</span>
+    <span class="c1">#             for dim in sdims:</span>
+    <span class="c1">#                 N = var.shape[dim]</span>
+    <span class="c1">#                 # check to see if this dimension is of a length which matches one of the xvars</span>
+    <span class="c1">#                 # (sort_N is a list of the lengths of the xvars)</span>
+    <span class="c1">#                 if N in sort_N:</span>
+    <span class="c1">#                     # if this dim&#39;s length matches that of one of the xvars,</span>
+    <span class="c1">#                     # grab the index of the match</span>
+    <span class="c1">#                     i = np.where(sort_N == N)[0][0]</span>
+    <span class="c1">#                     # get the indices used to shuffle the matching xvar</span>
+    <span class="c1">#                     shuf_idx = sort_idx[i]</span>
+    <span class="c1">#                     # remove padding [-1]s (added since the shuffling idx</span>
+    <span class="c1">#                     # have to be the same length in the hdf5 later)</span>
+    <span class="c1">#                     shuf_idx = shuf_idx[shuf_idx &gt;= 0].astype(int)</span>
+    <span class="c1">#                     # scramble the var along the this dimension according to</span>
+    <span class="c1">#                     # the shuffling idx </span>
+    <span class="c1">#                     var = var.take(shuf_idx,dim)</span>
+    <span class="c1">#                     # save the shuffled variable into params</span>
+    <span class="c1">#                     vars(self.params)[k] = var</span>
+
+    <span class="k">def</span> <span class="nf">_dims_to_sort</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">var</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">        Create a list of which dimensions should be checked for sorting.</span>
+<span class="sd">        TBH I do not remember why that if statement is necessary.</span>
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">ndims</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">ndim</span>
+        <span class="n">last_dim_to_sort</span> <span class="o">=</span> <span class="n">ndims</span>
+        <span class="k">if</span> <span class="n">last_dim_to_sort</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span> <span class="n">last_dim_to_sort</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">dims_to_sort</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">last_dim_to_sort</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dims_to_sort</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

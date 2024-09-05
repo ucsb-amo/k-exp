@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.control.misc.big_coil &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.control.misc.big_coil</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.control.misc.big_coil</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">kexp.control.artiq.DAC_CH</span> <span class="kn">import</span> <span class="n">DAC_CH</span>
+<span class="kn">from</span> <span class="nn">kexp.control.artiq.TTL</span> <span class="kn">import</span> <span class="n">TTL</span>
+<span class="kn">from</span> <span class="nn">kexp.config</span> <span class="kn">import</span> <span class="n">ExptParams</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">delay</span><span class="p">,</span> <span class="n">parallel</span><span class="p">,</span> <span class="n">portable</span><span class="p">,</span> <span class="n">TFloat</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">kexp.util.artiq.async_print</span> <span class="kn">import</span> <span class="n">aprint</span>
+
+<span class="n">dv</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.</span>
+<span class="n">di</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="n">dv_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.</span><span class="p">,</span><span class="mf">1.</span><span class="p">,</span><span class="mi">5</span><span class="p">)</span>
+
+<span class="n">V_FULLSCALE_DAC</span> <span class="o">=</span> <span class="mf">10.</span>
+<span class="n">V_SUPPLY_DEFAULT</span> <span class="o">=</span> <span class="mf">70.</span>
+
+<span class="n">T_ANALOG_DELAY</span> <span class="o">=</span> <span class="mf">30.e-3</span>
+
+<div class="viewcode-block" id="igbt_magnet">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet">[docs]</a>
+<span class="k">class</span> <span class="nc">igbt_magnet</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">v_control_dac</span> <span class="o">=</span> <span class="n">DAC_CH</span><span class="p">,</span> <span class="n">i_control_dac</span> <span class="o">=</span> <span class="n">DAC_CH</span><span class="p">,</span>
+                 <span class="n">igbt_ttl</span> <span class="o">=</span> <span class="n">TTL</span><span class="p">,</span> <span class="n">discharge_igbt_ttl</span> <span class="o">=</span> <span class="n">TTL</span><span class="p">,</span> <span class="n">expt_params</span><span class="p">:</span><span class="n">ExptParams</span> <span class="o">=</span> <span class="n">ExptParams</span><span class="p">,</span>
+                 <span class="n">max_current</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">max_voltage</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_voltage</span> <span class="o">=</span> <span class="n">max_voltage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_current</span> <span class="o">=</span> <span class="n">max_current</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_control_dac</span> <span class="o">=</span> <span class="n">v_control_dac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_control_dac</span> <span class="o">=</span> <span class="n">i_control_dac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">igbt_ttl</span> <span class="o">=</span> <span class="n">igbt_ttl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">discharge_igbt_ttl</span> <span class="o">=</span> <span class="n">discharge_igbt_ttl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">expt_params</span>
+
+<div class="viewcode-block" id="igbt_magnet.load_dac">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet.load_dac">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">load_dac</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;It doesn&#39;t actually matter that we&#39;re calling the load method of a</span>
+<span class="sd">        particular dac channel -- this calls the load method of the entire</span>
+<span class="sd">        dac, which loads the register values to all channels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_control_dac</span><span class="o">.</span><span class="n">load</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="igbt_magnet.on">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet.on">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">on</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">igbt_ttl</span><span class="o">.</span><span class="n">on</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="igbt_magnet.off">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet.off">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">off</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">discharge_igbt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">igbt_ttl</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="n">i_supply</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="n">v_supply</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">load_dac</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_dac</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="igbt_magnet.set_current">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet.set_current">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">set_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i_supply</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the current limit of the current supply in amps.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            i (float): the current limit to be set in amps.</span>
+<span class="sd">            load_dac (bool, optional): Loads the dac if true. Defaults to True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">v_dac_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supply_current_to_dac_voltage</span><span class="p">(</span><span class="n">i_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_control_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="n">v_dac_current</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="n">load_dac</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="igbt_magnet.set_voltage">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet.set_voltage">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">set_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">v_supply</span><span class="o">=</span><span class="n">V_SUPPLY_DEFAULT</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">v_dac_voltage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supply_voltage_to_dac_voltage</span><span class="p">(</span><span class="n">v_supply</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_control_dac</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">v</span><span class="o">=</span><span class="n">v_dac_voltage</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="n">load_dac</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="igbt_magnet.supply_current_to_dac_voltage">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet.supply_current_to_dac_voltage">[docs]</a>
+    <span class="nd">@portable</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fast-math&quot;</span><span class="p">})</span>
+    <span class="k">def</span> <span class="nf">supply_current_to_dac_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">i_supply</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TFloat</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">i_supply</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">max_current</span><span class="p">)</span> <span class="o">*</span> <span class="n">V_FULLSCALE_DAC</span></div>
+
+    
+<div class="viewcode-block" id="igbt_magnet.supply_voltage_to_dac_voltage">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet.supply_voltage_to_dac_voltage">[docs]</a>
+    <span class="nd">@portable</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fast-math&quot;</span><span class="p">})</span>
+    <span class="k">def</span> <span class="nf">supply_voltage_to_dac_voltage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">v_supply</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TFloat</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">v_supply</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">max_voltage</span><span class="p">)</span> <span class="o">*</span> <span class="n">V_FULLSCALE_DAC</span></div>
+
+    
+<div class="viewcode-block" id="igbt_magnet.ramp">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet.ramp">[docs]</a>
+    <span class="nd">@kernel</span><span class="p">(</span><span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;fast-math&quot;</span><span class="p">})</span>
+    <span class="k">def</span> <span class="nf">ramp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">t</span><span class="p">,</span><span class="n">i_start</span><span class="p">,</span><span class="n">i_end</span><span class="p">,</span><span class="n">n_steps</span><span class="o">=</span><span class="n">di</span><span class="p">,</span><span class="n">t_analog_delay</span><span class="o">=</span><span class="n">T_ANALOG_DELAY</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n_steps</span> <span class="o">==</span> <span class="n">di</span><span class="p">:</span>
+            <span class="n">n_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">n_field_ramp_steps</span>
+        <span class="n">v_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supply_current_to_dac_voltage</span><span class="p">(</span><span class="n">i_start</span><span class="p">)</span>
+        <span class="n">v_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">supply_current_to_dac_voltage</span><span class="p">(</span><span class="n">i_end</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_control_dac</span><span class="o">.</span><span class="n">linear_ramp</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="n">v_start</span><span class="p">,</span><span class="n">v_end</span><span class="p">,</span><span class="n">n_steps</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">t_analog_delay</span><span class="p">)</span></div>
+
+        
+    <span class="c1"># @kernel</span>
+    <span class="c1"># def open_discharge_igbt(self):</span>
+    <span class="c1">#     &quot;&quot;&quot;Opens the discharge_igbt.</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     self.discharge_igbt_ttl.off()</span>
+
+    <span class="c1"># @kernel</span>
+    <span class="c1"># def close_discharge_igbt(self):</span>
+    <span class="c1">#     &quot;&quot;&quot;Closes the discharge_igbt. Does not do any timeline fuckery.</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     self.discharge_igbt_ttl.on()</span>
+    
+    <span class="c1"># @kernel</span>
+    <span class="c1"># def discharge_igbt_pulse(self,t):</span>
+    <span class="c1">#     self.discharge_igbt_ttl.pulse(t)</span>
+
+<div class="viewcode-block" id="igbt_magnet.discharge">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.igbt_magnet.discharge">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">discharge</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_current</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_voltage</span><span class="p">(</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="n">delay</span><span class="p">(</span><span class="n">T_ANALOG_DELAY</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+</div>
+
+
+<div class="viewcode-block" id="hbridge_magnet">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.hbridge_magnet">[docs]</a>
+<span class="k">class</span> <span class="nc">hbridge_magnet</span><span class="p">(</span><span class="n">igbt_magnet</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">v_control_dac</span> <span class="o">=</span> <span class="n">DAC_CH</span><span class="p">,</span> <span class="n">i_control_dac</span> <span class="o">=</span> <span class="n">DAC_CH</span><span class="p">,</span>
+                 <span class="n">hbridge_ttl</span> <span class="o">=</span> <span class="n">TTL</span><span class="p">,</span> <span class="n">igbt_ttl</span> <span class="o">=</span> <span class="n">TTL</span><span class="p">,</span> <span class="n">discharge_igbt_ttl</span> <span class="o">=</span> <span class="n">TTL</span><span class="p">,</span>
+                 <span class="n">expt_params</span> <span class="o">=</span> <span class="n">ExptParams</span><span class="p">,</span> <span class="n">max_current</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="n">max_voltage</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">v_control_dac</span><span class="p">,</span><span class="n">i_control_dac</span><span class="p">,</span><span class="n">igbt_ttl</span><span class="p">,</span><span class="n">discharge_igbt_ttl</span><span class="p">,</span><span class="n">expt_params</span><span class="p">,</span><span class="n">max_current</span><span class="p">,</span><span class="n">max_voltage</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_current</span> <span class="o">=</span> <span class="n">max_current</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_voltage</span> <span class="o">=</span> <span class="n">max_voltage</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_control_dac</span> <span class="o">=</span> <span class="n">v_control_dac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">i_control_dac</span> <span class="o">=</span> <span class="n">i_control_dac</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">igbt_ttl</span> <span class="o">=</span> <span class="n">igbt_ttl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">discharge_igbt_ttl</span> <span class="o">=</span> <span class="n">discharge_igbt_ttl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_bridge_ttl</span> <span class="o">=</span> <span class="n">hbridge_ttl</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">expt_params</span>
+
+<div class="viewcode-block" id="hbridge_magnet.switch_to_helmholtz">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.hbridge_magnet.switch_to_helmholtz">[docs]</a>
+    <span class="k">def</span> <span class="nf">switch_to_helmholtz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_hbridge_switch_delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_bridge_ttl</span><span class="o">.</span><span class="n">on</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="hbridge_magnet.switch_to_antihelmholtz">
+<a class="viewcode-back" href="../../../../kexp.control.misc.html#kexp.control.misc.big_coil.hbridge_magnet.switch_to_antihelmholtz">[docs]</a>
+    <span class="k">def</span> <span class="nf">switch_to_antihelmholtz</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="n">delay</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_hbridge_switch_delay</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">h_bridge_ttl</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

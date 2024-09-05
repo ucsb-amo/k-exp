@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.config.dds_calibration &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.config.dds_calibration</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.config.dds_calibration</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="n">p_vs_amp</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">4.4709388971684053e-07</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="mf">0.0006855439642324888</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.021</span><span class="p">,</span> <span class="mf">0.000819672131147541</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.022</span><span class="p">,</span> <span class="mf">0.0009985096870342772</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.023</span><span class="p">,</span> <span class="mf">0.0011922503725782414</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.025</span><span class="p">,</span> <span class="mf">0.001669150521609538</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.0275</span><span class="p">,</span> <span class="mf">0.0024411326378539493</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.028</span><span class="p">,</span> <span class="mf">0.0026080476900149033</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.0325</span><span class="p">,</span> <span class="mf">0.004605067064083457</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.035</span><span class="p">,</span> <span class="mf">0.006110283159463488</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.0375</span><span class="p">,</span> <span class="mf">0.008047690014903129</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.04</span><span class="p">,</span> <span class="mf">0.010432190760059613</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.045</span><span class="p">,</span> <span class="mf">0.01639344262295082</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.05</span><span class="p">,</span> <span class="mf">0.024590163934426233</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.06</span><span class="p">,</span> <span class="mf">0.04858420268256334</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.07</span><span class="p">,</span> <span class="mf">0.0849478390461997</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.08</span><span class="p">,</span> <span class="mf">0.13412816691505217</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.085</span><span class="p">,</span> <span class="mf">0.1639344262295082</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.09</span><span class="p">,</span> <span class="mf">0.19821162444113266</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.095</span><span class="p">,</span> <span class="mf">0.23248882265275708</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.27570789865871836</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.105</span><span class="p">,</span> <span class="mf">0.3189269746646796</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.11</span><span class="p">,</span> <span class="mf">0.36661698956780925</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.115</span><span class="p">,</span> <span class="mf">0.4128166915052161</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.12</span><span class="p">,</span> <span class="mf">0.46497764530551416</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.125</span><span class="p">,</span> <span class="mf">0.5156482861400894</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.13</span><span class="p">,</span> <span class="mf">0.5692995529061102</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.135</span><span class="p">,</span> <span class="mf">0.6259314456035768</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.14</span><span class="p">,</span> <span class="mf">0.6780923994038748</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.145</span><span class="p">,</span> <span class="mf">0.7228017883755589</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.1475</span><span class="p">,</span> <span class="mf">0.7451564828614009</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.7645305514157973</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.155</span><span class="p">,</span> <span class="mf">0.8092399403874814</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.16</span><span class="p">,</span> <span class="mf">0.856929955290611</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.165</span><span class="p">,</span> <span class="mf">0.8941877794336811</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.1675</span><span class="p">,</span> <span class="mf">0.9165424739195231</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.17</span><span class="p">,</span> <span class="mf">0.9314456035767511</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.175</span><span class="p">,</span> <span class="mf">0.9582712369597615</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.18</span><span class="p">,</span> <span class="mf">0.9836065573770492</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">0.185</span><span class="p">,</span> <span class="mf">0.9985096870342772</span><span class="p">)]</span>
+
+<span class="n">p</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">p_vs_amp</span><span class="p">]</span>
+<span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">p_vs_amp</span><span class="p">]</span>
+
+<div class="viewcode-block" id="DDS_Amplitude_Calibration">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_calibration.DDS_Amplitude_Calibration">[docs]</a>
+<span class="k">class</span> <span class="nc">DDS_Amplitude_Calibration</span><span class="p">():</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power_data</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">amp_data</span> <span class="o">=</span> <span class="n">a</span>
+
+<div class="viewcode-block" id="DDS_Amplitude_Calibration.power_fraction_to_dds_amplitude">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_calibration.DDS_Amplitude_Calibration.power_fraction_to_dds_amplitude">[docs]</a>
+    <span class="k">def</span> <span class="nf">power_fraction_to_dds_amplitude</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fraction_of_max</span><span class="p">):</span>
+        <span class="n">amp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">fraction_of_max</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">power_data</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">amp_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">amp</span></div>
+
+
+<div class="viewcode-block" id="DDS_Amplitude_Calibration.dds_amplitude_to_power_fraction">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_calibration.DDS_Amplitude_Calibration.dds_amplitude_to_power_fraction">[docs]</a>
+    <span class="k">def</span> <span class="nf">dds_amplitude_to_power_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">amp</span><span class="p">):</span>
+        <span class="n">p_frac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">amp</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">amp_data</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">power_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p_frac</span></div>
+</div>
+
+    
+<span class="n">p_vs_vva</span> <span class="o">=</span> <span class="p">[(</span><span class="mf">5.</span><span class="p">,</span><span class="mf">182.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">4.</span><span class="p">,</span><span class="mf">181.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">3.</span><span class="p">,</span><span class="mf">178.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.85</span><span class="p">,</span><span class="mf">173.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.75</span><span class="p">,</span><span class="mf">168.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.65</span><span class="p">,</span><span class="mf">161.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.6</span><span class="p">,</span><span class="mf">159.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.55</span><span class="p">,</span><span class="mf">155.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.5</span><span class="p">,</span><span class="mf">151.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.45</span><span class="p">,</span><span class="mf">148.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.4</span><span class="p">,</span><span class="mf">145.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.35</span><span class="p">,</span><span class="mf">141.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.3</span><span class="p">,</span><span class="mf">138.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.25</span><span class="p">,</span><span class="mf">133.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.2</span><span class="p">,</span><span class="mf">130.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.15</span><span class="p">,</span><span class="mf">126.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.1</span><span class="p">,</span><span class="mf">123.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.05</span><span class="p">,</span><span class="mf">118.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">2.</span><span class="p">,</span><span class="mf">114.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.95</span><span class="p">,</span><span class="mf">111.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.9</span><span class="p">,</span><span class="mf">106.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.85</span><span class="p">,</span><span class="mf">102.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.8</span><span class="p">,</span><span class="mf">98.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.75</span><span class="p">,</span><span class="mf">94.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.7</span><span class="p">,</span><span class="mf">90.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.65</span><span class="p">,</span><span class="mf">86.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.6</span><span class="p">,</span><span class="mf">82.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.55</span><span class="p">,</span><span class="mf">78.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span><span class="mf">73.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.45</span><span class="p">,</span><span class="mf">70.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.4</span><span class="p">,</span><span class="mf">66.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.35</span><span class="p">,</span><span class="mf">62.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.3</span><span class="p">,</span><span class="mf">57.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.25</span><span class="p">,</span><span class="mf">54.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.2</span><span class="p">,</span><span class="mf">49.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.15</span><span class="p">,</span><span class="mf">45.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.1</span><span class="p">,</span><span class="mf">41.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.05</span><span class="p">,</span><span class="mf">37.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">1.</span><span class="p">,</span><span class="mf">33.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.95</span><span class="p">,</span><span class="mf">29.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.9</span><span class="p">,</span><span class="mf">25.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.85</span><span class="p">,</span><span class="mf">22.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.8</span><span class="p">,</span><span class="mf">18.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.75</span><span class="p">,</span><span class="mf">15.</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.7</span><span class="p">,</span><span class="mf">11.5</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.65</span><span class="p">,</span><span class="mf">8.4</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.6</span><span class="p">,</span><span class="mf">5.7</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.55</span><span class="p">,</span><span class="mf">3.4</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.5</span><span class="p">,</span><span class="mf">1.6</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.45</span><span class="p">,</span><span class="mf">.52</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.425</span><span class="p">,</span><span class="mf">.21</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.4</span><span class="p">,</span><span class="mf">.059</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.3</span><span class="p">,</span><span class="mf">.006</span><span class="p">),</span>
+            <span class="p">(</span><span class="mf">.0</span><span class="p">,</span><span class="mf">0.</span><span class="p">)]</span>
+
+<span class="n">p_vs_vva</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">p_vva</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">p_vs_vva</span><span class="p">])</span>
+<span class="n">pmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">p_vva</span><span class="p">)</span>
+<span class="n">p_vva</span> <span class="o">=</span> <span class="n">p_vva</span> <span class="o">/</span> <span class="n">pmax</span>
+<span class="n">v_vva</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">p_vs_vva</span><span class="p">])</span>
+    
+<div class="viewcode-block" id="DDS_VVA_Calibration">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_calibration.DDS_VVA_Calibration">[docs]</a>
+<span class="k">class</span> <span class="nc">DDS_VVA_Calibration</span><span class="p">():</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">power_data</span> <span class="o">=</span> <span class="n">p_vva</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vva_data</span> <span class="o">=</span> <span class="n">v_vva</span>
+
+<div class="viewcode-block" id="DDS_VVA_Calibration.power_fraction_to_vva">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_calibration.DDS_VVA_Calibration.power_fraction_to_vva">[docs]</a>
+    <span class="k">def</span> <span class="nf">power_fraction_to_vva</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">fraction_of_max</span><span class="p">):</span>
+        <span class="n">vva</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">fraction_of_max</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">power_data</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">vva_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">vva</span></div>
+
+
+<div class="viewcode-block" id="DDS_VVA_Calibration.vva_to_power_fraction">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_calibration.DDS_VVA_Calibration.vva_to_power_fraction">[docs]</a>
+    <span class="k">def</span> <span class="nf">vva_to_power_fraction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">v_vva</span><span class="p">):</span>
+        <span class="n">p_frac</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">v_vva</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">vva_data</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">power_data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">p_frac</span></div>
+</div>
+
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

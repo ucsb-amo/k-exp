@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.util.guis.dds.toggleSlider &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.util.guis.dds.toggleSlider</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.util.guis.dds.toggleSlider</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">PyQt6.QtCore</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Qt</span><span class="p">,</span> <span class="n">QSize</span><span class="p">,</span> <span class="n">QPoint</span><span class="p">,</span> <span class="n">QPointF</span><span class="p">,</span> <span class="n">QRectF</span><span class="p">,</span>
+    <span class="n">QEasingCurve</span><span class="p">,</span> <span class="n">QPropertyAnimation</span><span class="p">,</span> <span class="n">QSequentialAnimationGroup</span><span class="p">,</span>
+    <span class="n">pyqtSlot</span><span class="p">,</span> <span class="n">pyqtProperty</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">PyQt6.QtWidgets</span> <span class="kn">import</span> <span class="n">QApplication</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QHBoxLayout</span><span class="p">,</span> <span class="n">QGridLayout</span><span class="p">,</span> <span class="n">QLineEdit</span><span class="p">,</span> <span class="n">QPushButton</span><span class="p">,</span> <span class="n">QMainWindow</span>
+<span class="kn">from</span> <span class="nn">PyQt6.QtWidgets</span> <span class="kn">import</span> <span class="n">QCheckBox</span>
+<span class="kn">from</span> <span class="nn">PyQt6.QtGui</span> <span class="kn">import</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QBrush</span><span class="p">,</span> <span class="n">QPaintEvent</span><span class="p">,</span> <span class="n">QPen</span><span class="p">,</span> <span class="n">QPainter</span>
+
+
+<div class="viewcode-block" id="AnimatedToggle">
+<a class="viewcode-back" href="../../../../../kexp.util.guis.dds.html#kexp.util.guis.dds.toggleSlider.AnimatedToggle">[docs]</a>
+<span class="k">class</span> <span class="nc">AnimatedToggle</span><span class="p">(</span><span class="n">QCheckBox</span><span class="p">):</span>
+
+    <span class="n">_transparent_pen</span> <span class="o">=</span> <span class="n">QPen</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">transparent</span><span class="p">)</span>
+    <span class="n">_light_grey_pen</span> <span class="o">=</span> <span class="n">QPen</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">lightGray</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+        <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">bar_color</span><span class="o">=</span><span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">gray</span><span class="p">,</span>
+        <span class="n">checked_color</span><span class="o">=</span><span class="s2">&quot;#006600&quot;</span><span class="p">,</span>
+        <span class="n">handle_color</span><span class="o">=</span><span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">white</span><span class="p">,</span>
+        <span class="n">pulse_unchecked_color</span><span class="o">=</span><span class="s2">&quot;#44999999&quot;</span><span class="p">,</span>
+        <span class="n">pulse_checked_color</span><span class="o">=</span><span class="s2">&quot;#009900&quot;</span>
+        <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+
+        <span class="c1"># Save our properties on the object via self, so we can access them later</span>
+        <span class="c1"># in the paintEvent.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bar_brush</span> <span class="o">=</span> <span class="n">QBrush</span><span class="p">(</span><span class="n">bar_color</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bar_checked_brush</span> <span class="o">=</span> <span class="n">QBrush</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="n">checked_color</span><span class="p">)</span><span class="o">.</span><span class="n">lighter</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handle_brush</span> <span class="o">=</span> <span class="n">QBrush</span><span class="p">(</span><span class="n">handle_color</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handle_checked_brush</span> <span class="o">=</span> <span class="n">QBrush</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="n">checked_color</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pulse_unchecked_animation</span> <span class="o">=</span> <span class="n">QBrush</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="n">pulse_unchecked_color</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pulse_checked_animation</span> <span class="o">=</span> <span class="n">QBrush</span><span class="p">(</span><span class="n">QColor</span><span class="p">(</span><span class="n">pulse_checked_color</span><span class="p">))</span>
+
+        <span class="c1"># Setup the rest of the widget.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handle_position</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pulse_radius</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">animation</span> <span class="o">=</span> <span class="n">QPropertyAnimation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;handle_position&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animation</span><span class="o">.</span><span class="n">setEasingCurve</span><span class="p">(</span><span class="n">QEasingCurve</span><span class="o">.</span><span class="n">Type</span><span class="o">.</span><span class="n">InOutCubic</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animation</span><span class="o">.</span><span class="n">setDuration</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>  <span class="c1"># time in ms</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulse_anim</span> <span class="o">=</span> <span class="n">QPropertyAnimation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="sa">b</span><span class="s2">&quot;pulse_radius&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulse_anim</span><span class="o">.</span><span class="n">setDuration</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>  <span class="c1"># time in ms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulse_anim</span><span class="o">.</span><span class="n">setStartValue</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pulse_anim</span><span class="o">.</span><span class="n">setEndValue</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">animations_group</span> <span class="o">=</span> <span class="n">QSequentialAnimationGroup</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animations_group</span><span class="o">.</span><span class="n">addAnimation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">animation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animations_group</span><span class="o">.</span><span class="n">addAnimation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pulse_anim</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stateChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setup_animation</span><span class="p">)</span>
+
+<div class="viewcode-block" id="AnimatedToggle.sizeHint">
+<a class="viewcode-back" href="../../../../../kexp.util.guis.dds.html#kexp.util.guis.dds.toggleSlider.AnimatedToggle.sizeHint">[docs]</a>
+    <span class="k">def</span> <span class="nf">sizeHint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">QSize</span><span class="p">(</span><span class="mi">58</span><span class="p">,</span> <span class="mi">45</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnimatedToggle.hitButton">
+<a class="viewcode-back" href="../../../../../kexp.util.guis.dds.html#kexp.util.guis.dds.toggleSlider.AnimatedToggle.hitButton">[docs]</a>
+    <span class="k">def</span> <span class="nf">hitButton</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">:</span> <span class="n">QPoint</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">contentsRect</span><span class="p">()</span><span class="o">.</span><span class="n">contains</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="AnimatedToggle.setup_animation">
+<a class="viewcode-back" href="../../../../../kexp.util.guis.dds.html#kexp.util.guis.dds.toggleSlider.AnimatedToggle.setup_animation">[docs]</a>
+    <span class="nd">@pyqtSlot</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">setup_animation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animations_group</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">animation</span><span class="o">.</span><span class="n">setEndValue</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">animation</span><span class="o">.</span><span class="n">setEndValue</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">animations_group</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="AnimatedToggle.paintEvent">
+<a class="viewcode-back" href="../../../../../kexp.util.guis.dds.html#kexp.util.guis.dds.toggleSlider.AnimatedToggle.paintEvent">[docs]</a>
+    <span class="k">def</span> <span class="nf">paintEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span> <span class="n">QPaintEvent</span><span class="p">):</span>
+
+        <span class="n">contRect</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">contentsRect</span><span class="p">()</span>
+        <span class="n">handleRadius</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mf">0.24</span> <span class="o">*</span> <span class="n">contRect</span><span class="o">.</span><span class="n">height</span><span class="p">())</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="n">QPainter</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">setRenderHint</span><span class="p">(</span><span class="n">QPainter</span><span class="o">.</span><span class="n">RenderHint</span><span class="o">.</span><span class="n">Antialiasing</span><span class="p">)</span>
+
+        <span class="n">p</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_transparent_pen</span><span class="p">)</span>
+        <span class="n">barRect</span> <span class="o">=</span> <span class="n">QRectF</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">contRect</span><span class="o">.</span><span class="n">width</span><span class="p">()</span> <span class="o">-</span> <span class="n">handleRadius</span><span class="p">,</span> <span class="mf">0.40</span> <span class="o">*</span> <span class="n">contRect</span><span class="o">.</span><span class="n">height</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="n">barRect</span><span class="o">.</span><span class="n">moveCenter</span><span class="p">(</span><span class="n">QPointF</span><span class="p">(</span><span class="n">contRect</span><span class="o">.</span><span class="n">center</span><span class="p">()))</span>
+        <span class="n">rounding</span> <span class="o">=</span> <span class="n">barRect</span><span class="o">.</span><span class="n">height</span><span class="p">()</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="c1"># the handle will move along this line</span>
+        <span class="n">trailLength</span> <span class="o">=</span> <span class="n">contRect</span><span class="o">.</span><span class="n">width</span><span class="p">()</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">handleRadius</span>
+
+        <span class="n">xPos</span> <span class="o">=</span> <span class="n">contRect</span><span class="o">.</span><span class="n">x</span><span class="p">()</span> <span class="o">+</span> <span class="n">handleRadius</span> <span class="o">+</span> <span class="n">trailLength</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_position</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pulse_anim</span><span class="o">.</span><span class="n">state</span><span class="p">()</span> <span class="o">==</span> <span class="n">QPropertyAnimation</span><span class="o">.</span><span class="n">State</span><span class="o">.</span><span class="n">Running</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">setBrush</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pulse_checked_animation</span> <span class="k">if</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pulse_unchecked_animation</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">drawEllipse</span><span class="p">(</span><span class="n">QPointF</span><span class="p">(</span><span class="n">xPos</span><span class="p">,</span> <span class="n">barRect</span><span class="o">.</span><span class="n">center</span><span class="p">()</span><span class="o">.</span><span class="n">y</span><span class="p">()),</span>
+                          <span class="bp">self</span><span class="o">.</span><span class="n">_pulse_radius</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pulse_radius</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">isChecked</span><span class="p">():</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">setBrush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bar_checked_brush</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">drawRoundedRect</span><span class="p">(</span><span class="n">barRect</span><span class="p">,</span> <span class="n">rounding</span><span class="p">,</span> <span class="n">rounding</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">setBrush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handle_checked_brush</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">setBrush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_bar_brush</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">drawRoundedRect</span><span class="p">(</span><span class="n">barRect</span><span class="p">,</span> <span class="n">rounding</span><span class="p">,</span> <span class="n">rounding</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">setPen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_light_grey_pen</span><span class="p">)</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">setBrush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_handle_brush</span><span class="p">)</span>
+
+        <span class="n">p</span><span class="o">.</span><span class="n">drawEllipse</span><span class="p">(</span>
+            <span class="n">QPointF</span><span class="p">(</span><span class="n">xPos</span><span class="p">,</span> <span class="n">barRect</span><span class="o">.</span><span class="n">center</span><span class="p">()</span><span class="o">.</span><span class="n">y</span><span class="p">()),</span>
+            <span class="n">handleRadius</span><span class="p">,</span> <span class="n">handleRadius</span><span class="p">)</span>
+
+        <span class="n">p</span><span class="o">.</span><span class="n">end</span><span class="p">()</span></div>
+
+
+    <span class="nd">@pyqtProperty</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">handle_position</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_handle_position</span>
+
+    <span class="nd">@handle_position</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">handle_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="c1"># change the property</span>
+        <span class="c1"># we need to trigger QWidget.update() method, either by:</span>
+        <span class="c1">#     1- calling it here [ what we doing ].</span>
+        <span class="c1">#     2- connecting the QPropertyAnimation.valueChanged() signal to it.</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_handle_position</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="nd">@pyqtProperty</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">pulse_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pulse_radius</span>
+
+    <span class="nd">@pulse_radius</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">pulse_radius</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pos</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pulse_radius</span> <span class="o">=</span> <span class="n">pos</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
+
+
+<span class="c1"># app = QApplication([])</span>
+
+<span class="c1"># window = QWidget()</span>
+
+<span class="c1"># mainToggle = AnimatedToggle()</span>
+<span class="c1"># # secondaryToggle = AnimatedToggle(</span>
+<span class="c1"># #         checked_color=&quot;#FFB000&quot;,</span>
+<span class="c1"># #         pulse_checked_color=&quot;#44FFB000&quot;</span>
+<span class="c1"># # )</span>
+<span class="c1"># mainToggle.setFixedSize(mainToggle.sizeHint())</span>
+<span class="c1"># # secondaryToggle.setFixedSize(mainToggle.sizeHint())</span>
+
+<span class="c1"># window.setLayout(QVBoxLayout())</span>
+<span class="c1"># window.layout().addWidget(QLabel(&quot;Main Toggle&quot;))</span>
+<span class="c1"># window.layout().addWidget(mainToggle)</span>
+
+<span class="c1"># # window.layout().addWidget(QLabel(&quot;Secondary Toggle&quot;))</span>
+<span class="c1"># # window.layout().addWidget(secondaryToggle)</span>
+
+<span class="c1"># # mainToggle.stateChanged.connect(secondaryToggle.setChecked)</span>
+
+<span class="c1"># window.show()</span>
+<span class="c1"># app.exec()</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

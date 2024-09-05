@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.config.dds_id &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.config.dds_id</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.config.dds_id</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">artiq.coredevice</span> <span class="kn">import</span> <span class="n">ad53xx</span><span class="p">,</span> <span class="n">core</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">portable</span>
+
+<span class="kn">from</span> <span class="nn">kexp.control</span> <span class="kn">import</span> <span class="n">DDS</span>
+<span class="kn">from</span> <span class="nn">kexp.config.dac_id</span> <span class="kn">import</span> <span class="n">dac_frame</span>
+<span class="kn">from</span> <span class="nn">kexp.config.shuttler_id</span> <span class="kn">import</span> <span class="n">shuttler_frame</span>
+<span class="kn">from</span> <span class="nn">kexp.config.dds_calibration</span> <span class="kn">import</span> <span class="n">DDS_Amplitude_Calibration</span>
+<span class="kn">from</span> <span class="nn">kexp.config.dds_calibration</span> <span class="kn">import</span> <span class="n">DDS_VVA_Calibration</span>
+
+<span class="c1"># from jax import AD9910Manager, RAMProfile, RAMType</span>
+<span class="kn">from</span> <span class="nn">artiq.coredevice</span> <span class="kn">import</span> <span class="n">ad9910</span>
+
+<span class="kn">from</span> <span class="nn">kexp.config.expt_params</span> <span class="kn">import</span> <span class="n">ExptParams</span>
+
+<span class="n">N_uru</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="n">N_ch</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">N_uru</span><span class="p">,</span><span class="n">N_ch</span><span class="p">)</span>
+
+<span class="n">RAMP_STEP_TIME</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="mf">4.e-9</span>
+
+<span class="c1"># default_dac_dds_amplitude = 0.3</span>
+
+<span class="n">dv</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span>
+<span class="n">d_exptparams</span> <span class="o">=</span> <span class="n">ExptParams</span><span class="p">()</span>
+
+<div class="viewcode-block" id="dds_empty_frame">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_id.dds_empty_frame">[docs]</a>
+<span class="k">def</span> <span class="nf">dds_empty_frame</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">[[</span><span class="n">x</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_ch</span><span class="p">)]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_uru</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="dds_frame">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_id.dds_frame">[docs]</a>
+<span class="k">class</span> <span class="nc">dds_frame</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Associates each dds with a instance of the DDS class for use in experiments.</span>
+<span class="sd">    Also, records the AO order, DAC channels associated with VVA/PID set points,</span>
+<span class="sd">    associated transition for detuning calulations, and default</span>
+<span class="sd">    frequency/amplitudes.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expt_params</span><span class="p">:</span><span class="n">ExptParams</span><span class="o">=</span><span class="n">d_exptparams</span><span class="p">,</span>
+                  <span class="n">dac_frame_obj</span><span class="p">:</span><span class="n">dac_frame</span> <span class="o">=</span> <span class="p">[],</span>
+                  <span class="n">shuttler_frame_obj</span><span class="p">:</span><span class="n">shuttler_frame</span> <span class="o">=</span> <span class="p">[],</span>
+                  <span class="n">core</span><span class="p">:</span><span class="n">core</span><span class="o">.</span><span class="n">Core</span> <span class="o">=</span> <span class="p">[]):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">expt_params</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_N_uru</span> <span class="o">=</span> <span class="n">N_uru</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_N_ch</span> <span class="o">=</span> <span class="n">N_ch</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shape</span> <span class="o">=</span> <span class="n">shape</span>
+
+        <span class="k">if</span> <span class="n">dac_frame_obj</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dac_frame</span> <span class="o">=</span> <span class="n">dac_frame_obj</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dac_frame</span> <span class="o">=</span> <span class="n">dac_frame</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds_array</span> <span class="o">=</span> <span class="p">[[</span><span class="n">DDS</span><span class="p">(</span><span class="n">uru</span><span class="p">,</span><span class="n">ch</span><span class="p">,</span><span class="n">dac_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_frame</span><span class="o">.</span><span class="n">dac_device</span><span class="p">)</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_ch</span><span class="p">)]</span> <span class="k">for</span> <span class="n">uru</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_uru</span><span class="p">)]</span>
+
+        <span class="c1"># self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">antenna_rf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="n">default_freq</span><span class="o">=</span><span class="mf">200.e6</span><span class="p">,</span><span class="n">default_amp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_rf_source</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D2&#39;</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">detune_push</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_push</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_2d_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D2&#39;</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">detune_d2_r_2dmot</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_d2_r_2dmot</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_2d_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D2&#39;</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">detune_d2_c_2dmot</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_d2_c_2dmot</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_3d_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D2&#39;</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">detune_d2_r_mot</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_d2_r_mot</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_3d_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D2&#39;</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">detune_d2_c_mot</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_d2_c_mot</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mot_killer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D2&#39;</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="mf">0.188</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beatlock_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span>
+                                            <span class="n">default_freq</span><span class="o">=</span><span class="mf">42.26e6</span><span class="p">,</span>
+                                            <span class="n">default_amp</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d1_3d_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D1&#39;</span><span class="p">,</span>
+                                    <span class="n">dac_ch_vpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_frame</span><span class="o">.</span><span class="n">vva_d1_3d_c</span><span class="o">.</span><span class="n">ch</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">detune_d1_c_gm</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_d1_3d_c</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d1_3d_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D1&#39;</span><span class="p">,</span>
+                                    <span class="n">dac_ch_vpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_frame</span><span class="o">.</span><span class="n">vva_d1_3d_r</span><span class="o">.</span><span class="n">ch</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">detune_d1_r_gm</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_d1_3d_r</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">imaging</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                                    <span class="n">default_freq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">frequency_ao_imaging</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="mf">0.54</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">op_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D1&#39;</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">detune_optical_pumping_op</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_optical_pumping_op</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optical_pumping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">transition</span> <span class="o">=</span> <span class="s1">&#39;D1&#39;</span><span class="p">,</span>
+                                    <span class="n">default_detuning</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">detune_optical_pumping_r_op</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_optical_pumping_r_op</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ry_405</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                                      <span class="n">default_freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">frequency_ao_ry_405</span><span class="p">,</span>
+                                      <span class="n">default_amp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_ao_ry_405</span><span class="p">)</span> <span class="c1">#-11.0 dBm on the 405 IntraAction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ry_980</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                                      <span class="n">default_freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">frequency_ao_ry_980</span><span class="p">,</span>
+                                      <span class="n">default_amp</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_ao_ry_980</span><span class="p">)</span> <span class="c1">#500.0mVpp which is ~-2dBm for the 980 G&amp;H</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer_pid_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                                    <span class="n">default_freq</span> <span class="o">=</span> <span class="mf">80.e6</span><span class="p">,</span>
+                                    <span class="n">dac_ch_vpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_frame</span><span class="o">.</span><span class="n">v_pd_tweezer_pid1</span><span class="o">.</span><span class="n">ch</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_tweezer_pid1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer_pid_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dds_assign</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span> <span class="n">ao_order</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                                    <span class="n">default_freq</span> <span class="o">=</span> <span class="mf">80.e6</span><span class="p">,</span>
+                                    <span class="n">dac_ch_vpd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_frame</span><span class="o">.</span><span class="n">v_pd_tweezer_pid2</span><span class="o">.</span><span class="n">ch</span><span class="p">,</span>
+                                    <span class="n">default_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="o">.</span><span class="n">amp_tweezer_pid2</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">core</span> <span class="o">=</span> <span class="n">core</span>
+        <span class="c1"># self.dds_manager = [DDSManager]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds_amp_calibration</span> <span class="o">=</span> <span class="n">DDS_Amplitude_Calibration</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds_vva_calibration</span> <span class="o">=</span> <span class="n">DDS_VVA_Calibration</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ramp_dt</span> <span class="o">=</span> <span class="n">RAMP_STEP_TIME</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">write_dds_keys</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_dds_array</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dds_array</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+<div class="viewcode-block" id="dds_frame.dds_assign">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_id.dds_frame.dds_assign">[docs]</a>
+    <span class="k">def</span> <span class="nf">dds_assign</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">uru</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> 
+                   <span class="n">default_freq</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span> <span class="n">default_detuning</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span> <span class="n">default_amp</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span> 
+                   <span class="n">ao_order</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">double_pass</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">transition</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">dac_ch_vpd</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DDS</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Instantiates and returns a DDS object for the given urukul and channel.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            uru (int): The urukul card index. 0-indexed.</span>
+<span class="sd">            ch (int): The channel of this DDS. 0-indexed.</span>
+<span class="sd">            default_freq (float, optional): The default frequency (in Hz) to</span>
+<span class="sd">            which this DDS channel should turn on.</span>
+<span class="sd">            default_detuning (float, optional): The default detuning (in</span>
+<span class="sd">            linewidths) to which this DDS channel should turn on.</span>
+<span class="sd">            default_amp (_type_, optional): The default amplitude (0 to 1) to</span>
+<span class="sd">            which this DDS channel should turn on.</span>
+<span class="sd">            ao_order (int, optional): Specifies the AO order (if applicable) as</span>
+<span class="sd">            either +1 or -1.</span>
+<span class="sd">            double_pass (bool, optional): Specifies if the AO is set up as a</span>
+<span class="sd">            double pass for detuning calculations. Defaults to True.</span>
+<span class="sd">            transition (str, optional): If the AO controls near-resonant light,</span>
+<span class="sd">            specify the transition (&#39;D1&#39; or &#39;D2&#39;). Defaults to &#39;None&#39;.</span>
+<span class="sd">            dac_ch_vpd (int, optional): If controlling an AO with a VVA in line</span>
+<span class="sd">            with the DDS, this should specify the DAC channel number which</span>
+<span class="sd">            controls that VVA. For no DAC control, leave as -1.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DDS</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+
+        <span class="n">dds0</span> <span class="o">=</span> <span class="n">DDS</span><span class="p">(</span><span class="n">urukul_idx</span><span class="o">=</span><span class="n">uru</span><span class="p">,</span><span class="n">ch</span><span class="o">=</span><span class="n">ch</span><span class="p">,</span>
+                   <span class="n">frequency</span><span class="o">=</span><span class="n">default_freq</span><span class="p">,</span>
+                   <span class="n">amplitude</span><span class="o">=</span><span class="n">default_amp</span><span class="p">,</span>
+                   <span class="n">v_pd</span><span class="o">=</span><span class="mf">5.0</span><span class="p">)</span>
+        <span class="n">dds0</span><span class="o">.</span><span class="n">aom_order</span> <span class="o">=</span> <span class="n">ao_order</span>
+        <span class="n">dds0</span><span class="o">.</span><span class="n">transition</span> <span class="o">=</span> <span class="n">transition</span>
+        <span class="n">dds0</span><span class="o">.</span><span class="n">dac_ch</span> <span class="o">=</span> <span class="n">dac_ch_vpd</span>
+        <span class="n">dds0</span><span class="o">.</span><span class="n">dac_device</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dac_frame</span><span class="o">.</span><span class="n">dac_device</span>
+        <span class="n">dds0</span><span class="o">.</span><span class="n">double_pass</span> <span class="o">=</span> <span class="n">double_pass</span>
+
+        <span class="c1"># set the frequency according to detuning if default_detuning was specified instead of default_freq</span>
+        <span class="k">if</span> <span class="n">default_detuning</span> <span class="o">!=</span> <span class="n">dv</span> <span class="ow">and</span> <span class="n">default_freq</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">freq</span> <span class="o">=</span> <span class="n">dds0</span><span class="o">.</span><span class="n">detuning_to_frequency</span><span class="p">(</span><span class="n">default_detuning</span><span class="p">)</span>
+            <span class="n">dds0</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="n">freq</span>
+        <span class="k">elif</span> <span class="n">default_detuning</span> <span class="o">!=</span> <span class="n">dv</span> <span class="ow">and</span> <span class="n">default_freq</span> <span class="o">!=</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Only one of default_detuning and default_freq must be set in dds_id.py.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dds_array</span><span class="p">[</span><span class="n">uru</span><span class="p">][</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">dds0</span>
+
+        <span class="k">return</span> <span class="n">dds0</span></div>
+
+    
+<div class="viewcode-block" id="dds_frame.write_dds_keys">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_id.dds_frame.write_dds_keys">[docs]</a>
+    <span class="k">def</span> <span class="nf">write_dds_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds the assigned keys to the DDS objects so that the user-defined</span>
+<span class="sd">        names (keys) are available with the DDS objects.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">],</span><span class="n">DDS</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span></div>
+
+    
+<div class="viewcode-block" id="dds_frame.make_dds_array">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_id.dds_frame.make_dds_array">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_dds_array</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an array of shape (N_uru,N_ch) containing DDS objects for</span>
+<span class="sd">        each channel.</span>
+
+<span class="sd">        First loops through the DDS objects that were explicitly assigned as</span>
+<span class="sd">        attributes using dds_assign, then fills in the remaining DDS channels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="n">dds_linlist</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">],</span><span class="n">DDS</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">dds</span> <span class="ow">in</span> <span class="n">dds_linlist</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds_array</span><span class="p">[</span><span class="n">dds</span><span class="o">.</span><span class="n">urukul_idx</span><span class="p">][</span><span class="n">dds</span><span class="o">.</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">dds</span>
+
+        <span class="n">all_idx</span> <span class="o">=</span> <span class="p">[(</span><span class="n">uru</span><span class="p">,</span><span class="n">ch</span><span class="p">)</span> <span class="k">for</span> <span class="n">uru</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_uru</span><span class="p">)</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N_ch</span><span class="p">)]</span>
+        <span class="n">key_idx</span> <span class="o">=</span> <span class="p">[(</span><span class="n">dds</span><span class="o">.</span><span class="n">urukul_idx</span><span class="p">,</span><span class="n">dds</span><span class="o">.</span><span class="n">ch</span><span class="p">)</span> <span class="k">for</span> <span class="n">dds</span> <span class="ow">in</span> <span class="n">dds_linlist</span><span class="p">]</span>
+        <span class="n">non_key_idx</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">all_idx</span><span class="p">)</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">key_idx</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">non_key_idx</span><span class="p">:</span>
+            <span class="n">uru</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ch</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">freq</span><span class="p">,</span> <span class="n">amp</span><span class="p">,</span> <span class="n">v_pd</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">,</span> <span class="mf">0.</span>
+            <span class="n">this_dds</span> <span class="o">=</span> <span class="n">DDS</span><span class="p">(</span><span class="n">uru</span><span class="p">,</span><span class="n">ch</span><span class="p">,</span><span class="n">freq</span><span class="p">,</span><span class="n">amp</span><span class="p">,</span><span class="n">v_pd</span><span class="p">,</span><span class="n">dac_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dac_frame</span><span class="o">.</span><span class="n">dac_device</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dds_array</span><span class="p">[</span><span class="n">uru</span><span class="p">][</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">this_dds</span></div>
+
+
+<div class="viewcode-block" id="dds_frame.power_down_cooling">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_id.dds_frame.power_down_cooling">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">power_down_cooling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Turn off the near-resonant light for long hold times to avoid light</span>
+<span class="sd">        leakage interacting with the atoms.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">amplitude</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">amplitude</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">amplitude</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">amplitude</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_2d_c</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">amplitude</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_2d_r</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">amplitude</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">dds_device</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">amplitude</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_2d_c</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_2d_r</span><span class="o">.</span><span class="n">off</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">off</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="dds_frame.init_cooling">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dds_id.dds_frame.init_cooling">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">init_cooling</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;See &#39;power_down_cooling`. Reboots the DDS cores for the near-resonant</span>
+<span class="sd">        light and sets them to their defaults.</span>
+<span class="sd">        &quot;&quot;&quot;</span>   
+        <span class="bp">self</span><span class="o">.</span><span class="n">d1_3d_r</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d1_3d_c</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_3d_c</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_3d_r</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_2d_c</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">d2_2d_r</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">op_r</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">push</span><span class="o">.</span><span class="n">set_dds</span><span class="p">(</span><span class="n">set_stored</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+</div>
+
+
+<span class="c1">#     def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):</span>
+<span class="c1">#         &quot;&quot;&quot;Define an amplitude ramp profile and append to the specified DDSManager object.</span>
+
+<span class="c1">#         Args:</span>
+<span class="c1">#             dds (DDS): the DDS object corresponding to the channel to be ramped.</span>
+<span class="c1">#             freq_list (ArrayLike): An ndarray or list of values over which to ramp.</span>
+<span class="c1">#             t_ramp (float): The time (in seconds) for the complete ramp.</span>
+<span class="c1">#             dwell_end (bool, optional): If True, after completing the ramp, the</span>
+<span class="c1">#             DDS will remain at the final value in freq_list. Otherwise, switches</span>
+<span class="c1">#             back to freq_list[0]. Defaults to True. </span>
+<span class="c1">#             dds_mgr_idx (int, optional): The index of the DDSManager to use. By</span>
+<span class="c1">#             specifying different indices, one can define multiple ramp sequences</span>
+<span class="c1">#             to be used at different times during a sequence. Defaults to 0.</span>
+<span class="c1">#         &quot;&quot;&quot;</span>
+<span class="c1">#         freq_list, dt_ramp = self.handle_ramp_input(freq_list,t_ramp,dds_mgr_idx)</span>
+<span class="c1">#         this_profile = RAMProfile(</span>
+<span class="c1">#             dds.dds_device, freq_list, dt_ramp, RAMType.FREQ, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].append_ramp(dds, frequency_src=this_profile, amplitude_src=dds.amplitude)</span>
+        
+<span class="c1">#     def set_amplitude_ramp_profile(self, dds:DDS, amp_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):</span>
+<span class="c1">#         &quot;&quot;&quot;Define an amplitude ramp profile and append to the specified DDSManager object.</span>
+
+<span class="c1">#         Args:</span>
+<span class="c1">#             dds (DDS): the DDS object corresponding to the channel to be ramped.</span>
+<span class="c1">#             amp_list (ArrayLike): An ndarray or list of values over which to ramp.</span>
+<span class="c1">#             t_ramp (float): The time (in seconds) for the complete ramp.</span>
+<span class="c1">#             dwell_end (bool, optional): If True, after completing the ramp, the</span>
+<span class="c1">#             DDS will remain at the final value in amp_list. Otherwise, switches</span>
+<span class="c1">#             back to amp_list[0]. Defaults to True. </span>
+<span class="c1">#             dds_mgr_idx (int, optional): The index of the DDSManager to use. By</span>
+<span class="c1">#             specifying different indices, one can define multiple ramp sequences</span>
+<span class="c1">#             to be used at different times during a sequence. Defaults to 0.</span>
+<span class="c1">#         &quot;&quot;&quot;        </span>
+<span class="c1">#         amp_list, dt_ramp = self.handle_ramp_input(amp_list,t_ramp,dds_mgr_idx)</span>
+<span class="c1">#         this_profile = RAMProfile(</span>
+<span class="c1">#             dds.dds_device, amp_list, dt_ramp, RAMType.AMP, ad9910.RAM_MODE_RAMPUP, dwell_end=dwell_end)</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].append_ramp(dds, frequency_src=dds.frequency, amplitude_src=this_profile)</span>
+
+<span class="c1">#     def handle_ramp_input(self,value_list,t_ramp,dds_mgr_idx):</span>
+<span class="c1">#         if isinstance(value_list,np.ndarray):</span>
+<span class="c1">#             value_list = list(value_list)</span>
+<span class="c1">#         self.populate_dds_mgrs(dds_mgr_idx)</span>
+<span class="c1">#         N_points = len(value_list)</span>
+<span class="c1">#         if N_points &gt; 1024:</span>
+<span class="c1">#             raise ValueError(&quot;Too many points!&quot;)</span>
+<span class="c1">#         dt_ramp = round( ( t_ramp / N_points ) / 4.e-9 ) * 4.e-9</span>
+<span class="c1">#         return value_list, dt_ramp</span>
+
+<span class="c1">#     def populate_dds_mgrs(self,dds_mgr_idx):</span>
+<span class="c1">#         &#39;&#39;&#39;Create a new DDSManager and add to the list if the specified number</span>
+<span class="c1">#         of DDSManagers does not yet exist.&#39;&#39;&#39;</span>
+<span class="c1">#         current_max_mgr_idx = len(self.dds_manager) - 1</span>
+<span class="c1">#         if dds_mgr_idx == current_max_mgr_idx + 1:</span>
+<span class="c1">#             self.dds_manager.append(DDSManager(core=self.core))</span>
+<span class="c1">#         elif dds_mgr_idx == current_max_mgr_idx:</span>
+<span class="c1">#             pass</span>
+<span class="c1">#         else:</span>
+<span class="c1">#             raise ValueError(&quot;Must add DDSManagers sequentially with index increasing from 0.&quot;)</span>
+        
+<span class="c1">#     def cleanup_dds_profiles(self):</span>
+<span class="c1">#         &#39;&#39;&#39;Loops over all DDSManagers and adds single-tone RAM profiles for</span>
+<span class="c1">#         non-ramped DDS channels which share a card with a ramped DDS channel.&#39;&#39;&#39;</span>
+<span class="c1">#         for dds_mgr in self.dds_manager:</span>
+<span class="c1">#             dds_mgr.other_dds_to_single_tone_ram(dds_array=self.dds_array)</span>
+
+<span class="c1">#     @kernel</span>
+<span class="c1">#     def load_profile(self, dds_mgr_idx=0):</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].load_profile()</span>
+
+<span class="c1">#     @kernel</span>
+<span class="c1">#     def enable_profile(self, dds_mgr_idx=0):</span>
+<span class="c1">#         &#39;&#39;&#39;Enable + commit enable -- activates a RAM profile and begins</span>
+<span class="c1">#         playback. Delay is dominated by enable, so if more precise timing is</span>
+<span class="c1">#         required, call enable ahead of time and follow with commit_enable when</span>
+<span class="c1">#         you want to begin the ramp.&#39;&#39;&#39;</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].enable()</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].commit_enable()</span>
+
+<span class="c1">#     @kernel</span>
+<span class="c1">#     def disable_profile(self, dds_mgr_idx=0):</span>
+<span class="c1">#         &#39;&#39;&#39;Enable + commit disable -- activates a RAM profile and begins</span>
+<span class="c1">#         playback. Delay is dominated by disable, so if more precise timing is</span>
+<span class="c1">#         required, call disable ahead of time and follow with disable when</span>
+<span class="c1">#         you want to begin the ramp.&#39;&#39;&#39;</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].disable()</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].commit_disable()</span>
+
+<span class="c1">#     @kernel</span>
+<span class="c1">#     def enable(self, dds_mgr_idx=0):</span>
+<span class="c1">#         &#39;&#39;&#39;Sets up but does not begin a ramp. Call commit_enable to start the</span>
+<span class="c1">#         RAM profile (profile 0).&#39;&#39;&#39;</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].enable()</span>
+
+<span class="c1">#     @kernel</span>
+<span class="c1">#     def commit_enable(self, dds_mgr_idx=0):</span>
+<span class="c1">#         &#39;&#39;&#39;Starts a RAM playback after enable() has been called.&#39;&#39;&#39;</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].commit_enable()</span>
+
+<span class="c1">#     @kernel</span>
+<span class="c1">#     def disable(self, dds_mgr_idx=0):</span>
+<span class="c1">#         &#39;&#39;&#39;</span>
+<span class="c1">#         Sets up the termination of but does not stop a ramp. Call RAM playback</span>
+<span class="c1">#         and switch back to the single-tone profile (profile 7).</span>
+<span class="c1">#         &#39;&#39;&#39;</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].disable()</span>
+
+<span class="c1">#     @kernel</span>
+<span class="c1">#     def commit_disable(self, dds_mgr_idx=0):</span>
+<span class="c1">#         &#39;&#39;&#39;Stops a RAM playback after disable() has been called.&#39;&#39;&#39;</span>
+<span class="c1">#         self.dds_manager[dds_mgr_idx].commit_disable()</span>
+
+<span class="c1"># class DDSManager(AD9910Manager):</span>
+<span class="c1">#     def __init__(self,core=DummyCore()):</span>
+<span class="c1">#         super().__init__(core=core)</span>
+<span class="c1">#         self.DDS_with_ramps = []</span>
+
+<span class="c1">#     def append_ramp(self, dds:DDS, frequency_src=0.0, phase_src=0.0, amplitude_src=1.0):</span>
+<span class="c1">#         self.append(dds.dds_device, frequency_src=frequency_src, phase_src=phase_src, amplitude_src=amplitude_src)</span>
+<span class="c1">#         self.DDS_with_ramps.append(dds)</span>
+
+<span class="c1">#     def other_dds_to_single_tone_ram(self, dds_array):</span>
+<span class="c1">#         &#39;&#39;&#39;For DDS channels that are not being ramped which live on the same</span>
+<span class="c1">#         urukul card as one that has a ramp profile set in this DDSManager,</span>
+<span class="c1">#         define a RAM profile which is single-frequency, single-amplitude to</span>
+<span class="c1">#         maintain that channel&#39;s output when the RAM profiles for this DDSManager</span>
+<span class="c1">#         are enabled.&#39;&#39;&#39;</span>
+
+<span class="c1">#         # figure out which dds channels are being ramped on this DDSManager</span>
+<span class="c1">#         ch_with_ram = [(dds.urukul_idx,dds.ch) for dds in self.DDS_with_ramps]</span>
+<span class="c1">#         uru_with_ram = set([ch[0] for ch in ch_with_ram])</span>
+
+<span class="c1">#         # loop over the urukul cards which have a DDS being ramped</span>
+<span class="c1">#         for uru in uru_with_ram:</span>
+<span class="c1">#             all_ch = set([0,1,2,3])</span>
+<span class="c1">#             # figure out which channels on this urukul are being ramped</span>
+<span class="c1">#             ch_with_ram_on_this_uru = [ch[1] for ch in ch_with_ram if ch[0] == uru]</span>
+<span class="c1">#             # figure out which channels on this urukul are not being ramped</span>
+<span class="c1">#             ch_without_ram_on_this_uru = all_ch.difference(ch_with_ram_on_this_uru)</span>
+<span class="c1">#             # loop over those not being ramped</span>
+<span class="c1">#             for ch in ch_without_ram_on_this_uru:</span>
+<span class="c1">#                 dds = dds_array[uru][ch]</span>
+<span class="c1">#                 # append a single-frequency, single-amplitude RAM profile.</span>
+<span class="c1">#                 self.append(dds.dds_device, frequency_src=dds.frequency, amplitude_src=dds.amplitude)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.analysis.standard_experiments &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.analysis.standard_experiments</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.analysis.standard_experiments</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">curve_fit</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">find_peaks</span>
+<span class="kn">from</span> <span class="nn">kexp.analysis</span> <span class="kn">import</span> <span class="n">atomdata</span>
+
+<span class="n">dv</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1000.</span>
+
+<div class="viewcode-block" id="TOF">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.standard_experiments.TOF">[docs]</a>
+<span class="k">class</span> <span class="nc">TOF</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">atomdata</span><span class="p">,</span>
+                 <span class="n">sigma_fit_axis</span><span class="p">,</span>
+                 <span class="n">shot_idx</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        
+        <span class="n">ad</span> <span class="o">=</span> <span class="n">atomdata</span>
+        
+        <span class="k">if</span> <span class="n">sigma_fit_axis</span> <span class="o">==</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span>
+            <span class="n">cloudfits</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">cloudfit_y</span>
+        <span class="k">elif</span> <span class="n">sigma_fit_axis</span> <span class="o">==</span> <span class="s1">&#39;x&#39;</span><span class="p">:</span>
+            <span class="n">cloudfits</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">cloudfit_x</span>
+
+        <span class="k">if</span> <span class="n">ad</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigmas</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">cloudfits</span><span class="p">,</span><span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atom_numbers</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">atom_number</span><span class="p">[:]</span>
+        <span class="k">elif</span> <span class="n">ad</span><span class="o">.</span><span class="n">Nvars</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sigmas</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">_extract_attr</span><span class="p">(</span><span class="n">cloudfits</span><span class="p">[</span><span class="n">shot_idx</span><span class="p">],</span><span class="s1">&#39;sigma&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atom_numbers</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">atom_number</span><span class="p">[:]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xvarname</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">xvar</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_tof</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">t_tof</span>
+
+        <span class="c1"># idx = np.array(range(len(self.t_tof)))</span>
+        <span class="c1"># if include_idx:</span>
+        <span class="c1">#     idx = np.intersect1d(idx, np.asarray(include_idx))</span>
+
+        <span class="c1"># self.t_tof = self.t_tof[idx]</span>
+        <span class="c1"># self.sigmas = self.sigmas[idx]</span>
+        <span class="c1"># self.atom_numbers = self.atom_numbers[idx]</span>
+        
+        <span class="kn">from</span> <span class="nn">kexp.analysis.fitting.gaussian</span> <span class="kn">import</span> <span class="n">GaussianTemperatureFit</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span> <span class="o">=</span> <span class="n">GaussianTemperatureFit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_tof</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmas</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma_r0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">y_fitdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">average_atom_number</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atom_numbers</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="o">.</span><span class="n">T</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase_space_density</span> <span class="o">=</span> <span class="mf">0.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compute_phase_space_density</span><span class="p">()</span>
+
+<div class="viewcode-block" id="TOF.compute_phase_space_density">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.standard_experiments.TOF.compute_phase_space_density">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_phase_space_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                    <span class="n">num_tweezers</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                                    <span class="n">tweezer_waist</span><span class="o">=</span><span class="mf">3.6e-6</span><span class="p">,</span>
+                                    <span class="n">trap_wavelength</span><span class="o">=</span><span class="mf">1064.e-9</span><span class="p">,</span>
+                                    <span class="n">tweezer_final_frequency</span><span class="o">=</span><span class="mf">455.</span><span class="p">):</span>
+        <span class="kn">import</span> <span class="nn">kamo.constants</span> <span class="k">as</span> <span class="nn">c</span>
+        <span class="c1"># phase_space_density = self.average_atom_number / num_tweezers \</span>
+        <span class="c1">#     / (np.sqrt(2) * np.pi) * (trap_wavelength / tweezer_waist) \</span>
+        <span class="c1">#     * ( c.hbar**2/(c.kB * self.T * c.m_K * self.sigma_r0**2) )**(3/2)</span>
+        <span class="c1"># self.phase_space_density = phase_space_density</span>
+
+        <span class="n">phase_space_density</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">average_atom_number</span> <span class="o">/</span> <span class="n">num_tweezers</span> \
+            <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">trap_wavelength</span> <span class="o">/</span> <span class="n">tweezer_waist</span><span class="p">)</span> \
+            <span class="o">*</span> <span class="p">(</span> <span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">hbar</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">tweezer_final_frequency</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">kB</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="p">)</span> <span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">phase_space_density</span> <span class="o">=</span> <span class="n">phase_space_density</span></div>
+</div>
+
+
+<div class="viewcode-block" id="get_B">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.standard_experiments.get_B">[docs]</a>
+<span class="k">def</span> <span class="nf">get_B</span><span class="p">(</span><span class="n">f_mf0_mf1_transition</span><span class="p">,</span>
+          <span class="n">F0</span><span class="o">=</span><span class="mf">2.</span><span class="p">,</span><span class="n">mF0</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span><span class="n">F1</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span><span class="n">mF1</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+          <span class="n">min_B</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span><span class="n">max_B</span><span class="o">=</span><span class="mf">600.</span><span class="p">):</span>
+
+        <span class="kn">from</span> <span class="nn">kamo.atom_properties.k39</span> <span class="kn">import</span> <span class="n">Potassium39</span>
+        <span class="n">k</span> <span class="o">=</span> <span class="n">Potassium39</span><span class="p">()</span>
+        <span class="n">B</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">min_B</span><span class="p">,</span><span class="n">max_B</span><span class="p">,</span><span class="mi">1000000</span><span class="p">)</span>
+        <span class="n">f_transitions</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">get_microwave_transition_frequency</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mf">.5</span><span class="p">,</span><span class="n">F0</span><span class="p">,</span><span class="n">mF0</span><span class="p">,</span><span class="n">F1</span><span class="p">,</span><span class="n">mF1</span><span class="p">,</span><span class="n">B</span><span class="p">))</span> <span class="o">*</span> <span class="mf">1.e6</span>
+
+        <span class="k">def</span> <span class="nf">find_xval</span><span class="p">(</span><span class="n">y_val</span><span class="p">,</span><span class="n">y_vec</span><span class="p">,</span><span class="n">x_vec</span><span class="p">):</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">y_vec</span><span class="p">)</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">y</span> <span class="o">-</span> <span class="n">y_val</span><span class="p">))</span><span class="o">.</span><span class="n">argmin</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">x_vec</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">find_xval</span><span class="p">(</span><span class="n">f_mf0_mf1_transition</span><span class="p">,</span><span class="n">f_transitions</span><span class="p">,</span><span class="n">B</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="rabi_oscillation">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.standard_experiments.rabi_oscillation">[docs]</a>
+<span class="k">def</span> <span class="nf">rabi_oscillation</span><span class="p">(</span><span class="n">ad</span><span class="p">,</span><span class="n">rf_frequency_hz</span><span class="p">,</span>
+                     <span class="n">plot_bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">pi_time_at_peak</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">fit_guess_frequency</span><span class="o">=</span><span class="mf">1.e3</span><span class="p">,</span>
+                     <span class="n">fit_guess_phase</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span>
+                     <span class="n">fit_guess_amp</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                     <span class="n">fit_guess_offset</span><span class="o">=</span><span class="n">dv</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fits the signal (max-min sumOD) vs. pulse time to extract the rabi</span>
+<span class="sd">    frequency and pi-pulse time, and produces a plot.</span>
+
+<span class="sd">    xvar: rf pulse time.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ad (atomdata)</span>
+<span class="sd">        rf_frequency_hz (float): The RF drive frequency in Hz.</span>
+<span class="sd">        plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.</span>
+<span class="sd">        pi_time_at_peak (bool, optional): If True, assumes the initial</span>
+<span class="sd">        population is zero and extracts the pi-pulse time as the location of the</span>
+<span class="sd">        first peak in the fitted oscillation. If False, identifies the minimum</span>
+<span class="sd">        as the pi-pulse time. Defaults to True.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        t_pi: The pi pulse time in seconds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Define the Rabi oscillation function</span>
+    <span class="k">def</span> <span class="nf">_fit_func_rabi_oscillation</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">Omega</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">A</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">A</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Omega</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="n">phi</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">B</span>
+
+    <span class="c1"># Suppose these are your data</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># replace with your pulse times</span>
+
+    <span class="n">sm_sum_ods</span> <span class="o">=</span> <span class="p">[</span><span class="n">sumod_x</span> <span class="k">for</span> <span class="n">sumod_x</span> <span class="ow">in</span> <span class="n">ad</span><span class="o">.</span><span class="n">sum_od_x</span><span class="p">]</span>
+    <span class="n">rel_amps</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">sumod_x</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">sumod_x</span><span class="p">)</span> <span class="k">for</span> <span class="n">sumod_x</span> <span class="ow">in</span> <span class="n">sm_sum_ods</span><span class="p">]</span>
+    <span class="n">populations</span> <span class="o">=</span> <span class="n">rel_amps</span>  <span class="c1"># replace with your atom populations</span>
+
+    <span class="c1"># default fit guesses</span>
+    <span class="k">if</span> <span class="n">fit_guess_amp</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+        <span class="n">fit_guess_amp</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">populations</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">populations</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>
+    <span class="k">if</span> <span class="n">fit_guess_offset</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+        <span class="n">fit_guess_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">populations</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Fit the data</span>
+        <span class="n">popt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span><span class="n">_fit_func_rabi_oscillation</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">populations</span><span class="p">,</span>
+                            <span class="n">p0</span><span class="o">=</span><span class="p">[</span><span class="n">fit_guess_frequency</span><span class="p">,</span> <span class="n">fit_guess_phase</span><span class="p">,</span> <span class="n">fit_guess_amp</span><span class="p">,</span> <span class="n">fit_guess_offset</span><span class="p">])</span>
+
+        <span class="n">y_fit</span> <span class="o">=</span> <span class="n">_fit_func_rabi_oscillation</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="o">*</span><span class="n">popt</span><span class="p">)</span>
+
+        <span class="c1"># Print the fit parameters</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;Fit function: f(t) = A * (cos(Omega t / 2 + phi))**2 + B&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Omega = </span><span class="si">{</span><span class="n">popt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span><span class="se">\n</span><span class="s2"> phi = </span><span class="si">{</span><span class="n">popt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span><span class="se">\n</span><span class="s2"> B = </span><span class="si">{</span><span class="n">popt</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s2">,</span><span class="se">\n</span><span class="s2"> A = </span><span class="si">{</span><span class="n">popt</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">rabi_frequency_hz</span> <span class="o">=</span> <span class="n">popt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">y_fit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">))</span>
+        <span class="n">popt</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="mi">4</span>
+        <span class="n">rabi_frequency_hz</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">plot_bool</span><span class="p">:</span>
+    <span class="c1"># Plot the data and the fit</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">times</span><span class="o">*</span><span class="mf">1.e6</span><span class="p">,</span> <span class="n">populations</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Data&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">times</span><span class="o">*</span><span class="mf">1.e6</span><span class="p">,</span> <span class="n">y_fit</span><span class="p">,</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Fit&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;max(sum od x) - min(sum od x)&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;t (us)&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Run ID: </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">title</span> <span class="o">+=</span> <span class="sa">r</span><span class="s2">&quot;f(t) = $A \ \cos^2(\Omega t / 2 + \phi) + B$&quot;</span>
+        <span class="k">if</span> <span class="n">rabi_frequency_hz</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">$</span><span class="se">\\</span><span class="s2">Omega = 2</span><span class="se">\\</span><span class="s2">pi </span><span class="se">\\</span><span class="s2">times </span><span class="si">{</span><span class="n">rabi_frequency_hz</span><span class="o">/</span><span class="mf">1.e3</span><span class="si">:</span><span class="s2">1.3f</span><span class="si">}</span><span class="s2">$ kHz&quot;</span>
+        <span class="n">title</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">RF frequency = </span><span class="si">{</span><span class="n">rf_frequency_hz</span><span class="o">/</span><span class="mf">1.e6</span><span class="si">:</span><span class="s2">1.2f</span><span class="si">}</span><span class="s2"> MHz&quot;</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">pi_time_at_peak</span><span class="p">:</span>
+            <span class="n">y_fit</span> <span class="o">=</span> <span class="o">-</span><span class="n">y_fit</span>
+        <span class="n">peak_idx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">find_peaks</span><span class="p">(</span><span class="n">y_fit</span><span class="p">)</span>
+        <span class="n">t_pi</span> <span class="o">=</span> <span class="n">times</span><span class="p">[</span><span class="n">peak_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">t_pi</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="n">t_pi</span></div>
+
+
+<div class="viewcode-block" id="rabi_oscillation_2d">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.standard_experiments.rabi_oscillation_2d">[docs]</a>
+<span class="k">def</span> <span class="nf">rabi_oscillation_2d</span><span class="p">(</span><span class="n">ad</span><span class="p">:</span><span class="n">atomdata</span><span class="p">,</span>
+                        <span class="n">plot_bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">subplots_bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">pi_time_at_peak</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">detect_dips</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">xvar0format</span><span class="o">=</span><span class="s1">&#39;1.5f&#39;</span><span class="p">,</span><span class="n">xvar0mult</span><span class="o">=</span><span class="mf">1.e-6</span><span class="p">,</span><span class="n">xvar0unit</span><span class="o">=</span><span class="s1">&#39;MHz&#39;</span><span class="p">,</span>
+                        <span class="n">subplots_figsize</span><span class="o">=</span><span class="p">[],</span>
+                        <span class="n">plot_figsize</span><span class="o">=</span><span class="p">[],</span>
+                        <span class="n">fit_guess_frequency</span><span class="o">=</span><span class="mf">1000.</span><span class="p">,</span>
+                        <span class="n">fit_guess_phase</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span>
+                        <span class="n">fit_guess_amp</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">fit_guess_offset</span><span class="o">=</span><span class="n">dv</span><span class="p">,</span>
+                        <span class="n">rabi_freq_threshold</span><span class="o">=</span><span class="mf">500.</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fits the signal (max-min sumOD) vs. pulse time to extract the rabi</span>
+<span class="sd">    frequency and pi-pulse time, and produces a plot.</span>
+
+<span class="sd">    xvar0: rf frequency</span>
+<span class="sd">    xvar1: pulse time</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ad (atomdata)</span>
+<span class="sd">        plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.</span>
+<span class="sd">        subplots_bool (bool, optional): If True, plots subplots for each set of</span>
+<span class="sd">        scans over pulse time at fixed RF frequency. Includes fits.</span>
+<span class="sd">        pi_time_at_peak (bool, optional): If True, assumes the initial</span>
+<span class="sd">        population is zero and extracts the pi-pulse time as the location of the</span>
+<span class="sd">        first peak in the fitted oscillation. If False, identifies the minimum</span>
+<span class="sd">        as the pi-pulse time. Defaults to True.</span>
+<span class="sd">        xvar0format (str, optional): Defaults to &#39;1.2f&#39;</span>
+<span class="sd">        xvar0mult (float, optional): Defaults to 1.e-6 (to convert Hz to MHz)</span>
+<span class="sd">        xvar0unit (str, optional): Defaults to &#39;MHz&#39;.</span>
+<span class="sd">        subplots_figsize (tuple, optional): </span>
+<span class="sd">        plot_figsize (tuple, optional):</span>
+<span class="sd">        fit_guess_frequency,</span>
+<span class="sd">        fit_guess_phase,</span>
+<span class="sd">        fit_guess_amp,</span>
+<span class="sd">        fit_guess_offset,</span>
+<span class="sd">        rabi_freq_threshold (float, optional): The threshold below which a fit</span>
+<span class="sd">        resulting in this rabi frequency will be discarded.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        rabi_frequencies_hz (np.array): The Rabi frequency in Hz.</span>
+<span class="sd">        t_pi (np.array): The pi pulse times in seconds.</span>
+<span class="sd">        rf_frequencies (np.array): The RF frequencies at which each Rabi</span>
+<span class="sd">        frequency / pi pulse time was measured.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    
+    <span class="n">rabi_frequencies_hz</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">t_pis</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">rel_amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">sumod_x</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">sumod_x</span><span class="p">)</span> <span class="k">for</span> <span class="n">sumod_x</span> <span class="ow">in</span> <span class="n">sumod_for_this_field</span><span class="p">]</span> <span class="k">for</span> <span class="n">sumod_for_this_field</span> <span class="ow">in</span> <span class="n">ad</span><span class="o">.</span><span class="n">sum_od_x</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">detect_dips</span><span class="p">:</span>
+        <span class="n">rel_amps</span> <span class="o">=</span> <span class="o">-</span><span class="n">rel_amps</span>
+ 
+    <span class="n">xvar0_idx</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c1"># Define the Rabi oscillation function</span>
+    <span class="k">def</span> <span class="nf">_fit_func_rabi_oscillation</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">Omega</span><span class="p">,</span> <span class="n">phi</span><span class="p">,</span> <span class="n">B</span><span class="p">,</span> <span class="n">A</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">A</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="mf">0.5</span> <span class="o">*</span> <span class="n">Omega</span> <span class="o">*</span> <span class="n">t</span> <span class="o">+</span> <span class="n">phi</span><span class="p">))</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">B</span>
+
+    <span class="n">times</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">subplots_bool</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">subplots_figsize</span><span class="p">:</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">figsize</span><span class="o">=</span><span class="n">subplots_figsize</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">3</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">rel_amp</span> <span class="ow">in</span> <span class="n">rel_amps</span><span class="p">:</span>
+
+        <span class="n">populations</span> <span class="o">=</span> <span class="n">rel_amp</span>
+
+        <span class="c1"># default fit guesses</span>
+        <span class="k">if</span> <span class="n">fit_guess_amp</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">fit_guess_amp</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">populations</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">populations</span><span class="p">))</span><span class="o">/</span><span class="mi">2</span>
+        <span class="k">if</span> <span class="n">fit_guess_offset</span> <span class="o">==</span> <span class="n">dv</span><span class="p">:</span>
+            <span class="n">fit_guess_offset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">populations</span><span class="p">)</span>
+
+        <span class="c1"># Fit the data</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">popt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span><span class="n">_fit_func_rabi_oscillation</span><span class="p">,</span> <span class="n">times</span><span class="p">,</span> <span class="n">populations</span><span class="p">,</span>
+                                <span class="n">p0</span><span class="o">=</span><span class="p">[</span><span class="n">fit_guess_frequency</span><span class="p">,</span> <span class="n">fit_guess_phase</span><span class="p">,</span> <span class="n">fit_guess_amp</span><span class="p">,</span> <span class="n">fit_guess_offset</span><span class="p">],</span>
+                                <span class="p">)</span>
+            <span class="n">y_fit</span> <span class="o">=</span> <span class="n">_fit_func_rabi_oscillation</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="o">*</span><span class="n">popt</span><span class="p">)</span>
+            <span class="n">f_rabi</span> <span class="o">=</span> <span class="n">popt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">f_rabi</span> <span class="o">&lt;</span> <span class="n">rabi_freq_threshold</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fitted Rabi frequency (</span><span class="si">{</span><span class="n">f_rabi</span><span class="o">/</span><span class="mf">1.e3</span><span class="si">}</span><span class="s2"> kHz) below threshold (</span><span class="si">{</span><span class="n">rabi_freq_threshold</span><span class="o">/</span><span class="mf">1.e3</span><span class="si">}</span><span class="s2"> kHz)&quot;</span><span class="p">)</span>
+            <span class="n">rabi_frequencies_hz</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f_rabi</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">y_fit</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="kc">None</span><span class="p">]</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">))</span>
+            <span class="n">rabi_frequencies_hz</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pi_time_at_peak</span><span class="p">:</span>
+                <span class="n">y_fit</span> <span class="o">=</span> <span class="o">-</span><span class="n">y_fit</span>
+            <span class="n">peak_idx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">find_peaks</span><span class="p">(</span><span class="n">y_fit</span><span class="p">)</span>
+            <span class="n">t_pis</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">[</span><span class="n">peak_idx</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">t_pis</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="kc">None</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">subplots_bool</span><span class="p">:</span>
+        <span class="c1"># Plot the data and the fit</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">times</span><span class="o">*</span><span class="mf">1.e6</span><span class="p">,</span> <span class="n">populations</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Data&#39;</span><span class="p">)</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">times</span><span class="o">*</span><span class="mf">1.e6</span><span class="p">,</span> <span class="n">y_fit</span><span class="p">,</span> <span class="s1">&#39;k-&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Fit&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rabi_frequencies_hz</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]:</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;$f_R = </span><span class="si">{</span><span class="n">rabi_frequencies_hz</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">/</span><span class="mf">1.e3</span><span class="si">:</span><span class="s2">1.2f</span><span class="si">}</span><span class="s2">$&quot;</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+            <span class="n">xlabel</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">xlabel</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">*</span><span class="n">xvar0mult</span><span class="si">:{</span><span class="n">xvar0format</span><span class="si">}}</span><span class="s2">&quot;</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">xlabel</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">xvar0_idx</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
+        
+        <span class="n">xvar0_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">rabi_frequencies_hz</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">rabi_frequencies_hz</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">subplots_bool</span><span class="p">:</span>
+        <span class="n">ymax</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">ymin</span> <span class="o">=</span> <span class="mi">100000</span>
+        <span class="k">for</span> <span class="n">ax0</span> <span class="ow">in</span> <span class="n">ax</span><span class="p">:</span>
+            <span class="n">this_ymin</span><span class="p">,</span> <span class="n">this_ymax</span> <span class="o">=</span> <span class="n">ax0</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">this_ymax</span> <span class="o">&gt;</span> <span class="n">ymax</span><span class="p">:</span>
+                <span class="n">ymax</span> <span class="o">=</span> <span class="n">this_ymax</span>
+            <span class="k">if</span> <span class="n">this_ymin</span> <span class="o">&lt;</span> <span class="n">ymin</span><span class="p">:</span>
+                <span class="n">ymin</span> <span class="o">=</span> <span class="n">this_ymin</span>
+        <span class="p">[</span><span class="n">ax0</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="p">])</span> <span class="k">for</span> <span class="n">ax0</span> <span class="ow">in</span> <span class="n">ax</span><span class="p">]</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Run ID: </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">title</span> <span class="o">+=</span> <span class="sa">r</span><span class="s2">&quot;$y(t) = A \ \cos^2(\Omega t / 2 + \phi) + B$&quot;</span>
+        <span class="n">title</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">$f_</span><span class="se">{{</span><span class="s2">Rabi</span><span class="se">}}</span><span class="s2"> = </span><span class="se">\\</span><span class="s2">Omega / 2</span><span class="se">\\</span><span class="s2">pi$ (kHz)&quot;</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">supxlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">xvar0unit</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">f_rabi</span> <span class="o">==</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">f_rabi</span> <span class="ow">in</span> <span class="n">rabi_frequencies_hz</span><span class="p">]):</span>
+        <span class="n">plot_bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">plot_bool</span><span class="p">:</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">rabi_frequencies_hz</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">rabi_frequencies_hz</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">rabi_frequencies_hz</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span><span class="o">/</span><span class="mf">1.e3</span>
+        <span class="k">if</span> <span class="n">plot_figsize</span><span class="p">:</span>
+            <span class="n">rabi_fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="n">plot_figsize</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rabi_fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Run ID: </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="n">title</span> <span class="o">+=</span> <span class="sa">r</span><span class="s2">&quot;$f(t) = A \ \cos^2(\Omega t / 2 + \phi) + B$&quot;</span>
+        <span class="n">title</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Rabi frequency vs. </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">rabi_frequencies_hz</span><span class="p">)</span>
+        <span class="c1"># plt.xlabel(f&#39;{ad.xvars[0]*xvar0mult:{xvar0format}}&#39;)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Rabi frequency = $\Omega / 2 \pi$ (kHz)&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="n">rf_frequencies</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">rabi_frequencies_hz</span><span class="p">,</span> <span class="n">t_pis</span><span class="p">,</span> <span class="n">rf_frequencies</span></div>
+
+
+<div class="viewcode-block" id="magnetometry_1d">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.standard_experiments.magnetometry_1d">[docs]</a>
+<span class="k">def</span> <span class="nf">magnetometry_1d</span><span class="p">(</span><span class="n">ad</span><span class="p">,</span><span class="n">F0</span><span class="o">=</span><span class="mf">2.</span><span class="p">,</span><span class="n">mF0</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span><span class="n">F1</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span><span class="n">mF1</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                    <span class="n">axis</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                 <span class="n">plot_bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">find_field</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">detect_dips</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">average_multiple_peaks</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">param_of_interest</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                 <span class="n">transition_peak_idx</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">min_B</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span>
+                 <span class="n">max_B</span> <span class="o">=</span> <span class="mf">600.</span><span class="p">,</span>
+                 <span class="n">peak_prominence</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Analyzes the sum_od_x for each shot and produces an array of the max-min</span>
+<span class="sd">    OD (&quot;signal&quot;) vs. the RF center frequency. Extracts the peak signal from each </span>
+<span class="sd">    of these arrays, and finds the frequency where it occurs. Based on expected</span>
+<span class="sd">    microwave frequency for the known transition (specified by user), looks up</span>
+<span class="sd">    the magnitude of magnetic field. </span>
+<span class="sd">    </span>
+<span class="sd">    Produces a plot of the magnetic field vs. the scanned variable.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ad (atomdata): _description_</span>
+<span class="sd">        F0 (int, optional): The F quantum number of the initial state. Defaults to 2.</span>
+<span class="sd">        mF0 (int, optional): The mF quantum number of the inital state. Defaults to 0.</span>
+<span class="sd">        F1 (int, optional): The F quantum number of the final state. Defaults to 2.</span>
+<span class="sd">        mF1 (int, optional): The mF quantum number of the inital state. Defaults to 1.</span>
+<span class="sd">        axis (int, optional): The axis of the sumod to use for the peak finding.</span>
+<span class="sd">        Defaults to 0 (x).</span>
+<span class="sd">        plot_bool (bool, optional): If True, plots the signal vs. frequency</span>
+<span class="sd">        for each value of the scanned xvar. Defaults to True.</span>
+<span class="sd">        detect_dips (bool, optional): If True, inverts the signal to identify a</span>
+<span class="sd">        loss signal. Defaults to False.</span>
+<span class="sd">        param_of_interest (str, optional): If specified, adds the key and value</span>
+<span class="sd">        of the param with that key to the title.</span>
+<span class="sd">        transition_peak_idx (int, optional): state specified by the quantum numbers F0,</span>
+<span class="sd">        mF0, F1, mF1. Indexes as a list, with the peaks from lowest to highest</span>
+<span class="sd">        frequency. Default is the last peak (-1).</span>
+<span class="sd">        min_B (float, optional): the minimum B value in Gauss to use for the</span>
+<span class="sd">        calculation, useful if the transition frequency is non-monatonic with</span>
+<span class="sd">        magnetic field. Defaults to 0.</span>
+<span class="sd">        max_B (float, optional): the maximum B value in Gauss to use for the</span>
+<span class="sd">        calculation, useful if the transition frequency is non-monatonic with</span>
+<span class="sd">        magnetic field. Defaults to 600.</span>
+<span class="sd">        peak_prominence (float, optional): Specifies how prominent a peak has to</span>
+<span class="sd">        be in order to be counted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">sumdist</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">sum_od_x</span>
+    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">sumdist</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">sum_od_y</span>
+    <span class="n">sm_sum_ods</span> <span class="o">=</span> <span class="p">[</span><span class="n">dist</span> <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="n">sumdist</span><span class="p">]</span>
+    <span class="n">rel_amps</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span> <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="n">sm_sum_ods</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">detect_dips</span><span class="p">:</span>
+        <span class="n">rel_amps</span> <span class="o">=</span> <span class="o">-</span> <span class="n">rel_amps</span>
+    
+    <span class="n">peak_idx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">find_peaks</span><span class="p">(</span><span class="n">rel_amps</span><span class="p">,</span><span class="n">prominence</span><span class="o">=</span><span class="n">peak_prominence</span><span class="p">)</span>
+    <span class="n">x_peaks</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">peak_idx</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">average_multiple_peaks</span><span class="p">:</span>
+        <span class="n">x_peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">x_peaks</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">rel_amps</span><span class="p">[</span><span class="n">peak_idx</span><span class="p">])</span>
+        <span class="n">x_peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_peaks</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">find_field</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">this_transition</span> <span class="o">=</span> <span class="n">x_peaks</span><span class="p">[</span><span class="n">transition_peak_idx</span><span class="p">]</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">this_transition</span><span class="p">)</span>
+            <span class="n">B_measured</span> <span class="o">=</span> <span class="n">get_B</span><span class="p">(</span><span class="n">this_transition</span><span class="p">,</span><span class="n">F0</span><span class="p">,</span><span class="n">mF0</span><span class="p">,</span><span class="n">F1</span><span class="p">,</span><span class="n">mF1</span><span class="p">,</span><span class="n">min_B</span><span class="o">=</span><span class="n">min_B</span><span class="p">,</span><span class="n">max_B</span><span class="o">=</span><span class="n">max_B</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">B_measured</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">B_measured</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">plot_bool</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">rel_amps</span><span class="p">)</span>
+        <span class="n">yylim</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x_peaks</span><span class="p">,</span>
+                <span class="n">ymin</span><span class="o">=</span><span class="n">yylim</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">ymax</span><span class="o">=</span><span class="n">yylim</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">colors</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span><span class="n">linestyles</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;peak sumOD - min sumOD&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Run ID: </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="n">param_of_interest</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">title</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">param_of_interest</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="nb">vars</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">params</span><span class="p">)[</span><span class="n">param_of_interest</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="k">if</span> <span class="n">B_measured</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">B = </span><span class="si">{</span><span class="n">B_measured</span><span class="si">:</span><span class="s2">1.3f</span><span class="si">}</span><span class="s2"> G&quot;</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">B_measured</span><span class="p">,</span> <span class="n">x_peaks</span></div>
+
+
+<div class="viewcode-block" id="magnetometry_2d">
+<a class="viewcode-back" href="../../../kexp.analysis.html#kexp.analysis.standard_experiments.magnetometry_2d">[docs]</a>
+<span class="k">def</span> <span class="nf">magnetometry_2d</span><span class="p">(</span><span class="n">ad</span><span class="p">,</span><span class="n">F0</span><span class="o">=</span><span class="mf">2.</span><span class="p">,</span><span class="n">mF0</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span><span class="n">F1</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span><span class="n">mF1</span><span class="o">=</span><span class="mf">1.</span><span class="p">,</span>
+                    <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">subplots_bool</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">detect_dips</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">average_multiple_peaks</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">transition_peak_idx</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">peak_prominence</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                 <span class="n">min_B</span> <span class="o">=</span> <span class="mf">0.</span><span class="p">,</span>
+                 <span class="n">max_B</span> <span class="o">=</span> <span class="mf">600.</span><span class="p">,</span>
+                 <span class="n">subplots_figsize</span><span class="o">=</span><span class="p">[]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Analyzes the sum_od_x for each shot and produces an array of the max-min</span>
+<span class="sd">    OD (&quot;signal&quot;) for each value of the scanned variable vs. the RF center</span>
+<span class="sd">    frequency. Extracts the peak signal from each of these arrays, and finds the</span>
+<span class="sd">    frequency where it occurs. Based on expected microwave frequency for the</span>
+<span class="sd">    known transition (specified by user), looks up the magnitude of magnetic</span>
+<span class="sd">    field. Produces a plot of the magnetic field vs. the scanned variable (the</span>
+<span class="sd">    first xvar).</span>
+
+<span class="sd">    xvar0: scanned variable</span>
+<span class="sd">    xvar1: rf frequency</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        ad (atomdata): _description_</span>
+<span class="sd">        F0 (int, optional): The F quantum number of the initial state. Defaults to 2.</span>
+<span class="sd">        mF0 (int, optional): The mF quantum number of the inital state. Defaults to 0.</span>
+<span class="sd">        F1 (int, optional): The F quantum number of the final state. Defaults to 2.</span>
+<span class="sd">        mF1 (int, optional): The mF quantum number of the inital state. Defaults to 1.</span>
+<span class="sd">        axis (int, optional): The axis of the sumod to use for the peak finding.</span>
+<span class="sd">        Defaults to 0 (x).</span>
+<span class="sd">        subplots_bool (bool, optional): If True, plots the signal vs. frequency</span>
+<span class="sd">        for each value of the scanned xvar. Defaults to True.</span>
+<span class="sd">        detect_dips (bool, optional): If True, inverts the signal to identify a</span>
+<span class="sd">        loss signal. Defaults to False.</span>
+<span class="sd">        average_multiple_peaks (bool, optional): If True, averages multiple</span>
+<span class="sd">        peaks detected to obtain the center frequency. Use at your own risk --</span>
+<span class="sd">        be sure that only one feature is visible. Defaults to False.</span>
+<span class="sd">        transition_peak_idx (int, optional): state specified by the quantum numbers F0,</span>
+<span class="sd">        mF0, F1, mF1. Indexes as a list, with the peaks from lowest to highest</span>
+<span class="sd">        frequency. Default is the last peak (-1).</span>
+<span class="sd">        min_B (float, optional): the minimum B value in Gauss to use for the</span>
+<span class="sd">        calculation, useful if the transition frequency is non-monatonic with</span>
+<span class="sd">        magnetic field. Defaults to 0.</span>
+<span class="sd">        max_B (float, optional): the maximum B value in Gauss to use for the</span>
+<span class="sd">        calculation, useful if the transition frequency is non-monatonic with</span>
+<span class="sd">        magnetic field. Defaults to 600.</span>
+<span class="sd">        peak_prominence (float, optional): Specifies how prominent a peak has to</span>
+<span class="sd">        be in order to be counted.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    
+    <span class="c1"># if frequency_scan_axis == 1:</span>
+    <span class="c1">#     scanned_xvar_axis = 0</span>
+    <span class="c1"># elif frequency_scan_axis == 0:</span>
+    <span class="c1">#     scanned_xvar_axis = 1</span>
+    
+    <span class="k">if</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">sumdist</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">sum_od_x</span>
+    <span class="k">elif</span> <span class="n">axis</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">sumdist</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">sum_od_y</span>
+
+    <span class="n">rel_amps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">sumod</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">sumod</span><span class="p">)</span> <span class="k">for</span> <span class="n">sumod</span> <span class="ow">in</span> <span class="n">sumod_for_this_field</span><span class="p">]</span> <span class="k">for</span> <span class="n">sumod_for_this_field</span> <span class="ow">in</span> <span class="n">sumdist</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">detect_dips</span><span class="p">:</span>
+        <span class="n">rel_amps</span> <span class="o">=</span> <span class="o">-</span><span class="n">rel_amps</span>
+
+    <span class="n">xvar0_idx</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ymax</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ymin</span> <span class="o">=</span> <span class="mi">100000</span>
+
+    <span class="n">B_measured_array</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">transition_peaks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_peaks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">subplots_bool</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">subplots_figsize</span><span class="p">:</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span><span class="n">figsize</span><span class="o">=</span><span class="n">subplots_figsize</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+    <span class="k">for</span> <span class="n">rel_amp</span> <span class="ow">in</span> <span class="n">rel_amps</span><span class="p">:</span>
+
+        <span class="n">peak_idx</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">find_peaks</span><span class="p">(</span><span class="n">rel_amp</span><span class="p">,</span><span class="n">prominence</span><span class="o">=</span><span class="n">peak_prominence</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">peak_idx</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">x_peaks</span> <span class="o">=</span> <span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">peak_idx</span><span class="p">]</span>
+        
+            <span class="k">if</span> <span class="n">average_multiple_peaks</span><span class="p">:</span>
+                <span class="n">x_peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">x_peaks</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">rel_amp</span><span class="p">[</span><span class="n">peak_idx</span><span class="p">])</span>
+                <span class="n">x_peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_peaks</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x_peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="n">all_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x_peaks</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">f_this_transition</span> <span class="o">=</span> <span class="n">x_peaks</span><span class="p">[</span><span class="n">transition_peak_idx</span><span class="p">]</span>
+            <span class="n">transition_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f_this_transition</span><span class="p">)</span>
+            <span class="n">B_measured</span> <span class="o">=</span> <span class="n">get_B</span><span class="p">(</span><span class="n">f_this_transition</span><span class="p">,</span><span class="n">F0</span><span class="p">,</span><span class="n">mF0</span><span class="p">,</span><span class="n">F1</span><span class="p">,</span><span class="n">mF1</span><span class="p">,</span><span class="n">min_B</span><span class="o">=</span><span class="n">min_B</span><span class="p">,</span><span class="n">max_B</span><span class="o">=</span><span class="n">max_B</span><span class="p">)</span>
+            <span class="n">B_measured_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">B_measured</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">f_this_transition</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">B_measured</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">B_measured_array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">subplots_bool</span><span class="p">:</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="mf">1.e6</span><span class="p">,</span><span class="n">rel_amp</span><span class="p">)</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span><span class="n">labelrotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">xvar0_idx</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;maxOD-minOD&quot;</span><span class="p">)</span>
+
+            <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;xvar0 = </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="si">:</span><span class="s2">1.3f</span><span class="si">}</span><span class="s2">&quot;</span>
+
+            <span class="k">if</span> <span class="n">B_measured</span><span class="p">:</span>
+                <span class="n">title</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">B = </span><span class="si">{</span><span class="n">B_measured</span><span class="si">:</span><span class="s2">1.3f</span><span class="si">}</span><span class="s2"> G&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">title</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">xvar0_idx</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+
+        <span class="n">xvar0_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">if</span> <span class="n">subplots_bool</span><span class="p">:</span>
+
+        <span class="k">for</span> <span class="n">ax0</span> <span class="ow">in</span> <span class="n">ax</span><span class="p">:</span>
+                <span class="n">this_ymin</span><span class="p">,</span> <span class="n">this_ymax</span> <span class="o">=</span> <span class="n">ax0</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">this_ymax</span> <span class="o">&gt;</span> <span class="n">ymax</span><span class="p">:</span>
+                    <span class="n">ymax</span> <span class="o">=</span> <span class="n">this_ymax</span>
+                <span class="k">if</span> <span class="n">this_ymin</span> <span class="o">&lt;</span> <span class="n">ymin</span><span class="p">:</span>
+                    <span class="n">ymin</span> <span class="o">=</span> <span class="n">this_ymin</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ax</span><span class="p">)):</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="p">])</span>
+            <span class="n">these_peaks</span> <span class="o">=</span> <span class="n">all_peaks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">these_peaks</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">peak</span><span class="p">:</span>
+                    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">peak</span><span class="o">/</span><span class="mf">1.e6</span><span class="p">,</span>
+                            <span class="n">ymin</span><span class="o">=</span><span class="n">ymin</span><span class="p">,</span><span class="n">ymax</span><span class="o">=</span><span class="n">ymax</span><span class="p">,</span>
+                            <span class="n">colors</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span><span class="n">linestyles</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">)</span>
+
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Run ID: </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">title</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">xvar0 = </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">supxlabel</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">B</span> <span class="o">==</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">B</span> <span class="ow">in</span> <span class="n">B_measured_array</span><span class="p">]):</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Run ID: </span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">run_info</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">ad</span><span class="o">.</span><span class="n">xvars</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="n">B_measured_array</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ad</span><span class="o">.</span><span class="n">xvarnames</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;measured B field (G)&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    
+
+    <span class="k">return</span> <span class="n">B_measured_array</span><span class="p">,</span> <span class="n">transition_peaks</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

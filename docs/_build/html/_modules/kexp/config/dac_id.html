@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kexp.config.dac_id &mdash; kexp 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            kexp
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">kexp</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">kexp</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">kexp.config.dac_id</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for kexp.config.dac_id</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">artiq.experiment</span> <span class="kn">import</span> <span class="n">kernel</span>
+<span class="kn">from</span> <span class="nn">artiq.coredevice.zotino</span> <span class="kn">import</span> <span class="n">Zotino</span>
+<span class="kn">from</span> <span class="nn">kexp.control.artiq.DAC_CH</span> <span class="kn">import</span> <span class="n">DAC_CH</span>
+<span class="kn">from</span> <span class="nn">kexp.config.expt_params</span> <span class="kn">import</span> <span class="n">ExptParams</span>
+
+<span class="n">FORBIDDEN_CH</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="dac_frame">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dac_id.dac_frame">[docs]</a>
+<span class="k">class</span> <span class="nc">dac_frame</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">expt_params</span> <span class="o">=</span> <span class="n">ExptParams</span><span class="p">(),</span> <span class="n">dac_device</span> <span class="o">=</span> <span class="n">Zotino</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span> <span class="o">=</span> <span class="n">dac_device</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac_ch_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">p</span> <span class="o">=</span> <span class="n">expt_params</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">lightsheet_paint_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vva_lightsheet</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="n">v</span><span class="o">=</span><span class="mf">9.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vva_d1_3d_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="n">p</span><span class="o">.</span><span class="n">v_pd_d1_c_gm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vva_d1_3d_r</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="n">p</span><span class="o">.</span><span class="n">v_pd_d1_r_gm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">supply_current_2dmot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="n">v</span><span class="o">=</span><span class="mf">2.447</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xshim_current_control</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span><span class="n">p</span><span class="o">.</span><span class="n">v_xshim_current</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">yshim_current_control</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span><span class="n">p</span><span class="o">.</span><span class="n">v_yshim_current</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zshim_current_control</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span><span class="n">p</span><span class="o">.</span><span class="n">v_zshim_current</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil_supply_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span><span class="n">max_v</span><span class="o">=</span><span class="mf">5.9</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil_supply_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span><span class="n">max_v</span><span class="o">=</span><span class="mf">7.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">outer_coil_supply_voltage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">inner_coil_supply_voltage</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">11</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_tweezer_pid1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="n">v</span><span class="o">=</span><span class="mf">9.7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vco_rf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span><span class="n">v</span><span class="o">=</span><span class="mf">0.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vva_ry_405</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">14</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vva_ry_980</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tweezer_paint_amp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">v_pd_tweezer_pid2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">17</span><span class="p">,</span><span class="n">v</span><span class="o">=</span><span class="mf">6.</span><span class="p">,</span><span class="n">max_v</span><span class="o">=</span><span class="mf">10.</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_dac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">assign_dac_ch</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_dac_keys</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="dac_frame.assign_dac_ch">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dac_id.dac_frame.assign_dac_ch">[docs]</a>
+    <span class="k">def</span> <span class="nf">assign_dac_ch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ch</span><span class="p">,</span><span class="n">v</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span><span class="n">max_v</span><span class="o">=</span><span class="mf">9.99</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAC_CH</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">FORBIDDEN_CH</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DAC channel </span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s2"> is forbidden.&quot;</span><span class="p">)</span>
+        <span class="n">this_dac_ch</span> <span class="o">=</span> <span class="n">DAC_CH</span><span class="p">(</span><span class="n">ch</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="p">,</span> <span class="n">max_v</span><span class="o">=</span><span class="n">max_v</span><span class="p">)</span>
+        <span class="n">this_dac_ch</span><span class="o">.</span><span class="n">v</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac_ch_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">this_dac_ch</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">this_dac_ch</span></div>
+
+    
+    <span class="k">def</span> <span class="nf">_write_dac_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&#39;&#39;&#39;Adds the assigned keys to the DDS objects so that the user-defined</span>
+<span class="sd">        names (keys) are available with the DDS objects.&#39;&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">],</span><span class="n">DAC_CH</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span>
+                <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">set_errmessage</span><span class="p">()</span>
+
+<div class="viewcode-block" id="dac_frame.dac_by_ch">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dac_id.dac_frame.dac_by_ch">[docs]</a>
+    <span class="k">def</span> <span class="nf">dac_by_ch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DAC_CH</span><span class="p">:</span>
+        <span class="n">ch_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">dac</span><span class="o">.</span><span class="n">ch</span> <span class="k">for</span> <span class="n">dac</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac_ch_list</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">ch_list</span><span class="p">:</span>
+            <span class="n">ch_idx</span> <span class="o">=</span> <span class="n">ch_list</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dac_ch_list</span><span class="p">[</span><span class="n">ch_idx</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DAC ch </span><span class="si">{</span><span class="n">ch</span><span class="si">}</span><span class="s2"> not assigned in dac_id.&quot;</span><span class="p">)</span></div>
+
+        
+<div class="viewcode-block" id="dac_frame.set">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dac_id.dac_frame.set">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">ch</span><span class="p">,</span><span class="n">v</span><span class="p">,</span><span class="n">load_dac</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">write_dac</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="n">ch</span><span class="p">,</span><span class="n">voltage</span><span class="o">=</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">load_dac</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">load</span><span class="p">()</span></div>
+
+            
+<div class="viewcode-block" id="dac_frame.load">
+<a class="viewcode-back" href="../../../kexp.config.html#kexp.config.dac_id.dac_frame.load">[docs]</a>
+    <span class="nd">@kernel</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dac_device</span><span class="o">.</span><span class="n">load</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Jared E Pagett.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
