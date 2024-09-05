@@ -38,8 +38,8 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
-        self.p.t_tof = 2400.e-6
-        self.p.N_repeats = 1
+        self.p.t_tof = 3000.e-6
+        self.p.N_repeats = 4
 
         # self.p.t_magtrap_ramp = 75.e-3
         # self.p.t_magtrap = 0.
@@ -90,8 +90,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_tweezer_1064_rampdown2 = .35
         # self.p.t_tweezer_1064_rampdown2 = .5
 
-        # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(1.,5.,8)) 
-        self.p.v_pd_tweezer_1064_rampdown3_end = .8
+        self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(1.,5.,8))
+        # self.p.v_pd_tweezer_1064_rampdown3_end = .8
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.05,.5,8))
         # self.p.t_tweezer_1064_rampdown3 = .3
@@ -104,18 +104,18 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('dummy',[0,1])
         # self.p.t_tweezer_hold = 10.e-3
 
-        self.xvar('i_end',np.linspace(192.3,177.19,8))
+        # self.xvar('i_end',np.linspace(192.3,177.19,8))
 
-        self.camera_params.amp_imaging = .12
-        self.camera_params.exposure_time = 10.e-6
-        self.p.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.amp_imaging = .12
+        # self.camera_params.exposure_time = 10.e-6
+        # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_end)
+        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
 
@@ -183,9 +183,9 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
-                             i_start=self.p.i_evap3_current,
-                             i_end=self.p.i_end)
+        # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
+        #                      i_start=self.p.i_evap3_current,
+        #                      i_end=self.p.i_end)
         
         self.lightsheet.off()
         self.tweezer.off()
