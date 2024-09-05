@@ -1,6 +1,7 @@
 from kexp.control.artiq.DAC_CH import DAC_CH
 from kexp.control.artiq.TTL import TTL
 from kexp.control.artiq.DDS import DDS
+from kexp.calibrations import tweezer as tweezer_calibrations
 from kexp.config import ExptParams
 from kexp.util.artiq.async_print import aprint
 import spcm
@@ -273,8 +274,9 @@ class tweezer():
             which_tweezer (int): index of tweezer (frequency) to move
             distance (float): distance in meters to move the tweezer
         """
-        # compute tweezer movement params
-        dpf = 5.135e-12 # meter per Hz
+        # compute tweezer movement params in meter / MHz
+        cat_eye_xpf = tweezer_calibrations.cat_eye_xpf
+        non_cat_eye_xpf = tweezer_calibrations.non_cat_eye_xpf
 
         # set acceleration of movement
         acc_f = self.params.tweezer_acceleration / dpf
