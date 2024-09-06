@@ -40,7 +40,7 @@ class ExptParams():
         self.t_discharge_igbt = 2.e-3
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
-        self.t_mot_load = 0.5
+        self.t_mot_load = 0.75
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
         self.t_magnet_off_pretrigger = 0.e-3
@@ -225,6 +225,7 @@ class ExptParams():
         # tweezer movement
         self.n_steps_tweezer_move = 1000
         self.t_tweezer_single_move = 10.e-3
+        self.y_tweezer_move = 10.e-6
         # self.dt_tweezer_moves = 10.e-6
 
         # RF
@@ -260,9 +261,9 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 191.4
-        self.i_evap2_current = 181.3
-        self.i_evap3_current = 190.6
+        self.i_evap1_current = 193.
+        self.i_evap2_current = 193.4
+        self.i_evap3_current = 192.3
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.

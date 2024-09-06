@@ -6,6 +6,7 @@ from kexp.config import ExptParams
 from kexp.util.artiq.async_print import aprint
 from artiq.language.core import now_mu
 from artiq.coredevice.core import Core
+from artiq.experiment import rpc
 import spcm
 from spcm import units
 
@@ -273,7 +274,7 @@ class tweezer():
             B = 3*total_distance / total_time**2
             return A*t**3 + B*t**2
 
-    def move(self,which_tweezer,distance,time):
+    def compute_write_movement(self,which_tweezer,distance,time):
         """_summary_
 
         Args:
@@ -320,8 +321,7 @@ class tweezer():
 
     @rpc(flags={"async"})
     def write_to_awg_rpc(self,twz_idx,x,t):
-
-        self.move(twz_idx,x,t)
+        self.compute_write_movement(twz_idx,x,t)
         pass
 
     @kernel
