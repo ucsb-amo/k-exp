@@ -4,6 +4,8 @@ from kexp.control.artiq.DDS import DDS
 from kexp.calibrations import tweezer as tweezer_calibrations
 from kexp.config import ExptParams
 from kexp.util.artiq.async_print import aprint
+from artiq.language.core import now_mu
+from artiq.coredevice.core import Core
 import spcm
 from spcm import units
 
@@ -27,7 +29,8 @@ class tweezer():
                   pid1_int_hold_zero_ttl=TTL,
                   pid2_enable_ttl=TTL,
                   painting_dac=DAC_CH,
-                  expt_params=ExptParams):
+                  expt_params=ExptParams,
+                  core=Core):
         """Controls the tweezers.
 
         Args:
@@ -45,6 +48,7 @@ class tweezer():
         self.paint_amp_dac = painting_dac
         self.params = expt_params
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
+        self.core = core
 
     @kernel
     def on(self,paint=False,v_awg_am=dv):
@@ -264,59 +268,71 @@ class tweezer():
         
         self.dds.write_to_card()
 
-    # def close(self):
-    #     self.card.close(self.card._handle)
+    def cubic_move(self,t,total_distance,total_time):
+            A = -2*total_distance / total_time**3
+            B = 3*total_distance / total_time**2
+            return A*t**3 + B*t**2
 
-    def move_tweezer(self,which_tweezer,distance):
+    def move(self,which_tweezer,distance,time):
         """_summary_
 
         Args:
             which_tweezer (int): index of tweezer (frequency) to move
             distance (float): distance in meters to move the tweezer
+            time (float): total time of move
         """
-        # compute tweezer movement params in meter / MHz
+        # tweezer movement calibrations in meter / MHz
         cat_eye_xpf = tweezer_calibrations.cat_eye_xpf
         non_cat_eye_xpf = tweezer_calibrations.non_cat_eye_xpf
 
-        # set acceleration of movement
-        acc_f = self.params.tweezer_acceleration / dpf
+        if self.params.frequency_tweezer_list[which_tweezer] < 75.e6:
+            dpf = cat_eye_xpf
+        else:
+            dpf = non_cat_eye_xpf
 
-        # time necessary to move half the desired distance (accelerate to here)
-        t_tot = np.sqrt(abs(distance) / (2*self.params.tweezer_acceleration))
+        # how many steps?
+        n_steps = self.params.n_steps_tweezer_move
 
-        # how much time per linear ramp
-        dt = t_tot / self.params.n_tweezer_move_steps
+        # time per step
+        dt = time / (n_steps - 1)
 
-        # change in slope of linear ramp per dt
-        df = acc_f*dt
+        # generate array of slopes
+        slopes = np.zeros([n_steps],dtype=float)
 
-        # compute list of linear ramp slopes
-        acceleration_array = []
-        decceleration_array = []
-
-        for n in range(1,self.params.n_tweezer_move_steps+1):
-            acceleration_array.append(df*n)
-            decceleration_array.append(df*(self.params.n_tweezer_move_steps-n))
-
-        slopes = np.concatenate([np.array(acceleration_array),np.array(decceleration_array)])
-
-        if distance < 0:
-            slopes = -1*slopes
+        for step in range(1,n_steps):
+                slopes[step-1] = (self.cubic_move(dt*(step),distance,time) - self.cubic_move(dt*(step-1),distance,time)) / (dt*dpf)       
 
         # execute single movement
         # start trigger timer, which outputs trigger events at a given rate
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
         self.dds.trg_timer(dt)
         self.dds.exec_at_trg()
-        self.dds.write_to_card()
 
         # write slopes to card
         for slope in slopes:
             self.dds.frequency_slope(which_tweezer,slope)
             self.dds.exec_at_trg()
-        self.dds.write_to_card()
 
         # reset trigger mode to external at the end
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
         self.dds.exec_at_trg()
         self.dds.write_to_card()
+
+    @rpc(flags={"async"})
+    def write_to_awg_rpc(self,twz_idx,x,t):
+
+        self.move(twz_idx,x,t)
+        pass
+
+    @kernel
+    def write_to_awg(self,twz_idx,x,t):
+        self.core.wait_until_mu(now_mu())
+        self.write_to_awg_rpc(twz_idx,x,t)
+        delay(3*ms)
+        
+    @kernel
+    def move_tweezer(self,twz_idx,x,t,awg_write_bool=True):
+        if awg_write_bool:
+            self.write_to_awg(twz_idx,x,t)
+        self.ttl.pulse(1.e-6)
+        delay(t)

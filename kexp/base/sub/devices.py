@@ -104,7 +104,8 @@ class Devices():
                                pid1_int_hold_zero_ttl = self.ttl.tweezer_pid1_int_hold_zero,
                                pid2_enable_ttl=self.ttl.tweezer_pid2_enable,
                                painting_dac = self.dac.tweezer_paint_amp,
-                               expt_params = self.params)
+                               expt_params = self.params,
+                               core=self.core)
 
         # camera placeholder
         self.camera = DummyCamera()

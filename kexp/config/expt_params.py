@@ -222,6 +222,11 @@ class ExptParams():
 
         self.v_tweezer_paint_amp_max = 6.
 
+        # tweezer movement
+        self.n_steps_tweezer_move = 1000
+        self.t_tweezer_single_move = 10.e-3
+        # self.dt_tweezer_moves = 10.e-6
+
         # RF
         self.amp_rf_source = 0.99
         self.n_rf_sweep_steps = 1000
