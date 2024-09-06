@@ -14,7 +14,6 @@ class tweezer_load(EnvExperiment, Base):
 
         self.xvar('beans',[0.]*100)
 
-        # self.xvar('t_tof',np.linspace(1000.,3000.,10)*1.e-6)
         self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
         # self.p.frequency_tweezer_list = [70.3e6,80.e6]
 
@@ -29,6 +28,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
+        # self.xvar('t_tof',np.linspace(1000.,3000.,10)*1.e-6)
         self.p.t_tof = 20.e-6
         self.p.N_repeats = 1
 
@@ -108,7 +108,7 @@ class tweezer_load(EnvExperiment, Base):
         #                   v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
         #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        # delay(self.p.t_tweezer_hold)
+        delay(self.p.t_tweezer_hold)
         # self.tweezer.move_tweezer(0,self.p.y_tweezer_move,self.p.t_tweezer_single_move)
         
         self.lightsheet.off()
