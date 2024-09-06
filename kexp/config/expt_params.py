@@ -40,7 +40,7 @@ class ExptParams():
         self.t_discharge_igbt = 2.e-3
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
-        self.t_mot_load = 0.75
+        self.t_mot_load = 0.5
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
         self.t_magnet_off_pretrigger = 0.e-3
@@ -183,8 +183,8 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.99
-        self.v_pd_lightsheet_rampdown_end = 4.16
+        self.v_pd_lightsheet_rampup_end = 9.9
+        self.v_pd_lightsheet_rampdown_end = .65 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -220,13 +220,7 @@ class ExptParams():
         # self.amp_tweezer_list = [.2,.215]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = 6.
-
-        # tweezer movement
-        self.n_steps_tweezer_move = 1000
-        self.t_tweezer_single_move = 10.e-3
-        self.y_tweezer_move = 10.e-6
-        # self.dt_tweezer_moves = 10.e-6
+        self.v_tweezer_paint_amp_max = -1.222
 
         # RF
         self.amp_rf_source = 0.99
