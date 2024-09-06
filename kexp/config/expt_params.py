@@ -195,10 +195,10 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 9.2
-        self.v_pd_tweezer_1064_rampdown_end = .7
-        self.v_pd_tweezer_1064_rampdown2_end = 0.025
-        self.v_pd_tweezer_1064_rampdown3_end = 0.025
+        self.v_pd_tweezer_1064_ramp_end = 9.9
+        self.v_pd_tweezer_1064_rampdown_end = .3
+        self.v_pd_tweezer_1064_rampdown2_end = .07
+        self.v_pd_tweezer_1064_rampdown3_end = .8
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.

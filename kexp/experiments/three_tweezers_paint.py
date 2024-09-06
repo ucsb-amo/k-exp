@@ -12,7 +12,7 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        # self.xvar('beans',[0.]*100)
+        # self.xvar('beans',[0.]*4)
 
         # self.xvar('amp_imaging',np.linspace(0.05,0.125,10))
         # self.xvar('frequency_detuned_imaging',\
@@ -24,11 +24,11 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(1.,9.,10))
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,6.,10))
         # self.p.frequency_tweezer_list = [70.9e6,76.e6,80.e6]
-        self.p.frequency_tweezer_list = [70.9e6,76.e6,80.e6]
+        # self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
         self.p.frequency_tweezer_list = [70.3e6,80.e6]
 
         # a_list = [.5225,.290,.1775]
-        a_list = [.5225,.1775]
+        a_list = [.5275,.1525]
         # a_list = [0.52658228, 0.18367089, 0.28974684]
         # a_list = [0.49442252, 0.34649619, 0.1590813]
         # def normalize_alist(alist):
@@ -38,8 +38,8 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
-        self.p.t_tof = 2.5e-3
-        self.p.N_repeats = 1
+        self.p.t_tof = 3000.e-6
+        self.p.N_repeats = 4
 
         # self.p.t_magtrap_ramp = 75.e-3
         # self.p.t_magtrap = 0.
@@ -90,8 +90,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_tweezer_1064_rampdown2 = .35
         # self.p.t_tweezer_1064_rampdown2 = .5
 
-        self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.45,1.5,10)) 
-        # self.p.v_pd_tweezer_1064_rampdown3_end = .68
+        self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(1.,5.,8))
+        # self.p.v_pd_tweezer_1064_rampdown3_end = .8
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.05,.5,8))
         # self.p.t_tweezer_1064_rampdown3 = .3
@@ -100,13 +100,15 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.i_evap3_current = 192.3
 
         # self.xvar('t_tweezer_hold',np.linspace(1.,1000.,2)*1.e-3)
-        self.xvar('t_tof',np.linspace(800.,3500.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(800.,3000.,7)*1.e-6)
         # self.xvar('dummy',[0,1])
         # self.p.t_tweezer_hold = 10.e-3
 
-        self.camera_params.amp_imaging = .12
-        self.camera_params.exposure_time = 10.e-6
-        self.p.t_imaging_pulse = self.camera_params.exposure_time
+        # self.xvar('i_end',np.linspace(192.3,177.19,8))
+
+        # self.camera_params.amp_imaging = .12
+        # self.camera_params.exposure_time = 10.e-6
+        # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
         self.finish_prepare(shuffle=True)
 
@@ -180,6 +182,10 @@ class tweezer_load(EnvExperiment, Base):
                           v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
+        
+        # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
+        #                      i_start=self.p.i_evap3_current,
+        #                      i_end=self.p.i_end)
         
         self.lightsheet.off()
         self.tweezer.off()

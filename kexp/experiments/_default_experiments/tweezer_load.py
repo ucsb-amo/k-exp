@@ -4,19 +4,41 @@ from kexp import Base
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.calibrations.imaging import high_field_imaging_detuning
+
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        # self.xvar('t_tof',np.linspace(20.,1000.,10)*1.e-6)
-        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(1.,9.,10))
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,6.,10))
-        self.xvar('dummy',[0.]*2)
-        self.p.frequency_tweezer_list = [70.e6]
-        self.p.t_tof = 20.e-6
+        # self.p.frequency_tweezer_list = [70.9e6,76.e6,80.e6]
+        self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
+        # self.p.frequency_tweezer_list = [70.3e6,80.e6]
+
+        a_list = [.5225,.290,.1775]
+        # a_list = [.5225,.1775]
+        # def normalize_alist(alist):
+        #     sum = np.sum(alist)
+        #     return a_list/sum
+        # a_list = normalize_alist(a_list)
+        self.p.amp_tweezer_list = a_list
+        self.p.amp_tweezer_auto_compute = False
+
+        self.p.t_tof = 2.5e-3
         self.p.N_repeats = 1
-        self.p.t_lightsheet_hold = 0.1
+
+        self.p.t_mot_load = .75
+
+        # self.xvar('t_tweezer_hold',np.linspace(1.,1000.,2)*1.e-3)
+        self.xvar('t_tof',np.linspace(800.,3500.,10)*1.e-6)
+        # self.xvar('dummy',[0,1])
+        # self.p.t_tweezer_hold = 10.e-3
+
+        self.camera_params.amp_imaging = .12
+        self.camera_params.exposure_time = 10.e-6
+        self.p.t_imaging_pulse = self.camera_params.exposure_time
+
         self.finish_prepare(shuffle=True)
 
     @kernel
@@ -32,7 +54,6 @@ class tweezer_load(EnvExperiment, Base):
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
-        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.magtrap_and_load_lightsheet()
 
         # feshbach field on, ramp up to field 1  
@@ -48,20 +69,17 @@ class tweezer_load(EnvExperiment, Base):
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
         
-        # delay(self.p.t_feshbach_field_ramp)
-        
         # feshbach field ramp to field 2
         self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_evap1_current,
                              i_end=self.p.i_evap2_current)
         
-        # delay(self.p.t_tweezer_1064_ramp)
-        
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.tweezer.on(paint=False)
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
                           v_start=0.,
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
-                          paint=False,keep_trap_frequency_constant=False)
+                          paint=True,keep_trap_frequency_constant=False)
         
         # # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
@@ -69,13 +87,9 @@ class tweezer_load(EnvExperiment, Base):
                              v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         self.lightsheet.off()
-
-        # delay(self.p.t_tweezer_hold)
-        
         self.tweezer.off()
 
         delay(self.p.t_tof)
-        # self.flash_repump()
         self.abs_image()
 
         self.outer_coil.off()
