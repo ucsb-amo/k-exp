@@ -273,8 +273,8 @@ class tweezer():
             A = -2*total_distance / total_time**3
             B = 3*total_distance / total_time**2
             return A*t**3 + B*t**2
-
-    def compute_write_movement(self,which_tweezer,distance,time):
+    
+    def compute_movement(self,which_tweezer,distance,time):
         """_summary_
 
         Args:
@@ -295,22 +295,23 @@ class tweezer():
         n_steps = self.params.n_steps_tweezer_move
 
         # time per step
-        dt = time / (n_steps - 1)
+        self.dt = time / (n_steps - 1)
 
         # generate array of slopes
-        slopes = np.zeros([n_steps],dtype=float)
+        self.slopes = np.zeros([n_steps],dtype=float)
 
         for step in range(1,n_steps):
-                slopes[step-1] = (self.cubic_move(dt*(step),distance,time) - self.cubic_move(dt*(step-1),distance,time)) / (dt*dpf)       
+                self.slopes[step-1] = (self.cubic_move(self.dt*(step),distance,time) - self.cubic_move(self.dt*(step-1),distance,time)) / (self.dt*dpf)  
 
+    def write_movement(self,which_tweezer):
         # execute single movement
         # start trigger timer, which outputs trigger events at a given rate
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
-        self.dds.trg_timer(dt)
+        self.dds.trg_timer(self.dt)
         self.dds.exec_at_trg()
 
         # write slopes to card
-        for slope in slopes:
+        for slope in self.slopes:
             self.dds.frequency_slope(which_tweezer,slope)
             self.dds.exec_at_trg()
 
@@ -320,19 +321,20 @@ class tweezer():
         self.dds.write_to_card()
 
     @rpc(flags={"async"})
-    def write_to_awg_rpc(self,twz_idx,x,t):
-        self.compute_write_movement(twz_idx,x,t)
+    def write_to_awg_rpc(self,twz_idx):
+        self.write_movement(twz_idx)
         pass
 
     @kernel
-    def write_to_awg(self,twz_idx,x,t):
+    def write_to_awg(self,twz_idx):
         self.core.wait_until_mu(now_mu())
-        self.write_to_awg_rpc(twz_idx,x,t)
-        delay(3*ms)
+        self.write_to_awg_rpc(twz_idx)
+        self.core.break_realtime()
+        delay(20.e-3)
         
     @kernel
-    def move_tweezer(self,twz_idx,x,t,awg_write_bool=True):
+    def move_tweezer(self,twz_idx,t,awg_write_bool=True):
         if awg_write_bool:
-            self.write_to_awg(twz_idx,x,t)
-        self.ttl.pulse(1.e-6)
+            self.write_to_awg(twz_idx)
+        self.awg_trg_ttl.pulse(1.e-6)
         delay(t)
