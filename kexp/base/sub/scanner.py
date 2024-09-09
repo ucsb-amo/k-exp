@@ -322,7 +322,7 @@ class xvar():
         self.key = key
         if type(values) == float or type(values) == int:
             raise ValueError("xvar must be a list or ndarray")
-        self.values = np.asarray(values,dtype=float)
+        self.values = np.asarray(values)
         self.position = position
         self.counter = 0
         self.sort_idx = []
