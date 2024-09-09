@@ -4,6 +4,7 @@ import numpy as np
 from kexp.control.artiq.dummy_core import DummyCore
 from artiq.language.core import kernel_from_string, now_mu
 from artiq.experiment import delay
+from kexp.util.artiq.async_print import aprint
 
 RPC_DELAY = 10.e-3
 
@@ -320,7 +321,7 @@ class xvar():
         """
         self.key = key
         if type(values) == float or type(values) == int:
-            values = [values]
+            raise ValueError("xvar must be a list or ndarray")
         self.values = np.asarray(values,dtype=float)
         self.position = position
         self.counter = 0
