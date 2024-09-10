@@ -4,6 +4,7 @@ import numpy as np
 from kexp.control.artiq.dummy_core import DummyCore
 from artiq.language.core import kernel_from_string, now_mu
 from artiq.experiment import delay
+from kexp.util.artiq.async_print import aprint
 
 RPC_DELAY = 10.e-3
 
@@ -96,6 +97,12 @@ class Scanner():
         pass
 
     @kernel
+    def cleanup_scan_kernel(self):
+        """This method is run just after each scan_kernel completes.
+        """
+        pass
+        
+    @kernel
     def scan(self):
         """
         Runs the scan_kernel function for each value of the xvars specified.
@@ -127,6 +134,8 @@ class Scanner():
             self.init_scan_kernel()
 
             self.scan_kernel()
+
+            self.cleanup_scan_kernel()
 
             delay(self.params.t_recover)
             self.core.break_realtime()
@@ -312,8 +321,8 @@ class xvar():
         """
         self.key = key
         if type(values) == float or type(values) == int:
-            values = [values]
-        self.values = np.asarray(values,dtype=float)
+            raise ValueError("xvar must be a list or ndarray")
+        self.values = np.asarray(values)
         self.position = position
         self.counter = 0
         self.sort_idx = []

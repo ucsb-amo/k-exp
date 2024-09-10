@@ -8,23 +8,26 @@ class LorentzianFit(Fit):
         super().__init__(xdata,ydata,savgol_window=20)
 
         try:
-            amplitude, sigma, x_center, y_offset = self._fit(self.xdata,self.ydata)
+            popt = self._fit(self.xdata,self.ydata)
         except Exception as e:
             print(e)
-            amplitude, sigma, x_center, y_offset = np.NaN, np.NaN, np.NaN, np.NaN
+            popt = [np.NaN]*4
             self.y_fitdata = np.zeros(self.ydata.shape); self.y_fitdata.fill(np.NaN)
 
+
+        self.popt = popt
+        amplitude, sigma, x_center, y_offset = popt
         self.amplitude = amplitude
         self.sigma = sigma
         self.x_center = x_center
         self.y_offset = y_offset
 
-        self.y_fitdata = self._fit_func(self.xdata,amplitude,sigma,x_center,y_offset)
+        self.y_fitdata = self._fit_func(self.xdata,*popt)
 
         self.area = amplitude
 
     def _fit_func(self, x, amplitude, sigma, x_center, y_offset):
-        return y_offset + amplitude * sigma/(2*np.pi) / ( (x-x_center)**2 + (sigma/2)**2 )
+        return y_offset + amplitude * sigma / ( (x-x_center)**2 + (sigma*(2*np.pi)/2)**2 )
 
     def _fit(self, x, y):
         '''
@@ -46,7 +49,7 @@ class LorentzianFit(Fit):
         '''
         amplitude_guess = np.max(y) - np.min(y)
         x_center_guess = x[np.argmax(y)]
-        sigma_guess = np.abs(x_center_guess - x[np.argmin(np.abs(self.ydata_smoothed - 0.65*np.max(y)))])
+        sigma_guess = (x[-1] - x[0])/5
         y_offset_guess = np.min(y)
         popt, pcov = curve_fit(self._fit_func, x, y,
                                 p0=[amplitude_guess, sigma_guess, x_center_guess, y_offset_guess],

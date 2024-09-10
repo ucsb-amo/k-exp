@@ -19,8 +19,8 @@ class img_amp_calibration(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_evap1_current)
-        self.set_imaging_detuning(amp=self.p.amp_imaging)
+        self.set_high_field_imaging(i_outer=self.p.i_evap1_current,
+                                    imaging_amp=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)

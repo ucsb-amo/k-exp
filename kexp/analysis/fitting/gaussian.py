@@ -57,9 +57,33 @@ class BECFit(Fit):
     def __init__(self,xdata,ydata):
         super().__init__(xdata,ydata,savgol_window=20)
 
+        try:
+            popt = self._fit(self.xdata,self.ydata)
+        except Exception as e:
+            print(e)
+            popt = [np.NaN] * 6
+            self.y_fitdata = np.zeros(self.ydata.shape); self.y_fitdata.fill(np.NaN)
+
+        self.popt = popt
+        g_amp, g_sigma, g_center, tf_trap_coeff, tf_center, tf_offset = popt
+        self.g_amp = g_amp
+        self.g_sigma = g_sigma
+        self.g_center = g_center
+        self.tf_trap_coeff = tf_trap_coeff
+        self.tf_center = tf_center
+        self.tf_offset = tf_offset
+
+        self.y_fitdata = self._fit_func(self.xdata,*popt)
+
     def _fit_func(self, x, g_amp, g_sigma, g_center, tf_trap_coeff, tf_center, tf_offset):
-        return g_amp * np.exp( -(x-g_center)**2 / (2 * g_sigma**2) ) + tf_trap_coeff * (x - tf_center)**2 + tf_offset
+        return self._gauss(x, g_amp, g_sigma, g_center) + self._tf(x, tf_trap_coeff, tf_center, tf_offset)
     
+    def _gauss(self, x, g_amp, g_sigma, g_center):
+        return g_amp * np.exp( -(x-g_center)**2 / (2 * g_sigma**2) )
+        
+    def _tf(self, x, tf_trap_coeff, tf_center, tf_offset):
+        return -tf_trap_coeff * (x - tf_center)**2 + tf_offset
+
     def _fit(self, x, y):
 
         delta_x = x[-1]-x[0]
