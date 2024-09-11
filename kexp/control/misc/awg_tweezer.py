@@ -251,9 +251,9 @@ class tweezer():
         Raises:
             ValueError: _description_
         """
-        if isinstance(freq_list,float):
-            print('is a float!')
-            freq_list = [freq_list]
+        # if isinstance(freq_list,float):
+        #     print('is a float!')
+        #     freq_list = [freq_list]
         
         if len(freq_list) != len(amp_list):
             raise ValueError('Amplitude and frequency lists are not of equal length')

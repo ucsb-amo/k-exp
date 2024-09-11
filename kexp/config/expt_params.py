@@ -1,5 +1,6 @@
 import numpy as np
 from kexp.config.dds_calibration import DDS_VVA_Calibration
+from kexp.util.artiq.async_print import aprint
 
 class ExptParams():
     def __init__(self):
@@ -213,7 +214,7 @@ class ExptParams():
         # self.frequency_tweezer_spacing = .7e6*2
         self.frequency_tweezer_spacing = 6.e6*2
         # self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
-        self.frequency_tweezer_list = [72.e6]
+        # self.frequency_tweezer_list = np.array([72.e6])
         self.frequency_cat_eye_tweezer = 71.3e6
 
         self.frequency_tweezer_auto_compute = False
@@ -300,19 +301,21 @@ class ExptParams():
 
     def compute_tweezer_1064_freqs(self):
         if self.frequency_tweezer_auto_compute:
-            # min_f = self.frequency_aod_center - (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
-            # max_f = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing
-            # self.frequency_tweezer_list = np.linspace(min_f, max_f, self.n_tweezers)
-            self.frequency_tweezer_list = np.linspace(self.frequency_cat_eye_tweezer,80.e6,2)
+            self.frequency_tweezer_list = np.linspace(self.frequency_cat_eye_tweezer,80.e6,self.n_tweezers)
+            # self.frequency_tweezer_list = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing*np.linspace(-1.,1.,self.n_tweezers)
+            # self.frequency_tweezer_list.astype(dtype=float)
+            # aprint(self.frequency_tweezer_list.dtype)
+            # aprint(type(self.frequency_tweezer_list.dtype))
+            # self.frequency_tweezer_list = list(self.frequency_tweezer_list)
         # else:
-        #     self.frequency_tweezer_list = self.frequency_tweezer_list
+            # self.frequency_tweezer_list = [self.frequency_aod_center] * self.n_tweezers
 
     def compute_tweezer_1064_amps(self):
-        if not self.frequency_tweezer_auto_compute:
-            if isinstance(self.frequency_tweezer_list,float):
-                self.n_tweezers = 1
-            else:
-                self.n_tweezers = len(self.frequency_tweezer_list)
+        # if not self.frequency_tweezer_auto_compute:
+        #     if isinstance(self.frequency_tweezer_list,float):
+        #         self.n_tweezers = 1
+        #     else:
+        #         self.n_tweezers = len(self.frequency_tweezer_list)
         if self.amp_tweezer_auto_compute:
             self.amp_tweezer_list = np.ones(self.n_tweezers) / self.n_tweezers
         else:
