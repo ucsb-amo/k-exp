@@ -28,9 +28,9 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
-        self.xvar('t_tweezer_single_move',np.linspace(1.,100.,10)*1.e-3)
+        # self.xvar('t_tweezer_single_move',np.linspace(1.,100.,10)*1.e-3)
         self.p.y_tweezer_move = 7.e-6
-        self.p.t_tweezer_single_move = 1.
+        self.p.t_tweezer_single_move = 5.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,3000.,10)*1.e-6)
         self.p.t_tof = 500.e-6

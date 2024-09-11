@@ -10,6 +10,8 @@ from artiq.experiment import rpc
 import spcm
 from spcm import units
 
+import time
+
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 
 from artiq.experiment import kernel, delay, parallel, TFloat, portable
@@ -278,7 +280,7 @@ class tweezer():
             B = 3*total_distance / total_time**2
             return A*t**3 + B*t**2
 
-    def write_movement(self,which_tweezer,distance,time):
+    def write_movement(self,which_tweezer,distance,t):
 
         # tweezer movement calibrations in meter / MHz
         cat_eye_xpf = tweezer_calibrations.cat_eye_xpf
@@ -293,13 +295,16 @@ class tweezer():
         n_steps = self.params.n_steps_tweezer_move
 
         # time per step
-        self.dt = time / (n_steps - 1)
+        self.dt = t / (n_steps - 1)
 
         # generate array of slopes
         self.slopes = np.zeros([n_steps],dtype=float)
-
-        for step in range(1,n_steps):
-                self.slopes[step-1] = (self.cubic_move(self.dt*(step),distance,time) - self.cubic_move(self.dt*(step-1),distance,time)) / (self.dt*dpf)  
+        N = 100000
+        t0 = time.time()
+        for _ in range(N):
+            for step in range(1,n_steps):
+                    self.slopes[step-1] = (self.cubic_move(self.dt*(step),distance,t) - self.cubic_move(self.dt*(step-1),distance,t)) / (self.dt*dpf)  
+        print((time.time() - t0)/N)
 
         # execute single movement
         # start trigger timer, which outputs trigger events at a given rate
@@ -308,10 +313,16 @@ class tweezer():
         self.dds.exec_at_trg()
 
         # write slopes to card
-        for slope in self.slopes:
+        # for slope in self.slopes:
+        t0 = time.time()
+        write_every_N = 10
+        for idx in range(len(self.slopes)):
+            slope = self.slopes[idx]
             self.dds.frequency_slope(which_tweezer,slope)
             self.dds.exec_at_trg()
-            self.dds.write_to_card()
+            if idx != 0 and idx % write_every_N == 0:
+                self.dds.write_to_card()
+        print(time.time() - t0)
 
         # reset trigger mode to external at the end
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
