@@ -52,7 +52,7 @@ class Dealer():
                 raise ValueError(error_msg)
 
         for xvar in self.scan_xvars:
-            xvar.values = np.repeat(xvar.values, self.params.N_repeats[xvar.position])
+            xvar.values = np.repeat(xvar.values, self.params.N_repeats[xvar.position],axis=0)
 
     def shuffle_xvars(self,sort_preshuffle=True):
         """
@@ -93,7 +93,7 @@ class Dealer():
         
         # shuffle arrays with the scrambled indices
         for xvar in self.scan_xvars:
-            scrambled_list = xvar.values.take(sort_idx[xvar.position])
+            scrambled_list = xvar.values.take(sort_idx[xvar.position],axis=0)
             xvar.values = scrambled_list
 
         # remove duplicates (shouldn't exist anyway), sort into lists
