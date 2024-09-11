@@ -223,7 +223,7 @@ class ExptParams():
 
         self.v_tweezer_paint_amp_max = -1.222
 
-        self.n_steps_tweezer_move = 1000
+        self.n_steps_tweezer_move = 100
         self.y_tweezer_move = 10.e-6
         self.which_tweezer = 0
 

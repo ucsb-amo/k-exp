@@ -4,6 +4,7 @@ from artiq.coredevice.ttl import TTLOut
 from artiq.coredevice.core import Core
 from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
+from artiq.coredevice.grabber import Grabber
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
@@ -46,6 +47,7 @@ class Devices():
         zotino = self.get_device("zotino0")
         sampler = self.get_device("sampler0")
         self.grabber = self.get_device("grabber0")
+        self.grabber: Grabber
 
         # sampler channels
         self.sampler = sampler_frame(sampler_device=sampler)

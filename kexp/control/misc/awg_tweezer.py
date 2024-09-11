@@ -230,6 +230,8 @@ class tweezer():
         self.dds = spcm.DDS(self.card, channels=channels)
         self.dds.reset()
 
+        self.dds.data_transfer_mode(spcm.SPCM_DDS_DTM_DMA)
+
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
 
         # thanks jp
@@ -237,6 +239,8 @@ class tweezer():
 
         # assign dds cores to channel
         # self.dds.cores_on_channel(1, *self.core_list)
+
+        self.dds.write_to_card()
 
         # Start command including enable of trigger engine
         self.card.start(spcm.M2CMD_CARD_ENABLETRIGGER)
@@ -273,15 +277,9 @@ class tweezer():
             A = -2*total_distance / total_time**3
             B = 3*total_distance / total_time**2
             return A*t**3 + B*t**2
-    
-    def compute_movement(self,which_tweezer,distance,time):
-        """_summary_
 
-        Args:
-            which_tweezer (int): index of tweezer (frequency) to move
-            distance (float): distance in meters to move the tweezer
-            time (float): total time of move
-        """
+    def write_movement(self,which_tweezer,distance,time):
+
         # tweezer movement calibrations in meter / MHz
         cat_eye_xpf = tweezer_calibrations.cat_eye_xpf
         non_cat_eye_xpf = tweezer_calibrations.non_cat_eye_xpf
@@ -303,7 +301,6 @@ class tweezer():
         for step in range(1,n_steps):
                 self.slopes[step-1] = (self.cubic_move(self.dt*(step),distance,time) - self.cubic_move(self.dt*(step-1),distance,time)) / (self.dt*dpf)  
 
-    def write_movement(self,which_tweezer):
         # execute single movement
         # start trigger timer, which outputs trigger events at a given rate
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
@@ -314,6 +311,7 @@ class tweezer():
         for slope in self.slopes:
             self.dds.frequency_slope(which_tweezer,slope)
             self.dds.exec_at_trg()
+            self.dds.write_to_card()
 
         # reset trigger mode to external at the end
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
@@ -321,20 +319,23 @@ class tweezer():
         self.dds.write_to_card()
 
     @rpc(flags={"async"})
-    def write_to_awg_rpc(self,twz_idx):
-        self.write_movement(twz_idx)
+    def write_to_awg_rpc(self,twz_idx,distance,time):
+        self.write_movement(twz_idx,distance,time)
         pass
 
     @kernel
-    def write_to_awg(self,twz_idx):
+    def write_to_awg(self,twz_idx,distance,time):
         self.core.wait_until_mu(now_mu())
-        self.write_to_awg_rpc(twz_idx)
+        self.write_to_awg_rpc(twz_idx,distance,time)
         self.core.break_realtime()
-        delay(20.e-3)
+        delay(30.e-3)
         
     @kernel
-    def move_tweezer(self,twz_idx,t,awg_write_bool=True):
+    def move_tweezer(self,twz_idx,distance,time,awg_write_bool=True):
         if awg_write_bool:
-            self.write_to_awg(twz_idx)
+            self.write_to_awg(twz_idx,distance,time)
         self.awg_trg_ttl.pulse(1.e-6)
-        delay(t)
+        delay(time)
+
+    def sinusoidal_modulation(self,t,amplitude,frequency):
+        return amplitude*np.sin(2*np.pi*frequency*t)
