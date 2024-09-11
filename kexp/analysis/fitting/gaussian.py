@@ -8,23 +8,24 @@ class GaussianFit(Fit):
         super().__init__(xdata,ydata,savgol_window=20)
 
         try:
-            amplitude, sigma, x_center, y_offset = self._fit(self.xdata,self.ydata)
+            popt = self._fit(self.xdata,self.ydata)
         except Exception as e:
             print(e)
-            amplitude, sigma, x_center, y_offset = np.NaN, np.NaN, np.NaN, np.NaN
+            popt = [np.NaN] * 5
             self.y_fitdata = np.zeros(self.ydata.shape); self.y_fitdata.fill(np.NaN)
 
+        amplitude, sigma, x_center, y_offset, offset_slope = popt
         self.amplitude = amplitude
         self.sigma = sigma
         self.x_center = x_center
         self.y_offset = y_offset
 
-        self.y_fitdata = self._fit_func(self.xdata,amplitude,sigma,x_center,y_offset)
+        self.y_fitdata = self._fit_func(self.xdata,*popt)
 
         self.area = self.amplitude * np.sqrt( 2 * np.pi * self.sigma**2 )
 
-    def _fit_func(self, x, amplitude, sigma, x_center, y_offset):
-        return y_offset + amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) )
+    def _fit_func(self, x, amplitude, sigma, x_center, y_offset, offset_slope):
+        return y_offset + offset_slope * x + amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) )
 
     def _fit(self, x, y):
         '''
@@ -44,13 +45,46 @@ class GaussianFit(Fit):
         x0: float
         offset: float
         '''
-        amplitude_guess = np.max(y) - np.min(y)
-        x_center_guess = x[np.argmax(y)]
-        sigma_guess = np.abs(x_center_guess - x[np.argmin(np.abs(self.ydata_smoothed - 0.35*np.max(y)))])
-        y_offset_guess = np.min(y)
-        popt, pcov = curve_fit(self._fit_func, x, y,
-                                p0=[amplitude_guess, sigma_guess, x_center_guess, y_offset_guess],
-                                bounds=((0,0,-np.inf,0),(np.inf,np.inf,np.inf,np.inf)))
+
+        # smooth the data
+        convwidth = 10
+        ysm = np.convolve(y,[1/convwidth]*convwidth,mode='same')
+        # shift and normalize between 0 and 1
+        ynorm = ysm-np.min(ysm)
+        ynorm = ynorm/(np.max(ynorm) - np.min(ynorm))
+
+        from scipy.signal import find_peaks
+        fractional_prominence = 0.05
+        idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_prominence)
+        idx += convwidth
+        # get the highest peak if > 1
+        prom = prop['prominences']
+        idx = idx[np.argmax(prom)]
+        prom = prom[np.argmax(prom)]
+
+        # identify the x-position closest to the peak which has y-value closest
+        # to fraction thr of peak y-value, use distance between this and
+        # x-position of peak as width guess.
+        fraction_of_peak_height_at_peak_width = prom
+        miny = np.abs(ynorm - fraction_of_peak_height_at_peak_width*ynorm[idx])
+        thr = 0.1
+        mask = miny < thr
+        idx_nearest = np.argmin(np.abs(x[mask] - x[idx]))
+        x_nearest = x[mask][idx_nearest]
+        peak_width_idx = np.abs(idx - idx_nearest)
+
+        fit_mask = range(len(x))[(idx-peak_width_idx):(idx+peak_width_idx)]
+        peak_width = np.abs(x[idx] - x_nearest)
+        
+        amplitude_guess = y[idx] - np.min(ysm)
+        x_center_guess = x[idx]
+        sigma_guess = peak_width
+        y_offset_guess = np.min(ysm)
+        offset_slope_guess = 0.
+
+        popt, pcov = curve_fit(self._fit_func, x[fit_mask], y[fit_mask],
+                                p0=[amplitude_guess, sigma_guess, x_center_guess, y_offset_guess, offset_slope_guess],
+                                bounds=((0,0,-np.inf,0,-np.inf),(np.inf,np.inf,np.inf,np.inf,np.inf)))
         return popt
     
 class BECFit(Fit):

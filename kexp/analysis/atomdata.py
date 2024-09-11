@@ -522,6 +522,7 @@ class atomdata():
     def unshuffle_ad(self):
         self._unshuffle(self)
         self._unshuffle(self.params)
+        self._analysis_tags.unshuffle_xvars = False
 
     def _unshuffle(self,struct):
 
