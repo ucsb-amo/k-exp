@@ -57,7 +57,7 @@ class ExptParams():
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = .27
         self.t_tweezer_hold = 30.e-3
-        self.t_tweezer_1064_ramp = .13
+        self.t_tweezer_1064_ramp = .36
         self.t_tweezer_1064_rampdown = .09
         self.t_tweezer_1064_rampdown2 = 0.5
         self.t_tweezer_1064_rampdown3 = .3
@@ -223,6 +223,7 @@ class ExptParams():
 
         self.v_tweezer_paint_amp_max = -1.222
 
+        # tweezer movement params
         self.n_steps_tweezer_move = 100
         self.y_tweezer_move = 10.e-6
         self.which_tweezer = 0

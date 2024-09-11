@@ -306,13 +306,14 @@ class tweezer():
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
         self.dds.trg_timer(self.dt)
         self.dds.exec_at_trg()
+        self.dds.write_to_card()
 
         # write slopes to card
         for slope in self.slopes:
             self.dds.frequency_slope(which_tweezer,slope)
             self.dds.exec_at_trg()
-            self.dds.write_to_card()
 
+        self.dds.write_to_card()
         # reset trigger mode to external at the end
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
         self.dds.exec_at_trg()
@@ -328,7 +329,7 @@ class tweezer():
         self.core.wait_until_mu(now_mu())
         self.write_to_awg_rpc(twz_idx,distance,time)
         self.core.break_realtime()
-        delay(30.e-3)
+        delay(20.e-3)
         
     @kernel
     def move_tweezer(self,twz_idx,distance,time,awg_write_bool=True):

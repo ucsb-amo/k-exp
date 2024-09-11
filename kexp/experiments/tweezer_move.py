@@ -10,9 +10,9 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
-        # self.xvar('beans',[0.]*100)
+        self.xvar('beans',[0.]*100)
 
         self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
         # self.p.frequency_tweezer_list = [70.3e6,80.e6]
@@ -28,12 +28,18 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
-        self.xvar('t_tweezer_single_move',np.linspace(1.,100.,10)*1.e-3)
-        self.p.y_tweezer_move = 7.e-6
-        self.p.t_tweezer_single_move = 1.
+        # self.xvar('t_tweezer_single_move',np.linspace(1.,100.,10)*1.e-3)
+        self.p.y_tweezer_move = 6.e-6
+        self.p.t_tweezer_single_move = 50.e-3
 
-        # self.xvar('t_tof',np.linspace(1000.,3000.,10)*1.e-6)
-        self.p.t_tof = 500.e-6
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,0.,8))
+        # self.xvar('t_tweezer_1064_ramp',np.linspace(.01,.5,8))
+
+        self.p.v_tweezer_paint_amp_max = -1.7
+        self.p.v_pd_tweezer_1064_rampdown_end = .9
+
+        # self.xvar('t_tof',np.linspace(500.,3000.,15)*1.e-6)
+        self.p.t_tof = 50.e-6
         self.p.N_repeats = 1
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(1.,5.,8))
@@ -46,7 +52,7 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
+        self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -112,8 +118,8 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        # # delay(self.p.t_tweezer_hold)
-        self.tweezer.move_tweezer(self.p.which_tweezer,self.p.y_tweezer_move,self.p.t_tweezer_single_move)
+        # # # delay(self.p.t_tweezer_hold)
+        # self.tweezer.move_tweezer(self.p.which_tweezer,self.p.y_tweezer_move,self.p.t_tweezer_single_move)
         
         self.lightsheet.off()
         self.tweezer.off()
