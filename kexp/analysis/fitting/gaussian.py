@@ -65,9 +65,8 @@ class GaussianFit(Fit):
         from scipy.signal import find_peaks
         peak_idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_peak_prominence)
         peak_idx += convwidth
-        # get the highest peak if > 1
+        # get the most prominent peak if > 1
         prom = prop['prominences']
-        # get the 
         idx_idx = np.argmax(prom)
         peak_idx = peak_idx[idx_idx]
         prom = prom[idx_idx]
@@ -87,6 +86,7 @@ class GaussianFit(Fit):
         idx_nearest = np.argmin(np.abs(x[mask] - x[peak_idx]))
         x_nearest = x[mask][idx_nearest]
 
+        # construct a mask for the fitting based on a multiple of the estimated peak width
         peak_width_idx = np.abs(peak_idx - idx_nearest)
         N_peak_widths_mask = 2.
         mask_window_half_width = int(N_peak_widths_mask * peak_width_idx)
