@@ -4,6 +4,7 @@ from artiq.coredevice.ttl import TTLOut
 from artiq.coredevice.core import Core
 from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
+from artiq.coredevice.grabber import Grabber
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
@@ -46,6 +47,7 @@ class Devices():
         zotino = self.get_device("zotino0")
         sampler = self.get_device("sampler0")
         self.grabber = self.get_device("grabber0")
+        self.grabber: Grabber
 
         # sampler channels
         self.sampler = sampler_frame(sampler_device=sampler)
@@ -104,7 +106,8 @@ class Devices():
                                pid1_int_hold_zero_ttl = self.ttl.tweezer_pid1_int_hold_zero,
                                pid2_enable_ttl=self.ttl.tweezer_pid2_enable,
                                painting_dac = self.dac.tweezer_paint_amp,
-                               expt_params = self.params)
+                               expt_params = self.params,
+                               core=self.core)
 
         # camera placeholder
         self.camera = DummyCamera()
