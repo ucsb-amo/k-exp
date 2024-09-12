@@ -88,16 +88,15 @@ class GaussianFit(Fit):
         x_nearest = x[mask][idx_nearest]
 
         peak_width_idx = np.abs(peak_idx - idx_nearest)
-        N_peak_widths_mask = 1.
+        N_peak_widths_mask = 2.
         mask_window_half_width = int(N_peak_widths_mask * peak_width_idx)
-        fit_mask = range(len(x))[(peak_idx-mask_window_half_width):(peak_idx+mask_window_half_width)]
+        fit_mask = np.arange((peak_idx-mask_window_half_width),(peak_idx+mask_window_half_width))
+        fit_mask = np.intersect1d(range(len(x)),fit_mask)
 
-        peak_width = np.abs(x[peak_idx] - x_nearest)
-
-        amplitude_guess = y[peak_idx] - np.min(ysm)
+        amplitude_guess = y[peak_idx] - np.min(y[fit_mask])
         x_center_guess = x[peak_idx]
-        sigma_guess = peak_width
-        y_offset_guess = np.min(ysm)
+        sigma_guess = np.abs(x[peak_idx] - x_nearest)
+        y_offset_guess = np.min(y[fit_mask])
 
         return fit_mask, amplitude_guess, sigma_guess, x_center_guess, y_offset_guess
 
