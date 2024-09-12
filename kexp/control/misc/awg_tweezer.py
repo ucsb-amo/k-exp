@@ -274,11 +274,28 @@ class tweezer():
         self.dds.write()
 
     def cubic_move(self,t,total_distance,total_time):
-            A = -2*total_distance / total_time**3
-            B = 3*total_distance / total_time**2
-            return A*t**3 + B*t**2
+        """_summary_
+
+        Args:
+            t (float): time to move
+            total_distance (float): distance to move
+            total_time (_type_): _description_
+
+        Returns:
+            _type_: evaluated input
+        """            
+        A = -2*total_distance / total_time**3
+        B = 3*total_distance / total_time**2
+        return A*t**3 + B*t**2
 
     def write_movement(self,which_tweezer,distance,time):
+        """_summary_
+
+        Args:
+            which_tweezer (int): index of tweezer to move
+            distance (float): distance to move (m)
+            time (float): time to move (s)
+        """        
 
         # tweezer movement calibrations in meter / MHz
         cat_eye_xpf = tweezer_calibrations.cat_eye_xpf

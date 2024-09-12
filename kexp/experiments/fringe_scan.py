@@ -12,11 +12,11 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('t_tof',np.linspace(1200.,3000.,5)*1.e-6)
+        self.xvar('t_tof',np.linspace(1200.,3000.,10)*1.e-6)
 
-        self.p.frequency_tweezer_list = [70.3e6,80.e6]
+        self.p.frequency_tweezer_list = [70.3e6,78.37e6,80.e6]
 
-        a_list = [.5275,.155]
+        a_list = [.5275,.145,.155]
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
