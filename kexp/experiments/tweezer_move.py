@@ -10,14 +10,14 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('beans',[0.]*100)
+        # self.xvar('beans',[0.]*100)
 
-        self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
+        self.p.frequency_tweezer_list = [71.3e6,76.e6]
         # self.p.frequency_tweezer_list = [70.3e6,80.e6]
 
-        a_list = [.5225,.290,.1775]
+        a_list = [.5225,.290]
         # a_list = [.5275,.1525]
         # a_list = [0.52658228, 0.18367089, 0.28974684]
         # a_list = [0.49442252, 0.34649619, 0.1590813]
@@ -29,17 +29,20 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_auto_compute = False
 
         # self.xvar('t_tweezer_single_move',np.linspace(1.,100.,10)*1.e-3)
-        self.p.y_tweezer_move = 6.e-6
+        self.xvar('y_tweezer_move',np.linspace(6.,9.5,10)*1.e-6)
+        self.p.y_tweezer_move = -6.e-6
         self.p.t_tweezer_single_move = 50.e-3
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,0.,8))
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.2,4.,20))
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.01,.5,8))
 
-        self.p.v_tweezer_paint_amp_max = -1.7
-        self.p.v_pd_tweezer_1064_rampdown_end = .9
+        self.p.v_pd_lightsheet_rampdown_end = 1.6
+        self.p.v_tweezer_paint_amp_max = -2.2
+        self.p.v_pd_tweezer_1064_rampdown_end = 1.
 
-        # self.xvar('t_tof',np.linspace(500.,3000.,15)*1.e-6)
-        self.p.t_tof = 50.e-6
+        # self.xvar('t_tof',np.linspace(500.,3000.,10)*1.e-6)
+        self.p.t_tof = 1800.e-6
         self.p.N_repeats = 1
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(1.,5.,8))
@@ -47,12 +50,16 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 10.e-3
 
+        self.camera_params.amp_imaging = .12
+        self.camera_params.exposure_time = 10.e-6
+        self.p.t_imaging_pulse = self.camera_params.exposure_time
+
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
+        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -119,7 +126,8 @@ class tweezer_load(EnvExperiment, Base):
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
         # # # delay(self.p.t_tweezer_hold)
-        # self.tweezer.move_tweezer(self.p.which_tweezer,self.p.y_tweezer_move,self.p.t_tweezer_single_move)
+        self.tweezer.move_tweezer(self.p.which_tweezer,self.p.y_tweezer_move,self.p.t_tweezer_single_move)
+        delay(5.e-3)
         
         self.lightsheet.off()
         self.tweezer.off()
