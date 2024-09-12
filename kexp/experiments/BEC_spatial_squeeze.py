@@ -121,10 +121,6 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        # # # delay(self.p.t_tweezer_hold)
-        self.tweezer.move_tweezer(self.p.which_tweezer,self.p.y_tweezer_move,self.p.t_tweezer_single_move)
-        delay(5.e-3)
-        
         self.lightsheet.off()
         self.tweezer.off()
 
