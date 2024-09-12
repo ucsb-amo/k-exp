@@ -105,10 +105,7 @@ class atomdata():
         Args:
             xvars_to_avg (list, optional): A list of xvar indices to average.
             reanalyze (bool, optional): _description_. Defaults to True.
-        """        
-        if not self._analysis_tags.unshuffle_xvars:
-            raise ValueError("Can only average repeats on runs loaded with unshuffle_xvars = True. Set unshuffle_xvars = True and reload data.")
-        
+        """
         if not self._analysis_tags.averaged:
             if not xvars_to_avg:
                 xvars_to_avg = list(range(len(self.xvars)))

@@ -63,7 +63,7 @@ class ExptParams():
         self.t_tweezer_1064_rampdown2 = 0.5
         self.t_tweezer_1064_rampdown3 = .3
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
-        self.t_tweezer_single_move = 10.e-3
+        self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 20.e-6
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3

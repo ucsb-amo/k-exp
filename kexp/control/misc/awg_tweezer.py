@@ -284,7 +284,7 @@ class tweezer():
         Returns:
             _type_: evaluated input
         """            
-        A = -2*total_distance / total_time**3
+        A = -2*total_distance /  total_time**3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
         B = 3*total_distance / total_time**2
         return A*t**3 + B*t**2
 
@@ -333,21 +333,6 @@ class tweezer():
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
         self.dds.exec_at_trg()
         self.dds.write()
-        
-        # self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
-        # self.dds.trg_timer(self.dt)
-        # self.dds.exec_at_trg()
-        # self.dds.write_to_card()
-
-        # for slope in self.slopes:
-        #     self.dds.frequency_slope(which_tweezer,slope)
-        #     self.dds.exec_at_trg()
-
-        # self.dds.write_to_card()
-        
-        # self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
-        # self.dds.exec_at_trg()
-        # self.dds.write_to_card()
 
     @rpc(flags={"async"})
     def write_to_awg_rpc(self,twz_idx,distance,time):
