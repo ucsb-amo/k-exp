@@ -29,8 +29,9 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_auto_compute = False
 
         # self.xvar('t_tweezer_single_move',np.linspace(1.,100.,10)*1.e-3)
-        self.xvar('y_tweezer_move',np.linspace(6.,9.5,10)*1.e-6)
-        self.p.y_tweezer_move = -6.e-6
+        # self.xvar('y_tweezer_move',np.linspace(6.,9.5,10)*1.e-6)
+        self.xvar('t_tweezer_single_move',np.linspace(1.,50,20)*1.e-3)
+        self.p.y_tweezer_move = -8.5e-6
         self.p.t_tweezer_single_move = 50.e-3
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,0.,8))
@@ -43,7 +44,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('t_tof',np.linspace(500.,3000.,10)*1.e-6)
         self.p.t_tof = 1800.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(1.,5.,8))
         self.p.v_pd_tweezer_1064_rampdown3_end = 1.
