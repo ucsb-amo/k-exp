@@ -12,12 +12,12 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        # self.xvar('beans',[0.]*100)
+        # self.xvar('beans',[0.]*4)
 
         self.p.frequency_tweezer_list = [71.3e6,76.e6]
         # self.p.frequency_tweezer_list = [70.3e6,80.e6]
 
-        a_list = [.5225,.290]
+        a_list = [.5275,.29]
         # a_list = [.5275,.1525]
         # a_list = [0.52658228, 0.18367089, 0.28974684]
         # a_list = [0.49442252, 0.34649619, 0.1590813]
@@ -30,8 +30,8 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('t_tweezer_single_move',np.linspace(1.,100.,10)*1.e-3)
         # self.xvar('y_tweezer_move',np.linspace(6.,9.5,10)*1.e-6)
-        self.xvar('t_tweezer_single_move',np.linspace(1.,50,20)*1.e-3)
-        self.p.y_tweezer_move = -8.5e-6
+        self.xvar('t_tweezer_single_move',np.linspace(1.,50.,20)*1.e-3)
+        self.p.y_tweezer_move = -8.3333e-6
         self.p.t_tweezer_single_move = 50.e-3
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,0.,8))
