@@ -46,6 +46,12 @@ class GaussianFit(Fit):
         offset: float
         '''
 
+        # out = self._gaussian_guesses(x,y)
+        # fit_mask = out[0]
+        # guesses = out[1:]
+
+        fractional_peak_prominence = 0.1
+
         # smooth the data
         convwidth = 10
         ysm = np.convolve(y,[1/convwidth]*convwidth,mode='same')
@@ -54,38 +60,89 @@ class GaussianFit(Fit):
         ynorm = ynorm/(np.max(ynorm) - np.min(ynorm))
 
         from scipy.signal import find_peaks
-        fractional_prominence = 0.05
-        idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_prominence)
-        idx += convwidth
+        peak_idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_peak_prominence)
+        peak_idx += convwidth
         # get the highest peak if > 1
         prom = prop['prominences']
-        idx = idx[np.argmax(prom)]
-        prom = prom[np.argmax(prom)]
+        # get the 
+        idx_idx = np.argmax(prom)
+        peak_idx = peak_idx[idx_idx]
+        prom = prom[idx_idx]
 
         # identify the x-position closest to the peak which has y-value closest
         # to fraction thr of peak y-value, use distance between this and
         # x-position of peak as width guess.
-        fraction_of_peak_height_at_peak_width = prom
-        miny = np.abs(ynorm - fraction_of_peak_height_at_peak_width*ynorm[idx])
-        thr = 0.1
-        mask = miny < thr
-        idx_nearest = np.argmin(np.abs(x[mask] - x[idx]))
+        ybase_norm = (ynorm[prop['right_bases'][idx_idx]] + ynorm[prop['left_bases'][idx_idx]])/2
+        ynorm_base_at_zero = ynorm - ybase_norm
+        width_fraction_of_peak_height = prom
+        threshold_ynorm_at_width = width_fraction_of_peak_height*ynorm_base_at_zero[peak_idx]
+        # construct a function miny which is minimized for y values near the threshold y value
+        miny = np.abs(ynorm_base_at_zero - threshold_ynorm_at_width)
+        mask = miny < 0.05
+        # find the x value in the region where the y value is near the threshold value which is closest to the x value at the peak (x[idx])
+        idx_nearest = np.argmin(np.abs(x[mask] - x[peak_idx]))
         x_nearest = x[mask][idx_nearest]
-        peak_width_idx = np.abs(idx - idx_nearest)
+        peak_width_idx = np.abs(peak_idx - idx_nearest)
 
-        fit_mask = range(len(x))[(idx-peak_width_idx):(idx+peak_width_idx)]
-        peak_width = np.abs(x[idx] - x_nearest)
-        
-        amplitude_guess = y[idx] - np.min(ysm)
-        x_center_guess = x[idx]
+        fit_mask = range(len(x))[(peak_idx-peak_width_idx):(peak_idx+peak_width_idx)]
+
+        peak_width = np.abs(x[peak_idx] - x_nearest)
+
+        amplitude_guess = y[peak_idx] - np.min(ysm)
+        x_center_guess = x[peak_idx]
+        sigma_guess = peak_width
+        y_offset_guess = np.min(ysm)
+        offset_slope_guess = 0.
+        guesses = (amplitude_guess,x_center_guess,sigma_guess,y_offset_guess,offset_slope_guess)
+        popt, pcov = curve_fit(self._fit_func, x[fit_mask], y[fit_mask],
+                                p0=[*guesses],
+                                bounds=((0,0,-np.inf,0,-np.inf),(np.inf,np.inf,np.inf,np.inf,np.inf)))
+        return popt
+    
+    def _gaussian_guesses(self,x,y,fractional_peak_prominence=0.05,fractional_peak_height_at_width=0.4):
+        # smooth the data
+        convwidth = 10
+        ysm = np.convolve(y,[1/convwidth]*convwidth,mode='same')
+        # shift and normalize between 0 and 1
+        ynorm = ysm-np.min(ysm)
+        ynorm = ynorm/(np.max(ynorm) - np.min(ynorm))
+
+        from scipy.signal import find_peaks
+        peak_idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_peak_prominence)
+        peak_idx += convwidth
+        # get the highest peak if > 1
+        prom = prop['prominences']
+        # get the 
+        idx_idx = np.argmax(prom)
+        peak_idx = peak_idx[idx_idx]
+        prom = prom[idx_idx]
+
+        # identify the x-position closest to the peak which has y-value closest
+        # to fraction thr of peak y-value, use distance between this and
+        # x-position of peak as width guess.
+        ybase_norm = (ynorm[prop['right_bases'][idx_idx]] + ynorm[prop['left_bases'][idx_idx]])/2
+        ynorm_base_at_zero = ynorm - ybase_norm
+        width_fraction_of_peak_height = prom
+        threshold_ynorm_at_width = width_fraction_of_peak_height*ynorm_base_at_zero[peak_idx]
+        # construct a function miny which is minimized for y values near the threshold y value
+        miny = np.abs(ynorm_base_at_zero - threshold_ynorm_at_width)
+        mask = miny < fractional_peak_height_at_width
+        # find the x value in the region where the y value is near the threshold value which is closest to the x value at the peak (x[idx])
+        idx_nearest = np.argmin(np.abs(x[mask] - x[peak_idx]))
+        x_nearest = x[mask][idx_nearest]
+        peak_width_idx = np.abs(peak_idx - idx_nearest)
+
+        fit_mask = range(len(x))[(peak_idx-peak_width_idx):(peak_idx+peak_width_idx)]
+
+        peak_width = np.abs(x[peak_idx] - x_nearest)
+
+        amplitude_guess = y[peak_idx] - np.min(ysm)
+        x_center_guess = x[peak_idx]
         sigma_guess = peak_width
         y_offset_guess = np.min(ysm)
         offset_slope_guess = 0.
 
-        popt, pcov = curve_fit(self._fit_func, x[fit_mask], y[fit_mask],
-                                p0=[amplitude_guess, sigma_guess, x_center_guess, y_offset_guess, offset_slope_guess],
-                                bounds=((0,0,-np.inf,0,-np.inf),(np.inf,np.inf,np.inf,np.inf,np.inf)))
-        return popt
+        return fit_mask, amplitude_guess, x_center_guess, sigma_guess, y_offset_guess, offset_slope_guess
     
 class BECFit(Fit):
     def __init__(self,xdata,ydata):
