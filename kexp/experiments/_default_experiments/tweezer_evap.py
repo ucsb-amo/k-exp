@@ -11,8 +11,8 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.p.frequency_tweezer_list = [70.3e6,80.e6]
-        self.p.amp_tweezer_list = [.5275,.1525]
+        self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
+        self.p.amp_tweezer_list = [.5225,.290,.1775]
         self.p.amp_tweezer_auto_compute = False
 
         self.p.t_tof = 1500.e-6
