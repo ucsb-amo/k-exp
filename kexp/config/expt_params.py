@@ -218,6 +218,7 @@ class ExptParams():
         # self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
         # self.frequency_tweezer_list = np.array([72.e6])
         self.frequency_cat_eye_tweezer = 71.3e6
+        self.frequency_cateye_threshold = 72.e6
 
         self.frequency_tweezer_auto_compute = False
         self.amp_tweezer_auto_compute = True

@@ -10,7 +10,7 @@ from artiq.experiment import rpc
 import spcm
 from spcm import units
 
-from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2, tweezer_xmesh
 
 from artiq.experiment import kernel, delay, parallel, TFloat, portable
 
@@ -20,6 +20,26 @@ import numpy as np
 di = 0
 dv = -1000.
 dv_list = np.linspace(0.,1.,5)
+
+class TweezerTrap():
+    def __init__(self,
+                 position:float,
+                 amplitude:float,
+                 cateye:bool=False,
+                 frequency:float=0.,
+                 expt_params=ExptParams):
+        
+        self.cal = tweezer_xmesh()
+
+        self.position = position
+        self.amplitude = amplitude
+        self.cateye_bool = cateye
+
+        self.p = expt_params
+
+        # if frequency != 0.:
+        #     self.frequency = frequency
+        # else:
 
 class tweezer():
     def __init__(self,
@@ -50,6 +70,8 @@ class tweezer():
         self.params = expt_params
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
         self.core = core
+
+    # def add_tweezer(self,position,)
 
     @kernel
     def on(self,paint=False,v_awg_am=dv):
@@ -287,6 +309,9 @@ class tweezer():
         A = -2*total_distance /  total_time**3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
         B = 3*total_distance / total_time**2
         return A*t**3 + B*t**2
+    
+    # def position_to_frequency(self,which_tweezer):
+
 
     def write_movement(self,which_tweezer,distance,time):
         """_summary_
@@ -295,7 +320,7 @@ class tweezer():
             which_tweezer (int): index of tweezer to move
             distance (float): distance to move (m)
             time (float): time to move (s)
-        """        
+        """
 
         # tweezer movement calibrations in meter / MHz
         cat_eye_xpf = tweezer_calibrations.cat_eye_xpf
