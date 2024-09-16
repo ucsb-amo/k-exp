@@ -15,7 +15,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = [.5225,.290,.1775]
         self.p.amp_tweezer_auto_compute = False
 
-        self.p.t_tof = 1500.e-6
+        self.p.t_tof = 300.e-6
         self.p.N_repeats = 1
 
         self.p.t_mot_load = .75

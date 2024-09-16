@@ -14,13 +14,18 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('beans',[0.]*4)
 
-        self.p.frequency_tweezer_list = [71.3e6,76.e6]
+        # self.p.frequency_tweezer_list = [71.3e6,76.e6]
+        self.p.frequency_tweezer_list = [71.3e6, 76.e6, 80.e6]
         # self.p.frequency_tweezer_list = [70.3e6,80.e6]
 
-        a_list = [.5275,.29]
+        self.p.which_tweezer = 0
+
+        # a_list = [.5275,.29]
         # a_list = [.5275,.1525]
         # a_list = [0.52658228, 0.18367089, 0.28974684]
         # a_list = [0.49442252, 0.34649619, 0.1590813]
+        a_list = [.5225,.290,.1775]
+        # a_list = [0.4867639595959596, 0.3468113737373737, 0.16642466666666678]
         # def normalize_alist(alist):
         #     sum = np.sum(alist)
         #     return a_list/sum
@@ -28,10 +33,22 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
-        # self.xvar('y_tweezer_move',np.linspace(7.5,9.3,10)*1.e-6)
-        # self.xvar('t_tweezer_single_move',np.linspace(1.,20.,20)*1.e-3)
-        self.p.y_tweezer_move = 8.3333e-6
-        self.p.t_tweezer_single_move = 4.e-3
+        self.xvar("y_tweezer_move3", self.p.y_tweezer_move*np.linspace(0.2,1.,30))
+
+        self.p.y_tweezer_move2 = self.p.y_tweezer_move*1.4
+
+        # self.xvar('y_tweezer_move',np.linspace(0.,9.5,40)*1.e-6)
+        # self.xvar('t_tweezer_single_move',np.linspace(0.6,4.,30)*1.e-3)
+
+        self.p.t_tweezer_single_move = 5.e-3
+        self.p.t_tweezer_single_move2 = 15.e-3
+
+
+        # self.xvar("fraction_tweezer_rampdown3", np.linspace(0.6,0.9,5))
+
+        # self.xvar("y_tweezer_move", np.linspace(8.7,16.,5)*1.e-6)
+        # self.p.y_tweezer_move = 8.3333e-6
+        self.p.y_tweezer_move = 9.5e-6
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,0.,8))
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.2,4.,20))
@@ -41,8 +58,8 @@ class tweezer_load(EnvExperiment, Base):
         self.p.v_tweezer_paint_amp_max = -2.2
         self.p.v_pd_tweezer_1064_rampdown_end = 1.
 
-        # self.xvar('t_tof',np.linspace(500.,3000.,10)*1.e-6)
-        self.p.t_tof = 10.e-6
+        # self.xvar('t_tof',np.linspace(10.,100.,10)*1.e-6)
+        self.p.t_tof = 100.e-6
         self.p.N_repeats = 1
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(1.,5.,8))
@@ -53,12 +70,6 @@ class tweezer_load(EnvExperiment, Base):
         self.camera_params.amp_imaging = .12
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
-
-        # self.xvar('t_fraction', np.linspace(0.2,0.7,5))
-        self.p.t_fraction = 1
-
-        # self.xvar('t_tweezer_free', np.linspace(100,700,7)*1.e-6)
-        self.p.t_tweezer_free = 1.e-6
 
         self.finish_prepare(shuffle=True)
 
@@ -131,14 +142,20 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        # # # delay(self.p.t_tweezer_hold)
-        # self.tweezer.move_tweezer(self.p.which_tweezer,self.p.y_tweezer_move,self.p.t_tweezer_single_move)
-        # delay(-self.p.t_fraction*self.p.t_tweezer_single_move)
-        self.tweezer.off()
+        self.tweezer.move_tweezer(self.p.which_tweezer,self.p.y_tweezer_move,self.p.t_tweezer_single_move)
         
-        # delay(self.p.t_tweezer_free)
+        delay(5.e-3)
+
+        self.tweezer.move_tweezer(self.p.which_tweezer,-self.p.y_tweezer_move2,self.p.t_tweezer_single_move2)
+
+        delay(5.e-3)
+
+        self.tweezer.move_tweezer(self.p.which_tweezer,self.p.y_tweezer_move3,self.p.t_tweezer_single_move2)
+
+        delay(5.e-3)
         
         self.lightsheet.off()
+        self.tweezer.off()
 
         delay(self.p.t_tof)
         self.abs_image()

@@ -187,7 +187,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.9
-        self.v_pd_lightsheet_rampdown_end = .65 #4.16
+        self.v_pd_lightsheet_rampdown_end = 1.6 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -207,7 +207,7 @@ class ExptParams():
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
         # self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
 
-        self.n_tweezers = 1
+        self.n_tweezers = 2
 
         self.frequency_aod_center = 75.e6
 
@@ -215,17 +215,17 @@ class ExptParams():
         #tweezers uniformly distributed around center frequency of AOD
         # self.frequency_tweezer_spacing = .7e6*2
         self.frequency_tweezer_spacing = 6.e6*2
-        # self.frequency_tweezer_list = [70.4e6,72.e6,78.e6]
+        self.frequency_tweezer_list = [70.4e6,78.e6]
         # self.frequency_tweezer_list = np.array([72.e6])
         self.frequency_cat_eye_tweezer = 71.3e6
         self.frequency_cateye_threshold = 72.e6
 
-        self.frequency_tweezer_auto_compute = False
+        # self.frequency_tweezer_auto_compute = False
         self.amp_tweezer_auto_compute = True
-        # self.amp_tweezer_list = [.2,.215]
+        self.amp_tweezer_list = [.2,.215]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = -1.222
+        self.v_tweezer_paint_amp_max = -2.2
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -307,9 +307,9 @@ class ExptParams():
         self.v_pd_d1_c_gm = cal.power_fraction_to_vva(self.pfrac_d1_c_gm)
         self.v_pd_d1_r_gm = cal.power_fraction_to_vva(self.pfrac_d1_r_gm)
 
-    def compute_tweezer_1064_freqs(self):
-        if self.frequency_tweezer_auto_compute:
-            self.frequency_tweezer_list = np.linspace(self.frequency_cat_eye_tweezer,80.e6,self.n_tweezers)
+    # def compute_tweezer_1064_freqs(self):
+    #     if self.frequency_tweezer_auto_compute:
+    #         self.frequency_tweezer_list = np.linspace(self.frequency_cat_eye_tweezer,80.e6,self.n_tweezers)
             # self.frequency_tweezer_list = self.frequency_aod_center + (self.n_tweezers-1)/2*self.frequency_tweezer_spacing*np.linspace(-1.,1.,self.n_tweezers)
             # self.frequency_tweezer_list.astype(dtype=float)
             # aprint(self.frequency_tweezer_list.dtype)
