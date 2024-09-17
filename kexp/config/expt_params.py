@@ -220,7 +220,7 @@ class ExptParams():
         self.frequency_cat_eye_tweezer = 71.3e6
 
         # self.frequency_tweezer_auto_compute = False
-        self.amp_tweezer_auto_compute = True
+        # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.2,.215]
         # self.amp_tweezer_list = [.4,.4]
 
@@ -254,7 +254,7 @@ class ExptParams():
         # rydberg
         self.frequency_ao_ry_405 = 250.0e6
         self.frequency_ao_ry_980 = 80.0e6
-        self.amp_ao_ry_405 = 0.23
+        self.amp_ao_ry_405 = 0.245
         self.amp_ao_ry_980 = 0.285
 
         # low field evap
@@ -317,16 +317,16 @@ class ExptParams():
         # else:
             # self.frequency_tweezer_list = [self.frequency_aod_center] * self.n_tweezers
 
-    def compute_tweezer_1064_amps(self):
+    # def compute_tweezer_1064_amps(self):
         # if not self.frequency_tweezer_auto_compute:
         #     if isinstance(self.frequency_tweezer_list,float):
         #         self.n_tweezers = 1
         #     else:
         #         self.n_tweezers = len(self.frequency_tweezer_list)
-        if self.amp_tweezer_auto_compute:
-            self.amp_tweezer_list = np.ones(self.n_tweezers) / self.n_tweezers
-        else:
-            self.amp_tweezer_list = self.amp_tweezer_list
+        # if self.amp_tweezer_auto_compute:
+        #     self.amp_tweezer_list = np.ones(self.n_tweezers) / self.n_tweezers
+        # else:
+        #     self.amp_tweezer_list = self.amp_tweezer_list
 
     def compute_tweezer_1064_phases(self):
         self.phase_tweezer_array = np.zeros([len(self.amp_tweezer_list)])
