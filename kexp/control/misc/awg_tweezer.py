@@ -268,7 +268,7 @@ class tweezer():
         # Start command including enable of trigger engine
         self.card.start(spcm.M2CMD_CARD_ENABLETRIGGER)
 
-    def set_static_tweezers(self, freq_list, amp_list, phase_list):
+    def set_static_tweezers(self, freq_list, amp_list, phase_list=[0.]):
         """_summary_
 
         Args:
@@ -278,9 +278,8 @@ class tweezer():
         Raises:
             ValueError: _description_
         """
-        # if isinstance(freq_list,float):
-        #     print('is a float!')
-        #     freq_list = [freq_list]
+        if np.all(phase_list == [0.]):
+            phase_list = self.compute_tweezer_phases(amp_list)
         
         if len(freq_list) != len(amp_list):
             raise ValueError('Amplitude and frequency lists are not of equal length')
@@ -383,3 +382,16 @@ class tweezer():
     
     def reset_awg(self):
         self.dds.reset()
+
+    def compute_tweezer_phases(self,amplitudes):
+        phases = np.zeros([len(amplitudes)])
+        for tweezer_idx in range(len(amplitudes)):
+            if tweezer_idx == 0:
+                phases[0] =  360.
+            else:
+                phase_ij = 0
+                for j in range(1,tweezer_idx):
+                    phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*amplitudes[tweezer_idx]
+                phase_i = (phase_ij % 2*np.pi) * 360
+                phases[tweezer_idx] = phase_i
+        return phases
