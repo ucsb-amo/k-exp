@@ -20,6 +20,8 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.which_tweezer = 0
 
+        self.tweezer.add_trap()
+
         # a_list = [.5275,.29]
         # a_list = [.5275,.1525]
         # a_list = [0.52658228, 0.18367089, 0.28974684]

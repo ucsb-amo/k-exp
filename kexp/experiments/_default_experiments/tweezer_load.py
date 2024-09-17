@@ -15,24 +15,26 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.frequency_tweezer_list = [70.9e6,76.e6,80.e6]
         # self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
 
-        self.p.frequency_tweezer_list = [71.3e6]
+        # self.p.frequency_tweezer_list = [71.3e6]
         # self.p.frequency_tweezer_list = [70.3e6,80.e6]
+        self.p.frequency_tweezer_list = [70.7e6, 72.0e6, 76.e6, 80.e6]
 
-        a_list = [.5225]
+        # a_list = [.5225]
         # a_list = [.5225,.1775]
+        a_list = [0.34, 0.36, 0.18, 0.11]
+        # a_list = [0.36393715, 0.33410233, 0.19369715, 0.10826336]
         # def normalize_alist(alist):
         #     sum = np.sum(alist)
         #     return a_list/sum
         # a_list = normalize_alist(a_list)
         self.p.amp_tweezer_list = a_list
-        self.p.amp_tweezer_auto_compute = False
 
         
         # self.p.v_pd_lightsheet_rampdown_end = 1.6
 
-        self.xvar("v_pd_lightsheet_rampdown_end", np.linspace(1.,4., 10))
-        self.p.v_tweezer_paint_amp_max = -2.2
-        self.p.v_pd_tweezer_1064_rampdown_end = 1.
+        # self.xvar("v_pd_lightsheet_rampdown_end", np.linspace(1.,4., 10))
+        # self.p.v_tweezer_paint_amp_max = -2.2
+        # self.p.v_pd_tweezer_1064_rampdown_end = 1.
 
         self.p.t_tof = 10.e-6
         self.p.N_repeats = 1
