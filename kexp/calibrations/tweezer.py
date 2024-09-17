@@ -1,5 +1,5 @@
 import numpy as np
-from artiq.experiment import TFloat, portable
+from artiq.experiment import TFloat, portable, rpc
 
 @portable(flags={"fast-math"})
 def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:
@@ -15,59 +15,89 @@ class tweezer_xmesh():
         """
         Defines the calibration of tweezer frequency to position. The
         positive direction is to the right as viewed on the Andor.
-        """        
 
-        # calibration run 
+        To recalibrate:
+        1. Run tweezer_xpf_calibration.py, making sure that frequency, amplitude
+        lists produce a pair of trapped tweezers for both ce (ce) and
+        non-ce (nce).
+        2. Run analysis file:
+        k-jam/analysis/measurements/tweezer_xgrid_calibration.ipynb
+        3. Replace x_per_f_ce, x_per_f_nce, x_and_f_ce, and x_and_f_nce (output
+        of 2nd to last cell).
 
-        ## calibration ROI, andor
-        # roix = [170,220]
-        # roiy = [225,280]
+        The origin position is set by x_mesh_center. I typically set to the
+        midpoint between two extreme tweezers.
+        """
 
-        self.x_per_f_cateye =  -5.7e-12 # m/Hz
-        self.x_per_f_non_cateye =  5.2e-12 # m/Hz
+        # calibration run 12039
 
-        self.x_and_f_cateye = (1.64e-05,7.13e+07)
-        self.x_and_f_non_cateye = (2.31e-05,7.6e+07)
+        ## calibration ROI, 'tweezer_array'
+        # roix = [180,230]
+        # roiy = [250,290]
+
+        self.f_ce_max = 73.e6
+        self.f_ce_min = 70.e6
+
+        self.f_nce_max = 82.e6
+        self.f_nce_min = 75.5e6
+
+        self.x_and_f_ce = (1.53e-05,7.21e+07)
+        self.x_and_f_nce = (8.33e-06,7.6e+07)
+        self.x_per_f_ce = -5.27e-12
+        self.x_per_f_nce = 5.36e-12
 
         # origin wrt ROI above
-        self.x_mesh_center = 2.3069767441860467e-05
-        # self.x_mesh_center = 0.
+        self.x_mesh_center = 1.9051162790697675e-05
         
     @portable
-    def x_to_f(self, position, cateye_bool):
+    def x_to_f(self, position, cateye):
         """Converts a tweezer position into the corresponding AOD frequency.
 
         Args:
             position (float): position (in m)
             cateye_bool (bool): whether or not the tweezer is cat-eyed.
         """
-        if cateye_bool:
-            f_per_x = 1/self.x_per_f_cateye
-            x_sample = self.x_and_f_cateye[0]
-            f_sample = self.x_and_f_cateye[1]
+        if cateye:
+            f_per_x = 1/self.x_per_f_ce
+            x_sample = self.x_and_f_ce[0]
+            f_sample = self.x_and_f_ce[1]
         else:
-            f_per_x = 1/self.x_per_f_non_cateye
-            x_sample = self.x_and_f_non_cateye[0]
-            f_sample = self.x_and_f_non_cateye[1]
+            f_per_x = 1/self.x_per_f_nce
+            x_sample = self.x_and_f_nce[0]
+            f_sample = self.x_and_f_nce[1]
         x_sample = x_sample - self.x_mesh_center
-        return f_per_x * (position - x_sample) + f_sample
+        f_out = f_per_x * (position - x_sample) + f_sample
+        self.check_valid_range(f_out)
+        return f_out
         
     @portable
-    def f_to_x(self, frequency, cateye_bool):
+    def f_to_x(self, frequency, cateye):
         """Converts an AOD frequency (in Hz) into the corresponding real-space
         position.
 
         Args:
             frequency (float): AOD frequency (in Hz)
-            cateye_bool (bool): whether or not the tweezer is cat-eyed.
+            cateye (bool): whether or not the tweezer is cat-eyed.
         """
-        if cateye_bool:
-            x_per_f = self.x_per_f_cateye
-            x_sample = self.x_and_f_cateye[0]
-            f_sample = self.x_and_f_cateye[1]
+        self.check_valid_range(frequency)
+        if cateye:
+            x_per_f = self.x_per_f_ce
+            x_sample = self.x_and_f_ce[0]
+            f_sample = self.x_and_f_ce[1]
         else:
-            x_per_f = self.x_per_f_non_cateye
-            x_sample = self.x_and_f_non_cateye[0]
-            f_sample = self.x_and_f_non_cateye[1]
+            x_per_f = self.x_per_f_nce
+            x_sample = self.x_and_f_nce[0]
+            f_sample = self.x_and_f_nce[1]
         x_sample = x_sample - self.x_mesh_center
         return x_per_f * (frequency - f_sample) + x_sample
+    
+    @rpc(flags={"async"})
+    def check_valid_range(self, frequency, cateye):
+        if cateye:
+            if frequency > self.f_ce_max or frequency < self.f_ce_min:
+                raise ValueError(f"Requested cateye frequency {frequency/1.e6:1.2f} out of safe range.")
+        else:
+            if frequency > self.f_nce_max or frequency < self.f_nce_min:
+                raise ValueError(f"Requested non-cateye frequency {frequency/1.e6:1.2f} out of safe range.")
+    
+    
