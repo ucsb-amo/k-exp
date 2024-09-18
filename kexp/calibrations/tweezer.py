@@ -90,7 +90,7 @@ class tweezer_xmesh():
             f = f_per_x * (x - x_sample) + f_sample
             self.check_valid_range(f,c)
             f_out.append(f)
-        return f_out
+        return np.array(f_out)
         
     @portable
     def f_to_x(self, frequency):
