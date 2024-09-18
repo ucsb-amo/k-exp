@@ -473,7 +473,7 @@ class tweezer():
         channels = spcm.Channels(self.card)
         channels.enable(True)
         channels.output_load(50 * units.ohm)
-        channels.amp(1. * units.V)
+        channels.amp(.29 * units.V)
         self.card.write_setup()
 
         # trigger mode
