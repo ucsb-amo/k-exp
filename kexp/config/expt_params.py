@@ -229,7 +229,6 @@ class ExptParams():
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
-        self.idx_tweezer = 0
         self.y_tweezer_move = 10.e-6
         self.which_tweezer = 0
 
