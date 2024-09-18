@@ -18,8 +18,8 @@ class tweezer_xmesh():
 
         To recalibrate:
         1. Run tweezer_xpf_calibration.py, making sure that frequency, amplitude
-        lists produce a pair of trapped tweezers for both ce (ce) and
-        non-ce (nce).
+        lists produce a pair of trapped tweezers for both cateye (ce) and
+        non-cateye (nce).
         2. Run analysis file:
         k-jam/analysis/measurements/tweezer_xgrid_calibration.ipynb
         3. Replace x_per_f_ce, x_per_f_nce, x_and_f_ce, and x_and_f_nce (output
