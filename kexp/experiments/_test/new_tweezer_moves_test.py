@@ -16,12 +16,12 @@ class tweezer_move_test(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False)
 
-        # self.trap1 = self.tweezer.add_tweezer(0.,0.1,cateye=False)
-        # self.tweezer.add_tweezer_list(position_list=[0.,-1.e-6,1.e-6],
-        #                               amplitude_list=[0.1,0.1,0.1],
-        #                               cateye_list=[True,False,True])
+        self.trap1 = self.tweezer.add_tweezer(0.,0.1,cateye=False)
+        self.tweezer.add_tweezer_list(position_list=[0.,-1.e-6,1.e-6],
+                                      amplitude_list=[0.1,0.1,0.1],
+                                      cateye_list=[True,False,True])
         # self.tweezer.add_tweezer_list()
-        self.tweezer.add_tweezer_list()
+        # self.tweezer.add_tweezer_list()
         
         # self.slopes = self.trap1.compute_slopes(T_MOVE,cubic_move,
         #                                    T_MOVE,X_MOVE)
@@ -38,14 +38,19 @@ class tweezer_move_test(EnvExperiment, Base):
 
         # self.trap1.cubic_move(T_MOVE,X_MOVE)
         
-        self.tweezer.traps[0].cubic_move(T_MOVE,X_MOVE)
+        print(self.tweezer.traps[1].position)
+        self.core.break_realtime()
+        # self.tweezer.traps[1].cubic_move(T_MOVE,X_MOVE)
+        self.tweezer.traps[1].sine_move(0.25e-3,10.e-6,1.e3)
+        self.core.break_realtime()
+        print(self.tweezer.traps[1].position)
 
         # self.tweezer.move(tweezer_idx=0,
         #                    t_move=T_MOVE,
         #                 slopes=self.tweezer.traps[0].compute_cubic_move(T_MOVE,X_MOVE) )
 
         # self.tweezer.traps[0].cubic_move(T_MOVE,X_MOVE)
-        self.tweezer.cubic_move(0,T_MOVE,X_MOVE)
+        # self.tweezer.cubic_move(0,T_MOVE,X_MOVE)
 
         # self.trap1.move(T_MOVE,self.slopes)
 
