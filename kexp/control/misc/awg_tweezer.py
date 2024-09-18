@@ -24,7 +24,7 @@ dv_array = np.array([dv])
 T_AWG_RPC_DELAY = 100.e-3
 
 class TweezerMovesLib():
-    def cubic_move(self,t,t_move,x_move):
+    def cubic_move(self,t,t_move,x_move) -> TFloat:
         """A cubic profile that moves a distance x_move, with zero initial and
         final velocity.
 
@@ -42,7 +42,7 @@ class TweezerMovesLib():
     
     def sinusoidal_modulation(self,t,
                               modulation_amplitude,
-                              modulation_frequency):
+                              modulation_frequency) -> TFloat:
         """A sinusoidal modulation of position vs. time.
 
         Args:
@@ -85,6 +85,7 @@ class TweezerTrap():
         self.p = expt_params
         self.core = core
         self.dds = spcm.DDSCommandList
+        self.dds: spcm.DDSCommandList
 
         self.dds_idx = self.p.idx_tweezer
         self.p.idx_tweezer += 1
@@ -93,6 +94,19 @@ class TweezerTrap():
             self.x_per_f = self.mesh.x_per_f_ce
         else:
             self.x_per_f = self.mesh.x_per_f_nce
+
+    # Need to think about how this will work as an RPC
+    # def update_from_awg(self):
+    #     self.frequency = self.dds.get_freq(self.dds_idx)
+    #     self.position = self.f_to_x(self.frequency)
+
+    def update_rpc(self,x_shift) -> TFloat:
+        self.position = self.position + x_shift
+        return self.position
+
+    @kernel
+    def update(self,x_shift):
+        self.position = self.update_rpc(x_shift)
     
     def compute_cubic_move(self,t_move,x_move) -> TArray(TFloat):
         slopes = self.compute_slopes(t_move,
@@ -109,10 +123,12 @@ class TweezerTrap():
 
     @kernel
     def cubic_move(self,t_move,x_move):
+        self.update(x_shift=x_move)
         self.move(t_move, self.compute_cubic_move(t_move,x_move))
     
     @kernel
     def sine_move(self,t_mod,x_mod,f_mod):
+        self.update(x_shift=self.moves.sinusoidal_modulation(t_mod,x_mod,f_mod))
         self.move(t_mod,self.compute_sinusoidal_modulation(t_mod,x_mod,f_mod))
 
     @portable
@@ -148,6 +164,10 @@ class TweezerTrap():
 
         self.awg_trig_ttl.pulse(1.e-6)
         delay(t_move)
+
+        # self.core.wait_until_mu(now_mu())
+        # self.update_from_awg()
+        # delay(5.e-3)
 
     @rpc(flags={"async"})
     def write_move(self,slopes):
@@ -203,6 +223,7 @@ class tweezer():
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
         self.core = core
 
+        self.params.idx_tweezer = 0
         self.traps = []
         self.traps: list[TweezerTrap]
 
