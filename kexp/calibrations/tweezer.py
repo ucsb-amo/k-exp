@@ -35,7 +35,7 @@ class tweezer_xmesh():
         # roix = [180,230]
         # roiy = [250,290]
 
-        self.f_ce_max = 73.e6
+        self.f_ce_max = 72.3e6
         self.f_ce_min = 70.e6
 
         self.f_nce_max = 82.e6
@@ -48,48 +48,83 @@ class tweezer_xmesh():
 
         # origin wrt ROI above
         self.x_mesh_center = 1.9051162790697675e-05
+
+    def arrcast(self,v,dtype=float):
+            if not (isinstance(v,np.ndarray) or isinstance(v,list)):
+                v = [v]
+            return np.array(v,dtype=dtype)
         
     @portable
     def x_to_f(self, position, cateye):
         """Converts a tweezer position into the corresponding AOD frequency.
 
         Args:
-            position (float): position (in m)
-            cateye_bool (bool): whether or not the tweezer is cat-eyed.
+            position (float or list/ndarray): position (in m)
+            cateye_bool (bool or list/ndarray): whether or not the tweezer is
+            cat-eyed.
         """
-        if cateye:
-            f_per_x = 1/self.x_per_f_ce
-            x_sample = self.x_and_f_ce[0]
-            f_sample = self.x_and_f_ce[1]
+        if isinstance(position,np.ndarray) or isinstance(position,list):
+            if len(position) != len(cateye):
+                raise ValueError("The length of the cateye list and position list are not the same.")
         else:
-            f_per_x = 1/self.x_per_f_nce
-            x_sample = self.x_and_f_nce[0]
-            f_sample = self.x_and_f_nce[1]
-        x_sample = x_sample - self.x_mesh_center
-        f_out = f_per_x * (position - x_sample) + f_sample
-        self.check_valid_range(f_out)
+            position = [position]
+        if not (isinstance(cateye,np.ndarray) or isinstance(cateye,list)):
+            cateye = [cateye]
+
+        position = np.asarray(position)
+        cateye = np.asarray(cateye)
+
+        f_out = []
+        for i in range(len(position)):
+            x = position[i]
+            c = cateye[i]
+            if c:
+                f_per_x = 1/self.x_per_f_ce
+                x_sample = self.x_and_f_ce[0]
+                f_sample = self.x_and_f_ce[1]
+            else:
+                f_per_x = 1/self.x_per_f_nce
+                x_sample = self.x_and_f_nce[0]
+                f_sample = self.x_and_f_nce[1]
+            x_sample = x_sample - self.x_mesh_center
+            f = f_per_x * (x - x_sample) + f_sample
+            self.check_valid_range(f,c)
+            f_out.append(f)
         return f_out
         
     @portable
-    def f_to_x(self, frequency, cateye):
+    def f_to_x(self, frequency):
         """Converts an AOD frequency (in Hz) into the corresponding real-space
         position.
 
         Args:
             frequency (float): AOD frequency (in Hz)
-            cateye (bool): whether or not the tweezer is cat-eyed.
         """
-        self.check_valid_range(frequency)
-        if cateye:
-            x_per_f = self.x_per_f_ce
-            x_sample = self.x_and_f_ce[0]
-            f_sample = self.x_and_f_ce[1]
-        else:
-            x_per_f = self.x_per_f_nce
-            x_sample = self.x_and_f_nce[0]
-            f_sample = self.x_and_f_nce[1]
-        x_sample = x_sample - self.x_mesh_center
-        return x_per_f * (frequency - f_sample) + x_sample
+        cateye = frequency < self.f_ce_max
+        if not(isinstance(frequency,np.ndarray) or isinstance(frequency,list)):
+            frequency = [frequency]
+        if not (isinstance(cateye,np.ndarray) or isinstance(cateye,list)):
+            cateye = [cateye]
+        frequency = np.asarray(frequency)
+        cateye = np.asarray(cateye)
+        
+        x_out = []
+        for i in range(len(frequency)):
+            f = frequency[i]
+            c = cateye[i]
+            self.check_valid_range(f,c)
+            if c:
+                x_per_f = self.x_per_f_ce
+                x_sample = self.x_and_f_ce[0]
+                f_sample = self.x_and_f_ce[1]
+            else:
+                x_per_f = self.x_per_f_nce
+                x_sample = self.x_and_f_nce[0]
+                f_sample = self.x_and_f_nce[1]
+            x_sample = x_sample - self.x_mesh_center
+            x = x_per_f * (f - f_sample) + x_sample
+            x_out.append(x)
+        return np.array(x_out)
     
     @rpc(flags={"async"})
     def check_valid_range(self, frequency, cateye):
