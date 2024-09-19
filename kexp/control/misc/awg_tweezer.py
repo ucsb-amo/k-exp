@@ -10,9 +10,9 @@ from artiq.experiment import rpc
 import spcm
 from spcm import units
 
-from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2, tweezer_xmesh
 
-from artiq.experiment import kernel, delay, parallel, TFloat, portable
+from artiq.experiment import kernel, delay, parallel, TFloat, portable, TArray
 
 import numpy as np
 
@@ -20,6 +20,178 @@ import numpy as np
 di = 0
 dv = -1000.
 dv_list = np.linspace(0.,1.,5)
+dv_array = np.array([dv])
+T_AWG_RPC_DELAY = 100.e-3
+
+class TweezerMovesLib():
+    def cubic_move(self,t,t_move,x_move) -> TFloat:
+        """A cubic profile that moves a distance x_move, with zero initial and
+        final velocity.
+
+        Args:
+            t (float): The time (in s) through the move (from zero).
+            t_move (float): The total time (in s) that the move will take.
+            x_move (float): The displacement (in m) at time t_move.
+
+        Returns:
+            float or np.array: displacement vs time.
+        """        
+        A = -2*x_move/t_move**3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+        B = 3*x_move/t_move**2
+        return A*t**3 + B*t**2
+    
+    def sinusoidal_modulation(self,t,
+                              modulation_amplitude,
+                              modulation_frequency) -> TFloat:
+        """A sinusoidal modulation of position vs. time.
+
+        Args:
+            t (float): The time (in s) through the move (from zero).
+            modulation_amplitude (float): The position-space amplitude (in m)
+            that the tweezer should be shaken over.
+            modulation_frequency (float): The frequency (in Hz) at which the
+            modulation will take place.
+
+        Returns:
+            float or np.array: displacement vs time.
+        """        
+        A = modulation_amplitude
+        fm = modulation_frequency
+        return A*np.sin(2*np.pi*fm*t)
+
+class TweezerTrap():
+    def __init__(self,
+                 position=dv,
+                 amplitude=dv,
+                 cateye:bool=False,
+                 frequency=dv,
+                 awg_trigger_ttl=TTL,
+                 expt_params=ExptParams(),
+                 core=Core):
+        
+        self.mesh = tweezer_xmesh()
+        self.moves = TweezerMovesLib()
+
+        self.position = position
+        self.amplitude = amplitude
+        self.cateye = cateye
+        if frequency != dv:
+            self.frequency = frequency
+            self.position = self.f_to_x(frequency)
+        else:
+            self.frequency = self.x_to_f(position)
+
+        self.awg_trig_ttl = awg_trigger_ttl
+        self.p = expt_params
+        self.core = core
+        self.dds = spcm.DDSCommandList
+        self.dds: spcm.DDSCommandList
+
+        self.dds_idx = self.p.idx_tweezer
+        self.p.idx_tweezer += 1
+
+        if cateye:
+            self.x_per_f = self.mesh.x_per_f_ce
+        else:
+            self.x_per_f = self.mesh.x_per_f_nce
+
+    # Need to think about how this will work as an RPC
+    # def update_from_awg(self):
+    #     self.frequency = self.dds.get_freq(self.dds_idx)
+    #     self.position = self.f_to_x(self.frequency)
+
+    def update_rpc(self,x_shift) -> TFloat:
+        self.position = self.position + x_shift
+        return self.position
+
+    @kernel
+    def update(self,x_shift):
+        self.position = self.update_rpc(x_shift)
+    
+    def compute_cubic_move(self,t_move,x_move) -> TArray(TFloat):
+        slopes = self.compute_slopes(t_move,
+                                    self.moves.cubic_move,
+                                    t_move,x_move)
+        return slopes
+    
+    def compute_sinusoidal_modulation(self,t_move,x_amplitude,
+                              modulation_frequency) -> TArray(TFloat):
+        slopes = self.compute_slopes(t_move,
+                                    self.moves.sinusoidal_modulation,
+                                    x_amplitude,modulation_frequency)
+        return slopes
+
+    @kernel
+    def cubic_move(self,t_move,x_move):
+        self.update(x_shift=x_move)
+        self.move(t_move, self.compute_cubic_move(t_move,x_move))
+    
+    @kernel
+    def sine_move(self,t_mod,x_mod,f_mod):
+        self.update(x_shift=self.moves.sinusoidal_modulation(t_mod,x_mod,f_mod))
+        self.move(t_mod,self.compute_sinusoidal_modulation(t_mod,x_mod,f_mod))
+
+    @portable
+    def x_to_f(self,x):
+        return self.mesh.x_to_f(x,self.cateye)[0]
+        
+    @portable
+    def f_to_x(self,f):
+        return self.mesh.f_to_x(f)[0]
+
+    def compute_slopes(self,t_move,
+               x_vs_t_func,
+               *x_vs_t_params) -> TArray(TFloat):
+        dt = self.p.t_tweezer_movement_dt
+        tarray = np.arange(0.,t_move,dt)
+        slopes = np.diff(x_vs_t_func(tarray,*x_vs_t_params)) \
+            / dt / self.x_per_f
+        slopes = np.concatenate((slopes,[0.]))
+        return slopes
+
+    @kernel
+    def move(self,t_move,slopes):
+        """Sets the timeline cursor to the current RTIO time (wall-clock), then
+        starts writing the slopes list to the awg.
+
+        Args:
+            compute_move_output (tuple of (float,ndarray)): A tuple containing
+            the time of the move and the move's frequency slopes.
+        """
+        self.core.wait_until_mu(now_mu())
+        self.write_move(slopes)
+        delay(T_AWG_RPC_DELAY)
+
+        self.awg_trig_ttl.pulse(1.e-6)
+        delay(t_move)
+
+        # self.core.wait_until_mu(now_mu())
+        # self.update_from_awg()
+        # delay(5.e-3)
+
+    @rpc(flags={"async"})
+    def write_move(self,slopes):
+        """Writes the slopes list to the AWG at update interval dt.
+
+        Args:
+            slopes (ndarray): The list of frequency slopes (Hz/s) to be written
+            to the awg.
+        """        
+        dt = self.p.t_tweezer_movement_dt
+
+        self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
+        self.dds.trg_timer(dt)
+        self.dds.exec_at_trg()
+        self.dds.write()
+
+        for slope in slopes:
+            self.dds.frequency_slope(self.dds_idx,slope)
+            self.dds.exec_at_trg()
+        self.dds.write()
+
+        self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
+        self.dds.exec_at_trg()
+        self.dds.write()
 
 class tweezer():
     def __init__(self,
@@ -30,7 +202,7 @@ class tweezer():
                   pid1_int_hold_zero_ttl=TTL,
                   pid2_enable_ttl=TTL,
                   painting_dac=DAC_CH,
-                  expt_params=ExptParams,
+                  expt_params=ExptParams(),
                   core=Core):
         """Controls the tweezers.
 
@@ -50,6 +222,92 @@ class tweezer():
         self.params = expt_params
         self._awg_ip = 'TCPIP::192.168.1.83::inst0::INSTR'
         self.core = core
+
+        self.params.idx_tweezer = 0
+        self.traps = []
+        self.traps: list[TweezerTrap]
+
+    def add_tweezer_list(self,
+                         position_list=dv_array,
+                         amplitude_list=dv_array,
+                         cateye_list=dv_array,
+                         frequency_list=dv_array):
+        
+        def arrcast(v,dtype=float):
+            if not (isinstance(v,np.ndarray) or isinstance(v,list)):
+                v = [v]
+            return np.array(v,dtype=dtype)
+        
+        position_list = arrcast(position_list)
+        amplitude_list = arrcast(amplitude_list)
+        cateye_list = arrcast(cateye_list,bool)
+        frequency_list = arrcast(frequency_list)
+        
+        x_specified = np.all(position_list != dv_array)
+        amp_specified = np.all(amplitude_list != dv_array)
+        cateye_specified = np.all(cateye_list != dv_array)
+        freq_specified = np.all(frequency_list != dv_array)
+
+        mesh = tweezer_xmesh()
+
+        if not x_specified:
+            if not freq_specified:
+                frequency_list = arrcast(self.params.frequency_tweezer_list)
+            position_list = mesh.f_to_x(frequency_list)
+            cateye_list = (frequency_list < mesh.f_ce_max)
+        if not amp_specified:
+            amplitude_list = arrcast(self.params.amp_tweezer_list)
+        if x_specified and not cateye_specified:
+            raise ValueError('You must indicate cateye/non-cateye of each tweezer if specifying tweezers by position.')
+        if x_specified and freq_specified:
+            raise ValueError('You must specify either freuqency or position (not both), or specify neither to use default values.')
+        if freq_specified and cateye_list:
+            print("Both frequencies and cateye/non-cateye are specified -- ignoring the cateye list, using frequencies.")
+        
+        if np.sum(amplitude_list) > 1.:
+            raise ValueError(f"The amplitudes in amplitude_list sum to a value >1 ({np.sum(amplitude_list)})")
+
+        tweezer_list = []
+        for i in range(len(position_list)):
+            x = position_list[i]
+            a = amplitude_list[i]
+            c = cateye_list[i]
+            tweezer = self.add_tweezer(x,a,c)
+            tweezer_list.append(tweezer)
+        return tweezer_list
+
+    def add_tweezer(self,
+                    position=dv,
+                    amplitude=dv,
+                    cateye:bool=False,
+                    frequency=dv) -> TweezerTrap:
+        """Creates a TweezerTrap object and adds it to the traps list.
+
+        Args:
+            position (float, optional): The position of the tweezer relative to the origin (see calibration). Defaults to 0.
+            amplitude (float, optional): The DDS amplitude to be used for this tweezer trap. Defaults to 0.
+            cateye (bool, optional): A boolean indicating whether or not that
+            tweezer is formed by the cateye side of the tweezer optics. Defaults
+            to False.
+            frequency (float, optional): Can be optionally specified to specify
+            the tweezer by AOD freuqency. Defaults to 0.
+        """        
+        ampsum = np.sum([t.amplitude for t in self.traps])
+        if ampsum + amplitude > 1.:
+            raise ValueError(f"The amplitudes in the trap list sum to a value >1 ({ampsum})")
+        
+        if (position != dv) and (frequency != dv):
+            raise ValueError('You must specify either freuqency or position (not both).')
+
+        tweezer = TweezerTrap(position,
+                              amplitude,
+                              cateye,
+                              frequency,
+                              self.awg_trg_ttl,
+                              self.params,
+                              self.core)
+        self.traps.append(tweezer)
+        return tweezer
 
     @kernel
     def on(self,paint=False,v_awg_am=dv):
@@ -230,6 +488,9 @@ class tweezer():
         self.dds = spcm.DDSCommandList(self.card)
         self.dds.reset()
 
+        for trap in self.traps:
+            trap.dds = self.dds
+
         self.dds.data_transfer_mode(spcm.SPCM_DDS_DTM_DMA)
         self.dds.mode = self.dds.WRITE_MODE.WAIT_IF_FULL
 
@@ -246,16 +507,20 @@ class tweezer():
         # Start command including enable of trigger engine
         self.card.start(spcm.M2CMD_CARD_ENABLETRIGGER)
 
-    def set_static_tweezers(self, freq_list, amp_list, phase_list=[0.]):
-        """_summary_
+    def set_static_tweezers(self, freq_list=[0.], amp_list=[0.], phase_list=[0.]):
+        """Sets a static tweezer array. If no arguments are provided,
+        information is drawn from the class attribute "traps", which contains
+        TweezerTrap objects.
 
         Args:
-            freq_list (nd array): array of frequencies in Hz
-            amp_list (nd array): array of amplitudes (min=0, max=1)
-
-        Raises:
-            ValueError: _description_
+            freq_list (ndarray,optional): array of frequencies in Hz
+            amp_list (ndarray,optional): array of amplitudes (min=0, max=1)
+            phase_list (ndarray,optional): array of phases.
         """
+        if np.all(freq_list == [0.]) and np.all(amp_list == [0.]):
+            freq_list = [t.frequency for t in self.traps]
+            amp_list = [t.amplitude for t in self.traps]
+
         if np.all(phase_list == [0.]):
             phase_list = self.compute_tweezer_phases(amp_list)
         
@@ -271,89 +536,6 @@ class tweezer():
                 pass
         self.dds.exec_at_trg()
         self.dds.write()
-
-    def cubic_move(self,t,total_distance,total_time):
-        """_summary_
-
-        Args:
-            t (float): time to move
-            total_distance (float): distance to move
-            total_time (_type_): _description_
-
-        Returns:
-            _type_: evaluated input
-        """            
-        A = -2*total_distance /  total_time**3                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
-        B = 3*total_distance / total_time**2
-        return A*t**3 + B*t**2
-
-    def write_movement(self,which_tweezer,distance,time):
-        """_summary_
-
-        Args:
-            which_tweezer (int): index of tweezer to move
-            distance (float): distance to move (m)
-            time (float): time to move (s)
-        """        
-
-        # tweezer movement calibrations in meter / MHz
-        cat_eye_xpf = tweezer_calibrations.cat_eye_xpf
-        non_cat_eye_xpf = tweezer_calibrations.non_cat_eye_xpf
-
-        if self.params.frequency_tweezer_list[which_tweezer] < 75.e6:
-            dpf = cat_eye_xpf
-        else:
-            dpf = non_cat_eye_xpf
-
-        # how many steps?
-        # n_steps = self.params.n_steps_tweezer_move
-
-        # time per step
-        self.dt = self.params.t_tweezer_movement_dt
-
-        # generate array of slopes
-        self.slopes = np.zeros([int(time/self.dt)],dtype=float)
-        self.zero_array = np.array([0])
-
-        for step in range(1,int(time/self.dt)):
-                self.slopes[step-1] = (self.cubic_move(self.dt*(step),distance,time) - self.cubic_move(self.dt*(step-1),distance,time)) / (self.dt*dpf)  
-        self.slopes = np.concatenate([self.slopes,self.zero_array])
-
-        self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
-        self.dds.trg_timer(self.dt)
-        self.dds.exec_at_trg()
-        self.dds.write()
-
-        for slope in self.slopes:
-            self.dds.frequency_slope(which_tweezer,slope)
-            self.dds.exec_at_trg()
-        self.dds.write()
-
-        self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
-        self.dds.exec_at_trg()
-        self.dds.write()
-
-    @rpc(flags={"async"})
-    def write_to_awg_rpc(self,twz_idx,distance,time):
-        self.write_movement(twz_idx,distance,time)
-        pass
-
-    @kernel
-    def write_to_awg(self,twz_idx,distance,time):
-        self.core.wait_until_mu(now_mu())
-        self.write_to_awg_rpc(twz_idx,distance,time)
-        self.core.break_realtime()
-        delay(100.e-3)
-        
-    @kernel
-    def move_tweezer(self,twz_idx,distance,time,awg_write_bool=True):
-        if awg_write_bool:
-            self.write_to_awg(twz_idx,distance,time)
-        self.awg_trg_ttl.pulse(1.e-6)
-        delay(time)
-
-    def sinusoidal_modulation(self,t,amplitude,frequency):
-        return amplitude*np.sin(2*np.pi*frequency*t)
     
     def reset_awg(self):
         self.dds.reset()
@@ -370,3 +552,18 @@ class tweezer():
                 phase_i = (phase_ij % 2*np.pi) * 360
                 phases[tweezer_idx] = phase_i
         return phases
+    
+    @kernel
+    def move(self,tweezer_idx,
+             t_move,slopes):
+        self.traps[tweezer_idx].move(t_move,slopes)
+
+    @kernel
+    def cubic_move(self,tweezer_idx,
+                   t_move,x_move):
+        self.traps[tweezer_idx].cubic_move(t_move,x_move)
+
+    @kernel
+    def sine_move(self,tweezer_idx,
+                  t_mod,x_mod,f_mod):
+        self.traps[tweezer_idx].cubic_move(t_mod,x_mod,f_mod)
