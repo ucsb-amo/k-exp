@@ -592,11 +592,13 @@ class tweezer():
 
     @kernel
     def painting_off(self):
-        """Sets the painting all the way
+        """Sets the painting amplitude all the way off. 
         """        
         self.paint_amp_dac.set(v=-7.)
     
     def awg_init(self):
+        """Connects to spectrum AWG, sets full-scale voltage amplitude, initializes trigger mode.
+        """        
 
         self.card = spcm.Card(self._awg_ip)
 
