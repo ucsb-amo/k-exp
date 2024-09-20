@@ -71,6 +71,9 @@ def crop_OD(OD,crop_type='',Nvars=1):
     elif crop_type == 'fringe_removal':
         roix = [140,340]
         roiy = [160,340]
+    elif crop_type == 'tweezer_array':
+        roix = [180,230]
+        roiy = [250,290]
     else:
         print('no matching roi found, defaulting to whole image')
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]]

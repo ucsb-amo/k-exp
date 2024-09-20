@@ -78,15 +78,18 @@ class Image():
     @kernel
     def abs_image(self):
 
+        # atoms image (pwa)
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
         delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
+        # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
         delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
+        # dark image
         delay(self.camera_params.t_dark_image_delay * s)
         self.dds.imaging.off()
         self.dds.imaging.set_dds(amplitude=0.)

@@ -75,6 +75,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.params.compute_derived()
         self.compute_new_derived()
 
+        if self.tweezer.traps == []:
+            self.tweezer.add_tweezer_list()
+
         self.data_filepath = self.ds.create_data_file(self)
 
         self.generate_assignment_kernels()
@@ -132,7 +135,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
         self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
+        # self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
+        self.tweezer.set_static_tweezers()
         self.core.break_realtime()
 
         self.dds.ry_405.set_dds(set_stored=True)
@@ -140,7 +144,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.dds.ry_980.set_dds(set_stored=True)
         self.dds.ry_980.on()
 
-        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+        # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         delay(50.e-3)
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
