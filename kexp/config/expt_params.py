@@ -26,6 +26,9 @@ class ExptParams():
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 14.0e6
         self.frequency_detuned_imaging_F1 = 400.e6
+        self.beatlock_sign = -1
+        self.N_offset_lock_reference_multiplier = 8
+        self.frequency_minimum_offset_beatlock = 150.e6
         self.imaging_state = 2.
         
         self.t_repump_flash_imaging = 10.e-6
