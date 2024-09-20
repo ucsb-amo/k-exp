@@ -136,7 +136,10 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.core.wait_until_mu(now_mu())
         # self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
+        
+        self.tweezer.reset_changing_trap_list(self.xvarnames)
         self.tweezer.set_static_tweezers()
+
         self.core.break_realtime()
 
         self.dds.ry_405.set_dds(set_stored=True)
