@@ -596,7 +596,16 @@ class tweezer():
         """        
         self.paint_amp_dac.set(v=-7.)
 
-    def clear_trap_list(self,xvarnames):
+    def reset_changing_trap_list(self,xvarnames):
+        """If the user is scanning the trap amplitudes or frequency list, reset
+        the trap list and re-create the TweezerTrap objects with the new
+        frequencies/amplitudes. This should be done more intelligently in the
+        future.
+
+        Args:
+            xvarnames (list[str]): The xvarnames list containing strings of the
+            keys for the xvars.
+        """        
         if "amp_tweezer_list" in xvarnames or "frequency_tweezer_list" in xvarnames:
             self.traps = []
             self.params.idx_tweezer = 0
