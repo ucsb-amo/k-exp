@@ -595,6 +595,12 @@ class tweezer():
         """Sets the painting amplitude all the way off. 
         """        
         self.paint_amp_dac.set(v=-7.)
+
+    def clear_trap_list(self,xvarnames):
+        if "amp_tweezer_list" in xvarnames or "frequency_tweezer_list" in xvarnames:
+            self.traps = []
+            self.params.idx_tweezer = 0
+            self.add_tweezer_list()
     
     def awg_init(self):
         """Connects to spectrum AWG, sets full-scale voltage amplitude, initializes trigger mode.
