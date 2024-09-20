@@ -97,6 +97,30 @@ class Image():
         delay(self.camera_params.exposure_time)
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
+    @kernel
+    def abs_image_in_trap(self):
+
+        # atoms image (pwa)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+
+        self.tweezer.off()
+
+        # light-only image (pwoa)
+        delay(self.camera_params.t_light_only_image_delay * s)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+
+        # dark image
+        delay(self.camera_params.t_dark_image_delay * s)
+        self.dds.imaging.off()
+        self.dds.imaging.set_dds(amplitude=0.)
+        self.trigger_camera()
+        delay(self.camera_params.exposure_time)
+        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+
 
     @kernel
     def fl_image(self, t=-1., with_light=True):

@@ -60,8 +60,8 @@ def crop_OD(OD,crop_type='',Nvars=1):
         roix = [215,227]
         roiy = [235,260]
     elif crop_type == 'andor_single_tweezer':
-        roix = [200,231]
-        roiy = [265,291]
+        roix = [180,231]
+        roiy = [255,291]
     elif crop_type == 'xy2_lightsheet':
         roix = [1101,1300]
         roiy = [401,1200]
