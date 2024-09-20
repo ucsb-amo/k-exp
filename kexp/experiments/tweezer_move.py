@@ -42,7 +42,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(1.,5.,8))
         self.p.v_pd_tweezer_1064_rampdown3_end = 1.
-        self.xvar('beans',[0.]*1)
+        # self.xvar('beans',[0.]*1)
 
         self.p.t_tweezer_hold = 10.e-3
 
