@@ -247,8 +247,6 @@ class ExptParams():
         self.t_rf_state_xfer_sweep = 60.e-3
         self.frequency_rf_state_xfer_sweep_center = 461.7e6
         self.frequency_rf_state_xfer_sweep_fullwidth = 2.e6
-        
-        
 
         # feshbach field rampup
         # self.i_feshbach_field_rampup_start = 0.

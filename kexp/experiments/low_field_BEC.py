@@ -18,8 +18,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.frequency_detuned_imaging = 428.e6 # i-12.8
         self.p.frequency_detuned_imaging = 438.e6 # i-13.4
 
-        self.p.frequency_tweezer_list = [70.5e6,80.e6]
-        a_list = [.7925,.207]
+        self.p.frequency_tweezer_list = [78.e6]
+        a_list = [.46667]
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
@@ -64,7 +64,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.v_pd_lightsheet_rampdown_end = .9
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.5,-1.,2))
-        self.p.v_tweezer_paint_amp_max = -4.4
+        self.p.v_tweezer_paint_amp_max = 6.
 
         self.p.t_rf_state_xfer_sweep = 40.e-3
         self.p.n_rf_sweep_steps = 1000
