@@ -100,13 +100,10 @@ class tweezer_xmesh():
         Args:
             frequency (float): AOD frequency (in Hz)
         """
-        cateye = frequency < self.f_ce_max
         if not(isinstance(frequency,np.ndarray) or isinstance(frequency,list)):
             frequency = [frequency]
-        if not (isinstance(cateye,np.ndarray) or isinstance(cateye,list)):
-            cateye = [cateye]
         frequency = np.asarray(frequency)
-        cateye = np.asarray(cateye)
+        cateye = frequency < self.f_ce_max
         
         x_out = []
         for i in range(len(frequency)):
