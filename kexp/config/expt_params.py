@@ -74,9 +74,6 @@ class ExptParams():
         self.t_magtrap = 0.
         self.t_magtrap_ramp = .367
         self.t_magtrap_rampdown = .2
-        self.t_magtrap_ramp = 75.e-3
-        self.t_magtrap = 0.0
-        self.t_magtrap_rampdown = 75.e-3
         self.t_feshbach_field_rampup = 100.e-3
         self.t_feshbach_field_ramp = 15.e-3
         self.t_feshbach_field_ramp2 = 15.e-3
@@ -260,6 +257,12 @@ class ExptParams():
         self.frequency_ao_ry_980 = 80.0e6
         self.amp_ao_ry_405 = 0.245
         self.amp_ao_ry_980 = 0.285
+
+        # raman
+        self.frequency_raman_c = 160.e6
+        self.frequency_raman_r = 140.e6
+        self.amp_raman_c = .25
+        self.amp_raman_r = .25
 
         # low field evap
         # self.i_evap1_current = 9.5

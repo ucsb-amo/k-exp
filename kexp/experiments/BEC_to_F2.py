@@ -12,7 +12,10 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
+        self.xvar('frequency_detuned_imaging',
+                  np.arange(-770.,-720.,5)*1.e6)
         
+        self.p.t_mot_load = 1.5
         
         self.p.t_rf_state_xfer_sweep = 40.e-3
         self.p.n_rf_sweep_steps = 1000
@@ -27,7 +30,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_rf_state_xfer_sweep',np.linspace(15.,50.,20)*1.e-3)
         # self.xvar('t_fake_ramsey_delay',np.linspace(0.,100.,20)*1.e-3)
         # self.p.t_fake_ramsey_delay = 1.e-3
-        self.xvar('ifdosweep',[0,1])
+        # self.xvar('ifdosweep',[0,1])
         self.p.t_fake_ramsey_delay = 1.e-3
 
         self.p.ifdosweep = 1
@@ -75,7 +78,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
-        self.p.t_tof = 50.e-6
+        self.p.t_tof = 5.e-6
         self.p.N_repeats = 1
 
         self.p.t_mot_load = .75
@@ -86,7 +89,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.5,-1.,8))
         self.p.v_tweezer_paint_amp_max = -4.2
 
-        self.camera_params.amp_imaging = .12
+        self.camera_params.amp_imaging = .1
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
@@ -98,9 +101,9 @@ class tweezer_load(EnvExperiment, Base):
         self.dds.ry_405.set_dds(set_stored=True)
         self.dds.ry_405.on()
 
-        self.set_high_field_imaging(i_outer=self.p.i_end)
+        # self.set_high_field_imaging(i_outer=self.p.i_end)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
+        self.set_imaging_detuning(self.p.frequency_detuned_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -166,14 +169,14 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
-                             i_start=self.p.i_evap3_current,
-                             i_end=self.p.i_end)
+        # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
+        #                      i_start=self.p.i_evap3_current,
+        #                      i_end=self.p.i_end)
         
         if self.p.ifdosweep:
             self.rf.sweep(t=self.p.t_rf_state_xfer_sweep, frequency_center=self.p.frequency_rf_sweep_state_prep_center)
-            delay(self.p.t_fake_ramsey_delay)
-            self.rf.sweep(t=self.p.t_rf_state_xfer_sweep, frequency_center=self.p.frequency_rf_sweep_state_prep_center)
+            # delay(self.p.t_fake_ramsey_delay)
+            # self.rf.sweep(t=self.p.t_rf_state_xfer_sweep, frequency_center=self.p.frequency_rf_sweep_state_prep_center)
         else:
             delay(self.p.t_rf_state_xfer_sweep)
             delay(self.p.t_fake_ramsey_delay)

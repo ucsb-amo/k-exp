@@ -14,7 +14,7 @@ from artiq.coredevice import ad9910
 
 from kexp.config.expt_params import ExptParams
 
-N_uru = 5
+N_uru = 6
 N_ch = 4
 shape = (N_uru,N_ch)
 
@@ -88,9 +88,12 @@ class dds_frame():
         self.imaging = self.dds_assign(4,1, ao_order = 1,
                                     default_freq = self.p.frequency_ao_imaging,
                                     default_amp = 0.54)
-        self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1',
-                                    default_detuning = self.p.detune_optical_pumping_op,
-                                    default_amp = self.p.amp_optical_pumping_op)
+        # self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1',
+        #                             default_detuning = self.p.detune_optical_pumping_op,
+        #                             default_amp = self.p.amp_optical_pumping_op)
+        self.raman_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1',
+                                    default_freq = self.p.frequency_raman_r,
+                                    default_amp = self.p.amp_raman_r)
         self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1',
                                     default_detuning = self.p.detune_optical_pumping_r_op,
                                     default_amp = self.p.amp_optical_pumping_r_op)
@@ -108,6 +111,9 @@ class dds_frame():
                                     default_freq = 80.e6,
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
                                     default_amp = self.p.amp_tweezer_pid2)
+        self.raman_c = self.dds_assign(1,1, ao_order = 1,
+                                    default_freq = self.p.frequency_raman_c,
+                                    default_amp = self.p.amp_raman_c)
 
         self.core = core
         # self.dds_manager = [DDSManager]
@@ -228,7 +234,7 @@ class dds_frame():
         self.d2_3d_r.set_dds(set_stored=True)
         self.d2_2d_c.set_dds(set_stored=True)
         self.d2_2d_r.set_dds(set_stored=True)
-        self.op_r.set_dds(set_stored=True)
+        # self.op_r.set_dds(set_stored=True)
         self.push.set_dds(set_stored=True)
 
 #     def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):

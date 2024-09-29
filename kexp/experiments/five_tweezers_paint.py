@@ -12,7 +12,7 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('beans',[0.])
+        self.xvar('beans',[0.]*5)
 
         # self.xvar('amp_imaging',np.linspace(0.05,0.125,10))
         # self.xvar('frequency_detuned_imaging',\
@@ -70,13 +70,14 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.v_pd_lightsheet_rampdown_end = .65
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.5,-3.,20))
-        self.p.v_tweezer_paint_amp_max = -5.
+        self.p.v_tweezer_paint_amp_max = 5.
+        # self.p.v_tweezer_paint_amp_max = -5.
 
         # self.xvar('i_evap2_current',np.linspace(192.,194.5,10))
         # self.p.i_evap2_current = 193.4
 
         # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(4.,9.9,10))
-        # self.p.v_pd_tweezer_1064_ramp_end = 8.2
+        self.p.v_pd_tweezer_1064_ramp_end = 1.
         # self.p.v_pd_tweezer_1064_ramp_end = 9.9
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,200.,20)*1.e-3)

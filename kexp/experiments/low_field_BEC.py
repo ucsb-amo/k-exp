@@ -13,10 +13,10 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.xvar('frequency_detuned_imaging',\
-                  np.arange(248.,458.,10.)*1.e6)
+                  np.arange(248.,478.,10.)*1.e6)
         
         # self.p.frequency_detuned_imaging = 428.e6 # i-12.8
-        self.p.frequency_detuned_imaging = 438.e6 # i-13.4
+        self.p.frequency_detuned_imaging = 448.e6 # i-13.4
 
         self.p.frequency_tweezer_list = [78.e6]
         a_list = [.46667]
@@ -30,7 +30,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('t_tof',np.linspace(800.,3000.,10)*1.e-6)
 
-        self.xvar('t_magtrap_rampdown',np.linspace(.1,.5,4))
+        # self.xvar('t_magtrap_rampdown',np.linspace(.1,.5,4))
 
         # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,20))
 
@@ -40,8 +40,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.5,-2.,8))
         self.p.v_tweezer_paint_amp_max = -3.
 
-        self.p.i_lf_evap1_current = 12.86
-        self.p.i_lf_evap2_current = 12.85
+        self.p.i_lf_evap1_current = 13.43
+        self.p.i_lf_evap2_current = 12.57
         self.p.i_lf_evap3_current = 13.4
 
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.1,1.2,8)) 
