@@ -59,7 +59,7 @@ class TweezerBalancer():
         print(len(channels))
         channels.enable(True)
         channels.output_load(50 * units.ohm)
-        channels.amp(1. * units.V)
+        channels.amp(.29 * units.V)
         self.card.write_setup()
 
         # trigger mode
@@ -247,12 +247,16 @@ class TweezerBalancer():
         self.A_LIST = new_a_list
         return new_a_list
 
-    def update_a_list_manual(self, new_a_list_unsorted):
-        tweezer_order = self.get_tweezer_order()
-        new_a_list_sorted = [0.]*len(new_a_list_unsorted)
-        for i in range(len(new_a_list_unsorted)):
-            new_a_list_sorted[tweezer_order[i]] = new_a_list_unsorted[i]
-        new_a_list = new_a_list_sorted
+    # def update_a_list_manual(self, new_a_list_unsorted):
+    #     tweezer_order = self.get_tweezer_order()
+    #     new_a_list_sorted = [0.]*len(new_a_list_unsorted)
+    #     for i in range(len(new_a_list_unsorted)):
+    #         new_a_list_sorted[tweezer_order[i]] = new_a_list_unsorted[i]
+    #     new_a_list = new_a_list_sorted
+    #     self.A_LIST = new_a_list
+    #     return new_a_list
+
+    def update_a_list_manual(self, new_a_list):
         self.A_LIST = new_a_list
         return new_a_list
 
