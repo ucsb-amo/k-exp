@@ -113,7 +113,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('i_end',np.linspace(192.3,177.19,8))
 
-        self.camera_params.amp_imaging = .12
+        self.camera_params.amp_imaging = .1
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
