@@ -1,10 +1,9 @@
-from kexp.util.data.data_vault import DataSaver
 import time
+from kexp.util.data.server_talk import get_run_id
 
 class RunInfo():
     def __init__(self,expt_obj=None,save_data=True):
-        _ds = DataSaver()
-        self.run_id = _ds._get_rid()
+        self.run_id = get_run_id()
         self.run_datetime = time.localtime(time.time())
 
         self._run_description = ""
