@@ -2,7 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 
 from kexp.util.data import RunInfo
-from kexp.config import ExptParams
+from kexp.config.expt_params import ExptParams
 
 import numpy as np
 
@@ -179,8 +179,7 @@ class Dealer():
         imgs = img_ndarray
         xvardims = [len(xvar.values) for xvar in self.scan_xvars]
         n_nonxvar_dims = imgs.ndim - 1
-        imgs = imgs.reshape(*xvardims,-1,
-                            *imgs.shape[-n_nonxvar_dims:])
+        imgs = imgs.reshape(*xvardims,*imgs.shape[-n_nonxvar_dims:])
         return imgs
 
     def _unshuffle_struct(self,struct,
@@ -199,7 +198,8 @@ class Dealer():
                                               reshuffle=reshuffle)
                 vars(struct)[k] = var
     
-    def _unshuffle_ndarray(self,exclude_dims=0,
+    def _unshuffle_ndarray(self,var,
+                           exclude_dims=0,
                            reshuffle=False):
         if isinstance(var,list):
             var = np.array(var)
