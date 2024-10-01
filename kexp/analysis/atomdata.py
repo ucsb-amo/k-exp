@@ -66,9 +66,9 @@ class atomdata():
 
         self._dealer = self._init_dealer()
 
-        if self.run_info.run_datetime < datetime.datetime(2024,10,2):
+        if datetime.datetime(*self.run_info.run_datetime[:3]) < datetime.datetime(2024,10,2):
             self._analysis_tags.xvars_shuffled = True
-            self.unshuffle()
+            self.unshuffle(reanalyze=False)
 
         self._sort_images()
 
@@ -409,18 +409,21 @@ class atomdata():
             self._dealer._unshuffle_struct(self, reshuffle=True)
             self._dealer._unshuffle_struct(self.params, reshuffle=True)
             self.xvars = self._unpack_xvars()
+            self._sort_images()
             self.analyze()
             self._analysis_tags.xvars_shuffled = True
         else:
             print("Data is already in shuffled order.")
 
-    def unshuffle(self):
+    def unshuffle(self,reanalyze=True):
         if self._analysis_tags.xvars_shuffled == True:
             self.images = self._dealer.unscramble_images(reshuffle=False)
             self._dealer._unshuffle_struct(self, reshuffle=False)
             self._dealer._unshuffle_struct(self.params, reshuffle=False)
             self.xvars = self._unpack_xvars()
-            self.analyze()
+            if reanalyze:
+                self._sort_images()
+                self.analyze()
             self._analysis_tags.xvars_shuffled = False
         else:
             print("Data is already in unshuffled order.")
