@@ -80,8 +80,7 @@ def crop_OD(OD,crop_type=''):
         roiy = [0,np.shape(OD)[len(np.shape(OD))-2]]
 
     OD: np.ndarray
-    idx_y = range(roiy[0],roiy[1]+1)
-    idx_x = range(roix[0],roix[1]+1)
-    print(OD.shape)
+    idx_y = range(roiy[0],roiy[1])
+    idx_x = range(roix[0],roix[1])
     cropOD = OD.take(idx_y,axis=OD.ndim-2).take(idx_x,axis=OD.ndim-1)
     return cropOD
