@@ -10,6 +10,8 @@ from kexp.config.camera_params import CameraParams
 from kexp.base.sub import Dealer
 from kexp.base.sub import xvar
 
+import datetime
+
 class analysis_tags():
     def __init__(self,crop_type,absorption_analysis):
         self.crop_type = crop_type
@@ -63,6 +65,10 @@ class atomdata():
         self.atom = Potassium39()
 
         self._dealer = self._init_dealer()
+
+        if self.run_info.run_datetime < datetime.datetime(2024,10,2):
+            self._analysis_tags.xvars_shuffled = True
+            self.unshuffle()
 
         self._sort_images()
 
@@ -374,127 +380,6 @@ class atomdata():
         linarray = np.reshape(ndarray,np.size(ndarray))
         vals = [func(y) for y in linarray]
         return np.reshape(vals,ndarray.shape+(-1,))
-
-    ### image handling, sorting by xvars
-
-    # def _sort_images_absorption(self):
-
-        # self._split_images_abs()
-
-        # # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
-        # img_dims = np.shape(self.images[0])
-        # sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
-
-        # dtype = self.images.dtype
-        # self.img_atoms = np.zeros(sorted_img_dims,dtype=dtype)
-        # self.img_light = np.zeros(sorted_img_dims,dtype=dtype)
-        # self.img_dark = np.zeros(sorted_img_dims,dtype=dtype)
-        # self.img_tstamps = np.empty(tuple(self.xvardims),dtype=list)
-
-        # if self.Nvars == 1:
-        #     self.img_atoms = self._img_atoms
-        #     self.img_light = self._img_light
-        #     self.img_dark = self._img_dark
-        #     for i in range(self.xvardims[0]):
-        #         self.img_tstamps[i] = list([self._img_atoms_tstamp[i],
-        #                             self._img_light_tstamp[i],
-        #                             self._img_dark_tstamp[i]])
-        #     if len(self.xvars[0]) == 1:
-        #         self.img_atoms = np.array([self.img_atoms])
-        #         self.img_light = np.array([self.img_light])
-        #         self.img_dark = np.array([self.img_dark])
-        
-        # if self.Nvars == 2:
-        #     n1 = self.xvardims[0]
-        #     n2 = self.xvardims[1]
-        #     for i1 in range(n1):
-        #         for i2 in range(n2):
-        #             idx = i1*n2 + i2
-        #             self.img_atoms[i1][i2] = self._img_atoms[idx]
-        #             self.img_light[i1][i2] = self._img_light[idx]
-        #             self.img_dark[i1][i2] = self._img_dark[idx]
-        #             self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
-        #                                              self._img_light_tstamp[idx],
-        #                                              self._img_dark_tstamp[idx]]
-                    
-        # if self.Nvars == 3:
-        #     n1 = self.xvardims[0]
-        #     n2 = self.xvardims[1]
-        #     n3 = self.xvardims[2]
-        #     for i1 in range(n1):
-        #         for i2 in range(n2):
-        #                 for i3 in range(n3):
-        #                     idx = (i1*n2 + i2)*n3 + i3
-        #                     self.img_atoms[i1][i2][i3] = self._img_atoms[idx]
-        #                     self.img_light[i1][i2][i3] = self._img_light[idx]
-        #                     self.img_dark[i1][i2][i3] = self._img_dark[idx]
-        #                     self.img_tstamps[i1][i2][i3] = [self._img_atoms_tstamp[idx],
-        #                                                     self._img_light_tstamp[idx],
-        #                                                     self._img_dark_tstamp[idx]]
-                    
-    # def _split_images_abs(self):
-        
-    #     atom_img_idx = 0
-    #     light_img_idx = 1
-    #     dark_img_idx = 2
-        
-    #     self._img_atoms = np.array(self.images[atom_img_idx::3])
-    #     self._img_light = np.array(self.images[light_img_idx::3])
-    #     self._img_dark = np.array(self.images[dark_img_idx::3])
-
-    #     self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
-    #     self._img_light_tstamp = self.img_timestamps[light_img_idx::3]
-    #     self._img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
-
-    # def _sort_images_fluor(self):
-
-    #     self._split_images_fluor()
-
-    #     # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
-    #     img_dims = np.shape(self.images[0])
-    #     sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
-
-    #     self.img_atoms = np.zeros(sorted_img_dims)
-    #     self.img_light = np.zeros(sorted_img_dims)
-    #     self.img_tstamps = np.empty(tuple(self.xvardims),dtype=list)
-
-    #     if self.Nvars == 1:
-    #         self.img_atoms = self._img_atoms
-    #         self.img_light = self._img_light
-    #         # if len(self.xvars[0]) == 1:
-    #         #     self.img_atoms = np.array([self.img_atoms])
-    #         #     self.img_light = np.array([self.img_light])
-        
-    #     if self.Nvars == 2:
-    #         n1 = self.xvardims[0]
-    #         n2 = self.xvardims[1]
-    #         for i1 in range(n1):
-    #             for i2 in range(n2):
-    #                 idx = i1*n2 + i2
-    #                 self.img_atoms[i1][i2] = self._img_atoms[idx]
-    #                 self.img_light[i1][i2] = self._img_light[idx]
-
-    #     if self.Nvars == 3:
-    #         n1 = self.xvardims[0]
-    #         n2 = self.xvardims[1]
-    #         n3 = self.xvardims[2]
-    #         for i1 in range(n1):
-    #             for i2 in range(n2):
-    #                 for i3 in range(n3):
-    #                     idx = (i1*n2 + i2)*n3 + i3
-    #                     self.img_atoms[i1][i2][i3] = self._img_atoms[idx]
-    #                     self.img_light[i1][i2][i3] = self._img_light[idx]
-                    
-    # def _split_images_fluor(self):
-        
-    #     atom_img_idx = 0
-    #     light_img_idx = 1
-        
-    #     self._img_atoms = np.array(self.images[atom_img_idx::2])
-    #     self._img_light = np.array(self.images[light_img_idx::2])
-
-    #     self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::2]
-    #     self._img_light_tstamp = self.img_timestamps[light_img_idx::2]
     
     def _unpack_xvars(self):
         # fetch the arrays for each xvar from parameters
@@ -519,12 +404,26 @@ class atomdata():
     ## Unshuffling
     
     def reshuffle(self):
-        self.images = self._dealer.unscramble_images(reshuffle=True)
-        self._dealer._unshuffle_struct(self, reshuffle=True)
-        self._dealer._unshuffle_struct(self.params, reshuffle=True)
-        self.xvars = self._unpack_xvars()
-        self.analyze()
-        self._analysis_tags.xvars_shuffled = True
+        if self._analysis_tags.xvars_shuffled == False:
+            self.images = self._dealer.unscramble_images(reshuffle=True)
+            self._dealer._unshuffle_struct(self, reshuffle=True)
+            self._dealer._unshuffle_struct(self.params, reshuffle=True)
+            self.xvars = self._unpack_xvars()
+            self.analyze()
+            self._analysis_tags.xvars_shuffled = True
+        else:
+            print("Data is already in shuffled order.")
+
+    def unshuffle(self):
+        if self._analysis_tags.xvars_shuffled == True:
+            self.images = self._dealer.unscramble_images(reshuffle=False)
+            self._dealer._unshuffle_struct(self, reshuffle=False)
+            self._dealer._unshuffle_struct(self.params, reshuffle=False)
+            self.xvars = self._unpack_xvars()
+            self.analyze()
+            self._analysis_tags.xvars_shuffled = False
+        else:
+            print("Data is already in unshuffled order.")
 
     ### data saving
 
