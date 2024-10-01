@@ -1,7 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay, delay_mu
 import numpy as np
-from kexp.config import ExptParams
+from kexp.config.expt_params import ExptParams
 from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
 from kexp.util.data import DataSaver, RunInfo, server_talk
 from artiq.language.core import kernel_from_string, now_mu
