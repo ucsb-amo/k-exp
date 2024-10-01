@@ -78,15 +78,42 @@ class Image():
     @kernel
     def abs_image(self):
 
+        # atoms image (pwa)
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
         delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
+        # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
         delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
+        # dark image
+        delay(self.camera_params.t_dark_image_delay * s)
+        self.dds.imaging.off()
+        self.dds.imaging.set_dds(amplitude=0.)
+        self.trigger_camera()
+        delay(self.camera_params.exposure_time)
+        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+
+    @kernel
+    def abs_image_in_trap(self):
+
+        # atoms image (pwa)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+
+        self.tweezer.off()
+
+        # light-only image (pwoa)
+        delay(self.camera_params.t_light_only_image_delay * s)
+        self.trigger_camera()
+        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+
+        # dark image
         delay(self.camera_params.t_dark_image_delay * s)
         self.dds.imaging.off()
         self.dds.imaging.set_dds(amplitude=0.)
@@ -148,8 +175,38 @@ class Image():
 
     ###
 
+    @portable(flags={"fast-math"})
+    def imaging_detuning_to_beat_ref(self, frequency_detuned=dv) -> TFloat:
+        if frequency_detuned == dv:
+            if self.params.imaging_state == 1.:
+                frequency_detuned = self.params.frequency_detuned_imaging_F1
+            elif self.params.imaging_state == 2.:
+                frequency_detuned = self.params.frequency_detuned_imaging
+
+        # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
+        beat_sign = -1 
+
+        f_hyperfine_splitting_4s_MHz = 461.7 * 1.e6
+        f_shift_resonance = f_hyperfine_splitting_4s_MHz / 2
+
+        f_ao_shift = self.dds.imaging.frequency * self.dds.imaging.aom_order * 2
+
+        #f_offset = beat_sign * ( detuning - (f_shift_resonance + f_ao_shift) )
+        f_offset = beat_sign * (frequency_detuned - f_ao_shift - f_shift_resonance)
+
+        f_beatlock_ref = f_offset / self.params.N_offset_lock_reference_multiplier
+
+        if f_offset < self.params.frequency_minimum_offset_beatlock:
+            aprint("The requested detuning results in an offset less than the minimum beat note frequency for the lock.")
+        if f_beatlock_ref < 0.:
+            aprint("The requested detuning would require a negative reference frequency. You'll need to flip the beat lock sign to reach this detuning.")
+        if f_beatlock_ref > 400.e6:
+            aprint("Invalid beatlock reference frequency for requested detuning (>400 MHz). Must be less than 400 MHz for ARTIQ DDS. Consider changing the beat lock reference multiplier.")
+
+        return f_beatlock_ref
+
     @kernel(flags={"fast-math"})
-    def set_imaging_detuning(self, detuning = dv, amp = dv):
+    def set_imaging_detuning(self, frequency_detuned = dv, amp = dv):
         '''
         Sets the detuning of the beat-locked imaging laser (in Hz).
 
@@ -166,41 +223,30 @@ class Image():
         # determine this manually -- minimum offset frequency where the offset lock is happy
         if amp == dv:
             amp = self.camera_params.amp_imaging
-        if detuning == dv:
+        if frequency_detuned == dv:
             if self.params.imaging_state == 1.:
-                detuning = self.params.frequency_detuned_imaging_F1
+                frequency_detuned = self.params.frequency_detuned_imaging_F1
             elif self.params.imaging_state == 2.:
-                detuning = self.params.frequency_detuned_imaging
+                frequency_detuned = self.params.frequency_detuned_imaging
             
-
-        beat_sign = -1 # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
+        f_beatlock_ref = self.imaging_detuning_to_beat_ref(frequency_detuned=frequency_detuned)
 
         self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging,amplitude=amp)
 
-        f_minimum_offset_frequency = 150.e6
-
-        f_hyperfine_splitting_4s_MHz = 461.7 * 1.e6
-        f_shift_resonance = f_hyperfine_splitting_4s_MHz / 2
-
-        f_ao_shift = self.dds.imaging.frequency * self.dds.imaging.aom_order * 2
-
-        #f_offset = beat_sign * ( detuning - (f_shift_resonance + f_ao_shift) )
-        f_offset = beat_sign * (detuning - f_ao_shift - f_shift_resonance)
-
+        f_minimum_offset_frequency = self.params.frequency_minimum_offset_beatlock
+        f_offset = f_beatlock_ref * self.params.N_offset_lock_reference_multiplier
         if f_offset < f_minimum_offset_frequency:
             try: 
                 self.camera.Close()
             except: pass
             raise ValueError("The beat lock is unhappy at a lock point below the minimum offset.")
-            
-        offset_lock_multiplier_N = 8
-        f_beatlock_ref = f_offset / offset_lock_multiplier_N
         
         if f_beatlock_ref < 0.:
             try: 
                 self.camera.Close()
             except: pass
             raise ValueError("You tried to set the DDS to a negative frequency!")
+        
         self.dds.beatlock_ref.set_dds(frequency=f_beatlock_ref)
         self.dds.beatlock_ref.on()
 

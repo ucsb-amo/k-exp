@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from kexp.analysis import atomdata
 
+from kexp.analysis.helper import xlabels_1d
+
 def plot_mixOD(ad:atomdata,
                xvarformat="1.2f",
                xvarmult = 1.,
@@ -67,9 +69,9 @@ def plot_mixOD(ad:atomdata,
     # Set ticks at the center of each sub-image and rotate them vertically
     tick_positions = np.arange(px/2, total_width, px)
     ax.set_xticks(tick_positions)
-    xvarticks = np.array([f"{val*xvarmult:{xvarformat}}" for val in xvars[0]])
-    xvarticks = xvarticks[::n_repeats]
-    ax.set_xticklabels(xvarticks, rotation='vertical', ha='center')
+    xvarlabels = xlabels_1d(xvars[0], xvarmult, xvarformat)
+    xvarlabels = xvarlabels[::n_repeats]
+    ax.set_xticklabels(xvarlabels, rotation='vertical', ha='center')
     plt.minorticks_off()
 
     if lines:
@@ -108,6 +110,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     Ns = int(len(ad.xvars[0]) / Nr)
 
     xvar = ad.xvars[0]
+    xvarlabels = xlabels_1d(xvar, xvarmult, xvarformat)
 
     if ad.params.N_repeats == 1 or Ns == 1:
         for i in range(Ns):
@@ -120,7 +123,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
             ax[i].plot(xdata*1.e6,yfit)
             ax[i].set_ylim([0,1.1*ymax])
 
-            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}",rotation='vertical')
+            ax[i].set_xlabel(xvarlabels[i],rotation='vertical')
 
             ax[i].set_xticks([])
             ax[i].set_yticks([])
@@ -141,7 +144,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
                 ax[j,i].set_yticks([])
 
                 if j == Nr-1:
-                    ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}",rotation='vertical')
+                    ax[j,i].set_xlabel(xvarlabels[idx],rotation='vertical')
                     
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
     fig.supxlabel(ad.xvarnames[0])
@@ -181,12 +184,13 @@ def plot_fit_residuals(ad:atomdata,axis=0,
     Ns = ad.params.N_shots
 
     xvar = ad.xvars[0]
+    xvarlabels = xlabels_1d(xvar, xvarmult, xvarformat)
 
     if ad.params.N_repeats == 1:
         for i in range(Ns):
             ax[i].plot(xdata,sum_od_residuals[i])
 
-            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}",rotation='vertical')
+            ax[i].set_xlabel(xvarlabels[i],rotation='vertical')
   
             ax[i].set_ylim(ylimmin,ylimmax)
             ax[i].set_xticks([])
@@ -196,7 +200,7 @@ def plot_fit_residuals(ad:atomdata,axis=0,
             for i in range(Ns):
                 idx = j + i*Nr
                 ax[j,i].plot(xdata,sum_od_residuals[idx])
-                ax[j,i].set_xlabel(f"{xvar[idx]*xvarmult:{xvarformat}}")
+                ax[j,i].set_xlabel(xvarlabels[idx])
                 ax[j,i].set_ylim(ylimmin,ylimmax)
 
                 ax[j,i].set_xticks([])
@@ -207,7 +211,7 @@ def plot_fit_residuals(ad:atomdata,axis=0,
                     ax[j,i].set_yticks([])
 
                 if j == Nr-1:
-                    ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}",rotation='vertical')
+                    ax[j,i].set_xlabel(xvarlabels[idx],rotation='vertical')
 
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label} fit residuals")
     fig.supxlabel(ad.xvarnames[0])

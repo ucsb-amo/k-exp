@@ -75,6 +75,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.params.compute_derived()
         self.compute_new_derived()
 
+        if self.tweezer.traps == []:
+            self.tweezer.add_tweezer_list()
+
         self.data_filepath = self.ds.create_data_file(self)
 
         self.generate_assignment_kernels()
@@ -118,23 +121,38 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.dds.ry_980.set_dds(set_stored=True)
         self.dds.ry_405.on()
         self.dds.ry_980.on()
-
+        
     @kernel
     def init_scan_kernel(self):
         self.dds.init_cooling()
         self.core.break_realtime()
 
         if self.p.imaging_state == 1.:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging_F1)
+            self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
         elif self.p.imaging_state == 2.:
-            self.set_imaging_detuning(detuning=self.p.frequency_detuned_imaging)
+            self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
         self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
+        # self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
+        
+        self.tweezer.reset_changing_trap_list(self.xvarnames)
+        self.tweezer.set_static_tweezers()
+
         self.core.break_realtime()
 
+        self.dds.ry_405.set_dds(set_stored=True)
+        self.dds.ry_405.on()
+        self.dds.ry_980.set_dds(set_stored=True)
+        self.dds.ry_980.on()
+        self.dds.raman_c.set_dds(set_stored=True)
+        self.dds.raman_c.on()
+        self.dds.raman_r.set_dds(set_stored=True)
+        self.dds.raman_r.on()
+
+        # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+        delay(50.e-3)
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()

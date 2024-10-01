@@ -42,8 +42,8 @@ def crop_OD(OD,crop_type=''):
         roix = [190,250]
         roiy = [210,260]
     elif crop_type == 'andor_tweezer_tall_putin':
-        roix = [190,250]
-        roiy = [150,260]
+        roix = [175,241]
+        roiy = [240,301]
     elif crop_type == 'andor_tweezer_stached_putin':
         roix = [190,250]
         roiy = [230,260]
@@ -54,14 +54,14 @@ def crop_OD(OD,crop_type=''):
         roix = [140,330]
         roiy = [200,370]
     elif crop_type == 'andor_fallen_tweezer':
-        roix = [200,250]
-        roiy = [150,270]
+        roix = [170,220]
+        roiy = [225,280]
     elif crop_type == 'andor_tweezer_tight':
         roix = [215,227]
         roiy = [235,260]
     elif crop_type == 'andor_single_tweezer':
-        roix = [200,240]
-        roiy = [230,271]
+        roix = [180,231]
+        roiy = [255,291]
     elif crop_type == 'xy2_lightsheet':
         roix = [1101,1300]
         roiy = [401,1200]
@@ -71,6 +71,9 @@ def crop_OD(OD,crop_type=''):
     elif crop_type == 'fringe_removal':
         roix = [140,340]
         roiy = [160,340]
+    elif crop_type == 'tweezer_array':
+        roix = [180,230]
+        roiy = [250,290]
     else:
         print('no matching roi found, defaulting to whole image')
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]]
