@@ -59,8 +59,8 @@ class TweezerMovesLib():
         fm = modulation_frequency
         return A*np.sin(2*np.pi*fm*t)
     
-    def linear(self,t,
-               y0,yf) -> TFloat:
+    def linear(self,t,t_move,y0,yf) -> TFloat:
+        slope = (yf - y0) / t_move
         return slope * t + y0
 
 class TweezerTrap():
@@ -104,7 +104,7 @@ class TweezerTrap():
     #     self.frequency = self.dds.get_freq(self.dds_idx)
     #     self.position = self.f_to_x(self.frequency)
 
-    def update_rpc(self,x_shift) -> TFloat:
+    def update_x_rpc(self,x_shift) -> TFloat:
         """Updates the position attribute of the tweezer on the host device.
 
         Args:
@@ -115,15 +115,31 @@ class TweezerTrap():
         """        
         self.position = self.position + x_shift
         return self.position
+    
+    def update_amp_rpc(self,amp_change) -> TFloat:
+        """Updates the position attribute of the tweezer on the host device.
+
+        Args:
+            x_shift (float): The position shift of a move.
+
+        Returns:
+            TFloat: the new position (in m) of the tweezer trap.
+        """        
+        self.amplitude = self.amplitude + amp_change
+        return self.position
 
     @kernel
-    def update(self,x_shift):
+    def update_x(self,x_shift):
         """Updates the position attribute of the tweezer on the core device.
 
         Args:
             x_shift (float): The position shift (in m) of a move.
         """        
-        self.position = self.update_rpc(x_shift)
+        self.position = self.update_x_rpc(x_shift)
+
+    @kernel
+    def update_amp(self,amp_change):
+        self.amplitude = self.update_amp_rpc(amp_change)
     
     def compute_cubic_move(self,t_move,x_move) -> TArray(TFloat):
         """Compute the frequency slopes required for a cubic move profile (zero
@@ -136,7 +152,7 @@ class TweezerTrap():
         Returns:
             TArray(TFloat): the frequency slopes for the move.
         """        
-        slopes = self.compute_freq_slopes(t_move,
+        slopes = self.compute_slopes(t_move,
                                     self.moves.cubic_move,
                                     t_move,x_move)
         return slopes
@@ -154,9 +170,16 @@ class TweezerTrap():
         Returns:
             TArray(TFloat): the frequency slopes for the move.
         """        
-        slopes = self.compute_freq_slopes(t_move,
+        slopes = self.compute_slopes(t_move,
                                     self.moves.sinusoidal_modulation,
                                     x_amplitude,modulation_frequency)
+        return slopes
+    
+    @kernel
+    def compute_linear_amplitude_ramp(self,t_ramp,amp_f) -> TArray[TFloat]:
+        slopes = self.compute_slopes(t_ramp,self.moves.linear,
+                                     t_ramp,self.amplitude,amp_f,
+                                     frequency_slopes=False)
         return slopes
 
     @kernel
@@ -169,7 +192,7 @@ class TweezerTrap():
             t_move (float): the total duration (in s) of the move.
             x_move (float): the total displacement for the move.
         """        
-        self.update(x_shift=x_move)
+        self.update_x(x_shift=x_move)
         self.move(t_move, self.compute_cubic_move(t_move,x_move))
     
     @kernel
@@ -182,8 +205,13 @@ class TweezerTrap():
             modulation_frequency (float): the modulation frequency (in Hz) for
             the move.
         """        
-        self.update(x_shift=self.moves.sinusoidal_modulation(t_mod,x_mod,f_mod))
+        self.update_x(x_shift=self.moves.sinusoidal_modulation(t_mod,x_mod,f_mod))
         self.move(t_mod,self.compute_sinusoidal_modulation(t_mod,x_mod,f_mod))
+
+    @kernel
+    def linear_amplitude_ramp(self,t_ramp,amp_f):
+        self.update_amp(amp_f)
+        self.amp_ramp(t_ramp,self.compute_linear_amplitude_ramp(t_ramp,amp_f))
 
     @portable
     def x_to_f(self,x) -> TFloat:
@@ -211,9 +239,10 @@ class TweezerTrap():
         """        
         return self.mesh.f_to_x(f)[0]
 
-    def compute_freq_slopes(self,t_move,
+    def compute_slopes(self,t_move,
                x_vs_t_func,
-               *x_vs_t_params) -> TArray(TFloat):
+               *x_vs_t_params,
+               frequency_slopes=True) -> TArray(TFloat):
         """Compute the frequency slopes required to implement the specified move
         profile x(t) from t=0 to t=t_move. 
         
@@ -232,13 +261,14 @@ class TweezerTrap():
         """
         dt = self.p.t_tweezer_movement_dt
         tarray = np.arange(0.,t_move,dt)
-        slopes = np.diff(x_vs_t_func(tarray,*x_vs_t_params)) \
-            / dt / self.x_per_f
+        slopes = np.diff(x_vs_t_func(tarray,*x_vs_t_params)) / dt 
+        if frequency_slopes:
+            slopes = slopes / self.x_per_f
         slopes = np.concatenate((slopes,[0.]))
         return slopes
 
     @kernel
-    def move(self,t_move,slopes):
+    def move(self,t_move,slopes,dt=dv):
         """Sets the timeline cursor to the current RTIO time (wall-clock), then
         starts writing the slopes list to the awg.
 
@@ -247,14 +277,14 @@ class TweezerTrap():
             the time of the move and the move's frequency slopes.
         """
         self.core.wait_until_mu(now_mu())
-        self.write_move(slopes)
+        self.write_move(slopes,dt)
         delay(T_AWG_RPC_DELAY)
 
         self.awg_trig_ttl.pulse(1.e-6)
         delay(t_move)
 
     @kernel
-    def amp_ramp(self,t_move,slopes):
+    def amp_ramp(self,t_move,slopes,dt=dv):
         """Sets the timeline cursor to the current RTIO time (wall-clock), then
         starts writing the amplitude slopes list to the awg.
 
@@ -263,21 +293,22 @@ class TweezerTrap():
             the time of the move and the ramp's amplitude slopes.
         """
         self.core.wait_until_mu(now_mu())
-        self.write_amp_ramp(slopes)
+        self.write_amp_ramp(slopes,dt)
         delay(T_AWG_RPC_DELAY)
 
         self.awg_trig_ttl.pulse(1.e-6)
         delay(t_move)
 
     @rpc(flags={"async"})
-    def write_move(self,slopes):
+    def write_move(self,slopes,dt=dv):
         """Writes the slopes list to the AWG at update interval dt.
 
         Args:
             slopes (ndarray): The list of frequency slopes (Hz/s) to be written
             to the awg.
         """        
-        dt = self.p.t_tweezer_movement_dt
+        if dt == dv:
+            dt = self.p.t_tweezer_movement_dt
 
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
         self.dds.trg_timer(dt)
@@ -755,4 +786,9 @@ class tweezer():
     @kernel
     def sine_move(self,tweezer_idx,
                   t_mod,x_mod,f_mod):
-        self.traps[tweezer_idx].cubic_move(t_mod,x_mod,f_mod)
+        self.traps[tweezer_idx].sine_move(t_mod,x_mod,f_mod)
+
+    @kernel
+    def linear_amplitude_ramp(self,tweezer_idx,
+                              t_ramp,amp_f):
+        self.traps[tweezer_idx].linear_amplitude_ramp(t_ramp,amp_f)
