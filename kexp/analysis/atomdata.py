@@ -304,7 +304,7 @@ class atomdata():
             supplied, defaults to full ROI.
         '''
         
-        self.od, self.sum_od_x, self.sum_od_y = process_ODs(self.od_raw, crop_type, self.Nvars)
+        self.od, self.sum_od_x, self.sum_od_y = process_ODs(self.od_raw, crop_type)
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
 
