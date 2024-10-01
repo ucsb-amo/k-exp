@@ -5,6 +5,7 @@ import copy
 import h5py
 
 from kexp.util.data.server_talk import check_for_mapped_data_dir, get_run_id, update_run_id
+from kexp.base.sub.dealer import Dealer
 
 data_dir = os.getenv("data")
 
@@ -28,6 +29,15 @@ class DataSaver():
                 f = data_object
             else:
                 f = h5py.File(fpath,'r+')
+
+            if expt.sort_idx:
+                expt.images = f['images']
+                expt.image_timestamps = f['image_timestamps']
+                # expt = Dealer()
+                expt = expt._unshuffle_struct(expt) # this line may be bad
+                f['images'][...] = expt.unscramble_images()
+                f['image_timestamps'][...] = expt._unscramble_timestamps()
+                expt.params = expt._unshuffle_struct(expt.params)
 
             del f['params']
             params_dset = f.create_group('params')
@@ -58,11 +68,7 @@ class DataSaver():
             os.chdir(pwd)
 
     def get_xvardims(self,expt):
-        xvardims = []
-        for k in expt.xvarnames:
-            xvar = vars(expt.params)[k]
-            xvardims.append(len(xvar))
-        return xvardims
+        return [len(xvar.values) for xvar in expt.scan_xvars]
 
     def create_data_file(self,expt):
 
