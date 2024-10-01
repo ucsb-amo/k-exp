@@ -57,6 +57,13 @@ class DataSaver():
             self._update_run_id(expt.run_info)
             os.chdir(pwd)
 
+    def get_xvardims(self,expt):
+        xvardims = []
+        for k in expt.xvarnames:
+            xvar = vars(expt.params)[k]
+            xvardims.append(len(xvar))
+        return xvardims
+
     def create_data_file(self,expt):
 
         if expt.setup_camera:
