@@ -1,7 +1,7 @@
 import numpy as np
 import kexp.analysis.image_processing.roi_select as roi
 
-def process_ODs(raw_ODs,crop_type='mot',Nvars=1):
+def process_ODs(raw_ODs,crop_type='mot'):
     '''
     From an ndarray of ODs (dimensions n1 x n2 x ... x nN x px x py, where ni is
     the length of the ith xvar, and px and py are the dimensions in pixels of
@@ -18,8 +18,6 @@ def process_ODs(raw_ODs,crop_type='mot',Nvars=1):
         Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
         options: 'mot', 'cmot', 'gm', 'odt'.
 
-    Nvars: int
-
     Returns
     -------
     ODs: ArrayLike
@@ -27,10 +25,10 @@ def process_ODs(raw_ODs,crop_type='mot',Nvars=1):
     summedODx: ArrayLike summedODy: ArrayLike
     summedODy: ArrayLike
     '''
-    ODs = roi.crop_OD(raw_ODs,crop_type,Nvars)
-
-    sum_od_y = np.sum(ODs,Nvars+1)
-    sum_od_x = np.sum(ODs,Nvars)
+    ODs = roi.crop_OD(raw_ODs,crop_type)
+    ODs: np.ndarray
+    sum_od_y = np.sum(ODs,ODs.ndim-2)
+    sum_od_x = np.sum(ODs,ODs.ndim-1)
 
     return ODs, sum_od_x, sum_od_y
 

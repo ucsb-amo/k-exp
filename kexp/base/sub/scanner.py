@@ -1,4 +1,4 @@
-from kexp.config import ExptParams
+from kexp.config.expt_params import ExptParams
 from artiq.experiment import *
 import numpy as np
 from kexp.control.artiq.dummy_core import DummyCore

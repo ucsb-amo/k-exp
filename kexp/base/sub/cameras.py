@@ -6,7 +6,7 @@ from kexp.control.artiq.TTL import TTL, DummyTTL
 from kexp.config.expt_params import ExptParams
 import kexp.config.camera_params as camera_params
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
-from kexp.util.data import RunInfo
+from kexp.util.data.run_info import RunInfo
 import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint

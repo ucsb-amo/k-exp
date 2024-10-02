@@ -1,6 +1,6 @@
 from kexp.control.artiq.DAC_CH import DAC_CH
 from kexp.control.artiq.TTL import TTL
-from kexp.config import ExptParams
+from kexp.config.expt_params import ExptParams
 from artiq.experiment import kernel, delay, parallel, portable, TFloat
 import numpy as np
 from kexp.util.artiq.async_print import aprint

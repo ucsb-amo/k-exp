@@ -11,7 +11,7 @@ import kexp.util.data.server_talk as st
 
 data_dir = os.getenv("data")
 
-def load_atomdata(idx=0, crop_type='', path = "", unshuffle_xvars=True,
+def load_atomdata(idx=0, crop_type='', path = "",
                   transpose_idx = [], average_repeats = False) -> atomdata:
     '''
     Returns the atomdata stored in the `idx`th newest pickle file at `path`.
@@ -84,8 +84,8 @@ def load_atomdata(idx=0, crop_type='', path = "", unshuffle_xvars=True,
     ad = atomdata(xvarnames,images,image_timestamps,params,camera_params,run_info,
                   sort_idx,sort_N,
                   expt_text,params_text,cooling_text,imaging_text,
-                  unshuffle_xvars=unshuffle_xvars,
-                  crop_type=crop_type, transpose_idx=transpose_idx, avg_repeats=average_repeats)
+                  crop_type=crop_type, transpose_idx=transpose_idx, 
+                  avg_repeats=average_repeats)
     
     f.close()
 
