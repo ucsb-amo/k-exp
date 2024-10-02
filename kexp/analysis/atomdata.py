@@ -7,8 +7,8 @@ from kamo.atom_properties.k39 import Potassium39
 from kexp.util.data.run_info import RunInfo
 from kexp.config.expt_params import ExptParams
 from kexp.config.camera_params import CameraParams
-from kexp.base.sub import Dealer
-from kexp.base.sub import xvar
+from kexp.base.sub.dealer import Dealer
+from kexp.base.sub.scanner import xvar
 
 import datetime
 
