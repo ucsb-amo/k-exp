@@ -6,7 +6,7 @@ from kexp.config.expt_params import ExptParams
 from kexp.config.camera_params import CameraParams
 from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
-from kexp.util.data import RunInfo
+from kexp.util.data.run_info import RunInfo
 from kexp.base.sub.devices import Devices
 import pypylon.pylon as py
 import numpy as np

@@ -2,7 +2,7 @@ from kexp.control.artiq.DAC_CH import DAC_CH
 from kexp.control.artiq.TTL import TTL
 from kexp.control.artiq.DDS import DDS
 from kexp.calibrations import tweezer as tweezer_calibrations
-from kexp.config import ExptParams
+from kexp.config.expt_params import ExptParams
 from kexp.util.artiq.async_print import aprint
 from artiq.language.core import now_mu
 from artiq.coredevice.core import Core

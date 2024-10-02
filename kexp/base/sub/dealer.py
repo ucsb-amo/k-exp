@@ -1,8 +1,8 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 
-from kexp.util.data import RunInfo
 from kexp.config.expt_params import ExptParams
+from kexp.util.data.run_info import RunInfo
 
 import numpy as np
 
