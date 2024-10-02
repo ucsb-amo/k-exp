@@ -12,9 +12,8 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('t_tof',np.linspace(800.,2800.,20)*1.e-6)
+        self.xvar('t_tof',np.linspace(800.,2800.,3)*1.e-6)
         # self.xvar('t_tof',[1537*1.e-6]*20)
-
 
         # self.xvar('beans',[0]*100)
 

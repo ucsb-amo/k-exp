@@ -176,7 +176,7 @@ class TweezerTrap():
         return slopes
     
     @kernel
-    def compute_linear_amplitude_ramp(self,t_ramp,amp_f) -> TArray[TFloat]:
+    def compute_linear_amplitude_ramp(self,t_ramp,amp_f) -> TArray(TFloat):
         slopes = self.compute_slopes(t_ramp,self.moves.linear,
                                      t_ramp,self.amplitude,amp_f,
                                      frequency_slopes=False)
