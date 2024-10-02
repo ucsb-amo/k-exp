@@ -6,6 +6,7 @@ import h5py
 
 from kexp.util.data.server_talk import check_for_mapped_data_dir, get_run_id, update_run_id
 from kexp.base.sub.dealer import Dealer
+# from kexp.base.base import Base
 
 data_dir = os.getenv("data")
 
@@ -16,7 +17,7 @@ imaging_path = os.path.join(code_dir,"k-exp","kexp","base","sub","image.py")
 
 class DataSaver():
 
-    def save_data(self,expt,expt_filepath="",data_object=None):
+    def save_data(self,expt:Dealer,expt_filepath="",data_object=None):
 
         if expt.setup_camera:
             
@@ -31,13 +32,12 @@ class DataSaver():
                 f = h5py.File(fpath,'r+')
 
             if expt.sort_idx:
-                expt.images = f['images']
-                expt.image_timestamps = f['image_timestamps']
-                # expt = Dealer()
-                expt = expt._unshuffle_struct(expt) # this line may be bad
-                f['images'][...] = expt.unscramble_images()
-                f['image_timestamps'][...] = expt._unscramble_timestamps()
-                expt.params = expt._unshuffle_struct(expt.params)
+                expt.images = f['data']['images']
+                expt.image_timestamps = f['data']['image_timestamps']
+                expt._unshuffle_struct(expt)
+                f['data']['images'][...] = expt.unscramble_images()
+                f['data']['image_timestamps'][...] = expt._unscramble_timestamps()
+                expt._unshuffle_struct(expt.params)
 
             del f['params']
             params_dset = f.create_group('params')
