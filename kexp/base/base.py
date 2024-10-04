@@ -7,6 +7,7 @@ from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 from kexp.util.data import server_talk
 from artiq.language.core import kernel_from_string, now_mu
+import time
 
 RPC_DELAY = 10.e-3
 
@@ -170,6 +171,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
                 dtype = np.uint8
             self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=dtype)
             self.image_timestamps = np.zeros((self.params.N_img,))
+            # self.image_timestamps = np.empty((self.params.N_img,),dtype=type(time.time()))
         else:
             self.images = np.array([0])
             self.image_timestamps = np.array([0])

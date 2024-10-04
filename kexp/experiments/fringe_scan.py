@@ -12,12 +12,12 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('t_tof',np.linspace(800.,2800.,3)*1.e-6)
-        # self.xvar('t_tof',[1537*1.e-6]*20)
+        self.xvar('t_tof',np.linspace(800.,3000.,15)*1.e-6)
+        # self.xvar('t_tof',[2800*1.e-6]*20)
 
-        # self.xvar('beans',[0]*100)
+        # self.xvar('beans',[0]*4)
 
-        self.p.frequency_tweezer_list = [70.4e6,80.e6]
+        self.p.frequency_tweezer_list = [70.7e6,80.e6]
 
         # ass = np.linspace(.18,.205,20)
         # a_lists = [[.78,ass1] for ass1 in ass]
@@ -27,21 +27,27 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('amp_tweezer_list',a_lists)
 
-        a_list = [.795,.2]
+        a_list = [.73,.2]
         # a_list = [.78,.21]
         self.p.amp_tweezer_list = a_list
         self.p.amp_tweezer_auto_compute = False
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.4,3.,20))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.5,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.5,8))
+        self.p.pfrac_c_gmramp_end = 0.328
+        self.p.pfrac_r_gmramp_end = 0.271
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.5,0.,20))
-        self.p.v_tweezer_paint_amp_max = -2.8
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.4,3.,10))
+        self.p.v_pd_lightsheet_rampdown_end = 1.26
+
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.5,0.,10))
+        self.p.v_tweezer_paint_amp_max = -3.7
 
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.02,.55,8))
         self.p.t_tweezer_1064_rampdown2 = .3229
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.7,5.,8))
-        self.p.v_pd_tweezer_1064_rampdown3_end = 1.3
+        self.p.v_pd_tweezer_1064_rampdown3_end = 1.6
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.05,.3,8))
         self.p.t_tweezer_1064_rampdown3 = .15
@@ -49,7 +55,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('i_evap3_current',np.linspace(192.,194.,8))
         # self.p.i_evap3_current = 192.3
 
-        self.p.t_tof = 1800.e-6
+        self.p.t_tof = 2000.e-6
         self.p.N_repeats = 1
 
         self.p.t_mot_load = 1.5
@@ -132,10 +138,6 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
-        #                      i_start=self.p.i_evap3_current,
-        #                      i_end=self.p.i_end)
-        
         self.lightsheet.off()
         self.tweezer.off()
 
@@ -143,7 +145,7 @@ class tweezer_load(EnvExperiment, Base):
         self.abs_image()
 
         self.outer_coil.off()
-        self.outer_coil.discharge()
+        # self.outer_coil.discharge()
 
     @kernel
     def run(self):

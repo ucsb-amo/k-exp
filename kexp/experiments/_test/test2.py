@@ -7,8 +7,8 @@ class test2(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
-        self.xvar('p1',np.linspace(0.,10.,4))
-        self.xvar('p2',np.linspace(0.,10.,4))
+        self.xvar('p1',np.linspace(0.,10.,2))
+        self.xvar('p2',np.linspace(0.,10.,2))
         self.finish_prepare(shuffle=True)
     
     @kernel

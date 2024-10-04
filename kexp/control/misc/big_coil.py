@@ -26,6 +26,7 @@ class igbt_magnet():
         self.igbt_ttl = igbt_ttl
         self.discharge_igbt_ttl = discharge_igbt_ttl
         self.params = expt_params
+        self.i_current = 0.
 
     @kernel
     def load_dac(self):
@@ -40,7 +41,7 @@ class igbt_magnet():
         self.igbt_ttl.on()
 
     @kernel
-    def off(self,discharge_igbt=False,load_dac=True):
+    def snap_off(self,discharge_igbt=False,load_dac=True):
 
         self.igbt_ttl.off()
         self.set_current(i_supply=0.,load_dac=False)
@@ -58,6 +59,7 @@ class igbt_magnet():
         """        
         v_dac_current = self.supply_current_to_dac_voltage(i_supply)
         self.i_control_dac.set(v=v_dac_current,load_dac=load_dac)
+        self.i_current = i_supply
         
     @kernel
     def set_voltage(self,v_supply=V_SUPPLY_DEFAULT,load_dac=True):
@@ -73,13 +75,63 @@ class igbt_magnet():
         return (v_supply/self.max_voltage) * V_FULLSCALE_DAC
     
     @kernel(flags={"fast-math"})
-    def ramp(self,t,i_start,i_end,n_steps=di,t_analog_delay=T_ANALOG_DELAY):
+    def ramp(self,t,i_start=dv,i_end=0.,n_steps=di,t_analog_delay=T_ANALOG_DELAY):
+        """Ramps the supply current from i_start to i_end in n_steps over time t. 
+        If no i_start is provided, defaults to the last current the supply was set to.
+
+        Args:
+            t (float): The time of the ramp.
+            i_start (float, optional): The current at the start of the ramp.
+            Defaults to the attribute `i_current`, which corresponds to the last
+            current the supply was set to.
+            i_end (float, optional): The current at the end of the ramp. Defaults to 0.
+            n_steps (int, optional): The number of steps. Defaults to
+            ExptParams.n_field_ramp_steps.
+            t_analog_delay (float, optional): the time delay of the current
+            supply in response to analog changes. Defaults to T_ANALOG_DELAY.
+        """        
         if n_steps == di:
             n_steps = self.params.n_field_ramp_steps
+        if i_start == dv:
+            i_start = self.i_current
+        else:
+            self.i_current = i_start
+        if i_end == dv:
+            i_end = 0.
         v_start = self.supply_current_to_dac_voltage(i_start)
         v_end = self.supply_current_to_dac_voltage(i_end)
         self.i_control_dac.linear_ramp(t,v_start,v_end,n_steps)
         delay(t_analog_delay)
+        self.i_current = i_end
+
+    @kernel(flags={"fast-math"})
+    def rampdown(self,t_rampdown=50.e-3):
+        """Ramps the coils to off from the current set point.
+        """       
+        self.ramp(t=t_rampdown,
+                  i_start=self.i_current,
+                  i_end=0.,
+                  n_steps=100)
+        self.set_voltage(0.)
+        delay(T_ANALOG_DELAY)
+
+    @kernel
+    def discharge(self):
+        """Closes the coil contacts, makes sure the set points are zero, and
+        waits for any charge to dissipate.
+        """        
+        self.on()
+        self.set_current(0.)
+        self.set_voltage(0.)
+        delay(T_ANALOG_DELAY)
+        self.igbt_ttl.off()
+
+    @kernel
+    def off(self):
+        self.rampdown()
+        self.igbt_ttl.off()
+        delay(5.e-3)
+        self.discharge()
         
     # @kernel
     # def open_discharge_igbt(self):
@@ -96,14 +148,6 @@ class igbt_magnet():
     # @kernel
     # def discharge_igbt_pulse(self,t):
     #     self.discharge_igbt_ttl.pulse(t)
-
-    @kernel
-    def discharge(self):
-        self.on()
-        self.set_current(0.)
-        self.set_voltage(0.)
-        delay(T_ANALOG_DELAY)
-        self.off()
 
 class hbridge_magnet(igbt_magnet):
     def __init__(self,
