@@ -75,8 +75,11 @@ def crop_OD(OD,crop_type=''):
         roix = [180,230]
         roiy = [250,290]
     elif crop_type == 'andor_fallen_tweezer2':
-        roix = [170,220]
-        roiy = [225,280]
+        roix = [190,241]
+        roiy = [225,260]
+    elif crop_type == 'andor_tweezer_tight_putin':
+        roix = [200,230]
+        roiy = [232,248]
     else:
         print('no matching roi found, defaulting to whole image')
         roix = [0,np.shape(OD)[len(np.shape(OD))-1]]

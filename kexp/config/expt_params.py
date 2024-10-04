@@ -178,7 +178,7 @@ class ExptParams():
         self.detune_optical_pumping_r_op = 0.0
         self.amp_optical_pumping_r_op = 0.25
 
-        #ODT
+        # ODT
         # self.amp_lightsheet = 0.6
         # self.frequency_ao_lightsheet = 80.e6
         self.v_pd_lightsheet_pd_minimum = 0.046

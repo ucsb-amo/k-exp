@@ -256,6 +256,13 @@ class Image():
         detuning = high_field_imaging_detuning(i_outer=i_outer)
         
         self.set_imaging_detuning(detuning, amp=imaging_amp)
+
+    # @kernel(flags={"fast-math"})
+    # def set_low_field_imaging(self, i_outer, imaging_amp = dv):
+
+    #     detuning = low_field_imaging_detuning(i_outer=i_outer)
+        
+    #     self.set_imaging_detuning(detuning, amp=imaging_amp)
     ###
 
     def get_N_img(self):

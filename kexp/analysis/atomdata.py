@@ -47,7 +47,7 @@ class atomdata():
                                             absorption_analysis)
     
         self.images = images
-        self.img_timestamps = image_timestamps
+        self.image_timestamps = image_timestamps
         self.params = params
         self.camera_params = camera_params
 
@@ -88,7 +88,7 @@ class atomdata():
         dealer.params = self.params
         dealer.run_info = self.run_info
         dealer.images = self.images
-        dealer.img_timestamps = self.img_timestamps
+        dealer.image_timestamps = self.image_timestamps
         dealer.sort_idx = self.sort_idx
         dealer.sort_N = self.sort_N
         # reconstruct the xvar objects
@@ -110,7 +110,7 @@ class atomdata():
         else:
             self.img_atoms = imgs_tuple[0]
             self.img_dark = imgs_tuple[1]
-        self.img_timestamps.reshape(-1,3)
+        self.image_timestamps.reshape(-1,3)
 
     def compute_atom_number(self):
         self.atom_cross_section = self.atom.get_cross_section()
@@ -256,7 +256,7 @@ class atomdata():
 
         # for things of an ndarraylike nature which have one axis per xvar, and
         # so should have the order of their axes switched.
-        ndarraylike_keys = ['img_atoms','img_light','img_dark','img_tstamps']
+        ndarraylike_keys = ['img_atoms','img_light','img_dark']
         for key in ndarraylike_keys:
             attr = vars(self)[key]
             # figure out how many extra indices each has. add them to the new
@@ -265,7 +265,7 @@ class atomdata():
             dims_to_add = ndim - Nvars
             axes_idx_to_add = [Nvars+i for i in range(dims_to_add)]
             new_idx = np.concatenate( (new_xvar_idx, axes_idx_to_add) ).astype(int)
-            
+            print(new_idx)
             attr = np.transpose(attr,new_idx)
             vars(self)[key] = attr
 
