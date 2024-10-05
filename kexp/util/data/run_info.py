@@ -3,7 +3,10 @@ from kexp.util.data.server_talk import get_run_id
 
 class RunInfo():
     def __init__(self,expt_obj=None,save_data=True):
-        self.run_id = get_run_id()
+        if expt_obj != None:
+            self.run_id = get_run_id()
+        else:
+            self.run_id = 0
         self.run_datetime = time.localtime(time.time())
 
         self._run_description = ""
