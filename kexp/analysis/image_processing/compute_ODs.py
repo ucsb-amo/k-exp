@@ -27,8 +27,8 @@ def process_ODs(raw_ODs,crop_type='mot'):
     '''
     ODs = roi.crop_OD(raw_ODs,crop_type)
     ODs: np.ndarray
-    sum_od_y = np.sum(ODs,ODs.ndim-2)
-    sum_od_x = np.sum(ODs,ODs.ndim-1)
+    sum_od_y = np.sum(ODs,ODs.ndim-1)
+    sum_od_x = np.sum(ODs,ODs.ndim-2)
 
     return ODs, sum_od_x, sum_od_y
 
