@@ -24,8 +24,10 @@ def crop_OD(OD,crop_type=''):
         roix = [500,1300]
         roiy = [500,1200]
     elif crop_type == 'lightsheet':
-        roix = [840,980]
-        roiy = [400,800]
+        # roix = [840,980]
+        # roiy = [400,800]
+        roix = [870,980]
+        roiy = [590,730]
     elif crop_type == 'lightsheet_zaxis':
         roix = [750,970]
         roiy = [500,780]
