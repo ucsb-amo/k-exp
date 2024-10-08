@@ -702,11 +702,12 @@ class Cooling():
         self.inner_coil.ramp(t=t_magtrap_rampdown,
                             i_start=i_magtrap_ramp_end,
                             i_end=0.)
-        self.inner_coil.off()
+        self.inner_coil.snap_off()
 
     @kernel
     def magtrap(self,
                 t_magtrap_ramp=dv,
+                t_lightsheet_ramp=dv,
                 i_magtrap_init=dv,
                 i_magtrap_ramp_end=dv,
                 v_zshim_current=dv,
@@ -724,10 +725,14 @@ class Cooling():
             v_yshim_current = self.params.v_yshim_current_magtrap
         if v_xshim_current == dv:
             v_xshim_current = self.params.v_xshim_current_magtrap
+        if t_lightsheet_ramp == dv:
+            t_lightsheet_ramp = self.params.t_lightsheet_rampup
 
         self.start_magtrap(v_zshim_current=v_zshim_current,
                            v_yshim_current=v_yshim_current,
                            v_xshim_current=v_xshim_current)
+        
+        delay(t_lightsheet_ramp)
 
         self.inner_coil.ramp(t=t_magtrap_ramp,
                             i_start=i_magtrap_init,
