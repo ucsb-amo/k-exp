@@ -11,13 +11,14 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
 
         self.p.t_tof = 5.e-3
-        self.xvar('t_tof',np.linspace(5.,12.,8)*1.e-3)
+        # self.xvar('t_tof',np.linspace(5.,12.,8)*1.e-3)
+        self.xvar('dumy',[0]*1000)
 
-        self.p.N_repeats = 3
+        # self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 
