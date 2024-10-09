@@ -15,6 +15,7 @@ class GaussianFit(Fit):
             self.y_fitdata = np.zeros(self.ydata.shape); self.y_fitdata.fill(np.NaN)
 
         amplitude, sigma, x_center, y_offset = popt
+        self.popt = popt
         self.amplitude = amplitude
         self.sigma = sigma
         self.x_center = x_center
@@ -60,7 +61,10 @@ class GaussianFit(Fit):
         ysm = np.convolve(y,[1/convwidth]*convwidth,mode='same')
         # shift and normalize between 0 and 1
         ynorm = ysm-np.min(ysm)
-        ynorm = ynorm/(np.max(ynorm) - np.min(ynorm))
+        try:
+            ynorm = ynorm/(np.max(ynorm) - np.min(ynorm))
+        except:
+            print(ynorm)
 
         from scipy.signal import find_peaks
         peak_idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_peak_prominence)
