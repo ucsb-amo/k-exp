@@ -140,6 +140,7 @@ class Dealer():
                                           reshuffle=reshuffle)
             images[0::2] = pwa
             images[1::2] = dark
+        self.images = images
         return images
 
     def sort_images(self):
@@ -168,6 +169,7 @@ class Dealer():
             t_dark = self._unshuffle_ndarray(self.image_timestamps[1::2])
             image_timestamps[0::2] = t_pwa
             image_timestamps[1::2] = t_dark
+        self.image_timestamps = image_timestamps
         return image_timestamps
 
     def _reshape_data_array_to_nxvar(self,img_ndarray):
