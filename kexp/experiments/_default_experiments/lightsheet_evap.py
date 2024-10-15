@@ -10,18 +10,19 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_evap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         self.p.imaging_state = 1.
 
         self.p.v_pd_lightsheet_rampdown_end = 1.6
 
-        self.p.t_tof = 500.e-6
-        self.xvar('t_tof',np.linspace(5.,200.,10)*1.e-6)
+        self.p.t_tof = 20.e-6
+        # self.xvar('t_tof',np.linspace(50.,500.,4)*1.e-6)
+        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(4.,7.,10))
 
-        self.camera_params.amp_imaging = .12
-        self.camera_params.exposure_time = 10.e-6
-        self.p.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.amp_imaging = .12
+        # self.camera_params.exposure_time = 10.e-6
+        # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
 
         self.finish_prepare(shuffle=False)
