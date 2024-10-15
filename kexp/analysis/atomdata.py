@@ -107,10 +107,12 @@ class atomdata():
             self.img_atoms = imgs_tuple[0]
             self.img_light = imgs_tuple[1]
             self.img_dark = imgs_tuple[2]
+            self.image_timestamps.reshape(-1,3)
         else:
             self.img_atoms = imgs_tuple[0]
             self.img_dark = imgs_tuple[1]
-        self.image_timestamps.reshape(-1,3)
+            self.image_timestamps.reshape(-1,2)
+        
 
     def compute_atom_number(self):
         self.atom_cross_section = self.atom.get_cross_section()
