@@ -10,7 +10,7 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_evap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 1.
 

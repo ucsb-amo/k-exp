@@ -8,8 +8,8 @@ class rf_scan(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        # self.xvar('do_magtrap',[0,1])
-        self.p.do_magtrap = 1
+        self.xvar('do_magtrap',[0,1])
+        # self.p.do_magtrap = 1
         self.p.t_magtrap = 50.e-3
         self.p.t_mot_load = 0.1
         self.p.N_repeats = 2

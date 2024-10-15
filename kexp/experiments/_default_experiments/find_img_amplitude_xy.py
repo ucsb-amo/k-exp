@@ -6,14 +6,16 @@ import numpy as np
 class img_amp_calibration(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy2_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
         self.xvar('amp_imaging',np.linspace(0.1,0.5,10))
-        self.p.t_tof = 1.e-3
+        self.p.t_tof = 14.e-3
         self.p.N_repeats = 3
-        self.p.t_mot_load = .25
+        self.p.t_mot_load = .1
         self.finish_prepare(shuffle=True)
+
+        self.camera_params.amp_imaging
 
     @kernel
     def scan_kernel(self):
