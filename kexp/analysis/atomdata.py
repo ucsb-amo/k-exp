@@ -267,7 +267,6 @@ class atomdata():
             dims_to_add = ndim - Nvars
             axes_idx_to_add = [Nvars+i for i in range(dims_to_add)]
             new_idx = np.concatenate( (new_xvar_idx, axes_idx_to_add) ).astype(int)
-            print(new_idx)
             attr = np.transpose(attr,new_idx)
             vars(self)[key] = attr
 
