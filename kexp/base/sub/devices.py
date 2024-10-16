@@ -23,6 +23,7 @@ from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.control.misc.awg_tweezer import tweezer
 from kexp.control.misc.doubled_rf import doubled_rf
+from kexp.control.misc.raman_beams import RamanBeamPair
 
 import numpy as np
 
@@ -108,6 +109,9 @@ class Devices():
                                painting_dac = self.dac.tweezer_paint_amp,
                                expt_params = self.params,
                                core=self.core)
+        
+        self.raman_zeeman = RamanBeamPair(dds0=self.dds.raman_c,
+                                          dds1=self.dds.raman_r)
 
         # camera placeholder
         self.camera = DummyCamera()
