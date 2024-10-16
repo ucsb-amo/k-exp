@@ -101,7 +101,7 @@ class atomdata():
             this_xvar.sort_idx = self.sort_idx[sort_idx_idx]
         else:
             this_xvar.sort_idx = []
-            dealer.scan_xvars.append(this_xvar)
+        dealer.scan_xvars.append(this_xvar)
         return dealer
 
     def _sort_images(self):
