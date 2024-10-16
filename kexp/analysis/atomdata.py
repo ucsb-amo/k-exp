@@ -96,8 +96,11 @@ class atomdata():
             this_xvar = xvar(self.xvarnames[idx],
                              self.xvars[idx],
                              position=idx)
+        if np.any(self.sort_idx):
             sort_idx_idx = np.where(self.sort_N == len(this_xvar.values))[0][0]
             this_xvar.sort_idx = self.sort_idx[sort_idx_idx]
+        else:
+            this_xvar.sort_idx = []
             dealer.scan_xvars.append(this_xvar)
         return dealer
 
@@ -144,7 +147,7 @@ class atomdata():
                 xvars_to_avg = [xvars_to_avg]
 
             from copy import deepcopy
-            # self._xvars_stored = deepcopy(self.xvars)
+            self._xvars_stored = deepcopy(self.xvars)
             def store_values(struct,keylist):
                 for key in keylist:
                     array = vars(struct)[key]

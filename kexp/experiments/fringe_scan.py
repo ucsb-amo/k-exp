@@ -12,7 +12,7 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('t_tof',np.linspace(20.,100.,4)*1.e-6)
+        self.xvar('t_tof',np.linspace(20.,500.,10)*1.e-6)
         # self.xvar('t_tof',[20*1.e-6]*500)
 
         # self.xvar('beans',[0]*1)
@@ -44,10 +44,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(6.,9.8,5))
-        self.p.v_pd_lightsheet_rampdown_end = 7.9
+        self.p.v_pd_lightsheet_rampdown_end = 6.
 
-        self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,5.,4))
-        self.p.v_tweezer_paint_amp_max = -3.
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,5.,4))
+        self.p.v_tweezer_paint_amp_max = -4.2
 
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.02,.55,8))
         self.p.t_tweezer_1064_rampdown2 = .3229
@@ -110,16 +110,16 @@ class tweezer_load(EnvExperiment, Base):
                              i_end=self.p.i_evap2_current)
         
         
-        self.tweezer.on(paint=False)
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
-                          v_start=0.,
-                          v_end=self.p.v_pd_tweezer_1064_ramp_end,
-                          paint=True,keep_trap_frequency_constant=False)
+        # self.tweezer.on(paint=False)
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
+        #                   v_start=0.,
+        #                   v_end=self.p.v_pd_tweezer_1064_ramp_end,
+        #                   paint=True,keep_trap_frequency_constant=False)
         
-        # # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        # # # lightsheet ramp down (to off)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         # # tweezer evap 1 with constant trap frequency
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
