@@ -10,14 +10,14 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
         self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6)
         # self.xvar('t_tof',[20*1.e-6]*500)
 
         # self.xvar('beans',[0]*1)
 
-        self.p.frequency_tweezer_list = [70.6e6,80.e6]
+        self.p.frequency_tweezer_list = [71.3e6,80.e6]
 
         # ass = np.linspace(.18,.205,20)
         # a_lists = [[.78,ass1] for ass1 in ass]
