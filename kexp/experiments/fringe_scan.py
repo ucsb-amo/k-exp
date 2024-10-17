@@ -76,7 +76,7 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
+        self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
 
@@ -116,27 +116,27 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False)
         
-        # # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        # # # lightsheet ramp down (to off)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
-        # tweezer evap 1 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
-                          v_start=self.p.v_pd_tweezer_1064_ramp_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown_end,
-                          paint=True,keep_trap_frequency_constant=True)
+        # # tweezer evap 1 with constant trap frequency
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
+        #                   v_start=self.p.v_pd_tweezer_1064_ramp_end,
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown_end,
+        #                   paint=True,keep_trap_frequency_constant=True)
 
-        # feshbach field ramp to field 3
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
-                             i_start=self.p.i_evap2_current,
-                             i_end=self.p.i_evap3_current)
+        # # feshbach field ramp to field 3
+        # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
+        #                      i_start=self.p.i_evap2_current,
+        #                      i_end=self.p.i_evap3_current)
         
-        # tweezer evap 2 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
-                          v_start=self.p.v_pd_tweezer_1064_rampdown_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
-                          paint=True,keep_trap_frequency_constant=True)
+        # # tweezer evap 2 with constant trap frequency
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
+        #                   v_start=self.p.v_pd_tweezer_1064_rampdown_end,
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
+        #                   paint=True,keep_trap_frequency_constant=True)
         
         # # tweezer evap 3 with constant trap frequency
         # self.ttl.pd_scope_trig.pulse(1.e-6)

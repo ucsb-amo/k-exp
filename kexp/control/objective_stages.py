@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 
 from pylablib.devices import Newport
 
@@ -88,6 +89,7 @@ class controller():
             axis: motor_axis
             axis.move(sign * N_steps)
             print(axis.addr,axis.motor_idx,N_steps)
+            time.sleep(1)
 
     def move(self,N_steps,obj:str,axis:str):
         if obj == 'n':
