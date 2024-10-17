@@ -96,12 +96,12 @@ class atomdata():
             this_xvar = xvar(self.xvarnames[idx],
                              self.xvars[idx],
                              position=idx)
-        if np.any(self.sort_idx):
-            sort_idx_idx = np.where(self.sort_N == len(this_xvar.values))[0][0]
-            this_xvar.sort_idx = self.sort_idx[sort_idx_idx]
-        else:
-            this_xvar.sort_idx = []
-        dealer.scan_xvars.append(this_xvar)
+            if np.any(self.sort_idx):
+                sort_idx_idx = np.where(self.sort_N == len(this_xvar.values))[0][0]
+                this_xvar.sort_idx = self.sort_idx[sort_idx_idx]
+            else:
+                this_xvar.sort_idx = []
+            dealer.scan_xvars.append(this_xvar)
         return dealer
 
     def _sort_images(self):
