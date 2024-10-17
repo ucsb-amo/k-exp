@@ -20,11 +20,13 @@ class motor_axis():
         self.position = 0
 
     def move(self,N_steps):
+        self.wait_until_done_moving()
         self.stage.move_by(self.motor_idx,N_steps,addr=self.addr)
+        self.wait_until_done_moving()
         self.position += N_steps
     
     def wait_until_done_moving(self):
-        self.stage.wait_move()
+        self.stage.wait_move(addr=self.addr)
 
     def reset_position(self):
         self.position = 0
@@ -64,32 +66,33 @@ class controller():
             objective = self.axes['s']
             ysign = -1
 
-        if '+' in axis:
-            sign = 1
-        elif '-' in axis:
-            sign = -1
+        # if '+' in axis:
+        #     sign = 1
+        # elif '-' in axis:
+        #     sign = -1
 
         axes_to_move = []
         # in order to translate in x, drive the motors which control rotation about z
         if 'x' in axis:
             axes_to_move.append(objective['+z'])
             axes_to_move.append(objective['-z'])
+
         elif 'y' in axis:
             if obj == 'n':
                 axes_to_move.append(objective['+y'])
             elif obj == 's':
                 axes_to_move.append(objective['-y'])
             N_steps = ysign * N_steps
+
         # in order to translate in z, drive the motors which control rotation about x
         elif 'z' in axis:
             axes_to_move.append(objective['+x'])
             axes_to_move.append(objective['-x'])
 
-        for axis in axes_to_move:
-            axis: motor_axis
-            axis.move(sign * N_steps)
-            print(axis.addr,axis.motor_idx,N_steps)
-            time.sleep(1)
+        for this_axis in axes_to_move:
+            this_axis: motor_axis
+            this_axis.move(N_steps)
+            print(this_axis.addr,this_axis.motor_idx,N_steps)
 
     def move(self,N_steps,obj:str,axis:str):
         if obj == 'n':
@@ -99,10 +102,10 @@ class controller():
             objective = self.axes['s']
             ysign = -1
 
-        if '+' in axis:
-            sign = 1
-        elif '-' in axis:
-            sign = -1
+        # if '+' in axis:
+        #     sign = 1
+        # elif '-' in axis:
+        #     sign = -1
 
         axes_to_move = []
         if 'x' in axis:
@@ -122,30 +125,19 @@ class controller():
             elif '-' in axis:
                 axes_to_move.append(objective['-z'])
 
-        for axis in axes_to_move:
-            axis: motor_axis
-            axis.move(sign * N_steps)
+        for this_axis in axes_to_move:
+            this_axis: motor_axis
+            this_axis.move(N_steps)
+            
     
     def translate_together_x(self,N_steps):
-        if N_steps <= 0:
-            self.translate(N_steps=-N_steps,obj='n',axis='-x')
-            self.translate(N_steps=-N_steps,obj='s',axis='-x')
-        elif N_steps > 0:
-            self.translate(N_steps=N_steps,obj='n',axis='+x')
-            self.translate(N_steps=N_steps,obj='s',axis='+x')
+        self.translate(N_steps=N_steps,obj='n',axis='x')
+        self.translate(N_steps=N_steps,obj='s',axis='x')
 
     def translate_together_y(self,N_steps):
-        if N_steps <= 0:
-            self.translate(N_steps=-N_steps,obj='n',axis='-y')
-            self.translate(N_steps=-N_steps,obj='s',axis='-y')
-        elif N_steps > 0:
-            self.translate(N_steps=N_steps,obj='n',axis='+y')
-            self.translate(N_steps=N_steps,obj='s',axis='+y')
+        self.translate(N_steps=-N_steps,obj='n',axis='y')
+        self.translate(N_steps=-N_steps,obj='s',axis='y')
 
     def translate_together_z(self,N_steps):
-        if N_steps <= 0:
-            self.translate(N_steps=-N_steps,obj='n',axis='-z')
-            self.translate(N_steps=-N_steps,obj='s',axis='-z')
-        elif N_steps > 0:
-            self.translate(N_steps=N_steps,obj='n',axis='+z')
-            self.translate(N_steps=N_steps,obj='s',axis='+z')
+        self.translate(N_steps=-N_steps,obj='n',axis='z')
+        self.translate(N_steps=-N_steps,obj='s',axis='z')
