@@ -38,14 +38,14 @@ def crop_OD(OD,crop_type=''):
         roix = [950,1150]
         roiy = [630,700]
     elif crop_type == 'andor_tweezer':
-        roix = [150,220]
-        roiy = [250,300]
+        roix = [240,270]
+        roiy = [265,300]
     elif crop_type == 'andor_tweezer_wide_putin':
         roix = [190,250]
         roiy = [210,260]
     elif crop_type == 'andor_tweezer_tall_putin':
-        roix = [175,241]
-        roiy = [200,291]
+        roix = [240,270]
+        roiy = [190,300]
         # roix = [195,261]
         # roiy = [150,271]
     elif crop_type == 'andor_tweezer_stached_putin':
@@ -78,8 +78,8 @@ def crop_OD(OD,crop_type=''):
         roix = [140,340]
         roiy = [160,340]
     elif crop_type == 'tweezer_array':
-        roix = [180,230]
-        roiy = [250,290]
+        roix = [210,275]
+        roiy = [190,300]
     elif crop_type == 'andor_fallen_tweezer2':
         roix = [190,241]
         roiy = [225,260]
