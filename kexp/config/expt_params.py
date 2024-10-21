@@ -25,8 +25,8 @@ class ExptParams():
 
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 14.0e6
-        self.frequency_detuned_imaging_F1 = 400.e6
-        self.beatlock_sign = -1
+        self.frequency_detuned_imaging_F1 = 408.e6
+        self.beatlock_sign = -15
         self.N_offset_lock_reference_multiplier = 8
         self.frequency_minimum_offset_beatlock = 150.e6
         self.imaging_state = 2.
@@ -75,8 +75,8 @@ class ExptParams():
         self.t_magtrap_ramp = .367
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 100.e-3
-        self.t_feshbach_field_ramp = 15.e-3
-        self.t_feshbach_field_ramp2 = 15.e-3
+        self.t_feshbach_field_ramp = 12.e-3
+        self.t_feshbach_field_ramp2 = 12.e-3
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
@@ -272,7 +272,7 @@ class ExptParams():
 
         # high field evap
         self.i_evap1_current = 193.
-        self.i_evap2_current = 193.4
+        self.i_evap2_current = 192.3
         self.i_evap3_current = 192.3
 
         # forced evap

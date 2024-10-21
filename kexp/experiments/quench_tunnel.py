@@ -11,23 +11,21 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
-        
-        self.xvar('t_tof',np.linspace(800.,3000.,10)*1.e-6)
-        self.p.t_tof = 10.e-6
-        # self.xvar('t_tof',[2900*1.e-6]*3000)
+
+        # self.xvar('t_tof',np.linspace(800.,3000.,15)*1.e-6)
+        # self.p.t_tof = 1000.e-6
+        self.xvar('t_tof',[2900*1.e-6]*3000)
 
         # self.xvar('beans',[0]*1)
 
-        self.p.t_tunnel = 10.e-3
-
-        self.p.frequency_tweezer_list = [70.25e6,80.e6]
+        self.p.frequency_tweezer_list = [70.3e6,80.e6]
 
         # ass = np.linspace(.18,.205,20)
         # a_lists = [[.78,ass1] for ass1 in ass]
 
         # ass = np.linspace(.74,.76,20)
 
-        a_list = [.74,.26]
+        a_list = [.737,.26]
         # a_list = [.7,.2]
         self.p.amp_tweezer_list = a_list
 
@@ -46,8 +44,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
         self.p.t_lightsheet_rampdown = .16
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,8.,6))
-        # self.p.v_pd_lightsheet_rampdown_end = 3.
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(4.,8.,20))
         self.p.v_pd_lightsheet_rampdown_end = 5.4
 
         # self.xvar('i_evap2_current',np.linspace(192.5,194.5,8))
@@ -55,7 +52,6 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.3,20))
         self.p.t_tweezer_1064_ramp = .17
-
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.,-1.,20))
         self.p.v_tweezer_paint_amp_max = -3.5
 
@@ -78,10 +74,11 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('i_evap3_current',np.linspace(193.,195.,20))
         self.p.i_evap3_current = 193.2
 
-        # self.p.t_tof = 800.e-6
+        self.p.t_tof = 800.e-6
         self.p.N_repeats = 1
 
         self.p.t_mot_load = 1.
+        self.p.v_pd_tweezer_1064_rampdown3_end = 1.
 
         self.camera_params.amp_imaging = .11
         # self.xvar('amp_imaging',np.linspace(0.06,0.09,8))
@@ -94,6 +91,7 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -142,7 +140,7 @@ class tweezer_load(EnvExperiment, Base):
                           paint=True,keep_trap_frequency_constant=True)
 
         # # # feshbach field ramp to field 3
-        
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
                              i_start=self.p.i_evap2_current,
                              i_end=self.p.i_evap3_current)
@@ -159,8 +157,8 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
 
-        # delay(self.p.t_tunnel)
-
+        
+        
         self.lightsheet.off()
         self.tweezer.off()
 
