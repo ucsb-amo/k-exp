@@ -92,7 +92,7 @@ class controller():
         for this_axis in axes_to_move:
             this_axis: motor_axis
             this_axis.move(N_steps)
-            print(this_axis.addr,this_axis.motor_idx,N_steps)
+            print(this_axis.addr,this_axis.motor_idx,N_steps,this_axis.position)
 
     def move(self,N_steps,obj:str,axis:str):
         if obj == 'n':
