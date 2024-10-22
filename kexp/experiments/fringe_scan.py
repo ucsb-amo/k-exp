@@ -12,22 +12,23 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
-        self.xvar('t_tof',np.linspace(800.,3000.,10)*1.e-6)
-        self.p.t_tof = 10.e-6
-        # self.xvar('t_tof',[2900*1.e-6]*3000)
+        # self.xvar('t_tof',np.linspace(500.,2500.,10)*1.e-6)
+        self.p.t_tof = 2000.e-6
+        # self.xvar('t_tof',[1*1.e-6]*3)
 
         # self.xvar('beans',[0]*1)
 
+        self.xvar('t_tunnel',np.linspace(0.,60.,15)*1.e-3)
         self.p.t_tunnel = 10.e-3
 
-        self.p.frequency_tweezer_list = [70.25e6,80.e6]
+        self.p.frequency_tweezer_list = [70.2e6,79.7e6]
 
         # ass = np.linspace(.18,.205,20)
         # a_lists = [[.78,ass1] for ass1 in ass]
 
         # ass = np.linspace(.74,.76,20)
 
-        a_list = [.74,.26]
+        a_list = [.76,.24]
         # a_list = [.7,.2]
         self.p.amp_tweezer_list = a_list
 
@@ -79,12 +80,12 @@ class tweezer_load(EnvExperiment, Base):
         self.p.i_evap3_current = 193.2
 
         # self.p.t_tof = 800.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 400
 
         self.p.t_mot_load = 1.
 
-        self.camera_params.amp_imaging = .11
-        # self.xvar('amp_imaging',np.linspace(0.06,0.09,8))
+        self.camera_params.amp_imaging = .12
+        # self.xvar('amp_imaging',np.linspace(0.1,0.18,8))
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
@@ -94,6 +95,7 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -108,7 +110,7 @@ class tweezer_load(EnvExperiment, Base):
         # feshbach field on, ramp up to field 1  
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.on()
-        delay(1.e-3)
+        # delay(1.e-3)
         self.outer_coil.set_voltage()
         self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
@@ -159,7 +161,7 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
 
-        # delay(self.p.t_tunnel)
+        delay(self.p.t_tunnel)
 
         self.lightsheet.off()
         self.tweezer.off()

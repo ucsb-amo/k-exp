@@ -13,19 +13,19 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.xvar('t_tof',np.linspace(800.,3000.,15)*1.e-6)
-        # self.p.t_tof = 1000.e-6
-        self.xvar('t_tof',[2900*1.e-6]*3000)
+        self.p.t_tof = 5.e-6
+        # self.xvar('t_tof',[2900*1.e-6]*3000)
 
         # self.xvar('beans',[0]*1)
 
         self.p.frequency_tweezer_list = [70.3e6,80.e6]
 
-        # ass = np.linspace(.18,.205,20)
-        # a_lists = [[.78,ass1] for ass1 in ass]
+        self.xvar('t_tunnel',)
+        self.p.t_tunnel = 1.e-3
 
-        # ass = np.linspace(.74,.76,20)
+        self.p.final_amp = .737
 
-        a_list = [.737,.26]
+        a_list = [0.,.26]
         # a_list = [.7,.2]
         self.p.amp_tweezer_list = a_list
 
@@ -156,8 +156,10 @@ class tweezer_load(EnvExperiment, Base):
                           v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
-
         
+        self.tweezer.linear_amplitude_ramp(0,1.e-3,self.p.final_amp)
+
+        delay(self.p.t_tunnel)        
         
         self.lightsheet.off()
         self.tweezer.off()

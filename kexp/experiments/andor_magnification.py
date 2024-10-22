@@ -46,7 +46,6 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
 
         # self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning()
 
         self.switch_d2_2d(1)
