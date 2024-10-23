@@ -14,7 +14,7 @@ data_dir = os.getenv("data")
 def load_atomdata(idx=0, crop_type='', path = "",
                   transpose_idx = [], average_repeats = False) -> atomdata:
     '''
-    Returns the atomdata stored in the `idx`th newest pickle file at `path`.
+    Returns the atomdata stored in the `idx`th newest file at `path`.
 
     Parameters
     ----------
@@ -32,25 +32,8 @@ def load_atomdata(idx=0, crop_type='', path = "",
     ad: atomdata
     '''
 
-    if path == "":
-        latest_file = st.get_latest_data_file()
-        latest_rid = st.run_id_from_filepath(latest_file)
-        if idx == 0:
-            file = latest_file
-        if idx <= 0:
-            file = st.recurse_find_data_file(latest_rid+idx)
-        if idx > 0:
-            if latest_rid - idx < 10000:
-                file = st.recurse_find_data_file(idx)
-            else:
-                file = st.all_glob_find_data_file(idx)
-    else:
-        if path.endswith('.hdf5'):
-            file = path
-        else:
-            raise ValueError("The provided path is not a hdf5 file.")
-        
-    rid = st.run_id_from_filepath(file)
+    file, rid = st.get_data_file(idx,path)
+    
     print(f"run id {rid}")
     f = h5py.File(file,'r')
     
