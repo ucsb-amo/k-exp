@@ -9,9 +9,11 @@ from kexp.config.camera_params import CameraParams
 
 import kexp.util.data.server_talk as st
 
+from kexp.analysis.roi import ROI
+
 data_dir = os.getenv("data")
 
-def load_atomdata(idx=0, crop_type='', path = "",
+def load_atomdata(idx=0, roi_label='', path = "",
                   transpose_idx = [], average_repeats = False) -> atomdata:
     '''
     Returns the atomdata stored in the `idx`th newest file at `path`.
@@ -23,6 +25,12 @@ def load_atomdata(idx=0, crop_type='', path = "",
         stored in run_info.run_id), and that data is found and loaded. If zero
         or a negative number are given, data is loaded relative to the most
         recent dataset (idx=0).
+    roi_label: int or string
+        Specifies which crop to use. If left empty, defaults to the ROI saved in
+        the data if it exists, otherwise prompts the user to select an ROI using
+        the GUI. If an int, interpreted as an run ID, which will be checked for
+        a saved ROI and that ROI will be used. If a string, interprets as a key
+        in the roi.xlsx document in the PotassiumData folder.
     path: str
         The full path to the file to be loaded. If not specified, loads the file
         as dictated by `idx`.
@@ -67,12 +75,15 @@ def load_atomdata(idx=0, crop_type='', path = "",
     ad = atomdata(xvarnames,images,image_timestamps,params,camera_params,run_info,
                   sort_idx,sort_N,
                   expt_text,params_text,cooling_text,imaging_text,
-                  crop_type=crop_type, transpose_idx=transpose_idx, 
+                  roi_label=roi_label,
+                  transpose_idx=transpose_idx, 
                   avg_repeats=average_repeats)
     
     f.close()
 
     return ad
+
+
 
 def unpack_group(file,group_key,obj):
     g = file[group_key]

@@ -12,10 +12,11 @@ from copy import deepcopy
 check_for_mapped_data_dir()
 ROI_CSV_PATH = os.path.join(DATA_DIR,"roi.xlsx")
 
-class roi():
-    def __init__(self):
-        self.roix = []
-        self.roiy = []
+class ROI():
+    def __init__(self,key=""):
+        self.roix = [-1,-1]
+        self.roiy = [-1,-1]
+        self.key = key
 
     def crop(self,OD):
         OD: np.ndarray
@@ -24,27 +25,39 @@ class roi():
         cropOD = OD.take(idx_y,axis=OD.ndim-2).take(idx_x,axis=OD.ndim-1)
         return cropOD
 
-    def read_roi(self):
+    def read_roi(self,run_id=[]):
+        roi_defined = False
         roicsv = pd.read_excel(ROI_CSV_PATH)
         keymatch = roicsv.loc[ roicsv['key'] == self.key ]
         if np.any(keymatch):
             self.roix = [ keymatch['roix0'].values[0], keymatch['roix1'].values[0] ]
             self.roiy = [ keymatch['roiy0'].values[0], keymatch['roiy1'].values[0] ]
-        else:
+            out = np.array([*self.roix,*self.roiy])
+            roi_defined = not np.all(out == -1)
+        if not roi_defined:
             print('ROI not defined.')
-            self.select_roi()
+            self.select_roi(run_id)
 
-    def select_roi(self):
-        self._report_msg(0)
-        self._save_roi()
-        run_id = self.choose_run()
-        update_bool, roix, roiy = roi_creator(run_id).get_roi_rectangle()
+    def select_roi(self, run_id=[]):
+        # self._report_msg(0)
+        # self._save_roi()
+        if run_id == []:
+            run_id = self.choose_run()
+        elif isinstance(run_id,int):
+            pass
+        update_bool, roix, roiy = roi_creator(run_id, self.key).get_roi_rectangle()
         if update_bool:
             self.roix, self.roiy = roix, roiy
-            self._report_msg(1)
-            self.update_excel()
+            # self._report_msg(1)
         else:
             print("ROI not selected, aborting")
+
+    def update_saved(self,key=""):
+        if key == "":
+            key = self.key
+        if not isinstance(key,str) or key == "":
+            raise ValueError("No key specified -- pass in a key to name the ROI.")
+        self.update_excel(key)
 
     def choose_run(self):
         print('Please enter a run ID to use for ROI selection, or press enter to use most recent run.')
@@ -65,7 +78,7 @@ class roi():
         self.roiy = deepcopy(self._roiy_revert)
         self._roix_revert = x
         self._roiy_revert = y
-        self._report_msg(2)
+        # self._report_msg(2)
 
     def _report_msg(self,msg_idx):
         if msg_idx == 0:
@@ -83,27 +96,30 @@ class roi():
                   f"roiy = [{self.roiy[0]}, {self.roiy[1]}]\n")
             print(f"Revert changes with roi.revert()")
 
-    def update_excel(self):
+    def update_excel(self, key):
         # Read the excel file
         df = pd.read_excel(ROI_CSV_PATH)
         new_values = [*self.roix, *self.roiy]
 
         # Check if the label exists
-        if self.key in df.iloc[:, 0].values:
+        if key in df.iloc[:, 0].values:
             # Find the index of the row with the given label
-            index = df[df.iloc[:, 0] == self.key].index[0]
+            index = df[df.iloc[:, 0] == key].index[0]
             # Replace the row values with new values
             df.iloc[index, 1:] = new_values
         else:
             # Append a new row with the given label and new values
-            new_row = pd.DataFrame([[self.key] + new_values], columns=df.columns)
+            new_row = pd.DataFrame([[key] + new_values], columns=df.columns)
             df = pd.concat([df, new_row], ignore_index=True)
 
         # Save the updated dataframe back to the excel file
         df.to_excel(ROI_CSV_PATH, index=False)
 
 class roi_creator():
-    def __init__(self,run_id):
+    def __init__(self,run_id,key):
+
+        self.key = key
+        self.run_id = run_id
 
         filepath, _ = get_data_file(run_id)
         self.h5_file = h5py.File(filepath)
@@ -160,14 +176,16 @@ class roi_creator():
             cv2.imshow('OD', img_copy)
             
             key = cv2.waitKeyEx(1)
+            img_index = (img_index + 1) % self.N_img
+            image = self.get_od(img_index)
             if key == 13:  # Enter key
                 break
-            elif key == 2555904:  # Right arrow key ➡️
-                img_index = (img_index + 1) % self.N_img
-                image = self.get_od(img_index)
-            elif key == 2424832:  # Left arrow key ⬅️
-                img_index = (img_index - 1) % self.N_img
-                image = self.get_od(img_index)
+            # elif key == 2555904:  # Right arrow key ➡️
+            #     img_index = (img_index + 1) % self.N_img
+            #     image = self.get_od(img_index)
+            # elif key == 2424832:  # Left arrow key ⬅️
+            #     img_index = (img_index - 1) % self.N_img
+            #     image = self.get_od(img_index)
             if cv2.getWindowProperty('OD',cv2.WND_PROP_VISIBLE) < 1: # if window x button clicked
                 break
             if key == 27: # escape key

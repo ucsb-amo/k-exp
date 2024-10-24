@@ -1,5 +1,6 @@
-from kexp.analysis.image_processing.compute_ODs import *
+from kexp.analysis.image_processing.compute_ODs import compute_OD
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_dist
+from kexp.analysis.roi import ROI
 from kexp.util.data.data_vault import DataSaver
 import numpy as np
 from kamo.atom_properties.k39 import Potassium39
@@ -10,11 +11,14 @@ from kexp.config.camera_params import CameraParams
 from kexp.base.sub.dealer import Dealer
 from kexp.base.sub.scanner import xvar
 
+import kexp.util.data.server_talk as st
+import h5py
+
 import datetime
 
 class analysis_tags():
-    def __init__(self,crop_type,absorption_analysis):
-        self.crop_type = crop_type
+    def __init__(self,roi_label,absorption_analysis):
+        self.roi_label = roi_label
         self.absorption_analysis = absorption_analysis
         self.xvars_shuffled = False
         self.transposed = False
@@ -37,14 +41,13 @@ class atomdata():
                   params: ExptParams, camera_params:CameraParams,
                   run_info: RunInfo, sort_idx, sort_N, 
                   expt_text, params_text, cooling_text, imaging_text,
-                    crop_type='', transpose_idx=[], avg_repeats=False):
+                  roi_label='',
+                  transpose_idx=[], avg_repeats=False):
 
         self._ds = DataSaver()
 
         self.run_info = run_info
-        absorption_analysis = self.run_info.absorption_image
-        self._analysis_tags = analysis_tags(crop_type,
-                                            absorption_analysis)
+        absorption_analysis = self.run_info.absorption_image                                    
     
         self.images = images
         self.image_timestamps = image_timestamps
@@ -55,6 +58,10 @@ class atomdata():
         self.params_file = params_text
         self.cooling_file = cooling_text
         self.imaging_file = imaging_text
+
+        self._analysis_tags = analysis_tags(roi_label,
+                                            absorption_analysis)
+        self.handle_roi(roi_label)
 
         self.xvarnames = xvarnames
         self.xvars = self._unpack_xvars()
@@ -82,6 +89,59 @@ class atomdata():
             self.avg_repeats(reanalyze=False)
 
         self.analyze_ods()
+
+    def handle_roi(self, roi_label):
+        self.roi = ROI()
+
+        try:
+            fpath, _ = st.get_data_file(self.run_info.run_id)
+            file = h5py.File(fpath)
+            roix = file['attrs']['roix']
+            roiy = file['attrs']['roiy']
+            file.close()
+            self.roi.roix = roix
+            self.roi.roiy = roiy
+            print("Saved ROI found during data load.")
+            saved_roi = True
+        except:
+            saved_roi = False
+
+        if roi_label == "":
+            if saved_roi:
+                print("Using saved ROI.")
+                pass # use the saved ROI
+            else:
+                print("No saved ROI. Specify the new ROI.")
+                self.roi.select_roi(self.run_info.run_id)
+
+        elif isinstance(roi_label,int):
+            print("ROI specified by Run ID. Attempting to load ROI...")
+            fpath, _ = st.get_data_file(roi_label)
+            file = h5py.File(fpath)
+            try:
+                roix = file['attrs']['roix']
+                roiy = file['attrs']['roiy']
+                file.close()
+                self.roi.roix = roix
+                self.roi.roiy = roiy
+            except:
+                print("No ROI found in referenced Run ID. Please create an ROI.")
+                self.roi.select_roi(self.run_info.run_id)
+
+        elif isinstance(roi_label,str):
+            print("ROI specified by string. Referencing roi.xslx spreadsheet (PotassiumData)...")
+            self.roi.key = roi_label
+            self.roi.read_roi(self.run_info.run_id)
+            self._analysis_tags.roi_label = roi_label
+
+        if np.all(np.array([*self.roi.roix,*self.roi.roiy]) == -1) :
+            self.roi.roix = [1,self.images.shape[-1]]
+            self.roi.roiy = [1,self.images.shape[-2]]
+
+    def save_roi(self,key=""):
+        if key == "":
+            key = self._analysis_tags.roi_label
+        self.roi.update_saved(key)
 
     def _init_dealer(self) -> Dealer:
         dealer = Dealer()
@@ -116,7 +176,6 @@ class atomdata():
             self.img_dark = imgs_tuple[1]
             self.image_timestamps.reshape(-1,2)
         
-
     def compute_atom_number(self):
         self.atom_cross_section = self.atom.get_cross_section()
         dx_pixel = self.camera_params.pixel_size_m / self.camera_params.magnification
@@ -127,9 +186,10 @@ class atomdata():
         self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
-    def recrop(self,crop_type=''):
-        self.analyze_ods(crop_type=crop_type)
-        self._analysis_tags.crop_type = crop_type
+    ###
+    def recrop(self,roi_label=""):
+        self.handle_roi(roi_label)
+        self.analyze_ods()
 
     def avg_repeats(self,xvars_to_avg=[],reanalyze=True):
         """
@@ -286,31 +346,27 @@ class atomdata():
         else:
             self.od_raw = self.img_atoms.astype(np.int16) - self.img_light.astype(np.int16)
 
-    def analyze_ods(self,crop_type='',absorption_analysis=-1):
+    def analyze_ods(self,absorption_analysis=-1):
 
-        if not crop_type:
-            crop_type = self._analysis_tags.crop_type
         if absorption_analysis == -1:
             absorption_analysis = self._analysis_tags.absorption_analysis
 
         if absorption_analysis:
-            self._analyze_absorption_images(crop_type)
+            self._analyze_absorption_images()
             self._remap_fit_results()
             self.compute_atom_number()
         else:
-            self._analyze_fluorescence_images(crop_type)
+            self._analyze_fluorescence_images()
             self._remap_fit_results()
 
-    def analyze(self,crop_type='',absorption_analysis=-1):
-        if not crop_type:
-            crop_type = self._analysis_tags.crop_type
+    def analyze(self,absorption_analysis=-1):
         if absorption_analysis == -1:
             absorption_analysis = self._analysis_tags.absorption_analysis
 
         self.compute_raw_ods()
-        self.analyze_ods(crop_type,absorption_analysis)
+        self.analyze_ods(absorption_analysis)
 
-    def _analyze_absorption_images(self,crop_type='mot'):
+    def _analyze_absorption_images(self):
         '''
         Saves the images, image timestamps (in ns), computes ODs, summed ODs,
         and gaussian fits to the OD profiles.
@@ -319,18 +375,14 @@ class atomdata():
         ----------
         expt: EnvExperiment
             The experiment object, called to save datasets.
-
-        crop_type: str
-            Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-            options: 'mot', 'bigmot', 'cmot', 'gm'. If another string is
-            supplied, defaults to full ROI.
         '''
-        
-        self.od, self.sum_od_x, self.sum_od_y = process_ODs(self.od_raw, crop_type)
+        self.od = self.roi.crop(self.od_raw)
+        self.sum_od_x = np.sum(self.od,self.od.ndim-2)
+        self.sum_od_y = np.sum(self.od,self.od.ndim-1)
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
 
-    def _analyze_fluorescence_images(self,crop_type=''):
+    def _analyze_fluorescence_images(self):
         '''
         Saves the images, image timestamps (in ns), computes a subtracted image,
         and performs gaussian fits to the profiles. Note: the subtracted image
@@ -341,15 +393,10 @@ class atomdata():
         ----------
         expt: EnvExperiment
             The experiment object, called to save datasets.
-
-            
-        crop_type: str
-            Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-            options: 'mot'.
         '''
-        self.od = roi.crop_OD(self.od_raw,crop_type,self.Nvars)
-        self.sum_od_x = np.sum(self.od,self.Nvars)
-        self.sum_od_y = np.sum(self.od,self.Nvars+1)
+        self.od = self.roi.crop(self.od_raw)
+        self.sum_od_x = np.sum(self.od,self.od.ndim-2)
+        self.sum_od_y = np.sum(self.od,self.od.ndim-1)
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
 

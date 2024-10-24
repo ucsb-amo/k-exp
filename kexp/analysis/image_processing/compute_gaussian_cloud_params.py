@@ -35,6 +35,3 @@ def fit_gaussian_sum_dist(sum_dist:np.ndarray,camera_params) -> list[GaussianFit
     fits = fits.reshape(sum_dist.shape[:-1])
 
     return fits
-
-
-

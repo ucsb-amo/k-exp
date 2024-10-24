@@ -1,5 +1,5 @@
 import numpy as np
-import kexp.analysis.image_processing.roi_select as roi
+import kexp.analysis.roi_id as roi
 
 def process_ODs(raw_ODs,crop_type='mot'):
     '''
