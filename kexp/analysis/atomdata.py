@@ -24,43 +24,55 @@ class analysis_tags():
         self.transposed = False
         self.averaged = False
 
+class expt_code():
+    def __init__(self,
+                 experiment,
+                 params,
+                 cooling,
+                 imaging):
+        self.experiment = experiment
+        self.params = params
+        self.cooling = cooling
+        self.imaging = imaging
+
 class atomdata():
     '''
     Use to store and do basic analysis on data for every experiment.
-
-    xvarnames should be provided as a string indicating the params attribute
-    corresponding to the the independent variable(s). They should be provided in
-    the order over which they were looped, with the outermost loop first.
-
-    Any attribute which does not start with '_' will be saved to the dataset in
-    _save_data().
-
-    This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, xvarnames, images, image_timestamps,
-                  params: ExptParams, camera_params:CameraParams,
-                  run_info: RunInfo, sort_idx, sort_N, 
-                  expt_text, params_text, cooling_text, imaging_text,
-                  roi_id='',skip_saved_roi=False,
-                  transpose_idx=[], avg_repeats=False):
+    def __init__(self, idx=0, roi_id=None, path = "",
+                  skip_saved_roi = False,
+                  transpose_idx = [], avg_repeats = False):
+        '''
+        Returns the atomdata stored in the `idx`th newest file at `path`.
 
-        ### Unpack arguments
-        self._ds = DataSaver()
-        self.run_info = run_info
-        self.images = images
-        self.image_timestamps = image_timestamps
-        self.params = params
-        self.camera_params = camera_params
-        self.experiment = expt_text
-        self.params_file = params_text
-        self.cooling_file = cooling_text
-        self.imaging_file = imaging_text
-        self.xvarnames = xvarnames
-        self.xvars = self._unpack_xvars()
-        self.sort_idx = sort_idx
-        self.sort_N = sort_N
+        Parameters
+        ----------
+        idx: int
+            If a positive value is specified, it is interpreted as a run_id (as
+            stored in run_info.run_id), and that data is found and loaded. If zero
+            or a negative number are given, data is loaded relative to the most
+            recent dataset (idx=0).
+        roi_id: None, int, or string
+            Specifies which crop to use. If roi_id=None, defaults to the ROI saved in
+            the data if it exists, otherwise prompts the user to select an ROI using
+            the GUI. If an int, interpreted as an run ID, which will be checked for
+            a saved ROI and that ROI will be used. If a string, interprets as a key
+            in the roi.xlsx document in the PotassiumData folder.
+        path: str
+            The full path to the file to be loaded. If not specified, loads the file
+            as dictated by `idx`.
+        skip_saved_roi: bool
+            If true, ignore saved ROI in the data file.
+
+        Returns
+        -------
+        ad: atomdata
+        '''
+
+        self._load_data(idx,path)
 
         ### Helper objects
+        self._ds = DataSaver()
         self.atom = Potassium39()
         self._dealer = self._init_dealer()
         self._analysis_tags = analysis_tags(roi_id,self.run_info.absorption_image)
@@ -430,5 +442,44 @@ class atomdata():
             dealer.scan_xvars.append(this_xvar)
         return dealer
 
-    # def save_data(self):
-    #     self._ds.save_data(self)
+    def _load_data(self, idx=0, path = ""):
+        def unpack_group(file,group_key,obj):
+            g = file[group_key]
+            keys = list(g.keys())
+            for k in keys:
+                vars(obj)[k] = g[k][()]
+
+        file, rid = st.get_data_file(idx,path)
+    
+        print(f"run id {rid}")
+        with h5py.File(file,'r') as f:
+            self.params = ExptParams()
+            self.camera_params = CameraParams()
+            self.run_info = RunInfo()
+            unpack_group(f,'params',self.params)
+            unpack_group(f,'camera_params',self.camera_params)
+            unpack_group(f,'run_info',self.run_info)
+            self.images = f['data']['images'][()]
+            self.image_timestamps = f['data']['image_timestamps'][()]
+            self.xvarnames = f.attrs['xvarnames'][()]
+            self.xvars = self._unpack_xvars()
+            try:
+                experiment_text = f.attrs['expt_file']
+                params_text = f.attrs['params_file']
+                cooling_text = f.attrs['cooling_file']
+                imaging_text = f.attrs['imaging_file']
+            except:
+                experiment_text = ""
+                params_text = ""
+                cooling_text = ""
+                imaging_text = ""
+            self.experiment_code = expt_code(experiment_text,
+                                             params_text,
+                                             cooling_text,
+                                             imaging_text)
+            try:
+                self.sort_idx = f['data']['sort_idx'][()]
+                self.sort_N = f['data']['sort_N'][()]
+            except:
+                self.sort_idx = []
+                self.sort_N = []
