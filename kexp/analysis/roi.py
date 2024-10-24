@@ -84,6 +84,7 @@ class ROI():
             if not roi_exists:
                 print(f"Creating ROI for key {roi_id}.")
                 self.select_roi()
+                self.update_excel()
 
         if self.check_for_blank_roi():
             print("ROI was not specified. Defaulting to whole image.")
@@ -214,7 +215,7 @@ class ROI():
 
         # Save the updated dataframe back to the excel file
         df.to_excel(ROI_CSV_PATH, index=False)
-        print(f"Updated the saved ROI with key {key}.")
+        print(f"Updated the spreadsheet ROI with key {key}.")
 
 class roi_creator():
     def __init__(self,run_id,key):
