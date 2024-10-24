@@ -41,7 +41,7 @@ class atomdata():
                   params: ExptParams, camera_params:CameraParams,
                   run_info: RunInfo, sort_idx, sort_N, 
                   expt_text, params_text, cooling_text, imaging_text,
-                  roi_id='',
+                  roi_id='',skip_saved_roi=False,
                   transpose_idx=[], avg_repeats=False):
 
         ### Unpack arguments
@@ -64,16 +64,49 @@ class atomdata():
         self.atom = Potassium39()
         self._dealer = self._init_dealer()
         self._analysis_tags = analysis_tags(roi_id,self.run_info.absorption_image)
-        self.roi = ROI(roi_id,run_id=self.run_info.run_id)
-        
+        self.roi = ROI(roi_id,
+                       run_id = self.run_info.run_id,
+                       use_saved_roi = not skip_saved_roi)
+
         self._unshuffle_old_data()
         self._initial_analysis(transpose_idx,avg_repeats)
 
     ###
-    def recrop(self,roi_id=""):
-        self.roi = ROI(roi_id)
+    def recrop(self,roi_id=None,use_saved=True):
+        """Selects a new ROI and re-runs the analysis. Uses the same logic as
+        kexp.ROI.load_roi.
+
+        Args:
+            roi_id (None, int, or str): Specifies which crop to use. If None,
+            defaults to the ROI saved in the data if it exists, otherwise
+            prompts the user to select an ROI using the GUI. If an int,
+            interpreted as an run ID, which will be checked for a saved ROI and
+            that ROI will be used. If a string, interprets as a key in the
+            roi.xlsx document in the PotassiumData folder.
+
+            use_saved (bool): If False, ignores saved ROI and forces creation of
+            a new one.
+        """        
+        self.roi.load_roi(roi_id,use_saved)
         self.analyze_ods()
 
+    ### ROI management
+    def save_roi_excel(self,key=""):
+        if self.roi.key == "" and key == "":
+            raise ValueError("You must specify a key to save the ROI to the spreadsheet.")
+        if not isinstance(key,str):
+            raise ValueError("The specified key must be a string.")
+        
+        if not key == "":
+            self.roi.key = key
+        else:
+            # saving will use the key already associated with self.roi.
+            pass
+        self.roi.update_excel()
+
+    def save_roi_h5(self):
+        self.roi.save_roi_h5()
+            
     ### Analysis
 
     def _initial_analysis(self,transpose_idx,avg_repeats):

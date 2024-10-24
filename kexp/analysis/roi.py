@@ -3,100 +3,200 @@ import pandas as pd
 import os
 import cv2
 
-from kexp.util.data.server_talk import DATA_DIR, check_for_mapped_data_dir, get_data_file
+import kexp.util.data.server_talk as st
 from kexp.analysis.image_processing.compute_ODs import compute_OD
 
 import h5py
 from copy import deepcopy
 
-check_for_mapped_data_dir()
-ROI_CSV_PATH = os.path.join(DATA_DIR,"roi.xlsx")
+st.check_for_mapped_data_dir()
+ROI_CSV_PATH = os.path.join(st.DATA_DIR,"roi.xlsx")
 
 class ROI():
-    def __init__(self,key=""):
+    def __init__(self,
+                 roi_id=None,
+                 run_id=0,
+                 key="",
+                 use_saved_roi=True):
         self.roix = [-1,-1]
         self.roiy = [-1,-1]
         self.key = key
+        self.run_id = run_id
+        self.load_roi(roi_id,
+                      use_saved=use_saved_roi)
 
     def crop(self,OD):
+        """Crops the given ndarray according to the ROI.
+
+        Args:
+            OD (np.ndarray): The ndarray to be cropped.
+
+        Returns:
+            ndarray: The cropped ndarray.
+        """        
         OD: np.ndarray
         idx_y = range(self.roiy[0],self.roiy[1])
         idx_x = range(self.roix[0],self.roix[1])
         cropOD = OD.take(idx_y,axis=OD.ndim-2).take(idx_x,axis=OD.ndim-1)
         return cropOD
 
-    def read_roi(self,run_id=[]):
-        roi_defined = False
+    def load_roi(self,roi_id=None,use_saved=True):
+        """Loads an ROI according to the provided roi_id.
+
+        Args:
+            roi_id (None, int, or str): Specifies which crop to use. If None,
+            defaults to the ROI saved in the data if it exists, otherwise
+            prompts the user to select an ROI using the GUI. If an int,
+            interpreted as an run ID, which will be checked for a saved ROI and
+            that ROI will be used. If a string, interprets as a key in the
+            roi.xlsx document in the PotassiumData folder.
+
+            use_saved (bool): If False, ignores saved ROI and forces creation of
+            a new one.
+        """
+        
+        # Check for ROI saved in the current data file.
+        saved_roi_bool = self.read_roi_from_h5()
+        if roi_id == None:
+            if saved_roi_bool and use_saved:
+                print("Using saved ROI.")
+            elif saved_roi_bool:
+                print("Saved ROI was found, but is being overridden.")
+                print("Specify the new ROI.")
+                self.select_roi()
+        else:
+            if saved_roi_bool:
+                print("Saved ROI was found, but is being overridden.")
+
+        # Checks for ROI saved in the
+        if isinstance(roi_id,int):
+            print("ROI specified by Run ID. Attempting to load ROI...")
+            saved_roi_bool = self.read_roi_from_h5(roi_id)
+            if saved_roi_bool:
+                print(f"Using ROI loaded from run {roi_id}.")
+            else:
+                print(f"No ROI found in run {roi_id}. Specify the new ROI.")
+                self.select_roi()
+
+        if isinstance(roi_id,str):
+            print("ROI specified by string. Referencing roi.xslx spreadsheet (PotassiumData)...")
+            roi_exists = self.read_roi_from_excel(roi_id)
+            if not roi_exists:
+                print(f"Creating ROI for key {roi_id}.")
+                self.select_roi()
+
+        if self.check_for_blank_roi():
+            print("ROI was not specified. Defaulting to whole image.")
+            px, py = self.get_image_size()
+            self.roix = [0,px]
+            self.roiy = [0,py]
+
+    def save_roi_h5(self):
+        fpath, _ = st.get_data_file(self.run_id)
+        with h5py.File(fpath,'r+') as f:
+            f.attrs['roix'] = self.roix
+            f.attrs['roiy'] = self.roiy
+
+    def get_image_size(self):
+        """Gets the size in pixels of the images (horizontal, vertical) in this run.
+
+        Returns:
+            px, py: The image dimensions (rows, columns).
+        """        
+        fpath, _ = st.get_data_file(self.run_id)
+        with h5py.File(fpath) as f:
+            py, px = f['data']['images'].shape[-2:]
+        return px, py
+
+    def read_roi_from_h5(self, run_id=0):
+        """Looks in the hdf5 file with the corresponding run ID and attempts to
+        read out a saved ROI. Returns True if successful and False otherwise.
+
+        Args:
+            run_id (int): The run ID of the run in which to look for a
+            saved ROI.
+
+        Returns:
+            bool: Returns True if successful and False otherwise.
+        """        
+        if run_id == 0:
+            run_id = self.run_id
+        try:
+            fpath, run_id = st.get_data_file(self.run_id)
+            with h5py.File(fpath) as f:
+                roix = f.attrs['roix']
+                roiy = f.attrs['roiy']
+            self.roix = roix
+            self.roiy = roiy
+            print(f"ROI loaded from run {run_id}.")
+            return True
+        except:
+            print(f"No ROI saved in run {run_id}.")
+            return False
+        
+    def read_roi_from_excel(self,key):
+        """Reads in the ROI with the corresponding key from the roi spreadsheet
+        (roi.xlsx in PotassiumData), if it exists. Returns True if successful
+        and False otherwise.
+
+        Args:
+            key (str): The key of the ROI to retrieve from the spreadsheet.
+
+        Returns:
+            bool: Returns True if successful and False otherwise.
+        """        
+        self.key = key
+        if key == "":
+            raise ValueError("ROI key must be a non-empty string.")
         roicsv = pd.read_excel(ROI_CSV_PATH)
         keymatch = roicsv.loc[ roicsv['key'] == self.key ]
         if np.any(keymatch):
+            print(f"ROI {key} found.")
+            self.key = key
             self.roix = [ keymatch['roix0'].values[0], keymatch['roix1'].values[0] ]
             self.roiy = [ keymatch['roiy0'].values[0], keymatch['roiy1'].values[0] ]
-            out = np.array([*self.roix,*self.roiy])
-            roi_defined = not np.all(out == -1)
-        if not roi_defined:
-            print('ROI not defined.')
-            self.select_roi(run_id)
+            return True
+        else:
+            print(f"ROI with key {key} does not exist.")
+            return False
 
-    def select_roi(self, run_id=[]):
-        # self._report_msg(0)
-        # self._save_roi()
-        if run_id == []:
-            run_id = self.choose_run()
-        elif isinstance(run_id,int):
-            pass
+    def check_for_blank_roi(self):
+        """The ROI selection GUI output is all -1s if no ROI is selected.
+        Detects this result so that it can be handled.
+
+        Returns:
+            bool: whether or not the ROI selection is valid.
+        """        
+        return np.all(np.array([*self.roix,*self.roiy]) == -1)
+    
+    def select_roi(self, run_id=0):
+        """Brings up the GUI to select a new ROI rectangle. The user should
+        click and drag (LMB) in order to select a rectangle, then hit Enter to
+        submit their selection. RMB clears the rectangle, and Escape/the X
+        button will close the window without selecting an ROI (in most cases,
+        resulting in an ROI that spans the entire image).
+
+        Args:
+            run_id (int, optional): The run_id to use for displaying ODs during
+            ROI selection.
+        """        
+        if run_id == 0:
+            run_id = self.run_id
         update_bool, roix, roiy = roi_creator(run_id, self.key).get_roi_rectangle()
         if update_bool:
             self.roix, self.roiy = roix, roiy
-            # self._report_msg(1)
         else:
-            print("ROI not selected, aborting")
+            print("ROI not selected, aborting.")
 
-    def update_saved(self,key=""):
+    def update_excel(self):
+        """Saves the ROI to the excel spreadsheet (roi.xlsx) in the
+        PotassiumData folder. If the key already exists, updates the existing
+        ROI. If not, creates a new line.
+        """        
+        key = self.key
         if key == "":
-            key = self.key
-        if not isinstance(key,str) or key == "":
-            raise ValueError("No key specified -- pass in a key to name the ROI.")
-        self.update_excel(key)
+            raise ValueError("The key must be nonempty in order to save the ROI.")
 
-    def choose_run(self):
-        print('Please enter a run ID to use for ROI selection, or press enter to use most recent run.')
-        run_id = input('Run ID for ROI selection (or enter to use most recent run).')
-        if run_id == '':
-            run_id = 0
-        run_id = int(run_id)
-        return run_id
-            
-    def _save_roi(self):
-        self._roix_revert = deepcopy(self.roix)
-        self._roiy_revert = deepcopy(self.roiy)
-        
-    def revert(self):
-        x = deepcopy(self.roix)
-        y = deepcopy(self.roiy)
-        self.roix = deepcopy(self._roix_revert)
-        self.roiy = deepcopy(self._roiy_revert)
-        self._roix_revert = x
-        self._roiy_revert = y
-        # self._report_msg(2)
-
-    def _report_msg(self,msg_idx):
-        if msg_idx == 0:
-            print(f"Current ROI for {self.key}:\n"+
-                  f"roix = [{self.roix[0]}, {self.roix[1]}]\n"+
-                  f"roiy = [{self.roiy[0]}, {self.roiy[1]}]\n")
-        elif msg_idx == 1:
-            print(f"New ROI saved for {self.key}:\n"+
-                  f"roix = [{self.roix[0]}, {self.roix[1]}]\n"+
-                  f"roiy = [{self.roiy[0]}, {self.roiy[1]}]\n")
-            print(f"Revert changes with roi.revert()")
-        elif msg_idx == 2:
-            print(f"ROI reverted for {self.key}:\n"+
-                  f"roix = [{self.roix[0]}, {self.roix[1]}]\n"+
-                  f"roiy = [{self.roiy[0]}, {self.roiy[1]}]\n")
-            print(f"Revert changes with roi.revert()")
-
-    def update_excel(self, key):
         # Read the excel file
         df = pd.read_excel(ROI_CSV_PATH)
         new_values = [*self.roix, *self.roiy]
@@ -114,6 +214,7 @@ class ROI():
 
         # Save the updated dataframe back to the excel file
         df.to_excel(ROI_CSV_PATH, index=False)
+        print(f"Updated the saved ROI with key {key}.")
 
 class roi_creator():
     def __init__(self,run_id,key):
@@ -121,7 +222,7 @@ class roi_creator():
         self.key = key
         self.run_id = run_id
 
-        filepath, _ = get_data_file(run_id)
+        filepath, _ = st.get_data_file(run_id)
         self.h5_file = h5py.File(filepath)
         self.N_img = self.h5_file['data']['images'].shape[0]//3
 
@@ -132,6 +233,14 @@ class roi_creator():
         self.end_x, self.end_y = -1, -1
         
     def get_od(self,idx):
+        """Computes the idx'th OD for display in the ROI selection GUI.
+
+        Args:
+            idx (int): the index of the OD to display
+
+        Returns:
+            np.ndarray: the OD to display.
+        """        
         pwa = self.h5_file['data']['images'][3*idx]
         pwoa = self.h5_file['data']['images'][3*idx+1]
         dark = self.h5_file['data']['images'][3*idx+2]
@@ -139,7 +248,23 @@ class roi_creator():
         return od
         
     def get_roi_rectangle(self):
+        """Brings up the GUI to select an ROI over a display of the ODs from a
+        given run.
 
+        Controls:
+            LMB + drag: select an ROI rectangle.
+            RMB: clear the drawn ROI.
+            L/R arrow keys: scroll through ODs from the run.
+            Enter: submit your selection.
+            Escape / "X" button: close the GUI without submitting selection.
+
+        Returns:
+            bool: Whether or not an ROI has been selected.
+            tuple: roix, given as [roix0,roix1] (the left and right bounds of
+            the ROI).
+            tuple: roiy, given as [roiy0,roiy1] (the left and right bounds of
+            the ROI).
+        """        
         image = self.image
         img_index = 0
 
@@ -176,23 +301,24 @@ class roi_creator():
             cv2.imshow('OD', img_copy)
             
             key = cv2.waitKeyEx(1)
-            img_index = (img_index + 1) % self.N_img
-            image = self.get_od(img_index)
+            # img_index = (img_index + 1) % self.N_img
+            # image = self.get_od(img_index)
             if key == 13:  # Enter key
                 break
-            # elif key == 2555904:  # Right arrow key ➡️
-            #     img_index = (img_index + 1) % self.N_img
-            #     image = self.get_od(img_index)
-            # elif key == 2424832:  # Left arrow key ⬅️
-            #     img_index = (img_index - 1) % self.N_img
-            #     image = self.get_od(img_index)
+            elif key == 2555904:  # Right arrow key ➡️
+                img_index = (img_index + 1) % self.N_img
+                image = self.get_od(img_index)
+            elif key == 2424832:  # Left arrow key ⬅️
+                img_index = (img_index - 1) % self.N_img
+                image = self.get_od(img_index)
             if cv2.getWindowProperty('OD',cv2.WND_PROP_VISIBLE) < 1: # if window x button clicked
                 break
             if key == 27: # escape key
                 break
 
         cv2.destroyAllWindows()
+        self.h5_file.close()
 
         out = np.array([self.start_x, self.start_y, self.end_x, self.end_y])
         update_bool = not np.all(out == -1)
-        return update_bool, [self.start_x, self.start_y], [self.end_x, self.end_y]
+        return update_bool, np.sort([self.start_x, self.end_x]), np.sort([self.end_y, self.start_y])
