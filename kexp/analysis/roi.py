@@ -68,14 +68,14 @@ class ROI():
             if saved_roi_bool:
                 print("Saved ROI was found, but is being overridden.")
 
-        # Checks for ROI saved in the
+        # Checks for ROI saved in the specified run ID.
         if isinstance(roi_id,int):
             print("ROI specified by Run ID. Attempting to load ROI...")
             saved_roi_bool = self.read_roi_from_h5(roi_id)
             if saved_roi_bool:
                 print(f"Using ROI loaded from run {roi_id}.")
             else:
-                print(f"No ROI found in run {roi_id}. Specify the new ROI.")
+                print(f"Specify the new ROI.")
                 self.select_roi()
 
         if isinstance(roi_id,str):
@@ -109,7 +109,7 @@ class ROI():
             py, px = f['data']['images'].shape[-2:]
         return px, py
 
-    def read_roi_from_h5(self, run_id=0):
+    def read_roi_from_h5(self, run_id=[]):
         """Looks in the hdf5 file with the corresponding run ID and attempts to
         read out a saved ROI. Returns True if successful and False otherwise.
 
@@ -120,10 +120,10 @@ class ROI():
         Returns:
             bool: Returns True if successful and False otherwise.
         """        
-        if run_id == 0:
+        if run_id == []:
             run_id = self.run_id
         try:
-            fpath, run_id = st.get_data_file(self.run_id)
+            fpath, run_id = st.get_data_file(run_id)
             with h5py.File(fpath) as f:
                 roix = f.attrs['roix']
                 roiy = f.attrs['roiy']
@@ -170,7 +170,7 @@ class ROI():
         """        
         return np.all(np.array([*self.roix,*self.roiy]) == -1)
     
-    def select_roi(self, run_id=0):
+    def select_roi(self, run_id=[]):
         """Brings up the GUI to select a new ROI rectangle. The user should
         click and drag (LMB) in order to select a rectangle, then hit Enter to
         submit their selection. RMB clears the rectangle, and Escape/the X
@@ -181,7 +181,7 @@ class ROI():
             run_id (int, optional): The run_id to use for displaying ODs during
             ROI selection.
         """        
-        if run_id == 0:
+        if run_id == []:
             run_id = self.run_id
         update_bool, roix, roiy = roi_creator(run_id, self.key).get_roi_rectangle()
         if update_bool:
