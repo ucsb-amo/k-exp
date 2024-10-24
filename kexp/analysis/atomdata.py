@@ -17,8 +17,8 @@ import h5py
 import datetime
 
 class analysis_tags():
-    def __init__(self,roi_label,absorption_analysis):
-        self.roi_label = roi_label
+    def __init__(self,roi_id,absorption_analysis):
+        self.roi_id = roi_id
         self.absorption_analysis = absorption_analysis
         self.xvars_shuffled = False
         self.transposed = False
@@ -41,128 +41,77 @@ class atomdata():
                   params: ExptParams, camera_params:CameraParams,
                   run_info: RunInfo, sort_idx, sort_N, 
                   expt_text, params_text, cooling_text, imaging_text,
-                  roi_label='',
+                  roi_id='',
                   transpose_idx=[], avg_repeats=False):
 
+        ### Unpack arguments
         self._ds = DataSaver()
-
         self.run_info = run_info
-        absorption_analysis = self.run_info.absorption_image                                    
-    
         self.images = images
         self.image_timestamps = image_timestamps
         self.params = params
         self.camera_params = camera_params
-
         self.experiment = expt_text
         self.params_file = params_text
         self.cooling_file = cooling_text
         self.imaging_file = imaging_text
-
-        self._analysis_tags = analysis_tags(roi_label,
-                                            absorption_analysis)
-        self.handle_roi(roi_label)
-
         self.xvarnames = xvarnames
         self.xvars = self._unpack_xvars()
-
         self.sort_idx = sort_idx
         self.sort_N = sort_N
 
+        ### Helper objects
         self.atom = Potassium39()
-
         self._dealer = self._init_dealer()
+        self._analysis_tags = analysis_tags(roi_id,self.run_info.absorption_image)
+        self.roi = ROI(roi_id,run_id=self.run_info.run_id)
+        
+        self._unshuffle_old_data()
+        self._initial_analysis(transpose_idx,avg_repeats)
 
-        if datetime.datetime(*self.run_info.run_datetime[:3]) < datetime.datetime(2024,10,2):
-            self._analysis_tags.xvars_shuffled = True
-            self.unshuffle(reanalyze=False)
+    ###
+    def recrop(self,roi_id=""):
+        self.roi = ROI(roi_id)
+        self.analyze_ods()
 
+    ### Analysis
+
+    def _initial_analysis(self,transpose_idx,avg_repeats):
         self._sort_images()
-
         if transpose_idx:
             self._analysis_tags.transposed = True
             self.transpose_data(transpose_idx=False,reanalyze=False)
-
         self.compute_raw_ods()
-
         if avg_repeats:
             self.avg_repeats(reanalyze=False)
-
         self.analyze_ods()
 
-    def handle_roi(self, roi_label):
-        self.roi = ROI()
+    def analyze(self):
+        self.compute_raw_ods()
+        self.analyze_ods()
 
-        try:
-            fpath, _ = st.get_data_file(self.run_info.run_id)
-            file = h5py.File(fpath)
-            roix = file['attrs']['roix']
-            roiy = file['attrs']['roiy']
-            file.close()
-            self.roi.roix = roix
-            self.roi.roiy = roiy
-            print("Saved ROI found during data load.")
-            saved_roi = True
-        except:
-            saved_roi = False
+    def compute_raw_ods(self):
+        """Computes the ODs. If fluorescence analysis, OD = pwa - dark.
+        """        
+        if self._analysis_tags.absorption_analysis:
+            self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark)
+        else:
+            self.od_raw = self.img_atoms.astype(np.int16) - self.img_dark.astype(np.int16)
 
-        if roi_label == "":
-            if saved_roi:
-                print("Using saved ROI.")
-                pass # use the saved ROI
-            else:
-                print("No saved ROI. Specify the new ROI.")
-                self.roi.select_roi(self.run_info.run_id)
-
-        elif isinstance(roi_label,int):
-            print("ROI specified by Run ID. Attempting to load ROI...")
-            fpath, _ = st.get_data_file(roi_label)
-            file = h5py.File(fpath)
-            try:
-                roix = file['attrs']['roix']
-                roiy = file['attrs']['roiy']
-                file.close()
-                self.roi.roix = roix
-                self.roi.roiy = roiy
-            except:
-                print("No ROI found in referenced Run ID. Please create an ROI.")
-                self.roi.select_roi(self.run_info.run_id)
-
-        elif isinstance(roi_label,str):
-            print("ROI specified by string. Referencing roi.xslx spreadsheet (PotassiumData)...")
-            self.roi.key = roi_label
-            self.roi.read_roi(self.run_info.run_id)
-            self._analysis_tags.roi_label = roi_label
-
-        if np.all(np.array([*self.roi.roix,*self.roi.roiy]) == -1) :
-            self.roi.roix = [1,self.images.shape[-1]]
-            self.roi.roiy = [1,self.images.shape[-2]]
-
-    def save_roi(self,key=""):
-        if key == "":
-            key = self._analysis_tags.roi_label
-        self.roi.update_saved(key)
-
-    def _init_dealer(self) -> Dealer:
-        dealer = Dealer()
-        dealer.params = self.params
-        dealer.run_info = self.run_info
-        dealer.images = self.images
-        dealer.image_timestamps = self.image_timestamps
-        dealer.sort_idx = self.sort_idx
-        dealer.sort_N = self.sort_N
-        # reconstruct the xvar objects
-        for idx in range(len(self.xvarnames)):
-            this_xvar = xvar(self.xvarnames[idx],
-                             self.xvars[idx],
-                             position=idx)
-            if np.any(self.sort_idx):
-                sort_idx_idx = np.where(self.sort_N == len(this_xvar.values))[0][0]
-                this_xvar.sort_idx = self.sort_idx[sort_idx_idx]
-            else:
-                this_xvar.sort_idx = []
-            dealer.scan_xvars.append(this_xvar)
-        return dealer
+    def analyze_ods(self):
+        """Crops ODs, computes sum_ods, gaussian fits to sum_ods, and populates
+        fit results.
+        """        
+        self.od = self.roi.crop(self.od_raw)
+        self.sum_od_x = np.sum(self.od,self.od.ndim-2)
+        self.sum_od_y = np.sum(self.od,self.od.ndim-1)
+        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
+        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
+        
+        self._remap_fit_results()
+        
+        if self._analysis_tags.absorption_analysis:
+            self.compute_atom_number()
 
     def _sort_images(self):
         imgs_tuple = self._dealer.sort_images()
@@ -175,7 +124,8 @@ class atomdata():
             self.img_atoms = imgs_tuple[0]
             self.img_dark = imgs_tuple[1]
             self.image_timestamps.reshape(-1,2)
-        
+
+    ### Physics
     def compute_atom_number(self):
         self.atom_cross_section = self.atom.get_cross_section()
         dx_pixel = self.camera_params.pixel_size_m / self.camera_params.magnification
@@ -186,10 +136,7 @@ class atomdata():
         self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
-    ###
-    def recrop(self,roi_label=""):
-        self.handle_roi(roi_label)
-        self.analyze_ods()
+    ### Averaging and transpose
 
     def avg_repeats(self,xvars_to_avg=[],reanalyze=True):
         """
@@ -259,7 +206,6 @@ class atomdata():
     
     def revert_repeats(self):
         if self._analysis_tags.averaged:
-
             def retrieve_values(struct,keylist):
                 for key in keylist:
                     newkey = "_" + key + "_stored"
@@ -338,67 +284,7 @@ class atomdata():
 
         self._analysis_tags.transposed = not self._analysis_tags.transposed
 
-    ### Analysis
-
-    def compute_raw_ods(self):
-        if self._analysis_tags.absorption_analysis:
-            self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark)
-        else:
-            self.od_raw = self.img_atoms.astype(np.int16) - self.img_light.astype(np.int16)
-
-    def analyze_ods(self,absorption_analysis=-1):
-
-        if absorption_analysis == -1:
-            absorption_analysis = self._analysis_tags.absorption_analysis
-
-        if absorption_analysis:
-            self._analyze_absorption_images()
-            self._remap_fit_results()
-            self.compute_atom_number()
-        else:
-            self._analyze_fluorescence_images()
-            self._remap_fit_results()
-
-    def analyze(self,absorption_analysis=-1):
-        if absorption_analysis == -1:
-            absorption_analysis = self._analysis_tags.absorption_analysis
-
-        self.compute_raw_ods()
-        self.analyze_ods(absorption_analysis)
-
-    def _analyze_absorption_images(self):
-        '''
-        Saves the images, image timestamps (in ns), computes ODs, summed ODs,
-        and gaussian fits to the OD profiles.
-
-        Parameters
-        ----------
-        expt: EnvExperiment
-            The experiment object, called to save datasets.
-        '''
-        self.od = self.roi.crop(self.od_raw)
-        self.sum_od_x = np.sum(self.od,self.od.ndim-2)
-        self.sum_od_y = np.sum(self.od,self.od.ndim-1)
-        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
-        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
-
-    def _analyze_fluorescence_images(self):
-        '''
-        Saves the images, image timestamps (in ns), computes a subtracted image,
-        and performs gaussian fits to the profiles. Note: the subtracted image
-        is called "od" in order to provide compatability and ease of use to the
-        user. The computed difference is NOT an optical density.
-
-        Parameters
-        ----------
-        expt: EnvExperiment
-            The experiment object, called to save datasets.
-        '''
-        self.od = self.roi.crop(self.od_raw)
-        self.sum_od_x = np.sum(self.od,self.od.ndim-2)
-        self.sum_od_y = np.sum(self.od,self.od.ndim-1)
-        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
-        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
+    ### Data handling
 
     def _remap_fit_results(self):
         try:
@@ -480,7 +366,36 @@ class atomdata():
         else:
             print("Data is already in unshuffled order.")
 
-    ### data saving
+    def _unshuffle_old_data(self):
+        """Unshuffles data that was taken before we started saving data in
+        sorted order (before 2024/10/02).
+        """        
+        if datetime.datetime(*self.run_info.run_datetime[:3]) < datetime.datetime(2024,10,2):
+            self._analysis_tags.xvars_shuffled = True
+            self.unshuffle(reanalyze=False)
 
-    def save_data(self):
-        self._ds.save_data(self)
+    ### Setup
+
+    def _init_dealer(self) -> Dealer:
+        dealer = Dealer()
+        dealer.params = self.params
+        dealer.run_info = self.run_info
+        dealer.images = self.images
+        dealer.image_timestamps = self.image_timestamps
+        dealer.sort_idx = self.sort_idx
+        dealer.sort_N = self.sort_N
+        # reconstruct the xvar objects
+        for idx in range(len(self.xvarnames)):
+            this_xvar = xvar(self.xvarnames[idx],
+                             self.xvars[idx],
+                             position=idx)
+            if np.any(self.sort_idx):
+                sort_idx_idx = np.where(self.sort_N == len(this_xvar.values))[0][0]
+                this_xvar.sort_idx = self.sort_idx[sort_idx_idx]
+            else:
+                this_xvar.sort_idx = []
+            dealer.scan_xvars.append(this_xvar)
+        return dealer
+
+    # def save_data(self):
+    #     self._ds.save_data(self)
