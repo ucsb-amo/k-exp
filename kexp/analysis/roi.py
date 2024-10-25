@@ -17,15 +17,13 @@ class ROI():
                  roi_id=None,
                  run_id=0,
                  key="",
-                 use_saved_roi=True,
-                 suppress_print=False):
+                 use_saved_roi=True):
         self.roix = [-1,-1]
         self.roiy = [-1,-1]
         self.key = key
         self.run_id = run_id
         self.load_roi(roi_id,
-                      use_saved=use_saved_roi,
-                      suppress_print=suppress_print)
+                      use_saved=use_saved_roi)
 
     def crop(self,OD):
         """Crops the given ndarray according to the ROI.
@@ -42,7 +40,7 @@ class ROI():
         cropOD = OD.take(idx_y,axis=OD.ndim-2).take(idx_x,axis=OD.ndim-1)
         return cropOD
 
-    def load_roi(self,roi_id=None,use_saved=True,suppress_print=False):
+    def load_roi(self,roi_id=None,use_saved=True):
         """Loads an ROI according to the provided roi_id.
 
         Args:
@@ -54,45 +52,42 @@ class ROI():
             roi.xlsx document in the PotassiumData folder.
 
             use_saved (bool): If False, ignores saved ROI and forces creation of
-            a new one. Default is True.
-
-            suppress_print (bool): If True, suppresses all print statements.
-            Default is False.
+            a new one.
         """
         
         # Check for ROI saved in the current data file.
         saved_roi_bool = self.read_roi_from_h5()
         if roi_id == None:
             if saved_roi_bool and use_saved:
-                if not suppress_print: print("Using saved ROI.")
+                print("Using saved ROI.")
             elif saved_roi_bool:
-                if not suppress_print: print("Saved ROI was found, but is being overridden.")
-                if not suppress_print: print("Specify the new ROI.")
+                print("Saved ROI was found, but is being overridden.")
+                print("Specify the new ROI.")
                 self.select_roi()
         else:
             if saved_roi_bool:
-                if not suppress_print: print("Saved ROI was found, but is being overridden.")
+                print("Saved ROI was found, but is being overridden.")
 
         # Checks for ROI saved in the specified run ID.
         if isinstance(roi_id,int):
-            if not suppress_print: print("ROI specified by Run ID. Attempting to load ROI...")
+            print("ROI specified by Run ID. Attempting to load ROI...")
             saved_roi_bool = self.read_roi_from_h5(roi_id)
             if saved_roi_bool:
-                if not suppress_print: print(f"Using ROI loaded from run {roi_id}.")
+                print(f"Using ROI loaded from run {roi_id}.")
             else:
-                if not suppress_print: print(f"Specify the new ROI.")
+                print(f"Specify the new ROI.")
                 self.select_roi()
 
         if isinstance(roi_id,str):
-            if not suppress_print: print("ROI specified by string. Referencing roi.xslx spreadsheet (PotassiumData)...")
+            print("ROI specified by string. Referencing roi.xslx spreadsheet (PotassiumData)...")
             roi_exists = self.read_roi_from_excel(roi_id)
             if not roi_exists:
-                if not suppress_print: print(f"Creating ROI for key {roi_id}.")
+                print(f"Creating ROI for key {roi_id}.")
                 self.select_roi()
                 self.update_excel()
 
         if self.check_for_blank_roi():
-            if not suppress_print: print("ROI was not specified. Defaulting to whole image.")
+            print("ROI was not specified. Defaulting to whole image.")
             px, py = self.get_image_size()
             self.roix = [0,px]
             self.roiy = [0,py]
