@@ -96,8 +96,8 @@ class atomdata():
         self.atom = Potassium39()
         self._dealer = self._init_dealer()
         self._analysis_tags = analysis_tags(roi_id,self.run_info.absorption_image)
-        self.roi = ROI(roi_id,
-                       run_id = self.run_info.run_id,
+        self.roi = ROI(run_id = self.run_info.run_id,
+                       roi_id = roi_id,
                        use_saved_roi = not skip_saved_roi)
 
         self._unshuffle_old_data()
@@ -124,17 +124,7 @@ class atomdata():
 
     ### ROI management
     def save_roi_excel(self,key=""):
-        if self.roi.key == "" and key == "":
-            raise ValueError("You must specify a key to save the ROI to the spreadsheet.")
-        if not isinstance(key,str):
-            raise ValueError("The specified key must be a string.")
-        
-        if not key == "":
-            self.roi.key = key
-        else:
-            # saving will use the key already associated with self.roi.
-            pass
-        self.roi.update_excel()
+        self.roi.save_roi_excel(key)
 
     def save_roi_h5(self):
         self.roi.save_roi_h5()

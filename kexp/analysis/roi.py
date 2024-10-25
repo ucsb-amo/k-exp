@@ -14,8 +14,8 @@ ROI_CSV_PATH = os.path.join(st.DATA_DIR,"roi.xlsx")
 
 class ROI():
     def __init__(self,
-                 roi_id=None,
                  run_id=0,
+                 roi_id=None,
                  key="",
                  use_saved_roi=True):
         self.roix = [-1,-1]
@@ -64,6 +64,9 @@ class ROI():
                 print("Saved ROI was found, but is being overridden.")
                 print("Specify the new ROI.")
                 self.select_roi()
+            else:
+                print("Specify the new ROI.")
+                self.select_roi()
         else:
             if saved_roi_bool:
                 print("Saved ROI was found, but is being overridden.")
@@ -84,7 +87,7 @@ class ROI():
             if not roi_exists:
                 print(f"Creating ROI for key {roi_id}.")
                 self.select_roi()
-                self.update_excel()
+                self._update_excel()
 
         if self.check_for_blank_roi():
             print("ROI was not specified. Defaulting to whole image.")
@@ -97,6 +100,19 @@ class ROI():
         with h5py.File(fpath,'r+') as f:
             f.attrs['roix'] = self.roix
             f.attrs['roiy'] = self.roiy
+
+    def save_roi_excel(self,key=""):
+        if self.key == "" and key == "":
+            raise ValueError("You must specify a key to save the ROI to the spreadsheet.")
+        if not isinstance(key,str):
+            raise ValueError("The specified key must be a string.")
+        
+        if not key == "":
+            self.key = key
+        else:
+            # saving will use the key already associated with self.roi.
+            pass
+        self._update_excel()
 
     def get_image_size(self):
         """Gets the size in pixels of the images (horizontal, vertical) in this run.
@@ -189,7 +205,7 @@ class ROI():
         else:
             print("ROI not selected, aborting.")
 
-    def update_excel(self):
+    def _update_excel(self):
         """Saves the ROI to the excel spreadsheet (roi.xlsx) in the
         PotassiumData folder. If the key already exists, updates the existing
         ROI. If not, creates a new line.
