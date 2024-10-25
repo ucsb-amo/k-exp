@@ -23,7 +23,7 @@ def process_ODs(raw_ODs,roi):
     summedODx: ArrayLike summedODy: ArrayLike
     summedODy: ArrayLike
     '''
-    ODs = roi.crop(raw_ODs,roi)
+    ODs = roi.crop(raw_ODs)
     ODs: np.ndarray
     sum_od_y = np.sum(ODs,ODs.ndim-1)
     sum_od_x = np.sum(ODs,ODs.ndim-2)
