@@ -156,7 +156,7 @@ class atomdata():
     def analyze_ods(self):
         """Crops ODs, computes sum_ods, gaussian fits to sum_ods, and populates
         fit results.
-        """        
+        """
         self.od = self.roi.crop(self.od_raw)
         self.sum_od_x = np.sum(self.od,self.od.ndim-2)
         self.sum_od_y = np.sum(self.od,self.od.ndim-1)
