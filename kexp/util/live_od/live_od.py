@@ -10,6 +10,8 @@ from kexp.util.live_od.live_od_plotting import *
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
 from kexp.util.live_od.camera_connection_widget import CamConnBar, ROISelector
 
+from kexp.analysis.roi import ROI
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -31,6 +33,7 @@ class MainWindow(QWidget):
         self.img_count = 0
         self.img_count_run = 0
 
+    ### On new data, create CameraBaby object
     def create_camera_baby(self,file,name):
         self.the_baby = CameraBaby(file, name, self.queue,
                                    self.camera_nanny)
@@ -38,16 +41,18 @@ class MainWindow(QWidget):
 
         self.the_baby.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
 
-        self.the_baby.camera_connect.connect(self.check_new_camera)
+        self.the_baby.camera_connect.connect(self.check_new_camera) # checks for camera switch
+        self.the_baby.camera_connect.connect(self.set_default_roi) # checks camera type
 
-        self.the_baby.camera_grab_start.connect(self.grab_start_msg)
-        self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number)
-        self.the_baby.camera_grab_start.connect(self.plotter.plotwindow.get_img_number)
-        self.the_baby.camera_grab_start.connect(self.data_handler.start)
-        self.the_baby.camera_grab_start.connect(self.reset)
+        ### what to do when the camera starts grabbing
+        self.the_baby.camera_grab_start.connect(self.grab_start_msg) # post a message
+        self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number) # send N_imgs to expect
+        self.the_baby.camera_grab_start.connect(self.plotter.plotwindow.get_img_number) # ditto
+        self.the_baby.camera_grab_start.connect(self.data_handler.start) # open data to save images
+        self.the_baby.camera_grab_start.connect(self.reset_count) # reset counting
 
-        self.data_handler.got_image_from_queue.connect(self.analyzer.got_img)
-        self.data_handler.got_image_from_queue.connect(self.count_images)
+        self.data_handler.got_image_from_queue.connect(self.analyzer.got_img) # tell analyzer that a new image is here
+        self.data_handler.got_image_from_queue.connect(self.count_images) # increase image count for user display
 
         self.the_baby.honorable_death_signal.connect(lambda: self.msg(f'Run complete. {name} has died honorably.'))
         self.the_baby.dishonorable_death_signal.connect(lambda: self.msg(f'{name} has died dishonorably. Incomplete data deleted.'))
@@ -60,50 +65,32 @@ class MainWindow(QWidget):
 
         self.the_baby.start()
 
-    def check_new_camera(self,camera_select):
-        if self.last_camera != camera_select:
-            self.plotter.clear()
-            self.last_camera = camera_select
-
     def restart_mother(self):
         import time
         time.sleep(0.25)
         self.camera_mother.start()
 
-    def setup_widgets(self):
+    ### Plotter and ROI handling
 
-        font = QFont()
-        font.setPointSize(16)
-        self.output_window = QPlainTextEdit()
-        self.output_window.setFont(font)
-        self.output_window.setReadOnly(True)
+    def check_new_camera(self,camera_select):
+        if self.last_camera != camera_select:
+            self.plotter.clear()
+            self.last_camera = camera_select
+            self.set_default_roi(camera_select)
 
-        self.camera_conn_bar = CamConnBar(self.camera_nanny,self.output_window)
-        
-        self.roi_select = ROISelector()
-        self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_crop)
+    def update_roi(self):
+        roi_key = self.roi_select.crop_dropdown.currentText()
+        self.analyzer.roi = ROI(roi_key)
 
-        self.viewer_window = ODviewer()
+    def set_default_roi(self,camera_select):
+        if 'andor' in camera_select:
+            key = 'andor_all'    
+        if 'basler' in camera_select:
+            key = 'basler_all'
+        self.analyzer.roi = ROI(key,use_saved_roi=False)
+        self.roi_select.set_dropdown_to_key(key)
 
-        self.plotting_queue = Queue()
-        self.analyzer = Analyzer(self.plotting_queue)
-        self.plotter = Plotter(self.viewer_window,self.plotting_queue)
-        self.plotter.start()
-
-        self.analyzer.analyzed.connect(lambda: self.msg('new OD!'))
-        self.roi_select.crop_dropdown.currentIndexChanged.connect(self.plotter.clear)
-
-    def setup_layout(self):
-        self.layout = QVBoxLayout()
-
-        self.top_row = QHBoxLayout()
-        self.top_row.addWidget(self.camera_conn_bar)
-        self.top_row.addWidget(self.roi_select)
-        self.layout.addLayout(self.top_row)
-        self.layout.addWidget(self.viewer_window)
-        self.layout.addWidget(self.output_window)
-
-        self.setLayout(self.layout)
+    ### Plot counter
 
     def count_images(self):
         self.img_count += 1
@@ -112,14 +99,12 @@ class MainWindow(QWidget):
         if self.img_count == 3:
             self.img_count = 0
         
-    def reset(self):
+    def reset_count(self):
         self.img_count = 0
         self.img_count_run = 0
         self.analyzer.imgs = []
 
-    def update_crop(self):
-        self.analyzer.crop_type = self.roi_select.crop_dropdown.currentText()
-
+    ### Printouts
     def msg(self,msg):
         self.output_window.appendPlainText(msg)
 
@@ -131,6 +116,41 @@ class MainWindow(QWidget):
     def gotem_msg(self,count):
         msg = f"gotem (img {count}/{self.N_img})"
         self.msg(msg)
+
+    ### GUI layout and widgets setup
+    def setup_widgets(self):
+        font = QFont()
+        font.setPointSize(16)
+        self.output_window = QPlainTextEdit()
+        self.output_window.setFont(font)
+        self.output_window.setReadOnly(True)
+
+        self.camera_conn_bar = CamConnBar(self.camera_nanny,self.output_window)
+        
+        self.roi_select = ROISelector()
+        self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
+
+        self.viewer_window = ODviewer()
+
+        self.plotting_queue = Queue()
+        self.analyzer = Analyzer(self.plotting_queue)
+        self.plotter = Plotter(self.viewer_window,self.plotting_queue)
+        self.plotter.start()
+
+        self.analyzer.analyzed.connect(lambda: self.msg('new OD!'))
+        self.roi_select.crop_dropdown.currentIndexChanged.connect(self.plotter.clear)
+        
+    def setup_layout(self):
+        self.layout = QVBoxLayout()
+
+        self.top_row = QHBoxLayout()
+        self.top_row.addWidget(self.camera_conn_bar)
+        self.top_row.addWidget(self.roi_select)
+        self.layout.addLayout(self.top_row)
+        self.layout.addWidget(self.viewer_window)
+        self.layout.addWidget(self.output_window)
+
+        self.setLayout(self.layout)
 
 # Maybe hard, need to iterate through xvars in same order that the data is being taken
 # or, once have communication working, just send over the xvars real time

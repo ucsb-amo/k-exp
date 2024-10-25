@@ -22,7 +22,7 @@ def fit_gaussian_sum_dist(sum_dist:np.ndarray,camera_params) -> list[GaussianFit
     '''
 
     xaxis = camera_params.pixel_size_m / camera_params.magnification * np.arange(sum_dist.shape[-1])
-
+    
     # reshape to effectively a list of sumODs:
     sum_dist_list = sum_dist.reshape(-1,sum_dist.shape[-1])
     # prep a fit array of len == # sum ODs
@@ -35,6 +35,3 @@ def fit_gaussian_sum_dist(sum_dist:np.ndarray,camera_params) -> list[GaussianFit
     fits = fits.reshape(sum_dist.shape[:-1])
 
     return fits
-
-
-
