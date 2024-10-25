@@ -7,6 +7,9 @@ import kexp.config.camera_params as cp
 from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.util.live_od import CameraNanny
 
+from kexp.analysis.roi import ROI_CSV_PATH
+import pandas as pd
+
 class CamConnBar(QWidget):
     def __init__(self,camera_nanny,output_window):
         super().__init__()
@@ -113,18 +116,11 @@ class ROISelector(QWidget):
     def setup_widgets(self):
         self.label = QLabel("ROI Selection")
         self.crop_dropdown = QComboBox()
-        self.crop_dropdown.addItems(['','gm','mot','cmot','bigmot','lightsheet',
-                                         'gm2','lightsheet_long',
-                                         'lightsheet_short',
-                                         'xy_tweezer',
-                                         'andor_single_tweezer_tight',
-                                         'lightsheet_short',
-                                         'andor_single_tweezer',
-                                         'andor_lightsheet',
-                                         'andor_tweezer_wide_putin',
-                                         'andor_tweezer_smol',
-                                         'xy2_tweezer',
-                                         'xy2_lightsheet'])
+        self.crop_dropdown.addItems(self.load_roi_from_spreadsheet())
+        
+    def load_roi_from_spreadsheet(self):
+        roicsv = pd.read_excel(ROI_CSV_PATH)
+        return roicsv['key'].to_list()
         
     def setup_layout(self):
         self.layout = QVBoxLayout()
