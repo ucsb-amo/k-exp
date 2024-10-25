@@ -41,6 +41,7 @@ class Analyzer(QObject):
         self.od_raw = compute_OD(self.img_atoms,
                         self.img_light,
                         self.img_dark)
+        self.od_raw = np.array([self.od_raw])
         self.od, self.sum_od_x, self.sum_od_y = \
             process_ODs(self.od_raw,self.roi)
         self.od_raw = self.od_raw[0]
