@@ -80,14 +80,14 @@ class MainWindow(QWidget):
 
     def update_roi(self):
         roi_key = self.roi_select.crop_dropdown.currentText()
-        self.analyzer.roi = ROI(roi_key)
+        self.analyzer.roi = ROI(roi_id=roi_key)
 
     def set_default_roi(self,camera_select):
         if 'andor' in camera_select:
             key = 'andor_all'    
         if 'basler' in camera_select:
             key = 'basler_all'
-        self.analyzer.roi = ROI(key,use_saved_roi=False)
+        self.analyzer.roi = ROI(roi_id=key,use_saved_roi=False)
         self.roi_select.set_dropdown_to_key(key)
 
     ### Plot counter

@@ -12,9 +12,9 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('frequency_detuned_imaging',np.arange(260.,350.,6.)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.arange(260.,350.,6.)*1.e6)
         
-        self.p.frequency_detuned_imaging = 308.e6 # i-13.8
+        self.p.frequency_detuned_imaging = 302.e6 # i-13.8
         # self.p.frequency_detuned_imaging = 438.e6 # i-13.4
         # self.p.frequency_detuned_imaging = 300.e6 # i-14.5
         
@@ -54,7 +54,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.4,2.,10))
         self.p.v_pd_lightsheet_rampdown_end = 5.4
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,6.,10))
+        self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,6.,10))
         self.p.v_tweezer_paint_amp_max = 6.
 
         # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(4.,9.9,10))
@@ -88,7 +88,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.i_evap3_current = 192.3
 
         # self.xvar('i_lf_evap1_current',np.linspace(11.,17.,20))
-        self.xvar('i_lf_evap2_current',np.linspace(11.,17.,5))
+        # self.xvar('i_lf_evap2_current',np.linspace(11.,17.,5))
         # self.xvar('i_lf_evap3_current',np.linspace(11.,15.,8))
         self.p.i_lf_evap1_current = 13.8
         self.p.i_lf_evap2_current = 13.5
@@ -96,7 +96,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.i_spin_mixture = 19.6
 
-        self.camera_params.amp_imaging = .12
+        # self.camera_params.amp_imaging = .12
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
