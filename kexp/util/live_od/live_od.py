@@ -87,7 +87,7 @@ class MainWindow(QWidget):
             key = 'andor_all'    
         if 'basler' in camera_select:
             key = 'basler_all'
-        self.analyzer.roi = ROI(key,use_saved_roi=False)
+        self.analyzer.roi = ROI(key,use_saved_roi=False,suppress_print=True)
         self.roi_select.set_dropdown_to_key(key)
 
     ### Plot counter
