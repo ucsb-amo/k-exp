@@ -104,7 +104,7 @@ class atomdata():
         self._initial_analysis(transpose_idx,avg_repeats)
 
     ###
-    def recrop(self,roi_id=None,use_saved=True):
+    def recrop(self,roi_id=None,use_saved=False):
         """Selects a new ROI and re-runs the analysis. Uses the same logic as
         kexp.ROI.load_roi.
 
@@ -117,7 +117,7 @@ class atomdata():
             roi.xlsx document in the PotassiumData folder.
 
             use_saved (bool): If False, ignores saved ROI and forces creation of
-            a new one.
+            a new one. Default is False.
         """        
         self.roi.load_roi(roi_id,use_saved)
         self.analyze_ods()
