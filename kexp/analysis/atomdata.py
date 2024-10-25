@@ -16,7 +16,25 @@ import h5py
 
 import datetime
 
+def unpack_group(file,group_key,obj):
+    """Looks in an open h5 file in the group specified by key, and iterates over
+    every dataset in that h5 group, and for each dataset assigns an attribute of
+    the object obj" with that dataset's key and value.
+
+    Args:
+        file (h5py.File, h5py dataset): An open h5py file object or dataset.
+        group_key (str): The key of the group in the h5py file.
+        obj (object): Any object to be populated with attributes by the fields
+        in the provided dataset. 
+    """            
+    g = file[group_key]
+    keys = list(g.keys())
+    for k in keys:
+        vars(obj)[k] = g[k][()]
+
 class analysis_tags():
+    """A simple container to hold analysis tags for analysis logic.
+    """    
     def __init__(self,roi_id,absorption_analysis):
         self.roi_id = roi_id
         self.absorption_analysis = absorption_analysis
@@ -25,6 +43,8 @@ class analysis_tags():
         self.averaged = False
 
 class expt_code():
+    """A simple container to organize experiment text.
+    """    
     def __init__(self,
                  experiment,
                  params,
@@ -443,11 +463,6 @@ class atomdata():
         return dealer
 
     def _load_data(self, idx=0, path = ""):
-        def unpack_group(file,group_key,obj):
-            g = file[group_key]
-            keys = list(g.keys())
-            for k in keys:
-                vars(obj)[k] = g[k][()]
 
         file, rid = st.get_data_file(idx,path)
     
