@@ -24,8 +24,8 @@ class Analyzer(QObject):
     def __init__(self,plotting_queue:Queue):
         super().__init__()
         self.imgs = []
-        self.crop_type = ''
         self.plotting_queue = plotting_queue
+        self.roi = []
 
     def got_img(self,img):
         self.imgs.append(np.asarray(img))
@@ -42,8 +42,7 @@ class Analyzer(QObject):
                         self.img_light,
                         self.img_dark)
         self.od, self.sum_od_x, self.sum_od_y = \
-            process_ODs(self.od_raw,
-                        self.crop_type)
+            process_ODs(self.od_raw,self.roi)
         self.od_raw = self.od_raw[0]
         self.od = self.od[0]
         self.sum_od_x = self.sum_od_x[0]
