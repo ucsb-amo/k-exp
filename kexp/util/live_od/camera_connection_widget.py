@@ -116,11 +116,16 @@ class ROISelector(QWidget):
     def setup_widgets(self):
         self.label = QLabel("ROI Selection")
         self.crop_dropdown = QComboBox()
-        self.crop_dropdown.addItems(self.load_roi_from_spreadsheet())
+        self.load_roi_from_spreadsheet()
+        self.crop_dropdown.addItems(self.roi_keys)
         
     def load_roi_from_spreadsheet(self):
         roicsv = pd.read_excel(ROI_CSV_PATH)
-        return roicsv['key'].to_list()
+        self.roi_keys = roicsv['key'].to_list()
+
+    def set_dropdown_to_key(self,key):
+        idx = self.roi_keys.index(key)
+        self.crop_dropdown.setCurrentIndex(idx)
         
     def setup_layout(self):
         self.layout = QVBoxLayout()
