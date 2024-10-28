@@ -42,7 +42,6 @@ class MainWindow(QWidget):
         self.the_baby.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
 
         self.the_baby.camera_connect.connect(self.check_new_camera) # checks for camera switch
-        self.the_baby.camera_connect.connect(self.set_default_roi) # checks camera type
 
         ### what to do when the camera starts grabbing
         self.the_baby.camera_grab_start.connect(self.grab_start_msg) # post a message
