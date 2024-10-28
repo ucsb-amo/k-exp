@@ -13,6 +13,7 @@ class SineEnvelope(Fit):
 
         try:
             gfit = GaussianFit(xdata,ydata)
+            self.gfit = gfit
             self.xdata = gfit.xdata
             # self.ydata = gfit.ydata - gfit.y_fitdata
 
@@ -37,10 +38,7 @@ class SineEnvelope(Fit):
 
 
     def _fit_func(self, x, amplitude, sigma, x_center, y_offset, contrast, k, phase):
-        # k = (2 * np.pi) / (2.e-6 * 2)
         return y_offset + amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) ) * ( 1 + contrast * np.cos(k * (x-x_center) + phase) )
-        # return y_offset + amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) ) * ( 1 + contrast * np.sin(k * x + phase) )
-        # return y_offset + amplitude * np.sin(k * x + phase)
 
     def _fit(self, x, y):
         '''
@@ -68,13 +66,10 @@ class SineEnvelope(Fit):
         
     def _guesses(self,x,y):
         amplitude_guess = self.gfit.amplitude
-        # x_center_guess = x[np.argmax(y)]
         x_center_guess = self.gfit.x_center
-        # sigma_guess = np.mean( [x[len(x)//2]-x[0], x[-1]-x[len(x)//2]] )
         sigma_guess = self.gfit.sigma
-        # k_guess = (x[len(x)//2]-x[0])/10
         fringes_nogauss = self.ydata - self.gfit.y_fitdata
-        self.fng = fringes_nogauss
+        self._fringe_data = fringes_nogauss
 
         fringe_rms = np.sqrt(np.mean(fringes_nogauss**2))
         self.frms = fringe_rms
@@ -83,13 +78,10 @@ class SineEnvelope(Fit):
 
         prom = fringe_rms/3
         idx, _ = find_peaks(y, prominence=prom)
-        # print(x[idx])
-        self.vv = x[idx]
+        self._x_peaks = x[idx]
         lambda_guess = np.mean(np.diff(x[idx]))
-        # lambda_guess = 2.5e-6
         k_guess = 2*np.pi/lambda_guess 
         phase_guess = k_guess * x[self._find_idx(x_center_guess,x[idx])]
-        # phase_guess = 0
         y_offset_guess = (np.max(y) - np.min(y))
         return amplitude_guess, sigma_guess, x_center_guess, y_offset_guess, contrast_guess, k_guess, phase_guess
     
