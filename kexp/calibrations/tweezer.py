@@ -1,5 +1,5 @@
 import numpy as np
-from artiq.experiment import TFloat, portable, rpc
+from artiq.experiment import TFloat, TArray, portable, rpc
 
 @portable(flags={"fast-math"})
 def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:
@@ -54,8 +54,8 @@ class tweezer_xmesh():
                 v = [v]
             return np.array(v,dtype=dtype)
         
-    @portable
-    def x_to_f(self, position, cateye):
+    @rpc
+    def x_to_f(self, position, cateye) -> TArray(TFloat):
         """Converts a tweezer position into the corresponding AOD frequency.
 
         Args:
@@ -88,12 +88,12 @@ class tweezer_xmesh():
                 f_sample = self.x_and_f_nce[1]
             x_sample = x_sample - self.x_mesh_center
             f = f_per_x * (x - x_sample) + f_sample
-            self.check_valid_range(f,c)
+            # self.check_valid_range(f,c)
             f_out.append(f)
         return np.array(f_out)
         
-    @portable
-    def f_to_x(self, frequency):
+    @rpc
+    def f_to_x(self, frequency) -> TArray(TFloat):
         """Converts an AOD frequency (in Hz) into the corresponding real-space
         position.
 
@@ -109,7 +109,7 @@ class tweezer_xmesh():
         for i in range(len(frequency)):
             f = frequency[i]
             c = cateye[i]
-            self.check_valid_range(f,c)
+            # self.check_valid_range(f,c)
             if c:
                 x_per_f = self.x_per_f_ce
                 x_sample = self.x_and_f_ce[0]

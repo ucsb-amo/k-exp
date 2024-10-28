@@ -13,6 +13,51 @@ FIRST_DATA_FOLDER_DATE = datetime(2023,6,22)
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
 SOUNDS_DIR = os.path.join(DATA_DIR,'done_sounds')
 
+def get_data_file(idx=0, path=""):
+    '''
+    Returns the data file path corresponding to index idx. For idx > 0, idx is
+    intepreted as a run ID. For idx = 0, gets the latest data file path. For idx
+    < 0, increments chronologically backward from the latest file.
+
+    If path is instead specified, loads the file at the specified path.
+
+    Parameters
+    ----------
+    idx: int
+        If a positive value is specified, it is interpreted as a run_id (as
+        stored in run_info.run_id), and that data is found and loaded. If zero
+        or a negative number are given, data is loaded relative to the most
+        recent dataset (idx=0).
+    path: str
+        The full path to the file to be loaded. If not specified, loads the file
+        as dictated by `idx`.
+
+    Returns
+    -------
+    str: the full path to the specified data file
+    int: the run ID for the specified data file
+    '''
+    if path == "":
+        latest_file = get_latest_data_file()
+        latest_rid = run_id_from_filepath(latest_file)
+        if idx == 0:
+            file = latest_file
+        if idx <= 0:
+            file = recurse_find_data_file(latest_rid+idx)
+        if idx > 0:
+            if latest_rid - idx < 10000:
+                file = recurse_find_data_file(idx)
+            else:
+                file = all_glob_find_data_file(idx)
+    else:
+        if path.endswith('.hdf5'):
+            file = path
+        else:
+            raise ValueError("The provided path is not a hdf5 file.")
+        
+    rid = run_id_from_filepath(file)
+    return file, rid
+
 def check_for_mapped_data_dir(data_dir=DATA_DIR):
     if not os.path.exists(data_dir):
         print(f"Data dir ({data_dir}) not found. Attempting to re-map network drives.")

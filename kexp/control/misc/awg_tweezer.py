@@ -21,6 +21,7 @@ di = 0
 dv = -1000.
 dv_list = np.linspace(0.,1.,5)
 dv_array = np.array([dv])
+db_array = np.array([True])
 T_AWG_RPC_DELAY = 100.e-3
 
 class TweezerMovesLib():
@@ -99,47 +100,50 @@ class TweezerTrap():
         else:
             self.x_per_f = self.mesh.x_per_f_nce
 
-    # Need to think about how this will work as an RPC
-    # def update_from_awg(self):
-    #     self.frequency = self.dds.get_freq(self.dds_idx)
-    #     self.position = self.f_to_x(self.frequency)
-
-    def update_x_rpc(self,x_shift) -> TFloat:
+    def update_x_rpc(self,x) -> TFloat:
         """Updates the position attribute of the tweezer on the host device.
 
         Args:
-            x_shift (float): The position shift of a move.
+            x (float): The new position (in m).
 
         Returns:
             TFloat: the new position (in m) of the tweezer trap.
         """        
-        self.position = self.position + x_shift
+        self.position = x
         return self.position
     
-    def update_amp_rpc(self,amp_change) -> TFloat:
+    def update_amp_rpc(self,amp) -> TFloat:
         """Updates the position attribute of the tweezer on the host device.
 
         Args:
-            x_shift (float): The position shift of a move.
+            amp (float): The new amplitude (from 0 to 1).
 
         Returns:
-            TFloat: the new position (in m) of the tweezer trap.
+            TFloat: The new amplitude of the tweezer trap.
         """        
-        self.amplitude = self.amplitude + amp_change
-        return self.position
+        self.amplitude = amp
+        return self.amplitude
+    
+    def update_f_rpc(self,frequency=dv,from_position=True) -> TFloat:
+        if from_position:
+            self.frequency = self.x_to_f(self.position)
+        else:
+            self.frequency = frequency
+        return self.frequency
 
     @kernel
-    def update_x(self,x_shift):
+    def update_x(self,x):
         """Updates the position attribute of the tweezer on the core device.
 
         Args:
-            x_shift (float): The position shift (in m) of a move.
-        """        
-        self.position = self.update_x_rpc(x_shift)
+            x (float): The new position (in m).
+        """
+        self.position = self.update_x_rpc(x)
+        self.frequency = self.update_f_rpc()
 
     @kernel
-    def update_amp(self,amp_change):
-        self.amplitude = self.update_amp_rpc(amp_change)
+    def update_amp(self,amp):
+        self.amplitude = self.update_amp_rpc(amp)
     
     def compute_cubic_move(self,t_move,x_move) -> TArray(TFloat):
         """Compute the frequency slopes required for a cubic move profile (zero
@@ -175,7 +179,7 @@ class TweezerTrap():
                                     x_amplitude,modulation_frequency)
         return slopes
     
-    @kernel
+    
     def compute_linear_amplitude_ramp(self,t_ramp,amp_f) -> TArray(TFloat):
         slopes = self.compute_slopes(t_ramp,self.moves.linear,
                                      t_ramp,self.amplitude,amp_f,
@@ -191,9 +195,9 @@ class TweezerTrap():
         Args:
             t_move (float): the total duration (in s) of the move.
             x_move (float): the total displacement for the move.
-        """        
-        self.update_x(x_shift=x_move)
+        """
         self.move(t_move, self.compute_cubic_move(t_move,x_move))
+        self.update_x(self.position + x_move)
     
     @kernel
     def sine_move(self,t_mod,x_mod,f_mod):
@@ -204,15 +208,15 @@ class TweezerTrap():
             x_amplitude (float): the displacement amplitude (in m) for the move.
             modulation_frequency (float): the modulation frequency (in Hz) for
             the move.
-        """        
-        self.update_x(x_shift=self.moves.sinusoidal_modulation(t_mod,x_mod,f_mod))
+        """
         self.move(t_mod,self.compute_sinusoidal_modulation(t_mod,x_mod,f_mod))
+        self.update_x(self.position + self.moves.sinusoidal_modulation(t_mod,x_mod,f_mod))
 
     @kernel
     def linear_amplitude_ramp(self,t_ramp,amp_f):
-        self.update_amp(amp_f)
         self.amp_ramp(t_ramp,self.compute_linear_amplitude_ramp(t_ramp,amp_f))
-
+        self.update_amp(amp_f)
+        
     @portable
     def x_to_f(self,x) -> TFloat:
         """Converts the given tweezer position x to the required AOD frequency.
@@ -223,7 +227,8 @@ class TweezerTrap():
         Returns:
             TFloat: the AOD frequency (in Hz) corresponding to the given position x.
         """        
-        return self.mesh.x_to_f(x,self.cateye)[0]
+        self.dummy_out = self.mesh.x_to_f(x,self.cateye)
+        return self.dummy_out[0]
         
     @portable
     def f_to_x(self,f)  -> TFloat:
@@ -237,7 +242,8 @@ class TweezerTrap():
             TFloat: the position x (in m) corresponding to the given AOD
             frequency (in Hz).
         """        
-        return self.mesh.f_to_x(f)[0]
+        self.dummy_out = self.mesh.f_to_x(f)
+        return self.dummy_out[0]
 
     def compute_slopes(self,t_move,
                x_vs_t_func,
@@ -284,7 +290,7 @@ class TweezerTrap():
         delay(t_move)
 
     @kernel
-    def amp_ramp(self,t_move,slopes,dt=dv):
+    def amp_ramp(self,t_move,slopes):
         """Sets the timeline cursor to the current RTIO time (wall-clock), then
         starts writing the amplitude slopes list to the awg.
 
@@ -293,7 +299,7 @@ class TweezerTrap():
             the time of the move and the ramp's amplitude slopes.
         """
         self.core.wait_until_mu(now_mu())
-        self.write_amp_ramp(slopes,dt)
+        self.write_amp_ramp(slopes)
         delay(T_AWG_RPC_DELAY)
 
         self.awg_trig_ttl.pulse(1.e-6)
@@ -376,11 +382,17 @@ class tweezer():
         self.params.idx_tweezer = 0
         self.traps = []
         self.traps: list[TweezerTrap]
+        self.traps_saved = []
+        self.traps_saved: list[TweezerTrap]
+
+    def save_trap_list(self):
+        from copy import deepcopy
+        self.traps_saved = deepcopy(self.traps)
 
     def add_tweezer_list(self,
                          position_list=dv_array,
                          amplitude_list=dv_array,
-                         cateye_list=dv_array,
+                         cateye_list=db_array,
                          frequency_list=dv_array):
         """Populates the trap list (awg_tweezer.tweezer.traps) with a
         TweezerTrap object for each position (or frequency) and amplitude pair
@@ -416,7 +428,7 @@ class tweezer():
         
         x_specified = np.all(position_list != dv_array)
         amp_specified = np.all(amplitude_list != dv_array)
-        cateye_specified = np.all(cateye_list != dv_array)
+        cateye_specified = np.all(cateye_list != db_array)
         freq_specified = np.all(frequency_list != dv_array)
 
         mesh = tweezer_xmesh()
@@ -432,7 +444,7 @@ class tweezer():
             raise ValueError('You must indicate cateye/non-cateye of each tweezer if specifying tweezers by position.')
         if x_specified and freq_specified:
             raise ValueError('You must specify either freuqency or position (not both), or specify neither to use default values.')
-        if freq_specified and cateye_list:
+        if freq_specified and cateye_specified:
             print("Both frequencies and cateye/non-cateye are specified -- ignoring the cateye list, using frequencies.")
         
         if np.sum(amplitude_list) > 1.:
@@ -661,7 +673,15 @@ class tweezer():
         """        
         self.paint_amp_dac.set(v=-7.)
 
-    def reset_changing_trap_list(self,xvarnames):
+    @kernel
+    def reset_traps(self,xvarnames):
+        self.core.wait_until_mu(now_mu())
+        self.reset_trap_list_rpc(xvarnames)
+        self.set_static_tweezers()
+        self.sync_kernel_trap_list()
+        self.core.break_realtime()
+
+    def reset_trap_list_rpc(self,xvarnames):
         """If the user is scanning the trap amplitudes or frequency list, reset
         the trap list and re-create the TweezerTrap objects with the new
         frequencies/amplitudes. This should be done more intelligently in the
@@ -671,10 +691,26 @@ class tweezer():
             xvarnames (list[str]): The xvarnames list containing strings of the
             keys for the xvars.
         """        
+        from copy import deepcopy
         if "amp_tweezer_list" in xvarnames or "frequency_tweezer_list" in xvarnames:
             self.traps = []
             self.params.idx_tweezer = 0
             self.add_tweezer_list()
+        # else:
+            # for idx in range(len(self.traps)):
+            #     self.traps[idx] = deepcopy(self.traps_saved[idx])
+
+    @kernel
+    def sync_kernel_trap_list(self):
+        for idx in range(len(self.traps)):
+            self.traps[idx].update_amp(self.get_trap_amp(idx))
+            self.traps[idx].update_x(self.get_trap_position(idx))
+
+    def get_trap_amp(self,idx) -> TFloat:
+        return self.traps_saved[idx].amplitude
+    
+    def get_trap_position(self,idx) -> TFloat:
+        return self.traps_saved[idx].position
     
     def awg_init(self):
         """Connects to spectrum AWG, sets full-scale voltage amplitude, initializes trigger mode.

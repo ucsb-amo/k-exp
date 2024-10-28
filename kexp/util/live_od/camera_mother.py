@@ -6,7 +6,7 @@ import names
 
 import pypylon.pylon as py
 
-from kexp.util.data.load_atomdata import unpack_group
+from kexp.analysis.atomdata import unpack_group
 
 from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.util.live_od.camera_nanny import CameraNanny

@@ -80,6 +80,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         if self.tweezer.traps == []:
             self.tweezer.add_tweezer_list()
+        self.tweezer.save_trap_list()
 
         self.data_filepath = self.ds.create_data_file(self)
 
@@ -141,13 +142,10 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-        self.core.wait_until_mu(now_mu())
+        
         # self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
         
-        self.tweezer.reset_changing_trap_list(self.xvarnames)
-        self.tweezer.set_static_tweezers()
-
-        self.core.break_realtime()
+        self.tweezer.reset_traps(self.xvarnames)
 
         self.dds.ry_405.set_dds(set_stored=True)
         self.dds.ry_405.on()
