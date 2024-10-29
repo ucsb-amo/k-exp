@@ -10,7 +10,7 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
         # self.xvar('t_tof',np.linspace(1000.,2800.,10)*1.e-6)
         self.p.t_tof = 1.e-6
@@ -21,14 +21,14 @@ class tweezer_load(EnvExperiment, Base):
         self.xvar('t_tunnel',np.linspace(0.,10.,20)*1.e-3)
         self.p.t_tunnel = 30.e-3
 
-        self.p.frequency_tweezer_list = [70.15e6,79.7e6]
+        self.p.frequency_tweezer_list = [70.2e6,79.7e6]
 
         self.p.amp_final = .76
         a_list = [0.,.24]
         self.p.amp_tweezer_list = a_list
 
         self.p.n_tweezer_ramp_steps = 100
-        self.p.t_amp_ramp = 1.e-3
+        self.p.t_amp_ramp = 500.e-3
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.5,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.5,8))

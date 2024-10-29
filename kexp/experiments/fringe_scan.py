@@ -21,7 +21,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tunnel',np.linspace(0.,60.,15)*1.e-3)
         self.p.t_tunnel = 30.e-3
 
-        self.p.frequency_tweezer_list = [70.15e6,79.7e6]
+        self.p.frequency_tweezer_list = [70.2e6,79.7e6]
 
         # ass = np.linspace(.18,.205,20)
         # a_lists = [[.78,ass1] for ass1 in ass]
