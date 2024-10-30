@@ -677,8 +677,8 @@ class tweezer():
     def reset_traps(self,xvarnames):
         self.core.wait_until_mu(now_mu())
         self.reset_trap_list_rpc(xvarnames)
-        self.set_static_tweezers()
         self.sync_kernel_trap_list()
+        self.set_static_tweezers()
         self.core.break_realtime()
 
     def reset_trap_list_rpc(self,xvarnames):
@@ -696,9 +696,7 @@ class tweezer():
             self.traps = []
             self.params.idx_tweezer = 0
             self.add_tweezer_list()
-        # else:
-            # for idx in range(len(self.traps)):
-            #     self.traps[idx] = deepcopy(self.traps_saved[idx])
+            self.save_trap_list()
 
     @kernel
     def sync_kernel_trap_list(self):
