@@ -54,17 +54,17 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 1.0
-        self.t_lightsheet_rampdown = .7
+        self.t_lightsheet_rampdown = .16
         self.t_lightsheet_rampdown2 = .01
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = .27
         self.t_tweezer_hold = 30.e-3
-        self.t_tweezer_1064_ramp = .36
-        self.t_tweezer_1064_rampdown = .09
-        self.t_tweezer_1064_rampdown2 = 0.5
-        self.t_tweezer_1064_rampdown3 = .3
+        self.t_tweezer_1064_ramp = .17
+        self.t_tweezer_1064_rampdown = .03
+        self.t_tweezer_1064_rampdown2 = .4
+        self.t_tweezer_1064_rampdown3 = .2
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 20.e-6
@@ -72,7 +72,7 @@ class ExptParams():
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
         self.t_magtrap = 0.
-        self.t_magtrap_ramp = .367
+        self.t_magtrap_ramp = .5
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 100.e-3
         self.t_feshbach_field_ramp = 12.e-3
@@ -154,8 +154,8 @@ class ExptParams():
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.35
-        self.pfrac_r_gmramp_end = 0.194
+        self.pfrac_c_gmramp_end = 0.32
+        self.pfrac_r_gmramp_end = 0.32
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -187,7 +187,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.9
-        self.v_pd_lightsheet_rampdown_end = 1.5 #4.16
+        self.v_pd_lightsheet_rampdown_end = 5.4 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -199,7 +199,7 @@ class ExptParams():
         self.v_pd_tweezer_1064 = 5.
 
         self.v_pd_tweezer_1064_ramp_end = 9.9
-        self.v_pd_tweezer_1064_rampdown_end = .3
+        self.v_pd_tweezer_1064_rampdown_end = .9
         self.v_pd_tweezer_1064_rampdown2_end = .07
         self.v_pd_tweezer_1064_rampdown3_end = 1.
         self.n_tweezer_ramp_steps = 1000
@@ -225,7 +225,7 @@ class ExptParams():
         self.amp_tweezer_list = [.2,.215]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = -2.2
+        self.v_tweezer_paint_amp_max = -3.5
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -271,9 +271,9 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 193.
-        self.i_evap2_current = 192.3
-        self.i_evap3_current = 192.3
+        self.i_evap1_current = 192.
+        self.i_evap2_current = 193.9
+        self.i_evap3_current = 193.2
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.
