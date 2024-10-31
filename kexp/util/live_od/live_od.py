@@ -80,7 +80,7 @@ class MainWindow(QWidget):
     def update_roi(self):
         roi_key = self.roi_select.crop_dropdown.currentText()
         self.analyzer.roi = ROI(roi_id=roi_key)
-        self.roi_select.update_rois()
+        # self.roi_select.update_rois()
 
     def set_default_roi(self,camera_select):
         if 'andor' in camera_select:
