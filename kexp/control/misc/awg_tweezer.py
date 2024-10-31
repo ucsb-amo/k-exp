@@ -21,7 +21,7 @@ di = 0
 dv = -1000.
 dv_list = np.linspace(0.,1.,5)
 dv_array = np.array([dv])
-db_array = np.array([True])
+db_array = np.array([None])
 T_AWG_RPC_DELAY = 100.e-3
 
 class TweezerMovesLib():
@@ -428,7 +428,7 @@ class tweezer():
         
         x_specified = np.all(position_list != dv_array)
         amp_specified = np.all(amplitude_list != dv_array)
-        cateye_specified = np.all(cateye_list != db_array)
+        cateye_specified = np.all(cateye_list != [db_array])
         freq_specified = np.all(frequency_list != dv_array)
 
         mesh = tweezer_xmesh()
