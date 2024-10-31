@@ -19,7 +19,7 @@ class ExptParams():
         self.t_contactor_open_delay = 12.e-3
 
         #Imaging
-        self.t_imaging_pulse = 5.e-6
+        self.t_imaging_pulse = 10.e-6
         self.t_light_only_image_delay = 100.e-3
         self.t_dark_image_delay = 25.e-3
 
@@ -263,6 +263,9 @@ class ExptParams():
         self.frequency_raman_r = 150.e6
         self.amp_raman_c = .25
         self.amp_raman_r = .25
+        self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
+        self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
+        self.n_raman_sweep_steps = 100
 
         # low field evap
         # self.i_evap1_current = 9.5
