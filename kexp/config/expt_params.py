@@ -44,7 +44,7 @@ class ExptParams():
         self.t_discharge_igbt = 2.e-3
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
-        self.t_mot_load = 0.5
+        self.t_mot_load = 1.0
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
         self.t_magnet_off_pretrigger = 0.e-3
