@@ -110,8 +110,8 @@ class Devices():
                                expt_params = self.params,
                                core=self.core)
         
-        self.raman_zeeman = RamanBeamPair(dds0=self.dds.raman_c,
-                                          dds1=self.dds.raman_r,
+        self.raman_zeeman = RamanBeamPair(dds_plus=self.dds.raman_plus,
+                                          dds_minus=self.dds.raman_minus,
                                           params=self.params)
 
         # camera placeholder

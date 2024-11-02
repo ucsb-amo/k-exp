@@ -259,10 +259,10 @@ class ExptParams():
         self.amp_ao_ry_980 = 0.285
 
         # raman
-        self.frequency_raman_c = 150.e6
-        self.frequency_raman_r = 150.e6
-        self.amp_raman_c = .25
-        self.amp_raman_r = .25
+        self.frequency_raman_plus = 150.e6
+        self.frequency_raman_minus = 150.e6
+        self.amp_raman_plus = .25
+        self.amp_raman_minus = .25
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100

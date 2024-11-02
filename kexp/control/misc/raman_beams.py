@@ -8,42 +8,42 @@ dv = -0.1
 di = 0
 
 class RamanBeamPair():
-    def __init__(self,dds0:DDS,dds1:DDS,params:ExptParams):
-        self.dds0 = dds0
-        self.dds1 = dds1
+    def __init__(self,dds_plus:DDS,dds_minus:DDS,params:ExptParams):
+        self.dds_plus = dds_plus
+        self.dds_minus = dds_minus
         self.params = params
 
-        self._frequency_center_dds0 = self.dds0.frequency
-        self._frequency_center_dds1 = self.dds1.frequency
-        if self._frequency_center_dds0 != self._frequency_center_dds1:
+        self._frequency_center_dds_plus = self.dds_plus.frequency
+        self._frequency_center_dds_minus = self.dds_minus.frequency
+        if self._frequency_center_dds_plus != self._frequency_center_dds_minus:
             raise ValueError("I didn't write this code to accout for different AO center frequencies. Ask me, or if I am gone, figure it out yourself. You'll have to update state_splitting_to_ao_frequency and decide how to divvy up the frequency difference between the two AOs -- maybe proportionally to their bandwidth.")
 
-        self._relative_sign = self.dds0.aom_order * self.dds1.aom_order
+        self._relative_sign = self.dds_plus.aom_order * self.dds_minus.aom_order
 
         self._frequency_array = np.array([0.,0.])
 
     @portable(flags={"fast-math"})
     def state_splitting_to_ao_frequency(self,frequency_state_splitting) -> TArray(TFloat):
         frequency_difference_aos = frequency_state_splitting / 4
-        self._frequency_array[0] = self._frequency_center_dds0 - self._relative_sign * frequency_difference_aos
-        self._frequency_array[1] = self._frequency_center_dds1 + frequency_difference_aos
+        self._frequency_array[0] = self._frequency_center_dds_plus + self._relative_sign * frequency_difference_aos
+        self._frequency_array[1] = self._frequency_center_dds_minus - frequency_difference_aos
         return self._frequency_array
     
     @kernel
     def set_transition_frequency(self,frequency_transition):
         self._frequency_array = self.state_splitting_to_ao_frequency(frequency_transition)
-        self.dds0.set_dds(frequency=self._frequency_array[0])
-        self.dds1.set_dds(frequency=self._frequency_array[1])
+        self.dds_plus.set_dds(frequency=self._frequency_array[0])
+        self.dds_minus.set_dds(frequency=self._frequency_array[1])
 
     @kernel
     def on(self):
-        self.dds0.on()
-        self.dds1.on()
+        self.dds_plus.on()
+        self.dds_minus.on()
 
     @kernel
     def off(self):
-        self.dds0.off()
-        self.dds1.off()
+        self.dds_plus.off()
+        self.dds_minus.off()
 
     @kernel
     def pulse(self,t,frequency_transition,
