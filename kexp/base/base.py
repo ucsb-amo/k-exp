@@ -125,10 +125,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.dds.ry_980.set_dds(set_stored=True)
         self.dds.ry_405.on()
         self.dds.ry_980.on()
-        self.dds.raman_c.set_dds(set_stored=True)
-        self.dds.raman_r.set_dds(set_stored=True)
-        self.dds.raman_c.on()
-        self.dds.raman_r.on()
         
     @kernel
     def init_scan_kernel(self):
@@ -151,10 +147,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.dds.ry_405.on()
         self.dds.ry_980.set_dds(set_stored=True)
         self.dds.ry_980.on()
-        self.dds.raman_c.set_dds(set_stored=True)
-        self.dds.raman_c.on()
-        self.dds.raman_r.set_dds(set_stored=True)
-        self.dds.raman_r.on()
 
         # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         delay(50.e-3)
