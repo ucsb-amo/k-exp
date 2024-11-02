@@ -22,7 +22,7 @@ class RamanBeamPair():
 
         self._frequency_array = np.array([0.,0.])
 
-    @portable(flags={"fast-math"})
+    @kernel(flags={"fast-math"})
     def state_splitting_to_ao_frequency(self,frequency_state_splitting) -> TArray(TFloat):
         frequency_difference_aos = frequency_state_splitting / 4
         self._frequency_array[0] = self._frequency_center_dds0 - self._relative_sign * frequency_difference_aos
@@ -55,9 +55,10 @@ class RamanBeamPair():
         self.off()
 
     @kernel
-    def sweep(self,t,frequency_center,
-              frequency_sweep_fullwidth,
-              n_steps):
+    def sweep(self,t,
+              frequency_center=dv,
+              frequency_sweep_fullwidth=dv,
+              n_steps=di):
         """Sweeps the transition frequency of the two-photon transition over the
         specified range.
 
@@ -79,10 +80,10 @@ class RamanBeamPair():
         df = (ff-f0)/(n_steps-1)
         dt = t / n_steps
 
-        self.set_transition_frequency(frequency=f0)
+        self.set_transition_frequency(frequency_transition=f0)
         self.on()
         for i in range(n_steps):
-            self.set_transition_frequency(frequency=f0+i*df)
+            self.set_transition_frequency(frequency_transition=f0+i*df)
             delay(dt)
         self.off()
 
