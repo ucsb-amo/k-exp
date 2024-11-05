@@ -169,6 +169,9 @@ class GaussianFit(Fit):
         return fit_mask, amplitude_guess, sigma_guess, x_center_guess, y_offset_guess
     
 class MultiGaussianFit(GaussianFit,Fit):
+    """Fits a distribution with N resolvable gaussian peaks. Returns fit
+    parameters for each gaussian from left to right.
+    """    
     def __init__(self,xdata,ydata,N_peaks,
                  debug_plots=False):
         Fit.__init__(self,xdata,ydata,20)
@@ -196,11 +199,17 @@ class MultiGaussianFit(GaussianFit,Fit):
         self.sigma = self.popt[2::3]
         self.x_center = self.popt[3::3]
 
-        for i in range(self.N_peaks):
-            self.popt_single[i] = [self.y_offset,
-                                   *self.popt[(3*i+1):(3*i+4)]]
-            self.y_fitdata_single[i] = self._fit_func(self.xdata,*self.popt_single[i])
+        # return peaks from left to right
+        idx = np.argsort(self.x_center)
+        self.amplitude = self.amplitude[idx]
+        self.sigma = self.sigma[idx]
+        self.x_center = self.x_center[idx]
 
+        for i in range(self.N_peaks):
+            self.popt_single[i] = [self.y_offset,self.amplitude[i],self.sigma[i],self.x_center[i]]
+            self.y_fitdata_single[i] = self._fit_func(self.xdata,*self.popt_single[i])
+        
+        self.area = self.amplitude * np.sqrt(2 * np.pi * self.sigma**2)
         self.y_fitdata = self._fit_func(self.xdata, *self.popt)
 
     def plot_fit(self,

@@ -160,6 +160,10 @@ class atomdata():
         self.od = self.roi.crop(self.od_raw)
         self.sum_od_x = np.sum(self.od,self.od.ndim-2)
         self.sum_od_y = np.sum(self.od,self.od.ndim-1)
+
+        self.axis_x = self.camera_params.pixel_size_m / self.camera_params.magnification * np.arange(self.sum_od_x.shape[-1])
+        self.axis_y = self.camera_params.pixel_size_m / self.camera_params.magnification * np.arange(self.sum_od_x.shape[-1])
+        
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
         
