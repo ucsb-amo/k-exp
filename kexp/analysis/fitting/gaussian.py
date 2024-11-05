@@ -255,15 +255,19 @@ class MultiGaussianFit(GaussianFit,Fit):
         Returns
         -------
         '''
-        offsets = []
-        guesses = []
-        for i in range(self.N_peaks):
-            out = self._gaussian_guesses(x,y,which_peak=i)
-            offsets.append(out[1])
-            guess = out[2:]
-            for g in guess:
-                guesses.append(g)
-        y_offset_guess = np.mean(offsets)
+        if not np.all(y == 0):
+            offsets = []
+            guesses = []
+            for i in range(self.N_peaks):
+                out = self._gaussian_guesses(x,y,which_peak=i)
+                offsets.append(out[1])
+                guess = out[2:]
+                for g in guess:
+                    guesses.append(g)
+            y_offset_guess = np.mean(offsets)
+        else:
+            guesses = [0] * 3 * self.N_peaks
+            y_offset_guess = 0
 
         bound_low = (-np.inf,)
         bound_high = (np.inf,)
@@ -293,9 +297,14 @@ class MultiGaussianFit(GaussianFit,Fit):
 
         peak_idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_peak_prominence)
         peak_idx += convwidth
-        # get the most prominent peak if > 1
+        # get the "which_peak"th most prominent peak
         prom = prop['prominences']
-        idx_idx = np.flip(np.argsort(prom))[which_peak]
+        prom_indices = np.flip(np.argsort(prom))
+        # check to see there were enough peaks found
+        if len(prom_indices) > which_peak:
+            idx_idx = prom_indices[which_peak]
+        else:
+            idx_idx = prom_indices[-1]
         peak_idx = peak_idx[idx_idx]
         prom = prom[idx_idx]
 
