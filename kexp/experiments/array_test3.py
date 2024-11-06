@@ -22,7 +22,9 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.core.reset()
+        # self.core.reset()
+
+        self.tweezer.traps[0].cubic_move(10.e-3,1.e-6,False)
 
         print(self.params.v_pd_c_gmramp_list[0])
         self.vec = self.test()

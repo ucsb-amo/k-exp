@@ -20,16 +20,23 @@ class tweezer_load(EnvExperiment, Base):
     def test(self) -> TArray(TFloat):
 
         N = 100
-        self.vec[0:N] = np.linspace(0.,10.,N)
+        self.vec[0:N] = np.linspace(10.,10.,N)
         return self.vec
+    
+    @kernel
+    def get_test(self):
+        self.vec = self.test()
 
     @kernel
     def scan_kernel(self):
         self.core.reset()
 
         print(self.params.v_pd_c_gmramp_list[0])
+        print(self.vec[0])
         self.vec = self.test()
+        # self.get_test()
         print(self.params.v_pd_c_gmramp_list[0])
+        print(self.vec[0])
 
     @kernel
     def run(self):
