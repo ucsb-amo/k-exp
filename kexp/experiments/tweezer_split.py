@@ -9,10 +9,10 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=False,camera_select='andor',save_data=False)
         
         # self.xvar('t_tof',np.linspace(500.,2200.,10)*1.e-6)
-        self.xvar('dummy',[0,0])
+        self.xvar('dummy',[0])
         self.p.t_tof = 500.e-6
         # self.p.t_tof = 2200.e-6
         # self.xvar('t_tof',[1*1.e-6]*10)
@@ -116,7 +116,7 @@ class tweezer_load(EnvExperiment, Base):
         
         self.gm(self.p.t_gm * s)
         self.ttl.pd_scope_trig.pulse(1.e-6)
-        aprint(self.p.v_pd_c_gmramp_list,self.p.v_pd_r_gmramp_list)
+        aprint(self.p.v_pd_c_gmramp_list[0],self.p.v_pd_r_gmramp_list[0])
         self.gm_ramp(self.p.t_gmramp)
 
         self.magtrap_and_load_lightsheet()
