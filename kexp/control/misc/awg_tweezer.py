@@ -148,20 +148,6 @@ class TweezerTrap():
     @kernel
     def update_amp(self,amp):
         self.amplitude = self.update_amp_rpc(amp)
-
-    def get_N_rpc(self) -> TInt32:
-        return self._N
-    
-    @kernel
-    def update_N(self):
-        self._N = self.get_N_rpc()
-
-    def get_slopes_rpc(self) -> TArray(TFloat):
-        return self.slopes
-    
-    @kernel
-    def update_slopes(self):
-        self.slopes = self.get_slopes_rpc()
     
     def compute_cubic_move(self,t_move,x_move):
         """Compute the frequency slopes required for a cubic move profile (zero
@@ -179,7 +165,7 @@ class TweezerTrap():
                             t_move,x_move)
     
     def compute_sinusoidal_modulation(self,t_move,x_amplitude,
-                              modulation_frequency) -> TArray(TFloat):
+                              modulation_frequency):
         """Compute the frequency slopes required for a sinusoidal move profile.
 
         Args:
@@ -194,14 +180,12 @@ class TweezerTrap():
         self.slopes = self.compute_slopes(t_move,
                                     self.moves.sinusoidal_modulation,
                                     x_amplitude,modulation_frequency)
-        return self.slopes
     
     
-    def compute_linear_amplitude_ramp(self,t_ramp,amp_f) -> TArray(TFloat):
+    def compute_linear_amplitude_ramp(self,t_ramp,amp_f):
         self.slopes = self.compute_slopes(t_ramp,self.moves.linear,
                                      t_ramp,self.amplitude,amp_f,
                                      frequency_slopes=False)
-        return self.slopes
 
     @kernel
     def cubic_move(self,t_move,x_move,trigger=True):
@@ -294,24 +278,6 @@ class TweezerTrap():
         if frequency_slopes:
             self.slopes = self.slopes / self.x_per_f
 
-    # @kernel
-    # def move(self,t_move,slopes,dt=dv,
-    #          trigger = True):
-    #     """Sets the timeline cursor to the current RTIO time (wall-clock), then
-    #     starts writing the slopes list to the awg.
-
-    #     Args:
-    #         compute_move_output (tuple of (float,ndarray)): A tuple containing
-    #         the time of the move and the move's frequency slopes.
-    #     """
-    #     self.core.wait_until_mu(now_mu())
-    #     self.write_move(slopes,dt)
-    #     delay(T_AWG_RPC_DELAY)
-
-    #     if trigger:
-    #         self.awg_trig_ttl.pulse(1.e-6)
-    #         delay(t_move)
-
     @kernel
     def move(self,t_move,dt=dv,
              trigger = True):
@@ -323,9 +289,7 @@ class TweezerTrap():
             the time of the move and the move's frequency slopes.
         """
         self.core.wait_until_mu(now_mu())
-        self.update_N()
-        self.update_slopes()
-        self.write_move(self.slopes[0:self._N],dt)
+        self.write_move(dt)
         delay(T_AWG_RPC_DELAY)
 
         if trigger:
@@ -343,9 +307,7 @@ class TweezerTrap():
             the time of the move and the ramp's amplitude slopes.
         """
         self.core.wait_until_mu(now_mu())
-        self.update_N()
-        self.slopes = self.get_slopes_rpc()
-        self.write_amp_ramp(self.slopes[0:self._N])
+        self.write_amp_ramp()
         delay(T_AWG_RPC_DELAY)
 
         if trigger:
@@ -353,7 +315,7 @@ class TweezerTrap():
             delay(t_move)
 
     @rpc(flags={"async"})
-    def write_move(self,slopes,dt=dv):
+    def write_move(self,dt=dv):
         """Writes the slopes list to the AWG at update interval dt.
 
         Args:
@@ -368,7 +330,7 @@ class TweezerTrap():
         self.dds.exec_at_trg()
         self.dds.write()
 
-        for slope in slopes:
+        for slope in self.slopes[0:self._N]:
             self.dds.frequency_slope(self.dds_idx,slope)
             self.dds.exec_at_trg()
         self.dds.write()
@@ -378,7 +340,7 @@ class TweezerTrap():
         self.dds.write()
 
     @rpc(flags={"async"})
-    def write_amp_ramp(self,slopes):
+    def write_amp_ramp(self):
         dt = self.p.t_tweezer_movement_dt
 
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
@@ -386,7 +348,7 @@ class TweezerTrap():
         self.dds.exec_at_trg()
         self.dds.write()
 
-        for slope in slopes:
+        for slope in self.slopes[0:self._N]:
             self.dds.amplitude_slope(self.dds_idx,slope)
             self.dds.exec_at_trg()
         self.dds.write()
