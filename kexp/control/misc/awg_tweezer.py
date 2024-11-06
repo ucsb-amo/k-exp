@@ -199,8 +199,7 @@ class TweezerTrap():
             trigger (bool): whether or not to trigger the move start.
         """
         self.compute_cubic_move(t_move,x_move)
-        self.move(t_move, trigger=trigger)
-        self.update_x(self.position + x_move)
+        self.move(t_move, self.position + x_move, trigger=trigger)
     
     @kernel
     def sine_move(self,t_mod,x_mod,f_mod,trigger=True):
@@ -213,14 +212,13 @@ class TweezerTrap():
             the move.
         """
         self.compute_sinusoidal_modulation(t_mod,x_mod,f_mod)
-        self.move(t_mod,trigger=trigger)
-        self.update_x(self.position + self.moves.sinusoidal_modulation(t_mod,x_mod,f_mod))
+        xf = self.position + self.moves.sinusoidal_modulation(t_mod,x_mod,f_mod)
+        self.move(t_mod,xf,trigger=trigger)
 
     @kernel
     def linear_amplitude_ramp(self,t_ramp,amp_f,trigger=True):
         self.compute_linear_amplitude_ramp(t_ramp,amp_f)
-        self.amp_ramp(t_ramp,trigger=trigger)
-        self.update_amp(amp_f)
+        self.amp_ramp(t_ramp,amp_f,trigger=trigger)
         
     @portable
     def x_to_f(self,x) -> TFloat:
@@ -279,7 +277,10 @@ class TweezerTrap():
             self.slopes = self.slopes / self.x_per_f
 
     @kernel
-    def move(self,t_move,dt=dv,
+    def move(self,
+             t_move,
+             x_final,
+             dt=dv,
              trigger = True):
         """Sets the timeline cursor to the current RTIO time (wall-clock), then
         starts writing the slopes list to the awg.
@@ -290,6 +291,7 @@ class TweezerTrap():
         """
         self.core.wait_until_mu(now_mu())
         self.write_move(dt)
+        self.update_x(x_final)
         delay(T_AWG_RPC_DELAY)
 
         if trigger:
@@ -297,8 +299,10 @@ class TweezerTrap():
             delay(t_move)
 
     @kernel
-    def amp_ramp(self,t_move,
-             trigger = True):
+    def amp_ramp(self,
+                 t_move,
+                 amp_final,
+                 trigger = True):
         """Sets the timeline cursor to the current RTIO time (wall-clock), then
         starts writing the amplitude slopes list to the awg.
 
@@ -308,6 +312,7 @@ class TweezerTrap():
         """
         self.core.wait_until_mu(now_mu())
         self.write_amp_ramp()
+        self.update_amp(amp_final)
         delay(T_AWG_RPC_DELAY)
 
         if trigger:
@@ -818,12 +823,6 @@ class tweezer():
     @kernel
     def trigger(self):
         self.awg_trg_ttl.pulse(1.e-6)
-    
-    @kernel
-    def move(self,tweezer_idx,
-             t_move,slopes,trigger=True):
-        self.traps[tweezer_idx].move(t_move,slopes,
-                                     trigger=trigger)
 
     @kernel
     def cubic_move(self,tweezer_idx,
