@@ -12,7 +12,7 @@ from spcm import units
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2, tweezer_xmesh
 
-from artiq.experiment import kernel, delay, parallel, TFloat, portable, TArray
+from artiq.experiment import kernel, delay, parallel, TFloat, portable, TArray, TInt32
 
 import numpy as np
 
@@ -100,6 +100,9 @@ class TweezerTrap():
         else:
             self.x_per_f = self.mesh.x_per_f_nce
 
+        self.slopes = np.zeros((100000,),dtype=float)
+        self._N = 0
+
     def update_x_rpc(self,x) -> TFloat:
         """Updates the position attribute of the tweezer on the host device.
 
@@ -128,7 +131,8 @@ class TweezerTrap():
         if from_position:
             self.frequency = self.x_to_f(self.position)
         else:
-            self.frequency = frequency
+            if frequency != dv:
+                self.frequency = frequency
         return self.frequency
 
     @kernel
@@ -144,8 +148,22 @@ class TweezerTrap():
     @kernel
     def update_amp(self,amp):
         self.amplitude = self.update_amp_rpc(amp)
+
+    def get_N_rpc(self) -> TInt32:
+        return self._N
     
-    def compute_cubic_move(self,t_move,x_move) -> TArray(TFloat):
+    @kernel
+    def update_N(self):
+        self._N = self.get_N_rpc()
+
+    def get_slopes_rpc(self) -> TArray(TFloat):
+        return self.slopes
+    
+    @kernel
+    def update_slopes(self):
+        self.slopes = self.get_slopes_rpc()
+    
+    def compute_cubic_move(self,t_move,x_move):
         """Compute the frequency slopes required for a cubic move profile (zero
         intial and final velocity, displacement x_move in time t_move).
 
@@ -156,10 +174,9 @@ class TweezerTrap():
         Returns:
             TArray(TFloat): the frequency slopes for the move.
         """        
-        slopes = self.compute_slopes(t_move,
-                                    self.moves.cubic_move,
-                                    t_move,x_move)
-        return slopes
+        self.compute_slopes(t_move,
+                            self.moves.cubic_move,
+                            t_move,x_move)
     
     def compute_sinusoidal_modulation(self,t_move,x_amplitude,
                               modulation_frequency) -> TArray(TFloat):
@@ -174,17 +191,17 @@ class TweezerTrap():
         Returns:
             TArray(TFloat): the frequency slopes for the move.
         """        
-        slopes = self.compute_slopes(t_move,
+        self.slopes = self.compute_slopes(t_move,
                                     self.moves.sinusoidal_modulation,
                                     x_amplitude,modulation_frequency)
-        return slopes
+        return self.slopes
     
     
     def compute_linear_amplitude_ramp(self,t_ramp,amp_f) -> TArray(TFloat):
-        slopes = self.compute_slopes(t_ramp,self.moves.linear,
+        self.slopes = self.compute_slopes(t_ramp,self.moves.linear,
                                      t_ramp,self.amplitude,amp_f,
                                      frequency_slopes=False)
-        return slopes
+        return self.slopes
 
     @kernel
     def cubic_move(self,t_move,x_move,trigger=True):
@@ -197,7 +214,8 @@ class TweezerTrap():
             x_move (float): the total displacement for the move.
             trigger (bool): whether or not to trigger the move start.
         """
-        self.move(t_move, self.compute_cubic_move(t_move,x_move),trigger=trigger)
+        self.compute_cubic_move(t_move,x_move)
+        self.move(t_move, trigger=trigger)
         self.update_x(self.position + x_move)
     
     @kernel
@@ -210,12 +228,14 @@ class TweezerTrap():
             modulation_frequency (float): the modulation frequency (in Hz) for
             the move.
         """
-        self.move(t_mod,self.compute_sinusoidal_modulation(t_mod,x_mod,f_mod),trigger=trigger)
+        self.compute_sinusoidal_modulation(t_mod,x_mod,f_mod)
+        self.move(t_mod,trigger=trigger)
         self.update_x(self.position + self.moves.sinusoidal_modulation(t_mod,x_mod,f_mod))
 
     @kernel
     def linear_amplitude_ramp(self,t_ramp,amp_f,trigger=True):
-        self.amp_ramp(t_ramp,self.compute_linear_amplitude_ramp(t_ramp,amp_f),trigger=trigger)
+        self.compute_linear_amplitude_ramp(t_ramp,amp_f)
+        self.amp_ramp(t_ramp,trigger=trigger)
         self.update_amp(amp_f)
         
     @portable
@@ -249,7 +269,7 @@ class TweezerTrap():
     def compute_slopes(self,t_move,
                x_vs_t_func,
                *x_vs_t_params,
-               frequency_slopes=True) -> TArray(TFloat):
+               frequency_slopes=True):
         """Compute the frequency slopes required to implement the specified move
         profile x(t) from t=0 to t=t_move. 
         
@@ -268,14 +288,32 @@ class TweezerTrap():
         """
         dt = self.p.t_tweezer_movement_dt
         tarray = np.arange(0.,t_move,dt)
-        slopes = np.diff(x_vs_t_func(tarray,*x_vs_t_params)) / dt 
+        self._N = len(tarray)
+        self.slopes[0:(self._N-1)] = np.diff(x_vs_t_func(tarray,*x_vs_t_params)) / dt 
+        self.slopes[self._N-1] = 0.
         if frequency_slopes:
-            slopes = slopes / self.x_per_f
-        slopes = np.concatenate((slopes,[0.]))
-        return slopes
+            self.slopes = self.slopes / self.x_per_f
+
+    # @kernel
+    # def move(self,t_move,slopes,dt=dv,
+    #          trigger = True):
+    #     """Sets the timeline cursor to the current RTIO time (wall-clock), then
+    #     starts writing the slopes list to the awg.
+
+    #     Args:
+    #         compute_move_output (tuple of (float,ndarray)): A tuple containing
+    #         the time of the move and the move's frequency slopes.
+    #     """
+    #     self.core.wait_until_mu(now_mu())
+    #     self.write_move(slopes,dt)
+    #     delay(T_AWG_RPC_DELAY)
+
+    #     if trigger:
+    #         self.awg_trig_ttl.pulse(1.e-6)
+    #         delay(t_move)
 
     @kernel
-    def move(self,t_move,slopes,dt=dv,
+    def move(self,t_move,dt=dv,
              trigger = True):
         """Sets the timeline cursor to the current RTIO time (wall-clock), then
         starts writing the slopes list to the awg.
@@ -285,7 +323,9 @@ class TweezerTrap():
             the time of the move and the move's frequency slopes.
         """
         self.core.wait_until_mu(now_mu())
-        self.write_move(slopes,dt)
+        self.update_N()
+        self.update_slopes()
+        self.write_move(self.slopes[0:self._N],dt)
         delay(T_AWG_RPC_DELAY)
 
         if trigger:
@@ -293,7 +333,7 @@ class TweezerTrap():
             delay(t_move)
 
     @kernel
-    def amp_ramp(self,t_move,slopes,
+    def amp_ramp(self,t_move,
              trigger = True):
         """Sets the timeline cursor to the current RTIO time (wall-clock), then
         starts writing the amplitude slopes list to the awg.
@@ -303,7 +343,9 @@ class TweezerTrap():
             the time of the move and the ramp's amplitude slopes.
         """
         self.core.wait_until_mu(now_mu())
-        self.write_amp_ramp(slopes)
+        self.update_N()
+        self.slopes = self.get_slopes_rpc()
+        self.write_amp_ramp(self.slopes[0:self._N])
         delay(T_AWG_RPC_DELAY)
 
         if trigger:
