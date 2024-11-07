@@ -34,6 +34,9 @@ class Scanner():
         # self._param_keylist_int64s = []
         self._param_keylist_arrays = []
 
+        self._dummy_array = np.zeros(10000,dtype=float)
+        self._N = 0
+
     def logspace(self,start,end,n):
         return np.logspace(np.log10(start),np.log10(end),int(n))
 
@@ -171,7 +174,9 @@ class Scanner():
         int32val = 1
         # int64val = np.int64(1)
         floatval = 0.1
-        arrayval = np.array([1.])
+        # self._dummy_array[:] = 0.
+        arrval = np.array([1.])
+
         for idx in range(len(self._param_keylist_int32s)):
             int32val = self.fetch_int32(idx)
             self._xvar_writer_int32s[idx](self,int32val)
@@ -185,8 +190,8 @@ class Scanner():
             self._xvar_writer_floats[idx](self,floatval)
 
         for idx in range(len(self._param_keylist_arrays)):
-            arrayval = self.fetch_array(idx)
-            self._xvar_writer_arrays[idx](self,arrayval)
+            N, self._dummy_array = self.fetch_array(idx)
+            self._xvar_writer_arrays[idx](self,self._dummy_array[0:N])
             
     def fetch_float(self,i) -> TFloat:
         """Returns the value of the ith experiment parameter with datatype
@@ -201,7 +206,7 @@ class Scanner():
         """        
         return vars(self.params)[self._param_keylist_floats[i]]
     
-    def fetch_array(self,i) -> TArray(TFloat):
+    def fetch_array(self,i) -> TTuple([TInt32,TArray(TFloat)]):
         """Returns the value of the ith experiment parameter with datatype
         ndarray.
 
@@ -211,8 +216,11 @@ class Scanner():
 
         Returns:
             TFloat: The value of the ith ndarray ExptParam attribute.
-        """        
-        return vars(self.params)[self._param_keylist_arrays[i]]
+            TInt: length of the array
+        """    
+        N = len(vars(self.params)[self._param_keylist_arrays[i]])
+        self._dummy_array[0:N] = vars(self.params)[self._param_keylist_arrays[i]]
+        return (N, self._dummy_array)
     
     # def fetch_int64(self,i) -> TInt64:
     #     """Returns the value of the ith experiment parameter with datatype

@@ -14,21 +14,20 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         
-        self.p.frequency_tweezer_list_ce = np.array([70.8e6, 72.1e6])
-        self.p.amp_tweezer_list_ce = np.array([0.36393715, 0.33410233])
+        self.p.frequency_tweezer_list_ce = np.array([70.25e6, 72.1e6])
+        self.p.amp_tweezer_list_ce = np.array([0.36393715, 0.5410233])
 
-        self.p.frequency_tweezer_list_nce = np.array([76.e6, 80.e6])
-        self.p.amp_tweezer_list_nce = np.array([0.19369715, 0.10826336])
+        self.p.frequency_tweezer_list_nce = np.array([78.e6, 80.e6])
+        self.p.amp_tweezer_list_nce = np.array([0.10369715, 0.10826336])
 
-        self.xvar('which_tweezers',[0,1])
-        self.xvar('repeat',range(5))
+        self.xvar('cateye',[0,1])
+        self.xvar('repeat',range(10))
+        self.p.cateye = 0
 
         self.p.t_tof = 10.e-6
         self.p.N_repeats = 1
 
         self.camera_params.amp_imaging = .12
-        self.camera_params.exposure_time = 10.e-6
-        self.p.t_imaging_pulse = self.camera_params.exposure_time
 
         self.finish_prepare(shuffle=False)
 
@@ -36,10 +35,10 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.core.wait_until_mu(now_mu())
-        if self.p.which_tweezers == 0:
+        if self.p.cateye == 1:
             self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list_ce,
                                              self.p.amp_tweezer_list_ce)
-        elif self.p.which_tweezers == 1:
+        elif self.p.cateye == 0:
             self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list_nce,
                                              self.p.amp_tweezer_list_nce)
         delay(100.*ms)
@@ -108,12 +107,6 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         if self.setup_camera:
             if self.run_info.save_data:
                 self.cleanup_scanned()
-                # self.p.frequency_tweezer_list = [self.p.frequency_tweezer_list0,
-                #                                  self.p.frequency_tweezer_list1,
-                #                                  self.p.frequency_tweezer_list2]
-                # self.p.amp_tweezer_list = [self.p.amp_tweezer_list0,
-                #                             self.p.amp_tweezer_list1,
-                #                             self.p.amp_tweezer_list2]
                 self.write_data(expt_filepath)
             else:
                 self.remove_incomplete_data()

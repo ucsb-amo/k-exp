@@ -29,11 +29,8 @@ class tweezer_xmesh():
         midpoint between two extreme tweezers.
         """
 
-        # calibration run 12039
-
-        ## calibration ROI, 'tweezer_array'
-        # roix = [180,230]
-        # roiy = [250,290]
+        # calibration run 13202 (2024/10/30)
+        # calibration ROI saved in data
 
         self.f_ce_max = 72.3e6
         self.f_ce_min = 70.e6
@@ -41,13 +38,13 @@ class tweezer_xmesh():
         self.f_nce_max = 82.e6
         self.f_nce_min = 75.5e6
 
-        self.x_and_f_ce = (1.53e-05,7.21e+07)
-        self.x_and_f_nce = (8.33e-06,7.6e+07)
-        self.x_per_f_ce = -5.27e-12
-        self.x_per_f_nce = 5.36e-12
+        self.x_and_f_ce = (1.22e-05,7.21e+07)
+        self.x_and_f_nce = (7.83e-06,7.8e+07)
+        self.x_per_f_ce = -7.05e-12
+        self.x_per_f_nce = 5.65e-12
 
         # origin wrt ROI above
-        self.x_mesh_center = 1.9051162790697675e-05
+        self.x_mesh_center = 1.808695652e-05
 
     def arrcast(self,v,dtype=float):
             if not (isinstance(v,np.ndarray) or isinstance(v,list)):

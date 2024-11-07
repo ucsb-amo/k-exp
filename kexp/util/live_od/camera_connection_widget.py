@@ -116,6 +116,9 @@ class ROISelector(QWidget):
     def setup_widgets(self):
         self.label = QLabel("ROI Selection")
         self.crop_dropdown = QComboBox()
+        self.update_rois()
+
+    def update_rois(self):
         self.load_roi_from_spreadsheet()
         self.crop_dropdown.addItems(self.roi_keys)
         

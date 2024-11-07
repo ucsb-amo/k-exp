@@ -53,13 +53,13 @@ class Fit():
     def _fit(self,x,y):
         pass
 
-    def plot_fit(self):
+    def plot_fit(self,N_interp=10000):
         plt.figure()
         plt.plot(self.xdata,self.ydata,'.',markersize=4)
-        # xplot, yplot = self.get_plot_fitdata()
-        xplot = self.xdata
-        yplot = self.y_fitdata
-        plt.plot(xplot,yplot,'--')
+        
+        xsm = np.linspace(self.xdata[0],self.xdata[-1],N_interp)
+        yfit_sm = self._fit_func(xsm,*self.popt)
+        plt.plot(xsm,yfit_sm,'--')
         plt.legend(["Data","Fit"])
 
     def remove_infnan(self,xdata,ydata):

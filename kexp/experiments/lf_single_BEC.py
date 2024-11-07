@@ -12,12 +12,12 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(160.,650.,10.)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.arange(220.,290.,2.)*1.e6)
         
         # self.p.frequency_detuned_imaging = 302.e6 # i-13.8
         # self.p.frequency_detuned_imaging = 438.e6 # i-13.4
         # self.p.frequency_detuned_imaging = 300.e6 # i-14.5
-        self.p.frequency_detuned_imaging = 255.e6 # i-13.8
+        self.p.frequency_detuned_imaging = 262.e6 # i-19.6
         
         # self.xvar('beans',[0.]*100)
         
@@ -34,10 +34,10 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_mot_load = 1.5
 
-        # self.xvar('t_tof',np.linspace(40.,2000.,7)*1.e-6)
+        self.xvar('t_tof',np.linspace(500.,1600.,10)*1.e-6)
 
         self.p.t_tof = 1500.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 20
 
         self.p.pfrac_c_gmramp_end = 0.32
         self.p.pfrac_r_gmramp_end = 0.32
@@ -68,8 +68,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.1,3.,8)) 
         self.p.v_pd_tweezer_1064_rampdown_end = .9
 
-        # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.01,.2,8))
-        self.p.t_tweezer_1064_rampdown = .9
+        # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.01,.2,20))
+        self.p.t_tweezer_1064_rampdown = .04
 
         # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.04,.099,8)) 
         # self.p.v_pd_tweezer_1064_rampdown2_end = .1
@@ -88,10 +88,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('i_evap3_current',np.linspace(192.,194.,8))
         # self.p.i_evap3_current = 192.3
 
-        self.xvar('i_lf_evap1_current',np.linspace(12.,15.,20))
+        # self.xvar('i_lf_evap1_current',np.linspace(12.,15.,20))
         # self.xvar('i_lf_evap2_current',np.linspace(12.6,14.,8))
         # self.xvar('i_lf_evap3_current',np.linspace(12.5,14.,8))
-        self.p.i_lf_evap1_current = 13.8
+        self.p.i_lf_evap1_current = 14.2
         self.p.i_lf_evap2_current = 13.1
         self.p.i_lf_evap3_current = 13.5
 
