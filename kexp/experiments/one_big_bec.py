@@ -128,10 +128,7 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.dds.ry_405.set_dds(set_stored=True)
-        self.dds.ry_405.on()
-
-        # self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
+        self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
 
@@ -176,10 +173,10 @@ class tweezer_load(EnvExperiment, Base):
                              v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         # tweezer evap 1 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
-                          v_start=self.p.v_pd_tweezer_1064_ramp_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown_end,
-                          paint=True,keep_trap_frequency_constant=True)
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
+        #                   v_start=self.p.v_pd_tweezer_1064_ramp_end,
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown_end,
+        #                   paint=True,keep_trap_frequency_constant=True)
 
         # # feshbach field ramp to field 3
         # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
@@ -202,8 +199,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
         #                      i_start=self.p.i_evap3_current,
         #                      i_end=self.p.i_end)
-        self.outer_coil.snap_off()
-        delay(10.e-3)
+        # self.outer_coil.snap_off()
+        # delay(10.e-3)
         self.lightsheet.off()
         self.tweezer.off()
 

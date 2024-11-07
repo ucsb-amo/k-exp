@@ -29,7 +29,7 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
 
         self.camera_params.amp_imaging = .12
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

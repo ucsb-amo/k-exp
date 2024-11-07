@@ -11,16 +11,20 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
-        self.p.amp_tweezer_list = [.5225,.290,.1775]
-        self.p.amp_tweezer_auto_compute = False
+        # self.p.frequency_tweezer_list = [71.3e6,76.e6,80.e6]
+        # freqs = np.linspace(78.,81.,10)*1.e6
+        # ff = [[f] for f in freqs]
+        self.p.frequency_tweezer_list = [80.e6]
+        # self.xvar('frequency_tweezer_list',ff)
+        # print(self.p.frequency_tweezer_list)
+        self.p.amp_tweezer_list = [.1775]
 
         self.p.t_tof = 300.e-6
         self.p.N_repeats = 1
 
         self.p.t_mot_load = .75
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

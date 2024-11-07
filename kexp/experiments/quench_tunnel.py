@@ -16,19 +16,22 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_tof = 1.e-6
         # self.xvar('t_tof',[1*1.e-6]*3)
 
-        # self.xvar('beans',[0]*1)
+        # self.xvar('beans',[0]*5)
 
-        self.xvar('t_tunnel',np.linspace(0.,10.,20)*1.e-3)
-        self.p.t_tunnel = 30.e-3
+        # self.xvar('t_tunnel',np.linspace(0.,500.,20)*1.e-3)
+        self.p.t_tunnel = 500.e-3
 
-        self.p.frequency_tweezer_list = [70.2e6,79.7e6]
+        self.p.frequency_tweezer_list = [70.25e6,79.7e6]
+        # self.p.frequency_tweezer_list = [70.3e6]
 
-        self.p.amp_final = .76
+        self.xvar('amp_final',np.linspace(.72,.76,20))
+        # self.p.amp_final = .76
         a_list = [0.,.24]
+        # a_list = [0.]
         self.p.amp_tweezer_list = a_list
 
         self.p.n_tweezer_ramp_steps = 100
-        self.p.t_amp_ramp = 500.e-3
+        self.p.t_amp_ramp = 100.e-3
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.5,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.5,8))
