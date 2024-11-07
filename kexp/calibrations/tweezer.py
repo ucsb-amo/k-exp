@@ -38,13 +38,11 @@ class tweezer_xmesh():
         self.f_nce_max = 82.e6
         self.f_nce_min = 75.5e6
 
-        self.x_and_f_ce = (1.22e-05,7.21e+07)
-        self.x_and_f_nce = (7.83e-06,7.8e+07)
-        self.x_per_f_ce = -7.05e-12
-        self.x_per_f_nce = 5.65e-12
-
-        # origin wrt ROI above
-        self.x_mesh_center = 1.808695652e-05
+        self.x_and_f_ce = (1.99e-05,7.21e+07)
+        self.x_and_f_nce = (1.22e-05,7.8e+07)
+        self.x_per_f_ce = -5.83e-12
+        self.x_per_f_nce = 6.48e-12
+        self.x_mesh_center = 2.197826087e-05
 
     def arrcast(self,v,dtype=float):
             if not (isinstance(v,np.ndarray) or isinstance(v,list)):

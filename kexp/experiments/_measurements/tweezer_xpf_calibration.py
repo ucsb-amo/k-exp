@@ -21,11 +21,11 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         self.p.amp_tweezer_list_nce = np.array([0.10369715, 0.10826336])
 
         self.xvar('cateye',[0,1])
-        self.xvar('repeat',range(10))
+        self.xvar('tweezer_index',[0,1])
         self.p.cateye = 0
 
         self.p.t_tof = 10.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = [1,10]
 
         self.camera_params.amp_imaging = .12
 
@@ -35,12 +35,13 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.core.wait_until_mu(now_mu())
+        idx = self.p.tweezer_index
         if self.p.cateye == 1:
-            self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list_ce,
-                                             self.p.amp_tweezer_list_ce)
+            self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list_ce[idx],
+                                             self.p.amp_tweezer_list_ce[idx])
         elif self.p.cateye == 0:
-            self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list_nce,
-                                             self.p.amp_tweezer_list_nce)
+            self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list_nce[idx],
+                                             self.p.amp_tweezer_list_nce[idx])
         delay(100.*ms)
         self.tweezer.awg_trg_ttl.pulse(1.e-6)
 
