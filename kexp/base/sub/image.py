@@ -74,6 +74,12 @@ class Image():
         with parallel:
             self.dds.d1_3d_c.off()
             self.dds.d1_3d_r.off()
+    @kernel
+    def dispersive_image(self,repeats=1,repeat_delay=1.e-3):
+        for n in range(repeats):
+            self.trigger_camera()
+            self.pulse_imaging_light(self.params.t_imaging_pulse * s)
+            delay(repeat_delay)
 
     @kernel
     def abs_image(self):
