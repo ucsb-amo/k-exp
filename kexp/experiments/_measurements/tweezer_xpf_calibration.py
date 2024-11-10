@@ -37,15 +37,15 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         self.core.wait_until_mu(now_mu())
         idx = self.p.tweezer_index
         if self.p.cateye == 1:
-            self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list_ce[idx],
-                                             self.p.amp_tweezer_list_ce[idx])
+            self.tweezer.set_static_tweezers([self.p.frequency_tweezer_list_ce[idx]],
+                                             [self.p.amp_tweezer_list_ce[idx]])
         elif self.p.cateye == 0:
-            self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list_nce[idx],
-                                             self.p.amp_tweezer_list_nce[idx])
+            self.tweezer.set_static_tweezers([self.p.frequency_tweezer_list_nce[idx]],
+                                             [self.p.amp_tweezer_list_nce[idx]])
         delay(100.*ms)
         self.tweezer.awg_trg_ttl.pulse(1.e-6)
 
-        self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
+        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -86,6 +86,24 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
                              v_start=self.p.v_pd_lightsheet_rampdown_end,
                              v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        
+        # # # tweezer evap 1 with constant trap frequency
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
+                          v_start=self.p.v_pd_tweezer_1064_ramp_end,
+                          v_end=self.p.v_pd_tweezer_1064_rampdown_end,
+                          paint=True,keep_trap_frequency_constant=True)
+        
+        # # # feshbach field ramp to field 3
+        
+        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
+                             i_start=self.p.i_evap2_current,
+                             i_end=self.p.i_evap3_current)
+        
+        # # # tweezer evap 2 with constant trap frequency
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
+                          v_start=self.p.v_pd_tweezer_1064_rampdown_end,
+                          v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
+                          paint=True,keep_trap_frequency_constant=True)
         
         self.lightsheet.off()
         self.tweezer.off()

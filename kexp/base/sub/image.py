@@ -75,7 +75,7 @@ class Image():
             self.dds.d1_3d_c.off()
             self.dds.d1_3d_r.off()
     @kernel
-    def dispersive_image(self,repeats=1,repeat_delay=1.e-3):
+    def dispersive_image(self,repeats=1,repeat_delay=100.e-3):
         for n in range(repeats):
             self.trigger_camera()
             self.pulse_imaging_light(self.params.t_imaging_pulse * s)
@@ -260,6 +260,7 @@ class Image():
     def set_high_field_imaging(self, i_outer, imaging_amp = dv):
 
         detuning = high_field_imaging_detuning(i_outer=i_outer)
+        # aprint(detuning)
         
         self.set_imaging_detuning(detuning, amp=imaging_amp)
 

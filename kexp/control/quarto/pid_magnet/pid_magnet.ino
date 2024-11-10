@@ -1,6 +1,8 @@
 #include "qCommand.h"
 qCommand qC;
 
+IntervalTimer plot;
+
 float SETPOINT1 = 0.0;
 float SETPOINT2 = 0.0;
 float P1 = 0.02;
