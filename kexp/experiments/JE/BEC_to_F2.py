@@ -12,8 +12,8 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.xvar('frequency_detuned_imaging',
-                  np.arange(-770.,-720.,5)*1.e6)
+        # self.xvar('frequency_detuned_imaging',
+        #           np.arange(-770.,-720.,5)*1.e6)
         
         self.p.t_mot_load = 1.5
         
@@ -74,7 +74,7 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
+        self.set_high_field_imaging(i_outer=192.3)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
 
@@ -92,7 +92,7 @@ class tweezer_load(EnvExperiment, Base):
         self.outer_coil.on()
         delay(1.e-3)
         self.outer_coil.set_voltage()
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_evap1_current)
         
@@ -102,7 +102,7 @@ class tweezer_load(EnvExperiment, Base):
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
         
         # feshbach field ramp to field 2
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_evap1_current,
                              i_end=self.p.i_evap2_current)
         
@@ -125,7 +125,7 @@ class tweezer_load(EnvExperiment, Base):
         #                   paint=True,keep_trap_frequency_constant=True)
 
         # # feshbach field ramp to field 3
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp2,
                              i_start=self.p.i_evap2_current,
                              i_end=self.p.i_evap3_current)
         
@@ -145,18 +145,19 @@ class tweezer_load(EnvExperiment, Base):
         # self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
         #                      i_start=self.p.i_evap3_current,
         #                      i_end=self.p.i_end)
+        delay(30.e-3)
+        self.dac.outer_coil_pid.set(v=4.8075)
+        self.ttl.outer_coil_pid_enable.on()
+        delay(1.)
 
-        self.dac.out
-        self.ttl.outer_coil_pid_enable
-        
-        if self.p.ifdosweep:
-            self.rf.sweep(t=self.p.t_rf_state_xfer_sweep, frequency_center=self.p.frequency_rf_sweep_state_prep_center)
-            # delay(self.p.t_fake_ramsey_delay)
-            # self.rf.sweep(t=self.p.t_rf_state_xfer_sweep, frequency_center=self.p.frequency_rf_sweep_state_prep_center)
-        else:
-            delay(self.p.t_rf_state_xfer_sweep)
-            # delay(self.p.t_fake_ramsey_delay)
-            # delay(self.p.t_rf_state_xfer_sweep)
+        # if self.p.ifdosweep:
+        #     self.rf.sweep(t=self.p.t_rf_state_xfer_sweep, frequency_center=self.p.frequency_rf_sweep_state_prep_center)
+        #     # delay(self.p.t_fake_ramsey_delay)
+        #     # self.rf.sweep(t=self.p.t_rf_state_xfer_sweep, frequency_center=self.p.frequency_rf_sweep_state_prep_center)
+        # else:
+        #     delay(self.p.t_rf_state_xfer_sweep)
+        #     # delay(self.p.t_fake_ramsey_delay)
+        #     # delay(self.p.t_rf_state_xfer_sweep)
         
         self.lightsheet.off()
         self.tweezer.off()
@@ -166,6 +167,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.outer_coil.off()
         self.outer_coil.discharge()
+        self.ttl.outer_coil_pid_enable.off()
 
     @kernel
     def run(self):
