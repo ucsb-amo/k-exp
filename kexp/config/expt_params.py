@@ -64,7 +64,7 @@ class ExptParams():
         self.t_tweezer_1064_ramp = .17
         self.t_tweezer_1064_rampdown = .03
         self.t_tweezer_1064_rampdown2 = .4
-        self.t_tweezer_1064_rampdown3 = .2
+        self.t_tweezer_1064_rampdown3 = .1
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 20.e-6
@@ -154,8 +154,8 @@ class ExptParams():
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.32
-        self.pfrac_r_gmramp_end = 0.32
+        self.pfrac_c_gmramp_end = 0.38
+        self.pfrac_r_gmramp_end = 0.27
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -187,7 +187,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.9
-        self.v_pd_lightsheet_rampdown_end = 5.4 #4.16
+        self.v_pd_lightsheet_rampdown_end = 5.5 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -199,9 +199,9 @@ class ExptParams():
         self.v_pd_tweezer_1064 = 5.
 
         self.v_pd_tweezer_1064_ramp_end = 9.9
-        self.v_pd_tweezer_1064_rampdown_end = .9
-        self.v_pd_tweezer_1064_rampdown2_end = .07
-        self.v_pd_tweezer_1064_rampdown3_end = 1.
+        self.v_pd_tweezer_1064_rampdown_end = .7
+        self.v_pd_tweezer_1064_rampdown2_end = .06
+        self.v_pd_tweezer_1064_rampdown3_end = 1.4
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
@@ -275,8 +275,8 @@ class ExptParams():
 
         # high field evap
         self.i_evap1_current = 192.
-        self.i_evap2_current = 193.9
-        self.i_evap3_current = 193.2
+        self.i_evap2_current = 193.8
+        self.i_evap3_current = 193.6
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.
