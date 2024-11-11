@@ -39,8 +39,8 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.5,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.5,8))
-        self.pfrac_c_gmramp_end = 0.38
-        self.pfrac_r_gmramp_end = 0.27
+        # self.pfrac_c_gmramp_end = 0.38
+        # self.pfrac_r_gmramp_end = 0.27
 
         # self.xvar('i_evap1_current',np.linspace(190.,195.,20))
         # self.p.i_evap1_current = 192.
@@ -50,10 +50,10 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(4.,7.5,8))
         # self.p.v_pd_lightsheet_rampdown_end = 3.
-        self.p.v_pd_lightsheet_rampdown_end = 5.5
+        # self.p.v_pd_lightsheet_rampdown_end = 5.5
 
         # self.xvar('i_evap2_current',np.linspace(192.5,194.,8))
-        self.p.i_evap2_current = 193.8
+        # self.p.i_evap2_current = 193.8
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.3,8))
         # self.p.t_tweezer_1064_ramp = .17
@@ -65,22 +65,22 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_tweezer_1064_rampdown = .03
 
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(0.1,1.5,8))
-        self.p.v_pd_tweezer_1064_rampdown_end = .7
+        # self.p.v_pd_tweezer_1064_rampdown_end = .7
 
         # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(0.04,.099,5))
-        self.p.v_pd_tweezer_1064_rampdown2_end = .06
+        # self.p.v_pd_tweezer_1064_rampdown2_end = .06
 
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.05,.6,8))
-        self.p.t_tweezer_1064_rampdown2 = .4
+        # self.p.t_tweezer_1064_rampdown2 = .4
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.7,2.,10))
-        self.p.v_pd_tweezer_1064_rampdown3_end = 1.4
+        # self.p.v_pd_tweezer_1064_rampdown3_end = 1.4
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.02,.3,8))
-        self.p.t_tweezer_1064_rampdown3 = .1
+        # self.p.t_tweezer_1064_rampdown3 = .1
         
         # self.xvar('i_evap3_current',np.linspace(192.5,194.,8))
-        self.p.i_evap3_current = 193.6
+        # self.p.i_evap3_current = 193.6
 
         self.p.t_tweezer_ramp_back_up = 100.e-3
         self.p.v_pd_ramp_back_up = 1.3
