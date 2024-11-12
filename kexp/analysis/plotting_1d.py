@@ -5,6 +5,7 @@ from kexp.analysis import atomdata
 from kexp.analysis.helper import xlabels_1d
 
 def plot_mixOD(ad:atomdata,
+               ndarray=[],
                xvarformat="1.2f",
                xvarmult = 1.,
                lines=False,
@@ -12,9 +13,14 @@ def plot_mixOD(ad:atomdata,
                figsize=[],
                aspect='auto'):
     # Extract necessary information
-    od = ad.od
+    
     xvarnames = ad.xvarnames
     xvars = ad.xvars
+
+    if isinstance(ndarray,np.ndarray):
+        od = ndarray
+    else:
+        od = ad.od
 
     if max_od == 0.:
         max_od = np.max(od)
