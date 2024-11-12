@@ -12,73 +12,82 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
-        # self.xvar('t_tof',np.linspace(1000.,2800.,10)*1.e-6)
-        self.p.t_tof = 1.e-6
-        # self.xvar('t_tof',[1*1.e-6]*3)
+        # self.xvar('t_tof',np.linspace(500.,2200.,10)*1.e-6)
+        self.p.t_tof = 500.e-6
+        # self.p.t_tof = 2200.e-6
+        # self.xvar('t_tof',[1*1.e-6]*10)
 
         # self.xvar('beans',[0]*1)
 
-        self.xvar('t_tunnel',np.linspace(0.,10.,20)*1.e-3)
-        self.p.t_tunnel = 30.e-3
+        # self.xvar('x_move',np.linspace(0.,5.,5)*1.e-6)
+        # self.params.x_move = 2.5e-6
+        self.params.x_move = 0.
 
-        self.p.frequency_tweezer_list = [70.2e6,79.7e6]
+        # self.xvar('t_tunnel',np.linspace(0.,60.,20)*1.e-3)
+        self.p.t_tunnel = 0.e-3
 
-        self.p.amp_final = .76
-        a_list = [0.,.24]
+        self.p.t_tweezer_single_move = 10.e-3
+
+        self.p.frequency_tweezer_list = [71.68e6,79.e6]
+
+        # ass = np.linspace(.79,.81,10)
+        # a_lists = [[ass1,.19] for ass1 in ass]
+        # self.xvar('amp_tweezer_list',a_lists)
+
+        a_list = [.795,.196]
+        # a_list = [.7,.2]
         self.p.amp_tweezer_list = a_list
 
-        self.p.n_tweezer_ramp_steps = 100
-        self.p.t_amp_ramp = 500.e-3
+        self.p.t_amp_ramp = 1.e-3
+        self.p.amp_final = .786
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.5,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.5,8))
-        self.p.pfrac_c_gmramp_end = 0.32
-        self.p.pfrac_r_gmramp_end = 0.32
-
-        # self.xvar('t_lightsheet_rampup',np.linspace(.1,1.5,15))
-        # self.xvar('t_magtrap_ramp',np.linspace(.5,1.5,12))
-        # self.p.t_lightsheet_rampup = 
-        self.p.t_magtrap_ramp = .5
+        # self.tweezer.add_tweezer_list(position_list=[8.85e-6,0.8e-6],
+        #                               cateye_list=[1,0],
+        #                               amplitude_list=[.752,.245])
 
         # self.xvar('i_evap1_current',np.linspace(190.,195.,20))
-        self.p.i_evap1_current = 192.
-        # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
-        self.p.t_lightsheet_rampdown = .16
+        # self.p.i_evap1_current = 192.
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,8.,6))
+        # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
+        # self.p.t_lightsheet_rampdown = .16
+
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,10))
         # self.p.v_pd_lightsheet_rampdown_end = 3.
-        self.p.v_pd_lightsheet_rampdown_end = 5.4
+        self.p.v_pd_lightsheet_rampdown_end = 5.2
 
         # self.xvar('i_evap2_current',np.linspace(192.5,194.5,8))
-        self.p.i_evap2_current = 193.9
+        # self.p.i_evap2_current = 192.8
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.3,20))
-        self.p.t_tweezer_1064_ramp = .17
+        # self.p.t_tweezer_1064_ramp = .17
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.,-1.,20))
-        self.p.v_tweezer_paint_amp_max = -3.5
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.,0.,10))
+        self.p.v_tweezer_paint_amp_max = -3.3
 
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.012,.1,8))
-        self.p.t_tweezer_1064_rampdown = .03
+        # self.p.t_tweezer_1064_rampdown = .03
 
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(0.1,1.5,8))
-        self.p.v_pd_tweezer_1064_rampdown_end = .9
+        # self.p.v_pd_tweezer_1064_rampdown_end = .9
+
+        # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(0.04,.099,5))
+        # self.p.v_pd_tweezer_1064_rampdown_end = .9
 
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.1,.8,8))
-        self.p.t_tweezer_1064_rampdown2 = .4
+        # self.p.t_tweezer_1064_rampdown2 = .4
 
-        # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.7,1.6,20))
-        self.p.v_pd_tweezer_1064_rampdown3_end = 1.
-        # self.p.v_pd_tweezer_1064_rampdown3_end = 3.
+        # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.3,3.,20))
+        self.p.v_pd_tweezer_1064_rampdown3_end = .85
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.02,.5,8))
-        self.p.t_tweezer_1064_rampdown3 = .2
+        # self.p.t_tweezer_1064_rampdown3 = .2
         
-        # self.xvar('i_evap3_current',np.linspace(193.,195.,20))
-        self.p.i_evap3_current = 193.2
+        # self.xvar('i_evap3_current',np.linspace(192.5,194.3,8))
+        # self.p.i_evap3_current = 193.2
 
         # self.p.t_tof = 800.e-6
-        self.p.N_repeats = 1
+        # self.p.N_repeats = 300
+        self.p.N_repeats = 400
 
         self.p.t_mot_load = 1.
 
@@ -130,12 +139,12 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False)
         
-        # # # lightsheet ramp down (to off)
+        # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
                              v_start=self.p.v_pd_lightsheet_rampdown_end,
                              v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
-        # # # tweezer evap 1 with con\stant trap frequency
+        # # # tweezer evap 1 with constant trap frequency
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
                           v_start=self.p.v_pd_tweezer_1064_ramp_end,
                           v_end=self.p.v_pd_tweezer_1064_rampdown_end,
@@ -159,11 +168,12 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        self.tweezer.linear_amplitude_ramp(0,self.p.t_amp_ramp,self.p.amp_final)
+        # self.tweezer.linear_amplitude_ramp(0,self.p.t_amp_ramp,self.p.amp_final)
+        
+        self.lightsheet.off()
 
         delay(self.p.t_tunnel)
 
-        self.lightsheet.off()
         self.tweezer.off()
 
         delay(self.p.t_tof)
