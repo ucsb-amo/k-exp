@@ -72,49 +72,48 @@ class DataSaver():
 
     def create_data_file(self,expt):
 
-        if expt.setup_camera:
+        pwd = os.getcwd()
 
-            pwd = os.getcwd()
+        check_for_mapped_data_dir()
+        os.chdir(data_dir)
 
-            check_for_mapped_data_dir()
-            os.chdir(data_dir)
+        fpath, folder = self._data_path(expt.run_info)
 
-            fpath, folder = self._data_path(expt.run_info)
+        if not os.path.exists(folder):
+            os.mkdir(folder)
 
-            if not os.path.exists(folder):
-                os.mkdir(folder)
+        expt.run_info.filepath = fpath
+        expt.run_info.xvarnames = expt.xvarnames
 
-            expt.run_info.filepath = fpath
-            expt.run_info.xvarnames = expt.xvarnames
+        f = h5py.File(fpath,'w')
+        data = f.create_group('data')
 
-            f = h5py.File(fpath,'w')
-            data = f.create_group('data')
+        f.attrs['camera_ready'] = 0
+        f.attrs['camera_ready_ack'] = 0
+        
+        f.attrs['xvarnames'] = expt.xvarnames
+        data.create_dataset('images',data=expt.images)
+        data.create_dataset('image_timestamps',data=expt.image_timestamps)
+        if expt.sort_idx:
+            data.create_dataset('sort_idx',data=expt.sort_idx)
+            data.create_dataset('sort_N',data=expt.sort_N)
+        
+        # store run info as attrs
+        self._class_attr_to_attr(f,expt.run_info)
+        # also store run info as dataset
+        runinfo_dset = f.create_group('run_info')
+        self._class_attr_to_dataset(runinfo_dset,expt.run_info)
+        params_dset = f.create_group('params')
+        self._class_attr_to_dataset(params_dset,expt.params)
+        cam_dset = f.create_group('camera_params')
+        self._class_attr_to_dataset(cam_dset,expt.camera_params)
+        
+        f.close()
 
-            f.attrs['camera_ready'] = 0
-            f.attrs['camera_ready_ack'] = 0
-            
-            f.attrs['xvarnames'] = expt.xvarnames
-            data.create_dataset('images',data=expt.images)
-            data.create_dataset('image_timestamps',data=expt.image_timestamps)
-            if expt.sort_idx:
-                data.create_dataset('sort_idx',data=expt.sort_idx)
-                data.create_dataset('sort_N',data=expt.sort_N)
-            
-            # store run info as attrs
-            self._class_attr_to_attr(f,expt.run_info)
-            # also store run info as dataset
-            runinfo_dset = f.create_group('run_info')
-            self._class_attr_to_dataset(runinfo_dset,expt.run_info)
-            params_dset = f.create_group('params')
-            self._class_attr_to_dataset(params_dset,expt.params)
-            cam_dset = f.create_group('camera_params')
-            self._class_attr_to_dataset(cam_dset,expt.camera_params)
-            
-            f.close()
+        os.chdir(pwd)
 
-            os.chdir(pwd)
-
-            return fpath
+        return fpath
+        
 
     def _class_attr_to_dataset(self,dset,obj):
         try:
@@ -139,12 +138,17 @@ class DataSaver():
         except Exception as e:
             print(e)
 
-    def _data_path(self,run_info):
+    def _data_path(self,run_info,lite=False):
+        this_data_dir = data_dir
         run_id_str = f"{str(run_info.run_id).zfill(7)}"
-        expt_class = run_info.expt_class
-        datetime_str = run_info.run_datetime_str
+        expt_class = self._bytes_to_str(run_info.expt_class)
+        datetime_str = self._bytes_to_str(run_info.run_datetime_str)
+        if lite:
+            run_id_str += "_lite"
+            this_data_dir = os.path.join(data_dir,"_lite")
         filename = run_id_str + "_" + datetime_str + "_" + expt_class + ".hdf5"
-        filepath_folder = os.path.join(data_dir,run_info.run_date_str)
+        filepath_folder = os.path.join(this_data_dir,
+                                       self._bytes_to_str(run_info.run_date_str))
         filepath = os.path.join(filepath_folder,filename)
         return filepath, filepath_folder
 
@@ -153,6 +157,11 @@ class DataSaver():
 
     def _get_rid(self):
         return get_run_id()
+    
+    def _bytes_to_str(self,attr):
+        if isinstance(attr,bytes):
+            attr = attr.decode("utf-8")
+        return attr
 
 class DataVault():
     def __init__(self,atomdata_list=[],datalist_path=[]):
