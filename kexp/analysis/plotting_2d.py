@@ -3,6 +3,7 @@ import numpy as np
 from kexp.analysis import atomdata
 
 def plot_image_grid(ad:atomdata,
+                    ndarray = [],
                     xvarformat="1.2f",
                      xvar0format="",
                      xvar1format="",
@@ -15,7 +16,11 @@ def plot_image_grid(ad:atomdata,
     if not xvar1format:
         xvar1format = xvarformat
     # Extract necessary attributes
-    od = ad.od
+    if isinstance(ndarray,np.ndarray):
+        od = ndarray
+    else:
+        od = ad.od
+        
     if max_od == 0.:
         max_od = np.max(od)
     xvars = ad.xvars

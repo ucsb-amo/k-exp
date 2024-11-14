@@ -75,7 +75,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_imaging_pulse',np.linspace(1.e-6,20.e-6,20))
         self.p.t_imaging_pulse = 10.e-6
 
-        self.xvar('detuning_dispersive_imaging',np.arange(-700.e6,-620.e6,6.e6))
+        self.xvar('detuning_dispersive_imaging',np.arange(-700.e6,-500.e6,5.e6))
         # self.xvar('detuning_dispersive_imaging',np.arange(-625.e6,-610.e6,1.e6))
         self.p.detuning_dispersive_imaging = -686.e6
 
@@ -143,18 +143,18 @@ class tweezer_load(EnvExperiment, Base):
                              i_start=self.p.i_evap2_current,
                              i_end=self.p.i_evap3_current)
         
-        # tweezer evap 2 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
-                          v_start=self.p.v_pd_tweezer_1064_rampdown_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
-                          paint=True,keep_trap_frequency_constant=True)
+        # # tweezer evap 2 with constant trap frequency
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
+        #                   v_start=self.p.v_pd_tweezer_1064_rampdown_end,
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
+        #                   paint=True,keep_trap_frequency_constant=True)
         
-        # tweezer evap 3 with constant trap frequency
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
-                          v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
-                          paint=True,keep_trap_frequency_constant=True,low_power=True)
+        # # tweezer evap 3 with constant trap frequency
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
+        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
+        #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
         
         self.lightsheet.off()
 
