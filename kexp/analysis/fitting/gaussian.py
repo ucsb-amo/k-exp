@@ -59,9 +59,9 @@ class GaussianFit(Fit):
     def _gaussian_guesses(self,x,y,
                           which_peak,
                           fractional_peak_prominence=0.01,
-                          fractional_peak_height_at_width=0.5,
-                          px_boxcar_smoothing_width=3,
-                          use_peak_bases=True):
+                          fractional_peak_height_at_width=0.4,
+                          px_boxcar_smoothing_width=10,
+                          use_peak_bases=False):
         # smooth the data
         convwidth = px_boxcar_smoothing_width
         ysm = np.convolve(y,[1/convwidth]*convwidth,mode='same')
