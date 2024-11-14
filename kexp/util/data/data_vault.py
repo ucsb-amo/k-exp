@@ -139,12 +139,15 @@ class DataSaver():
         except Exception as e:
             print(e)
 
-    def _data_path(self,run_info):
+    def _data_path(self,run_info,lite=False):
         run_id_str = f"{str(run_info.run_id).zfill(7)}"
-        expt_class = run_info.expt_class
-        datetime_str = run_info.run_datetime_str
+        expt_class = self._bytes_to_str(run_info.expt_class)
+        datetime_str = self._bytes_to_str(run_info.run_datetime_str)
+        if lite:
+            run_id_str += "_lite"
         filename = run_id_str + "_" + datetime_str + "_" + expt_class + ".hdf5"
-        filepath_folder = os.path.join(data_dir,run_info.run_date_str)
+        filepath_folder = os.path.join(data_dir,
+                                       self._bytes_to_str(run_info.run_date_str))
         filepath = os.path.join(filepath_folder,filename)
         return filepath, filepath_folder
 
@@ -153,6 +156,11 @@ class DataSaver():
 
     def _get_rid(self):
         return get_run_id()
+    
+    def _bytes_to_str(self,attr):
+        if isinstance(attr,bytes):
+            attr = attr.decode("utf-8")
+        return attr
 
 class DataVault():
     def __init__(self,atomdata_list=[],datalist_path=[]):
