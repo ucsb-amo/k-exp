@@ -17,13 +17,15 @@ class ROI():
                  run_id=0,
                  roi_id=None,
                  key="",
-                 use_saved_roi=True):
+                 use_saved_roi=True,
+                 lite=False):
         self.roix = [-1,-1]
         self.roiy = [-1,-1]
         self.key = key
         self.run_id = run_id
         self.load_roi(roi_id,
-                      use_saved=use_saved_roi)
+                      use_saved=use_saved_roi,
+                      lite=lite)
 
     def crop(self,OD):
         """Crops the given ndarray according to the ROI.
@@ -40,7 +42,7 @@ class ROI():
         cropOD = OD.take(idx_y,axis=OD.ndim-2).take(idx_x,axis=OD.ndim-1)
         return cropOD
 
-    def load_roi(self,roi_id=None,use_saved=True):
+    def load_roi(self,roi_id=None,use_saved=True,lite=False):
         """Loads an ROI according to the provided roi_id.
 
         Args:
@@ -56,7 +58,7 @@ class ROI():
         """
         
         # Check for ROI saved in the current data file.
-        saved_roi_bool = self.read_roi_from_h5()
+        saved_roi_bool = self.read_roi_from_h5(lite=lite)
         if roi_id == None:
             if saved_roi_bool and use_saved:
                 print("Using saved ROI.")
@@ -125,7 +127,7 @@ class ROI():
             py, px = f['data']['images'].shape[-2:]
         return px, py
 
-    def read_roi_from_h5(self, run_id=[]):
+    def read_roi_from_h5(self, run_id=[], lite=False):
         """Looks in the hdf5 file with the corresponding run ID and attempts to
         read out a saved ROI. Returns True if successful and False otherwise.
 
@@ -139,7 +141,7 @@ class ROI():
         if run_id == []:
             run_id = self.run_id
         try:
-            fpath, run_id = st.get_data_file(run_id)
+            fpath, run_id = st.get_data_file(run_id,lite)
             with h5py.File(fpath) as f:
                 roix = f.attrs['roix']
                 roiy = f.attrs['roiy']

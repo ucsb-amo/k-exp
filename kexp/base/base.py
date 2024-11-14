@@ -82,7 +82,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.tweezer.add_tweezer_list()
         self.tweezer.save_trap_list()
 
-        self.data_filepath = self.ds.create_data_file(self)
+        if self.setup_camera:
+            self.data_filepath = self.ds.create_data_file(self)
 
         self.generate_assignment_kernels()
     

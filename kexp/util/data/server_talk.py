@@ -13,7 +13,18 @@ FIRST_DATA_FOLDER_DATE = datetime(2023,6,22)
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
 SOUNDS_DIR = os.path.join(DATA_DIR,'done_sounds')
 
-def get_data_file(idx=0, path=""):
+def set_data_dir(lite=False):
+    global DATA_DIR
+    global DATA_DIR_FILE_DEPTH_IDX
+
+    DATA_DIR = os.getenv("data")
+    DATA_DIR_FILE_DEPTH_IDX = len(DATA_DIR.split('\\')[0:-1]) - 2
+
+    if lite:
+        DATA_DIR = os.path.join(DATA_DIR,"_lite")
+        DATA_DIR_FILE_DEPTH_IDX += 1
+
+def get_data_file(idx=0, path="", lite=False):
     '''
     Returns the data file path corresponding to index idx. For idx > 0, idx is
     intepreted as a run ID. For idx = 0, gets the latest data file path. For idx
@@ -38,64 +49,68 @@ def get_data_file(idx=0, path=""):
     int: the run ID for the specified data file
     '''
     if path == "":
-        latest_file = get_latest_data_file()
-        latest_rid = run_id_from_filepath(latest_file)
+        latest_file = get_latest_data_file(lite)
+        latest_rid = run_id_from_filepath(latest_file,lite)
         if idx == 0:
             file = latest_file
         if idx <= 0:
-            file = recurse_find_data_file(latest_rid+idx)
+            file = recurse_find_data_file(latest_rid+idx,lite)
         if idx > 0:
             if latest_rid - idx < 10000:
-                file = recurse_find_data_file(idx)
+                file = recurse_find_data_file(idx,lite)
             else:
-                file = all_glob_find_data_file(idx)
+                file = all_glob_find_data_file(idx,lite)
     else:
         if path.endswith('.hdf5'):
             file = path
         else:
             raise ValueError("The provided path is not a hdf5 file.")
         
-    rid = run_id_from_filepath(file)
+    rid = run_id_from_filepath(file,lite)
     return file, rid
 
-def check_for_mapped_data_dir(data_dir=DATA_DIR):
-    if not os.path.exists(data_dir):
-        print(f"Data dir ({data_dir}) not found. Attempting to re-map network drives.")
+def check_for_mapped_data_dir():
+    set_data_dir()
+    if not os.path.exists(DATA_DIR):
+        print(f"Data dir ({DATA_DIR}) not found. Attempting to re-map network drives.")
         cmd = MAP_BAT_PATH         
         result = subprocess.run(cmd, creationflags=subprocess.CREATE_NO_WINDOW)
-        if not os.path.exists(data_dir):
+        if not os.path.exists(DATA_DIR):
             raise ValueError(f"Data dir still not found. Are you connected to the physics network?") 
         else:
             print("Network drives successfully mapped.")
 
-def get_latest_date_folder(days_ago=0):
+def get_latest_date_folder(lite=False,days_ago=0):
+    set_data_dir(lite)
     date = datetime.today() - timedelta(days=days_ago)
     date_str = date.strftime('%Y-%m-%d')
     folderpath=os.path.join(DATA_DIR,date_str)
     if not os.path.exists(folderpath) or not os.listdir(folderpath):
-        folderpath = get_latest_date_folder(days_ago+1)
+        folderpath = get_latest_date_folder(lite,days_ago+1)
     return folderpath
     
-def get_latest_data_file():
+def get_latest_data_file(lite=False):
     check_for_mapped_data_dir()
-    folderpath = get_latest_date_folder()
+    folderpath = get_latest_date_folder(lite)
     pattern = os.path.join(folderpath,'*.hdf5')
     latest_file = max(glob.iglob(pattern),key=os.path.getmtime)
     return latest_file
 
-def recurse_find_data_file(r_id,days_ago=0):
+def recurse_find_data_file(r_id,lite=False,days_ago=0):
     date = datetime.today() - timedelta(days=days_ago)
 
     if date < FIRST_DATA_FOLDER_DATE:
         raise ValueError(f"Data file with run ID {r_id:1.0f} was not found.")
     
     date_str = date.strftime('%Y-%m-%d')
+
+    set_data_dir(lite)
     folderpath=os.path.join(DATA_DIR,date_str)
 
     if os.path.exists(folderpath):
         pattern = os.path.join(folderpath,'*.hdf5')
         files = np.array(list(glob.iglob(pattern)))
-        r_ids = np.array([run_id_from_filepath(file) for file in files])
+        r_ids = np.array([run_id_from_filepath(file,lite) for file in files])
 
         files_mask = (r_id == r_ids)
         file_with_rid = files[files_mask]
@@ -107,24 +122,28 @@ def recurse_find_data_file(r_id,days_ago=0):
             file_with_rid = file_with_rid[0]
         
         if not file_with_rid:
-            file_with_rid = recurse_find_data_file(r_id,days_ago+1)
+            file_with_rid = recurse_find_data_file(r_id,lite,days_ago+1)
     else:
-        file_with_rid = recurse_find_data_file(r_id,days_ago+1)
+        file_with_rid = recurse_find_data_file(r_id,lite,days_ago+1)
     return file_with_rid
 
-def all_glob_find_data_file(run_id):
+def all_glob_find_data_file(run_id,lite=False):
+    set_data_dir(lite)
     folderpath=os.path.join(DATA_DIR,'*','*.hdf5')
     list_of_files = glob.glob(folderpath)
-    rids = [run_id_from_filepath(file) for file in list_of_files]
+    rids = [run_id_from_filepath(file,lite) for file in list_of_files]
     rid_idx = rids.index(run_id)
     file = list_of_files[rid_idx]
     return file
 
-def run_id_from_filepath(filepath):
+def run_id_from_filepath(filepath,lite=False):
+    set_data_dir(lite)
     run_id = int(filepath.split("_")[DATA_DIR_FILE_DEPTH_IDX].split("\\")[-1])
     return run_id
 
 def get_run_id():
+    set_data_dir()
+
     pwd = os.getcwd()
     os.chdir(DATA_DIR)
     with open(RUN_ID_PATH,'r') as f:
@@ -133,6 +152,8 @@ def get_run_id():
     return int(rid)
 
 def update_run_id(run_info):
+    set_data_dir()
+
     pwd = os.getcwd()
     os.chdir(DATA_DIR)
 
@@ -143,6 +164,7 @@ def update_run_id(run_info):
     os.chdir(pwd)
 
 def play_random_sound():
+    set_data_dir()
     files = [f for f in os.listdir(SOUNDS_DIR) if os.path.isfile(os.path.join(SOUNDS_DIR, f))]
     file = random.choice(files)
     winsound.PlaySound(os.path.join(SOUNDS_DIR,file), winsound.SND_FILENAME)

@@ -60,8 +60,9 @@ class atomdata():
     Use to store and do basic analysis on data for every experiment.
     '''
     def __init__(self, idx=0, roi_id=None, path = "",
-                  skip_saved_roi = False,
-                  transpose_idx = [], avg_repeats = False):
+                 lite = False,
+                 skip_saved_roi = False,
+                 transpose_idx = [], avg_repeats = False):
         '''
         Returns the atomdata stored in the `idx`th newest file at `path`.
 
@@ -89,7 +90,7 @@ class atomdata():
         ad: atomdata
         '''
 
-        self._load_data(idx,path)
+        self._load_data(idx,path,lite)
 
         ### Helper objects
         self._ds = DataSaver()
@@ -98,7 +99,8 @@ class atomdata():
         self._analysis_tags = analysis_tags(roi_id,self.run_info.absorption_image)
         self.roi = ROI(run_id = self.run_info.run_id,
                        roi_id = roi_id,
-                       use_saved_roi = not skip_saved_roi)
+                       use_saved_roi = not skip_saved_roi,
+                       lite = lite)
 
         self._unshuffle_old_data()
         self._initial_analysis(transpose_idx,avg_repeats)
@@ -456,9 +458,9 @@ class atomdata():
             dealer.scan_xvars.append(this_xvar)
         return dealer
 
-    def _load_data(self, idx=0, path = ""):
+    def _load_data(self, idx=0, path = "", lite=False):
 
-        file, rid = st.get_data_file(idx,path)
+        file, rid = st.get_data_file(idx,path,lite)
     
         print(f"run id {rid}")
         with h5py.File(file,'r') as f:
