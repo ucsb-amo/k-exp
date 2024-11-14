@@ -90,6 +90,8 @@ class atomdata():
         ad: atomdata
         '''
 
+        self._lite = lite
+
         self._load_data(idx,path,lite)
 
         ### Helper objects
@@ -100,7 +102,7 @@ class atomdata():
         self.roi = ROI(run_id = self.run_info.run_id,
                        roi_id = roi_id,
                        use_saved_roi = not skip_saved_roi,
-                       lite = lite)
+                       lite = self._lite)
 
         self._unshuffle_old_data()
         self._initial_analysis(transpose_idx,avg_repeats)
@@ -129,7 +131,7 @@ class atomdata():
         self.roi.save_roi_excel(key)
 
     def save_roi_h5(self):
-        self.roi.save_roi_h5()
+        self.roi.save_roi_h5(lite=self._lite)
             
     ### Analysis
 

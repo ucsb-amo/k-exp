@@ -168,3 +168,58 @@ def play_random_sound():
     files = [f for f in os.listdir(SOUNDS_DIR) if os.path.isfile(os.path.join(SOUNDS_DIR, f))]
     file = random.choice(files)
     winsound.PlaySound(os.path.join(SOUNDS_DIR,file), winsound.SND_FILENAME)
+
+def create_lite_copy(run_idx,roi_id=None,use_saved_roi=True):
+    from kexp.util.data import RunInfo, DataSaver
+    from kexp.analysis.atomdata import unpack_group
+    import h5py
+    from kexp.analysis import ROI
+
+    original_data_filepath, rid = get_data_file(run_idx)
+
+    ri = RunInfo()
+    with h5py.File(original_data_filepath) as file:
+        unpack_group(file,'run_info',ri)
+
+    ds = DataSaver()
+    lite_data_path, lite_data_folder = ds._data_path(ri,lite=True)
+
+    if not os.path.exists(lite_data_folder):
+        os.mkdir(lite_data_folder)
+
+    with h5py.File(lite_data_path,'w') as f_lite:
+        with h5py.File(original_data_filepath,'r') as f_src:
+            # copy over other datasets (not data)
+            keys = f_src.keys()
+            for key in keys:
+                if key != 'data':
+                    f_src.copy(f_src[key],f_lite,key)
+
+            # copy over non-image data
+            dkeys = f_src['data'].keys()
+            f_lite.create_group('data')
+            for key in dkeys:
+                if key != 'images':
+                    f_src.copy(f_src['data'][key],f_lite['data'],key)
+
+            # copy over attributes
+            akeys = f_src.attrs.keys()
+            for key in akeys:
+                f_lite.attrs[key] = f_src.attrs[key]
+
+            roi = ROI(rid,roi_id=roi_id,use_saved_roi=use_saved_roi)
+            
+            N_img = f_src['data']['images'].shape[0]
+            px = np.diff(roi.roix)[0]
+            py = np.diff(roi.roiy)[0]
+
+            f_lite.attrs['roix'] = [0,px]
+            f_lite.attrs['roiy'] = [0,py]
+
+            dtype = f_src['data']['images'][0].dtype
+            images = np.zeros((N_img,py,px),dtype=dtype)
+
+            for idx in range(N_img):
+                images[idx] = roi.crop(f_src['data']['images'][idx])
+            f_lite['data']['images'] = images
+    print(f'Lite version of run {rid} saved at {lite_data_path}.')

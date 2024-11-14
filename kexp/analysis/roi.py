@@ -97,8 +97,8 @@ class ROI():
             self.roix = [0,px]
             self.roiy = [0,py]
 
-    def save_roi_h5(self):
-        fpath, _ = st.get_data_file(self.run_id)
+    def save_roi_h5(self, lite=False):
+        fpath, _ = st.get_data_file(self.run_id,lite=lite)
         with h5py.File(fpath,'r+') as f:
             f.attrs['roix'] = self.roix
             f.attrs['roiy'] = self.roiy
@@ -141,7 +141,7 @@ class ROI():
         if run_id == []:
             run_id = self.run_id
         try:
-            fpath, run_id = st.get_data_file(run_id,lite)
+            fpath, run_id = st.get_data_file(run_id,lite=lite)
             with h5py.File(fpath) as f:
                 roix = f.attrs['roix']
                 roiy = f.attrs['roiy']
