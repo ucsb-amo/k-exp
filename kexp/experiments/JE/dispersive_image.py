@@ -75,8 +75,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_imaging_pulse',np.linspace(1.e-6,20.e-6,20))
         self.p.t_imaging_pulse = 10.e-6
 
-        self.xvar('detuning_dispersive_imaging',np.arange(-800.e6,-615.e6,6.e6))
-        # self.xvar('detuning_dispersive_imaging',np.arange(-625.e6,-610.e6,1.e6))
+        # self.xvar('detuning_dispersive_imaging',np.arange(-800.e6,-615.e6,6.e6))
+        self.xvar('detuning_dispersive_imaging',np.arange(-625.e6,-610.e6,1.e6))
         # self.p.detuning_dispersive_imaging = -736.e6
 
         self.camera_params.amp_imaging = .12
@@ -158,12 +158,12 @@ class tweezer_load(EnvExperiment, Base):
         
         self.lightsheet.off()
 
-        self.dispersive_image(repeats=3)
+        # self.dispersive_image(repeats=3)
 
         self.tweezer.off()
 
-        # delay(self.p.t_tof)
-        # self.abs_image()
+        delay(self.p.t_tof)
+        self.abs_image()
         
         self.outer_coil.off()
         # self.outer_coil.discharge()
