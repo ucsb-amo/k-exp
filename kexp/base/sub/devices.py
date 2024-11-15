@@ -76,8 +76,11 @@ class Devices():
         # magnet coils
         self.inner_coil = hbridge_magnet(max_current=170.,
                                          max_voltage=80.,
+                                         pid_measure_max_current=200.,
                                          v_control_dac=self.dac.inner_coil_supply_voltage,
                                          i_control_dac=self.dac.inner_coil_supply_current,
+                                         pid_dac=self.dac.inner_coil_pid,
+                                         pid_ttl=self.ttl.inner_coil_pid_ttl,
                                          igbt_ttl=self.ttl.inner_coil_igbt,
                                          discharge_igbt_ttl=self.ttl.inner_coil_discharge_igbt,
                                          hbridge_ttl=self.ttl.hbridge_helmholtz,
@@ -85,8 +88,11 @@ class Devices():
                                       
         self.outer_coil = igbt_magnet(max_current=500.,
                                       max_voltage=80.,
+                                      pid_measure_max_current=400.,
                                       v_control_dac=self.dac.outer_coil_supply_voltage,
                                       i_control_dac=self.dac.outer_coil_supply_current,
+                                      pid_dac=self.dac.outer_coil_pid,
+                                      pid_ttl=self.ttl.outer_coil_pid_ttl,
                                       igbt_ttl=self.ttl.outer_coil_igbt,
                                       discharge_igbt_ttl=self.ttl.outer_coil_discharge_igbt,
                                       expt_params=self.params)

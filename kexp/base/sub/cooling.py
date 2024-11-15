@@ -154,7 +154,7 @@ class Cooling():
             v_xshim_current = self.params.v_xshim_current
         ### End Defaults ###
             
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
@@ -196,7 +196,7 @@ class Cooling():
             v_zshim_current = self.params.v_zshim_current
         ### End Defaults ###
             
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
         
@@ -247,7 +247,7 @@ class Cooling():
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current
 
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
@@ -291,7 +291,7 @@ class Cooling():
             i_supply = self.params.i_cmot
         ### End Defaults ###
             
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
@@ -328,7 +328,7 @@ class Cooling():
         ### End Defaults ###
             
         # self.inner_coil.set_current(i_supply)
-        self.inner_coil.set_current(self.params.i_magtrap_init)
+        self.inner_coil.set_supply(self.params.i_magtrap_init)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
@@ -372,7 +372,7 @@ class Cooling():
         ### End Defaults ###
             
         dt = t / self.params.n_d1cmot_detuning_sweep_steps
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
@@ -693,13 +693,13 @@ class Cooling():
                             v_awg_am_max=v_awg_paint_amp_lightsheet,
                             keep_trap_frequency_constant=False)
 
-        self.inner_coil.ramp(t=t_magtrap_ramp,
+        self.inner_coil.ramp_supply(t=t_magtrap_ramp,
                             i_start=i_magtrap_init,
                             i_end=i_magtrap_ramp_end)
         
         delay(self.params.t_magtrap)
 
-        self.inner_coil.ramp(t=t_magtrap_rampdown,
+        self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
                             i_start=i_magtrap_ramp_end,
                             i_end=0.)
         self.inner_coil.snap_off()
@@ -871,7 +871,7 @@ class Cooling():
 
         self.core.break_realtime()
 
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(9.)
         self.inner_coil.on()
 

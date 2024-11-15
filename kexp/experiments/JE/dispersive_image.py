@@ -162,7 +162,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.tweezer.off()
 
-        # delay(self.p.t_tof)
+        delay(self.p.t_tof)
         self.abs_image()
         
         self.outer_coil.off()
