@@ -60,7 +60,8 @@ class GaussianFit(Fit):
                           which_peak,
                           fractional_peak_prominence=0.01,
                           fractional_peak_height_at_width=0.5,
-                          px_boxcar_smoothing_width=3):
+                          px_boxcar_smoothing_width=3,
+                          use_peak_bases=True):
         # smooth the data
         convwidth = px_boxcar_smoothing_width
         ysm = np.convolve(y,[1/convwidth]*convwidth,mode='same')
@@ -82,9 +83,11 @@ class GaussianFit(Fit):
         # identify the x-position closest to the peak which has y-value closest
         # to fraction thr of peak y-value, use distance between this and
         # x-position of peak as width guess.
-        # ybase_norm = (ynorm[prop['right_bases'][idx_idx]] + ynorm[prop['left_bases'][idx_idx]])/2
-        # ynorm_base_at_zero = ynorm - ybase_norm
-        ynorm_base_at_zero = ynorm
+        if use_peak_bases:
+            ybase_norm = (ynorm[prop['right_bases'][idx_idx]] + ynorm[prop['left_bases'][idx_idx]])/2
+            ynorm_base_at_zero = ynorm - ybase_norm
+        else:
+            ynorm_base_at_zero = ynorm
 
         threshold_ynorm_at_width = fractional_peak_height_at_width*ynorm_base_at_zero[peak_idx]
         # construct a function miny which is minimized for y values near the threshold y value
