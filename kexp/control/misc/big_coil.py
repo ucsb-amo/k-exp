@@ -171,10 +171,11 @@ class igbt_magnet():
         """        
         if i_pid == dv:
             i_pid = self.i_supply
-        self.set_pid( i_pid )
+        self.set_pid( i_pid - 1. )
         self.pid_ttl.on()
         self.set_supply( self.i_pid + I_PID_OVERHEAD )
         delay(T_ANALOG_DELAY)
+        self.set_pid( i_pid )
 
     @kernel
     def stop_pid(self, i_supply=dv):
