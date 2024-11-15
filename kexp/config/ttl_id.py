@@ -26,6 +26,8 @@ class ttl_frame():
         self.inner_coil_discharge_igbt = self.ttl_assign(15)
         self.pd_scope_trig = self.ttl_assign(16)
         self.pd_scope_trig_2 = self.ttl_assign(17)
+        self.inner_coil_pid_ttl = self.ttl_assign(3)
+        self.outer_coil_pid_ttl = self.ttl_assign(2)
         # self.machine_table_trig = self.ttl_assign(25)
 
         self._write_ttl_keys()

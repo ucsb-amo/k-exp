@@ -12,7 +12,7 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
         # self.xvar('t_tof',np.linspace(600.,2500.,15)*1.e-6)
-        # self.xvar('dummy',[0]*3)
+        self.xvar('dummy',[0]*3)
         self.p.t_tof = 10.e-6
         # self.p.t_tof = 2200.e-6
         # self.xvar('t_tof',[500*1.e-6]*4)
@@ -21,7 +21,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.frequency_tweezer_list = [73.7e6,77.3e6]
 
-        a_list = [.43,.54]
+        a_list = [.45,.54]
         # a_list = [.7,.2]
         self.p.amp_tweezer_list = a_list
 
@@ -76,7 +76,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_imaging_pulse = 10.e-6
 
         # self.xvar('detuning_dispersive_imaging',np.arange(-700.e6,-500.e6,5.e6))
-        self.xvar('detuning_dispersive_imaging',np.arange(-625.e6,-610.e6,1.e6))
+        # self.xvar('detuning_dispersive_imaging',np.arange(-700.e6,-510.e6,1.e6))
         self.p.detuning_dispersive_imaging = -614.e6
 
         self.camera_params.amp_imaging = .101
