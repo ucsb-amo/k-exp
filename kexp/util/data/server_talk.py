@@ -100,7 +100,12 @@ def recurse_find_data_file(r_id,lite=False,days_ago=0):
     date = datetime.today() - timedelta(days=days_ago)
 
     if date < FIRST_DATA_FOLDER_DATE:
-        raise ValueError(f"Data file with run ID {r_id:1.0f} was not found.")
+        if lite:
+            lstr = " (lite)"
+        else:
+            lstr = ""
+        print(f"Data file{lstr} with run ID {r_id:1.0f} was not found.")
+        return False
     
     date_str = date.strftime('%Y-%m-%d')
 
@@ -138,7 +143,10 @@ def all_glob_find_data_file(run_id,lite=False):
 
 def run_id_from_filepath(filepath,lite=False):
     set_data_dir(lite)
-    run_id = int(filepath.split("_")[DATA_DIR_FILE_DEPTH_IDX].split("\\")[-1])
+    if filepath:
+        run_id = int(filepath.split("_")[DATA_DIR_FILE_DEPTH_IDX].split("\\")[-1])
+    else:
+        return False
     return run_id
 
 def get_run_id():
