@@ -72,6 +72,12 @@ class igbt_magnet():
 
     @kernel
     def set_pid(self,i_pid,load_dac=True):
+        """Sets the PID set point to the given current.
+
+        Args:
+            i_pid (float): The desired current in A.
+            load_dac (bool, optional): Loads the dac if true. Defaults to True.
+        """        
         v_pid = self.supply_current_to_pid_voltage(i_pid)
         self.i_control_dac.set(v=v_pid,load_dac=load_dac)
         self.i_pid = i_pid
@@ -156,12 +162,34 @@ class igbt_magnet():
 
     @kernel
     def start_pid(self, i_pid=dv):
+        """Starts the PID, then sets the supply with some current overhead for
+        the PID to eat.
+
+        Args:
+            i_pid (float, optional): The desired current in A. Defaults to the
+            current value of the supply output.
+        """        
         if i_pid == dv:
             i_pid = self.i_supply
         self.set_pid( i_pid )
         self.pid_ttl.on()
-        self.set_supply( self.i_supply + I_PID_OVERHEAD )
+        self.set_supply( self.i_pid + I_PID_OVERHEAD )
         delay(T_ANALOG_DELAY)
+
+    @kernel
+    def stop_pid(self, i_supply=dv):
+        """Brings the supply set point back in line with the desired current,
+        then stops the PID.
+
+        Args:
+            i_supply (float, optional): The desired current in A. Defaults to the
+            current pid current set point.
+        """        
+        if i_supply == dv:
+            i_supply = self.i_pid
+        self.set_supply( i_supply )
+        delay(T_ANALOG_DELAY)
+        self.pid_ttl.off()
 
     @kernel(flags={"fast-math"})
     def rampdown(self,t_rampdown=50.e-3):
