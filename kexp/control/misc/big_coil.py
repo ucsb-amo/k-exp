@@ -12,7 +12,7 @@ dv_list = np.linspace(0.,1.,5)
 V_FULLSCALE_DAC = 10.
 V_SUPPLY_DEFAULT = 70.
 
-I_PID_OVERHEAD = 10.
+I_PID_OVERHEAD = 1.
 
 T_ANALOG_DELAY = 30.e-3
 
@@ -79,7 +79,7 @@ class igbt_magnet():
             load_dac (bool, optional): Loads the dac if true. Defaults to True.
         """        
         v_pid = self.supply_current_to_pid_voltage(i_pid)
-        self.i_control_dac.set(v=v_pid,load_dac=load_dac)
+        self.pid_dac.set(v=v_pid,load_dac=load_dac)
         self.i_pid = i_pid
         
     @kernel
@@ -171,11 +171,10 @@ class igbt_magnet():
         """        
         if i_pid == dv:
             i_pid = self.i_supply
-        self.set_pid( i_pid - 1. )
+        self.set_pid( i_pid)
         self.pid_ttl.on()
         self.set_supply( self.i_pid + I_PID_OVERHEAD )
         delay(T_ANALOG_DELAY)
-        self.set_pid( i_pid )
 
     @kernel
     def stop_pid(self, i_supply=dv):
