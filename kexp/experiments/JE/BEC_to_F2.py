@@ -12,20 +12,19 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',
-        #           np.arange(-625.,-585.,5)*1.e6)
+        self.xvar('frequency_detuned_imaging',np.arange(-615.,-530.,8)*1.e6)
         
         self.p.t_mot_load = 1.5
         
         self.p.t_rf_state_xfer_sweep = 40.e-3
         self.p.n_rf_sweep_steps = 1000
-        self.p.frequency_rf_sweep_state_prep_fullwidth = 30.e3
+        self.p.frequency_rf_sweep_state_prep_fullwidth = 10.e3
 
         # self.xvar('frequency_rf_sweep_state_prep_fullwidth',np.linspace(10.,200.,20)*1.e3)
         # self.xvar('frequency_rf_sweep_state_prep_center', 145.5e6 + np.linspace(-5.,5.,60)*1.e6)
-        # self.xvar('frequency_rf_sweep_state_prep_center', np.linspace(146.,146.3,40)*1.e6)
-        # self.p.frequency_rf_sweep_state_prep_center = 145.336e6
-        self.p.frequency_rf_sweep_state_prep_center = 146.177e6
+        # self.xvar('frequency_rf_sweep_state_prep_center', np.linspace(145.4,145.6,5)*1.e6)
+        self.p.frequency_rf_sweep_state_prep_center = 145.462e6
+        # self.p.frequency_rf_sweep_state_prep_center = 146.177e6
 
         # self.xvar('t_rf_state_xfer_sweep',np.linspace(15.,50.,20)*1.e-3)
         # self.xvar('t_fake_ramsey_delay',np.linspace(0.,100.,20)*1.e-3)
@@ -40,14 +39,16 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('rf_drive_frequency', np.linspace(145.3,145.4,15)*1.e6)
         # self.p.rf_drive_frequency = 145.336e6
-        # self.xvar('t_rabi_drive', np.linspace(20.,750.,40)*1.e-6)
-        self.p.t_rabi_drive = .5e-3
+        # self.xvar('t_rabi_drive', np.linspace(20.,550.,30)*1.e-6)
+        self.p.t_rabi_drive = 1.e-6
 
         # self.xvar('t_rabi_drive', np.linspace(200.,1500.,40)*1.e-6)
 
-        self.xvar('pid_setpoint',np.linspace(196.93,202.90,10))
+        self.xvar('pid_setpoint',np.linspace(196.,202.90,10))
+        self.p.pid_setpoint = 196.3
 
-        # self.xvar('beans',[0.]*3)
+
+        # self.xvar('beans',[0.]*100)
 
         self.pfrac_c_gmramp_end = 0.38
         self.pfrac_r_gmramp_end = 0.27
@@ -106,7 +107,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.v_tweezer_paint_amp_max = -3.
 
         self.p.t_tof = 5.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = [3,1]
 
         self.p.t_mot_load = .75
 
@@ -119,9 +120,9 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=192.3)
+        # self.set_high_field_imaging(i_outer=192.3)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
+        self.set_imaging_detuning(self.p.frequency_detuned_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -200,14 +201,14 @@ class tweezer_load(EnvExperiment, Base):
         # self.outer_coil.start_pid()
         delay(.6)
 
-        if self.p.ifdosweep:
-            self.rf.set_rf(frequency=self.p.frequency_rf_sweep_state_prep_center)
-            self.rf.on()
-            delay(self.p.t_rabi_drive)
+        # if self.p.ifdosweep:
+        #     self.rf.set_rf(frequency=self.p.frequency_rf_sweep_state_prep_center)
+        #     self.rf.on()
+        #     delay(self.p.t_rabi_drive)
             # self.rf.sweep(t=self.p.t_rf_state_xfer_sweep, frequency_center=self.p.frequency_rf_sweep_state_prep_center)
             # delay(self.p.t_fake_ramsey_delay)
             # self.rf.sweep(t=self.p.t_rf_state_xfer_sweep, frequency_center=self.p.frequency_rf_sweep_state_prep_center)
-            self.rf.off()
+            # self.rf.off()
         # else:
         #     delay(self.p.t_rf_state_xfer_sweep)
             # delay(self.p.t_fake_ramsey_delay)

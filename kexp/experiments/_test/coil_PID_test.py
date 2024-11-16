@@ -12,8 +12,8 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False,camera_select='andor',save_data=False)
 
-        self.i_initial = 160.
-        self.v_pid_setpoint = 3.95
+        self.i_initial = 193.
+        self.i_pid = 196.3 # equivalent ot 192.3 from power supply
 
         self.finish_prepare(shuffle=True)
 
@@ -35,16 +35,14 @@ class tweezer_load(EnvExperiment, Base):
 
         # trigger scope and turn on PID
         self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.dac.inner_coil_pid.set(0.)
-        self.dac.outer_coil_pid.set(v=self.v_pid_setpoint)
-        self.ttl.outer_coil_pid_enable.on()
+        self.outer_coil.start_pid(i_pid=self.i_pid)
 
         # wait
-        delay(0.3)
+        delay(0.6)
 
         self.ttl.outer_coil_pid_enable.off()
+        delay(50.e-3)
         self.outer_coil.off()
-        self.outer_coil.discharge()
         
 
     @kernel
