@@ -734,7 +734,7 @@ class Cooling():
         
         delay(t_lightsheet_ramp)
 
-        self.inner_coil.ramp(t=t_magtrap_ramp,
+        self.inner_coil.ramp_supply(t=t_magtrap_ramp,
                             i_start=i_magtrap_init,
                             i_end=i_magtrap_ramp_end)
 
