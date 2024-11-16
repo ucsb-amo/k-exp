@@ -91,11 +91,11 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('i_lf_evap1_current',np.linspace(12.,15.,20))
         # self.xvar('i_lf_evap2_current',np.linspace(12.6,14.,8))
         # self.xvar('i_lf_evap3_current',np.linspace(12.5,14.,8))
-        self.p.i_lf_evap1_current = 14.2
-        self.p.i_lf_evap2_current = 13.1
-        self.p.i_lf_evap3_current = 13.5
+        self.p.i_lf_evap1_current = 18.93
+        self.p.i_lf_evap2_current = 17.83
+        self.p.i_lf_evap3_current = 18.23
 
-        self.p.i_spin_mixture = 19.6
+        self.p.i_spin_mixture = 24.3
 
         # self.camera_params.amp_imaging = .12
         self.camera_params.exposure_time = 10.e-6

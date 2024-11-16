@@ -274,9 +274,9 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 192.
-        self.i_evap2_current = 193.8
-        self.i_evap3_current = 193.6
+        self.i_evap1_current = 195.93
+        self.i_evap2_current = 197.72
+        self.i_evap3_current = 197.52
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.

@@ -45,7 +45,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('t_rabi_drive', np.linspace(200.,1500.,40)*1.e-6)
 
-        self.xvar('pid_setpoint',np.linspace(193.,199.,10))
+        self.xvar('pid_setpoint',np.linspace(196.93,202.90,10))
 
         # self.xvar('beans',[0.]*3)
 
@@ -63,7 +63,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.v_pd_lightsheet_rampdown_end = 7.
 
         # self.xvar('i_evap2_current',np.linspace(192.5,194.5,8))
-        self.p.i_evap2_current = 193.8
+        self.p.i_evap2_current = 197.72
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.3,20))
         # self.p.t_tweezer_1064_ramp = .17
@@ -90,7 +90,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_tweezer_1064_rampdown3 = .1
         
         # self.xvar('i_evap3_current',np.linspace(192.5,194.3,8))
-        self.p.i_evap3_current = 193.6
+        self.p.i_evap3_current = 197.53
 
         # self.xvar('amp_imaging',np.linspace(0.05,0.125,10))
         # self.xvar('frequency_detuned_imaging',\
