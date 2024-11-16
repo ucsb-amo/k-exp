@@ -1,6 +1,19 @@
 from artiq.experiment import portable, TFloat
 import numpy as np
 
+from kexp.calibrations.imaging import \
+    slope_imaging_frequency_per_iouter_current_pid, slope_imaging_frequency_per_iouter_current_supply, \
+    yintercept_imaging_frequency_per_iouter_current_pid, yintercept_imaging_frequency_per_iouter_current_supply
+
+@portable
+def pid_current_to_supply_setpoint(i_pid) -> TFloat:
+    m_pid = slope_imaging_frequency_per_iouter_current_pid
+    m_sup = slope_imaging_frequency_per_iouter_current_supply
+    b_pid = yintercept_imaging_frequency_per_iouter_current_pid
+    b_sup = yintercept_imaging_frequency_per_iouter_current_supply
+    return (m_pid * i_pid + b_pid - b_sup) / m_sup
+
+### Note that these need to be updated to be in terms of the transducer-measured current.
 @portable
 def i_outer_to_magnetic_field(i_outer) -> TFloat:
     # k-jam\analysis\measurements\magnetometry_high_field.ipynb
