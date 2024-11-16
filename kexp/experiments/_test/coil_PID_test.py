@@ -12,8 +12,8 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False,camera_select='andor',save_data=False)
 
-        self.i_initial = 193.
-        self.i_pid = 196.3 # equivalent ot 192.3 from power supply
+        self.i_initial = 192.3
+        self.i_pid = 196.23 # equivalent ot 192.3 from power supply
 
         self.finish_prepare(shuffle=True)
 
