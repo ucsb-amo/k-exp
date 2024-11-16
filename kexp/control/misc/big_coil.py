@@ -5,8 +5,6 @@ from artiq.experiment import kernel, delay, parallel, portable, TFloat
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 
-from kexp.calibrations.magnets import pid_current_to_supply_setpoint
-
 dv = -1.
 di = 0
 dv_list = np.linspace(0.,1.,5)
@@ -18,6 +16,10 @@ I_PID_OVERHEAD = 1.
 
 T_ANALOG_DELAY = 30.e-3
 
+@portable
+def identity(x) -> TFloat:
+    return x
+
 class igbt_magnet():
     def __init__(self,
                  v_control_dac = DAC_CH, i_control_dac = DAC_CH,
@@ -25,7 +27,8 @@ class igbt_magnet():
                  igbt_ttl = TTL, discharge_igbt_ttl = TTL,
                  expt_params:ExptParams = ExptParams,
                  max_current = 0., max_voltage = 0.,
-                 pid_measure_max_current = 0.):
+                 pid_measure_max_current = 0.,
+                 real_current_to_supply_function=identity):
         self.max_voltage = max_voltage
         self.max_current = max_current
         self.v_control_dac = v_control_dac
@@ -38,6 +41,7 @@ class igbt_magnet():
         self.params = expt_params
         self.i_supply = 0.
         self.i_pid = 0.
+        self.real_current_to_supply_function = real_current_to_supply_function
 
     @kernel
     def load_dac(self):
@@ -69,7 +73,7 @@ class igbt_magnet():
             i (float): the current limit to be set in amps.
             load_dac (bool, optional): Loads the dac if true. Defaults to True.
         """        
-        i_setpoint = pid_current_to_supply_setpoint(i_supply)
+        i_setpoint = self.real_current_to_supply_function(i_supply)
         v_dac_current = self.supply_current_to_dac_voltage(i_setpoint)
         self.i_control_dac.set(v=v_dac_current,load_dac=load_dac)
         self.i_supply = i_supply
@@ -129,10 +133,10 @@ class igbt_magnet():
         if i_end == dv:
             i_end = 0.
 
-        i_start_setpoint = pid_current_to_supply_setpoint(i_start)
+        i_start_setpoint = self.real_current_to_supply_function(i_start)
         v_start = self.supply_current_to_dac_voltage(i_start_setpoint)
 
-        i_end_setpoint = pid_current_to_supply_setpoint(i_end)
+        i_end_setpoint = self.real_current_to_supply_function(i_end)
         v_end = self.supply_current_to_dac_voltage(i_end_setpoint)
 
         self.i_control_dac.linear_ramp(t,v_start,v_end,n_steps)

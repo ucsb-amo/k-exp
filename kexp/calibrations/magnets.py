@@ -6,7 +6,7 @@ from kexp.calibrations.imaging import \
     yintercept_imaging_frequency_per_iouter_current_pid, yintercept_imaging_frequency_per_iouter_current_supply
 
 @portable
-def pid_current_to_supply_setpoint(i_pid) -> TFloat:
+def pid_current_to_outer_supply_setpoint(i_pid) -> TFloat:
     """For a given actual current i_pid (as read by a transducer), returns the
     current set point which should be fed to the supply so that it actually
     supplies the desired current.
