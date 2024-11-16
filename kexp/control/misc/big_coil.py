@@ -5,6 +5,8 @@ from artiq.experiment import kernel, delay, parallel, portable, TFloat
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 
+from kexp.calibrations.magnets import pid_current_to_supply_setpoint
+
 dv = -1.
 di = 0
 dv_list = np.linspace(0.,1.,5)
@@ -60,13 +62,15 @@ class igbt_magnet():
 
     @kernel
     def set_supply(self,i_supply,load_dac=True):
-        """Sets the current limit of the current supply in amps.
+        """Sets the actual current output of the current supply in amps.
+        Corrects for discrepancy between supply set point and actual output.
 
         Args:
             i (float): the current limit to be set in amps.
             load_dac (bool, optional): Loads the dac if true. Defaults to True.
         """        
-        v_dac_current = self.supply_current_to_dac_voltage(i_supply)
+        i_setpoint = pid_current_to_supply_setpoint(i_supply)
+        v_dac_current = self.supply_current_to_dac_voltage(i_setpoint)
         self.i_control_dac.set(v=v_dac_current,load_dac=load_dac)
         self.i_supply = i_supply
 
@@ -124,8 +128,13 @@ class igbt_magnet():
             self.i_supply = i_start
         if i_end == dv:
             i_end = 0.
-        v_start = self.supply_current_to_dac_voltage(i_start)
-        v_end = self.supply_current_to_dac_voltage(i_end)
+
+        i_start_setpoint = pid_current_to_supply_setpoint(i_start)
+        v_start = self.supply_current_to_dac_voltage(i_start_setpoint)
+
+        i_end_setpoint = pid_current_to_supply_setpoint(i_end)
+        v_end = self.supply_current_to_dac_voltage(i_end_setpoint)
+
         self.i_control_dac.linear_ramp(t,v_start,v_end,n_steps)
         delay(t_analog_delay)
         self.i_supply = i_end
@@ -171,7 +180,7 @@ class igbt_magnet():
         """        
         if i_pid == dv:
             i_pid = self.i_supply
-        self.set_pid( i_pid)
+        self.set_pid( i_pid )
         self.pid_ttl.on()
         self.set_supply( self.i_pid + I_PID_OVERHEAD )
         delay(T_ANALOG_DELAY)

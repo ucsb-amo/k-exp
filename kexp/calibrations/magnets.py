@@ -7,6 +7,17 @@ from kexp.calibrations.imaging import \
 
 @portable
 def pid_current_to_supply_setpoint(i_pid) -> TFloat:
+    """For a given actual current i_pid (as read by a transducer), returns the
+    current set point which should be fed to the supply so that it actually
+    supplies the desired current.
+
+    Args:
+        i_pid (float): The desired actual current in amps.
+
+    Returns:
+        TFloat: the current the supply should be set to to get the actual
+        desired current.
+    """    
     m_pid = slope_imaging_frequency_per_iouter_current_pid
     m_sup = slope_imaging_frequency_per_iouter_current_supply
     b_pid = yintercept_imaging_frequency_per_iouter_current_pid
