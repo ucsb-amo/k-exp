@@ -18,15 +18,23 @@ class RamanBeamPair():
         if self._frequency_center_dds_plus != self._frequency_center_dds_minus:
             raise ValueError("I didn't write this code to accout for different AO center frequencies. Ask me, or if I am gone, figure it out yourself. You'll have to update state_splitting_to_ao_frequency and decide how to divvy up the frequency difference between the two AOs -- maybe proportionally to their bandwidth.")
 
-        self._relative_sign = self.dds_plus.aom_order * self.dds_minus.aom_order
-
         self._frequency_array = np.array([0.,0.])
 
-    @kernel(flags={"fast-math"})
+    @portable(flags={"fast-math"})
     def state_splitting_to_ao_frequency(self,frequency_state_splitting) -> TArray(TFloat):
-        frequency_difference_aos = frequency_state_splitting / 4
-        self._frequency_array[0] = self._frequency_center_dds_plus + self._relative_sign * frequency_difference_aos
-        self._frequency_array[1] = self._frequency_center_dds_minus - frequency_difference_aos
+
+        order_plus = self.dds_plus.aom_order
+        order_minus = self.dds_minus.aom_order
+
+        df = frequency_state_splitting / 4
+
+        if order_plus * order_minus == -1:
+            self._frequency_array[0] = df
+            self._frequency_array[1] = df
+        else:
+            self._frequency_array[0] = self._frequency_center_dds_plus + df
+            self._frequency_array[1] = self._frequency_center_dds_minus - df
+
         return self._frequency_array
     
     @kernel
