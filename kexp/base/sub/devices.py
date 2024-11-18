@@ -116,7 +116,7 @@ class Devices():
                                expt_params = self.params,
                                core=self.core)
         
-        self.raman_zeeman = RamanBeamPair(dds_plus=self.dds.raman_plus,
+        self.raman = RamanBeamPair(dds_plus=self.dds.raman_plus,
                                           dds_minus=self.dds.raman_minus,
                                           params=self.params)
 
