@@ -16,7 +16,7 @@ class field_0_magnetometry(EnvExperiment, Base):
         self.p.do_sweep = 1
 
         # self.xvar('v_yshim_current_gm', np.linspace(1.6,2.2,5))
-        self.xvar('v_xshim_current_gm', np.linspace(0.,.2,5))
+        # self.xvar('v_xshim_current_gm', np.linspace(0.,.2,5))
         # self.xvar('v_zshim_current_gm', np.linspace(0.735,.77,5))
 
         self.xvar('frequency_rf_sweep_state_prep_center', 461.7e6 + np.linspace(-.25,.25,50)*1.e6)

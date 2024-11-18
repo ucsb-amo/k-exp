@@ -6,13 +6,21 @@ import kamo.constants as c
 from kexp.analysis.fitting.fit import Fit
 
 class GaussianFit(Fit):
-    def __init__(self,xdata,ydata,debug_plotting=False):
+    def __init__(self,xdata,ydata,debug_plotting=False,
+                 which_peak=0,
+                 px_boxcar_smoothing=10,
+                 fractional_peak_height_at_width=0.4,
+                 use_peak_bases_for_amplitude=True):
         super().__init__(xdata,ydata,savgol_window=20)
 
         self._debug_plotting = debug_plotting
 
         try:
-            popt = self._fit(self.xdata,self.ydata)
+            popt = self._fit(self.xdata,self.ydata,
+                             which_peak,
+                             px_boxcar_smoothing,
+                             fractional_peak_height_at_width,
+                             use_peak_bases_for_amplitude)
         except Exception as e:
             print(e)
             popt = [np.NaN] * 4
@@ -32,7 +40,11 @@ class GaussianFit(Fit):
     def _fit_func(self, x, amplitude, sigma, x_center, y_offset):
         return y_offset + amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) )
 
-    def _fit(self, x, y, which_peak=0):
+    def _fit(self, x, y,
+             which_peak,
+             px_boxcar_smoothing,
+             fractional_peak_height_at_width,
+             use_peak_bases_for_amplitude):
         """Returns the gaussian fit parameters for y(x).
 
         Fit equation: offset + amplitude * np.exp( -(x-x0)**2 / (2 * sigma**2) )
@@ -47,7 +59,11 @@ class GaussianFit(Fit):
             popt: _description_
         """
 
-        out = self._gaussian_guesses(x,y,which_peak)
+        out = self._gaussian_guesses(x,y,
+                                     which_peak,
+                                     px_boxcar_smoothing,
+                                     fractional_peak_height_at_width,
+                                     use_peak_bases_for_amplitude)
         fit_mask = out[0]
         guesses = out[1:]
 
@@ -58,10 +74,11 @@ class GaussianFit(Fit):
     
     def _gaussian_guesses(self,x,y,
                           which_peak,
-                          fractional_peak_prominence=0.01,
-                          fractional_peak_height_at_width=0.4,
                           px_boxcar_smoothing_width=10,
-                          use_peak_bases=False):
+                          fractional_peak_height_at_width=0.4,
+                          use_peak_bases=False,
+                          fractional_peak_prominence=0.01):
+        
         # smooth the data
         convwidth = px_boxcar_smoothing_width
         ysm = np.convolve(y,[1/convwidth]*convwidth,mode='same')

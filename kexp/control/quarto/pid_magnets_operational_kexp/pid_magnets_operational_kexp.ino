@@ -82,6 +82,7 @@ void clear_integrator(qCommand& qC, Stream& S) {
 void getMeas1() {
   double newadc1 = readADC1_from_ISR();
   inputA = newadc1;
+  writeDAC(3,newadc1);
   //writeDAC(3, inputA);
   double newdac1 = 0.;
   if (pid_enable1) {
@@ -107,7 +108,7 @@ void getMeas1() {
   {
     writeDAC(1,newdac1+offset);
   }
-  writeDAC(3,newdac1+offset);
+  
 }
 
 void getSet1(){
@@ -117,7 +118,7 @@ void getSet1(){
 void getMeas2() {
   double newadc2 = readADC3_from_ISR();
   inputB = newadc2;
-  //writeDAC(4, inputB);
+  writeDAC(4, inputB);
   double newdac2 = 0.;
   if (pid_enable2) {
     double prop2 = (newadc2-SETPOINT2) * P2;
@@ -143,7 +144,7 @@ void getMeas2() {
   {
     writeDAC(2,newdac2+offset);
   }
-  writeDAC(4,newdac2+offset);
+  //writeDAC(4,newdac2+offset);
 }
 
 void getSet2(){

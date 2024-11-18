@@ -25,6 +25,8 @@ from kexp.control.misc.awg_tweezer import tweezer
 from kexp.control.misc.doubled_rf import doubled_rf
 from kexp.control.misc.raman_beams import RamanBeamPair
 
+from kexp.calibrations.magnets import pid_current_to_outer_supply_setpoint
+
 import numpy as np
 
 dv = -0.1
@@ -95,7 +97,8 @@ class Devices():
                                       pid_ttl=self.ttl.outer_coil_pid_ttl,
                                       igbt_ttl=self.ttl.outer_coil_igbt,
                                       discharge_igbt_ttl=self.ttl.outer_coil_discharge_igbt,
-                                      expt_params=self.params)
+                                      expt_params=self.params,
+                                      real_current_to_supply_function=pid_current_to_outer_supply_setpoint)
         
         # painted ligthsheet
         self.lightsheet = lightsheet(pid_dac=self.dac.vva_lightsheet,

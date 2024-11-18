@@ -10,46 +10,39 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=False)
 
-        self.i_initial = 192.3
-        self.i_pid = 196.23 # equivalent ot 192.3 from power supply
+        self.xvar('dummy',[0]*1)
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
-
+        # self.outer_coil.on()
+        # delay(1.e-3)
+        # self.outer_coil.set_voltage()
+        # self.outer_coil.ramp_supply(self.p.t_feshbach_field_rampup,i_end=self.p.i_evap1_current)
+        # delay(30.e-3)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.outer_coil.start_pid()
+        # delay(0.5)
+        # self.outer_coil.off()
+        # self.outer_coil.stop_pid()
+        # delay(0.25)
         self.outer_coil.on()
         delay(1.e-3)
         self.outer_coil.set_voltage()
-        delay(50.e-3)
-
-        # # ramp up field
-        self.outer_coil.ramp_supply(t=200.e-3,
-                             i_start=0.,
-                             i_end=self.i_initial)
-        
-        # wait for supply to finish ramping
-        delay(180.e-3)
-
-        # trigger scope and turn on PID
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.outer_coil.start_pid(i_pid=self.i_pid)
-
-        # wait
-        delay(0.6)
-
-        self.ttl.outer_coil_pid_enable.off()
-        delay(50.e-3)
+        self.outer_coil.ramp_supply(100.e-3,i_end=100.)
+        delay(5.)
+        self.outer_coil.start_pid()
+        delay(1.)
         self.outer_coil.off()
-        
+        self.outer_coil.stop_pid()
 
     @kernel
     def run(self):
         self.init_kernel()
         self.scan()
-        # self.mot_observe()
 
     def analyze(self):
         import os
