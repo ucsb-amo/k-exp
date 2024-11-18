@@ -12,7 +12,7 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False)
 
-        self.xvar('dummy',[0]*1)
+        self.xvar('dummy',[0]*30)
 
         self.finish_prepare(shuffle=True)
 
@@ -32,10 +32,12 @@ class tweezer_load(EnvExperiment, Base):
         self.outer_coil.on()
         delay(1.e-3)
         self.outer_coil.set_voltage()
+        delay(30.e-3)
         self.outer_coil.ramp_supply(100.e-3,i_end=100.)
-        delay(5.)
+        delay(0.4)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
-        delay(1.)
+        delay(0.4)
         self.outer_coil.off()
         self.outer_coil.stop_pid()
 
