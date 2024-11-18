@@ -54,12 +54,12 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 1.0
-        self.t_lightsheet_rampdown = .16
-        self.t_lightsheet_rampdown2 = .01
+        self.t_lightsheet_rampdown = .4
+        self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
-        self.t_tweezer_ramp = .27
+        self.t_tweezer_ramp = .116
         self.t_tweezer_hold = 30.e-3
         self.t_tweezer_1064_ramp = .17
         self.t_tweezer_1064_rampdown = .03
@@ -154,8 +154,8 @@ class ExptParams():
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.14
-        self.pfrac_r_gmramp_end = 0.142
+        self.pfrac_c_gmramp_end = 0.1
+        self.pfrac_r_gmramp_end = 1.5
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -166,7 +166,7 @@ class ExptParams():
 
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.
-        self.v_yshim_current_magtrap = 5.2
+        self.v_yshim_current_magtrap = 5.8
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -187,7 +187,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.9
-        self.v_pd_lightsheet_rampdown_end = 5.5 #4.16
+        self.v_pd_lightsheet_rampdown_end = 6.5 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -274,8 +274,8 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 192.
-        self.i_evap2_current = 193.8
+        self.i_evap1_current = 192.5
+        self.i_evap2_current = 194.1
         self.i_evap3_current = 193.6
 
         # forced evap
