@@ -84,7 +84,7 @@ class ExptParams():
         self.amp_d1_3d_c = 0.3
         self.amp_d1_3d_r = 0.3
 
-        #push beam
+        # push beam
         self.detune_push = -2.4
         self.amp_push = 0.13
 

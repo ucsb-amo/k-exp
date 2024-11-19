@@ -15,13 +15,13 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('dummy',[0]*3)
         self.p.t_tof = 2400.e-6
         # self.p.t_tof = 2200.e-6
-        self.xvar('t_tof',[2400*1.e-6])
+        # self.xvar('t_tof',[2400*1.e-6])
 
         # self.xvar('beans',[0]*1)
 
         self.p.x_move = -5.e-6
 
-        # self.xvar('t_tunnel',np.linspace(0.,100.,15)*1.e-3)
+        self.xvar('t_tunnel',np.linspace(0.,100.,15)*1.e-3)
         self.p.t_tunnel = 20.e-3
 
         # self.xvar('t_tweezer_single_move',np.linspace(5.,100.,20)*1.e-3)
@@ -30,7 +30,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.frequency_tweezer_list = [73.7e6,77.3e6]
 
-        a_list = [.43,.54]
+        a_list = [.44,.54]
         # a_list = [.7,.2]
         self.p.amp_tweezer_list = a_list
 
@@ -91,7 +91,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_mot_load = 1.
 
-        self.camera_params.amp_imaging = .12
+        self.camera_params.amp_imaging = .08
         # self.xvar('amp_imaging',np.linspace(0.1,0.18,8))
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
@@ -113,7 +113,7 @@ class tweezer_load(EnvExperiment, Base):
         self.cmot_d1(self.p.t_d1cmot * s)
         
         self.gm(self.p.t_gm * s)
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.gm_ramp(self.p.t_gmramp)
 
         self.magtrap_and_load_lightsheet()
@@ -123,7 +123,7 @@ class tweezer_load(EnvExperiment, Base):
         self.outer_coil.on()
         # delay(1.e-3)
         self.outer_coil.set_voltage()
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_evap1_current)
         
@@ -133,7 +133,7 @@ class tweezer_load(EnvExperiment, Base):
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
         
         # feshbach field ramp to field 2
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_evap1_current,
                              i_end=self.p.i_evap2_current)
         
@@ -155,7 +155,7 @@ class tweezer_load(EnvExperiment, Base):
                           paint=True,keep_trap_frequency_constant=True)
 
         # feshbach field ramp to field 3
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp2,
                              i_start=self.p.i_evap2_current,
                              i_end=self.p.i_evap3_current)
         
@@ -171,10 +171,13 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
 
-        self.tweezer.trigger()
-        delay(self.p.t_tweezer_single_move)
-        
         self.lightsheet.off()
+
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.outer_coil.start_pid()
+
+        self.tweezer.trigger()
+        delay(self.p.t_tweezer_single_move)        
 
         delay(self.p.t_tunnel)
 
@@ -183,7 +186,10 @@ class tweezer_load(EnvExperiment, Base):
         delay(self.p.t_tof)
         self.abs_image()
 
+        self.outer_coil.stop_pid()
+        delay(50.e-3)
         self.outer_coil.off()
+        
         # self.outer_coil.discharge()
 
     @kernel
