@@ -1,4 +1,4 @@
-from artiq.experiment import kernel, portable, delay, TArray, TFloat
+from artiq.experiment import kernel, portable, delay, TArray, TFloat, parallel
 import numpy as np
 from kexp.control.artiq.DDS import DDS
 from kexp.control.artiq.DAC_CH import DAC_CH
@@ -40,8 +40,9 @@ class RamanBeamPair():
     @kernel
     def set_transition_frequency(self,frequency_transition):
         self._frequency_array = self.state_splitting_to_ao_frequency(frequency_transition)
-        self.dds_plus.set_dds(frequency=self._frequency_array[0])
-        self.dds_minus.set_dds(frequency=self._frequency_array[1])
+        with parallel:
+            self.dds_plus.set_dds(frequency=self._frequency_array[0])
+            self.dds_minus.set_dds(frequency=self._frequency_array[1])
 
     @kernel
     def on(self):

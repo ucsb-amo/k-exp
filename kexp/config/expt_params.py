@@ -61,10 +61,10 @@ class ExptParams():
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = .116
         self.t_tweezer_hold = 30.e-3
-        self.t_tweezer_1064_ramp = .17
-        self.t_tweezer_1064_rampdown = .03
-        self.t_tweezer_1064_rampdown2 = .4
-        self.t_tweezer_1064_rampdown3 = .1
+        self.t_tweezer_1064_ramp = .116
+        self.t_tweezer_1064_rampdown = .02
+        self.t_tweezer_1064_rampdown2 = .24
+        self.t_tweezer_1064_rampdown3 = .13
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 20.e-6
@@ -187,7 +187,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.9
-        self.v_pd_lightsheet_rampdown_end = 6.5 #4.16
+        self.v_pd_lightsheet_rampdown_end = 7.2 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -199,9 +199,9 @@ class ExptParams():
         self.v_pd_tweezer_1064 = 5.
 
         self.v_pd_tweezer_1064_ramp_end = 9.9
-        self.v_pd_tweezer_1064_rampdown_end = .7
-        self.v_pd_tweezer_1064_rampdown2_end = .06
-        self.v_pd_tweezer_1064_rampdown3_end = 1.4
+        self.v_pd_tweezer_1064_rampdown_end = .45
+        self.v_pd_tweezer_1064_rampdown2_end = .05
+        self.v_pd_tweezer_1064_rampdown3_end = .3
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
@@ -225,7 +225,7 @@ class ExptParams():
         self.amp_tweezer_list = [.2,.215]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = -3.5
+        self.v_tweezer_paint_amp_max = -.5
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
