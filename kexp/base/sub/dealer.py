@@ -128,13 +128,14 @@ class Dealer():
                                         reshuffle=reshuffle)
         
         pwa, pwoa, dark = self._unsort_images(pwa,pwoa,dark)
-        
-        if self.run_info.absorption_image:
-            images[0::3] = pwa
-            images[1::3] = pwoa
-            images[2::3] = dark
-        else:
-            pass
+
+        Ns = self.params.N_shots
+        Nps = self.params.N_img_per_shot
+        images = images.reshape(Ns,+2)
+        for shot_idx in range(Ns):
+            images[shot_idx][:Nps] = pwa[shot_idx]
+            images[Nps] = pwoa[shot_idx][0]
+            images[Nps+1] = dark[shot_idx][0]
 
         self.images = images
         return images
