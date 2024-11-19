@@ -11,6 +11,7 @@ class ExptParams():
         self.N_repeats = 1
         self.N_img = 1
         self.N_shots_with_repeats = 1
+        self.N_img_per_shot = 1
 
         #Magnet
         self.t_keysight_analog_response = 27.2e-3

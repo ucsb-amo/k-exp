@@ -260,17 +260,8 @@ class Image():
     def set_high_field_imaging(self, i_outer, imaging_amp = dv):
 
         detuning = high_field_imaging_detuning(i_outer=i_outer)
-        # aprint(detuning)
         
         self.set_imaging_detuning(detuning, amp=imaging_amp)
-
-    # @kernel(flags={"fast-math"})
-    # def set_low_field_imaging(self, i_outer, imaging_amp = dv):
-
-    #     detuning = low_field_imaging_detuning(i_outer=i_outer)
-        
-    #     self.set_imaging_detuning(detuning, amp=imaging_amp)
-    ###
 
     def get_N_img(self):
         """
@@ -294,7 +285,7 @@ class Image():
             if len(self.params.N_repeats) == 1:
                 N_repeats = self.params.N_repeats[0]
             else:
-                N_repeats = 1
+                N_repeats = np.prod(self.params.N_repeats)
         else:
             N_repeats = 1
         self.params.N_shots = int(N_img / N_repeats)
@@ -303,7 +294,7 @@ class Image():
         if self.run_info.absorption_image:
             images_per_shot = 3
         else:
-            images_per_shot = 2
+            images_per_shot = self.params.N_img_per_shot + 2
 
         N_img = images_per_shot * N_img # 3 images per value of independent variable (xvar)
 
