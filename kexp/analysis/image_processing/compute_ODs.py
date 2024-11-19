@@ -30,7 +30,7 @@ def process_ODs(raw_ODs,roi):
 
     return ODs, sum_od_x, sum_od_y
 
-def compute_OD(atoms,light,dark):
+def compute_OD(atoms,light,dark,log=True):
     '''
     From a list of images (length 3*n, where n is the number of runs), computes
     OD. Crops to a preset ROI based on in what stage of cooling the images were
@@ -78,11 +78,14 @@ def compute_OD(atoms,light,dark):
     It_over_I0 = np.divide(atoms_only, light_only, 
                     out=np.zeros(atoms_only.shape, dtype=float), 
                     where= light_only!=0)
-    
-    OD = -np.log(It_over_I0,
-                    out=np.zeros(atoms_only.shape, dtype=float), 
-                    where= It_over_I0!=0)
-    
-    OD[OD<0] = 0
 
-    return OD  
+    if log:    
+        OD = -np.log(It_over_I0,
+                        out=np.zeros(atoms_only.shape, dtype=float), 
+                        where= It_over_I0!=0)
+        
+        OD[OD<0] = 0
+    else:
+        OD = It_over_I0
+
+    return OD
