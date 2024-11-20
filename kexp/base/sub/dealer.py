@@ -129,8 +129,6 @@ class Dealer():
         dark = self._unshuffle_ndarray(dark,exclude_dims=3,
                                         reshuffle=reshuffle)
 
-        # pwa, pwoa, dark = self._unsort(pwa,pwoa,dark)
-
         self.images = self.stack_linear_data_ndarray(pwa,pwoa,dark)
 
         return self.images
@@ -142,8 +140,6 @@ class Dealer():
         t_pwa = self._unshuffle_ndarray(t_pwa,reshuffle=reshuffle)
         t_pwoa = self._unshuffle_ndarray(t_pwoa,reshuffle=reshuffle)
         t_dark = self._unshuffle_ndarray(t_dark,reshuffle=reshuffle)
-
-        # t_pwa, t_pwoa, t_dark = self._unsort(t_pwa,t_pwoa,t_dark)
 
         self.image_timestamps = self.stack_linear_data_ndarray(t_pwa,t_pwoa,t_dark)
 
@@ -187,12 +183,6 @@ class Dealer():
                 arg = arg.reshape(*self.xvardims,*arg.shape[(self.N_xvars+1):])
             out.append(arg)
         return out
-    
-    def _unsort(self,*args):
-        out = []
-        for arg in args:
-            out.append( self._reshape_data_array_to_linear(arg) )
-        return np.array(out)
 
     def _reshape_data_array_to_nxvar(self,ndarray):
         """Accepts an array of images of length equal to the number of shots in
@@ -207,21 +197,6 @@ class Dealer():
         ndarray = ndarray.reshape(*self.xvardims,
                                   self.params.N_pwa_per_shot,
                                   *ndarray.shape[2:])
-        return ndarray
-    
-    def _reshape_data_array_to_linear(self,ndarray):
-        """Accepts an array of images with shape (n1,n2,...,nN,px,py),
-        where ni is the length of the ith xvar. Reshapes them to (N,px,py),
-        where N = the product of the lengths of all the xvars (= the number of
-        shots). (px,py) is the image shape.
-
-        Args:
-            img_ndarray (np.ndarray): an image array of shape
-            (n1,n2,...,nN,px,py), where ni is the length of the ith xvar, and px
-            and py are the size of the image axes in pixels.
-        """        
-        n_imgs = self.params.N_shots
-        ndarray = ndarray.reshape(n_imgs, self.params.N_pwa_per_shot, *ndarray.shape[2:])
         return ndarray
 
     def _unshuffle_struct(self,struct,
