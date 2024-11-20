@@ -9,12 +9,12 @@ class multi_image_test(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select='andor',
-                      absorption_image=True)
+                      absorption_image=False)
 
-        # self.xvar('p1',[0,1])
+        # self.xvar('p1',[0,1])ar 
         # self.xvar('p2',[0,1,2])
         # self.xvar('dum')
-        self.p.N_pwa_per_shot = 1
+        self.p.N_pwa_per_shot = 3
 
         self.finish_prepare(shuffle=True)
 
@@ -31,7 +31,8 @@ class multi_image_test(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(setup_awg=False,dds_off=False,init_dds=True,dds_set=False,init_dac=False,init_lightsheet=False,init_shuttler=False)
+        # self.init_kernel()
         self.scan()
 
     def analyze(self):
