@@ -9,7 +9,7 @@ class multi_image_test(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select='andor',
-                      absorption_image=False)
+                      absorption_image=True)
 
         # self.xvar('p1',[0,1])ar 
         # self.xvar('p2',[0,1,2])
