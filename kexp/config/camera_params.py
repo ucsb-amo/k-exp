@@ -62,8 +62,8 @@ class BaslerParams(CameraParams):
 
 class AndorParams(CameraParams):
     def __init__(self,
-                 exposure_time_fluor = 10.e-3, exposure_time_abs = 10.e-6,
-                 amp_absorption = 0.106, amp_fluorescence=0.5,
+                 exposure_time_fluor = 10.e-6, exposure_time_abs = 10.e-6,
+                 amp_absorption = 0.106, amp_fluorescence=0.106,
                  resolution = (512,512,),
                  t_light_only_image_delay=25.e-3,
                  t_dark_image_delay=25.e-3,
