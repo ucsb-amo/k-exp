@@ -71,6 +71,7 @@ def plot_image_grid(ad:atomdata,
     return fig, ax
 
 def mixOD_grid(ad,
+                ndarray = [],
                 xvarformat="1.2g",
                 xvar0format="",
                 xvar1format="",
@@ -86,7 +87,11 @@ def mixOD_grid(ad,
     if not xvar1format:
         xvar1format = xvarformat
     # Extract necessary attributes
-    od = ad.od
+    if isinstance(ndarray,np.ndarray):
+        od = ndarray
+    else:
+        od = ad.od
+        
     if max_od == 0.:
         max_od = np.max(od)
         
