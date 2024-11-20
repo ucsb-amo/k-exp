@@ -164,10 +164,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.dds.raman_minus.on()
         self.dds.raman_plus.on()
 
-        # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
-        delay(50.e-3)
         if self._setup_awg:
             self.tweezer.reset_traps(self.xvarnames)
+            delay(20.e-3)
             self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
