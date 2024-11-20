@@ -61,7 +61,7 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         self.outer_coil.on()
         delay(1.e-3)
         self.outer_coil.set_voltage()
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_evap1_current)
         
@@ -71,7 +71,7 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
         
         # feshbach field ramp to field 2
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_evap1_current,
                              i_end=self.p.i_evap2_current)
         
@@ -95,7 +95,7 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         
         # # # feshbach field ramp to field 3
         
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp2,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp2,
                              i_start=self.p.i_evap2_current,
                              i_end=self.p.i_evap3_current)
         
