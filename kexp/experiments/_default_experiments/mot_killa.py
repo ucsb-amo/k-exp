@@ -6,15 +6,15 @@ import numpy as np
 class mot_killa(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.p.imaging_state = 2.
-        # self.xvar('imaging_state',[2,1])
-
+        self.p.imaging_state = 1
         # self.xvar('beans',[0]*300)
 
-        # self.xvar('evap1_current',np.linspace(11.,13.9,6))
-        self.p.i_evap1_current = 28.5
+        # self.xvar('evap1_current',np.linspace(16.,20.,20))
+        self.p.i_evap1_current = 33.12
+
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(5.,9.,10))
 
         # self.xvar('i_feshbach_field_ramp_start',np.linspace(30.,15.,10))
 
@@ -28,28 +28,23 @@ class mot_killa(EnvExperiment, Base):
 
         # self.xvar('evap2_current',np.linspace(10.9,12.3,6))
 
-        self.xvar('t_tof',np.linspace(100.,100.,300)*1.e-6)
+        # self.xvar('t_tof',np.linspace(100.,100.,300)*1.e-6)
 
         # self.xvar('i_magtrap_ramp_start', np.linspace(40.,90.,10))
         # self.xvar('i_magtrap_init', np.linspace(20.,40.,10))
 
         # self.xvar('t_tweezer_hold', np.linspace(15.,40.,20)*1.e-3)
 
-        self.p.t_lightsheet_hold = 1.5e-3
-
-        self.p.t_lightsheet_rampup = 25.e-3
-
         self.p.t_tof = 10.e-6
 
-        self.p.t_mot_load = 0.5
-        self.p.t_bias_off_wait = 2.e-3
+        self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
         # self.set_imaging_detuning(frequency_detuned=self.p.detuning_dispersive_imaging)
-        self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
+        # self.set_high_field_imaging(i_outer=self.p.i_evap1_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
@@ -75,22 +70,22 @@ class mot_killa(EnvExperiment, Base):
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
         
-        # feshbach field ramp to field 2
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_evap1_current,
-                             i_end=self.p.i_evap2_current)
+        # # feshbach field ramp to field 2
+        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+        #                      i_start=self.p.i_evap1_current,
+        #                      i_end=self.p.i_evap2_current)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.tweezer.on(paint=False)
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
-                          v_start=0.,
-                          v_end=self.p.v_pd_tweezer_1064_ramp_end,
-                          paint=True,keep_trap_frequency_constant=False)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.tweezer.on(paint=False)
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
+        #                   v_start=0.,
+        #                   v_end=self.p.v_pd_tweezer_1064_ramp_end,
+        #                   paint=True,keep_trap_frequency_constant=False)
         
-        # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        # # lightsheet ramp down (to off)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         # # tweezer evap 1 with constant trap frequency
         # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
@@ -116,6 +111,9 @@ class mot_killa(EnvExperiment, Base):
         #                   v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
         #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
         
+        self.outer_coil.snap_off()
+        delay(5.e-3)
+
         self.lightsheet.off()
 
         self.tweezer.off()
@@ -123,8 +121,10 @@ class mot_killa(EnvExperiment, Base):
         self.dds.mot_killer.on()
     
         delay(self.p.t_tof)
-        self.flash_repump()
+        # self.flash_repump()
         self.abs_image()
+
+        self.outer_coil.discharge()
 
         self.dds.mot_killer.off()
 

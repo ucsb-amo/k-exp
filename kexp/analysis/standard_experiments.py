@@ -82,12 +82,15 @@ def get_B(f_mf0_mf1_transition,
         return find_xval(f_mf0_mf1_transition,f_transitions,B)
 
 def rabi_oscillation(ad,rf_frequency_hz,
+                     include_idx=[0,-1],
+                     min_population_is_zero=True,
                      plot_bool=True,
                      pi_time_at_peak=True,
-                     fit_guess_frequency=1.e3,
+                     fit_guess_frequency=10.e3,
                      fit_guess_phase=np.pi/2,
-                     fit_guess_amp=dv,
-                     fit_guess_offset=dv):
+                     fit_guess_amp=1.,
+                     fit_guess_offset=1.,
+                     fit_guess_decay_tau=dv):
     """Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
     frequency and pi-pulse time, and produces a plot.
 
@@ -95,6 +98,12 @@ def rabi_oscillation(ad,rf_frequency_hz,
 
     Args:
         ad (atomdata)
+        include_idx (list, optional): Specifies the first and last index of the
+        data that will be used for the fit. -1 in the second element uses to the
+        end of the list.
+        min_population_is_zero (bool, optional): If true, normalizes the data
+        between 1 and 0 (full intial contrast). If false, just normalizes the
+        data maximum to 1.
         rf_frequency_hz (float): The RF drive frequency in Hz.
         plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
         pi_time_at_peak (bool, optional): If True, assumes the initial
@@ -107,8 +116,9 @@ def rabi_oscillation(ad,rf_frequency_hz,
     """
 
     # Define the Rabi oscillation function
-    def _fit_func_rabi_oscillation(t, Omega, phi, B, A):
-        return A * np.abs(np.cos(0.5 * Omega * t + phi))**2 + B
+    def _fit_func_rabi_oscillation(t, Omega, phi, B, A, tau):
+        # return A * np.exp(-t/tau) * np.abs(np.cos(0.5 * Omega * t + phi))**2
+        return 0.5 * (B + A * np.exp(-t/tau) * np.cos(Omega * t + phi) )
 
     # Suppose these are your data
     times = ad.xvars[0]  # replace with your pulse times
@@ -117,22 +127,50 @@ def rabi_oscillation(ad,rf_frequency_hz,
     rel_amps = [np.max(sumod_x)-np.min(sumod_x) for sumod_x in sm_sum_ods]
     populations = rel_amps  # replace with your atom populations
 
-    # default fit guesses
-    if fit_guess_amp == dv:
-        fit_guess_amp = (np.max(populations) - np.min(populations))/2
-    if fit_guess_offset == dv:
-        fit_guess_offset = np.min(populations)
+    if include_idx[1] == -1:
+        idx0 = include_idx[0]
+        times = times[idx0:]
+        populations = populations[idx0:]
+    else:
+        idx0 = include_idx[0]
+        idxf = include_idx[1]
+        times = times[idx0:idxf]
+        populations = populations[idx0:idxf]
+
+    populations = (populations)/(np.max(populations))
+
+    if min_population_is_zero:
+        populations = (populations-np.min(populations))/(np.max(populations)-np.min(populations))
+    else:
+        populations = (populations)/(np.max(populations))
+
+    if fit_guess_decay_tau == dv:
+        convwidth = 3
+        psm = np.convolve(populations,[1/convwidth]*convwidth,mode='same')
+        peak_idx, peak_prop = find_peaks(psm,height=0.3)
+        print(peak_idx)
+        y = peak_prop['peak_heights']
+        def _fit_func_decay(t, tau):
+            return np.exp(-t/tau)
+
+        popt_decay, _ = curve_fit(_fit_func_decay,times[0:2],y[0:2])
+        fit_guess_decay_tau = popt_decay[0]
 
     try:
         # Fit the data
         popt, _ = curve_fit(_fit_func_rabi_oscillation, times, populations,
-                            p0=[fit_guess_frequency, fit_guess_phase, fit_guess_amp, fit_guess_offset])
+                            p0=[fit_guess_frequency, fit_guess_phase,
+                                 fit_guess_amp, fit_guess_offset,
+                                   fit_guess_decay_tau],
+                            bounds=((0.,0.,0.,0.,0.),(np.inf,2*np.pi,1.,1.,np.inf)))
+        # if not include_damping:
+        #     popt.append(0.)
 
         y_fit = _fit_func_rabi_oscillation(times, *popt)
 
         # Print the fit parameters
-        print(r"Fit function: f(t) = A * (cos(Omega t / 2 + phi))**2 + B")
-        print(f"Omega = {popt[0]},\n phi = {popt[1]},\n B = {popt[2]},\n A = {popt[3]}")
+        # print(r"Fit function: f(t) = A * exp(-t/tau) * (cos(Omega t / 2 + phi))**2 + B")
+        print(f"Omega = 2*pi*{popt[0]/(2*np.pi):1.2f} Hz,\n phi = {popt[1]},\n B = {popt[2]},\n A = {popt[3]}")
 
         rabi_frequency_hz = popt[0] / (2*np.pi)
     except:
@@ -143,17 +181,20 @@ def rabi_oscillation(ad,rf_frequency_hz,
     if plot_bool:
     # Plot the data and the fit
         plt.scatter(times*1.e6, populations, label='Data')
-        plt.plot(times*1.e6, y_fit, 'k-', label='Fit')
+        t_sm = np.linspace(times[0],times[-1],10000)
+        plt.plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='Fit')
         plt.ylabel('max(sum od x) - min(sum od x)')
         plt.xlabel('t (us)')
-        plt.legend()
+        plt.legend(loc='lower right')
         title = f"Run ID: {ad.run_info.run_id}\n"
-        title += r"f(t) = $A \ \cos^2(\Omega t / 2 + \phi) + B$"
+        title += f"RF frequency = {rf_frequency_hz/1.e6:1.2f} MHz\n"
+        # title += r"f(t) = $A \ \exp(-t/\tau) \cos^2(\Omega t / 2 + \phi) + B$"
+        title += r"$f(t) = 0.5 \ \left[ B + A \ \exp(-t/\tau) \ \cos(\Omega t + \phi) \right]$"
         if rabi_frequency_hz:
             title += f"\n$\\Omega = 2\\pi \\times {rabi_frequency_hz/1.e3:1.3f}$ kHz"
-        title += f"\nRF frequency = {rf_frequency_hz/1.e6:1.2f} MHz"
 
         plt.title(title)
+        plt.ylim([0,1.1])
         plt.show()
 
     try:
@@ -167,6 +208,8 @@ def rabi_oscillation(ad,rf_frequency_hz,
     return t_pi
 
 def rabi_oscillation_2d(ad:atomdata,
+                        include_idx=[0,-1],
+                        min_population_is_zero=True,
                         plot_bool=True,
                         subplots_bool=True,
                         pi_time_at_peak=True,
@@ -176,17 +219,25 @@ def rabi_oscillation_2d(ad:atomdata,
                         plot_figsize=[],
                         fit_guess_frequency=1000.,
                         fit_guess_phase=np.pi,
-                        fit_guess_amp=dv,
-                        fit_guess_offset=dv,
+                        fit_guess_amp=1.,
+                        fit_guess_offset=1.,
+                        fit_guess_decay_tau=dv,
                         rabi_freq_threshold=500.):
     """Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
-    frequency and pi-pulse time, and produces a plot.
+    frequency and pi-pulse time, and pro
+    duces a plot.
 
     xvar0: rf frequency
     xvar1: pulse time
 
     Args:
         ad (atomdata)
+        include_idx (list, optional): Specifies the first and last index of the
+        data that will be used for the fit. -1 in the second element uses to the
+        end of the list.
+        min_population_is_zero (bool, optional): If true, normalizes the data
+        between 1 and 0 (full intial contrast). If false, just normalizes the
+        data maximum to 1.
         plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
         subplots_bool (bool, optional): If True, plots subplots for each set of
         scans over pulse time at fixed RF frequency. Includes fits.
@@ -239,17 +290,37 @@ def rabi_oscillation_2d(ad:atomdata,
 
         populations = rel_amp
 
-        # default fit guesses
-        if fit_guess_amp == dv:
-            fit_guess_amp = (np.max(populations) - np.min(populations))/2
-        if fit_guess_offset == dv:
-            fit_guess_offset = np.min(populations)
+        if include_idx[1] == -1:
+            idx0 = include_idx[0]
+            times = times[idx0:]
+            populations = populations[idx0:]
+        else:
+            idx0 = include_idx[0]
+            idxf = include_idx[1]
+            times = times[idx0:idxf]
+            populations = populations[idx0:idxf]
+
+        if min_population_is_zero:
+            populations = (populations-np.min(populations))/(np.max(populations)-np.min(populations))
+        else:
+            populations = (populations)/(np.max(populations))
+
+        if fit_guess_decay_tau == dv:
+            peak_idx, peak_prop = find_peaks(populations,height=0.5)
+            y = peak_prop['peak_heights']
+            def _fit_func_decay(t, tau):
+                return np.exp(-t/tau)
+            popt_decay, _ = curve_fit(_fit_func_decay,times[peak_idx],y)
+            fit_guess_decay_tau = popt_decay[0]
 
         # Fit the data
         try:
             popt, _ = curve_fit(_fit_func_rabi_oscillation, times, populations,
-                                p0=[fit_guess_frequency, fit_guess_phase, fit_guess_amp, fit_guess_offset],
-                                )
+                            p0=[fit_guess_frequency, fit_guess_phase,
+                                 fit_guess_amp, fit_guess_offset,
+                                   fit_guess_decay_tau],
+                            bounds=((0.,-np.inf,0.,-np.inf,0.),(np.inf,np.inf,1.,np.inf,np.inf)))
+
             y_fit = _fit_func_rabi_oscillation(times, *popt)
             f_rabi = popt[0]/(2*np.pi)
             if f_rabi < rabi_freq_threshold:
@@ -270,7 +341,8 @@ def rabi_oscillation_2d(ad:atomdata,
         if subplots_bool:
         # Plot the data and the fit
             ax[xvar0_idx].scatter(times*1.e6, populations, label='Data')
-            ax[xvar0_idx].plot(times*1.e6, y_fit, 'k-', label='Fit')
+            t_sm = np.linspace(times[0],times[-1],10000)
+            ax[xvar0_idx].plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='Fit')
             if rabi_frequencies_hz[xvar0_idx]:
                 title = f"$f_R = {rabi_frequencies_hz[xvar0_idx]/1.e3:1.2f}$"
                 ax[xvar0_idx].set_title(title)
@@ -295,7 +367,7 @@ def rabi_oscillation_2d(ad:atomdata,
                 ymin = this_ymin
         [ax0.set_ylim([ymin,ymax]) for ax0 in ax]
         title = f"Run ID: {ad.run_info.run_id}\n"
-        title += r"$y(t) = A \ \cos^2(\Omega t / 2 + \phi) + B$"
+        title += r"$f(t) = 0.5 \ \left[ B + A \exp(-t/\tau) \ \cos(\Omega t + \phi) \right]$\n"
         title += f"\n$f_{{Rabi}} = \\Omega / 2\\pi$ (kHz)"
         fig.suptitle(title)
         fig.supxlabel(f"{ad.xvarnames[0]} ({xvar0unit})")
@@ -313,7 +385,7 @@ def rabi_oscillation_2d(ad:atomdata,
         else:
             rabi_fig = plt.figure()
         title = f"Run ID: {ad.run_info.run_id}\n"
-        title += r"$f(t) = A \ \cos^2(\Omega t / 2 + \phi) + B$"
+        title += r"$f(t) = 0.5 \ \left[ B + A \exp(-t/\tau) \ \cos(\Omega t + \phi) \right]$\n"
         title += f"\nRabi frequency vs. {ad.xvarnames[0]}"
         plt.title(title)
         plt.scatter(ad.xvars[0],rabi_frequencies_hz)

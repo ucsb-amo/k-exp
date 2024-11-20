@@ -215,6 +215,7 @@ class dds_frame():
         self.d2_2d_c.dds_device.set(amplitude=0.)
         self.d2_2d_r.dds_device.set(amplitude=0.)
         self.push.dds_device.set(amplitude=0.)
+        # self.mot_killer.dds_device.set(amplitude=0.)
 
         self.d1_3d_r.off()
         self.d1_3d_c.off()
@@ -223,6 +224,7 @@ class dds_frame():
         self.d2_2d_c.off()
         self.d2_2d_r.off()
         self.push.off()
+        # self.mot_killer.off()
 
     @kernel
     def init_cooling(self):
