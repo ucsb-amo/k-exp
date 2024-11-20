@@ -39,6 +39,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.sort_idx = []
         self.sort_N = []
 
+        self._setup_awg = False
+
         self.ds = DataSaver()
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
@@ -107,6 +109,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         if setup_awg:
+            self._setup_awg = setup_awg
             self.tweezer.awg_init()
         self.core.reset() # clears RTIO
         if init_dac:
@@ -151,11 +154,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-        
-        # self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
-        
-        self.tweezer.reset_traps(self.xvarnames)
-
         self.dds.ry_405.set_dds(set_stored=True)
         self.dds.ry_405.on()
         self.dds.ry_980.set_dds(set_stored=True)
@@ -168,7 +166,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         delay(50.e-3)
-        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+        if self._setup_awg:
+            self.tweezer.reset_traps(self.xvarnames)
+            self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
 
