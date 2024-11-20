@@ -11,7 +11,7 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
-        # self.xvar('t_tof',np.linspace(800.,4000.,15)*1.e-6)
+        self.xvar('t_tof',np.linspace(800.,4000.,15)*1.e-6)
         # self.xvar('dummy',[0]*3)
         self.p.t_tof = 100.e-6
         # self.p.t_tof = 2200.e-6
@@ -79,15 +79,15 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_mot_load = 1.
 
         # self.xvar('t_imaging_pulse',np.linspace(1.e-6,20.e-6,20))
-        self.p.t_imaging_pulse = 15.e-6
+        self.p.t_imaging_pulse = 10.e-6
 
         # self.xvar('detuning_dispersive_imaging',np.arange(-800.e6,-615.e6,5.e6))
-        self.xvar('detuning_dispersive_imaging',np.arange(-740.e6,-500.e6,6.e6))
+        # self.xvar('detuning_dispersive_imaging',np.arange(-740.e6,-500.e6,6.e6))
         self.p.detuning_dispersive_imaging = -740.e6
 
         # self.xvar('amp_imaging',np.linspace(0.03,0.15,8))
         self.camera_params.amp_imaging = .08
-        self.camera_params.exposure_time = 15.e-6
+        self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
         self.finish_prepare(shuffle=True)
@@ -95,8 +95,8 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.detuning_dispersive_imaging)
-        # self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
+        # self.set_imaging_detuning(frequency_detuned=self.p.detuning_dispersive_imaging)
+        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
@@ -165,12 +165,12 @@ class tweezer_load(EnvExperiment, Base):
         
         self.lightsheet.off()
 
-        self.dispersive_image(repeats=3,repeat_delay=.075)
+        # self.dispersive_image(repeats=3,repeat_delay=.075)
 
         self.tweezer.off()
 
-        # delay(self.p.t_tof)
-        # self.abs_image()
+        delay(self.p.t_tof)
+        self.abs_image()
         
         self.outer_coil.off()
         # self.outer_coil.discharge()
