@@ -9,11 +9,12 @@ class multi_image_test(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select='andor',
-                      absorption_image=False)
+                      absorption_image=True)
 
-        self.xvar('p1',[0,1])
-        self.xvar('p2',[0,1,2])
-        self.p.N_pwa_per_shot = 5
+        # self.xvar('p1',[0,1])
+        # self.xvar('p2',[0,1,2])
+        # self.xvar('dum')
+        self.p.N_pwa_per_shot = 1
 
         self.finish_prepare(shuffle=True)
 
