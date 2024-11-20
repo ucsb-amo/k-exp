@@ -307,7 +307,7 @@ class Image():
         if self.run_info.absorption_image:
             images_per_shot = 3
         else:
-            images_per_shot = self.params.N_img_per_shot + 2
+            images_per_shot = self.params.N_pwa_per_shot + 2
 
         N_img = images_per_shot * N_img # 3 images per value of independent variable (xvar)
 

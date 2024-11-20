@@ -12,6 +12,8 @@ class Dealer():
         self.sort_N = []
         self.params = ExptParams()
         self.xvarnames = []
+        self.xvardims = []
+        self.N_xvars = 0
         self.images = np.array([])
         self.image_timestamps = np.array([])
         self.run_info = RunInfo()
@@ -116,82 +118,74 @@ class Dealer():
             self.sort_idx[i] = np.append(self.sort_idx[i], [-1]*N_to_pad)
 
     def unscramble_images(self,reshuffle=False):
-        images = np.empty(self.images.shape, dtype=self.images.dtype)
 
-        pwa, pwoa, dark = self.sort_images()
+        pwa, pwoa, dark = self.deal_data_ndarray(self.images)
         
-        pwa = self._unshuffle_ndarray(pwa,exclude_dims=2,
+        pwa = self._unshuffle_ndarray(pwa,exclude_dims=3,
                                         reshuffle=reshuffle)
-        pwoa = self._unshuffle_ndarray(pwoa,exclude_dims=2,
+        pwoa = self._unshuffle_ndarray(pwoa,exclude_dims=3,
                                         reshuffle=reshuffle)
-        dark = self._unshuffle_ndarray(dark,exclude_dims=2,
+        dark = self._unshuffle_ndarray(dark,exclude_dims=3,
                                         reshuffle=reshuffle)
         
         pwa, pwoa, dark = self._unsort(pwa,pwoa,dark)
 
+        self.images = self.stack_linear_data_ndarray(pwa,pwoa,dark)
+
+        return self.images
+
+    def _unscramble_timestamps(self,reshuffle=False):
+
+        t_pwa, t_pwoa, t_dark = self.deal_data_ndarray(self.image_timestamps)
+
+        t_pwa = self._unshuffle_ndarray(t_pwa,reshuffle=reshuffle)
+        t_pwoa = self._unshuffle_ndarray(t_pwoa,reshuffle=reshuffle)
+        t_dark = self._unshuffle_ndarray(t_dark,reshuffle=reshuffle)
+
+        t_pwa, t_pwoa, t_dark = self._unsort(t_pwa,t_pwoa,t_dark)
+
+        self.image_timestamps = self.stack_linear_data_ndarray(t_pwa,t_pwoa,t_dark)
+
+        return self.image_timestamps
+    
+    def stack_linear_data_ndarray(self,pwa,pwoa,dark):
         Ns = self.params.N_shots
-        Nps = self.params.N_img_per_shot
-        images = images.reshape((Ns,Nps)+images.shape[-1:])
+        Nps = self.params.N_pwa_per_shot
+        N_img = Ns*(Nps+2)
+
+        ndarray = np.empty((Ns,Nps+2)+pwa.shape[(self.N_xvars):],
+                            dtype=pwa.dtype)
+        print(ndarray.shape)
         for shot_idx in range(Ns):
-            images[shot_idx][:Nps] = pwa[shot_idx]
-            images[Nps] = pwoa[shot_idx][0]
-            images[Nps+1] = dark[shot_idx][0]
-        images = images.reshape(self.images.shape)
-        self.images = images
-        return images
+            ndarray[shot_idx][:Nps] = pwa[shot_idx]
+            ndarray[shot_idx][Nps] = pwoa[shot_idx][0]
+            ndarray[shot_idx][Nps+1] = dark[shot_idx][0]
+        ndarray = ndarray.reshape((N_img,)+pwa.shape[(self.N_xvars):])
+        return ndarray
 
-    def sort_images(self):
-        Nps = self.params.N_img_per_shot
+    def deal_data_ndarray(self,ndarray):
+        Ns = self.params.N_shots
+        Nps = self.params.N_pwa_per_shot
+        ndarray = ndarray.reshape((Ns,Nps+2)+ndarray.shape[1:])
 
-        img = self.images.reshape((self.params.N_shots,Nps)+self.images.shape[-1:])
-
-        pwa = img[:,0:Nps]
-        pwoa = np.expand_dims(img[:,Nps],axis=0).repeat(Nps,axis=0)
-        dark = np.expand_dims(img[:,Nps],axis=0).repeat(Nps,axis=0)
+        pwa = ndarray[:,0:Nps]
+        pwoa = np.expand_dims(ndarray[:,Nps],axis=0).repeat(Nps,axis=0)
+        dark = np.expand_dims(ndarray[:,Nps],axis=0).repeat(Nps,axis=0)
 
         pwa = self._reshape_data_array_to_nxvar(pwa)
         pwoa = self._reshape_data_array_to_nxvar(pwoa)
         dark = self._reshape_data_array_to_nxvar(dark)
 
         return (pwa,pwoa,dark)
-        
-    def _unscramble_timestamps(self):
-        image_timestamps = np.empty(self.image_timestamps.shape, dtype=self.image_timestamps.dtype)
-
-        self.sort_timestamps()
-
-        t_pwa = self._unshuffle_ndarray(t_pwa)
-        t_pwoa = self._unshuffle_ndarray(t_pwoa)
-        t_dark = self._unshuffle_ndarray(t_dark)
-
-        t_pwa, t_pwoa, t_dark = self._unsort(t_pwa,t_pwoa,t_dark)
-
-        Nps = self.params.N_img_per_shot
-        Ns = self.params.N_shots
-        image_timestamps = image_timestamps.reshape((Ns,Nps))
-        for shot_idx in range(Ns):
-            image_timestamps[shot_idx][:Nps] = t_pwa[shot_idx]
-            image_timestamps[Nps] = t_pwoa[shot_idx][0]
-            image_timestamps[Nps+1] = t_dark[shot_idx][0]
-        image_timestamps = image_timestamps.reshape(self.image_timestamps.shape)
-        self.image_timestamps = image_timestamps
-
-        return image_timestamps
     
-    def sort_timestamps(self):
-        Nps = self.params.N_img_per_shot
-        Ns = self.params.N_shots
-
-        ts = self.image_timestamps.reshape((self.params.N_shots,Nps))
-        t_pwa = ts[:,0:Nps]
-        t_pwoa = np.expand_dims(ts[:,Nps],axis=0).repeat(Nps,axis=0)
-        t_dark = np.expand_dims(ts[:,Nps],axis=0).repeat(Nps,axis=0)
-
-        t_pwa = self._reshape_data_array_to_nxvar(t_pwa)
-        t_pwoa = self._reshape_data_array_to_nxvar(t_pwoa)
-        t_dark = self._reshape_data_array_to_nxvar(t_dark)
-
-        return t_pwa, t_pwoa, t_dark
+    def strip_shot_idx_axis(self,*args):
+        out = []
+        for arg in args:
+            arg: np.ndarray
+            if arg.shape[self.N_xvars] == 1:
+                arg = arg.reshape(*self.xvardims,*arg.shape[(self.N_xvars+1):])
+            out.append(arg)
+        return out
     
     def _unsort(self,*args):
         out = []
@@ -199,23 +193,22 @@ class Dealer():
             out.append( self._reshape_data_array_to_linear(arg) )
         return np.array(out)
 
-    def _reshape_data_array_to_nxvar(self,img_ndarray):
+    def _reshape_data_array_to_nxvar(self,ndarray):
         """Accepts an array of images of length equal to the number of shots in
         the order they were taken. Reshapes them to shape (n1,n2,...,nN,px,py),
         where ni is the length of the ith xvar.
 
         Args:
-            img_ndarray (np.ndarray): an image array of shape (N,px,py), where N = the product of
+            ndarray (np.ndarray): an image array of shape (N,...), where N = the product of
         the lengths of all the xvars (= the number of shots), and px and py are
         the size of the image axes in pixels.
-        """        
-        imgs = img_ndarray
-        xvardims = [len(xvar.values) for xvar in self.scan_xvars]
-        n_nonxvar_dims = imgs.ndim - 1
-        imgs = imgs.reshape(*xvardims,self.params.N_img_per_shot,*imgs.shape[-n_nonxvar_dims:])
-        return imgs
+        """
+        ndarray = ndarray.reshape(*self.xvardims,
+                                  self.params.N_pwa_per_shot,
+                                  *ndarray.shape[2:])
+        return ndarray
     
-    def _reshape_data_array_to_linear(self,img_ndarray):
+    def _reshape_data_array_to_linear(self,ndarray):
         """Accepts an array of images with shape (n1,n2,...,nN,px,py),
         where ni is the length of the ith xvar. Reshapes them to (N,px,py),
         where N = the product of the lengths of all the xvars (= the number of
@@ -226,13 +219,9 @@ class Dealer():
             (n1,n2,...,nN,px,py), where ni is the length of the ith xvar, and px
             and py are the size of the image axes in pixels.
         """        
-        imgs = img_ndarray
-        xvardims = [len(xvar.values) for xvar in self.scan_xvars]
-        nvars = len(xvardims)
-        n_nonxvar_dims = imgs.ndim - nvars
-        n_imgs = np.prod(xvardims)*self.params.N_img_per_shot
-        imgs = imgs.reshape(n_imgs,*imgs.shape[-n_nonxvar_dims:])
-        return imgs
+        n_imgs = np.prod(self.xvardims)
+        ndarray = ndarray.reshape(n_imgs,*ndarray.shape[2:])
+        return ndarray
 
     def _unshuffle_struct(self,struct,
                           reshuffle=False):

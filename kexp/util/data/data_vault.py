@@ -32,8 +32,10 @@ class DataSaver():
                 f = h5py.File(fpath,'r+')
 
             if expt.sort_idx:
-                expt.images = f['data']['images']
-                expt.image_timestamps = f['data']['image_timestamps']
+                expt.images = np.array(f['data']['images'])
+                expt.image_timestamps = np.array(f['data']['image_timestamps'])
+                expt.xvardims = [len(xvar.values) for xvar in expt.scan_xvars]
+                expt.N_xvars = len(expt.xvardims)
                 expt._unshuffle_struct(expt)
                 f['data']['images'][...] = expt.unscramble_images()
                 f['data']['image_timestamps'][...] = expt._unscramble_timestamps()

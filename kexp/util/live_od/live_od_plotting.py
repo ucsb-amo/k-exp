@@ -27,20 +27,29 @@ class Analyzer(QObject):
         self.plotting_queue = plotting_queue
         self.roi = []
 
+    def get_img_number(self,N_img,N_shots,N_pwa_per_shot):
+        self.N_img = N_img
+        self.N_shots = N_shots
+        self.N_pwa_per_shot = N_pwa_per_shot
+
+    def get_analysis_type(self,absorption_image_bool):
+        self.absorption_image = absorption_image_bool
+
     def got_img(self,img):
         self.imgs.append(np.asarray(img))
-        if len(self.imgs) == 3:
+        if len(self.imgs) == (self.N_pwa_per_shot+2):
             self.analyze()
             self.imgs = []
 
     def analyze(self):
         self.img_atoms = self.imgs[0]
-        self.img_light = self.imgs[1]
-        self.img_dark = self.imgs[2]
+        self.img_light = self.imgs[self.N_pwa_per_shot]
+        self.img_dark = self.imgs[self.N_pwa_per_shot+1]
 
         self.od_raw = compute_OD(self.img_atoms,
                         self.img_light,
-                        self.img_dark)
+                        self.img_dark,
+                        abs_image_bool=self.absorption_image)
         self.od_raw = np.array([self.od_raw])
         self.od, self.sum_od_x, self.sum_od_y = \
             process_ODs(self.od_raw,self.roi)
@@ -154,8 +163,10 @@ class ODviewer(QWidget):
         self.sum_od_x_plot.setFixedWidth(self.od_plot.width())
         self.sum_od_x_plot.setFixedHeight(150)
 
-    def get_img_number(self,Nimg):
-        self.Nimg = Nimg
+    def get_img_number(self,N_img,N_shots,N_pwa_per_shot):
+        self.N_img = N_img
+        self.N_shots = N_shots
+        self.N_pwa_per_shot = N_pwa_per_shot
 
     def update_image_count(self,count):
         self.image_count_label.setText(f"Image count: {int(count)}/{int(self.Nimg)}")

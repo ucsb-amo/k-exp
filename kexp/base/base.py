@@ -58,6 +58,12 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         parameters that the user created in the experiment file at each step in
         a scan. This must be an RPC -- no kernel decorator.
         """
+
+        if self.run_info.absorption_image:
+            if self.params.N_pwa_per_shot == 1:
+                print("You indicated more than one PWA per shot, but the analysis is set to absorption imaging. Setting # PWA to 1.")
+            self.params.N_pwa_per_shot = 1
+
         if not self.xvarnames:
             self.xvar("dummy",[0]*2)
         if self.xvarnames and not self.scan_xvars:
@@ -126,6 +132,11 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.dds.ry_980.set_dds(set_stored=True)
         self.dds.ry_405.on()
         self.dds.ry_980.on()
+
+        self.dds.raman_plus.set_dds(set_stored=True)
+        self.dds.raman_minus.set_dds(set_stored=True)
+        self.dds.raman_plus.on()
+        self.dds.raman_minus.on()
         
     @kernel
     def init_scan_kernel(self):
@@ -154,6 +165,14 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
+
+    @kernel
+    def cleanup_scan_kernel(self):
+        if not self.run_info.absorption_image:
+            delay(self.params.t_light_only_image_delay)
+            self.light_image()
+            delay(self.params.t_dark_image_delay)
+            self.dark_image()
 
     def prepare_image_array(self):
         if self.run_info.save_data:
