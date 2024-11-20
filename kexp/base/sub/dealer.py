@@ -155,11 +155,19 @@ class Dealer():
 
         ndarray = np.empty((Ns,Nps+2)+pwa.shape[(self.N_xvars):],
                             dtype=pwa.dtype)
-        print(ndarray.shape)
         for shot_idx in range(Ns):
             ndarray[shot_idx][:Nps] = pwa[shot_idx]
-            ndarray[shot_idx][Nps] = pwoa[shot_idx][0]
-            ndarray[shot_idx][Nps+1] = dark[shot_idx][0]
+            
+            this_pwoa = pwoa[shot_idx]
+            if isinstance(this_pwoa,np.ndarray):
+                this_pwoa = this_pwoa[0]
+            ndarray[shot_idx][Nps] = this_pwoa
+            
+            this_dark = dark[shot_idx]
+            if isinstance(this_pwoa,np.ndarray):
+                this_dark = this_dark[0]
+            ndarray[shot_idx][Nps+1] = this_dark
+
         ndarray = ndarray.reshape((N_img,)+pwa.shape[(self.N_xvars):])
         return ndarray
 
