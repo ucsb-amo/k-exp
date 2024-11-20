@@ -1,3 +1,4 @@
+
 from artiq.experiment import *
 from artiq.experiment import delay, delay_mu
 import numpy as np
@@ -60,7 +61,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         """
 
         if self.run_info.absorption_image:
-            if self.params.N_pwa_per_shot == 1:
+            if self.params.N_pwa_per_shot > 1:
                 print("You indicated more than one PWA per shot, but the analysis is set to absorption imaging. Setting # PWA to 1.")
             self.params.N_pwa_per_shot = 1
 

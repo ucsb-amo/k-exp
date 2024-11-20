@@ -47,18 +47,10 @@ def compute_OD(atoms,light,dark,abs_image_bool=True):
     img_dark: list 
         An n x px x py list of images of n images, px x py pixels. Images with no light, no atoms.
 
-    crop_type: str
-        Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-        options: 'mot', 'cmot', 'gm', 'odt'.
-
     Returns
     -------
     ODsraw: ArrayLike
         The uncropped ODs
-    ODs: ArrayLike
-        The cropped ODs
-    summedODx: ArrayLike
-    summedODy: ArrayLike
     '''
     
     dtype = atoms.dtype
@@ -76,10 +68,10 @@ def compute_OD(atoms,light,dark,abs_image_bool=True):
     light_only[light_only < 0] = 0
 
     if abs_image_bool:
+
         It_over_I0 = np.divide(atoms_only, light_only, 
                     out=np.zeros(atoms_only.shape, dtype=float), 
-                    where= light_only!=0)
-
+                    where=light_only!=0)
         
         OD = -np.log(It_over_I0,
                         out=np.zeros(atoms_only.shape, dtype=float), 

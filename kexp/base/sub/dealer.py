@@ -170,7 +170,7 @@ class Dealer():
 
         pwa = ndarray[:,0:Nps]
         pwoa = np.expand_dims(ndarray[:,Nps],axis=0).repeat(Nps,axis=0)
-        dark = np.expand_dims(ndarray[:,Nps],axis=0).repeat(Nps,axis=0)
+        dark = np.expand_dims(ndarray[:,Nps+1],axis=0).repeat(Nps,axis=0)
 
         pwa = self._reshape_data_array_to_nxvar(pwa)
         pwoa = self._reshape_data_array_to_nxvar(pwoa)
