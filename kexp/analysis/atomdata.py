@@ -150,12 +150,10 @@ class atomdata():
         self.analyze_ods()
 
     def compute_raw_ods(self):
-        """Computes the ODs. If fluorescence analysis, OD = pwa - dark.
+        """Computes the ODs. If not absorption analysis, OD = (pwa - dark)/(pwoa - dark).
         """        
-        if self._analysis_tags.absorption_analysis:
-            self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark)
-        else:
-            self.od_raw = self.img_atoms.astype(np.int16) - self.img_dark.astype(np.int16)
+        self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark,
+                                 abs_image_bool=self._analysis_tags.absorption_analysis)
 
     def analyze_ods(self):
         """Crops ODs, computes sum_ods, gaussian fits to sum_ods, and populates
@@ -177,16 +175,27 @@ class atomdata():
             self.compute_atom_number()
 
     def _sort_images(self):
-        imgs_tuple = self._dealer.sort_images()
-        if self._analysis_tags.absorption_analysis:
-            self.img_atoms = imgs_tuple[0]
-            self.img_light = imgs_tuple[1]
-            self.img_dark = imgs_tuple[2]
-            self.image_timestamps.reshape(-1,3)
+        imgs_tuple = self._dealer.deal_data_ndarray(self.images)
+        self.img_atoms = imgs_tuple[0]
+        self.img_light = imgs_tuple[1]
+        self.img_dark = imgs_tuple[2]
+
+        img_timestamp_tuple = self._dealer.deal_data_ndarray(self.image_timestamps)
+        self.img_timestamp_atoms = img_timestamp_tuple[0]
+        self.img_timestamp_light = img_timestamp_tuple[1]
+        self.img_timestamp_dark = img_timestamp_tuple[2]
+        
+        if self.params.N_pwa_per_shot > 1:
+            self.xvarnames = np.append(self.xvarnames,'idx_pwa')
+            self.xvars.append(np.arange(self.params.N_pwa_per_shot))
         else:
-            self.img_atoms = imgs_tuple[0]
-            self.img_dark = imgs_tuple[1]
-            self.image_timestamps.reshape(-1,2)
+            self.img_atoms = self._dealer.strip_shot_idx_axis(self.img_atoms)[0]
+            self.img_light = self._dealer.strip_shot_idx_axis(self.img_light)[0]
+            self.img_dark = self._dealer.strip_shot_idx_axis(self.img_dark)[0]
+
+            self.img_timestamp_atoms = self._dealer.strip_shot_idx_axis(self.img_timestamp_atoms)[0]
+            self.img_timestamp_light = self._dealer.strip_shot_idx_axis(self.img_timestamp_light)[0]
+            self.img_timestamp_dark = self._dealer.strip_shot_idx_axis(self.img_timestamp_dark)[0]
 
     ### Physics
     def compute_atom_number(self):
@@ -458,6 +467,8 @@ class atomdata():
             else:
                 this_xvar.sort_idx = []
             dealer.scan_xvars.append(this_xvar)
+            dealer.xvardims.append(len(this_xvar.values))
+        dealer.N_xvars = len(self.xvardims)
         return dealer
 
     def _load_data(self, idx=0, path = "", lite=False):

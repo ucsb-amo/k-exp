@@ -45,8 +45,13 @@ class MainWindow(QWidget):
 
         ### what to do when the camera starts grabbing
         self.the_baby.camera_grab_start.connect(self.grab_start_msg) # post a message
+        self.the_baby.camera_grab_start.connect(self.get_img_number)
         self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number) # send N_imgs to expect
         self.the_baby.camera_grab_start.connect(self.plotter.plotwindow.get_img_number) # ditto
+        self.the_baby.camera_grab_start.connect(self.analyzer.get_img_number) # ditto
+
+        self.the_baby.save_data_bool_signal.connect(self.analyzer.get_analysis_type)
+        
         self.the_baby.camera_grab_start.connect(self.data_handler.start) # open data to save images
         self.the_baby.camera_grab_start.connect(self.reset_count) # reset counting
 
@@ -92,11 +97,14 @@ class MainWindow(QWidget):
 
     ### Plot counter
 
+    def get_img_number(self,N_img,N_shots,N_pwa_per_shot):
+        self.N_pwa_per_shot = N_pwa_per_shot
+
     def count_images(self):
         self.img_count += 1
         self.img_count_run += 1
         self.plotter.plotwindow.update_image_count(self.img_count_run)
-        if self.img_count == 3:
+        if self.img_count == self.N_pwa_per_shot:
             self.img_count = 0
         
     def reset_count(self):

@@ -131,8 +131,10 @@ class DataHandler(QThread,Scribe):
     def get_save_data_bool(self,save_data_bool):
         self.save_data = save_data_bool
 
-    def get_img_number(self,N_img):
+    def get_img_number(self,N_img,N_shots,N_pwa_per_shot):
         self.N_img = N_img
+        self.N_shots = N_shots
+        self.N_pwa_per_shot = N_pwa_per_shot
 
     def run(self):
         self.write_image_to_dataset()
@@ -165,8 +167,9 @@ class DataHandler(QThread,Scribe):
 class CameraBaby(QThread,Scribe):
     image_captured = pyqtSignal(int)
     camera_connect = pyqtSignal(str)
-    camera_grab_start = pyqtSignal(int)
+    camera_grab_start = pyqtSignal(int,int,int)
     save_data_bool_signal = pyqtSignal(int)
+    abs_image_type_signal = pyqtSignal(bool)
     honorable_death_signal = pyqtSignal()
     dishonorable_death_signal = pyqtSignal()
 
@@ -238,13 +241,16 @@ class CameraBaby(QThread,Scribe):
         unpack_group(self.dataset,'camera_params',self.camera_params)
         unpack_group(self.dataset,'params',self.params)
         unpack_group(self.dataset,'run_info',self.run_info)
+        self.abs_image_type_signal.emit(self.run_info.absorption_image)
         self.save_data_bool_signal.emit(self.run_info.save_data)
         self.dataset.close()
 
     def grab_loop(self):
-        Nimg = int(self.params.N_img)
-        self.camera_grab_start.emit(Nimg)
-        self.camera.start_grab(Nimg,output_queue=self.queue,
+        N_img = int(self.params.N_img)
+        N_shots = int(self.params.N_shots)
+        N_pwa_per_shot = int(self.params.N_pwa_per_shot)
+        self.camera_grab_start.emit(N_img,N_shots,N_pwa_per_shot)
+        self.camera.start_grab(N_img,output_queue=self.queue,
                          timeout=DEFAULT_TIMEOUT)
         self.death = self.honorable_death
 

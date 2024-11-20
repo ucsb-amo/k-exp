@@ -30,7 +30,7 @@ def process_ODs(raw_ODs,roi):
 
     return ODs, sum_od_x, sum_od_y
 
-def compute_OD(atoms,light,dark):
+def compute_OD(atoms,light,dark,abs_image_bool=True):
     '''
     From a list of images (length 3*n, where n is the number of runs), computes
     OD. Crops to a preset ROI based on in what stage of cooling the images were
@@ -47,18 +47,10 @@ def compute_OD(atoms,light,dark):
     img_dark: list 
         An n x px x py list of images of n images, px x py pixels. Images with no light, no atoms.
 
-    crop_type: str
-        Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-        options: 'mot', 'cmot', 'gm', 'odt'.
-
     Returns
     -------
     ODsraw: ArrayLike
         The uncropped ODs
-    ODs: ArrayLike
-        The cropped ODs
-    summedODx: ArrayLike
-    summedODy: ArrayLike
     '''
     
     dtype = atoms.dtype
@@ -75,14 +67,18 @@ def compute_OD(atoms,light,dark):
     atoms_only[atoms_only < 0] = 0
     light_only[light_only < 0] = 0
 
-    It_over_I0 = np.divide(atoms_only, light_only, 
-                    out=np.zeros(atoms_only.shape, dtype=float), 
-                    where= light_only!=0)
-    
-    OD = -np.log(It_over_I0,
-                    out=np.zeros(atoms_only.shape, dtype=float), 
-                    where= It_over_I0!=0)
-    
-    OD[OD<0] = 0
+    if abs_image_bool:
 
-    return OD  
+        It_over_I0 = np.divide(atoms_only, light_only, 
+                    out=np.zeros(atoms_only.shape, dtype=float), 
+                    where=light_only!=0)
+        
+        OD = -np.log(It_over_I0,
+                        out=np.zeros(atoms_only.shape, dtype=float), 
+                        where= It_over_I0!=0)
+        
+        OD[OD<0] = 0
+    else:
+        OD = light_only - atoms_only
+
+    return OD

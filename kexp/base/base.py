@@ -1,3 +1,4 @@
+
 from artiq.experiment import *
 from artiq.experiment import delay, delay_mu
 import numpy as np
@@ -38,6 +39,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.sort_idx = []
         self.sort_N = []
 
+        self._setup_awg = False
+
         self.ds = DataSaver()
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
@@ -58,6 +61,12 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         parameters that the user created in the experiment file at each step in
         a scan. This must be an RPC -- no kernel decorator.
         """
+
+        if self.run_info.absorption_image:
+            if self.params.N_pwa_per_shot > 1:
+                print("You indicated more than one PWA per shot, but the analysis is set to absorption imaging. Setting # PWA to 1.")
+            self.params.N_pwa_per_shot = 1
+
         if not self.xvarnames:
             self.xvar("dummy",[0]*2)
         if self.xvarnames and not self.scan_xvars:
@@ -100,6 +109,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         if setup_awg:
+            self._setup_awg = setup_awg
             self.tweezer.awg_init()
         self.core.reset() # clears RTIO
         if init_dac:
@@ -127,10 +137,10 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.dds.ry_405.on()
         self.dds.ry_980.on()
 
-        self.dds.raman_minus.set_dds(set_stored=True)
         self.dds.raman_plus.set_dds(set_stored=True)
-        self.dds.raman_minus.on()
+        self.dds.raman_minus.set_dds(set_stored=True)
         self.dds.raman_plus.on()
+        self.dds.raman_minus.on()
         
     @kernel
     def init_scan_kernel(self):
@@ -144,11 +154,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-        
-        # self.tweezer.set_static_tweezers(self.p.frequency_tweezer_list,self.p.amp_tweezer_list,self.p.phase_tweezer_array)
-        
-        self.tweezer.reset_traps(self.xvarnames)
-
         self.dds.ry_405.set_dds(set_stored=True)
         self.dds.ry_405.on()
         self.dds.ry_980.set_dds(set_stored=True)
@@ -161,9 +166,19 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         # self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         delay(50.e-3)
-        self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+        if self._setup_awg:
+            self.tweezer.reset_traps(self.xvarnames)
+            self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
+
+    @kernel
+    def cleanup_scan_kernel(self):
+        if not self.run_info.absorption_image:
+            delay(self.params.t_light_only_image_delay)
+            self.light_image()
+            delay(self.params.t_dark_image_delay)
+            self.dark_image()
 
     def prepare_image_array(self):
         if self.run_info.save_data:
