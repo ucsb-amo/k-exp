@@ -120,7 +120,6 @@ class Dealer():
     def unscramble_images(self,reshuffle=False):
 
         pwa, pwoa, dark = self.deal_data_ndarray(self.images)
-        # print(np.all(pwoa[0][0] == pwoa[1][0]))
         
         pwa = self._unshuffle_ndarray(pwa,exclude_dims=3,
                                         reshuffle=reshuffle)
@@ -152,12 +151,19 @@ class Dealer():
 
         ndarray = np.empty((Ns,Nps+2)+pwa.shape[(self.N_xvars+1):],
                             dtype=pwa.dtype)
+        
+        sh = pwa.shape
+        
+        pwa = pwa.reshape((Ns,Nps)+pwa.shape[(self.N_xvars+1):])
+        pwoa = pwoa.reshape((Ns,Nps)+pwoa.shape[(self.N_xvars+1):])
+        dark = dark.reshape((Ns,Nps)+dark.shape[(self.N_xvars+1):])
+
         for shot_idx in range(Ns):
             ndarray[shot_idx][:Nps] = pwa[shot_idx]
             ndarray[shot_idx][Nps] = pwoa[shot_idx][0]
             ndarray[shot_idx][Nps+1] = dark[shot_idx][0]
 
-        ndarray = ndarray.reshape((N_img,)+pwa.shape[(self.N_xvars+1):])
+        ndarray = ndarray.reshape((N_img,)+sh[(self.N_xvars+1):])
         return ndarray
 
     def deal_data_ndarray(self,ndarray):
