@@ -22,11 +22,8 @@ class tweezer_xmesh():
         non-cateye (nce).
         2. Run analysis file:
         k-jam/analysis/measurements/tweezer_xgrid_calibration.ipynb
-        3. Replace x_per_f_ce, x_per_f_nce, x_and_f_ce, and x_and_f_nce (output
-        of 2nd to last cell).
-
-        The origin position is set by x_mesh_center. I typically set to the
-        midpoint between two extreme tweezers.
+        3. Replace x_per_f_ce, x_per_f_nce, x_to_f_offset_ce, and
+        x_to_f_offset_nce (output of last cell).
         """
 
         # calibration run 13202 (2024/10/30)
@@ -36,15 +33,12 @@ class tweezer_xmesh():
         self.f_ce_min = 70.e6
 
         self.f_nce_max = 82.e6
-        self.f_nce_min = 75.5e6
+        self.f_nce_min = 76.e6
 
-        self.x_and_f_ce = (1.22e-05,7.02e+07)
-        self.x_and_f_nce = (1.99e-05,8e+07)
-        self.x_per_f_ce = -6.96e-12
-        self.x_per_f_nce = 5.39e-12
-
-        # origin wrt ROI above
-        self.x_mesh_center = 1.860869565e-05
+        self.x_to_f_offset_ce = -0.000476
+        self.x_to_f_offset_nce = 0.000417
+        self.x_per_f_ce = 6.39e-12
+        self.x_per_f_nce = -5.39e-12
 
     def arrcast(self,v,dtype=float):
             if not (isinstance(v,np.ndarray) or isinstance(v,list)):
@@ -77,15 +71,12 @@ class tweezer_xmesh():
             c = cateye[i]
             if c:
                 f_per_x = 1/self.x_per_f_ce
-                x_sample = self.x_and_f_ce[0]
-                f_sample = self.x_and_f_ce[1]
+                x_offset = self.x_to_f_offset_ce
             else:
                 f_per_x = 1/self.x_per_f_nce
-                x_sample = self.x_and_f_nce[0]
-                f_sample = self.x_and_f_nce[1]
+                x_offset = self.x_to_f_offset_nce
             x_sample = x_sample - self.x_mesh_center
-            f = f_per_x * (x - x_sample) + f_sample
-            # self.check_valid_range(f,c)
+            f = (position - x_offset)/f_per_x
             f_out.append(f)
         return np.array(f_out)
         
@@ -109,14 +100,11 @@ class tweezer_xmesh():
             # self.check_valid_range(f,c)
             if c:
                 x_per_f = self.x_per_f_ce
-                x_sample = self.x_and_f_ce[0]
-                f_sample = self.x_and_f_ce[1]
+                x_offset = self.x_to_f_offset_ce
             else:
                 x_per_f = self.x_per_f_nce
-                x_sample = self.x_and_f_nce[0]
-                f_sample = self.x_and_f_nce[1]
-            x_sample = x_sample - self.x_mesh_center
-            x = x_per_f * (f - f_sample) + x_sample
+                x_offset = self.x_to_f_offset_nce
+            x = x_per_f * f + x_offset
             x_out.append(x)
         return np.array(x_out)
     
