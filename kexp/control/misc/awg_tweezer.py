@@ -100,6 +100,7 @@ class TweezerTrap():
         else:
             self.x_per_f = self.mesh.x_per_f_nce
 
+        self.dummy_out = np.array([0.])
         self.slopes = np.zeros((100000,),dtype=float)
         self._N = 0
 
