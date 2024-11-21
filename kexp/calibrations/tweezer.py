@@ -32,7 +32,7 @@ class tweezer_xmesh():
         # calibration run 13202 (2024/10/30)
         # calibration ROI saved in data
 
-        self.f_ce_max = 72.3e6
+        self.f_ce_max = 74.e6
         self.f_ce_min = 70.e6
 
         self.f_nce_max = 82.e6

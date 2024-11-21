@@ -11,10 +11,12 @@ class multi_image_test(EnvExperiment, Base):
                       camera_select='andor',
                       absorption_image=True)
 
-        # self.xvar('p1',[0,1])ar 
+        self.xvar('p1',[0,1])
         # self.xvar('p2',[0,1,2])
         # self.xvar('dum')
         self.p.N_pwa_per_shot = 3
+
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 
