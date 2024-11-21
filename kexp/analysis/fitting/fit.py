@@ -53,14 +53,15 @@ class Fit():
     def _fit(self,x,y):
         pass
 
-    def plot_fit(self,N_interp=10000):
-        plt.figure()
+    def plot_fit(self,N_interp=10000,legend=True):
+        # plt.figure()
         plt.plot(self.xdata,self.ydata,'.',markersize=4)
         
         xsm = np.linspace(self.xdata[0],self.xdata[-1],N_interp)
         yfit_sm = self._fit_func(xsm,*self.popt)
         plt.plot(xsm,yfit_sm,'--')
-        plt.legend(["Data","Fit"])
+        if legend:
+            plt.legend(["Data","Fit"])
 
     def remove_infnan(self,xdata,ydata):
         bools = ~np.isnan(xdata) & ~np.isinf(xdata) & ~np.isnan(ydata) & ~np.isinf(ydata)
