@@ -109,14 +109,14 @@ def mixOD_grid(ad,
     # Stitch the images into the grid
     for i in range(n_1):
         for j in range(n_2):
-            full_image[i * px: (i + 1) * px, j * py: (j + 1) * py] = od[i, j]
+            full_image[i * px: (i + 1) * px, j * py: (j + 1) * py] = np.flip(od[i, j],axis=0)
 
     # Create a figure and plot the stitched image
     if figsize:
         plt.figure(figsize=figsize)
     else:
         plt.figure(figsize=(10, 8))
-    plt.imshow(full_image,vmin=0.,vmax=max_od, origin='lower')
+    plt.imshow(full_image,vmin=0.,vmax=max_od)
     plt.title(f"Run ID: {ad.run_info.run_id}")
     plt.xlabel(xvarnames[1])  # Label x-axis with the second x-variable name
     plt.ylabel(xvarnames[0])  # Label y-axis with the first x-variable name
