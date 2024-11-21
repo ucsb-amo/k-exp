@@ -145,7 +145,7 @@ class Dealer():
         return self.image_timestamps
     
     def stack_linear_data_ndarray(self,pwa,pwoa,dark):
-        Ns = self.params.N_shots
+        Ns = self.params.N_shots_with_repeats
         Nps = self.params.N_pwa_per_shot
         N_img = Ns*(Nps+2)
 
@@ -167,7 +167,7 @@ class Dealer():
         return ndarray
 
     def deal_data_ndarray(self,ndarray):
-        Ns = self.params.N_shots
+        Ns = self.params.N_shots_with_repeats
         Nps = self.params.N_pwa_per_shot
         ndarray = ndarray.reshape((Ns,Nps+2)+ndarray.shape[1:])
 
@@ -212,7 +212,8 @@ class Dealer():
         if np.any(self.sort_idx):
             protected_keys = ['xvarnames','sort_idx','images',
                               'image_timestamps','sort_N','sort_idx',
-                              'xvars','N_repeats','N_shots','scan_xvars']
+                              'xvars','N_repeats','N_shots',
+                              'N_shots_with_repeats','scan_xvars']
             ks = struct.__dict__.keys()
             sort_ks = [k for k in ks if k not in protected_keys]
             for k in sort_ks:
@@ -277,7 +278,7 @@ class Dealer():
     #         sort_N = np.array(sort_N)
     #     sort_idx = self.sort_idx
 
-    #     protected_keys = ['xvarnames','sort_idx','images','image_timestamps','sort_N','sort_idx','xvars','N_repeats','N_shots']
+    #     protected_keys = ['xvarnames','sort_idx','images','image_timestamps','sort_N','sort_idx','xvars','N_repeats','N_shots_with_repeats']
     #     # get a list of the variable keys (that are not protected)
     #     ks = self.params.__dict__.keys()
     #     sort_ks = [k for k in ks if k not in protected_keys if k not in self.xvarnames]
