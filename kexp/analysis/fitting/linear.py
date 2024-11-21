@@ -14,7 +14,7 @@ class LinearFit(Fit):
         self.popt = popt
         self.slope = popt[0]
         self.offset = popt[1]
-        self.y_fitdata = self._fit_func(x,*popt)
+        self.y_fitdata = self._fit_func(self.xdata,*popt)
 
     def _fit_func(self, x, slope, offset):
         return slope * x + offset
