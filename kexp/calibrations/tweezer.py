@@ -26,19 +26,19 @@ class tweezer_xmesh():
         x_to_f_offset_nce (output of last cell).
         """
 
-        # calibration run 13202 (2024/10/30)
+        # calibration run 18543
         # calibration ROI saved in data
 
-        self.f_ce_max = 74.e6
+        self.f_ce_max = 74.5e6
         self.f_ce_min = 70.e6
 
         self.f_nce_max = 82.e6
         self.f_nce_min = 76.e6
 
-        self.x_to_f_offset_ce = -0.000476
-        self.x_to_f_offset_nce = 0.000417
-        self.x_per_f_ce = 6.39e-12
-        self.x_per_f_nce = -5.39e-12
+        self.x_to_f_offset_ce = 0.000429217
+        self.x_to_f_offset_nce = -0.000448541
+        self.x_per_f_ce = -5.91304e-12
+        self.x_per_f_nce = 5.82844e-12
 
     def arrcast(self,v,dtype=float):
             if not (isinstance(v,np.ndarray) or isinstance(v,list)):
@@ -70,13 +70,13 @@ class tweezer_xmesh():
             x = position[i]
             c = cateye[i]
             if c:
-                f_per_x = 1/self.x_per_f_ce
+                x_per_f = self.x_per_f_ce
                 x_offset = self.x_to_f_offset_ce
             else:
-                f_per_x = 1/self.x_per_f_nce
+                x_per_f = self.x_per_f_nce
                 x_offset = self.x_to_f_offset_nce
-            x_sample = x_sample - self.x_mesh_center
-            f = (position - x_offset)/f_per_x
+            print(x_per_f,x_offset)
+            f = (x - x_offset) / x_per_f
             f_out.append(f)
         return np.array(f_out)
         
@@ -97,7 +97,6 @@ class tweezer_xmesh():
         for i in range(len(frequency)):
             f = frequency[i]
             c = cateye[i]
-            # self.check_valid_range(f,c)
             if c:
                 x_per_f = self.x_per_f_ce
                 x_offset = self.x_to_f_offset_ce
