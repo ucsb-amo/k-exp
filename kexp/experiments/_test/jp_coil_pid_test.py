@@ -12,7 +12,7 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False)
 
-        self.xvar('dummy',[0]*30)
+        self.xvar('dummy',[0])
 
         self.finish_prepare(shuffle=True)
 

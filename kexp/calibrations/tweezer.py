@@ -75,7 +75,6 @@ class tweezer_xmesh():
             else:
                 x_per_f = self.x_per_f_nce
                 x_offset = self.x_to_f_offset_nce
-            print(x_per_f,x_offset)
             f = (x - x_offset) / x_per_f
             f_out.append(f)
         return np.array(f_out)

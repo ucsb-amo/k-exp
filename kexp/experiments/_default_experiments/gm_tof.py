@@ -41,7 +41,7 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_yshim_current_gm = 1.2
         # self.xvar('dumdum',[0]*100)
 
-        self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(.05,15.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
         
         self.p.imaging_state = 2.
