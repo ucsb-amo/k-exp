@@ -112,7 +112,7 @@ class dds_frame():
                                     default_freq = 80.e6,
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
                                     default_amp = self.p.amp_tweezer_pid2)
-        self.raman_plus = self.dds_assign(1,1, ao_order = -1,
+        self.raman_plus = self.dds_assign(1,1, ao_order = 1,
                                     default_freq = self.p.frequency_raman_plus,
                                     default_amp = self.p.amp_raman_plus)
 
