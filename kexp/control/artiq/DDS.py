@@ -52,6 +52,16 @@ class DDS():
       self._t_att_delay_mu = self._t_att_xfer_mu + self._t_ref_period_mu + 1
 
    @portable
+   def _stash_defaults(self):
+      self._frequency_default = self.frequency
+      self._amplitude_default = self.amplitude
+
+   @portable
+   def _restore_defaults(self):
+      self.frequency = self._frequency_default
+      self.amplitude = self._amplitude_default
+
+   @portable
    def update_dac_bool(self):
       self.dac_control_bool = (self.dac_ch != DAC_CH_DEFAULT)
 

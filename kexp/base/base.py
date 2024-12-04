@@ -132,15 +132,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         if init_lightsheet:
             self.lightsheet.init()
 
-        self.dds.ry_405.set_dds(set_stored=True)
-        self.dds.ry_980.set_dds(set_stored=True)
         self.dds.ry_405.on()
         self.dds.ry_980.on()
-
-        # self.dds.raman_plus.set_dds(set_stored=True)
-        # self.dds.raman_minus.set_dds(set_stored=True)
-        # self.dds.raman_plus.on()
-        # self.dds.raman_minus.on()
         
     @kernel
     def init_scan_kernel(self):
@@ -154,15 +147,12 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-        self.dds.ry_405.set_dds(set_stored=True)
         self.dds.ry_405.on()
-        self.dds.ry_980.set_dds(set_stored=True)
         self.dds.ry_980.on()
 
-        # self.dds.raman_minus.set_dds(set_stored=True)
-        # self.dds.raman_plus.set_dds(set_stored=True)
-        # self.dds.raman_minus.on()
-        # self.dds.raman_plus.on()
+        self.dds.reset_defaults()
+        self.set_all_dds()
+        self.core.break_realtime()
 
         if self._setup_awg:
             self.tweezer.reset_traps(self.xvarnames)

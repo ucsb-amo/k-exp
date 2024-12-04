@@ -1,7 +1,7 @@
 import numpy as np
 
 from artiq.coredevice import ad53xx
-from artiq.experiment import kernel
+from artiq.experiment import kernel, portable
 
 from kexp.control.artiq.DDS import DDS
 from kexp.control.artiq.dummy_core import DummyCore
@@ -126,6 +126,8 @@ class dds_frame():
         self.make_dds_array()
         self.dds_list = np.array(self.dds_array).flatten()
 
+        self.stash_defaults()
+
     def dds_assign(self, uru, ch, 
                    default_freq=dv, default_detuning=dv, default_amp=dv, 
                    ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
@@ -208,15 +210,17 @@ class dds_frame():
         """Turn off the near-resonant light for long hold times to avoid light
         leakage interacting with the atoms.
         """        
-        self.d1_3d_r.dds_device.set(amplitude=0.)
-        self.d1_3d_c.dds_device.set(amplitude=0.)
-        self.d2_3d_c.dds_device.set(amplitude=0.)
-        self.d2_3d_r.dds_device.set(amplitude=0.)
-        self.d2_2d_c.dds_device.set(amplitude=0.)
-        self.d2_2d_r.dds_device.set(amplitude=0.)
-        self.push.dds_device.set(amplitude=0.)
-        self.mot_killer.dds_device.set(amplitude=0.)
-        self.optical_pumping.dds_device.set(amplitude=0.)
+        self.d1_3d_r.set_dds(amplitude=0.)
+        self.d1_3d_c.set_dds(amplitude=0.)
+        self.d2_3d_c.set_dds(amplitude=0.)
+        self.d2_3d_r.set_dds(amplitude=0.)
+        self.d2_2d_c.set_dds(amplitude=0.)
+        self.d2_2d_r.set_dds(amplitude=0.)
+        self.push.set_dds(amplitude=0.)
+        self.mot_killer.set_dds(amplitude=0.)
+        self.optical_pumping.set_dds(amplitude=0.)
+        self.raman_minus.set_dds(amplitude=0.)
+        self.raman_plus.set_dds(amplitude=0.)
 
         self.d1_3d_r.off()
         self.d1_3d_c.off()
@@ -227,20 +231,31 @@ class dds_frame():
         self.push.off()
         self.mot_killer.off()
         self.optical_pumping.off()
+        self.raman_minus.off()
+        self.raman_plus.off()
 
     @kernel
     def init_cooling(self):
         """See 'power_down_cooling`. Reboots the DDS cores for the near-resonant
         light and sets them to their defaults.
-        """   
+        """
         self.d1_3d_r.set_dds(set_stored=True)
         self.d1_3d_c.set_dds(set_stored=True)
         self.d2_3d_c.set_dds(set_stored=True)
         self.d2_3d_r.set_dds(set_stored=True)
         self.d2_2d_c.set_dds(set_stored=True)
         self.d2_2d_r.set_dds(set_stored=True)
-        # self.op_r.set_dds(set_stored=True)
         self.push.set_dds(set_stored=True)
+
+    @portable
+    def reset_defaults(self):
+        for dds in self.dds_list:
+            dds._restore_defaults()
+
+    @portable
+    def stash_defaults(self):
+        for dds in self.dds_list:
+            dds._stash_defaults()
 
 #     def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):
 #         """Define an amplitude ramp profile and append to the specified DDSManager object.
