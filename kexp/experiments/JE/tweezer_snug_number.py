@@ -11,11 +11,11 @@ class tweezer_snug(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
-        # self.xvar('t_tof',np.linspace(900.,1500.,5)*1.e-6)
+        self.xvar('t_tof',np.linspace(900.,3500.,10)*1.e-6)
         # self.xvar('dummy',[0]*3)
         # self.p.t_tof = 1800.e-6
-        self.p.t_tof = 1200.e-6
-        # self.xvar('t_tof',[900*1.e-6]*3)
+        self.p.t_tof = 3500.e-6
+        # self.xvar('t_tof',[1200*1.e-6]*3)
 
         # self.xvar('beans',[0]*1)
 
@@ -26,17 +26,18 @@ class tweezer_snug(EnvExperiment, Base):
 
         # self.xvar('t_tunnel',np.linspace(1.,100.,1000)*1.e-3)
         # self.xvar('t_tunnel',[10*1.e-3]*3)
-        self.p.t_tunnel = 50.e-3
+        self.p.t_tunnel = 10.e-3
 
         # self.p.frequency_tweezer_list = [73.7e6,77.3e6]
         self.p.frequency_tweezer_list = [73.9e6,77.5e6]
 
         # a_list = [.45,.55]
-        a_list = [.445,.555]
+        a_list = [.425,.575]
         self.p.amp_tweezer_list = a_list
 
-        self.p.t_amp_ramp = 1.e-3
-        self.p.amp_final = .786
+        self.p.t_amp_ramp = 10.e-3
+        self.p.amp_spill = .786
+        self.p.amp_revert = a_list[0]
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.5,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.5,8))
@@ -59,8 +60,8 @@ class tweezer_snug(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.3,8))
         # self.p.t_tweezer_1064_ramp = .17
 
-        self.xvar('v_tweezer_paint_amp_max',np.linspace(0.,4.,20))
-        self.p.v_tweezer_paint_amp_max = 2.
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(0.,5.,20))
+        self.p.v_tweezer_paint_amp_max = 2.6
 
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.012,.1,8))
         # self.p.t_tweezer_1064_rampdown = .03
@@ -87,9 +88,6 @@ class tweezer_snug(EnvExperiment, Base):
         self.p.i_tunnel_current = 196.7
         self.p.t_tunnel_current = 11.e-3
 
-        self.p.t_tweezer_ramp_back_up = 100.e-3
-        self.p.v_pd_ramp_back_up = 1.3
-
         # self.p.t_tof = 800.e-6
         # self.p.N_repeats = 300
         self.p.N_repeats = 1
@@ -105,17 +103,22 @@ class tweezer_snug(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        # self.tweezer.traps[0].linear_amplitude_ramp(t_ramp=self.p.t_amp_ramp,amp_f=self.p.amp_spill)
+        # self.tweezer.traps[0].linear_amplitude_ramp(t_ramp=self.p.t_amp_ramp,amp_f=self.p.amp_revert)
+        
+        self.tweezer.traps[0].cubic_move(t_move=self.p.t_tweezer_single_move,
+                                         x_move=-self.p.x_move,trigger=False)
+        self.tweezer.traps[1].cubic_move(t_move=self.p.t_tweezer_single_move,
+                                         x_move=self.p.x_move,trigger=False)
         
         # self.tweezer.traps[0].cubic_move(t_move=self.p.t_tweezer_single_move,
-        #                                  x_move=-self.p.x_move,trigger=False)
-        # self.tweezer.traps[1].cubic_move(t_move=self.p.t_tweezer_single_move,
         #                                  x_move=self.p.x_move,trigger=False)
+        # self.tweezer.traps[1].cubic_move(t_move=self.p.t_tweezer_single_move,
+        #                                  x_move=-self.p.x_move,trigger=False)
         
-        # self.tweezer.traps[0].cubic_move(t_move=self.p.t_tweezer_single_move,
-        #                                  x_move=self.p.x_move,trigger=False)
-        # self.tweezer.traps[1].cubic_move(t_move=self.p.t_tweezer_single_move,
-        #                                  x_move=-self.p.x_move,trigger=False)
         delay(200.e-3)
+        
         self.set_high_field_imaging(i_outer=self.p.i_tunnel_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
@@ -189,18 +192,17 @@ class tweezer_snug(EnvExperiment, Base):
                              i_start=self.p.i_evap3_current,
                              i_end=self.p.i_tunnel_current)
         
-        
         self.outer_coil.start_pid()
 
         self.lightsheet.off()
 
         # delay(100.e-3)
 
-        # self.tweezer.trigger()
-        # delay(self.p.t_tweezer_single_move)
-        # delay(1.e-3)
-        # self.tweezer.trigger()
-        # delay(self.p.t_tweezer_single_move)        
+        self.tweezer.trigger()
+        delay(self.p.t_tweezer_single_move)
+        delay(1.e-3)
+        self.tweezer.trigger()
+        delay(self.p.t_tweezer_single_move)        
 
         delay(self.p.t_tunnel)
 
