@@ -8,9 +8,9 @@ from kexp.analysis.fitting.fit import Fit
 class GaussianFit(Fit):
     def __init__(self,xdata,ydata,debug_plotting=False,
                  which_peak=0,
-                 px_boxcar_smoothing=10,
-                 fractional_peak_height_at_width=0.4,
-                 use_peak_bases_for_amplitude=True):
+                 px_boxcar_smoothing=3,
+                 fractional_peak_height_at_width=0.3,
+                 use_peak_bases_for_amplitude=False):
         super().__init__(xdata,ydata,savgol_window=20)
 
         self._debug_plotting = debug_plotting
@@ -136,7 +136,7 @@ class GaussianFit(Fit):
         peak_width_idx = np.abs(peak_idx - np.where(x == x_nearest)[0][0])
         if peak_width_idx == 1:
             peak_width_idx = 2
-        N_peak_widths_mask = 2.
+        N_peak_widths_mask = 4.
         mask_window_half_width = int(N_peak_widths_mask * peak_width_idx)
         fit_mask = np.arange((peak_idx-mask_window_half_width),(peak_idx+mask_window_half_width))
         fit_mask = np.intersect1d(range(len(x)),fit_mask)
