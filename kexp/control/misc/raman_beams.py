@@ -3,6 +3,7 @@ import numpy as np
 from kexp.control.artiq.DDS import DDS
 from kexp.control.artiq.DAC_CH import DAC_CH
 from kexp.config.expt_params import ExptParams
+from kexp.util.artiq.async_print import aprint
 
 dv = -0.1
 di = 0
