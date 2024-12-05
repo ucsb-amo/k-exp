@@ -50,7 +50,7 @@ class MainWindow(QWidget):
         self.the_baby.camera_grab_start.connect(self.plotter.plotwindow.get_img_number) # ditto
         self.the_baby.camera_grab_start.connect(self.analyzer.get_img_number) # ditto
 
-        self.the_baby.save_data_bool_signal.connect(self.analyzer.get_analysis_type)
+        self.the_baby.abs_image_type_signal.connect(self.analyzer.get_analysis_type)
         
         self.the_baby.camera_grab_start.connect(self.data_handler.start) # open data to save images
         self.the_baby.camera_grab_start.connect(self.reset_count) # reset counting
