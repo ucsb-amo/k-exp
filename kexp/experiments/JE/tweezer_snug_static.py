@@ -34,7 +34,7 @@ class tweezer_snug(EnvExperiment, Base):
 
         # self.xvar('amp_tweezer_list',a_lists)
 
-        a_list = [.445,.52]
+        a_list = [.445,.50]
         # a_list = [.2,.23]
         self.p.amp_tweezer_list = a_list
 
