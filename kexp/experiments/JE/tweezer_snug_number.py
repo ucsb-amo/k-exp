@@ -11,7 +11,7 @@ class tweezer_snug(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
-        self.xvar('t_tof',np.linspace(900.,3500.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(900.,3500.,10)*1.e-6)
         # self.xvar('dummy',[0]*3)
         # self.p.t_tof = 1800.e-6
         self.p.t_tof = 3500.e-6
@@ -25,7 +25,7 @@ class tweezer_snug(EnvExperiment, Base):
         self.p.t_tweezer_single_move = 10.e-3
 
         # self.xvar('t_tunnel',np.linspace(1.,100.,1000)*1.e-3)
-        # self.xvar('t_tunnel',[10*1.e-3]*3)
+        self.xvar('t_tunnel',[10*1.e-3]*3)
         self.p.t_tunnel = 10.e-3
 
         # self.p.frequency_tweezer_list = [73.7e6,77.3e6]
