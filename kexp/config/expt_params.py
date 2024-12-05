@@ -63,9 +63,9 @@ class ExptParams():
         self.t_tweezer_ramp = .116
         self.t_tweezer_hold = 30.e-3
         self.t_tweezer_1064_ramp = .116
-        self.t_tweezer_1064_rampdown = .02
-        self.t_tweezer_1064_rampdown2 = .24
-        self.t_tweezer_1064_rampdown3 = .13
+        self.t_tweezer_1064_rampdown = .04
+        self.t_tweezer_1064_rampdown2 = .15
+        self.t_tweezer_1064_rampdown3 = .06
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 20.e-6
@@ -188,7 +188,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.9
-        self.v_pd_lightsheet_rampdown_end = 7.2 #4.16
+        self.v_pd_lightsheet_rampdown_end = 7.1 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -199,7 +199,7 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 9.9
+        self.v_pd_tweezer_1064_ramp_end = 6.5
         self.v_pd_tweezer_1064_rampdown_end = .45
         self.v_pd_tweezer_1064_rampdown2_end = .05
         self.v_pd_tweezer_1064_rampdown3_end = .3
@@ -217,7 +217,6 @@ class ExptParams():
         # self.frequency_tweezer_spacing = .7e6*2
         self.frequency_tweezer_spacing = 6.e6*2
         self.frequency_tweezer_list = [70.4e6,78.e6]
-        # self.frequency_tweezer_list = np.array([72.e6])
         self.frequency_cat_eye_tweezer = 71.3e6
         self.frequency_cateye_threshold = 72.e6
 
@@ -276,7 +275,7 @@ class ExptParams():
 
         # high field evap
         self.i_evap1_current = 196.43
-        self.i_evap2_current = 198.02
+        self.i_evap2_current = 197.5
         self.i_evap3_current = 197.53
 
         # forced evap

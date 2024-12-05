@@ -11,9 +11,11 @@ class tweezer_snug(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
-        # self.xvar('t_tof',np.linspace(800.,4000.,10)*1.e-6)
+        # self.xvar('frequency_detuned_imaging',np.arange(240.,550.,6)*1.e6)
+        
+        # self.xvar('t_tof',np.linspace(200.,4000.,10)*1.e-6)
         self.p.t_tof = 3600.e-6
-        # self.xvar('t_tof',[3600*1.e-6]*1)
+        self.xvar('t_tof',[20*1.e-6]*3)
 
         # self.xvar('x_move',np.linspace(-3.5,-2.75,20)*1.e-6)
         self.p.x_move = 3.e-6
@@ -21,8 +23,8 @@ class tweezer_snug(EnvExperiment, Base):
         self.p.t_tweezer_single_move = 10.e-3
 
         # self.xvar('t_tunnel',np.linspace(1.,100.,20)*1.e-3)
-        self.xvar('t_tunnel',[20*1.e-3]*3)
-        self.p.t_tunnel = 10.e-3
+        # self.xvar('t_tunnel',[20*1.e-3]*3)
+        self.p.t_tunnel = 20.e-3
 
         # self.p.frequency_tweezer_list = [73.7e6,77.3e6]
         self.p.frequency_tweezer_list = [73.43e6,77.e6]
@@ -47,22 +49,22 @@ class tweezer_snug(EnvExperiment, Base):
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(5.,8.,20))
         # self.p.v_pd_lightsheet_rampdown_end = 3.
-        self.p.v_pd_lightsheet_rampdown_end = 7.1
+        # self.p.v_pd_lightsheet_rampdown_end = 7.1
 
         # self.xvar('i_evap2_current',np.linspace(194.5,199.,10))
-        self.p.i_evap2_current = 197.5
+        # self.p.i_evap2_current = 197.5
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.3,8))
         # self.p.t_tweezer_1064_ramp = .17
 
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,9.9,20))
-        self.p.v_pd_tweezer_1064_ramp_end = 6.5
+        # self.p.v_pd_tweezer_1064_ramp_end = 6.5
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.5,-1.,20))
         self.p.v_tweezer_paint_amp_max = -2.4
 
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.012,.1,10))
-        self.p.t_tweezer_1064_rampdown = .04
+        # self.p.t_tweezer_1064_rampdown = .04
 
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(0.1,1.5,8))
         # self.p.v_pd_tweezer_1064_rampdown_end = .7
@@ -71,7 +73,7 @@ class tweezer_snug(EnvExperiment, Base):
         # self.p.v_pd_tweezer_1064_rampdown2_end = .06
 
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.05,.6,8))
-        self.p.t_tweezer_1064_rampdown2 = .15
+        # self.p.t_tweezer_1064_rampdown2 = .15
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.1,.5,20))
         # self.p.v_pd_tweezer_1064_rampdown3_end = .9
@@ -97,7 +99,7 @@ class tweezer_snug(EnvExperiment, Base):
 
         self.p.t_mot_load = 1.
 
-        self.camera_params.amp_imaging = .09
+        self.camera_params.amp_imaging = .08
         # self.xvar('amp_imaging',np.linspace(0.1,0.18,8))
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
@@ -112,6 +114,7 @@ class tweezer_snug(EnvExperiment, Base):
         
         self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
