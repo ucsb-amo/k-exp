@@ -25,7 +25,7 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 14.0e6
+        self.frequency_detuned_imaging = 16.0e6
         self.frequency_detuned_imaging_F1 = 408.e6
         self.beatlock_sign = -15
         self.N_offset_lock_reference_multiplier = 8
@@ -156,7 +156,7 @@ class ExptParams():
         #Discrete GM ramp
         #v_pd values for start and end of ramp
         self.pfrac_c_gmramp_end = 0.1
-        self.pfrac_r_gmramp_end = 1.5
+        self.pfrac_r_gmramp_end = 0.145
         self.n_gmramp_steps = 200
 
         # mag trap

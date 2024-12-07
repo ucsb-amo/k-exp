@@ -148,7 +148,6 @@ def rabi_oscillation(ad,rf_frequency_hz,
         convwidth = 3
         psm = np.convolve(populations,[1/convwidth]*convwidth,mode='same')
         peak_idx, peak_prop = find_peaks(psm,height=0.3)
-        print(peak_idx)
         y = peak_prop['peak_heights']
         def _fit_func_decay(t, tau):
             return np.exp(-t/tau)
@@ -327,6 +326,7 @@ def rabi_oscillation_2d(ad:atomdata,
                 raise ValueError(f"Fitted Rabi frequency ({f_rabi/1.e3} kHz) below threshold ({rabi_freq_threshold/1.e3} kHz)")
             rabi_frequencies_hz.append(f_rabi)
         except:
+            popt = [None,None,None,None]
             y_fit = np.array([None]*len(times))
             rabi_frequencies_hz.append(None)
 
@@ -342,7 +342,8 @@ def rabi_oscillation_2d(ad:atomdata,
         # Plot the data and the fit
             ax[xvar0_idx].scatter(times*1.e6, populations, label='Data')
             t_sm = np.linspace(times[0],times[-1],10000)
-            ax[xvar0_idx].plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='Fit')
+            if not np.all(popt != None):
+                ax[xvar0_idx].plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='Fit')
             if rabi_frequencies_hz[xvar0_idx]:
                 title = f"$f_R = {rabi_frequencies_hz[xvar0_idx]/1.e3:1.2f}$"
                 ax[xvar0_idx].set_title(title)
@@ -462,10 +463,8 @@ def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
     if find_field:
         try:
             this_transition = x_peaks[transition_peak_idx]
-            print(this_transition)
             B_measured = get_B(this_transition,F0,mF0,F1,mF1,min_B=min_B,max_B=max_B)
         except Exception as e:
-            print(e)
             B_measured = None
     else:
         B_measured = None
@@ -592,7 +591,6 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
             B_measured = get_B(f_this_transition,F0,mF0,F1,mF1,min_B=min_B,max_B=max_B)
             B_measured_array.append(B_measured)
         except Exception as e:
-            print(e)
             f_this_transition = None
             B_measured = None
             B_measured_array.append(None)
