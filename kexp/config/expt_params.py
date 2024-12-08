@@ -151,7 +151,7 @@ class ExptParams():
         self.detune_d1_c_gm = self.detune_gm
         self.pfrac_d1_c_gm = .99 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .91
+        self.pfrac_d1_r_gm = .99
 
         #Discrete GM ramp
         #v_pd values for start and end of ramp

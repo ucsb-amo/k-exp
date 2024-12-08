@@ -10,10 +10,22 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('frequency_detuned_imaging',np.arange(-50.,50.,6)*1.e6)
 
+        # self.xvar('i_cmot',np.linspace(13.,25.,10))
+
+        # self.xvar('v_zshim_current',np.linspace(.0,1.,10))
+        self.p.v_zshim_current = .11
+        # self.xvar('v_yshim_current',np.linspace(5.,9.99,10))
+        # self.xvar('v_xshim_current',np.linspace(.0,9.,10))
+       
+        # self.xvar('detune_d2_r_d1cmot',np.linspace(-7.,0.,10))
+        self.p.detune_d2_r_d1cmot = -3.88
+        # self.xvar('amp_d2_r_d1cmot',np.linspace(.02,.18,10))
+        self.p.amp_d2_r_d1cmot = .037
+        
         # self.xvar('detune_d1_c_d1cmot',np.linspace(0.,10.,20))
-        # self.p.detune_d1_c_d1cmot = 5.7
+        self.p.detune_d1_c_d1cmot = 6.8
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(.1,.99,20))
-        # self.p.pfrac_d1_c_d1cmot = .9
+        self.p.pfrac_d1_c_d1cmot = .99
 
         # self.xvar('detune_d1_c_gm',np.linspace(3.,11.,8))
         # self.p.detune_d1_c_gm = 6.4
@@ -22,8 +34,8 @@ class gm_tof(EnvExperiment, Base):
         # self.p.detune_gm = 7.85
         # self.xvar('detune_gm',np.linspace(7.,10.,8))
 
-        # self.xvar('pfrac_d1_c_gm',np.linspace(.2,.99,6))
-        # self.xvar('pfrac_d1_r_gm',np.linspace(.2,.99,12))
+        # self.xvar('pfrac_d1_c_gm',np.linspace(.2,.99,8))
+        # self.xvar('pfrac_d1_r_gm',np.linspace(.2,.99,8))
         # self.p.pfrac_d1_c_gm = .99
         # self.p.pfrac_d1_r_gm = .91
 
@@ -33,12 +45,12 @@ class gm_tof(EnvExperiment, Base):
         # self.p.pfrac_r_gmramp_end = 0.142
         # self.xvar('pfrac_gm',np.linspace(0.2,0.9,8))
 
-        # self.xvar('v_zshim_current_gm',np.linspace(.65,.9,10))
+        # self.xvar('v_zshim_current_gm',np.linspace(.4,1.,10))
         # self.p.v_zshim_current_gm = .83
-        # self.xvar('v_xshim_current_gm',np.linspace(0.,.8,6))
-        # self.p.v_xshim_current_gm = .32
+        # self.xvar('v_xshim_current_gm',np.linspace(0.,.8,10))
+        self.p.v_xshim_current_gm = .14
         # self.xvar('v_yshim_current_gm',np.linspace(0.,7.,12))
-        # self.p.v_yshim_current_gm = 2.545
+        self.p.v_yshim_current_gm = 2.545
 
         # self.p.v_yshim_current_gm = 1.2
         # self.xvar('dumdum',[0]*100)
@@ -48,9 +60,9 @@ class gm_tof(EnvExperiment, Base):
         
         self.p.amp_imaging = .2
         self.p.imaging_state = 2.
-        self.p.t_tof = 15.e-3
-        self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.t_tof = 3.e-3
+        self.p.t_mot_load = .75
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 

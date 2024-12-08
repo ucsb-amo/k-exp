@@ -137,11 +137,13 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         
     @kernel
     def init_scan_kernel(self):
+        
+
+        self.dds.init_cooling()
+        self.core.break_realtime()
+
         self.dds.reset_defaults()
         self.set_all_dds()
-        self.core.break_realtime()
-        
-        self.dds.init_cooling()
         self.core.break_realtime()
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
