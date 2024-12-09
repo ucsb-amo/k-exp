@@ -804,6 +804,11 @@ class tweezer():
                 pass
         self.dds.exec_at_trg()
         self.dds.write()
+
+    def set_amp(self,tweezer_idx,amp):
+        self.dds[tweezer_idx].amp(amp)
+        self.dds.exec_at_trg()
+        self.dds.write()
     
     def reset_awg(self):
         self.dds.reset()

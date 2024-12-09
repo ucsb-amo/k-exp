@@ -11,7 +11,8 @@ def plot_mixOD(ad:atomdata,
                lines=False,
                max_od=0.,
                figsize=[],
-               aspect='auto'):
+               aspect='auto',
+               swap_axes=False):
     # Extract necessary information
     
     xvarnames = ad.xvarnames
@@ -30,8 +31,12 @@ def plot_mixOD(ad:atomdata,
     n_repeats = int(ad.params.N_repeats)
     n_shots = int(n / n_repeats)
 
-    total_width = n_shots * px
-    max_height = n_repeats * py
+    if swap_axes:
+        total_width = n_repeats * px
+        max_height = n_shots * py
+    else:
+        total_width = n_shots * px
+        max_height = n_repeats * py
 
     # Create a figure and axis for plotting
     if figsize:
@@ -47,16 +52,28 @@ def plot_mixOD(ad:atomdata,
     # print(n_repeats)
 
     # Plot each image and label with xvar value
-    for i in range(n_shots):
-        for j in range(n_repeats):
-            idx = j + i*n_repeats
-            img = od[idx]
-            ax.imshow(img, extent=[x_pos, x_pos+px, y_pos, y_pos+py],
-                    vmin=0.,vmax=max_od, origin='lower')
-            ax.axvline()
-            y_pos += py
-        y_pos = 0
-        x_pos += px
+    if swap_axes:
+        for i in range(n_repeats):
+            for j in range(n_shots):
+                idx = i + j*n_repeats
+                img = od[idx]
+                ax.imshow(img, extent=[x_pos, x_pos+px, y_pos, y_pos+py],
+                        vmin=0.,vmax=max_od, origin='lower')
+                ax.axvline()
+                y_pos += py
+            y_pos = 0
+            x_pos += px
+    else:
+        for i in range(n_shots):
+            for j in range(n_repeats):
+                idx = j + i*n_repeats
+                img = od[idx]
+                ax.imshow(img, extent=[x_pos, x_pos+px, y_pos, y_pos+py],
+                        vmin=0.,vmax=max_od, origin='lower')
+                ax.axvline()
+                y_pos += py
+            y_pos = 0
+            x_pos += px
 
     plt.gca().set_aspect(aspect)
 
@@ -68,17 +85,31 @@ def plot_mixOD(ad:atomdata,
     ax.set_xlim(0, total_width)
     ax.set_ylim(0, max_height)
 
-    # Remove y-axis ticks and labels
-    ax.yaxis.set_visible(False)
-    ax.xaxis.set_ticks([])
+    if swap_axes:
+        # Remove x-axis ticks and labels
+        ax.xaxis.set_visible(False)
+        ax.yaxis.set_ticks([])
+    else:
+        # Remove y-axis ticks and labels
+        ax.yaxis.set_visible(False)
+        ax.xaxis.set_ticks([])
 
-    # Set ticks at the center of each sub-image and rotate them vertically
-    tick_positions = np.arange(px/2, total_width, px)
-    ax.set_xticks(tick_positions)
-    xvarlabels = xlabels_1d(xvars[0], xvarmult, xvarformat)
-    xvarlabels = xvarlabels[::n_repeats]
-    ax.set_xticklabels(xvarlabels, rotation='vertical', ha='center')
-    plt.minorticks_off()
+    if swap_axes:
+        # Set ticks at the center of each sub-image and rotate them vertically
+        tick_positions = np.arange(py/2, max_height, py)
+        ax.set_yticks(tick_positions)
+        xvarlabels = xlabels_1d(xvars[0], xvarmult, xvarformat)
+        xvarlabels = xvarlabels[::n_repeats]
+        ax.set_yticklabels(xvarlabels, rotation='horizontal', ha='center')
+        plt.minorticks_off()
+    else:
+        # Set ticks at the center of each sub-image and rotate them vertically
+        tick_positions = np.arange(px/2, total_width, px)
+        ax.set_xticks(tick_positions)
+        xvarlabels = xlabels_1d(xvars[0], xvarmult, xvarformat)
+        xvarlabels = xvarlabels[::n_repeats]
+        ax.set_xticklabels(xvarlabels, rotation='vertical', ha='center')
+        plt.minorticks_off()
 
     if lines:
         for pos in np.arange(px, total_width, px):
