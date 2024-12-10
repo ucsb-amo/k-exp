@@ -126,11 +126,11 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 5.7
-        self.pfrac_d1_c_d1cmot = .9
+        self.detune_d1_c_d1cmot = 7.5
+        self.pfrac_d1_c_d1cmot = .86
 
-        self.detune_d2_r_d1cmot = -3.2
-        self.amp_d2_r_d1cmot = 0.042
+        self.detune_d2_r_d1cmot = -3.88
+        self.amp_d2_r_d1cmot = 0.065
 
         self.detune_d1_c_sweep_d1cmot_start = 9.
         self.detune_d1_c_sweep_d1cmot_end = 7.
@@ -141,33 +141,33 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 6.4
+        self.detune_gm = 7.4
         # self.amp_gm = 0.09
 
         self.v_zshim_current_gm = 0.83
         self.v_xshim_current_gm = 0.32
-        self.v_yshim_current_gm = 2.545
+        self.v_yshim_current_gm = 2.6
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .99 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .97 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .99
+        self.pfrac_d1_r_gm = .97
 
-        #Discrete GM ramp
+        # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.1
-        self.pfrac_r_gmramp_end = 0.145
+        self.pfrac_c_gmramp_end = 0.115
+        self.pfrac_r_gmramp_end = 0.242
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 27.
-        self.i_magtrap_ramp_end = 90.
+        self.i_magtrap_init = 23.3
+        self.i_magtrap_ramp_end = 95.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
 
         self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 0.
-        self.v_yshim_current_magtrap = 5.8
+        self.v_xshim_current_magtrap = 0.14
+        self.v_yshim_current_magtrap = 5.32
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0

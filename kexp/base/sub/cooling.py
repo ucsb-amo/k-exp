@@ -702,6 +702,7 @@ class Cooling():
         self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
                             i_start=i_magtrap_ramp_end,
                             i_end=0.)
+        
         self.inner_coil.snap_off()
 
     @kernel

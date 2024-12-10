@@ -7,7 +7,7 @@ from kexp.calibrations import high_field_imaging_detuning
 class magtrap_lightsheet_tweezer_overlap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='z_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         # self.p.imaging_state = 1.
         # self.xvar('imaging_state',[2,1])

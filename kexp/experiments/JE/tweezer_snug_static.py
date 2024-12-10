@@ -15,7 +15,7 @@ class tweezer_snug(EnvExperiment, Base):
         
         # self.xvar('t_tof',np.linspace(100.,3800.,10)*1.e-6)
         self.p.t_tof = 50.e-6
-        self.xvar('t_tof',[50*1.e-6]*3)
+        # self.xvar('t_tof',[50*1.e-6]*3)
 
         # self.xvar('x_move',np.linspace(-3.5,-2.75,20)*1.e-6)
         self.p.x_move = 3.e-6
@@ -42,12 +42,18 @@ class tweezer_snug(EnvExperiment, Base):
         self.p.amp_final = .786
 
         # self.xvar('pfrac_d1_c_gm',np.linspace(.6,.99,8))
+        self.xvar('v_yshim_current_gm',np.linspace(.5,5.,20))
+
+        # self.xvar('pfrac_d1_c_gm',np.linspace(.6,.99,8))
         # self.xvar('pfrac_d1_r_gm',np.linspace(.6,.99,8))
+
+        # self.xvar('detune_d1_c_gm',np.linspace(1.,10.,8))
+        # self.xvar('detune_d1_r_gm',np.linspace(1.,10.,8))
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.5,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.5,8))
-        self.p.pfrac_c_gmramp_end = .1
-        self.p.pfrac_r_gmramp_end = .5
+        self.p.pfrac_c_gmramp_end = .214
+        self.p.pfrac_r_gmramp_end = .214
 
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,1.,8))
         # self.xvar('v_yshim_current_magtrap',np.linspace(3.,7.,8))
