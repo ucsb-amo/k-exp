@@ -129,16 +129,16 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.switch_all_dds(0) # turn all DDS off to start experiment
         if beat_ref_on:
             self.dds.beatlock_ref.on()
+            self.dds.d1_beatlock_ref.on()
         if init_lightsheet:
             self.lightsheet.init()
 
-        self.dds.ry_405.on()
-        self.dds.ry_980.on()
+        # self.dds.ry_405.on()
+        # self.dds.ry_980.on()
         
     @kernel
     def init_scan_kernel(self):
         
-
         self.dds.init_cooling()
         self.core.break_realtime()
 
@@ -148,8 +148,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-        self.dds.ry_405.on()
-        self.dds.ry_980.on()
+        # self.dds.ry_405.on()
+        # self.dds.ry_980.on()
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)

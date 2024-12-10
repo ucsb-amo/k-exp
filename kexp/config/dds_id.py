@@ -115,6 +115,9 @@ class dds_frame():
         self.raman_plus = self.dds_assign(1,1, ao_order = 1,
                                     default_freq = self.p.frequency_raman_plus,
                                     default_amp = self.p.amp_raman_plus)
+        self.d1_beatlock_ref = self.dds_assign(5,1,
+                                    default_freq=42.26e6,
+                                    default_amp=0.1)
 
         self.core = core
         # self.dds_manager = [DDSManager]
