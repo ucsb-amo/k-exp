@@ -164,15 +164,3 @@ class DataSaver():
         if isinstance(attr,bytes):
             attr = attr.decode("utf-8")
         return attr
-
-class DataVault():
-    def __init__(self,atomdata_list=[],datalist_path=[]):
-
-        if atomdata_list != []:
-            if ~isinstance(atomdata_list,list):
-                atomdata_list = [copy.deepcopy(atomdata_list)]
-            self.atomdata_list = atomdata_list
-
-        self.run_ids = [ad.run_info.run_id for ad in atomdata_list]
-        self.data_filepaths = [ad.run_info.filepath for ad in atomdata_list]
-        self.data_dates = [time.strftime('%Y-%m-%d',ad.run_info.run_datetime) for ad in atomdata_list]

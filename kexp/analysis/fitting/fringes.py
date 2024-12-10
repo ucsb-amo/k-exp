@@ -61,7 +61,7 @@ class SineEnvelope(Fit):
         guesses = self._guesses(x,y)
         popt, pcov = curve_fit(self._fit_func, x, y,
                                 p0=guesses,
-                                bounds=((-1.,0,-np.inf,0,0,0,-np.inf),(np.inf,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf)))
+                                bounds=((-1.,0,-np.inf,0,0,0,0.),(np.inf,np.inf,np.inf,np.inf,np.inf,np.inf,np.inf)))
         return popt, pcov
         
     def _guesses(self,x,y):
@@ -76,12 +76,12 @@ class SineEnvelope(Fit):
     
         contrast_guess = fringe_rms 
 
-        prom = fringe_rms/3
-        idx, _ = find_peaks(y, prominence=prom)
+        prom = fringe_rms
+        idx, _ = find_peaks(y, prominence=prom, distance = 4)
         self._x_peaks = x[idx]
         lambda_guess = np.mean(np.diff(x[idx]))
         k_guess = 2*np.pi/lambda_guess 
-        phase_guess = k_guess * x[self._find_idx(x_center_guess,x[idx])]
+        phase_guess = k_guess * x[self._find_idx(x_center_guess,x[idx])] + np.pi/4
         y_offset_guess = (np.max(y) - np.min(y))
         return amplitude_guess, sigma_guess, x_center_guess, y_offset_guess, contrast_guess, k_guess, phase_guess
     

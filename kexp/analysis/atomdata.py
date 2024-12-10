@@ -507,3 +507,59 @@ class atomdata():
             except:
                 self.sort_idx = []
                 self.sort_N = []
+
+# class ConcatAtomdata(atomdata):
+#     def __init__(self,rids=[],roi_id=None,lite=False):
+
+#         self.params = ExptParams()
+#         self.camera_params = CameraParams()
+#         self.run_info = RunInfo()
+
+#         file, rid = st.get_data_file(rids[0],lite=lite)
+#         with h5py.File(file,'r') as f:
+#             params = ExptParams()
+#             unpack_group(f,'params',params)
+#             self.xvarnames = f.attrs['xvarnames'][()]
+
+#             images = f['data']['images'][()]
+#             image_timestamps = f['data']['image_timestamps'][()]
+
+#             self.images = np.zeros( np.shape(rids) + images.shape,
+#                                     dtype=images.dtype )
+#             self.image_timestamps = np.zeros( np.shape(rids) + image_timestamps.shape,
+#                                               dtype=image_timestamps.dtype)
+
+#         self.sort_idx = []
+#         self.sort_N = []
+
+#         for rid in rids:
+#             file, rid = st.get_data_file(rid,lite=lite)
+    
+#             print(f"run id {rid}")
+#             with h5py.File(file,'r') as f:
+#                 params = ExptParams()
+#                 camera_params = CameraParams()
+#                 run_info = RunInfo()
+#                 unpack_group(f,'params',params)
+#                 unpack_group(f,'camera_params',camera_params)
+#                 unpack_group(f,'run_info',run_info)
+#                 self.images = f['data']['images'][()]
+#                 self.image_timestamps = f['data']['image_timestamps'][()]
+#                 self.xvarnames = f.attrs['xvarnames'][()]
+#                 self.xvars = self._unpack_xvars()
+#                 try:
+#                     experiment_text = f.attrs['expt_file']
+#                     params_text = f.attrs['params_file']
+#                     cooling_text = f.attrs['cooling_file']
+#                     imaging_text = f.attrs['imaging_file']
+#                 except:
+#                     experiment_text = ""
+#                     params_text = ""
+#                     cooling_text = ""
+#                     imaging_text = ""
+#                 self.experiment_code = expt_code(experiment_text,
+#                                                 params_text,
+#                                                 cooling_text,
+#                                                 imaging_text)
+                    
+

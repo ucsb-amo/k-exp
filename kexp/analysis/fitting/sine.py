@@ -57,10 +57,10 @@ class Sine(Fit):
         
     def _guesses(self,x,y):
 
-        y_offset_guess = (np.max(y) - np.min(y))
+        y_offset_guess = (np.max(y) + np.min(y)) / 2
 
         rms = np.sqrt(np.mean((y- np.mean(y))**2))
-        amplitude_guess = np.sqrt(2) * rms
+        amplitude_guess = rms
 
         prom = rms/3
         idx, _ = find_peaks(y, prominence=prom)
