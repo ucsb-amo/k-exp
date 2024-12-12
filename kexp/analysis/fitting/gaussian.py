@@ -193,14 +193,22 @@ class MultiGaussianFit(GaussianFit,Fit):
     parameters for each gaussian from left to right.
     """    
     def __init__(self,xdata,ydata,N_peaks,
-                 debug_plots=False):
+                 debug_plots=False,
+                 fractional_peak_prominence=0.01,
+                 fractional_peak_height_at_width=0.6,
+                 px_boxcar_smoothing_width=3,
+                 peak_distance_px=3):
         Fit.__init__(self,xdata,ydata,20)
 
         self._debug_plotting = debug_plots
         self.N_peaks = N_peaks
         n_params = 4
         self._prepare_fit_result_lists(N_peaks,n_params)
-        self.popt = self._fit(self.xdata,self.ydata)
+        self.popt = self._fit(self.xdata,self.ydata,
+                              fractional_peak_prominence,
+                              fractional_peak_height_at_width,
+                              px_boxcar_smoothing_width,
+                              peak_distance_px)
         self._assign_fit_results()
 
     def _prepare_fit_result_lists(self,N_peaks,n_params):
@@ -261,7 +269,11 @@ class MultiGaussianFit(GaussianFit,Fit):
             y += amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) )
         return y
 
-    def _fit(self, x, y):
+    def _fit(self, x, y,
+            fractional_peak_prominence,
+            fractional_peak_height_at_width,
+            px_boxcar_smoothing_width,
+            peak_distance_px):
         '''
         Returns the gaussian fit parameters for y(x).
 
@@ -279,7 +291,11 @@ class MultiGaussianFit(GaussianFit,Fit):
             offsets = []
             guesses = []
             for i in range(self.N_peaks):
-                out = self._gaussian_guesses(x,y,which_peak=i)
+                out = self._gaussian_guesses(x,y,which_peak=i,
+                                             fractional_peak_prominence=fractional_peak_prominence,
+                                             fractional_peak_height_at_width=fractional_peak_height_at_width,
+                                             px_boxcar_smoothing_width=px_boxcar_smoothing_width,
+                                             peak_distance_px=peak_distance_px)
                 offsets.append(out[1])
                 guess = out[2:]
                 for g in guess:
@@ -304,7 +320,8 @@ class MultiGaussianFit(GaussianFit,Fit):
                           which_peak,
                           fractional_peak_prominence=0.01,
                           fractional_peak_height_at_width=0.4,
-                          px_boxcar_smoothing_width=3):
+                          px_boxcar_smoothing_width=3,
+                          peak_distance_px=3):
         # smooth the data
         convwidth = px_boxcar_smoothing_width
         ysm = np.convolve(y,[1/convwidth]*convwidth,mode='same')
@@ -315,7 +332,8 @@ class MultiGaussianFit(GaussianFit,Fit):
         except:
             print(ynorm)
 
-        peak_idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_peak_prominence)
+        peak_idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_peak_prominence,
+                                    width=peak_distance_px)
         peak_idx += convwidth
         # get the "which_peak"th most prominent peak
         prom = prop['prominences']
