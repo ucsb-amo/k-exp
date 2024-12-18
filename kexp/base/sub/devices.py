@@ -24,6 +24,7 @@ from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.control.misc.awg_tweezer import tweezer
 from kexp.control.misc.doubled_rf import doubled_rf
 from kexp.control.misc.raman_beams import RamanBeamPair
+from kexp.control.misc.ssg3021x import SSG3021X
 
 from kexp.calibrations.magnets import pid_current_to_outer_supply_setpoint
 
@@ -122,6 +123,8 @@ class Devices():
         self.raman = RamanBeamPair(dds_plus=self.dds.raman_plus,
                                           dds_minus=self.dds.raman_minus,
                                           params=self.params)
+        
+        self.ry_980_eo = SSG3021X()
 
         # camera placeholder
         self.camera = DummyCamera()
