@@ -24,6 +24,9 @@ dv_array = np.array([dv])
 db_array = np.array([None])
 T_AWG_RPC_DELAY = 100.e-3
 
+SLOPE_TYPE_FREQ = 0
+SLOPE_TYPE_AMP = 1
+
 class TweezerMovesLib():
     def cubic_move(self,t,t_move,x_move) -> TFloat:
         """A cubic profile that moves a distance x_move, with zero initial and
@@ -178,15 +181,14 @@ class TweezerTrap():
         Returns:
             TArray(TFloat): the frequency slopes for the move.
         """        
-        self.compute_slopes(t_move,
-                                    self.moves.sinusoidal_modulation,
+        self.compute_slopes(t_move,self.moves.sinusoidal_modulation,
                                     x_amplitude,modulation_frequency)
     
     
     def compute_linear_amplitude_ramp(self,t_ramp,amp_f):
         self.compute_slopes(t_ramp,self.moves.linear,
                                      t_ramp,self.amplitude,amp_f,
-                                     frequency_slopes=False)
+                                     slope_type=SLOPE_TYPE_AMP)
 
     @kernel
     def cubic_move(self,t_move,x_move,trigger=True):
@@ -252,7 +254,7 @@ class TweezerTrap():
     def compute_slopes(self,t_move,
                x_vs_t_func,
                *x_vs_t_params,
-               frequency_slopes=True):
+               slope_type=SLOPE_TYPE_FREQ):
         """Compute the frequency slopes required to implement the specified move
         profile x(t) from t=0 to t=t_move. 
         
@@ -274,8 +276,16 @@ class TweezerTrap():
         self._N = len(tarray)
         self.slopes[0:(self._N-1)] = np.diff(x_vs_t_func(tarray,*x_vs_t_params)) / dt 
         self.slopes[self._N-1] = 0.0
-        if frequency_slopes:
+        
+        if slope_type == SLOPE_TYPE_FREQ:
             self.slopes = self.slopes / self.x_per_f
+            slope_min = self.dds.avail_freq_slope_step()
+        elif slope_type == SLOPE_TYPE_AMP:
+            slope_min = self.dds.avail_amp_slope_step
+
+        mask = np.logical_and(abs(self.slopes) < slope_min, self.slopes != 0.)
+
+        self.slopes[mask] = slope_min
 
     @kernel
     def move(self,
