@@ -14,17 +14,20 @@ class tweezer_snug(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.arange(240.,550.,6)*1.e6)
         
         # self.xvar('t_tof',np.linspace(800.,3500.,10)*1.e-6)
-        self.p.t_tof = 1100.e-6
+        self.p.t_tof = 500.e-6
         # self.xvar('t_tof',[500*1.e-6]*3)
 
-        # self.xvar('x_move',np.linspace(-3.5,-2.75,20)*1.e-6)
-        self.p.x_move = 4.e-6
-        # self.xvar('t_tweezer_single_move',np.linspace(3.,50.,20)*1.e-3)
-        self.p.t_tweezer_single_move = 10.e-3
+        # self.xvar('t_tweezer_mod',np.linspace(3.,50.,20)*1.e-3)
+        self.p.t_tweezer_mod = 300.e-3
 
-        self.xvar('t_tunnel',np.linspace(.0,200.,10)*1.e-3)
+        self.xvar('f_tweezer_mod',np.linspace(30.,100.,70))
+        self.p.f_tweezer_mod = 64.
+
+        self.p.x_tweezer_mod_amp = 1.e-6
+
+        # self.xvar('t_tunnel',np.linspace(.0,200.,80)*1.e-3)
         # self.xvar('t_tunnel',[20*1.e-3]*3)
-        self.p.t_tunnel = 22.e-3
+        self.p.t_tunnel = 1.e-3
 
         # self.p.frequency_tweezer_list = [73.7e6,77.3e6]
         self.p.frequency_tweezer_list = [73.15e6,77.e6]
@@ -34,7 +37,7 @@ class tweezer_snug(EnvExperiment, Base):
 
         # self.xvar('amp_tweezer_list',a_lists)
 
-        a_list = [.48,.5]
+        a_list = [.0,.5]
         # a_list = [.2,.23]
         self.p.amp_tweezer_list = a_list
 
@@ -114,9 +117,6 @@ class tweezer_snug(EnvExperiment, Base):
         # self.p.i_non_inter_current = 197.
         self.p.t_non_inter = 10.e-3
 
-        self.p.t_tweezer_ramp_back_up = 100.e-3
-        self.p.v_pd_ramp_back_up = 1.3
-
         # self.p.t_tof = 800.e-6
         # self.p.N_repeats = 300
         self.p.N_repeats = 1
@@ -128,7 +128,7 @@ class tweezer_snug(EnvExperiment, Base):
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -139,8 +139,8 @@ class tweezer_snug(EnvExperiment, Base):
 
         # self.tweezer.set_amp(0,.49)
 
-        self.tweezer.traps[1].cubic_move(t_move=self.p.t_tweezer_single_move,
-                                         x_move=self.p.x_move,trigger=False)
+        self.tweezer.traps[1].sine_move(t_mod=self.p.t_tweezer_mod,x_mod=self.p.x_tweezer_mod_amp,f_mod=self.p.f_tweezer_mod,trigger=False)
+        delay(100.e-3)
         
         # self.set_high_field_imaging(i_outer=self.p.i_non_inter_current)
         self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
@@ -231,7 +231,7 @@ class tweezer_snug(EnvExperiment, Base):
         delay(self.p.t_tunnel)
 
         self.tweezer.trigger()
-        delay(self.p.t_tweezer_single_move)
+        delay(self.p.t_tweezer_mod)
 
         self.tweezer.off()
 
