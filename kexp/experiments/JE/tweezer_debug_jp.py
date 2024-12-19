@@ -26,12 +26,12 @@ class tweezer_snug(EnvExperiment, Base):
         self.p.N = len(self.slopes)
         # self.xvar('N',range(2500,50000,2500))
 
-        self.p.t_tweezer_movement_dt = 40.e-6
+        # self.p.t_tweezer_movement_dt = 40.e-6
 
-        self.p.f_tweezer_mod = 100.
-        N_T_mod = 10.
-        self.p.x_tweezer_mod_amp = 1.e-6
-        self.p.t_tweezer_mod = N_T_mod * (1/self.p.f_tweezer_mod)
+        # self.p.f_tweezer_mod = 100.
+        # N_T_mod = 10.
+        # self.p.x_tweezer_mod_amp = 1.e-6
+        # self.p.t_tweezer_mod = N_T_mod * (1/self.p.f_tweezer_mod)
 
         self.finish_prepare(shuffle=False)
 
@@ -50,14 +50,14 @@ class tweezer_snug(EnvExperiment, Base):
         self.tweezer.dds.exec_at_trg()
         self.tweezer.dds.write()
 
-        self.slopes[self.p.N - 1] = self.tweezer.dds.avail_freq_slope_step() - 1
+        self.slopes[self.p.N - 1] = self.tweezer.dds.avail_freq_slope_step()*2 - 1
         aprint(self.p.N,self.slopes[(self.p.N-1)])
 
         f_min = self.tweezer.dds.avail_freq_slope_step()
 
         for slope in self.slopes[0:self.p.N]:
-            if abs(slope) < f_min and slope != 0.:
-                slope = np.sign(slope) * f_min
+            # if abs(slope) < f_min and slope != 0.:
+            #     slope = np.sign(slope) * f_min
             self.tweezer.dds.frequency_slope(1,slope)
             self.tweezer.dds.exec_at_trg()
         self.tweezer.dds.write()
@@ -69,13 +69,13 @@ class tweezer_snug(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.tweezer.traps[1].sine_move(t_mod=self.p.t_tweezer_mod,x_mod=self.p.x_tweezer_mod_amp,f_mod=self.p.f_tweezer_mod,trigger=False)
-        aprint(self.p.f_tweezer_mod)
-        delay(200.e-3)
-
-        # self.core.wait_until_mu(now_mu())
-        # self.write_move()
+        # self.tweezer.traps[1].sine_move(t_mod=self.p.t_tweezer_mod,x_mod=self.p.x_tweezer_mod_amp,f_mod=self.p.f_tweezer_mod,trigger=False)
+        # aprint(self.p.f_tweezer_mod)
         # delay(200.e-3)
+
+        self.core.wait_until_mu(now_mu())
+        self.write_move()
+        delay(200.e-3)
 
         self.tweezer.trigger()
         delay(self.p.t_tweezer_mod)

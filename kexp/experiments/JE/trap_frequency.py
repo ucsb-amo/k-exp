@@ -18,12 +18,12 @@ class tweezer_snug(EnvExperiment, Base):
         # self.xvar('t_tof',[500*1.e-6]*3)
 
         # self.xvar('t_tweezer_mod',np.linspace(3.,50.,20)*1.e-3)
-        self.p.t_tweezer_mod = 300.e-3
+        self.p.t_tweezer_mod = 100.e-3
 
-        self.xvar('f_tweezer_mod',np.linspace(30.,100.,70))
+        self.xvar('f_tweezer_mod',np.linspace(40.,4000.,20))
         self.p.f_tweezer_mod = 64.
 
-        self.p.x_tweezer_mod_amp = 1.e-6
+        self.p.x_tweezer_mod_amp = .5e-6
 
         # self.xvar('t_tunnel',np.linspace(.0,200.,80)*1.e-3)
         # self.xvar('t_tunnel',[20*1.e-3]*3)
@@ -128,7 +128,7 @@ class tweezer_snug(EnvExperiment, Base):
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -139,7 +139,10 @@ class tweezer_snug(EnvExperiment, Base):
 
         # self.tweezer.set_amp(0,.49)
 
-        self.tweezer.traps[1].sine_move(t_mod=self.p.t_tweezer_mod,x_mod=self.p.x_tweezer_mod_amp,f_mod=self.p.f_tweezer_mod,trigger=False)
+        self.tweezer.traps[1].sine_move(t_mod=self.p.t_tweezer_mod,
+                                        x_mod=self.p.x_tweezer_mod_amp,
+                                        f_mod=self.p.f_tweezer_mod,
+                                        trigger=False)
         delay(100.e-3)
         
         # self.set_high_field_imaging(i_outer=self.p.i_non_inter_current)

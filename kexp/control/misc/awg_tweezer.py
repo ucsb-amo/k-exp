@@ -61,7 +61,7 @@ class TweezerMovesLib():
         """        
         A = modulation_amplitude
         fm = modulation_frequency
-        return A*np.sin(2*np.pi*fm*t)
+        return A*np.sin(2*np.pi*fm*t + np.pi/2)
     
     def linear(self,t,t_move,y0,yf) -> TFloat:
         slope = (yf - y0) / t_move
