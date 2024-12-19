@@ -333,7 +333,7 @@ class MultiGaussianFit(GaussianFit,Fit):
             print(ynorm)
 
         peak_idx, prop = find_peaks(ynorm[convwidth:],prominence=fractional_peak_prominence,
-                                    width=peak_distance_px)
+                                    distance=peak_distance_px)
         peak_idx += convwidth
         # get the "which_peak"th most prominent peak
         prom = prop['prominences']
