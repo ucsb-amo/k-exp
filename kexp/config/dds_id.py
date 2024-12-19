@@ -118,6 +118,9 @@ class dds_frame():
         self.d1_beatlock_ref = self.dds_assign(5,1,
                                     default_freq=42.26e6,
                                     default_amp=0.1)
+        self.d1_beatlock_laser = self.dds_assign(5,2,
+                                    default_freq=150.e6,
+                                    default_amp=0.21)
 
         self.core = core
         # self.dds_manager = [DDSManager]
