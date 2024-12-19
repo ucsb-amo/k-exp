@@ -178,13 +178,13 @@ class TweezerTrap():
         Returns:
             TArray(TFloat): the frequency slopes for the move.
         """        
-        self.slopes = self.compute_slopes(t_move,
+        self.compute_slopes(t_move,
                                     self.moves.sinusoidal_modulation,
                                     x_amplitude,modulation_frequency)
     
     
     def compute_linear_amplitude_ramp(self,t_ramp,amp_f):
-        self.slopes = self.compute_slopes(t_ramp,self.moves.linear,
+        self.compute_slopes(t_ramp,self.moves.linear,
                                      t_ramp,self.amplitude,amp_f,
                                      frequency_slopes=False)
 
@@ -273,7 +273,7 @@ class TweezerTrap():
         tarray = np.arange(0.,t_move,dt)
         self._N = len(tarray)
         self.slopes[0:(self._N-1)] = np.diff(x_vs_t_func(tarray,*x_vs_t_params)) / dt 
-        self.slopes[self._N-1] = 0.
+        self.slopes[self._N-1] = 0.0
         if frequency_slopes:
             self.slopes = self.slopes / self.x_per_f
 
@@ -327,17 +327,20 @@ class TweezerTrap():
         Args:
             slopes (ndarray): The list of frequency slopes (Hz/s) to be written
             to the awg.
-        """        
-        if dt == dv:
-            dt = self.p.t_tweezer_movement_dt
+        """   
+        dt = self.p.t_tweezer_movement_dt
 
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
         self.dds.trg_timer(dt)
         self.dds.exec_at_trg()
         self.dds.write()
 
+        f_min = self.dds.avail_freq_slope_step()
+
         for slope in self.slopes[0:self._N]:
-            self.dds.frequency_slope(self.dds_idx,slope)
+            if abs(slope) < f_min and slope != 0.:
+                slope = np.sign(slope) * f_min
+            self.dds.freq_slope(self.dds_idx,slope)
             self.dds.exec_at_trg()
         self.dds.write()
 
