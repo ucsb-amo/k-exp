@@ -10,6 +10,7 @@ class GaussianFit(Fit):
                  which_peak=0,
                  px_boxcar_smoothing=3,
                  fractional_peak_height_at_width=0.3,
+                 fractional_peak_prominence = 0.01,
                  use_peak_bases_for_amplitude=False):
         super().__init__(xdata,ydata,savgol_window=20)
 
@@ -20,7 +21,8 @@ class GaussianFit(Fit):
                              which_peak,
                              px_boxcar_smoothing,
                              fractional_peak_height_at_width,
-                             use_peak_bases_for_amplitude)
+                             use_peak_bases_for_amplitude,
+                             fractional_peak_prominence)
         except Exception as e:
             print(e)
             popt = [np.NaN] * 4
@@ -44,7 +46,8 @@ class GaussianFit(Fit):
              which_peak,
              px_boxcar_smoothing,
              fractional_peak_height_at_width,
-             use_peak_bases_for_amplitude):
+             use_peak_bases_for_amplitude,
+             fractional_peak_prominence):
         """Returns the gaussian fit parameters for y(x).
 
         Fit equation: offset + amplitude * np.exp( -(x-x0)**2 / (2 * sigma**2) )
@@ -63,7 +66,8 @@ class GaussianFit(Fit):
                                      which_peak,
                                      px_boxcar_smoothing,
                                      fractional_peak_height_at_width,
-                                     use_peak_bases_for_amplitude)
+                                     use_peak_bases_for_amplitude,
+                                     fractional_peak_prominence)
         fit_mask = out[0]
         guesses = out[1:]
 

@@ -58,18 +58,18 @@ class Sine(Fit):
     def _guesses(self,x,y):
 
         y_offset_guess = (np.max(y) + np.min(y)) / 2
+        # y_offset_guess = np.mean(y)
 
         rms = np.sqrt(np.mean((y- np.mean(y))**2))
         amplitude_guess = rms
 
-        prom = rms/3
+        prom = rms/2
         idx, _ = find_peaks(y, prominence=prom)
         lambda_guess = np.mean(np.diff(x[idx]))
-        k_guess = 2*np.pi/lambda_guess 
-        # phase_guess = k_guess * x[self._find_idx(x_center_guess,x[idx])]
-        phase_guess = 0.
+        k_guess = 2*np.pi/lambda_guess
+        phase_guess = (- k_guess * x[0])%(2*np.pi)
+        # phase_guess = 1
         
-
         return amplitude_guess, y_offset_guess, k_guess, phase_guess
     
     def _find_idx(self,x0,x):
