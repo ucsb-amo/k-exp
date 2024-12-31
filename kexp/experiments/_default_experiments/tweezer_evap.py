@@ -11,13 +11,13 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.p.frequency_tweezer_list = [73.15e6,77.e6]
+        self.p.frequency_tweezer_list = [73.5e6,77.e6]
 
-        self.p.amp_tweezer_list = [.45,.5]
+        self.p.amp_tweezer_list = [.41,.5]
 
-        self.p.t_tof = 300.e-6
-        # self.xvar('t_tof',np.linspace(200.,2000.,10)*1.e-6)
-        self.xvar('t_tof',[100*1.e-6]*3)
+        self.p.t_tof = 3200.e-6
+        # self.xvar('t_tof',np.linspace(50.,1000.,5)*1.e-6)
+        self.xvar('t_tof',[200*1.e-6]*3)
 
         # self.xvar('pfrac_d1_c_gm',np.linspace(.6,.99,8))
         # self.xvar('v_yshim_current_gm',np.linspace(.5,5.,20))
@@ -42,8 +42,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
         # self.p.t_lightsheet_rampdown = .16
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(4.,8.,10))
-        self.p.v_pd_lightsheet_rampdown_end = 7.
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(5.,8.5,10))
+        self.p.v_pd_lightsheet_rampdown_end = 8.5
         # self.p.v_pd_lightsheet_rampdown_end = 7.1
 
         # self.xvar('i_evap2_current',np.linspace(196.5,199.,10))
@@ -55,8 +55,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(4.,9.9,20))
         self.p.v_pd_tweezer_1064_ramp_end = 9.
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,4.,20))
-        self.p.v_tweezer_paint_amp_max = -2.3
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-.6,.2,10))
+        self.p.v_tweezer_paint_amp_max = -1.8
 
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.012,.3,8))
         self.p.t_tweezer_1064_rampdown = .05
@@ -89,7 +89,7 @@ class tweezer_load(EnvExperiment, Base):
         self.camera_params.exposure_time = 10.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
