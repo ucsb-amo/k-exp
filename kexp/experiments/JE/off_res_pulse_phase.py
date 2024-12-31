@@ -14,7 +14,7 @@ class tweezer_snug(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.arange(240.,550.,6)*1.e6)
         
         # self.xvar('t_tof',np.linspace(1000.,3800.,15)*1.e-6)
-        self.p.t_tof = 3100.e-6
+        self.p.t_tof = 3200.e-6
         # self.xvar('t_tof',[3100*1.e-6]*10)
 
         # self.xvar('x_move',np.linspace(-3.5,-2.75,20)*1.e-6)
@@ -114,13 +114,16 @@ class tweezer_snug(EnvExperiment, Base):
         self.p.i_non_inter_current = 192.
         self.p.t_non_inter = 56.e-3
 
+        self.xvar('amp_imaging_pulse',np.linspace(.03,.25,20))
+        self.p.amp_imaging_pulse = .08
+
         self.p.f_off_res_imaging = -735.e6
-        self.xvar('t_image_pulse',np.linspace(1.e-6,600.e-6,20))
+        # self.xvar('t_image_pulse',np.linspace(1.e-6,600.e-6,20))
         self.p.t_image_pulse = 10.e-6
 
         # self.p.t_tof = 800.e-6
         # self.p.N_repeats = 300
-        self.p.N_repeats = 3
+        self.p.N_repeats = 6
 
         self.p.t_mot_load = 1.
 
@@ -144,7 +147,7 @@ class tweezer_snug(EnvExperiment, Base):
         #                                  x_move=self.p.x_move,trigger=False)
         
         # self.set_high_field_imaging(i_outer=self.p.i_non_inter_current)
-        # self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
+        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         self.set_imaging_detuning(self.p.f_off_res_imaging)
 
@@ -216,17 +219,20 @@ class tweezer_snug(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.outer_coil.ramp_pid(t=self.p.t_non_inter,
-                              i_start=self.p.i_evap3_current,
-                              i_end=self.p.i_non_inter_current)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.outer_coil.ramp_pid(t=self.p.t_non_inter,
+        #                       i_start=self.p.i_evap3_current,
+        #                       i_end=self.p.i_non_inter_current)
+
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging_pulse)
 
         delay(self.p.t_tunnel/2)
 
         self.pulse_imaging_light(self.p.t_image_pulse)
         # delay(self.p.t_image_pulse)
 
-        self.set_high_field_imaging(i_outer=self.p.i_non_inter_current)
+        self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
+        self.dds.imaging.set_dds(amplitude=.08)
 
         delay(self.p.t_tunnel/2)
 

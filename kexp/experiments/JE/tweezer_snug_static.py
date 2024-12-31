@@ -153,7 +153,6 @@ class tweezer_snug(EnvExperiment, Base):
         self.cmot_d1(self.p.t_d1cmot * s)
         
         self.gm(self.p.t_gm * s)
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.gm_ramp(self.p.t_gmramp)
 
         self.magtrap_and_load_lightsheet()
@@ -161,7 +160,6 @@ class tweezer_snug(EnvExperiment, Base):
         # feshbach field on, ramp up to field 1  
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.on()
-        # delay(1.e-3)
         self.outer_coil.set_voltage()
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
@@ -241,8 +239,6 @@ class tweezer_snug(EnvExperiment, Base):
         self.outer_coil.stop_pid()
         delay(10.e-3)
         self.outer_coil.off()
-        
-        # self.outer_coil.discharge()
 
     @kernel
     def run(self):

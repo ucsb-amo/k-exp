@@ -135,7 +135,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         # self.dds.ry_405.on()
         self.dds.ry_980.on()
-        self.dds.d1_beatlock_laser.on()
         
     @kernel
     def init_scan_kernel(self):
@@ -151,7 +150,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         # self.dds.ry_405.on()
         self.dds.ry_980.on()
-        self.dds.d1_beatlock_laser.on()
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
@@ -162,6 +160,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.tweezer.reset_traps(self.xvarnames)
             delay(100.e-3)
             self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+        
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
 
