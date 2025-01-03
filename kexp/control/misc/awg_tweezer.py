@@ -630,7 +630,7 @@ class tweezer():
 
         if low_power:
             pid_dac = self.pid2_dac
-            v_pd_max = tweezer_vpd1_to_vpd2(v_awg_am_max)
+            v_pd_max = tweezer_vpd1_to_vpd2(v_pd_max)
         else:
             pid_dac = self.pid1_dac
 
@@ -649,7 +649,7 @@ class tweezer():
                     v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v,v_pd_max)
                 else:
                     v_awg_amp_mod = v_awg_am_max
-                self.paint_amp_dac.set(v_awg_amp_mod,load_dac=False)
+                self.paint_amp_dac.set(v_awg_amp_mod,load_dac=True)
             pid_dac.set(v=v,load_dac=True)
             delay(dt_ramp)
 

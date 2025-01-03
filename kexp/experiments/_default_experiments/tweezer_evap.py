@@ -11,75 +11,15 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.p.frequency_tweezer_list = [73.5e6,77.e6]
+        self.p.frequency_tweezer_list = [73.2e6,77.e6]
 
-        self.p.amp_tweezer_list = [.41,.5]
+        self.p.amp_tweezer_list = [.43,.51]
 
-        self.p.t_tof = 3200.e-6
-        # self.xvar('t_tof',np.linspace(50.,1000.,5)*1.e-6)
-        self.xvar('t_tof',[200*1.e-6]*3)
+        self.p.t_tof = 3500.e-6
+        # self.xvar('t_tof',np.linspace(500.,3500.,10)*1.e-6)
+        # self.xvar('t_tof',[800*1.e-6]*3)
 
-        # self.xvar('pfrac_d1_c_gm',np.linspace(.6,.99,8))
-        # self.xvar('v_yshim_current_gm',np.linspace(.5,5.,20))
-
-        # self.xvar('pfrac_d1_c_gm',np.linspace(.6,.99,8))
-        # self.xvar('pfrac_d1_r_gm',np.linspace(.6,.99,8))
-
-        # self.xvar('detune_d1_c_gm',np.linspace(1.,10.,8))
-        # self.xvar('detune_d1_r_gm',np.linspace(1.,10.,8))
-
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.5,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.5,8))
-        self.p.pfrac_c_gmramp_end = .271
-        self.p.pfrac_r_gmramp_end = .15
-
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,1.,8))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(3.,7.,8))
-
-        # self.xvar('i_evap1_current',np.linspace(194.,198.,20))
-        # self.p.i_evap1_current = 192.
-
-        # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
-        # self.p.t_lightsheet_rampdown = .16
-
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(5.,8.5,10))
-        self.p.v_pd_lightsheet_rampdown_end = 8.5
-        # self.p.v_pd_lightsheet_rampdown_end = 7.1
-
-        # self.xvar('i_evap2_current',np.linspace(196.5,199.,10))
-        self.p.i_evap2_current = 198.2
-
-        # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.9,8))
-        self.p.t_tweezer_1064_ramp = .38
-
-        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(4.,9.9,20))
-        self.p.v_pd_tweezer_1064_ramp_end = 9.
-
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-.6,.2,10))
-        self.p.v_tweezer_paint_amp_max = -1.8
-
-        # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.012,.3,8))
-        self.p.t_tweezer_1064_rampdown = .05
-
-        # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(0.1,1.5,8))
-        self.p.v_pd_tweezer_1064_rampdown_end = .7
-
-        # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(0.04,.099,8))
-        self.p.v_pd_tweezer_1064_rampdown2_end = .07
-
-        # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.05,.4,8))
-        self.p.t_tweezer_1064_rampdown2 = .15
- 
-        # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.15,.5,10))
-        self.p.v_pd_tweezer_1064_rampdown3_end = .4
-        # self.p.v_pd_tweezer_1064_rampdown3_end = .35
-
-        # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.02,.3,8))
-        self.p.t_tweezer_1064_rampdown3 = .18
-        
-        # self.xvar('i_evap3_current',np.linspace(196.5,199.,10))
-        # self.p.i_evap3_current = 197.8
-        self.p.i_evap3_current = 198.5
+        self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,4.,20))
 
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
@@ -123,7 +63,7 @@ class tweezer_load(EnvExperiment, Base):
                              i_start=self.p.i_evap1_current,
                              i_end=self.p.i_evap2_current)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        
         self.tweezer.on(paint=False)
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
                           v_start=0.,
@@ -136,7 +76,7 @@ class tweezer_load(EnvExperiment, Base):
                              v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         self.lightsheet.off()
-        
+
         # tweezer evap 1 with constant trap frequency
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
                           v_start=self.p.v_pd_tweezer_1064_ramp_end,

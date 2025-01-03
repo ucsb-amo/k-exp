@@ -5,8 +5,8 @@ from artiq.experiment import TFloat, TArray, portable, rpc
 def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:
     #Calibration coefficients are from
     #k-jam\analysis\measurements\PID1_vs_PID2.ipynb
-    slope =  123.42857154500274
-    y_intercept =  -2.7238095329863836
+    slope =  116.57142844453922
+    y_intercept =  -2.289523800007051
     return vpd_pid1 * slope + y_intercept
 
 # distance per MHz:
