@@ -16,10 +16,10 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = [.43,.51]
 
         self.p.t_tof = 3500.e-6
-        # self.xvar('t_tof',np.linspace(500.,3500.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(900.,3500.,10)*1.e-6)
         # self.xvar('t_tof',[800*1.e-6]*3)
 
-        self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,4.,20))
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,4.,20))
 
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
