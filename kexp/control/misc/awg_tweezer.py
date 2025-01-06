@@ -152,6 +152,36 @@ class TweezerTrap():
     @kernel
     def update_amp(self,amp):
         self.amplitude = self.update_amp_rpc(amp)
+
+    def set_amp_rpc(self,amp):
+        self.dds.amp(self.dds_idx,amp)
+        self.dds.exec_at_trg()
+        self.dds.write()
+
+    @kernel
+    def set_amp(self,amp,trigger=True):
+
+        self.core.wait_until_mu(now_mu())
+        self.set_amp_rpc(amp)
+        self.update_amp(amp)
+        delay(T_AWG_RPC_DELAY)
+        if trigger:
+            self.awg_trig_ttl.pulse(1.e-6)
+
+    def set_position_rpc(self,x):
+        self.dds.freq(self.dds_idx,self.x_to_f(x))
+        self.dds.exec_at_trg()
+        self.dds.write()
+
+    @kernel
+    def set_position(self,x,trigger=True):
+
+        self.core.wait_until_mu(now_mu())
+        self.set_position_rpc(x)
+        self.update_x(x)
+        delay(T_AWG_RPC_DELAY)
+        if trigger:
+            self.awg_trig_ttl.pulse(1.e-6)
     
     def compute_cubic_move(self,t_move,x_move):
         """Compute the frequency slopes required for a cubic move profile (zero
@@ -281,7 +311,7 @@ class TweezerTrap():
             self.slopes = self.slopes / self.x_per_f
             slope_min = self.dds.avail_freq_slope_step()
         elif slope_type == SLOPE_TYPE_AMP:
-            slope_min = self.dds.avail_amp_slope_step()
+            slope_min = self.dds.avail_amp_slope_step() * 1.00001
 
         self.slopes = np.where(
             (np.abs(self.slopes) < slope_min) & (self.slopes != 0),
@@ -368,12 +398,12 @@ class TweezerTrap():
         self.dds.exec_at_trg()
         self.dds.write()
 
-        # amp_step_min = self.dds.avail_freq_slope_step()
+        # amp_step_min = self.dds.avail_amp_slope_step()
 
         for slope in self.slopes[0:self._N]:
             # if abs(slope) < amp_step_min and slope != 0.:
             #     slope = np.sign(slope) * amp_step_min
-            self.dds.amplitude_slope(self.dds_idx,slope)
+            self.dds.amp_slope(self.dds_idx,slope)
             self.dds.exec_at_trg()
         self.dds.write()
 
@@ -823,10 +853,8 @@ class tweezer():
         self.dds.exec_at_trg()
         self.dds.write()
 
-    def set_amp(self,tweezer_idx,amp):
-        self.dds[tweezer_idx].amp(amp)
-        self.dds.exec_at_trg()
-        self.dds.write()
+    def set_amp(self,tweezer_idx,amp,trigger=True):
+        self.dds[tweezer_idx].set_amp(amp,trigger)
     
     def reset_awg(self):
         self.dds.reset()
