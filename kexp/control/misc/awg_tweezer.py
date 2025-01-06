@@ -281,11 +281,12 @@ class TweezerTrap():
             self.slopes = self.slopes / self.x_per_f
             slope_min = self.dds.avail_freq_slope_step()
         elif slope_type == SLOPE_TYPE_AMP:
-            slope_min = self.dds.avail_amp_slope_step
+            slope_min = self.dds.avail_amp_slope_step()
 
-        mask = np.logical_and(abs(self.slopes) < slope_min, self.slopes != 0.)
-
-        self.slopes[mask] = slope_min
+        self.slopes = np.where(
+            (np.abs(self.slopes) < slope_min) & (self.slopes != 0),
+               np.sign(self.slopes) * slope_min,
+               self.slopes)
 
     @kernel
     def move(self,
@@ -345,11 +346,11 @@ class TweezerTrap():
         self.dds.exec_at_trg()
         self.dds.write()
 
-        f_min = self.dds.avail_freq_slope_step()
+        f_step_min = self.dds.avail_freq_slope_step()
 
         for slope in self.slopes[0:self._N]:
-            if abs(slope) < f_min and slope != 0.:
-                slope = np.sign(slope) * f_min
+            if abs(slope) < f_step_min and slope != 0.:
+                slope = np.sign(slope) * f_step_min
             self.dds.freq_slope(self.dds_idx,slope)
             self.dds.exec_at_trg()
         self.dds.write()
@@ -367,7 +368,11 @@ class TweezerTrap():
         self.dds.exec_at_trg()
         self.dds.write()
 
+        amp_step_min = self.dds.avail_freq_slope_step()
+
         for slope in self.slopes[0:self._N]:
+            if abs(slope) < amp_step_min and slope != 0.:
+                slope = np.sign(slope) * amp_step_min
             self.dds.amplitude_slope(self.dds_idx,slope)
             self.dds.exec_at_trg()
         self.dds.write()
