@@ -346,11 +346,11 @@ class TweezerTrap():
         self.dds.exec_at_trg()
         self.dds.write()
 
-        f_step_min = self.dds.avail_freq_slope_step()
+        # f_step_min = self.dds.avail_freq_slope_step()
 
         for slope in self.slopes[0:self._N]:
-            if abs(slope) < f_step_min and slope != 0.:
-                slope = np.sign(slope) * f_step_min
+            # if abs(slope) < f_step_min and slope != 0.:
+            #     slope = np.sign(slope) * f_step_min
             self.dds.freq_slope(self.dds_idx,slope)
             self.dds.exec_at_trg()
         self.dds.write()
@@ -368,11 +368,11 @@ class TweezerTrap():
         self.dds.exec_at_trg()
         self.dds.write()
 
-        amp_step_min = self.dds.avail_freq_slope_step()
+        # amp_step_min = self.dds.avail_freq_slope_step()
 
         for slope in self.slopes[0:self._N]:
-            if abs(slope) < amp_step_min and slope != 0.:
-                slope = np.sign(slope) * amp_step_min
+            # if abs(slope) < amp_step_min and slope != 0.:
+            #     slope = np.sign(slope) * amp_step_min
             self.dds.amplitude_slope(self.dds_idx,slope)
             self.dds.exec_at_trg()
         self.dds.write()
