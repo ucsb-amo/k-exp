@@ -13,7 +13,6 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=False,camera_select='andor',save_data=False)
 
         self.xvar('dummy',[1])
-
         self.p.frequency_tweezer_list = [73.3e6,77.e6]
 
         # self.xvar('amp_final',np.linspace(.41,.43,20))
