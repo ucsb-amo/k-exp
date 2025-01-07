@@ -12,17 +12,17 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False,camera_select='andor',save_data=False)
 
+        self.xvar('dummy',[1])
         self.p.frequency_tweezer_list = [73.3e6,77.e6]
 
         # self.xvar('amp_final',np.linspace(.41,.43,20))
 
-        self.p.amp_initial = .3
+        self.p.amp_initial = .0
         self.p.amp_final = .425
 
-        self.p.t_tweezer_amp_ramp = 200.e-3
+        self.p.t_tweezer_amp_ramp = 5.
 
-        a_list = [.0,.51]
-        # a_list = [0.]
+        a_list = [.0,.0]
 
         self.p.amp_tweezer_list = a_list
 
@@ -30,32 +30,19 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-
-        self.tweezer.set_amp(0,self.p.amp_initial)
-
-        delay(100.e-3)
         
         self.tweezer.traps[0].linear_amplitude_ramp(t_ramp=self.p.t_tweezer_amp_ramp,
                                          amp_f=self.p.amp_final,trigger=False)
-        
-        delay(100.e-3)
 
+        self.tweezer.on()
         self.tweezer.trigger()
-
-        delay(.5)
-
-        self.tweezer.trigger()
-        
         delay(self.p.t_tweezer_amp_ramp)
-
         self.tweezer.off()
 
     @kernel
     def run(self):
         self.init_kernel()
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        # self.mot_observe()
 
     def analyze(self):
         import os
