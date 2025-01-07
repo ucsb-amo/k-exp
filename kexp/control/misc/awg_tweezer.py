@@ -24,8 +24,8 @@ dv_array = np.array([dv])
 db_array = np.array([None])
 T_AWG_RPC_DELAY = 100.e-3
 
-SLOPE_TYPE_FREQ = 0
-SLOPE_TYPE_AMP = 1
+VAL_TYPE_FREQ = 0
+VAL_TYPE_AMP = 1
 
 class TweezerMovesLib():
     def cubic_move(self,t,t_move,x_move) -> TFloat:
@@ -104,7 +104,7 @@ class TweezerTrap():
             self.x_per_f = self.mesh.x_per_f_nce
 
         self.dummy_out = np.array([0.])
-        self.slopes = np.zeros((1000000,),dtype=float)
+        self.values = np.zeros((1000000,),dtype=float)
         self._N = 0
 
     def update_x_rpc(self,x) -> TFloat:
@@ -216,9 +216,9 @@ class TweezerTrap():
     
     
     def compute_linear_amplitude_ramp(self,t_ramp,amp_f):
-        self.compute_slopes(t_ramp,self.moves.linear,
+        self.compute_values(t_ramp,self.moves.linear,
                                      t_ramp,self.amplitude,amp_f,
-                                     slope_type=SLOPE_TYPE_AMP)
+                                     ramp_type=VAL_TYPE_AMP)
 
     @kernel
     def cubic_move(self,t_move,x_move,trigger=True):
@@ -249,9 +249,9 @@ class TweezerTrap():
         self.move(t_mod,xf,trigger=trigger)
 
     @kernel
-    def linear_amplitude_ramp(self,t_ramp,amp_f,trigger=True):
+    def linear_amplitude_ramp(self,t_ramp,amp_f,trigger=True,slopes=False):
         self.compute_linear_amplitude_ramp(t_ramp,amp_f)
-        self.amp_ramp(t_ramp,amp_f,trigger=trigger)
+        self.amp_ramp(t_ramp,amp_f,trigger=trigger,slopes=slopes)
         
     @portable
     def x_to_f(self,x) -> TFloat:
@@ -284,7 +284,7 @@ class TweezerTrap():
     def compute_slopes(self,t_move,
                x_vs_t_func,
                *x_vs_t_params,
-               slope_type=SLOPE_TYPE_FREQ):
+               ramp_type=VAL_TYPE_FREQ):
         """Compute the frequency slopes required to implement the specified move
         profile x(t) from t=0 to t=t_move. 
         
@@ -304,19 +304,33 @@ class TweezerTrap():
         dt = self.p.t_tweezer_movement_dt
         tarray = np.arange(0.,t_move,dt)
         self._N = len(tarray)
-        self.slopes[0:(self._N-1)] = np.diff(x_vs_t_func(tarray,*x_vs_t_params)) / dt 
-        self.slopes[self._N-1] = 0.0
+        self.values[0:(self._N-1)] = np.diff(x_vs_t_func(tarray,*x_vs_t_params)) / dt 
+        self.values[self._N-1] = 0.0
         
-        if slope_type == SLOPE_TYPE_FREQ:
-            self.slopes = self.slopes / self.x_per_f
+        if ramp_type == VAL_TYPE_FREQ:
+            self.values = self.values / self.x_per_f
             slope_min = self.dds.avail_freq_slope_step()
-        elif slope_type == SLOPE_TYPE_AMP:
+        elif ramp_type == VAL_TYPE_AMP:
             slope_min = self.dds.avail_amp_slope_step() * 1.00001
 
-        self.slopes = np.where(
-            (np.abs(self.slopes) < slope_min) & (self.slopes != 0),
-               np.sign(self.slopes) * slope_min,
-               self.slopes)
+        self.values = np.where(
+            (np.abs(self.values) < slope_min) & (self.values != 0),
+               np.sign(self.values) * slope_min,
+               self.values)
+        
+    def compute_values(self,t_move,
+                       x_vs_t_func,
+                       *x_vs_t_params,
+                       ramp_type=VAL_TYPE_FREQ):
+        dt = self.p.t_tweezer_movement_dt
+        tarray = np.arange(0.,t_move,dt)
+        self._N = len(tarray)
+        self.values[0:self._N] = x_vs_t_func(tarray,*x_vs_t_params)
+
+        if ramp_type == VAL_TYPE_FREQ:
+            self.values = self.values / self.x_per_f
+        elif ramp_type == VAL_TYPE_AMP:
+            pass
 
     @kernel
     def move(self,
@@ -332,8 +346,8 @@ class TweezerTrap():
             the time of the move and the move's frequency slopes.
         """
         self.core.wait_until_mu(now_mu())
-        self.write_move(dt)
         self.update_x(x_final)
+        self.write_move(dt)
         delay(T_AWG_RPC_DELAY)
 
         if trigger:
@@ -344,7 +358,8 @@ class TweezerTrap():
     def amp_ramp(self,
                  t_move,
                  amp_final,
-                 trigger = True):
+                 trigger = True,
+                 slopes = False):
         """Sets the timeline cursor to the current RTIO time (wall-clock), then
         starts writing the amplitude slopes list to the awg.
 
@@ -353,8 +368,8 @@ class TweezerTrap():
             the time of the move and the ramp's amplitude slopes.
         """
         self.core.wait_until_mu(now_mu())
-        self.write_amp_ramp()
         self.update_amp(amp_final)
+        self.write_amp_ramp(slopes)
         delay(T_AWG_RPC_DELAY)
 
         if trigger:
@@ -376,21 +391,21 @@ class TweezerTrap():
         self.dds.exec_at_trg()
         self.dds.write()
 
-        # f_step_min = self.dds.avail_freq_slope_step()
+        i = 0
 
-        for slope in self.slopes[0:self._N]:
-            # if abs(slope) < f_step_min and slope != 0.:
-            #     slope = np.sign(slope) * f_step_min
-            self.dds.freq_slope(self.dds_idx,slope)
+        for value in self.values[0:self._N]:
+            self.dds.freq_slope(self.dds_idx,value)
             self.dds.exec_at_trg()
-        self.dds.write()
+            i = i + 1
+            if i % 1000 == 0:
+                self.dds.write()
 
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
         self.dds.exec_at_trg()
         self.dds.write()
 
     @rpc(flags={"async"})
-    def write_amp_ramp(self):
+    def write_amp_ramp(self,slopes=False):
         dt = self.p.t_tweezer_movement_dt
 
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_TIMER)
@@ -398,14 +413,17 @@ class TweezerTrap():
         self.dds.exec_at_trg()
         self.dds.write()
 
-        # amp_step_min = self.dds.avail_amp_slope_step()
+        i = 0
 
-        for slope in self.slopes[0:self._N]:
-            # if abs(slope) < amp_step_min and slope != 0.:
-            #     slope = np.sign(slope) * amp_step_min
-            self.dds.amp_slope(self.dds_idx,slope)
+        for value in self.values[0:self._N]:
+            if slopes:
+                self.dds.amp_slope(self.dds_idx,value)  
+            else:
+                self.dds.amp(self.dds_idx,value)
             self.dds.exec_at_trg()
-        self.dds.write()
+            i = i + 1
+            if i % 1000 == 0:
+                self.dds.write()
 
         self.dds.trg_src(spcm.SPCM_DDS_TRG_SRC_CARD)
         self.dds.exec_at_trg()
