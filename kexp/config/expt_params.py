@@ -60,7 +60,7 @@ class ExptParams():
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
-        self.t_tweezer_ramp = .116
+        self.t_tweezer_ramp = .18
         self.t_tweezer_hold = 30.e-3
         self.t_tweezer_1064_ramp = .5
         self.t_tweezer_1064_rampdown = .17
@@ -69,6 +69,7 @@ class ExptParams():
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
+        self.t_tweezer_amp_ramp_dt = 10.e-6
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
@@ -188,7 +189,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.9
-        self.v_pd_lightsheet_rampdown_end = 8.5 #4.16
+        self.v_pd_lightsheet_rampdown_end = 8.2 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
