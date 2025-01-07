@@ -18,12 +18,12 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('amp_final',np.linspace(.41,.43,20))
 
-        self.p.amp_initial = .3
+        self.p.amp_initial = .0
         self.p.amp_final = .425
 
-        self.p.t_tweezer_amp_ramp = 100.e-3
+        self.p.t_tweezer_amp_ramp = 5.
 
-        a_list = [.0,.51]
+        a_list = [.0,.0]
 
         self.p.amp_tweezer_list = a_list
 
@@ -31,25 +31,13 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-
-        self.tweezer.traps[0].set_amp(self.p.amp_initial,
-                                      trigger=False)
-
-        delay(100.e-3)
         
         self.tweezer.traps[0].linear_amplitude_ramp(t_ramp=self.p.t_tweezer_amp_ramp,
                                          amp_f=self.p.amp_final,trigger=False)
-        
-        delay(300.e-3)
 
+        self.tweezer.on()
         self.tweezer.trigger()
-
-        delay(.5)
-
-        self.tweezer.trigger()
-        
         delay(self.p.t_tweezer_amp_ramp)
-
         self.tweezer.off()
 
     @kernel
