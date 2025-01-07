@@ -23,6 +23,7 @@ dv_list = np.linspace(0.,1.,5)
 dv_array = np.array([dv])
 db_array = np.array([None])
 T_AWG_RPC_DELAY = 100.e-3
+T_AWG_SYNC_DELAY = 5.e-3
 
 VAL_TYPE_FREQ = 0
 VAL_TYPE_AMP = 1
@@ -107,7 +108,7 @@ class TweezerTrap():
         self.values = np.zeros((1000000,),dtype=float)
         self._N = 0
 
-    def update_x_rpc(self,x) -> TFloat:
+    def update_x_rpc(self,x=dv,from_frequency=False) -> TFloat:
         """Updates the position attribute of the tweezer on the host device.
 
         Args:
@@ -116,7 +117,11 @@ class TweezerTrap():
         Returns:
             TFloat: the new position (in m) of the tweezer trap.
         """        
-        self.position = x
+        if from_frequency:
+            self.position = self.f_to_x(self.frequency)
+        else:
+            if x != dv:
+                self.position = x
         return self.position
     
     def update_amp_rpc(self,amp) -> TFloat:
@@ -138,16 +143,23 @@ class TweezerTrap():
             if frequency != dv:
                 self.frequency = frequency
         return self.frequency
+    
+    @kernel
+    def update_f(self,f,update_x=True):
+        self.frequency = self.update_f_rpc(f,from_position=False)
+        if update_x:
+            self.position = self.update_x_rpc()
 
     @kernel
-    def update_x(self,x):
+    def update_x(self,x,update_freq=True):
         """Updates the position attribute of the tweezer on the core device.
 
         Args:
             x (float): The new position (in m).
         """
         self.position = self.update_x_rpc(x)
-        self.frequency = self.update_f_rpc()
+        if update_freq:
+            self.frequency = self.update_f_rpc()
 
     @kernel
     def update_amp(self,amp):
