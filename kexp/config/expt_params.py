@@ -64,7 +64,7 @@ class ExptParams():
         self.t_tweezer_hold = 30.e-3
         self.t_tweezer_1064_ramp = .5
         self.t_tweezer_1064_rampdown = .17
-        self.t_tweezer_1064_rampdown2 = .6
+        self.t_tweezer_1064_rampdown2 = .35
         self.t_tweezer_1064_rampdown3 = .18
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
@@ -167,7 +167,7 @@ class ExptParams():
         # self.n_magtrap_rampdown_steps = 1000
 
         self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 0.14
+        self.v_xshim_current_magtrap = 0.12
         self.v_yshim_current_magtrap = 5.32
 
         #Optical Pumping
