@@ -22,8 +22,8 @@ dv = -1000.
 dv_list = np.linspace(0.,1.,5)
 dv_array = np.array([dv])
 db_array = np.array([None])
-T_AWG_RPC_DELAY = 100.e-3
-T_AWG_SYNC_DELAY = 5.e-3
+T_AWG_RAMP_WRITE_DELAY = 100.e-3
+T_AWG_RPC_DELAY = 25.e-3
 
 VAL_TYPE_FREQ = 0
 VAL_TYPE_AMP = 1
@@ -193,6 +193,21 @@ class TweezerTrap():
         self.core.wait_until_mu(now_mu())
         self.set_position_rpc(x)
         self.update_x(x)
+        delay(T_AWG_RPC_DELAY)
+        if trigger:
+            self.awg_trig_ttl.pulse(1.e-6)
+
+    def set_frequency_rpc(self,f):
+        self.dds.freq(self.dds_idx,f)
+        self.dds.exec_at_trg()
+        self.dds.write()
+
+    @kernel
+    def set_frequency(self,f,trigger=True):
+
+        self.core.wait_until_mu(now_mu())
+        self.set_frequency_rpc(f)
+        self.update_f(f,update_x=True)
         delay(T_AWG_RPC_DELAY)
         if trigger:
             self.awg_trig_ttl.pulse(1.e-6)
