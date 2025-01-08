@@ -13,12 +13,13 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        
-        self.p.frequency_tweezer_list_ce = np.array([74.e6, 72.0e6])
-        self.p.amp_tweezer_list_ce = np.array([.4, .375])
+        N = 3
 
-        self.p.frequency_tweezer_list_nce = np.array([76.45e6, 78.3e6])
-        self.p.amp_tweezer_list_nce = np.array([.1875, .365])
+        self.p.frequency_tweezer_list_nce = np.linspace(76.4e6, 77.e6, N)
+        self.p.amp_tweezer_list_nce = .575 * np.ones(N)
+        
+        self.p.frequency_tweezer_list_ce = np.linspace(72.9e6, 73.8e6, N)
+        self.p.amp_tweezer_list_ce = .42 * np.ones(N)
 
         # idx = 0
         # self.tweezer.add_tweezer(frequency=self.p.frequency_tweezer_list_ce[idx],
@@ -26,40 +27,44 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         # self.tweezer.add_tweezer(frequency=self.p.frequency_tweezer_list_nce[idx],
         #                          amplitude=self.p.amp_tweezer_list_nce[idx])
         
-        self.p.v_tweezer_paint_amp_max = -3.5
-        self.p.v_pd_tweezer_1064_rampdown3_end = 1.
+        self.p.v_tweezer_paint_amp_max = .8
 
         self.xvar('cateye',[0,1])
         self.xvar('tweezer_index',[0,1])
         self.p.tweezer_index = 1
         self.p.cateye = 0
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         self.p.t_tof = 10.e-6
         # self.xvar('tweezer_index',[0,1,0,1])
         # self.xvar('t_tof',np.linspace(10.,1000.,4)*1.e-6)
 
-        self.p.f = [0.]
-        self.p.a = [0.]
+        self.p.f = 0.
+        self.p.a = 0.
 
-        self.finish_prepare(shuffle=True)
+        self.tweezer.add_tweezer(frequency=77.e6,amplitude=0.5)
+
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
 
-        self.core.wait_until_mu(now_mu())
+        # self.core.wait_until_mu(now_mu())
         idx = self.p.tweezer_index
         if self.p.cateye == 1:
-            self.p.f[0] = self.p.frequency_tweezer_list_ce[idx]
-            self.p.a[0] = self.p.amp_tweezer_list_ce[idx]
+            self.p.f = self.p.frequency_tweezer_list_ce[idx]
+            self.p.a = self.p.amp_tweezer_list_ce[idx]
         elif self.p.cateye == 0:
-            self.p.f[0] = self.p.frequency_tweezer_list_nce[idx]
-            self.p.a[0] = self.p.amp_tweezer_list_nce[idx]
+            self.p.f = self.p.frequency_tweezer_list_nce[idx]
+            self.p.a = self.p.amp_tweezer_list_nce[idx]
 
-        self.core.wait_until_mu(now_mu())
-        self.tweezer.set_static_tweezers(freq_list=self.p.f,amp_list=self.p.a)
-        delay(100.*ms)
+        # self.tweezer.set_static_tweezers(freq_list=self.p.f,amp_list=self.p.a)
+        # delay(100.*ms)
+
+        self.tweezer.traps[0].set_amp(self.p.a)
+        self.tweezer.traps[0].set_frequency(self.p.f)
+
         self.tweezer.awg_trg_ttl.pulse(1.e-6)
 
         self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
@@ -146,9 +151,4 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
     def analyze(self):
         import os
         expt_filepath = os.path.abspath(__file__)
-        if self.setup_camera:
-            if self.run_info.save_data:
-                self.cleanup_scanned()
-                self.write_data(expt_filepath)
-            else:
-                self.remove_incomplete_data()
+        self.end(expt_filepath)
