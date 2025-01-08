@@ -14,8 +14,7 @@ from PyQt6.QtGui import QColor, QIcon
 import vxi11
 import time
 
-T_UPDATE_MS = 250
-T_STATUS_CHECK_MS = 2000
+T_UPDATE_MS = 500
 FONTSIZE_PT = 18
 
 class status_decoder():
