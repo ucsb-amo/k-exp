@@ -35,10 +35,10 @@ class tweezer_xmesh():
         self.f_nce_max = 82.e6
         self.f_nce_min = 76.e6
 
-        self.x_to_f_offset_ce = 0.000429217
-        self.x_to_f_offset_nce = -0.000448541
-        self.x_per_f_ce = -5.91304e-12
-        self.x_per_f_nce = 5.82844e-12
+        self.x_to_f_offset_ce = 0.000423043
+        self.x_to_f_offset_nce = -0.000442464
+        self.x_per_f_ce = -5.7971e-12
+        self.x_per_f_nce = 5.7971e-12
 
     def arrcast(self,v,dtype=float):
             if not (isinstance(v,np.ndarray) or isinstance(v,list)):
