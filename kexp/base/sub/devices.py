@@ -104,6 +104,7 @@ class Devices():
         # painted ligthsheet
         self.lightsheet = lightsheet(pid_dac=self.dac.vva_lightsheet,
                                      paint_amp_dac=self.dac.lightsheet_paint_amp,
+                                     alignment_shim_dac=self.dac.zshim_current_control,
                                      sw_ttl=self.ttl.lightsheet_sw,
                                      pid_int_hold_zero_ttl = self.ttl.lightsheet_pid_int_hold_zero,
                                      expt_params=self.params)
