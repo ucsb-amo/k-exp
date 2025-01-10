@@ -8,7 +8,7 @@ class ttl_frame():
 
         self.ttl_list = []
         
-        self.outer_coil_discharge_igbt = self.ttl_assign(0)
+        self.coil_discharge_igbt = self.ttl_assign(0)
         self.tweezer_pid2_enable = self.ttl_assign(1)
         self.outer_coil_pid_ttl = self.ttl_assign(2)
         self.inner_coil_pid_ttl = self.ttl_assign(3)
@@ -23,7 +23,7 @@ class ttl_frame():
         self.lightsheet_pid_int_hold_zero = self.ttl_assign(12)
         self.aod_rf_sw = self.ttl_assign(13)
         self.awg_trigger = self.ttl_assign(14)
-        self.inner_coil_discharge_igbt = self.ttl_assign(15)
+        self.zshim_hbridge = self.ttl_assign(15)
         self.pd_scope_trig = self.ttl_assign(16)
         self.pd_scope_trig_2 = self.ttl_assign(17)
         self.imaging_shutter_xy = self.ttl_assign(18)

@@ -63,7 +63,7 @@ class ExptParams():
         self.t_tweezer_ramp = .18
         self.t_tweezer_hold = 30.e-3
         self.t_tweezer_1064_ramp = .5
-        self.t_tweezer_1064_rampdown = .17
+        self.t_tweezer_1064_rampdown = .13
         self.t_tweezer_1064_rampdown2 = .6
         self.t_tweezer_1064_rampdown3 = .18
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
@@ -277,7 +277,7 @@ class ExptParams():
 
         # high field evap
         self.i_evap1_current = 197.9
-        self.i_evap2_current = 197.8
+        self.i_evap2_current = 198.7
         self.i_evap3_current = 197.6
 
         # forced evap

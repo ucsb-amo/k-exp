@@ -85,7 +85,7 @@ class Devices():
                                          pid_dac=self.dac.inner_coil_pid,
                                          pid_ttl=self.ttl.inner_coil_pid_ttl,
                                          igbt_ttl=self.ttl.inner_coil_igbt,
-                                         discharge_igbt_ttl=self.ttl.inner_coil_discharge_igbt,
+                                         discharge_igbt_ttl=self.ttl.coil_discharge_igbt,
                                          hbridge_ttl=self.ttl.hbridge_helmholtz,
                                          expt_params=self.params)
                                       
@@ -97,7 +97,7 @@ class Devices():
                                       pid_dac=self.dac.outer_coil_pid,
                                       pid_ttl=self.ttl.outer_coil_pid_ttl,
                                       igbt_ttl=self.ttl.outer_coil_igbt,
-                                      discharge_igbt_ttl=self.ttl.outer_coil_discharge_igbt,
+                                      discharge_igbt_ttl=self.ttl.coil_discharge_igbt,
                                       expt_params=self.params,
                                       real_current_to_supply_function=pid_current_to_outer_supply_setpoint)
         

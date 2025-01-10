@@ -34,7 +34,7 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
         # self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,1))
         # self.xvar('t_lightsheet_rampup',np.linspace(0.05,3.,20))
 
-        # self.xvar('v_zshim_current_magtrap',np.linspace(.0,1.,10))
+        self.xvar('v_zshim_current_magtrap',np.linspace(.0,3.,10))
         # self.p.v_zshim_current_magtrap = .12
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,1.,10))
         # self.p.v_xshim_current_magtrap = .14
@@ -46,10 +46,11 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
         # self.xvar('i_magtrap_ramp_end',np.linspace(30.,95.,10))
 
         # self.xvar('t_magtrap_ramp',np.linspace(.05,6.,10))
+        self.p.t_magtrap_ramp = .5
 
         self.p.t_lightsheet_hold = 10.e-3
 
-        self.xvar('t_tof',np.linspace(300.,1000.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(300.,1000.,10)*1.e-6)
         self.p.t_tof = 800.e-6
         self.p.N_repeats = 3
 

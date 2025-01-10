@@ -166,6 +166,8 @@ class Cooling():
         delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
+        
+        self.ttl.zshim_hbridge.on()
         self.set_shims(v_xshim_current,v_yshim_current,v_zshim_current)
         with parallel:
             self.switch_d2_3d(1)
@@ -617,11 +619,8 @@ class Cooling():
 
     @kernel
     def start_magtrap(self,
-                        v_zshim_current=dv,
                         v_yshim_current=dv,
                         v_xshim_current=dv):
-        if v_zshim_current == dv:
-            v_zshim_current = self.params.v_zshim_current_magtrap
         if v_yshim_current == dv:
             v_yshim_current = self.params.v_yshim_current_magtrap
         if v_xshim_current == dv:
@@ -634,10 +633,11 @@ class Cooling():
 
         self.dds.power_down_cooling()
         
-
-        self.set_shims(v_zshim_current=v_zshim_current,
+        self.set_shims(v_zshim_current=0.,
                         v_yshim_current=v_yshim_current,
                         v_xshim_current=v_xshim_current)
+        
+        self.ttl.zshim_hbridge.off()
 
         # magtrap start
         self.inner_coil.on()
@@ -679,12 +679,12 @@ class Cooling():
         if v_xshim_current == dv:
             v_xshim_current = self.params.v_xshim_current_magtrap
 
-        self.start_magtrap(v_zshim_current=v_zshim_current,
-                           v_yshim_current=v_yshim_current,
+        self.start_magtrap(v_yshim_current=v_yshim_current,
                            v_xshim_current=v_xshim_current)
 
         # ramp up lightsheet over magtrap
-        
+
+        self.dac.zshim_current_control.linear_ramp()
 
         self.lightsheet.ramp(t_lightsheet_ramp,
                             v_pd_lightsheet_ramp_start,
