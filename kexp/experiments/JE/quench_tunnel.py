@@ -12,9 +12,9 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
-        # self.xvar('t_tof',np.linspace(1000.,3500.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(200.,3500.,10)*1.e-6)
         self.p.t_tof = 600.e-6
-        # self.xvar('t_tof',[20*1.e-6]*50)
+        # self.xvar('t_tof',[800*1.e-6]*3)
 
         # self.xvar('beans',[0]*5)
 
@@ -52,21 +52,22 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_ramp',np.linspace(0.05,.6,10))
 
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(0.1,.8,20))
-        self.p.v_pd_tweezer_1064_rampdown_end =.14
-        # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.05,.6,20))
-        self.p.t_tweezer_1064_rampdown = .33
+        self.p.v_pd_tweezer_1064_rampdown_end =.54
+        # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.05,.6,10))
+        self.p.t_tweezer_1064_rampdown = .1722
         # self.xvar('i_evap2_current',np.linspace(198.,200.,10))
         self.p.i_evap2_current = 199.1
 
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.05,.6,10))
+        self.p.t_tweezer_1064_rampdown2 = .4
 
-        # self.xvar('i_evap3_current',np.linspace(197.,200.,10))
+        # self.xvar('i_evap3_current',np.linspace(197.,200.,20))
         self.p.i_evap3_current = 199.3
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.5,4.,20))
-        self.p.v_tweezer_paint_amp_max = .8
+        self.p.v_tweezer_paint_amp_max = -1.2
 
-        # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.2,.5,10))
+        self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.2,1.,10))
         self.p.v_pd_tweezer_1064_rampdown3_end = .4
 
         self.p.i_non_inter_current = 181.3
@@ -162,11 +163,11 @@ class tweezer_load(EnvExperiment, Base):
                           v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
         
-        # # tweezer evap 3 with constant trap frequency
-        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
-        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
-        #                   v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
-        #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
+        # tweezer evap 3 with constant trap frequency
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
+                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_tweezer_1064_rampdown2_end),
+                          v_end=self.p.v_pd_tweezer_1064_rampdown3_end,
+                          paint=True,keep_trap_frequency_constant=True,low_power=True)
         
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.outer_coil.ramp_pid(t=self.p.t_non_inter,

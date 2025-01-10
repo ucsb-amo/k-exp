@@ -139,6 +139,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     @kernel
     def init_scan_kernel(self):
         
+        self.set_imaging_shutters()
         self.dds.init_cooling()
         self.core.break_realtime()
 

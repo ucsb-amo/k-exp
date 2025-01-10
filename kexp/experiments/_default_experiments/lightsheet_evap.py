@@ -10,17 +10,27 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_evap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.imaging_state = 1.
+        # self.p.imaging_state = 1.
 
-        self.p.v_pd_lightsheet_rampdown_end = 1.6
+        # self.p.v_pd_lightsheet_rampdown_end = 1.6
 
-        self.p.t_tof = 20.e-6
-        # self.xvar('t_tof',np.linspace(50.,500.,4)*1.e-6)
-        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(4.,7.,10))
+        self.p.t_tof = 800.e-6
+        self.xvar('t_tof',np.linspace(300.,1000.,10)*1.e-6)
 
-        # self.camera_params.amp_imaging = .12
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.6,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(.05,.6,8))
+
+        # self.xvar('t_lightsheet_rampdown',np.linspace(.05,.6,20))
+        self.p.t_lightsheet_rampdown = .4
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(4.,7.,10))
+
+        # self.xvar('i_evap1_current',np.linspace(196.,205.,20))
+        self.p.i_evap1_current = 197.9
+
+        self.p.N_repeats = 1
+        self.p.amp_imaging = .2
         # self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
@@ -30,7 +40,8 @@ class tweezer_evap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.set_high_field_imaging(i_outer=self.p.i_evap1_current)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -44,9 +55,8 @@ class tweezer_evap(EnvExperiment, Base):
 
         # feshbach field on, ramp up to field 1  
         self.outer_coil.on()
-        delay(1.e-3)
         self.outer_coil.set_voltage()
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_evap1_current)
         
@@ -55,10 +65,10 @@ class tweezer_evap(EnvExperiment, Base):
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
         
-        # feshbach field ramp to field 2
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_evap1_current,
-                             i_end=self.p.i_evap2_current)
+        # # feshbach field ramp to field 2
+        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+        #                      i_start=self.p.i_evap1_current,
+        #                      i_end=self.p.i_evap2_current)
         
         self.ttl.pd_scope_trig.pulse(1.e-6)
 

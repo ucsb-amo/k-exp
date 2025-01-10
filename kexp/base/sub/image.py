@@ -30,6 +30,15 @@ class Image():
     ### Imaging sequences ###
 
     @kernel
+    def set_imaging_shutters(self):
+        if self.camera_params.camera_select == 'andor':
+            self.ttl.imaging_shutter_x.on()
+            self.ttl.imaging_shutter_xy.off()
+        else:
+            self.ttl.imaging_shutter_x.off()
+            self.ttl.imaging_shutter_xy.on()
+
+    @kernel
     def pulse_imaging_light(self,t):
         self.dds.imaging.on()
         # self.dds.d2_3d_r.on()
@@ -94,6 +103,9 @@ class Image():
         self.trigger_camera()
         self.pulse_imaging_light(self.params.t_imaging_pulse * s)
         delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+
+        self.ttl.imaging_shutter_x.off()
+        self.ttl.imaging_shutter_xy.off()
 
         # dark image
         delay(self.camera_params.t_dark_image_delay * s)

@@ -25,8 +25,8 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 16.0e6
-        self.frequency_detuned_imaging_F1 = 408.e6
+        self.frequency_detuned_imaging = 18.0e6
+        self.frequency_detuned_imaging_F1 = 410.e6
         self.beatlock_sign = -15
         self.N_offset_lock_reference_multiplier = 8
         self.frequency_minimum_offset_beatlock = 150.e6
@@ -64,7 +64,7 @@ class ExptParams():
         self.t_tweezer_hold = 30.e-3
         self.t_tweezer_1064_ramp = .5
         self.t_tweezer_1064_rampdown = .17
-        self.t_tweezer_1064_rampdown2 = .35
+        self.t_tweezer_1064_rampdown2 = .6
         self.t_tweezer_1064_rampdown3 = .18
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
@@ -74,7 +74,8 @@ class ExptParams():
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
         self.t_magtrap = 0.
-        self.t_magtrap_ramp = .5
+        # self.t_magtrap_ramp = 1.
+        self.t_magtrap_ramp = 4.
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 100.e-3
         self.t_feshbach_field_ramp = 12.e-3
@@ -156,8 +157,8 @@ class ExptParams():
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.271
-        self.pfrac_r_gmramp_end = 0.15
+        self.pfrac_c_gmramp_end = 0.36
+        self.pfrac_r_gmramp_end = 0.28
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -167,7 +168,7 @@ class ExptParams():
         # self.n_magtrap_rampdown_steps = 1000
 
         self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 0.12
+        self.v_xshim_current_magtrap = 0.14
         self.v_yshim_current_magtrap = 5.32
 
         #Optical Pumping
@@ -275,7 +276,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 196.3
+        self.i_evap1_current = 197.9
         self.i_evap2_current = 197.8
         self.i_evap3_current = 197.6
 
