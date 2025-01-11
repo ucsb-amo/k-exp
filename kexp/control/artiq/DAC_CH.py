@@ -54,3 +54,14 @@ class DAC_CH():
         for i in range(n):
             self.set(v=v0+i*delta_v)
             delay(dt)
+
+    @kernel(flags={"fast-math"})
+    def cubic_ramp(self,t,v_start,v_end,n):
+        v0 = v_start
+        vf = v_end
+        dt = t/n
+        A = -2*(vf-v0)**3/t**3
+        B =  3*(vf-v0)**2/t**2
+        for i in range(n):
+            self.set(v = A*(i*dt)**3 + B*(i*dt)**2)
+            delay(dt)
