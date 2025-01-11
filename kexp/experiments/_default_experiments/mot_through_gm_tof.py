@@ -58,10 +58,10 @@ class gm_tof(EnvExperiment, Base):
         self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
         
-        self.p.amp_imaging = .23
+        self.p.amp_imaging = .26
         self.p.imaging_state = 2.
         self.p.t_tof = 100.e-6
-        self.p.t_mot_load = .1
+        self.p.t_mot_load = .2
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)

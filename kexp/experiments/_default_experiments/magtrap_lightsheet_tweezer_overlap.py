@@ -15,10 +15,13 @@ class magtrap_lightsheet_tweezer_overlap(EnvExperiment, Base):
         # self.p.frequency_detuned_imaging = 421.e6
         # self.xvar('dummy',[1.]*2)
 
-        self.xvar('beans',[1,2]*10)
+        self.xvar('beans',[1,2]*100)
         # self.p.beans = 0.
 
-        self.p.v_pd_lightsheet_rampup_end = 5.
+        self.p.t_lightsheet_rampup = .2
+        self.p.t_magtrap_ramp = .5
+
+        # self.p.v_pd_lightsheet_rampup_end = 5.
 
         # self.p.n_tweezers = 1
         # self.p.amp_tweezer_list = [.15]
@@ -32,7 +35,7 @@ class magtrap_lightsheet_tweezer_overlap(EnvExperiment, Base):
         self.p.t_tweezer_tof = 10.e-6
 
         self.p.t_lightsheet_hold = 100.e-3
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .26
 
         self.finish_prepare(shuffle=False)
 
@@ -52,6 +55,7 @@ class magtrap_lightsheet_tweezer_overlap(EnvExperiment, Base):
         self.gm_ramp(self.p.t_gmramp)
 
         if self.p.beans == 0:
+            self.release()
             delay(self.p.t_gm_tof)
 
         if self.p.beans == 1:

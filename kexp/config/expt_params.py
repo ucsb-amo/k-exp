@@ -167,6 +167,7 @@ class ExptParams():
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
 
+        self.v_zshim_current_magtrap_init = 0.
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.14
         self.v_yshim_current_magtrap = 5.32

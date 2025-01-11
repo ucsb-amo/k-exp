@@ -23,7 +23,7 @@ class ttl_frame():
         self.lightsheet_pid_int_hold_zero = self.ttl_assign(12)
         self.aod_rf_sw = self.ttl_assign(13)
         self.awg_trigger = self.ttl_assign(14)
-        self.zshim_hbridge = self.ttl_assign(15)
+        self.zshim_hbridge_flip = self.ttl_assign(15)
         self.pd_scope_trig = self.ttl_assign(16)
         self.pd_scope_trig_2 = self.ttl_assign(17)
         self.imaging_shutter_xy = self.ttl_assign(18)

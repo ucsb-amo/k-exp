@@ -19,7 +19,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_tof = 50.e-6
         # self.xvar('t_tof',np.linspace(200.,2000.,10)*1.e-6)
-        # self.xvar('t_tof',[800*1.e-6]*3)
+        # self.xvar('t_tof',[800*1.e-6]*3)``
 
         self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.6,8))
         self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.7,8))
