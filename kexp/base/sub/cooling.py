@@ -621,13 +621,16 @@ class Cooling():
     @kernel
     def start_magtrap(self,v_zshim_current=dv,
                         v_yshim_current=dv,
-                        v_xshim_current=dv):
+                        v_xshim_current=dv,
+                        t_delay=dv):
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current_magtrap_init
         if v_yshim_current == dv:
             v_yshim_current = self.params.v_yshim_current_magtrap
         if v_xshim_current == dv:
             v_xshim_current = self.params.v_xshim_current_magtrap
+        if t_delay == dv:
+            t_delay = self.params.t_magtrap_delay
         
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
@@ -636,12 +639,15 @@ class Cooling():
 
         self.dds.power_down_cooling()
         self.ttl.pd_scope_trig.pulse(1.e-6)
+
+        self.ttl.zshim_hbridge_flip.on()
+
         self.set_shims(v_zshim_current=v_zshim_current,
                         v_yshim_current=v_yshim_current,
                         v_xshim_current=v_xshim_current)
         
-        self.ttl.zshim_hbridge_flip.off()
-
+        delay(t_delay)
+             
         # magtrap start
         self.inner_coil.on()
 
@@ -700,7 +706,7 @@ class Cooling():
                             paint=paint_lightsheet,
                             v_awg_am_max=v_awg_paint_amp_lightsheet,
                             keep_trap_frequency_constant=False,
-                            ramp_shim=False,
+                            ramp_shim=True,
                             v_shim_start=self.params.v_zshim_current_magtrap_init,
                             v_shim_end=v_zshim_current)
 
@@ -718,19 +724,19 @@ class Cooling():
 
     @kernel
     def magtrap(self,
-                                t_lightsheet_ramp=dv,
-                                t_magtrap_ramp=dv,
-                                t_magtrap_rampdown=dv,
-                                v_pd_lightsheet_ramp_start=dv,
-                                v_pd_lightsheet_ramp_end=dv,
-                                paint_lightsheet=False,
-                                v_awg_paint_amp_lightsheet=dv,
-                                i_magtrap_init=dv,
-                                i_magtrap_ramp_end=dv,
-                                v_zshim_current_init=dv,
-                                v_zshim_current=dv,
-                                v_yshim_current=dv,
-                                v_xshim_current=dv):
+                t_lightsheet_ramp=dv,
+                t_magtrap_ramp=dv,
+                t_magtrap_rampdown=dv,
+                v_pd_lightsheet_ramp_start=dv,
+                v_pd_lightsheet_ramp_end=dv,
+                paint_lightsheet=False,
+                v_awg_paint_amp_lightsheet=dv,
+                i_magtrap_init=dv,
+                i_magtrap_ramp_end=dv,
+                v_zshim_current_init=dv,
+                v_zshim_current=dv,
+                v_yshim_current=dv,
+                v_xshim_current=dv):
         if t_lightsheet_ramp == dv:
             t_lightsheet_ramp = self.params.t_lightsheet_rampup
         if t_magtrap_ramp == dv:

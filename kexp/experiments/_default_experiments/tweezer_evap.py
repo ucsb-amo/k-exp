@@ -21,13 +21,36 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(200.,2000.,10)*1.e-6)
         # self.xvar('t_tof',[800*1.e-6]*3)``
 
-        self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.6,8))
-        self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.7,8))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.6,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.7,8))
+
+        # self.xvar('i_magtrap_init',np.linspace(20.,95,8))
+        self.p.i_magtrap_init = 73.
+
+        # self.xvar('v_zshim_current_magtrap_init',np.linspace(.0,3.,10))
+        self.p.v_zshim_current_magtrap_init = .7
+
+        # self.xvar('v_zshim_current_magtrap',np.linspace(.0,.7,20))
+        self.p.v_zshim_current_magtrap = .0
+
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,1.,10))
+        # self.p.v_xshim_current_magtrap = .14
+
+        # self.xvar('v_yshim_current_magtrap',np.linspace(2.,9.,10))
+        # self.p.v_yshim_current_gm = 2.545
+
+        # self.xvar('i_magtrap_init',np.linspace(20.,70.,8))
+
+        # self.xvar('i_magtrap_ramp_end',np.linspace(30.,95.,8))
+        self.p.i_magtrap_ramp_end = 48.
+
+        # self.xvar('t_magtrap_ramp',np.linspace(.05,6.5,8))
+        self.p.t_magtrap_ramp = 2.8
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(5.,9.,10))
         self.p.v_pd_lightsheet_rampdown_end = 6.
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,4.,20))
+        self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,4.,5))
         self.p.v_tweezer_paint_amp_max = -1.79
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.9,8))

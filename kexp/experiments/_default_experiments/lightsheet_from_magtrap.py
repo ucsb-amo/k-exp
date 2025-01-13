@@ -32,32 +32,45 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
         # self.p.v_pd_lightsheet_rampup_end = 9.99
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.5,9.99,5))
         # self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,1))
-        # self.xvar('t_lightsheet_rampup',np.linspace(0.05,3.,20))
+        # self.xvar('t_lightsheet_rampup',np.linspace(0.05,1.5,8))
 
-        # self.xvar('i_magtrap_init',np.linspace(18.,70,8))
-        self.p.i_magtrap_init = 28.
+        # self.xvar('t_magtrap_delay',np.linspace(0.,5.,10)*1.e-3)
+        # self.p.t_magtrap_delay = 
 
-        # self.xvar('v_zshim_current_magtrap',np.linspace(.0,3.,10))
-        # self.p.v_zshim_current_magtrap = .12
+        # self.xvar('i_magtrap_init',np.linspace(20.,95,8))
+        self.p.i_magtrap_init = 73.
+
+        # self.xvar('v_zshim_current_magtrap_init',np.linspace(.0,3.,10))
+        self.p.v_zshim_current_magtrap_init = .7
+
+        # self.xvar('v_zshim_current_magtrap',np.linspace(.0,.7,20))
+        self.p.v_zshim_current_magtrap = .0
+
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,1.,10))
         # self.p.v_xshim_current_magtrap = .14
-        # self.xvar('v_yshim_current_magtrap',np.linspace(2.,9.,20))
+
+        # self.xvar('v_yshim_current_magtrap',np.linspace(2.,9.,10))
         # self.p.v_yshim_current_gm = 2.545
 
-        # self.xvar('i_magtrap_init',np.linspace(20.,30.,10))
+        # self.xvar('i_magtrap_init',np.linspace(20.,70.,8))
 
-        # self.xvar('i_magtrap_ramp_end',np.linspace(30.,95.,10))
+        # self.xvar('i_magtrap_ramp_end',np.linspace(30.,95.,8))
+        self.p.i_magtrap_ramp_end = 48.
 
-        # self.xvar('t_magtrap_ramp',np.linspace(.05,6.,10))
-        self.p.t_magtrap_ramp = .5
+        # self.xvar('t_magtrap_ramp',np.linspace(.05,6.5,8))
+        self.p.t_magtrap_ramp = 2.8
+        # self.p.t_magtrap_ramp = .5
+
+        # self.xvar('t_lightsheet_rampup',np.linspace(.05,2.,8))
 
         self.p.t_lightsheet_hold = 10.e-3
 
-        self.xvar('t_tof',np.linspace(300.,1000.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(300.,1000.,10)*1.e-6)
         self.p.t_tof = 800.e-6
-        self.p.N_repeats = 1
+        self.xvar('t_tof',[800*1.e-6]*5)
+        self.p.N_repeats = 5
 
-        self.p.amp_imaging = .25
+        self.p.amp_imaging = .35
 
         self.finish_prepare(shuffle=True)
 
