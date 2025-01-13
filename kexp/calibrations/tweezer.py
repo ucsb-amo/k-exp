@@ -1,13 +1,18 @@
 import numpy as np
 from artiq.experiment import TFloat, TArray, portable, rpc
 
+
+#Calibration coefficients are from
+#k-jam\analysis\measurements\PID1_vs_PID2.ipynb
+vpd2_per_vpd1_slope =  116.57142844453922
+v_pd2_y_intercept =  -2.289523800007051
 @portable(flags={"fast-math"})
 def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:
-    #Calibration coefficients are from
-    #k-jam\analysis\measurements\PID1_vs_PID2.ipynb
-    slope =  116.57142844453922
-    y_intercept =  -2.289523800007051
-    return vpd_pid1 * slope + y_intercept
+    return vpd_pid1 * vpd2_per_vpd1_slope + v_pd2_y_intercept
+
+@portable(flags={"fast-math"})
+def tweezer_vpd2_to_vpd1(vpd_pid2) -> TFloat:
+    return (vpd_pid2 - v_pd2_y_intercept) / vpd2_per_vpd1_slope
 
 # distance per MHz:
 class tweezer_xmesh():
