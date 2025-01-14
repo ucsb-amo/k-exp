@@ -54,7 +54,7 @@ class ExptParams():
         self.t_gmramp = 5.e-3
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 1.0
+        self.t_lightsheet_rampup = 1.1
         self.t_lightsheet_rampdown = .4
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
@@ -73,9 +73,10 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
+        self.t_magtrap_delay = 0.
         self.t_magtrap = 0.
-        # self.t_magtrap_ramp = 1.
-        self.t_magtrap_ramp = 4.
+        self.t_magtrap_ramp = 1.
+        # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 100.e-3
         self.t_feshbach_field_ramp = 12.e-3
