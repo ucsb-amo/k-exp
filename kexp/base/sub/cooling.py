@@ -640,7 +640,7 @@ class Cooling():
         self.dds.power_down_cooling()
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        self.ttl.zshim_hbridge_flip.on()
+        # self.ttl.zshim_hbridge_flip.on()
 
         self.set_shims(v_zshim_current=v_zshim_current,
                         v_yshim_current=v_yshim_current,
@@ -706,7 +706,7 @@ class Cooling():
                             paint=paint_lightsheet,
                             v_awg_am_max=v_awg_paint_amp_lightsheet,
                             keep_trap_frequency_constant=False,
-                            ramp_shim=True,
+                            ramp_shim=False,
                             v_shim_start=self.params.v_zshim_current_magtrap_init,
                             v_shim_end=v_zshim_current)
 
@@ -768,17 +768,17 @@ class Cooling():
 
         # ramp up lightsheet over magtrap
 
-        self.dac.zshim_current_control.linear_ramp(t=self.params.t_lightsheet_rampup,
-                                                   v_start=v_zshim_current_init,
-                                                   v_end=v_zshim_current,
-                                                   n=1000)
+        # self.dac.zshim_current_control.linear_ramp(t=self.params.t_lightsheet_rampup,
+        #                                            v_start=v_zshim_current_init,
+        #                                            v_end=v_zshim_current,
+        #                                            n=1000)
         
         # self.dac.zshim_current_control.linear_ramp(t=1.,
         #                                            v_start=v_zshim_current,
         #                                            v_end=0.,
         #                                            n=1000)
 
-        # delay(self.params.t_lightsheet_rampup)
+        delay(self.params.t_lightsheet_rampup)
 
         self.inner_coil.ramp_supply(t=t_magtrap_ramp,
                             i_start=i_magtrap_init,
