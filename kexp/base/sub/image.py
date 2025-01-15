@@ -16,6 +16,13 @@ from kexp.calibrations import high_field_imaging_detuning
 
 dv = -10.e9
 
+class ImagingType():
+    def __init__(self):
+        self.ABSORPTION = 0
+        self.DISPERSIVE = 1
+        self.FLUORESCENCE = 2
+img_types = ImagingType()
+
 class Image():
     def __init__(self):
         self.dds = dds_frame()
@@ -83,6 +90,7 @@ class Image():
         with parallel:
             self.dds.d1_3d_c.off()
             self.dds.d1_3d_r.off()
+
     @kernel
     def dispersive_image(self,repeats=1,repeat_delay=100.e-3):
         for n in range(repeats):
@@ -160,21 +168,11 @@ class Image():
            t = self.camera_params.exposure_time
 
         self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_fluor)
-        self.dds.second_imaging.set_dds(amplitude=.01)
         self.dds.d2_3d_r.set_dds(0.,amplitude=.06)
 
         self.trigger_camera()
         if with_light:
             self.pulse_imaging_light(t * s)
-            # self.dds.second_imaging.on()
-            # delay(t)
-            # self.dds.second_imaging.off()
-            # self.pulse_resonant_mot_beams(t * s)
-            # self.pulse_D1_beams(t * s)
-            pass
-
-        # self.lightsheet.off()
-        # self.dds.tweezer.off()
 
         delay(self.params.t_light_only_image_delay * s)
 
@@ -185,12 +183,6 @@ class Image():
         self.trigger_camera()
         if with_light:
             self.pulse_imaging_light(t * s)
-            # self.dds.second_imaging.on()
-            # delay(t)
-            # self.dds.second_imaging.off()
-            # self.pulse_resonant_mot_beams(t * s)
-            # self.pulse_D1_beams(t * s)
-            pass
 
     @kernel
     def trigger_camera(self):

@@ -1,3 +1,5 @@
+from kexp.base.sub.image import img_types as img
+
 class CameraParams():
     def __init__(self):
         self.camera_type = ""
@@ -19,14 +21,15 @@ class CameraParams():
         self.t_light_only_image_delay = 0.
         self.t_dark_image_delay = 0.
     
-    def select_absorption(self,absorption_bool):
+    def select_absorption(self,imaging_type):
         pass
 
 class BaslerParams(CameraParams):
     def __init__(self,serial_number='40320384',
                  trigger_source='Line1',
-                 exposure_time_fluor = 500.e-6, exposure_time_abs = 19.e-6,
-                 amp_absorption = 0.248,amp_fluorescence=0.5,
+                 exposure_time_fluor = 500.e-6, amp_fluorescence=0.5,
+                 exposure_time_abs = 19.e-6, amp_absorption = 0.248,
+                 exposure_time_dispersive=100.e-6, amp_dispersive = 0.248,
                  resolution = (1200,1920,),
                  t_light_only_image_delay=25.e-3,
                  t_dark_image_delay=15.e-3,
@@ -47,23 +50,29 @@ class BaslerParams(CameraParams):
         self.__exposure_time_fluor__ = exposure_time_fluor
         self.__exposure_time_abs__ = exposure_time_abs
         self.__amp_absorption__ = amp_absorption
-        self.__amp_fluorescence__ = amp_fluorescence 
+        self.__amp_fluorescence__ = amp_fluorescence
+        self.__amp_dispersive__ = amp_dispersive
+        self.__exposure_time_dispersive__ = exposure_time_dispersive
 
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
 
-    def select_absorption(self,absorption_bool):
-        if absorption_bool:
+    def select_absorption(self,imaging_type):
+        if imaging_type == img.ABSORPTION:
             self.amp_imaging = self.__amp_absorption__
             self.exposure_time = self.__exposure_time_abs__
-        else:
+        elif imaging_type == img.FLUORESCENCE:
             self.amp_imaging = self.__amp_fluorescence__
             self.exposure_time = self.__exposure_time_fluor__
+        elif imaging_type == img.DISPERSIVE:
+            self.amp_imaging = self.__amp_dispersive__
+            self.exposure_time = self.__exposure_time_dispersive__
 
 class AndorParams(CameraParams):
     def __init__(self,
-                 exposure_time_fluor = 10.e-6, exposure_time_abs = 10.e-6,
-                 amp_absorption = 0.106, amp_fluorescence=0.106,
+                 exposure_time_fluor = 10.e-3, amp_fluorescence=0.106,
+                 exposure_time_abs = 10.e-6, amp_absorption=0.106,
+                 exposure_time_dispersive=100.e-6, amp_dispersive = 0.106,
                  resolution = (512,512,),
                  t_light_only_image_delay=25.e-3,
                  t_dark_image_delay=25.e-3,
@@ -84,28 +93,35 @@ class AndorParams(CameraParams):
         self.vs_amp = 3
         self.preamp = 2
 
-        self.resolution = resolution
+        self.__em_gain_fluor = 300.
+        self.__em_gain_abs = 300.
+        self.__em_gain_dispersive = 300.
 
+        self.resolution = resolution
+        
         self.__exposure_time_fluor__ = exposure_time_fluor
         self.__exposure_time_abs__ = exposure_time_abs
         self.__amp_absorption__ = amp_absorption
         self.__amp_fluorescence__ = amp_fluorescence
-
-        self.__em_gain_fluor = 300.
-        self.__em_gain_abs = 300.
+        self.__amp_dispersive__ = amp_dispersive
+        self.__exposure_time_dispersive__ = exposure_time_dispersive
 
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
 
-    def select_absorption(self,absorption_bool):
-        if absorption_bool:
+    def select_absorption(self,imaging_type):
+        if imaging_type == img.ABSORPTION:
             self.amp_imaging = self.__amp_absorption__
             self.exposure_time = self.__exposure_time_abs__
             self.em_gain = self.__em_gain_abs
-        else:
+        elif imaging_type == img.FLUORESCENCE:
             self.amp_imaging = self.__amp_fluorescence__
             self.exposure_time = self.__exposure_time_fluor__
             self.em_gain = self.__em_gain_fluor
+        elif imaging_type == img.DISPERSIVE:
+            self.amp_imaging = self.__amp_dispersive__
+            self.exposure_time = self.__exposure_time_dispersive__
+            self.em_gain = self.__em_gain_dispersive
 
 andor_params = AndorParams(camera_select='andor',
                            amp_absorption=0.08,

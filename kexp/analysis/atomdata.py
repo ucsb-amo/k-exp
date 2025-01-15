@@ -11,6 +11,8 @@ from kexp.config.camera_params import CameraParams
 from kexp.base.sub.dealer import Dealer
 from kexp.base.sub.scanner import xvar
 
+from kexp.base.sub.image import img_types as img
+
 import kexp.util.data.server_talk as st
 import h5py
 
@@ -35,9 +37,9 @@ def unpack_group(file,group_key,obj):
 class analysis_tags():
     """A simple container to hold analysis tags for analysis logic.
     """    
-    def __init__(self,roi_id,absorption_analysis):
+    def __init__(self,roi_id,imaging_type):
         self.roi_id = roi_id
-        self.absorption_analysis = absorption_analysis
+        self.imaging_type = imaging_type
         self.xvars_shuffled = False
         self.transposed = False
         self.averaged = False
@@ -153,7 +155,7 @@ class atomdata():
         """Computes the ODs. If not absorption analysis, OD = (pwa - dark)/(pwoa - dark).
         """        
         self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark,
-                                 abs_image_bool=self._analysis_tags.absorption_analysis)
+                                 imaging_type=self._analysis_tags.imaging_type)
 
     def analyze_ods(self):
         """Crops ODs, computes sum_ods, gaussian fits to sum_ods, and populates
@@ -171,7 +173,7 @@ class atomdata():
         
         self._remap_fit_results()
         
-        if self._analysis_tags.absorption_analysis:
+        if self._analysis_tags.imaging_type == img.ABSORPTION:
             self.compute_atom_number()
 
     def _sort_images(self):

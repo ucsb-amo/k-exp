@@ -11,6 +11,7 @@ import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
+from kexp.base.sub.image import img_types as img
 
 class Cameras():
     def __init__(self):
@@ -22,7 +23,7 @@ class Cameras():
 
     ### Camera setup functions ###
 
-    def choose_camera(self,setup_camera=True,absorption_image=True,camera_select="xy_basler"):
+    def choose_camera(self,setup_camera=True,imaging_type=img.ABSORPTION,camera_select="xy_basler"):
 
         if not setup_camera:
             self.camera = DummyCamera()
@@ -35,40 +36,40 @@ class Cameras():
                     ttl = self.ttl.basler
                     self.assign_camera_stuff(camera_select,
                                             camera_ttl=ttl,
-                                            absorption_bool=absorption_image)
+                                            imaging_type=imaging_type)
                 case "xy2_basler":
                     ttl = self.ttl.z_basler
                     self.assign_camera_stuff(camera_select,
                                             camera_ttl=ttl,
-                                            absorption_bool=absorption_image)
+                                            imaging_type=imaging_type)
                 case "x_basler":
                     ttl = self.ttl.z_basler
                     self.assign_camera_stuff(camera_select,
                                             camera_ttl=ttl,
-                                            absorption_bool=absorption_image)
+                                            imaging_type=imaging_type)
                 case "z_basler":
                     ttl = self.ttl.z_basler
                     self.assign_camera_stuff(camera_select,
                                              camera_ttl=ttl,
-                                             absorption_bool=absorption_image)
+                                             imaging_type=imaging_type)
                 case "andor":
                     ttl = self.ttl.andor
                     self.assign_camera_stuff(camera_select,
                                              camera_ttl=ttl,
-                                             absorption_bool=absorption_image)
+                                             imaging_type=imaging_type)
                 case _:
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
-            self.assign_camera_stuff(camera_select,camera_ttl=ttl,absorption_bool=absorption_image)
-        self.run_info.absorption_image = absorption_image
+            self.assign_camera_stuff(camera_select,camera_ttl=ttl,imaging_type=imaging_type)
+        self.run_info.imaging_type = imaging_type
 
     def assign_camera_stuff(self,
                             camera_select:str,
                             camera_ttl:TTL,
-                            absorption_bool):
+                            imaging_type):
         
         self.camera_params = self.get_camera_params(camera_select)
         self.camera_params.camera_select = camera_select
-        self.camera_params.select_absorption(absorption_bool)
+        self.camera_params.select_absorption(imaging_type)
         self.ttl.camera = camera_ttl
 
     def get_camera_params(self,camera_select) -> camera_params.CameraParams:

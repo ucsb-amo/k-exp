@@ -4,6 +4,7 @@ from artiq.experiment import delay, delay_mu
 import numpy as np
 from kexp.config.expt_params import ExptParams
 from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
+from kexp.base.sub.image import img_types as img
 from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 from kexp.util.data import server_talk
@@ -17,7 +18,11 @@ RPC_DELAY = 10.e-3
 from kexp.util.artiq.async_print import aprint
 
 class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
-    def __init__(self,setup_camera=True,absorption_image=True,save_data=True,camera_select="xy_basler"):
+    def __init__(self,
+                 setup_camera=True,
+                 imaging_type=img.ABSORPTION,
+                 save_data=True,
+                 camera_select="xy_basler"):
         Scanner.__init__(self)
         super().__init__()
 
@@ -30,7 +35,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.prepare_devices(expt_params=self.params)
 
-        self.choose_camera(setup_camera,absorption_image,camera_select)
+        self.choose_camera(setup_camera,imaging_type,camera_select)
 
         self.images = []
         self.image_timestamps = []
@@ -62,7 +67,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         a scan. This must be an RPC -- no kernel decorator.
         """
 
-        if self.run_info.absorption_image:
+        if self.run_info.imaging_type == img.ABSORPTION:
             if self.params.N_pwa_per_shot > 1:
                 print("You indicated more than one PWA per shot, but the analysis is set to absorption imaging. Setting # PWA to 1.")
             self.params.N_pwa_per_shot = 1
@@ -167,7 +172,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
     @kernel
     def cleanup_scan_kernel(self):
-        if not self.run_info.absorption_image:
+        if not self.run_info.imaging_type:
             delay(self.params.t_light_only_image_delay)
             self.light_image()
             delay(self.params.t_dark_image_delay)
