@@ -653,19 +653,23 @@ class Cooling():
 
     @kernel
     def magtrap_and_load_lightsheet(self,
-                                t_lightsheet_ramp=dv,
-                                t_magtrap_ramp=dv,
-                                t_magtrap_rampdown=dv,
-                                v_pd_lightsheet_ramp_start=dv,
-                                v_pd_lightsheet_ramp_end=dv,
-                                paint_lightsheet=False,
-                                v_awg_paint_amp_lightsheet=dv,
-                                i_magtrap_init=dv,
-                                i_magtrap_ramp_end=dv,
-                                v_zshim_current_init=dv,
-                                v_zshim_current=dv,
-                                v_yshim_current=dv,
-                                v_xshim_current=dv):
+                                    do_lightsheet_ramp=True,
+                                    do_magtrap_rampup=True,
+                                    do_magtrap_rampdown=True,
+                                    paint_lightsheet=False,
+                                    ramp_shim_with_lightsheet=False,
+                                    t_lightsheet_ramp=dv,
+                                    t_magtrap_ramp=dv,
+                                    t_magtrap_rampdown=dv,
+                                    v_pd_lightsheet_ramp_start=dv,
+                                    v_pd_lightsheet_ramp_end=dv,
+                                    v_awg_paint_amp_lightsheet=dv,
+                                    i_magtrap_init=dv,
+                                    i_magtrap_ramp_end=dv,
+                                    v_zshim_current_init=dv,
+                                    v_zshim_current=dv,
+                                    v_yshim_current=dv,
+                                    v_xshim_current=dv):
         if t_lightsheet_ramp == dv:
             t_lightsheet_ramp = self.params.t_lightsheet_rampup
         if t_magtrap_ramp == dv:
@@ -700,92 +704,31 @@ class Cooling():
         # self.dac.zshim_current_control.linear_ramp()
         # self.dac.zshim_current_control.set(v=self.params.v_zshim_current_magtrap)
 
-        self.lightsheet.ramp(t_lightsheet_ramp,
-                            v_pd_lightsheet_ramp_start,
-                            v_pd_lightsheet_ramp_end,
-                            paint=paint_lightsheet,
-                            v_awg_am_max=v_awg_paint_amp_lightsheet,
-                            keep_trap_frequency_constant=False,
-                            ramp_shim=False,
-                            v_shim_start=self.params.v_zshim_current_magtrap_init,
-                            v_shim_end=v_zshim_current)
+        if do_lightsheet_ramp:
+            self.lightsheet.ramp(t_lightsheet_ramp,
+                                v_pd_lightsheet_ramp_start,
+                                v_pd_lightsheet_ramp_end,
+                                paint=paint_lightsheet,
+                                v_awg_am_max=v_awg_paint_amp_lightsheet,
+                                keep_trap_frequency_constant=False,
+                                ramp_shim=ramp_shim_with_lightsheet,
+                                v_shim_start=v_zshim_current_init,
+                                v_shim_end=v_zshim_current)
+        else:
+            delay(t_lightsheet_ramp)
 
-        self.inner_coil.ramp_supply(t=t_magtrap_ramp,
-                            i_start=i_magtrap_init,
-                            i_end=i_magtrap_ramp_end)
+        if do_magtrap_rampup:
+            self.inner_coil.ramp_supply(t=t_magtrap_ramp,
+                                i_start=i_magtrap_init,
+                                i_end=i_magtrap_ramp_end)
         
         delay(self.params.t_magtrap)
 
-        self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
-                            i_start=i_magtrap_ramp_end,
-                            i_end=0.)
-        
-        self.inner_coil.snap_off()
-
-    @kernel
-    def magtrap(self,
-                t_lightsheet_ramp=dv,
-                t_magtrap_ramp=dv,
-                t_magtrap_rampdown=dv,
-                v_pd_lightsheet_ramp_start=dv,
-                v_pd_lightsheet_ramp_end=dv,
-                paint_lightsheet=False,
-                v_awg_paint_amp_lightsheet=dv,
-                i_magtrap_init=dv,
-                i_magtrap_ramp_end=dv,
-                v_zshim_current_init=dv,
-                v_zshim_current=dv,
-                v_yshim_current=dv,
-                v_xshim_current=dv):
-        if t_lightsheet_ramp == dv:
-            t_lightsheet_ramp = self.params.t_lightsheet_rampup
-        if t_magtrap_ramp == dv:
-            t_magtrap_ramp = self.params.t_magtrap_ramp
-        if t_magtrap_rampdown == dv:
-            t_magtrap_rampdown = self.params.t_magtrap_rampdown
-        if v_pd_lightsheet_ramp_start == dv:
-            v_pd_lightsheet_ramp_start = self.params.v_pd_lightsheet_rampup_start
-        if v_pd_lightsheet_ramp_end == dv:
-            v_pd_lightsheet_ramp_end = self.params.v_pd_lightsheet_rampup_end
-        if v_awg_paint_amp_lightsheet == dv:
-            v_awg_paint_amp_lightsheet = self.params.v_lightsheet_paint_amp_max
-        if i_magtrap_init == dv:
-            i_magtrap_init = self.params.i_magtrap_init
-        if i_magtrap_ramp_end == dv:
-            i_magtrap_ramp_end = self.params.i_magtrap_ramp_end
-        if v_zshim_current_init == dv:
-            v_zshim_current_init = self.params.v_zshim_current_magtrap_init
-        if v_zshim_current == dv:
-            v_zshim_current = self.params.v_zshim_current_magtrap
-        if v_yshim_current == dv:
-            v_yshim_current = self.params.v_yshim_current_magtrap
-        if v_xshim_current == dv:
-            v_xshim_current = self.params.v_xshim_current_magtrap
-
-        self.start_magtrap(v_zshim_current=v_zshim_current_init,
-                           v_yshim_current=v_yshim_current,
-                           v_xshim_current=v_xshim_current)
-
-        # ramp up lightsheet over magtrap
-
-        # self.dac.zshim_current_control.linear_ramp(t=self.params.t_lightsheet_rampup,
-        #                                            v_start=v_zshim_current_init,
-        #                                            v_end=v_zshim_current,
-        #                                            n=1000)
-        
-        # self.dac.zshim_current_control.linear_ramp(t=1.,
-        #                                            v_start=v_zshim_current,
-        #                                            v_end=0.,
-        #                                            n=1000)
-
-        delay(self.params.t_lightsheet_rampup)
-
-        self.inner_coil.ramp_supply(t=t_magtrap_ramp,
-                            i_start=i_magtrap_init,
-                            i_end=i_magtrap_ramp_end)
-        
-        delay(self.params.t_magtrap)
-
+        if do_magtrap_rampdown:
+            self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
+                                i_start=i_magtrap_ramp_end,
+                                i_end=0.)
+            self.inner_coil.snap_off()
 
     @kernel
     def release(self):
