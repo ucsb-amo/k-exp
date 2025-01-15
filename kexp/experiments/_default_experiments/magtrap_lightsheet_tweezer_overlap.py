@@ -26,7 +26,7 @@ class magtrap_lightsheet_tweezer_overlap(EnvExperiment, Base):
         # self.p.n_tweezers = 1
         # self.p.amp_tweezer_list = [.15]
 
-        self.p.t_mot_load = .75
+        self.p.t_mot_load = 1.
 
         self.p.t_tof = 200.e-6
         self.p.t_gm_tof = 3.e-3
@@ -60,7 +60,7 @@ class magtrap_lightsheet_tweezer_overlap(EnvExperiment, Base):
 
         if self.p.beans == 1:
 
-            self.magtrap()
+            self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,do_magtrap_rampdown=False)
             self.inner_coil.snap_off()
 
             delay(self.p.t_magtrap_tof)

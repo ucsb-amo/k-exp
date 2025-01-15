@@ -163,7 +163,7 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 23.3
+        self.i_magtrap_init = 27.
         self.i_magtrap_ramp_end = 95.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
@@ -171,7 +171,7 @@ class ExptParams():
         self.v_zshim_current_magtrap_init = 0.
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.14
-        self.v_yshim_current_magtrap = 5.32
+        self.v_yshim_current_magtrap = 6.
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -191,7 +191,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.9
+        self.v_pd_lightsheet_rampup_end = 9.99
         self.v_pd_lightsheet_rampdown_end = 8.2 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0

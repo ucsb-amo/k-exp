@@ -32,8 +32,7 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
         # self.p.v_pd_lightsheet_rampup_end = 9.99
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.5,9.99,5))
         # self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,1))
-        # self.xvar('t_lightsheet_rampup',np.linspace(0.05,2.,4))
-        self.p.t_lightsheet_rampup = 1.
+        # self.xvar('t_lightsheet_rampup',np.linspace(0.05,1.5,8))
 
         # self.xvar('t_magtrap_delay',np.linspace(0.,5.,10)*1.e-3)
         # self.p.t_magtrap_delay = 
@@ -56,18 +55,18 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
         # self.xvar('i_magtrap_ramp_end',np.linspace(30.,95.,8))
         # self.p.i_magtrap_ramp_end = 95.
 
-        # self.xvar('t_magtrap_ramp',np.linspace(1.,6.5,2))
-        # self.p.t_magtrap_ramp = 6.5
-        self.p.t_magtrap_ramp = 1.
+        # self.xvar('t_magtrap_ramp',np.linspace(.05,6.5,10))
+        # self.p.t_magtrap_ramp = 1.4
+        # self.p.t_magtrap_ramp = .5
 
         # self.xvar('t_lightsheet_rampup',np.linspace(.05,2.,8))
 
         self.p.t_lightsheet_hold = 10.e-3
 
         # self.xvar('t_tof',np.linspace(100.,600.,10)*1.e-6)
-        self.p.t_tof = 700.e-6
-        # self.xvar('t_tof',[800*1.e-6]*100)
-        self.p.N_repeats = 4
+        # self.p.t_tof = 800.e-6
+        self.xvar('t_tof',[20*1.e-6]*3)
+        self.p.N_repeats = 1
 
         self.p.amp_imaging = .15
 
@@ -81,7 +80,6 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
-        
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 

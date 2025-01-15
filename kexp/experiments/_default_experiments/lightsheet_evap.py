@@ -10,37 +10,44 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_evap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
 
         # self.p.imaging_state = 1.
 
-        # self.p.v_pd_lightsheet_rampdown_end = 1.6
+        self.p.v_pd_lightsheet_rampdown_end = 5.
 
-        self.p.t_tof = 800.e-6
-        self.xvar('t_tof',np.linspace(300.,1000.,10)*1.e-6)
+        self.p.t_tof = 10.e-6
+        # self.xvar('t_tof',[10*1.e-6]*100)
+        # self.xvar('t_tof',np.linspace(10.,100.,10)*1.e-6)
+
+        # self.xvar('detune_d1_c_gm',np.linspace(1.,10.,8))
+        # self.xvar('detune_d1_r_gm',np.linspace(1.,10.,8))
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.6,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(.05,.6,8))
 
-        # self.xvar('t_lightsheet_rampdown',np.linspace(.05,.6,20))
-        self.p.t_lightsheet_rampdown = .4
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(4.,7.,10))
+        # self.xvar('t_lightsheet_rampdown',np.linspace(.05,.6,6))
+        self.p.t_lightsheet_rampdown = .6
 
-        # self.xvar('i_evap1_current',np.linspace(196.,205.,20))
-        self.p.i_evap1_current = 197.9
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,20))
+        self.p.v_pd_lightsheet_rampdown_end = 4.5
+
+        self.p.t_lightsheet_rampup = 1.
+        self.p.t_magtrap_ramp = 1.
+
+        # self.xvar('i_evap1_current',np.linspace(196.,199.,10))
+        self.p.i_evap1_current = 198.
 
         self.p.N_repeats = 1
-        self.p.amp_imaging = .2
         # self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
-
 
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
 
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         self.set_high_field_imaging(i_outer=self.p.i_evap1_current)
 
         self.switch_d2_2d(1)
@@ -51,6 +58,7 @@ class tweezer_evap(EnvExperiment, Base):
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.magtrap_and_load_lightsheet()
 
         # feshbach field on, ramp up to field 1  
