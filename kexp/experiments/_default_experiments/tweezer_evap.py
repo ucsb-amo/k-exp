@@ -50,7 +50,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(5.,9.,10))
         self.p.v_pd_lightsheet_rampdown_end = 6.
 
-        self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,4.,5))
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,4.,5))
         self.p.v_tweezer_paint_amp_max = -1.79
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.9,8))
@@ -78,7 +78,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_tweezer_1064_rampdown2 = .15
  
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.25,1.,10))
-        self.p.v_pd_tweezer_1064_rampdown3_end = .4
+        # self.p.v_pd_tweezer_1064_rampdown3_end = .4
         # self.p.v_pd_tweezer_1064_rampdown3_end = .35
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.02,.3,8))

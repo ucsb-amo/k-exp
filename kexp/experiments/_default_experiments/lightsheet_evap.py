@@ -10,7 +10,7 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_evap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.p.imaging_state = 1.
 
@@ -29,8 +29,8 @@ class tweezer_evap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown',np.linspace(.05,.6,6))
         self.p.t_lightsheet_rampdown = .6
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,20))
-        self.p.v_pd_lightsheet_rampdown_end = 4.5
+        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,20))
+        # self.p.v_pd_lightsheet_rampdown_end = 4.5
 
         self.p.t_lightsheet_rampup = 1.
         self.p.t_magtrap_ramp = 1.

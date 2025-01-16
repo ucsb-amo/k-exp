@@ -10,6 +10,9 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('frequency_detuned_imaging',np.arange(350.,450.,3)*1.e6)
 
+        self.xvar('detune_push',np.linspace(-6.,0.,10))
+        self.xvar('amp_push',np.linspace(.1,.188,10))
+
         # self.xvar('i_cmot',np.linspace(13.,25.,10))
 
         # self.xvar('v_zshim_current',np.linspace(.0,1.,10))
@@ -55,12 +58,12 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_yshim_current_gm = 1.2
         # self.xvar('dumdum',[0]*100)
 
-        self.xvar('t_tof',np.linspace(14.,20.,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(14.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
         
         # self.p.amp_imaging = .17
         self.p.imaging_state = 2.
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 18.e-3
         self.p.t_mot_load = .1
         self.p.N_repeats = 3
 
