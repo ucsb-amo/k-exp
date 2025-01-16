@@ -10,8 +10,8 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('frequency_detuned_imaging',np.arange(350.,450.,3)*1.e6)
 
-        self.xvar('detune_push',np.linspace(-6.,0.,10))
-        self.xvar('amp_push',np.linspace(.1,.188,10))
+        # self.xvar('detune_push',np.linspace(-6.,0.,10))
+        # self.xvar('amp_push',np.linspace(.1,.188,10))
 
         # self.xvar('i_cmot',np.linspace(13.,25.,10))
 

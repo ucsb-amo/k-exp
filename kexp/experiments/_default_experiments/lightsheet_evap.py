@@ -14,29 +14,27 @@ class tweezer_evap(EnvExperiment, Base):
 
         # self.p.imaging_state = 1.
 
-        self.p.v_pd_lightsheet_rampdown_end = 5.
-
-        self.p.t_tof = 10.e-6
+        self.p.t_tof = 40.e-6
         # self.xvar('t_tof',[10*1.e-6]*100)
         # self.xvar('t_tof',np.linspace(10.,100.,10)*1.e-6)
 
         # self.xvar('detune_d1_c_gm',np.linspace(1.,10.,8))
         # self.xvar('detune_d1_r_gm',np.linspace(1.,10.,8))
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.6,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(.05,.6,8))
+        self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.6,8))
+        self.xvar('pfrac_r_gmramp_end',np.linspace(.05,.6,8))
 
-        # self.xvar('t_lightsheet_rampdown',np.linspace(.05,.6,6))
-        self.p.t_lightsheet_rampdown = .6
+        # self.xvar('t_lightsheet_rampdown',np.linspace(.05,1.,8))
+        # self.p.t_lightsheet_rampdown = .6
 
-        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,20))
-        # self.p.v_pd_lightsheet_rampdown_end = 4.5
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,20))
+        self.p.v_pd_lightsheet_rampdown_end = 5.8
 
-        self.p.t_lightsheet_rampup = 1.
-        self.p.t_magtrap_ramp = 1.
+        # self.p.t_lightsheet_rampup = 1.
+        # self.p.t_magtrap_ramp = 1.
 
-        # self.xvar('i_evap1_current',np.linspace(196.,199.,10))
-        self.p.i_evap1_current = 198.
+        # self.xvar('i_evap1_current',np.linspace(196.,199.,8))
+        # self.p.i_evap1_current = 198.
 
         self.p.N_repeats = 1
         # self.camera_params.exposure_time = 10.e-6
