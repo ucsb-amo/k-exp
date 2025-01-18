@@ -14,27 +14,21 @@ class tweezer_snug(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.arange(240.,550.,6)*1.e6)
         
         # self.xvar('t_tof',np.linspace(1000.,3800.,15)*1.e-6)
-        self.p.t_tof = 3200.e-6
+        self.p.t_tof = 3000.e-6
         # self.xvar('t_tof',[3100*1.e-6]*10)
-
-        # self.xvar('x_move',np.linspace(-3.5,-2.75,20)*1.e-6)
-        self.p.x_move = 4.e-6
-        # self.xvar('t_tweezer_single_move',np.linspace(3.,50.,20)*1.e-3)
-        self.p.t_tweezer_single_move = 10.e-3
 
         # self.xvar('t_tunnel',np.linspace(.0,80.,20)*1.e-3)
         # self.xvar('t_tunnel',[20*1.e-3]*3)
-        self.p.t_tunnel = 25.e-3
+        self.p.t_tunnel = 10.e-3
 
-        # self.p.frequency_tweezer_list = [73.7e6,77.3e6]
-        self.p.frequency_tweezer_list = [73.15e6,77.e6]
+        self.p.frequency_tweezer_list = [73.2e6,77.e6]
 
         # ass = np.linspace(.42,.46,20)
         # a_lists = [[ass1,.51] for ass1 in ass]
 
         # self.xvar('amp_tweezer_list',a_lists)
 
-        a_list = [.482,.5]
+        a_list = [.43,.505]
         # a_list = [.2,.23]
         self.p.amp_tweezer_list = a_list
 
@@ -52,8 +46,8 @@ class tweezer_snug(EnvExperiment, Base):
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.1,.5,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(.1,.5,8))
-        self.p.pfrac_c_gmramp_end = .271
-        self.p.pfrac_r_gmramp_end = .15
+        # self.p.pfrac_c_gmramp_end = .271
+        # self.p.pfrac_r_gmramp_end = .15
 
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,1.,8))
         # self.xvar('v_yshim_current_magtrap',np.linspace(3.,7.,8))
@@ -65,47 +59,47 @@ class tweezer_snug(EnvExperiment, Base):
         # self.p.t_lightsheet_rampdown = .16
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(4.,8.,10))
-        self.p.v_pd_lightsheet_rampdown_end = 7.
+        # self.p.v_pd_lightsheet_rampdown_end = 7.
         # self.p.v_pd_lightsheet_rampdown_end = 7.1
 
         # self.xvar('i_evap2_current',np.linspace(196.5,199.,10))
-        self.p.i_evap2_current = 198.2
+        # self.p.i_evap2_current = 198.2
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.012,.9,8))
-        self.p.t_tweezer_1064_ramp = .38
+        # self.p.t_tweezer_1064_ramp = .38
 
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(4.,9.9,20))
-        self.p.v_pd_tweezer_1064_ramp_end = 9.
+        # self.p.v_pd_tweezer_1064_ramp_end = 9.
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-4.,4.,20))
-        self.p.v_tweezer_paint_amp_max = -2.3
+        # self.p.v_tweezer_paint_amp_max = -2.3
 
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.012,.3,8))
-        self.p.t_tweezer_1064_rampdown = .05
+        # self.p.t_tweezer_1064_rampdown = .05
 
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(0.1,1.5,8))
-        self.p.v_pd_tweezer_1064_rampdown_end = .7
+        # self.p.v_pd_tweezer_1064_rampdown_end = .7
 
         # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(0.04,.099,8))
-        self.p.v_pd_tweezer_1064_rampdown2_end = .07
+        # self.p.v_pd_tweezer_1064_rampdown2_end = .07
 
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.05,.4,8))
-        self.p.t_tweezer_1064_rampdown2 = .15
+        # self.p.t_tweezer_1064_rampdown2 = .15
  
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.15,.5,10))
-        self.p.v_pd_tweezer_1064_rampdown3_end = .4
+        # self.p.v_pd_tweezer_1064_rampdown3_end = .4
         # self.p.v_pd_tweezer_1064_rampdown3_end = .35
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.02,.3,8))
-        self.p.t_tweezer_1064_rampdown3 = .18
+        # self.p.t_tweezer_1064_rampdown3 = .18
         
         # self.xvar('i_evap3_current',np.linspace(196.5,199.,10))
         # self.p.i_evap3_current = 197.8
-        self.p.i_evap3_current = 198.5
+        # self.p.i_evap3_current = 198.5
 
         # self.xvar('i_tunnel_current',np.linspace(184.,197.,20))
-        self.p.i_tunnel_current = 196.8
-        self.p.t_tunnel_current = 10.e-3
+        # self.p.i_tunnel_current = 196.8
+        # self.p.t_tunnel_current = 10.e-3
 
         # self.xvar('i_non_inter_current',np.linspace(188.3,195.,10))
         # self.xvar('t_non_inter',np.linspace(3.e-3,100.e-3,10))
@@ -123,7 +117,7 @@ class tweezer_snug(EnvExperiment, Base):
 
         # self.p.t_tof = 800.e-6
         # self.p.N_repeats = 300
-        self.p.N_repeats = 6
+        self.p.N_repeats = 20
 
         self.p.t_mot_load = 1.
 
@@ -136,15 +130,6 @@ class tweezer_snug(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-
-        
-
-        # self.tweezer.traps[0].linear_amplitude_ramp(1.e-3,.47,False)
-
-        # self.tweezer.set_amp(0,.49)
-
-        # self.tweezer.traps[1].cubic_move(t_move=self.p.t_tweezer_single_move,
-        #                                  x_move=self.p.x_move,trigger=False)
         
         # self.set_high_field_imaging(i_outer=self.p.i_non_inter_current)
         self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
@@ -232,7 +217,7 @@ class tweezer_snug(EnvExperiment, Base):
         # delay(self.p.t_image_pulse)
 
         self.set_high_field_imaging(i_outer=self.p.i_evap3_current)
-        self.dds.imaging.set_dds(amplitude=.08)
+        self.dds.imaging.set_dds(amplitude=.113)
 
         delay(self.p.t_tunnel/2)
 

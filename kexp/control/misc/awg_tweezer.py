@@ -299,7 +299,7 @@ class TweezerTrap():
         if dt == dv:
             self.p.t_tweezer_amp_ramp_dt
         self.compute_linear_amplitude_ramp(t_ramp,amp_f)
-        self.amp_ramp(t_ramp, trigger=trigger, slopes=False)
+        self.amp_ramp(t_ramp, amp_final=amp_f, trigger=trigger, slopes=False)
         
     @portable
     def x_to_f(self,x) -> TFloat:

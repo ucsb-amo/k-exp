@@ -159,7 +159,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         if self._setup_awg:
             self.tweezer.reset_traps(self.xvarnames)
-            delay(100.e-3)
+            delay(300.e-3)
             self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
