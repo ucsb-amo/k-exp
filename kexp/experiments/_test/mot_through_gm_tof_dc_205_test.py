@@ -58,7 +58,7 @@ class gm_tof(EnvExperiment, Base):
         self.vSource = dc_205.dc_205()
         self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
-        
+        self.p.i_spin_mixture = 24.3
         self.p.amp_imaging = .17
         self.p.imaging_state = 2.
         self.p.t_tof = 100.e-6
@@ -73,7 +73,8 @@ class gm_tof(EnvExperiment, Base):
     def scan_kernel(self):
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
-        
+        self.outer_coil.on()
+        self.outer_coil.set_voltage(v_supply=0.)
         self.switch_d2_2d(1)
 
         self.mot(self.p.t_mot_load)
@@ -82,13 +83,20 @@ class gm_tof(EnvExperiment, Base):
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
-
+        delay(100.e-3)
+        self.outer_coil.ramp_supply(t=40.e-2,
+                             i_start=0.,
+                             i_end=self.p.i_spin_mixture)
+        delay(200.e-2)
         self.release()
-
+        
+        
         delay(self.p.t_tof)
         self.flash_repump()
         self.abs_image()
 
+        self.outer_coil.off()
+        self.outer_coil.discharge()
 
 
        

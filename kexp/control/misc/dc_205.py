@@ -36,6 +36,11 @@ class dc_205():
         response = self.ser.readline().decode('utf-8').strip()
         print(f"Received response: {response}")
 
+        turnOnCMD = f"SOUT 0\n"
+        self.ser.write(turnOnCMD.encode('utf-8'))
+        print(f"Sent command: {turnOnCMD.strip()}")
+
+    #v = 0,10,100
     def set_range(self,v):
         #rangeHigh = 10
         n = int(math.log10(v))
@@ -53,8 +58,14 @@ class dc_205():
         self.ser.write(vSet.encode('utf-8'))
         print(f"Sent command: {vSet.strip()}")
 
+#        Read the response (if any)
+        response = self.ser.readline().decode('utf-8').strip()
+        print(f"Received response: {response}")
 
-        # Read the response (if any)
+        turnOnCMD = f"SOUT 1; SOUT?\n"
+        self.ser.write(turnOnCMD.encode('utf-8'))
+        print(f"Sent command: {turnOnCMD.strip()}")
+
         response = self.ser.readline().decode('utf-8').strip()
         print(f"Received response: {response}")
                     
