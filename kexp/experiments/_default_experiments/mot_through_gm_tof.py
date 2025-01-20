@@ -1,6 +1,7 @@
 from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base
+from kexp.control.misc import dc_205
 import numpy as np
 
 class gm_tof(EnvExperiment, Base):
@@ -54,7 +55,7 @@ class gm_tof(EnvExperiment, Base):
 
         # self.p.v_yshim_current_gm = 1.2
         # self.xvar('dumdum',[0]*100)
-
+        self.vSource = dc_205.dc_205()
         self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
         
@@ -63,7 +64,9 @@ class gm_tof(EnvExperiment, Base):
         self.p.t_tof = 100.e-6
         self.p.t_mot_load = .2
         self.p.N_repeats = 1
-
+        self.vSource.test_connect()
+        self.vSource.set_range(10)
+        self.vSource.set_voltage(3.0e-0)
         self.finish_prepare(shuffle=True)
 
     @kernel
@@ -72,7 +75,7 @@ class gm_tof(EnvExperiment, Base):
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
         
         self.switch_d2_2d(1)
-        
+
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot)
@@ -83,9 +86,11 @@ class gm_tof(EnvExperiment, Base):
         self.release()
 
         delay(self.p.t_tof)
-
         self.flash_repump()
         self.abs_image()
+
+
+
        
     @kernel
     def run(self):
