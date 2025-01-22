@@ -66,7 +66,7 @@ class gm_tof(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.vSource.test_connect()
         self.vSource.set_range(1)
-        self.vSource.set_voltage(4.5e-1)
+        self.vSource.set_voltage(4.8e-1)
         self.finish_prepare(shuffle=True)
 
     @kernel

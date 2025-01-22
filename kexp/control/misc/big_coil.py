@@ -182,6 +182,13 @@ class igbt_magnet():
             i_pid (float, optional): The desired current in A. Defaults to the
             current value of the supply output.
         """        
+        ##note for setting coils with the new subtract PID method
+        ##the PID target value should only take the target current as a paremeter,
+        ##but it will be a function of the gain of the SR560 box, which is default 100, but perhaps artiq should know
+        ##what that gain is/be able to set it
+        ##
+
+
         if i_pid == dv:
             i_pid = self.i_supply
         self.set_pid(i_pid)
