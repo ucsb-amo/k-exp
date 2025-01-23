@@ -9,7 +9,7 @@ class flimage_test(EnvExperiment, Base):
         Base.__init__(self,
                       imaging_type=img_types.FLUORESCENCE,
                       setup_camera=True,
-                      camera_select='xy_basler',
+                      camera_select='andor',
                       save_data=False)
         
         self.xvar('dummy',[1])
@@ -26,10 +26,10 @@ class flimage_test(EnvExperiment, Base):
         delay(self.p.t_tof)
         self.flimage_single()
 
-        delay(20.e-3)
+        delay(self.camera_params.t_light_only_image_delay)
         self.flimage_single()
 
-        delay(20.e-3)
+        delay(self.camera_params.t_dark_image_delay)
         self.flimage_single(with_light=False)
        
     @kernel
