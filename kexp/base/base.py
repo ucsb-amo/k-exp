@@ -173,9 +173,14 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
     @kernel
     def cleanup_scan_kernel(self):
-        if not self.run_info.imaging_type:
+        if self.run_info.imaging_type == img.DISPERSIVE:
             delay(self.params.t_light_only_image_delay)
             self.light_image()
+            delay(self.params.t_dark_image_delay)
+            self.dark_image()
+        elif self.run_info.imaging_type == img.FLUORESCENCE:
+            delay(self.params.t_light_only_image_delay)
+            self.flimage()
             delay(self.params.t_dark_image_delay)
             self.dark_image()
 
