@@ -49,10 +49,11 @@ class BaslerParams(CameraParams):
 
         self.__exposure_time_fluor__ = exposure_time_fluor
         self.__exposure_time_abs__ = exposure_time_abs
+        self.__exposure_time_dispersive__ = exposure_time_dispersive
         self.__amp_absorption__ = amp_absorption
         self.__amp_fluorescence__ = amp_fluorescence
         self.__amp_dispersive__ = amp_dispersive
-        self.__exposure_time_dispersive__ = exposure_time_dispersive
+        
 
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
