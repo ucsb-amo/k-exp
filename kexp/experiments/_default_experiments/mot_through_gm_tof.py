@@ -58,14 +58,14 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_yshim_current_gm = 1.2
         # self.xvar('dumdum',[0]*100)
 
-        # self.xvar('t_tof',np.linspace(14.,20.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(14.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
         
         # self.p.amp_imaging = .17
         self.p.imaging_state = 2.
-        self.p.t_tof = 18.e-3
-        self.p.t_mot_load = .1
-        self.p.N_repeats = 3
+        # self.p.t_tof = 18.e-3
+        self.p.t_mot_load = 0.1
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
 
@@ -79,8 +79,9 @@ class gm_tof(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot)
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        
         self.gm(self.p.t_gm * s)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.gm_ramp(self.p.t_gmramp)
 
         self.release()
