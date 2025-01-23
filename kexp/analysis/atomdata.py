@@ -100,7 +100,7 @@ class atomdata():
         self._ds = DataSaver()
         self.atom = Potassium39()
         self._dealer = self._init_dealer()
-        self._analysis_tags = analysis_tags(roi_id,self.run_info.absorption_image)
+        self._analysis_tags = analysis_tags(roi_id,self.run_info.imaging_type)
         self.roi = ROI(run_id = self.run_info.run_id,
                        roi_id = roi_id,
                        use_saved_roi = not skip_saved_roi,
