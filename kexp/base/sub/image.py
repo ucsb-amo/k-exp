@@ -65,9 +65,9 @@ class Image():
             t (float): Time (in seconds) to hold the resonant MOT beams on.
         """
         if amp_c == dv:
-            amp_c = self.params.amp_d2_c_mot
+            amp_c = self.params.amp_d2_c_imaging
         if amp_r == dv:
-            amp_r = self.params.amp_d2_r_mot
+            amp_r = self.params.amp_d2_r_imaging
 
         with parallel:
             self.dds.d2_3d_c.set_dds_gamma(detune_c, amplitude=amp_c)
@@ -152,26 +152,32 @@ class Image():
     @kernel
     def light_image(self):
         self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse)
+        if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
+            self.pulse_imaging_light(self.params.t_imaging_pulse)
+        elif self.run_info.imaging_type == img.FLUORESCENCE:
+            self.pulse_resonant_mot_beams()
         delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
     @kernel
     def dark_image(self):
-        self.dds.imaging.off()
-        self.dds.imaging.set_dds(amplitude=0.)
+
+        if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
+            self.dds.imaging.off()
+            self.dds.imaging.set_dds(amplitude=0.)
+        elif self.run_info.imaging_type == img.FLUORESCENCE:
+            self.dds.d2_3d_c.off()
+            self.dds.d2_3d_r.off()
+            self.dds.d2_3d_c.set_dds(amplitude=0.)
+            self.dds.d2_3d_r.set_dds(amplitude=0.)
+
         self.trigger_camera()
         delay(self.camera_params.exposure_time)
-        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-    @kernel
-    def flimage_single(self, t=-1., with_light=True):
-        
-        if t==-1:
-           t = self.camera_params.exposure_time
-
-        self.trigger_camera()
-        if with_light:
-            self.pulse_resonant_mot_beams(t)
+        if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
+            self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        elif self.run_info.imaging_type == img.FLUORESCENCE:
+            self.dds.d2_3d_c.set_dds(amplitude=self.params.amp_d2_c_imaging)
+            self.dds.d2_3d_r.set_dds(amplitude=self.params.amp_d2_r_imaging)
 
     @kernel
     def trigger_camera(self):
