@@ -40,6 +40,11 @@ class Image():
             self.ttl.imaging_shutter_xy.on()
 
     @kernel
+    def close_imaging_shutters(self):
+        self.ttl.imaging_shutter_x.off()
+        self.ttl.imaging_shutter_xy.off()
+
+    @kernel
     def pulse_imaging_light(self,t):
         self.dds.imaging.on()
         # self.dds.d2_3d_r.on()
@@ -114,50 +119,35 @@ class Image():
     def abs_image(self):
 
         # atoms image (pwa)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.light_image()
 
         # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.light_image()
 
-        self.ttl.imaging_shutter_x.off()
-        self.ttl.imaging_shutter_xy.off()
+        # self.close_imaging_shutters()
 
         # dark image
         delay(self.camera_params.t_dark_image_delay * s)
-        self.dds.imaging.off()
-        self.dds.imaging.set_dds(amplitude=0.)
-        self.trigger_camera()
-        delay(self.camera_params.exposure_time)
-        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        self.dark_image()
 
     @kernel
     def abs_image_in_trap(self):
 
         # atoms image (pwa)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.light_image()
 
         self.tweezer.off()
 
         # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.light_image()
+
+        self.close_imaging_shutters()
 
         # dark image
-        delay(self.camera_params.t_dark_image_delay * s)
-        self.dds.imaging.off()
-        self.dds.imaging.set_dds(amplitude=0.)
-        self.trigger_camera()
-        delay(self.camera_params.exposure_time)
-        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        delay(self.camera_params.t_dark_image_delay)
+        self.dark_image()
 
     @kernel
     def light_image(self):
