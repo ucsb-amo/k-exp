@@ -53,7 +53,7 @@ class Image():
         # self.dds.d2_3d_r.off()
 
     @kernel
-    def pulse_resonant_mot_beams(self,t,
+    def pulse_resonant_mot_beams(self,t=dv,
                                  detune_c=0.,
                                  detune_r=0.,
                                  amp_c=dv,
@@ -64,6 +64,8 @@ class Image():
         Args:
             t (float): Time (in seconds) to hold the resonant MOT beams on.
         """
+        if t == dv:
+            t = self.camera_params.exposure_time
         if amp_c == dv:
             amp_c = self.params.amp_d2_c_imaging
         if amp_r == dv:
