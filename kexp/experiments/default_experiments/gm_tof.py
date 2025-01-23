@@ -62,7 +62,7 @@ class gm_tof(EnvExperiment, Base):
         self.p.amp_imaging = .17
         self.p.imaging_state = 2.
         self.p.t_tof = 100.e-6
-        self.p.t_mot_load = .2
+        self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
