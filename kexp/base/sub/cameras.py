@@ -69,7 +69,7 @@ class Cameras():
         
         self.camera_params = self.get_camera_params(camera_select)
         self.camera_params.camera_select = camera_select
-        self.camera_params.select_absorption(imaging_type)
+        self.camera_params.select_imaging_type(imaging_type)
         self.ttl.camera = camera_ttl
 
     def get_camera_params(self,camera_select) -> camera_params.CameraParams:

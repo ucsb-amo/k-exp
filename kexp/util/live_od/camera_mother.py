@@ -169,7 +169,7 @@ class CameraBaby(QThread,Scribe):
     camera_connect = pyqtSignal(str)
     camera_grab_start = pyqtSignal(int,int,int)
     save_data_bool_signal = pyqtSignal(int)
-    abs_image_type_signal = pyqtSignal(bool)
+    image_type_signal = pyqtSignal(bool)
     honorable_death_signal = pyqtSignal()
     dishonorable_death_signal = pyqtSignal()
 
@@ -241,7 +241,7 @@ class CameraBaby(QThread,Scribe):
         unpack_group(self.dataset,'camera_params',self.camera_params)
         unpack_group(self.dataset,'params',self.params)
         unpack_group(self.dataset,'run_info',self.run_info)
-        self.abs_image_type_signal.emit(self.run_info.absorption_image)
+        self.image_type_signal.emit(self.run_info.imaging_type)
         self.save_data_bool_signal.emit(self.run_info.save_data)
         self.dataset.close()
 

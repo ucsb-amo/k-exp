@@ -21,13 +21,13 @@ class CameraParams():
         self.t_light_only_image_delay = 0.
         self.t_dark_image_delay = 0.
     
-    def select_absorption(self,imaging_type):
+    def select_imaging_type(self,imaging_type):
         pass
 
 class BaslerParams(CameraParams):
     def __init__(self,serial_number='40320384',
                  trigger_source='Line1',
-                 exposure_time_fluor = 500.e-6, amp_fluorescence=0.5,
+                 exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
                  exposure_time_abs = 19.e-6, amp_absorption = 0.248,
                  exposure_time_dispersive=100.e-6, amp_dispersive = 0.248,
                  resolution = (1200,1920,),
@@ -57,7 +57,7 @@ class BaslerParams(CameraParams):
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
 
-    def select_absorption(self,imaging_type):
+    def select_imaging_type(self,imaging_type):
         if imaging_type == img.ABSORPTION:
             self.amp_imaging = self.__amp_absorption__
             self.exposure_time = self.__exposure_time_abs__
@@ -93,7 +93,7 @@ class AndorParams(CameraParams):
         self.vs_amp = 3
         self.preamp = 2
 
-        self.__em_gain_fluor = 300.
+        self.__em_gain_fluor = 10.
         self.__em_gain_abs = 300.
         self.__em_gain_dispersive = 300.
 
@@ -109,7 +109,7 @@ class AndorParams(CameraParams):
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
 
-    def select_absorption(self,imaging_type):
+    def select_imaging_type(self,imaging_type):
         if imaging_type == img.ABSORPTION:
             self.amp_imaging = self.__amp_absorption__
             self.exposure_time = self.__exposure_time_abs__

@@ -13,6 +13,7 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
 from kexp.calibrations import high_field_imaging_detuning
+from kexp.config.img_types import img_types as img
 
 dv = -10.e9
 
@@ -47,16 +48,25 @@ class Image():
         # self.dds.d2_3d_r.off()
 
     @kernel
-    def pulse_resonant_mot_beams(self,t):
+    def pulse_resonant_mot_beams(self,t,
+                                 detune_c=0.,
+                                 detune_r=0.,
+                                 amp_c=dv,
+                                 amp_r=dv):
         """
         Sets D2 3D MOT beams to resonance and turns them on for time t.
 
         Args:
             t (float): Time (in seconds) to hold the resonant MOT beams on.
-        """        
+        """
+        if amp_c == dv:
+            amp_c = self.params.amp_d2_c_mot
+        if amp_r == dv:
+            amp_r = self.params.amp_d2_r_mot
+
         with parallel:
-            self.dds.d2_3d_c.set_dds_gamma(0.)
-            self.dds.d2_3d_r.set_dds_gamma(0.)
+            self.dds.d2_3d_c.set_dds_gamma(detune_c, amplitude=amp_c)
+            self.dds.d2_3d_r.set_dds_gamma(detune_r, amplitude=amp_r)
         with parallel:
             self.dds.d2_3d_c.on()
             self.dds.d2_3d_r.on()
@@ -66,16 +76,25 @@ class Image():
             self.dds.d2_3d_r.off()
 
     @kernel
-    def pulse_D1_beams(self,t):
+    def pulse_D1_beams(self,t,
+                        detune_c=0.,
+                        detune_r=0.,
+                        amp_c=dv,
+                        amp_r=dv):
         """
         Sets D1 GM beams to resonance and turns them on for time t.
 
         Args:
             t (float): Time (in seconds) to hold the resonant MOT beams on.
         """        
+        if amp_d2_c == dv:
+            amp_d2_c = self.params.v_pd_d1_c_gm
+        if amp_d2_r == dv:
+            amp_d2_r = self.params.v_pd_d1_r_gm
+
         with parallel:
-            self.dds.d1_3d_c.set_dds_gamma(0.)
-            self.dds.d1_3d_r.set_dds_gamma(0.)
+            self.dds.d1_3d_c.set_dds_gamma(detune_c, amplitude=amp_c)
+            self.dds.d1_3d_r.set_dds_gamma(detune_r, amplitude=amp_r)
         with parallel:
             self.dds.d1_3d_c.on()
             self.dds.d1_3d_r.on()
@@ -155,27 +174,14 @@ class Image():
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
     @kernel
-    def fl_image(self, t=-1., with_light=True):
+    def flimage_single(self, t=-1., with_light=True):
         
         if t==-1:
            t = self.camera_params.exposure_time
 
-        self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_fluor)
-        self.dds.d2_3d_r.set_dds(0.,amplitude=.06)
-
         self.trigger_camera()
         if with_light:
-            self.pulse_imaging_light(t * s)
-
-        delay(self.params.t_light_only_image_delay * s)
-
-        self.lightsheet.on()
-        delay(10.e-3*s)
-        self.lightsheet.off()
-
-        self.trigger_camera()
-        if with_light:
-            self.pulse_imaging_light(t * s)
+            self.pulse_resonant_mot_beams(t)
 
     @kernel
     def trigger_camera(self):
@@ -301,7 +307,7 @@ class Image():
         self.params.N_shots = int(N_img / N_repeats)
         ###
 
-        if self.run_info.absorption_image:
+        if self.run_info.imaging_type == img.ABSORPTION:
             images_per_shot = 3
         else:
             images_per_shot = self.params.N_pwa_per_shot + 2
