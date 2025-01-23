@@ -1,12 +1,13 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base
+from kexp import Base, img_types
 import numpy as np
 
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True,
+                      imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(350.,450.,3)*1.e6)
 
