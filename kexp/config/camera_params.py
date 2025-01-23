@@ -1,4 +1,4 @@
-from kexp.base.sub.image import img_types as img
+from kexp.config.img_types import img_types as img
 
 class CameraParams():
     def __init__(self):

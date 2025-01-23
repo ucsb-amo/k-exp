@@ -4,7 +4,6 @@ from artiq.experiment import delay, delay_mu
 import numpy as np
 from kexp.config.expt_params import ExptParams
 from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
-from kexp.base.sub.image import img_types as img
 from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 from kexp.util.data import server_talk
@@ -14,6 +13,8 @@ import time
 RPC_DELAY = 10.e-3
 
 # also import the andor camera parameters
+
+from kexp.config.img_types import img_types as img
 
 from kexp.util.artiq.async_print import aprint
 

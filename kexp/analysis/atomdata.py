@@ -11,12 +11,12 @@ from kexp.config.camera_params import CameraParams
 from kexp.base.sub.dealer import Dealer
 from kexp.base.sub.scanner import xvar
 
-from kexp.base.sub.image import img_types as img
-
 import kexp.util.data.server_talk as st
 import h5py
 
 import datetime
+
+from kexp.config.img_types import img_types as img
 
 def unpack_group(file,group_key,obj):
     """Looks in an open h5 file in the group specified by key, and iterates over

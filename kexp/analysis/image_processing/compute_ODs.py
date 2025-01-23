@@ -1,5 +1,6 @@
 import numpy as np
-from kexp.base.sub.image import img_types as img
+
+from kexp.config.img_types import img_types as img
 
 def process_ODs(raw_ODs,roi):
     '''

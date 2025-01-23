@@ -11,7 +11,7 @@ import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
-from kexp.base.sub.image import img_types as img
+from kexp.config.img_types import img_types as img
 
 class Cameras():
     def __init__(self):

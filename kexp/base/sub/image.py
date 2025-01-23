@@ -16,13 +16,6 @@ from kexp.calibrations import high_field_imaging_detuning
 
 dv = -10.e9
 
-class ImagingType():
-    def __init__(self):
-        self.ABSORPTION = 0
-        self.DISPERSIVE = 1
-        self.FLUORESCENCE = 2
-img_types = ImagingType()
-
 class Image():
     def __init__(self):
         self.dds = dds_frame()
