@@ -11,7 +11,7 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.FLUORESCENCE)
 
         self.xvar('beans',[0.]*4)
 
@@ -19,6 +19,8 @@ class tweezer_load(EnvExperiment, Base):
 
         a_list = [.5275,.29]
         self.p.amp_tweezer_list = a_list
+
+        self.p.t_mot_load = 0.5
 
         self.finish_prepare(shuffle=True)
 
@@ -52,6 +54,7 @@ class tweezer_load(EnvExperiment, Base):
         delay(10.e-6)
 
         self.abs_image()
+        # self.light_image()
 
         delay(0.25)
 

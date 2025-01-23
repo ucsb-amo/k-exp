@@ -25,8 +25,8 @@ class ExptParams():
         self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 18.0e6
-        self.frequency_detuned_imaging_F1 = 410.e6
+        self.frequency_detuned_imaging = 19.0e6
+        self.frequency_detuned_imaging_F1 = 420.e6
         self.beatlock_sign = -15
         self.N_offset_lock_reference_multiplier = 8
         self.frequency_minimum_offset_beatlock = 150.e6
