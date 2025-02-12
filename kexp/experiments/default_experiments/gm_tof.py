@@ -56,12 +56,14 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_yshim_current_gm = 1.2
         # self.xvar('dumdum',[0]*100)
 
-        self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
+
+        self.xvar('t_mot_load',np.linspace(0.25,5.,10))
         
-        self.p.amp_imaging = .17
+        # self.p.amp_imaging = .17
         self.p.imaging_state = 2.
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 15.e-3
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
@@ -69,7 +71,7 @@ class gm_tof(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
         
         self.switch_d2_2d(1)
