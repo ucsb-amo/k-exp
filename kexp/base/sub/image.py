@@ -127,7 +127,7 @@ class Image():
         delay(self.camera_params.t_light_only_image_delay * s)
         self.light_image()
 
-        # self.close_imaging_shutters()
+        self.close_imaging_shutters()
 
         # dark image
         delay(self.camera_params.t_dark_image_delay * s)
