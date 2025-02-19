@@ -32,49 +32,50 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
         # self.p.v_pd_lightsheet_rampup_end = 9.99
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.5,9.99,5))
         # self.xvar('v_lightsheet_paint_amp_max',np.arange(-7.,6.,1))
-        # self.xvar('t_lightsheet_rampup',np.linspace(0.05,1.5,8))
+        # self.xvar('t_lightsheet_rampup',np.linspace(0.05,2.,4))
+        self.p.t_lightsheet_rampup = 1.
 
         # self.xvar('t_magtrap_delay',np.linspace(0.,5.,10)*1.e-3)
         # self.p.t_magtrap_delay = 
 
-        # self.xvar('i_magtrap_init',np.linspace(20.,90,8))
-        self.p.i_magtrap_init = 90.
+        # self.xvar('i_magtrap_init',np.linspace(60.,90,20))
+        # self.p.i_magtrap_init = 28.
 
         # self.xvar('v_zshim_current_magtrap_init',np.linspace(.0,1.,8))
-        self.p.v_zshim_current_magtrap_init = .4
+        # self.p.v_zshim_current_magtrap_init = .4
 
-        # self.xvar('v_zshim_current_magtrap',np.linspace(.0,.7,20))
-        self.p.v_zshim_current_magtrap = .0
+        # self.xvar('v_zshim_current_magtrap',np.linspace(.0,1.,10))
+        # self.p.v_zshim_current_magtrap = .0
 
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,1.,10))
-        # self.p.v_xshim_current_magtrap = .14
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,2.,10))
+        # self.p.v_xshim_current_magtrap = .2
 
         # self.xvar('v_yshim_current_magtrap',np.linspace(2.,9.,10))
-        # self.p.v_yshim_current_gm = 2.545
+        # self.p.v_yshim_current_magtrap = 8.2
 
         # self.xvar('i_magtrap_ramp_end',np.linspace(30.,95.,8))
-        self.p.i_magtrap_ramp_end = 95.
+        # self.p.i_magtrap_ramp_end = 95.
 
-        # self.xvar('t_magtrap_ramp',np.linspace(.05,6.5,20))
-        self.p.t_magtrap_ramp = 2.7
-        # self.p.t_magtrap_ramp = .5
+        # self.xvar('t_magtrap_ramp',np.linspace(1.,6.5,2))
+        # self.p.t_magtrap_ramp = 6.5
+        # self.p.t_magtrap_ramp = 1.
 
         # self.xvar('t_lightsheet_rampup',np.linspace(.05,2.,8))
 
         self.p.t_lightsheet_hold = 10.e-3
 
-        self.xvar('t_tof',np.linspace(50.,1000.,10)*1.e-6)
-        self.p.t_tof = 800.e-6
-        # self.xvar('t_tof',[800*1.e-6]*5)
-        self.p.N_repeats = 1
+        self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6)
+        self.p.t_tof = 700.e-6
+        # self.xvar('t_tof',[800*1.e-6]*100)
+        self.p.N_repeats = 3
 
-        self.p.amp_imaging = .15
+        # self.p.amp_imaging = .15
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)

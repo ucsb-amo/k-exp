@@ -41,13 +41,13 @@ def outer_supply_setpoint_to_pid_current(i_sup) -> TFloat:
 @portable
 def i_outer_to_magnetic_field(i_outer) -> TFloat:
     """For a given real current (measured by PID transducer), gives the magnetic
-    field produced by the outer coils.
+    field in Gauss produced by the outer coils.
 
     Args:
         i_outer (float): the current in A.
 
     Returns:
-        TFloat: The magnetic field produced.
+        TFloat: The magnetic field produced in Gauss (G).
     """    
     # k-jam\analysis\measurements\magnetometry_high_field.ipynb
     # run ID 10575
