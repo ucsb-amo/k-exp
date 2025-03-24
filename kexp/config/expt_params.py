@@ -90,7 +90,7 @@ class ExptParams():
 
         # push beam
         self.detune_push = -6.
-        self.amp_push = 0.18
+        self.amp_push = 0.188
 
         #2D MOT
         self.detune_d2_c_2dmot = -1.2

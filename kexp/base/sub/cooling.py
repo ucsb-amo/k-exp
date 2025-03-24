@@ -103,10 +103,13 @@ class Cooling():
             i_supply = self.params.v_2d_mot_current
         ### End Defaults ###
 
-        self.dds.d2_2d_c.set_dds_gamma(delta=detune_d2_c,
+        self.dds.d2_2dh_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
-        delay(self.params.t_rtio)
-        self.dds.d2_2d_r.set_dds_gamma(delta=detune_d2_r,
+        self.dds.d2_2dh_r.set_dds_gamma(delta=detune_d2_r,
+                                 amplitude=amp_d2_r)
+        self.dds.d2_2dv_c.set_dds_gamma(delta=detune_d2_c,
+                                 amplitude=amp_d2_c)
+        self.dds.d2_2dv_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
         delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
@@ -742,12 +745,16 @@ class Cooling():
     def switch_d2_2d(self,state):
         if state == 1:
             with parallel:
-                self.dds.d2_2d_c.on()
-                self.dds.d2_2d_r.on()
+                self.dds.d2_2dh_c.on()
+                self.dds.d2_2dh_r.on()
+                self.dds.d2_2dv_c.on()
+                self.dds.d2_2dv_r.on()
         elif state == 0:
             with parallel:
-                self.dds.d2_2d_c.off()
-                self.dds.d2_2d_r.off()
+                self.dds.d2_2dh_c.off()
+                self.dds.d2_2dh_r.off()
+                self.dds.d2_2dv_c.off()
+                self.dds.d2_2dv_r.off()
 
     @kernel
     def switch_d2_3d(self,state):
