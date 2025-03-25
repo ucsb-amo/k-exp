@@ -25,7 +25,7 @@ void setup() {
   qC.assignVariable("p2",&P2);
   qC.assignVariable("i2",&I2);
 
-  // enableInterruptTrigger(1,BOTH_EDGES,&switch1);
+  // enableInterruptTrigger(1,BOTH_EDGES,&switch1); 
   // enableInterruptTrigger(2,BOTH_EDGES,&switch2);
 
   qC.addCommand("c",clear_integrator);
@@ -54,9 +54,11 @@ void clear_integrator(qCommand& qC, Stream& S) {
   integral2 = 0;
 }
 
-//Read ADC, output ADC value at Ch3 & 4 calculate PID, output PID at CH1, 2 
+//Read ADC, output ADC value at Ch3(4) calculate PID, output PID at CH1(2)
 void getMeas1() {
   double newadc1 = readADC1_from_ISR();
+  writeDAC(3,newadc1);
+  
   double newdac1 = 0.;
 
   if (pid_enable1) {
@@ -68,20 +70,15 @@ void getMeas1() {
   }
 
   ///Bit overflow check conditions
-  if(newdac1>10)
-  {
+  if (newdac1 > 10) {
     newdac1 = 9.9;
-    writeDAC(1,9.9);
   }
-  else if(newdac1 < 0)
-  {
-    newdac1 = 0;
-    writeDAC(1,0.);
+  else if (newdac1 < 0) {
+    newdac1 = 0.;
   }
-  else
-  {
-    writeDAC(1,newdac1);
+  else {
   }
+  writeDAC(1,newdac1);
 }
 
 void getSet1(){
@@ -90,7 +87,10 @@ void getSet1(){
 
 void getMeas2() {
   double newadc2 = readADC3_from_ISR();
+  writeDAC(4,newadc2);
+
   double newdac2 = 0.;
+
   if (pid_enable2) {
     double prop2 = (newadc2-SETPOINT2) * P2;
     integral2 += (newadc2-SETPOINT2) * I2;
@@ -100,20 +100,17 @@ void getMeas2() {
   }
 
   ///Bit overflow check conditions
-  if(newdac2>10)
+  if (newdac2 > 10)
   {
     newdac2 = 9.9;
-    writeDAC(2,9.9);
   }
   else if(newdac2<0)
   {
-    newdac2 = 0;
-    writeDAC(2,0);
+    newdac2 = 0.;
   }
-  else
-  {
-    writeDAC(2,newdac2);
+  else {
   }
+  writeDAC(2,newdac2);
 }
 
 void getSet2(){
