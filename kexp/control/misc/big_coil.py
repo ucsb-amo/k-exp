@@ -174,6 +174,11 @@ class igbt_magnet():
         self.i_pid = i_end
 
     @kernel
+    def calc_overhead(self,i_pid):
+        keysight_overhead = i_pid*0.3569422-0.04
+        return keysight_overhead
+
+    @kernel
     def start_pid(self, i_pid=dv):
         """Starts the PID, then sets the supply with some current overhead for
         the PID to eat.
@@ -193,7 +198,7 @@ class igbt_magnet():
             i_pid = self.i_supply
         self.set_pid(i_pid)
         self.pid_ttl.on()
-        self.set_supply( self.i_pid + I_PID_OVERHEAD )
+        self.set_supply( self.i_pid + self.calc_overhead(self.i.pid))
         delay(T_ANALOG_DELAY)
 
     @kernel
