@@ -59,19 +59,21 @@ class dds_frame():
         self.push = self.dds_assign(2,0, ao_order = 1, transition = 'D2',
                                     default_detuning = self.p.detune_push,
                                     default_amp = self.p.amp_push)
-        self.d2_2d_r = self.dds_assign(2,1, ao_order = 1, transition = 'D2',
+        # old 2d MOT AOs
+        self.d2_2dv_r = self.dds_assign(2,1, ao_order = 1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_r_2dmot,
                                     default_amp = self.p.amp_d2_r_2dmot)
-        self.d2_2d_c = self.dds_assign(2,2, ao_order = -1, transition = 'D2',
+        self.d2_2dv_c = self.dds_assign(2,2, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_c_2dmot,
                                     default_amp = self.p.amp_d2_c_2dmot)
-        self.d2_3d_r = self.dds_assign(2,3, ao_order = 1, transition = 'D2',
+        # old 3d MOT AOs
+        self.d2_2dh_r = self.dds_assign(2,3, ao_order = 1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_r_mot,
                                     default_amp = self.p.amp_d2_r_mot)
-
-        self.d2_3d_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2',
+        self.d2_2dh_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_c_mot,
                                     default_amp = self.p.amp_d2_c_mot)
+        
         self.mot_killer = self.dds_assign(3,1, ao_order = -1, transition = 'D2',
                                     default_detuning = 0.,
                                     default_amp = 0.188)
@@ -101,9 +103,9 @@ class dds_frame():
         self.ry_405 = self.dds_assign(0,1, ao_order = 1,
                                       default_freq=self.p.frequency_ao_ry_405,
                                       default_amp=self.p.amp_ao_ry_405) #-11.0 dBm on the 405 IntraAction
-        self.ry_980 = self.dds_assign(0,2, ao_order = 1,
-                                      default_freq=self.p.frequency_ao_ry_980,
-                                      default_amp=self.p.amp_ao_ry_980) #500.0mVpp which is ~-2dBm for the 980 G&H
+        self.ry_980_switch = self.dds_assign(0,2, ao_order = 1,
+                                      default_freq=self.p.frequency_ao_ry_980_switch,
+                                      default_amp=self.p.amp_ao_ry_980_switch) #500.0mVpp which is ~-2dBm for the 980 G&H
         self.tweezer_pid_1 = self.dds_assign(0,3, ao_order = 1,
                                     default_freq = 80.e6,
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid1.ch,
@@ -115,12 +117,21 @@ class dds_frame():
         self.raman_plus = self.dds_assign(1,1, ao_order = 1,
                                     default_freq = self.p.frequency_raman_plus,
                                     default_amp = self.p.amp_raman_plus)
+        self.d1_probe = self.dds_assign(5,0,
+                                    default_freq=100.e6,
+                                    default_amp=0.21)
         self.d1_beatlock_ref = self.dds_assign(5,1,
                                     default_freq=42.26e6,
                                     default_amp=0.1)
-        # self.d1_beatlock_laser = self.dds_assign(5,2,
-        #                             default_freq=150.e6,
-        #                             default_amp=0.21)
+        self.d1_blueshield = self.dds_assign(5,2,
+                                    default_freq=150.e6,
+                                    default_amp=0.21)
+        self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2_c_mot,
+                                    default_amp = self.p.amp_d2_c_mot)
+        self.d2_3d_r = self.dds_assign(1,3, ao_order = 1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2_r_mot,
+                                    default_amp = self.p.amp_d2_r_mot)
 
         self.core = core
         # self.dds_manager = [DDSManager]
@@ -215,13 +226,15 @@ class dds_frame():
     def power_down_cooling(self):
         """Turn off the near-resonant light for long hold times to avoid light
         leakage interacting with the atoms.
-        """        
+        """
         self.d1_3d_r.set_dds(amplitude=0.)
         self.d1_3d_c.set_dds(amplitude=0.)
         self.d2_3d_c.set_dds(amplitude=0.)
         self.d2_3d_r.set_dds(amplitude=0.)
-        self.d2_2d_c.set_dds(amplitude=0.)
-        self.d2_2d_r.set_dds(amplitude=0.)
+        self.d2_2dv_c.set_dds(amplitude=0.)
+        self.d2_2dv_r.set_dds(amplitude=0.)
+        self.d2_2dh_c.set_dds(amplitude=0.)
+        self.d2_2dh_r.set_dds(amplitude=0.)
         self.push.set_dds(amplitude=0.)
         self.mot_killer.set_dds(amplitude=0.)
         self.optical_pumping.set_dds(amplitude=0.)
@@ -232,8 +245,10 @@ class dds_frame():
         self.d1_3d_c.off()
         self.d2_3d_c.off()
         self.d2_3d_r.off()
-        self.d2_2d_c.off()
-        self.d2_2d_r.off()
+        self.d2_2dv_c.off()
+        self.d2_2dv_r.off()
+        self.d2_2dh_c.off()
+        self.d2_2dh_r.off()
         self.push.off()
         self.mot_killer.off()
         self.optical_pumping.off()
@@ -249,8 +264,10 @@ class dds_frame():
         self.d1_3d_c.set_dds(set_stored=True)
         self.d2_3d_c.set_dds(set_stored=True)
         self.d2_3d_r.set_dds(set_stored=True)
-        self.d2_2d_c.set_dds(set_stored=True)
-        self.d2_2d_r.set_dds(set_stored=True)
+        self.d2_2dh_c.set_dds(set_stored=True)
+        self.d2_2dh_r.set_dds(set_stored=True)
+        self.d2_2dv_c.set_dds(set_stored=True)
+        self.d2_2dv_r.set_dds(set_stored=True)
         self.push.set_dds(set_stored=True)
 
     @portable

@@ -11,6 +11,24 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('frequency_detuned_imaging',np.arange(350.,450.,3)*1.e6)
 
+        # self.xvar('detune_push',np.linspace(-1.,2.,8))
+        # self.xvar('amp_push',np.linspace(.05,.188,8))
+        self.p.detune_push = 0.
+
+        # self.xvar('detune_d2_c_2dmot',np.linspace(-0.7,1.5,8))
+        # self.xvar('detune_d2_r_2dmot',np.linspace(-3.7,-3.3,8))
+        self.p.detune_d2_r_2dmot = -3.3
+        self.p.detune_d2_c_2dmot = 0.87
+
+        self.xvar('detune_d2_c_mot',np.linspace(-3,0,8))
+        self.xvar('detune_d2_r_mot',np.linspace(-5,0,8))
+
+        # self.xvar('amp_d2_c_2dmot',np.linspace(-6.,0.,8))
+        # self.xvar('amp_d2_r_2dmot',np.linspace(.1,.188,8))
+
+        # self.xvar('v_2d_mot_current',np.linspace(0.,4.,10
+        # self.p.v_2d_mot_current = 2.11
+
         # self.xvar('i_cmot',np.linspace(13.,25.,10))
 
         # self.xvar('v_zshim_current',np.linspace(.0,1.,10))
@@ -59,10 +77,10 @@ class gm_tof(EnvExperiment, Base):
         self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
         
-        self.p.amp_imaging = .17
+        self.p.amp_imaging = .38
         self.p.imaging_state = 2.
-        self.p.t_tof = 100.e-6
-        self.p.t_mot_load = .2
+        self.p.t_tof = 20.e-6
+        self.p.t_mot_load = 2.
         self.p.N_repeats = 1
         # self.vSource.test_connect()
         # self.vSource.set_range(1)
@@ -73,15 +91,18 @@ class gm_tof(EnvExperiment, Base):
     def scan_kernel(self):
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
+
+        self.load_2D_mot(self.p.t_2D_mot_load_delay)
         
         self.switch_d2_2d(1)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot)
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
+        # self.cmot_d1(self.p.t_d1cmot)
+        
+        # self.gm(self.p.t_gm * s)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 
@@ -95,7 +116,7 @@ class gm_tof(EnvExperiment, Base):
     @kernel
     def run(self):
         self.init_kernel()
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
+        
         self.scan()
         self.mot_observe()
 

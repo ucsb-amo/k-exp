@@ -103,10 +103,13 @@ class Cooling():
             i_supply = self.params.v_2d_mot_current
         ### End Defaults ###
 
-        self.dds.d2_2d_c.set_dds_gamma(delta=detune_d2_c,
+        self.dds.d2_2dh_c.set_dds_gamma(delta=detune_d2_c,
                                  amplitude=amp_d2_c)
-        delay(self.params.t_rtio)
-        self.dds.d2_2d_r.set_dds_gamma(delta=detune_d2_r,
+        self.dds.d2_2dh_r.set_dds_gamma(delta=detune_d2_r,
+                                 amplitude=amp_d2_r)
+        self.dds.d2_2dv_c.set_dds_gamma(delta=detune_d2_c,
+                                 amplitude=amp_d2_c)
+        self.dds.d2_2dv_r.set_dds_gamma(delta=detune_d2_r,
                                  amplitude=amp_d2_r)
         delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
@@ -742,12 +745,16 @@ class Cooling():
     def switch_d2_2d(self,state):
         if state == 1:
             with parallel:
-                self.dds.d2_2d_c.on()
-                self.dds.d2_2d_r.on()
+                self.dds.d2_2dh_c.on()
+                self.dds.d2_2dh_r.on()
+                self.dds.d2_2dv_c.on()
+                self.dds.d2_2dv_r.on()
         elif state == 0:
             with parallel:
-                self.dds.d2_2d_c.off()
-                self.dds.d2_2d_r.off()
+                self.dds.d2_2dh_c.off()
+                self.dds.d2_2dh_r.off()
+                self.dds.d2_2dv_c.off()
+                self.dds.d2_2dv_r.off()
 
     @kernel
     def switch_d2_3d(self,state):
@@ -817,9 +824,9 @@ class Cooling():
         if amp_ry_405 == dv:
             amp_ry_405 = self.params.amp_ao_ry_405
         if frequency_ry_980 == dv:
-            frequency_ry_980 = self.params.frequency_ao_ry_980
+            frequency_ry_980 = self.params.frequency_ao_ry_980_switch
         if amp_ry_980 == dv:
-            amp_ry_980 = self.params.amp_ao_ry_980
+            amp_ry_980 = self.params.amp_ao_ry_980_switch
         if i_supply == dv:
             i_supply = self.params.i_mot
         if v_zshim_current == dv:
@@ -835,7 +842,7 @@ class Cooling():
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         delay(self.params.t_rtio)
-        self.dds.ry_980.set_dds(frequency=frequency_ry_405,
+        self.dds.ry_980_switch.set_dds(frequency=frequency_ry_405,
                                 amplitude=amp_ry_405)
         delay(self.params.t_rtio)
         self.dds.ry_405.set_dds(frequency=frequency_ry_980,
@@ -856,7 +863,7 @@ class Cooling():
         self.switch_d2_2d(1)
 
         self.dds.ry_405.on()
-        self.dds.ry_980.on()
+        self.dds.ry_980_switch.on()
 
         self.dds.beatlock_ref.on()
 

@@ -9,8 +9,8 @@ class img_amp_calibration(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
-        self.xvar('amp_imaging',np.linspace(0.1,0.5,10))
-        self.p.t_tof = 14.e-3
+        self.xvar('amp_imaging',np.linspace(0.13,0.35,15))
+        self.p.t_tof = 17.e-3
         self.p.N_repeats = 3
         self.p.t_mot_load = .1
         self.finish_prepare(shuffle=True)

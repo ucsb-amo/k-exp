@@ -88,8 +88,6 @@ class lightsheet():
             self.painting_off()
 
         self.pid_dac.set(v=v_start,load_dac=True)
-
-        self.pid_dac.load()
         self.on(paint=paint)
         delay(dt_ramp)
 
@@ -97,9 +95,9 @@ class lightsheet():
             v = v_start + i*delta_v
             self.pid_dac.set(v=v,load_dac=False)
 
-            if ramp_shim:
-                vshim = v_shim_start + i*delta_v_shim
-                self.alignment_shim_dac.set(v=vshim,load_dac=False)
+            # if ramp_shim:
+            #     vshim = v_shim_start + i*delta_v_shim
+            #     self.alignment_shim_dac.set(v=vshim,load_dac=False)
 
             if paint:
                 if keep_trap_frequency_constant:
