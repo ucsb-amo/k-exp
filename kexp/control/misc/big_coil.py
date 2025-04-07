@@ -4,6 +4,7 @@ from kexp.config.expt_params import ExptParams
 from artiq.experiment import kernel, delay, parallel, portable, TFloat
 import numpy as np
 from kexp.util.artiq.async_print import aprint
+from kexp.calibrations.magnets import compute_pid_overhead
 
 dv = -1.
 di = 0
@@ -173,10 +174,7 @@ class igbt_magnet():
         self.pid_dac.linear_ramp(t,v_start,v_end,n_steps)
         self.i_pid = i_end
 
-    @kernel
-    def calc_overhead(self,i_pid):
-        keysight_overhead = i_pid*0.3569422-0.04
-        return keysight_overhead
+    
 
     @kernel
     def start_pid(self, i_pid=dv):
@@ -198,7 +196,7 @@ class igbt_magnet():
             i_pid = self.i_supply
         self.set_pid(i_pid)
         self.pid_ttl.on()
-        self.set_supply( self.i_pid + self.calc_overhead(self.i.pid))
+        self.set_supply( self.i_pid + compute_pid_overhead(self.i_pid))
         delay(T_ANALOG_DELAY)
 
     @kernel

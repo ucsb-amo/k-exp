@@ -74,3 +74,21 @@ def magnetic_field_to_i_outer(b) -> TFloat:
     i = (b - y_intercept_G) / slope_G_per_A
     i = outer_supply_setpoint_to_pid_current(i)
     return i
+
+@portable
+def compute_pid_overhead(i_pid) -> TFloat:
+    """Computes current overhead such that shunt MOSFET gate voltage sits at
+    a roughly fixed value (~6V).
+
+    Numbers worked out by observing shunted current and real current over a
+    range of set points, described in notes here:
+    https://docs.google.com/document/d/11WCgrdBnUMHi8nWz7Vp8wVUJYQWNkQWty88WbOmQMoo/edit?tab=t.0#heading=h.b4wsdlxg4uov
+
+    Args:
+        i_pid (float): pid current (in A)
+
+    Returns:
+        float: the excess current (in A) that the keysight will run over the desired pid current
+    """        
+    keysight_overhead = i_pid * 0.3569422 - 0.04
+    return keysight_overhead
