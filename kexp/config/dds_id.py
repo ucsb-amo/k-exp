@@ -103,9 +103,9 @@ class dds_frame():
         self.ry_405 = self.dds_assign(0,1, ao_order = 1,
                                       default_freq=self.p.frequency_ao_ry_405,
                                       default_amp=self.p.amp_ao_ry_405) #-11.0 dBm on the 405 IntraAction
-        self.ry_980 = self.dds_assign(0,2, ao_order = 1,
-                                      default_freq=self.p.frequency_ao_ry_980,
-                                      default_amp=self.p.amp_ao_ry_980) #500.0mVpp which is ~-2dBm for the 980 G&H
+        self.ry_980_switch = self.dds_assign(0,2, ao_order = 1,
+                                      default_freq=self.p.frequency_ao_ry_980_switch,
+                                      default_amp=self.p.amp_ao_ry_980_switch) #500.0mVpp which is ~-2dBm for the 980 G&H
         self.tweezer_pid_1 = self.dds_assign(0,3, ao_order = 1,
                                     default_freq = 80.e6,
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid1.ch,
