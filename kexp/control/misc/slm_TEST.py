@@ -23,7 +23,6 @@ class SLM:
         self.default_y = 1200 // 2
 
     def write_phase_spot(self, diameter, phase, x_center=None, y_center=None):
-        """Sends a formatted phase spot command to the SLM server."""
         if x_center is None:
             x_center = self.default_x
         if y_center is None:
@@ -38,7 +37,6 @@ class SLM:
             print(f"Error sending phase spot: {e}")
 
     def _send_command(self, command):
-        """Internal method to send the command over TCP."""
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
             client_socket.connect((self.server_ip, self.server_port))
             client_socket.sendall(command.encode('utf-8'))
