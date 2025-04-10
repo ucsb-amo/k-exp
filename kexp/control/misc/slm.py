@@ -1,4 +1,6 @@
-class SLM():
+import socket
+
+class SLM:
     """Goal:
     A class to control the SLM. An object of this class will exist as an
     attribute of the experiment class (self.slm = SLM()). Then we can call SLM
@@ -13,15 +15,31 @@ class SLM():
     interface ("input" style), one that the user will call in experiments (like
     the "slm.write_phase_spot" example above).
     """    
-    def __init__(self):
-        self.ip = "192.168.1.102"
 
-    def write_phase_spot(self,diameter,phase,x_center,y_center):
-        command_str = self.format_phase_spot_slm_commmand(diameter,phase,x_center,y_center)
-        self.send_command(command_str)
+    def __init__(self, server_ip='192.168.1.102', server_port=5000):
+        self.server_ip = server_ip
+        self.server_port = server_port
+        self.default_x = 1920 // 2
+        self.default_y = 1200 // 2
 
-    def format_phase_spot_slm_commmand(self,diameter,phase,x_center,y_center):
-        pass
+    def write_phase_spot(self, diameter, phase, x_center=None, y_center=None):
+        if x_center is None:
+            x_center = self.default_x
+        if y_center is None:
+            y_center = self.default_y
 
-    def send_command(self, command):
-        pass
+        try:
+            command = f"{diameter} {phase} {x_center} {y_center}"
+            self._send_command(command)
+            print(f"\nSent: {command}")
+            print(f"-> diameter = {diameter} um, phase = {phase} pi, x-center = {x_center}, y-center = {y_center}\n")
+        except Exception as e:
+            print(f"Error sending phase spot: {e}")
+
+    def _send_command(self, command):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
+            client_socket.connect((self.server_ip, self.server_port))
+            client_socket.sendall(command.encode('utf-8'))
+
+if __name__ == '__main__':
+    slm = SLM()
