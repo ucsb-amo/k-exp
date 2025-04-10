@@ -2,7 +2,7 @@ import numpy as np
 
 # print("Hi")
 
-from kexp.control.misc.slm_TEST import SLM
+from kexp.control.misc.slm import SLM
 
 # Create an instance of the SLM class
 slm = SLM()
