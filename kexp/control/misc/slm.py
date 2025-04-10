@@ -19,7 +19,7 @@ class SLM():
     def write_phase_spot(self,diameter,phase,x_center,y_center):
         pass
     
-    def send_command_to_slm(self,diameter,phase,x_center,y_center):
+    def send_command_to_slm(self,command_str):
         pass
 
     def format_phase_spot_slm_commmand(self,diameter,phase,x_center,y_center):
