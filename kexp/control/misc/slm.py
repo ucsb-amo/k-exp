@@ -17,10 +17,8 @@ class SLM():
         self.ip = "192.168.1.102"
 
     def write_phase_spot(self,diameter,phase,x_center,y_center):
-        pass
-    
-    def send_command_to_slm(self,command_str):
-        pass
+        command_str = self.format_phase_spot_slm_commmand(diameter,phase,x_center,y_center)
+        self.send_command(command_str)
 
     def format_phase_spot_slm_commmand(self,diameter,phase,x_center,y_center):
         pass
