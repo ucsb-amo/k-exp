@@ -55,7 +55,7 @@ class Devices():
         self.grabber: Grabber
 
         # slm
-        self.slm = SLM()
+        self.slm = SLM(expt_params=self.params, core=self.core)
 
         # sampler channels
         self.sampler = sampler_frame(sampler_device=sampler)
