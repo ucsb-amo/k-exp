@@ -43,37 +43,5 @@ class SLM:
             client_socket.connect((self.server_ip, self.server_port))
             client_socket.sendall(command.encode('utf-8'))
 
-    # def run_cli(self):
-    #     """Optional: Starts a CLI loop to enter commands manually."""
-    #     while True:
-    #         try:
-    #             user_input = input("Enter diameter, phase, [x-center, y-center], or type 'exit' to quit: ")
-    #             if user_input.strip().lower() == 'exit':
-    #                 print("Exiting client.")
-    #                 break
-
-    #             parts = user_input.strip().split()
-
-    #             if len(parts) == 2:
-    #                 diameter = int(parts[0])
-    #                 phase = float(parts[1])
-    #                 self.write_phase_spot(diameter, phase)
-
-    #             elif len(parts) == 4:
-    #                 diameter = int(parts[0])
-    #                 phase = float(parts[1])
-    #                 x_center = int(parts[2])
-    #                 y_center = int(parts[3])
-    #                 self.write_phase_spot(diameter, phase, x_center, y_center)
-
-    #             else:
-    #                 print("Please enter exactly 2 or 4 values.")
-    #         except ValueError:
-    #             print("Invalid input. Diameter must be an integer, and phase must be a float.\n")
-    #         except Exception as e:
-    #             print(f"Error: {e}\n")
-
-# If running this file directly
 if __name__ == '__main__':
     slm = SLM()
-    # slm.run_cli()
