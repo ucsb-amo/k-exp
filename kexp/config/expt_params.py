@@ -40,6 +40,11 @@ class ExptParams():
         self.detune_d2_c_imaging = 0.
         self.amp_d2_c_imaging = 0.065
 
+        self.diameter_slm_spot = 200
+        self.phase_slm_spot = np.pi/2
+        self.px_slm_phase_spot_position_x = 1920 // 2
+        self.px_slm_phase_spot_position_y = 1200 // 2
+
         #Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
