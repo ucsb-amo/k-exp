@@ -18,7 +18,7 @@ class SLM:
         = 100, y_center = 300)
     """
 
-    def __init__(self, expt_params = ExptParams(), core = Core(),
+    def __init__(self, expt_params = ExptParams(), core = Core,
                   server_ip='192.168.1.102', server_port=5000):
         
         self.server_ip = server_ip
