@@ -795,6 +795,7 @@ class Cooling():
             amp_d2_r = dv,
             detune_push = dv,
             amp_push = dv,
+            v_2d_mot_supply = dv,
             frequency_ry_405 = dv,
             amp_ry_405 = dv,
             frequency_ry_980 = dv,
@@ -815,6 +816,8 @@ class Cooling():
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
+        if v_2d_mot_supply == dv:
+            v_2d_mot_supply = self.params.v_2d_mot_current
         if detune_push == dv:
             detune_push = self.params.detune_push
         if amp_push == dv:
@@ -861,6 +864,8 @@ class Cooling():
         self.switch_d2_3d(1)
         delay(1*ms)
         self.switch_d2_2d(1)
+
+        self.dac.supply_current_2dmot.set(v=v_2d_mot_supply)
 
         self.dds.ry_405.on()
         self.dds.ry_980_switch.on()

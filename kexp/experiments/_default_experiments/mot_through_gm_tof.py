@@ -8,25 +8,28 @@ class gm_tof(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(350.,450.,3)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.arange(-150.,150.,8)*1.e6)
 
-        # self.xvar('detune_push',np.linspace(-1.,2.,8))
+        # self.xvar('detune_push',np.linspace(-2.,2.,10))
         # self.xvar('amp_push',np.linspace(.05,.188,8))
         self.p.detune_push = 0.
 
-        # self.xvar('detune_d2_c_2dmot',np.linspace(-0.7,1.5,8))
-        # self.xvar('detune_d2_r_2dmot',np.linspace(-3.7,-3.3,8))
-        self.p.detune_d2_r_2dmot = -3.3
-        self.p.detune_d2_c_2dmot = 0.87
+        # self.xvar('detune_d2_c_2dmot',np.linspace(-4.,1.5,8))
+        # self.xvar('detune_d2_r_2dmot',np.linspace(-6.,-2.5,10))
+        self.p.detune_d2_r_2dmot = -4.4
+        self.p.detune_d2_c_2dmot = -1.6
 
-        self.xvar('detune_d2_c_mot',np.linspace(-3,0,8))
-        self.xvar('detune_d2_r_mot',np.linspace(-5,0,8))
+        # self.xvar('detune_d2_c_mot',np.linspace(-3.,0,8))
+        # self.xvar('detune_d2_r_mot',np.linspace(-5.,0,8))
 
         # self.xvar('amp_d2_c_2dmot',np.linspace(-6.,0.,8))
         # self.xvar('amp_d2_r_2dmot',np.linspace(.1,.188,8))
 
-        # self.xvar('v_2d_mot_current',np.linspace(0.,4.,10
-        # self.p.v_2d_mot_current = 2.11
+        # self.xvar('v_2d_mot_current',np.linspace(0.,5.,10))
+        self.p.v_2d_mot_current = 3.3
+
+        # self.xvar('i_mot',np.linspace(25.,40.,10))
+        self.p.i_mot = 28.
 
         # self.xvar('i_cmot',np.linspace(13.,25.,10))
 
@@ -76,7 +79,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(14.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
         
-        self.p.amp_imaging = .38
+        self.p.amp_imaging = .3
         self.p.imaging_state = 2.
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 2.

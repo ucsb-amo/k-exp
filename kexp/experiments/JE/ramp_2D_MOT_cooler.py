@@ -12,7 +12,7 @@ class gm_tof(EnvExperiment, Base):
 
         self.n_steps = 1000
 
-        self.p.d2_2d_c_ramp_list = np.linspace(-3.,3.,self.n_steps)
+        # self.p.d2_2d_c_ramp_list = np.linspace(-3.,3.,self.n_steps)
 
         self.p.mot_current_ramp_list = np.linspace(1.,4.,self.n_steps)
 
@@ -36,16 +36,25 @@ class gm_tof(EnvExperiment, Base):
         self.switch_d2_2d(1)
         self.dds.push.off()
 
-        # self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)
+        self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)
 
-        self.dds.d2_2d_r.set_dds_gamma(delta=self.p.detune_d2_r_2dmot,
+        self.dds.d2_2dv_r.set_dds_gamma(delta=self.p.detune_d2_r_2dmot,
                                  amplitude=self.p.amp_d2_r_2dmot)
         delay(self.params.t_rtio)
-        self.dds.d2_2d_c.set_dds_gamma(delta=self.p.detune_d2_c_2dmot,
+        self.dds.d2_2dv_c.set_dds_gamma(delta=self.p.detune_d2_c_2dmot,
+                                 amplitude=self.p.amp_d2_c_2dmot)
+        delay(self.params.t_rtio)
+        self.dds.d2_2dh_r.set_dds_gamma(delta=self.p.detune_d2_r_2dmot,
+                                 amplitude=self.p.amp_d2_r_2dmot)
+        delay(self.params.t_rtio)
+        self.dds.d2_2dh_c.set_dds_gamma(delta=self.p.detune_d2_c_2dmot,
                                  amplitude=self.p.amp_d2_c_2dmot)
 
         # for g in self.p.d2_2d_c_ramp_list:
-        #     self.dds.d2_2d_c.set_dds_gamma(delta=g,
+        #     self.dds.d2_2dv_c.set_dds_gamma(delta=g,
+        #                             amplitude=self.p.amp_d2_c_2dmot)
+        #     delay(self.params.t_rtio)
+        #     self.dds.d2_2dh_c.set_dds_gamma(delta=g,
         #                             amplitude=self.p.amp_d2_c_2dmot)
         #     delay(self.t_ramp /self.n_steps)
 
