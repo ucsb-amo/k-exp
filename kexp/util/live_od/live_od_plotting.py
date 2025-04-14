@@ -7,7 +7,7 @@ from PyQt6.QtGui import QIcon, QFont
 from queue import Queue
 import numpy as np
 from kexp.analysis.image_processing import compute_OD, process_ODs
-from kexp.config.img_types import img_types
+from kexp import img_types
 
 import matplotlib
 import matplotlib.pyplot as plt

@@ -48,8 +48,8 @@ class CameraNanny():
         if type(camera_type) == bytes: 
             camera_type = camera_type.decode()
         if camera_type == "basler":
-            # camera.ExposureTime.SetValue(camera_params.exposure_time*1.e6)
-            pass
+            camera.set_exposure(camera_params.exposure_time)
+            camera.set_gain(camera_params.gain)
         elif camera_type == "andor":
             camera.set_EMCCD_gain(camera_params.gain)
             camera.set_exposure(camera_params.exposure_time)
