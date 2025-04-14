@@ -16,7 +16,7 @@ import h5py
 
 import datetime
 
-from kexp.config.img_types import img_types as img
+from kexp.config.camera_params import img_types as img
 
 def unpack_group(file,group_key,obj):
     """Looks in an open h5 file in the group specified by key, and iterates over

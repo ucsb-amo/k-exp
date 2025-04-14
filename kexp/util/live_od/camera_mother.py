@@ -213,7 +213,7 @@ class CameraBaby(QThread,Scribe):
     def create_camera(self):
         self.camera = self.camera_nanny.persistent_get_camera(self.camera_params)
         self.camera_nanny.update_params(self.camera,self.camera_params)
-        camera_select = self.camera_params.camera_select
+        camera_select = self.camera_params.key
         if type(camera_select) == bytes: 
             camera_select = camera_select.decode()
         self.camera_connect.emit(camera_select)

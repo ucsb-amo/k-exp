@@ -14,7 +14,7 @@ RPC_DELAY = 10.e-3
 
 # also import the andor camera parameters
 
-from kexp.config.img_types import img_types as img
+from kexp.config.camera_params import img_types as img
 
 from kexp.util.artiq.async_print import aprint
 
