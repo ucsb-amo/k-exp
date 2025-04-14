@@ -45,6 +45,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.sort_idx = []
         self.sort_N = []
 
+        self._img_count_this_shot = 0
+
         self._setup_awg = False
 
         self.ds = DataSaver()
@@ -165,13 +167,13 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
 
-    @kernel
-    def cleanup_scan_kernel(self):
-        if self.run_info.imaging_type == img.DISPERSIVE or self.run_info.imaging_type == img.FLUORESCENCE:
-            delay(self.params.t_light_only_image_delay)
-            self.light_image()
-            delay(self.params.t_dark_image_delay)
-            self.dark_image()
+    # @kernel
+    # def cleanup_scan_kernel(self):
+    #     if self.run_info.imaging_type == img.DISPERSIVE or self.run_info.imaging_type == img.FLUORESCENCE:
+    #         delay(self.params.t_light_only_image_delay)
+    #         self.light_image()
+    #         delay(self.params.t_dark_image_delay)
+    #         self.dark_image()
 
     def prepare_image_array(self):
         if self.run_info.save_data:
