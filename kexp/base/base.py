@@ -21,9 +21,15 @@ from kexp.util.artiq.async_print import aprint
 class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     def __init__(self,
                  setup_camera=True,
-                 imaging_type=img.ABSORPTION,
                  save_data=True,
+                 imaging_type=img.ABSORPTION,
+                 absorption_image=None,
                  camera_select="xy_basler"):
+        
+        if absorption_image != None:
+            print("Warning: The argument 'absorption_image' is depreciated -- change it out for 'imaging_type'")
+            print("Defaulting to absorption imaging.")
+
         Scanner.__init__(self)
         super().__init__()
 
