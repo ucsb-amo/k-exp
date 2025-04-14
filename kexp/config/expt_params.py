@@ -39,6 +39,9 @@ class ExptParams():
         self.t_cooler_flash_imaging = 15.e-6
         self.detune_d2_c_imaging = 0.
         self.amp_d2_c_imaging = 0.065
+        
+        self.amp_d2_2d_imaging = 0.188
+        self.detune_2d_imaging = 0.
 
         self.diameter_slm_spot = 200
         self.phase_slm_spot = np.pi/2

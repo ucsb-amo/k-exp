@@ -134,5 +134,5 @@ x_basler_params = BaslerParams(serial_number='40320384',camera_select='x_basler'
                                trigger_source='Line2')
 z_basler_params = BaslerParams(serial_number='40416468',camera_select='z_basler',
                                amp_absorption=0.5,amp_fluorescence=0.5)
-basler_2dmot_params = BaslerParams(serial='40411037',camera_select='basler_2dmot',
+basler_2dmot_params = BaslerParams(serial_number='40411037',camera_select='basler_2dmot',
                                    trigger_source='Line2')

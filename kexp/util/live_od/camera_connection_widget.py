@@ -20,7 +20,7 @@ class CamConnBar(QWidget):
 
     def setup_camera_buttons(self):
         self.xy_basler_button = CameraButton(cp.xy_basler_params,self.cn,self.output_window)
-        self.xy2_basler_button = CameraButton(cp.xy2_basler_params,self.cn,self.output_window)
+        self.basler_2dmot_button = CameraButton(cp.basler_2dmot_params,self.cn,self.output_window)
         self.x_basler_button = CameraButton(cp.x_basler_params,self.cn,self.output_window)
         self.z_basler_button = CameraButton(cp.z_basler_params,self.cn,self.output_window)
         self.andor = CameraButton(cp.andor_params,self.cn,self.output_window,open_camera_on_start=False)
@@ -30,7 +30,7 @@ class CamConnBar(QWidget):
         label = QLabel("Camera connections")
         buttonlayout = QHBoxLayout()
         buttonlayout.addWidget(self.xy_basler_button)
-        buttonlayout.addWidget(self.xy2_basler_button)
+        buttonlayout.addWidget(self.basler_2dmot_button)
         buttonlayout.addWidget(self.z_basler_button)
         buttonlayout.addWidget(self.x_basler_button)
         buttonlayout.addWidget(self.andor)
