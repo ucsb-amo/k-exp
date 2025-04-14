@@ -33,15 +33,15 @@ class Cameras():
             self.ttl.camera = DummyTTL()
         else:
             match camera.key:
-                case "xy_basler":
+                case cameras.xy_basler.key:
                     ttl = self.ttl.basler
-                case "x_basler":
+                case cameras.x_basler.key:
                     ttl = self.ttl.z_basler
-                case "z_basler":
+                case cameras.z_basler.key:
                     ttl = self.ttl.z_basler
-                case "andor":
+                case cameras.andor.key:
                     ttl = self.ttl.andor
-                case "basler_2dmot":
+                case cameras.basler_2dmot.key:
                     ttl = self.ttl.basler_2dmot
                 case _:
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
