@@ -55,10 +55,10 @@ class SLM:
         try:
             # note unit conversions, since the client uses units of um for
             # diameter and units of pi for phase
-            command = f"{int(diameter*1.e6)} {phase/np.pi} {x_center} {y_center}"
+            command = f"{diameter} {phase} {x_center} {y_center}"
             self._send_command(command)
             print(f"\nSent: {command}")
-            print(f"-> diameter = {diameter*1.e6} um, phase = {phase} pi, x-center = {x_center}, y-center = {y_center}\n")
+            print(f"-> diameter = {int(diameter*1.e6)} um, phase = {phase/np.pi} pi, x-center = {x_center}, y-center = {y_center}\n")
         except Exception as e:
             print(f"Error sending phase spot: {e}")
 
