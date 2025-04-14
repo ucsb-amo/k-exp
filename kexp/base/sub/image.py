@@ -13,7 +13,7 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
 from kexp.calibrations import high_field_imaging_detuning
-from kexp.config.img_types import img_types as img
+from kexp.config.camera_params import img_types as img, cameras
 
 dv = -10.e9
 
@@ -27,12 +27,13 @@ class Image():
         self.camera = DummyCamera()
         self.lightsheet = lightsheet()
         self.scan_xvars = []
+        self._pwa_count = 0
 
     ### Imaging sequences ###
 
     @kernel
     def set_imaging_shutters(self):
-        if self.camera_params.camera_select == 'andor':
+        if self.camera_params.key == cameras.andor.key:
             self.ttl.imaging_shutter_x.on()
             self.ttl.imaging_shutter_xy.off()
         else:
@@ -65,7 +66,7 @@ class Image():
             t (float): Time (in seconds) to hold the resonant 2D MOT beams on.
         """
         if t == dv:
-            t = self.camera_params.exposure_time
+            t = self.params.t_imaging_pulse
         if detune_c == dv:
             detune_c = self.params.detune_2d_imaging
         if detune_r == dv:
@@ -74,12 +75,11 @@ class Image():
             amp_c = self.params.amp_d2_2d_imaging
         if amp_r == dv:
             amp_r = self.params.amp_d2_2d_imaging
-
-        with parallel:
-            self.dds.d2_2dh_c.set_dds_gamma(detune_c, amplitude=amp_c)
-            self.dds.d2_2dh_r.set_dds_gamma(detune_r, amplitude=amp_r)
-            self.dds.d2_2dv_c.set_dds_gamma(detune_c, amplitude=amp_c)
-            self.dds.d2_2dv_r.set_dds_gamma(detune_r, amplitude=amp_r)
+        
+        self.dds.d2_2dh_c.set_dds_gamma(detune_c, amplitude=amp_c)
+        self.dds.d2_2dh_r.set_dds_gamma(detune_r, amplitude=amp_r)
+        self.dds.d2_2dv_c.set_dds_gamma(detune_c, amplitude=amp_c)
+        self.dds.d2_2dv_r.set_dds_gamma(detune_r, amplitude=amp_r)
         with parallel:
             self.dds.d2_2dh_c.on()
             self.dds.d2_2dh_r.on()
@@ -105,15 +105,14 @@ class Image():
             t (float): Time (in seconds) to hold the resonant MOT beams on.
         """
         if t == dv:
-            t = self.camera_params.exposure_time
+            t = self.params.t_imaging_pulse
         if amp_c == dv:
             amp_c = self.params.amp_d2_c_imaging
         if amp_r == dv:
             amp_r = self.params.amp_d2_r_imaging
 
-        with parallel:
-            self.dds.d2_3d_c.set_dds_gamma(detune_c, amplitude=amp_c)
-            self.dds.d2_3d_r.set_dds_gamma(detune_r, amplitude=amp_r)
+        self.dds.d2_3d_c.set_dds_gamma(detune_c, amplitude=amp_c)
+        self.dds.d2_3d_r.set_dds_gamma(detune_r, amplitude=amp_r)
         with parallel:
             self.dds.d2_3d_c.on()
             self.dds.d2_3d_r.on()
@@ -197,7 +196,7 @@ class Image():
         if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
             self.pulse_imaging_light(self.params.t_imaging_pulse)
         elif self.run_info.imaging_type == img.FLUORESCENCE:
-            if self.camera_params.camera_select == "basler_2dmot":
+            if self.camera_params.key == cameras.basler_2dmot.key:
                 self.pulse_2d_mot_beams()
             else:
                 self.pulse_resonant_mot_beams()
@@ -210,24 +209,21 @@ class Image():
             self.dds.imaging.off()
             self.dds.imaging.set_dds(amplitude=0.)
         elif self.run_info.imaging_type == img.FLUORESCENCE:
-            if self.camera_params.camera_select == "basler_2dmot":
+            with parallel:
+                self.dds.d2_3d_c.off()
+                self.dds.d2_3d_r.off()
+            self.dds.d2_3d_c.set_dds(amplitude=0.)
+            self.dds.d2_3d_r.set_dds(amplitude=0.)
+            if self.camera_params.key == cameras.basler_2dmot.key:
                 with parallel:
                     self.dds.d2_2dh_c.off()
                     self.dds.d2_2dh_r.off()
                     self.dds.d2_2dv_c.off()
                     self.dds.d2_2dv_c.off()
-                with parallel:
-                    self.dds.d2_2dh_c.set_dds(amplitude=0.)
-                    self.dds.d2_2dh_r.set_dds(amplitude=0.)
-                    self.dds.d2_2dv_c.set_dds(amplitude=0.)
-                    self.dds.d2_2dv_c.set_dds(amplitude=0.)
-            else:
-                with parallel:
-                    self.dds.d2_3d_c.off()
-                    self.dds.d2_3d_r.off()
-                with parallel:
-                    self.dds.d2_3d_c.set_dds(amplitude=0.)
-                    self.dds.d2_3d_r.set_dds(amplitude=0.)
+                self.dds.d2_2dh_c.set_dds(amplitude=0.)
+                self.dds.d2_2dh_r.set_dds(amplitude=0.)
+                self.dds.d2_2dv_c.set_dds(amplitude=0.)
+                self.dds.d2_2dv_c.set_dds(amplitude=0.)
 
         self.trigger_camera()
         delay(self.camera_params.exposure_time)
@@ -235,7 +231,7 @@ class Image():
         if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
             self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
         elif self.run_info.imaging_type == img.FLUORESCENCE:
-            if self.camera_params.camera_select == "basler_2dmot":
+            if self.camera_params.key == cameras.basler_2dmot.key:
                 self.dds.d2_2dh_c.set_dds(amplitude=self.params.amp_d2_2d_imaging)
                 self.dds.d2_2dh_r.set_dds(amplitude=self.params.amp_d2_2d_imaging)
                 self.dds.d2_2dv_c.set_dds(amplitude=self.params.amp_d2_2d_imaging)
