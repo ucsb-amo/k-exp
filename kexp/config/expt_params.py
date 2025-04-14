@@ -21,8 +21,6 @@ class ExptParams():
 
         #Imaging
         self.t_imaging_pulse = 10.e-6
-        self.t_light_only_image_delay = 100.e-3
-        self.t_dark_image_delay = 25.e-3
 
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 19.0e6
