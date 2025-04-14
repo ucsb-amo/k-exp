@@ -30,9 +30,10 @@ class BaslerParams(CameraParams):
                  exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
                  exposure_time_abs = 19.e-6, amp_absorption = 0.248,
                  exposure_time_dispersive=100.e-6, amp_dispersive = 0.248,
+                 gain = 0.,
                  resolution = (1200,1920,),
                  t_light_only_image_delay=25.e-3,
-                 t_dark_image_delay=15.e-3,
+                 t_dark_image_delay=20.e-3,
                  camera_select = "",
                  magnification = 0.75):
         super().__init__()
@@ -46,6 +47,8 @@ class BaslerParams(CameraParams):
         self.pixel_size_m = 3.45 * 1.e-6
         self.magnification = magnification
         self.exposure_delay = 17 * 1.e-6
+
+        self.gain = gain
 
         self.__exposure_time_fluor__ = exposure_time_fluor
         self.__exposure_time_abs__ = exposure_time_abs
@@ -135,4 +138,4 @@ x_basler_params = BaslerParams(serial_number='40320384',camera_select='x_basler'
 z_basler_params = BaslerParams(serial_number='40416468',camera_select='z_basler',
                                amp_absorption=0.5,amp_fluorescence=0.5)
 basler_2dmot_params = BaslerParams(serial_number='40411037',camera_select='basler_2dmot',
-                                   trigger_source='Line2')
+                                   trigger_source='Line2', gain=35.)

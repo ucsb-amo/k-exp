@@ -18,7 +18,7 @@ class BaslerUSB(pylon.InstantCamera):
         TriggerMode (str): picks whether or not the camera waits for a trigger to capture frames. (default: 'On')
         BaslerSerialNumber (str): identifies which camera should be used via the serial number. (default: ExptParams.basler_serial_no_absorption)
     '''
-    def __init__(self,ExposureTime=0.,TriggerSource='Line1',TriggerMode='On',BaslerSerialNumber=xy_basler_params.serial_no):
+    def __init__(self,ExposureTime=0.,Gain=0.,TriggerSource='Line1',TriggerMode='On',BaslerSerialNumber=xy_basler_params.serial_no):
 
         super().__init__()
 
@@ -47,6 +47,14 @@ class BaslerUSB(pylon.InstantCamera):
             ExposureTime_us = self.ExposureTime.GetMin()
             print(f"Exposure time requested is below camera minimum. Setting to minimum exposure : {ExposureTime_us:1.0f} us")
         self.ExposureTime.SetValue(ExposureTime_us)
+
+        if Gain > self.Gain.GetMax():
+            Gain = self.Gain.GetMax()
+            print(f"Gain requested is above camera maximum. Setting to maximum gain : {Gain:1.0f} dB")
+        if Gain > self.Gain.GetMax():
+            Gain = self.Gain.GetMin()
+            print(f"Gain requested is below camera minimum. Setting to minimum gain : {Gain:1.0f} dB")
+        self.Gain.SetValue(Gain)
 
     def close(self):
         self.Close()
