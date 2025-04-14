@@ -58,7 +58,7 @@ class SLM:
             command = f"{int(diameter*1.e6)} {phase/np.pi} {x_center} {y_center}"
             self._send_command(command)
             print(f"\nSent: {command}")
-            print(f"-> diameter = {diameter} um, phase = {phase} pi, x-center = {x_center}, y-center = {y_center}\n")
+            print(f"-> diameter = {diameter*1.e6} um, phase = {phase} pi, x-center = {x_center}, y-center = {y_center}\n")
         except Exception as e:
             print(f"Error sending phase spot: {e}")
 
