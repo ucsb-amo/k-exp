@@ -33,29 +33,14 @@ class Cameras():
             match camera_select:
                 case "xy_basler":
                     ttl = self.ttl.basler
-                    self.assign_camera_stuff(camera_select,
-                                            camera_ttl=ttl,
-                                            absorption_bool=absorption_image)
-                case "xy2_basler":
-                    ttl = self.ttl.z_basler
-                    self.assign_camera_stuff(camera_select,
-                                            camera_ttl=ttl,
-                                            absorption_bool=absorption_image)
                 case "x_basler":
                     ttl = self.ttl.z_basler
-                    self.assign_camera_stuff(camera_select,
-                                            camera_ttl=ttl,
-                                            absorption_bool=absorption_image)
                 case "z_basler":
                     ttl = self.ttl.z_basler
-                    self.assign_camera_stuff(camera_select,
-                                             camera_ttl=ttl,
-                                             absorption_bool=absorption_image)
                 case "andor":
                     ttl = self.ttl.andor
-                    self.assign_camera_stuff(camera_select,
-                                             camera_ttl=ttl,
-                                             absorption_bool=absorption_image)
+                case "basler_2dmot":
+                    ttl = self.ttl.basler_2dmot
                 case _:
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
             self.assign_camera_stuff(camera_select,camera_ttl=ttl,absorption_bool=absorption_image)
