@@ -43,11 +43,20 @@ class BaslerUSB(pylon.InstantCamera):
         self.TriggerSelector = "FrameStart"
         self.TriggerMode = TriggerMode
         self.TriggerSource = TriggerSource
+        
+        self.set_exposure(ExposureTime_us)
+        self.set_gain(Gain)
+
+    def set_exposure(self,ExposureTime_us):
         if ExposureTime_us < self.ExposureTime.GetMin():
             ExposureTime_us = self.ExposureTime.GetMin()
             print(f"Exposure time requested is below camera minimum. Setting to minimum exposure : {ExposureTime_us:1.0f} us")
+        if ExposureTime_us > self.ExposureTime.GetMax():
+            ExposureTime_us = self.ExposureTime.GetMax()
+            print(f"Exposure time requested is above camera maximum. Setting to maximum exposure : {ExposureTime_us:1.0f} us")
         self.ExposureTime.SetValue(ExposureTime_us)
 
+    def set_gain(self,Gain):
         if Gain > self.Gain.GetMax():
             Gain = self.Gain.GetMax()
             print(f"Gain requested is above camera maximum. Setting to maximum gain : {Gain:1.0f} dB")
