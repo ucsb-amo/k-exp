@@ -130,11 +130,9 @@ andor_params = AndorParams(camera_select='andor',
 xy_basler_params = BaslerParams(serial_number='40316451',camera_select='xy_basler',
                                 amp_absorption=0.16,
                                 magnification=0.5)
-xy2_basler_params = BaslerParams(serial_number='40411037',camera_select='xy2_basler',
-                                 trigger_source='Line2',
-                                 amp_absorption=0.33,
-                                 magnification=2.1)
 x_basler_params = BaslerParams(serial_number='40320384',camera_select='x_basler',
                                trigger_source='Line2')
 z_basler_params = BaslerParams(serial_number='40416468',camera_select='z_basler',
                                amp_absorption=0.5,amp_fluorescence=0.5)
+basler_2dmot_params = BaslerParams(serial='40411037',camera_select='basler_2dmot',
+                                   trigger_source='Line2')

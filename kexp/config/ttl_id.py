@@ -28,6 +28,7 @@ class ttl_frame():
         self.pd_scope_trig_2 = self.ttl_assign(17)
         self.imaging_shutter_xy = self.ttl_assign(18)
         self.imaging_shutter_x = self.ttl_assign(19)
+        self.basler_2dmot = self.ttl_assign(20)
         # self.machine_table_trig = self.ttl_assign(25)
 
         self._write_ttl_keys()

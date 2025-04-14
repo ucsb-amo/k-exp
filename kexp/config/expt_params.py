@@ -40,6 +40,11 @@ class ExptParams():
         self.detune_d2_c_imaging = 0.
         self.amp_d2_c_imaging = 0.065
 
+        self.diameter_slm_spot = 200
+        self.phase_slm_spot = np.pi/2
+        self.px_slm_phase_spot_position_x = 1920 // 2
+        self.px_slm_phase_spot_position_y = 1200 // 2
+
         #Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
@@ -89,23 +94,23 @@ class ExptParams():
         self.amp_d1_3d_r = 0.3
 
         # push beam
-        self.detune_push = -6.
-        self.amp_push = 0.18
+        self.detune_push = -.8
+        self.amp_push = 0.188
 
         #2D MOT
-        self.detune_d2_c_2dmot = -1.2
+        self.detune_d2_c_2dmot = -1.6
         self.amp_d2_c_2dmot = 0.188
 
-        self.detune_d2_r_2dmot = -2.4
+        self.detune_d2_r_2dmot = -4.4
         self.amp_d2_r_2dmot = 0.188
 
-        self.v_2d_mot_current = 2.11
+        self.v_2d_mot_current = 3.3
 
         #MOT
-        self.detune_d2_c_mot = -2.4
+        self.detune_d2_c_mot = -2.7
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.2
+        self.detune_d2_r_mot = -4.4
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -114,9 +119,9 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 20.0
-        self.v_zshim_current = 0.13
-        self.v_xshim_current = 4.1
+        self.i_mot = 29.0
+        self.v_zshim_current = 0.
+        self.v_xshim_current = 4.
         self.v_yshim_current = 7.
 
         #D2 CMOT
@@ -129,10 +134,10 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 7.5
+        self.detune_d1_c_d1cmot = 8.5
         self.pfrac_d1_c_d1cmot = .86
 
-        self.detune_d2_r_d1cmot = -3.88
+        self.detune_d2_r_d1cmot = -3.
         self.amp_d2_r_d1cmot = 0.065
 
         self.detune_d1_c_sweep_d1cmot_start = 9.
@@ -258,9 +263,9 @@ class ExptParams():
 
         # rydberg
         self.frequency_ao_ry_405 = 250.0e6
-        self.frequency_ao_ry_980 = 80.0e6
+        self.frequency_ao_ry_980_switch = 80.0e6
         self.amp_ao_ry_405 = 0.245
-        self.amp_ao_ry_980 = 0.285
+        self.amp_ao_ry_980_switch = 0.285
 
         # raman
         self.frequency_raman_plus = 150.e6
