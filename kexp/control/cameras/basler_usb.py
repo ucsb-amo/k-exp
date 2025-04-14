@@ -22,8 +22,6 @@ class BaslerUSB(pylon.InstantCamera):
 
         super().__init__()
 
-        ExposureTime_us = ExposureTime * 1.e6
-
         tl_factory = pylon.TlFactory.GetInstance()
         if BaslerSerialNumber == '':
             self.Attach(tl_factory.CreateFirstDevice())
@@ -44,10 +42,11 @@ class BaslerUSB(pylon.InstantCamera):
         self.TriggerMode = TriggerMode
         self.TriggerSource = TriggerSource
         
-        self.set_exposure(ExposureTime_us)
+        self.set_exposure(ExposureTime)
         self.set_gain(Gain)
 
-    def set_exposure(self,ExposureTime_us):
+    def set_exposure(self,ExposureTime):
+        ExposureTime_us = ExposureTime * 1.e6
         if ExposureTime_us < self.ExposureTime.GetMin():
             ExposureTime_us = self.ExposureTime.GetMin()
             print(f"Exposure time requested is below camera minimum. Setting to minimum exposure : {ExposureTime_us:1.0f} us")
@@ -55,6 +54,7 @@ class BaslerUSB(pylon.InstantCamera):
             ExposureTime_us = self.ExposureTime.GetMax()
             print(f"Exposure time requested is above camera maximum. Setting to maximum exposure : {ExposureTime_us:1.0f} us")
         self.ExposureTime.SetValue(ExposureTime_us)
+        print(ExposureTime_us)
 
     def set_gain(self,Gain):
         if Gain > self.Gain.GetMax():

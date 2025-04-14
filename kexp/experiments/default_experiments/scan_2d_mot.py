@@ -40,7 +40,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(14.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
 
-        self.camera_params.exposure_time = 250.e-3
+        self.camera_params.exposure_time = 19.e-3
         self.params.t_imaging_pulse = self.camera_params.exposure_time
         
         self.p.imaging_state = 2.
@@ -59,7 +59,7 @@ class gm_tof(EnvExperiment, Base):
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         
-        self.mot(self.p.t_mot_load)
+        # self.mot(self.p.t_mot_load)
         # self.dds.push.off()
         # self.cmot_d1(self.p.t_d1cmot)
         
@@ -72,18 +72,6 @@ class gm_tof(EnvExperiment, Base):
         delay(self.p.t_tof)
 
         self.abs_image()
-
-        # self.trigger_camera()
-        # # delay(self.camera_params.exposure_time)
-        # self.pulse_2d_mot_beams(t=self.camera_params.exposure_time)
-
-        # delay(self.camera_params.t_light_only_image_delay)
-        # self.trigger_camera()
-        # delay(self.camera_params.exposure_time)
-
-        # delay(self.camera_params.t_dark_image_delay)
-        # self.trigger_camera()
-        # delay(self.camera_params.exposure_time)
        
     @kernel
     def run(self):
@@ -91,7 +79,7 @@ class gm_tof(EnvExperiment, Base):
         
         self.scan()
 
-        # self.mot_observe()
+        self.mot_observe()
 
     def analyze(self):
         import os

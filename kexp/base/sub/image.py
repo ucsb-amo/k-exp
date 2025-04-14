@@ -138,9 +138,8 @@ class Image():
         if amp_d2_r == dv:
             amp_d2_r = self.params.v_pd_d1_r_gm
 
-        with parallel:
-            self.dds.d1_3d_c.set_dds_gamma(detune_c, amplitude=amp_c)
-            self.dds.d1_3d_r.set_dds_gamma(detune_r, amplitude=amp_r)
+        self.dds.d1_3d_c.set_dds_gamma(detune_c, amplitude=amp_c)
+        self.dds.d1_3d_r.set_dds_gamma(detune_r, amplitude=amp_r)
         with parallel:
             self.dds.d1_3d_c.on()
             self.dds.d1_3d_r.on()
