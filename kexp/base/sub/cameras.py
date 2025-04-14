@@ -25,6 +25,12 @@ class Cameras():
     def choose_camera(self,setup_camera=True,
                       imaging_type=img_types.ABSORPTION,
                       camera=cameras.xy_basler):
+        
+        if isinstance(camera,str):
+            key = camera
+            camera = vars(cameras)[key]
+            if not isinstance(camera,CameraParams):
+                raise ValueError(f'The requested camera with key {key} was not found.')
 
         if not setup_camera:
             self.camera = DummyCamera()
