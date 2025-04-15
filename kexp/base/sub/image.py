@@ -231,10 +231,10 @@ class Image():
             self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
         elif self.run_info.imaging_type == img.FLUORESCENCE:
             if self.camera_params.key == cameras.basler_2dmot.key:
-                self.dds.d2_2dh_c.set_dds(amplitude=self.params.amp_d2_2d_imaging)
-                self.dds.d2_2dh_r.set_dds(amplitude=self.params.amp_d2_2d_imaging)
-                self.dds.d2_2dv_c.set_dds(amplitude=self.params.amp_d2_2d_imaging)
-                self.dds.d2_2dv_r.set_dds(amplitude=self.params.amp_d2_2d_imaging)
+                self.dds.d2_2dh_c.set_dds(amplitude=self.params.amp_d2_2d_c_imaging)
+                self.dds.d2_2dh_r.set_dds(amplitude=self.params.amp_d2_2d_r_imaging)
+                self.dds.d2_2dv_c.set_dds(amplitude=self.params.amp_d2_2d_c_imaging)
+                self.dds.d2_2dv_r.set_dds(amplitude=self.params.amp_d2_2d_r_imaging)
             else:
                 self.dds.d2_3d_c.set_dds(amplitude=self.params.amp_d2_c_imaging)
                 self.dds.d2_3d_r.set_dds(amplitude=self.params.amp_d2_r_imaging)
