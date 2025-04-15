@@ -38,8 +38,10 @@ class ExptParams():
         self.detune_d2_c_imaging = 0.
         self.amp_d2_c_imaging = 0.065
         
-        self.amp_d2_2d_imaging = 0.188
-        self.detune_2d_imaging = 0.
+        self.amp_d2_2d_c_imaging = 0.188
+        self.amp_d2_2d_r_imaging = 0.188
+        self.detune_2d_c_imaging = -1.6
+        self.detune_2d_r_imaging = -4.4
 
         self.diameter_slm_spot = 200
         self.phase_slm_spot = np.pi/2

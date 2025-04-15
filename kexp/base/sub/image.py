@@ -68,13 +68,13 @@ class Image():
         if t == dv:
             t = self.params.t_imaging_pulse
         if detune_c == dv:
-            detune_c = self.params.detune_2d_imaging
+            detune_c = self.params.detune_2d_c_imaging
         if detune_r == dv:
-            detune_r = self.params.detune_2d_imaging
+            detune_r = self.params.detune_2d_r_imaging
         if amp_c == dv:
-            amp_c = self.params.amp_d2_2d_imaging
+            amp_c = self.params.amp_d2_2d_c_imaging
         if amp_r == dv:
-            amp_r = self.params.amp_d2_2d_imaging
+            amp_r = self.params.amp_d2_2d_r_imaging
         
         self.dds.d2_2dh_c.set_dds_gamma(detune_c, amplitude=amp_c)
         self.dds.d2_2dh_r.set_dds_gamma(detune_r, amplitude=amp_r)
