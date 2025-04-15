@@ -13,6 +13,7 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
 from kexp.calibrations import high_field_imaging_detuning
+from kexp.config.camera_params import img_types as img, cameras
 
 dv = -10.e9
 
@@ -26,17 +27,23 @@ class Image():
         self.camera = DummyCamera()
         self.lightsheet = lightsheet()
         self.scan_xvars = []
+        self._pwa_count = 0
 
     ### Imaging sequences ###
 
     @kernel
     def set_imaging_shutters(self):
-        if self.camera_params.camera_select == 'andor':
+        if self.camera_params.key == cameras.andor.key:
             self.ttl.imaging_shutter_x.on()
             self.ttl.imaging_shutter_xy.off()
         else:
             self.ttl.imaging_shutter_x.off()
             self.ttl.imaging_shutter_xy.on()
+
+    @kernel
+    def close_imaging_shutters(self):
+        self.ttl.imaging_shutter_x.off()
+        self.ttl.imaging_shutter_xy.off()
 
     @kernel
     def pulse_imaging_light(self,t):
@@ -47,16 +54,65 @@ class Image():
         # self.dds.d2_3d_r.off()
 
     @kernel
-    def pulse_resonant_mot_beams(self,t):
+    def pulse_2d_mot_beams(self,t=dv,
+                           detune_c=dv,
+                           detune_r=dv,
+                           amp_c=dv,
+                           amp_r=dv):
+        """
+        Sets D2 2D MOT beams to resonance and turns them on for time t.
+
+        Args:
+            t (float): Time (in seconds) to hold the resonant 2D MOT beams on.
+        """
+        if t == dv:
+            t = self.params.t_imaging_pulse
+        if detune_c == dv:
+            detune_c = self.params.detune_2d_c_imaging
+        if detune_r == dv:
+            detune_r = self.params.detune_2d_r_imaging
+        if amp_c == dv:
+            amp_c = self.params.amp_d2_2d_c_imaging
+        if amp_r == dv:
+            amp_r = self.params.amp_d2_2d_r_imaging
+        
+        self.dds.d2_2dh_c.set_dds_gamma(detune_c, amplitude=amp_c)
+        self.dds.d2_2dh_r.set_dds_gamma(detune_r, amplitude=amp_r)
+        self.dds.d2_2dv_c.set_dds_gamma(detune_c, amplitude=amp_c)
+        self.dds.d2_2dv_r.set_dds_gamma(detune_r, amplitude=amp_r)
+        with parallel:
+            self.dds.d2_2dh_c.on()
+            self.dds.d2_2dh_r.on()
+            self.dds.d2_2dv_c.on()
+            self.dds.d2_2dv_r.on()
+        delay(t)
+        with parallel:
+            self.dds.d2_2dh_c.off()
+            self.dds.d2_2dh_r.off()
+            self.dds.d2_2dv_c.off()
+            self.dds.d2_2dv_r.off()
+
+    @kernel
+    def pulse_resonant_mot_beams(self,t=dv,
+                                 detune_c=0.,
+                                 detune_r=0.,
+                                 amp_c=dv,
+                                 amp_r=dv):
         """
         Sets D2 3D MOT beams to resonance and turns them on for time t.
 
         Args:
             t (float): Time (in seconds) to hold the resonant MOT beams on.
-        """        
-        with parallel:
-            self.dds.d2_3d_c.set_dds_gamma(0.)
-            self.dds.d2_3d_r.set_dds_gamma(0.)
+        """
+        if t == dv:
+            t = self.params.t_imaging_pulse
+        if amp_c == dv:
+            amp_c = self.params.amp_d2_c_imaging
+        if amp_r == dv:
+            amp_r = self.params.amp_d2_r_imaging
+
+        self.dds.d2_3d_c.set_dds_gamma(detune_c, amplitude=amp_c)
+        self.dds.d2_3d_r.set_dds_gamma(detune_r, amplitude=amp_r)
         with parallel:
             self.dds.d2_3d_c.on()
             self.dds.d2_3d_r.on()
@@ -66,16 +122,24 @@ class Image():
             self.dds.d2_3d_r.off()
 
     @kernel
-    def pulse_D1_beams(self,t):
+    def pulse_D1_beams(self,t,
+                        detune_c=0.,
+                        detune_r=0.,
+                        amp_c=dv,
+                        amp_r=dv):
         """
         Sets D1 GM beams to resonance and turns them on for time t.
 
         Args:
             t (float): Time (in seconds) to hold the resonant MOT beams on.
         """        
-        with parallel:
-            self.dds.d1_3d_c.set_dds_gamma(0.)
-            self.dds.d1_3d_r.set_dds_gamma(0.)
+        if amp_d2_c == dv:
+            amp_d2_c = self.params.v_pd_d1_c_gm
+        if amp_d2_r == dv:
+            amp_d2_r = self.params.v_pd_d1_r_gm
+
+        self.dds.d1_3d_c.set_dds_gamma(detune_c, amplitude=amp_c)
+        self.dds.d1_3d_r.set_dds_gamma(detune_r, amplitude=amp_r)
         with parallel:
             self.dds.d1_3d_c.on()
             self.dds.d1_3d_r.on()
@@ -83,6 +147,7 @@ class Image():
         with parallel:
             self.dds.d1_3d_c.off()
             self.dds.d1_3d_r.off()
+
     @kernel
     def dispersive_image(self,repeats=1,repeat_delay=100.e-3):
         for n in range(repeats):
@@ -94,103 +159,85 @@ class Image():
     def abs_image(self):
 
         # atoms image (pwa)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.light_image()
 
         # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.light_image()
 
-        self.ttl.imaging_shutter_x.off()
-        self.ttl.imaging_shutter_xy.off()
+        self.close_imaging_shutters()
 
         # dark image
         delay(self.camera_params.t_dark_image_delay * s)
-        self.dds.imaging.off()
-        self.dds.imaging.set_dds(amplitude=0.)
-        self.trigger_camera()
-        delay(self.camera_params.exposure_time)
-        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        self.dark_image()
 
     @kernel
     def abs_image_in_trap(self):
 
         # atoms image (pwa)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.light_image()
 
         self.tweezer.off()
 
         # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)
-        self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse * s)
-        delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
+        self.light_image()
+
+        self.close_imaging_shutters()
 
         # dark image
-        delay(self.camera_params.t_dark_image_delay * s)
-        self.dds.imaging.off()
-        self.dds.imaging.set_dds(amplitude=0.)
-        self.trigger_camera()
-        delay(self.camera_params.exposure_time)
-        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        delay(self.camera_params.t_dark_image_delay)
+        self.dark_image()
 
     @kernel
     def light_image(self):
         self.trigger_camera()
-        self.pulse_imaging_light(self.params.t_imaging_pulse)
+        if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
+            self.pulse_imaging_light(self.params.t_imaging_pulse)
+        elif self.run_info.imaging_type == img.FLUORESCENCE:
+            if self.camera_params.key == cameras.basler_2dmot.key:
+                self.pulse_2d_mot_beams()
+            else:
+                self.pulse_resonant_mot_beams()
         delay(self.camera_params.exposure_time - self.params.t_imaging_pulse)
 
     @kernel
     def dark_image(self):
-        self.dds.imaging.off()
-        self.dds.imaging.set_dds(amplitude=0.)
+
+        if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
+            self.dds.imaging.off()
+            self.dds.imaging.set_dds(amplitude=0.)
+        elif self.run_info.imaging_type == img.FLUORESCENCE:
+            with parallel:
+                self.dds.d2_3d_c.off()
+                self.dds.d2_3d_r.off()
+            self.dds.d2_3d_c.set_dds(amplitude=0.)
+            self.dds.d2_3d_r.set_dds(amplitude=0.)
+            if self.camera_params.key == cameras.basler_2dmot.key:
+                with parallel:
+                    self.dds.d2_2dh_c.off()
+                    self.dds.d2_2dh_r.off()
+                    self.dds.d2_2dv_c.off()
+                    self.dds.d2_2dv_c.off()
+                self.dds.d2_2dh_c.set_dds(amplitude=0.)
+                self.dds.d2_2dh_r.set_dds(amplitude=0.)
+                self.dds.d2_2dv_c.set_dds(amplitude=0.)
+                self.dds.d2_2dv_c.set_dds(amplitude=0.)
+
         self.trigger_camera()
         delay(self.camera_params.exposure_time)
-        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
-    @kernel
-    def fl_image(self, t=-1., with_light=True):
-        
-        if t==-1:
-           t = self.camera_params.exposure_time
-
-        self.dds.imaging.set_dds(amplitude=self.params.amp_imaging_fluor)
-        self.dds.second_imaging.set_dds(amplitude=.01)
-        self.dds.d2_3d_r.set_dds(0.,amplitude=.06)
-
-        self.trigger_camera()
-        if with_light:
-            self.pulse_imaging_light(t * s)
-            # self.dds.second_imaging.on()
-            # delay(t)
-            # self.dds.second_imaging.off()
-            # self.pulse_resonant_mot_beams(t * s)
-            # self.pulse_D1_beams(t * s)
-            pass
-
-        # self.lightsheet.off()
-        # self.dds.tweezer.off()
-
-        delay(self.params.t_light_only_image_delay * s)
-
-        self.lightsheet.on()
-        delay(10.e-3*s)
-        self.lightsheet.off()
-
-        self.trigger_camera()
-        if with_light:
-            self.pulse_imaging_light(t * s)
-            # self.dds.second_imaging.on()
-            # delay(t)
-            # self.dds.second_imaging.off()
-            # self.pulse_resonant_mot_beams(t * s)
-            # self.pulse_D1_beams(t * s)
-            pass
+        if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
+            self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        elif self.run_info.imaging_type == img.FLUORESCENCE:
+            if self.camera_params.key == cameras.basler_2dmot.key:
+                self.dds.d2_2dh_c.set_dds(amplitude=self.params.amp_d2_2d_imaging)
+                self.dds.d2_2dh_r.set_dds(amplitude=self.params.amp_d2_2d_imaging)
+                self.dds.d2_2dv_c.set_dds(amplitude=self.params.amp_d2_2d_imaging)
+                self.dds.d2_2dv_r.set_dds(amplitude=self.params.amp_d2_2d_imaging)
+            else:
+                self.dds.d2_3d_c.set_dds(amplitude=self.params.amp_d2_c_imaging)
+                self.dds.d2_3d_r.set_dds(amplitude=self.params.amp_d2_r_imaging)
 
     @kernel
     def trigger_camera(self):
@@ -292,8 +339,9 @@ class Image():
         """
         Computes the number of images to be taken during the sequence from the
         length of the specified xvars, stores in self.params.N_img. For
-        absorption imaging, 3 images per shot. For fluorescence imaging, 2
-        images per shot.
+        absorption imaging, 3 images per shot. For fluorescence imaging,
+        variable pwa images (ExptParams.N_pwa_per_shot, default = 1), then 1
+        each pwoa and dark images.
         """                
         N_img = 1
         msg = ""
@@ -316,7 +364,7 @@ class Image():
         self.params.N_shots = int(N_img / N_repeats)
         ###
 
-        if self.run_info.absorption_image:
+        if self.run_info.imaging_type == img.ABSORPTION:
             images_per_shot = 3
         else:
             images_per_shot = self.params.N_pwa_per_shot + 2

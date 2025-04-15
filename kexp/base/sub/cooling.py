@@ -84,7 +84,7 @@ class Cooling():
                      amp_d2_r = dv,
                      detune_push = dv,
                      amp_push = dv,
-                     i_supply = dv):
+                     v_analog_supply = dv):
         
         ### Start Defaults ###
         if detune_d2_c == dv:
@@ -99,8 +99,8 @@ class Cooling():
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
-        if i_supply == dv:
-            i_supply = self.params.v_2d_mot_current
+        if v_analog_supply == dv:
+            v_analog_supply = self.params.v_2d_mot_current
         ### End Defaults ###
 
         self.dds.d2_2dh_c.set_dds_gamma(delta=detune_d2_c,
@@ -115,7 +115,7 @@ class Cooling():
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         
-        self.dac.supply_current_2dmot.set(v=i_supply)
+        self.dac.supply_current_2dmot.set(v=v_analog_supply)
 
         with parallel:
             self.switch_d2_2d(1)
