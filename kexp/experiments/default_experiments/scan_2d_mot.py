@@ -1,9 +1,11 @@
-from artiq.experiment import *
-from artiq.experiment import delay
-from kexp import Base, cameras, img_types
+
 import numpy as np
 
 from kexp.util.artiq.async_print import aprint
+
+from artiq.experiment import *
+from artiq.experiment import delay
+from kexp import Base, cameras, img_types
 
 class gm_tof(EnvExperiment, Base):
 
