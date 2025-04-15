@@ -30,7 +30,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('v_2d_mot_current',np.linspace(0.,5.,10))
         self.p.v_2d_mot_current = 3.3
 
-        # self.xvar('i_mot',np.linspace(25.,35.,10))
+        # self.xvar('i_mot',np.linspace(15.,35.,20))
         self.p.i_mot = 29.
 
         # self.xvar('v_zshim_current',np.linspace(0.,2.,8))
@@ -42,11 +42,14 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.,.99,8))
 
-        self.xvar('detune_d1_c_gm',np.linspace(7.,14.,8))
-        self.xvar('detune_d1_r_gm',np.linspace(7.,14.,8))
+        # self.xvar('detune_d1_c_gm',np.linspace(7.,14.,8))
+        # self.xvar('detune_d1_r_gm',np.linspace(7.,14.,8))
 
-        # self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
-        # self.xvar('pfrac_d1_r_gm',np.linspace(0.1,.99,8))
+        self.p.detune_d1_c_gm = 13.
+        self.p.detune_d1_r_gm = 13.
+
+        self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
+        self.xvar('pfrac_d1_r_gm',np.linspace(0.1,.99,8))
         # self.pfrac_d1_c_gm = .67
         # self.pfrac_d1_r_gm = .67
 
@@ -56,7 +59,7 @@ class gm_tof(EnvExperiment, Base):
         
         self.p.amp_imaging = .3
         self.p.imaging_state = 2.
-        self.p.t_tof = 1000.e-6
+        self.p.t_tof = 5000.e-6
         self.p.t_mot_load = .5
         self.p.N_repeats = 1
 
