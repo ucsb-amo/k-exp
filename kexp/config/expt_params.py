@@ -22,6 +22,7 @@ class ExptParams():
         #Imaging
         self.t_imaging_pulse = 10.e-6
 
+        # img beam settings
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 19.0e6
         self.frequency_detuned_imaging_F1 = 420.e6
@@ -29,7 +30,8 @@ class ExptParams():
         self.N_offset_lock_reference_multiplier = 8
         self.frequency_minimum_offset_beatlock = 150.e6
         self.imaging_state = 2.
-        
+
+        ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
         self.detune_d2_r_imaging = 0.
         self.amp_d2_r_imaging = 0.065
@@ -38,11 +40,13 @@ class ExptParams():
         self.detune_d2_c_imaging = 0.
         self.amp_d2_c_imaging = 0.065
         
+        ## 2D MOT imaging settings
         self.amp_d2_2d_c_imaging = 0.188
         self.amp_d2_2d_r_imaging = 0.188
-        self.detune_2d_c_imaging = -1.6
-        self.detune_2d_r_imaging = -4.4
+        self.detune_d2_2d_c_imaging = -1.6
+        self.detune_d2_2d_r_imaging = -4.4
 
+        # SLM settings
         self.diameter_slm_spot = 200
         self.phase_slm_spot = np.pi/2
         self.px_slm_phase_spot_position_x = 1920 // 2
