@@ -63,13 +63,13 @@ def compute_OD(atoms,light,dark,imaging_type=img.ABSORPTION):
     else:
         new_dtype = np.int32
 
-    atoms_only = atoms.astype(new_dtype) - dark.astype(new_dtype)
-    light_only = light.astype(new_dtype) - dark.astype(new_dtype)
-
-    atoms_only[atoms_only < 0] = 0
-    light_only[light_only < 0] = 0
-
     if imaging_type == img.ABSORPTION:
+        atoms_only = atoms.astype(new_dtype) - dark.astype(new_dtype)
+        light_only = light.astype(new_dtype) - dark.astype(new_dtype)
+
+        atoms_only[atoms_only < 0] = 0
+        light_only[light_only < 0] = 0
+
         It_over_I0 = np.divide(atoms_only, light_only, 
                     out=np.zeros(atoms_only.shape, dtype=float), 
                     where=light_only!=0)
@@ -78,6 +78,6 @@ def compute_OD(atoms,light,dark,imaging_type=img.ABSORPTION):
                         where= It_over_I0!=0)
         OD[OD<0] = 0
     else:
-        OD = light_only - atoms_only
+        OD = atoms.astype(new_dtype) - light.astype(new_dtype)
 
     return OD
