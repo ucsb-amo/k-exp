@@ -42,7 +42,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(14.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
 
-        self.camera_params.exposure_time = 19.e-3
+        self.camera_params.exposure_time = 5.e-3
         self.params.t_imaging_pulse = self.camera_params.exposure_time
         
         self.p.imaging_state = 2.
@@ -52,7 +52,10 @@ class gm_tof(EnvExperiment, Base):
         self.p.t_mot_load = .5
         self.p.N_repeats = 1
 
-        self.camera_params.gain = 30.
+        self.camera_params.gain = 40.
+
+        self.p.detune_d2_2d_c_imaging = 0.
+        self.p.detune_d2_2d_r_imaging = 0.
 
         self.finish_prepare(shuffle=True)
 
@@ -69,7 +72,10 @@ class gm_tof(EnvExperiment, Base):
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.gm_ramp(self.p.t_gmramp)
 
-        self.release()
+        # self.release()
+
+        self.switch_d2_2d(0)
+        self.dac.supply_current_2dmot.set(v=0.)
 
         delay(self.p.t_tof)
 
