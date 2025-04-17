@@ -101,29 +101,29 @@ class ExptParams():
         self.amp_d1_3d_r = 0.3
 
         # push beam
-        self.detune_push = -.8
+        self.detune_push = 0.
         self.amp_push = 0.188
 
         #2D MOT
-        self.detune_d2v_c_2dmot = -1.3
+        self.detune_d2v_c_2dmot = -1.7
         self.amp_d2v_c_2dmot = 0.188
 
         self.detune_d2h_c_2dmot = -1.5
         self.amp_d2h_c_2dmot = 0.188
 
-        self.detune_d2v_r_2dmot = -3.4
+        self.detune_d2v_r_2dmot = -4.8
         self.amp_d2v_r_2dmot = 0.188
 
-        self.detune_d2h_r_2dmot = -4.4
+        self.detune_d2h_r_2dmot = -7.
         self.amp_d2h_r_2dmot = 0.188
 
-        self.v_2d_mot_current = 3.1
+        self.v_2d_mot_current = 3.3
 
         #MOT
-        self.detune_d2_c_mot = -2.7
+        self.detune_d2_c_mot = -2.5
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.4
+        self.detune_d2_r_mot = -4.5
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
