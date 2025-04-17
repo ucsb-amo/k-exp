@@ -78,23 +78,36 @@ class Cooling():
 
     @kernel
     def load_2D_mot(self, t,
-                     detune_d2_c = dv,
-                     amp_d2_c = dv,
-                     detune_d2_r = dv,
-                     amp_d2_r = dv,
+                     detune_d2_vc = dv,
+                     amp_d2_vc = dv,
+                     detune_d2_vr = dv,
+                     amp_d2_vr = dv,
+                     detune_d2_hc = dv,
+                     amp_d2_hc = dv,
+                     detune_d2_hr = dv,
+                     amp_d2_hr = dv,
                      detune_push = dv,
                      amp_push = dv,
-                     v_analog_supply = dv):
+                     v_analog_supply = dv,
+                     with_push = True):
         
         ### Start Defaults ###
-        if detune_d2_c == dv:
-            detune_d2_c = self.params.detune_d2_c_2dmot
-        if amp_d2_c == dv:
-            amp_d2_c = self.params.amp_d2_c_2dmot
-        if detune_d2_r == dv:
-            detune_d2_r = self.params.detune_d2_r_2dmot
-        if amp_d2_r == dv:
-            amp_d2_r = self.params.amp_d2_r_2dmot
+        if detune_d2_vc == dv:
+            detune_d2_vc = self.params.detune_d2v_c_2dmot
+        if amp_d2_vc == dv:
+            amp_d2_vc = self.params.amp_d2v_c_2dmot
+        if detune_d2_vr == dv:
+            detune_d2_vr = self.params.detune_d2v_r_2dmot
+        if amp_d2_vr == dv:
+            amp_d2_vr = self.params.amp_d2v_r_2dmot
+        if detune_d2_hc == dv:
+            detune_d2_hc = self.params.detune_d2h_c_2dmot
+        if amp_d2_hc == dv:
+            amp_d2_hc = self.params.amp_d2h_c_2dmot
+        if detune_d2_hr == dv:
+            detune_d2_hr = self.params.detune_d2h_r_2dmot
+        if amp_d2_hr == dv:
+            amp_d2_hr = self.params.amp_d2h_r_2dmot
         if detune_push == dv:
             detune_push = self.params.detune_push
         if amp_push == dv:
@@ -103,17 +116,20 @@ class Cooling():
             v_analog_supply = self.params.v_2d_mot_current
         ### End Defaults ###
 
-        self.dds.d2_2dh_c.set_dds_gamma(delta=detune_d2_c,
-                                 amplitude=amp_d2_c)
-        self.dds.d2_2dh_r.set_dds_gamma(delta=detune_d2_r,
-                                 amplitude=amp_d2_r)
-        self.dds.d2_2dv_c.set_dds_gamma(delta=detune_d2_c,
-                                 amplitude=amp_d2_c)
-        self.dds.d2_2dv_r.set_dds_gamma(delta=detune_d2_r,
-                                 amplitude=amp_d2_r)
+        self.dds.d2_2dh_c.set_dds_gamma(delta=detune_d2_hc,
+                                 amplitude=amp_d2_hc)
+        self.dds.d2_2dh_r.set_dds_gamma(delta=detune_d2_hr,
+                                 amplitude=amp_d2_hr)
+        self.dds.d2_2dv_c.set_dds_gamma(delta=detune_d2_vc,
+                                 amplitude=amp_d2_vc)
+        self.dds.d2_2dv_r.set_dds_gamma(delta=detune_d2_vr,
+                                 amplitude=amp_d2_vr)
         delay(self.params.t_rtio)
-        self.dds.push.set_dds_gamma(delta=detune_push,
-                                 amplitude=amp_push)
+        if with_push:
+            self.dds.push.set_dds_gamma(delta=detune_push,
+                                    amplitude=amp_push)
+        else:
+            self.dds.push.off()
         
         self.dac.supply_current_2dmot.set(v=v_analog_supply)
 
