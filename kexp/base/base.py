@@ -173,6 +173,10 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
 
+        self.dds.d1_blueshield.on()
+        self.dds.d1_probe.on()
+        self.dds.d1_beatlock_ref.on()
+
     # @kernel
     # def cleanup_scan_kernel(self):
     #     if self.run_info.imaging_type == img.DISPERSIVE or self.run_info.imaging_type == img.FLUORESCENCE:

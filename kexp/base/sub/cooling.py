@@ -44,13 +44,13 @@ class Cooling():
 
     @kernel
     def pump_to_F1(self):
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
-                        v_yshim_current=self.p.v_yshim_current_magtrap,
-                        v_xshim_current=self.p.v_xshim_current_magtrap)
+        self.set_shims(v_zshim_current=self.params.v_zshim_current_magtrap,
+                        v_yshim_current=self.params.v_yshim_current_magtrap,
+                        v_xshim_current=self.params.v_xshim_current_magtrap)
         delay(2.e-3)
         self.dds.optical_pumping.set_dds(set_stored=True)
         self.dds.optical_pumping.on()
-        delay(200.e-6)
+        delay(self.params.t_pump_to_F1)
         self.dds.optical_pumping.off()
         self.flash_cooler()
 

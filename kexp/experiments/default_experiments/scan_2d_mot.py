@@ -20,8 +20,8 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('amp_push',np.linspace(.05,.188,8))
         # self.p.detune_push = -.8
 
-        # self.xvar('detune_d2v_r_2dmot',np.linspace(-7.,-3.,8))
-        # self.xvar('detune_d2v_c_2dmot',np.linspace(-4.5,0.,8))
+        self.xvar('detune_d2v_r_2dmot',np.linspace(-7.,-3.,8))
+        self.xvar('detune_d2v_c_2dmot',np.linspace(-4.5,0.,8))
         # self.xvar('detune_d2h_r_2dmot',np.linspace(-10.,-5.,8))
         # self.xvar('detune_d2h_c_2dmot',np.linspace(-4.,0.,8))
        
