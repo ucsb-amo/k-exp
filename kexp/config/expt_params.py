@@ -64,6 +64,7 @@ class ExptParams():
         self.t_shim_change_pretrigger = 0.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
+        self.t_pump_to_F1 = 200.e-6
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 1.
@@ -133,9 +134,9 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 21.5
-        self.v_zshim_current = 0.65
-        self.v_xshim_current = 6.
-        self.v_yshim_current = 7.7
+        self.v_zshim_current = 0.45
+        self.v_xshim_current = .28
+        self.v_yshim_current = 7.5
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -147,7 +148,7 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 8.5
+        self.detune_d1_c_d1cmot = 8.8
         self.pfrac_d1_c_d1cmot = .99
 
         self.detune_d2_r_d1cmot = -2.8
@@ -162,22 +163,22 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 7.4
+        self.detune_gm = 8.8
         # self.amp_gm = 0.09
 
         self.v_zshim_current_gm = 0.83
         self.v_xshim_current_gm = 0.32
-        self.v_yshim_current_gm = 2.5
+        self.v_yshim_current_gm = 2.2
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .9 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .76 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .99
+        self.pfrac_d1_r_gm = .65
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.36
-        self.pfrac_r_gmramp_end = 0.13
+        self.pfrac_c_gmramp_end = 0.24
+        self.pfrac_r_gmramp_end = 0.12
         self.n_gmramp_steps = 200
 
         # mag trap

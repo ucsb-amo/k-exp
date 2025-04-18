@@ -33,49 +33,57 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('i_mot',np.linspace(15.,35.,30))
         # self.p.i_mot = 29.
 
-        # self.xvar('v_zshim_current',np.linspace(0.,2.4,8))
-        # self.xvar('v_xshim_current',np.linspace(0.,8.,8))
+        # self.xvar('v_zshim_current',np.linspace(0.,1.,8))
+        # self.xvar('v_xshim_current',np.linspace(0.,2.,8))
         # self.xvar('v_yshim_current',np.linspace(0.,9.99,8))
-        self.p.v_zshim_current = 0.
-        self.p.v_xshim_current = 0. 
-        self.p.v_yshim_current = 4.5
+        # self.p.v_zshim_current = 0.45
+        # self.p.v_xshim_current = 0. 
+        # self.p.v_yshim_current = 4.5
 
-        # self.xvar('detune_d1_c_d1cmot',np.linspace(6.,13.,8))
+        # self.xvar('detune_d1_c_d1cmot',np.linspace(5.,13.,8))
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,0.,8))
 
-        # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.,.99,10))
-        # self.xvar('amp_d2_r_d1cmot',np.linspace(0.,.188,10))
+        # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.,.99,8))
+        # self.xvar('amp_d2_r_d1cmot',np.linspace(0.,.188,8))
 
-        # self.xvar('detune_d1_c_gm',np.linspace(6.,16.,8))
-        # self.xvar('detune_d1_r_gm',np.linspace(6.,16.,8))
+        # self.xvar('i_cmot',np.linspace(15.,35.,30))
+        # self.p.i_cmot = 29.
 
-        self.p.detune_d1_c_gm = 11.5
-        self.p.detune_d1_r_gm = 11.5
+        # self.xvar('detune_d1_c_gm',np.linspace(6.,12.,8))
+        # self.xvar('detune_d1_r_gm',np.linspace(6.,12.,8))
+        # self.xvar('detune_d1_gm',np.linspace(6.,12.,20))
 
-        # self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
-        # self.xvar('pfrac_d1_r_gm',np.linspace(0.1,.99,8))
-        # self.pfrac_d1_c_gm = .67
-        # self.pfrac_d1_r_gm = .67
+        # self.p.detune_d1_c_gm = 8.8
+        # self.p.detune_d1_r_gm = 8.8
 
-        # self.xvar('v_zshim_current_gm',np.linspace(0.,2.,8))
-        # self.xvar('v_xshim_current_gm',np.linspace(0.,7.,8))
-        # self.xvar('v_yshim_current_gm',np.linspace(0.,9.,8))
+        # self.xvar('pfrac_d1_c_gm',np.linspace(.2,.99,8))
+        # self.xvar('pfrac_d1_r_gm',np.linspace(0.2,.99,8))
+        # self.pfrac_d1_c_gm = .76
+        # self.pfrac_d1_r_gm = .65
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.7,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.7,8))
+        # self.xvar('v_zshim_current_gm',np.linspace(0.6,.9,8))
+        # self.xvar('v_xshim_current_gm',np.linspace(0.,1.,8))
+        # self.xvar('v_yshim_current_gm',np.linspace(1.4,2.8,8))
 
-        self.p.pfrac_c_gmramp_end = 0.15
-        self.p.pfrac_r_gmramp_end = 0.3
+        # self.p.v_zshim_current_gm = 0.45
+        # self.p.v_xshim_current_gm = 0. 
+        # self.p.v_yshim_current_gm = 4.5
+
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.5,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.5,8))
+
+        # self.p.pfrac_c_gmramp_end = 0.15
+        # self.p.pfrac_r_gmramp_end = 0.3
 
         # self.xvar('dumdum',[0]*5)
 
-        # self.xvar('t_tof',np.linspace(3500.,7000.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(12.,17.,10)*1.e-3)
         
         self.p.amp_imaging = .35
         self.p.imaging_state = 2.
-        self.p.t_tof = 7000.e-6
-        self.p.t_mot_load = .5
-        self.p.N_repeats = 1
+        self.p.t_tof = 15.e-3
+        self.p.t_mot_load = .3
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 
