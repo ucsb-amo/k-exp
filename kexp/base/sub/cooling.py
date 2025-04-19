@@ -733,15 +733,15 @@ class Cooling():
                                 ramp_shim=ramp_shim_with_lightsheet,
                                 v_shim_start=v_zshim_current_init,
                                 v_shim_end=v_zshim_current)
-        else:
-            delay(t_lightsheet_ramp)
+        # else:
+            # delay(t_lightsheet_ramp)
 
         if do_magtrap_rampup:
             self.inner_coil.ramp_supply(t=t_magtrap_ramp,
                                 i_start=i_magtrap_init,
                                 i_end=i_magtrap_ramp_end)
         
-        delay(self.params.t_magtrap)
+        # delay(self.params.t_magtrap)
 
         if do_magtrap_rampdown:
             self.inner_coil.ramp_supply(t=t_magtrap_rampdown,

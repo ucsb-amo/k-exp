@@ -158,7 +158,14 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.set_all_dds()
         self.core.break_realtime()
 
+        self.dds.d2_2dh_c.on()
+        self.dds.d2_2dh_r.on()
+        self.dds.d2_2dv_c.on()
+        self.dds.d2_2dv_r.on()
+        self.dds.push.off()
+
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        self.dds.d1_beatlock_ref.set_dds(frequency=42.e6)
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
@@ -175,6 +182,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.dds.d1_blueshield.on()
         self.dds.d1_probe.on()
+        
         self.dds.d1_beatlock_ref.on()
 
     # @kernel
