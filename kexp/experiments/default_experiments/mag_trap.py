@@ -13,30 +13,36 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.t_tof = 5000.e-6
+        self.p.t_tof = 6000.e-6
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
         # self.xvar('dumy',[0]*1000)
 
-        # self.xvar('t_magtrap_hold',np.linspace(10.,500.,15)*1.e-3)
+        self.xvar('t_magtrap_hold',np.linspace(30.,60.,30)*1.e-3)
         self.p.t_lightsheet_rampup = .001
 
-        self.p.t_magtrap_hold = .050
+        self.p.t_magtrap_hold = .1
+
+        # self.xvar('t_magtrap_delay',np.linspace(3.,15.,10)*1.e-3)
 
         # self.xvar('v_zshim_current_magtrap_init',np.linspace(0.,3.5,8))
-        self.p.v_zshim_current_magtrap_init = -4.3
+        # self.p.v_zshim_current_magtrap_init = -4.3
 
         # self.xvar('v_zshim_current',np.linspace(0.,3.,8))
         # self.xvar('v_zshim_current_gm',np.linspace(0.,3.,8))
 
-        # self.xvar('i_magtrap_init',np.linspace(18.,45,5))
-        self.p.i_magtrap_init = 40.
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.5,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.5,8))
+        self.p.pfrac_r_gmramp_end = .3
 
-        # self.xvar('v_zshim_current_magtrap_init',np.linspace(0.,5.,9))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,9))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,8.,9))
-        self.p.v_zshim_current_magtrap_init = 0.
+        # self.xvar('i_magtrap_init',np.linspace(20.,60,8))
+        self.p.i_magtrap_init = 38.
+
+        # self.xvar('v_zshim_current_magtrap_init',np.linspace(0.,3.,8))
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,8))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,8.,10))
+        # self.p.v_zshim_current_magtrap_init = 0.
         self.p.v_yshim_current_magtrap = 0.
-        self.p.v_xshim_current_magtrap = 0.
+        # self.p.v_xshim_current_magtrap = 0.
         # self.xvar('t_lightsheet_rampup',np.linspace(0.05,1.,10))
         # self.p.t_lightsheet_rampup = 
 
@@ -59,7 +65,7 @@ class mag_trap(EnvExperiment, Base):
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot * s)
+        self.cmot_d1(self.p.t_d1cmot * s,)
         
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
