@@ -15,12 +15,14 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tof = 6000.e-6
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
-        # self.xvar('dumy',[0]*1000)
+        self.xvar('dumy',[0]*1000)
 
-        self.xvar('t_magtrap_hold',np.linspace(30.,60.,30)*1.e-3)
+        # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
+
+        # self.xvar('t_magtrap_hold',np.linspace(100.,200.,30)*1.e-3)
         self.p.t_lightsheet_rampup = .001
 
-        self.p.t_magtrap_hold = .1
+        self.p.t_magtrap_hold = .15
 
         # self.xvar('t_magtrap_delay',np.linspace(3.,15.,10)*1.e-3)
 
@@ -34,7 +36,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.5,8))
         self.p.pfrac_r_gmramp_end = .3
 
-        # self.xvar('i_magtrap_init',np.linspace(20.,60,8))
+        # self.xvar('i_magtrap_init',np.linspace(27.,60,8))
         self.p.i_magtrap_init = 38.
 
         # self.xvar('v_zshim_current_magtrap_init',np.linspace(0.,3.,8))
