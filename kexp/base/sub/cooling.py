@@ -54,7 +54,7 @@ class Cooling():
         self.dds.optical_pumping.on()
         delay(t)
         self.dds.optical_pumping.off()
-        # self.flash_cooler()
+        self.flash_cooler()
 
     @kernel
     def flash_cooler(self,t=dv,detune=dv,amp=dv):

@@ -81,11 +81,11 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(.01,20.,20)*1.e-6)
         # self.p.t_pump_to_F1 = .01e-6
 
-        self.xvar('t_tof',np.linspace(12.,20.,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(12.,20.,10)*1.e-3)
         
         self.p.amp_imaging = .35
         self.p.imaging_state = 2.
-        self.p.t_tof = 50.e-6
+        self.p.t_tof = 17.e-3
         self.p.t_mot_load = .3
         self.p.N_repeats = 1
 
