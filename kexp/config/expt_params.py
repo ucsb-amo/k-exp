@@ -134,7 +134,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 21.5
-        self.v_zshim_current = 0.25
+        self.v_zshim_current = 0.11
         self.v_xshim_current = .28
         self.v_yshim_current = 1.28
 

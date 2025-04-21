@@ -31,7 +31,7 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_2d_mot_current = 3.3
 
         # self.xvar('i_mot',np.linspace(10.,30.,30))
-        self.xvar('i_mot',[18.,65.]*10)
+        # self.xvar('i_mot',[18.,65.]*10)
         # self.p.i_mot = 29.
 
         # self.xvar('v_zshim_current',np.linspace(0.,.6,30))
@@ -81,7 +81,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(.01,20.,20)*1.e-6)
         # self.p.t_pump_to_F1 = .01e-6
 
-        # self.xvar('t_tof',np.linspace(.03,.2,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(12.,20.,10)*1.e-3)
         
         self.p.amp_imaging = .35
         self.p.imaging_state = 2.
@@ -98,10 +98,10 @@ class gm_tof(EnvExperiment, Base):
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        # self.cmot_d1(self.p.t_d1cmot)
+        self.cmot_d1(self.p.t_d1cmot)
         
-        # self.gm(self.p.t_gm * s)
-        # self.gm_ramp(self.p.t_gmramp)
+        self.gm(self.p.t_gm * s)
+        self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 
