@@ -43,9 +43,20 @@ class Cooling():
         self.dds.d2_3d_r.off()
 
     @kernel
-    def pump_to_F1(self,t=dv):
+    def pump_to_F1(self,t=dv,
+                   v_zshim_current = dv,
+                   v_yshim_current = dv,
+                   v_xshim_current = dv):
+
         if t == dv:
             t = self.params.t_pump_to_F1
+        if v_zshim_current == dv:
+            v_zshim_current = self.params.v_zshim_current_magtrap
+        if v_yshim_current == dv:
+            v_yshim_current = self.params.v_yshim_current_magtrap
+        if v_xshim_current == dv:
+            v_xshim_current = self.params.v_xshim_current_magtrap
+
         self.set_shims(v_zshim_current=self.params.v_zshim_current_magtrap,
                         v_yshim_current=self.params.v_yshim_current_magtrap,
                         v_xshim_current=self.params.v_xshim_current_magtrap)
@@ -54,7 +65,7 @@ class Cooling():
         self.dds.optical_pumping.on()
         delay(t)
         self.dds.optical_pumping.off()
-        self.flash_cooler()
+        # self.flash_cooler()
 
     @kernel
     def flash_cooler(self,t=dv,detune=dv,amp=dv):
@@ -351,8 +362,6 @@ class Cooling():
             i_supply = self.params.i_cmot
         ### End Defaults ###
             
-        self.inner_coil.set_supply(i_supply)
-        # self.inner_coil.set_supply(self.params.i_magtrap_init)
         # self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_supply(self.params.i_magtrap_init)
         # self.inner_coil.set_voltage(i_supply)

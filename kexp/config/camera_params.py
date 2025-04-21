@@ -139,7 +139,7 @@ class camera_frame():
         self.andor = AndorParams(amp_absorption=0.08, 
                                  magnification=18.4)
         self.xy_basler = BaslerParams(serial_number='40316451',
-                                      amp_absorption=0.16,
+                                      amp_absorption=0.35,
                                       magnification=0.5)
         self.x_basler = BaslerParams(serial_number='40320384',
                                      trigger_source='Line2')

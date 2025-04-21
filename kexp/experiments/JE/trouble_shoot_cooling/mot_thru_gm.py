@@ -6,7 +6,7 @@ import numpy as np
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='z_basler',save_data=True)
 
         # self.xvar('frequency_detuned_imaging',np.arange(-150.,150.,8)*1.e6)
 
@@ -78,15 +78,19 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('dumdum',[0]*5)
 
-        self.xvar('t_pump_to_F1',np.linspace(1.,120.,20)*1.e-6)
+        # self.xvar('t_pump_to_F1',np.linspace(1.,120.,20)*1.e-6)
         # self.p.t_pump_to_F1 = .01e-6
 
-        # self.xvar('t_tof',np.linspace(12.,20.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(1.,20.,10)*1.e-3)
+
+        self.camera_params.exposure_time = 50.e-6
+        self.params.t_imaging_pulse = self.camera_params.exposure_time
+        self.camera_params.gain = 1.
         
-        self.p.amp_imaging = .35
+        self.p.amp_imaging = .54
         self.p.imaging_state = 2.
         self.p.t_tof = 1.e-3
-        self.p.t_mot_load = .3
+        self.p.t_mot_load = .5
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=False)
