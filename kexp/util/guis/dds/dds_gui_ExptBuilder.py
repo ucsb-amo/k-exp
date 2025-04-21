@@ -58,8 +58,9 @@ class DDSGUIExptBuilder():
         return(returncode)
 
     def one_on(self, dds:DDS):
-        dac_load_line = ""
+        dac_load_line = "" 
         dac_control_line = ""
+        print(dds.dac_control_bool)
         if dds.dac_control_bool:
             dac_load_line = f"""self.dac = self.get_device("{dds.dac_device}")"""
             dac_control_line = f"self.dac.set([{dds.dac_ch}],[{dds.v_pd}])"
@@ -77,6 +78,7 @@ class DDSGUIExptBuilder():
                 {dac_control_line}
                 self.dds.sw.on()
         """)
+        print(script)
         returncode = self.execute(script)
         return(returncode)  
 

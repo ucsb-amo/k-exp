@@ -64,7 +64,7 @@ class ExptParams():
         self.t_shim_change_pretrigger = 0.e-3
         self.t_gm = 3.e-3
         self.t_gmramp = 5.e-3
-        self.t_pump_to_F1 = 5.e-6
+        self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = 1.

@@ -1,30 +1,27 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base, img_types, cameras
+from kexp import Base
 import numpy as np
 
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select=cameras.xy_basler,
-                      imaging_type=img_types.ABSORPTION)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(350.,450.,3)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.arange(-150.,150.,8)*1.e6)
 
-        # self.xvar('dumdum',[0]*100)
 
-        self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
+        # self.xvar('dumdum',[0]*5)
 
-        # self.xvar('t_mot_load',np.linspace(0.25,5.,10))
+        self.xvar('t_tof',np.linspace(.05,.5,10)*1.e-3)
         
         self.p.amp_imaging = .35
         self.p.imaging_state = 2.
-        self.p.t_tof = 15.e-3
-        self.p.t_mot_load = 1.
+        self.p.t_tof = 1.e-3
+        self.p.t_mot_load = .3
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -33,13 +30,6 @@ class gm_tof(EnvExperiment, Base):
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-
-        self.cmot_d1(self.p.t_d1cmot)
-
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
-
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 
@@ -50,7 +40,7 @@ class gm_tof(EnvExperiment, Base):
        
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(setup_awg=False)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()

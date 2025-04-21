@@ -63,10 +63,7 @@ class lightsheet():
              paint=False,
              v_awg_am_max=dv,
              v_pd_max=dv,
-             keep_trap_frequency_constant=True,
-             ramp_shim=False,
-             v_shim_start=dv,
-             v_shim_end=dv):
+             keep_trap_frequency_constant=True):
         
         if v_start == dv:
             v_start = self.params.v_pd_lightsheet_rampup_start
@@ -82,8 +79,6 @@ class lightsheet():
         dt_ramp = t / n_steps
         delta_v = (v_end - v_start)/(n_steps - 1)
 
-        delta_v_shim = (v_shim_end - v_shim_start)/(n_steps - 1)
-
         if not paint:
             self.painting_off()
 
@@ -94,10 +89,6 @@ class lightsheet():
         for i in range(n_steps):
             v = v_start + i*delta_v
             self.pid_dac.set(v=v,load_dac=False)
-
-            # if ramp_shim:
-            #     vshim = v_shim_start + i*delta_v_shim
-            #     self.alignment_shim_dac.set(v=vshim,load_dac=False)
 
             if paint:
                 if keep_trap_frequency_constant:
