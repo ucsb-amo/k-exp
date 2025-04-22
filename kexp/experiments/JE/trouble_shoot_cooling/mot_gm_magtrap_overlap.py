@@ -54,11 +54,11 @@ class mag_trap(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_mot_load = .3
 
-        self.camera_params.exposure_time = 50.e-6
-        self.params.t_imaging_pulse = self.camera_params.exposure_time
-        self.camera_params.gain = 1.
+        # self.camera_params.exposure_time = 50.e-6
+        # self.params.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.gain = 1.
 
-        self.p.amp_imaging = .54
+        self.p.amp_imaging = .35
         self.p.imaging_state = 2.
 
         self.finish_prepare(shuffle=False)

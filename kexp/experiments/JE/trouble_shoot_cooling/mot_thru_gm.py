@@ -6,7 +6,7 @@ import numpy as np
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='z_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         # self.xvar('frequency_detuned_imaging',np.arange(-150.,150.,8)*1.e6)
 
@@ -30,12 +30,12 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('v_2d_mot_current',np.linspace(0.,5.,10))
         # self.p.v_2d_mot_current = 3.3
 
-        # self.xvar('i_mot',np.linspace(10.,30.,30))
-        # self.xvar('i_mot',[18.,65.]*10)
-        # self.p.i_mot = 29.
+        # self.xvar('i_mot',np.linspace(15.,40.,30))
+        self.xvar('i_mot',[21.,65.]*10)
+        self.p.i_mot = 65.
 
-        # self.xvar('v_zshim_current',np.linspace(0.,.6,30))
-        # self.xvar('v_xshim_current',np.linspace(0.,2.,8))
+        # self.xvar('v_zshim_current',np.linspace(0.,5.,8))
+        # self.xvar('v_xshim_current',np.linspace(0.,4.,8))
         # self.xvar('v_yshim_current',np.linspace(0.,9.,8))
         # self.p.v_zshim_current = 0.83
         # self.p.v_xshim_current = .32 
@@ -62,7 +62,7 @@ class gm_tof(EnvExperiment, Base):
         # self.pfrac_d1_c_gm = .76
         # self.pfrac_d1_r_gm = .65
 
-        # self.xvar('v_zshim_current_gm',np.linspace(0.5,1.2,8))
+        # self.xvar('v_zshim_current_gm',np.linspace(0.1,1.2,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,2.,8))
         # self.xvar('v_yshim_current_gm',np.linspace(1.4,3.5,8))
 
@@ -81,15 +81,15 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(1.,120.,20)*1.e-6)
         # self.p.t_pump_to_F1 = .01e-6
 
-        self.xvar('t_tof',np.linspace(1.,20.,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(12.,20.,10)*1.e-3)
 
-        self.camera_params.exposure_time = 50.e-6
-        self.params.t_imaging_pulse = self.camera_params.exposure_time
-        self.camera_params.gain = 1.
+        # self.camera_params.exposure_time = 50.e-6
+        # self.params.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.gain = 1.
         
-        self.p.amp_imaging = .54
+        self.p.amp_imaging = .35
         self.p.imaging_state = 2.
-        self.p.t_tof = 1.e-3
+        self.p.t_tof = 300.e-6
         self.p.t_mot_load = .5
         self.p.N_repeats = 1
 
@@ -102,10 +102,10 @@ class gm_tof(EnvExperiment, Base):
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot)
+        # self.cmot_d1(self.p.t_d1cmot)
         
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
+        # self.gm(self.p.t_gm * s)
+        # self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 

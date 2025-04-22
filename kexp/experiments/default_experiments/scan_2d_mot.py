@@ -11,17 +11,17 @@ class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select=cameras.xy_basler,
+                      camera_select='xy_basler',
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(-150.,150.,8)*1.e6)
 
-        # self.xvar('detune_push',np.linspace(-4.,1.,8))
+        self.xvar('detune_push',np.linspace(-4.,1.,20))
         # self.xvar('amp_push',np.linspace(.05,.188,8))
         # self.p.detune_push = -.8
 
-        self.xvar('detune_d2v_r_2dmot',np.linspace(-7.,-3.,8))
-        self.xvar('detune_d2v_c_2dmot',np.linspace(-4.5,0.,8))
+        # self.xvar('detune_d2v_r_2dmot',np.linspace(-7.,-3.,5))
+        # self.xvar('detune_d2v_c_2dmot',np.linspace(-4.5,0.,5))
         # self.xvar('detune_d2h_r_2dmot',np.linspace(-10.,-5.,8))
         # self.xvar('detune_d2h_c_2dmot',np.linspace(-4.,0.,8))
        
@@ -47,26 +47,24 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_2d_mot_current = 2.7
 
         # self.xvar('i_mot',np.linspace(25.,40.,10))
-        # self.p.i_mot = 21.5
+        # self.p.i_mot = 65.
 
         # self.xvar('dumdum',[0]*100)
 
         # self.xvar('t_tof',np.linspace(14.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(200.,1500.,10)*1.e-6)
 
-        # self.camera_params.exposure_time = 5.e-3
+        # self.camera_params.exposure_time = 10.e-3
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
-        # self.camera_params.gain = 40.
+        # self.camera_params.gain = 25.
         
         self.p.imaging_state = 2.
         self.p.amp_imaging = .35
 
         self.p.t_tof = 300.e-6
 
-        self.p.t_mot_load = .3
+        self.p.t_mot_load = .5
         self.p.N_repeats = 1
-
-        
 
         # self.p.detune_d2_2d_c_imaging = 0.
         # self.p.detune_d2_2d_r_imaging = 0.
@@ -88,7 +86,7 @@ class gm_tof(EnvExperiment, Base):
 
         self.release()
 
-        self.switch_d2_2d(0)
+        # self.switch_d2_2d(0)
         # self.dac.supply_current_2dmot.set(v=0.)
 
         delay(self.p.t_tof)
