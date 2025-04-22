@@ -2,7 +2,7 @@
 qCommand qC;
 
 float SETPOINT1 = 9.0;
-float SETPOINT2 = 1.3;
+float SETPOINT2 = 1.;
 float P1 = -.055;
 float I1 = -0.006;
 float P2 = -0.055;
