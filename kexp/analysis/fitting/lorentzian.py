@@ -53,18 +53,28 @@ class LorentzianFit(Fit):
         x0: float
         offset: float
         '''
-        amplitude_guess = np.max(y) - np.min(y)
-        x_center_guess = x[np.argmax(y)]
-        gamma_guess = np.abs((x[-1] - x[0]))/10
-        y_offset_guess = np.min(y)
-        
-        bounds_min = (0,0,-np.inf,-np.inf)
-        bounds_max = (np.inf,np.inf,np.inf,np.inf)
+        fit_success = False
+        N = 1
+        while fit_success == False:
+            amplitude_guess = np.max(y) - np.min(y)
+            x_center_guess = x[np.argmax(y)]
+            gamma_guess = np.abs((x[-1] - x[0]))/N
+            y_offset_guess = np.min(y)
+            
+            bounds_min = (0,0,-np.inf,-np.inf)
+            bounds_max = (np.inf,np.inf,np.inf,np.inf)
 
-        guesses = [amplitude_guess, gamma_guess, x_center_guess, y_offset_guess]
-        # print(f'guesses: {guesses}')
+            guesses = [amplitude_guess, gamma_guess, x_center_guess, y_offset_guess]
+            # print(f'guesses: {guesses}')
 
-        popt, pcov = curve_fit(self._fit_func, x, y,
-                                p0=guesses,
-                                bounds=(bounds_min,bounds_max))
+            try:
+                popt, pcov = curve_fit(self._fit_func, x, y,
+                                        p0=guesses,
+                                        bounds=(bounds_min,bounds_max))
+                fit_success = True
+            except:
+                N += 1
+            
+            if N == 10:
+                break
         return popt
