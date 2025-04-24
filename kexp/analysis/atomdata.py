@@ -16,6 +16,8 @@ import h5py
 
 import datetime
 
+from kexp.config.camera_params import img_types as img
+
 def unpack_group(file,group_key,obj):
     """Looks in an open h5 file in the group specified by key, and iterates over
     every dataset in that h5 group, and for each dataset assigns an attribute of
@@ -35,9 +37,9 @@ def unpack_group(file,group_key,obj):
 class analysis_tags():
     """A simple container to hold analysis tags for analysis logic.
     """    
-    def __init__(self,roi_id,absorption_analysis):
+    def __init__(self,roi_id,imaging_type):
         self.roi_id = roi_id
-        self.absorption_analysis = absorption_analysis
+        self.imaging_type = imaging_type
         self.xvars_shuffled = False
         self.transposed = False
         self.averaged = False
@@ -98,7 +100,7 @@ class atomdata():
         self._ds = DataSaver()
         self.atom = Potassium39()
         self._dealer = self._init_dealer()
-        self._analysis_tags = analysis_tags(roi_id,self.run_info.absorption_image)
+        self._analysis_tags = analysis_tags(roi_id,self.run_info.imaging_type)
         self.roi = ROI(run_id = self.run_info.run_id,
                        roi_id = roi_id,
                        use_saved_roi = not skip_saved_roi,
@@ -153,7 +155,7 @@ class atomdata():
         """Computes the ODs. If not absorption analysis, OD = (pwa - dark)/(pwoa - dark).
         """        
         self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark,
-                                 abs_image_bool=self._analysis_tags.absorption_analysis)
+                                 imaging_type=self._analysis_tags.imaging_type)
 
     def analyze_ods(self):
         """Crops ODs, computes sum_ods, gaussian fits to sum_ods, and populates
@@ -171,7 +173,7 @@ class atomdata():
         
         self._remap_fit_results()
         
-        if self._analysis_tags.absorption_analysis:
+        if self._analysis_tags.imaging_type == img.ABSORPTION:
             self.compute_atom_number()
 
     def _sort_images(self):

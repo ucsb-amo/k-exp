@@ -39,7 +39,8 @@ class DDS():
          self.dac_device = dac_device
       else:
          self.dac_device = ad53xx.AD53xx
-      self.dac_control_bool = self.dac_ch > 0
+         
+      self.dac_control_bool = self.dac_ch != DAC_CH_DEFAULT
 
       self.dds_amp_calibration = dds_amp_cal()
       self.dds_vva_calibration = dds_vva_cal()

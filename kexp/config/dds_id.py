@@ -61,18 +61,18 @@ class dds_frame():
                                     default_amp = self.p.amp_push)
         # old 2d MOT AOs
         self.d2_2dv_r = self.dds_assign(2,1, ao_order = 1, transition = 'D2',
-                                    default_detuning = self.p.detune_d2_r_2dmot,
-                                    default_amp = self.p.amp_d2_r_2dmot)
+                                    default_detuning = self.p.detune_d2v_r_2dmot,
+                                    default_amp = self.p.amp_d2v_r_2dmot)
         self.d2_2dv_c = self.dds_assign(2,2, ao_order = -1, transition = 'D2',
-                                    default_detuning = self.p.detune_d2_c_2dmot,
-                                    default_amp = self.p.amp_d2_c_2dmot)
+                                    default_detuning = self.p.detune_d2v_c_2dmot,
+                                    default_amp = self.p.amp_d2v_c_2dmot)
         # old 3d MOT AOs
         self.d2_2dh_r = self.dds_assign(2,3, ao_order = 1, transition = 'D2',
-                                    default_detuning = self.p.detune_d2_r_mot,
-                                    default_amp = self.p.amp_d2_r_mot)
+                                    default_detuning = self.p.detune_d2h_r_2dmot,
+                                    default_amp = self.p.amp_d2h_r_2dmot)
         self.d2_2dh_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2',
-                                    default_detuning = self.p.detune_d2_c_mot,
-                                    default_amp = self.p.amp_d2_c_mot)
+                                    default_detuning = self.p.detune_d2h_c_2dmot,
+                                    default_amp = self.p.amp_d2h_c_2dmot)
         
         self.mot_killer = self.dds_assign(3,1, ao_order = -1, transition = 'D2',
                                     default_detuning = 0.,

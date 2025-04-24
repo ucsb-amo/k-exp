@@ -1,6 +1,8 @@
 import time
 from kexp.util.data.server_talk import get_run_id
 
+from kexp.config.camera_params import img_types as img
+
 class RunInfo():
     def __init__(self,expt_obj=None,save_data=True):
         if expt_obj != None:
@@ -20,7 +22,7 @@ class RunInfo():
         self.experiment_filepath = []
         self.xvarnames = []
 
-        self.absorption_image = True
+        self.imaging_type = img.ABSORPTION
         
         self.save_data = int(save_data)
 

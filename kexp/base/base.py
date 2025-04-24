@@ -14,10 +14,22 @@ RPC_DELAY = 10.e-3
 
 # also import the andor camera parameters
 
+from kexp.config.camera_params import img_types as img
+
 from kexp.util.artiq.async_print import aprint
 
 class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
-    def __init__(self,setup_camera=True,absorption_image=True,save_data=True,camera_select="xy_basler"):
+    def __init__(self,
+                 setup_camera=True,
+                 save_data=True,
+                 imaging_type=img.ABSORPTION,
+                 absorption_image=None,
+                 camera_select="xy_basler"):
+        
+        if absorption_image != None:
+            print("Warning: The argument 'absorption_image' is depreciated -- change it out for 'imaging_type'")
+            print("Defaulting to absorption imaging.")
+
         Scanner.__init__(self)
         super().__init__()
 
@@ -30,7 +42,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         self.prepare_devices(expt_params=self.params)
 
-        self.choose_camera(setup_camera,absorption_image,camera_select)
+        self.choose_camera(setup_camera,imaging_type,camera_select)
 
         self.images = []
         self.image_timestamps = []
@@ -38,6 +50,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.xvarnames = []
         self.sort_idx = []
         self.sort_N = []
+
+        self._img_count_this_shot = 0
 
         self._setup_awg = False
 
@@ -62,7 +76,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         a scan. This must be an RPC -- no kernel decorator.
         """
 
-        if self.run_info.absorption_image:
+        if self.run_info.imaging_type == img.ABSORPTION:
             if self.params.N_pwa_per_shot > 1:
                 print("You indicated more than one PWA per shot, but the analysis is set to absorption imaging. Setting # PWA to 1.")
             self.params.N_pwa_per_shot = 1
@@ -144,7 +158,14 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.set_all_dds()
         self.core.break_realtime()
 
+        self.dds.d2_2dh_c.on()
+        self.dds.d2_2dh_r.on()
+        self.dds.d2_2dv_c.on()
+        self.dds.d2_2dv_r.on()
+        self.dds.push.on()
+
         self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+        self.dds.d1_beatlock_ref.set_dds(frequency=42.e6)
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
@@ -153,19 +174,24 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
         if self._setup_awg:
             self.tweezer.reset_traps(self.xvarnames)
-            delay(300.e-3)
+            delay(100.e-3)
             self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
 
-    @kernel
-    def cleanup_scan_kernel(self):
-        if not self.run_info.absorption_image:
-            delay(self.params.t_light_only_image_delay)
-            self.light_image()
-            delay(self.params.t_dark_image_delay)
-            self.dark_image()
+        self.dds.d1_blueshield.on()
+        self.dds.d1_probe.on()
+        
+        self.dds.d1_beatlock_ref.on()
+
+    # @kernel
+    # def cleanup_scan_kernel(self):
+    #     if self.run_info.imaging_type == img.DISPERSIVE or self.run_info.imaging_type == img.FLUORESCENCE:
+    #         delay(self.params.t_light_only_image_delay)
+    #         self.light_image()
+    #         delay(self.params.t_dark_image_delay)
+    #         self.dark_image()
 
     def prepare_image_array(self):
         if self.run_info.save_data:

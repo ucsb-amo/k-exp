@@ -1,5 +1,7 @@
 import numpy as np
 
+from kexp.config.camera_params import img_types as img
+
 def process_ODs(raw_ODs,roi):
     '''
     From an ndarray of ODs (dimensions n1 x n2 x ... x nN x px x py, where ni is
@@ -30,7 +32,7 @@ def process_ODs(raw_ODs,roi):
 
     return ODs, sum_od_x, sum_od_y
 
-def compute_OD(atoms,light,dark,abs_image_bool=True):
+def compute_OD(atoms,light,dark,imaging_type=img.ABSORPTION):
     '''
     From a list of images (length 3*n, where n is the number of runs), computes
     OD. Crops to a preset ROI based on in what stage of cooling the images were
@@ -61,24 +63,21 @@ def compute_OD(atoms,light,dark,abs_image_bool=True):
     else:
         new_dtype = np.int32
 
-    atoms_only = atoms.astype(new_dtype) - dark.astype(new_dtype)
-    light_only = light.astype(new_dtype) - dark.astype(new_dtype)
+    if imaging_type == img.ABSORPTION:
+        atoms_only = atoms.astype(new_dtype) - dark.astype(new_dtype)
+        light_only = light.astype(new_dtype) - dark.astype(new_dtype)
 
-    atoms_only[atoms_only < 0] = 0
-    light_only[light_only < 0] = 0
-
-    if abs_image_bool:
+        atoms_only[atoms_only < 0] = 0
+        light_only[light_only < 0] = 0
 
         It_over_I0 = np.divide(atoms_only, light_only, 
                     out=np.zeros(atoms_only.shape, dtype=float), 
                     where=light_only!=0)
-        
         OD = -np.log(It_over_I0,
                         out=np.zeros(atoms_only.shape, dtype=float), 
                         where= It_over_I0!=0)
-        
         OD[OD<0] = 0
     else:
-        OD = light_only - atoms_only
+        OD = atoms.astype(new_dtype) - light.astype(new_dtype)
 
     return OD
