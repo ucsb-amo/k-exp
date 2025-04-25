@@ -87,7 +87,7 @@ class ExptParams():
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 3.4e-3
-        self.t_magtrap = 0.
+        self.t_magtrap = 1.5
         self.t_magtrap_ramp = 1.5
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .2
