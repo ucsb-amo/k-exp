@@ -67,7 +67,7 @@ class ExptParams():
         self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 1.
+        self.t_lightsheet_rampup = 2.
         self.t_lightsheet_rampdown = .7
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
@@ -86,7 +86,7 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap_delay = 0.
+        self.t_magtrap_delay = 3.4e-3
         self.t_magtrap = 0.
         self.t_magtrap_ramp = 1.5
         # self.t_magtrap_ramp = 4.4
@@ -182,7 +182,7 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 27.
+        self.i_magtrap_init = 95.
         self.i_magtrap_ramp_end = 95.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
@@ -209,7 +209,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.99
+        self.v_pd_lightsheet_rampup_end = 9.9
         self.v_pd_lightsheet_rampdown_end = 6.5 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0

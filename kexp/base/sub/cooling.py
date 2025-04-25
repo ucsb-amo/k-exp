@@ -697,12 +697,17 @@ class Cooling():
                                 i_start=i_magtrap_init,
                                 i_end=i_magtrap_ramp_end)
         
-        # delay(self.params.t_magtrap)
+        delay(self.params.t_magtrap)
 
         if do_magtrap_rampdown:
-            self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
-                                i_start=i_magtrap_ramp_end,
-                                i_end=0.)
+            if do_magtrap_rampup:
+                self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
+                                    i_start=i_magtrap_ramp_end,
+                                    i_end=0.)
+            else:
+                self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
+                                    i_start=i_magtrap_init,
+                                    i_end=0.)
             self.inner_coil.snap_off()
 
     @kernel
