@@ -13,9 +13,9 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 5.e-3
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
-        self.xvar('dumy',[2,3]*5)
+        self.xvar('dumy',[2]*500)
 
         # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
 
@@ -48,14 +48,14 @@ class mag_trap(EnvExperiment, Base):
         # self.p.v_xshim_current_magtrap = 0.
         # self.xvar('t_lightsheet_rampup',np.linspace(0.05,1.,10))
         # self.p.t_lightsheet_rampup = 
-        self.p.v_pd_lightsheet_rampup_end = 3.5
+        # self.p.v_pd_lightsheet_rampup_end = 3.5
 
         # self.p.t_magtrap_ramp = .5
 
         self.p.t_lightsheet_hold = .02
 
         self.p.N_repeats = 1
-        self.p.t_mot_load = .75
+        self.p.t_mot_load = .3
 
         # self.camera_params.exposure_time = 50.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
@@ -71,6 +71,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.set_imaging_detuning(amp=self.p.amp_imaging)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.dds.mot_killer.set_dds_gamma(0.,amplitude=.188)
 
         if self.p.dumy == 0:
             self.mot(self.p.t_mot_load)
@@ -116,9 +117,14 @@ class mag_trap(EnvExperiment, Base):
 
             self.lightsheet.off()
 
+        
+        self.dds.mot_killer.on()
+
         delay(self.p.t_tof)
         self.flash_repump()
         self.abs_image()
+
+        self.dds.mot_killer.off()
 
     @kernel
     def run(self):
