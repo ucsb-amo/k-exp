@@ -6,7 +6,7 @@ import numpy as np
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         # self.xvar('frequency_detuned_imaging',np.arange(-150.,150.,8)*1.e6)
 
@@ -31,15 +31,15 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_2d_mot_current = 3.3
 
         # self.xvar('i_mot',np.linspace(15.,40.,30))
-        # self.xvar('i_mot',[21.,65.]*10)
-        # self.p.i_mot = 20.
+        self.xvar('i_mot',[10.,15.,20.,30.,40.,50.,60.,70.]*500)
+        # self.p.i_mot = 65.
 
         # self.xvar('v_zshim_current',np.linspace(0.,.5,8))
         # self.xvar('v_xshim_current',np.linspace(0.,4.,8))
         # self.xvar('v_yshim_current',np.linspace(0.,9.,8))
-        # self.p.v_zshim_current = 0.91
-        # self.p.v_xshim_current = .0 
-        # self.p.v_yshim_current = 1.45
+        # self.p.v_zshim_current = 0.83
+        # self.p.v_xshim_current = .32 
+        # self.p.v_yshim_current = 2.2
 
         # self.xvar('detune_d1_c_d1cmot',np.linspace(5.,13.,8))
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,0.,8))
@@ -90,7 +90,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
         self.p.amp_imaging = .35
         self.p.imaging_state = 2.
-        self.p.t_tof = 15.e-3
+        self.p.t_tof = 100.e-6
         self.p.t_mot_load = .3
         self.p.N_repeats = 1
 
@@ -103,10 +103,10 @@ class gm_tof(EnvExperiment, Base):
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot)
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
+        # self.cmot_d1(self.p.t_d1cmot)
+        
+        # self.gm(self.p.t_gm * s)
+        # self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 
