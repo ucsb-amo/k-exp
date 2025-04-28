@@ -65,7 +65,7 @@ class Cooling():
         self.dds.optical_pumping.on()
         delay(t)
         self.dds.optical_pumping.off()
-        # self.flash_cooler()
+        self.flash_cooler()
 
     @kernel
     def flash_cooler(self,t=dv,detune=dv,amp=dv):
@@ -500,49 +500,6 @@ class Cooling():
             self.switch_d2_3d(0)
         delay(t)
 
-    # @kernel
-    # def gm_ramp(self,t,t_ramp,
-    #         detune_d1_c = dv,
-    #         v_pd_d1_c = dv,
-    #         detune_d1_r = dv,
-    #         v_pd_d1_r = dv,
-    #         detune_d1 = dv,
-    #         dds_mgr_idx = 0):
-        
-    #     ### Start Defaults ###
-    #     if detune_d1 != dv:
-    #         detune_d1_c = detune_d1
-    #         detune_d1_r = detune_d1
-    #     else:
-    #         if detune_d1_c == dv:
-    #             detune_d1_c = self.params.detune_d1_c_gm
-    #         if detune_d1_r == dv:
-    #             detune_d1_r = self.params.detune_d1_r_gm
-        
-    #     if v_pd_d1_c == dv:
-    #         v_pd_d1_c = self.params.v_pd_d1_c_gm
-    #     if v_pd_d1_r == dv:
-    #         v_pd_d1_r = self.params.v_pd_d1_r_gm
-    #     ### End Defaults ###
-
-    #     self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
-    #                                    v_pd=v_pd_d1_c)
-    #     delay(self.params.t_rtio)
-    #     self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
-    #                                    v_pd=v_pd_d1_r)
-        
-    #     self.dds.load_profile(dds_mgr_idx)
-
-    #     with parallel:
-    #         self.ttl.inner_coil_igbt.off()
-    #         self.switch_d1_3d(1)
-    #         self.switch_d2_3d(0)
-    #     delay(t)
-    #     self.dds.enable_profile(dds_mgr_idx)
-    #     delay(t_ramp)
-    #     # delay(t)
-    #     self.dds.disable_profile(dds_mgr_idx)
-
     @kernel
     def gm_ramp(self, t_gmramp = dv,
             detune_d1_c = dv,
@@ -740,12 +697,17 @@ class Cooling():
                                 i_start=i_magtrap_init,
                                 i_end=i_magtrap_ramp_end)
         
-        # delay(self.params.t_magtrap)
+        delay(self.params.t_magtrap)
 
         if do_magtrap_rampdown:
-            self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
-                                i_start=i_magtrap_ramp_end,
-                                i_end=0.)
+            if do_magtrap_rampup:
+                self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
+                                    i_start=i_magtrap_ramp_end,
+                                    i_end=0.)
+            else:
+                self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
+                                    i_start=i_magtrap_init,
+                                    i_end=0.)
             self.inner_coil.snap_off()
 
     @kernel

@@ -67,7 +67,7 @@ class ExptParams():
         self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 1.
+        self.t_lightsheet_rampup = 2.
         self.t_lightsheet_rampdown = .7
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
@@ -86,8 +86,8 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap_delay = 0.
-        self.t_magtrap = 0.
+        self.t_magtrap_delay = 3.4e-3
+        self.t_magtrap = 1.5
         self.t_magtrap_ramp = 1.5
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .2
@@ -121,10 +121,10 @@ class ExptParams():
         self.v_2d_mot_current = 2.7
 
         #MOT
-        self.detune_d2_c_mot = -3.5
+        self.detune_d2_c_mot = -2.1
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -6.5
+        self.detune_d2_r_mot = -4.4
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -133,10 +133,10 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 26.
-        self.v_zshim_current = 0.11
-        self.v_xshim_current = .28
-        self.v_yshim_current = 1.28
+        self.i_mot = 20.
+        self.v_zshim_current = 0.82
+        self.v_xshim_current = .0
+        self.v_yshim_current = 1.7
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -163,33 +163,32 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 8.8
+        self.detune_gm = 7.5
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.83
-        self.v_xshim_current_gm = 0.28
-        self.v_yshim_current_gm = 2.6
+        self.v_zshim_current_gm = 0.63
+        self.v_xshim_current_gm = 0.63
+        self.v_yshim_current_gm = 2.3
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .65 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .424 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .65
+        self.pfrac_d1_r_gm = .424
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
         self.pfrac_c_gmramp_end = 0.17
-        self.pfrac_r_gmramp_end = 0.12
+        self.pfrac_r_gmramp_end = 0.17
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 27.
+        self.i_magtrap_init = 95.
         self.i_magtrap_ramp_end = 95.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
-
-        self.v_zshim_current_magtrap_init = 0.
+        
         self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 0.14
+        self.v_xshim_current_magtrap = 0.5
         self.v_yshim_current_magtrap = 6.
 
         #Optical Pumping
@@ -210,7 +209,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.99
+        self.v_pd_lightsheet_rampup_end = 9.9
         self.v_pd_lightsheet_rampdown_end = 6.5 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -276,9 +275,9 @@ class ExptParams():
         # self.n_feshbach_field_ramp2_steps = 100
 
         # rydberg
-        self.frequency_ao_ry_405 = 250.0e6
+        self.frequency_ao_ry_405 = 80.0e6
         self.frequency_ao_ry_980_switch = 80.0e6
-        self.amp_ao_ry_405 = 0.245
+        self.amp_ao_ry_405 = 0.188
         self.amp_ao_ry_980_switch = 0.285
 
         # raman
