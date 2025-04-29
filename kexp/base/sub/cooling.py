@@ -681,7 +681,6 @@ class Cooling():
                            v_xshim_current=v_xshim_current)
 
         # ramp up lightsheet over magtrap
-
         if do_lightsheet_ramp:
             self.lightsheet.ramp(t_lightsheet_ramp,
                                 v_pd_lightsheet_ramp_start,

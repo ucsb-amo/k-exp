@@ -86,7 +86,7 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap_delay = 3.4e-3
+        self.t_magtrap_delay = 1.e-3
         self.t_magtrap = 1.5
         self.t_magtrap_ramp = 1.5
         # self.t_magtrap_ramp = 4.4
@@ -177,8 +177,8 @@ class ExptParams():
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.17
-        self.pfrac_r_gmramp_end = 0.17
+        self.pfrac_c_gmramp_end = 0.3
+        self.pfrac_r_gmramp_end = 0.2
         self.n_gmramp_steps = 200
 
         # mag trap
