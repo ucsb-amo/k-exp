@@ -31,10 +31,10 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = .05e-3
 
-        self.p.frequency_tweezer_list = [73.9e6,77.5e6]
+        self.p.frequency_tweezer_list = [74.e6,76.5e6]
 
         # a_list = [.45,.55]
-        a_list = [.425,.575]
+        a_list = [.41,.4]
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
