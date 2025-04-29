@@ -2,7 +2,6 @@
 qCommand qC;
 
 float SETPOINT1 = 0.0;
-float tempSETPOINT1 = 2.3;
 float SETPOINT2 = 0.0;
 float P1 = -0.01;
 float I1 = -0.001;
@@ -29,8 +28,6 @@ void setup() {
   qC.assignVariable("p2",&P2);
   qC.assignVariable("i2",&I2);
   qC.assignVariable("i2",&I2);
-
-
 
   qC.assignVariable("vmax",&v_max_ao_efficiency);
 
@@ -66,9 +63,9 @@ void hold2() {
 
 void getMeas1() {
   double newadc1 = readADC1_from_ISR();
-  double prop1 = (newadc1-tempSETPOINT1) * P1;
+  double prop1 = (newadc1-SETPOINT1) * P1;
   if (integrator_go1) {
-    integral1 += (newadc1-tempSETPOINT1) * I1;}
+    integral1 += (newadc1-SETPOINT1) * I1;}
   double newdac1 = prop1 + integral1;
   writeDAC(1,newdac1);
 }

@@ -84,8 +84,8 @@ class AndorParams(CameraParams):
                  exposure_time_abs = 10.e-6, amp_absorption=0.106,
                  exposure_time_dispersive=100.e-6, amp_dispersive = 0.106,
                  resolution = (512,512,),
-                 t_light_only_image_delay=25.e-3,
-                 t_dark_image_delay=25.e-3,
+                 t_light_only_image_delay=50.e-3,
+                 t_dark_image_delay=50.e-3,
                  key = "",
                  magnification = 50./3):
         super().__init__()

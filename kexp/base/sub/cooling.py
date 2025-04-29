@@ -681,7 +681,6 @@ class Cooling():
                            v_xshim_current=v_xshim_current)
 
         # ramp up lightsheet over magtrap
-
         if do_lightsheet_ramp:
             self.lightsheet.ramp(t_lightsheet_ramp,
                                 v_pd_lightsheet_ramp_start,
@@ -800,9 +799,9 @@ class Cooling():
         if amp_push == dv:
             amp_push = self.params.amp_push
         if frequency_ry_405 == dv:
-            frequency_ry_405 = self.params.frequency_ao_ry_405
+            frequency_ry_405 = self.params.frequency_ao_ry_405_switch
         if amp_ry_405 == dv:
-            amp_ry_405 = self.params.amp_ao_ry_405
+            amp_ry_405 = self.params.amp_ao_ry_405_switch
         if frequency_ry_980 == dv:
             frequency_ry_980 = self.params.frequency_ao_ry_980_switch
         if amp_ry_980 == dv:
@@ -825,7 +824,7 @@ class Cooling():
         self.dds.ry_980_switch.set_dds(frequency=frequency_ry_405,
                                 amplitude=amp_ry_405)
         delay(self.params.t_rtio)
-        self.dds.ry_405.set_dds(frequency=frequency_ry_980,
+        self.dds.ry_405_switch.set_dds(frequency=frequency_ry_980,
                                 amplitude=amp_ry_980)
         
         
@@ -844,7 +843,7 @@ class Cooling():
 
         self.dac.supply_current_2dmot.set(v=v_2d_mot_supply)
 
-        self.dds.ry_405.on()
+        self.dds.ry_405_switch.on()
         self.dds.ry_980_switch.on()
 
         self.dds.beatlock_ref.on()
