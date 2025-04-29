@@ -25,7 +25,7 @@ from kexp.control.misc.awg_tweezer import tweezer
 from kexp.control.misc.doubled_rf import doubled_rf
 from kexp.control.misc.raman_beams import RamanBeamPair
 from kexp.control.misc.ssg3021x import SSG3021X
-from kexp.control.misc.slm import SLM
+from kexp.control.slm.slm import SLM
 
 from kexp.calibrations.magnets import pid_current_to_outer_supply_setpoint
 
