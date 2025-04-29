@@ -16,9 +16,9 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 5.e-6
         # self.xvar('t_tof',np.linspace(100,900.,10)*1.e-6)
-        self.xvar('dumy',[0]*5)
+        # self.xvar('dumy',[0]*5)
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,2500.,10)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,9.9,10))
@@ -27,9 +27,10 @@ class mag_trap(EnvExperiment, Base):
         
         self.p.t_lightsheet_hold = .2
 
-        self.p.v_pd_tweezer_1064_ramp_end = 4.
+        self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(1.,5.,10))
+        self.p.v_pd_tweezer_1064_ramp_end = 3.
 
-        self.p.t_tweezer_hold = .05e-3
+        self.p.t_tweezer_hold = .01e-3
 
         self.p.frequency_tweezer_list = [74.e6,76.5e6]
 
@@ -38,19 +39,19 @@ class mag_trap(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
-        # self.p.t_imaging_pulse = 2.e-5    
+        # self.p.t_imaging_pulse = 50.e-5    
         
-        # self.camera_params.exposure_time = 50.e-6
+        self.camera_params.exposure_time = 15.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
         # self.xvar('hf_imaging_detuning', np.arange(-700.,-600.,5.)*1.e6)
         self.p.hf_imaging_detuning = -645.e6
 
-        # self.p.amp_imaging = .1
+        self.p.amp_imaging = .1
         self.p.imaging_state = 2.
 
         # self.p.N_repeats = 1
-        self.p.t_mot_load = .5
+        self.p.t_mot_load = .75
 
         self.finish_prepare(shuffle=True)
 
@@ -58,7 +59,7 @@ class mag_trap(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.camera_params.exposure_time = self.params.t_imaging_pulse
         # self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
 
@@ -78,11 +79,11 @@ class mag_trap(EnvExperiment, Base):
                              i_start=0.,
                              i_end=self.p.i_evap2_current)
         
-        self.tweezer.on(paint=False)
+        self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
                           v_start=0.,
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
-                          paint=True,keep_trap_frequency_constant=False)
+                          paint=False,keep_trap_frequency_constant=False)
 
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
