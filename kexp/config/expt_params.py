@@ -47,7 +47,7 @@ class ExptParams():
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.diameter_slm_spot = 200
+        self.diameter_slm_spot = 20e-6
         self.phase_slm_spot = np.pi/2
         self.px_slm_phase_spot_position_x = 1920 // 2
         self.px_slm_phase_spot_position_y = 1200 // 2
