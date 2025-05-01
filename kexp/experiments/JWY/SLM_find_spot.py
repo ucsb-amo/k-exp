@@ -15,7 +15,8 @@ class gm_tof(EnvExperiment, Base):
 
 
         
-        self.xvar('px_slm_phase_spot_position_y',np.linspace(600,1200,10,dtype=int))
+        self.xvar('px_slm_phase_spot_position_y',np.linspace(800,1000,11,dtype=int))
+        self.xvar('px_slm_phase_spot_position_x',np.linspace(800,1000,5,dtype=int))
         self.p.phase_slm_spot = 3.14
         self.p.diameter_slm_spot = 100e-6
         # self.p.px_slm_phase_spot_position_y = 800

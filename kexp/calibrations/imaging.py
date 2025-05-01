@@ -10,8 +10,8 @@ yintercept_imaging_frequency_per_iouter_current_supply = 184968716.32441515
 
 # run 13951
 # currents set using transducer (not supply set point)
-slope_imaging_frequency_per_iouter_current_pid = -4156249.9999999697
-yintercept_imaging_frequency_per_iouter_current_pid = 204874999.99999326
+slope_imaging_frequency_per_iouter_current_pid = -4263157.982109993
+yintercept_imaging_frequency_per_iouter_current_pid = 201333349.9498738
 
 @portable
 def high_field_imaging_detuning(i_outer) -> TFloat:
