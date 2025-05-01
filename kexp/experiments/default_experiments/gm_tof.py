@@ -14,9 +14,8 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('dumdum',[0]*100)
 
-        self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
-
-        # self.xvar('t_mot_load',np.linspace(0.25,5.,10))
+        self.xvar('t_tof',np.linspace(10.,20.,3)*1.e-3)
+        self.xvar('t_mot_load',np.linspace(0.25,5.,3))
         
         self.p.amp_imaging = .35
         self.p.imaging_state = 2.

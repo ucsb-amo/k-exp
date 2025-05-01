@@ -31,7 +31,7 @@ class sampler_frame():
                 
     @kernel
     def sample(self):
-        self.samples = self.sampler_device.sample(self.samples)
+        self.sampler_device.sample(self.samples)
     
     @kernel
     def init(self):

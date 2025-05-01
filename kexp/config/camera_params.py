@@ -80,12 +80,12 @@ class BaslerParams(CameraParams):
 
 class AndorParams(CameraParams):
     def __init__(self,
-                 exposure_time_fluor = 10.e-3, amp_fluorescence=0.106,
+                 exposure_time_fluor = 25.e-6, amp_fluorescence=0.54,
                  exposure_time_abs = 10.e-6, amp_absorption=0.106,
                  exposure_time_dispersive=100.e-6, amp_dispersive = 0.106,
                  resolution = (512,512,),
-                 t_light_only_image_delay=50.e-3,
-                 t_dark_image_delay=50.e-3,
+                 t_light_only_image_delay=75.e-3,
+                 t_dark_image_delay=75.e-3,
                  key = "",
                  magnification = 50./3):
         super().__init__()
@@ -136,7 +136,7 @@ class AndorParams(CameraParams):
 class camera_frame():
     def __init__(self):
         
-        self.andor = AndorParams(amp_absorption=0.08, 
+        self.andor = AndorParams(amp_absorption=0.1, 
                                  magnification=18.4)
         self.xy_basler = BaslerParams(serial_number='40316451',
                                       amp_absorption=0.32,

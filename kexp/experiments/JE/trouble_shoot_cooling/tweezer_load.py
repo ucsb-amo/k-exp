@@ -19,22 +19,25 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_tof = 5.e-6
         # self.xvar('t_tof',np.linspace(100,900.,10)*1.e-6)
         # self.xvar('dumy',[0]*500)
-
-        # self.xvar('t_lightsheet_rampup',np.linspace(20.,2500.,10)*1.e-3)
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,9.9,10))
-        # self.p.t_lightsheet_rampup = 1.
-        # self.p.v_pd_lightsheet_rampup_end = 9.9
         
         self.p.t_lightsheet_hold = .2
 
-        self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(.1,1.,20))
-        self.p.v_pd_tweezer_1064_ramp_end = 2.
+        self.p.t_magtrap = .5
+
+        self.xvar('i_evap2_current',np.linspace(180.,200.,23))
+        self.p.i_evap2_current = 180.
+
+        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(.3,9.,8))
+        self.p.v_pd_tweezer_1064_ramp_end = 1.2
+
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.,6.,8))
+        self.p.v_tweezer_paint_amp_max = -7.
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.05,.9,10))
-        self.p.t_tweezer_1064_ramp = 13.e-3
+        # self.p.t_tweezer_1064_ramp = 13.e-3
 
-        # self.xvar('t_tweezer_hold',np.linspace(.05,.9,10))
-        self.p.t_tweezer_hold = 50.e-3
+        # self.xvar('t_tweezer_hold',np.linspace(.5,50.,10)*1.e-3)
+        self.p.t_tweezer_hold = 5.e-3
 
         self.p.frequency_tweezer_list = [74.e6,76.e6]
         # self.p.frequency_tweezer_list = np.linspace(76.e6,78.e6,6)
@@ -43,29 +46,32 @@ class mag_trap(EnvExperiment, Base):
         a_list = [.45,.45]
         self.p.amp_tweezer_list = a_list
 
-        # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
-        # self.p.t_imaging_pulse = 10.e-6    
+        # self.xvar('hf_imaging_detuning', np.arange(-620.,-595.,3.)*1.e6)
+
+        # self.xvar('t_imaging_pulse',np.linspace(50.,5000.,10)*1.e-6)
+        # self.p.t_imaging_pulse = 50.e-6    
         
         # self.camera_params.exposure_time = 500.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
-        # self.xvar('hf_imaging_detuning', np.arange(-700.,-600.,5.)*1.e6)
-        self.p.hf_imaging_detuning = -645.e6
+        self.xvar('hf_imaging_detuning', np.arange(-675.,-560.,5.)*1.e6)
+        self.p.hf_imaging_detuning = -575.e6
 
+        # self.p.amp_imaging = .54
         self.p.amp_imaging = .12
         self.p.imaging_state = 2.
 
-        # self.p.N_repeats = 1
-        self.p.t_mot_load = .75
+        self.p.N_repeats = 1
+        self.p.t_mot_load = .5
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        self.camera_params.exposure_time = self.params.t_imaging_pulse
+        # self.camera_params.exposure_time = self.params.t_imaging_pulse
         # self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
 
         # self.switch_d2_2d(1)
@@ -76,32 +82,32 @@ class mag_trap(EnvExperiment, Base):
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
-        # self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
+        self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-        # self.outer_coil.on()
-        # self.outer_coil.set_voltage()
-        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
-        #                      i_start=0.,
-        #                      i_end=self.p.i_evap2_current)
+        self.outer_coil.on()
+        self.outer_coil.set_voltage()
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
+                             i_start=0.,
+                             i_end=self.p.i_evap2_current)
         
         self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
                           v_start=0.,
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
-                          paint=False,keep_trap_frequency_constant=False)
+                          paint=True,keep_trap_frequency_constant=False)
 
         # delay(self.p.t_lightsheet_hold)
-        # self.lightsheet.off()
+        self.lightsheet.off()
 
         delay(self.p.t_tweezer_hold)
 
         self.tweezer.off()
 
         delay(self.p.t_tof)
-        self.flash_repump()
+        # self.flash_repump()
         self.abs_image()
 
-        # self.outer_coil.off()
+        self.outer_coil.off()
 
     @kernel
     def run(self):

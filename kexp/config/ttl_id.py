@@ -29,6 +29,7 @@ class ttl_frame():
         self.imaging_shutter_xy = self.ttl_assign(18)
         self.imaging_shutter_x = self.ttl_assign(19)
         self.basler_2dmot = self.ttl_assign(20)
+        self.keithley_trigger = self.ttl_assign(48)
         # self.machine_table_trig = self.ttl_assign(25)
 
         self._write_ttl_keys()

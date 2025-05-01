@@ -30,19 +30,22 @@ class sampler_test(EnvExperiment,Base):
 
         v = [0.,1.,2.,3.,4.,5.,6.,7.]
         
-        for i in range(len(self.data)):
-            self.sampler.set_gain_mu(i,0)
-        
         self.core.break_realtime()
 
-        for n in range(len(self.data)):
+        self.dac.dac_device.write_dac(ch,v[7])
+        self.dac.load()
+        self.core.break_realtime()
 
-            self.core.break_realtime()
-            self.dac.write_dac(ch,v[n])
-            self.dac.load()
-            self.core.break_realtime()
+        for n in range(8):
+
+            # self.core.break_realtime()
+            # self.dac.dac_device.write_dac(ch,v[n])
+            # self.dac.load()
+            # self.core.break_realtime()
 
             delay(1000*ms)
             # self.sampler.sample(self.data)
             # print(self.data[0])
-            print(self.sampler.test.sample())
+            # print(self.sampler.test.sample())
+            self.sampler.sample()
+            print(self.sampler.samples)
