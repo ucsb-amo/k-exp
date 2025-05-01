@@ -333,7 +333,7 @@ class atomdata():
                     new_attr = np.array(new_attr)
                 vars(struct)[key] = new_attr
 
-        listlike_keys = ['xvars','sort_idx','xvarnames','sort_N']
+        listlike_keys = ['xvars','xvarnames']
         reorder_listlike(self,listlike_keys)
 
         param_keys = ['N_repeats']
@@ -352,6 +352,8 @@ class atomdata():
             new_idx = np.concatenate( (new_xvar_idx, axes_idx_to_add) ).astype(int)
             attr = np.transpose(attr,new_idx)
             vars(self)[key] = attr
+
+        self._dealer = self._init_dealer()
 
         if reanalyze:
             self.analyze()
