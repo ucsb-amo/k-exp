@@ -3,16 +3,34 @@ from kexp.control.cameras.camera_params import CameraParams, BaslerParams, Andor
 class camera_frame():
     def __init__(self):
         
-        self.andor = AndorParams(amp_absorption=0.1, 
-                                 magnification=18.4)
+        self.andor = AndorParams(amp_absorption=0.1, exposure_time_abs=10.e-6, em_gain_abs=300.,
+                                amp_fluorescence=0.54, exposure_time_fluor=25.e-6, em_gain_fluor=10.,
+                                amp_dispersive=0.106, exposure_time_dispersive=100.e-6, em_gain_dispersive=300.,
+                                magnification=18.4,
+                                t_light_only_image_delay=75.e-3,
+                                t_dark_image_delay=75.e-3)
+        
         self.xy_basler = BaslerParams(serial_number='40316451',
-                                      amp_absorption=0.32,
-                                      magnification=0.5)
+                                    exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
+                                    exposure_time_abs = 19.e-6, amp_absorption = 0.248,
+                                    exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
+                                    gain=0.,
+                                    amp_absorption=0.32,
+                                    magnification=0.5)
+        
         self.x_basler = BaslerParams(serial_number='40320384',
-                                     trigger_source='Line2')
+                                    exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
+                                    exposure_time_abs = 19.e-6, amp_absorption = 0.248,
+                                    exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
+                                    gain=0.,
+                                    trigger_source='Line2')
+        
         self.z_basler = BaslerParams(serial_number='40416468',
-                                     amp_absorption=0.5,
-                                     amp_fluorescence=0.5)
+                                    exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
+                                    exposure_time_abs = 19.e-6, amp_absorption = 0.5,
+                                    exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
+                                    gain=0.)
+        
         self.basler_2dmot = BaslerParams(serial_number='40411037',
                                          trigger_source='Line2',
                                          gain=35.)
@@ -29,3 +47,4 @@ class camera_frame():
                 self.__dict__[key].key = key
         
 cameras = camera_frame()
+

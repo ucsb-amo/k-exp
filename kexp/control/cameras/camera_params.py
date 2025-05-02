@@ -54,6 +54,10 @@ class BaslerParams(CameraParams):
         self.magnification = magnification
         self.exposure_delay = 17 * 1.e-6
 
+        # self.__gain_fluor = gain
+        # self.__gain_abs = gain
+        # self.__gain_dispersive = gain
+
         self.gain = gain
 
         self.__exposure_time_fluor__ = exposure_time_fluor
@@ -62,7 +66,6 @@ class BaslerParams(CameraParams):
         self.__amp_absorption__ = amp_absorption
         self.__amp_fluorescence__ = amp_fluorescence
         self.__amp_dispersive__ = amp_dispersive
-        
 
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
@@ -80,9 +83,9 @@ class BaslerParams(CameraParams):
 
 class AndorParams(CameraParams):
     def __init__(self,
-                 exposure_time_fluor = 25.e-6, amp_fluorescence=0.54,
-                 exposure_time_abs = 10.e-6, amp_absorption=0.1,
-                 exposure_time_dispersive=100.e-6, amp_dispersive = 0.106,
+                 exposure_time_fluor = 25.e-6, amp_fluorescence=0.54, em_gain_fluor = 10.,
+                 exposure_time_abs = 10.e-6, amp_absorption=0.1, em_gain_abs = 300.,
+                 exposure_time_dispersive=100.e-6, amp_dispersive = 0.106, em_gain_dispersive = 300.,
                  resolution = (512,512,),
                  t_light_only_image_delay=75.e-3,
                  t_dark_image_delay=75.e-3,
@@ -97,6 +100,7 @@ class AndorParams(CameraParams):
         self.connection_delay = 8.0
         self.t_camera_trigger = 200.e-9
         self.t_readout_time = 512 * 3.3e-6
+
         self.gain = 1.
         self.hs_speed = 0
         self.vs_speed = 1
