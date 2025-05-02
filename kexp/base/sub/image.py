@@ -33,6 +33,13 @@ class Image():
 
     @kernel
     def set_imaging_shutters(self):
+        """Opens the imaging shutter for the relevant beam, and closes the
+        shutters for the other imaging beam paths.
+
+        Note that for Andor, fluorescence imaging is currently set up to use the
+        xy imaging beam. This should be switched to the z-imaging beam when it
+        is installed.
+        """        
         if self.camera_params.key == cameras.andor.key:
             self.ttl.imaging_shutter_x.on()
             self.ttl.imaging_shutter_xy.off()
@@ -42,15 +49,19 @@ class Image():
 
     @kernel
     def close_imaging_shutters(self):
+        """Closes all imaging shutters.
+        """        
         self.ttl.imaging_shutter_x.off()
         self.ttl.imaging_shutter_xy.off()
 
     @kernel
     def light_image(self, t=dv):
-        """Takes an image (PWA or PWOA)
+        """Takes an image (PWA or PWOA). Leaves the timeline cursor at the end
+        of the camera exposure time (camera_params.exposure_time).
 
         Args:
-            t (_type_, optional): _description_. Defaults to dv.
+            t (float, optional): The imaging light pulse time. Defaults to
+            ExptParams.t_imaging pulse.
         """        
         if t == dv:
             t = self.params.t_imaging_pulse
@@ -117,6 +128,11 @@ class Image():
 
     @kernel
     def pulse_img_beam(self,t):
+        """Pulses the imaging beam.
+
+        Args:
+            t (float): The time of the imaging pulse.
+        """        
         self.dds.imaging.on()
         delay(t)
         self.dds.imaging.off()
@@ -427,7 +443,7 @@ class Image():
             camera_params.amp_imaging.
         """        
 
-        detuning = high_field_imaging_detuning(i_outer=i_outer)
+        detuning = high_field_imaging_detuning(i_transducer=i_outer)
         
         self.set_imaging_detuning(detuning, amp=amp_imaging)
 
