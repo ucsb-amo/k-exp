@@ -16,7 +16,16 @@ double v_max_ao_efficiency = 4.;
 bool integrator_go1 = true;
 bool pid_enable2 = false;
 
+struct Cal 
+{
+    uint16_t cal_a;
+    double cal_b;
+    uint16_t cal_c;
+    char cal_d[16];
+};
+
 void setup() {
+  Serial.begin(115200);
   configureADC(1,1,0,BIPOLAR_10V,getMeas1);
   configureADC(2,1,0,BIPOLAR_10V,getSet1);
   configureADC(3,1,0,BIPOLAR_10V,getMeas2);
@@ -35,11 +44,20 @@ void setup() {
   enableInterruptTrigger(2,BOTH_EDGES,&hold2);
 
   qC.addCommand("c",clear_integrator);
+  qC.addCommand("ping",ping);
+
 }
 
 void clear_integrator(qCommand& qC, Stream& S) {
   integral1 = 0;
   integral2 = 0;
+}
+
+void ping(qCommand& qC, Stream& S)
+{
+  struct Cal cal2;
+  readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
+  Serial.println(cal2.cal_d); 
 }
 
 void hold1() {
