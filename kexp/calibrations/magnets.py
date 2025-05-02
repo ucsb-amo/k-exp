@@ -1,14 +1,13 @@
 from artiq.experiment import portable, TFloat
 import numpy as np
 
-from kexp.calibrations.imaging import \
-    slope_imaging_frequency_per_iouter_current_pid, slope_imaging_frequency_per_iouter_current_supply, \
-    yintercept_imaging_frequency_per_iouter_current_pid, yintercept_imaging_frequency_per_iouter_current_supply
+# obtain calibration by running
+# kexp/experiments/measurements/measure_i_pid_per_i_outer.py
+# analyze with
+# k-jam/analysis/measurements/i_pid_per_i_outer.ipynb
 
-m_pid = slope_imaging_frequency_per_iouter_current_pid
-m_sup = slope_imaging_frequency_per_iouter_current_supply
-b_pid = yintercept_imaging_frequency_per_iouter_current_pid
-b_sup = yintercept_imaging_frequency_per_iouter_current_supply
+slope_i_pid_per_i_outer = 1.0168583974549856
+offset_i_pid_per_i_outer = 0.6553740218059771
 
 @portable
 def pid_current_to_outer_supply_setpoint(i_pid) -> TFloat:
@@ -23,7 +22,7 @@ def pid_current_to_outer_supply_setpoint(i_pid) -> TFloat:
         TFloat: the current the supply should be set to to get the actual
         desired current.
     """
-    return (m_pid * i_pid + b_pid - b_sup) / m_sup
+    return (i_pid - offset_i_pid_per_i_outer) / slope_i_pid_per_i_outer
 
 @portable
 def outer_supply_setpoint_to_pid_current(i_sup) -> TFloat:
@@ -36,7 +35,7 @@ def outer_supply_setpoint_to_pid_current(i_sup) -> TFloat:
     Returns:
         TFloat: the actual current that the magnets will see in amps.
     """    
-    return (m_sup * i_sup + b_sup - b_pid) / m_pid
+    return slope_i_pid_per_i_outer * i_sup + offset_i_pid_per_i_outer
 
 @portable
 def i_outer_to_magnetic_field(i_outer) -> TFloat:
