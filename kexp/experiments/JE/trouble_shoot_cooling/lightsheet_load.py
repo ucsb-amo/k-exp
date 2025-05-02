@@ -13,10 +13,10 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select=cameras.xy_basler,
+                      camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 600.e-6
+        self.p.t_tof = 60.e-6
         # self.xvar('t_tof',np.linspace(100,900.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0]*5)
@@ -24,7 +24,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
 
         # self.xvar('t_magtrap',np.linspace(0.,5000.,10)*1.e-3)
-        self.p.t_magtrap = 1.5
+        # self.p.t_magtrap = 1.5
 
         # self.xvar('i_magtrap_init',np.linspace(22.,90.,15))
         # self.p.i_magtrap_init = 95.

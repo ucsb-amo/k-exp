@@ -41,8 +41,12 @@ class Image():
         is installed.
         """        
         if self.camera_params.key == cameras.andor.key:
-            self.ttl.imaging_shutter_x.on()
-            self.ttl.imaging_shutter_xy.off()
+            if self.run_info.imaging_type == img.FLUORESCENCE:
+                self.ttl.imaging_shutter_x.off()
+                self.ttl.imaging_shutter_xy.on()
+            else:
+                self.ttl.imaging_shutter_x.on()
+                self.ttl.imaging_shutter_xy.off()
         else:
             self.ttl.imaging_shutter_x.off()
             self.ttl.imaging_shutter_xy.on()
