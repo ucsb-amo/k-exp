@@ -362,11 +362,11 @@ class Image():
         self.dds.beatlock_ref.on()
 
     @kernel(flags={"fast-math"})
-    def set_high_field_imaging(self, i_outer, imaging_amp = dv):
+    def set_high_field_imaging(self, i_outer, amp_imaging = dv):
 
         detuning = high_field_imaging_detuning(i_outer=i_outer)
         
-        self.set_imaging_detuning(detuning, amp=imaging_amp)
+        self.set_imaging_detuning(detuning, amp=amp_imaging)
 
     def get_N_img(self):
         """
