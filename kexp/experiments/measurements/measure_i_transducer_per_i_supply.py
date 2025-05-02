@@ -29,14 +29,14 @@ class high_field_magnetometry(EnvExperiment, Base):
         Base.__init__(self,setup_camera=False,save_data=False)
 
         data_dir = r'G:\Shared drives\Tweezers\Measurements'
-        fname = 'i_pid_vs_i_outer.csv'
+        fname = 'i_transducer_vs_i_supply.csv'
         self.fpath = os.path.join(data_dir,fname)
 
         self.N = 25
 
-        self.i_outer = np.linspace(10.,200.,self.N)
-        self.v_pid = np.zeros(self.i_outer.shape)
-        self.i_pid = np.zeros(self.i_outer.shape)
+        self.i_supply = np.linspace(10.,200.,self.N)
+        self.v_pid = np.zeros(self.i_supply.shape)
+        self.i_transducer = np.zeros(self.i_supply.shape)
 
         self.multimeter = KeithleyDMM6500(self.v_pid)
 
@@ -52,7 +52,7 @@ class high_field_magnetometry(EnvExperiment, Base):
 
         for i in range(self.N):
 
-            v = self.outer_coil.supply_current_to_dac_voltage(self.i_outer[i])
+            v = self.outer_coil.supply_current_to_dac_voltage(self.i_supply[i])
             self.outer_coil.i_control_dac.set(v)
             delay(100.e-3)
 
@@ -65,16 +65,16 @@ class high_field_magnetometry(EnvExperiment, Base):
     def write_csv_data(self):
 
         self.v_pid = self.multimeter.v_data
-        self.i_pid = self.v_pid * TRANSDUCER_A_PER_V
+        self.i_transducer = self.v_pid * TRANSDUCER_A_PER_V
 
         with open(self.fpath, mode="w", newline="") as file:
             writer = csv.writer(file)
             
             # Writing the header
-            writer.writerow(["i_outer (A)", "v_pid (V)", "i_pid (A)"])
+            writer.writerow(["i_supply (A)", "v_pid (V)", "i_transducer (A)"])
             
             # Writing the data
-            for row in zip(self.i_outer, self.v_pid, self.i_pid):
+            for row in zip(self.i_supply, self.v_pid, self.i_transducer):
                 writer.writerow(row)
 
             print(f"Data successfully written to {self.fpath}")

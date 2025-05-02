@@ -27,7 +27,7 @@ from kexp.control.misc.raman_beams import RamanBeamPair
 from kexp.control.misc.ssg3021x import SSG3021X
 from kexp.control.slm.slm import SLM
 
-from kexp.calibrations.magnets import pid_current_to_outer_supply_setpoint
+from kexp.calibrations.magnets import transducer_current_to_outer_supply_setpoint
 
 import numpy as np
 

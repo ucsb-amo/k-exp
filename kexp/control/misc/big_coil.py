@@ -40,7 +40,7 @@ class igbt_magnet():
         self.discharge_igbt_ttl = discharge_igbt_ttl
         self.params = expt_params
         self.i_supply = 0.
-        self.i_pid = 0.
+        self.i_transducer = 0.
         self.real_current_to_supply_function = real_current_to_supply_function
 
     @kernel
