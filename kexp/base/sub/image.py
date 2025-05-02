@@ -72,17 +72,40 @@ class Image():
                            detune_r=dv,
                            amp_c=dv,
                            amp_r=dv):
+        """Pulses the relevant imaging light for time t. Which beam(s) is pulsed depends on RunInfo.imaging_type.
 
+        Args:
+            t (float, optional): The imaging pulse time. Defaults to ExptParams.t_imaging_pulse.
+            detune_c (float, optional): The cooler detuning for fluorescence
+            imaging with MOT beams (3D or 2D).
+            detune_r (float, optional): The repump detuning for fluorescence
+            imaging with MOT beams (3D or 2D).
+            amp_c (float, optional): The cooler amplitude for fluorescence
+            imaging with MOT beams (3D or 2D).
+            amp_r (float, optional): The repump amplitude for fluorescence
+            imaging with MOT beams (3D or 2D).
+        """        
         if t == dv:
             t = self.params.t_imaging_pulse
-        if detune_c == dv:
-            detune_c = self.params.detune_d2_2d_c_imaging
-        if detune_r == dv:
-            detune_r = self.params.detune_d2_2d_r_imaging
-        if amp_c == dv:
-            amp_c = self.params.amp_d2_2d_c_imaging
-        if amp_r == dv:
-            amp_r = self.params.amp_d2_2d_r_imaging
+        
+        if self.camera_params.key == cameras.basler_2dmot.key:
+            if detune_c == dv:
+                detune_c = self.params.detune_d2_2d_c_imaging
+            if detune_r == dv:
+                detune_r = self.params.detune_d2_2d_r_imaging
+            if amp_c == dv:
+                amp_c = self.params.amp_d2_2d_c_imaging
+            if amp_r == dv:
+                amp_r = self.params.amp_d2_2d_r_imaging
+        else:
+            if detune_c == dv:
+                detune_c = self.params.detune_d2_c_imaging
+            if detune_r == dv:
+                detune_r = self.params.detune_d2_r_imaging
+            if amp_c == dv:
+                amp_c = self.params.amp_d2_c_imaging
+            if amp_r == dv:
+                amp_r = self.params.amp_d2_r_imaging
 
         if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
             self.pulse_img_beam(t)
@@ -105,7 +128,8 @@ class Image():
                            amp_c=dv,
                            amp_r=dv):
         """
-        Sets D2 2D MOT beams to resonance and turns them on for time t.
+        Sets D2 2D MOT beams to resonance (or the specified detuning) and turns
+        them on for time t.
 
         Args:
             t (float): Time (in seconds) to hold the 2D MOT beams on.
@@ -142,7 +166,8 @@ class Image():
                                  amp_c=dv,
                                  amp_r=dv):
         """
-        Sets D2 3D MOT beams to resonance and turns them on for time t.
+        Sets D2 3D MOT beams to resonance (or the specified detuning) and turns
+        them on for time t.
 
         Args:
             t (float): Time (in seconds) to hold the MOT beams on.
@@ -173,7 +198,8 @@ class Image():
                         v_pd_c=dv,
                         v_pd_r=dv):
         """
-        Sets D1 GM beams to resonance and turns them on for time t.
+        Sets D1 GM beams to resonance (or the specified detuning) and turns them
+        on for time t.
 
         Args:
             t (float): Time (in seconds) to hold the resonant MOT beams on.
@@ -202,6 +228,9 @@ class Image():
 
     @kernel
     def abs_image(self):
+        """Takes a light image (PWA), delays, another light image (PWOA), delay,
+        then a dark image.
+        """        
 
         # atoms image (pwa)
         self.light_image()
@@ -218,6 +247,8 @@ class Image():
 
     @kernel
     def abs_image_in_trap(self):
+        """Abs image, but takes the light image with the tweezer light on.
+        """        
 
         # atoms image (pwa)
         self.light_image()
@@ -236,6 +267,9 @@ class Image():
 
     @kernel
     def kill_imaging_light(self):    
+        """Turns off the RF switches and sets amplitudes to zero for DDS
+        channels controlling light that would otherwise pollute the dark image.
+        """        
         if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
             self.dds.imaging.off()
             self.dds.imaging.set_dds(amplitude=0.)
@@ -260,6 +294,10 @@ class Image():
 
     @kernel
     def reset_imaging_beam_settings(self):
+        """Sets the amplitudes (but does not turn on) whichever beams were just
+        turned off for the dark image. Which beams are referenced depends on
+        the imaging type.
+        """        
         if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
             self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
         elif self.run_info.imaging_type == img.FLUORESCENCE:
@@ -288,6 +326,21 @@ class Image():
 
     @portable(flags={"fast-math"})
     def imaging_detuning_to_beat_ref(self, frequency_detuned=dv) -> TFloat:
+        """Converts a desired imaging detuning to the required beat lock reference.
+
+        Makes reference to the beat lock sign, which DDS channel drives the AO
+        to frequency shift the imaging light, and the reference multiplier
+        setting on the beat lock controller.
+
+        Args:
+            frequency_detuned (float, optional): The desired imaging detuning
+            from the brightest D2 resonance in Hz. Whether the detuning is
+            relative to F=2 -> 4P3/2 or F=1 -> 4P3/2 depends on the parameter
+            ExptParams.imaging_state (if == 1: F=1, if == 2: F=2)
+
+        Returns:
+            TFloat: the required beat lock reference frequency in Hz.
+        """        
         if frequency_detuned == dv:
             if self.params.imaging_state == 1.:
                 frequency_detuned = self.params.frequency_detuned_imaging_F1
@@ -363,6 +416,16 @@ class Image():
 
     @kernel(flags={"fast-math"})
     def set_high_field_imaging(self, i_outer, amp_imaging = dv):
+        """Sets the high field imaging detuning according to the current in the
+        outer coil (as measured on a transducer). Also sets the imaging DDS
+        amplitude.
+
+        Args:
+            i_outer (float): The outer coil current (transducer) in A at which
+            the imaging will take place.
+            amp_imaging (float, optional): Imaging DDS amplitude. Defaults to
+            camera_params.amp_imaging.
+        """        
 
         detuning = high_field_imaging_detuning(i_outer=i_outer)
         
