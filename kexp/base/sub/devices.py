@@ -103,7 +103,7 @@ class Devices():
                                       igbt_ttl=self.ttl.outer_coil_igbt,
                                       discharge_igbt_ttl=self.ttl.coil_discharge_igbt,
                                       expt_params=self.params,
-                                      real_current_to_supply_function=pid_current_to_outer_supply_setpoint)
+                                      real_current_to_supply_function=transducer_current_to_outer_supply_setpoint)
         
         # painted ligthsheet
         self.lightsheet = lightsheet(pid_dac=self.dac.vva_lightsheet,
