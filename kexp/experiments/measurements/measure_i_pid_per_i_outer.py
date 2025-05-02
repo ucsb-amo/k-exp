@@ -7,6 +7,11 @@ import vxi11
 import csv
 import os
 
+# Keithely should be set up to measure 60A/V transducer (or change trandsucer
+# factor here)
+
+TRANSDUCER_A_PER_V = 60
+
 class KeithleyDMM6500():
     def __init__(self,data_array=np.array([]),ip='192.168.1.96'):
         self.ip = ip
@@ -60,7 +65,7 @@ class high_field_magnetometry(EnvExperiment, Base):
     def write_csv_data(self):
 
         self.v_pid = self.multimeter.v_data
-        self.i_pid = self.v_pid * 60
+        self.i_pid = self.v_pid * TRANSDUCER_A_PER_V
 
         with open(self.fpath, mode="w", newline="") as file:
             writer = csv.writer(file)
