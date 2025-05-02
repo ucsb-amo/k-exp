@@ -41,7 +41,7 @@ class calibrate_hf_image_detuning(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        self.camera_params.exposure_time = self.params.t_imaging_pulse
+        self.camera_params.exposure_time = self.params.t_imaging_pulse # this one
         # self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
 
         # self.switch_d2_2d(1)
