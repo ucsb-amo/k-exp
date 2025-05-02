@@ -82,19 +82,30 @@ class Image():
                            detune_c=dv,
                            detune_r=dv,
                            amp_c=dv,
-                           amp_r=dv):
+                           amp_r=dv,
+                           andor_fluor_with_d2_3d_beams = False):
         """Pulses the relevant imaging light for time t. Which beam(s) is pulsed depends on RunInfo.imaging_type.
 
+        - For Andor, pulses the normal imaging beam DDS for both absorption and
+        fluorescence (unless andor_fluor_with_d2_3d_beams == True, then uses D2
+        3D MOT beams.
+        - For the 2D Basler, pulses the 2D MOT beams.
+        - For the xy basler (and other cameras), pulses the 3D MOT beams.
+
         Args:
-            t (float, optional): The imaging pulse time. Defaults to ExptParams.t_imaging_pulse.
+            - t (float, optional): The imaging pulse time. Defaults to ExptParams.t_imaging_pulse.
             detune_c (float, optional): The cooler detuning for fluorescence
             imaging with MOT beams (3D or 2D).
-            detune_r (float, optional): The repump detuning for fluorescence
+            - detune_r (float, optional): The repump detuning for fluorescence
             imaging with MOT beams (3D or 2D).
-            amp_c (float, optional): The cooler amplitude for fluorescence
+            - amp_c (float, optional): The cooler amplitude for fluorescence
             imaging with MOT beams (3D or 2D).
-            amp_r (float, optional): The repump amplitude for fluorescence
+            - amp_r (float, optional): The repump amplitude for fluorescence
             imaging with MOT beams (3D or 2D).
+            - andor_fluor_with_d2_3d_beams (bool, optional): Whether or not to use
+            the 3D MOT beams for Andor fluorescence imaging. If False, uses the
+            normal x-imaging fiber, which should be installed on the z-imaging
+            path to avoid the light directly hitting the Andor sensor.
         """        
         if t == dv:
             t = self.params.t_imaging_pulse
@@ -120,8 +131,14 @@ class Image():
 
         if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
             self.pulse_img_beam(t)
+            
         elif self.run_info.imaging_type == img.FLUORESCENCE:
-            if self.camera_params.key == cameras.basler_2dmot.key:
+            if self.camera_params.key == cameras.andor.key:
+                if andor_fluor_with_d2_3d_beams:
+                    self.pulse_img_beam(t)
+                else:
+                    self.pulse_resonant_mot_beams(t)
+            elif self.camera_params.key == cameras.basler_2dmot.key:
                 self.pulse_2d_mot_beams(t)
             else:
                 self.pulse_resonant_mot_beams(t)
