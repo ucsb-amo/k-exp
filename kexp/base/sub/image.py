@@ -139,9 +139,9 @@ class Image():
         elif self.run_info.imaging_type == img.FLUORESCENCE:
             if self.camera_params.key == cameras.andor.key:
                 if andor_fluor_with_d2_3d_beams:
-                    self.pulse_img_beam(t)
-                else:
                     self.pulse_resonant_mot_beams(t)
+                else:
+                    self.pulse_img_beam(t)
             elif self.camera_params.key == cameras.basler_2dmot.key:
                 self.pulse_2d_mot_beams(t)
             else:
