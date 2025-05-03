@@ -87,7 +87,7 @@ class Image():
                            detune_r=dv,
                            amp_c=dv,
                            amp_r=dv,
-                           andor_fluor_with_d2_3d_beams = False):
+                           andor_fluor_with_d2_3d_beams = True):
         """Pulses the relevant imaging light for time t. Which beam(s) is pulsed depends on RunInfo.imaging_type.
 
         - For Andor, pulses the normal imaging beam DDS for both absorption and

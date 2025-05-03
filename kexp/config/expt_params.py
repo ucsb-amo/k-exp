@@ -67,7 +67,7 @@ class ExptParams():
         self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = .8
+        self.t_lightsheet_rampup = .7
         self.t_lightsheet_rampdown = .7
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
@@ -87,7 +87,7 @@ class ExptParams():
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
-        self.t_magtrap = 2.
+        self.t_magtrap = 1. # for max atom number use 3 s
         self.t_magtrap_ramp = 1.5
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .2
@@ -171,19 +171,19 @@ class ExptParams():
         self.v_yshim_current_gm = 2.3
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .424 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .65 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .424
+        self.pfrac_d1_r_gm = .74
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.3
-        self.pfrac_r_gmramp_end = 0.2
+        self.pfrac_c_gmramp_end = 0.01
+        self.pfrac_r_gmramp_end = 0.52
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 95.
-        self.i_magtrap_ramp_end = 95.
+        self.i_magtrap_init = 90.
+        self.i_magtrap_ramp_end = 90.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
         
@@ -209,7 +209,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.9
+        self.v_pd_lightsheet_rampup_end = 9.
         self.v_pd_lightsheet_rampdown_end = 6.5 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0

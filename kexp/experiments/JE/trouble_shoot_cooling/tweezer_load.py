@@ -13,7 +13,7 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select=cameras.xy_basler,
+                      camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
         self.p.t_tof = 15.e-6
@@ -26,7 +26,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('t_feshbach_field_rampup',np.linspace(.07,.5,10))
 
-        self.xvar('i_evap2_current',np.linspace(180.,200.,14))
+        # self.xvar('i_evap2_current',np.linspace(180.,200.,14))
         self.p.i_evap2_current = 180.
 
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(.3,9.,8))
@@ -56,11 +56,11 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 500.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
-        self.xvar('hf_imaging_detuning', np.arange(-560.,-490.,5.)*1.e6)
+        self.xvar('hf_imaging_detuning', np.arange(-500.,-420.,5.)*1.e6)
         self.p.hf_imaging_detuning = -560.e6
 
         # self.xvar('amp_imaging', np.linspace(.03,.2,20))
-        self.p.amp_imaging = .35
+        # self.p.amp_imaging = .35
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.
 
@@ -73,8 +73,8 @@ class mag_trap(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        self.camera_params.exposure_time = self.params.t_imaging_pulse
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.camera_params.exposure_time = self.params.t_imaging_pulse
         # self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
 
         # self.switch_d2_2d(1)
@@ -107,7 +107,7 @@ class mag_trap(EnvExperiment, Base):
         self.tweezer.off()
 
         delay(self.p.t_tof)
-        self.flash_repump()
+        # self.flash_repump()
         self.abs_image()
 
         self.outer_coil.off()
