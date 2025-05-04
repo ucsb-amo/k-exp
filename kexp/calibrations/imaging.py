@@ -5,8 +5,8 @@ from artiq.experiment import portable, TFloat
 
 # run 22166
 # currents set using transducer (not supply set point)
-slope_imaging_frequency_per_i_transducer = -4067301.3883676743
-yintercept_imaging_frequency_per_i_transducer = 164785170.12585738
+slope_imaging_frequency_per_i_transducer = -2399999.9357619714
+yintercept_imaging_frequency_per_i_transducer = -71857154.93524233
 
 @portable
 def high_field_imaging_detuning(i_transducer) -> TFloat:

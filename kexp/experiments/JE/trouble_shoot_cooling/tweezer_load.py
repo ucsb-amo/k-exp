@@ -26,7 +26,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('t_feshbach_field_rampup',np.linspace(.07,.5,10))
 
-        # self.xvar('i_evap2_current',np.linspace(180.,200.,14))
+        self.xvar('i_evap2_current',np.linspace(180.,200.,14))
         self.p.i_evap2_current = 180.
 
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(.3,9.,8))
@@ -56,7 +56,7 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 500.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
-        self.xvar('hf_imaging_detuning', np.arange(-500.,-420.,5.)*1.e6)
+        self.xvar('hf_imaging_detuning', np.arange(-560.,-490.,5.)*1.e6)
         self.p.hf_imaging_detuning = -560.e6
 
         # self.xvar('amp_imaging', np.linspace(.03,.2,20))

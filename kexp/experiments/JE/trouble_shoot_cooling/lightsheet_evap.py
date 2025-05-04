@@ -12,14 +12,14 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 1000.e-6
         # self.xvar('t_tof',np.linspace(20,1500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
-        self.xvar('dumy',[0]*5)
+        # self.xvar('dumy',[0]*5)
 
         # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
 
@@ -51,7 +51,23 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_lightsheet_rampup = 1.
         # self.p.v_pd_lightsheet_rampup_end = 9.
 
-        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,10))
+        self.xvar('i_evap1_current',np.linspace(180.,200.,10))
+        self.p.i_evap1_current = 193.
+
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,7.,8))
+        self.p.v_pd_lightsheet_rampdown_end = 4.
+
+        # self.xvar('t_lightsheet_rampdown',np.linspace(100.,2000.,8)*1.e-3)
+        self.p.t_lightsheet_rampdown = .9
+
+        # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.5,3.,8))
+        self.p.v_pd_lightsheet_rampdown2_end = 1.1
+
+        # self.xvar('t_lightsheet_rampdown2',np.linspace(100.,2000.,8)*1.e-3)
+        self.p.t_lightsheet_rampdown2 = 1.7
+
+        self.xvar('i_evap2_current',np.linspace(180.,205.,10))
+        self.p.i_evap2_current = 196.5
         
         self.p.t_lightsheet_hold = .2
 
@@ -72,9 +88,10 @@ class mag_trap(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-
+        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         # self.set_imaging_detuning(amp=self.p.amp_imaging)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -86,13 +103,36 @@ class mag_trap(EnvExperiment, Base):
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-        delay(self.p.t_lightsheet_hold)
+        # feshbach field on, ramp up to field 1  
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.outer_coil.on()
+        # delay(1.e-3)
+        self.outer_coil.set_voltage()
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
+                             i_start=0.,
+                             i_end=self.p.i_evap1_current)
+
+        # lightsheet evap 1
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
+                             v_start=self.p.v_pd_lightsheet_rampup_end,
+                             v_end=self.p.v_pd_lightsheet_rampdown_end)
+        
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                             i_start=self.p.i_evap1_current,
+                             i_end=self.p.i_evap2_current)
+        
+        # lightsheet evap 2
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
+                             v_start=self.p.v_pd_lightsheet_rampdown_end,
+                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
 
         self.lightsheet.off()
 
         delay(self.p.t_tof)
-        self.flash_repump()
+        # self.flash_repump()
         self.abs_image()
+
+        self.outer_coil.off()
 
     @kernel
     def run(self):

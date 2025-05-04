@@ -13,10 +13,10 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.t_tof = 8000.e-6
+        self.p.t_tof = 7000.e-6
         # self.xvar('t_tof',np.linspace(5.,15.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
-        # self.xvar('dumy',[0]*10)
+        # self.xvar('dumy',[0]*5)
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
         # self.p.t_pump_to_F1 = 50.e-6
