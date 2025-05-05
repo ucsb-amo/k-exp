@@ -2,7 +2,7 @@ from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.control.cameras.basler_usb import BaslerUSB
 from kexp.control.cameras.andor import AndorEMCCD
 
-from kexp.control.cameras.camera_params import CameraParams
+from kexp.control.cameras.camera_param_classes import CameraParams
 
 import numpy as np
 import pypylon.pylon as py

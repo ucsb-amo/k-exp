@@ -5,7 +5,7 @@ import numpy as np
 from queue import Queue
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from kexp.config.camera_params import cameras
+from kexp.config.camera_id import cameras
 
 class BaslerUSB(pylon.InstantCamera):
     '''

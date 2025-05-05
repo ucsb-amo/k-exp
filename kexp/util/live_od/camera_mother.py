@@ -178,7 +178,7 @@ class CameraBaby(QThread,Scribe):
         super().__init__()
 
         from kexp.config.expt_params import ExptParams
-        from kexp.config.camera_params import CameraParams
+        from kexp.config.camera_id import CameraParams
         from kexp.util.data.run_info import RunInfo
         self.params = ExptParams()
         self.camera_params = CameraParams()

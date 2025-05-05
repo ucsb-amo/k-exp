@@ -5,7 +5,7 @@ from kexp.util.live_od.live_od_plotting import *
 
 from kexp import cameras, img_types
 from kexp.control.cameras.dummy_cam import DummyCamera
-from kexp.control.cameras.camera_params import CameraParams
+from kexp.control.cameras.camera_param_classes import CameraParams
 from kexp.util.live_od import CameraNanny
 
 from kexp.analysis.roi import ROI_CSV_PATH

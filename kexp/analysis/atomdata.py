@@ -7,7 +7,7 @@ from kamo.atom_properties.k39 import Potassium39
 
 from kexp.util.data.run_info import RunInfo
 from kexp.config.expt_params import ExptParams
-from kexp.config.camera_params import CameraParams
+from kexp.config.camera_id import CameraParams
 from kexp.base.sub.dealer import Dealer
 from kexp.base.sub.scanner import xvar
 
@@ -16,7 +16,7 @@ import h5py
 
 import datetime
 
-from kexp.config.camera_params import img_types as img
+from kexp.config.camera_id import img_types as img
 
 def unpack_group(file,group_key,obj):
     """Looks in an open h5 file in the group specified by key, and iterates over

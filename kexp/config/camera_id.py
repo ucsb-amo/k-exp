@@ -1,4 +1,4 @@
-from kexp.control.cameras.camera_params import CameraParams, BaslerParams, AndorParams, img_types
+from kexp.control.cameras.camera_param_classes import CameraParams, BaslerParams, AndorParams, img_types
 
 class camera_frame():
     def __init__(self):

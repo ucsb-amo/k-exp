@@ -3,7 +3,7 @@ from artiq.experiment import delay, parallel, sequential, delay_mu
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.expt_params import ExptParams
-from kexp.config.camera_params import CameraParams
+from kexp.config.camera_id import CameraParams
 from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
 from kexp.util.data.run_info import RunInfo
@@ -13,7 +13,7 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
 from kexp.calibrations import high_field_imaging_detuning
-from kexp.config.camera_params import img_types as img, cameras
+from kexp.config.camera_id import img_types as img, cameras
 
 dv = -10.e9
 

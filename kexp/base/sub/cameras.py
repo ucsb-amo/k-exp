@@ -4,7 +4,7 @@ from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.control.artiq.TTL import TTL, DummyTTL
 from kexp.config.expt_params import ExptParams
-from kexp.config.camera_params import cameras, img_types, CameraParams
+from kexp.config.camera_id import cameras, img_types, CameraParams
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
 from kexp.util.data.run_info import RunInfo
 import pypylon.pylon as py
