@@ -29,10 +29,19 @@ class gm_tof(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        self.slm.write_phase_spot()
+        self.slm.write_phase_spot_kernel()
 
-        delay(5.)
-        self.abs_image()
+        # self.abs_image()
+        self.light_image()
+
+        delay(self.camera_params.t_light_only_image_delay)
+        self.slm.write_phase_spot_kernel(0.,0.)
+        self.light_image()
+
+        self.close_imaging_shutters()
+
+        delay(self.camera_params.t_dark_image_delay)
+        self.dark_image()
        
     @kernel
     def run(self):
