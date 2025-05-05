@@ -15,9 +15,9 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('dumdum',[0]*100)
 
         self.xvar('t_tof',np.linspace(10.,20.,3)*1.e-3)
-        self.xvar('t_mot_load',np.linspace(0.25,5.,3))
+        # self.xvar('t_mot_load',np.linspace(0.25,5.,3))
         
-        self.p.amp_imaging = .35
+        # self.p.amp_imaging = .35
         self.p.imaging_state = 2.
         self.p.t_tof = 15.e-3
         self.p.t_mot_load = 1.
@@ -27,7 +27,7 @@ class gm_tof(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
         
         self.mot(self.p.t_mot_load)

@@ -12,14 +12,14 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(400,1500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
-        self.xvar('dumy',[0]*500)
+        # self.xvar('dumy',[0]*5)
 
         # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
 
@@ -74,24 +74,24 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_magtrap_ramp = .5
         # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
         # self.p.t_imaging_pulse = 2.e-5    
+
+        # self.xvar('amp_imaging',np.linspace(.03,.12,10))
        
         # self.camera_params.exposure_time = 25.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
+        # self.p.amp_imaging = .54
 
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
-        self.p.amp_imaging = .54
-        self.p.imaging_state = 2.
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        # self.set_imaging_detuning(amp=self.p.amp_imaging)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -126,6 +126,7 @@ class mag_trap(EnvExperiment, Base):
                              v_start=self.p.v_pd_lightsheet_rampdown_end,
                              v_end=self.p.v_pd_lightsheet_rampdown2_end)
 
+        delay(self.p.t_tweezer_1064_ramp)
         self.lightsheet.off()
 
         delay(self.p.t_tof)

@@ -21,20 +21,6 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
         # self.p.t_pump_to_F1 = 50.e-6
 
-        # self.xvar('v_xshim_current',np.linspace(0.,2.,8))
-        # self.xvar('v_yshim_current',np.linspace(0.,8.5,8))
-
-        # self.xvar('i_magtrap_init',np.linspace(30.,90,8))
-        # self.p.i_magtrap_init = 95.
-
-        # self.p.v_yshim_current = 2.2
-
-        # self.p.v_zshim_current_gm = 0.68
-        # self.p.v_xshim_current_gm = 0.5 
-
-        # self.xvar('pfrac_d1_c_gm',np.linspace(0.4,.99,8))
-        # self.xvar('pfrac_d1_r_gm',np.linspace(0.4,.99,8))
-
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.0,.1,20))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.3,.7,8))
         # self.p.pfrac_c_gmramp_end = 0.3
@@ -64,10 +50,6 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # self.set_imaging_detuning(amp=self.p.amp_imaging)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-
-        # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
