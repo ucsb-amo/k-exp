@@ -33,11 +33,10 @@ class CameraParams():
 class BaslerParams(CameraParams):
     def __init__(self,serial_number='40320384',
                 trigger_source='Line1',
-                exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
-                exposure_time_abs = 19.e-6, amp_absorption = 0.248,
-                exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
+                exposure_time_fluor = 1.e-3, amp_fluorescence=0.5, gain_fluor = 0.,
+                exposure_time_abs = 19.e-6, amp_absorption = 0.248, gain_abs = 0.,
+                exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248, gain_dispersive = 0.,
                 t_light_only_image_delay=25.e-3, t_dark_image_delay=20.e-3,
-                gain = 0.,
                 resolution = (1200,1920,),
                 magnification = 0.75,
                 key = ""):
@@ -53,11 +52,9 @@ class BaslerParams(CameraParams):
         self.magnification = magnification
         self.exposure_delay = 17 * 1.e-6
 
-        # self.__gain_fluor = gain
-        # self.__gain_abs = gain
-        # self.__gain_dispersive = gain
-
-        self.gain = gain
+        self.__gain_fluor = gain_fluor
+        self.__gain_abs = gain_abs
+        self.__gain_dispersive = gain_dispersive
 
         self.__exposure_time_fluor__ = exposure_time_fluor
         self.__exposure_time_abs__ = exposure_time_abs
@@ -73,12 +70,15 @@ class BaslerParams(CameraParams):
         if imaging_type == img_types.ABSORPTION:
             self.amp_imaging = self.__amp_absorption__
             self.exposure_time = self.__exposure_time_abs__
+            self.gain = self.__gain_abs
         elif imaging_type == img_types.FLUORESCENCE:
             self.amp_imaging = self.__amp_fluorescence__
             self.exposure_time = self.__exposure_time_fluor__
+            self.gain = self.__gain_fluor
         elif imaging_type == img_types.DISPERSIVE:
             self.amp_imaging = self.__amp_dispersive__
             self.exposure_time = self.__exposure_time_dispersive__
+            self.gain = self.__gain_dispersive
 
 class AndorParams(CameraParams):
     def __init__(self,
