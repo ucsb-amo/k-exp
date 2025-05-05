@@ -32,16 +32,15 @@ class CameraParams():
 
 class BaslerParams(CameraParams):
     def __init__(self,serial_number='40320384',
-                 trigger_source='Line1',
-                 exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
-                 exposure_time_abs = 19.e-6, amp_absorption = 0.248,
-                 exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
-                 gain = 0.,
-                 resolution = (1200,1920,),
-                 t_light_only_image_delay=25.e-3,
-                 t_dark_image_delay=20.e-3,
-                 key = "",
-                 magnification = 0.75):
+                trigger_source='Line1',
+                exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
+                exposure_time_abs = 19.e-6, amp_absorption = 0.248,
+                exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
+                t_light_only_image_delay=25.e-3, t_dark_image_delay=20.e-3,
+                gain = 0.,
+                resolution = (1200,1920,),
+                magnification = 0.75,
+                key = ""):
         super().__init__()
         self.key = key
         self.camera_type = "basler"
@@ -86,11 +85,10 @@ class AndorParams(CameraParams):
                  exposure_time_fluor = 25.e-6, amp_fluorescence=0.54, em_gain_fluor = 10.,
                  exposure_time_abs = 10.e-6, amp_absorption=0.1, em_gain_abs = 300.,
                  exposure_time_dispersive=100.e-6, amp_dispersive = 0.106, em_gain_dispersive = 300.,
+                 t_light_only_image_delay=75.e-3, t_dark_image_delay=75.e-3,
                  resolution = (512,512,),
-                 t_light_only_image_delay=75.e-3,
-                 t_dark_image_delay=75.e-3,
-                 key = "",
-                 magnification = 50./3):
+                 magnification = 50./3,
+                 key = ""):
         super().__init__()
         self.key = key
         self.camera_type = "andor"
@@ -107,9 +105,9 @@ class AndorParams(CameraParams):
         self.vs_amp = 3
         self.preamp = 2
 
-        self.__em_gain_fluor = 10.
-        self.__em_gain_abs = 300.
-        self.__em_gain_dispersive = 300.
+        self.__em_gain_fluor = em_gain_fluor
+        self.__em_gain_abs = em_gain_abs
+        self.__em_gain_dispersive = em_gain_dispersive
 
         self.resolution = resolution
         
