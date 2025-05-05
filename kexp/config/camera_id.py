@@ -14,25 +14,21 @@ class camera_frame():
                                     exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
                                     exposure_time_abs = 19.e-6, amp_absorption = 0.32,
                                     exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
-                                    gain=0.,
                                     magnification=0.5)
         
         self.x_basler = BaslerParams(serial_number='40320384',
                                     exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
                                     exposure_time_abs = 19.e-6, amp_absorption = 0.248,
                                     exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
-                                    gain=0.,
                                     trigger_source='Line2')
         
         self.z_basler = BaslerParams(serial_number='40416468',
                                     exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
                                     exposure_time_abs = 19.e-6, amp_absorption = 0.5,
-                                    exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
-                                    gain=0.)
+                                    exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248)
         
         self.basler_2dmot = BaslerParams(serial_number='40411037',
-                                         trigger_source='Line2',
-                                         gain=35.)
+                                         trigger_source='Line2')
         
         self.img_types = img_types
         self.write_keys()
