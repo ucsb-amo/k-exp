@@ -278,7 +278,7 @@ class ExptParams():
         self.frequency_ao_ry_405_switch = 80.0e6
         self.frequency_ao_ry_980_switch = 80.0e6
         self.amp_ao_ry_405_switch = 0.188
-        self.amp_ao_ry_980_switch = 0.285
+        self.amp_ao_ry_980_switch = 0.55
 
         # raman
         self.frequency_raman_plus = 150.e6
