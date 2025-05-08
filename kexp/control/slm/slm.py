@@ -52,11 +52,11 @@ class SLM:
         if y_center == di:
             y_center = self.params.px_slm_phase_spot_position_y
 
-        if mask_type == 'spot'
+        if mask_type == 'spot':
             mask = 1
-        elif mask_type == 'grating'
+        elif mask_type == 'grating':
             mask = 2
-        elif mask_type == 'cross'
+        elif mask_type == 'cross':
             mask = 3
 
         try:
