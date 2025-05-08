@@ -6,6 +6,7 @@ import numpy as np
 
 di = -1
 dv = 1.
+dm = 'spot'
 SLM_RPC_DELAY = 2.
 
 class SLM:
@@ -44,13 +45,15 @@ class SLM:
             ExptParams.px_slm_phase_spot_position_y. 
         """        
         if dimension == dv:
-            dimension = self.params.diameter_slm_spot
+            dimension = self.params.dimension_slm_mask
         if phase == dv:
-            phase = self.params.phase_slm_spot
+            phase = self.params.phase_slm_mask
         if x_center == di:
-            x_center = self.params.px_slm_phase_spot_position_x
+            x_center = self.params.px_slm_phase_mask_position_x
         if y_center == di:
-            y_center = self.params.px_slm_phase_spot_position_y
+            y_center = self.params.px_slm_phase_mask_position_y
+        if mask_type == dm:    
+           mask_type =  self.params.slm_mask
 
         if mask_type == 'spot':
             mask = 1
@@ -58,19 +61,20 @@ class SLM:
             mask = 2
         elif mask_type == 'cross':
             mask = 3
-
+        
         try:
             # note unit conversions, since the client uses units of um for
             # dimension and units of pi for phase
-            command = f"{int(dimension*1.e6)} {phase/np.pi} {x_center} {y_center} {mask}"
+            dimension = int(dimension*1.e6)
+            command = f"{int(dimension)} {phase/np.pi} {x_center} {y_center} {mask}"
             self._send_command(command)
             print(f"\nSent: {command}")
-            print(f"-> mask: {mask_type}, dimension = {int(dimension)} um, phase = {phase/np.pi} pi, x-center = {x_center}, y-center = {y_center}\n")
+            print(f"-> mask: {mask_type}, dimension = {dimension} um, phase = {phase/np.pi} pi, x-center = {x_center}, y-center = {y_center}\n")
         except Exception as e:
             print(f"Error sending phase spot: {e}")
 
     @kernel
-    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di):
+    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type=dm):
         """Writes a phase spot of given dimension and phase to the specified
         position on the slm display.
 
@@ -89,7 +93,7 @@ class SLM:
             ExptParams.px_slm_phase_spot_position_y. 
         """    
         self.core.wait_until_mu(now_mu())
-        self.write_phase_mask(dimension,phase,x_center,y_center)
+        self.write_phase_mask(dimension, phase, x_center, y_center, mask_type=dm)
         delay(SLM_RPC_DELAY)
 
     def _send_command(self, command):
