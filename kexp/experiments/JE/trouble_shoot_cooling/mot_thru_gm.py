@@ -31,15 +31,15 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_2d_mot_current = 3.3
 
         # self.xvar('i_mot',np.linspace(15.,40.,30))
-        # self.xvar('i_mot',[10.,15.,20.,30.,40.,50.,60.,70.]*500)
+        # self.xvar('i_mot',[10.,15.,20.,25.,30.,35.,60.,70.]*5)
         # self.p.i_mot = 65.
 
         # self.xvar('v_zshim_current',np.linspace(0.,2.,8))
         # self.xvar('v_xshim_current',np.linspace(0.,4.,8))
-        # self.xvar('v_yshim_current',np.linspace(0.,4.,20))
-        # self.p.v_zshim_current = 0.83
-        # self.p.v_xshim_current = .32 
-        # self.p.v_yshim_current = 2.2
+        # self.xvar('v_yshim_current',np.linspace(0.,4.,8))
+        # self.p.v_zshim_current = 1.14
+        # self.p.v_xshim_current = 2.8 
+        # self.p.v_yshim_current = 2.8
 
         # self.xvar('detune_d1_c_d1cmot',np.linspace(5.,13.,8))
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,0.,8))
@@ -62,9 +62,9 @@ class gm_tof(EnvExperiment, Base):
         # self.pfrac_d1_c_gm = .424
         # self.pfrac_d1_r_gm = .424
 
-        # self.xvar('v_zshim_current_gm',np.linspace(0.4,.7,8))
+        # self.xvar('v_zshim_current_gm',np.linspace(0.5,.7,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.3,1.,8))
-        # self.xvar('v_yshim_current_gm',np.linspace(1.,4.,15))
+        # self.xvar('v_yshim_current_gm',np.linspace(1.,4.,8))
 
         # self.p.v_zshim_current_gm = 0.63
         # self.p.v_xshim_current_gm = 0.63 
@@ -73,8 +73,8 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.5,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.5,8))
 
-        self.p.pfrac_c_gmramp_end = 0.11
-        self.p.pfrac_r_gmramp_end = 0.11
+        # self.p.pfrac_c_gmramp_end = 0.11
+        # self.p.pfrac_r_gmramp_end = 0.2
 
         # self.xvar('dumdum',[0]*5)
 
@@ -91,7 +91,7 @@ class gm_tof(EnvExperiment, Base):
         # self.p.amp_imaging = .35
         self.p.imaging_state = 2.
         self.p.t_tof = 17.e-3
-        self.p.t_mot_load = .5
+        self.p.t_mot_load = .3
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=False)
@@ -104,7 +104,7 @@ class gm_tof(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot)
-        
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
