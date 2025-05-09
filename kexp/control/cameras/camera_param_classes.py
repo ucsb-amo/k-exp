@@ -7,6 +7,7 @@ class ImagingType():
 img_types = ImagingType()
 
 class CameraParams():
+    # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
     def __init__(self):
         self.camera_type = ""
         self.key = ""
@@ -33,6 +34,7 @@ class CameraParams():
         pass
 
 class BaslerParams(CameraParams):
+    # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
     def __init__(self,serial_number='40320384',
                 trigger_source='Line1',
                 exposure_time_fluor = 1.e-3, amp_fluorescence=0.5, gain_fluor = 0.,
@@ -83,6 +85,7 @@ class BaslerParams(CameraParams):
             self.gain = self.__gain_dispersive
 
 class AndorParams(CameraParams):
+    # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
     def __init__(self,
                  exposure_time_fluor = 25.e-6, amp_fluorescence=0.54, em_gain_fluor = 10.,
                  exposure_time_abs = 10.e-6, amp_absorption=0.1, em_gain_abs = 300.,
