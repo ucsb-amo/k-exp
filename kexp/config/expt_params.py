@@ -47,10 +47,11 @@ class ExptParams():
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.diameter_slm_spot = 20e-6
-        self.phase_slm_spot = np.pi/2
-        self.px_slm_phase_spot_position_x = 1920 // 2
-        self.px_slm_phase_spot_position_y = 1200 // 2
+        self.slm_mask = 'spot'
+        self.dimension_slm_mask = 20e-6
+        self.phase_slm_mask = np.pi/2
+        self.px_slm_phase_mask_position_x = 1920 // 2
+        self.px_slm_phase_mask_position_y = 1200 // 2
 
         #Cooling timing
         self.t_tof = 20.e-6
@@ -134,7 +135,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 20.
-        self.v_zshim_current = 0.82
+        self.v_zshim_current = 1.14
         self.v_xshim_current = .0
         self.v_yshim_current = 1.7
 
@@ -166,9 +167,9 @@ class ExptParams():
         self.detune_gm = 7.5
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.63
-        self.v_xshim_current_gm = 0.63
-        self.v_yshim_current_gm = 2.3
+        self.v_zshim_current_gm = 0.57
+        self.v_xshim_current_gm = 0.7
+        self.v_yshim_current_gm = 2.25
 
         self.detune_d1_c_gm = self.detune_gm
         self.pfrac_d1_c_gm = .65 # there is an ND on this photodiode -- much higher power/volt than the repump

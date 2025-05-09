@@ -6,7 +6,7 @@ import numpy as np
 
 di = -1
 dv = 1.
-dm = 'spot'
+dm = 1
 SLM_RPC_DELAY = 2.
 
 class SLM:
@@ -27,22 +27,24 @@ class SLM:
         self.params = expt_params
         self.core = core
 
-    def write_phase_mask(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot'):
+    def write_phase_mask(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type=dm):
         """Writes a phase spot of given dimension and phase to the specified
         position on the slm display.
 
         Args:
-            dimension (float): Diameter (in m) of the phase spot. If set to
+            dimension (float): Dimnesion (in m) of the phase mask. If set to
             zero, gives uniform phase pattern. Defaults to
-            ExptParams.diameter_slm_spot.
-            phase (float): Phase (in radians) for the phase spot. Defaults to
-            ExptParams.phase_slm_spot.
+            ExptParams.dimension_slm_mask.
+            phase (float): Phase (in radians) for the phase mask. Defaults to
+            ExptParams.phase_slm_mask.
             x_center (int): Horizontal position (in pixels) of the
             phase spot (from top right). Indexed from 1 to 1920. Defaults to
-            ExptParams.px_slm_phase_spot_position_x.
+            ExptParams.px_slm_phase_mask_position_x.
             y_center (int): Vertical position (in pixels) of the
             phase spot (from top right). Indexed from 1 to 1200. Defaults to
-            ExptParams.px_slm_phase_spot_position_y. 
+            ExptParams.px_slm_phase_mask_position_y. 
+            mask_type (str): The type of mask. It can be spot, grating or cross. 
+            Defaults to ExptParams.slm_mask.
         """        
         if dimension == dv:
             dimension = self.params.dimension_slm_mask
@@ -79,18 +81,19 @@ class SLM:
         position on the slm display.
 
         Args:
-            dimension (float): Dimension (in m) of the phase pattern, 
-            e.g, diamteter for the spot and side length for the grating. 
-            If set to zero, gives uniform phase pattern. Defaults to
-            ExptParams.dimension_slm_spot.
-            phase (float): Phase (in radians) for the phase spot. Defaults to
-            ExptParams.phase_slm_spot.
+            dimension (float): Dimnesion (in m) of the phase mask. If set to
+            zero, gives uniform phase pattern. Defaults to
+            ExptParams.dimension_slm_mask.
+            phase (float): Phase (in radians) for the phase mask. Defaults to
+            ExptParams.phase_slm_mask.
             x_center (int): Horizontal position (in pixels) of the
             phase spot (from top right). Indexed from 1 to 1920. Defaults to
-            ExptParams.px_slm_phase_spot_position_x.
+            ExptParams.px_slm_phase_mask_position_x.
             y_center (int): Vertical position (in pixels) of the
             phase spot (from top right). Indexed from 1 to 1200. Defaults to
-            ExptParams.px_slm_phase_spot_position_y. 
+            ExptParams.px_slm_phase_mask_position_y. 
+            mask_type (str): The type of mask. It can be spot, grating or cross. 
+            Defaults to ExptParams.slm_mask.
         """    
         self.core.wait_until_mu(now_mu())
         self.write_phase_mask(dimension, phase, x_center, y_center, mask_type=dm)
