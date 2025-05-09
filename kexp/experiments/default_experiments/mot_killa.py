@@ -31,7 +31,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.set_imaging_detuning(amp=self.p.amp_imaging)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-
+        self.dds.ry_980_switch.on()
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
