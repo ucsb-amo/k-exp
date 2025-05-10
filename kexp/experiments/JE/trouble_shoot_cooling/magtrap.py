@@ -26,28 +26,28 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.0,.4,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.7,8))
-        self.p.pfrac_c_gmramp_end = 0.11
-        self.p.pfrac_r_gmramp_end = 0.2
+        # self.p.pfrac_c_gmramp_end = 0.11
+        # self.p.pfrac_r_gmramp_end = 0.2
         
         # self.xvar('i_magtrap_init',np.linspace(30.,95.,8))
         self.i_magtrap_init = 95.
 
 
-        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,2.,20))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,9.,10))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.,10))
+        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,2.,10))
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,9.,8))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.,8))
         # self.p.v_zshim_current_magtrap = 2.3
-        # self.p.v_xshim_current_magtrap = 0.5
-        # self.p.v_yshim_current_magtrap = 5.
-        # self.xvar('t_magtrap_delay',np.linspace(1.,20.,8)*1.e-3)
+        # self.p.v_xshim_current_magtrap = 0.
+        # self.p.v_yshim_current_magtrap = 2.28
+        # self.xvar('t_magtrap_delay',np.linspace(1.,20.,20)*1.e-3)
         # self.p.t_magtrap_delay = 5.e-3
         # self.p.t_shim_delay = .5e-3
 
-        self.xvar('t_magtrap_hold',np.linspace(1.,50.,30)*1.e-3)
+        # self.xvar('t_magtrap_hold',np.linspace(1.,80.,8)*1.e-3)
         self.p.t_magtrap_hold = .1
 
         self.p.N_repeats = 1
-        self.p.t_mot_load = .5
+        self.p.t_mot_load = .75
 
         # self.p.amp_imaging = .35
         self.p.imaging_state = 2.
