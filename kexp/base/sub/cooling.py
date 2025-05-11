@@ -724,7 +724,7 @@ class Cooling():
                                 i_start=i_magtrap_init,
                                 i_end=i_magtrap_ramp_end)
         
-        # delay(self.params.t_magtrap)
+        delay(self.params.t_magtrap)
 
         if do_magtrap_rampdown:
             if do_magtrap_rampup:
