@@ -69,7 +69,7 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = .7
-        self.t_lightsheet_rampdown = .7
+        self.t_lightsheet_rampdown = 1.3
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
@@ -88,8 +88,8 @@ class ExptParams():
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 2.e-3
-        self.t_magtrap = 1. # for max atom number use 3 s
-        self.t_magtrap_ramp = 1.5
+        self.t_magtrap = 2. # for max atom number use 3 s
+        self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 100.e-3
@@ -178,19 +178,19 @@ class ExptParams():
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.03
-        self.pfrac_r_gmramp_end = 0.57
+        self.pfrac_c_gmramp_end = 0.037
+        self.pfrac_r_gmramp_end = 0.67
         self.n_gmramp_steps = 200
 
         # mag trap
         self.i_magtrap_init = 85.
-        self.i_magtrap_ramp_end = 90.
+        self.i_magtrap_ramp_end = 95.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
         
         self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 2.5
-        self.v_yshim_current_magtrap = 1.
+        self.v_xshim_current_magtrap = 2.8
+        self.v_yshim_current_magtrap = 1.3
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -210,7 +210,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.
+        self.v_pd_lightsheet_rampup_end = 9.3
         self.v_pd_lightsheet_rampdown_end = 6.5 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -222,8 +222,8 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 9.
-        self.v_pd_tweezer_1064_rampdown_end = .5
+        self.v_pd_tweezer_1064_ramp_end = 9.3
+        self.v_pd_tweezer_1064_rampdown_end = 2.
         self.v_pd_tweezer_1064_rampdown2_end = .07
         self.v_pd_tweezer_1064_rampdown3_end = .57
         self.n_tweezer_ramp_steps = 1000
@@ -297,7 +297,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 198.3
+        self.i_evap1_current = 194.
         self.i_evap2_current = 198.45
         self.i_evap3_current = 198.7
 
