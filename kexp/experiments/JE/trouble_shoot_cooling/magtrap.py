@@ -15,7 +15,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tof = 7.e-3
         # self.xvar('t_tof',np.linspace(5.,15.,10)*1.e-3)
-        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         # self.xvar('dumy',[0]*5)
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
@@ -87,6 +87,7 @@ class mag_trap(EnvExperiment, Base):
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,
                                         do_magtrap_rampup=False,
+                                        do_magtrap_hold=False,
                                         do_magtrap_rampdown=False)
         delay(self.p.t_magtrap_hold)
         self.inner_coil.snap_off()

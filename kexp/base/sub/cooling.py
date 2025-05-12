@@ -668,6 +668,7 @@ class Cooling():
     def magtrap_and_load_lightsheet(self,
                                     do_lightsheet_ramp=True,
                                     do_magtrap_rampup=True,
+                                    do_magtrap_hold=True,
                                     do_magtrap_rampdown=True,
                                     paint_lightsheet=False,
                                     t_lightsheet_ramp=dv,
@@ -723,8 +724,8 @@ class Cooling():
             self.inner_coil.ramp_supply(t=t_magtrap_ramp,
                                 i_start=i_magtrap_init,
                                 i_end=i_magtrap_ramp_end)
-        
-        delay(self.params.t_magtrap)
+        if do_magtrap_hold:
+            delay(self.params.t_magtrap)
 
         if do_magtrap_rampdown:
             if do_magtrap_rampup:
