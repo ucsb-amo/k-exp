@@ -12,13 +12,13 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,setup_camera=True,save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 100.e-6
-        self.xvar('t_tof',np.linspace(20.,300.,10)*1.e-6)
-        # self.xvar('dumy',[0]*50)
+        self.p.t_tof = 20.e-6
+        # self.xvar('t_tof',np.linspace(20.,300.,10)*1.e-6)
+        self.xvar('dumy',[0]*50)
         
         self.p.t_lightsheet_hold = .2
 
@@ -48,7 +48,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_tweezer_1064_ramp = .4
 
         # self.xvar('t_tweezer_hold',np.linspace(1.,50.,8)*1.e-3)
-        self.p.t_tweezer_hold = .1e-3
+        self.p.t_tweezer_hold = 5.e-6
 
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.05,2.,12))
         self.p.v_pd_tweezer_1064_rampdown_end = .05
@@ -132,13 +132,13 @@ class mag_trap(EnvExperiment, Base):
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
 
-        # tweezer evap 1 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
-                          v_start=self.p.v_pd_tweezer_1064_ramp_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown_end,
-                          paint=False,keep_trap_frequency_constant=False)
+        # # tweezer evap 1 with constant trap frequency
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
+        #                   v_start=self.p.v_pd_tweezer_1064_ramp_end,
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown_end,
+        #                   paint=False,keep_trap_frequency_constant=False)
 
-        # delay(self.p.t_tweezer_hold)
+        delay(self.p.t_tweezer_hold)
 
         self.tweezer.off()
 

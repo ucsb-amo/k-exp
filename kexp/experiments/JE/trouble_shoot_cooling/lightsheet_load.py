@@ -16,13 +16,13 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 600.e-6
+        self.p.t_tof = 400.e-6
         # self.xvar('t_tof',np.linspace(20,1200.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0]*100)
 
-        self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.2,8))
-        self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.84,8))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.2,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.84,8))
         # self.p.pfrac_c_gmramp_end = 0.03
         # self.p.pfrac_r_gmramp_end = 0.57
 
@@ -36,7 +36,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_magtrap_ramp = .4
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,2000.,10)*1.e-3)
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,9.9,10))
+        self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,9.9,10))
         # self.p.t_lightsheet_rampup = 1.
         # self.p.v_pd_lightsheet_rampup_end = 9.3
 
@@ -45,9 +45,9 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,10))
         
-        self.p.t_lightsheet_hold = .2
+        self.p.t_lightsheet_hold = .1
 
-        self.p.t_magtrap = .5
+        # self.p.t_magtrap = .5
 
         # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
         # self.p.t_imaging_pulse = 2.e-5    
