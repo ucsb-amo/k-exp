@@ -178,8 +178,8 @@ class ExptParams():
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.02
-        self.pfrac_r_gmramp_end = 0.5
+        self.pfrac_c_gmramp_end = 0.03
+        self.pfrac_r_gmramp_end = 0.55
         self.n_gmramp_steps = 200
 
         # mag trap
