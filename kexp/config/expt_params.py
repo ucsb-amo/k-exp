@@ -76,7 +76,7 @@ class ExptParams():
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = .18
         self.t_tweezer_hold = 30.e-3
-        self.t_tweezer_1064_ramp = .5
+        self.t_tweezer_1064_ramp = .4
         self.t_tweezer_1064_rampdown = .1
         self.t_tweezer_1064_rampdown2 = .6
         self.t_tweezer_1064_rampdown3 = .18
@@ -211,7 +211,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.7
-        self.v_pd_lightsheet_rampdown_end = 1. #4.16
+        self.v_pd_lightsheet_rampdown_end = 1.3 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -222,7 +222,7 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 9.3
+        self.v_pd_tweezer_1064_ramp_end = 9.1
         self.v_pd_tweezer_1064_rampdown_end = 2.
         self.v_pd_tweezer_1064_rampdown2_end = .07
         self.v_pd_tweezer_1064_rampdown3_end = .57
@@ -248,7 +248,7 @@ class ExptParams():
         self.amp_tweezer_list = [.2,.215]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = -2.2
+        self.v_tweezer_paint_amp_max = -2.7
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -298,6 +298,10 @@ class ExptParams():
 
         # high field evap
         self.i_evap1_current = 193.
+
+        self.i_tweezer_load_current = 192.6
+        self.i_tweezer_evap1_current = 194.6
+
         self.i_evap2_current = 198.45
         self.i_evap3_current = 198.7
 
