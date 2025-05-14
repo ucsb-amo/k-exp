@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 250.e-6
+        self.p.t_tof = 50.e-6
         # self.xvar('t_tof',np.linspace(20.,300.,10)*1.e-6)
         # self.xvar('dumy',[0]*50)
         
@@ -27,7 +27,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_feshbach_field_rampup',np.linspace(.07,.5,10))
 
         # self.xvar('i_evap1_current',np.linspace(180.,200.,10))
-        # self.p.i_evap1_current = 193.
+        self.p.i_evap1_current = 193.
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,4.,10))
         # self.p.v_pd_lightsheet_rampdown_end = 1.3
@@ -45,12 +45,12 @@ class mag_trap(EnvExperiment, Base):
         # self.p.v_pd_tweezer_1064_ramp_end = 9.1
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-3.,0.,6))
-        # self.p.v_tweezer_paint_amp_max = -2.7
+        self.p.v_tweezer_paint_amp_max = -2.7
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.05,.9,10))
         # self.p.t_tweezer_1064_ramp = .4
 
-        # self.xvar('t_tweezer_hold',np.linspace(1.,100.,20)*1.e-3)
+        self.xvar('t_tweezer_hold',np.linspace(1.,100.,10)*1.e-3)
         self.p.t_tweezer_hold = 5.e-3
 
         self.p.frequency_tweezer_list = [74.e6,76.e6]
