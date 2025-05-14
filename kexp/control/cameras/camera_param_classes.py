@@ -11,23 +11,27 @@ class CameraParams():
     def __init__(self):
         self.camera_type = ""
         self.key = ""
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.pixel_size_m = 0.
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.magnification = 13
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.exposure_delay = 0.
-        
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.exposure_time = 0.
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.connection_delay = 0.0
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.t_camera_trigger = 2.e-6
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.gain = 0.
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.amp_imaging = 0.
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.resolution = (1,1,)
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.t_light_only_image_delay = 0.
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.t_dark_image_delay = 0.
     
     def select_imaging_type(self,imaging_type):
@@ -49,24 +53,24 @@ class BaslerParams(CameraParams):
         self.camera_type = "basler"
         self.serial_no = serial_number
         self.trigger_source = trigger_source
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.resolution = resolution
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.pixel_size_m = 3.45 * 1.e-6
         self.magnification = magnification
         self.exposure_delay = 17 * 1.e-6
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.__gain_fluor = gain_fluor
         self.__gain_abs = gain_abs
         self.__gain_dispersive = gain_dispersive
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.__exposure_time_fluor__ = exposure_time_fluor
         self.__exposure_time_abs__ = exposure_time_abs
         self.__exposure_time_dispersive__ = exposure_time_dispersive
         self.__amp_absorption__ = amp_absorption
         self.__amp_fluorescence__ = amp_fluorescence
         self.__amp_dispersive__ = amp_dispersive
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
 
@@ -103,25 +107,25 @@ class AndorParams(CameraParams):
         self.connection_delay = 8.0
         self.t_camera_trigger = 200.e-9
         self.t_readout_time = 512 * 3.3e-6
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.hs_speed = 0
         self.vs_speed = 1
         self.vs_amp = 3
         self.preamp = 2
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.__em_gain_fluor = em_gain_fluor
         self.__em_gain_abs = em_gain_abs
         self.__em_gain_dispersive = em_gain_dispersive
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.resolution = resolution
-        
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.__exposure_time_fluor__ = exposure_time_fluor
         self.__exposure_time_abs__ = exposure_time_abs
         self.__amp_absorption__ = amp_absorption
         self.__amp_fluorescence__ = amp_fluorescence
         self.__amp_dispersive__ = amp_dispersive
         self.__exposure_time_dispersive__ = exposure_time_dispersive
-
+        # DO NOT ASSIGN DEFAULT PARAMETERS HERE -- INSTEAD ASSIGN THEM IN kexp.config.camera_id!
         self.t_light_only_image_delay = t_light_only_image_delay
         self.t_dark_image_delay = t_dark_image_delay
 
