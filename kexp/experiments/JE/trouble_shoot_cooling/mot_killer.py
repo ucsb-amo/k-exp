@@ -13,7 +13,8 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
-        self.p.t_tof = 300.e-6
+        self.p.t_tof = 50.e-6
+        # self.p.t_tof = 10.e-3
         # self.xvar('t_tof',np.linspace(10,15.,20)*1.e-3)
         # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         self.xvar('dumy',[0]*1000)
@@ -29,21 +30,31 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
+        self.dds.mot_killer.set_dds_gamma(delta=0.,amplitude=.188)
+
         # self.set_imaging_detuning(amp=self.p.amp_imaging)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
-        self.mot(self.p.t_mot_load)
-        self.dds.push.off()
+        # self.mot(self.p.t_mot_load)
+        # self.dds.push.off()
         # self.cmot_d1(self.p.t_d1cmot * s)
         
         # self.gm(self.p.t_gm * s)
         # self.gm_ramp(self.p.t_gmramp)
 
-        self.release()
+        self.mot(self.p.t_mot_load)
+        self.dds.push.off()
+        self.cmot_d1(self.p.t_d1cmot)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        self.dds.mot_killer.set_dds_gamma(delta=0.,amplitude=.188)
         self.dds.mot_killer.on()
+
+        self.gm(self.p.t_gm * s)
+        self.gm_ramp(self.p.t_gmramp)
+
+
+        self.release()
 
         delay(self.p.t_tof)
         self.flash_repump()
