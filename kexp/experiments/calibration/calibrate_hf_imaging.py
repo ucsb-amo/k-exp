@@ -28,7 +28,7 @@ class calibrate_hf_image_detuning(EnvExperiment, Base):
         self.xvar('i_feshbach_current', np.linspace(180.,200.,18))
         self.p.i_feshbach_current = 182.
 
-        self.p.amp_imaging = .12
+        # self.p.amp_imaging = .12
         self.p.imaging_state = 2.
 
         # self.p.N_repeats = 1
@@ -40,8 +40,8 @@ class calibrate_hf_image_detuning(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        self.camera_params.exposure_time = self.params.t_imaging_pulse # this one
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.camera_params.exposure_time = self.params.t_imaging_pulse # this one
         # self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
 
         # self.switch_d2_2d(1)

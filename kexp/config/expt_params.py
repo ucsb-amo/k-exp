@@ -69,7 +69,7 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = .7
-        self.t_lightsheet_rampdown = 1.3
+        self.t_lightsheet_rampdown = 1.1
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
@@ -179,7 +179,7 @@ class ExptParams():
         # Discrete GM ramp
         #v_pd values for start and end of ramp
         self.pfrac_c_gmramp_end = 0.03
-        self.pfrac_r_gmramp_end = 0.55
+        self.pfrac_r_gmramp_end = 0.5
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -210,8 +210,8 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.9
-        self.v_pd_lightsheet_rampdown_end = 6.5 #4.16
+        self.v_pd_lightsheet_rampup_end = 9.7
+        self.v_pd_lightsheet_rampdown_end = 1. #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -297,7 +297,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 194.
+        self.i_evap1_current = 193.
         self.i_evap2_current = 198.45
         self.i_evap3_current = 198.7
 

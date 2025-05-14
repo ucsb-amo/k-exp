@@ -72,7 +72,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_mot_load = .75
 
         # self.xvar('amp_imaging',np.linspace(.25,.4,20))
-        self.p.amp_imaging = .33
+        self.p.amp_imaging = .32
         self.p.imaging_state = 2.
 
         self.finish_prepare(shuffle=True)
@@ -80,7 +80,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
