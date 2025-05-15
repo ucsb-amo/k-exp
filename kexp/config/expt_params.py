@@ -278,7 +278,7 @@ class ExptParams():
         # rydberg
         self.frequency_ao_ry_405_switch = 80.0e6
         self.frequency_ao_ry_980_switch = 80.0e6
-        self.amp_ao_ry_405_switch = 0.188
+        self.amp_ao_ry_405_switch = 0.10
         self.amp_ao_ry_980_switch = 0.4
 
         # raman
@@ -303,8 +303,8 @@ class ExptParams():
         self.i_tweezer_evap1_current = 193.86
         self.i_tweezer_evap2_current = 193.71
 
-        self.i_evap2_current = 198.45
-        self.i_evap3_current = 198.7
+        # self.i_evap2_current = 198.45
+        # self.i_evap3_current = 198.7
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.

@@ -137,6 +137,7 @@ class mag_trap(EnvExperiment, Base):
                           v_start=0.,
                           v_end=self.p.v_pd_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False)
+                          
         self.ttl.pd_scope_trig.pulse(1.e-6)
         # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
