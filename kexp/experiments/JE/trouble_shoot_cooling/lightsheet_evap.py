@@ -16,8 +16,8 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 400.e-6
-        # self.xvar('t_tof',np.linspace(400,1500.,10)*1.e-6)
+        # self.p.t_tof = 1000.e-6
+        self.xvar('t_tof',np.linspace(400,1500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0]*5)
 
@@ -51,14 +51,14 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_lightsheet_rampup = 1.
         # self.p.v_pd_lightsheet_rampup_end = 9.
 
-        self.xvar('i_evap1_current',np.linspace(190.,198.,8))
-        # self.p.i_evap1_current = 194.
+        # self.xvar('i_evap1_current',np.linspace(191.,195.,8))
+        # self.p.i_evap1_current = 193.
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,6.,8))
-        self.p.v_pd_lightsheet_rampdown_end = 2.
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.1,2.,20))
+        # self.p.v_pd_lightsheet_rampdown_end = 1.
 
-        # self.xvar('t_lightsheet_rampdown',np.linspace(100.,2000.,10)*1.e-3)
-        # self.p.t_lightsheet_rampdown = 1.3
+        # self.xvar('t_lightsheet_rampdown',np.linspace(100.,2000.,8)*1.e-3)
+        # self.p.t_lightsheet_rampdown = 1.1
 
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.5,2.,15))
         # self.p.v_pd_lightsheet_rampdown2_end = 1.3
@@ -71,18 +71,21 @@ class mag_trap(EnvExperiment, Base):
         
         # self.p.t_lightsheet_hold = .2
 
-        # self.p.t_magtrap = 2.
+        # self.p.t_magtrap = 1.
         # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
         # self.p.t_imaging_pulse = 2.e-5    
 
         # self.xvar('amp_imaging',np.linspace(.03,.12,10))
+
+        # self.xvar('hf_imaging_detuning', np.arange(-7.,-650.,6.)*1.e6)
+        # self.xvar('hf_imaging_detuning', np.arange(-670.,-560.,6.)*1.e6)
        
         # self.camera_params.exposure_time = 25.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
         # self.p.amp_imaging = .54
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -100,7 +103,7 @@ class mag_trap(EnvExperiment, Base):
         
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
-
+ 
         self.magtrap_and_load_lightsheet()
 
         # feshbach field on, ramp up to field 1  
@@ -111,6 +114,10 @@ class mag_trap(EnvExperiment, Base):
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_evap1_current)
+        
+        self.set_shims(v_zshim_current=0.,
+                        v_yshim_current=0.,
+                        v_xshim_current=0.)
 
         # lightsheet evap 1
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
@@ -126,7 +133,8 @@ class mag_trap(EnvExperiment, Base):
         #                      v_start=self.p.v_pd_lightsheet_rampdown_end,
         #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
 
-        delay(self.p.t_tweezer_1064_ramp)
+        # delay(self.p.t_tweezer_1064_ramp)
+        # delay(1.)
         self.lightsheet.off()
 
         delay(self.p.t_tof)

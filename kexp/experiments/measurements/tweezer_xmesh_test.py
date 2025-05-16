@@ -16,27 +16,32 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         from kexp.calibrations.tweezer import tweezer_xmesh
         t = tweezer_xmesh()
 
-        fs = np.array([74000000.0, 72000000.0, 76450000.0, 78300000.0])
+        fs = np.array([74.e6, 72.e6, 76.45e6, 78.3e6])
         amp = [.27,.1675,.1875,.365]
         ce = fs < t.f_ce_max
         x = t.f_to_x(fs)
 
+        self.p.frequency_tweezer_list = fs
+        self.p.amp_tweezer_list = amp
+
         idx = 0
         # self.tweezer.add_tweezer(position=x[idx],amplitude=amp[idx],cateye=ce[idx])
         # self.tweezer.add_tweezer(frequency=fs[idx],amplitude=amp[idx])
-        self.tweezer.add_tweezer_list(position_list=x,
-                                      cateye_list=ce,
-                                      amplitude_list=amp)
+        # self.tweezer.add_tweezer_list(position_list=x,
+        #                               cateye_list=ce,
+        #                               amplitude_list=amp)
         print(len(self.tweezer.traps))
         # self.p.f = [fs[idx]]      
         # self.p.a = [amp[idx]]
 
-        self.p.v_tweezer_paint_amp_max = -3.5
-        self.p.v_pd_tweezer_1064_rampdown3_end = 1.
+        # self.p.v_tweezer_paint_amp_max = -3.5
+        # self.p.v_pd_tweezer_1064_rampdown3_end = 1.
 
         self.p.N_repeats = 1
 
         self.p.t_tof = 10.e-6
+
+        self.p.t_tweezer_hold = 30.e-3
 
         self.xvar('dummy',[1])
 
@@ -50,7 +55,7 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         # delay(100.*ms)
         # self.tweezer.awg_trg_ttl.pulse(1.e-6)
 
-        self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
+        self.set_high_field_imaging(i_outer=self.p.i_tweezer_load_current)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -68,7 +73,11 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         self.outer_coil.set_voltage()
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
-                             i_end=self.p.i_evap3_current)
+                             i_end=self.p.i_evap1_current)
+        
+        self.set_shims(v_zshim_current=0.,
+                        v_yshim_current=0.,
+                        v_xshim_current=0.)
         
         # lightsheet evap 1
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
@@ -78,7 +87,7 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         # feshbach field ramp to field 2
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_evap1_current,
-                             i_end=self.p.i_evap2_current)
+                             i_end=self.p.i_tweezer_load_current)
         
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.tweezer.on(paint=False)
@@ -117,6 +126,9 @@ class tweezer_xpf_calibration(EnvExperiment, Base):
         #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
         
         self.lightsheet.off()
+
+        delay(self.p.t_tweezer_hold)
+
         self.tweezer.off()
 
         delay(self.p.t_tof)
