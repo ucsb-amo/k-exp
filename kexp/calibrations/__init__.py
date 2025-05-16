@@ -1,2 +1,2 @@
-from .magnets import i_supply_to_magnetic_field, transducer_current_to_outer_supply_setpoint, magnetic_field_to_i_supply
+from .magnets import i_transducer_to_magnetic_field, transducer_current_to_outer_supply_setpoint, magnetic_field_to_i_transducer
 from .imaging import high_field_imaging_detuning
