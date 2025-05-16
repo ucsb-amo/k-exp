@@ -2,7 +2,7 @@ from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.control.cameras.basler_usb import BaslerUSB
 from kexp.control.cameras.andor import AndorEMCCD
 
-from kexp.config import camera_params
+from kexp.control.cameras.camera_param_classes import CameraParams
 
 import numpy as np
 import pypylon.pylon as py
@@ -29,35 +29,34 @@ class CameraNanny():
             else:
                 return camera
 
-    def get_camera(self,camera_params:camera_params.CameraParams) -> DummyCamera:
-        camera_select = camera_params.camera_select
+    def get_camera(self,camera_params:CameraParams) -> DummyCamera:
+        camera_key = camera_params.key
         need_to_open = True
-        if type(camera_select) == bytes: 
-            camera_select = camera_select.decode()
-        if camera_select in self.__dict__.keys():
-            camera = vars(self)[camera_select]
+        if type(camera_key) == bytes: 
+            camera_key = camera_key.decode()
+        if camera_key in self.__dict__.keys():
+            camera = vars(self)[camera_key]
             need_to_open = not camera.is_opened()
         if need_to_open:
             camera = self.open(camera_params)
             if type(camera) != DummyCamera:
-                vars(self)[camera_select] = camera
+                vars(self)[camera_key] = camera
         return camera
     
-    def update_params(self,camera,camera_params:camera_params.CameraParams):
+    def update_params(self,camera,camera_params:CameraParams):
         camera_type = camera_params.camera_type
         if type(camera_type) == bytes: 
             camera_type = camera_type.decode()
         if camera_type == "basler":
-            # camera.ExposureTime.SetValue(camera_params.exposure_time*1.e6)
-            pass
+            camera.set_exposure(camera_params.exposure_time)
+            camera.set_gain(camera_params.gain)
         elif camera_type == "andor":
-            camera.set_EMCCD_gain(camera_params.em_gain)
+            camera.set_EMCCD_gain(camera_params.gain)
             camera.set_exposure(camera_params.exposure_time)
             camera.set_amp_mode(preamp=camera_params.preamp)
             camera.set_hsspeed(camera_params.hs_speed)
-            # camera.setup_shutter("closed")
 
-    def open(self,camera_params:camera_params.CameraParams):
+    def open(self,camera_params:CameraParams):
         camera_type = camera_params.camera_type
         if type(camera_type) == bytes:
             camera_type = camera_type.decode()
@@ -65,20 +64,21 @@ class CameraNanny():
             if camera_type == "basler":
                 camera = BaslerUSB(BaslerSerialNumber=camera_params.serial_no,
                                     ExposureTime=camera_params.exposure_time,
-                                    TriggerSource=camera_params.trigger_source)
+                                    TriggerSource=camera_params.trigger_source,
+                                    Gain=camera_params.gain)
             elif camera_type == "andor":
                 camera = AndorEMCCD(ExposureTime=camera_params.exposure_time,
-                                    gain = camera_params.em_gain,
+                                    gain = camera_params.gain,
                                     hs_speed=camera_params.hs_speed,
                                     vs_speed=camera_params.vs_speed,
                                     vs_amp=camera_params.vs_amp,
                                     preamp=camera_params.preamp)
-                # camera.setup_shutter("closed")
+                
         except Exception as e:
             # raise(e)
             camera = DummyCamera()
             print(e)
-            print(f"There was an issue opening the requested camera (key: {camera_params.camera_select}).")
+            print(f"There was an issue opening the requested camera (key: {camera_params.key}).")
         return camera
     
     def close_all(self):

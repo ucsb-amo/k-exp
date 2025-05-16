@@ -7,6 +7,7 @@ from PyQt6.QtGui import QIcon, QFont
 from queue import Queue
 import numpy as np
 from kexp.analysis.image_processing import compute_OD, process_ODs
+from kexp import img_types
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -32,8 +33,8 @@ class Analyzer(QObject):
         self.N_shots = N_shots
         self.N_pwa_per_shot = N_pwa_per_shot
 
-    def get_analysis_type(self,absorption_image_bool):
-        self.absorption_image = absorption_image_bool
+    def get_analysis_type(self,imaging_type):
+        self.imaging_type = imaging_type
 
     def got_img(self,img):
         self.imgs.append(np.asarray(img))
@@ -49,7 +50,7 @@ class Analyzer(QObject):
         self.od_raw = compute_OD(self.img_atoms,
                         self.img_light,
                         self.img_dark,
-                        abs_image_bool=self.absorption_image)
+                        imaging_type=self.imaging_type)
         self.od_raw = np.array([self.od_raw])
         self.od, self.sum_od_x, self.sum_od_y = \
             process_ODs(self.od_raw,self.roi)

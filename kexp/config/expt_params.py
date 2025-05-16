@@ -21,17 +21,17 @@ class ExptParams():
 
         #Imaging
         self.t_imaging_pulse = 10.e-6
-        self.t_light_only_image_delay = 100.e-3
-        self.t_dark_image_delay = 25.e-3
 
+        # img beam settings
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 18.0e6
-        self.frequency_detuned_imaging_F1 = 410.e6
+        self.frequency_detuned_imaging = 19.0e6
+        self.frequency_detuned_imaging_F1 = 420.e6
         self.beatlock_sign = -15
         self.N_offset_lock_reference_multiplier = 8
         self.frequency_minimum_offset_beatlock = 150.e6
         self.imaging_state = 2.
-        
+
+        ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
         self.detune_d2_r_imaging = 0.
         self.amp_d2_r_imaging = 0.065
@@ -39,6 +39,19 @@ class ExptParams():
         self.t_cooler_flash_imaging = 15.e-6
         self.detune_d2_c_imaging = 0.
         self.amp_d2_c_imaging = 0.065
+        
+        ## 2D MOT imaging settings
+        self.amp_d2_2d_c_imaging = 0.188
+        self.amp_d2_2d_r_imaging = 0.188
+        self.detune_d2_2d_c_imaging = -1.6
+        self.detune_d2_2d_r_imaging = -4.4
+
+        # SLM settings
+        self.slm_mask = 'spot'
+        self.dimension_slm_mask = 20e-6
+        self.phase_slm_mask = np.pi/2
+        self.px_slm_phase_mask_position_x = 1920 // 2
+        self.px_slm_phase_mask_position_y = 1200 // 2
 
         #Cooling timing
         self.t_tof = 20.e-6
@@ -51,20 +64,21 @@ class ExptParams():
         self.t_magnet_off_pretrigger = 0.e-3
         self.t_shim_change_pretrigger = 0.e-3
         self.t_gm = 3.e-3
-        self.t_gmramp = 5.e-3
+        self.t_gmramp = 6.5e-3
+        self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
-        self.t_lightsheet_rampup = 1.
-        self.t_lightsheet_rampdown = .7
+        self.t_lightsheet_rampup = .7
+        self.t_lightsheet_rampdown = 1.1
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
         self.t_tweezer_ramp = .18
-        self.t_tweezer_hold = 30.e-3
+        self.t_tweezer_hold = 5.e-3
         self.t_tweezer_1064_ramp = .5
-        self.t_tweezer_1064_rampdown = .1
-        self.t_tweezer_1064_rampdown2 = .6
+        self.t_tweezer_1064_rampdown = 80.e-3 
+        self.t_tweezer_1064_rampdown2 = 510.e-3   
         self.t_tweezer_1064_rampdown3 = .18
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
@@ -73,9 +87,9 @@ class ExptParams():
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
         self.t_recover = 40.e-3
-        self.t_magtrap_delay = 0.
-        self.t_magtrap = 0.
-        self.t_magtrap_ramp = 1.5
+        self.t_magtrap_delay = 2.e-3
+        self.t_magtrap = 2. # for max atom number use 3 s
+        self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .2
         self.t_feshbach_field_rampup = 100.e-3
@@ -89,23 +103,29 @@ class ExptParams():
         self.amp_d1_3d_r = 0.3
 
         # push beam
-        self.detune_push = -6.
+        self.detune_push = -0.8
         self.amp_push = 0.188
 
         #2D MOT
-        self.detune_d2_c_2dmot = -1.2
-        self.amp_d2_c_2dmot = 0.188
+        self.detune_d2v_c_2dmot = -2.5
+        self.amp_d2v_c_2dmot = 0.188
 
-        self.detune_d2_r_2dmot = -2.4
-        self.amp_d2_r_2dmot = 0.188
+        self.detune_d2h_c_2dmot = -1.7
+        self.amp_d2h_c_2dmot = 0.188
 
-        self.v_2d_mot_current = 2.11
+        self.detune_d2v_r_2dmot = -4.1
+        self.amp_d2v_r_2dmot = 0.188
+
+        self.detune_d2h_r_2dmot = -6.4
+        self.amp_d2h_r_2dmot = 0.188
+
+        self.v_2d_mot_current = 2.7
 
         #MOT
-        self.detune_d2_c_mot = -2.4
+        self.detune_d2_c_mot = -2.6
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.2
+        self.detune_d2_r_mot = -5.7
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -114,10 +134,10 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 20.0
-        self.v_zshim_current = 0.13
-        self.v_xshim_current = 4.1
-        self.v_yshim_current = 7.
+        self.i_mot = 19.5
+        self.v_zshim_current = .57
+        self.v_xshim_current = 0.
+        self.v_yshim_current = 2.8
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -129,11 +149,11 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 7.5
-        self.pfrac_d1_c_d1cmot = .86
+        self.detune_d1_c_d1cmot = 10.
+        self.pfrac_d1_c_d1cmot = .85
 
-        self.detune_d2_r_d1cmot = -3.88
-        self.amp_d2_r_d1cmot = 0.065
+        self.detune_d2_r_d1cmot = -2.9
+        self.amp_d2_r_d1cmot = 0.047
 
         self.detune_d1_c_sweep_d1cmot_start = 9.
         self.detune_d1_c_sweep_d1cmot_end = 7.
@@ -144,34 +164,33 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 7.4
+        self.detune_gm = 11.5
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.83
-        self.v_xshim_current_gm = 0.32
-        self.v_yshim_current_gm = 2.6
+        self.v_zshim_current_gm = 0.78
+        self.v_xshim_current_gm = 0.57
+        self.v_yshim_current_gm = 2.4
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .97 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .71 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .97
+        self.pfrac_d1_r_gm = .71
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.36
-        self.pfrac_r_gmramp_end = 0.13
+        self.pfrac_c_gmramp_end = 0.03
+        self.pfrac_r_gmramp_end = 0.5
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 27.
+        self.i_magtrap_init = 92.
         self.i_magtrap_ramp_end = 95.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
-
-        self.v_zshim_current_magtrap_init = 0.
+        
         self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 0.14
-        self.v_yshim_current_magtrap = 6.
+        self.v_xshim_current_magtrap = 0.
+        self.v_yshim_current_magtrap = 8.
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -191,8 +210,8 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.99
-        self.v_pd_lightsheet_rampdown_end = 6.5 #4.16
+        self.v_pd_lightsheet_rampup_end = 9.7
+        self.v_pd_lightsheet_rampdown_end = .89 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -203,9 +222,9 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 9.
-        self.v_pd_tweezer_1064_rampdown_end = .5
-        self.v_pd_tweezer_1064_rampdown2_end = .07
+        self.v_pd_tweezer_1064_ramp_end = 8.7
+        self.v_pd_tweezer_1064_rampdown_end = 1.4
+        self.v_pd_tweezer_1064_rampdown2_end = .12
         self.v_pd_tweezer_1064_rampdown3_end = .57
         self.n_tweezer_ramp_steps = 1000
 
@@ -220,16 +239,16 @@ class ExptParams():
         #tweezers uniformly distributed around center frequency of AOD
         # self.frequency_tweezer_spacing = .7e6*2
         self.frequency_tweezer_spacing = 6.e6*2
-        self.frequency_tweezer_list = [70.4e6,78.e6]
+        self.frequency_tweezer_list = [73.7e6,76.e6]
         self.frequency_cat_eye_tweezer = 71.3e6
         self.frequency_cateye_threshold = 72.e6
 
         # self.frequency_tweezer_auto_compute = False
         # self.amp_tweezer_auto_compute = True
-        self.amp_tweezer_list = [.2,.215]
+        self.amp_tweezer_list = [.14,.145]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = -2.2
+        self.v_tweezer_paint_amp_max = -3.
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -257,10 +276,10 @@ class ExptParams():
         # self.n_feshbach_field_ramp2_steps = 100
 
         # rydberg
-        self.frequency_ao_ry_405 = 250.0e6
+        self.frequency_ao_ry_405_switch = 80.0e6
         self.frequency_ao_ry_980_switch = 80.0e6
-        self.amp_ao_ry_405 = 0.245
-        self.amp_ao_ry_980_switch = 0.285
+        self.amp_ao_ry_405_switch = 0.10
+        self.amp_ao_ry_980_switch = 0.4
 
         # raman
         self.frequency_raman_plus = 150.e6
@@ -278,9 +297,14 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # high field evap
-        self.i_evap1_current = 198.3
-        self.i_evap2_current = 198.45
-        self.i_evap3_current = 198.7
+        self.i_evap1_current = 193.2
+
+        self.i_tweezer_load_current = 193.4
+        self.i_tweezer_evap1_current = 193.86
+        self.i_tweezer_evap2_current = 193.71
+
+        # self.i_evap2_current = 198.45
+        # self.i_evap3_current = 198.7
 
         # forced evap
         self.i_forced_evap_ramp_init = 0.

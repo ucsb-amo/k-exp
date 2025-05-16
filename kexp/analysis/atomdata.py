@@ -7,7 +7,7 @@ from kamo.atom_properties.k39 import Potassium39
 
 from kexp.util.data.run_info import RunInfo
 from kexp.config.expt_params import ExptParams
-from kexp.config.camera_params import CameraParams
+from kexp.config.camera_id import CameraParams
 from kexp.base.sub.dealer import Dealer
 from kexp.base.sub.scanner import xvar
 
@@ -15,6 +15,8 @@ import kexp.util.data.server_talk as st
 import h5py
 
 import datetime
+
+from kexp.config.camera_id import img_types as img
 
 def unpack_group(file,group_key,obj):
     """Looks in an open h5 file in the group specified by key, and iterates over
@@ -35,9 +37,9 @@ def unpack_group(file,group_key,obj):
 class analysis_tags():
     """A simple container to hold analysis tags for analysis logic.
     """    
-    def __init__(self,roi_id,absorption_analysis):
+    def __init__(self,roi_id,imaging_type):
         self.roi_id = roi_id
-        self.absorption_analysis = absorption_analysis
+        self.imaging_type = imaging_type
         self.xvars_shuffled = False
         self.transposed = False
         self.averaged = False
@@ -98,7 +100,7 @@ class atomdata():
         self._ds = DataSaver()
         self.atom = Potassium39()
         self._dealer = self._init_dealer()
-        self._analysis_tags = analysis_tags(roi_id,self.run_info.absorption_image)
+        self._analysis_tags = analysis_tags(roi_id,self.run_info.imaging_type)
         self.roi = ROI(run_id = self.run_info.run_id,
                        roi_id = roi_id,
                        use_saved_roi = not skip_saved_roi,
@@ -153,7 +155,7 @@ class atomdata():
         """Computes the ODs. If not absorption analysis, OD = (pwa - dark)/(pwoa - dark).
         """        
         self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark,
-                                 abs_image_bool=self._analysis_tags.absorption_analysis)
+                                 imaging_type=self._analysis_tags.imaging_type)
 
     def analyze_ods(self):
         """Crops ODs, computes sum_ods, gaussian fits to sum_ods, and populates
@@ -171,7 +173,7 @@ class atomdata():
         
         self._remap_fit_results()
         
-        if self._analysis_tags.absorption_analysis:
+        if self._analysis_tags.imaging_type == img.ABSORPTION:
             self.compute_atom_number()
 
     def _sort_images(self):
@@ -331,7 +333,7 @@ class atomdata():
                     new_attr = np.array(new_attr)
                 vars(struct)[key] = new_attr
 
-        listlike_keys = ['xvars','sort_idx','xvarnames','sort_N']
+        listlike_keys = ['xvars','xvarnames']
         reorder_listlike(self,listlike_keys)
 
         param_keys = ['N_repeats']
@@ -350,6 +352,8 @@ class atomdata():
             new_idx = np.concatenate( (new_xvar_idx, axes_idx_to_add) ).astype(int)
             attr = np.transpose(attr,new_idx)
             vars(self)[key] = attr
+
+        self._dealer = self._init_dealer()
 
         if reanalyze:
             self.analyze()

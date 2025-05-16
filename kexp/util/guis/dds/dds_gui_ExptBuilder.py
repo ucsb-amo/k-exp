@@ -58,11 +58,14 @@ class DDSGUIExptBuilder():
         return(returncode)
 
     def one_on(self, dds:DDS):
-        dac_load_line = ""
+        dac_load_line = "" 
         dac_control_line = ""
+        dds.update_dac_bool()
+        print(dds.dac_control_bool, dds.dac_ch)
         if dds.dac_control_bool:
-            dac_load_line = f"""self.dac = self.get_device("{dds.dac_device}")"""
-            dac_control_line = f"self.dac.set([{dds.dac_ch}],[{dds.v_pd}])"
+            # dac_load_line = f"""self.dac = self.get_device("{dds.dac_device}")"""
+            dac_load_line = f"""self.dac = self.get_device("zotino0")"""
+            dac_control_line = f"self.dac.set_dac([{dds.v_pd}],[{dds.dac_ch}])"
         script = textwrap.dedent(f"""
         from artiq.experiment import *
         class StartUp(EnvExperiment):
@@ -77,6 +80,7 @@ class DDSGUIExptBuilder():
                 {dac_control_line}
                 self.dds.sw.on()
         """)
+        print(script)
         returncode = self.execute(script)
         return(returncode)  
 
@@ -84,8 +88,9 @@ class DDSGUIExptBuilder():
         dac_load_line = ""
         dac_control_line = ""
         if dds.dac_control_bool:
-            dac_load_line = f"""self.dac = self.get_device("{dds.dac_device}")"""
-            dac_control_line = f"self.dac.set([{dds.dac_ch}],[0.])"
+            # dac_load_line = f"""self.dac = self.get_device("{dds.dac_device}")"""
+            dac_load_line = f"""self.dac = self.get_device("zotino0")"""
+            dac_control_line = f"self.dac.set_dac([0.],[{dds.dac_ch}])"
         script = textwrap.dedent(f"""
         from artiq.experiment import *
         class StartUp(EnvExperiment):
@@ -111,7 +116,7 @@ class DDSGUIExptBuilder():
             dds = ch.dds
             dds: DDS
             if dds.dac_control_bool:
-                dac_control_line = f"self.dac.set([{dds.dac_ch}],[0.])"
+                dac_control_line = f"self.dac.set_dac([0.],[{dds.dac_ch}])"
             get_lines += f"""
         self.setattr_device("{dds.name}")"""
             set_lines += f"""
@@ -144,7 +149,7 @@ class DDSGUIExptBuilder():
             dds = ch.dds
             dds: DDS
             if dds.dac_control_bool:
-                dac_control_line = f"self.dac.set([{dds.dac_ch}],[{dds.v_pd}])"
+                dac_control_line = f"self.dac.set([{dds.v_pd}],[{dds.dac_ch}])"
             get_lines += f"""
         self.setattr_device({dds.name})"""
             set_lines += f"""

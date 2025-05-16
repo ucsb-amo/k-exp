@@ -25,8 +25,9 @@ from kexp.control.misc.awg_tweezer import tweezer
 from kexp.control.misc.doubled_rf import doubled_rf
 from kexp.control.misc.raman_beams import RamanBeamPair
 from kexp.control.misc.ssg3021x import SSG3021X
+from kexp.control.slm.slm import SLM
 
-from kexp.calibrations.magnets import pid_current_to_outer_supply_setpoint
+from kexp.calibrations.magnets import transducer_current_to_outer_supply_setpoint
 
 import numpy as np
 
@@ -52,6 +53,9 @@ class Devices():
         sampler = self.get_device("sampler0")
         self.grabber = self.get_device("grabber0")
         self.grabber: Grabber
+
+        # slm
+        self.slm = SLM(expt_params=self.params, core=self.core)
 
         # sampler channels
         self.sampler = sampler_frame(sampler_device=sampler)
@@ -99,7 +103,7 @@ class Devices():
                                       igbt_ttl=self.ttl.outer_coil_igbt,
                                       discharge_igbt_ttl=self.ttl.coil_discharge_igbt,
                                       expt_params=self.params,
-                                      real_current_to_supply_function=pid_current_to_outer_supply_setpoint)
+                                      real_current_to_supply_function=transducer_current_to_outer_supply_setpoint)
         
         # painted ligthsheet
         self.lightsheet = lightsheet(pid_dac=self.dac.vva_lightsheet,
