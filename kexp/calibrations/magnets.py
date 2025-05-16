@@ -38,7 +38,7 @@ def outer_supply_setpoint_to_transducer_current(i_sup) -> TFloat:
     return slope_i_transducer_per_i_supply * i_sup + offset_i_transducer_per_i_supply
 
 @portable
-def i_supply_to_magnetic_field(i_supply) -> TFloat:
+def i_transducer_to_magnetic_field(i_transducer) -> TFloat:
     """For a given real current (measured by transducer), gives the magnetic
     field in Gauss produced by the outer coils.
 
@@ -50,13 +50,13 @@ def i_supply_to_magnetic_field(i_supply) -> TFloat:
     """    
     # k-jam\analysis\measurements\magnetometry_high_field.ipynb
     # run ID 10575
-    i = np.asarray(i_supply)
-    i = transducer_current_to_outer_supply_setpoint(i_supply)
+    i = np.asarray(i_transducer)
+    i = transducer_current_to_outer_supply_setpoint(i_transducer)
     slope_G_per_A, y_intercept_G = [2.84103112, 1.33805367]
     return slope_G_per_A * i + y_intercept_G
 
 @portable
-def magnetic_field_to_i_supply(b) -> TFloat:
+def magnetic_field_to_i_transducer(b) -> TFloat:
     """Finds the outer coil current which gives the specified magnetic field
     (G). Current is real current, as measured by the transducer.
 
