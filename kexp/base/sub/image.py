@@ -12,7 +12,7 @@ import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
-from kexp.calibrations import high_field_imaging_detuning
+from kexp.calibrations import high_field_imaging_detuning, low_field_imaging_detuning, I_LF_HF_THRESHOLD
 from kexp.config.camera_id import img_types as img, cameras
 
 dv = -10.e9
@@ -463,8 +463,10 @@ class Image():
             amp_imaging (float, optional): Imaging DDS amplitude. Defaults to
             camera_params.amp_imaging.
         """        
-
-        detuning = high_field_imaging_detuning(i_transducer=i_outer)
+        if i_outer > I_LF_HF_THRESHOLD:
+            detuning = high_field_imaging_detuning(i_transducer=i_outer)
+        else:
+            detuning = low_field_imaging_detuning(i_transducer=i_outer)
         
         self.set_imaging_detuning(detuning, amp=amp_imaging)
 
