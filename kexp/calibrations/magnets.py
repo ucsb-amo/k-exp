@@ -6,8 +6,8 @@ import numpy as np
 # analyze with
 # k-jam/analysis/measurements/i_transducer_per_i_supply.ipynb
 
-slope_i_transducer_per_i_supply = 1.0168583974549856
-offset_i_transducer_per_i_supply = 0.6553740218059771
+slope_i_transducer_per_i_supply = 1.0168888389645203
+offset_i_transducer_per_i_supply = 0.6426955097172109
 
 @portable
 def transducer_current_to_outer_supply_setpoint(i_transducer) -> TFloat:
