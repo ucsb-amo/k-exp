@@ -29,7 +29,8 @@ class igbt_magnet():
                  expt_params:ExptParams = ExptParams,
                  max_current = 0., max_voltage = 0.,
                  pid_measure_max_current = 0.,
-                 real_current_to_supply_function=identity):
+                 real_current_to_supply_function=identity,
+                 supply_current_to_real_current_function=identity):
         self.max_voltage = max_voltage
         self.max_current = max_current
         self.v_control_dac = v_control_dac
@@ -43,6 +44,7 @@ class igbt_magnet():
         self.i_supply = 0.
         self.i_pid = 0.
         self.real_current_to_supply_function = real_current_to_supply_function
+        self.supply_current_to_real_current_function = supply_current_to_real_current_function
 
     @kernel
     def load_dac(self):
@@ -174,8 +176,6 @@ class igbt_magnet():
         self.pid_dac.linear_ramp(t,v_start,v_end,n_steps)
         self.i_pid = i_end
 
-    
-
     @kernel
     def start_pid(self, i_pid=dv):
         """Starts the PID, then sets the supply with some current overhead for
@@ -183,7 +183,8 @@ class igbt_magnet():
 
         Args:
             i_pid (float, optional): The desired current in A. Defaults to the
-            current value of the supply output.
+            current value of the supply output (as measured by the coil
+            transducer).
         """        
         ##note for setting coils with the new subtract PID method
         ##the PID target value should only take the target current as a paremeter,
