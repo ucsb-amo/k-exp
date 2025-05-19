@@ -24,27 +24,24 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
         # self.p.t_lightsheet_rampdown = .16
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.6,1.5,15))
-        self.p.v_pd_lightsheet_rampdown_end = .72
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.7,5.5,10))
+        self.p.v_pd_lightsheet_rampdown_end = .78
 
         # self.xvar('t_lightsheet_hold',np.linspace(1.,5000.,5)*1.e-3)
         # self.p.t_lightsheet_hold = .1
 
-        # self.xvar('t_tweezer_hold',np.linspace(1.,500.,20)*1.e-3)
-        self.p.t_tweezer_hold = 30.e-3
+        self.xvar('t_tweezer_hold',np.linspace(1.,700.,10)*1.e-3)
+        self.p.t_tweezer_hold = 300.e-3
 
-        self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,0.,8))
-        self.p.v_tweezer_paint_amp_max = -3.8
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,0.,10))
+        self.p.v_tweezer_paint_amp_max = -3.9
 
-        self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(4.,9.2,8))
-        self.p.v_pd_tweezer_1064_ramp_end = 6.3
+        # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(3.,8.,10))
+        self.p.v_pd_tweezer_1064_ramp_end = 5.
         # self.p.v_pd_tweezer_1064_ramp_end = 9.9
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,800.,20)*1.e-3)
         # self.p.t_tweezer_1064_ramp = .17
-
-        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(3.,8.,10))
-        self.p.v_pd_tweezer_1064_ramp_end = 5.5
 
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.1,3.,8)) 
         # self.p.v_pd_tweezer_1064_rampdown_end = .9
@@ -69,10 +66,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('i_evap3_current',np.linspace(192.,194.,8))
         # self.p.i_evap3_current = 192.3
 
-        # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(12.,20.,20))
+        # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(14.,17.,8))
         # self.xvar('i_lf_evap2_current',np.linspace(17.,19.,8))
         # self.xvar('i_lf_evap3_current',np.linspace(17.,19.,8))
-        # self.xvar('i_lf_tweezer_load_current',np.linspace(12.,22.,20))
+        # self.xvar('i_lf_tweezer_load_current',np.linspace(14.,20.,8))
         self.p.i_lf_lightsheet_evap1_current = 16.
 
         self.p.i_lf_tweezer_load_current = 14.5
@@ -145,6 +142,7 @@ class tweezer_load(EnvExperiment, Base):
                         v_xshim_current=0.)
 
         # feshbach field on, ramp up to field 1  
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.on()
         # delay(1.e-3)
         self.outer_coil.set_voltage()
@@ -152,7 +150,7 @@ class tweezer_load(EnvExperiment, Base):
                              i_start=0.,
                              i_end=self.p.i_lf_lightsheet_evap1_current)
         
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # 
         # self.outer_coil.start_pid(i_pid = self.p.i_lf_lightsheet_evap1_current)
 
         # lightsheet evap 1
