@@ -657,6 +657,7 @@ class Cooling():
                         v_zshim_current=v_zshim_current)
 
         self.dds.power_down_cooling()
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
 
         delay(t_delay)
              

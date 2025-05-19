@@ -10,6 +10,8 @@ import os
 # Keithely should be set up to measure 60A/V transducer (or change trandsucer
 # factor here)
 
+# Analyze in k-jam\analysis\measurements\i_transducer_per_i_supply.ipynb
+
 TRANSDUCER_A_PER_V = 60
 
 class KeithleyDMM6500():
@@ -54,7 +56,7 @@ class high_field_magnetometry(EnvExperiment, Base):
 
             v = self.outer_coil.supply_current_to_dac_voltage(self.i_supply[i])
             self.outer_coil.i_control_dac.set(v)
-            delay(100.e-3)
+            delay(200.e-3)
 
             self.core.wait_until_mu(now_mu())
             self.multimeter.read_voltage(i)
