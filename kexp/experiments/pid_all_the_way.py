@@ -6,6 +6,7 @@ from kexp.util.artiq.async_print import aprint
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
+from kexp.calibrations.magnets import compute_pid_overhead
 
 class tweezer_load(EnvExperiment, Base):
 
@@ -18,6 +19,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.arange(240.,550.,6)*1.e6)
         
         self.p.frequency_detuned_imaging = 294.e6 # i-18.3
+
+        self.p.t_feshbach_field_rampup = 500.e-3
 
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.5,9.9,6))
         # self.p.v_pd_lightsheet_rampup_end = 9.9
@@ -109,7 +112,7 @@ class tweezer_load(EnvExperiment, Base):
         a_list = [.145]
         self.p.amp_tweezer_list = a_list
 
-        self.xvar('beans',[1]*1000)
+        self.xvar('beans',[1]*2)
 
         self.p.t_mot_load = 1.
 
@@ -147,20 +150,20 @@ class tweezer_load(EnvExperiment, Base):
 
         # feshbach field on, ramp up to field 1  
         self.outer_coil.on()
-        # delay(1.e-3)
         self.outer_coil.set_voltage()
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
+
+        self.outer_coil.set_pid(i_pid=0.)
+        self.outer_coil.pid_ttl.on()
+
+        i_max = self.p.i_spin_mixture # max current for experiment
+        self.outer_coil.set_supply(i_supply=30.) # pid will eat all of this as it ramps
+        delay(50.e-3)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.outer_coil.ramp_pid(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_lf_lightsheet_evap1_current)
         
-        delay(100.e-3)
-        
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        if self.p.beans:
-            self.outer_coil.start_pid()
-            aprint(self.p.i_lf_lightsheet_evap1_current,
-                   self.outer_coil.i_pid,
-                   self.outer_coil.i_supply)
+        # self.outer_coil.start_pid()
 
         # lightsheet evap 1
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
@@ -168,14 +171,9 @@ class tweezer_load(EnvExperiment, Base):
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
         
         # feshbach field ramp to field 2
-        if self.p.beans:
-            self.outer_coil.ramp_pid(t=self.p.t_feshbach_field_ramp,
-                                i_start=self.p.i_lf_lightsheet_evap1_current,
-                                i_end=self.p.i_lf_tweezer_load_current)
-        else:
-            self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                                i_start=self.p.i_lf_lightsheet_evap1_current,
-                                i_end=self.p.i_lf_tweezer_load_current)
+        self.outer_coil.ramp_pid(t=self.p.t_feshbach_field_ramp,
+                            i_start=self.p.i_lf_lightsheet_evap1_current,
+                            i_end=self.p.i_lf_tweezer_load_current)
         
         # # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.tweezer.on(paint=False)
@@ -192,14 +190,9 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
         
-        if self.p.beans:
-            self.outer_coil.ramp_pid(t=20.e-3,
-                                i_start=self.p.i_lf_tweezer_load_current,
-                                i_end=self.p.i_spin_mixture)
-        else:
-            self.outer_coil.ramp_supply(t=20.e-3,
-                                i_start=self.p.i_lf_tweezer_load_current,
-                                i_end=self.p.i_spin_mixture)
+        self.outer_coil.ramp_pid(t=20.e-3,
+                            i_start=self.p.i_lf_tweezer_load_current,
+                            i_end=self.p.i_spin_mixture)
         # delay(100.e-3)
 
         # self.dds.raman_minus.set_dds(amplitude=.25)
@@ -223,8 +216,7 @@ class tweezer_load(EnvExperiment, Base):
         delay(self.p.t_tof)
         self.abs_image()
 
-        if self.p.beans:
-            self.outer_coil.stop_pid()
+        self.outer_coil.stop_pid()
         delay(50.e-3)
 
         self.outer_coil.off()

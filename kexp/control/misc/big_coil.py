@@ -81,6 +81,7 @@ class igbt_magnet():
         self.i_control_dac.set(v=v_dac_current,load_dac=load_dac)
         self.i_supply = i_supply
 
+
     @kernel
     def set_pid(self,i_pid,load_dac=True):
         """Sets the PID set point to the given current.
@@ -92,6 +93,22 @@ class igbt_magnet():
         v_pid = self.supply_current_to_pid_voltage(i_pid)
         self.pid_dac.set(v=v_pid,load_dac=load_dac)
         self.i_pid = i_pid
+
+
+    @kernel
+    def start_pid_no_overhead(self,i_pid,load_dac=True):
+        """Starts the PID without any overhead.
+
+        Args:
+            i_pid (float): The desired current in A.
+            load_dac (bool, optional): Loads the dac if true. Defaults to True.
+        """        
+        v_pid = self.supply_current_to_pid_voltage(i_pid)
+        self.pid_dac.set(v=v_pid,load_dac=load_dac)
+        self.i_pid = i_pid
+        self.pid_ttl.on()
+
+    
         
     @kernel
     def set_voltage(self,v_supply=V_SUPPLY_DEFAULT,load_dac=True):
@@ -192,13 +209,29 @@ class igbt_magnet():
         ##what that gain is/be able to set it
         ##
 
-
         if i_pid == dv:
             i_pid = self.i_supply
+
         self.set_pid(i_pid)
         self.pid_ttl.on()
-        self.set_supply( self.i_pid + compute_pid_overhead(self.i_pid))
+
+        i_start = i_pid
+        i_end = self.i_pid + compute_pid_overhead(self.i_pid)
+        t_ramp = 10.e-3
+        n_steps = 50
+        delta_i = (i_end - i_start)/(n_steps-1)
+        dt = t_ramp / n_steps
+        for j in range(n_steps):
+            self.set_supply( i_start + delta_i * j )
+            delay(dt)
+        # self.set_supply(i_end)
         delay(T_ANALOG_DELAY)
+        # f = 0.25
+        # delay(T_ANALOG_DELAY*f)
+        # self.pid_ttl.off()
+        # delay(1.e-6)
+        # self.pid_ttl.on()
+        # delay(T_ANALOG_DELAY*(1-f))
 
     @kernel
     def stop_pid(self, i_supply=dv):
@@ -240,6 +273,7 @@ class igbt_magnet():
 
     @kernel
     def off(self):
+        self.ramp_supply(t=10.e-3, i_end=self.i_pid)
         self.rampdown()
         self.igbt_ttl.off()
         self.pid_ttl.off()
