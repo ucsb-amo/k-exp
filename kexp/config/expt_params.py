@@ -219,7 +219,7 @@ class ExptParams():
         #1064 tweezer
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
         self.amp_tweezer_pid1 = .45
-        self.amp_tweezer_pid2 = .45
+        self.amp_tweezer_pid2 = .45 # 0.2
         self.v_pd_tweezer_1064 = 5.
 
         self.v_pd_tweezer_1064_ramp_end = 8.6
@@ -279,7 +279,7 @@ class ExptParams():
         self.frequency_ao_ry_405_switch = 80.0e6
         self.frequency_ao_ry_980_switch = 80.0e6
         self.amp_ao_ry_405_switch = 0.10
-        self.amp_ao_ry_980_switch = 0.4
+        self.amp_ao_ry_980_switch = 0.12
 
         # raman
         self.frequency_raman_plus = 150.e6

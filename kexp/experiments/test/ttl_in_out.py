@@ -23,7 +23,6 @@ class trap_frequency(EnvExperiment, Base):
         self.core.reset()
 
         
-        
 
     def analyze(self):
         pass

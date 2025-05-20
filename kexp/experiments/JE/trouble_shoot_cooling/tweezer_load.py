@@ -29,7 +29,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_evap1_current',np.linspace(180.,200.,10))
         # self.p.i_evap1_current = 193.
 
-        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(1.,8.,10))
+        self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.5,1.5,10))
         self.p.v_pd_lightsheet_rampdown_end = 1.3
 
         # self.xvar('t_lightsheet_rampdown',np.linspace(100.,2000.,8)*1.e-3)
@@ -59,11 +59,11 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(20.,150.,15)*1.e-3) 
         # self.p.t_tweezer_1064_rampdown = 65.e-3
 
-        self.p.frequency_tweezer_list = [73.9e6,76.e6]
+        self.p.frequency_tweezer_list = [73.85e6,76.e6]
         # self.p.frequency_tweezer_list = np.linspace(76.e6,78.e6,6)
 
         # a_list = [.45,.55]
-        a_list = [.135,.145]
+        a_list = [.1355,.145]
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('hf_imaging_detuning', np.arange(-620.,-595.,3.)*1.e6)
