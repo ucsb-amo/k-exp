@@ -4,7 +4,7 @@ from kexp.config.expt_params import ExptParams
 from artiq.experiment import kernel, delay, parallel, portable, TFloat
 import numpy as np
 from kexp.util.artiq.async_print import aprint
-from kexp.calibrations.magnets import compute_pid_overhead
+from kexp.calibrations.magnets import compute_pid_overhead             
 
 dv = -1.
 di = 0
@@ -26,25 +26,30 @@ class igbt_magnet():
                  v_control_dac = DAC_CH, i_control_dac = DAC_CH,
                  pid_dac = DAC_CH, pid_ttl = TTL,
                  igbt_ttl = TTL, discharge_igbt_ttl = TTL,
-                 expt_params:ExptParams = ExptParams,
+                 expt_params:ExptParams = ExptParams(),
                  max_current = 0., max_voltage = 0.,
-                 pid_measure_max_current = 0.,
-                 real_current_to_supply_function=identity,
-                 supply_current_to_real_current_function=identity):
+                 slope_current_per_vdac_supply=1.,
+                 offset_current_per_vdac_supply=0.,
+                 slope_current_per_vdac_pid=1.,
+                 offset_current_per_vdac_pid=0.):
+        
         self.max_voltage = max_voltage
         self.max_current = max_current
         self.v_control_dac = v_control_dac
         self.i_control_dac = i_control_dac
         self.pid_dac = pid_dac
         self.pid_ttl = pid_ttl
-        self.pid_measure_max_current = pid_measure_max_current
         self.igbt_ttl = igbt_ttl
         self.discharge_igbt_ttl = discharge_igbt_ttl
         self.params = expt_params
         self.i_supply = 0.
         self.i_pid = 0.
-        self.real_current_to_supply_function = real_current_to_supply_function
-        self.supply_current_to_real_current_function = supply_current_to_real_current_function
+
+        self.slope_current_per_vdac_supply = slope_current_per_vdac_supply
+        self.offset_current_per_vdac_supply = offset_current_per_vdac_supply
+        self.slope_current_per_vdac_pid = slope_current_per_vdac_pid
+        self.offset_current_per_vdac_pid = offset_current_per_vdac_pid
+
 
     @kernel
     def load_dac(self):
@@ -76,11 +81,9 @@ class igbt_magnet():
             i (float): the current limit to be set in amps.
             load_dac (bool, optional): Loads the dac if true. Defaults to True.
         """        
-        i_setpoint = self.real_current_to_supply_function(i_supply)
-        v_dac_current = self.supply_current_to_dac_voltage(i_setpoint)
+        v_dac_current = self.current_to_supply_vdac(i_supply)
         self.i_control_dac.set(v=v_dac_current,load_dac=load_dac)
         self.i_supply = i_supply
-
 
     @kernel
     def set_pid(self,i_pid,load_dac=True):
@@ -90,10 +93,9 @@ class igbt_magnet():
             i_pid (float): The desired current in A.
             load_dac (bool, optional): Loads the dac if true. Defaults to True.
         """        
-        v_pid = self.supply_current_to_pid_voltage(i_pid)
+        v_pid = self.current_to_pid_vdac(i_pid)
         self.pid_dac.set(v=v_pid,load_dac=load_dac)
         self.i_pid = i_pid
-
 
     @kernel
     def start_pid_no_overhead(self,i_pid,load_dac=True):
@@ -103,12 +105,10 @@ class igbt_magnet():
             i_pid (float): The desired current in A.
             load_dac (bool, optional): Loads the dac if true. Defaults to True.
         """        
-        v_pid = self.supply_current_to_pid_voltage(i_pid)
+        v_pid = self.current_to_pid_vdac(i_pid)
         self.pid_dac.set(v=v_pid,load_dac=load_dac)
         self.i_pid = i_pid
-        self.pid_ttl.on()
-
-    
+        self.pid_ttl.on()    
         
     @kernel
     def set_voltage(self,v_supply=V_SUPPLY_DEFAULT,load_dac=True):
@@ -116,12 +116,20 @@ class igbt_magnet():
         self.v_control_dac.set(v=v_dac_voltage,load_dac=load_dac)
 
     @portable(flags={"fast-math"})
-    def supply_current_to_pid_voltage(self,i_supply) -> TFloat:
-        return (i_supply/self.pid_measure_max_current) * V_FULLSCALE_DAC
+    def current_to_pid_vdac(self,i) -> TFloat:
+        return (i - self.offset_current_per_vdac_pid) / self.slope_current_per_vdac_pid
+    
+    @portable(flags={"fast-math"})
+    def pid_vdac_to_current(self,v) -> TFloat:
+        return self.slope_current_per_vdac_pid * v + self.offset_current_per_vdac_pid
 
     @portable(flags={"fast-math"})
-    def supply_current_to_dac_voltage(self,i_supply) -> TFloat:
-        return (i_supply/self.max_current) * V_FULLSCALE_DAC
+    def current_to_supply_vdac(self,i) -> TFloat:
+        return (i - self.offset_current_per_vdac_supply) / self.slope_current_per_vdac_supply
+    
+    @portable(flags={"fast-math"})
+    def supply_vdac_to_current(self,v) -> TFloat:
+        return self.slope_current_per_vdac_supply * v + self.offset_current_per_vdac_supply
     
     @portable(flags={"fast-math"})
     def supply_voltage_to_dac_voltage(self,v_supply) -> TFloat:
@@ -153,11 +161,8 @@ class igbt_magnet():
         if i_end == dv:
             i_end = 0.
 
-        i_start_setpoint = self.real_current_to_supply_function(i_start)
-        v_start = self.supply_current_to_dac_voltage(i_start_setpoint)
-
-        i_end_setpoint = self.real_current_to_supply_function(i_end)
-        v_end = self.supply_current_to_dac_voltage(i_end_setpoint)
+        v_start = self.current_to_supply_vdac(i_start)
+        v_end = self.current_to_supply_vdac(i_end)
 
         self.i_control_dac.linear_ramp(t,v_start,v_end,n_steps)
         delay(t_analog_delay)
@@ -188,8 +193,8 @@ class igbt_magnet():
             self.i_pid = i_start
         if i_end == dv:
             i_end = 0.
-        v_start = self.supply_current_to_pid_voltage(i_start)
-        v_end = self.supply_current_to_pid_voltage(i_end)
+        v_start = self.current_to_pid_vdac(i_start)
+        v_end = self.current_to_pid_vdac(i_end)
         self.pid_dac.linear_ramp(t,v_start,v_end,n_steps)
         self.i_pid = i_end
 
@@ -217,21 +222,14 @@ class igbt_magnet():
 
         i_start = i_pid
         i_end = self.i_pid + compute_pid_overhead(self.i_pid)
-        t_ramp = 10.e-3
+        t_ramp = 50.e-3
         n_steps = 50
         delta_i = (i_end - i_start)/(n_steps-1)
         dt = t_ramp / n_steps
         for j in range(n_steps):
             self.set_supply( i_start + delta_i * j )
             delay(dt)
-        # self.set_supply(i_end)
         delay(T_ANALOG_DELAY)
-        # f = 0.25
-        # delay(T_ANALOG_DELAY*f)
-        # self.pid_ttl.off()
-        # delay(1.e-6)
-        # self.pid_ttl.on()
-        # delay(T_ANALOG_DELAY*(1-f))
 
     @kernel
     def stop_pid(self, i_supply=dv):
@@ -244,7 +242,11 @@ class igbt_magnet():
         """        
         if i_supply == dv:
             i_supply = self.i_pid
-        self.set_supply( i_supply )
+        # self.ramp_supply(t=50.e-3,
+        #           i_start=self.i_supply,
+        #           i_end=i_supply,
+        #           n_steps=100)
+        self.set_supply(i_supply)
         delay(T_ANALOG_DELAY)
         self.pid_ttl.off()
 
@@ -302,15 +304,20 @@ class hbridge_magnet(igbt_magnet):
                  pid_dac = DAC_CH, pid_ttl = TTL,
                  hbridge_ttl = TTL, igbt_ttl = TTL, discharge_igbt_ttl = TTL,
                  expt_params = ExptParams, max_current = 0., max_voltage = 0.,
-                 pid_measure_max_current = 0.
-                 ):
+                 slope_current_per_vdac_supply=1.,
+                 offset_current_per_vdac_supply=0.,
+                 slope_current_per_vdac_pid=1.,
+                 offset_current_per_vdac_pid=0.):
         super().__init__(v_control_dac,
                          i_control_dac,
                          pid_dac,pid_ttl,
                          igbt_ttl,discharge_igbt_ttl,
                          expt_params,
                          max_current,max_voltage,
-                         pid_measure_max_current)
+                         slope_current_per_vdac_supply,
+                         offset_current_per_vdac_supply,
+                         slope_current_per_vdac_pid,
+                         offset_current_per_vdac_pid)
         self.max_current = max_current
         self.max_voltage = max_voltage
         self.v_control_dac = v_control_dac

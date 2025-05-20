@@ -106,7 +106,7 @@ class tweezer_load(EnvExperiment, Base):
         a_list = [.145]
         self.p.amp_tweezer_list = a_list
 
-        self.xvar('beans',[1]*1000)
+        self.xvar('beans',[0,1]*1000)
 
         self.p.t_mot_load = 1.
 
@@ -143,7 +143,7 @@ class tweezer_load(EnvExperiment, Base):
                         v_xshim_current=0.)
 
         # feshbach field on, ramp up to field 1  
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.on()
         # delay(1.e-3)
         self.outer_coil.set_voltage()
@@ -159,12 +159,18 @@ class tweezer_load(EnvExperiment, Base):
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
         
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        if self.p.beans:
+            self.outer_coil.start_pid()
+        else:
+            delay(80.e-3)
+        
         # feshbach field ramp to field 2
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+        self.outer_coil.ramp_pid(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_lf_lightsheet_evap1_current,
                              i_end=self.p.i_lf_tweezer_load_current)
         
-        # # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.tweezer.on(paint=False)
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
                           v_start=0.,
@@ -179,7 +185,7 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
 
-        self.outer_coil.ramp_supply(t=20.e-3,
+        self.outer_coil.ramp_pid(t=20.e-3,
                              i_start=self.p.i_lf_tweezer_load_current,
                              i_end=self.p.i_spin_mixture)
 
@@ -206,7 +212,8 @@ class tweezer_load(EnvExperiment, Base):
         delay(self.p.t_tof)
         self.abs_image()
 
-        # self.outer_coil.stop_pid()
+        if self.p.beans:
+            self.outer_coil.stop_pid()
         # delay(50.e-3)
 
         self.outer_coil.off()

@@ -22,7 +22,7 @@ class TTL():
         self.ttl_device.off()
 
     @kernel
-    def pulse(self,t):
+    def pulse(self,t=1.e-6):
         self.ttl_device.on()
         delay(t)
         self.ttl_device.off()
