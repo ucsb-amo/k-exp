@@ -10,8 +10,7 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
-                      camera_select='andor')
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.p.imaging_state = 2.
 
@@ -31,14 +30,14 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_lightsheet_hold',np.linspace(1.,5000.,5)*1.e-3)
         # self.p.t_lightsheet_hold = .1
 
-        self.xvar('t_tweezer_hold',np.linspace(1.,700.,10)*1.e-3)
-        self.p.t_tweezer_hold = 300.e-3
+        # self.xvar('t_tweezer_hold',np.linspace(1.,800.,10)*1.e-3)
+        self.p.t_tweezer_hold = 100.e-3
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,0.,10))
-        self.p.v_tweezer_paint_amp_max = -3.9
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,-2.,10))
+        self.p.v_tweezer_paint_amp_max = -6.5
 
-        # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(3.,8.,10))
-        self.p.v_pd_tweezer_1064_ramp_end = 5.
+        # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(3.,9.,15))
+        self.p.v_pd_tweezer_1064_ramp_end = 8.1
         # self.p.v_pd_tweezer_1064_ramp_end = 9.9
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,800.,20)*1.e-3)
@@ -106,7 +105,7 @@ class tweezer_load(EnvExperiment, Base):
         a_list = [.145]
         self.p.amp_tweezer_list = a_list
 
-        self.xvar('beans',[0,1]*1000)
+        self.xvar('beans',[0,1]*20)
 
         self.p.t_mot_load = 1.
 
@@ -159,18 +158,12 @@ class tweezer_load(EnvExperiment, Base):
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lightsheet_rampdown_end)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        if self.p.beans:
-            self.outer_coil.start_pid()
-        else:
-            delay(80.e-3)
-        
         # feshbach field ramp to field 2
-        self.outer_coil.ramp_pid(t=self.p.t_feshbach_field_ramp,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_lf_lightsheet_evap1_current,
                              i_end=self.p.i_lf_tweezer_load_current)
         
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        #
         self.tweezer.on(paint=False)
         self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
                           v_start=0.,
@@ -185,9 +178,15 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
 
-        self.outer_coil.ramp_pid(t=20.e-3,
+        self.outer_coil.ramp_supply(t=20.e-3,
                              i_start=self.p.i_lf_tweezer_load_current,
                              i_end=self.p.i_spin_mixture)
+        
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        if self.p.beans:
+            self.outer_coil.start_pid()
+        else:
+            delay(80.e-3)
 
         # delay(100.e-3)
 
@@ -212,9 +211,8 @@ class tweezer_load(EnvExperiment, Base):
         delay(self.p.t_tof)
         self.abs_image()
 
-        if self.p.beans:
-            self.outer_coil.stop_pid()
-        # delay(50.e-3)
+        self.outer_coil.stop_pid()
+        delay(50.e-3)
 
         self.outer_coil.off()
         self.outer_coil.discharge()

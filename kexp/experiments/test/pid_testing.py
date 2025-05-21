@@ -18,29 +18,16 @@ class tweezer_load(EnvExperiment, Base):
         self.finish_prepare(shuffle=False)
 
     @kernel
-    def start_pid_fake(self, i_pid):
-        i_start = i_pid
-        i_end = i_pid + compute_pid_overhead(i_pid)
-        t_ramp = 50.e-3
-        n_steps = 50
-        delta_i = (i_end - i_start)/(n_steps-1)
-        dt = t_ramp / n_steps
-        for j in range(n_steps):
-            self.outer_coil.set_supply( i_start + delta_i * j )
-            delay(dt)
-        delay(30.e-3)
-
-    @kernel
     def scan_kernel(self):
 
-        i = 16.
+        i = 50.
 
         # feshbach field on, ramp up to field 1  
         self.outer_coil.on()
         self.outer_coil.set_voltage()
 
         self.outer_coil.ramp_supply(t=100.e-3,i_start=0.,i_end=i)
-        delay(100.e-3)
+        delay(300.e-3)
         # self.outer_coil.start_pid()
         # self.start_pid_fake(i)
         # delay(80.e-3)
@@ -53,7 +40,8 @@ class tweezer_load(EnvExperiment, Base):
         
         self.outer_coil.pid_ttl.on()
 
-        self.outer_coil.ramp_supply(t=100.e-3,i_end=i+compute_pid_overhead(i))
+        self.outer_coil.ramp_supply(t=50.e-3,i_end=i+compute_pid_overhead(i))
+        delay(30.e-3)
 
         # self.outer_coil.set_supply(i_supply=18.) # pid will eat all of this as it ramps
         # delay(200.e-3)
