@@ -12,21 +12,10 @@ offset_i_transducer_per_v_setpoint_supply_outer = 0.6609996609503291
 slope_i_transducer_per_v_setpoint_pid_outer  = 40.01587069690042
 offset_i_transducer_per_v_setpoint_pid_outer  = -0.3520810805908351
 
-# @portable
-# def transducer_current_to_outer_supply_dac_setpoint(i_transducer) -> TFloat:
-#     return (i_transducer - offset_i_transducer_per_v_setpoint_supply_outer) / slope_i_transducer_per_v_setpoint_supply_outer
-
-# @portable
-# def outer_supply_dac_setpoint_to_transducer_current(v_setpoint) -> TFloat:
-#     return slope_i_transducer_per_v_setpoint_supply_outer * v_setpoint + offset_i_transducer_per_v_setpoint_supply_outer
-
-# @portable
-# def transducer_current_to_outer_pid_setpoint(i_transducer) -> TFloat:
-#     return (i_transducer - offset_i_transducer_per_v_setpoint_pid_outer) / slope_i_transducer_per_v_setpoint_pid_outer
-
-# @portable
-# def outer_pid_setpoint_to_transducer_current(v_setpoint) -> TFloat:
-#     return slope_i_transducer_per_v_setpoint_pid_outer * v_setpoint + offset_i_transducer_per_v_setpoint_pid_outer
+# slope_overhead_per_i_transducer = 0.3569422
+# offset_overhead_per_i_transducer = -0.04
+slope_overhead_per_i_transducer = 0.37548
+offset_overhead_per_i_transducer = -1.25112
 
 @portable
 def compute_pid_overhead(i_pid) -> TFloat:
@@ -43,7 +32,7 @@ def compute_pid_overhead(i_pid) -> TFloat:
     Returns:
         float: the excess current (in A) that the keysight will run over the desired pid current
     """        
-    keysight_overhead = i_pid * 0.3569422 - 0.04
+    keysight_overhead = i_pid * slope_overhead_per_i_transducer +  offset_overhead_per_i_transducer
     return keysight_overhead
 
 ####
