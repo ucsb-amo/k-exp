@@ -82,6 +82,7 @@ def get_B(f_mf0_mf1_transition,
         return find_xval(f_mf0_mf1_transition,f_transitions,B)
 
 def rabi_oscillation(ad,rf_frequency_hz,
+                     populations_array=[],
                      include_idx=[0,-1],
                      min_population_is_zero=True,
                      plot_bool=True,
@@ -98,13 +99,15 @@ def rabi_oscillation(ad,rf_frequency_hz,
 
     Args:
         ad (atomdata)
+        rf_frequency_hz (float): The RF drive frequency in Hz.
+        populations_array (array, optional): An array of the populations, if
+        left empty uses max(ad.sum_od_x) - min(ad.sum_od_x).
         include_idx (list, optional): Specifies the first and last index of the
         data that will be used for the fit. -1 in the second element uses to the
         end of the list.
         min_population_is_zero (bool, optional): If true, normalizes the data
         between 1 and 0 (full intial contrast). If false, just normalizes the
         data maximum to 1.
-        rf_frequency_hz (float): The RF drive frequency in Hz.
         plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
         pi_time_at_peak (bool, optional): If True, assumes the initial
         population is zero and extracts the pi-pulse time as the location of the
@@ -123,9 +126,14 @@ def rabi_oscillation(ad,rf_frequency_hz,
     # Suppose these are your data
     times = ad.xvars[0]  # replace with your pulse times
 
-    sm_sum_ods = [sumod_x for sumod_x in ad.sum_od_x]
-    rel_amps = [np.max(sumod_x)-np.min(sumod_x) for sumod_x in sm_sum_ods]
-    populations = rel_amps  # replace with your atom populations
+    populations_array = np.asarray(populations_array)
+
+    if populations_array.size:
+        populations = populations_array
+    else:
+        sm_sum_ods = [sumod_x for sumod_x in ad.sum_od_x]
+        rel_amps = [np.max(sumod_x)-np.min(sumod_x) for sumod_x in sm_sum_ods]
+        populations = rel_amps  # replace with your atom populations
 
     if include_idx[1] == -1:
         idx0 = include_idx[0]
@@ -182,7 +190,7 @@ def rabi_oscillation(ad,rf_frequency_hz,
         plt.scatter(times*1.e6, populations, label='Data')
         t_sm = np.linspace(times[0],times[-1],10000)
         plt.plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='Fit')
-        plt.ylabel('max(sum od x) - min(sum od x)')
+        plt.ylabel('fractional state population')
         plt.xlabel('t (us)')
         plt.legend(loc='lower right')
         title = f"Run ID: {ad.run_info.run_id}\n"
