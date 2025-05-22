@@ -215,6 +215,7 @@ def rabi_oscillation(ad,rf_frequency_hz,
     return t_pi
 
 def rabi_oscillation_2d(ad:atomdata,
+                        populations_array=[],
                         include_idx=[0,-1],
                         min_population_is_zero=True,
                         plot_bool=True,
@@ -274,9 +275,14 @@ def rabi_oscillation_2d(ad:atomdata,
     rabi_frequencies_hz = []
     t_pis = []
 
-    rel_amps = np.asarray([[np.max(sumod_x)-np.min(sumod_x) for sumod_x in sumod_for_this_field] for sumod_for_this_field in ad.sum_od_x])
+    if populations_array.size:
+        populations_array = populations_array
+    else:
+        rel_amps = np.asarray([[np.max(sumod_x)-np.min(sumod_x) for sumod_x in sumod_for_this_field] for sumod_for_this_field in ad.sum_od_x])
+        populations_array = rel_amps
     if detect_dips:
-        rel_amps = -rel_amps
+        populations_array = -populations_array
+
  
     xvar0_idx = 0
 
@@ -293,7 +299,7 @@ def rabi_oscillation_2d(ad:atomdata,
         else:
             fig, ax = plt.subplots(1,len(ad.xvars[0]),figsize=(15,3))
 
-    for rel_amp in rel_amps:
+    for rel_amp in populations_array:
 
         populations = rel_amp
 
