@@ -177,7 +177,10 @@ def rabi_oscillation(ad,rf_frequency_hz,
 
         # Print the fit parameters
         # print(r"Fit function: f(t) = A * exp(-t/tau) * (cos(Omega t / 2 + phi))**2 + B")
-        print(f"Omega = 2*pi*{popt[0]/(2*np.pi):1.2f} Hz,\n phi = {popt[1]},\n B = {popt[2]},\n A = {popt[3]}")
+        print(f"Omega = 2*pi*{popt[0]/(2*np.pi):1.2f} Hz,"
+              +f"\n phi = {popt[1]},\n A = {popt[2]},"
+              +f"\n B = {popt[3]},"
+              +f"\n tau = {popt[4]}")
 
         rabi_frequency_hz = popt[0] / (2*np.pi)
     except:
@@ -186,13 +189,16 @@ def rabi_oscillation(ad,rf_frequency_hz,
         rabi_frequency_hz = None
 
     if plot_bool:
+        fig, ax = plt.subplots(1,1)
     # Plot the data and the fit
-        plt.scatter(times*1.e6, populations, label='Data')
+        ax.scatter(times*1.e6, populations, label='Data')
         t_sm = np.linspace(times[0],times[-1],10000)
-        plt.plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='Fit')
-        plt.ylabel('fractional state population')
-        plt.xlabel('t (us)')
-        plt.legend(loc='lower right')
+        ax.plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='fit')
+        ax.set_ylabel('fractional state population')
+        ax.set_xlabel('t (us)')
+
+        ax.legend(loc='lower right')
+        
         title = f"Run ID: {ad.run_info.run_id}\n"
         title += f"RF frequency = {rf_frequency_hz/1.e6:1.2f} MHz\n"
         # title += r"f(t) = $A \ \exp(-t/\tau) \cos^2(\Omega t / 2 + \phi) + B$"
@@ -200,9 +206,13 @@ def rabi_oscillation(ad,rf_frequency_hz,
         if rabi_frequency_hz:
             title += f"\n$\\Omega = 2\\pi \\times {rabi_frequency_hz/1.e3:1.3f}$ kHz"
 
-        plt.title(title)
-        plt.ylim([0,1.1])
-        plt.show()
+        ax.set_title(title)
+        ax.set_ylim([0,1.1])
+
+        fit_params_str = f"$\Omega$ = $2\pi \\times {popt[0]/(2*np.pi):1.2f}$ Hz,"\
+            +f"\n$A = {popt[2]:1.2f}$, $B = {popt[3]:1.2f}$"\
+            +f"\n$\\tau = {popt[4]*1.e6:1.2f}$ us"
+        ax.text(0.6, 0.75, fit_params_str, transform=ax.transAxes)
 
     try:
         if not pi_time_at_peak:
