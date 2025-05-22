@@ -25,21 +25,20 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_lightsheet_rampdown = .16
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.5,2.5,20))
-        self.p.v_pd_lightsheet_rampdown_end = 1.2
+        self.p.v_pd_lightsheet_rampdown_end = .85
         # self.p.v_pd_lightsheet_rampdown_end = .78
-
 
         # self.xvar('t_lightsheet_hold',np.linspace(1.,5000.,5)*1.e-3)
         # self.p.t_lightsheet_hold = .1
 
         # self.xvar('t_tweezer_hold',np.linspace(1.,800.,10)*1.e-3)
-        self.p.t_tweezer_hold = 300.e-3
+        self.p.t_tweezer_hold = 1.e-3
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,0.,10))
-        self.p.v_tweezer_paint_amp_max = -7.
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.5,0.,8))
+        self.p.v_tweezer_paint_amp_max = -2.5
 
-        # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(3.,9.,15))
-        self.p.v_pd_tweezer_1064_ramp_end = 6.5
+        # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(5.,9.2,10))
+        self.p.v_pd_tweezer_1064_ramp_end = 9.2
         # self.p.v_pd_tweezer_1064_ramp_end = 9.9
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,800.,20)*1.e-3)
@@ -69,12 +68,12 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.i_evap3_current = 192.3
 
         # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(14.,17.,8))
-        # self.xvar('i_lf_evap2_current',np.linspace(17.,19.,8))
+        # self.xvar('i_lf_tweezer_evap1_current',np.linspace(17.,19.,8))
         # self.xvar('i_lf_evap3_current',np.linspace(17.,19.,8))
-        # self.xvar('i_lf_tweezer_load_current',np.linspace(14.,20.,8))
+        # self.xvar('i_lf_tweezer_load_current',np.linspace(13.,18.,8))
         self.p.i_lf_lightsheet_evap1_current = 16.
 
-        self.p.i_lf_tweezer_load_current = 14.5
+        self.p.i_lf_tweezer_load_current = 16.57
         # self.p.i_lf_evap3_current = 18.23
 
         # self.p.i_spin_mixture = 24.3
@@ -98,7 +97,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_raman_sweep = 1.e-3
 
         self.p.t_raman_pulse = 500.e-6
-        self.xvar('t_raman_pulse',np.linspace(.3,100.,50)*1.e-6)
+        # self.xvar('t_raman_pulse',np.linspace(.3,100.,50)*1.e-6)
         
         # self.xvar('f_raman_sweep_width',np.linspace(3.e3,30.e3,20))
         # self.p.f_raman_sweep_width = 350.e3
@@ -113,17 +112,17 @@ class tweezer_load(EnvExperiment, Base):
 
         # a_list = [.45,.55]
         # a_list = [.14,.145]
-        a_list = [.145]
+        a_list = [.25]
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('beans',[0,1])
 
         self.p.t_mot_load = 1.
 
-        # self.xvar('t_tof',np.linspace(100.,3000.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(10.,100.,10)*1.e-6)
 
-        self.p.t_tof = 20.e-6
-        self.p.N_repeats = 3
+        self.p.t_tof = 100.e-6
+        self.p.N_repeats = 1
 
         # self.xvar('turn_off_pid_before_imaging_bool',[0,1])
 
@@ -142,7 +141,7 @@ class tweezer_load(EnvExperiment, Base):
         #     pid_during_imaging = True
         # self.set_high_field_imaging(i_outer=self.p.i_spin_mixture,
         #                             pid_bool=pid_during_imaging)
-        self.set_high_field_imaging(i_outer=self.p.i_spin_mixture,pid_bool=True)
+        self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_load_current,pid_bool=False)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -195,48 +194,38 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
 
-        self.outer_coil.ramp_supply(t=20.e-3,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_lf_tweezer_load_current,
-                             i_end=self.p.i_spin_mixture)
+                             i_end=self.p.i_lf_tweezer_evap1_current)
+
+        # tweezer evap 1 with constant trap frequency
+        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
+                          v_start=self.p.v_pd_tweezer_1064_ramp_end,
+                          v_end=self.p.v_pd_tweezer_1064_rampdown_end,
+                          paint=True,keep_trap_frequency_constant=True)
+
+        # self.outer_coil.ramp_supply(t=20.e-3,
+        #                      i_start=self.p.i_lf_tweezer_load_current,
+        #                      i_end=self.p.i_spin_mixture)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.outer_coil.start_pid()
-
-        delay(50.e-3)
-
-        self.dds.raman_minus.set_dds(amplitude=self.p.amp_raman)
-        self.dds.raman_plus.set_dds(amplitude=self.p.amp_raman)
-
-        # delay(100.e-3)
-
-        # self.dds.raman_minus.on()
-        # delay(self.p.t_raman_pulse)
-        # self.dds.raman_minus.off()
-
-        # self.dds.raman_plus.on()
-        # delay(self.p.t_raman_pulse)
-        # self.dds.raman_plus.off()
-
-        self.raman.pulse(t=self.p.t_raman_pulse,frequency_transition=self.p.f_raman_transition)
-        # delay(self.p.t_raman_pulse)
-        # self.raman.sweep(t=self.p.t_raman_sweep,frequency_center=self.p.f_raman_sweep_center,frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
-        # delay(self.p.t_raman_sweep)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.outer_coil.start_pid()
 
         # delay(50.e-3)
 
-        # if self.p.turn_off_pid_before_imaging_bool:
-        #     self.outer_coil.stop_pid()
-        #     delay(50.e-3)
-        # else:
-        #     delay(80.e-3)
+        # self.dds.raman_minus.set_dds(amplitude=self.p.amp_raman)
+        # self.dds.raman_plus.set_dds(amplitude=self.p.amp_raman)
 
-        # delay(self.p.t_tweezer_hold)
+        # self.raman.pulse(t=self.p.t_raman_pulse,frequency_transition=self.p.f_raman_transition)
+
+        # self.raman.sweep(t=self.p.t_raman_sweep,frequency_center=self.p.f_raman_sweep_center,frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
+
+        delay(self.p.t_tweezer_hold)
         self.tweezer.off()
 
         delay(self.p.t_tof)
         self.abs_image()
 
-        self.outer_coil.stop_pid()
         # self.outer_coil.stop_pid()
         # delay(50.e-3)
 
