@@ -20,7 +20,8 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        i = 50.
+        # i = 50.
+        i = 20.
 
         # feshbach field on, ramp up to field 1  
         self.outer_coil.on()

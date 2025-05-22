@@ -20,13 +20,13 @@ class calibrate_hf_image_detuning(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(100,900.,10)*1.e-6)
         # self.xvar('dumy',[0]*500)
         
-        self.p.t_lightsheet_hold = .2
+        self.p.t_lightsheet_hold = 0.1
 
-        self.xvar('i_feshbach_current', np.linspace(180.,200.,18))
-        self.p.i_feshbach_current = 182.
+        self.xvar('i_lf_current', np.linspace(16.,25.,5))
+        self.p.i_lf_current = 18.3
 
-        self.xvar('hf_imaging_detuning', np.arange(-660.,-555.,6.)*1.e6)
-        # self.p.hf_imaging_detuning = -645.e6
+        self.xvar('lf_imaging_detuning', np.arange(200.,350.,4.)*1.e6)
+        self.p.lf_imaging_detuning = 291.98e6
 
         # self.p.amp_imaging = .12
         self.p.imaging_state = 2.
@@ -39,10 +39,8 @@ class calibrate_hf_image_detuning(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.set_imaging_detuning(frequency_detuned=self.p.lf_imaging_detuning)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        # self.camera_params.exposure_time = self.params.t_imaging_pulse # this one
-        # self.set_high_field_imaging(i_outer=self.p.i_evap2_current)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -54,11 +52,18 @@ class calibrate_hf_image_detuning(EnvExperiment, Base):
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
+        self.set_shims(v_zshim_current=0.,
+                        v_yshim_current=0.,
+                        v_xshim_current=0.)
+
         self.outer_coil.on()
         self.outer_coil.set_voltage()
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
-                             i_end=self.p.i_feshbach_current)
+                             i_end=self.p.i_lf_current)
+        
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.outer_coil.start_pid()
 
         delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
