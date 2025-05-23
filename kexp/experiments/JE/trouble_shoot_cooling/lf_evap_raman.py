@@ -24,8 +24,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
         # self.p.t_lightsheet_rampdown = .16
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.5,2.5,20))
-        self.p.v_pd_lightsheet_rampdown_end = .85
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.5,2.,10))
+        self.p.v_pd_lightsheet_rampdown_end = .83
         # self.p.v_pd_lightsheet_rampdown_end = .78
 
         # self.xvar('t_lightsheet_hold',np.linspace(1.,5000.,5)*1.e-3)
@@ -34,8 +34,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(1.,800.,10)*1.e-3)
         self.p.t_tweezer_hold = 1.e-3
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.5,0.,8))
-        self.p.v_tweezer_paint_amp_max = -2.5
+        self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.5,0.,15))
+        self.p.v_tweezer_paint_amp_max = -4.
 
         # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(5.,9.2,10))
         self.p.v_pd_tweezer_1064_ramp_end = 9.2
@@ -204,11 +204,11 @@ class tweezer_load(EnvExperiment, Base):
                              i_start=self.p.i_lf_tweezer_load_current,
                              i_end=self.p.i_lf_tweezer_evap1_current)
 
-        # tweezer evap 1 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
-                          v_start=self.p.v_pd_tweezer_1064_ramp_end,
-                          v_end=self.p.v_pd_tweezer_1064_rampdown_end,
-                          paint=True,keep_trap_frequency_constant=True)
+        # # tweezer evap 1 with constant trap frequency
+        # self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
+        #                   v_start=self.p.v_pd_tweezer_1064_ramp_end,
+        #                   v_end=self.p.v_pd_tweezer_1064_rampdown_end,
+        #                   paint=True,keep_trap_frequency_constant=True)
 
         # self.outer_coil.ramp_supply(t=20.e-3,
         #                      i_start=self.p.i_lf_tweezer_load_current,
