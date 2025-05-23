@@ -10,7 +10,6 @@ def normalize(array,map_minimum_to_zero=False):
 
 def rm_outliers(array,
                 outlier_method='mean',
-                center_method='mean',
                 outlier_threshold=0.3,
                 return_outlier_mask = True,
                 return_outlier_idx = False,
