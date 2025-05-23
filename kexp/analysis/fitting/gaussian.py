@@ -11,8 +11,12 @@ class GaussianFit(Fit):
                  px_boxcar_smoothing=3,
                  fractional_peak_height_at_width=0.3,
                  fractional_peak_prominence = 0.01,
-                 use_peak_bases_for_amplitude=False):
-        super().__init__(xdata,ydata,savgol_window=20)
+                 use_peak_bases_for_amplitude=False,
+                 include_idx = [0,-1],
+                 exclude_idx = []):
+        super().__init__(xdata,ydata,
+                         include_idx=include_idx,exclude_idx=exclude_idx,
+                         savgol_window=20)
 
         self._debug_plotting = debug_plotting
 
@@ -201,8 +205,12 @@ class MultiGaussianFit(GaussianFit,Fit):
                  fractional_peak_prominence=0.01,
                  fractional_peak_height_at_width=0.6,
                  px_boxcar_smoothing_width=3,
-                 peak_distance_px=3):
-        Fit.__init__(self,xdata,ydata,20)
+                 peak_distance_px=3,
+                 include_idx = [0,-1],
+                 exclude_idx = []):
+        super().__init__(xdata,ydata,
+                         include_idx=include_idx,exclude_idx=exclude_idx,
+                         savgol_window=20)
 
         self._debug_plotting = debug_plots
         self.N_peaks = N_peaks
@@ -430,8 +438,12 @@ class MultiGaussianFit(GaussianFit,Fit):
         return fit_mask, y_offset_guess, amplitude_guess, sigma_guess, x_center_guess
 
 class BECFit(Fit):
-    def __init__(self,xdata,ydata):
-        super().__init__(xdata,ydata,savgol_window=20)
+    def __init__(self,xdata,ydata,
+                 include_idx = [0,-1],
+                 exclude_idx = []):
+        super().__init__(xdata,ydata,
+                         include_idx=include_idx,exclude_idx=exclude_idx,
+                         savgol_window=20)
 
         try:
             popt = self._fit(self.xdata,self.ydata)
@@ -477,7 +489,12 @@ class BECFit(Fit):
         return popt
 
 class GaussianTemperatureFit(Fit):
-    def __init__(self, xdata, ydata):
+    def __init__(self, xdata, ydata,
+                 include_idx = [0,-1],
+                 exclude_idx = []):
+        super().__init__(xdata,ydata,
+                         include_idx=include_idx,exclude_idx=exclude_idx,
+                         savgol_window=4,savgol_degree=2)
 
         super().__init__(xdata,ydata,savgol_window=4,savgol_degree=2)
 

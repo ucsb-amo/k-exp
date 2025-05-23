@@ -3,8 +3,11 @@ from scipy.optimize import curve_fit
 import numpy as np
 
 class LinearFit(Fit):
-    def __init__(self,xdata,ydata):
-        super().__init__(xdata,ydata)
+    def __init__(self,xdata,ydata,
+                 include_idx = [0,-1],
+                 exclude_idx = []):
+        super().__init__(xdata,ydata,
+                         include_idx=include_idx,exclude_idx=exclude_idx)
         try:
             popt = self._fit(self.xdata,self.ydata)
         except Exception as e:

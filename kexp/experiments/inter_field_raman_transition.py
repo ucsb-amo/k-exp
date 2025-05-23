@@ -24,20 +24,24 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
         # self.p.t_lightsheet_rampdown = .16
 
-        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.7,5.5,10))
-        self.p.v_pd_lightsheet_rampdown_end = .78
+        # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.5,2.5,20))
+        self.p.v_pd_lightsheet_rampdown_end = 1.2
+        # self.p.v_pd_lightsheet_rampdown_end = .78
+
 
         # self.xvar('t_lightsheet_hold',np.linspace(1.,5000.,5)*1.e-3)
         # self.p.t_lightsheet_hold = .1
 
         # self.xvar('t_tweezer_hold',np.linspace(1.,800.,10)*1.e-3)
-        self.p.t_tweezer_hold = 100.e-3
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,-2.,10))
-        self.p.v_tweezer_paint_amp_max = -6.5
+        self.p.t_tweezer_hold = 300.e-3
+
+        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,0.,10))
+        self.p.v_tweezer_paint_amp_max = -7.
 
         # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(3.,9.,15))
-        self.p.v_pd_tweezer_1064_ramp_end = 8.1
+        self.p.v_pd_tweezer_1064_ramp_end = 6.5
+        
         # self.p.v_pd_tweezer_1064_ramp_end = 9.9
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,800.,20)*1.e-3)
@@ -78,23 +82,24 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.i_spin_mixture = 24.3
         self.p.i_spin_mixture = 20.57
 
-        # self.xvar('t_raman_pulse',np.linspace(10.e-6,20.e-3,5))
-        # self.p.t_raman_pulse = 500.e-6
-        # self.p.f_raman_transition = 41.23e6
-        self.p.f_raman_transition = 50.e6
+        # self.xvar('f_raman_transition',43.4222e6 + np.linspace(-7.e3,7.e3,15))
+        self.p.f_raman_transition = 43.4222e6
 
-        # self.xvar('f_raman_sweep_center',np.linspace(39.e6,45.e6,40))
-        # self.xvar('f_raman_sweep_center',np.linspace(44.0,45.5,15)*1.e6)
-        # self.xvar('f_raman_sweep_center',76.4e6 + 2.e6*np.linspace(-1.,1.,60))
-        # self.p.f_raman_sweep_center = 41.238e6
+        # self.xvar('t_raman_pulse',np.linspace(.1,80.,20)*1.e-6)
+        self.p.t_raman_pulse = 500.e-6
 
-        # self.xvar('t_raman_sweep',np.linspace(100.e-6,20.e-3,20))
-        self.p.t_raman_sweep = 1.8e-3
-        # self.p.t_raman_pulse = 30.e-3
-        # self.xvar('t_raman_pulse',np.linspace(0.01,80.,10)*1.e-3)
-        
-        # self.xvar('f_raman_sweep_width',np.linspace(10.e3,2000.e3,30))
-        self.p.f_raman_sweep_width = 350.e3
+        # self.xvar('f_raman_sweep_center',np.linspace(43.35e6,43.48e6,10))
+        self.p.f_raman_sweep_center = 43.4222e6
+
+        # self.xvar('t_raman_sweep',np.linspace(200.e-6,3.e-3,10))
+        self.p.t_raman_sweep = 1.e-3
+
+        # self.xvar('f_raman_sweep_width',np.linspace(3.e3,30.e3,20))
+        self.p.f_raman_sweep_width = 15.e3
+
+        # self.xvar('amp_raman',np.linspace(.02,.15,20))
+        self.p.amp_raman = .25
+        # self.p.amp_raman = .11
 
         # self.p.frequency_tweezer_list = [73.7e6,76.e6]
         self.p.frequency_tweezer_list = [76.e6]
@@ -105,7 +110,7 @@ class tweezer_load(EnvExperiment, Base):
         a_list = [.145]
         self.p.amp_tweezer_list = a_list
 
-        self.xvar('beans',[0,1]*20)
+        # self.xvar('beans',[0,1]*10)
 
         self.p.t_mot_load = 1.
 
@@ -113,6 +118,8 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_tof = 20.e-6
         self.p.N_repeats = 1
+
+        # self.xvar('turn_off_pid_before_imaging_bool',[0,1])
 
         # self.camera_params.amp_imaging = .12
         # self.camera_params.exposure_time = 10.e-6
@@ -123,9 +130,13 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_spin_mixture)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
+        # if self.p.turn_off_pid_before_imaging_bool:
+        #     pid_during_imaging = False
+        # else:
+        #     pid_during_imaging = True
+        # self.set_high_field_imaging(i_outer=self.p.i_spin_mixture,
+        #                             pid_bool=pid_during_imaging)
+        self.set_high_field_imaging(i_outer=self.p.i_spin_mixture,pid_bool=True)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -178,32 +189,23 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
 
+        self.dac.supply_current_2dmot.set(v=0.)
+
         self.outer_coil.ramp_supply(t=20.e-3,
                              i_start=self.p.i_lf_tweezer_load_current,
                              i_end=self.p.i_spin_mixture)
         
         self.ttl.pd_scope_trig.pulse(1.e-6)
-        if self.p.beans:
-            self.outer_coil.start_pid()
-        else:
-            delay(80.e-3)
+        self.outer_coil.start_pid()
 
-        # delay(100.e-3)
+        delay(40.e-3)
 
-        # self.dds.raman_minus.set_dds(amplitude=.25)
-        # self.dds.raman_plus.set_dds(amplitude=.25)
-
-        # self.dds.raman_minus.on()
-        # delay(self.p.t_raman_pulse)
-        # self.dds.raman_minus.off()
-
-        # self.dds.raman_plus.on()
-        # delay(self.p.t_raman_pulse)
-        # self.dds.raman_plus.off()
+        # self.dds.raman_minus.set_dds(amplitude=self.p.amp_raman)
+        # self.dds.raman_plus.set_dds(amplitude=self.p.amp_raman)
 
         # self.raman.pulse(t=self.p.t_raman_pulse,frequency_transition=self.p.f_raman_transition)
+
         # self.raman.sweep(t=self.p.t_raman_sweep,frequency_center=self.p.f_raman_sweep_center,frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
-        # delay(self.p.t_raman_sweep)
 
         # delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -212,10 +214,11 @@ class tweezer_load(EnvExperiment, Base):
         self.abs_image()
 
         self.outer_coil.stop_pid()
-        delay(50.e-3)
 
         self.outer_coil.off()
         self.outer_coil.discharge()
+
+        self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)
 
     @kernel
     def run(self):
