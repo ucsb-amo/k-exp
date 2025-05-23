@@ -27,7 +27,10 @@ from kexp.control.misc.raman_beams import RamanBeamPair
 from kexp.control.misc.ssg3021x import SSG3021X
 from kexp.control.slm.slm import SLM
 
-from kexp.calibrations.magnets import transducer_current_to_outer_supply_setpoint
+from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
+                                       offset_i_transducer_per_v_setpoint_supply_outer,
+                                       slope_i_transducer_per_v_setpoint_pid_outer,
+                                       offset_i_transducer_per_v_setpoint_pid_outer)
 
 import numpy as np
 
@@ -83,7 +86,6 @@ class Devices():
         # magnet coils
         self.inner_coil = hbridge_magnet(max_current=170.,
                                          max_voltage=80.,
-                                         pid_measure_max_current=200.,
                                          v_control_dac=self.dac.inner_coil_supply_voltage,
                                          i_control_dac=self.dac.inner_coil_supply_current,
                                          pid_dac=self.dac.inner_coil_pid,
@@ -91,11 +93,11 @@ class Devices():
                                          igbt_ttl=self.ttl.inner_coil_igbt,
                                          discharge_igbt_ttl=self.ttl.coil_discharge_igbt,
                                          hbridge_ttl=self.ttl.hbridge_helmholtz,
-                                         expt_params=self.params)
+                                         expt_params=self.params,
+                                         slope_current_per_vdac_supply=17.)
                                       
         self.outer_coil = igbt_magnet(max_current=500.,
                                       max_voltage=80.,
-                                      pid_measure_max_current=400.,
                                       v_control_dac=self.dac.outer_coil_supply_voltage,
                                       i_control_dac=self.dac.outer_coil_supply_current,
                                       pid_dac=self.dac.outer_coil_pid,
@@ -103,7 +105,10 @@ class Devices():
                                       igbt_ttl=self.ttl.outer_coil_igbt,
                                       discharge_igbt_ttl=self.ttl.coil_discharge_igbt,
                                       expt_params=self.params,
-                                      real_current_to_supply_function=transducer_current_to_outer_supply_setpoint)
+                                      slope_current_per_vdac_supply=slope_i_transducer_per_v_setpoint_supply_outer,
+                                      offset_current_per_vdac_supply=offset_i_transducer_per_v_setpoint_supply_outer,
+                                      slope_current_per_vdac_pid=slope_i_transducer_per_v_setpoint_pid_outer,
+                                      offset_current_per_vdac_pid=offset_i_transducer_per_v_setpoint_pid_outer)
         
         # painted ligthsheet
         self.lightsheet = lightsheet(pid_dac=self.dac.vva_lightsheet,

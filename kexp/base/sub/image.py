@@ -12,7 +12,10 @@ import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
-from kexp.calibrations import high_field_imaging_detuning, low_field_imaging_detuning, I_LF_HF_THRESHOLD
+from kexp.calibrations import (high_field_imaging_detuning,
+                                low_field_imaging_detuning,
+                                low_field_pid_imaging_detuning,
+                                I_LF_HF_THRESHOLD)
 from kexp.config.camera_id import img_types as img, cameras
 
 dv = -10.e9
@@ -452,7 +455,7 @@ class Image():
         self.dds.beatlock_ref.on()
 
     @kernel(flags={"fast-math"})
-    def set_high_field_imaging(self, i_outer, amp_imaging = dv):
+    def set_high_field_imaging(self, i_outer, pid_bool=False, amp_imaging = dv):
         """Sets the high field imaging detuning according to the current in the
         outer coil (as measured on a transducer). Also sets the imaging DDS
         amplitude.
@@ -460,13 +463,17 @@ class Image():
         Args:
             i_outer (float): The outer coil current (transducer) in A at which
             the imaging will take place.
+            pid_bool (float): Whether or not the PID is enabled during imaging.
+            Defaults to False.
             amp_imaging (float, optional): Imaging DDS amplitude. Defaults to
             camera_params.amp_imaging.
         """        
         if i_outer > I_LF_HF_THRESHOLD:
             detuning = high_field_imaging_detuning(i_transducer=i_outer)
-        else:
+        elif not pid_bool:
             detuning = low_field_imaging_detuning(i_transducer=i_outer)
+        else:
+            detuning = low_field_pid_imaging_detuning(i_pid=i_outer)
         
         self.set_imaging_detuning(detuning, amp=amp_imaging)
 

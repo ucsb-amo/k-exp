@@ -2,9 +2,12 @@ import numpy as np
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import copy
+from kexp.analysis.helper import crop_array_by_index
 
 class Fit():
-    def __init__(self,xdata,ydata,savgol_window=5,savgol_degree=3):
+    def __init__(self,xdata,ydata,
+                 include_idx=[0,-1],exclude_idx=[],
+                 savgol_window=5,savgol_degree=3):
         '''
         Arguments
         ----------
@@ -28,6 +31,9 @@ class Fit():
         '''
         xdata = np.asarray(xdata)
         ydata = np.asarray(ydata)
+
+        xdata = crop_array_by_index(xdata,include_idx,exclude_idx)
+        ydata = crop_array_by_index(ydata,include_idx,exclude_idx)
 
         xdata, ydata = self.remove_infnan(xdata,ydata)
         self.xdata = xdata
