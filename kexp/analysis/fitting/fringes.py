@@ -6,8 +6,11 @@ from scipy.optimize import curve_fit
 import numpy as np
 
 class SineEnvelope(Fit):
-    def __init__(self,xdata,ydata):
-        super().__init__(xdata,ydata,savgol_window=20)
+    def __init__(self,xdata,ydata,
+                 include_idx=[0,-1],exclude_idx=[]):
+        super().__init__(xdata,ydata,
+                        include_idx=include_idx,exclude_idx=exclude_idx,
+                        savgol_window=20)
 
         # self.xdata, self.ydata = self.remove_infnan(self.xdata,self.ydata)
 

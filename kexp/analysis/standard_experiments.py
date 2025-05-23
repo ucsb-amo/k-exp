@@ -3,14 +3,18 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from kexp.analysis import atomdata
+from kexp.analysis.helper import crop_array_by_index, normalize
 
 dv = -1000.
+dv_fit_guess_rabi_frequency = 1.e5
 
 class TOF():
     def __init__(self,
                  atomdata,
                  sigma_fit_axis,
-                 shot_idx=0):
+                 shot_idx=0,
+                 include_idx = [0,-1],
+                 exclude_idx = []):
         
         ad = atomdata
         
@@ -29,18 +33,12 @@ class TOF():
             self.xvar = ad.xvars[0]
 
         self.t_tof = ad.params.t_tof
-
-        # idx = np.array(range(len(self.t_tof)))
-        # if include_idx:
-        #     idx = np.intersect1d(idx, np.asarray(include_idx))
-
-        # self.t_tof = self.t_tof[idx]
-        # self.sigmas = self.sigmas[idx]
-        # self.atom_numbers = self.atom_numbers[idx]
         
         from kexp.analysis.fitting.gaussian import GaussianTemperatureFit
         
-        self.fit = GaussianTemperatureFit(self.t_tof, self.sigmas)
+        self.fit = GaussianTemperatureFit(self.t_tof, self.sigmas,
+                                          include_idx = include_idx,
+                                          exclude_idx = exclude_idx)
         
         self.sigma_r0 = self.fit.y_fitdata[0]
         self.average_atom_number = np.mean(self.atom_numbers)
@@ -85,10 +83,11 @@ def rabi_oscillation(ad,rf_frequency_hz,
                      pulse_times_array=[],
                      populations_array=[],
                      include_idx=[0,-1],
-                     min_population_is_zero=True,
+                     exclude_idx=[],
+                     min_population_is_zero=False,
                      plot_bool=True,
                      pi_time_at_peak=True,
-                     fit_guess_frequency=10.e3,
+                     fit_guess_frequency=dv_fit_guess_rabi_frequency,
                      fit_guess_phase=np.pi/2,
                      fit_guess_amp=1.,
                      fit_guess_offset=1.,
@@ -123,13 +122,11 @@ def rabi_oscillation(ad,rf_frequency_hz,
 
     # Define the Rabi oscillation function
     def _fit_func_rabi_oscillation(t, Omega, phi, B, A, tau):
-        # return A * np.exp(-t/tau) * np.abs(np.cos(0.5 * Omega * t + phi))**2
         return 0.5 * (B + A * np.exp(-t/tau) * np.cos(Omega * t + phi) )
 
     # Suppose these are your data
     pulse_times_array = np.asarray(pulse_times_array)
     pulse_times_array = pulse_times_array.flatten()
-
     if pulse_times_array.size:
         times = pulse_times_array
     else:
@@ -137,7 +134,6 @@ def rabi_oscillation(ad,rf_frequency_hz,
     
     populations_array = np.asarray(populations_array)
     populations_array = populations_array.flatten()
-
     if populations_array.size:
         populations = populations_array
     else:
@@ -145,22 +141,9 @@ def rabi_oscillation(ad,rf_frequency_hz,
         rel_amps = [np.max(sumod_x)-np.min(sumod_x) for sumod_x in sm_sum_ods]
         populations = rel_amps  # replace with your atom populations
 
-    if include_idx[1] == -1:
-        idx0 = include_idx[0]
-        times = times[idx0:]
-        populations = populations[idx0:]
-    else:
-        idx0 = include_idx[0]
-        idxf = include_idx[1]
-        times = times[idx0:idxf]
-        populations = populations[idx0:idxf]
-
-    populations = (populations)/(np.max(populations))
-
-    if min_population_is_zero:
-        populations = (populations-np.min(populations))/(np.max(populations)-np.min(populations))
-    else:
-        populations = (populations)/(np.max(populations))
+    populations = crop_array_by_index(populations,include_idx,exclude_idx)
+    times = crop_array_by_index(times,include_idx,exclude_idx)
+    populations = normalize(populations, map_minimum_to_zero=min_population_is_zero)
 
     if fit_guess_decay_tau == dv:
         convwidth = 3
@@ -169,6 +152,10 @@ def rabi_oscillation(ad,rf_frequency_hz,
         y = peak_prop['peak_heights']
         def _fit_func_decay(t, tau):
             return np.exp(-t/tau)
+        
+        if fit_guess_frequency == dv:
+            dt_peaks = np.mean(np.diff(times[peak_idx]))
+            fit_guess_frequency = 1/dt_peaks
 
         popt_decay, _ = curve_fit(_fit_func_decay,times[0:2],y[0:2])
         fit_guess_decay_tau = popt_decay[0]
@@ -197,9 +184,10 @@ def rabi_oscillation(ad,rf_frequency_hz,
         popt = [None]*5
         rabi_frequency_hz = None
 
+    
+    # Plot the data and the fit
     if plot_bool:
         fig, ax = plt.subplots(1,1)
-    # Plot the data and the fit
         ax.scatter(times*1.e6, populations, label='Data')
         t_sm = np.linspace(times[0],times[-1],10000)
         try:
@@ -242,7 +230,8 @@ def rabi_oscillation(ad,rf_frequency_hz,
 def rabi_oscillation_2d(ad:atomdata,
                         populations_array=[],
                         include_idx=[0,-1],
-                        min_population_is_zero=True,
+                        exclude_idx=[],
+                        min_population_is_zero=False,
                         plot_bool=True,
                         subplots_bool=True,
                         pi_time_at_peak=True,
@@ -331,20 +320,10 @@ def rabi_oscillation_2d(ad:atomdata,
 
         populations = populations.flatten()
 
-        if include_idx[1] == -1:
-            idx0 = include_idx[0]
-            times = times[idx0:]
-            populations = populations[idx0:]
-        else:
-            idx0 = include_idx[0]
-            idxf = include_idx[1]
-            times = times[idx0:idxf]
-            populations = populations[idx0:idxf]
+        populations = crop_array_by_index(populations,include_idx,exclude_idx)
+        times = crop_array_by_index(times,include_idx,exclude_idx)
 
-        if min_population_is_zero:
-            populations = (populations-np.min(populations))/(np.max(populations)-np.min(populations))
-        else:
-            populations = (populations)/(np.max(populations))
+        populations = normalize(populations, map_minimum_to_zero=min_population_is_zero)
 
         if fit_guess_decay_tau == dv:
             peak_idx, peak_prop = find_peaks(populations,height=0.5)
