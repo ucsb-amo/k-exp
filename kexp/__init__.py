@@ -4,3 +4,4 @@ from .analysis import atomdata
 from .util.data.load_atomdata import load_atomdata
 from .analysis import ROI
 from .config.camera_id import img_types, cameras, CameraParams
+from .control.ethernet_relay import EthernetRelay
