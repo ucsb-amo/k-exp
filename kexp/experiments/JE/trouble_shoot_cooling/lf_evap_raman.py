@@ -39,7 +39,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(1.,800.,10)*1.e-3)
         self.p.t_tweezer_hold = 1.e-3
 
-        # self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.5,0.,15))
+        self.xvar('v_tweezer_paint_amp_max',np.linspace(-6.5,0.,15))
         self.p.v_tweezer_paint_amp_max = -1.8
 
         # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(4.,9.2,10))
@@ -70,8 +70,8 @@ class tweezer_load(EnvExperiment, Base):
         self.p.i_lf_tweezer_evap1_current = 16.
         # self.p.i_lf_evap3_current = 18.23
 
-        self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.4,4.,15))
-        self.p.v_pd_tweezer_1064_rampdown_end = .95
+        # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.4,3.,15))
+        self.p.v_pd_tweezer_1064_rampdown_end = 2.4
 
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(20.,120.,20)*1.e-3) 
         self.p.t_tweezer_1064_rampdown = 62.e-3  
@@ -133,12 +133,6 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # if self.p.turn_off_pid_before_imaging_bool:
-        #     pid_during_imaging = False
-        # else:
-        #     pid_during_imaging = True
-        # self.set_high_field_imaging(i_outer=self.p.i_spin_mixture,
-        #                             pid_bool=pid_during_imaging)
         self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap1_current,pid_bool=False)
         # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
 
