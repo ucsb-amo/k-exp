@@ -131,7 +131,7 @@ def rabi_oscillation(ad,rf_frequency_hz,
     pulse_times_array = pulse_times_array.flatten()
 
     if pulse_times_array.size:
-        times = pulse_times_arrayWE
+        times = pulse_times_array
     else:
         times = ad.xvars[0]  # replace with your pulse times
     
