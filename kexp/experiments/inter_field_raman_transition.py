@@ -33,6 +33,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_lightsheet_hold = .1
 
         # self.xvar('t_tweezer_hold',np.linspace(1.,800.,10)*1.e-3)
+
         self.p.t_tweezer_hold = 300.e-3
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-7.,0.,10))
@@ -40,6 +41,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('v_pd_tweezer_1064_ramp_end', np.linspace(3.,9.,15))
         self.p.v_pd_tweezer_1064_ramp_end = 6.5
+        
         # self.p.v_pd_tweezer_1064_ramp_end = 9.9
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,800.,20)*1.e-3)
@@ -123,7 +125,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

@@ -22,13 +22,13 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('t_tof',np.linspace(10.,200.,10)*1.e-6)
         self.p.t_tof = 200.e-6
-
+        
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.5,9.9,6))
         # self.p.v_pd_lightsheet_rampup_end = 9.9
         
         # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
         # self.p.t_lightsheet_rampdown = .16
-
+        
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.5,2.5,10))
         self.p.v_pd_lightsheet_rampdown_end = 1.1
         # self.p.v_pd_lightsheet_rampdown_end = .78
@@ -48,6 +48,12 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(10.,800.,20)*1.e-3)
         # self.p.t_tweezer_1064_ramp = .17
+
+        # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.1,3.,8)) 
+        # self.p.v_pd_tweezer_1064_rampdown_end = .9
+
+        # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.01,.2,20))
+        # self.p.t_tweezer_1064_rampdown = .04
 
         # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.04,.099,8)) 
         # self.p.v_pd_tweezer_1064_rampdown2_end = .1
@@ -109,17 +115,22 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.frequency_tweezer_list = [73.7e6,76.e6]
         # self.p.frequency_tweezer_list = [76.e6]
         self.p.frequency_tweezer_list = [74.e6]
+
         # self.p.frequency_tweezer_list = np.linspace(76.e6,78.e6,6)
 
         # a_list = [.45,.55]
         # a_list = [.14,.145]
         a_list = [.145]
+        
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('beans',[0,1])
 
         self.p.t_mot_load = 1.
 
+        # self.xvar('t_tof',np.linspace(10.,100.,10)*1.e-6)
+
+        self.p.t_tof = 200.e-6
         self.p.N_repeats = 1
 
         # self.xvar('turn_off_pid_before_imaging_bool',[0,1])
