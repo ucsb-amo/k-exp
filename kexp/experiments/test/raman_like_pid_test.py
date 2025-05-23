@@ -12,7 +12,7 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False,save_data=False)
-        self.xvar('beans',[0]*5)
+        self.xvar('beans',[0]*5000)
         # self.p.imaging_state = 2.
 
         # self.xvar('frequency_detuned_imaging',np.arange(240.,550.,6)*1.e6)
