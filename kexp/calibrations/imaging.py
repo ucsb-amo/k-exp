@@ -5,7 +5,7 @@ from artiq.experiment import portable, TFloat
 
 # currents set using transducer (not supply set point)
 
-I_LF_HF_THRESHOLD = 150.
+I_LF_HF_THRESHOLD = 45.
 
 # run 22849
 # all shims set to zero during feshbach field
