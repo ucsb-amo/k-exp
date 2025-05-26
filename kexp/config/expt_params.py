@@ -90,7 +90,7 @@ class ExptParams():
         self.t_magtrap = 2. # for max atom number use 3 s
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
-        self.t_magtrap_rampdown = .2
+        self.t_magtrap_rampdown = .15
         self.t_feshbach_field_rampup = 100.e-3
         self.t_feshbach_field_ramp = 12.e-3
         self.t_feshbach_field_ramp2 = 12.e-3
@@ -289,11 +289,18 @@ class ExptParams():
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
 
-        # low field evap
+        # low field evap old
         # self.i_evap1_current = 9.5
         # self.i_evap2_current = 31.3
         # self.i_evap3_current = 25.
         # self.i_evap3_current = 16.4
+
+        # low field evap NEW
+        self.i_lf_lightsheet_evap1_current = 16.4
+
+        self.i_lf_tweezer_load_current = 13.
+        self.i_lf_tweezer_evap1_current = 13.3
+        self.i_lf_tweezer_evap2_current = 13.
 
         # high field evap
         self.i_lightsheet_evap1_current = 193.2
