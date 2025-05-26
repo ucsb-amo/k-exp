@@ -5,6 +5,8 @@ from kexp.control.artiq.dummy_core import DummyCore
 from artiq.language.core import kernel_from_string, now_mu
 from artiq.experiment import delay
 from kexp.util.artiq.async_print import aprint
+from kexp.config.camera_id import CameraParams
+from kexp.util.data.counter import counter
 
 RPC_DELAY = 10.e-3
 
@@ -20,6 +22,7 @@ class Scanner():
         self.xvarnames = []
         self.scan_xvars = []
         self.Nvars = 0
+        
         self.update_nvars()
         self.compute_new_derived = nothing
         self.core = DummyCore()
@@ -103,7 +106,7 @@ class Scanner():
     def cleanup_scan_kernel(self):
         """This method is run just after each scan_kernel completes.
         """
-        pass
+        self.cleanup_image_count()
         
     @kernel
     def scan(self):
@@ -315,6 +318,10 @@ class Scanner():
         except Exception as e:
             print(e)
             print('Derived parameters were not updated.')
+
+    def cleanup_image_count(self):
+        # dummy, overloaded by kexp.image.cleanup_image_count
+        pass
 
 class xvar():
     def __init__(self,key:str,values:np.ndarray,position=0):
