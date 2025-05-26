@@ -62,10 +62,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(13.,17.,20))
         self.p.i_lf_lightsheet_evap1_current = 15.8
 
-        self.xvar('i_lf_tweezer_load_current',np.linspace(15.,17.,20))
-        self.p.i_lf_tweezer_load_current = 16.57
+        # self.xvar('i_lf_tweezer_load_current',np.linspace(15.,17.,20))
+        self.p.i_lf_tweezer_load_current = 15.3
 
-        # self.xvar('i_lf_tweezer_evap1_current',np.linspace(13.5,16.5,15))
+        self.xvar('i_lf_tweezer_evap1_current',np.linspace(13.5,17.,15))
         self.p.i_lf_tweezer_evap1_current = 16.
         
         # self.p.i_lf_evap3_current = 18.23
