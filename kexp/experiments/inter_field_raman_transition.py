@@ -25,7 +25,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_lightsheet_rampdown = .16
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(.5,2.5,20))
-        self.p.v_pd_lightsheet_rampdown_end = 1.2
+        self.p.v_pd_lightsheet_rampdown_end = .83
         # self.p.v_pd_lightsheet_rampdown_end = .78
 
 
@@ -102,7 +102,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.amp_raman = .11
 
         # self.p.frequency_tweezer_list = [73.7e6,76.e6]
-        self.p.frequency_tweezer_list = [76.e6]
+        self.p.frequency_tweezer_list = [74.e6]
         # self.p.frequency_tweezer_list = np.linspace(76.e6,78.e6,6)
 
         # a_list = [.45,.55]
