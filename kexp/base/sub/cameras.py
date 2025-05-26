@@ -55,7 +55,7 @@ class Cameras():
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
             self.assign_camera_stuff(camera,camera_ttl=ttl,imaging_type=imaging_type)
         self.run_info.imaging_type = imaging_type
-        self.setup_slm()
+        self.setup_slm(imaging_type)
 
     def setup_slm(self, imaging_type):
         if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
