@@ -7,7 +7,7 @@ from kexp.config.camera_id import CameraParams
 from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
 from kexp.util.data.run_info import RunInfo
-from kexp.base.sub.devices import Devices
+from kexp.util.data.counter import counter
 import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint
@@ -30,7 +30,7 @@ class Image():
         self.camera = DummyCamera()
         self.lightsheet = lightsheet()
         self.scan_xvars = []
-        self._pwa_count = 0
+        self._counter = counter()
 
     ### Imaging sequences ###
 
@@ -75,6 +75,7 @@ class Image():
         self.trigger_camera()
         self.pulse_imaging_light(t)
         delay(self.camera_params.exposure_time - t)
+        self._counter.light_img_idx = self._counter.light_img_idx + 1
 
     @kernel
     def dark_image(self):
@@ -360,8 +361,33 @@ class Image():
         delay(-self.camera_params.exposure_delay * s)
         self.ttl.camera.pulse(self.camera_params.t_camera_trigger * s)
         t_adv = self.camera_params.exposure_delay - self.camera_params.t_camera_trigger
+        self._counter.img_idx = self._counter.img_idx + 1
         delay(t_adv * s)
 
+
+    @kernel
+    def cleanup_image_count(self):
+        N_pwa_target = self.params.N_pwa_per_shot
+        light_img_idx = self._counter.light_img_idx
+        img_idx = self._counter.img_idx
+
+        if light_img_idx == N_pwa_target \
+            and img_idx == N_pwa_target:
+
+            delay(self.camera_params.t_light_only_image_delay)
+            self.light_image()
+            delay(self.camera_params.t_dark_image_delay)
+            self.dark_image()
+
+        elif light_img_idx == N_pwa_target + 1 \
+            and img_idx == N_pwa_target + 2:
+            pass
+
+        else:
+            raise ValueError("Incorrect number of PWA acquired during the shot.")
+        
+        self._counter.light_img_idx = 0
+        self._counter.img_idx = 0
     ###
 
     @portable(flags={"fast-math"})

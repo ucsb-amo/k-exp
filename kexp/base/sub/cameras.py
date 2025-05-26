@@ -6,6 +6,7 @@ from kexp.control.artiq.TTL import TTL, DummyTTL
 from kexp.config.expt_params import ExptParams
 from kexp.config.camera_id import cameras, img_types, CameraParams
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
+from kexp.control.slm.slm import SLM
 from kexp.util.data.run_info import RunInfo
 import pypylon.pylon as py
 import numpy as np
@@ -19,6 +20,7 @@ class Cameras():
         self.camera_params = CameraParams()
         self.run_info = RunInfo()
         self.ttl = ttl_frame()
+        self.slm = SLM()
 
     ### Camera setup functions ###
 
@@ -53,6 +55,14 @@ class Cameras():
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
             self.assign_camera_stuff(camera,camera_ttl=ttl,imaging_type=imaging_type)
         self.run_info.imaging_type = imaging_type
+        # self.setup_slm(imaging_type)
+
+    @kernel
+    def setup_slm(self, imaging_type):
+        if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
+            self.slm.write_phase_mask_kernel(0.)
+        elif imaging_type == img_types.DISPERSIVE:
+            self.slm.write_phase_mask_kernel()
 
     def assign_camera_stuff(self,
                             camera:CameraParams,

@@ -6,6 +6,7 @@ from kexp.config.expt_params import ExptParams
 from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
 from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
+from kexp.util.data.counter import counter
 from kexp.util.data import server_talk
 from artiq.language.core import kernel_from_string, now_mu
 import time
@@ -36,6 +37,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.setup_camera = setup_camera
         self.run_info = RunInfo(self,save_data)
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
+        self._counter = counter()
 
         self.params = ExptParams()
         self.p = self.params
@@ -50,8 +52,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.xvarnames = []
         self.sort_idx = []
         self.sort_N = []
-
-        self._img_count_this_shot = 0
 
         self._setup_awg = False
 
@@ -95,9 +95,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         self.params.N_img = self.get_N_img()
         self.prepare_image_array()
 
-        # if cleanup_dds_profiles:
-        #     self.dds.cleanup_dds_profiles()
-
         self.params.compute_derived()
         self.compute_new_derived()
 
@@ -115,11 +112,14 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
 
     @kernel
     def init_kernel(self, run_id = True, init_dds =  True, init_dac = True,
-                     dds_set = True, dds_off = True, beat_ref_on=True,
-                     init_shuttler = True, init_lightsheet = True, setup_awg = True):
+                    dds_set = True, dds_off = True, beat_ref_on=True,
+                    init_shuttler = True, init_lightsheet = True,
+                    setup_awg = True, setup_slm = True):
         if self.setup_camera:
             self.wait_for_camera_ready(timeout=15.)
             print("Camera is ready.")
+        if setup_slm:
+            self.setup_slm(self.run_info.imaging_type)
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         if setup_awg:
