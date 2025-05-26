@@ -12,7 +12,6 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
                       imaging_type=img_types.DISPERSIVE)
 
         self.params.N_pwa_per_shot = 3
-        # self.xvar('t_pwa_image',np.linspace(0.,100.,10)*1.e-3,live_flag=True)
 
         self.finish_prepare(shuffle=True)
 
