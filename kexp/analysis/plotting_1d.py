@@ -6,6 +6,7 @@ from kexp.analysis.helper import xlabels_1d
 
 def plot_mixOD(ad:atomdata,
                ndarray=[],
+               xvar_idx=0,
                xvarformat="1.2f",
                xvarmult = 1.,
                lines=False,
@@ -23,12 +24,17 @@ def plot_mixOD(ad:atomdata,
     else:
         od = ad.od
 
+    
+
     if max_od == 0.:
         max_od = np.max(od)
 
     # Calculate the dimensions of the stitched image
     n, px, py = od.shape
-    n_repeats = int(ad.params.N_repeats)
+    if isinstance(ad.params.N_repeats,np.ndarray):
+        n_repeats = 1
+    else:
+        n_repeats = int(ad.params.N_repeats)
     n_shots = int(n / n_repeats)
 
     if swap_axes:
@@ -78,7 +84,7 @@ def plot_mixOD(ad:atomdata,
     plt.gca().set_aspect(aspect)
 
     # Set axis labels and title
-    ax.set_xlabel(xvarnames[0])
+    ax.set_xlabel(xvarnames[xvar_idx])
     ax.set_title(f"Run ID: {ad.run_info.run_id}")
 
     # Set the x-axis limits to show all images
@@ -98,7 +104,7 @@ def plot_mixOD(ad:atomdata,
         # Set ticks at the center of each sub-image and rotate them vertically
         tick_positions = np.arange(py/2, max_height, py)
         ax.set_yticks(tick_positions)
-        xvarlabels = xlabels_1d(xvars[0], xvarmult, xvarformat)
+        xvarlabels = xlabels_1d(xvars[xvar_idx], xvarmult, xvarformat)
         xvarlabels = xvarlabels[::n_repeats]
         ax.set_yticklabels(xvarlabels, rotation='horizontal', ha='center')
         plt.minorticks_off()
@@ -106,7 +112,7 @@ def plot_mixOD(ad:atomdata,
         # Set ticks at the center of each sub-image and rotate them vertically
         tick_positions = np.arange(px/2, total_width, px)
         ax.set_xticks(tick_positions)
-        xvarlabels = xlabels_1d(xvars[0], xvarmult, xvarformat)
+        xvarlabels = xlabels_1d(xvars[xvar_idx], xvarmult, xvarformat)
         xvarlabels = xvarlabels[::n_repeats]
         ax.set_xticklabels(xvarlabels, rotation='vertical', ha='center')
         plt.minorticks_off()
@@ -117,9 +123,6 @@ def plot_mixOD(ad:atomdata,
 
     # Show the plot
     fig.tight_layout()
-    plt.show()
-
-    return fig, ax
 
 def plot_sum_od_fits(ad:atomdata,axis=0,
                     xvarformat='3.3g',
@@ -185,8 +188,6 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
                     
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
     fig.supxlabel(ad.xvarnames[0])
-
-    return fig, ax
 
 def plot_fit_residuals(ad:atomdata,axis=0,
                        xvarformat='1.3g',
@@ -256,6 +257,4 @@ def plot_fit_residuals(ad:atomdata,axis=0,
     fig.tight_layout()
 
     plt.show()
-
-    return fig, ax
 
