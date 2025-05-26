@@ -270,7 +270,6 @@ class Scanner():
             elif 'float' in dtype:
                 self._param_keylist_floats.append(key)
                 self._xvar_writer_floats.append( kernel_from_string(["self","value"],bodycode) )
-
             elif 'ndarray' in dtype:
                 self._param_keylist_arrays.append(key)
                 self._xvar_writer_arrays.append( kernel_from_string(["self","value"],bodycode) )
