@@ -33,3 +33,15 @@ def crop_array_by_index(array,include_idx=[0,-1],exclude_idx=[]):
         array = np.delete(array,exclude_idx)
 
     return array
+
+def find_n_max_indices(arr, N):
+    """Find the indices of the N maximum values in a numpy ndarray."""
+    if N > arr.size:
+        raise ValueError("N cannot be greater than the number of elements in the array.")
+    
+    # Get the indices of the top N values
+    indices = np.argpartition(arr.flatten(), -N)[-N:]  # Unsorted top N indices
+    sorted_indices = indices[np.argsort(-arr.flatten()[indices])]  # Sort indices by value
+    
+    # Convert back to multi-dimensional indices
+    return [tuple(idx) for idx in np.array(np.unravel_index(sorted_indices, arr.shape)).T]
