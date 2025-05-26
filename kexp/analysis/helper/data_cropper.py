@@ -19,7 +19,6 @@ def crop_array_by_index(array,include_idx=[0,-1],exclude_idx=[]):
         array: the array with the specified elements removed.
     """
     array = np.asarray(array)
-    print(type(array),array)
     idx0 = int(include_idx[0])
     if include_idx[1] == -1:
         idxf = len(array)
