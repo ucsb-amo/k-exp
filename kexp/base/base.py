@@ -117,9 +117,14 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     def init_kernel(self, run_id = True, init_dds =  True, init_dac = True,
                      dds_set = True, dds_off = True, beat_ref_on=True,
                      init_shuttler = True, init_lightsheet = True, setup_awg = True):
+                    dds_set = True, dds_off = True, beat_ref_on=True,
+                    init_shuttler = True, init_lightsheet = True,
+                    setup_awg = True, setup_slm = True):
         if self.setup_camera:
             self.wait_for_camera_ready(timeout=15.)
             print("Camera is ready.")
+        if setup_slm:
+            self.setup_slm(self.run_info.imaging_type)
         if run_id:
             print(self._ridstr) # prints run ID to terminal
         if setup_awg:
