@@ -55,13 +55,14 @@ class Cameras():
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
             self.assign_camera_stuff(camera,camera_ttl=ttl,imaging_type=imaging_type)
         self.run_info.imaging_type = imaging_type
-        self.setup_slm(imaging_type)
+        # self.setup_slm(imaging_type)
 
+    @kernel
     def setup_slm(self, imaging_type):
         if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
-            self.slm.write_phase_mask(0.)
+            self.slm.write_phase_mask_kernel(0.)
         elif imaging_type == img_types.DISPERSIVE:
-            self.slm.write_phase_mask()
+            self.slm.write_phase_mask_kernel()
 
     def assign_camera_stuff(self,
                             camera:CameraParams,
