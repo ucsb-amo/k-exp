@@ -16,11 +16,15 @@ def get_best_result_idx(ad:atomdata,
     except:
         pass
     
+    figure_of_merit_label = ""
     figure_of_merit_array = np.asarray(figure_of_merit_array)
     if np.size(figure_of_merit_array):
-        print(f"figure_of_merit_param is set to '{figure_of_merit_key}', but argument figure_of_merit_array. Using figure_of_merit_array.")
         fom_array = figure_of_merit_array
-
+        print(f"figure_of_merit_param is set to '{figure_of_merit_key}', but argument figure_of_merit_array. Using figure_of_merit_array.")
+        figure_of_merit_label = input("input a label for the figure of merit:")
+    elif figure_of_merit_label == "":
+        figure_of_merit_label = figure_of_merit_key
+        
     if fom_array.size != np.prod(ad.xvardims):
         raise ValueError("Figure of merit array must have one value per shot. Examples are atom_number, fit_sd_x, etc. Cannot be an array per shot as in, od, sum_od, etc.")
     
@@ -28,6 +32,7 @@ def get_best_result_idx(ad:atomdata,
     n_best_shot_dict_list = [dict() for _ in range(N_best_shots)]
     for j in range(N_best_shots):
         n_best_shot_dict_list[j]['idx'] = n_max_idx[j]
+        n_best_shot_dict_list[j]['fom_key'] = figure_of_merit_label
         n_best_shot_dict_list[j]['fom'] = fom_array[n_max_idx[j]]
         for i in range(ad.Nvars):
             n_best_shot_dict_list[j][ad.xvarnames[i]] = ad.xvars[i][n_max_idx[j][i]]
@@ -39,8 +44,6 @@ def plot_n_best_od(ad:atomdata,
                 figure_of_merit_array = [],
                 figure_of_merit_label = "",
                 N_best_shots = 5,
-                xvarformat="1.2f",
-                xvarmult = 1.,
                 lines=False,
                 max_od=0.,
                 figsize=[],
@@ -51,12 +54,8 @@ def plot_n_best_od(ad:atomdata,
                                     figure_of_merit_key,
                                     figure_of_merit_array,
                                     N_best_shots)
-
-    figure_of_merit_array = np.asarray(figure_of_merit_array)
-    if figure_of_merit_label == "" and not figure_of_merit_array.size:
-        figure_of_merit_label = figure_of_merit_key
-    else:
-        figure_of_merit_label = input("input a label for the figure of merit:")
+    
+    figure_of_merit_label = n_best_shots[0]['fom_key']
 
     od = []
     for j in range(N_best_shots):
