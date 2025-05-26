@@ -22,7 +22,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.5,9.9,6))
         # self.p.v_pd_lightsheet_rampup_end = 9.9
 
-        # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(13.,17.,20))
+        self.xvar('i_lf_lightsheet_evap1_current',np.linspace(12.,25.,30))
         self.p.i_lf_lightsheet_evap1_current = 15.8
         
         # self.xvar('t_lightsheet_rampdown',np.linspace(.02,1.,8))
@@ -57,8 +57,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.1,3.,8)) 
         self.p.v_pd_tweezer_1064_rampdown_end = 1.3
 
-        self.xvar('t_tweezer_1064_rampdown',np.linspace(0.02,.15,20))
-        self.p.t_tweezer_1064_rampdown = 70.e-3
+        # self.xvar('t_tweezer_1064_rampdown',np.linspace(0.02,.15,20))
+        self.p.t_tweezer_1064_rampdown = 115.e-3
 
         # self.xvar('v_pd_tweezer_1064_rampdown2_end',np.linspace(.04,.099,8)) 
         # self.p.v_pd_tweezer_1064_rampdown2_end = .1
