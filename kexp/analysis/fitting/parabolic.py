@@ -56,7 +56,7 @@ class KinematicFit(Fit):
                                 bounds=((-np.inf,-np.inf,-np.inf),(np.inf,np.inf,np.inf)))
         return popt, pcov
     
-class ParabolicFit(Fit):
+class QuadraticFit(Fit):
     def __init__(self,xdata,ydata,
                  include_idx = [0,-1],
                  exclude_idx = []):
