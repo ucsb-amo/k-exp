@@ -27,7 +27,9 @@ class SLM:
         self.params = expt_params
         self.core = core
 
-    def write_phase_mask(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type=dm):
+    def write_phase_mask(self, dimension=dv, phase=dv,
+                        x_center=di, y_center=di,
+                        mask_type='spot'):
         """Writes a phase spot of given dimension and phase to the specified
         position on the slm display.
 
@@ -43,8 +45,8 @@ class SLM:
             y_center (int): Vertical position (in pixels) of the
             phase spot (from top right). Indexed from 1 to 1200. Defaults to
             ExptParams.px_slm_phase_mask_position_y. 
-            mask_type (str): The type of mask. It can be spot, grating or cross. 
-            Defaults to ExptParams.slm_mask.
+            mask_type (str): The type of mask. It can be `'spot'`, `'grating'`
+            or `'cross'`. Defaults to `'spot'`.
         """        
         if dimension == dv:
             dimension = self.params.dimension_slm_mask
@@ -54,8 +56,6 @@ class SLM:
             x_center = self.params.px_slm_phase_mask_position_x
         if y_center == di:
             y_center = self.params.px_slm_phase_mask_position_y
-        if mask_type == dm:    
-           mask_type =  self.params.slm_mask
 
         if mask_type == 'spot':
             mask = 1

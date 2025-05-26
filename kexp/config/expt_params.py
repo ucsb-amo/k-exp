@@ -47,7 +47,6 @@ class ExptParams():
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.slm_mask = 'spot'
         self.dimension_slm_mask = 20e-6
         self.phase_slm_mask = np.pi/2
         self.px_slm_phase_mask_position_x = 1920 // 2
