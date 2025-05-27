@@ -218,7 +218,7 @@ class ExptParams():
         #1064 tweezer
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
         self.amp_tweezer_pid1 = .45
-        self.amp_tweezer_pid2 = .45 # 0.2
+        self.amp_tweezer_pid2 = .6 # 0.6 for brimrose
         self.v_pd_tweezer_1064 = 5.
 
         self.v_pd_tweezer_1064_ramp_end = 8.6
