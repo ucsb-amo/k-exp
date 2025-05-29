@@ -32,7 +32,10 @@ def plot_mixOD(ad:atomdata,
     # Calculate the dimensions of the stitched image
     n, px, py = od.shape
     if isinstance(ad.params.N_repeats,np.ndarray):
-        n_repeats = 1
+        if ad.params.N_repeats.size > 1:
+            n_repeats = 1
+        else:
+            n_repeats = int(ad.params.N_repeats)
     else:
         n_repeats = int(ad.params.N_repeats)
     n_shots = int(n / n_repeats)
@@ -84,7 +87,6 @@ def plot_mixOD(ad:atomdata,
     plt.gca().set_aspect(aspect)
 
     # Set axis labels and title
-    ax.set_xlabel(xvarnames[xvar_idx])
     ax.set_title(f"Run ID: {ad.run_info.run_id}")
 
     # Set the x-axis limits to show all images
@@ -101,14 +103,16 @@ def plot_mixOD(ad:atomdata,
         ax.xaxis.set_ticks([])
 
     if swap_axes:
+        ax.set_ylabel(xvarnames[xvar_idx])
         # Set ticks at the center of each sub-image and rotate them vertically
         tick_positions = np.arange(py/2, max_height, py)
         ax.set_yticks(tick_positions)
         xvarlabels = xlabels_1d(xvars[xvar_idx], xvarmult, xvarformat)
         xvarlabels = xvarlabels[::n_repeats]
-        ax.set_yticklabels(xvarlabels, rotation='horizontal', ha='center')
+        ax.set_yticklabels(xvarlabels, rotation='vertical', va='center')
         plt.minorticks_off()
     else:
+        ax.set_xlabel(xvarnames[xvar_idx])
         # Set ticks at the center of each sub-image and rotate them vertically
         tick_positions = np.arange(px/2, total_width, px)
         ax.set_xticks(tick_positions)
