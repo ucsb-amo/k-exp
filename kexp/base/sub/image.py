@@ -26,6 +26,7 @@ class Image():
         self.ttl = ttl_frame()
         self.params = ExptParams()
         self.camera_params = CameraParams()
+        self.setup_camera = True
         self.run_info = RunInfo()
         self.camera = DummyCamera()
         self.lightsheet = lightsheet()
@@ -371,22 +372,25 @@ class Image():
         light_img_idx = self._counter.light_img_idx
         img_idx = self._counter.img_idx
 
-        if light_img_idx == N_pwa_target \
-            and img_idx == N_pwa_target:
+        if self.setup_camera:
+            if light_img_idx == N_pwa_target \
+                and img_idx == N_pwa_target:
 
-            delay(self.camera_params.t_light_only_image_delay)
-            self.light_image()
-            
-            self.close_imaging_shutters()
-            delay(self.camera_params.t_dark_image_delay)
-            self.dark_image()
+                print('hi')
 
-        elif light_img_idx == N_pwa_target + 1 \
-            and img_idx == N_pwa_target + 2:
-            pass
+                delay(self.camera_params.t_light_only_image_delay)
+                self.light_image()
+                
+                self.close_imaging_shutters()
+                delay(self.camera_params.t_dark_image_delay)
+                self.dark_image()
 
-        else:
-            raise ValueError("Incorrect number of PWA acquired during the shot.")
+            elif light_img_idx == N_pwa_target + 1 \
+                and img_idx == N_pwa_target + 2:
+                pass
+
+            else:
+                raise ValueError("Incorrect number of PWA acquired during the shot.")
         
         self._counter.light_img_idx = 0
         self._counter.img_idx = 0
