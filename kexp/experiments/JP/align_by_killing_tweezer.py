@@ -19,8 +19,8 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_tweezer_list = [74.e6]
         self.p.amp_tweezer_list = [.5]
 
-        self.xvar('amp_mot_killer',np.linspace(0.,0.188,3))
-        self.p.amp_mot_killer = 0.188
+        # self.xvar('amp_mot_killer',np.linspace(0.,0.188,3))
+        self.p.amp_mot_killer = 0.1
 
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
