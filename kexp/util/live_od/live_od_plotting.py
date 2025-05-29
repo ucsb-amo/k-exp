@@ -92,12 +92,13 @@ class ODviewer(QWidget):
         self.max_OD_spinner = QDoubleSpinBox()
         self.max_OD_spinner_label = QLabel("Max OD")
         self.max_OD_spinner.setValue(2.0)
-        self.max_OD_spinner.setMinimum(0.)
+        # self.max_OD_spinner.setMinimum(0.)
         self.max_OD_spinner.setSingleStep(0.1)
 
         self.min_OD_spinner = QDoubleSpinBox()
         self.min_OD_spinner_label = QLabel("Min OD")
-        self.min_OD_spinner.setMinimum(0.)
+        self.min_OD_spinner.setValue(0.0)
+        # self.min_OD_spinner.setMinimum(0.)
         self.min_OD_spinner.setSingleStep(0.1)
 
         self.image_count_label = QLabel(f"Image Count: / {self.Nimg} ")
