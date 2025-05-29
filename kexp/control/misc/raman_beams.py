@@ -57,7 +57,17 @@ class RamanBeamPair():
 
     @kernel
     def pulse(self,t,frequency_transition,
+              amp_raman_plus = dv,
+              amp_raman_minus = dv,
               set_transition_frequency_bool=True):
+        if amp_raman_plus == dv:
+            amp_raman_plus = self.params.amp_raman_plus
+        if amp_raman_plus == dv:
+            amp_raman_minus = self.params.amp_raman_minus
+
+        self.dds_plus.set_dds(amplitude=amp_raman_plus)
+        self.dds_plus.set_dds(amplitude=amp_raman_minus)
+
         if set_transition_frequency_bool:
             self.set_transition_frequency(frequency_transition)
         self.on()

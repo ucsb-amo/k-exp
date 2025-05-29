@@ -221,7 +221,7 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45 # brimrose AO
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 9.6
+        self.v_pd_tweezer_1064_ramp_end = 9.4
         self.v_pd_tweezer_1064_rampdown_end = 2.8
         self.v_pd_tweezer_1064_rampdown2_end = .12
         self.v_pd_tweezer_1064_rampdown3_end = .57

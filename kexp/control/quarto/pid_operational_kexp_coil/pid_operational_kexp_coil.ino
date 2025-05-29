@@ -48,8 +48,8 @@ bool pid_enable2 = false;
 
 void setup() {
   configureADC(1,1,0,BIPOLAR_10V,getMeas1);
-  configureADC(2,1,0,BIPOLAR_10V,getSet1);
-  configureADC(3,1,0,BIPOLAR_10V,getMeas2);
+  configureADC(3,1,0,BIPOLAR_10V,getSet1);
+  configureADC(2,1,0,BIPOLAR_10V,getMeas2);
 
   qC.assignVariable("p10",&P10);
   qC.assignVariable("i10",&I10);
@@ -114,6 +114,7 @@ void getMeas1()
   inputA = newadc1;
   writeDAC(4,inputA);
   writeDAC(2, inputB);
+  writeDAC(1, inputB);
   // P1 = P11;
   // I1 = I11;
   //}
@@ -170,12 +171,12 @@ void getMeas1()
 
 void getSet1()
 {
-  SETPOINT1 = readADC2_from_ISR();
+  SETPOINT1 = readADC3_from_ISR();
 }
 
 void getMeas2()
  {
-  double newadc2 = readADC3_from_ISR();
+  double newadc2 = readADC2_from_ISR();
   inputB = newadc2;
 }
 

@@ -4,8 +4,8 @@ from artiq.experiment import TFloat, TArray, portable, rpc
 
 #Calibration coefficients are from
 #k-jam\analysis\measurements\PID1_vs_PID2.ipynb
-vpd2_per_vpd1_slope =  89.89375081538569
-v_pd2_y_intercept =  -2.317598672382655
+vpd2_per_vpd1_slope =  71.67500001330266
+v_pd2_y_intercept =  -2.1376785723712772
 
 @portable(flags={"fast-math"})
 def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:
