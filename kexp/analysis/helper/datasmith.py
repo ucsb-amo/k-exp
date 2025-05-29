@@ -1,11 +1,21 @@
 import numpy as np
 
-def normalize(array,map_minimum_to_zero=False):
+def normalize(array,map_minimum_to_zero=False,
+               max_idx=None, min_idx=None):
     x = np.asarray(array)
-    if map_minimum_to_zero:
-        x = (x-np.min(x))/(np.max(x)-np.min(x))
+    if max_idx == None:
+        x_max = np.max(x)
     else:
-        x = (x)/(np.max(x))
+        x_max = x[max_idx]
+    if min_idx == None:
+        x_min = np.min(x)
+    else:
+        x_min = x[min_idx]
+
+    if map_minimum_to_zero:
+        x = (x-x_min)/(x_max-x_min)
+    else:
+        x = x/x_max
     return x
 
 def rm_outliers(array,

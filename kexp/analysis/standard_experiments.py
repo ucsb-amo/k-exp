@@ -3,7 +3,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from kexp.analysis import atomdata
-from kexp.analysis.helper import crop_array_by_index, normalize
+from kexp.analysis.helper import crop_array_by_index, normalize, get_repeat_std_error
 
 dv = -1000.
 dv_fit_guess_rabi_frequency = 1.e5
@@ -79,11 +79,13 @@ def get_B(f_mf0_mf1_transition,
 
         return find_xval(f_mf0_mf1_transition,f_transitions,B)
 
-def rabi_oscillation(ad,rf_frequency_hz,
+def rabi_oscillation(ad:atomdata,
+                     rf_frequency_hz,
                      pulse_times_array=[],
                      populations_array=[],
                      include_idx=[0,-1],
                      exclude_idx=[],
+                     normalize_maximum_idx=None,
                      min_population_is_zero=False,
                      plot_bool=True,
                      pi_time_at_peak=True,
@@ -143,7 +145,8 @@ def rabi_oscillation(ad,rf_frequency_hz,
 
     populations = crop_array_by_index(populations,include_idx,exclude_idx)
     times = crop_array_by_index(times,include_idx,exclude_idx)
-    populations = normalize(populations, map_minimum_to_zero=min_population_is_zero)
+    populations = normalize(populations, map_minimum_to_zero=min_population_is_zero,
+                            max_idx=normalize_maximum_idx)
 
     if fit_guess_decay_tau == dv:
         convwidth = 3
@@ -173,8 +176,8 @@ def rabi_oscillation(ad,rf_frequency_hz,
         # Print the fit parameters
         # print(r"Fit function: f(t) = A * exp(-t/tau) * (cos(Omega t / 2 + phi))**2 + B")
         print(f"Omega = 2*pi*{popt[0]/(2*np.pi):1.2f} Hz,"
-              +f"\n phi = {popt[1]},\n A = {popt[2]},"
-              +f"\n B = {popt[3]},"
+              +f"\n phi = {popt[1]},\n A = {popt[3]},"
+              +f"\n B = {popt[2]},"
               +f"\n tau = {popt[4]}")
 
         rabi_frequency_hz = popt[0] / (2*np.pi)
@@ -188,7 +191,17 @@ def rabi_oscillation(ad,rf_frequency_hz,
     # Plot the data and the fit
     if plot_bool:
         fig, ax = plt.subplots(1,1)
-        ax.scatter(times*1.e6, populations, label='Data')
+        Nr = ad.params.N_repeats
+        if isinstance(Nr,np.ndarray):
+            Nr = Nr[0]
+        mean, err = get_repeat_std_error(populations, Nr)
+
+        c = [0.,0.4,1.]
+        plt.scatter(times[::Nr]*1.e6, mean, color=c, label=f'Data (N={Nr})')
+        if Nr > 1:
+            plt.errorbar(times[::Nr]*1.e6, mean, err,
+                        capsize=5, fmt='None', ecolor=c)
+
         t_sm = np.linspace(times[0],times[-1],10000)
         try:
             ax.plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='fit')
@@ -211,9 +224,10 @@ def rabi_oscillation(ad,rf_frequency_hz,
 
         try:
             fit_params_str = f"$\Omega$ = $2\pi \\times {popt[0]/(2*np.pi):1.2f}$ Hz,"\
-                +f"\n$A = {popt[2]:1.2f}$, $B = {popt[3]:1.2f}$"\
+                +f"\n$A = {popt[3]:1.2f}$, $B = {popt[2]:1.2f}$"\
                 +f"\n$\\tau = {popt[4]*1.e6:1.2f}$ us"
-            ax.text(0.6, 0.75, fit_params_str, transform=ax.transAxes)
+            ax.text(0.6, 0.75, fit_params_str, transform=ax.transAxes,
+                     bbox=dict(facecolor='white', alpha=0.5, edgecolor='black', boxstyle='round,pad=0.5'))
         except:
             pass
 
