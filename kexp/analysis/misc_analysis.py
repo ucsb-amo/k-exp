@@ -3,17 +3,18 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from kexp.analysis import atomdata
-from kexp.analysis.helper import crop_array_by_index, normalize, find_n_max_indices
+from kexp.analysis.helper.datasmith import normalize, crop_array_by_index, find_n_max_indices
 
 def get_best_result_idx(ad:atomdata,
                         figure_of_merit_key='atom_number',
                         figure_of_merit_array=[],
                         N_best_shots=5):
     
+    fom_array = np.array([])
     try:
         fom_array = vars(ad)[figure_of_merit_key]
         fom_array: np.ndarray
-    except:
+    except Exception as e:
         pass
     
     figure_of_merit_label = ""
