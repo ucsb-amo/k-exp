@@ -59,6 +59,8 @@ class Dealer():
 
         for xvar in self.scan_xvars:
             xvar.values = np.repeat(xvar.values, self.params.N_repeats[xvar.position],axis=0)
+        
+        self.params.N_repeats = self.params.N_repeats[0]
 
     def shuffle_xvars(self,sort_preshuffle=True):
         """
