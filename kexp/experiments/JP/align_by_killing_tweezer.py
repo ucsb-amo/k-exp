@@ -19,7 +19,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_tweezer_list = [74.e6]
         self.p.amp_tweezer_list = [.5]
 
-        self.xvar('amp_mot_killer',np.linspace(0.,0.188,5))
+        self.xvar('amp_mot_killer',np.linspace(0.,0.188,3))
         self.p.amp_mot_killer = 0.188
 
         self.p.t_mot_load = 1.
@@ -83,8 +83,8 @@ class tweezer_load(EnvExperiment, Base):
 
         self.dds.mot_killer.set_dds_gamma(delta=0., amplitude=self.p.amp_mot_killer)
         self.dds.mot_killer.on()
-        
-        delay(10.e-3)
+
+        delay(100.e-3)
 
         self.tweezer.off()
 
