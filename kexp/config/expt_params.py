@@ -73,7 +73,7 @@ class ExptParams():
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
-        self.t_tweezer_ramp = .18
+        self.t_tweezer_ramp = .5
         self.t_tweezer_hold = 5.e-3
         self.t_tweezer_1064_ramp = .5
         self.t_tweezer_1064_rampdown = 85.e-3 
@@ -209,8 +209,8 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.7
-        self.v_pd_lightsheet_rampdown_end = .78 #4.16
+        self.v_pd_lightsheet_rampup_end = 9.4
+        self.v_pd_lightsheet_rampdown_end = .92 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -218,11 +218,11 @@ class ExptParams():
         #1064 tweezer
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
         self.amp_tweezer_pid1 = .45
-        self.amp_tweezer_pid2 = .6 # 0.6 for brimrose
+        self.amp_tweezer_pid2 = .45 # brimrose AO
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 8.6
-        self.v_pd_tweezer_1064_rampdown_end = 2.4
+        self.v_pd_tweezer_1064_ramp_end = 9.6
+        self.v_pd_tweezer_1064_rampdown_end = 2.8
         self.v_pd_tweezer_1064_rampdown2_end = .12
         self.v_pd_tweezer_1064_rampdown3_end = .57
         self.n_tweezer_ramp_steps = 1000
@@ -247,7 +247,7 @@ class ExptParams():
         self.amp_tweezer_list = [.14,.145]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = -1.4
+        self.v_tweezer_paint_amp_max = 0.
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -296,10 +296,10 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # low field evap NEW
-        self.i_lf_lightsheet_evap1_current = 16.4
+        self.i_lf_lightsheet_evap1_current = 13.9
 
         self.i_lf_tweezer_load_current = 13.
-        self.i_lf_tweezer_evap1_current = 13.3
+        self.i_lf_tweezer_evap1_current = 14.
         self.i_lf_tweezer_evap2_current = 13.
 
         # high field evap
