@@ -14,10 +14,9 @@ class RamanBeamPair():
         self.dds_minus = dds_minus
         self.params = params
 
-        self._frequency_center_dds_plus = self.dds_plus.frequency
-        self._frequency_center_dds_minus = self.dds_minus.frequency
-        if self._frequency_center_dds_plus != self._frequency_center_dds_minus:
-            raise ValueError("I didn't write this code to accout for different AO center frequencies. Ask me, or if I am gone, figure it out yourself. You'll have to update state_splitting_to_ao_frequency and decide how to divvy up the frequency difference between the two AOs -- maybe proportionally to their bandwidth.")
+        self._frequency_center_dds = (self.dds_plus.frequency + self.dds_minus.frequency)/2
+        if abs(self._frequency_center_dds - self.dds_plus.frequency) != abs(self._frequency_center_dds - self.dds_minus.frequency):
+            raise ValueError("The - and + DDS frequencies should be equidistant from their mean for optimal efficiency.")
 
         self._frequency_array = np.array([0.,0.])
 
@@ -33,8 +32,8 @@ class RamanBeamPair():
             self._frequency_array[0] = df
             self._frequency_array[1] = df
         else:
-            self._frequency_array[0] = self._frequency_center_dds_plus + df
-            self._frequency_array[1] = self._frequency_center_dds_minus - df
+            self._frequency_array[0] = self._frequency_center_dds + df
+            self._frequency_array[1] = self._frequency_center_dds - df
 
         return self._frequency_array
     
@@ -57,7 +56,17 @@ class RamanBeamPair():
 
     @kernel
     def pulse(self,t,frequency_transition,
+              amp_raman_plus = dv,
+              amp_raman_minus = dv,
               set_transition_frequency_bool=True):
+        if amp_raman_plus == dv:
+            amp_raman_plus = self.params.amp_raman_plus
+        if amp_raman_plus == dv:
+            amp_raman_minus = self.params.amp_raman_minus
+
+        self.dds_plus.set_dds(amplitude=amp_raman_plus)
+        self.dds_plus.set_dds(amplitude=amp_raman_minus)
+
         if set_transition_frequency_bool:
             self.set_transition_frequency(frequency_transition)
         self.on()

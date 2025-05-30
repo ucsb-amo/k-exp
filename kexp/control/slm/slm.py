@@ -21,6 +21,24 @@ class SLM:
         self.core = core
 
     def write_phase_mask(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type=dm):
+        """Writes a phase spot of given dimension and phase to the specified
+        position on the slm display.
+
+        Args:
+            dimension (float): Dimnesion (in m) of the phase mask. If set to
+            zero, gives uniform phase pattern. Defaults to
+            ExptParams.dimension_slm_mask.
+            phase (float): Phase (in radians) for the phase mask. Defaults to
+            ExptParams.phase_slm_mask.
+            x_center (int): Horizontal position (in pixels) of the
+            phase spot (from top right). Indexed from 1 to 1920. Defaults to
+            ExptParams.px_slm_phase_mask_position_x.
+            y_center (int): Vertical position (in pixels) of the
+            phase spot (from top right). Indexed from 1 to 1200. Defaults to
+            ExptParams.px_slm_phase_mask_position_y. 
+            mask_type (str): The type of mask. It can be spot, grating or cross. 
+            Defaults to ExptParams.slm_mask.
+        """        
         if dimension == dv:
             dimension = self.params.dimension_slm_mask
         if phase == dv:
@@ -29,8 +47,8 @@ class SLM:
             x_center = self.params.px_slm_phase_mask_position_x
         if y_center == di:
             y_center = self.params.px_slm_phase_mask_position_y
-        if mask_type == dm:
-            mask_type = self.params.slm_mask
+        if mask_type == dm:    
+           mask_type =  self.params.slm_mask
 
         if mask_type == 'find':
             command = 'find'
@@ -67,8 +85,26 @@ class SLM:
 
     @kernel
     def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type=dm):
+        """Writes a phase spot of given dimension and phase to the specified
+        position on the slm display.
+
+        Args:
+            dimension (float): Dimnesion (in m) of the phase mask. If set to
+            zero, gives uniform phase pattern. Defaults to
+            ExptParams.dimension_slm_mask.
+            phase (float): Phase (in radians) for the phase mask. Defaults to
+            ExptParams.phase_slm_mask.
+            x_center (int): Horizontal position (in pixels) of the
+            phase spot (from top right). Indexed from 1 to 1920. Defaults to
+            ExptParams.px_slm_phase_mask_position_x.
+            y_center (int): Vertical position (in pixels) of the
+            phase spot (from top right). Indexed from 1 to 1200. Defaults to
+            ExptParams.px_slm_phase_mask_position_y. 
+            mask_type (str): The type of mask. It can be spot, grating or cross. 
+            Defaults to ExptParams.slm_mask.
+        """    
         self.core.wait_until_mu(now_mu())
-        self.write_phase_mask(dimension, phase, x_center, y_center, mask_type=dm)
+        self.write_phase_mask(dimension, phase, x_center, y_center, mask_type)
         delay(SLM_RPC_DELAY)
 
     def _send_command(self, command):

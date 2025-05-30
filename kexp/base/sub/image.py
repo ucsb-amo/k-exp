@@ -7,12 +7,15 @@ from kexp.config.camera_id import CameraParams
 from kexp.control.misc.painted_lightsheet import lightsheet
 from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
 from kexp.util.data.run_info import RunInfo
-from kexp.base.sub.devices import Devices
+from kexp.util.data.counter import counter
 import pypylon.pylon as py
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 import logging
-from kexp.calibrations import high_field_imaging_detuning, low_field_imaging_detuning, I_LF_HF_THRESHOLD
+from kexp.calibrations import (high_field_imaging_detuning,
+                                low_field_imaging_detuning,
+                                low_field_pid_imaging_detuning,
+                                I_LF_HF_THRESHOLD)
 from kexp.config.camera_id import img_types as img, cameras
 
 dv = -10.e9
@@ -23,11 +26,12 @@ class Image():
         self.ttl = ttl_frame()
         self.params = ExptParams()
         self.camera_params = CameraParams()
+        self.setup_camera = True
         self.run_info = RunInfo()
         self.camera = DummyCamera()
         self.lightsheet = lightsheet()
         self.scan_xvars = []
-        self._pwa_count = 0
+        self._counter = counter()
 
     ### Imaging sequences ###
 
@@ -72,6 +76,7 @@ class Image():
         self.trigger_camera()
         self.pulse_imaging_light(t)
         delay(self.camera_params.exposure_time - t)
+        self._counter.light_img_idx = self._counter.light_img_idx + 1
 
     @kernel
     def dark_image(self):
@@ -357,8 +362,38 @@ class Image():
         delay(-self.camera_params.exposure_delay * s)
         self.ttl.camera.pulse(self.camera_params.t_camera_trigger * s)
         t_adv = self.camera_params.exposure_delay - self.camera_params.t_camera_trigger
+        self._counter.img_idx = self._counter.img_idx + 1
         delay(t_adv * s)
 
+
+    @kernel
+    def cleanup_image_count(self):
+        N_pwa_target = self.params.N_pwa_per_shot
+        light_img_idx = self._counter.light_img_idx
+        img_idx = self._counter.img_idx
+
+        if self.setup_camera:
+            if light_img_idx == N_pwa_target \
+                and img_idx == N_pwa_target:
+
+                print('hi')
+
+                delay(self.camera_params.t_light_only_image_delay)
+                self.light_image()
+                
+                self.close_imaging_shutters()
+                delay(self.camera_params.t_dark_image_delay)
+                self.dark_image()
+
+            elif light_img_idx == N_pwa_target + 1 \
+                and img_idx == N_pwa_target + 2:
+                pass
+
+            else:
+                raise ValueError("Incorrect number of PWA acquired during the shot.")
+        
+        self._counter.light_img_idx = 0
+        self._counter.img_idx = 0
     ###
 
     @portable(flags={"fast-math"})
@@ -452,7 +487,7 @@ class Image():
         self.dds.beatlock_ref.on()
 
     @kernel(flags={"fast-math"})
-    def set_high_field_imaging(self, i_outer, amp_imaging = dv):
+    def set_high_field_imaging(self, i_outer, pid_bool=False, amp_imaging = dv):
         """Sets the high field imaging detuning according to the current in the
         outer coil (as measured on a transducer). Also sets the imaging DDS
         amplitude.
@@ -460,13 +495,17 @@ class Image():
         Args:
             i_outer (float): The outer coil current (transducer) in A at which
             the imaging will take place.
+            pid_bool (float): Whether or not the PID is enabled during imaging.
+            Defaults to False.
             amp_imaging (float, optional): Imaging DDS amplitude. Defaults to
             camera_params.amp_imaging.
         """        
         if i_outer > I_LF_HF_THRESHOLD:
             detuning = high_field_imaging_detuning(i_transducer=i_outer)
-        else:
+        elif not pid_bool:
             detuning = low_field_imaging_detuning(i_transducer=i_outer)
+        else:
+            detuning = low_field_pid_imaging_detuning(i_pid=i_outer)
         
         self.set_imaging_detuning(detuning, amp=amp_imaging)
 

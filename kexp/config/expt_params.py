@@ -47,12 +47,10 @@ class ExptParams():
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.slm_mask = 'spot'
         self.dimension_slm_mask = 20e-6
-        self.phase_slm_mask = np.pi/2
-        self.px_slm_phase_mask_position_x = 1920 // 2
-        self.px_slm_phase_mask_position_y = 1200 // 2
-
+        self.phase_slm_mask = 0.42 * np.pi
+        self.px_slm_phase_mask_position_x = 1141
+        self.px_slm_phase_mask_position_y = 965
         #Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
@@ -69,17 +67,17 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         self.t_lightsheet_rampup = .7
-        self.t_lightsheet_rampdown = 1.1
+        self.t_lightsheet_rampdown = .67
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
-        self.t_tweezer_ramp = .18
+        self.t_tweezer_ramp = .5
         self.t_tweezer_hold = 5.e-3
         self.t_tweezer_1064_ramp = .5
-        self.t_tweezer_1064_rampdown = 85.e-3 
-        self.t_tweezer_1064_rampdown2 = 450.e-3   
-        self.t_tweezer_1064_rampdown3 = .18
+        self.t_tweezer_1064_rampdown = 45.e-3 
+        self.t_tweezer_1064_rampdown2 = 340.e-3   
+        self.t_tweezer_1064_rampdown3 = .56
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
@@ -91,7 +89,7 @@ class ExptParams():
         self.t_magtrap = 2. # for max atom number use 3 s
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
-        self.t_magtrap_rampdown = .2
+        self.t_magtrap_rampdown = .15
         self.t_feshbach_field_rampup = 100.e-3
         self.t_feshbach_field_ramp = 12.e-3
         self.t_feshbach_field_ramp2 = 12.e-3
@@ -210,8 +208,8 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.7
-        self.v_pd_lightsheet_rampdown_end = .78 #4.16
+        self.v_pd_lightsheet_rampup_end = 9.4
+        self.v_pd_lightsheet_rampdown_end = .92 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -219,13 +217,13 @@ class ExptParams():
         #1064 tweezer
         # self.v_pd_tweezer_1064_pd_minimum = 0.01
         self.amp_tweezer_pid1 = .45
-        self.amp_tweezer_pid2 = .45 # 0.2
+        self.amp_tweezer_pid2 = .45 # brimrose AO
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_tweezer_1064_ramp_end = 8.6
-        self.v_pd_tweezer_1064_rampdown_end = 2.4
+        self.v_pd_tweezer_1064_ramp_end = 9.4
+        self.v_pd_tweezer_1064_rampdown_end = 2.
         self.v_pd_tweezer_1064_rampdown2_end = .12
-        self.v_pd_tweezer_1064_rampdown3_end = .57
+        self.v_pd_tweezer_1064_rampdown3_end = 1.7
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
@@ -248,7 +246,7 @@ class ExptParams():
         self.amp_tweezer_list = [.14,.145]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = -1.4
+        self.v_tweezer_paint_amp_max = 1.8
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -279,10 +277,10 @@ class ExptParams():
         self.frequency_ao_ry_405_switch = 80.0e6
         self.frequency_ao_ry_980_switch = 80.0e6
         self.amp_ao_ry_405_switch = 0.10
-        self.amp_ao_ry_980_switch = 0.12
+        self.amp_ao_ry_980_switch = 0.34
 
         # raman
-        self.frequency_raman_plus = 150.e6
+        self.frequency_raman_plus = 150.e6 
         self.frequency_raman_minus = 150.e6
         self.amp_raman_plus = .25
         self.amp_raman_minus = .25
@@ -290,11 +288,18 @@ class ExptParams():
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
 
-        # low field evap
+        # low field evap old
         # self.i_evap1_current = 9.5
         # self.i_evap2_current = 31.3
         # self.i_evap3_current = 25.
         # self.i_evap3_current = 16.4
+
+        # low field evap NEW
+        self.i_lf_lightsheet_evap1_current = 13.1
+
+        self.i_lf_tweezer_load_current = 15.
+        self.i_lf_tweezer_evap1_current = 14.5
+        self.i_lf_tweezer_evap2_current = 14.
 
         # high field evap
         self.i_lightsheet_evap1_current = 193.2

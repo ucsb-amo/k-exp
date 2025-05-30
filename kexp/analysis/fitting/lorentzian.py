@@ -5,11 +5,16 @@ from kexp.analysis.fitting.fit import Fit
 
 class LorentzianFit(Fit):
     def __init__(self,xdata,ydata,
-                 force_zero_offset=False):
-        
-        self.force_zero_offset = force_zero_offset
+                 force_zero_offset=False,
+                 include_idx = [0,-1],
+                 exclude_idx = []):
+        super().__init__(xdata,ydata,
+                         include_idx=include_idx,exclude_idx=exclude_idx,
+                         savgol_window=20)
         
         super().__init__(xdata,ydata,savgol_window=20)
+
+        self.force_zero_offset = force_zero_offset
 
         try:
             popt = self._fit(self.xdata,self.ydata)

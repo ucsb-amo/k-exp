@@ -22,11 +22,11 @@ class calibrate_hf_image_detuning(EnvExperiment, Base):
         
         self.p.t_lightsheet_hold = .2
 
-        self.xvar('hf_imaging_detuning', np.arange(-660.,-555.,6.)*1.e6)
-        # self.p.hf_imaging_detuning = -645.e6
-
         self.xvar('i_feshbach_current', np.linspace(180.,200.,18))
         self.p.i_feshbach_current = 182.
+
+        self.xvar('hf_imaging_detuning', np.arange(-660.,-555.,6.)*1.e6)
+        # self.p.hf_imaging_detuning = -645.e6
 
         # self.p.amp_imaging = .12
         self.p.imaging_state = 2.

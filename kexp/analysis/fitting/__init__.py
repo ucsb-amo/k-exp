@@ -1,5 +1,7 @@
 from .fit import Fit
-from .gaussian import GaussianFit, GaussianTemperatureFit, BECFit, MultiGaussianFit
-from .lorentzian import LorentzianFit
-from .fringes import SineEnvelope
-from .sine import Sine
+from .gaussian import *
+from .lorentzian import *
+from .fringes import *
+from .sine import *
+from .linear import *
+from .parabolic import *

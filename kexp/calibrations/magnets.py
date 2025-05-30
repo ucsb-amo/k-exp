@@ -2,40 +2,51 @@ from artiq.experiment import portable, TFloat
 import numpy as np
 
 # obtain calibration by running
+# kexp/experiments/measurements/measure_currents_vs_setpoint_pid_and_supply.py
+# analyze with
+# k-jam/analysis/measurements/current_vs_setpoint_pid_and_supply.ipynb
+
+slope_i_transducer_per_v_setpoint_supply_outer = 50.84570263249882
+offset_i_transducer_per_v_setpoint_supply_outer = 0.6609996609503291
+
+slope_i_transducer_per_v_setpoint_pid_outer  = 40.01587069690042
+offset_i_transducer_per_v_setpoint_pid_outer  = -0.3520810805908351
+
+# slope_overhead_per_i_transducer = 0.3569422
+# offset_overhead_per_i_transducer = -0.04
+slope_overhead_per_i_transducer = 0.37548
+offset_overhead_per_i_transducer = -1.25112
+
+@portable
+def compute_pid_overhead(i_pid) -> TFloat:
+    """Computes current overhead such that shunt MOSFET gate voltage sits at
+    a roughly fixed value (~6V).
+
+    Numbers worked out by observing shunted current and real current over a
+    range of set points, described in notes here:
+    https://docs.google.com/document/d/11WCgrdBnUMHi8nWz7Vp8wVUJYQWNkQWty88WbOmQMoo/edit?tab=t.0#heading=h.b4wsdlxg4uov
+
+    Args:
+        i_pid (float): pid current (in A)
+
+    Returns:
+        float: the excess current (in A) that the keysight will run over the desired pid current
+    """        
+    keysight_overhead = i_pid * slope_overhead_per_i_transducer +  offset_overhead_per_i_transducer
+    return keysight_overhead
+
+####
+# The data below data should be retaken! Very old calibration. Once retaken, the
+# "transducer current" and "i_supply" thing should be eliminated, and instead
+# just use the v_setpoint to transducer current calibration functions above to
+# directly set the current to what we want
+
+# obtain calibration by running
 # kexp/experiments/measurements/measure_i_transducer_per_i_supply.py
 # analyze with
 # k-jam/analysis/measurements/i_transducer_per_i_supply.ipynb
-
 slope_i_transducer_per_i_supply = 1.0168888389645203
 offset_i_transducer_per_i_supply = 0.6426955097172109
-
-@portable
-def transducer_current_to_outer_supply_setpoint(i_transducer) -> TFloat:
-    """For a given actual current i_transducer (as read by a transducer), returns the
-    current set point which should be fed to the supply so that it actually
-    supplies the desired current.
-
-    Args:
-        i_transducer (float): The desired actual current in amps.
-
-    Returns:
-        TFloat: the current the supply should be set to to get the actual
-        desired current.
-    """
-    return (i_transducer - offset_i_transducer_per_i_supply) / slope_i_transducer_per_i_supply
-
-@portable
-def outer_supply_setpoint_to_transducer_current(i_sup) -> TFloat:
-    """For a given supply setpoint current (i_sup), returns the corresponding
-    actual output current.
-
-    Args:
-        i_sup (float): The supply set point in amps.
-
-    Returns:
-        TFloat: the actual current that the magnets will see in amps.
-    """    
-    return slope_i_transducer_per_i_supply * i_sup + offset_i_transducer_per_i_supply
 
 @portable
 def i_transducer_to_magnetic_field(i_transducer) -> TFloat:
@@ -51,7 +62,7 @@ def i_transducer_to_magnetic_field(i_transducer) -> TFloat:
     # k-jam\analysis\measurements\magnetometry_high_field.ipynb
     # run ID 10575
     i = np.asarray(i_transducer)
-    i = transducer_current_to_outer_supply_setpoint(i_transducer)
+    i = (i - offset_i_transducer_per_i_supply ) / slope_i_transducer_per_i_supply
     slope_G_per_A, y_intercept_G = [2.84103112, 1.33805367]
     return slope_G_per_A * i + y_intercept_G
 
@@ -71,5 +82,5 @@ def magnetic_field_to_i_transducer(b) -> TFloat:
     b = np.asarray(b)
     slope_G_per_A, y_intercept_G = [2.84103112, 1.33805367]
     i = (b - y_intercept_G) / slope_G_per_A
-    i = outer_supply_setpoint_to_transducer_current(i)
+    i = slope_i_transducer_per_i_supply * i + offset_i_transducer_per_i_supply
     return i
