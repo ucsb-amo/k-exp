@@ -143,14 +143,17 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     
     ymax = np.max([np.max(fit.ydata) for fit in fits])
 
+    if isinstance(ad.params.N_repeats,np.ndarray):
+        ad.params.N_repeats = ad.params.N_repeats[0]
+
     if figsize:
-        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
+        fig, ax = plt.subplots(ad.params.N_repeats,ad.params.N_shots,
                                figsize=figsize,layout='tight')
     else:
-        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
+        fig, ax = plt.subplots(ad.params.N_repeats,ad.params.N_shots,
                            layout='tight')
 
-    Nr = ad.params.N_repeats[0]
+    Nr = ad.params.N_repeats
     Ns = int(len(ad.xvars[0]) / Nr)
 
     xvar = ad.xvars[0]
@@ -205,6 +208,9 @@ def plot_fit_residuals(ad:atomdata,axis=0,
         label = "y"
     else:
         raise ValueError("Axis must be 0 (x) or 1 (y)")
+    
+    if isinstance(ad.params.N_repeats,np.ndarray):
+        ad.params.N_repeats = ad.params.N_repeats[0]
 
     fits_yfitdata = [fit.y_fitdata for fit in fits]
     fits_ydata = [fit.ydata for fit in fits]
@@ -213,16 +219,16 @@ def plot_fit_residuals(ad:atomdata,axis=0,
     print(sum_od_residuals.shape)
 
     if figsize:
-        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
+        fig, ax = plt.subplots(ad.params.N_repeats,ad.params.N_shots,
                                figsize=figsize)
     else:
-        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots)
+        fig, ax = plt.subplots(ad.params.N_repeats,ad.params.N_shots)
 
     bools = ~np.isinf(sum_od_residuals) & ~np.isnan(sum_od_residuals)
     ylimmin = np.min(sum_od_residuals[bools])
     ylimmax = np.max(sum_od_residuals[bools])
 
-    Nr = ad.params.N_repeats[0]
+    Nr = ad.params.N_repeats
     Ns = ad.params.N_shots
 
     xvar = ad.xvars[0]

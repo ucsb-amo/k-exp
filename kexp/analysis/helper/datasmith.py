@@ -1,5 +1,21 @@
 import numpy as np
 
+def remove_infnan(*arrays):
+    """
+    Accepts any number of numpy arrays, finds indices with NaN or Inf,
+    constructs a mask to remove those elements from all arrays,
+    and returns the masked arrays.
+    """
+    if not arrays:
+        raise ValueError("At least one array must be provided")
+    # Stack arrays to find invalid values across all arrays
+    stacked = np.vstack(arrays)
+    # Identify indices where any array contains NaN or Inf
+    invalid_mask = np.any(np.isnan(stacked) | np.isinf(stacked), axis=0)
+    # Filter out invalid elements
+    masked_arrays = tuple(arr[~invalid_mask] for arr in arrays)
+    return masked_arrays
+
 def normalize(array,map_minimum_to_zero=False,
                max_idx=None, min_idx=None):
     x = np.asarray(array)

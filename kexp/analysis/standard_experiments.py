@@ -3,7 +3,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from kexp.analysis import atomdata
-from kexp.analysis.helper import crop_array_by_index, normalize, get_repeat_std_error
+from kexp.analysis.helper import crop_array_by_index, normalize, get_repeat_std_error, remove_infnan
 
 dv = -1000.
 dv_fit_guess_rabi_frequency = 1.e5
@@ -145,6 +145,9 @@ def rabi_oscillation(ad:atomdata,
 
     populations = crop_array_by_index(populations,include_idx,exclude_idx)
     times = crop_array_by_index(times,include_idx,exclude_idx)
+
+    populations, times = remove_infnan(populations, times)
+
     populations = normalize(populations, map_minimum_to_zero=min_population_is_zero,
                             max_idx=normalize_maximum_idx)
 
@@ -160,6 +163,7 @@ def rabi_oscillation(ad:atomdata,
             dt_peaks = np.mean(np.diff(times[peak_idx]))
             fit_guess_frequency = 1/dt_peaks
 
+        
         popt_decay, _ = curve_fit(_fit_func_decay,times[0:2],y[0:2])
         fit_guess_decay_tau = popt_decay[0]
 
@@ -336,7 +340,8 @@ def rabi_oscillation_2d(ad:atomdata,
 
         populations = crop_array_by_index(populations,include_idx,exclude_idx)
         times = crop_array_by_index(times,include_idx,exclude_idx)
-
+        populations, times = remove_infnan(populations, times)
+        print(populations, times)
         populations = normalize(populations, map_minimum_to_zero=min_population_is_zero)
 
         if fit_guess_decay_tau == dv:
