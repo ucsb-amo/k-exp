@@ -47,7 +47,7 @@ class ExptParams():
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 20e-6
+        self.dimension_slm_mask = 25e-6
         self.phase_slm_mask = 0.42 * np.pi
         self.px_slm_phase_mask_position_x = 1141
         self.px_slm_phase_mask_position_y = 965
@@ -280,8 +280,8 @@ class ExptParams():
         self.amp_ao_ry_980_switch = 0.34
 
         # raman
-        self.frequency_raman_plus = 150.e6 
-        self.frequency_raman_minus = 150.e6
+        self.frequency_raman_plus = 160.e6 
+        self.frequency_raman_minus = 140.e6
         self.amp_raman_plus = .25
         self.amp_raman_minus = .25
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
