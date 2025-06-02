@@ -20,7 +20,7 @@ class SLM:
         self.params = expt_params
         self.core = core
 
-    def write_phase_mask(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type=dm):
+    def write_phase_mask(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot'):
         """Writes a phase spot of given dimension and phase to the specified
         position on the slm display.
 
@@ -47,16 +47,11 @@ class SLM:
             x_center = self.params.px_slm_phase_mask_position_x
         if y_center == di:
             y_center = self.params.px_slm_phase_mask_position_y
-        if mask_type == dm:    
-           mask_type =  self.params.slm_mask
 
-        if mask_type == 'find':
-            command = 'find'
-            self._send_command(command)
-            print(f"\nSent: {command}\n")
-            threading.Thread(target=self._launch_pattern_gui).start()
-            return
-        elif mask_type == 'spot':
+        x_center = int(x_center)
+        y_center = int(y_center)
+
+        if mask_type == 'spot':
             mask = 'spot'
         elif mask_type == 'grating':
             mask = 'grating'
@@ -65,11 +60,6 @@ class SLM:
 
         try:
             dimension = int(dimension * 1.e6)
-            # command ={
-            #         "mode": "spot",
-            #         "center": self.spot_center,
-            #         "radius": self.spot_radius
-            #     }
             command = {
                     "mask": mask,
                     "center": [x_center, y_center],
@@ -84,7 +74,7 @@ class SLM:
             print(f"Error sending phase spot: {e}")
 
     @kernel
-    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type=dm):
+    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot'):
         """Writes a phase spot of given dimension and phase to the specified
         position on the slm display.
 
@@ -111,7 +101,7 @@ class SLM:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
             client_socket.connect((self.server_ip, self.server_port))
             if isinstance(command, dict):
-                command = json.dumps(command)  # Convert dict to JSON string
+                command = json.dumps(command) # Convert dict to JSON string
             client_socket.sendall(command.encode('utf-8'))
 
     # def _launch_pattern_gui(self):
