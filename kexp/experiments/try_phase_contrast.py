@@ -60,7 +60,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('phase_slm_mask', np.pi/2 * (1 + 0.1*np.linspace(-2.,1.,5)))
         self.p.phase_slm_mask = np.pi * 0.42
         self.p.dimension_slm_mask = 50.e-6
-        self.xvar('dimension_slm_mask',np.linspace(1.,100.,5)*1.e-6)
+        # self.xvar('dimension_slm_mask',np.linspace(1.,100.,5)*1.e-6)
         # self.xvar('dummy',[0])
 
         # self.camera_params.amp_imaging = .12
