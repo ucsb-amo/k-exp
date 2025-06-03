@@ -47,6 +47,8 @@ class SLM:
             x_center = self.params.px_slm_phase_mask_position_x
         if y_center == di:
             y_center = self.params.px_slm_phase_mask_position_y
+        if mask_type == dm:    
+           mask_type =  self.params.slm_mask
 
         x_center = int(x_center)
         y_center = int(y_center)
@@ -74,7 +76,7 @@ class SLM:
             print(f"Error sending phase spot: {e}")
 
     @kernel
-    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot'):
+    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type=dm):
         """Writes a phase spot of given dimension and phase to the specified
         position on the slm display.
 
