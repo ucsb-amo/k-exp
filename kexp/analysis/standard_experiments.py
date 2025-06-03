@@ -161,7 +161,7 @@ def rabi_oscillation(ad:atomdata,
             Nr = Nr[0]
         mean, err = get_repeat_std_error(populations, Nr)
         if normalize_maximum_idx != None:
-            override_normalize_value = mean[normalize_maximum_idx]   
+            override_normalize_value = mean[normalize_maximum_idx]
     
     populations = normalize(populations,
                             map_minimum_to_zero=min_population_is_zero,
@@ -215,6 +215,7 @@ def rabi_oscillation(ad:atomdata,
         c = [0.,0.4,1.]
         
         if avg_repeats:
+            print('hi')
             plt.scatter(times[::Nr]*1.e6, mean, color=c, label=f'Data (N={Nr})')
             if Nr > 1:
                 plt.errorbar(times[::Nr]*1.e6, mean, err,
