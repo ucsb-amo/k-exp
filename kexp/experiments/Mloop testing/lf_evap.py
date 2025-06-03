@@ -12,34 +12,34 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.p.v_tweezer_paint_amp_max = -1.8
+        self.p.v_tweezer_paint_amp_max = 2.
         # [-7.,4.]
 
-        self.p.v_pd_tweezer_1064_ramp_end = 9.4
+        self.p.v_pd_tweezer_1064_ramp_end = 8.9
         # [5.,9.4]
 
-        self.p.i_lf_tweezer_load_current = 13.6
+        self.p.i_lf_tweezer_load_current = 15.5
         # [12.,17.]
 
-        self.p.i_lf_tweezer_evap1_current = 14.3
+        self.p.i_lf_tweezer_evap1_current = 14.
         # [12.,16.]
 
-        self.p.v_pd_tweezer_1064_rampdown_end = 2.
+        self.p.v_pd_tweezer_1064_rampdown_end = 1.6
         # [.5,4.]
 
-        self.p.t_tweezer_1064_rampdown = 75.e-3 
+        self.p.t_tweezer_1064_rampdown = 80.e-3 
         # [20.,180.] 
 
-        self.p.i_lf_tweezer_evap2_current = 13.
+        self.p.i_lf_tweezer_evap2_current = 14.
         # [12.,15.]
 
         self.p.v_pd_tweezer_1064_rampdown2_end = .12
         # [.05,.19]
 
-        self.p.t_tweezer_1064_rampdown2 = 200.e-3 
+        self.p.t_tweezer_1064_rampdown2 = 330.e-3 
         # [20.,500.]
 
-        self.p.v_pd_tweezer_1064_rampdown3_end = 1.5
+        self.p.v_pd_tweezer_1064_rampdown3_end = .6
         # [.5,2.]
 
         self.p.t_tweezer_1064_rampdown3 = .56
@@ -50,7 +50,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_tweezer_list = [74.e6]
         self.p.amp_tweezer_list = [.75]
 
-        self.p.t_tof = 1000.e-6
+        self.p.t_tof = 900.e-6
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
@@ -59,7 +59,7 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap1_current,pid_bool=False)
+        self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap2_current,pid_bool=False)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -153,9 +153,6 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(self.p.t_tof)
         self.abs_image()
-
-        # self.outer_coil.stop_pid()
-        # delay(50.e-3)
 
         self.outer_coil.off()
         self.outer_coil.discharge()

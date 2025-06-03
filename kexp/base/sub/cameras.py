@@ -60,7 +60,7 @@ class Cameras():
     @kernel
     def setup_slm(self, imaging_type):
         if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
-            self.slm.write_phase_mask_kernel(0.)
+            self.slm.write_phase_mask_kernel(0.,0.)
         elif imaging_type == img_types.DISPERSIVE:
             self.slm.write_phase_mask_kernel()
 

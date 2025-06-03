@@ -10,19 +10,16 @@ class mot_killa(EnvExperiment, Base):
 
         self.p.t_raman_pulse = 10.e-6
         self.p.f_raman_transition = 44.e6
-        self.xvar('dum',[0])
 
         self.finish_prepare(shuffle=True)
 
     @kernel
-    def scan_kernel(self):
-        
-        self.raman.pulse(t=self.p.t_raman_pulse,frequency_transition=self.p.f_raman_transition)
-
-    @kernel
     def run(self):
         self.init_kernel()
-        self.scan()
+        self.raman.set_transition_frequency(40.e6)
+        self.raman.dds_minus.set_dds(amplitude=0.25)
+        self.raman.dds_plus.set_dds(amplitude=0.25)
+        self.raman.on()
 
     def analyze(self):
         import os
