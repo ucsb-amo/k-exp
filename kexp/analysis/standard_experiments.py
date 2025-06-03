@@ -249,8 +249,7 @@ def rabi_oscillation(ad:atomdata,
         if avg_repeats:
             plt.scatter(times[::Nr]*1.e6, mean, color=c, label=f'Data (N={Nr})')
             if Nr > 1:
-                plt.errorbar(times[::Nr]*1.e6, mean, err,
-                            capsize=5, fmt='None', ecolor=c)
+                plt.errorbar(times[::Nr]*1.e6, mean, err, fmt='None', ecolor=c)
         else:
             plt.scatter(times*1.e6, populations, color=c, label=f'Data')
 
@@ -284,7 +283,7 @@ def rabi_oscillation(ad:atomdata,
             pass
 
     try:
-        if not pi_time_at_peak:
+        if pi_time_at_peak:
             y_fit = -y_fit
         peak_idx, _ = find_peaks(y_fit)
         t_pi = times[peak_idx][0]
