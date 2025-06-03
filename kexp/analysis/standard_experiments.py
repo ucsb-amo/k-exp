@@ -179,12 +179,17 @@ def rabi_oscillation(ad:atomdata,
         elif map_minimum_to_zero:
             override_normalize_min = mean[np.argmin(mean)]
     else:
-        override_normalize_min = None
-        
         if normalize_maximum_idx != None:
             override_normalize_max = populations[normalize_maximum_idx]
         else:
             override_normalize_max = None
+
+        if normalize_minimum_idx:
+            override_normalize_min = populations[normalize_minimum_idx]
+        elif map_minimum_to_zero:
+            override_normalize_min = populations[np.argmin(populations)]
+        else:
+            override_normalize_min = None
     
     populations = normalize(populations,
                             override_normalize_minimum=override_normalize_min,
