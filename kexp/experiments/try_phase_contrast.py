@@ -11,12 +11,15 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(150.,350.7,8)*1.e6)
-        self.p.frequency_detuned_imaging = 270.e6
+        # self.p.frequency_detuned_imaging = 270.e6
+        # self.p.frequency_detuned_imaging
 
         # self.xvar('beans',[0]*15)
+
+        self.p.t_tweezer_hold = 100.e-3
 
         # self.xvar('t_tof',np.linspace(400.,1200.,15)*1.e-6)
         self.p.t_tof = 20.e-6
@@ -51,20 +54,23 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('beans',[0,1])
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
 
         # self.p.phase_slm_mask = 3.14 / 2
-        # self.xvar('phase_slm_mask', np.pi/2 * ( 1 + 0.1*np.linspace(-2.,1.,5) ) )
+        # self.xvar('phase_slm_mask', np.pi/2 * (1 + 0.1*np.linspace(-2.,1.,5)))
         self.p.phase_slm_mask = np.pi * 0.42
-        # self.p.dimension_slm_mask = 50.e-6
-        self.xvar('dimension_slm_mask',np.linspace(1.,50.,10)*1.e-6)
+        self.p.dimension_slm_mask = 50.e-6
+        # self.xvar('dimension_slm_mask',np.linspace(1.,100.,5)*1.e-6)
+        # self.xvar('dummy',[0])
 
         # self.camera_params.amp_imaging = .12
         # self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.p.N_pwa_per_shot = 1
-        self.p.t_dispersive_image_interval = 10.e-3
+        # self.p.N_pwa_per_shot = 3
+        self.p.t_dispersive_image_interval = 100.e-3
+
+        # self.xvar('dummy',[0]*2)
 
         # self.xvar('amp_imaging',np.linspace(.05,.2,10))
 
@@ -76,7 +82,7 @@ class tweezer_load(EnvExperiment, Base):
         self.slm.write_phase_mask_kernel()
         # self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap2_current,
                                     # pid_bool=False)
-        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
@@ -128,12 +134,14 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
 
+        delay(self.p.t_tweezer_hold)
+
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_lf_tweezer_load_current,
                              i_end=self.p.i_lf_tweezer_evap1_current)
 
         
-        # # tweezer evap 1 with constant trap frequency
+        # tweezer evap 1 with constant trap frequency
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
                           v_start=self.p.v_pd_tweezer_1064_ramp_end,
                           v_end=self.p.v_pd_tweezer_1064_rampdown_end,
@@ -143,11 +151,12 @@ class tweezer_load(EnvExperiment, Base):
                              i_start=self.p.i_lf_tweezer_evap1_current,
                              i_end=self.p.i_lf_tweezer_evap2_current)
         
-        # # # tweezer evap 2 with constant trap frequency
+        # # tweezer evap 2 with constant trap frequency
         self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
                           v_start=self.p.v_pd_tweezer_1064_rampdown_end,
                           v_end=self.p.v_pd_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
+        
         delay(2.e-3)
         # tweezer evap 3 with constant trap frequency
         self.ttl.pd_scope_trig.pulse(1.e-6)
@@ -171,7 +180,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.raman.sweep(t=self.p.t_raman_sweep,frequency_center=self.p.f_raman_sweep_center,frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
 
-        self.light_image()
+        # self.light_image()
         # delay(self.p.t_dispersive_image_interval)
         # self.light_image()
         # delay(self.p.t_dispersive_image_interval)
@@ -182,6 +191,14 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(self.p.t_tof)
 
+        # delay(200.e-3)
+        # self.light_image()
+        
+        # self.close_imaging_shutters()
+        # delay(200.e-3)
+        # self.dark_image()
+
+        self.abs_image()
         # self.outer_coil.stop_pid()
         # delay(50.e-3)
 

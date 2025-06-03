@@ -9,18 +9,18 @@ from kexp.control.slm.slm import SLM
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,setup_camera=True,save_data=False,
                       camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-
-        
-        self.xvar('px_slm_phase_mask_position_y',np.linspace(949,954,3,dtype=int))
-        self.xvar('px_slm_phase_mask_position_x',np.linspace(1120,1125,3,dtype=int))
-        # self.p.slm_mask = 'grating'
+        self.xvar('px_slm_phase_mask_position_x',np.linspace(1135.,1145.,11,dtype=int))
+        self.xvar('px_slm_phase_mask_position_y',np.linspace(960.,970.,11,dtype=int))
+        # self.xvar('dumdum',[0]*3)
+        # self.p.slm_mask = 'spot'
         self.p.phase_slm_mask = 3.14
         self.p.dimension_slm_mask = 10e-6
-        # self.p.px_slm_phase_spot_position_y = 800
+        # self.p.px_slm_phase_mask_position_x = 1009
+        # self.p.px_slm_phase_mask_position_y = 1012
         self.p.amp_imaging = .35
         self.p.N_repeats = 1
         self.finish_prepare(shuffle=True)
