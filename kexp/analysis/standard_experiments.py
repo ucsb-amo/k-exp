@@ -3,7 +3,7 @@ from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from kexp.analysis import atomdata
-from kexp.analysis.helper import crop_array_by_index, normalize, get_repeat_std_error, remove_infnan
+from kexp.analysis.helper import *
 
 dv = -1000.
 dv_fit_guess_rabi_frequency = 1.e5
@@ -229,7 +229,7 @@ def rabi_oscillation(ad:atomdata,
 
         # Print the fit parameters
         # print(r"Fit function: f(t) = A * exp(-t/tau) * (cos(Omega t / 2 + phi))**2 + B")
-        print(f"Omega = 2*pi*{popt[0]/(2*np.pi):1.2f} Hz,"
+        print(f"Omega = 2*pi*{popt[0]/(2*np.pi)/1.e3:1.2f} kHz"
               +f"\n phi = {popt[1]},\n A = {popt[3]},"
               +f"\n B = {popt[2]},"
               +f"\n tau = {popt[4]}")
@@ -282,7 +282,7 @@ def rabi_oscillation(ad:atomdata,
         ax.set_ylim([-0.1,1.1])
 
         try:
-            fit_params_str = f"$\Omega$ = $2\pi \\times {popt[0]/(2*np.pi):1.2f}$ Hz,"\
+            fit_params_str = f"$\Omega$ = $2\pi \\times {popt[0]/(2*np.pi)/1.e3:1.2f}$ kHz"\
                 +f"\n$A = {popt[3]:1.2f}$, $B = {popt[2]:1.2f}$"\
                 +f"\n$\\tau = {popt[4]*1.e6:1.2f}$ us"
             ax.text(0.6, 0.75, fit_params_str, transform=ax.transAxes,
@@ -302,16 +302,18 @@ def rabi_oscillation_2d(ad:atomdata,
                         populations_array=[],
                         include_idx=[0,-1],
                         exclude_idx=[],
-                        min_population_is_zero=False,
+                        normalize_maximum_idx=None,
+                        map_minimum_to_zero=None,
+                        normalize_minimum_idx=None,
                         plot_bool=True,
                         subplots_bool=True,
                         pi_time_at_peak=True,
                         detect_dips=False,
-                        xvar0format='1.5f',xvar0mult=1.e-6,xvar0unit='MHz',
+                        xvar0format='1.2e',xvar0mult=1.,xvar0unit='',
                         subplots_figsize=[],
                         plot_figsize=[],
-                        fit_guess_frequency=1000.,
-                        fit_guess_phase=np.pi,
+                        fit_guess_frequency=dv_fit_guess_rabi_frequency,
+                        fit_guess_phase=np.pi/2,
                         fit_guess_amp=1.,
                         fit_guess_offset=1.,
                         fit_guess_decay_tau=dv,
@@ -328,9 +330,20 @@ def rabi_oscillation_2d(ad:atomdata,
         include_idx (list, optional): Specifies the first and last index of the
         data that will be used for the fit. -1 in the second element uses to the
         end of the list.
-        min_population_is_zero (bool, optional): If true, normalizes the data
-        between 1 and 0 (full intial contrast). If false, just normalizes the
-        data maximum to 1.
+        normalize_maximum_idx (int, optional): If a value is provided,
+        normalizes the data so that the value at the index provided is mapped to
+        1. Otherwise, normalizes to the maximum value in the populations array.
+        If avg_repeats is True, the value of the mean at this index in the
+        repeat averaged array.
+        map_minimum_to_zero (bool, optional): If True, normalizes the data so
+        that it is scaled between 0 and 1, where the value mapped to zero is
+        chosen according to `normalize_minimum_idx`. If `normalize_minimum_idx`
+        is not None, then this bool is overridden to True.
+        normalize_minimum_idx (int, optional): If a value is provided,
+        normalizes the data so that the value at the provided index is mapped to
+        zero 0 (full intial contrast), where the value at the provided index is
+        mapped to zero.
+        avg_repeats (bool, optional): If True, averages repeats and plots with error bars.
         plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
         subplots_bool (bool, optional): If True, plots subplots for each set of
         scans over pulse time at fixed RF frequency. Includes fits.
@@ -378,7 +391,7 @@ def rabi_oscillation_2d(ad:atomdata,
         # return A * np.exp(-t/tau) * np.abs(np.cos(0.5 * Omega * t + phi))**2
         return 0.5 * (B + A * np.exp(-t/tau) * np.cos(Omega * t + phi) )
 
-    times = ad.xvars[1]
+    times0 = ad.xvars[1]
 
     if subplots_bool:
         plt.figure()
@@ -387,15 +400,36 @@ def rabi_oscillation_2d(ad:atomdata,
         else:
             fig, ax = plt.subplots(1,len(ad.xvars[0]),figsize=(15,3))
 
+    fit_results = []
+
     for populations in populations_array:
+        times = times0
 
         populations = populations.flatten()
-
         populations = crop_array_by_index(populations,include_idx,exclude_idx)
         times = crop_array_by_index(times,include_idx,exclude_idx)
         populations, times = remove_infnan(populations, times)
-        print(populations, times)
-        populations = normalize(populations, map_minimum_to_zero=min_population_is_zero)
+
+        # mask = rm_outliers(populations,'mean',0.5)
+        # populations = populations[mask]
+        # times = times[mask]
+
+        if normalize_maximum_idx != None:
+            override_normalize_max = populations[normalize_maximum_idx]
+        else:
+            override_normalize_max = None
+
+        if normalize_minimum_idx:
+            override_normalize_min = populations[normalize_minimum_idx]
+        elif map_minimum_to_zero:
+            override_normalize_min = populations[np.argmin(populations)]
+        else:
+            override_normalize_min = None
+
+        populations = normalize(populations,
+                                map_minimum_to_zero=map_minimum_to_zero,
+                                override_normalize_minimum=override_normalize_min,
+                                override_normalize_maximum=override_normalize_max)
 
         if fit_guess_decay_tau == dv:
             peak_idx, peak_prop = find_peaks(populations,height=0.5)
@@ -423,6 +457,8 @@ def rabi_oscillation_2d(ad:atomdata,
             popt = [None]*5
             y_fit = np.array([None]*len(times))
             rabi_frequencies_hz.append(None)
+            
+        fit_results.append(popt)
 
         try:
             if not pi_time_at_peak:
@@ -434,7 +470,8 @@ def rabi_oscillation_2d(ad:atomdata,
 
         if subplots_bool:
         # Plot the data and the fit
-            ax[xvar0_idx].scatter(times*1.e6, populations, label='Data')
+            c = [0.,0.4,1.]
+            ax[xvar0_idx].scatter(times*1.e6, populations, label='Data', color=c)
             t_sm = np.linspace(times[0],times[-1],10000)
             if np.all(popt != None):
                 ax[xvar0_idx].plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='Fit')
@@ -492,7 +529,7 @@ def rabi_oscillation_2d(ad:atomdata,
 
     rf_frequencies = ad.xvars[0]
 
-    return rabi_frequencies_hz, t_pis, rf_frequencies
+    return rabi_frequencies_hz, t_pis, rf_frequencies, fit_results
 
 def magnetometry_1d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
                     axis = 0,
