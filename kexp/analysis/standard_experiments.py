@@ -89,6 +89,7 @@ def rabi_oscillation(ad:atomdata,
                      min_population_is_zero=False,
                      plot_bool=True,
                      pi_time_at_peak=True,
+                     avg_repeats=True,
                      fit_guess_frequency=dv_fit_guess_rabi_frequency,
                      fit_guess_phase=np.pi/2,
                      fit_guess_amp=1.,
@@ -117,6 +118,7 @@ def rabi_oscillation(ad:atomdata,
         population is zero and extracts the pi-pulse time as the location of the
         first peak in the fitted oscillation. If False, identifies the minimum
         as the pi-pulse time. Defaults to True.
+        avg_repeats (bool, optional): If True, averages repeats and plots with error bars.
 
     Returns:
         t_pi: The pi pulse time in seconds.
@@ -148,8 +150,20 @@ def rabi_oscillation(ad:atomdata,
 
     populations, times = remove_infnan(populations, times)
 
-    populations = normalize(populations, map_minimum_to_zero=min_population_is_zero,
-                            max_idx=normalize_maximum_idx)
+    if normalize_maximum_idx != None:
+        override_normalize_value = populations[normalize_maximum_idx]
+        
+    if avg_repeats:
+        Nr = ad.params.N_repeats
+        if isinstance(Nr,np.ndarray):
+            Nr = Nr[0]
+        mean, err = get_repeat_std_error(populations, Nr)
+        if normalize_maximum_idx != None:
+            override_normalize_value = mean[normalize_maximum_idx]   
+    
+    populations = normalize(populations,
+                            map_minimum_to_zero=min_population_is_zero,
+                            override_normalize_value=override_normalize_value)
 
     if fit_guess_decay_tau == dv:
         convwidth = 3
@@ -195,16 +209,16 @@ def rabi_oscillation(ad:atomdata,
     # Plot the data and the fit
     if plot_bool:
         fig, ax = plt.subplots(1,1)
-        Nr = ad.params.N_repeats
-        if isinstance(Nr,np.ndarray):
-            Nr = Nr[0]
-        mean, err = get_repeat_std_error(populations, Nr)
 
         c = [0.,0.4,1.]
-        plt.scatter(times[::Nr]*1.e6, mean, color=c, label=f'Data (N={Nr})')
-        if Nr > 1:
-            plt.errorbar(times[::Nr]*1.e6, mean, err,
-                        capsize=5, fmt='None', ecolor=c)
+        
+        if avg_repeats:
+            plt.scatter(times[::Nr]*1.e6, mean, color=c, label=f'Data (N={Nr})')
+            if Nr > 1:
+                plt.errorbar(times[::Nr]*1.e6, mean, err,
+                            capsize=5, fmt='None', ecolor=c)
+        else:
+            plt.scatter(times[::]*1.e6, populations, color=c, label=f'Data (N={Nr})')
 
         t_sm = np.linspace(times[0],times[-1],10000)
         try:
