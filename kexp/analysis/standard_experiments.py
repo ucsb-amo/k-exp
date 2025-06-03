@@ -220,7 +220,7 @@ def rabi_oscillation(ad:atomdata,
                 plt.errorbar(times[::Nr]*1.e6, mean, err,
                             capsize=5, fmt='None', ecolor=c)
         else:
-            plt.scatter(times*1.e6, populations, color=c, label=f'Data (N={Nr})')
+            plt.scatter(times*1.e6, populations, color=c, label=f'Data')
 
         t_sm = np.linspace(times[0],times[-1],10000)
         try:
