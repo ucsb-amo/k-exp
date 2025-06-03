@@ -86,7 +86,8 @@ def rabi_oscillation(ad:atomdata,
                      include_idx=[0,-1],
                      exclude_idx=[],
                      normalize_maximum_idx=None,
-                     min_population_is_zero=False,
+                     map_minimum_to_zero=None,
+                     normalize_minimum_idx=None,
                      plot_bool=True,
                      pi_time_at_peak=True,
                      avg_repeats=True,
@@ -110,9 +111,19 @@ def rabi_oscillation(ad:atomdata,
         include_idx (list, optional): Specifies the first and last index of the
         data that will be used for the fit. -1 in the second element uses to the
         end of the list.
-        min_population_is_zero (bool, optional): If true, normalizes the data
-        between 1 and 0 (full intial contrast). If false, just normalizes the
-        data maximum to 1.
+        normalize_maximum_idx (int, optional): If a value is provided,
+        normalizes the data so that the value at the index provided is mapped to
+        1. Otherwise, normalizes to the maximum value in the populations array.
+        If avg_repeats is True, the value of the mean at this index in the
+        repeat averaged array.
+        map_minimum_to_zero (bool, optional): If True, normalizes the data so
+        that it is scaled between 0 and 1, where the value mapped to zero is
+        chosen according to `normalize_minimum_idx`. If `normalize_minimum_idx`
+        is not None, then this bool is overridden to True.
+        normalize_minimum_idx (int, optional): If a value is provided,
+        normalizes the data so that the value at the provided index is mapped to
+        zero 0 (full intial contrast), where the value at the provided index is
+        mapped to zero.
         plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
         pi_time_at_peak (bool, optional): If True, assumes the initial
         population is zero and extracts the pi-pulse time as the location of the
@@ -150,22 +161,34 @@ def rabi_oscillation(ad:atomdata,
 
     populations, times = remove_infnan(populations, times)
 
-    if normalize_maximum_idx != None:
-        override_normalize_value = populations[normalize_maximum_idx]
-    else:
-        override_normalize_value = None
+    
         
     if avg_repeats:
         Nr = ad.params.N_repeats
         if isinstance(Nr,np.ndarray):
             Nr = Nr[0]
         mean, err = get_repeat_std_error(populations, Nr)
+
         if normalize_maximum_idx != None:
-            override_normalize_value = mean[normalize_maximum_idx]
+            override_normalize_max = mean[normalize_maximum_idx]
+        else:
+            override_normalize_max = mean[np.argmax(mean)]
+
+        if normalize_minimum_idx:
+            override_normalize_min = mean[normalize_minimum_idx]
+        elif map_minimum_to_zero:
+            override_normalize_min = mean[np.argmin(mean)]
+    else:
+        override_normalize_min = None
+        
+        if normalize_maximum_idx != None:
+            override_normalize_max = populations[normalize_maximum_idx]
+        else:
+            override_normalize_max = None
     
     populations = normalize(populations,
-                            map_minimum_to_zero=min_population_is_zero,
-                            override_normalize_value=override_normalize_value)
+                            override_normalize_minimum=override_normalize_min,
+                            override_normalize_maximum=override_normalize_max)
     
     if avg_repeats:
         mean, err = get_repeat_std_error(populations, Nr)
@@ -709,4 +732,4 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
 
     
 
-    return B_measured_array, transition_peaks
+    return B_measured_array, transition_peaksf

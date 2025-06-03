@@ -17,22 +17,19 @@ def remove_infnan(*arrays):
     return masked_arrays
 
 def normalize(array,map_minimum_to_zero=False,
-               max_idx=None, min_idx=None,
-               override_normalize_value=None):
+               override_normalize_maximum=None,
+               override_normalize_minimum=None):
     x = np.asarray(array)
 
-    if max_idx == None:
+    if override_normalize_maximum != None:
+        x_max = override_normalize_maximum
+    else:
         x_max = np.max(x)
+
+    if override_normalize_minimum != None:
+        x_min = override_normalize_minimum
     else:
-        x_max = x[max_idx]
-
-    if override_normalize_value != None:
-        x_max = override_normalize_value
-
-    if min_idx == None:
         x_min = np.min(x)
-    else:
-        x_min = x[min_idx]
 
     if map_minimum_to_zero:
         x = (x-x_min)/(x_max-x_min)
