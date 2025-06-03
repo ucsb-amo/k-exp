@@ -210,6 +210,81 @@ class atomdata():
         self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
+    def slice_atomdata(self, which_xvar_idx, which_shot_idx):
+        """Slices along a given xvar index at a particular value (which_shot_idx) of
+        that xvar, and returns an atomdata of reduced dimensionality as if that
+        variable had been held constant.
+
+        Args:
+            ad (atomdata): The atomdata to be sliced.
+            which_xvar_idx (_type_): The index of the xvar to slice along.
+            which_shot_idx (_type_): The index of the xvar value to select.
+
+        Returns:
+            atomdata: The sliced atomdata object.
+        """
+
+        ad = atomdata(self.run_info.run_id)
+
+        # repeat handling is broken right now, in that if the repeats are on the
+        # first axis, the function won't return an atomdata with all the repeats. To
+        # be fixed later.
+        def check_for_repeat_axis():
+            for idx, arr in enumerate(ad.xvars):
+                _, counts = np.unique(arr, return_counts=True)
+                if np.any(counts > 1):
+                    slicing_repeat_axis_bool = (which_xvar_idx == idx)
+                    break
+            return slicing_repeat_axis_bool
+        
+        if ad.params.N_repeats > 1:
+            print('Warning: this run has repeats, which are by default associated with xvar 0. If you slice into the axis which has the repeats, you will only get one slice, not all the shots with that xvar0 value.')
+            # if you slice into the repeat axis, set N_repeats = 1.
+            if check_for_repeat_axis():
+                ad.params.N_repeats = 1
+
+        # replace the param for the xvar being sliced with the slice value
+        vars(ad.params)[ad.xvarnames[which_xvar_idx]] = ad.xvars[which_xvar_idx][which_shot_idx]
+        
+        def remove_element_by_index(data, index):
+            if isinstance(data, list):
+                del data[index]
+            elif isinstance(data, np.ndarray):
+                data = np.delete(data, index)
+            return data
+        # remove the xvars, xvarnames, and xvardims entry for that xvar
+        keys = ['xvars','xvarnames','xvardims']
+        # only remove the sort_N and sort_idx for this xvar if is the only one of
+        # its length (otherwise another xvar also uses that sort_idx list)
+        sliced_xvardim = ad.xvardims[which_xvar_idx]
+        if np.sum(ad.xvardims == sliced_xvardim) == 1:
+            sort_N_idx = np.where(ad.sort_N == sliced_xvardim)[0][0]
+            ad.sort_N = remove_element_by_index(ad.sort_N, sort_N_idx)
+            ad.sort_idx = remove_element_by_index(ad.sort_idx, sort_N_idx)
+        
+        for k in keys:
+            vars(ad)[k] = remove_element_by_index(vars(ad)[k],
+                                                    which_xvar_idx)
+        # decrement the number of variables by one
+        ad.Nvars -= 1
+
+        def slice_ndarray(array):
+            return np.take(array,
+                        indices=which_shot_idx,
+                        axis=which_xvar_idx)
+        nd_keys = ['img_atoms','img_light','img_dark',
+                'img_timestamp_atoms','img_timestamp_light','img_timestamp_dark']
+        for k in nd_keys:
+            vars(ad)[k] = slice_ndarray(vars(ad)[k])
+
+        ad.params.N_img = np.prod(ad.xvardims * ad.params.N_pwa_per_shot)
+        ad.params.N_shots = int(ad.params.N_shots / sliced_xvardim)
+        ad.params.N_shots_with_repeats = int(ad.params.N_shots_with_repeats / sliced_xvardim)
+
+        ad.analyze()
+
+        return ad
+
     ### Averaging and transpose
 
     def avg_repeats(self,xvars_to_avg=[],reanalyze=True):
