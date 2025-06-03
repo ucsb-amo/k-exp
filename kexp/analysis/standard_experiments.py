@@ -152,6 +152,8 @@ def rabi_oscillation(ad:atomdata,
 
     if normalize_maximum_idx != None:
         override_normalize_value = populations[normalize_maximum_idx]
+    else:
+        override_normalize_value = None
         
     if avg_repeats:
         Nr = ad.params.N_repeats
