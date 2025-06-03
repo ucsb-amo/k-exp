@@ -192,6 +192,7 @@ def rabi_oscillation(ad:atomdata,
             override_normalize_min = None
     
     populations = normalize(populations,
+                            map_minimum_to_zero=map_minimum_to_zero,
                             override_normalize_minimum=override_normalize_min,
                             override_normalize_maximum=override_normalize_max)
     

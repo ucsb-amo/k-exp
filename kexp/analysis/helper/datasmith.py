@@ -16,9 +16,10 @@ def remove_infnan(*arrays):
     masked_arrays = tuple(arr[~invalid_mask] for arr in arrays)
     return masked_arrays
 
-def normalize(array,map_minimum_to_zero=False,
-               override_normalize_maximum=None,
-               override_normalize_minimum=None):
+def normalize(array,
+              map_minimum_to_zero=False,
+              override_normalize_maximum=None,
+              override_normalize_minimum=None):
     x = np.asarray(array)
 
     if override_normalize_maximum != None:
