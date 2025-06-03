@@ -57,6 +57,8 @@ class SLM:
             mask = 'grating'
         elif mask_type == 'cross':
             mask = 'cross'
+        else:
+            raise ValueError("mask_type must be one of 'spot', 'grating', or 'cross'.")
 
         try:
             dimension = int(dimension * 1.e6)
@@ -74,7 +76,7 @@ class SLM:
             print(f"Error sending phase spot: {e}")
 
     @kernel
-    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type=dm):
+    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot'):
         """Writes a phase spot of given dimension and phase to the specified
         position on the slm display.
 
