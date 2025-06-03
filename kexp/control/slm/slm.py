@@ -47,8 +47,6 @@ class SLM:
             x_center = self.params.px_slm_phase_mask_position_x
         if y_center == di:
             y_center = self.params.px_slm_phase_mask_position_y
-        if mask_type == dm:    
-           mask_type =  self.params.slm_mask
 
         x_center = int(x_center)
         y_center = int(y_center)
