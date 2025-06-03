@@ -88,9 +88,9 @@ def rabi_oscillation(ad:atomdata,
                      normalize_maximum_idx=None,
                      map_minimum_to_zero=None,
                      normalize_minimum_idx=None,
-                     plot_bool=True,
-                     pi_time_at_peak=True,
                      avg_repeats=True,
+                     plot_bool=True,
+                     plot_raw_data=True,
                      fit_guess_frequency=dv_fit_guess_rabi_frequency,
                      fit_guess_phase=np.pi/2,
                      fit_guess_amp=1.,
@@ -124,12 +124,9 @@ def rabi_oscillation(ad:atomdata,
         normalizes the data so that the value at the provided index is mapped to
         zero 0 (full intial contrast), where the value at the provided index is
         mapped to zero.
-        plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
-        pi_time_at_peak (bool, optional): If True, assumes the initial
-        population is zero and extracts the pi-pulse time as the location of the
-        first peak in the fitted oscillation. If False, identifies the minimum
-        as the pi-pulse time. Defaults to True.
         avg_repeats (bool, optional): If True, averages repeats and plots with error bars.
+        plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
+        
 
     Returns:
         t_pi: The pi pulse time in seconds.
@@ -164,6 +161,7 @@ def rabi_oscillation(ad:atomdata,
     
         
     if avg_repeats:
+        
         Nr = ad.params.N_repeats
         if isinstance(Nr,np.ndarray):
             Nr = Nr[0]
@@ -178,7 +176,11 @@ def rabi_oscillation(ad:atomdata,
             override_normalize_min = mean[normalize_minimum_idx]
         elif map_minimum_to_zero:
             override_normalize_min = mean[np.argmin(mean)]
+        else:
+            override_normalize_min = None
+
     else:
+
         if normalize_maximum_idx != None:
             override_normalize_max = populations[normalize_maximum_idx]
         else:
@@ -245,18 +247,23 @@ def rabi_oscillation(ad:atomdata,
         fig, ax = plt.subplots(1,1)
 
         c = [0.,0.4,1.]
+        c_data = [0.,0.4,1.,1.]
+        c_fit = [0.,0.4,1.,0.6]
         
         if avg_repeats:
             plt.scatter(times[::Nr]*1.e6, mean, color=c, label=f'Data (N={Nr})')
             if Nr > 1:
-                plt.errorbar(times[::Nr]*1.e6, mean, err,
-                            capsize=5, fmt='None', ecolor=c)
+                plt.errorbar(times[::Nr]*1.e6, mean, err, fmt='None', ecolor=c)
+            if plot_raw_data:
+                c_data[3] = 0.4
+                plt.scatter(times*1.e6, populations, color=c_data, s=5, label=f'Raw data')
         else:
-            plt.scatter(times*1.e6, populations, color=c, label=f'Data')
+            plt.scatter(times*1.e6, populations, color=c_data, label=f'Raw data')
+                
 
         t_sm = np.linspace(times[0],times[-1],10000)
         try:
-            ax.plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), 'k-', label='fit')
+            ax.plot(t_sm*1.e6, _fit_func_rabi_oscillation(t_sm,*popt), color=c_fit, label='fit')
         except:
             pass
         ax.set_ylabel('fractional state population')
@@ -272,7 +279,7 @@ def rabi_oscillation(ad:atomdata,
             title += f"\n$\\Omega = 2\\pi \\times {rabi_frequency_hz/1.e3:1.3f}$ kHz"
 
         ax.set_title(title)
-        ax.set_ylim([0,1.1])
+        ax.set_ylim([-0.1,1.1])
 
         try:
             fit_params_str = f"$\Omega$ = $2\pi \\times {popt[0]/(2*np.pi):1.2f}$ Hz,"\
@@ -284,10 +291,8 @@ def rabi_oscillation(ad:atomdata,
             pass
 
     try:
-        if not pi_time_at_peak:
-            y_fit = -y_fit
-        peak_idx, _ = find_peaks(y_fit)
-        t_pi = times[peak_idx][0]
+        t_pi = np.pi / popt[0]
+        print(f'pi time = {t_pi:1.4e} s')
     except:
         t_pi = None
 
@@ -738,4 +743,4 @@ def magnetometry_2d(ad,F0=2.,mF0=0.,F1=1.,mF1=1.,
 
     
 
-    return B_measured_array, transition_peaksf
+    return B_measured_array, transition_peaks
