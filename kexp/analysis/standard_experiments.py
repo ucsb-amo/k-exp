@@ -166,6 +166,9 @@ def rabi_oscillation(ad:atomdata,
     populations = normalize(populations,
                             map_minimum_to_zero=min_population_is_zero,
                             override_normalize_value=override_normalize_value)
+    
+    if avg_repeats:
+        mean, err = get_repeat_std_error(populations, Nr)
 
     if fit_guess_decay_tau == dv:
         convwidth = 3
@@ -215,7 +218,6 @@ def rabi_oscillation(ad:atomdata,
         c = [0.,0.4,1.]
         
         if avg_repeats:
-            print('hi')
             plt.scatter(times[::Nr]*1.e6, mean, color=c, label=f'Data (N={Nr})')
             if Nr > 1:
                 plt.errorbar(times[::Nr]*1.e6, mean, err,
