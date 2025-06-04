@@ -411,8 +411,9 @@ class atomdata():
         listlike_keys = ['xvars','xvarnames']
         reorder_listlike(self,listlike_keys)
 
-        param_keys = ['N_repeats']
-        reorder_listlike(self.params,param_keys)
+        if isinstance(self.params, np.ndarray):
+            param_keys = ['N_repeats']
+            reorder_listlike(self.params,param_keys)
 
         # for things of an ndarraylike nature which have one axis per xvar, and
         # so should have the order of their axes switched.
