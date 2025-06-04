@@ -10,7 +10,7 @@ import json
 di = -1
 dv = 1.
 dm = 1
-SLM_RPC_DELAY = 3.e-3
+SLM_RPC_DELAY = 1.
 
 class SLM:
     def __init__(self, expt_params=ExptParams(), core=Core,
