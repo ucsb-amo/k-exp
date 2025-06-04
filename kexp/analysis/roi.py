@@ -271,30 +271,41 @@ class roi_creator():
         given run.
 
         Controls:
-            LMB + drag: select an ROI rectangle.
-            RMB: clear the drawn ROI.
-            L/R arrow keys: scroll through ODs from the run.
-            Enter: submit your selection.
-            Escape / "X" button: close the GUI without submitting selection.
+            LMB + drag: Select an ROI rectangle.
+            MMB + drag: Draw a dotted-line rectangle for zooming.
+            MMB release: Zoom in to the selected region.
+            RMB: Clear the drawn ROI.
+            Mouse wheel scroll down: Zoom back out to full scale.
+            L/R arrow keys: Scroll through ODs from the run while keeping zoom.
+            Enter: Submit your selection.
+            Escape / "X" button: Close the GUI without submitting selection.
 
         Returns:
-            bool: Whether or not an ROI has been selected.
-            tuple: roix, given as [roix0,roix1] (the left and right bounds of
-            the ROI).
-            tuple: roiy, given as [roiy0,roiy1] (the left and right bounds of
-            the ROI).
-        """        
+            bool: Whether an ROI has been selected.
+            tuple: roix, given as [roix0, roix1] (left and right bounds of the ROI).
+            tuple: roiy, given as [roiy0, roiy1] (top and bottom bounds of the ROI).
+        """       
         image = self.image
+        original_image = image.copy()  # Store the full-scale image
         img_index = 0
+        zooming = False
+        zoom_region = None  # Store zoomed region coordinates
+        self.cmap_juice_factor = 1.
 
         def draw_rectangle(event, x, y, flags, param):
-            
+            nonlocal image, zoom_region, zooming
+
             if event == cv2.EVENT_LBUTTONDOWN:
                 self.drawing = True
                 self.start_x, self.start_y = x, y
                 
+            elif event == cv2.EVENT_MBUTTONDOWN:
+                zooming = True
+                image = original_image.copy()  # Restore full-size image
+                self.start_x, self.start_y = x, y
+
             elif event == cv2.EVENT_MOUSEMOVE:
-                if self.drawing:
+                if self.drawing or zooming:
                     self.end_x = max(min(x, image.shape[1] - 1), 0)
                     self.end_y = max(min(y, image.shape[0] - 1), 0)
                     
@@ -303,41 +314,131 @@ class roi_creator():
                 self.end_x = max(min(x, image.shape[1] - 1), 0)
                 self.end_y = max(min(y, image.shape[0] - 1), 0)
 
+            elif event == cv2.EVENT_MBUTTONUP:
+                zooming = False
+                self.end_x = max(min(x, image.shape[1] - 1), 0)
+                self.end_y = max(min(y, image.shape[0] - 1), 0)
+
+                try:
+                    if self.start_x != -1 and self.start_y != -1 and self.end_x != -1 and self.end_y != -1:
+                        zoom_region = (self.start_x, self.start_y, self.end_x, self.end_y)
+                        zoomed_region = image[self.start_y:self.end_y, self.start_x:self.end_x]
+                        image = cv2.resize(zoomed_region,
+                                        (original_image.shape[1], original_image.shape[0]),
+                                        interpolation=cv2.INTER_LINEAR)
+                except:
+                    pass
+                self.start_x, self.start_y = -1, -1
+                self.end_x, self.end_y = -1, -1
+
             elif event == cv2.EVENT_RBUTTONDOWN:
                 self.drawing = False
-                self.start_x = -1
-                self.start_y = -1
-                self.end_x = -1
-                self.end_y = -1
+                zooming = False
+                self.start_x, self.start_y = -1, -1
+                self.end_x, self.end_y = -1, -1
+                # image = original_image.copy()  # Restore full-size image
+                # zoom_region = None  # Clear zoom region
 
-        cv2.namedWindow('OD')
-        cv2.setMouseCallback('OD', draw_rectangle)
+        def adjust_colormap_scale(key):
+            """Adjusts the colormap scale factor based on arrow key input."""
+            step_size = 0.1
+            max_joos = 0.05
+            if key == 0x260000:  # Up arrow key (increase fraction)
+                self.cmap_juice_factor = max(self.cmap_juice_factor - step_size, max_joos)
+            elif key == 0x280000:  # Down arrow key (decrease fraction)
+                self.cmap_juice_factor = min(self.cmap_juice_factor + step_size, 1.0)
+
+        def update_image_to_colormap(image):
+            """Updates the displayed image based on the current scale factor."""
+            
+            # normalized_image = image
+            max_pixel_value = np.max(image)  # Find the maximum pixel value in the original unnormalized image
+            threshold = self.cmap_juice_factor * max_pixel_value  # Apply scaling factor
+
+            # Normalize with the threshold
+            normalized_image = np.clip(image, 0, threshold)
+            normalized_image = cv2.normalize(normalized_image, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+            # Apply the Inferno colormap
+            # colored_image = normalized_image
+            colored_image = cv2.applyColorMap(normalized_image, cv2.COLORMAP_VIRIDIS)
+
+            cv2.imshow('recrop', colored_image)
+
+            return colored_image
+
+        cv2.namedWindow('recrop')
+        cv2.setWindowProperty('recrop', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+        try:
+            import win32gui
+            import win32con
+
+            hwnd = win32gui.FindWindow(None, 'recrop')
+            win32gui.SetForegroundWindow(hwnd)
+            win32gui.ShowWindow(hwnd, win32con.SW_SHOW)
+        except:
+            pass
+        cv2.setMouseCallback('recrop', draw_rectangle)
 
         while True:
+
             img_copy = image.copy()
-            if self.start_x != -1 and self.start_y != -1 and self.end_x != -1 and self.end_y != -1:
-                cv2.rectangle(img_copy, (self.start_x, self.start_y), (self.end_x, self.end_y), (255, 255, 255), 2)
-            cv2.imshow('OD', img_copy)
             
+            if self.start_x != -1 and self.start_y != -1 and self.end_x != -1 and self.end_y != -1:
+                c = np.max(img_copy)
+                color = (c, c, c)
+                thickness = 2 if self.drawing else 1
+                line_type = cv2.LINE_8 if self.drawing else cv2.LINE_4  # Solid for LMB, dotted for MMB
+                cv2.rectangle(img_copy, (self.start_x, self.start_y), (self.end_x, self.end_y), color, thickness, line_type)
+
+            img_copy = update_image_to_colormap(img_copy)
+
             key = cv2.waitKeyEx(1)
-            # img_index = (img_index + 1) % self.N_img
-            # image = self.get_od(img_index)
             if key == 13:  # Enter key
                 break
-            elif key == 2555904:  # Right arrow key ➡️
-                img_index = (img_index + 1) % self.N_img
+
+            if key in [0x260000, 0x280000]:  # Up or down arrow key
+                adjust_colormap_scale(key)
+
+            elif key == 2555904 or key == 2424832: # Right arrow key ➡️ (2555904) and left arrow key ⬅️ (2424832)
+                if key == 2555904:
+                    img_index = (img_index + 1) % self.N_img
+                elif key == 2424832:
+                    img_index = (img_index - 1) % self.N_img
                 image = self.get_od(img_index)
-            elif key == 2424832:  # Left arrow key ⬅️
-                img_index = (img_index - 1) % self.N_img
-                image = self.get_od(img_index)
-            if cv2.getWindowProperty('OD',cv2.WND_PROP_VISIBLE) < 1: # if window x button clicked
+                if zoom_region:
+                    start_x, start_y, end_x, end_y = zoom_region
+                    zoomed_region = image[start_y:end_y, start_x:end_x]
+                    image = cv2.resize(zoomed_region,
+                                    (original_image.shape[1], original_image.shape[0]),
+                                    interpolation=cv2.INTER_LINEAR)
+
+            if cv2.getWindowProperty('recrop', cv2.WND_PROP_VISIBLE) < 1:  # If window "X" button clicked
                 break
-            if key == 27: # escape key
+            if key == 27:  # Escape key
                 break
 
         cv2.destroyAllWindows()
         self.h5_file.close()
 
-        out = np.array([self.start_x, self.start_y, self.end_x, self.end_y])
+        if zoom_region == None:
+            x_origin, y_origin = 0, 0
+            scale_x, scale_y = 1, 1
+        else:
+            scale_x = (zoom_region[2] - zoom_region[0]) / original_image.shape[1]
+            scale_y = (zoom_region[3] - zoom_region[1]) / original_image.shape[0]
+            x_origin = zoom_region[0]
+            y_origin = zoom_region[1]
+
+        mapped_start_x = x_origin + int(self.start_x * scale_x)
+        mapped_end_x = x_origin + int(self.end_x * scale_x)
+        mapped_start_y = y_origin + int(self.start_y * scale_y)
+        mapped_end_y = y_origin + int(self.end_y * scale_y)
+
+        # print(self.start_x, self.end_x, self.start_y, self.end_y)
+        # print(scale_x, scale_y)
+        # print(mapped_start_x, mapped_end_x, mapped_start_y, mapped_end_y)
+
+        out = np.array([mapped_start_x, mapped_start_y, mapped_end_x, mapped_end_y])
         update_bool = not np.all(out == -1)
-        return update_bool, np.sort([self.start_x, self.end_x]), np.sort([self.end_y, self.start_y])
+        return update_bool, np.sort([mapped_start_x, mapped_end_x]), np.sort([mapped_end_y, mapped_start_y])
