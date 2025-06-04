@@ -13,7 +13,7 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(200.,400.,6)*1.e6)
         
@@ -38,15 +38,17 @@ class tweezer_load(EnvExperiment, Base):
         self.p.i_spin_mixture = 19.48
 
         # self.xvar('f_raman_transition',43.4222e6 + np.linspace(-7.e3,7.e3,15))
-        self.p.f_raman_transition = 41.247e6
+        self.p.frequency_raman_transition = 41.247e6
+        # self.xvar('f_raman_transition',41.247e6 + np.linspace(-900.e3,900.e3,5))
+        # self.p.frequency_detuned_raman_transition = 41.989e6
+        self.p.frequency_detuned_raman_transition = 41.447e6
         
         # self.xvar('t_raman_pulse',np.linspace(0.,100.,10)*1.e-6)
 
         self.p.t_raman_pi_pulse = 4.2329144711594805e-06
-        self.xvar('t_raman_pulse',np.linspace(0.,self.p.t_raman_pi_pulse,15))
-        # self.xvar('t_raman_pulse',np.linspace(0.,100.,10)*1.e-6)
+        # self.xvar('t_raman_pulse',np.linspace(0.,self.p.t_raman_pi_pulse,15))
+        self.xvar('t_raman_pulse',np.linspace(0.,10.,20)*1.e-6)
         # self.p.t_raman_pulse = 30.e-6
-        
 
         # self.xvar('f_raman_sweep_width',np.linspace(3.e3,30.e3,20))
         # self.p.f_raman_sweep_width = 15.e3
@@ -74,13 +76,13 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_mot_load = 1.
         self.p.t_tof = 300.e-6
         # self.xvar('t_tof',np.linspace(20.,500.,4)*1.e-6)
-        self.p.N_repeats = 2
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
-        # self.set_imaging_detuning(self.p.frequency_detuned_imaging_m1)
+        self.set_imaging_detuning(self.p.frequency_detuned_imaging_m1)
         # self.set_high_field_imaging(i_outer=self.p.i_spin_mixture,pid_bool=True)
 
         # if self.p.do_pi_pulse_bool:
@@ -88,7 +90,7 @@ class tweezer_load(EnvExperiment, Base):
         # else:
         #     self.set_imaging_detuning(self.p.frequency_detuned_imaging_m1)
         
-        self.set_imaging_detuning(self.p.frequency_detuned_imaging_midpoint)
+        # self.set_imaging_detuning(self.p.frequency_detuned_imaging_midpoint)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
@@ -111,8 +113,6 @@ class tweezer_load(EnvExperiment, Base):
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_lf_lightsheet_evap1_current)
-        
-        # self.outer_coil.start_pid(i_pid = self.p.i_lf_lightsheet_evap1_current)
 
         # lightsheet evap 1
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
@@ -180,23 +180,10 @@ class tweezer_load(EnvExperiment, Base):
         self.dds.raman_minus.set_dds(amplitude=self.p.amp_raman)
         self.dds.raman_plus.set_dds(amplitude=self.p.amp_raman)
 
-        # self.raman.set_transition_frequency(self.p.f_raman_transition)
-
-        # self.raman.dds_plus.on()
-        # delay(self.p.t_pulse)
-        # self.raman.dds_plus.off()
-        # delay(self.p.t_max - self.p.t_pulse)
-
         # self.dds.imaging.on()
-        self.raman.pulse(t=self.p.t_raman_pulse,frequency_transition=self.p.f_raman_transition)
+        self.raman.pulse(t=self.p.t_raman_pulse,frequency_transition=self.p.frequency_detuned_raman_transition)
         # delay(self.p.t_raman_pulse)
         # self.dds.imaging.off()
-
-        # pi pulse
-        # if self.p.do_pi_pulse_bool:
-        #     self.raman.pulse(t=self.p.t_raman_pi_pulse,frequency_transition=self.p.f_raman_transition)
-        # else:
-        #     delay(self.p.t_raman_pi_pulse)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.f_raman_sweep_center,
@@ -206,7 +193,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.dds.imaging.set_dds(amplitude=.09)
 
         # delay(self.p.t_tweezer_hold)
-        delay(10.e-3)
+        # delay(10.e-3)
         self.tweezer.off()
 
         delay(self.p.t_tof)

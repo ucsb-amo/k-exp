@@ -51,27 +51,35 @@ class ExptParams():
         self.phase_slm_mask = 0.42 * np.pi
         self.px_slm_phase_mask_position_x = 1141
         self.px_slm_phase_mask_position_y = 965
-        #Cooling timing
+        
+        # Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
+        
         self.t_mot_kill = 1.
         self.t_2D_mot_load_delay = 1.
         self.t_mot_load = 1.0
+        
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
+        
         self.t_magnet_off_pretrigger = 0.e-3
         self.t_shim_change_pretrigger = 0.e-3
+       
         self.t_gm = 3.e-3
         self.t_gmramp = 6.5e-3
+        
         self.t_pump_to_F1 = 150.e-6
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
+        
         self.t_lightsheet_rampup = .7
         self.t_lightsheet_rampdown = .24
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
         self.t_lightsheet_hold = 40.e-3
+        
         self.t_tweezer_ramp = .5
         self.t_tweezer_hold = 5.e-3
         self.t_tweezer_1064_ramp = .37
@@ -82,19 +90,24 @@ class ExptParams():
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
+        
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
+        
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 2.e-3
         self.t_magtrap = 2. # for max atom number use 3 s
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .15
+        
         self.t_feshbach_field_rampup = 100.e-3
         self.t_feshbach_field_ramp = 12.e-3
         self.t_feshbach_field_ramp2 = 12.e-3
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
+
+        self.t_raman_pi_pulse = 4.2329144711594805e-06
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -287,6 +300,8 @@ class ExptParams():
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
+
+        self.frequency_raman_transition = 41.247e6
 
         # low field evap old
         # self.i_evap1_current = 9.5
