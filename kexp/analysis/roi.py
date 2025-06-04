@@ -302,6 +302,7 @@ class roi_creator():
             elif event == cv2.EVENT_MBUTTONDOWN:
                 zooming = True
                 image = original_image.copy()  # Restore full-size image
+                zoom_region = None
                 self.start_x, self.start_y = x, y
 
             elif event == cv2.EVENT_MOUSEMOVE:
@@ -318,7 +319,6 @@ class roi_creator():
                 zooming = False
                 self.end_x = max(min(x, image.shape[1] - 1), 0)
                 self.end_y = max(min(y, image.shape[0] - 1), 0)
-
                 try:
                     if self.start_x != -1 and self.start_y != -1 and self.end_x != -1 and self.end_y != -1:
                         zoom_region = (self.start_x, self.start_y, self.end_x, self.end_y)
@@ -327,7 +327,8 @@ class roi_creator():
                                         (original_image.shape[1], original_image.shape[0]),
                                         interpolation=cv2.INTER_LINEAR)
                 except:
-                    pass
+                    image = original_image.copy()
+                    zoom_region = None
                 self.start_x, self.start_y = -1, -1
                 self.end_x, self.end_y = -1, -1
 
@@ -415,6 +416,7 @@ class roi_creator():
 
             if cv2.getWindowProperty('recrop', cv2.WND_PROP_VISIBLE) < 1:  # If window "X" button clicked
                 break
+
             if key == 27:  # Escape key
                 break
 
@@ -435,10 +437,8 @@ class roi_creator():
         mapped_start_y = y_origin + int(self.start_y * scale_y)
         mapped_end_y = y_origin + int(self.end_y * scale_y)
 
-        # print(self.start_x, self.end_x, self.start_y, self.end_y)
-        # print(scale_x, scale_y)
-        # print(mapped_start_x, mapped_end_x, mapped_start_y, mapped_end_y)
-
         out = np.array([mapped_start_x, mapped_start_y, mapped_end_x, mapped_end_y])
         update_bool = not np.all(out == -1)
+        if mapped_start_x == mapped_end_x or mapped_start_y == mapped_end_y:
+            update_bool = False
         return update_bool, np.sort([mapped_start_x, mapped_end_x]), np.sort([mapped_end_y, mapped_start_y])
