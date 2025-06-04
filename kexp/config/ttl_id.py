@@ -8,8 +8,10 @@ class ttl_frame():
 
         self.ttl_list = []
         
-        self.outer_coil_discharge_igbt = self.ttl_assign(0)
+        self.coil_discharge_igbt = self.ttl_assign(0)
         self.tweezer_pid2_enable = self.ttl_assign(1)
+        self.inner_coil_pid_ttl = self.ttl_assign(2)
+        self.outer_coil_pid_ttl = self.ttl_assign(3)
         self.lightsheet_sw = self.ttl_assign(4)
         self.basler = self.ttl_assign(5)
         self.inner_coil_igbt = self.ttl_assign(6)
@@ -21,9 +23,13 @@ class ttl_frame():
         self.lightsheet_pid_int_hold_zero = self.ttl_assign(12)
         self.aod_rf_sw = self.ttl_assign(13)
         self.awg_trigger = self.ttl_assign(14)
-        self.inner_coil_discharge_igbt = self.ttl_assign(15)
+        self.zshim_hbridge_flip = self.ttl_assign(15)
         self.pd_scope_trig = self.ttl_assign(16)
         self.pd_scope_trig_2 = self.ttl_assign(17)
+        self.imaging_shutter_xy = self.ttl_assign(18)
+        self.imaging_shutter_x = self.ttl_assign(19)
+        self.basler_2dmot = self.ttl_assign(20)
+        self.keithley_trigger = self.ttl_assign(48)
         # self.machine_table_trig = self.ttl_assign(25)
 
         self._write_ttl_keys()

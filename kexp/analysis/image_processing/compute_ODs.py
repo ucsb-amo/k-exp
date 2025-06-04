@@ -1,7 +1,8 @@
 import numpy as np
-import kexp.analysis.image_processing.roi_select as roi
 
-def process_ODs(raw_ODs,crop_type='mot',Nvars=1):
+from kexp.config.camera_id import img_types as img
+
+def process_ODs(raw_ODs,roi):
     '''
     From an ndarray of ODs (dimensions n1 x n2 x ... x nN x px x py, where ni is
     the length of the ith xvar, and px and py are the dimensions in pixels of
@@ -14,11 +15,8 @@ def process_ODs(raw_ODs,crop_type='mot',Nvars=1):
     raw_ODs: ndarray 
         An n1 x n2 x ... x nN x px x py ndarray of uncropped ODs.
 
-    crop_type: str
-        Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-        options: 'mot', 'cmot', 'gm', 'odt'.
-
-    Nvars: int
+    roi: kexp.analysis.ROI
+        The ROI object to use for the crop.
 
     Returns
     -------
@@ -27,14 +25,14 @@ def process_ODs(raw_ODs,crop_type='mot',Nvars=1):
     summedODx: ArrayLike summedODy: ArrayLike
     summedODy: ArrayLike
     '''
-    ODs = roi.crop_OD(raw_ODs,crop_type,Nvars)
-
-    sum_od_y = np.sum(ODs,Nvars+1)
-    sum_od_x = np.sum(ODs,Nvars)
+    ODs = roi.crop(raw_ODs)
+    ODs: np.ndarray
+    sum_od_y = np.sum(ODs,ODs.ndim-1)
+    sum_od_x = np.sum(ODs,ODs.ndim-2)
 
     return ODs, sum_od_x, sum_od_y
 
-def compute_OD(atoms,light,dark):
+def compute_OD(atoms,light,dark,imaging_type=img.ABSORPTION):
     '''
     From a list of images (length 3*n, where n is the number of runs), computes
     OD. Crops to a preset ROI based on in what stage of cooling the images were
@@ -51,18 +49,10 @@ def compute_OD(atoms,light,dark):
     img_dark: list 
         An n x px x py list of images of n images, px x py pixels. Images with no light, no atoms.
 
-    crop_type: str
-        Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-        options: 'mot', 'cmot', 'gm', 'odt'.
-
     Returns
     -------
     ODsraw: ArrayLike
         The uncropped ODs
-    ODs: ArrayLike
-        The cropped ODs
-    summedODx: ArrayLike
-    summedODy: ArrayLike
     '''
     
     dtype = atoms.dtype
@@ -80,13 +70,15 @@ def compute_OD(atoms,light,dark):
     light_only[light_only < 0] = 0
 
     It_over_I0 = np.divide(atoms_only, light_only, 
-                    out=np.zeros(atoms_only.shape, dtype=float), 
-                    where= light_only!=0)
-    
-    OD = -np.log(It_over_I0,
-                    out=np.zeros(atoms_only.shape, dtype=float), 
-                    where= It_over_I0!=0)
-    
-    OD[OD<0] = 0
+                out=np.zeros(atoms_only.shape, dtype=float), 
+                where=light_only!=0)
 
-    return OD  
+    if imaging_type == img.ABSORPTION:
+        OD = -np.log(It_over_I0,
+                        out=np.zeros(atoms_only.shape, dtype=float), 
+                        where= It_over_I0!=0)
+        OD[OD<0] = 0
+    else:
+        OD = It_over_I0
+
+    return OD

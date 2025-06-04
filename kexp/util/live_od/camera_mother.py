@@ -6,7 +6,7 @@ import names
 
 import pypylon.pylon as py
 
-from kexp.util.data.load_atomdata import unpack_group
+from kexp.analysis.atomdata import unpack_group
 
 from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.util.live_od.camera_nanny import CameraNanny
@@ -131,20 +131,23 @@ class DataHandler(QThread,Scribe):
     def get_save_data_bool(self,save_data_bool):
         self.save_data = save_data_bool
 
-    def get_img_number(self,N_img):
+    def get_img_number(self,N_img,N_shots,N_pwa_per_shot):
         self.N_img = N_img
+        self.N_shots = N_shots
+        self.N_pwa_per_shot = N_pwa_per_shot
 
     def run(self):
         self.write_image_to_dataset()
 
     def write_image_to_dataset(self):
-        TIMEOUT = 45.
+        TIMEOUT = 20.
         if self.save_data:
-            self.dataset = self.wait_for_data_available(close=False)
+            self.dataset = self.wait_for_data_available(close=False,timeout=TIMEOUT)
         try:
             while True:
-                img, img_t, idx = self.queue.get(timeout=TIMEOUT)
-                TIMEOUT = 30.
+                img, _, idx = self.queue.get(timeout=TIMEOUT)
+                TIMEOUT = 10.
+                img_t = time.time()
                 self.got_image_from_queue.emit(img)
                 if self.save_data:
                     self.dataset['data']['images'][idx] = img
@@ -164,8 +167,9 @@ class DataHandler(QThread,Scribe):
 class CameraBaby(QThread,Scribe):
     image_captured = pyqtSignal(int)
     camera_connect = pyqtSignal(str)
-    camera_grab_start = pyqtSignal(int)
+    camera_grab_start = pyqtSignal(int,int,int)
     save_data_bool_signal = pyqtSignal(int)
+    image_type_signal = pyqtSignal(bool)
     honorable_death_signal = pyqtSignal()
     dishonorable_death_signal = pyqtSignal()
 
@@ -174,7 +178,7 @@ class CameraBaby(QThread,Scribe):
         super().__init__()
 
         from kexp.config.expt_params import ExptParams
-        from kexp.config.camera_params import CameraParams
+        from kexp.config.camera_id import CameraParams
         from kexp.util.data.run_info import RunInfo
         self.params = ExptParams()
         self.camera_params = CameraParams()
@@ -209,7 +213,7 @@ class CameraBaby(QThread,Scribe):
     def create_camera(self):
         self.camera = self.camera_nanny.persistent_get_camera(self.camera_params)
         self.camera_nanny.update_params(self.camera,self.camera_params)
-        camera_select = self.camera_params.camera_select
+        camera_select = self.camera_params.key
         if type(camera_select) == bytes: 
             camera_select = camera_select.decode()
         self.camera_connect.emit(camera_select)
@@ -237,13 +241,16 @@ class CameraBaby(QThread,Scribe):
         unpack_group(self.dataset,'camera_params',self.camera_params)
         unpack_group(self.dataset,'params',self.params)
         unpack_group(self.dataset,'run_info',self.run_info)
+        self.image_type_signal.emit(self.run_info.imaging_type)
         self.save_data_bool_signal.emit(self.run_info.save_data)
         self.dataset.close()
 
     def grab_loop(self):
-        Nimg = int(self.params.N_img)
-        self.camera_grab_start.emit(Nimg)
-        self.camera.start_grab(Nimg,output_queue=self.queue,
+        N_img = int(self.params.N_img)
+        N_shots = int(self.params.N_shots)
+        N_pwa_per_shot = int(self.params.N_pwa_per_shot)
+        self.camera_grab_start.emit(N_img,N_shots,N_pwa_per_shot)
+        self.camera.start_grab(N_img,output_queue=self.queue,
                          timeout=DEFAULT_TIMEOUT)
         self.death = self.honorable_death
 

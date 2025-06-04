@@ -43,14 +43,55 @@ class Cooling():
         self.dds.d2_3d_r.off()
 
     @kernel
-    def pump_to_F1(self):
-        self.set_shims(v_zshim_current=self.p.v_zshim_current_magtrap,
-                        v_yshim_current=self.p.v_yshim_current_magtrap,
-                        v_xshim_current=self.p.v_xshim_current_magtrap)
+    def pump_to_F1(self,t=dv,
+                   v_zshim_current = dv,
+                   v_yshim_current = dv,
+                   v_xshim_current = dv):
+
+        if t == dv:
+            t = self.params.t_pump_to_F1
+        if v_zshim_current == dv:
+            v_zshim_current = self.params.v_zshim_current_magtrap
+        if v_yshim_current == dv:
+            v_yshim_current = self.params.v_yshim_current_magtrap
+        if v_xshim_current == dv:
+            v_xshim_current = self.params.v_xshim_current_magtrap
+
+        self.set_shims(v_zshim_current=self.params.v_zshim_current_magtrap,
+                        v_yshim_current=self.params.v_yshim_current_magtrap,
+                        v_xshim_current=self.params.v_xshim_current_magtrap)
         delay(2.e-3)
         self.dds.optical_pumping.set_dds(set_stored=True)
         self.dds.optical_pumping.on()
-        delay(200.e-6)
+        delay(t)
+        self.dds.optical_pumping.off()
+        self.flash_cooler()
+
+    @kernel
+    def pump_to_F1_test(self,t=dv,
+                   v_zshim_current = dv,
+                   v_yshim_current = dv,
+                   v_xshim_current = dv,
+                   iterations = dv):
+
+        if t == dv:
+            t = self.params.t_pump_to_F1
+        if v_zshim_current == dv:
+            v_zshim_current = self.params.v_zshim_current_magtrap
+        if v_yshim_current == dv:
+            v_yshim_current = self.params.v_yshim_current_magtrap
+        if v_xshim_current == dv:
+            v_xshim_current = self.params.v_xshim_current_magtrap
+        if iterations == dv:
+            iterations = 5
+
+        self.set_shims(v_zshim_current=self.params.v_zshim_current_magtrap,
+                        v_yshim_current=self.params.v_yshim_current_magtrap,
+                        v_xshim_current=self.params.v_xshim_current_magtrap)
+        delay(2.e-3)
+        self.dds.optical_pumping.set_dds(set_stored=True)
+        self.dds.optical_pumping.on()
+        delay(t)
         self.dds.optical_pumping.off()
         self.flash_cooler()
 
@@ -78,41 +119,60 @@ class Cooling():
 
     @kernel
     def load_2D_mot(self, t,
-                     detune_d2_c = dv,
-                     amp_d2_c = dv,
-                     detune_d2_r = dv,
-                     amp_d2_r = dv,
+                     detune_d2_vc = dv,
+                     amp_d2_vc = dv,
+                     detune_d2_vr = dv,
+                     amp_d2_vr = dv,
+                     detune_d2_hc = dv,
+                     amp_d2_hc = dv,
+                     detune_d2_hr = dv,
+                     amp_d2_hr = dv,
                      detune_push = dv,
                      amp_push = dv,
-                     i_supply = dv):
+                     v_analog_supply = dv,
+                     with_push = True):
         
         ### Start Defaults ###
-        if detune_d2_c == dv:
-            detune_d2_c = self.params.detune_d2_c_2dmot
-        if amp_d2_c == dv:
-            amp_d2_c = self.params.amp_d2_c_2dmot
-        if detune_d2_r == dv:
-            detune_d2_r = self.params.detune_d2_r_2dmot
-        if amp_d2_r == dv:
-            amp_d2_r = self.params.amp_d2_r_2dmot
+        if detune_d2_vc == dv:
+            detune_d2_vc = self.params.detune_d2v_c_2dmot
+        if amp_d2_vc == dv:
+            amp_d2_vc = self.params.amp_d2v_c_2dmot
+        if detune_d2_vr == dv:
+            detune_d2_vr = self.params.detune_d2v_r_2dmot
+        if amp_d2_vr == dv:
+            amp_d2_vr = self.params.amp_d2v_r_2dmot
+        if detune_d2_hc == dv:
+            detune_d2_hc = self.params.detune_d2h_c_2dmot
+        if amp_d2_hc == dv:
+            amp_d2_hc = self.params.amp_d2h_c_2dmot
+        if detune_d2_hr == dv:
+            detune_d2_hr = self.params.detune_d2h_r_2dmot
+        if amp_d2_hr == dv:
+            amp_d2_hr = self.params.amp_d2h_r_2dmot
         if detune_push == dv:
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
-        if i_supply == dv:
-            i_supply = self.params.v_2d_mot_current
+        if v_analog_supply == dv:
+            v_analog_supply = self.params.v_2d_mot_current
         ### End Defaults ###
 
-        self.dds.d2_2d_c.set_dds_gamma(delta=detune_d2_c,
-                                 amplitude=amp_d2_c)
+        self.dds.d2_2dh_c.set_dds_gamma(delta=detune_d2_hc,
+                                 amplitude=amp_d2_hc)
+        self.dds.d2_2dh_r.set_dds_gamma(delta=detune_d2_hr,
+                                 amplitude=amp_d2_hr)
+        self.dds.d2_2dv_c.set_dds_gamma(delta=detune_d2_vc,
+                                 amplitude=amp_d2_vc)
+        self.dds.d2_2dv_r.set_dds_gamma(delta=detune_d2_vr,
+                                 amplitude=amp_d2_vr)
         delay(self.params.t_rtio)
-        self.dds.d2_2d_r.set_dds_gamma(delta=detune_d2_r,
-                                 amplitude=amp_d2_r)
-        delay(self.params.t_rtio)
-        self.dds.push.set_dds_gamma(delta=detune_push,
-                                 amplitude=amp_push)
+        if with_push:
+            self.dds.push.set_dds_gamma(delta=detune_push,
+                                    amplitude=amp_push)
+        else:
+            self.dds.push.off()
         
-        self.dac.supply_current_2dmot.set(v=i_supply)
+        self.dac.supply_current_2dmot.set(v=v_analog_supply)
 
         with parallel:
             self.switch_d2_2d(1)
@@ -154,7 +214,7 @@ class Cooling():
             v_xshim_current = self.params.v_xshim_current
         ### End Defaults ###
             
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
@@ -166,6 +226,9 @@ class Cooling():
         delay(self.params.t_rtio)
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
+        
+        self.ttl.zshim_hbridge_flip.off()
+        
         self.set_shims(v_xshim_current,v_yshim_current,v_zshim_current)
         with parallel:
             self.switch_d2_3d(1)
@@ -196,7 +259,7 @@ class Cooling():
             v_zshim_current = self.params.v_zshim_current
         ### End Defaults ###
             
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
         
@@ -247,7 +310,7 @@ class Cooling():
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current
 
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
@@ -291,7 +354,7 @@ class Cooling():
             i_supply = self.params.i_cmot
         ### End Defaults ###
             
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
@@ -324,12 +387,12 @@ class Cooling():
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_d1cmot
         if i_supply == dv:
-            i_supply = self.params.i_mot
+            i_supply = self.params.i_cmot
         ### End Defaults ###
             
-        # self.inner_coil.set_current(i_supply)
-        self.inner_coil.set_current(self.params.i_magtrap_init)
-        self.inner_coil.set_voltage(i_supply)
+        # self.inner_coil.set_supply(i_supply)
+        self.inner_coil.set_supply(self.params.i_magtrap_init)
+        # self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
@@ -372,7 +435,7 @@ class Cooling():
         ### End Defaults ###
             
         dt = t / self.params.n_d1cmot_detuning_sweep_steps
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(i_supply)
         self.inner_coil.on()
 
@@ -464,49 +527,6 @@ class Cooling():
             self.switch_d1_3d(1)
             self.switch_d2_3d(0)
         delay(t)
-
-    # @kernel
-    # def gm_ramp(self,t,t_ramp,
-    #         detune_d1_c = dv,
-    #         v_pd_d1_c = dv,
-    #         detune_d1_r = dv,
-    #         v_pd_d1_r = dv,
-    #         detune_d1 = dv,
-    #         dds_mgr_idx = 0):
-        
-    #     ### Start Defaults ###
-    #     if detune_d1 != dv:
-    #         detune_d1_c = detune_d1
-    #         detune_d1_r = detune_d1
-    #     else:
-    #         if detune_d1_c == dv:
-    #             detune_d1_c = self.params.detune_d1_c_gm
-    #         if detune_d1_r == dv:
-    #             detune_d1_r = self.params.detune_d1_r_gm
-        
-    #     if v_pd_d1_c == dv:
-    #         v_pd_d1_c = self.params.v_pd_d1_c_gm
-    #     if v_pd_d1_r == dv:
-    #         v_pd_d1_r = self.params.v_pd_d1_r_gm
-    #     ### End Defaults ###
-
-    #     self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c, 
-    #                                    v_pd=v_pd_d1_c)
-    #     delay(self.params.t_rtio)
-    #     self.dds.d1_3d_r.set_dds_gamma(delta=detune_d1_r, 
-    #                                    v_pd=v_pd_d1_r)
-        
-    #     self.dds.load_profile(dds_mgr_idx)
-
-    #     with parallel:
-    #         self.ttl.inner_coil_igbt.off()
-    #         self.switch_d1_3d(1)
-    #         self.switch_d2_3d(0)
-    #     delay(t)
-    #     self.dds.enable_profile(dds_mgr_idx)
-    #     delay(t_ramp)
-    #     # delay(t)
-    #     self.dds.disable_profile(dds_mgr_idx)
 
     @kernel
     def gm_ramp(self, t_gmramp = dv,
@@ -616,46 +636,52 @@ class Cooling():
             self.dds.op_r.off()
 
     @kernel
-    def start_magtrap(self,
-                        v_zshim_current=dv,
+    def start_magtrap(self,v_zshim_current=dv,
                         v_yshim_current=dv,
-                        v_xshim_current=dv):
+                        v_xshim_current=dv,
+                        t_delay=dv):
         if v_zshim_current == dv:
             v_zshim_current = self.params.v_zshim_current_magtrap
         if v_yshim_current == dv:
             v_yshim_current = self.params.v_yshim_current_magtrap
         if v_xshim_current == dv:
             v_xshim_current = self.params.v_xshim_current_magtrap
+        if t_delay == dv:
+            t_delay = self.params.t_magtrap_delay
         
         self.switch_d2_3d(0)
         self.switch_d1_3d(0)
 
-        self.pump_to_F1()
+        self.pump_to_F1(v_xshim_current=v_xshim_current,
+                        v_yshim_current=v_yshim_current,
+                        v_zshim_current=v_zshim_current)
 
         self.dds.power_down_cooling()
-        
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        self.set_shims(v_zshim_current=v_zshim_current,
-                        v_yshim_current=v_yshim_current,
-                        v_xshim_current=v_xshim_current)
-
+        delay(t_delay)
+             
         # magtrap start
         self.inner_coil.on()
 
     @kernel
     def magtrap_and_load_lightsheet(self,
-                                t_lightsheet_ramp=dv,
-                                t_magtrap_ramp=dv,
-                                t_magtrap_rampdown=dv,
-                                v_pd_lightsheet_ramp_start=dv,
-                                v_pd_lightsheet_ramp_end=dv,
-                                paint_lightsheet=False,
-                                v_awg_paint_amp_lightsheet=dv,
-                                i_magtrap_init=dv,
-                                i_magtrap_ramp_end=dv,
-                                v_zshim_current=dv,
-                                v_yshim_current=dv,
-                                v_xshim_current=dv):
+                                    do_lightsheet_ramp=True,
+                                    do_magtrap_rampup=True,
+                                    do_magtrap_hold=True,
+                                    do_magtrap_rampdown=True,
+                                    paint_lightsheet=False,
+                                    t_lightsheet_ramp=dv,
+                                    t_magtrap_ramp=dv,
+                                    t_magtrap_rampdown=dv,
+                                    v_pd_lightsheet_ramp_start=dv,
+                                    v_pd_lightsheet_ramp_end=dv,
+                                    v_awg_paint_amp_lightsheet=dv,
+                                    i_magtrap_init=dv,
+                                    i_magtrap_ramp_end=dv,
+                                    v_zshim_current=dv,
+                                    v_yshim_current=dv,
+                                    v_xshim_current=dv):
         if t_lightsheet_ramp == dv:
             t_lightsheet_ramp = self.params.t_lightsheet_rampup
         if t_magtrap_ramp == dv:
@@ -684,55 +710,33 @@ class Cooling():
                            v_xshim_current=v_xshim_current)
 
         # ramp up lightsheet over magtrap
-        
+        if do_lightsheet_ramp:
+            self.lightsheet.ramp(t_lightsheet_ramp,
+                                v_pd_lightsheet_ramp_start,
+                                v_pd_lightsheet_ramp_end,
+                                paint=paint_lightsheet,
+                                v_awg_am_max=v_awg_paint_amp_lightsheet,
+                                keep_trap_frequency_constant=False)
+        # else:
+            # delay(t_lightsheet_ramp)
 
-        self.lightsheet.ramp(t_lightsheet_ramp,
-                            v_pd_lightsheet_ramp_start,
-                            v_pd_lightsheet_ramp_end,
-                            paint=paint_lightsheet,
-                            v_awg_am_max=v_awg_paint_amp_lightsheet,
-                            keep_trap_frequency_constant=False)
+        if do_magtrap_rampup:
+            self.inner_coil.ramp_supply(t=t_magtrap_ramp,
+                                i_start=i_magtrap_init,
+                                i_end=i_magtrap_ramp_end)
+        if do_magtrap_hold:
+            delay(self.params.t_magtrap)
 
-        self.inner_coil.ramp(t=t_magtrap_ramp,
-                            i_start=i_magtrap_init,
-                            i_end=i_magtrap_ramp_end)
-        
-        delay(self.params.t_magtrap)
-
-        self.inner_coil.ramp(t=t_magtrap_rampdown,
-                            i_start=i_magtrap_ramp_end,
-                            i_end=0.)
-        self.inner_coil.off()
-
-    @kernel
-    def magtrap(self,
-                t_magtrap_ramp=dv,
-                i_magtrap_init=dv,
-                i_magtrap_ramp_end=dv,
-                v_zshim_current=dv,
-                v_yshim_current=dv,
-                v_xshim_current=dv):
-        if t_magtrap_ramp == dv:
-            t_magtrap_ramp = self.params.t_magtrap_ramp
-        if i_magtrap_init == dv:
-            i_magtrap_init = self.params.i_magtrap_init
-        if i_magtrap_ramp_end == dv:
-            i_magtrap_ramp_end = self.params.i_magtrap_ramp_end
-        if v_zshim_current == dv:
-            v_zshim_current = self.params.v_zshim_current_magtrap
-        if v_yshim_current == dv:
-            v_yshim_current = self.params.v_yshim_current_magtrap
-        if v_xshim_current == dv:
-            v_xshim_current = self.params.v_xshim_current_magtrap
-
-        self.start_magtrap(v_zshim_current=v_zshim_current,
-                           v_yshim_current=v_yshim_current,
-                           v_xshim_current=v_xshim_current)
-
-        self.inner_coil.ramp(t=t_magtrap_ramp,
-                            i_start=i_magtrap_init,
-                            i_end=i_magtrap_ramp_end)
-
+        if do_magtrap_rampdown:
+            if do_magtrap_rampup:
+                self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
+                                    i_start=i_magtrap_ramp_end,
+                                    i_end=0.)
+            else:
+                self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
+                                    i_start=i_magtrap_init,
+                                    i_end=0.)
+            self.inner_coil.snap_off()
 
     @kernel
     def release(self):
@@ -746,12 +750,16 @@ class Cooling():
     def switch_d2_2d(self,state):
         if state == 1:
             with parallel:
-                self.dds.d2_2d_c.on()
-                self.dds.d2_2d_r.on()
+                self.dds.d2_2dh_c.on()
+                self.dds.d2_2dh_r.on()
+                self.dds.d2_2dv_c.on()
+                self.dds.d2_2dv_r.on()
         elif state == 0:
             with parallel:
-                self.dds.d2_2d_c.off()
-                self.dds.d2_2d_r.off()
+                self.dds.d2_2dh_c.off()
+                self.dds.d2_2dh_r.off()
+                self.dds.d2_2dv_c.off()
+                self.dds.d2_2dv_r.off()
 
     @kernel
     def switch_d2_3d(self,state):
@@ -792,6 +800,7 @@ class Cooling():
             amp_d2_r = dv,
             detune_push = dv,
             amp_push = dv,
+            v_2d_mot_supply = dv,
             frequency_ry_405 = dv,
             amp_ry_405 = dv,
             frequency_ry_980 = dv,
@@ -812,18 +821,20 @@ class Cooling():
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
+        if v_2d_mot_supply == dv:
+            v_2d_mot_supply = self.params.v_2d_mot_current
         if detune_push == dv:
             detune_push = self.params.detune_push
         if amp_push == dv:
             amp_push = self.params.amp_push
         if frequency_ry_405 == dv:
-            frequency_ry_405 = self.params.frequency_ao_ry_405
+            frequency_ry_405 = self.params.frequency_ao_ry_405_switch
         if amp_ry_405 == dv:
-            amp_ry_405 = self.params.amp_ao_ry_405
+            amp_ry_405 = self.params.amp_ao_ry_405_switch
         if frequency_ry_980 == dv:
-            frequency_ry_980 = self.params.frequency_ao_ry_980
+            frequency_ry_980 = self.params.frequency_ao_ry_980_switch
         if amp_ry_980 == dv:
-            amp_ry_980 = self.params.amp_ao_ry_980
+            amp_ry_980 = self.params.amp_ao_ry_980_switch
         if i_supply == dv:
             i_supply = self.params.i_mot
         if v_zshim_current == dv:
@@ -839,10 +850,10 @@ class Cooling():
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         delay(self.params.t_rtio)
-        self.dds.ry_980.set_dds(frequency=frequency_ry_405,
+        self.dds.ry_980_switch.set_dds(frequency=frequency_ry_405,
                                 amplitude=amp_ry_405)
         delay(self.params.t_rtio)
-        self.dds.ry_405.set_dds(frequency=frequency_ry_980,
+        self.dds.ry_405_switch.set_dds(frequency=frequency_ry_980,
                                 amplitude=amp_ry_980)
         
         
@@ -859,14 +870,16 @@ class Cooling():
         delay(1*ms)
         self.switch_d2_2d(1)
 
-        self.dds.ry_405.on()
-        self.dds.ry_980.on()
+        self.dac.supply_current_2dmot.set(v=v_2d_mot_supply)
+
+        self.dds.ry_405_switch.on()
+        self.dds.ry_980_switch.on()
 
         self.dds.beatlock_ref.on()
 
         self.core.break_realtime()
 
-        self.inner_coil.set_current(i_supply)
+        self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(9.)
         self.inner_coil.on()
 

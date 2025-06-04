@@ -1,7 +1,8 @@
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 
-from kexp.config import ExptParams
+from kexp.config.expt_params import ExptParams
+from kexp.util.data.run_info import RunInfo
 
 import numpy as np
 
@@ -11,6 +12,11 @@ class Dealer():
         self.sort_N = []
         self.params = ExptParams()
         self.xvarnames = []
+        self.xvardims = []
+        self.N_xvars = 0
+        self.images = np.array([])
+        self.image_timestamps = np.array([])
+        self.run_info = RunInfo()
 
         self.scan_xvars = []
         self.Nvars = 0
@@ -52,7 +58,9 @@ class Dealer():
                 raise ValueError(error_msg)
 
         for xvar in self.scan_xvars:
-            xvar.values = np.repeat(xvar.values, self.params.N_repeats[xvar.position])
+            xvar.values = np.repeat(xvar.values, self.params.N_repeats[xvar.position],axis=0)
+        
+        self.params.N_repeats = self.params.N_repeats[0]
 
     def shuffle_xvars(self,sort_preshuffle=True):
         """
@@ -93,7 +101,7 @@ class Dealer():
         
         # shuffle arrays with the scrambled indices
         for xvar in self.scan_xvars:
-            scrambled_list = xvar.values.take(sort_idx[xvar.position])
+            scrambled_list = xvar.values.take(sort_idx[xvar.position],axis=0)
             xvar.values = scrambled_list
 
         # remove duplicates (shouldn't exist anyway), sort into lists
@@ -111,6 +119,154 @@ class Dealer():
             N_to_pad = maxN - len(self.sort_idx[i])
             self.sort_idx[i] = np.append(self.sort_idx[i], [-1]*N_to_pad)
 
+    def unscramble_images(self,reshuffle=False):
+
+        pwa, pwoa, dark = self.deal_data_ndarray(self.images)
+        
+        pwa = self._unshuffle_ndarray(pwa,exclude_dims=3,
+                                        reshuffle=reshuffle)
+        pwoa = self._unshuffle_ndarray(pwoa,exclude_dims=3,
+                                        reshuffle=reshuffle)
+        dark = self._unshuffle_ndarray(dark,exclude_dims=3,
+                                        reshuffle=reshuffle)
+
+        self.images = self.stack_linear_data_ndarray(pwa,pwoa,dark)
+
+        return self.images
+
+    def _unscramble_timestamps(self,reshuffle=False):
+
+        t_pwa, t_pwoa, t_dark = self.deal_data_ndarray(self.image_timestamps)
+
+        t_pwa = self._unshuffle_ndarray(t_pwa,reshuffle=reshuffle)
+        t_pwoa = self._unshuffle_ndarray(t_pwoa,reshuffle=reshuffle)
+        t_dark = self._unshuffle_ndarray(t_dark,reshuffle=reshuffle)
+
+        self.image_timestamps = self.stack_linear_data_ndarray(t_pwa,t_pwoa,t_dark)
+
+        return self.image_timestamps
+    
+    def stack_linear_data_ndarray(self,pwa,pwoa,dark):
+        Ns = self.params.N_shots_with_repeats
+        Nps = self.params.N_pwa_per_shot
+        N_img = Ns*(Nps+2)
+
+        ndarray = np.empty((Ns,Nps+2)+pwa.shape[(self.N_xvars+1):],
+                            dtype=pwa.dtype)
+        
+        sh = pwa.shape
+        
+        pwa = pwa.reshape((Ns,Nps)+pwa.shape[(self.N_xvars+1):])
+        pwoa = pwoa.reshape((Ns,Nps)+pwoa.shape[(self.N_xvars+1):])
+        dark = dark.reshape((Ns,Nps)+dark.shape[(self.N_xvars+1):])
+
+        for shot_idx in range(Ns):
+            ndarray[shot_idx][:Nps] = pwa[shot_idx]
+            ndarray[shot_idx][Nps] = pwoa[shot_idx][0]
+            ndarray[shot_idx][Nps+1] = dark[shot_idx][0]
+
+        ndarray = ndarray.reshape((N_img,)+sh[(self.N_xvars+1):])
+        return ndarray
+
+    def deal_data_ndarray(self,ndarray):
+        Ns = self.params.N_shots_with_repeats
+        Nps = self.params.N_pwa_per_shot
+        ndarray = ndarray.reshape((Ns,Nps+2)+ndarray.shape[1:])
+
+        pwa = ndarray[:,0:Nps]
+        pwoa = np.expand_dims(ndarray[:,Nps],axis=1).repeat(Nps,axis=1)
+        dark = np.expand_dims(ndarray[:,Nps+1],axis=1).repeat(Nps,axis=1)
+
+        pwa = self._reshape_data_array_to_nxvar(pwa)
+        pwoa = self._reshape_data_array_to_nxvar(pwoa)
+        dark = self._reshape_data_array_to_nxvar(dark)
+
+        return (pwa,pwoa,dark)
+    
+    def strip_shot_idx_axis(self,*args):
+        out = []
+        for arg in args:
+            arg: np.ndarray
+            if arg.shape[self.N_xvars] == 1:
+                arg = arg.reshape(*self.xvardims,*arg.shape[(self.N_xvars+1):])
+            out.append(arg)
+        return out
+
+    def _reshape_data_array_to_nxvar(self,ndarray):
+        """Accepts an array of images of length equal to the number of shots in
+        the order they were taken. Reshapes them to shape (n1,n2,...,nN,px,py),
+        where ni is the length of the ith xvar.
+
+        Args:
+            ndarray (np.ndarray): an image array of shape (N,...), where N = the product of
+        the lengths of all the xvars (= the number of shots), and px and py are
+        the size of the image axes in pixels.
+        """
+        ndarray = ndarray.reshape(*self.xvardims,
+                                  self.params.N_pwa_per_shot,
+                                  *ndarray.shape[2:])
+        return ndarray
+
+    def _unshuffle_struct(self,struct,
+                          reshuffle=False):
+
+        # only unshuffle if list has been shuffled
+        if np.any(self.sort_idx):
+            protected_keys = ['xvarnames','sort_idx','images',
+                              'image_timestamps','sort_N','sort_idx',
+                              'xvars','N_repeats','N_shots',
+                              'N_shots_with_repeats','scan_xvars']
+            ks = struct.__dict__.keys()
+            sort_ks = [k for k in ks if k not in protected_keys]
+            for k in sort_ks:
+                var = vars(struct)[k]
+                var = self._unshuffle_ndarray(var,
+                                              reshuffle=reshuffle)
+                vars(struct)[k] = var
+    
+    def _unshuffle_ndarray(self,var,
+                           exclude_dims=0,
+                           reshuffle=False):
+        if isinstance(var,list):
+            var = np.array(var)
+        if isinstance(var,np.ndarray):
+            sdims = self._dims_to_sort(var,exclude_dims)
+            for dim in sdims:
+                N = var.shape[dim]
+                if N in self.sort_N:
+                    i = np.where(np.array(self.sort_N) == N)[0][0]
+                    shuf_idx = self.sort_idx[i]
+                    shuf_idx = shuf_idx[shuf_idx >= 0].astype(int) # remove padding [-1]s
+                    if not reshuffle:
+                        unshuf_idx = np.zeros_like(shuf_idx)
+                        unshuf_idx[shuf_idx] = np.arange(N)
+                    else:
+                        unshuf_idx = shuf_idx
+                    var = var.take(unshuf_idx,dim)
+        return var
+
+    def _dims_to_sort(self,var,exclude_dims=0):
+        """For a given ndarray (var), determine which axes should be unshuffled.
+        Can specify exclude_dims in order to prevent that many axes (counted
+        from the deepest axis) from being unshuffled. For example, for an
+        array of images, one would want to specify exclude_dims = 2, to
+        prevent unshuffling of the pixels.
+
+        Args:
+            var (np.ndarray): The ndarray whose axes should be unshuffled.
+            exclude_dims (int, optional): The number of axes (from the end) to
+            exclude from unshuffling. Defaults to 0.
+
+        Returns:
+            np.array[int]: The indices of the axes that should be checked for
+            unshuffling.
+        """        
+        ndims = var.ndim
+        last_dim_to_sort = ndims - exclude_dims
+        if last_dim_to_sort < 0: last_dim_to_sort = 0
+        dims_to_sort = np.arange(0,last_dim_to_sort)
+        return dims_to_sort
+        
     # def shuffle_derived(self):
     #     '''
     #     Loop through all the attributes of params which are not in the list of
@@ -124,7 +280,7 @@ class Dealer():
     #         sort_N = np.array(sort_N)
     #     sort_idx = self.sort_idx
 
-    #     protected_keys = ['xvarnames','sort_idx','images','img_timestamps','sort_N','sort_idx','xvars','N_repeats','N_shots']
+    #     protected_keys = ['xvarnames','sort_idx','images','image_timestamps','sort_N','sort_idx','xvars','N_repeats','N_shots_with_repeats']
     #     # get a list of the variable keys (that are not protected)
     #     ks = self.params.__dict__.keys()
     #     sort_ks = [k for k in ks if k not in protected_keys if k not in self.xvarnames]
@@ -156,14 +312,3 @@ class Dealer():
     #                     var = var.take(shuf_idx,dim)
     #                     # save the shuffled variable into params
     #                     vars(self.params)[k] = var
-
-    def _dims_to_sort(self,var):
-        '''
-        Create a list of which dimensions should be checked for sorting.
-        TBH I do not remember why that if statement is necessary.
-        '''
-        ndims = var.ndim
-        last_dim_to_sort = ndims
-        if last_dim_to_sort < 0: last_dim_to_sort = 0
-        dims_to_sort = np.arange(0,last_dim_to_sort)
-        return dims_to_sort

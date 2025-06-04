@@ -27,11 +27,11 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.set_read_mode("image")
         self.set_cooler_mode(mode=1)
         self.set_amp_mode(preamp=preamp)
-        # self.activate_cameralink(0)
+        self.activate_cameralink(1)
         # self.set_fast_trigger_mode(mode=1)
 
-    # def activate_cameralink(self,state=1):
-    #     lib.SetCameraLinkMode(state)
+    def activate_cameralink(self,state=1):
+        lib.SetCameraLinkMode(state)
 
     def set_emccd_advanced(self):
         lib.SetEMAdvanced(1)
@@ -57,7 +57,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.open()
 
     def start_grab(self, N_img, output_queue:Queue,
-                    timeout=10., missing_frame="skip", return_info=False, buff_size=None):
+                    timeout=10., missing_frame="skip", return_info=True, buff_size=None):
         """
         Snap `nframes` images (with preset image read mode parameters)
         Modified from pylablib.devices.interface.camera.
@@ -91,6 +91,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
                     new_frames,rng=self.read_multiple_images(missing_frame=missing_frame,return_rng=True)
                 for frame in new_frames:
                         if isinstance(frame,np.ndarray):
+                            # img_timestamp = time.time()
                             img_timestamp = 0.
                             output_queue.put((frame,img_timestamp,nacq))
                 frames+=new_frames

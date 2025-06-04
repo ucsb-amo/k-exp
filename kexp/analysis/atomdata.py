@@ -1,85 +1,205 @@
-from kexp.analysis.image_processing.compute_ODs import *
+from kexp.analysis.image_processing.compute_ODs import compute_OD
 from kexp.analysis.image_processing.compute_gaussian_cloud_params import fit_gaussian_sum_dist
+from kexp.analysis.roi import ROI
 from kexp.util.data.data_vault import DataSaver
 import numpy as np
 from kamo.atom_properties.k39 import Potassium39
 
 from kexp.util.data.run_info import RunInfo
 from kexp.config.expt_params import ExptParams
-from kexp.config.camera_params import CameraParams
+from kexp.config.camera_id import CameraParams
+from kexp.base.sub.dealer import Dealer
+from kexp.base.sub.scanner import xvar
+
+import kexp.util.data.server_talk as st
+import h5py
+
+import datetime
+
+from kexp.config.camera_id import img_types as img
+
+def unpack_group(file,group_key,obj):
+    """Looks in an open h5 file in the group specified by key, and iterates over
+    every dataset in that h5 group, and for each dataset assigns an attribute of
+    the object obj" with that dataset's key and value.
+
+    Args:
+        file (h5py.File, h5py dataset): An open h5py file object or dataset.
+        group_key (str): The key of the group in the h5py file.
+        obj (object): Any object to be populated with attributes by the fields
+        in the provided dataset. 
+    """            
+    g = file[group_key]
+    keys = list(g.keys())
+    for k in keys:
+        vars(obj)[k] = g[k][()]
 
 class analysis_tags():
-    def __init__(self,crop_type,absorption_analysis,unshuffle_xvars):
-        self.crop_type = crop_type
-        self.absorption_analysis = absorption_analysis
-        self.unshuffle_xvars = unshuffle_xvars
+    """A simple container to hold analysis tags for analysis logic.
+    """    
+    def __init__(self,roi_id,imaging_type):
+        self.roi_id = roi_id
+        self.imaging_type = imaging_type
+        self.xvars_shuffled = False
         self.transposed = False
         self.averaged = False
+
+class expt_code():
+    """A simple container to organize experiment text.
+    """    
+    def __init__(self,
+                 experiment,
+                 params,
+                 cooling,
+                 imaging):
+        self.experiment = experiment
+        self.params = params
+        self.cooling = cooling
+        self.imaging = imaging
 
 class atomdata():
     '''
     Use to store and do basic analysis on data for every experiment.
-
-    xvarnames should be provided as a string indicating the params attribute
-    corresponding to the the independent variable(s). They should be provided in
-    the order over which they were looped, with the outermost loop first.
-
-    Any attribute which does not start with '_' will be saved to the dataset in
-    _save_data().
-
-    This class also handles saving parameters from expt.params to the dataset.
     '''
-    def __init__(self, xvarnames, images, image_timestamps,
-                  params: ExptParams, camera_params:CameraParams,
-                  run_info: RunInfo, sort_idx, sort_N, 
-                  expt_text, params_text, cooling_text, imaging_text,
-                    unshuffle_xvars = True, crop_type='',
-                    transpose_idx=[], avg_repeats=False):
+    def __init__(self, idx=0, roi_id=None, path = "",
+                 lite = False,
+                 skip_saved_roi = False,
+                 transpose_idx = [], avg_repeats = False):
+        '''
+        Returns the atomdata stored in the `idx`th newest file at `path`.
 
+        Parameters
+        ----------
+        idx: int
+            If a positive value is specified, it is interpreted as a run_id (as
+            stored in run_info.run_id), and that data is found and loaded. If zero
+            or a negative number are given, data is loaded relative to the most
+            recent dataset (idx=0).
+        roi_id: None, int, or string
+            Specifies which crop to use. If roi_id=None, defaults to the ROI saved in
+            the data if it exists, otherwise prompts the user to select an ROI using
+            the GUI. If an int, interpreted as an run ID, which will be checked for
+            a saved ROI and that ROI will be used. If a string, interprets as a key
+            in the roi.xlsx document in the PotassiumData folder.
+        path: str
+            The full path to the file to be loaded. If not specified, loads the file
+            as dictated by `idx`.
+        skip_saved_roi: bool
+            If true, ignore saved ROI in the data file.
+
+        Returns
+        -------
+        ad: atomdata
+        '''
+
+        self._lite = lite
+
+        self._load_data(idx,path,lite)
+
+        ### Helper objects
         self._ds = DataSaver()
-        self.run_info = run_info
-        absorption_analysis = self.run_info.absorption_image
-        self._analysis_tags = analysis_tags(crop_type,
-                                            absorption_analysis,
-                                            unshuffle_xvars)
-    
-        self.images = images
-        self.img_timestamps = image_timestamps
-        self.params = params
-        self.camera_params = camera_params
-
-        self.experiment = expt_text
-        self.params_file = params_text
-        self.cooling_file = cooling_text
-        self.imaging_file = imaging_text
-
-        self.xvarnames = xvarnames
-        self.xvars = self._unpack_xvars()
-
-        self.sort_idx = sort_idx
-        self.sort_N = sort_N
-
         self.atom = Potassium39()
+        self._dealer = self._init_dealer()
+        self._analysis_tags = analysis_tags(roi_id,self.run_info.imaging_type)
+        self.roi = ROI(run_id = self.run_info.run_id,
+                       roi_id = roi_id,
+                       use_saved_roi = not skip_saved_roi,
+                       lite = self._lite)
 
+        self._unshuffle_old_data()
+        self._initial_analysis(transpose_idx,avg_repeats)
+
+    ###
+    def recrop(self,roi_id=None,use_saved=False):
+        """Selects a new ROI and re-runs the analysis. Uses the same logic as
+        kexp.ROI.load_roi.
+
+        Args:
+            roi_id (None, int, or str): Specifies which crop to use. If None,
+            defaults to the ROI saved in the data if it exists, otherwise
+            prompts the user to select an ROI using the GUI. If an int,
+            interpreted as an run ID, which will be checked for a saved ROI and
+            that ROI will be used. If a string, interprets as a key in the
+            roi.xlsx document in the PotassiumData folder.
+
+            use_saved (bool): If False, ignores saved ROI and forces creation of
+            a new one. Default is False.
+        """        
+        self.roi.load_roi(roi_id,use_saved)
+        self.analyze_ods()
+
+    ### ROI management
+    def save_roi_excel(self,key=""):
+        self.roi.save_roi_excel(key)
+
+    def save_roi_h5(self):
+        self.roi.save_roi_h5(lite=self._lite)
+            
+    ### Analysis
+
+    def _initial_analysis(self,transpose_idx,avg_repeats):
         self._sort_images()
-
         if transpose_idx:
             self._analysis_tags.transposed = True
             self.transpose_data(transpose_idx=False,reanalyze=False)
-
         self.compute_raw_ods()
-
         if avg_repeats:
             self.avg_repeats(reanalyze=False)
-
         self.analyze_ods()
 
-    def _sort_images(self):
-        if self._analysis_tags.absorption_analysis:
-            self._sort_images_absorption()
-        else:
-            self._sort_images_fluor()
+    def analyze(self):
+        self.compute_raw_ods()
+        self.analyze_ods()
 
+    def compute_raw_ods(self):
+        """Computes the ODs. If not absorption analysis, OD = (pwa - dark)/(pwoa - dark).
+        """        
+        self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark,
+                                 imaging_type=self._analysis_tags.imaging_type)
+
+    def analyze_ods(self):
+        """Crops ODs, computes sum_ods, gaussian fits to sum_ods, and populates
+        fit results.
+        """
+        self.od = self.roi.crop(self.od_raw)
+        self.sum_od_x = np.sum(self.od,self.od.ndim-2)
+        self.sum_od_y = np.sum(self.od,self.od.ndim-1)
+
+        self.axis_x = self.camera_params.pixel_size_m / self.camera_params.magnification * np.arange(self.sum_od_x.shape[-1])
+        self.axis_y = self.camera_params.pixel_size_m / self.camera_params.magnification * np.arange(self.sum_od_x.shape[-1])
+        
+        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
+        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
+        
+        self._remap_fit_results()
+        
+        if self._analysis_tags.imaging_type == img.ABSORPTION:
+            self.compute_atom_number()
+
+    def _sort_images(self):
+        imgs_tuple = self._dealer.deal_data_ndarray(self.images)
+        self.img_atoms = imgs_tuple[0]
+        self.img_light = imgs_tuple[1]
+        self.img_dark = imgs_tuple[2]
+
+        img_timestamp_tuple = self._dealer.deal_data_ndarray(self.image_timestamps)
+        self.img_timestamp_atoms = img_timestamp_tuple[0]
+        self.img_timestamp_light = img_timestamp_tuple[1]
+        self.img_timestamp_dark = img_timestamp_tuple[2]
+        
+        if self.params.N_pwa_per_shot > 1:
+            self.xvarnames = np.append(self.xvarnames,'idx_pwa')
+            self.xvars.append(np.arange(self.params.N_pwa_per_shot))
+        else:
+            self.img_atoms = self._dealer.strip_shot_idx_axis(self.img_atoms)[0]
+            self.img_light = self._dealer.strip_shot_idx_axis(self.img_light)[0]
+            self.img_dark = self._dealer.strip_shot_idx_axis(self.img_dark)[0]
+
+            self.img_timestamp_atoms = self._dealer.strip_shot_idx_axis(self.img_timestamp_atoms)[0]
+            self.img_timestamp_light = self._dealer.strip_shot_idx_axis(self.img_timestamp_light)[0]
+            self.img_timestamp_dark = self._dealer.strip_shot_idx_axis(self.img_timestamp_dark)[0]
+
+    ### Physics
     def compute_atom_number(self):
         self.atom_cross_section = self.atom.get_cross_section()
         dx_pixel = self.camera_params.pixel_size_m / self.camera_params.magnification
@@ -90,12 +210,82 @@ class atomdata():
         self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
-    def recrop(self,crop_type=''):
-        # if crop_type != self._analysis_tags.crop_type:
-        self.analyze_ods(crop_type=crop_type,unshuffle_xvars=False)
-        self._analysis_tags.crop_type = crop_type
-        # else:
-        #     raise ValueError(f'The specified crop_type ({crop_type}) already applied ({self._analysis_tags.crop_type}).')
+    def slice_atomdata(self, which_xvar_idx, which_shot_idx):
+        """Slices along a given xvar index at a particular value (which_shot_idx) of
+        that xvar, and returns an atomdata of reduced dimensionality as if that
+        variable had been held constant.
+
+        Args:
+            ad (atomdata): The atomdata to be sliced.
+            which_xvar_idx (_type_): The index of the xvar to slice along.
+            which_shot_idx (_type_): The index of the xvar value to select.
+
+        Returns:
+            atomdata: The sliced atomdata object.
+        """
+
+        ad = atomdata(self.run_info.run_id)
+
+        # repeat handling is broken right now, in that if the repeats are on the
+        # first axis, the function won't return an atomdata with all the repeats. To
+        # be fixed later.
+        def check_for_repeat_axis():
+            for idx, arr in enumerate(ad.xvars):
+                _, counts = np.unique(arr, return_counts=True)
+                if np.any(counts > 1):
+                    slicing_repeat_axis_bool = (which_xvar_idx == idx)
+                    break
+            return slicing_repeat_axis_bool
+        
+        if ad.params.N_repeats > 1:
+            print('Warning: this run has repeats, which are by default associated with xvar 0. If you slice into the axis which has the repeats, you will only get one slice, not all the shots with that xvar0 value.')
+            # if you slice into the repeat axis, set N_repeats = 1.
+            if check_for_repeat_axis():
+                ad.params.N_repeats = 1
+
+        # replace the param for the xvar being sliced with the slice value
+        vars(ad.params)[ad.xvarnames[which_xvar_idx]] = ad.xvars[which_xvar_idx][which_shot_idx]
+        
+        def remove_element_by_index(data, index):
+            if isinstance(data, list):
+                del data[index]
+            elif isinstance(data, np.ndarray):
+                data = np.delete(data, index)
+            return data
+        # remove the xvars, xvarnames, and xvardims entry for that xvar
+        keys = ['xvars','xvarnames','xvardims']
+        # only remove the sort_N and sort_idx for this xvar if is the only one of
+        # its length (otherwise another xvar also uses that sort_idx list)
+        sliced_xvardim = ad.xvardims[which_xvar_idx]
+        if np.sum(ad.xvardims == sliced_xvardim) == 1:
+            sort_N_idx = np.where(ad.sort_N == sliced_xvardim)[0][0]
+            ad.sort_N = remove_element_by_index(ad.sort_N, sort_N_idx)
+            ad.sort_idx = remove_element_by_index(ad.sort_idx, sort_N_idx)
+        
+        for k in keys:
+            vars(ad)[k] = remove_element_by_index(vars(ad)[k],
+                                                    which_xvar_idx)
+        # decrement the number of variables by one
+        ad.Nvars -= 1
+
+        def slice_ndarray(array):
+            return np.take(array,
+                        indices=which_shot_idx,
+                        axis=which_xvar_idx)
+        nd_keys = ['img_atoms','img_light','img_dark',
+                'img_timestamp_atoms','img_timestamp_light','img_timestamp_dark']
+        for k in nd_keys:
+            vars(ad)[k] = slice_ndarray(vars(ad)[k])
+
+        ad.params.N_img = np.prod(ad.xvardims * ad.params.N_pwa_per_shot)
+        ad.params.N_shots = int(ad.params.N_shots / sliced_xvardim)
+        ad.params.N_shots_with_repeats = int(ad.params.N_shots_with_repeats / sliced_xvardim)
+
+        ad.analyze()
+
+        return ad
+
+    ### Averaging and transpose
 
     def avg_repeats(self,xvars_to_avg=[],reanalyze=True):
         """
@@ -105,10 +295,7 @@ class atomdata():
         Args:
             xvars_to_avg (list, optional): A list of xvar indices to average.
             reanalyze (bool, optional): _description_. Defaults to True.
-        """        
-        if not self._analysis_tags.unshuffle_xvars:
-            raise ValueError("Can only average repeats on runs loaded with unshuffle_xvars = True. Set unshuffle_xvars = True and reload data.")
-        
+        """
         if not self._analysis_tags.averaged:
             if not xvars_to_avg:
                 xvars_to_avg = list(range(len(self.xvars)))
@@ -116,7 +303,7 @@ class atomdata():
                 xvars_to_avg = [xvars_to_avg]
 
             from copy import deepcopy
-            # self._xvars_stored = deepcopy(self.xvars)
+            self._xvars_stored = deepcopy(self.xvars)
             def store_values(struct,keylist):
                 for key in keylist:
                     array = vars(struct)[key]
@@ -145,7 +332,7 @@ class atomdata():
         
             if reanalyze:
                 # don't unshuffle xvars again -- that will be confusing
-                self.analyze_ods(unshuffle_xvars=False)
+                self.analyze_ods()
 
             self._analysis_tags.averaged = True
         else:
@@ -168,7 +355,6 @@ class atomdata():
     
     def revert_repeats(self):
         if self._analysis_tags.averaged:
-
             def retrieve_values(struct,keylist):
                 for key in keylist:
                     newkey = "_" + key + "_stored"
@@ -176,7 +362,7 @@ class atomdata():
             retrieve_values(self,self._store_keys)
             retrieve_values(self.params,self._store_param_keys)
 
-            self.analyze_ods(unshuffle_xvars=False)
+            self.analyze_ods()
             self._analysis_tags.averaged = False
         else:
             print("Atomdata is not repeat averaged. To average, use Atomdata.avg_repeats().")
@@ -222,7 +408,7 @@ class atomdata():
                     new_attr = np.array(new_attr)
                 vars(struct)[key] = new_attr
 
-        listlike_keys = ['xvars','sort_idx','xvarnames','sort_N']
+        listlike_keys = ['xvars','xvarnames']
         reorder_listlike(self,listlike_keys)
 
         param_keys = ['N_repeats']
@@ -230,7 +416,7 @@ class atomdata():
 
         # for things of an ndarraylike nature which have one axis per xvar, and
         # so should have the order of their axes switched.
-        ndarraylike_keys = ['img_atoms','img_light','img_dark','img_tstamps']
+        ndarraylike_keys = ['img_atoms','img_light','img_dark']
         for key in ndarraylike_keys:
             attr = vars(self)[key]
             # figure out how many extra indices each has. add them to the new
@@ -239,97 +425,17 @@ class atomdata():
             dims_to_add = ndim - Nvars
             axes_idx_to_add = [Nvars+i for i in range(dims_to_add)]
             new_idx = np.concatenate( (new_xvar_idx, axes_idx_to_add) ).astype(int)
-            
             attr = np.transpose(attr,new_idx)
             vars(self)[key] = attr
 
+        self._dealer = self._init_dealer()
+
         if reanalyze:
-            self.analyze(unshuffle_xvars=False)
+            self.analyze()
 
         self._analysis_tags.transposed = not self._analysis_tags.transposed
 
-    ### Analysis
-
-    def compute_raw_ods(self):
-        if self._analysis_tags.absorption_analysis:
-            self.od_raw = compute_OD(self.img_atoms,self.img_light,self.img_dark)
-        else:
-            self.od_raw = self.img_atoms.astype(np.int16) - self.img_light.astype(np.int16)
-
-    def analyze_ods(self,crop_type='',unshuffle_xvars=-1,absorption_analysis=-1):
-
-        if not crop_type:
-            crop_type = self._analysis_tags.crop_type
-        if unshuffle_xvars == -1:
-            unshuffle_xvars = self._analysis_tags.unshuffle_xvars
-        if absorption_analysis == -1:
-            absorption_analysis = self._analysis_tags.absorption_analysis
-
-        if absorption_analysis:
-            self._analyze_absorption_images(crop_type)
-            self._remap_fit_results()
-            self.compute_atom_number()
-        else:
-            self._analyze_fluorescence_images(crop_type)
-            self._remap_fit_results()
-    
-        if unshuffle_xvars:
-            self.unshuffle_ad()
-            self.xvars = self._unpack_xvars() # re-unpack xvars to get unshuffled xvars
-
-    def analyze(self,crop_type='',unshuffle_xvars=-1,absorption_analysis=-1):
-        if not crop_type:
-            crop_type = self._analysis_tags.crop_type
-        if unshuffle_xvars == -1:
-            unshuffle_xvars = self._analysis_tags.unshuffle_xvars
-        if absorption_analysis == -1:
-            absorption_analysis = self._analysis_tags.absorption_analysis
-
-        self.compute_raw_ods()
-        self.analyze_ods(crop_type,unshuffle_xvars,absorption_analysis)
-
-    def _analyze_absorption_images(self,crop_type='mot'):
-        '''
-        Saves the images, image timestamps (in ns), computes ODs, summed ODs,
-        and gaussian fits to the OD profiles.
-
-        Parameters
-        ----------
-        expt: EnvExperiment
-            The experiment object, called to save datasets.
-
-        crop_type: str
-            Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-            options: 'mot', 'bigmot', 'cmot', 'gm'. If another string is
-            supplied, defaults to full ROI.
-        '''
-        
-        self.od, self.sum_od_x, self.sum_od_y = process_ODs(self.od_raw, crop_type, self.Nvars)
-        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
-        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
-
-    def _analyze_fluorescence_images(self,crop_type=''):
-        '''
-        Saves the images, image timestamps (in ns), computes a subtracted image,
-        and performs gaussian fits to the profiles. Note: the subtracted image
-        is called "od" in order to provide compatability and ease of use to the
-        user. The computed difference is NOT an optical density.
-
-        Parameters
-        ----------
-        expt: EnvExperiment
-            The experiment object, called to save datasets.
-
-            
-        crop_type: str
-            Picks what crop settings to use for the ODs. Default: 'mot'. Allowed
-            options: 'mot'.
-        '''
-        self.od = roi.crop_OD(self.od_raw,crop_type,self.Nvars)
-        self.sum_od_x = np.sum(self.od,self.Nvars)
-        self.sum_od_y = np.sum(self.od,self.Nvars+1)
-        self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
-        self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
+    ### Data handling
 
     def _remap_fit_results(self):
         try:
@@ -352,139 +458,17 @@ class atomdata():
             print("Unable to extract fit parameters. The gaussian fit must have failed")
 
     def _extract_attr(self,ndarray,attr):
-        dims = np.shape(ndarray)
-        frame = np.empty(dims,dtype=float)
-        if len(dims) == 1:
-            for (i0,), fit in np.ndenumerate(ndarray):
-                frame[i0] = vars(fit)[attr]
-        elif len(dims) == 2:
-            for (i0,i1), fit in np.ndenumerate(ndarray):
-                frame[i0][i1] = vars(fit)[attr]
-        elif len(dims) == 3:
-            for (i0,i1,i2), fit in np.ndenumerate(ndarray):
-                frame[i0][i1][i2] = vars(fit)[attr]
-        return frame
+        linarray = np.reshape(ndarray,np.size(ndarray))
+        vals = [vars(y)[attr] for y in linarray]
+        out = np.reshape(vals,ndarray.shape+(-1,))
+        if out.ndim == 2 and out.shape[-1] == 1:
+            out = out.flatten()
+        return out
 
-    ### image handling, sorting by xvars
-
-    def _sort_images_absorption(self):
-
-        self._split_images_abs()
-
-        # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
-        img_dims = np.shape(self.images[0])
-        sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
-
-        dtype = self.images.dtype
-        self.img_atoms = np.zeros(sorted_img_dims,dtype=dtype)
-        self.img_light = np.zeros(sorted_img_dims,dtype=dtype)
-        self.img_dark = np.zeros(sorted_img_dims,dtype=dtype)
-        self.img_tstamps = np.empty(tuple(self.xvardims),dtype=list)
-
-        if self.Nvars == 1:
-            self.img_atoms = self._img_atoms
-            self.img_light = self._img_light
-            self.img_dark = self._img_dark
-            for i in range(self.xvardims[0]):
-                self.img_tstamps[i] = list([self._img_atoms_tstamp[i],
-                                    self._img_light_tstamp[i],
-                                    self._img_dark_tstamp[i]])
-            if len(self.xvars[0]) == 1:
-                self.img_atoms = np.array([self.img_atoms])
-                self.img_light = np.array([self.img_light])
-                self.img_dark = np.array([self.img_dark])
-        
-        if self.Nvars == 2:
-            n1 = self.xvardims[0]
-            n2 = self.xvardims[1]
-            for i1 in range(n1):
-                for i2 in range(n2):
-                    idx = i1*n2 + i2
-                    self.img_atoms[i1][i2] = self._img_atoms[idx]
-                    self.img_light[i1][i2] = self._img_light[idx]
-                    self.img_dark[i1][i2] = self._img_dark[idx]
-                    self.img_tstamps[i1][i2] = [self._img_atoms_tstamp[idx],
-                                                     self._img_light_tstamp[idx],
-                                                     self._img_dark_tstamp[idx]]
-                    
-        if self.Nvars == 3:
-            n1 = self.xvardims[0]
-            n2 = self.xvardims[1]
-            n3 = self.xvardims[2]
-            for i1 in range(n1):
-                for i2 in range(n2):
-                        for i3 in range(n3):
-                            idx = (i1*n2 + i2)*n3 + i3
-                            self.img_atoms[i1][i2][i3] = self._img_atoms[idx]
-                            self.img_light[i1][i2][i3] = self._img_light[idx]
-                            self.img_dark[i1][i2][i3] = self._img_dark[idx]
-                            self.img_tstamps[i1][i2][i3] = [self._img_atoms_tstamp[idx],
-                                                            self._img_light_tstamp[idx],
-                                                            self._img_dark_tstamp[idx]]
-                    
-    def _split_images_abs(self):
-        
-        atom_img_idx = 0
-        light_img_idx = 1
-        dark_img_idx = 2
-        
-        self._img_atoms = np.array(self.images[atom_img_idx::3])
-        self._img_light = np.array(self.images[light_img_idx::3])
-        self._img_dark = np.array(self.images[dark_img_idx::3])
-
-        self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::3]
-        self._img_light_tstamp = self.img_timestamps[light_img_idx::3]
-        self._img_dark_tstamp = self.img_timestamps[dark_img_idx::3]
-
-    def _sort_images_fluor(self):
-
-        self._split_images_fluor()
-
-        # construct empty matrix of size xvardim[0] x xvardim[1] x pixels_y x pixels_x
-        img_dims = np.shape(self.images[0])
-        sorted_img_dims = tuple(self.xvardims) + tuple(img_dims)
-
-        self.img_atoms = np.zeros(sorted_img_dims)
-        self.img_light = np.zeros(sorted_img_dims)
-        self.img_tstamps = np.empty(tuple(self.xvardims),dtype=list)
-
-        if self.Nvars == 1:
-            self.img_atoms = self._img_atoms
-            self.img_light = self._img_light
-            # if len(self.xvars[0]) == 1:
-            #     self.img_atoms = np.array([self.img_atoms])
-            #     self.img_light = np.array([self.img_light])
-        
-        if self.Nvars == 2:
-            n1 = self.xvardims[0]
-            n2 = self.xvardims[1]
-            for i1 in range(n1):
-                for i2 in range(n2):
-                    idx = i1*n2 + i2
-                    self.img_atoms[i1][i2] = self._img_atoms[idx]
-                    self.img_light[i1][i2] = self._img_light[idx]
-
-        if self.Nvars == 3:
-            n1 = self.xvardims[0]
-            n2 = self.xvardims[1]
-            n3 = self.xvardims[2]
-            for i1 in range(n1):
-                for i2 in range(n2):
-                    for i3 in range(n3):
-                        idx = (i1*n2 + i2)*n3 + i3
-                        self.img_atoms[i1][i2][i3] = self._img_atoms[idx]
-                        self.img_light[i1][i2][i3] = self._img_light[idx]
-                    
-    def _split_images_fluor(self):
-        
-        atom_img_idx = 0
-        light_img_idx = 1
-        
-        self._img_atoms = np.array(self.images[atom_img_idx::2])
-        self._img_light = np.array(self.images[light_img_idx::2])
-
-        self._img_atoms_tstamp = self.img_timestamps[atom_img_idx::2]
-        self._img_light_tstamp = self.img_timestamps[light_img_idx::2]
+    def _map(self,ndarray,func):
+        linarray = np.reshape(ndarray,np.size(ndarray))
+        vals = [func(y) for y in linarray]
+        return np.reshape(vals,ndarray.shape+(-1,))
     
     def _unpack_xvars(self):
         # fetch the arrays for each xvar from parameters
@@ -508,45 +492,153 @@ class atomdata():
     
     ## Unshuffling
     
-    def unshuffle_ad(self):
-        self._unshuffle(self)
-        self._unshuffle(self.params)
+    def reshuffle(self):
+        if self._analysis_tags.xvars_shuffled == False:
+            self.images = self._dealer.unscramble_images(reshuffle=True)
+            self._dealer._unshuffle_struct(self, reshuffle=True)
+            self._dealer._unshuffle_struct(self.params, reshuffle=True)
+            self.xvars = self._unpack_xvars()
+            self._sort_images()
+            self.analyze()
+            self._analysis_tags.xvars_shuffled = True
+        else:
+            print("Data is already in shuffled order.")
 
-    def _unshuffle(self,struct):
+    def unshuffle(self,reanalyze=True):
+        if self._analysis_tags.xvars_shuffled == True:
+            self.images = self._dealer.unscramble_images(reshuffle=False)
+            self._dealer._unshuffle_struct(self, reshuffle=False)
+            self._dealer._unshuffle_struct(self.params, reshuffle=False)
+            self.xvars = self._unpack_xvars()
+            if reanalyze:
+                self._sort_images()
+                self.analyze()
+            self._analysis_tags.xvars_shuffled = False
+        else:
+            print("Data is already in unshuffled order.")
 
-        # only unshuffle if list has been shuffled
-        if np.any(self.sort_idx):
-            sort_N = self.sort_N
-            sort_idx = self.sort_idx
+    def _unshuffle_old_data(self):
+        """Unshuffles data that was taken before we started saving data in
+        sorted order (before 2024/10/02).
+        """        
+        if datetime.datetime(*self.run_info.run_datetime[:3]) < datetime.datetime(2024,10,2):
+            self._analysis_tags.xvars_shuffled = True
+            self.unshuffle(reanalyze=False)
 
-            protected_keys = ['xvarnames','sort_idx','images','img_timestamps','sort_N','sort_idx','xvars','N_repeats','N_shots']
-            ks = struct.__dict__.keys()
-            sort_ks = [k for k in ks if k not in protected_keys]
-            for k in sort_ks:
-                var = vars(struct)[k]
-                if isinstance(var,list):
-                    var = np.array(var)
-                if isinstance(var,np.ndarray):
-                    sdims = self._dims_to_sort(var)
-                    for dim in sdims:
-                        N = var.shape[dim]
-                        if N in sort_N:
-                            i = np.where(sort_N == N)[0][0]
-                            shuf_idx = sort_idx[i]
-                            shuf_idx = shuf_idx[shuf_idx >= 0].astype(int) # remove padding [-1]s
-                            unshuf_idx = np.zeros_like(shuf_idx)
-                            unshuf_idx[shuf_idx] = np.arange(N)
-                            var = var.take(unshuf_idx,dim)
-                            vars(struct)[k] = var
-            
-    def _dims_to_sort(self,var):
-        ndims = var.ndim
-        last_dim_to_sort = ndims
-        if last_dim_to_sort < 0: last_dim_to_sort = 0
-        dims_to_sort = np.arange(0,last_dim_to_sort)
-        return dims_to_sort
+    ### Setup
 
-    ### data saving
+    def _init_dealer(self) -> Dealer:
+        dealer = Dealer()
+        dealer.params = self.params
+        dealer.run_info = self.run_info
+        dealer.images = self.images
+        dealer.image_timestamps = self.image_timestamps
+        dealer.sort_idx = self.sort_idx
+        dealer.sort_N = self.sort_N
+        # reconstruct the xvar objects
+        for idx in range(len(self.xvarnames)):
+            this_xvar = xvar(self.xvarnames[idx],
+                             self.xvars[idx],
+                             position=idx)
+            if np.any(self.sort_idx):
+                sort_idx_idx = np.where(self.sort_N == len(this_xvar.values))[0][0]
+                this_xvar.sort_idx = self.sort_idx[sort_idx_idx]
+            else:
+                this_xvar.sort_idx = []
+            dealer.scan_xvars.append(this_xvar)
+            dealer.xvardims.append(len(this_xvar.values))
+        dealer.N_xvars = len(self.xvardims)
+        return dealer
 
-    def save_data(self):
-        self._ds.save_data(self)
+    def _load_data(self, idx=0, path = "", lite=False):
+
+        file, rid = st.get_data_file(idx,path,lite)
+    
+        print(f"run id {rid}")
+        with h5py.File(file,'r') as f:
+            self.params = ExptParams()
+            self.camera_params = CameraParams()
+            self.run_info = RunInfo()
+            unpack_group(f,'params',self.params)
+            unpack_group(f,'camera_params',self.camera_params)
+            unpack_group(f,'run_info',self.run_info)
+            self.images = f['data']['images'][()]
+            self.image_timestamps = f['data']['image_timestamps'][()]
+            self.xvarnames = f.attrs['xvarnames'][()]
+            self.xvars = self._unpack_xvars()
+            try:
+                experiment_text = f.attrs['expt_file']
+                params_text = f.attrs['params_file']
+                cooling_text = f.attrs['cooling_file']
+                imaging_text = f.attrs['imaging_file']
+            except:
+                experiment_text = ""
+                params_text = ""
+                cooling_text = ""
+                imaging_text = ""
+            self.experiment_code = expt_code(experiment_text,
+                                             params_text,
+                                             cooling_text,
+                                             imaging_text)
+            try:
+                self.sort_idx = f['data']['sort_idx'][()]
+                self.sort_N = f['data']['sort_N'][()]
+            except:
+                self.sort_idx = []
+                self.sort_N = []
+
+# class ConcatAtomdata(atomdata):
+#     def __init__(self,rids=[],roi_id=None,lite=False):
+
+#         self.params = ExptParams()
+#         self.camera_params = CameraParams()
+#         self.run_info = RunInfo()
+
+#         file, rid = st.get_data_file(rids[0],lite=lite)
+#         with h5py.File(file,'r') as f:
+#             params = ExptParams()
+#             unpack_group(f,'params',params)
+#             self.xvarnames = f.attrs['xvarnames'][()]
+
+#             images = f['data']['images'][()]
+#             image_timestamps = f['data']['image_timestamps'][()]
+
+#             self.images = np.zeros( np.shape(rids) + images.shape,
+#                                     dtype=images.dtype )
+#             self.image_timestamps = np.zeros( np.shape(rids) + image_timestamps.shape,
+#                                               dtype=image_timestamps.dtype)
+
+#         self.sort_idx = []
+#         self.sort_N = []
+
+#         for rid in rids:
+#             file, rid = st.get_data_file(rid,lite=lite)
+    
+#             print(f"run id {rid}")
+#             with h5py.File(file,'r') as f:
+#                 params = ExptParams()
+#                 camera_params = CameraParams()
+#                 run_info = RunInfo()
+#                 unpack_group(f,'params',params)
+#                 unpack_group(f,'camera_params',camera_params)
+#                 unpack_group(f,'run_info',run_info)
+#                 self.images = f['data']['images'][()]
+#                 self.image_timestamps = f['data']['image_timestamps'][()]
+#                 self.xvarnames = f.attrs['xvarnames'][()]
+#                 self.xvars = self._unpack_xvars()
+#                 try:
+#                     experiment_text = f.attrs['expt_file']
+#                     params_text = f.attrs['params_file']
+#                     cooling_text = f.attrs['cooling_file']
+#                     imaging_text = f.attrs['imaging_file']
+#                 except:
+#                     experiment_text = ""
+#                     params_text = ""
+#                     cooling_text = ""
+#                     imaging_text = ""
+#                 self.experiment_code = expt_code(experiment_text,
+#                                                 params_text,
+#                                                 cooling_text,
+#                                                 imaging_text)
+                    
+

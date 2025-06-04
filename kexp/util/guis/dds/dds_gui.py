@@ -12,7 +12,7 @@ import kexp.config.dds_id as dds_id
 from dds_gui_ExptBuilder import DDSGUIExptBuilder
 import copy
 
-from kexp.control import DDS
+from kexp.control.artiq import DDS
 import os
 
 CODE_DIR = os.environ.get("code")

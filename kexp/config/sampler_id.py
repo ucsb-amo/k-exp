@@ -11,7 +11,7 @@ class sampler_frame():
         
         ### begin assignments
  
-        self.tweezer_pid2_v_pd = self.sampler_assign(0)
+        self.test = self.sampler_assign(0)
 
         ### end assignments
 
@@ -30,9 +30,8 @@ class sampler_frame():
                 self.__dict__[key].key = key
                 
     @kernel
-    def sample(self) -> TArray(TFloat):
+    def sample(self):
         self.sampler_device.sample(self.samples)
-        return self.samples
     
     @kernel
     def init(self):

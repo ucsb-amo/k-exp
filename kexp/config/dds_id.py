@@ -1,10 +1,12 @@
 import numpy as np
 
 from artiq.coredevice import ad53xx
-from artiq.experiment import kernel
+from artiq.experiment import kernel, portable
 
-from kexp.control import DDS, DummyCore
+from kexp.control.artiq.DDS import DDS
+from kexp.control.artiq.dummy_core import DummyCore
 from kexp.config.dac_id import dac_frame
+from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 from kexp.config.dds_calibration import DDS_VVA_Calibration
 
@@ -13,7 +15,7 @@ from artiq.coredevice import ad9910
 
 from kexp.config.expt_params import ExptParams
 
-N_uru = 5
+N_uru = 6
 N_ch = 4
 shape = (N_uru,N_ch)
 
@@ -30,20 +32,16 @@ def dds_empty_frame(x=None):
 class dds_frame():
     '''
     Associates each dds with a instance of the DDS class for use in experiments.
-    Also, records the AOM order so that AOM frequencies can be determined from
-    detunings.
+    Also, records the AO order, DAC channels associated with VVA/PID set points,
+    associated transition for detuning calulations, and default
+    frequency/amplitudes.
     '''
     def __init__(self, expt_params:ExptParams=d_exptparams,
                   dac_frame_obj:dac_frame = [],
-                    core = DummyCore()):
+                  shuttler_frame_obj:shuttler_frame = [],
+                  core = DummyCore()):
         
         self.p = expt_params
-
-        self.core = core
-        # self.dds_manager = [DDSManager]
-        self.dds_amp_calibration = DDS_Amplitude_Calibration()
-        self.dds_vva_calibration = DDS_VVA_Calibration()
-        self.ramp_dt = RAMP_STEP_TIME
 
         self._N_uru = N_uru
         self._N_ch = N_ch
@@ -61,19 +59,21 @@ class dds_frame():
         self.push = self.dds_assign(2,0, ao_order = 1, transition = 'D2',
                                     default_detuning = self.p.detune_push,
                                     default_amp = self.p.amp_push)
-        self.d2_2d_r = self.dds_assign(2,1, ao_order = 1, transition = 'D2',
-                                    default_detuning = self.p.detune_d2_r_2dmot,
-                                    default_amp = self.p.amp_d2_r_2dmot)
-        self.d2_2d_c = self.dds_assign(2,2, ao_order = -1, transition = 'D2',
-                                    default_detuning = self.p.detune_d2_c_2dmot,
-                                    default_amp = self.p.amp_d2_c_2dmot)
-        self.d2_3d_r = self.dds_assign(2,3, ao_order = 1, transition = 'D2',
-                                    default_detuning = self.p.detune_d2_r_mot,
-                                    default_amp = self.p.amp_d2_r_mot)
-
-        self.d2_3d_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2',
-                                    default_detuning = self.p.detune_d2_c_mot,
-                                    default_amp = self.p.amp_d2_c_mot)
+        # old 2d MOT AOs
+        self.d2_2dv_r = self.dds_assign(2,1, ao_order = 1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2v_r_2dmot,
+                                    default_amp = self.p.amp_d2v_r_2dmot)
+        self.d2_2dv_c = self.dds_assign(2,2, ao_order = -1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2v_c_2dmot,
+                                    default_amp = self.p.amp_d2v_c_2dmot)
+        # old 3d MOT AOs
+        self.d2_2dh_r = self.dds_assign(2,3, ao_order = 1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2h_r_2dmot,
+                                    default_amp = self.p.amp_d2h_r_2dmot)
+        self.d2_2dh_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2h_c_2dmot,
+                                    default_amp = self.p.amp_d2h_c_2dmot)
+        
         self.mot_killer = self.dds_assign(3,1, ao_order = -1, transition = 'D2',
                                     default_detuning = 0.,
                                     default_amp = 0.188)
@@ -84,50 +84,94 @@ class dds_frame():
                                     dac_ch_vpd = self._dac_frame.vva_d1_3d_c.ch,
                                     default_detuning = self.p.detune_d1_c_gm,
                                     default_amp = self.p.amp_d1_3d_c)
-        
         self.d1_3d_r = self.dds_assign(4,0, ao_order = 1, transition = 'D1',
                                     dac_ch_vpd = self._dac_frame.vva_d1_3d_r.ch,
                                     default_detuning = self.p.detune_d1_r_gm,
                                     default_amp = self.p.amp_d1_3d_r)
         self.imaging = self.dds_assign(4,1, ao_order = 1,
                                     default_freq = self.p.frequency_ao_imaging,
-                                    default_amp = 0.5)
-        self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1',
-                                    default_detuning = self.p.detune_optical_pumping_op,
-                                    default_amp = self.p.amp_optical_pumping_op)
+                                    default_amp = 0.54)
+        # self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1',
+        #                             default_detuning = self.p.detune_optical_pumping_op,
+        #                             default_amp = self.p.amp_optical_pumping_op)
+        self.raman_minus = self.dds_assign(4,2, ao_order = 1,
+                                    default_freq = self.p.frequency_raman_minus,
+                                    default_amp = self.p.amp_raman_minus)
         self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1',
                                     default_detuning = self.p.detune_optical_pumping_r_op,
                                     default_amp = self.p.amp_optical_pumping_r_op)
-        self.ry_405 = self.dds_assign(0,1, ao_order = 1,
-                                      default_freq=self.p.frequency_ao_ry_405,
-                                      default_amp=self.p.amp_ao_ry_405) #-11.0 dBm on the 405 IntraAction
-        self.ry_980 = self.dds_assign(0,2, ao_order = 1,
-                                      default_freq=self.p.frequency_ao_ry_980,
-                                      default_amp=self.p.amp_ao_ry_980) #500.0mVpp which is ~-2dBm for the 980 G&H
+        self.ry_405_switch = self.dds_assign(0,1, ao_order = 1,
+                                      default_freq=self.p.frequency_ao_ry_405_switch,
+                                      default_amp=self.p.amp_ao_ry_405_switch) #-11.0 dBm on the 405 IntraAction
+        self.ry_980_switch = self.dds_assign(0,2, ao_order = 1,
+                                      default_freq=self.p.frequency_ao_ry_980_switch,
+                                      default_amp=self.p.amp_ao_ry_980_switch) #500.0mVpp which is ~-2dBm for the 980 G&H
         self.tweezer_pid_1 = self.dds_assign(0,3, ao_order = 1,
                                     default_freq = 80.e6,
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid1.ch,
                                     default_amp = self.p.amp_tweezer_pid1)
         self.tweezer_pid_2 = self.dds_assign(1,0, ao_order = 1,
-                                    default_freq = 80.e6,
+                                    default_freq = 200.e6,
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
                                     default_amp = self.p.amp_tweezer_pid2)
+        self.raman_plus = self.dds_assign(1,1, ao_order = 1,
+                                    default_freq = self.p.frequency_raman_plus,
+                                    default_amp = self.p.amp_raman_plus)
+        self.d1_probe = self.dds_assign(5,0,
+                                    default_freq=100.e6,
+                                    default_amp=0.21)
+        self.d1_beatlock_ref = self.dds_assign(5,1,
+                                    default_freq=42.26e6,
+                                    default_amp=0.1)
+        self.d1_blueshield = self.dds_assign(5,2,
+                                    default_freq=150.e6,
+                                    default_amp=0.21)
+        self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2_c_mot,
+                                    default_amp = self.p.amp_d2_c_mot)
+        self.d2_3d_r = self.dds_assign(1,3, ao_order = 1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2_r_mot,
+                                    default_amp = self.p.amp_d2_r_mot)
+
+        self.core = core
+        # self.dds_manager = [DDSManager]
+        self.dds_amp_calibration = DDS_Amplitude_Calibration()
+        self.dds_vva_calibration = DDS_VVA_Calibration()
+        self.ramp_dt = RAMP_STEP_TIME
 
         self.write_dds_keys()
         self.make_dds_array()
         self.dds_list = np.array(self.dds_array).flatten()
 
+        self.stash_defaults()
+
     def dds_assign(self, uru, ch, 
                    default_freq=dv, default_detuning=dv, default_amp=dv, 
                    ao_order=0, double_pass = True, transition='None', dac_ch_vpd=-1) -> DDS:
-        '''
-        Makes a DDS object, sets the aom order, and
-        returns the DDS() object.
+        """Instantiates and returns a DDS object for the given urukul and channel.
 
-        Returns
-        -------
-        DDS
-        '''
+        Args:
+            uru (int): The urukul card index. 0-indexed.
+            ch (int): The channel of this DDS. 0-indexed.
+            default_freq (float, optional): The default frequency (in Hz) to
+            which this DDS channel should turn on.
+            default_detuning (float, optional): The default detuning (in
+            linewidths) to which this DDS channel should turn on.
+            default_amp (_type_, optional): The default amplitude (0 to 1) to
+            which this DDS channel should turn on.
+            ao_order (int, optional): Specifies the AO order (if applicable) as
+            either +1 or -1.
+            double_pass (bool, optional): Specifies if the AO is set up as a
+            double pass for detuning calculations. Defaults to True.
+            transition (str, optional): If the AO controls near-resonant light,
+            specify the transition ('D1' or 'D2'). Defaults to 'None'.
+            dac_ch_vpd (int, optional): If controlling an AO with a VVA in line
+            with the DDS, this should specify the DAC channel number which
+            controls that VVA. For no DAC control, leave as -1.
+
+        Returns:
+            DDS
+        """        
 
         dds0 = DDS(urukul_idx=uru,ch=ch,
                    frequency=default_freq,
@@ -151,13 +195,19 @@ class dds_frame():
         return dds0
     
     def write_dds_keys(self):
-        '''Adds the assigned keys to the DDS objects so that the user-defined
-        names (keys) are available with the DDS objects.'''
+        """Adds the assigned keys to the DDS objects so that the user-defined
+        names (keys) are available with the DDS objects."""
         for key in self.__dict__.keys():
             if isinstance(self.__dict__[key],DDS):
                 self.__dict__[key].key = key
     
     def make_dds_array(self):
+        """Creates an array of shape (N_uru,N_ch) containing DDS objects for
+        each channel.
+
+        First loops through the DDS objects that were explicitly assigned as
+        attributes using dds_assign, then fills in the remaining DDS channels.
+        """        
         dds_linlist = [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
         for dds in dds_linlist:
             self.dds_array[dds.urukul_idx][dds.ch] = dds
@@ -174,32 +224,61 @@ class dds_frame():
 
     @kernel
     def power_down_cooling(self):
-        self.d1_3d_r.dds_device.set(amplitude=0.)
-        self.d1_3d_c.dds_device.set(amplitude=0.)
-        self.d2_3d_c.dds_device.set(amplitude=0.)
-        self.d2_3d_r.dds_device.set(amplitude=0.)
-        self.d2_2d_c.dds_device.set(amplitude=0.)
-        self.d2_2d_r.dds_device.set(amplitude=0.)
-        self.push.dds_device.set(amplitude=0.)
+        """Turn off the near-resonant light for long hold times to avoid light
+        leakage interacting with the atoms.
+        """
+        self.d1_3d_r.set_dds(amplitude=0.)
+        self.d1_3d_c.set_dds(amplitude=0.)
+        self.d2_3d_c.set_dds(amplitude=0.)
+        self.d2_3d_r.set_dds(amplitude=0.)
+        self.d2_2dv_c.set_dds(amplitude=0.)
+        self.d2_2dv_r.set_dds(amplitude=0.)
+        self.d2_2dh_c.set_dds(amplitude=0.)
+        self.d2_2dh_r.set_dds(amplitude=0.)
+        self.push.set_dds(amplitude=0.)
+        self.mot_killer.set_dds(amplitude=0.)
+        self.optical_pumping.set_dds(amplitude=0.)
+        self.raman_minus.set_dds(amplitude=0.)
+        self.raman_plus.set_dds(amplitude=0.)
 
         self.d1_3d_r.off()
         self.d1_3d_c.off()
         self.d2_3d_c.off()
         self.d2_3d_r.off()
-        self.d2_2d_c.off()
-        self.d2_2d_r.off()
+        self.d2_2dv_c.off()
+        self.d2_2dv_r.off()
+        self.d2_2dh_c.off()
+        self.d2_2dh_r.off()
         self.push.off()
+        self.mot_killer.off()
+        self.optical_pumping.off()
+        self.raman_minus.off()
+        self.raman_plus.off()
 
     @kernel
     def init_cooling(self):
+        """See 'power_down_cooling`. Reboots the DDS cores for the near-resonant
+        light and sets them to their defaults.
+        """
         self.d1_3d_r.set_dds(set_stored=True)
         self.d1_3d_c.set_dds(set_stored=True)
         self.d2_3d_c.set_dds(set_stored=True)
         self.d2_3d_r.set_dds(set_stored=True)
-        self.d2_2d_c.set_dds(set_stored=True)
-        self.d2_2d_r.set_dds(set_stored=True)
-        self.op_r.set_dds(set_stored=True)
+        self.d2_2dh_c.set_dds(set_stored=True)
+        self.d2_2dh_r.set_dds(set_stored=True)
+        self.d2_2dv_c.set_dds(set_stored=True)
+        self.d2_2dv_r.set_dds(set_stored=True)
         self.push.set_dds(set_stored=True)
+
+    @portable
+    def reset_defaults(self):
+        for dds in self.dds_list:
+            dds._restore_defaults()
+
+    @portable
+    def stash_defaults(self):
+        for dds in self.dds_list:
+            dds._stash_defaults()
 
 #     def set_frequency_ramp_profile(self, dds:DDS, freq_list, t_ramp:float, dwell_end=True, dds_mgr_idx=0):
 #         """Define an amplitude ramp profile and append to the specified DDSManager object.

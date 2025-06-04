@@ -1,9 +1,12 @@
-from kexp.config import ExptParams
+from kexp.config.expt_params import ExptParams
 from artiq.experiment import *
 import numpy as np
 from kexp.control.artiq.dummy_core import DummyCore
 from artiq.language.core import kernel_from_string, now_mu
 from artiq.experiment import delay
+from kexp.util.artiq.async_print import aprint
+from kexp.config.camera_id import CameraParams
+from kexp.util.data.counter import counter
 
 RPC_DELAY = 10.e-3
 
@@ -19,6 +22,7 @@ class Scanner():
         self.xvarnames = []
         self.scan_xvars = []
         self.Nvars = 0
+        
         self.update_nvars()
         self.compute_new_derived = nothing
         self.core = DummyCore()
@@ -32,6 +36,9 @@ class Scanner():
         self._param_keylist_int32s = []
         # self._param_keylist_int64s = []
         self._param_keylist_arrays = []
+
+        self._dummy_array = np.zeros(10000,dtype=float)
+        self._N = 0
 
     def logspace(self,start,end,n):
         return np.logspace(np.log10(start),np.log10(end),int(n))
@@ -96,6 +103,12 @@ class Scanner():
         pass
 
     @kernel
+    def cleanup_scan_kernel(self):
+        """This method is run just after each scan_kernel completes.
+        """
+        self.cleanup_image_count()
+        
+    @kernel
     def scan(self):
         """
         Runs the scan_kernel function for each value of the xvars specified.
@@ -127,6 +140,8 @@ class Scanner():
             self.init_scan_kernel()
 
             self.scan_kernel()
+
+            self.cleanup_scan_kernel()
 
             delay(self.params.t_recover)
             self.core.break_realtime()
@@ -162,7 +177,9 @@ class Scanner():
         int32val = 1
         # int64val = np.int64(1)
         floatval = 0.1
-        arrayval = np.array([1.])
+        # self._dummy_array[:] = 0.
+        arrval = np.array([1.])
+
         for idx in range(len(self._param_keylist_int32s)):
             int32val = self.fetch_int32(idx)
             self._xvar_writer_int32s[idx](self,int32val)
@@ -176,8 +193,8 @@ class Scanner():
             self._xvar_writer_floats[idx](self,floatval)
 
         for idx in range(len(self._param_keylist_arrays)):
-            arrayval = self.fetch_array(idx)
-            self._xvar_writer_arrays[idx](self,arrayval)
+            N, self._dummy_array = self.fetch_array(idx)
+            self._xvar_writer_arrays[idx](self,self._dummy_array[0:N])
             
     def fetch_float(self,i) -> TFloat:
         """Returns the value of the ith experiment parameter with datatype
@@ -192,7 +209,7 @@ class Scanner():
         """        
         return vars(self.params)[self._param_keylist_floats[i]]
     
-    def fetch_array(self,i) -> TArray(TFloat):
+    def fetch_array(self,i) -> TTuple([TInt32,TArray(TFloat)]):
         """Returns the value of the ith experiment parameter with datatype
         ndarray.
 
@@ -202,8 +219,11 @@ class Scanner():
 
         Returns:
             TFloat: The value of the ith ndarray ExptParam attribute.
-        """        
-        return vars(self.params)[self._param_keylist_arrays[i]]
+            TInt: length of the array
+        """    
+        N = len(vars(self.params)[self._param_keylist_arrays[i]])
+        self._dummy_array[0:N] = vars(self.params)[self._param_keylist_arrays[i]]
+        return (N, self._dummy_array)
     
     # def fetch_int64(self,i) -> TInt64:
     #     """Returns the value of the ith experiment parameter with datatype
@@ -253,7 +273,6 @@ class Scanner():
             elif 'float' in dtype:
                 self._param_keylist_floats.append(key)
                 self._xvar_writer_floats.append( kernel_from_string(["self","value"],bodycode) )
-
             elif 'ndarray' in dtype:
                 self._param_keylist_arrays.append(key)
                 self._xvar_writer_arrays.append( kernel_from_string(["self","value"],bodycode) )
@@ -300,6 +319,10 @@ class Scanner():
             print(e)
             print('Derived parameters were not updated.')
 
+    def cleanup_image_count(self):
+        # dummy, overloaded by kexp.image.cleanup_image_count
+        pass
+
 class xvar():
     def __init__(self,key:str,values:np.ndarray,position=0):
         """Defines an variable that will be scanned over in the scan_kernel.
@@ -312,8 +335,8 @@ class xvar():
         """
         self.key = key
         if type(values) == float or type(values) == int:
-            values = [values]
-        self.values = np.asarray(values,dtype=float)
+            raise ValueError("xvar must be a list or ndarray")
+        self.values = np.asarray(values)
         self.position = position
         self.counter = 0
         self.sort_idx = []

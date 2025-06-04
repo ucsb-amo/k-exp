@@ -7,6 +7,7 @@ from PyQt6.QtGui import QIcon, QFont
 from queue import Queue
 import numpy as np
 from kexp.analysis.image_processing import compute_OD, process_ODs
+from kexp import img_types
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -24,26 +25,35 @@ class Analyzer(QObject):
     def __init__(self,plotting_queue:Queue):
         super().__init__()
         self.imgs = []
-        self.crop_type = ''
         self.plotting_queue = plotting_queue
+        self.roi = []
+
+    def get_img_number(self,N_img,N_shots,N_pwa_per_shot):
+        self.N_img = N_img
+        self.N_shots = N_shots
+        self.N_pwa_per_shot = N_pwa_per_shot
+
+    def get_analysis_type(self,imaging_type):
+        self.imaging_type = imaging_type
 
     def got_img(self,img):
         self.imgs.append(np.asarray(img))
-        if len(self.imgs) == 3:
+        if len(self.imgs) == (self.N_pwa_per_shot+2):
             self.analyze()
             self.imgs = []
 
     def analyze(self):
         self.img_atoms = self.imgs[0]
-        self.img_light = self.imgs[1]
-        self.img_dark = self.imgs[2]
+        self.img_light = self.imgs[self.N_pwa_per_shot]
+        self.img_dark = self.imgs[self.N_pwa_per_shot+1]
 
         self.od_raw = compute_OD(self.img_atoms,
                         self.img_light,
-                        self.img_dark)
+                        self.img_dark,
+                        imaging_type=self.imaging_type)
+        self.od_raw = np.array([self.od_raw])
         self.od, self.sum_od_x, self.sum_od_y = \
-            process_ODs(self.od_raw,
-                        self.crop_type)
+            process_ODs(self.od_raw,self.roi)
         self.od_raw = self.od_raw[0]
         self.od = self.od[0]
         self.sum_od_x = self.sum_od_x[0]
@@ -82,12 +92,13 @@ class ODviewer(QWidget):
         self.max_OD_spinner = QDoubleSpinBox()
         self.max_OD_spinner_label = QLabel("Max OD")
         self.max_OD_spinner.setValue(2.0)
-        self.max_OD_spinner.setMinimum(0.)
+        # self.max_OD_spinner.setMinimum(0.)
         self.max_OD_spinner.setSingleStep(0.1)
 
         self.min_OD_spinner = QDoubleSpinBox()
         self.min_OD_spinner_label = QLabel("Min OD")
-        self.min_OD_spinner.setMinimum(0.)
+        self.min_OD_spinner.setValue(0.0)
+        # self.min_OD_spinner.setMinimum(0.)
         self.min_OD_spinner.setSingleStep(0.1)
 
         self.image_count_label = QLabel(f"Image Count: / {self.Nimg} ")
@@ -154,8 +165,10 @@ class ODviewer(QWidget):
         self.sum_od_x_plot.setFixedWidth(self.od_plot.width())
         self.sum_od_x_plot.setFixedHeight(150)
 
-    def get_img_number(self,Nimg):
-        self.Nimg = Nimg
+    def get_img_number(self,N_img,N_shots,N_pwa_per_shot):
+        self.N_img = N_img
+        self.N_shots = N_shots
+        self.N_pwa_per_shot = N_pwa_per_shot
 
     def update_image_count(self,count):
         self.image_count_label.setText(f"Image count: {int(count)}/{int(self.Nimg)}")

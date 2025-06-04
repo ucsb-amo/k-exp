@@ -14,8 +14,36 @@ from PyQt6.QtGui import QColor, QIcon
 import vxi11
 import time
 
-T_UPDATE_MS = 250
+T_UPDATE_MS = 500
 FONTSIZE_PT = 18
+
+class status_decoder():
+    def __init__(self):
+        self.error_codes = {
+            0: 'OV',
+            1: 'OC',
+            2: 'PF',
+            3: 'CP',
+            4: 'OT',
+            5: 'MSP',
+            6: '',
+            7: '',
+            8: '',
+            9: 'INH',
+            10: 'UNR'}
+    
+    def check_bit(self, status, bit_idx):
+        return status >> bit_idx & 1
+    
+    def decode_status(self, status):
+        err_str = ""
+
+        for bit in range(11):
+            if self.check_bit(status, bit):
+                err_str += self.error_codes[bit]
+                err_str += " "
+        
+        return err_str
 
 # one of these per current supply
 class current_supply_widget(QWidget):
@@ -24,8 +52,12 @@ class current_supply_widget(QWidget):
         self.ip = ip
         self.max_current = max_current
         self.supply = vxi11.Instrument(ip)
+        self.status = 0
+        self.err_str = ""
         self.init_device()
         self.init_UI()
+
+        self.status_decoder = status_decoder()
 
     def init_device(self):
         # make sure the device is set up to listen to its inhibit pin
@@ -33,24 +65,37 @@ class current_supply_widget(QWidget):
         
     def read_current(self):
         # send the supply the query to measure the current
-        self.supply.write(":MEASure:CURRent:DC?")
-        # wait a bit for the reply to be available (probably don't need this)
-        time.sleep(0.05)
-        # read out the value that the supply sends back -- convert it to a
-        # number since it's a nasty string
-        return float(self.supply.read())
+        v = self.supply.ask(":MEASure:CURRent:DC?")
+        # convert it value to a number since it's a nasty string
+        return float(v)
     
-    def update_current_UI(self):
-        current = self.read_current()
-        # set the value text of our box (see "init_UI") to the new current
-        # the "1.4f" formats the number to a string as with 4 decimal places (f for "float")
-        self.value_label.setText(f"{current:1.4f}") 
+    def read_status(self):
+        self.status = int(self.supply.ask("STAT:QUES:COND?"))
+    
+    def clear_protect_status(self):
+        self.supply.write("OUTP:PROT:CLE")
+        self.status = 0
+    
+    def update_UI(self):
+        if not self.status:
+            self.read_status()
+            current = self.read_current()
+            # set the value text of our box (see "init_UI") to the new current
+            # the "1.4f" formats the number to a string as with 4 decimal places (f for "float")
+            self.value_label.setText(f"{current:1.4f}")
+        else:
+            self.err_str = self.status_decoder.decode_status(self.status)
+            self.value_label.setText(f"{self.err_str}")
+
+        if 'UNR' in self.err_str:
+            self.clear_protect_status()
     
     def init_UI(self):
 
         # this one gets "self" (is an attribute) since I'll need to update it
         # later when I check the current value
-        self.value_label = QLabel("")
+        self.value_label = QPushButton("")
+        self.value_label.clicked.connect(self.clear_protect_status)
         self.value_label.setStyleSheet("font-weight: bold; font-size: {FONTSIZE_PT}pt")
 
         # these ones will remain the same forever so I just name them here and
@@ -60,6 +105,7 @@ class current_supply_widget(QWidget):
         text_label.setStyleSheet("font-size: {FONTSIZE_PT}pt") # formatting
 
         unit_label = QLabel("A")
+
         unit_label.setStyleSheet("font-weight: bold; font-size: {FONTSIZE_PT}pt") # formatting
 
         # the overall layout of this part will have widgets in a horizontal line
@@ -83,7 +129,7 @@ class Window(QWidget):
         # again. effect is to run the "connected" function repeatedly every
         # T_UPDATE_MS (defined way at top of file)
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_current)
+        self.timer.timeout.connect(self.update_UI)
         self.timer.start(T_UPDATE_MS)
 
     def init_instruments(self):
@@ -99,9 +145,9 @@ class Window(QWidget):
         for supply_UI in self.supply_UIs:
             self.layout.addLayout(supply_UI.layout)
 
-    def update_current(self):
+    def update_UI(self):
         for supply_UI in self.supply_UIs:
-            supply_UI.update_current_UI()
+            supply_UI.update_UI()
     
 def main():
     app = QApplication(sys.argv)

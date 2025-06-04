@@ -2,9 +2,12 @@ import numpy as np
 from scipy.signal import savgol_filter
 import matplotlib.pyplot as plt
 import copy
+from kexp.analysis.helper import crop_array_by_index, remove_infnan
 
 class Fit():
-    def __init__(self,xdata,ydata,savgol_window=5,savgol_degree=3):
+    def __init__(self,xdata,ydata,
+                 include_idx=[0,-1],exclude_idx=[],
+                 savgol_window=5,savgol_degree=3):
         '''
         Arguments
         ----------
@@ -29,10 +32,14 @@ class Fit():
         xdata = np.asarray(xdata)
         ydata = np.asarray(ydata)
 
-        xdata, ydata = self.remove_infnan(xdata,ydata)
+        xdata = crop_array_by_index(xdata,include_idx,exclude_idx)
+        ydata = crop_array_by_index(ydata,include_idx,exclude_idx)
+
+        xdata, ydata = remove_infnan(xdata,ydata)
         self.xdata = xdata
         self.ydata = ydata
 
+        self.popt = []
         self.y_fitdata = []
         
         try:
@@ -40,19 +47,25 @@ class Fit():
         except:
             self.ydata_smoothed = copy.deepcopy(self.ydata)
 
+    # def get_plot_fitdata(self):
+    #     Nsample = len(self.xdata)*500
+    #     xplot = np.linspace(self.xdata[0],self.xdata[-1],Nsample)
+    #     yplot = self._fit_func(xplot,*self.popt)
+    #     return (xplot, yplot)
+
     def _fit_func(self,x):
         pass
 
     def _fit(self,x,y):
         pass
 
-    def plot_fit(self):
-        fig = plt.figure()
+    def plot_fit(self,N_interp=10000,legend=True):
+        # plt.figure()
         plt.plot(self.xdata,self.ydata,'.',markersize=4)
-        plt.plot(self.xdata,self.y_fitdata,'--')
-        plt.legend(["Data","Fit"])
-
-    def remove_infnan(self,xdata,ydata):
-        bools = ~np.isnan(xdata) & ~np.isinf(xdata) & ~np.isnan(ydata) & ~np.isinf(ydata)
-        return xdata[bools], ydata[bools]
+        
+        xsm = np.linspace(self.xdata[0],self.xdata[-1],N_interp)
+        yfit_sm = self._fit_func(xsm,*self.popt)
+        plt.plot(xsm,yfit_sm,'--')
+        if legend:
+            plt.legend(["Data","Fit"])
 

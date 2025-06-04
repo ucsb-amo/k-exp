@@ -5,7 +5,7 @@ import numpy as np
 from queue import Queue
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from kexp.config.camera_params import xy_basler_params
+from kexp.config.camera_id import cameras
 
 class BaslerUSB(pylon.InstantCamera):
     '''
@@ -18,11 +18,9 @@ class BaslerUSB(pylon.InstantCamera):
         TriggerMode (str): picks whether or not the camera waits for a trigger to capture frames. (default: 'On')
         BaslerSerialNumber (str): identifies which camera should be used via the serial number. (default: ExptParams.basler_serial_no_absorption)
     '''
-    def __init__(self,ExposureTime=0.,TriggerSource='Line1',TriggerMode='On',BaslerSerialNumber=xy_basler_params.serial_no):
+    def __init__(self,ExposureTime=0.,Gain=0.,TriggerSource='Line1',TriggerMode='On',BaslerSerialNumber=cameras.xy_basler.serial_no):
 
         super().__init__()
-
-        ExposureTime_us = ExposureTime * 1.e6
 
         tl_factory = pylon.TlFactory.GetInstance()
         if BaslerSerialNumber == '':
@@ -43,10 +41,29 @@ class BaslerUSB(pylon.InstantCamera):
         self.TriggerSelector = "FrameStart"
         self.TriggerMode = TriggerMode
         self.TriggerSource = TriggerSource
+        
+        self.set_exposure(ExposureTime)
+        self.set_gain(Gain)
+
+    def set_exposure(self,ExposureTime):
+        ExposureTime_us = ExposureTime * 1.e6
         if ExposureTime_us < self.ExposureTime.GetMin():
             ExposureTime_us = self.ExposureTime.GetMin()
             print(f"Exposure time requested is below camera minimum. Setting to minimum exposure : {ExposureTime_us:1.0f} us")
+        if ExposureTime_us > self.ExposureTime.GetMax():
+            ExposureTime_us = self.ExposureTime.GetMax()
+            print(f"Exposure time requested is above camera maximum. Setting to maximum exposure : {ExposureTime_us:1.0f} us")
         self.ExposureTime.SetValue(ExposureTime_us)
+        print(ExposureTime_us)
+
+    def set_gain(self,Gain):
+        if Gain > self.Gain.GetMax():
+            Gain = self.Gain.GetMax()
+            print(f"Gain requested is above camera maximum. Setting to maximum gain : {Gain:1.0f} dB")
+        if Gain > self.Gain.GetMax():
+            Gain = self.Gain.GetMin()
+            print(f"Gain requested is below camera minimum. Setting to minimum gain : {Gain:1.0f} dB")
+        self.Gain.SetValue(Gain)
 
     def close(self):
         self.Close()
@@ -57,8 +74,8 @@ class BaslerUSB(pylon.InstantCamera):
     def is_opened(self):
         return self.IsOpen()
     
-    def start_grab(self,N_img,output_queue:Queue,timeout=20.):
-        this_timeout = 30.
+    def start_grab(self,N_img,output_queue:Queue,timeout=10.):
+        this_timeout = 20.
         Nimg = int(N_img)
         self.StartGrabbingMax(Nimg, pylon.GrabStrategy_LatestImages)
         count = 0

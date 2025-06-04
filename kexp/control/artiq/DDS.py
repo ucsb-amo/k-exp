@@ -39,7 +39,8 @@ class DDS():
          self.dac_device = dac_device
       else:
          self.dac_device = ad53xx.AD53xx
-      self.dac_control_bool = self.dac_ch > 0
+         
+      self.dac_control_bool = self.dac_ch != DAC_CH_DEFAULT
 
       self.dds_amp_calibration = dds_amp_cal()
       self.dds_vva_calibration = dds_vva_cal()
@@ -50,6 +51,16 @@ class DDS():
 
       self._t_set_delay_mu = self._t_set_xfer_mu + self._t_ref_period_mu + 1
       self._t_att_delay_mu = self._t_att_xfer_mu + self._t_ref_period_mu + 1
+
+   @portable
+   def _stash_defaults(self):
+      self._frequency_default = self.frequency
+      self._amplitude_default = self.amplitude
+
+   @portable
+   def _restore_defaults(self):
+      self.frequency = self._frequency_default
+      self.amplitude = self._amplitude_default
 
    @portable
    def update_dac_bool(self):

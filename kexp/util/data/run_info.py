@@ -1,10 +1,14 @@
-from kexp.util.data.data_vault import DataSaver
 import time
+from kexp.util.data.server_talk import get_run_id
+
+from kexp.config.camera_id import img_types as img
 
 class RunInfo():
     def __init__(self,expt_obj=None,save_data=True):
-        _ds = DataSaver()
-        self.run_id = _ds._get_rid()
+        if expt_obj != None:
+            self.run_id = get_run_id()
+        else:
+            self.run_id = 0
         self.run_datetime = time.localtime(time.time())
 
         self._run_description = ""
@@ -18,7 +22,7 @@ class RunInfo():
         self.experiment_filepath = []
         self.xvarnames = []
 
-        self.absorption_image = True
+        self.imaging_type = img.ABSORPTION
         
         self.save_data = int(save_data)
 

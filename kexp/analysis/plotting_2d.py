@@ -3,6 +3,7 @@ import numpy as np
 from kexp.analysis import atomdata
 
 def plot_image_grid(ad:atomdata,
+                    ndarray = [],
                     xvarformat="1.2f",
                      xvar0format="",
                      xvar1format="",
@@ -15,7 +16,11 @@ def plot_image_grid(ad:atomdata,
     if not xvar1format:
         xvar1format = xvarformat
     # Extract necessary attributes
-    od = ad.od
+    if isinstance(ndarray,np.ndarray):
+        od = ndarray
+    else:
+        od = ad.od
+        
     if max_od == 0.:
         max_od = np.max(od)
     xvars = ad.xvars
@@ -66,6 +71,7 @@ def plot_image_grid(ad:atomdata,
     return fig, ax
 
 def mixOD_grid(ad,
+                ndarray = [],
                 xvarformat="1.2g",
                 xvar0format="",
                 xvar1format="",
@@ -81,7 +87,11 @@ def mixOD_grid(ad,
     if not xvar1format:
         xvar1format = xvarformat
     # Extract necessary attributes
-    od = ad.od
+    if isinstance(ndarray,np.ndarray):
+        od = ndarray
+    else:
+        od = ad.od
+        
     if max_od == 0.:
         max_od = np.max(od)
         
@@ -99,14 +109,14 @@ def mixOD_grid(ad,
     # Stitch the images into the grid
     for i in range(n_1):
         for j in range(n_2):
-            full_image[i * px: (i + 1) * px, j * py: (j + 1) * py] = od[i, j]
+            full_image[i * px: (i + 1) * px, j * py: (j + 1) * py] = np.flip(od[i, j],axis=0)
 
     # Create a figure and plot the stitched image
     if figsize:
         plt.figure(figsize=figsize)
     else:
         plt.figure(figsize=(10, 8))
-    plt.imshow(full_image,vmin=0.,vmax=max_od, origin='lower')
+    plt.imshow(full_image,vmin=0.,vmax=max_od)
     plt.title(f"Run ID: {ad.run_info.run_id}")
     plt.xlabel(xvarnames[1])  # Label x-axis with the second x-variable name
     plt.ylabel(xvarnames[0])  # Label y-axis with the first x-variable name

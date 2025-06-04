@@ -3,9 +3,13 @@ from PyQt6.QtWidgets import (QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushBut
 
 from kexp.util.live_od.live_od_plotting import *
 
-import kexp.config.camera_params as cp
+from kexp import cameras, img_types
 from kexp.control.cameras.dummy_cam import DummyCamera
+from kexp.control.cameras.camera_param_classes import CameraParams
 from kexp.util.live_od import CameraNanny
+
+from kexp.analysis.roi import ROI_CSV_PATH
+import pandas as pd
 
 class CamConnBar(QWidget):
     def __init__(self,camera_nanny,output_window):
@@ -16,16 +20,24 @@ class CamConnBar(QWidget):
         self.setup_layout()
 
     def setup_camera_buttons(self):
-        self.xy_basler_button = CameraButton(cp.xy_basler_params,self.cn,self.output_window)
-        self.x_basler_button = CameraButton(cp.x_basler_params,self.cn,self.output_window)
-        self.z_basler_button = CameraButton(cp.z_basler_params,self.cn,self.output_window)
-        self.andor = CameraButton(cp.andor_params,self.cn,self.output_window,open_camera_on_start=False)
+        self.xy_basler_button = CameraButton(cameras.xy_basler,
+                                             self.cn,self.output_window)
+        self.basler_2dmot_button = CameraButton(cameras.basler_2dmot,
+                                                self.cn,self.output_window)
+        self.x_basler_button = CameraButton(cameras.x_basler,
+                                            self.cn,self.output_window)
+        self.z_basler_button = CameraButton(cameras.z_basler,
+                                            self.cn,self.output_window)
+        self.andor = CameraButton(cameras.andor,
+                                  self.cn,self.output_window,
+                                  open_camera_on_start=False)
 
     def setup_layout(self):
         self.layout = QVBoxLayout()
         label = QLabel("Camera connections")
         buttonlayout = QHBoxLayout()
         buttonlayout.addWidget(self.xy_basler_button)
+        buttonlayout.addWidget(self.basler_2dmot_button)
         buttonlayout.addWidget(self.z_basler_button)
         buttonlayout.addWidget(self.x_basler_button)
         buttonlayout.addWidget(self.andor)
@@ -34,13 +46,13 @@ class CamConnBar(QWidget):
         self.setLayout(self.layout)
 
 class CameraButton(QPushButton):
-    def __init__(self,camera_params:cp.CameraParams,
+    def __init__(self,camera_params:CameraParams,
                  camera_nanny:CameraNanny,
                  output_window:QPlainTextEdit,
-                 open_camera_on_start:bool=True):
+                 open_camera_on_start:bool=False):
         super().__init__()
         self.camera_params = camera_params
-        self.camera_name = self.camera_params.camera_select
+        self.camera_name = self.camera_params.key
         self.cn = camera_nanny
         self.camera = DummyCamera()
         self.output_window = output_window
@@ -59,7 +71,7 @@ class CameraButton(QPushButton):
     def button_pressed(self):
         if self.camera.is_opened():
             self.close_camera()
-            self.msg(f'Connection to {self.camera_params.camera_select} closed.')
+            self.msg(f'Connection to {self.camera_params.key} closed.')
         else:
             self.open_camera()
     
@@ -73,7 +85,7 @@ class CameraButton(QPushButton):
         camera = self.cn.get_camera(self.camera_params)
         if not camera.is_opened():
             self._set_color_failed()
-            self.msg(f'Failed to open camera {self.camera_params.camera_select}')
+            self.msg(f'Failed to open camera {self.camera_params.key}')
         else:
             self._set_color_success()
         self.camera = camera
@@ -111,15 +123,19 @@ class ROISelector(QWidget):
     def setup_widgets(self):
         self.label = QLabel("ROI Selection")
         self.crop_dropdown = QComboBox()
-        self.crop_dropdown.addItems(['','gm','mot','cmot','bigmot','lightsheet',
-                                         'gm2','lightsheet_long',
-                                         'lightsheet_short',
-                                         'xy_tweezer',
-                                         'andor_single_tweezer_tight',
-                                         'lightsheet_short',
-                                         'andor_single_tweezer',
-                                         'andor_lightsheet',
-                                         'andor_tweezer_wide_putin'])
+        self.update_rois()
+
+    def update_rois(self):
+        self.load_roi_from_spreadsheet()
+        self.crop_dropdown.addItems(self.roi_keys)
+        
+    def load_roi_from_spreadsheet(self):
+        roicsv = pd.read_excel(ROI_CSV_PATH)
+        self.roi_keys = roicsv['key'].to_list()
+
+    def set_dropdown_to_key(self,key):
+        idx = self.roi_keys.index(key)
+        self.crop_dropdown.setCurrentIndex(idx)
         
     def setup_layout(self):
         self.layout = QVBoxLayout()

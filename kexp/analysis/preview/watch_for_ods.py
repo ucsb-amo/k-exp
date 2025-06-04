@@ -4,7 +4,7 @@ import matplotlib.cm as cm
 from kexp.control import BaslerUSB
 from kexp.analysis.image_processing import compute_ODs, fit_gaussian_sum_dist
 import numpy as np
-from kexp.config import camera_params
+from kexp.config import camera_id
 from kamo.atom_properties.k39 import Potassium39
 
 from kexp.base.base import Cameras

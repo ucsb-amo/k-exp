@@ -2,28 +2,50 @@ import matplotlib.pyplot as plt
 import numpy as np
 from kexp.analysis import atomdata
 
+from kexp.analysis.helper import xlabels_1d
+
 def plot_mixOD(ad:atomdata,
+               ndarray=[],
+               xvar_idx=0,
                xvarformat="1.2f",
                xvarmult = 1.,
                lines=False,
                max_od=0.,
                figsize=[],
-               aspect='auto'):
+               aspect='auto',
+               swap_axes=False):
     # Extract necessary information
-    od = ad.od
+    
     xvarnames = ad.xvarnames
     xvars = ad.xvars
+
+    if isinstance(ndarray,np.ndarray):
+        od = ndarray
+    else:
+        od = ad.od
+
+    
 
     if max_od == 0.:
         max_od = np.max(od)
 
     # Calculate the dimensions of the stitched image
     n, px, py = od.shape
-    n_repeats = int(ad.params.N_repeats)
+    if isinstance(ad.params.N_repeats,np.ndarray):
+        if ad.params.N_repeats.size > 1:
+            n_repeats = 1
+        else:
+            n_repeats = int(ad.params.N_repeats)
+    else:
+        n_repeats = int(ad.params.N_repeats)
     n_shots = int(n / n_repeats)
 
-    total_width = n_shots * px
-    max_height = n_repeats * py
+    if swap_axes:
+        total_width = n_repeats * px
+        max_height = n_shots * py
+    else:
+        total_width = n_shots * px
+        max_height = n_repeats * py
 
     # Create a figure and axis for plotting
     if figsize:
@@ -39,38 +61,65 @@ def plot_mixOD(ad:atomdata,
     # print(n_repeats)
 
     # Plot each image and label with xvar value
-    for i in range(n_shots):
-        for j in range(n_repeats):
-            idx = j + i*n_repeats
-            img = od[idx]
-            ax.imshow(img, extent=[x_pos, x_pos+px, y_pos, y_pos+py],
-                    vmin=0.,vmax=max_od, origin='lower')
-            ax.axvline()
-            y_pos += py
-        y_pos = 0
-        x_pos += px
+    if swap_axes:
+        for i in range(n_repeats):
+            for j in range(n_shots):
+                idx = i + j*n_repeats
+                img = od[idx]
+                ax.imshow(img, extent=[x_pos, x_pos+px, y_pos, y_pos+py],
+                        vmin=0.,vmax=max_od, origin='lower')
+                ax.axvline()
+                y_pos += py
+            y_pos = 0
+            x_pos += px
+    else:
+        for i in range(n_shots):
+            for j in range(n_repeats):
+                idx = j + i*n_repeats
+                img = od[idx]
+                ax.imshow(img, extent=[x_pos, x_pos+px, y_pos, y_pos+py],
+                        vmin=0.,vmax=max_od, origin='lower')
+                ax.axvline()
+                y_pos += py
+            y_pos = 0
+            x_pos += px
 
     plt.gca().set_aspect(aspect)
 
     # Set axis labels and title
-    ax.set_xlabel(xvarnames[0])
     ax.set_title(f"Run ID: {ad.run_info.run_id}")
 
     # Set the x-axis limits to show all images
     ax.set_xlim(0, total_width)
     ax.set_ylim(0, max_height)
 
-    # Remove y-axis ticks and labels
-    ax.yaxis.set_visible(False)
-    ax.xaxis.set_ticks([])
+    if swap_axes:
+        # Remove x-axis ticks and labels
+        ax.xaxis.set_visible(False)
+        ax.yaxis.set_ticks([])
+    else:
+        # Remove y-axis ticks and labels
+        ax.yaxis.set_visible(False)
+        ax.xaxis.set_ticks([])
 
-    # Set ticks at the center of each sub-image and rotate them vertically
-    tick_positions = np.arange(px/2, total_width, px)
-    ax.set_xticks(tick_positions)
-    xvarticks = np.array([f"{val*xvarmult:{xvarformat}}" for val in xvars[0]])
-    xvarticks = xvarticks[::n_repeats]
-    ax.set_xticklabels(xvarticks, rotation='vertical', ha='center')
-    plt.minorticks_off()
+    if swap_axes:
+        ax.set_ylabel(xvarnames[xvar_idx])
+        # Set ticks at the center of each sub-image and rotate them vertically
+        tick_positions = np.arange(py/2, max_height, py)
+        ax.set_yticks(tick_positions)
+        xvarlabels = xlabels_1d(xvars[xvar_idx], xvarmult, xvarformat)
+        xvarlabels = xvarlabels[::n_repeats]
+        ax.set_yticklabels(xvarlabels, rotation='vertical', va='center')
+        plt.minorticks_off()
+    else:
+        ax.set_xlabel(xvarnames[xvar_idx])
+        # Set ticks at the center of each sub-image and rotate them vertically
+        tick_positions = np.arange(px/2, total_width, px)
+        ax.set_xticks(tick_positions)
+        xvarlabels = xlabels_1d(xvars[xvar_idx], xvarmult, xvarformat)
+        xvarlabels = xvarlabels[::n_repeats]
+        ax.set_xticklabels(xvarlabels, rotation='vertical', ha='center')
+        plt.minorticks_off()
 
     if lines:
         for pos in np.arange(px, total_width, px):
@@ -78,9 +127,6 @@ def plot_mixOD(ad:atomdata,
 
     # Show the plot
     fig.tight_layout()
-    plt.show()
-
-    return fig, ax
 
 def plot_sum_od_fits(ad:atomdata,axis=0,
                     xvarformat='3.3g',
@@ -97,17 +143,21 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     
     ymax = np.max([np.max(fit.ydata) for fit in fits])
 
+    if isinstance(ad.params.N_repeats,np.ndarray):
+        ad.params.N_repeats = ad.params.N_repeats[0]
+
     if figsize:
-        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
+        fig, ax = plt.subplots(ad.params.N_repeats,ad.params.N_shots,
                                figsize=figsize,layout='tight')
     else:
-        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
+        fig, ax = plt.subplots(ad.params.N_repeats,ad.params.N_shots,
                            layout='tight')
 
-    Nr = ad.params.N_repeats[0]
+    Nr = ad.params.N_repeats
     Ns = int(len(ad.xvars[0]) / Nr)
 
     xvar = ad.xvars[0]
+    xvarlabels = xlabels_1d(xvar, xvarmult, xvarformat)
 
     if ad.params.N_repeats == 1 or Ns == 1:
         for i in range(Ns):
@@ -120,7 +170,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
             ax[i].plot(xdata*1.e6,yfit)
             ax[i].set_ylim([0,1.1*ymax])
 
-            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}",rotation='vertical')
+            ax[i].set_xlabel(xvarlabels[i],rotation='vertical')
 
             ax[i].set_xticks([])
             ax[i].set_yticks([])
@@ -141,12 +191,10 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
                 ax[j,i].set_yticks([])
 
                 if j == Nr-1:
-                    ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}",rotation='vertical')
+                    ax[j,i].set_xlabel(xvarlabels[idx],rotation='vertical')
                     
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
     fig.supxlabel(ad.xvarnames[0])
-
-    return fig, ax
 
 def plot_fit_residuals(ad:atomdata,axis=0,
                        xvarformat='1.3g',
@@ -160,6 +208,9 @@ def plot_fit_residuals(ad:atomdata,axis=0,
         label = "y"
     else:
         raise ValueError("Axis must be 0 (x) or 1 (y)")
+    
+    if isinstance(ad.params.N_repeats,np.ndarray):
+        ad.params.N_repeats = ad.params.N_repeats[0]
 
     fits_yfitdata = [fit.y_fitdata for fit in fits]
     fits_ydata = [fit.ydata for fit in fits]
@@ -168,25 +219,26 @@ def plot_fit_residuals(ad:atomdata,axis=0,
     print(sum_od_residuals.shape)
 
     if figsize:
-        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots,
+        fig, ax = plt.subplots(ad.params.N_repeats,ad.params.N_shots,
                                figsize=figsize)
     else:
-        fig, ax = plt.subplots(ad.params.N_repeats[0],ad.params.N_shots)
+        fig, ax = plt.subplots(ad.params.N_repeats,ad.params.N_shots)
 
     bools = ~np.isinf(sum_od_residuals) & ~np.isnan(sum_od_residuals)
     ylimmin = np.min(sum_od_residuals[bools])
     ylimmax = np.max(sum_od_residuals[bools])
 
-    Nr = ad.params.N_repeats[0]
+    Nr = ad.params.N_repeats
     Ns = ad.params.N_shots
 
     xvar = ad.xvars[0]
+    xvarlabels = xlabels_1d(xvar, xvarmult, xvarformat)
 
     if ad.params.N_repeats == 1:
         for i in range(Ns):
             ax[i].plot(xdata,sum_od_residuals[i])
 
-            ax[i].set_xlabel(f"{xvar[i]:{xvarformat}}",rotation='vertical')
+            ax[i].set_xlabel(xvarlabels[i],rotation='vertical')
   
             ax[i].set_ylim(ylimmin,ylimmax)
             ax[i].set_xticks([])
@@ -196,7 +248,7 @@ def plot_fit_residuals(ad:atomdata,axis=0,
             for i in range(Ns):
                 idx = j + i*Nr
                 ax[j,i].plot(xdata,sum_od_residuals[idx])
-                ax[j,i].set_xlabel(f"{xvar[idx]*xvarmult:{xvarformat}}")
+                ax[j,i].set_xlabel(xvarlabels[idx])
                 ax[j,i].set_ylim(ylimmin,ylimmax)
 
                 ax[j,i].set_xticks([])
@@ -207,7 +259,7 @@ def plot_fit_residuals(ad:atomdata,axis=0,
                     ax[j,i].set_yticks([])
 
                 if j == Nr-1:
-                    ax[j,i].set_xlabel(f"{xvar[idx]:{xvarformat}}",rotation='vertical')
+                    ax[j,i].set_xlabel(xvarlabels[idx],rotation='vertical')
 
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label} fit residuals")
     fig.supxlabel(ad.xvarnames[0])
@@ -215,6 +267,4 @@ def plot_fit_residuals(ad:atomdata,axis=0,
     fig.tight_layout()
 
     plt.show()
-
-    return fig, ax
 
