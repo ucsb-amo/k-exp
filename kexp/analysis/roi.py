@@ -271,30 +271,39 @@ class roi_creator():
         given run.
 
         Controls:
-            LMB + drag: select an ROI rectangle.
-            RMB: clear the drawn ROI.
-            L/R arrow keys: scroll through ODs from the run.
-            Enter: submit your selection.
-            Escape / "X" button: close the GUI without submitting selection.
+            LMB + drag: Select an ROI rectangle.
+            MMB + drag: Draw a dotted-line rectangle for zooming.
+            MMB release: Zoom in to the selected region.
+            RMB: Clear the drawn ROI.
+            Mouse wheel scroll down: Zoom back out to full scale.
+            L/R arrow keys: Scroll through ODs from the run while keeping zoom.
+            Enter: Submit your selection.
+            Escape / "X" button: Close the GUI without submitting selection.
 
         Returns:
-            bool: Whether or not an ROI has been selected.
-            tuple: roix, given as [roix0,roix1] (the left and right bounds of
-            the ROI).
-            tuple: roiy, given as [roiy0,roiy1] (the left and right bounds of
-            the ROI).
-        """        
+            bool: Whether an ROI has been selected.
+            tuple: roix, given as [roix0, roix1] (left and right bounds of the ROI).
+            tuple: roiy, given as [roiy0, roiy1] (top and bottom bounds of the ROI).
+        """       
         image = self.image
+        original_image = image.copy()  # Store the full-scale image
         img_index = 0
+        zooming = False
+        zoom_region = None  # Store zoomed region coordinates
 
         def draw_rectangle(event, x, y, flags, param):
-            
+            nonlocal image, zoom_region, zooming
+
             if event == cv2.EVENT_LBUTTONDOWN:
                 self.drawing = True
                 self.start_x, self.start_y = x, y
                 
+            elif event == cv2.EVENT_MBUTTONDOWN:
+                zooming = True
+                self.start_x, self.start_y = x, y
+
             elif event == cv2.EVENT_MOUSEMOVE:
-                if self.drawing:
+                if self.drawing or zooming:
                     self.end_x = max(min(x, image.shape[1] - 1), 0)
                     self.end_y = max(min(y, image.shape[0] - 1), 0)
                     
@@ -303,41 +312,80 @@ class roi_creator():
                 self.end_x = max(min(x, image.shape[1] - 1), 0)
                 self.end_y = max(min(y, image.shape[0] - 1), 0)
 
+            elif event == cv2.EVENT_MBUTTONUP:
+                zooming = False
+                self.end_x = max(min(x, image.shape[1] - 1), 0)
+                self.end_y = max(min(y, image.shape[0] - 1), 0)
+
+                if self.start_x != -1 and self.start_y != -1 and self.end_x != -1 and self.end_y != -1:
+                    zoom_region = (self.start_x, self.start_y, self.end_x, self.end_y)
+                    zoomed_region = image[self.start_y:self.end_y, self.start_x:self.end_x]
+                    image = cv2.resize(zoomed_region, (original_image.shape[1], original_image.shape[0]), interpolation=cv2.INTER_LINEAR)
+
             elif event == cv2.EVENT_RBUTTONDOWN:
                 self.drawing = False
-                self.start_x = -1
-                self.start_y = -1
-                self.end_x = -1
-                self.end_y = -1
+                zooming = False
+                self.start_x, self.start_y = -1, -1
+                self.end_x, self.end_y = -1, -1
+                image = original_image.copy()  # Restore full-size image
+                zoom_region = None  # Clear zoom region
+
+            # elif event == cv2.EVENT_MOUSEWHEEL:
+            #     if flags < 0:  # Scroll down to zoom out
+            #         image = original_image.copy()  # Restore full-size image
+            #         zoom_region = None  # Clear zoom region
 
         cv2.namedWindow('OD')
         cv2.setMouseCallback('OD', draw_rectangle)
 
         while True:
             img_copy = image.copy()
+
             if self.start_x != -1 and self.start_y != -1 and self.end_x != -1 and self.end_y != -1:
-                cv2.rectangle(img_copy, (self.start_x, self.start_y), (self.end_x, self.end_y), (255, 255, 255), 2)
+                color = (255, 255, 255)  
+                thickness = 2 if self.drawing else 1
+                line_type = cv2.LINE_8 if self.drawing else cv2.LINE_4  # Solid for LMB, dotted for MMB
+                cv2.rectangle(img_copy, (self.start_x, self.start_y), (self.end_x, self.end_y), color, thickness, line_type)
+
             cv2.imshow('OD', img_copy)
-            
+
             key = cv2.waitKeyEx(1)
-            # img_index = (img_index + 1) % self.N_img
-            # image = self.get_od(img_index)
             if key == 13:  # Enter key
                 break
             elif key == 2555904:  # Right arrow key ➡️
                 img_index = (img_index + 1) % self.N_img
                 image = self.get_od(img_index)
+                if zoom_region:
+                    start_x, start_y, end_x, end_y = zoom_region
+                    zoomed_region = image[start_y:end_y, start_x:end_x]
+                    image = cv2.resize(zoomed_region, (original_image.shape[1], original_image.shape[0]), interpolation=cv2.INTER_LINEAR)
+
             elif key == 2424832:  # Left arrow key ⬅️
                 img_index = (img_index - 1) % self.N_img
                 image = self.get_od(img_index)
-            if cv2.getWindowProperty('OD',cv2.WND_PROP_VISIBLE) < 1: # if window x button clicked
+                print(zoom_region)
+                if zoom_region:
+                    start_x, start_y, end_x, end_y = zoom_region
+                    zoomed_region = image[start_y:end_y, start_x:end_x]
+                    image = cv2.resize(zoomed_region, (original_image.shape[1], original_image.shape[0]), interpolation=cv2.INTER_LINEAR)
+
+            if cv2.getWindowProperty('OD', cv2.WND_PROP_VISIBLE) < 1:  # If window "X" button clicked
                 break
-            if key == 27: # escape key
+            if key == 27:  # Escape key
                 break
 
         cv2.destroyAllWindows()
         self.h5_file.close()
 
-        out = np.array([self.start_x, self.start_y, self.end_x, self.end_y])
+        # Map ROI coordinates **back to full-size image**
+        scale_x = original_image.shape[1] / image.shape[1]
+        scale_y = original_image.shape[0] / image.shape[0]
+        
+        mapped_start_x = int(self.start_x * scale_x)
+        mapped_end_x = int(self.end_x * scale_x)
+        mapped_start_y = int(self.start_y * scale_y)
+        mapped_end_y = int(self.end_y * scale_y)
+
+        out = np.array([mapped_start_x, mapped_start_y, mapped_end_x, mapped_end_y])
         update_bool = not np.all(out == -1)
-        return update_bool, np.sort([self.start_x, self.end_x]), np.sort([self.end_y, self.start_y])
+        return update_bool, np.sort([mapped_start_x, mapped_end_x]), np.sort([mapped_end_y, mapped_start_y])
