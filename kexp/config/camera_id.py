@@ -5,7 +5,7 @@ class camera_frame():
         
         self.andor = AndorParams(amp_absorption=0.09, exposure_time_abs=15.e-6, em_gain_abs=300.,
                                 amp_fluorescence=0.54, exposure_time_fluor=25.e-6, em_gain_fluor=1.,
-                                amp_dispersive=0.15, exposure_time_dispersive=100.e-6, em_gain_dispersive=300.,
+                                amp_dispersive=0.4, exposure_time_dispersive=5.e-6, em_gain_dispersive=300.,
                                 magnification=18.4,
                                 t_light_only_image_delay=75.e-3,
                                 t_dark_image_delay=75.e-3)
