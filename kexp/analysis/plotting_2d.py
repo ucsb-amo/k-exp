@@ -130,8 +130,6 @@ def mixOD_grid(ad,
     
     plt.gca().set_aspect(aspect)
 
-    plt.show()
-
 def plot_sum_od_fits(ad:atomdata,axis=0,
                      xvarformat='1.3f',
                      xvar0format='',
@@ -193,6 +191,3 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
     fig.supxlabel(f"{ad.xvarnames[1]}")
     fig.suptitle(f"Run ID: {ad.run_info.run_id}\nsum_od_{label}")
     fig.tight_layout()
-    plt.show() 
-
-    return fig, ax

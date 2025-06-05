@@ -9,6 +9,7 @@ def plot_mixOD(ad:atomdata,
                xvar_idx=0,
                xvarformat="1.2f",
                xvarmult = 1.,
+               xvarunit = "",
                lines=False,
                max_od=0.,
                figsize=[],
@@ -102,8 +103,12 @@ def plot_mixOD(ad:atomdata,
         ax.yaxis.set_visible(False)
         ax.xaxis.set_ticks([])
 
+    axislabel_str = f'{xvarnames[xvar_idx]}'
+    if xvarunit != "":
+        axislabel_str += f' ({xvarunit})'
+
     if swap_axes:
-        ax.set_ylabel(xvarnames[xvar_idx])
+        ax.set_ylabel(axislabel_str)
         # Set ticks at the center of each sub-image and rotate them vertically
         tick_positions = np.arange(py/2, max_height, py)
         ax.set_yticks(tick_positions)
@@ -112,7 +117,7 @@ def plot_mixOD(ad:atomdata,
         ax.set_yticklabels(xvarlabels, rotation='vertical', va='center')
         plt.minorticks_off()
     else:
-        ax.set_xlabel(xvarnames[xvar_idx])
+        ax.set_xlabel(axislabel_str)
         # Set ticks at the center of each sub-image and rotate them vertically
         tick_positions = np.arange(px/2, total_width, px)
         ax.set_xticks(tick_positions)
