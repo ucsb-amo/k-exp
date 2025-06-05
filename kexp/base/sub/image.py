@@ -376,8 +376,6 @@ class Image():
             if light_img_idx == N_pwa_target \
                 and img_idx == N_pwa_target:
 
-                print('hi')
-
                 delay(self.camera_params.t_light_only_image_delay)
                 self.light_image()
                 
