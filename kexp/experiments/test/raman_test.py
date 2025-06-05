@@ -8,18 +8,16 @@ class mot_killa(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False)
 
-        self.p.t_raman_pulse = 10.e-6
-        self.p.f_raman_transition = 44.e6
-
         self.finish_prepare(shuffle=True)
 
     @kernel
     def run(self):
         self.init_kernel()
-        self.raman.set_transition_frequency(40.e6)
-        self.raman.dds_minus.set_dds(amplitude=0.25)
-        self.raman.dds_plus.set_dds(amplitude=0.25)
-        self.raman.on()
+        self.ttl.pd_scope_trig()
+        self.ttl.imaging_shutter_x.on()
+        self.dds.imaging.on()
+        delay(0.7e-6)
+        self.dds.imaging.off()
 
     def analyze(self):
         import os
