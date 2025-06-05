@@ -190,6 +190,11 @@ class atomdata():
         if self.params.N_pwa_per_shot > 1:
             self.xvarnames = np.append(self.xvarnames,'idx_pwa')
             self.xvars.append(np.arange(self.params.N_pwa_per_shot))
+            self.xvardims = np.append(self.xvardims,self.params.N_pwa_per_shot)
+            self.Nvars += 1
+            np.append(self.sort_idx,np.arange(self.params.N_pwa_per_shot))
+            if not self.params.N_pwa_per_shot in self.sort_N:
+                np.append(self.sort_N,self.params.N_pwa_per_shot)
         else:
             self.img_atoms = self._dealer.strip_shot_idx_axis(self.img_atoms)[0]
             self.img_light = self._dealer.strip_shot_idx_axis(self.img_light)[0]
