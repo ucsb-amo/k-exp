@@ -203,7 +203,7 @@ class DDS():
    def off(self, dac_update = True, dac_load = True):
       self.update_dac_bool()
       self.dds_device.sw.off()
-      delay(1*us)
+      # delay(1*us)
       if self.dac_control_bool and dac_update:
          self.dac_device.write_dac(channel=self.dac_ch,voltage=0.)
          if dac_load:

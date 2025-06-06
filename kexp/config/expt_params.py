@@ -107,7 +107,7 @@ class ExptParams():
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
-        self.t_raman_pi_pulse = 4.2329144711594805e-06
+        self.t_raman_pi_pulse = 4.14044251866737e-06
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -236,7 +236,7 @@ class ExptParams():
         self.v_pd_tweezer_1064_ramp_end = 8.9
         self.v_pd_tweezer_1064_rampdown_end = 1.6
         self.v_pd_tweezer_1064_rampdown2_end = .12
-        self.v_pd_tweezer_1064_rampdown3_end = .7
+        self.v_pd_tweezer_1064_rampdown3_end = 1.2
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
@@ -259,7 +259,7 @@ class ExptParams():
         self.amp_tweezer_list = [.14,.145]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = 1.3
+        self.v_tweezer_paint_amp_max = 1.
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -315,6 +315,8 @@ class ExptParams():
         self.i_lf_tweezer_load_current = 15.5
         self.i_lf_tweezer_evap1_current = 14.
         self.i_lf_tweezer_evap2_current = 13.2
+
+        self.i_spin_mixture = 19.48
 
         # high field evap
         self.i_lightsheet_evap1_current = 193.2
