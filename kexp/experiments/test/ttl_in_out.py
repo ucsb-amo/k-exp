@@ -18,7 +18,7 @@ class trap_frequency(EnvExperiment):
         self.core: Core
         self.ttl_in: TTLInOut
         self.ttl_out: TTLOut
-        self.T = 10
+        self.T = 20
         self.a = 0
         self.slm = SLM(core=self.core)
 
@@ -33,37 +33,40 @@ class trap_frequency(EnvExperiment):
             
     @kernel
     def run(self):
-        self.core.reset()                       #resets core device
+        self.core.reset()                    
         delay(1.e-3)
-        self.slm.write_phase_mask_kernel(dimension=0.)
-        delay(1.e-3)
+        self.slm.write_phase_mask_kernel(dimension=100.e-6, phase=1., x_center=100, y_center=10, mask_type='spot')
+        delay(1.e-4)
         self.wait_for_SLM()
+        delay(1.e-3)
+        self.slm.write_phase_mask_kernel(dimension=100.e-6, phase=0., x_center=100, y_center=10, mask_type='spot')
 
     @kernel
     def wait_for_SLM(self):                              
         
-        for i in range(self.T):
-
-            delay(10*us) 
-            t_end = self.ttl_in.gate_rising(50e-3)    #opens gate for rising edges to be detected on TTL0 for 10ms
-                                                    #sets variable t_end as time(in MUs) at which detection stops
+        for i in [1,2,3,4]:
+            
+           
+            t_end = self.ttl_in.gate_rising(100e-3)      #opens gate for rising edges to be detected on TTL0 for 10ms
+                                                        #sets variable t_end as time(in MUs) at which detection stops
                                                 
-            t_edge = self.ttl_in.timestamp_mu(t_end)  #sets variable t_edge as time(in MUs) at which first edge is detected
-                                                #if no edge is detected, sets
-                                                #t_edge to -1
-                                                
+            t_edge = self.ttl_in.timestamp_mu(t_end)    #sets variable t_edge as time(in MUs) at which first edge is detected
+                                                        #if no edge is detected, sets
+                                                        #t_edge to -1
+                                          
             if t_edge > 0:                          #runs if an edge has been detected
                 at_mu(t_edge)                       #set time cursor to position of edge
                 # delay(5*us)   
-                # aprint("on")                      #5us delay, to prevent underflow
                 # self.ttl6.pulse(5*ms)               #outputs 5ms pulse on TTL6
                 self.a = i
+                # aprint(i)
                 break
             else:
                 # aprint("off")
                 if i == self.T:
                     raise ValueError("SLM is not ready for next uploading")
-            # self.ttl_in.count(t_end)                  #discard remaining edges and close gate
+             
+            delay(10*us)        
         aprint(self.a)
 
     def analyze(self):
