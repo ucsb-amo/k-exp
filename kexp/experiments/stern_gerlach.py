@@ -36,11 +36,13 @@ class rabi_surf(EnvExperiment, Base):
         # self.p.frequency_pci_pulse = 303.4e6
         # self.p.amp_pci_pulse = 0.15
 
+        self.p.t_sg_gradient_ramp = 5.e-3
+        self.p.t_sg_gradient_rampdown = 5.e-3
         self.p.t_sg_gradient_hold = 1.e-3
-        self.p.i_sg = 80.
+        self.p.i_sg = 5.
 
         # self.xvar('t_sg_gradient_hold',np.linspace(0.,10.,3)*1.e-3)
-        self.xvar('do_sg',[0,1])
+        # self.xvar('do_sg',[0,1])
         # self.xvar('dum',[0])
 
         ### misc params ###
@@ -62,18 +64,25 @@ class rabi_surf(EnvExperiment, Base):
         self.prepare_lf_tweezers()
         ### start experiment ###
 
-        self.prep_stern_gerlach()
+        # self.prep_stern_gerlach()
         self.prep_raman()
         # self.hadamard()
 
+        self.inner_coil.on()
+        self.inner_coil.set_voltage(20.)
+        self.inner_coil.ramp_supply(t=self.p.t_sg_gradient_ramp,
+                                    i_end=self.p.i_sg)
+        self.inner_coil.ramp_supply(t=self.p.t_sg_gradient_rampdown,
+                                    i_end=0.)
+        self.inner_coil.off()
         self.tweezer.off()
 
         # if self.p.do_sg:
-        self.stern_gerlach()
+        # self.stern_gerlach()
         # else:
         #     pass
 
-        # delay(self.p.t_tof)
+        delay(self.p.t_tof)
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.abs_image()
 

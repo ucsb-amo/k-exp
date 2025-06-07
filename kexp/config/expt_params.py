@@ -75,6 +75,7 @@ class ExptParams():
         
         self.t_lightsheet_rampup = .7
         self.t_lightsheet_rampdown = .24
+        self.t_hf_lightsheet_rampdown = .6
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
@@ -86,6 +87,10 @@ class ExptParams():
         self.t_tweezer_1064_rampdown = 80.e-3 
         self.t_tweezer_1064_rampdown2 = 330.e-3   
         self.t_tweezer_1064_rampdown3 = .6
+        self.t_hf_tweezer_1064_ramp = .37
+        self.t_hf_tweezer_1064_rampdown = 80.e-3 
+        self.t_hf_tweezer_1064_rampdown2 = 330.e-3   
+        self.t_hf_tweezer_1064_rampdown3 = .6
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
@@ -223,6 +228,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 9.4
         self.v_pd_lightsheet_rampdown_end = 1.1 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = 1.1 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -237,6 +243,11 @@ class ExptParams():
         self.v_pd_tweezer_1064_rampdown_end = 1.6
         self.v_pd_tweezer_1064_rampdown2_end = .12
         self.v_pd_tweezer_1064_rampdown3_end = 1.2
+
+        self.v_pd_hf_tweezer_1064_ramp_end = 8.9
+        self.v_pd_hf_tweezer_1064_rampdown_end = 1.6
+        self.v_pd_hf_tweezer_1064_rampdown2_end = .12
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 1.2
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
@@ -295,8 +306,8 @@ class ExptParams():
         # raman
         self.frequency_raman_plus = 160.e6 
         self.frequency_raman_minus = 140.e6
-        self.amp_raman_plus = .25
-        self.amp_raman_minus = .25
+        self.amp_raman_plus = .35
+        self.amp_raman_minus = .35
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
@@ -319,11 +330,11 @@ class ExptParams():
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_lightsheet_evap1_current = 193.2
+        self.i_hf_lightsheet_evap1_current = 193.2
 
-        self.i_tweezer_load_current = 193.4
-        self.i_tweezer_evap1_current = 193.86
-        self.i_tweezer_evap2_current = 193.8
+        self.i_hf_tweezer_load_current = 193.4
+        self.i_hf_tweezer_evap1_current = 193.86
+        self.i_hf_tweezer_evap2_current = 193.8
 
         # self.i_evap2_current = 198.45
         # self.i_evap3_current = 198.7

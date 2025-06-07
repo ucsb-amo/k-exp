@@ -16,7 +16,7 @@ class rabi_surf(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 5
         self.p.N_pwa_per_shot = 1
 
         ### imaging setup ###
@@ -36,14 +36,13 @@ class rabi_surf(EnvExperiment, Base):
         # self.p.frequency_detuned_imaging_m1 = 400.e6
 
         ### Experiment setup
-        
         self.camera_params.amp_imaging = 0.11
 
         # t_list = np.linspace(-1,1,9) * self.p.t_raman_pi_pulse
         # self.xvar('dt_initial_pci_offset',t_list)
         self.p.dt_initial_pci_offset = 0.
 
-        self.xvar('phase_pci_pulses_relto_raman_drive',np.linspace(0.5,2.5,15))
+        self.xvar('phase_pci_pulses_relto_raman_drive',np.linspace(0.,3.14,20))
         self.p.phase_pci_pulses_relto_raman_drive = 0.
         self.p.N_flops = 3
 
@@ -51,14 +50,16 @@ class rabi_surf(EnvExperiment, Base):
         # self.xvar('t_raman_pulse',self.p.t_raman_pi_pulse*np.arange(0.,
         #                                                             2*self.p.N_flops + rabi_flop_sampling_interval,
         #                                                             rabi_flop_sampling_interval))
-        # self.xvar('t_raman_pulse',self.p.t_raman_pi_pulse*np.linspace(0.,6.,10))
+        # self.xvar('t_raman_pulse',self.p.t_raman_pi_pulse*np.linspace(0.,3.,20))
         # self.p.t_raman_pulse = self.p.t_raman_pi_pulse/2 + self.p.t_raman_pi_pulse * 2 * np.pi
         # self.p.t_raman_pulse = 0.
 
         self.p.frequency_detuned_pci_during_rabi = self.p.frequency_detuned_imaging_midpoint
         # self.xvar('amp_pci_during_rabi', np.linspace(.08,.21,10))
-        self.p.amp_pci_during_rabi = 0.15
-        self.p.t_pci_pulse = 0.6
+        self.p.amp_pci_during_rabi = 0.11
+        self.p.t_pci_pulse = 0.6e-6
+
+        self.p.t_raman_pi_pulse = 3.8e-6
         
         # self.xvar('amp_pci_imaging',np.linspace(0.1,0.25,7))
         self.p.amp_pci_imaging = 0.2
@@ -66,7 +67,7 @@ class rabi_surf(EnvExperiment, Base):
 
         ### misc params ###
         self.p.phase_slm_mask = 0.5 * np.pi
-        self.p.t_tof = 300.e-6
+        self.p.t_tof = 500.e-6
         self.p.frequency_tweezer_list = [74.e6]
         self.p.amp_tweezer_list = [.75]
 
