@@ -487,7 +487,7 @@ class Cooling():
         # self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_supply(self.params.i_magtrap_init)
         # self.inner_coil.set_voltage(i_supply)
-        self.inner_coil.on()
+        # self.inner_coil.on()
 
         self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c,
                                        v_pd=v_pd_d1_c)
@@ -827,7 +827,9 @@ class Cooling():
                                     i_start=i_magtrap_ramp_end,
                                     i_end=0.)
             else:
-                pass
+                self.inner_coil.ramp_supply(t=t_magtrap_rampdown,
+                                    i_start=i_magtrap_init,
+                                    i_end=0.)
             self.inner_coil.snap_off()
 
     @kernel

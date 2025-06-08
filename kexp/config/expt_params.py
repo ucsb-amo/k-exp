@@ -76,6 +76,7 @@ class ExptParams():
         self.t_lightsheet_rampup = .7
         self.t_lightsheet_rampdown = .24
         self.t_hf_lightsheet_rampdown = .6
+        self.t_hf_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown3 = .01
         self.t_lightsheet_load = 10.e-3
