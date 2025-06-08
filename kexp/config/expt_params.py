@@ -88,7 +88,7 @@ class ExptParams():
         self.t_tweezer_1064_rampdown = 80.e-3 
         self.t_tweezer_1064_rampdown2 = 330.e-3   
         self.t_tweezer_1064_rampdown3 = .6
-        self.t_hf_tweezer_1064_ramp = .37
+        self.t_hf_tweezer_1064_ramp = .54
         self.t_hf_tweezer_1064_rampdown = 80.e-3 
         self.t_hf_tweezer_1064_rampdown2 = 330.e-3   
         self.t_hf_tweezer_1064_rampdown3 = .6
