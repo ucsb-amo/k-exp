@@ -69,7 +69,7 @@ class rabi_surf(EnvExperiment, Base):
         self.p.phase_slm_mask = 0.5 * np.pi
         self.p.t_tof = 500.e-6
         self.p.frequency_tweezer_list = [74.e6]
-        self.p.amp_tweezer_list = [.75]
+        self.p.amp_tweezer_list = [.99]
 
         self.t = np.zeros(10000,np.int64)
         self.t_idx = 0
