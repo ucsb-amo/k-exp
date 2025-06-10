@@ -870,10 +870,9 @@ class tweezer():
     def get_trap_position(self,idx) -> TFloat:
         return self.traps_saved[idx].position
     
-    def awg_init(self):
+    def awg_init(self,two_d = False):
         """Connects to spectrum AWG, sets full-scale voltage amplitude, initializes trigger mode.
         """        
-
         self.card = spcm.Card(self._awg_ip)
 
         self.card.open(self._awg_ip)
@@ -915,7 +914,8 @@ class tweezer():
         self.core_list = [hex(2**n) for n in range(20)]
 
         # assign dds cores to channel
-        # self.dds.cores_on_channel(1, *self.core_list)
+        if two_d:
+            self.dds.cores_on_channel(1, spcm.SPCM_DDS_CORE8,spcm.SPCM_DDS_CORE9,spcm.SPCM_DDS_CORE10,spcm.SPCM_DDS_CORE11)
 
         self.dds.write_to_card()
 
@@ -951,6 +951,41 @@ class tweezer():
                 pass
         self.dds.exec_at_trg()
         self.dds.write()
+
+    def set_static_2d_tweezers(self, freq_list1=[0.], amp_list1=[0.], phase_list1=[0.],freq_list2=[0.], amp_list2=[0.], phase_list2=[0.]):
+        """Sets a static tweezer array. If no arguments are provided,
+        information is drawn from the class attribute "traps", which contains
+        TweezerTrap objects.
+
+        Args:
+            freq_list (ndarray,optional): array of frequencies in Hz
+            amp_list (ndarray,optional): array of amplitudes (min=0, max=1)
+            phase_list (ndarray,optional): array of phases.
+        """
+        phase_list1 = self.compute_tweezer_phases(amp_list1)
+        phase_list2 = self.compute_tweezer_phases(amp_list2)
+
+        if len(freq_list1) != len(amp_list1):
+            raise ValueError('Amplitude and frequency lists are not of equal length')
+        if len(freq_list2) != len(amp_list2):
+            raise ValueError('Amplitude and frequency lists are not of equal length')
+
+        for tweezer_idx in range(len(freq_list1)):
+            if tweezer_idx < len(freq_list1):
+                self.dds[tweezer_idx].amp(amp_list1[tweezer_idx])
+                self.dds[tweezer_idx].freq(freq_list1[tweezer_idx])
+                self.dds[tweezer_idx].phase(phase_list1[tweezer_idx])
+            else:
+                pass
+
+        for tweezer_idx in range(len(freq_list2)):
+            if tweezer_idx < len(freq_list2):
+                tweezer_idx = tweezer_idx + 8
+                self.dds[tweezer_idx].amp(amp_list2[tweezer_idx-8])
+                self.dds[tweezer_idx].freq(freq_list2[tweezer_idx-8])
+                self.dds[tweezer_idx].phase(phase_list2[tweezer_idx-8])
+            else:
+                pass
 
     def set_amp(self,tweezer_idx,amp,trigger=True):
         self.dds[tweezer_idx].set_amp(amp,trigger)

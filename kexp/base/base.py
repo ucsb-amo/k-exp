@@ -148,7 +148,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.lightsheet.init()
         
     @kernel
-    def init_scan_kernel(self):
+    def init_scan_kernel(self,two_d_tweezers = False):
         
         self.set_imaging_shutters()
         self.dds.init_cooling()
@@ -173,6 +173,11 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
 
         if self._setup_awg:
+            if two_d_tweezers:
+                self.tweezer.set_static_2d_tweezers(freq_list1=self.params.frequency_tweezer_list1,
+                                                    freq_list2=self.params.frequency_tweezer_list2,
+                                                    amp_list1=self.params.amp_tweezer_list1,
+                                                    amp_list2=self.params.amp_tweezer_list2)
             self.tweezer.reset_traps(self.xvarnames)
             delay(100.e-3)
             self.tweezer.awg_trg_ttl.pulse(t=1.e-6)

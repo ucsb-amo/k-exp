@@ -271,6 +271,12 @@ class ExptParams():
         self.amp_tweezer_list = [.14,.145]
         # self.amp_tweezer_list = [.4,.4]
 
+        self.frequency_tweezer_list1 = [72250000.,72833333.33333333,73416666.66666667,74000000.]
+        self.frequency_tweezer_list2 = [74050000.,74683333.33333333,75316666.66666667,75950000.]
+
+        self.amp_tweezer_list1 = [.25,.25,.25,.25]
+        self.amp_tweezer_list2 = [.25,.25,.25,.25]
+
         self.v_tweezer_paint_amp_max = 0.
 
         # tweezer movement params
