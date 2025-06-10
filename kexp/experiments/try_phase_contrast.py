@@ -48,7 +48,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_raman = .25
 
         self.p.frequency_tweezer_list = [74.e6]
-        a_list = [.75]
+        a_list = [.99]
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('beans',[0,1])

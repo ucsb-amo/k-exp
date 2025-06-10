@@ -2,6 +2,7 @@ import numpy as np
 
 from artiq.coredevice import ad53xx
 from artiq.experiment import kernel, portable
+from artiq.language.core import delay_mu
 
 from kexp.control.artiq.DDS import DDS
 from kexp.control.artiq.dummy_core import DummyCore
@@ -243,14 +244,17 @@ class dds_frame():
         self.raman_minus.set_dds(amplitude=0.)
         self.raman_plus.set_dds(amplitude=0.)
 
+        delay_mu(8)
         self.d1_3d_r.off()
         self.d1_3d_c.off()
         self.d2_3d_c.off()
         self.d2_3d_r.off()
+        delay_mu(8) # to avoid sequence errors from all the TTLs being at once
         self.d2_2dv_c.off()
         self.d2_2dv_r.off()
         self.d2_2dh_c.off()
         self.d2_2dh_r.off()
+        delay_mu(8)
         self.push.off()
         self.mot_killer.off()
         self.optical_pumping.off()

@@ -57,7 +57,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_pulse',np.linspace(0.,self.p.t_max,10))
 
         self.p.frequency_tweezer_list = [74.e6]
-        self.p.amp_tweezer_list = [.75]
+        self.p.amp_tweezer_list = [.99]
 
         self.p.t_mot_load = 1.
         self.p.t_tof = 500.e-6

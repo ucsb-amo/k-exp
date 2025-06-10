@@ -74,7 +74,7 @@ class ExptParams():
         self.t_optical_pumping_bias_rampup = 2.e-3
         
         self.t_lightsheet_rampup = .7
-        self.t_lightsheet_rampdown = .24
+        self.t_lightsheet_rampdown = .4
         self.t_hf_lightsheet_rampdown = .6
         self.t_hf_lightsheet_rampdown2 = .061
         self.t_lightsheet_rampdown2 = .061
@@ -85,9 +85,9 @@ class ExptParams():
         self.t_tweezer_ramp = .5
         self.t_tweezer_hold = 5.e-3
         self.t_tweezer_1064_ramp = .37
-        self.t_tweezer_1064_rampdown = 80.e-3 
-        self.t_tweezer_1064_rampdown2 = 330.e-3   
-        self.t_tweezer_1064_rampdown3 = .6
+        self.t_tweezer_1064_rampdown = 57.e-3 
+        self.t_tweezer_1064_rampdown2 = 314.e-3   
+        self.t_tweezer_1064_rampdown3 = .65
         self.t_hf_tweezer_1064_ramp = .54
         self.t_hf_tweezer_1064_rampdown = 80.e-3 
         self.t_hf_tweezer_1064_rampdown2 = 330.e-3   
@@ -246,8 +246,8 @@ class ExptParams():
         self.v_pd_tweezer_1064_rampdown3_end = 1.2
 
         self.v_pd_hf_tweezer_1064_ramp_end = 8.9
-        self.v_pd_hf_tweezer_1064_rampdown_end = 1.6
-        self.v_pd_hf_tweezer_1064_rampdown2_end = .12
+        self.v_pd_hf_tweezer_1064_rampdown_end = 1.
+        self.v_pd_hf_tweezer_1064_rampdown2_end = .15
         self.v_pd_hf_tweezer_1064_rampdown3_end = 1.2
         self.n_tweezer_ramp_steps = 1000
 
@@ -271,7 +271,7 @@ class ExptParams():
         self.amp_tweezer_list = [.14,.145]
         # self.amp_tweezer_list = [.4,.4]
 
-        self.v_tweezer_paint_amp_max = 1.
+        self.v_tweezer_paint_amp_max = 0.
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -324,7 +324,7 @@ class ExptParams():
         # low field evap NEW
         self.i_lf_lightsheet_evap1_current = 13.2
 
-        self.i_lf_tweezer_load_current = 15.5
+        self.i_lf_tweezer_load_current = 13.
         self.i_lf_tweezer_evap1_current = 14.
         self.i_lf_tweezer_evap2_current = 13.2
 
