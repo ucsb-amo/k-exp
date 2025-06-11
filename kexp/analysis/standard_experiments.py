@@ -132,6 +132,7 @@ def rabi_oscillation(ad:atomdata,
 
     Returns:
         t_pi: The pi pulse time in seconds.
+        popt: The fit result (order Omega, phi, B, A, tau)
     """
 
     # Define the Rabi oscillation function
@@ -299,7 +300,7 @@ def rabi_oscillation(ad:atomdata,
     except:
         t_pi = None
 
-    return t_pi
+    return t_pi, popt
 
 def rabi_oscillation_2d(ad:atomdata,
                         populations_array=[],
