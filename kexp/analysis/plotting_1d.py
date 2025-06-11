@@ -25,8 +25,6 @@ def plot_mixOD(ad:atomdata,
     else:
         od = ad.od
 
-    
-
     if max_od == 0.:
         max_od = np.max(od)
 
@@ -47,7 +45,7 @@ def plot_mixOD(ad:atomdata,
     else:
         total_width = n_shots * px
         max_height = n_repeats * py
-
+        
     # Create a figure and axis for plotting
     if figsize:
         fig, ax = plt.subplots(figsize=figsize)

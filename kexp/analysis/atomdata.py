@@ -14,6 +14,8 @@ from kexp.base.sub.scanner import xvar
 import kexp.util.data.server_talk as st
 import h5py
 
+from kexp.analysis.helper.datasmith import *
+
 import datetime
 
 from kexp.config.camera_id import img_types as img
@@ -215,63 +217,123 @@ class atomdata():
         self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
-    def slice_atomdata(self, which_xvar_idx, which_shot_idx):
+    def slice_atomdata(self, which_shot_idx=0, which_xvar_idx=0):
         """Slices along a given xvar index at a particular value (which_shot_idx) of
         that xvar, and returns an atomdata of reduced dimensionality as if that
         variable had been held constant.
 
         Args:
             ad (atomdata): The atomdata to be sliced.
-            which_xvar_idx (_type_): The index of the xvar to slice along.
-            which_shot_idx (_type_): The index of the xvar value to select.
+            which_shot_idx (list): The indices of the xvar value to select. If
+            of length 1, reduces the dimensionality of the dataset.
+            which_xvar_idx (int): The index of the xvar (or equivalently, the
+            axis of the data) to slice along.
 
         Returns:
             atomdata: The sliced atomdata object.
         """
 
         ad = atomdata(self.run_info.run_id)
+        which_shot_idx = ensure_ndarray(which_shot_idx, enforce_1d=True)
 
         # repeat handling is broken right now, in that if the repeats are on the
         # first axis, the function won't return an atomdata with all the repeats. To
         # be fixed later.
-        def check_for_repeat_axis():
-            for idx, arr in enumerate(ad.xvars):
-                _, counts = np.unique(arr, return_counts=True)
-                if np.any(counts > 1):
-                    slicing_repeat_axis_bool = (which_xvar_idx == idx)
-                    break
-            return slicing_repeat_axis_bool
+        def check_for_repeat_axis(which_xvar_idx, which_shot_idx):
+            """
+            Checks if the axis being sliced (which_xvar_idx) contains repeated values,
+            and if a subset (which_shot_idx) is selected, whether the subset contains
+            repeats, and if so, whether each value appears the same number of times.
+            Returns:
+                n_repeats (int): Number of repeats in the subset.
+            Raises:
+                ValueError: If the subset contains repeats but not all values
+                have the same count.
+            """
+            
+            arr = ad.xvars[which_xvar_idx]
+            _, counts = np.unique(arr, return_counts=True)
+            slicing_repeat_axis_bool = np.any(counts > 1)
+            if slicing_repeat_axis_bool:
+                print(f"Warning: this run has {ad.params.N_repeats} repeats, which are by default associated with xvar0. Depending on your choice of 'which_shot_idx', you may miss some repeats.")
+
+            n_repeats = 1
+            if slicing_repeat_axis_bool and len(which_shot_idx) > 1:
+                subset = arr[which_shot_idx]
+                _, subset_counts = np.unique(subset, return_counts=True)
+                if np.any(subset_counts > 1):
+                    if not np.all(subset_counts == subset_counts[0]):
+                        raise ValueError("When slicing into the axis with repeats, you must slice the same number of repeats for each value.")
+                    n_repeats = subset_counts[0]
+            return n_repeats
         
-        if ad.params.N_repeats > 1:
-            print('Warning: this run has repeats, which are by default associated with xvar 0. If you slice into the axis which has the repeats, you will only get one slice, not all the shots with that xvar0 value.')
-            # if you slice into the repeat axis, set N_repeats = 1.
-            if check_for_repeat_axis():
-                ad.params.N_repeats = 1
+        ad.params.N_repeats = check_for_repeat_axis(which_xvar_idx,which_shot_idx)
 
         # replace the param for the xvar being sliced with the slice value
         vars(ad.params)[ad.xvarnames[which_xvar_idx]] = ad.xvars[which_xvar_idx][which_shot_idx]
+
+        def remap_sort_idx_to_sequential(x):
+            """
+            Relabels the elements of x to sequential integers in the same order
+            as np.sort(x) starting from 0, ignoring any -1s (which are treated as padding).
+            The same number of padding -1s are added to the end of the array after remapping.
+            """
+            x = np.asarray(x)
+            # Find non-padding elements
+            valid_mask = x != -1
+            valid_vals = x[valid_mask]
+            unique_sorted = np.sort(np.unique(valid_vals))
+            mapping = {val: i for i, val in enumerate(unique_sorted)}
+            remapped = np.array([mapping[val] for val in valid_vals])
+            # Pad with -1s to match original length
+            n_pad = len(x) - len(remapped)
+            if n_pad > 0:
+                remapped = np.concatenate([remapped, -1 * np.ones(n_pad, dtype=int)])
+            return remapped
+
+        def grab_these_sort_idx(indices,which_xvar_idx=0):
+            """
+            Grabs the sort_idx elements corresponding to the indices in
+            which_shot_idx, and returns them as a new array padded with -1s
+            so that the returned array has the same length as the original sort_idx array.
+            """
+            taken = ad.sort_idx[which_xvar_idx][indices]
+            n_pad = len(ad.sort_idx[which_xvar_idx]) - len(taken)
+            if n_pad > 0:
+                taken = np.concatenate([taken, -1 * np.ones(n_pad, dtype=ad.sort_idx[which_xvar_idx].dtype)])
+            return taken
         
-        def remove_element_by_index(data, index):
-            if isinstance(data, list):
-                del data[index]
-            elif isinstance(data, np.ndarray):
-                data = np.delete(data, index)
-            return data
         # remove the xvars, xvarnames, and xvardims entry for that xvar
         keys = ['xvars','xvarnames','xvardims']
         # only remove the sort_N and sort_idx for this xvar if is the only one of
         # its length (otherwise another xvar also uses that sort_idx list)
         sliced_xvardim = ad.xvardims[which_xvar_idx]
-        if np.sum(ad.xvardims == sliced_xvardim) == 1:
-            sort_N_idx = np.where(ad.sort_N == sliced_xvardim)[0][0]
-            ad.sort_N = remove_element_by_index(ad.sort_N, sort_N_idx)
-            ad.sort_idx = remove_element_by_index(ad.sort_idx, sort_N_idx)
-        
-        for k in keys:
-            vars(ad)[k] = remove_element_by_index(vars(ad)[k],
-                                                    which_xvar_idx)
-        # decrement the number of variables by one
-        ad.Nvars -= 1
+        sort_N_idx = np.where(ad.sort_N == sliced_xvardim)[0][0]
+        if len(which_shot_idx) == 1 and ad.Nvars > 1:
+            # if you are slicing out a single shot, remove the xvar to reduce
+            # the dimensionality of the dataset
+            if np.sum(ad.xvardims == sliced_xvardim) == 1:
+                ad.sort_N = remove_element_by_index(ad.sort_N, sort_N_idx)
+                ad.sort_idx = remove_element_by_index(ad.sort_idx, sort_N_idx)
+
+            for k in keys:
+                vars(ad)[k] = remove_element_by_index(vars(ad)[k],
+                                                        which_xvar_idx)
+            # decrement the number of variables by one
+            ad.Nvars -= 1
+        else:
+            # otherwise, just slice the xvar without reducing atomdata dimensionality
+            if ad.sort_idx.size != 0:
+                ad.sort_N[sort_N_idx] = len(which_shot_idx)
+                ad.sort_idx[sort_N_idx] = grab_these_sort_idx(which_shot_idx,which_xvar_idx)
+                # you left out some sort_idx elements, so remap the sort_idx to
+                # sequential integers starting from 0.
+                ad.sort_idx[sort_N_idx] = remap_sort_idx_to_sequential(ad.sort_idx[sort_N_idx])
+
+            ad.xvars[which_xvar_idx] = np.take(ad.xvars[which_xvar_idx],
+                                               indices=which_shot_idx,
+                                               axis=which_xvar_idx)
+            ad.xvardims[which_xvar_idx] = len(which_shot_idx)
 
         def slice_ndarray(array):
             return np.take(array,
@@ -592,6 +654,7 @@ class atomdata():
             except:
                 self.sort_idx = []
                 self.sort_N = []
+                
 
 # class ConcatAtomdata(atomdata):
 #     def __init__(self,rids=[],roi_id=None,lite=False):

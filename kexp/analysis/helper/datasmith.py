@@ -130,3 +130,30 @@ def get_repeat_std_error(array,N_repeats):
     std_error = np.std(np.reshape(array,(-1,Nr)),axis=1)/np.sqrt(Nr)
 
     return means, std_error
+
+def ensure_ndarray(var, enforce_1d=True):
+    """Ensures that the input is a numpy ndarray. If the input is a float,
+    int, or list, it converts it to a 1D numpy array. If the input is already
+    a numpy ndarray, it returns it as is. If enforce_1d is True, it raises an error
+    if the input is more than 1-dimensional.
+    """
+    if isinstance(var, (float, int)):
+        arr = np.array([var])
+    elif isinstance(var, list):
+        arr = np.array(var)
+    elif isinstance(var, np.ndarray):
+        arr = var
+    else:
+        raise TypeError("Input must be float, int, list, or ndarray")
+    if arr.ndim > 1 and enforce_1d:
+        raise ValueError("Input array must be at most 1-dimensional")
+    return arr
+
+def remove_element_by_index(data, index):
+    """Removes the element at the specified index from data, which can
+    be a list or a numpy array."""
+    if isinstance(data, list):
+        del data[index]
+    elif isinstance(data, np.ndarray):
+        data = np.delete(data, index)
+    return data
