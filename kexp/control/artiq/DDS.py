@@ -4,7 +4,7 @@ from artiq.language.core import now_mu, at_mu
 from kexp.util.db.device_db import device_db
 import numpy as np
 
-from artiq.coredevice import ad9910, ad53xx
+from artiq.coredevice import ad9910, ad53xx, ttl
 from artiq.coredevice.urukul import CPLD
 
 from kexp.util.artiq.async_print import aprint
@@ -51,6 +51,8 @@ class DDS():
 
       self._t_set_delay_mu = self._t_set_xfer_mu + self._t_ref_period_mu + 1
       self._t_att_delay_mu = self._t_att_xfer_mu + self._t_ref_period_mu + 1
+
+      self.dds_device.sw: ttl.TTLOut
 
    @portable
    def _stash_defaults(self):
@@ -203,7 +205,6 @@ class DDS():
    def off(self, dac_update = True, dac_load = True):
       self.update_dac_bool()
       self.dds_device.sw.off()
-      # delay(1*us)
       if self.dac_control_bool and dac_update:
          self.dac_device.write_dac(channel=self.dac_ch,voltage=0.)
          if dac_load:

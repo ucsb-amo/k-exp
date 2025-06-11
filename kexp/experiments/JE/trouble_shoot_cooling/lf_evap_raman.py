@@ -16,8 +16,8 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_detuned_imaging = 342.e6
         # self.xvar('beans',[0]*5)
 
-        self.xvar('t_tof',np.linspace(600.,1500.,10)*1.e-6)
-        self.p.t_tof = 1500.e-6
+        # self.xvar('t_tof',np.linspace(600.,1500.,10)*1.e-6)
+        self.p.t_tof = 1000.e-6
 
         # self.xvar('t_feshbach_field_rampup',np.linspace(15.,100.,10)*1.e-3)
         # self.t_feshbach_field_rampup = 100.e-3
@@ -70,13 +70,13 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.v_pd_tweezer_1064_rampdown2_end = .15
 
         # self.xvar('t_tweezer_1064_rampdown2',np.linspace(0.1,.6,8))
-        self.p.t_tweezer_1064_rampdown2 = .314
+        # self.p.t_tweezer_1064_rampdown2 = .314
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.4,1.5,15))
         self.p.v_pd_tweezer_1064_rampdown3_end = .79
 
         # self.xvar('t_tweezer_1064_rampdown3',np.linspace(0.3,.8,8))
-        self.p.t_tweezer_1064_rampdown3 = .65
+        # self.p.t_tweezer_1064_rampdown3 = .65
 
         # self.p.i_spin_mixture = 24.3
         self.p.i_spin_mixture = 20.57
@@ -108,7 +108,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('beans',[0,1])
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
 
         # self.p.phase_slm_mask = 3.14 / 2
         # self.xvar('amp_raman',np.linspace(.02,.15,20))
