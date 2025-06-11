@@ -77,6 +77,8 @@ def mixOD_grid(ad,
                 xvar1format="",
                 xvar0mult=1.,
                 xvar1mult=1.,
+                xvar0unit='',
+                xvar1unit='',
                 max_od=0.,
                 figsize=[],
                 aspect='auto'):
@@ -118,8 +120,15 @@ def mixOD_grid(ad,
         plt.figure(figsize=(10, 8))
     plt.imshow(full_image,vmin=0.,vmax=max_od)
     plt.title(f"Run ID: {ad.run_info.run_id}")
-    plt.xlabel(xvarnames[1])  # Label x-axis with the second x-variable name
-    plt.ylabel(xvarnames[0])  # Label y-axis with the first x-variable name
+    xv0str = ''
+    xv1str = ''
+    if xvar1unit != '':
+        xv1str = f' ({xvar1unit})'
+    if xvar0unit != '':
+        xv0str = f' ({xvar0unit})'
+    
+    plt.xlabel(xvarnames[1]+xv1str)  # Label x-axis with the second x-variable name
+    plt.ylabel(xvarnames[0]+xv0str)  # Label y-axis with the first x-variable name
 
     # Set ticks and labels for x and y axes
     plt.xticks(np.arange(0.5 * py, grid_cols * py, py), 
