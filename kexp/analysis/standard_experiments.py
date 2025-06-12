@@ -92,6 +92,7 @@ def rabi_oscillation(ad:atomdata,
                      plot_bool=True,
                      plot_raw_data=True,
                      fit_params_on_plot=True,
+                     fit_params_on_left=True,
                      fit_guess_frequency=dv_fit_guess_rabi_frequency,
                      fit_guess_phase=np.pi/2,
                      fit_guess_amp=1.,
@@ -128,6 +129,8 @@ def rabi_oscillation(ad:atomdata,
         avg_repeats (bool, optional): If True, averages repeats and plots with error bars.
         plot_bool (bool, optional): If True, plots the data and fit. Defaults to True.
         fit_params_on_plot (bool, optional): If True, puts the fit parameter values on the plot.
+        fit_params_on_left (bool, optional): If True, puts the fit parameter box
+        on the left side of the plot.
         
 
     Returns:
@@ -289,8 +292,15 @@ def rabi_oscillation(ad:atomdata,
                 fit_params_str = f"$\Omega$ = $2\pi \\times {popt[0]/(2*np.pi)/1.e3:1.2f}$ kHz"\
                     +f"\n$A = {popt[3]:1.2f}$, $B = {popt[2]:1.2f}$"\
                     +f"\n$\\tau = {popt[4]*1.e6:1.2f}$ us"
-                ax.text(0.6, 0.75, fit_params_str, transform=ax.transAxes,
-                        bbox=dict(facecolor='white', alpha=0.5, edgecolor='black', boxstyle='round,pad=0.5'))
+                if fit_params_on_left:
+                    x_pos = 0.05
+                    ha = 'left'
+                else:
+                    x_pos = 0.6
+                    ha = 'left'
+                ax.text(x_pos, 0.75, fit_params_str, transform=ax.transAxes,
+                        bbox=dict(facecolor='white', alpha=0.5, edgecolor='black', boxstyle='round,pad=0.5'),
+                        ha=ha)
             except:
                 pass
 

@@ -233,7 +233,7 @@ class atomdata():
             atomdata: The sliced atomdata object.
         """
 
-        ad = atomdata(self.run_info.run_id)
+        ad = atomdata(self.run_info.run_id, avg_repeats=self._analysis_tags.averaged)
         which_shot_idx = ensure_ndarray(which_shot_idx, enforce_1d=True)
 
         # repeat handling is broken right now, in that if the repeats are on the
@@ -262,6 +262,7 @@ class atomdata():
                 subset = arr[which_shot_idx]
                 _, subset_counts = np.unique(subset, return_counts=True)
                 if np.any(subset_counts > 1):
+                    print(subset_counts)
                     if not np.all(subset_counts == subset_counts[0]):
                         raise ValueError("When slicing into the axis with repeats, you must slice the same number of repeats for each value.")
                     n_repeats = subset_counts[0]
@@ -308,13 +309,17 @@ class atomdata():
         # only remove the sort_N and sort_idx for this xvar if is the only one of
         # its length (otherwise another xvar also uses that sort_idx list)
         sliced_xvardim = ad.xvardims[which_xvar_idx]
-        sort_N_idx = np.where(ad.sort_N == sliced_xvardim)[0][0]
+
+        if not self._analysis_tags.averaged:
+            sort_N_idx = np.where(ad.sort_N == sliced_xvardim)[0][0]
+            
         if len(which_shot_idx) == 1 and ad.Nvars > 1:
             # if you are slicing out a single shot, remove the xvar to reduce
             # the dimensionality of the dataset
-            if np.sum(ad.xvardims == sliced_xvardim) == 1:
-                ad.sort_N = remove_element_by_index(ad.sort_N, sort_N_idx)
-                ad.sort_idx = remove_element_by_index(ad.sort_idx, sort_N_idx)
+            if not self._analysis_tags.averaged:
+                if np.sum(ad.xvardims == sliced_xvardim) == 1:
+                    ad.sort_N = remove_element_by_index(ad.sort_N, sort_N_idx)
+                    ad.sort_idx = remove_element_by_index(ad.sort_idx, sort_N_idx)
 
             for k in keys:
                 vars(ad)[k] = remove_element_by_index(vars(ad)[k],
@@ -324,11 +329,12 @@ class atomdata():
         else:
             # otherwise, just slice the xvar without reducing atomdata dimensionality
             if ad.sort_idx.size != 0:
-                ad.sort_N[sort_N_idx] = len(which_shot_idx)
-                ad.sort_idx[sort_N_idx] = grab_these_sort_idx(which_shot_idx,which_xvar_idx)
-                # you left out some sort_idx elements, so remap the sort_idx to
-                # sequential integers starting from 0.
-                ad.sort_idx[sort_N_idx] = remap_sort_idx_to_sequential(ad.sort_idx[sort_N_idx])
+                if not self._analysis_tags.averaged:
+                    ad.sort_N[sort_N_idx] = len(which_shot_idx)
+                    ad.sort_idx[sort_N_idx] = grab_these_sort_idx(which_shot_idx,which_xvar_idx)
+                    # you left out some sort_idx elements, so remap the sort_idx to
+                    # sequential integers starting from 0.
+                    ad.sort_idx[sort_N_idx] = remap_sort_idx_to_sequential(ad.sort_idx[sort_N_idx])
 
             ad.xvars[which_xvar_idx] = np.take(ad.xvars[which_xvar_idx],
                                                indices=which_shot_idx,
