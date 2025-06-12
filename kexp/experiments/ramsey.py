@@ -20,22 +20,24 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_detuned_imaging_m1 = 286.e6
         self.p.frequency_detuned_imaging_0 = 318.e6
         self.p.frequency_detuned_imaging_midpoint = 608.e6
-
-        self.p.i_spin_mixture = 19.48
-        self.p.frequency_raman_transition = 41.236e6
         
         ### 
 
         self.p.t_hadamard = 1.62e-6
-        # self.xvar('t_ramsey',np.linspace(0.,20.e-6,10))
+        self.p.t_ramsey = 0.
+        self.xvar('t_ramsey',np.linspace(0.,60.e-6,30))
 
         ###
+
+        self.p.i_spin_mixture = 19.48
+        self.p.frequency_raman_transition = 41.236e6
+        self.p.amp_raman  = 0.25
 
         self.p.frequency_tweezer_list = [74.e6]
         self.p.amp_tweezer_list = [.99]
         self.p.t_mot_load = 1.
         self.p.t_tof = 300.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 10
 
         self.finish_prepare(shuffle=True)
 
@@ -46,9 +48,11 @@ class tweezer_load(EnvExperiment, Base):
 
         self.prepare_atoms()
 
-        # self.hadamard()
-        # delay(self.p.t_ramsey)
-        # self.hadamard()
+        self.init_raman()
+
+        self.hadamard()
+        delay(self.p.t_ramsey)
+        self.hadamard()
 
         self.tweezer.off()
 
