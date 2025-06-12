@@ -40,9 +40,8 @@ class RamanBeamPair():
     @kernel
     def set_transition_frequency(self,frequency_transition):
         self._frequency_array = self.state_splitting_to_ao_frequency(frequency_transition)
-        with parallel:
-            self.dds_plus.set_dds(frequency=self._frequency_array[0])
-            self.dds_minus.set_dds(frequency=self._frequency_array[1])
+        self.dds_plus.set_dds(frequency=self._frequency_array[0])
+        self.dds_minus.set_dds(frequency=self._frequency_array[1])
 
     @kernel
     def on(self):
@@ -56,16 +55,7 @@ class RamanBeamPair():
 
     @kernel
     def pulse(self,t,frequency_transition,
-              amp_raman_plus = dv,
-              amp_raman_minus = dv,
               set_transition_frequency_bool=True):
-        if amp_raman_plus == dv:
-            amp_raman_plus = self.params.amp_raman_plus
-        if amp_raman_plus == dv:
-            amp_raman_minus = self.params.amp_raman_minus
-
-        self.dds_plus.set_dds(amplitude=amp_raman_plus)
-        self.dds_minus.set_dds(amplitude=amp_raman_minus)
 
         if set_transition_frequency_bool:
             self.set_transition_frequency(frequency_transition)
