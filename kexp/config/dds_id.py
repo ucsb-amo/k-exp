@@ -266,15 +266,15 @@ class dds_frame():
         """See 'power_down_cooling`. Reboots the DDS cores for the near-resonant
         light and sets them to their defaults.
         """
-        self.d1_3d_r.set_dds(set_stored=True)
-        self.d1_3d_c.set_dds(set_stored=True)
-        self.d2_3d_c.set_dds(set_stored=True)
-        self.d2_3d_r.set_dds(set_stored=True)
-        self.d2_2dh_c.set_dds(set_stored=True)
-        self.d2_2dh_r.set_dds(set_stored=True)
-        self.d2_2dv_c.set_dds(set_stored=True)
-        self.d2_2dv_r.set_dds(set_stored=True)
-        self.push.set_dds(set_stored=True)
+        self.d1_3d_r.set_dds()
+        self.d1_3d_c.set_dds()
+        self.d2_3d_c.set_dds()
+        self.d2_3d_r.set_dds()
+        self.d2_2dh_c.set_dds()
+        self.d2_2dh_r.set_dds()
+        self.d2_2dv_c.set_dds()
+        self.d2_2dv_r.set_dds()
+        self.push.set_dds()
 
     @portable
     def reset_defaults(self):
