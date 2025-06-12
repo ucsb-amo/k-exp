@@ -155,35 +155,7 @@ class Cooling():
                         v_yshim_current=self.params.v_yshim_current_magtrap,
                         v_xshim_current=self.params.v_xshim_current_magtrap)
         delay(2.e-3)
-        self.dds.optical_pumping.set_dds(set_stored=True)
-        self.dds.optical_pumping.on()
-        delay(t)
-        self.dds.optical_pumping.off()
-        self.flash_cooler()
-
-    @kernel
-    def pump_to_F1_test(self,t=dv,
-                   v_zshim_current = dv,
-                   v_yshim_current = dv,
-                   v_xshim_current = dv,
-                   iterations = dv):
-
-        if t == dv:
-            t = self.params.t_pump_to_F1
-        if v_zshim_current == dv:
-            v_zshim_current = self.params.v_zshim_current_magtrap
-        if v_yshim_current == dv:
-            v_yshim_current = self.params.v_yshim_current_magtrap
-        if v_xshim_current == dv:
-            v_xshim_current = self.params.v_xshim_current_magtrap
-        if iterations == dv:
-            iterations = 5
-
-        self.set_shims(v_zshim_current=self.params.v_zshim_current_magtrap,
-                        v_yshim_current=self.params.v_yshim_current_magtrap,
-                        v_xshim_current=self.params.v_xshim_current_magtrap)
-        delay(2.e-3)
-        self.dds.optical_pumping.set_dds(set_stored=True)
+        self.dds.optical_pumping.set_dds()
         self.dds.optical_pumping.on()
         delay(t)
         self.dds.optical_pumping.off()
