@@ -162,7 +162,7 @@ class Devices():
     @kernel
     def set_all_dds(self):
         for dds in self.dds.dds_list:
-            dds.set_dds(set_stored=True)
+            dds.set_dds()
             dds.dds_device.set_att(0. * dB)
             delay(5.e-6)
 
