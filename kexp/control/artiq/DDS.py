@@ -98,7 +98,7 @@ class DDS():
       return freq * 1.e6
    
    @portable(flags={"fast-math"})
-   def frequency_to_detuning(self,frequency,single_pass=False) -> TFloat:
+   def frequency_to_detuning(self,frequency) -> TFloat:
       frequency = float(frequency) / 1e6
       f_shift_to_resonance = 461.7 / 2
       linewidth_MHz = 6
@@ -131,68 +131,35 @@ class DDS():
       else:
          frequency = self.detuning_to_frequency(linewidths_detuned=delta)
 
-      if self.dac_control_bool:
-         self.set_dds(frequency=frequency, amplitude=amplitude, v_pd=v_pd)
-      else:
-         self.set_dds(frequency=frequency, amplitude=amplitude)
+      self.set_dds(frequency=frequency, amplitude=amplitude, v_pd=v_pd)
 
    @kernel(flags={"fast-math"})
-   def set_dds(self, frequency = -0.1, amplitude = -0.1, v_pd = -0.1, set_stored = False):
-      '''Set the dds device. If frequency = 0, turn it off'''
+   def set_dds(self, frequency=-0.1, amplitude=-0.1, v_pd=-0.1):
+      """Set the DDS device. If frequency < 0, use stored value. If frequency = 0, turn it off."""
 
-      # update dac_control_bool if not already updated
       self.update_dac_bool()
 
-      # set unspecified parameters to default values if set_stored
-      # otherwise, set_dds will not set unspecified values to save time
-      if set_stored:
-         if frequency < 0.:
-            frequency = self.frequency
-         if amplitude < 0.:
-            amplitude = self.amplitude
-         if v_pd < 0.:
-            v_pd = self.v_pd
+      self.frequency = frequency if frequency >= 0. else self.frequency
+      frequency = self.frequency
 
-         self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude)
-         if self.dac_control_bool:
-            self.update_dac_setpoint(self.v_pd)
-      else:
-         # determine which values need to be set
-         _set_freq = frequency >= 0.
-         if self.dac_control_bool:
-            _set_vpd = v_pd > 0.
-            _set_amp = (amplitude >= 0.)
-         else:
-            _set_amp = (amplitude >= 0.)
-            _set_vpd = False
-         _set_freq_and_power = _set_freq and (_set_amp or _set_vpd)
+      self.amplitude = amplitude if amplitude >= 0. else self.amplitude
+      amplitude = self.amplitude
 
-         if not frequency < 0.:
-            self.frequency = frequency
-         if not amplitude < 0.:
-            self.amplitude = amplitude
-         if not v_pd < 0.:
-            self.v_pd = v_pd
-
-         # set the things which need to be set
-         if _set_freq_and_power:
-            if self.dac_control_bool:
-               self.update_dac_setpoint(v_pd)
-            self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-         elif _set_freq:
-            self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-         if not _set_freq_and_power:
-            if _set_amp:
-               self.dds_device.set(frequency=self.frequency,amplitude=self.amplitude)
-            if _set_vpd:
-               self.update_dac_setpoint(v_pd)
+      self.v_pd = v_pd if v_pd >= 0. else self.v_pd
+      v_pd = self.v_pd
+      
+      # Set DDS and DAC as needed
+      if self.dac_control_bool:
+         self.update_dac_setpoint(v_pd)
+      if frequency >= 0. or amplitude >= 0.:
+         self.dds_device.set(frequency=frequency, amplitude=amplitude)
    
    @kernel
    def update_dac_setpoint(self, v_pd=-0.1, dac_load = True):
-      if v_pd < 0.:
-         v_pd = self.v_pd
-      else:
-         self.v_pd = v_pd # code breaks without that line
+
+      self.v_pd = v_pd if v_pd >= 0. else self.v_pd
+      v_pd = self.v_pd
+
       self.dac_device.write_dac(channel=self.dac_ch, voltage=v_pd)
       if dac_load:
          self.dac_device.load()

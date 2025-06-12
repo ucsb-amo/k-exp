@@ -193,14 +193,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         
         self.dds.d1_beatlock_ref.on()
 
-    # @kernel
-    # def cleanup_scan_kernel(self):
-    #     if self.run_info.imaging_type == img.DISPERSIVE or self.run_info.imaging_type == img.FLUORESCENCE:
-    #         delay(self.params.t_light_only_image_delay)
-    #         self.light_image()
-    #         delay(self.params.t_dark_image_delay)
-    #         self.dark_image()
-
     def prepare_image_array(self):
         if self.run_info.save_data:
             print(self.camera_params.camera_type)
@@ -212,19 +204,17 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
                 dtype = np.uint8
             self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=dtype)
             self.image_timestamps = np.zeros((self.params.N_img,))
-            # self.image_timestamps = np.empty((self.params.N_img,),dtype=type(time.time()))
         else:
             self.images = np.array([0])
             self.image_timestamps = np.array([0])
 
     def end(self,expt_filepath):
 
-        # self.tweezer.close()
-        
         if self.setup_camera:
             if self.run_info.save_data:
                 self.cleanup_scanned()
                 self.write_data(expt_filepath)
             else:
                 self.remove_incomplete_data()
+                
         server_talk.play_random_sound()
