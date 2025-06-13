@@ -126,7 +126,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
         if setup_awg:
             self._setup_awg = setup_awg
             self.tweezer.awg_init()
-        self.raman._init()
         self.core.reset() # clears RTIO
         if init_dac:
             self.dac.dac_device.init() # initializes DAC

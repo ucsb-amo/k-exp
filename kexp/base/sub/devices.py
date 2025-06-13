@@ -134,6 +134,7 @@ class Devices():
         self.raman = RamanBeamPair(dds_plus=self.dds.raman_plus,
                                     dds_minus=self.dds.raman_minus,
                                     params=self.params)
+        self.raman._init()
         
         self.ry_980_eo = SSG3021X()
 
