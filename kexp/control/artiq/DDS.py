@@ -134,25 +134,49 @@ class DDS():
       self.set_dds(frequency=frequency, amplitude=amplitude, v_pd=v_pd)
 
    @kernel(flags={"fast-math"})
-   def set_dds(self, frequency=-0.1, amplitude=-0.1, v_pd=-0.1):
-      """Set the DDS device. If frequency < 0, use stored value. If frequency = 0, turn it off."""
+   def set_dds(self, frequency=-0.1, amplitude=-0.1, v_pd=-0.1, init=False):
+      """
+      Sets the DDS frequency and amplitude. If the DDS is associated with a DAC,
+      it also sets the DAC voltage to v_pd.
+
+      Args:
+         frequency (float): Frequency in Hz. If negative, the frequency is not
+         updated.
+         amplitude (float): Amplitude in V. If negative, the amplitude is not
+         updated.
+         v_pd (float): Voltage for the DAC. If negative, the voltage is not
+         updated. This is only used if the DDS is controlled by a DAC.
+         init (bool): If True, the DDS is set to the stored parameters, even if
+         no arguments are provided. This is used to set the DDS to a known state
+         at the start of an experiment. Defaults to False.
+      """
 
       self.update_dac_bool()
-
-      self.frequency = frequency if frequency >= 0. else self.frequency
-      frequency = self.frequency
-
-      self.amplitude = amplitude if amplitude >= 0. else self.amplitude
-      amplitude = self.amplitude
-
-      self.v_pd = v_pd if v_pd >= 0. else self.v_pd
-      v_pd = self.v_pd
       
+      # Determine if frequency, amplitude, or v_pd should be updated
+      freq_changed = (frequency >= 0.) and (frequency != self.frequency)
+      amp_changed = (amplitude >= 0.) and (amplitude != self.amplitude)
+      vpd_changed = (v_pd >= 0.) and (v_pd != self.v_pd)
+
+      # Update stored values
+      if freq_changed:
+         self.frequency = frequency if frequency >= 0. else self.frequency
+      if amp_changed:
+         self.amplitude = amplitude if amplitude >= 0. else self.amplitude
+      if self.dac_control_bool and vpd_changed:
+         self.v_pd = v_pd if v_pd >= 0. else self.v_pd
+
+      # If init is True, force update
+      if init:
+         freq_changed = True
+         amp_changed = True
+         vpd_changed = True
+
       # Set DDS and DAC as needed
-      if self.dac_control_bool:
-         self.update_dac_setpoint(v_pd)
-      if frequency >= 0. or amplitude >= 0.:
-         self.dds_device.set(frequency=frequency, amplitude=amplitude)
+      if self.dac_control_bool and (vpd_changed or init):
+         self.update_dac_setpoint(self.v_pd)
+      if freq_changed or amp_changed or init:
+         self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude)
    
    @kernel
    def update_dac_setpoint(self, v_pd=-0.1, dac_load = True):
@@ -181,7 +205,7 @@ class DDS():
    def on(self, dac_update = True, dac_load=True):
       self.update_dac_bool()
       if self.dac_control_bool and dac_update:
-         self.dac_device.write_dac(self.dac_ch,self.v_pd)
+         self.dac_device.write_dac(channel=self.dac_ch,voltage=self.v_pd)
          if dac_load:
             self.dac_device.load()
       self.dds_device.sw.on()

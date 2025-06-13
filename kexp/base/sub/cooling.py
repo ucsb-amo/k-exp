@@ -968,3 +968,54 @@ class Cooling():
         self.dac.xshim_current_control.set(v = v_xshim_current)
         self.dac.yshim_current_control.set(v = v_yshim_current)
         self.dac.zshim_current_control.set(v = v_zshim_current)
+
+    @kernel
+    def power_down_cooling(self):
+        """Turn off the near-resonant light for long hold times to avoid light
+        leakage interacting with the atoms.
+        """
+        self.dds.d1_3d_r.set_dds(amplitude=0.)
+        self.dds.d1_3d_c.set_dds(amplitude=0.)
+        self.dds.d2_3d_c.set_dds(amplitude=0.)
+        self.dds.d2_3d_r.set_dds(amplitude=0.)
+        self.dds.d2_2dv_c.set_dds(amplitude=0.)
+        self.dds.d2_2dv_r.set_dds(amplitude=0.)
+        self.dds.d2_2dh_c.set_dds(amplitude=0.)
+        self.dds.d2_2dh_r.set_dds(amplitude=0.)
+        self.dds.push.set_dds(amplitude=0.)
+        self.dds.mot_killer.set_dds(amplitude=0.)
+        self.dds.optical_pumping.set_dds(amplitude=0.)
+        self.dds.raman_minus.set_dds(amplitude=0.)
+        self.dds.raman_plus.set_dds(amplitude=0.)
+
+        # to avoid sequence errors from all the TTLs being at once
+        self.dds.d1_3d_r.off()
+        self.dds.d1_3d_c.off()
+        self.dds.d2_3d_c.off()
+        self.dds.d2_3d_r.off()
+        self.dds.d2_2dv_c.off()
+        self.dds.d2_2dv_r.off()
+        self.dds.d2_2dh_c.off()
+        self.dds.d2_2dh_r.off()
+        delay_mu(8)
+        self.dds.push.off()
+        self.dds.mot_killer.off()
+        self.dds.optical_pumping.off()
+        self.dds.raman_minus.off()
+        self.dds.raman_plus.off()
+        delay_mu(8)
+
+    @kernel
+    def init_cooling(self):
+        """See 'power_down_cooling`. Reboots the DDS cores for the near-resonant
+        light and sets them to their defaults.
+        """
+        self.dds.d1_3d_r.set_dds(init=True)
+        self.dds.d1_3d_c.set_dds(init=True)
+        self.dds.d2_3d_c.set_dds(init=True)
+        self.dds.d2_3d_r.set_dds(init=True)
+        self.dds.d2_2dh_c.set_dds(init=True)
+        self.dds.d2_2dh_r.set_dds(init=True)
+        self.dds.d2_2dv_c.set_dds(init=True)
+        self.dds.d2_2dv_r.set_dds(init=True)
+        self.dds.push.set_dds(init=True)

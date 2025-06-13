@@ -74,7 +74,6 @@ class dds_frame():
         self.d2_2dh_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2h_c_2dmot,
                                     default_amp = self.p.amp_d2h_c_2dmot)
-        
         self.mot_killer = self.dds_assign(3,1, ao_order = -1, transition = 'D2',
                                     default_detuning = 0.,
                                     default_amp = 0.188)
@@ -224,57 +223,6 @@ class dds_frame():
             freq, amp, v_pd = 0., 0., 0.
             this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame.dac_device)
             self.dds_array[uru][ch] = this_dds
-
-    @kernel
-    def power_down_cooling(self):
-        """Turn off the near-resonant light for long hold times to avoid light
-        leakage interacting with the atoms.
-        """
-        self.d1_3d_r.set_dds(amplitude=0.)
-        self.d1_3d_c.set_dds(amplitude=0.)
-        self.d2_3d_c.set_dds(amplitude=0.)
-        self.d2_3d_r.set_dds(amplitude=0.)
-        self.d2_2dv_c.set_dds(amplitude=0.)
-        self.d2_2dv_r.set_dds(amplitude=0.)
-        self.d2_2dh_c.set_dds(amplitude=0.)
-        self.d2_2dh_r.set_dds(amplitude=0.)
-        self.push.set_dds(amplitude=0.)
-        self.mot_killer.set_dds(amplitude=0.)
-        self.optical_pumping.set_dds(amplitude=0.)
-        self.raman_minus.set_dds(amplitude=0.)
-        self.raman_plus.set_dds(amplitude=0.)
-
-        delay_mu(8)
-        self.d1_3d_r.off()
-        self.d1_3d_c.off()
-        self.d2_3d_c.off()
-        self.d2_3d_r.off()
-        delay_mu(8) # to avoid sequence errors from all the TTLs being at once
-        self.d2_2dv_c.off()
-        self.d2_2dv_r.off()
-        self.d2_2dh_c.off()
-        self.d2_2dh_r.off()
-        delay_mu(8)
-        self.push.off()
-        self.mot_killer.off()
-        self.optical_pumping.off()
-        self.raman_minus.off()
-        self.raman_plus.off()
-
-    @kernel
-    def init_cooling(self):
-        """See 'power_down_cooling`. Reboots the DDS cores for the near-resonant
-        light and sets them to their defaults.
-        """
-        self.d1_3d_r.set_dds()
-        self.d1_3d_c.set_dds()
-        self.d2_3d_c.set_dds()
-        self.d2_3d_r.set_dds()
-        self.d2_2dh_c.set_dds()
-        self.d2_2dh_r.set_dds()
-        self.d2_2dv_c.set_dds()
-        self.d2_2dv_r.set_dds()
-        self.push.set_dds()
 
     @portable
     def reset_defaults(self):
