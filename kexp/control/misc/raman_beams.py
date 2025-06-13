@@ -13,12 +13,14 @@ class RamanBeamPair():
         self.dds_plus = dds_plus
         self.dds_minus = dds_minus
         self.params = params
+        self._frequency_center_dds = 0.
 
+        self._frequency_array = np.array([0.,0.])
+
+    def _init(self):
         self._frequency_center_dds = (self.dds_plus.frequency + self.dds_minus.frequency)/2
         if abs(self._frequency_center_dds - self.dds_plus.frequency) != abs(self._frequency_center_dds - self.dds_minus.frequency):
             raise ValueError("The - and + DDS frequencies should be equidistant from their mean for optimal efficiency.")
-
-        self._frequency_array = np.array([0.,0.])
 
     @portable(flags={"fast-math"})
     def state_splitting_to_ao_frequency(self,frequency_state_splitting) -> TArray(TFloat):

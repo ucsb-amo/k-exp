@@ -126,6 +126,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
         if setup_awg:
             self._setup_awg = setup_awg
             self.tweezer.awg_init()
+        self.raman._init()
         self.core.reset() # clears RTIO
         if init_dac:
             self.dac.dac_device.init() # initializes DAC
@@ -213,23 +214,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
         else:
             self.images = np.array([0])
             self.image_timestamps = np.array([0])
-
-    @kernel
-    def run(self):
-        self.init_kernel()
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
-        self.scan()
-
-    def get_expt_filepath(self):
-        """
-        Returns the filepath for the current experiment data file.
-        This is used to save images and other data.
-        """
-        return os.path.abspath(inspect.getfile(self.__class__))
-
-    def analyze(self):
-        expt_filepath = self.get_expt_filepath()
-        print(expt_filepath)
+    
+    def end(self, expt_filepath):
 
         if self.setup_camera:
             if self.run_info.save_data:
