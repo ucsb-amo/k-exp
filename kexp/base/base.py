@@ -1,9 +1,10 @@
-
+import inspect
+import os
 from artiq.experiment import *
 from artiq.experiment import delay, delay_mu
 import numpy as np
 from kexp.config.expt_params import ExptParams
-from kexp.base.sub import Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe
+from kexp.base.sub import *
 from kexp.util.data.data_vault import DataSaver
 from kexp.util.data.run_info import RunInfo
 from kexp.util.data.counter import counter
@@ -19,7 +20,7 @@ from kexp.config.camera_id import img_types as img
 
 from kexp.util.artiq.async_print import aprint
 
-class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
+class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
     def __init__(self,
                  setup_camera=True,
                  save_data=True,
@@ -151,7 +152,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
     def init_scan_kernel(self,two_d_tweezers = False):
         
         self.set_imaging_shutters()
-        self.dds.init_cooling()
+        self.init_cooling()
         self.core.break_realtime()
 
         self.dds.reset_defaults()
@@ -193,6 +194,11 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
         
         self.dds.d1_beatlock_ref.on()
 
+    @kernel
+    def cleanup_scan_kernel(self):
+        self.cleanup_image_count()
+        self.reset_coils()
+
     def prepare_image_array(self):
         if self.run_info.save_data:
             print(self.camera_params.camera_type)
@@ -208,7 +214,22 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe):
             self.images = np.array([0])
             self.image_timestamps = np.array([0])
 
-    def end(self,expt_filepath):
+    @kernel
+    def run(self):
+        self.init_kernel()
+        self.load_2D_mot(self.p.t_2D_mot_load_delay)
+        self.scan()
+
+    def get_expt_filepath(self):
+        """
+        Returns the filepath for the current experiment data file.
+        This is used to save images and other data.
+        """
+        return os.path.abspath(inspect.getfile(self.__class__))
+
+    def analyze(self):
+        expt_filepath = self.get_expt_filepath()
+        print(expt_filepath)
 
         if self.setup_camera:
             if self.run_info.save_data:

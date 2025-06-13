@@ -6,6 +6,7 @@ from kexp.config.dac_id import dac_frame
 from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.misc.awg_tweezer import tweezer
 from kexp.control.misc.painted_lightsheet import lightsheet
+from kexp.control.misc.raman_beams import RamanBeamPair
 from kexp.config.expt_params import ExptParams
 import numpy as np
 
@@ -27,6 +28,7 @@ class Cooling():
         self.tweezer = tweezer()
         self.lightsheet = lightsheet()
         self.params = ExptParams()
+        self.raman = RamanBeamPair()
         self.p = self.params
 
     ## meta stages
@@ -115,7 +117,6 @@ class Cooling():
                              i_start=self.p.i_lf_tweezer_evap2_current,
                              i_end=self.p.i_spin_mixture)
         
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
 
         delay(40.e-3)
@@ -722,7 +723,7 @@ class Cooling():
                         v_yshim_current=v_yshim_current,
                         v_zshim_current=v_zshim_current)
 
-        self.dds.power_down_cooling()
+        self.power_down_cooling()
         # self.ttl.pd_scope_trig.pulse(1.e-6)
 
         delay(t_delay)

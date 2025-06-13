@@ -9,7 +9,7 @@ dv = -0.1
 di = 0
 
 class RamanBeamPair():
-    def __init__(self,dds_plus:DDS,dds_minus:DDS,params:ExptParams):
+    def __init__(self,dds_plus=DDS,dds_minus=DDS,params=ExptParams):
         self.dds_plus = dds_plus
         self.dds_minus = dds_minus
         self.params = params

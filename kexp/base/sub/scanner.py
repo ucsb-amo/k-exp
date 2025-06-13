@@ -77,7 +77,8 @@ class Scanner():
 
     @kernel
     def scan_kernel(self):
-        """The kernel function to be scanned in the experiment. 
+        """The kernel function to be scanned in the experiment. Usually
+        overloaded in kexp.Base.
         
         It should correspond to a single "shot" (single set of images to
         generate one OD).
@@ -93,20 +94,23 @@ class Scanner():
     @kernel
     def pre_scan(self):
         """This method is run in scan before the scan loop.
+        Usually overloaded in kexp.Base.
         """        
         pass
 
     @kernel
     def init_scan_kernel(self):
         """This method is run between each shot just before scan_kernel.
+        Usually overloaded in kexp.Base.
         """
         pass
 
     @kernel
     def cleanup_scan_kernel(self):
         """This method is run just after each scan_kernel completes.
+        Usually overloaded in kexp.Base.
         """
-        self.cleanup_image_count()
+        pass
         
     @kernel
     def scan(self):
