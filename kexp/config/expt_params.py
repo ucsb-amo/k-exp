@@ -31,6 +31,13 @@ class ExptParams():
         self.frequency_minimum_offset_beatlock = 150.e6
         self.imaging_state = 2.
 
+        # low field imaging settings at i_spin_mixture = 19.48
+        # (free space)
+        self.frequency_detuned_imaging_m1 = 286.e6
+        self.frequency_detuned_imaging_0 = 318.e6
+        # self.p.frequency_detuned_imaging_midpoint = 300.e6
+        self.frequency_detuned_imaging_midpoint = 608.e6
+
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
         self.detune_d2_r_imaging = 0.
@@ -48,7 +55,7 @@ class ExptParams():
 
         # SLM settings
         self.dimension_slm_mask = 25e-6
-        self.phase_slm_mask = 0.42 * np.pi
+        self.phase_slm_mask = 0.5 * np.pi
         self.px_slm_phase_mask_position_x = 1141
         self.px_slm_phase_mask_position_y = 965
         
@@ -113,7 +120,7 @@ class ExptParams():
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
-        self.t_raman_pi_pulse = 3.2292563670862067e-06
+        self.t_raman_pi_pulse = 3.24e-06
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -313,13 +320,12 @@ class ExptParams():
         # raman
         self.frequency_raman_plus = 160.e6 
         self.frequency_raman_minus = 140.e6
-        self.amp_raman_plus = .35
-        self.amp_raman_minus = .35
+        self.amp_raman = .35 # max power & clean pulse shape at 0.35
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
 
-        self.frequency_raman_transition = 41.236e6
+        self.frequency_raman_transition = 41.294e6
 
         # low field evap old
         # self.i_evap1_current = 9.5
