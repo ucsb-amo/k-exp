@@ -54,7 +54,6 @@ class BaslerUSB(pylon.InstantCamera):
             ExposureTime_us = self.ExposureTime.GetMax()
             print(f"Exposure time requested is above camera maximum. Setting to maximum exposure : {ExposureTime_us:1.0f} us")
         self.ExposureTime.SetValue(ExposureTime_us)
-        print(ExposureTime_us)
 
     def set_gain(self,Gain):
         if Gain > self.Gain.GetMax():

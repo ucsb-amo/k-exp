@@ -5,6 +5,21 @@ import json
 import pyqtgraph as pg
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QLabel, QPushButton, QPlainTextEdit
 from PyQt6.QtCore import Qt
+import sys
+import contextlib
+
+class SuppressPrints:
+    def __init__(self, suppress=True):
+        self.suppress = suppress
+        self._original_stdout = None
+    def __enter__(self):
+        if self.suppress:
+            self._original_stdout = sys.stdout
+            sys.stdout = open(os.devnull, 'w')
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.suppress and self._original_stdout:
+            sys.stdout.close()
+            sys.stdout = self._original_stdout
 
 class LiveODViewer(QWidget):
     STATE_PATH = os.path.expanduser('~/.live_od_last_state.pkl')
@@ -44,21 +59,29 @@ class LiveODViewer(QWidget):
         for v in [self.img_atoms_view, self.img_light_view, self.img_dark_view]:
             v.ui.histogram.hide(); v.ui.roiBtn.hide(); v.ui.menuBtn.hide()
             self.set_pg_colormap(v, 'viridis')
+        # --- Sync zoom/pan between atom, light, and dark images ---
+        self._syncing_image_views = False
+        self.img_atoms_view.getView().sigRangeChanged.connect(lambda *args: self._sync_image_views(self.img_atoms_view))
+        self.img_light_view.getView().sigRangeChanged.connect(lambda *args: self._sync_image_views(self.img_light_view))
+        self.img_dark_view.getView().sigRangeChanged.connect(lambda *args: self._sync_image_views(self.img_dark_view))
         self.od_plot = pg.PlotWidget()
-        self.od_plot.setLabel('left', 'OD')
-        self.od_plot.setLabel('bottom', 'X')
+        # Set default axes limits to 0-512 for both x and y
+        self.od_plot.setXRange(0, 512, padding=0)
+        self.od_plot.setYRange(0, 512, padding=0)
+        # self.od_plot.setLabel('left', 'OD')
+        # self.od_plot.setLabel('bottom', '')
         self.od_img_item = pg.ImageItem()
         self.od_plot.addItem(self.od_img_item)
         self.od_img_item.setZValue(-10)
         self.set_pg_colormap(self.od_img_item, 'viridis')
         self.sumodx_panel = pg.PlotWidget()
-        self.sumodx_panel.setLabel('left', '')
-        self.sumodx_panel.setLabel('bottom', 'X')
+        # self.sumodx_panel.setLabel('left', '')
+        # self.sumodx_panel.setLabel('bottom', '')
         self.sumodx_panel.setMouseEnabled(x=False, y=True)
         self.sumodx_panel.setMenuEnabled(False)
         self.sumody_panel = pg.PlotWidget()
-        self.sumody_panel.setLabel('bottom', '')
-        self.sumody_panel.setLabel('left', 'Y')
+        # self.sumody_panel.setLabel('bottom', '')
+        # self.sumody_panel.setLabel('left', '')
         self.sumody_panel.setMouseEnabled(x=True, y=False)
         self.sumody_panel.setMenuEnabled(False)
         self.sumody_panel.hideAxis('right'); self.sumody_panel.hideAxis('top')
@@ -67,14 +90,41 @@ class LiveODViewer(QWidget):
         self.od_plot.setMenuEnabled(True)
         self.od_plot.hideAxis('right'); self.od_plot.hideAxis('top')
         self.od_plot.showGrid(x=False, y=False)
+        # --- Begin grid layout for OD and sumOD panels ---
+        # Horizontal splitter: left is od_plot+sumodx (vertical), right is sumody
+        od_and_sumodx_splitter = QSplitter(Qt.Orientation.Vertical)
+        od_and_sumodx_splitter.addWidget(self.od_plot)
+        od_and_sumodx_splitter.addWidget(self.sumodx_panel)
+        self.sumodx_panel.setMinimumHeight(100)
+        od_and_sumodx_splitter.setSizes([400, 120])
+
         od_grid = QSplitter(Qt.Orientation.Horizontal)
-        od_left = QSplitter(Qt.Orientation.Vertical)
-        od_left.addWidget(self.od_plot)
-        od_left.addWidget(self.sumodx_panel)
-        od_left.setSizes([400, 120])
-        od_grid.addWidget(od_left)
-        od_grid.addWidget(self.sumody_panel)
+
+        sumody_splitter = QSplitter(Qt.Orientation.Vertical)
+        sumody_splitter.addWidget(self.sumody_panel)
+        # Add a blank spacer widget below sumody_panel
+        spacer = QWidget()
+        # Set spacer minimum height to match sumodx_panel's minimum height
+        spacer.setMinimumHeight(self.sumodx_panel.minimumHeight())
+        sumody_splitter.addWidget(spacer)
+        sumody_splitter.setSizes([400, 120])
+
+        # Synchronize vertical split positions
+        def sync_vertical_splitter(pos):
+            sumody_splitter.setSizes(pos)
+        def sync_vertical_splitter_reverse(pos):
+            od_and_sumodx_splitter.setSizes(pos)
+        od_and_sumodx_splitter.splitterMoved.connect(
+            lambda pos, index: sync_vertical_splitter(od_and_sumodx_splitter.sizes()))
+        sumody_splitter.splitterMoved.connect(
+            lambda pos, index: sync_vertical_splitter_reverse(sumody_splitter.sizes()))
+
+        od_grid.addWidget(od_and_sumodx_splitter)
+        od_grid.addWidget(sumody_splitter)
+        od_grid.addWidget(sumody_splitter)
+        
         od_grid.setSizes([500, 120])
+        # --- End grid layout ---
         main_splitter = QSplitter(Qt.Orientation.Vertical)
         main_splitter.addWidget(img_splitter)
         main_splitter.addWidget(od_grid)
@@ -96,6 +146,7 @@ class LiveODViewer(QWidget):
         self.reset_zoom_button.clicked.connect(self.reset_zoom)
         self.od_plot.scene().sigMouseClicked.connect(self.handle_mouse_click)
         self.od_plot.getViewBox().sigRangeChanged.connect(self.sync_sumod_panels)
+        self.sync_sumod_panels()
 
     def _with_label(self, imgview, label):
         container = QWidget()
@@ -134,6 +185,7 @@ class LiveODViewer(QWidget):
         self._first_image_minmax = {}
         self._autoscale_ready = False
         self._autoscale_buffer = []
+        self._roi_set_count = 0
     def update_image_count(self, count, total):
         self.image_count_label.setText(f'Image count: {count}/{total}')
     def get_img_number(self, N_img, N_shots, N_pwa_per_shot, run_id=None):
@@ -163,15 +215,21 @@ class LiveODViewer(QWidget):
         self._last_atoms = atoms
         self._last_light = light
         self._last_dark = dark
+
     def sync_sumod_panels(self):
         od_vb = self.od_plot.getViewBox()
         x_range, y_range = od_vb.viewRange()
         self.sumodx_panel.setXRange(*x_range, padding=0)
-        self.sumody_panel.setYRange(*y_range, padding=0)
+
+        self.od_plot.setYRange(*y_range, padding=0)
+        self.od_plot.setXRange(*x_range, padding=0)
+
     def _plot_sumodx(self, sumodx):
         if sumodx is not None:
             self.sumodx_panel.clear()
             self.sumodx_panel.plot(sumodx, pen=pg.mkPen('w', width=2))
+            # On first shot of a run, set y axis 0 to 1.5*max
+
     def _plot_sumody(self, sumody, od_shape):
         if sumody is not None:
             y = np.linspace(0, od_shape[1] - 1, len(sumody))
@@ -179,8 +237,11 @@ class LiveODViewer(QWidget):
             x = (x - np.mean(x)) * self._sumody_scale + np.mean(x)
             self.sumody_panel.clear()
             self.sumody_panel.plot(x, y, pen=pg.mkPen('w', width=2))
+            # On first shot of a run, set y axis 0 to 1.5*max
     def reset_zoom(self):
-        self.od_plot.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
+        # Reset OD plot axes to original default limits
+        self.od_plot.setXRange(0, 512, padding=0)
+        self.od_plot.setYRange(0, 512, padding=0)
         self.sumodx_panel.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
         self.sumody_panel.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
         self.sync_sumod_panels()
@@ -188,6 +249,10 @@ class LiveODViewer(QWidget):
         if event.button() == Qt.MouseButton.RightButton:
             self.reset_zoom()
     def plot_od(self, od, sumodx, sumody, min_od=None, max_od=None):
+        # If this is the first OD after a clear, set axes to match its shape
+        if getattr(self, '_last_od_shape', None) is None and od is not None:
+            self.od_plot.setXRange(0, od.shape[1], padding=0)
+            self.od_plot.setYRange(0, od.shape[0], padding=0)
         if min_od is None or max_od is None:
             min_od = float(np.min(od))
             max_od = float(np.max(od))
@@ -200,7 +265,19 @@ class LiveODViewer(QWidget):
         self._last_od = od
         self._last_sumodx = sumodx
         self._last_sumody = sumody
+
     def handle_plot_data(self, to_plot):
         img_atoms, img_light, img_dark, od, sum_od_x, sum_od_y = to_plot
         self.plot_images(img_atoms, img_light, img_dark)
         self.plot_od(od, sum_od_x, sum_od_y)
+
+    def _sync_image_views(self, source_view):
+        if self._syncing_image_views:
+            return
+        self._syncing_image_views = True
+        target_views = [self.img_atoms_view, self.img_light_view, self.img_dark_view]
+        src_range = source_view.getView().viewRange()
+        for v in target_views:
+            if v is not source_view:
+                v.getView().setRange(xRange=src_range[0], yRange=src_range[1], padding=0)
+        self._syncing_image_views = False

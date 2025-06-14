@@ -1,6 +1,6 @@
 import sys
 from queue import Queue
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
 from PyQt6.QtGui import QFont, QIcon
 from PyQt6.QtCore import Qt, pyqtSignal
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
@@ -10,6 +10,43 @@ from kexp.util.live_od.gui.analyzer import Analyzer
 from kexp.util.live_od.gui.plotter import LiveODPlotter
 from kexp.analysis.roi import ROI
 from kexp.util.increment_run_id import update_run_id
+from kexp.analysis.image_processing import compute_OD, process_ODs
+import numpy as np
+
+class StatusLightsWidget(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.lights = {}
+        layout = QVBoxLayout()
+        for label in ["cam ready", "ready marked", "ready ack"]:
+            h = QHBoxLayout()
+            light = QFrame()
+            light.setFixedSize(18, 18)
+            light.setStyleSheet("background-color: gray; border-radius: 9px; border: 1px solid black;")
+            self.lights[label] = light
+            h.addWidget(light)
+            h.addWidget(QLabel(label))
+            h.addStretch()
+            layout.addLayout(h)
+        self.setLayout(layout)
+
+    def set_light(self, label, state):
+        color = {True: "green", False: "gray"}[state]
+        if label in self.lights:
+            self.lights[label].setStyleSheet(f"background-color: {color}; border-radius: 9px; border: 1px solid black;")
+
+    # Add methods to set the lights from signals
+    def set_cam_status_lights(self,status_int):
+        if status_int == -1:
+            self.set_light("cam ready", False)
+            self.set_light("ready marked", False)
+            self.set_light("ready ack", False)
+        elif status_int == 0:
+            self.set_light("cam ready", True)
+        elif status_int == 1:
+            self.set_light("ready marked", True)
+        elif status_int == 2:
+            self.set_light("ready ack", True)
 
 class LiveODWindow(QWidget):
     interrupt = pyqtSignal()
@@ -21,6 +58,7 @@ class LiveODWindow(QWidget):
         self.last_camera = ""
         self.img_count = 0
         self.img_count_run = 0
+        self.status_lights = StatusLightsWidget()
         self.setup_widgets()
         self.setup_layout()
         self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
@@ -38,7 +76,6 @@ class LiveODWindow(QWidget):
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
         self.plotting_queue = Queue()
         self.analyzer = Analyzer(self.plotting_queue)
-        self.analyzer.analyzed.connect(lambda: self.msg('new OD!'))
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
         self.plotter.start()
         self.advance_run_button = QPushButton('Fix')
@@ -50,6 +87,7 @@ class LiveODWindow(QWidget):
         layout = QVBoxLayout()
         control_bar = QHBoxLayout()
         control_bar.addWidget(self.camera_conn_bar)
+        control_bar.addWidget(self.status_lights)
         control_bar.addWidget(self.roi_select)
         control_bar.addWidget(self.advance_run_button)
         control_bar.addStretch()
@@ -76,6 +114,7 @@ class LiveODWindow(QWidget):
         self.the_baby.dishonorable_death_signal.connect(lambda: self.msg(f'{name} has died dishonorably. Incomplete data deleted.'))
         self.the_baby.honorable_death_signal.connect(self.restart_mother)
         self.the_baby.dishonorable_death_signal.connect(self.restart_mother)
+        self.the_baby.cam_status_signal.connect(self.status_lights.set_cam_status_lights)
         self.the_baby.start()
 
     def restart_mother(self):
@@ -102,8 +141,41 @@ class LiveODWindow(QWidget):
 
     def update_roi(self):
         roi_key = self.roi_select.crop_dropdown.currentText()
-        self.analyzer.roi = ROI(roi_id=roi_key)
-        if hasattr(self, 'analyzer') and hasattr(self.analyzer, 'imgs') and self.analyzer.imgs:
+        self.analyzer.roi = ROI(roi_id=roi_key, use_saved_roi=False, printouts=False)
+        # Recompute and replot OD from currently displayed images
+        atoms = getattr(self.viewer_window, '_last_atoms', None)
+        light = getattr(self.viewer_window, '_last_light', None)
+        dark = getattr(self.viewer_window, '_last_dark', None)
+        roi = self.analyzer.roi
+        width = roi.roix[1] - roi.roix[0]
+        height = roi.roiy[1] - roi.roiy[0]
+        # --- Adjust OD window axis limits to match ROI aspect ratio, sized to larger axis ---
+        if width > 0 and height > 0:
+            if width >= height:
+                x0, x1 = 0, width
+                y0, y1 = 0, width * (height / width)
+            else:
+                y0, y1 = 0, height
+                x0, x1 = 0, height * (width / height)
+            self.viewer_window.od_plot.setXRange(x0, x1, padding=0)
+            self.viewer_window.od_plot.setYRange(y0, y1, padding=0)
+        # --- End axis adjustment ---
+        if atoms is not None and light is not None and dark is not None:
+            od = compute_OD(atoms, light, dark)
+            od = np.array([od])
+            od_cropped, sumodx, sumody = process_ODs(od, roi)
+            od_cropped = od_cropped[0]
+            sumodx = sumodx[0]
+            sumody = sumody[0]
+            self.viewer_window.plot_od(od_cropped, sumodx, sumody)
+            # --- Autoscale sumodx and sumody panels ---
+            if sumodx is not None and len(sumodx) > 0:
+                max_x = np.max(sumodx)
+                self.viewer_window.sumodx_panel.setYRange(0, max_x if max_x > 0 else 1, padding=0)
+            if sumody is not None and len(sumody) > 0:
+                max_y = np.max(sumody)
+                self.viewer_window.sumody_panel.setYRange(0, max_y if max_y > 0 else 1, padding=0)
+        elif hasattr(self, 'analyzer') and hasattr(self.analyzer, 'imgs') and self.analyzer.imgs:
             if len(self.analyzer.imgs) == (getattr(self.analyzer, 'N_pwa_per_shot', 0) + 2):
                 self.analyzer.analyze()
         elif hasattr(self, 'viewer_window') and hasattr(self.viewer_window, '_last_od'):
@@ -121,7 +193,7 @@ class LiveODWindow(QWidget):
         else:
             key = None
         if key:
-            self.analyzer.roi = ROI(roi_id=key, use_saved_roi=False)
+            self.analyzer.roi = ROI(roi_id=key, use_saved_roi=False, printouts=False)
             self.roi_select.set_dropdown_to_key(key)
 
     def get_img_number(self, N_img, N_shots, N_pwa_per_shot):
@@ -153,30 +225,26 @@ class LiveODWindow(QWidget):
 
     def clear_plots(self):
         self.viewer_window.clear_plots()
+
     def update_image_count(self, count, total):
         self.viewer_window.update_image_count(count, total)
+
     def advance_run(self):
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
                 if hasattr(self, 'data_handler') and self.data_handler is not None:
                     try:
-                        if hasattr(self.data_handler, 'stop') and callable(self.data_handler.stop):
-                            self.data_handler.stop()
-                        else:
-                            if hasattr(self.data_handler, 'file') and self.data_handler.file is not None:
-                                try:
-                                    self.data_handler.file.close()
-                                except Exception:
-                                    pass
-                            self.data_handler.terminate()
+                        if hasattr(self.data_handler, 'dataset') and self.data_handler.dataset is not None:
+                            try:
+                                self.data_handler.dataset.close()
+                            except Exception:
+                                pass
+                        self.data_handler.terminate()
                     except Exception as e:
                         print(e)
                     self.data_handler = None
-                if hasattr(self.the_baby, 'stop') and callable(self.the_baby.stop):
-                    self.the_baby.stop()
-                else:
-                    self.the_baby.terminate()
-                    self.the_baby.dishonorable_death()
+                self.the_baby.terminate()
+                self.the_baby.dishonorable_death()
                 self.the_baby = None
                 self.queue = Queue()
                 print('Acquisition aborted, run ID advanced.')
