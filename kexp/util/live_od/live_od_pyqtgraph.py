@@ -241,11 +241,9 @@ class LiveODViewer(QWidget):
         self.init_ui()
         
     def init_ui(self):
-        self.reset_zoom_button = QPushButton('Reset zoom')
         self.clear_button = QPushButton('Clear')
         self.image_count_label = QLabel('Image count: 0/0')
         control_bar = QHBoxLayout()
-        control_bar.addWidget(self.reset_zoom_button)
         control_bar.addWidget(self.clear_button)
         control_bar.addWidget(self.image_count_label)
         control_bar.addStretch()
@@ -314,8 +312,6 @@ class LiveODViewer(QWidget):
         layout.addWidget(top_splitter)
         self.setLayout(layout)
         self.clear_button.clicked.connect(self.clear_plots)
-        self.reset_zoom_button.clicked.connect(self.reset_zoom)
-        self.od_plot.scene().sigMouseClicked.connect(self.handle_mouse_click)
         self.od_plot.getViewBox().sigRangeChanged.connect(self.sync_sumod_panels)
 
     def _with_label(self, imgview, label):
@@ -411,15 +407,6 @@ class LiveODViewer(QWidget):
             x = (x - np.mean(x)) * self._sumody_scale + np.mean(x)
             self.sumody_panel.clear()
             self.sumody_panel.plot(x, y, pen=pg.mkPen('w', width=2))
-    def reset_zoom(self):
-        # Reset OD plot and sumod panels to show full ROI/image
-        self.od_plot.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
-        self.sumodx_panel.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
-        self.sumody_panel.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
-        self.sync_sumod_panels()
-    def handle_mouse_click(self, event):
-        if event.button() == Qt.MouseButton.RightButton:
-            self.reset_zoom()
     def plot_od(self, od, sumodx, sumody, min_od=None, max_od=None):
         if min_od is None or max_od is None:
             min_od = float(np.min(od))
