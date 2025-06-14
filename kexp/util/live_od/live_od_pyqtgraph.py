@@ -20,6 +20,7 @@ from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandle
 from kexp.util.live_od.camera_connection_widget import CamConnBar, ROISelector
 from kexp.analysis.roi import ROI
 from kexp.analysis.image_processing import compute_OD, process_ODs
+from kexp.util.increment_run_id import update_run_id
 
 class Analyzer(QThread):
     analyzed = pyqtSignal()
@@ -193,13 +194,13 @@ class LiveODWindow(QWidget):
         # Interrupt the whole camera baby process and restart camera mother
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
-                self.the_baby.dishonorable_death_signal.emit()
                 if hasattr(self, 'data_handler') and self.data_handler is not None:
                     try:
                         self.data_handler.terminate()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(e)
                 self.the_baby.terminate()
+                self.the_baby.dishonorable_death()
                 self.the_baby = None
                 print('Acquisition aborted, run ID advanced.')
             except Exception as e:
