@@ -1,7 +1,7 @@
 
-from PyQt6.QtWidgets import (QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit)
+from PyQt6.QtWidgets import (QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit, QComboBox)
 
-from kexp.util.live_od.live_od_plotting import *
+# from kexp.util.live_od.live_od_plotting import *
 
 from kexp import cameras, img_types
 from kexp.control.cameras.dummy_cam import DummyCamera
