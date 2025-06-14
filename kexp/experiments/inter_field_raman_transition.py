@@ -28,7 +28,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_detuned_raman_transition = 41.5e6
 
         self.p.t_raman_pi_pulse = 2.507e-06
-        # self.xvar('t_raman_pulse',np.linspace(0.,self.p.t_raman_pi_pulse,15))
+        # self.xvar('t_raman_pulse',np.linspace(0.,self.p.t_raman_pi_pulse,5))
         # self.xvar('t_raman_pulse',np.linspace(0.,3.,50)*1.e-6)
         self.p.t_raman_pulse = 1.e-3
 
@@ -38,15 +38,16 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('f_raman_sweep_center',np.arange(43.41e6, 43.5e6, self.p.f_raman_sweep_width))
         # self.xvar('f_raman_sweep_center',np.linspace(43.41e6, 43.43e6,5))
-        self.xvar('f_raman_sweep_center',np.arange(41.21e6, 41.5e6, self.p.f_raman_sweep_width/2))
+        # self.xvar('f_raman_sweep_center',np.arange(41.21e6, 41.5e6, self.p.f_raman_sweep_width/2))
         # self.p.f_raman_sweep_center = 43.408e6
         # self.p.f_raman_sweep_center = self.p.frequency_raman_transition
 
         # self.xvar('t_raman_sweep',np.linspace(200.e-6,3.e-3,10))
-        self.p.t_raman_sweep = 1.e-3
+        # self.p.t_raman_sweep = 1.e-3
 
-        # self.xvar('amp_raman',np.linspace(0.,.25,5))
-        self.p.amp_raman = .15
+        self.xvar('amp_raman',np.linspace(0.,self.p.amp_raman,8))
+        # self.p.amp_raman = .15
+        self.p.amp_raman = 0.25
 
         # self.p.t_max = 20.e-3
         # self.xvar('t_pulse',np.linspace(0.,self.p.t_max,10))
@@ -91,11 +92,11 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_raman_pulse)
         # self.dds.imaging.off()
 
-        # self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=40.e6)
+        self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=30.e6)
 
-        self.raman.sweep(t=self.p.t_raman_sweep,
-                         frequency_center=self.p.f_raman_sweep_center,
-                         frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
+        # self.raman.sweep(t=self.p.t_raman_sweep,
+        #                  frequency_center=self.p.f_raman_sweep_center,
+        #                  frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
         
         # delay(1.e-3)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging_0)

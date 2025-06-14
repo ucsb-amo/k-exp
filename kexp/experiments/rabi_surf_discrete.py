@@ -24,12 +24,6 @@ class rabi_surf(EnvExperiment, Base):
             self.camera_params.exposure_time = 5.e-6
             self.params.t_imaging_pulse = 4.e-6
 
-        # IMAGING FREQUENCIES IN FREE SPACE
-        self.p.frequency_detuned_imaging_m1 = 288.e6
-        # self.p.frequency_detuned_imaging_midpoint = 303.4e6
-        self.p.frequency_detuned_imaging_midpoint = 615.e6
-        self.p.frequency_detuned_imaging_0 = 318.e6
-
         ### Experiment setup
 
         self.p.phase_pci_pulses_relto_raman_drive = 0.
@@ -38,8 +32,6 @@ class rabi_surf(EnvExperiment, Base):
         self.p.frequency_detuned_pci_during_rabi = self.p.frequency_detuned_imaging_midpoint
         self.p.amp_pci_during_rabi = 0.11
         self.p.t_pci_pulse = 0.6e-6
-        
-        self.p.t_raman_pi_pulse = 3.3e-6
 
         self.xvar('t_pulse_interval',np.linspace(0.,10.e-6,5))
         
