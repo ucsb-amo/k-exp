@@ -97,6 +97,17 @@ class LiveODWindow(QWidget):
         self.camera_mother.start()
 
     def check_new_camera(self, camera_select):
+        # Update button color immediately when camera connection changes
+        if hasattr(self, 'camera_conn_bar'):
+            for btn in [self.camera_conn_bar.xy_basler_button,
+                        self.camera_conn_bar.basler_2dmot_button,
+                        self.camera_conn_bar.x_basler_button,
+                        self.camera_conn_bar.z_basler_button,
+                        self.camera_conn_bar.andor]:
+                if hasattr(btn, 'camera_name') and btn.camera_name == camera_select:
+                    btn._set_color_success()
+                elif hasattr(btn, 'camera') and not btn.camera.is_opened():
+                    btn._set_color_closed()
         if self.last_camera != camera_select:
             self.clear_plots()
             self.last_camera = camera_select
