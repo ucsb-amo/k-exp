@@ -53,6 +53,7 @@ class Scribe():
                 count = 1
             elif np.mod(count,N_NOTIFY) == 0:
                 print('Waiting for camera ready.') 
+                print(self.run_info.run_id)
             
             if timeout > 0.:
                 if time.time() - t0 > timeout:

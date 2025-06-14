@@ -194,18 +194,27 @@ class LiveODWindow(QWidget):
         # Interrupt the whole camera baby process and restart camera mother
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
+                # Ensure file is closed before dishonorable death
                 if hasattr(self, 'data_handler') and self.data_handler is not None:
                     try:
+                        if hasattr(self.data_handler, 'file') and self.data_handler.file is not None:
+                            try:
+                                self.data_handler.file.close()
+                            except Exception:
+                                pass
                         self.data_handler.terminate()
                     except Exception as e:
                         print(e)
+                    self.data_handler = None  # Ensure handler is reset
                 self.the_baby.terminate()
                 self.the_baby.dishonorable_death()
-                self.the_baby = None
+                self.the_baby = None  # Ensure baby is reset
+                self.queue = Queue()  # Reset the queue for new experiment
                 print('Acquisition aborted, run ID advanced.')
             except Exception as e:
                 self.msg(f"Error sending dishonorable death signal: {e}")
         # Restart camera mother to watch for new data
+        update_run_id()
         self.restart_mother()
 
     def clear_plots(self):
@@ -227,7 +236,6 @@ class LiveODViewer(QWidget):
         self._autoscale_buffer = []
         self._cmap_name = 'viridis'  # Default colormap is now viridis
         self.init_ui()
-        self._load_last_state()
         
     def init_ui(self):
         self.reset_zoom_button = QPushButton('Reset zoom')
@@ -337,7 +345,6 @@ class LiveODViewer(QWidget):
         self._cmap_name = cmap_name
         for v in [self.img_atoms_view, self.img_light_view, self.img_dark_view, self.od_img_item]:
             self.set_pg_colormap(v, cmap_name)
-        self._save_cmap_setting(cmap_name)
     def clear_plots(self):
         self.img_atoms_view.clear()
         self.img_light_view.clear()
@@ -360,36 +367,6 @@ class LiveODViewer(QWidget):
         self.Nimg = N_img
         if run_id is not None:
             self._current_run_id = run_id
-    def _save_last_state(self, atoms=None, light=None, dark=None, od=None, sumodx=None, sumody=None):
-        try:
-            state = {
-                'atoms': atoms if atoms is not None else getattr(self, '_last_atoms', None),
-                'light': light if light is not None else getattr(self, '_last_light', None),
-                'dark': dark if dark is not None else getattr(self, '_last_dark', None),
-                'od': od if od is not None else getattr(self, '_last_od', None),
-                'sumodx': sumodx if sumodx is not None else getattr(self, '_last_sumodx', None),
-                'sumody': sumody if sumody is not None else getattr(self, '_last_sumody', None),
-            }
-            with open(self.STATE_PATH, 'wb') as f:
-                pickle.dump(state, f)
-        except Exception as e:
-            pass
-    def _load_last_state(self):
-        try:
-            if os.path.exists(self.STATE_PATH):
-                with open(self.STATE_PATH, 'rb') as f:
-                    state = pickle.load(f)
-                if all(state.get(k) is not None for k in ['atoms', 'light', 'dark', 'od', 'sumodx', 'sumody']):
-                    self.plot_images(state['atoms'], state['light'], state['dark'])
-                    self.plot_od(state['od'], state['sumodx'], state['sumody'])
-                    self._last_atoms = state['atoms']
-                    self._last_light = state['light']
-                    self._last_dark = state['dark']
-                    self._last_od = state['od']
-                    self._last_sumodx = state['sumodx']
-                    self._last_sumody = state['sumody']
-        except Exception as e:
-            pass
     def plot_images(self, atoms, light, dark):
         # Buffer first three images for autoscale
         if not self._autoscale_ready:
@@ -414,7 +391,6 @@ class LiveODViewer(QWidget):
         self._last_atoms = atoms
         self._last_light = light
         self._last_dark = dark
-        self._save_last_state(atoms=atoms, light=light, dark=dark)
     def sync_sumod_panels(self):
         # Synchronize sumodx and sumody panels to match OD plot's visible region
         od_vb = self.od_plot.getViewBox()
@@ -454,7 +430,6 @@ class LiveODViewer(QWidget):
         self._last_od = od
         self._last_sumodx = sumodx
         self._last_sumody = sumody
-        self._save_last_state(od=od, sumodx=sumodx, sumody=sumody)
     def handle_plot_data(self, to_plot):
         img_atoms, img_light, img_dark, od, sum_od_x, sum_od_y = to_plot
         self.plot_images(img_atoms, img_light, img_dark)
