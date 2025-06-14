@@ -55,6 +55,7 @@ class Analyzer(QThread):
         self.plotting_queue.put((self.img_atoms, self.img_light, self.img_dark, self.od, self.sum_od_x, self.sum_od_y))
 
 class LiveODWindow(QWidget):
+    interrupt = pyqtSignal() 
     def __init__(self):
         super().__init__()
         self.queue = Queue()
@@ -71,6 +72,7 @@ class LiveODWindow(QWidget):
     def create_camera_baby(self, file, name):
         self.the_baby = CameraBaby(file, name, self.queue, self.camera_nanny)
         self.data_handler = DataHandler(self.queue, data_filepath=file)
+        # self.interrupt.connect(self.data_handler.interrupt)
         self.the_baby.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
         self.the_baby.camera_connect.connect(self.check_new_camera)
         self.the_baby.camera_grab_start.connect(self.grab_start_msg)
@@ -194,12 +196,13 @@ class LiveODWindow(QWidget):
         # Interrupt the whole camera baby process and restart camera mother
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
+                self.interrupt.emit() 
                 # Ensure file is closed before dishonorable death
                 if hasattr(self, 'data_handler') and self.data_handler is not None:
                     try:
-                        if hasattr(self.data_handler, 'file') and self.data_handler.file is not None:
+                        if hasattr(self.data_handler, 'dataset') and self.data_handler.dataset is not None:
                             try:
-                                self.data_handler.file.close()
+                                self.data_handler.dataset.close()
                             except Exception:
                                 pass
                         self.data_handler.terminate()
@@ -207,14 +210,14 @@ class LiveODWindow(QWidget):
                         print(e)
                     self.data_handler = None  # Ensure handler is reset
                 self.the_baby.terminate()
-                self.the_baby.dishonorable_death()
+                self.the_baby.dishonorable_death()  # Signal to baby to die honorably
                 self.the_baby = None  # Ensure baby is reset
                 self.queue = Queue()  # Reset the queue for new experiment
                 print('Acquisition aborted, run ID advanced.')
             except Exception as e:
                 self.msg(f"Error sending dishonorable death signal: {e}")
-        # Restart camera mother to watch for new data
-        update_run_id()
+            # Restart camera mother to watch for new data
+            update_run_id()
         self.restart_mother()
 
     def clear_plots(self):

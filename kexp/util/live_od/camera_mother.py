@@ -127,6 +127,7 @@ class DataHandler(QThread,Scribe):
         super().__init__()
         self.queue = queue
         self.data_filepath = data_filepath
+        self.interrupted = False
 
     def get_save_data_bool(self,save_data_bool):
         self.save_data = save_data_bool
@@ -139,12 +140,15 @@ class DataHandler(QThread,Scribe):
     def run(self):
         self.write_image_to_dataset()
 
+    # def interrupt(self):
+    #     self.interrupted = True
+
     def write_image_to_dataset(self):
         TIMEOUT = 20.
         if self.save_data:
             self.dataset = self.wait_for_data_available(close=False,timeout=TIMEOUT)
         try:
-            while True:
+            while True and not self.interrupted:
                 img, _, idx = self.queue.get(timeout=TIMEOUT)
                 TIMEOUT = 10.
                 img_t = time.time()
@@ -163,6 +167,9 @@ class DataHandler(QThread,Scribe):
             if self.save_data:
                 self.dataset.close()
             self.timeout.emit()
+
+        if self.interrupted and self.save_data:
+            self.dataset.close()
 
 class CameraBaby(QThread,Scribe):
     image_captured = pyqtSignal(int)
@@ -229,7 +236,10 @@ class CameraBaby(QThread,Scribe):
         return True
     
     def dishonorable_death(self,delete_data=True):
-        self.camera.stop_grab()
+        try:
+            self.camera.stop_grab()
+        except:
+            pass
         self.update_run_id()
         self.remove_incomplete_data(delete_data)
         print(f"{self.name} has died dishonorably.")
