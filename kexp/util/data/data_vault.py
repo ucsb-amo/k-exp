@@ -66,7 +66,7 @@ class DataSaver():
 
             f.close()
             print("Parameters saved, data closed.")
-            self._update_run_id(expt.run_info)
+            # self._update_run_id(expt.run_info)
             os.chdir(pwd)
 
     def get_xvardims(self,expt):
