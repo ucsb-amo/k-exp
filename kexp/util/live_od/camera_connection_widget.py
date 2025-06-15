@@ -36,14 +36,14 @@ class CamConnBar(QWidget):
 
     def setup_layout(self):
         self.layout = QVBoxLayout()
-        label = QLabel("Camera connections")
+        # label = QLabel("Camera connections")
         buttonlayout = QHBoxLayout()
         buttonlayout.addWidget(self.xy_basler_button)
         buttonlayout.addWidget(self.basler_2dmot_button)
         buttonlayout.addWidget(self.z_basler_button)
         buttonlayout.addWidget(self.x_basler_button)
         buttonlayout.addWidget(self.andor)
-        self.layout.addWidget(label)
+        # self.layout.addWidget(label)
         self.layout.addLayout(buttonlayout)
         self.setLayout(self.layout)
 
@@ -73,7 +73,7 @@ class CameraButton(QPushButton):
     def button_pressed(self):
         if self.camera.is_opened():
             self.close_camera()
-            self.msg(f'Connection to {self.camera_params.key} closed.')
+            # self.msg(f'Connection to {self.camera_params.key} closed.')
         else:
             self.open_camera()
     
