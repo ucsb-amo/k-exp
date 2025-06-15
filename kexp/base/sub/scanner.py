@@ -7,6 +7,7 @@ from artiq.experiment import delay
 from kexp.util.artiq.async_print import aprint
 from kexp.config.camera_id import CameraParams
 from kexp.util.data.counter import counter
+import os
 
 RPC_DELAY = 10.e-3
 
@@ -111,7 +112,7 @@ class Scanner():
         Usually overloaded in kexp.Base.
         """
         pass
-        
+
     @kernel
     def scan(self):
         """
@@ -125,6 +126,8 @@ class Scanner():
         updated host ExptParams values are written into the corresponding kernel
         ExptParams.
         """
+
+        self._check_data_file_exists()
 
         self.pre_scan()
 
@@ -146,6 +149,8 @@ class Scanner():
             self.scan_kernel()
 
             self.cleanup_scan_kernel()
+
+            self._check_data_file_exists()
 
             delay(self.params.t_recover)
             self.core.break_realtime()
