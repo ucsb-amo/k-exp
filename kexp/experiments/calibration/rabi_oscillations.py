@@ -21,22 +21,11 @@ class rabi_oscillations(EnvExperiment, Base):
 
         ### Experiment setup
         
-        # self.xvar('t_raman_pulse',np.arange(0.,2*N,0.25)*self.p.t_raman_pi_pulse)
-        # self.xvar('t_raman_pulse',np.linspace(0.,5.e-6,10))
-        # self.xvar('t_raman_pulse',)
-        # self.p.t_raman_pulse = 0.
-        self.tf = 2.e-3
-        # self.xvar('t_raman_pulse',np.concatenate([np.linspace(0.,3.e-6,9),[self.tf]]))
         t_pi = 2.6137e-06
-        N = 4
-        # self.xvar('t_raman_pulse',np.arange(0.,2*N,0.5)*t_pi)
-        self.xvar('t_raman_pulse',np.linspace(0.,500.e-6,1))
-
-        # speed mode saves like 3 seconds per shot, doubles data rate
-        # self.p.t_magtrap = 1.
-        # self.p.t_magtrap_ramp = 0.25
-        # self.p.t_lightsheet_rampup = 0.5
-        # self.p.t_lightsheet_rampdown = 0.25
+        N = 2
+        dt_periods = 0.25
+        # self.p.t_raman_pulse = 0.
+        self.xvar('t_raman_pulse',np.arange(0.,2*N + dt_periods, dt_periods)*t_pi)
 
         ### misc params ###
         self.p.t_tof = 300.e-6
@@ -56,13 +45,7 @@ class rabi_oscillations(EnvExperiment, Base):
         self.set_up_imaging()
         self.prepare_lf_tweezers()
         self.init_raman_beams()
-        
-        # if self.p.t_raman_pulse == self.tf:
-        f = 38.e6
-        # else:
-        # f = self.p.frequency_raman_transition
-
-        self.raman.pulse(self.p.t_raman_pulse,f)
+        self.raman.pulse(self.p.t_raman_pulse,self.p.frequency_raman_transition)
         delay(1.e-3)
         self.tweezer.off()
 
