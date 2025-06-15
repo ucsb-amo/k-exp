@@ -2,16 +2,18 @@ import sys
 from queue import Queue
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
 from PyQt6.QtGui import QFont, QIcon
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from PyQt6.QtCore import QThread
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
 from kexp.util.live_od.camera_connection_widget import CamConnBar, ROISelector
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.analyzer import Analyzer
 from kexp.util.live_od.gui.plotter import LiveODPlotter
 from kexp.analysis.roi import ROI
-from kexp.util.increment_run_id import update_run_id
+from kexp.util.increment_run_id import update_run_id, RUN_ID_PATH
 from kexp.analysis.image_processing import compute_OD, process_ODs
 import numpy as np
+import os
 
 class StatusLightsWidget(QWidget):
     def __init__(self):
@@ -58,62 +60,103 @@ class LiveODWindow(QWidget):
         self.last_camera = ""
         self.img_count = 0
         self.img_count_run = 0
-        self.status_lights = StatusLightsWidget()
         self.setup_widgets()
         self.setup_layout()
         self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
         self.camera_mother.start()
 
+    def update_run_id_label(self):
+        try:
+            with open(RUN_ID_PATH, 'r') as f:
+                rid = f.read().strip()
+            self.run_id_label.setText(f"Run ID: {rid}")
+        except Exception as e:
+            self.run_id_label.setText("Run ID: (unavailable)")
+
     def setup_widgets(self):
-        font = QFont()
-        font.setPointSize(10)
         self.viewer_window = LiveODViewer()
-        self.output_window = self.viewer_window.output_window
-        self.output_window.setFont(font)
-        self.output_window.setReadOnly(True)
+        self.setup_run_id_label()
+        self.setup_output_window()
+        self.setup_fix_button()
         self.camera_conn_bar = CamConnBar(self.camera_nanny, self.output_window)
         self.roi_select = ROISelector()
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
         self.plotting_queue = Queue()
         self.analyzer = Analyzer(self.plotting_queue)
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
+        self.status_lights = StatusLightsWidget()
         self.plotter.start()
-        self.advance_run_button = QPushButton('Fix')
-        self.advance_run_button.setMinimumHeight(40)
-        self.advance_run_button.setStyleSheet('background-color: #ffcccc; font-size: 18px; font-weight: bold;')
-        self.advance_run_button.clicked.connect(self.advance_run)
+
+    def setup_fix_button(self):
+        self.fix_button = QPushButton('Fix')
+        self.fix_button.setMinimumHeight(40)
+        self.fix_button.setStyleSheet('background-color: #ffcccc; font-size: 40px; font-weight: bold;')
+        self.fix_button.clicked.connect(self.fix)
+        self.run_id_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    def setup_output_window(self):
+        font = QFont()
+        font.setPointSize(10)
+        self.output_window = self.viewer_window.output_window
+        self.output_window.setFont(font)
+        self.output_window.setReadOnly(True)
+
+    def setup_run_id_label(self):
+        # Add Run ID label
+        self.run_id_label = QLabel()
+        self.run_id_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        font = QFont()
+        font.setPointSize(12)
+        font.setBold(True)
+        self.run_id_label.setFont(font)
+        self.update_run_id_label()
+        # Timer for periodic update
+        self.run_id_timer = QTimer(self)
+        self.run_id_timer.timeout.connect(self.update_run_id_label)
+        self.run_id_timer.start(1)  # 10 seconds
 
     def setup_layout(self):
         layout = QVBoxLayout()
+        # Add the Run ID label above the camera buttons
+        # layout.addWidget(self.run_id_label)
         control_bar = QHBoxLayout()
-        control_bar.addWidget(self.camera_conn_bar)
+        cam_bar = QVBoxLayout()
+        cam_bar.addWidget(self.run_id_label)
+        cam_bar.addWidget(self.camera_conn_bar)
+        control_bar.addLayout(cam_bar)
         control_bar.addWidget(self.status_lights)
         control_bar.addWidget(self.roi_select)
-        control_bar.addWidget(self.advance_run_button)
-        control_bar.addStretch()
+        control_bar.addWidget(self.fix_button)
+        # control_bar.addStretch()
         layout.addLayout(control_bar)
         layout.addWidget(self.viewer_window)
         self.setLayout(layout)
 
     def create_camera_baby(self, file, name):
-        self.the_baby = CameraBaby(file, name, self.queue, self.camera_nanny)
         self.data_handler = DataHandler(self.queue, data_filepath=file)
-        self.the_baby.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
+        self.the_baby = CameraBaby(self.data_handler, name, self.queue, self.camera_nanny)
+        self.data_handler.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
+        self.data_handler.image_type_signal.connect(self.analyzer.get_analysis_type)
+        self.data_handler.got_image_from_queue.connect(self.analyzer.got_img)
+        self.data_handler.got_image_from_queue.connect(self.count_images)
+
         self.the_baby.camera_connect.connect(self.check_new_camera)
         self.the_baby.camera_grab_start.connect(self.grab_start_msg)
         self.the_baby.camera_grab_start.connect(self.get_img_number)
         self.the_baby.camera_grab_start.connect(self.data_handler.get_img_number)
         self.the_baby.camera_grab_start.connect(self.viewer_window.get_img_number)
         self.the_baby.camera_grab_start.connect(self.analyzer.get_img_number)
-        self.the_baby.image_type_signal.connect(self.analyzer.get_analysis_type)
         self.the_baby.camera_grab_start.connect(self.data_handler.start)
         self.the_baby.camera_grab_start.connect(self.reset_count)
-        self.data_handler.got_image_from_queue.connect(self.analyzer.got_img)
-        self.data_handler.got_image_from_queue.connect(self.count_images)
+
         self.the_baby.honorable_death_signal.connect(lambda: self.msg(f'Run complete. {name} has died honorably.'))
-        self.the_baby.dishonorable_death_signal.connect(lambda: self.msg(f'{name} has died dishonorably. Incomplete data deleted.'))
         self.the_baby.honorable_death_signal.connect(self.restart_mother)
+        self.the_baby.honorable_death_signal.connect(update_run_id)
+
+        self.the_baby.dishonorable_death_signal.connect(lambda: self.msg(f'{name} has died dishonorably. Incomplete data deleted.'))
         self.the_baby.dishonorable_death_signal.connect(self.restart_mother)
+        self.the_baby.dishonorable_death_signal.connect(update_run_id)
+
         self.the_baby.cam_status_signal.connect(self.status_lights.set_cam_status_lights)
         self.the_baby.start()
 
@@ -229,28 +272,27 @@ class LiveODWindow(QWidget):
     def update_image_count(self, count, total):
         self.viewer_window.update_image_count(count, total)
 
-    def advance_run(self):
+    def fix(self):
+        if hasattr(self, 'data_handler') and self.data_handler is not None:
+            try:
+                self.data_handler.interrupted = True
+                self.data_handler.quit()
+            except Exception as e:
+                print(e)
+            self.data_handler = None
+                
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
-                if hasattr(self, 'data_handler') and self.data_handler is not None:
-                    try:
-                        if hasattr(self.data_handler, 'dataset') and self.data_handler.dataset is not None:
-                            try:
-                                self.data_handler.dataset.close()
-                            except Exception:
-                                pass
-                        self.data_handler.terminate()
-                    except Exception as e:
-                        print(e)
-                    self.data_handler = None
-                self.the_baby.terminate()
-                self.the_baby.dishonorable_death()
-                self.the_baby = None
-                self.queue = Queue()
+                self.the_baby.interrupted = True
+                # self.the_baby.dishonorable_death()
                 print('Acquisition aborted, run ID advanced.')
             except Exception as e:
-                self.msg(f"Error sending dishonorable death signal: {e}")
-        update_run_id()
+                print(e)
+            self.the_baby = None
+        else:
+            update_run_id()
+
+        self.queue = Queue()
         self.restart_mother()
 
 if __name__ == '__main__':
