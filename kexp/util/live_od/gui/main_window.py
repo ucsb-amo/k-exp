@@ -290,7 +290,8 @@ class LiveODWindow(QWidget):
                 print(e)
             self.the_baby = None
         else:
-            update_run_id()
+            # update_run_id()
+            pass
 
         self.queue = Queue()
         self.restart_mother()
