@@ -12,27 +12,26 @@ N_NOTIFY = T_NOTIFY // CHECK_PERIOD
 DEFAULT_TIMEOUT = 20.
 
 class Scribe():
-    def __init__(self):
+    def __init__(self, data_filepath=""):
         self.ds = DataSaver()
-        self.data_filepath = ""
+        if data_filepath != "":
+            self.data_filepath = data_filepath
 
-    def wait_for_data_available(self,close=True,openmode='r+',
+    def wait_for_data_available(self,openmode='r+',
                                 check_period=CHECK_PERIOD,
-                                timeout=-1.):
+                                timeout=DEFAULT_TIMEOUT):
         """Blocks until the file at self.datapath is available.
         """
+        close = False
         t0 = time.time()
         count = 0
         while True:
             try:
                 f = h5py.File(self.data_filepath,openmode)
-                if close:
-                    f.close()
                 return f
             except Exception as e:
                 if "Unable to" in str(e) or "Invalid file name" in str(e) or "cannot access" in str(e):
                     # file is busy -- wait for available
-                    # print(e)
                     count += 1
                     time.sleep(check_period)
                     if count == N_NOTIFY:
@@ -40,6 +39,7 @@ class Scribe():
                         print("Can't open data. Is another process using it?")
                 else:
                     raise e
+            self._check_data_file_exists()
             if timeout > 0.:
                 if time.time() - t0 > timeout:
                     raise ValueError("Timed out waiting for data to be available.")        
@@ -48,54 +48,46 @@ class Scribe():
         count = 1
         t0 = time.time()
         while True:
-            if np.mod(count,N_NOTIFY*3) == 0:
-                print('Is CameraMother running?')
-                count = 1
-            elif np.mod(count,N_NOTIFY) == 0:
+            try:
+                self._check_data_file_exists()
+            except:
+                break
+            if np.mod(count,N_NOTIFY) == 0:
                 print('Waiting for camera ready.') 
                 print(self.run_info.run_id)
             
             if timeout > 0.:
                 if time.time() - t0 > timeout:
-                    self.dataset.close()
                     self.remove_incomplete_data()
                     raise ValueError("Waiting for camera ready timed out.")
 
-            self.dataset = self.wait_for_data_available(close=False)
-            if self.dataset.attrs['camera_ready']:
-                self.dataset.attrs['camera_ready_ack'] = 1
-                print('Acknowledged camera ready signal.')
-                self.dataset.close()
-                break
-            else:
-                self.dataset.close()
-                count += 1
+            with self.wait_for_data_available() as f:
+                if f.attrs['camera_ready']:
+                    f.attrs['camera_ready_ack'] = 1
+                    print('Acknowledged camera ready signal.')
+                    break
+                else:
+                    count += 1
             time.sleep(CHECK_PERIOD)
         return True
 
     def mark_camera_ready(self):
-        while True:
-            self.dataset = self.wait_for_data_available(close=False,timeout=DEFAULT_TIMEOUT)
-            self.dataset.attrs['camera_ready'] = 1
-            self.dataset.close()
-            break
+        with self.wait_for_data_available() as f:
+            f.attrs['camera_ready'] = 1
 
     def check_camera_ready_ack(self):
         while True:
-            self.dataset = self.wait_for_data_available(close=False,timeout=DEFAULT_TIMEOUT)
-            if self.dataset.attrs['camera_ready_ack']:
-                print('Received ready acknowledgement.')
-                self.dataset.close()
-                break
-            else:
-                self.dataset.close()
-                time.sleep(WAIT_PERIOD)
-        return self.dataset
+            with self.wait_for_data_available() as f:
+                if f.attrs['camera_ready_ack']:
+                    print('Received ready acknowledgement.')
+                    break
+                else:
+                    time.sleep(WAIT_PERIOD)
         
-    def write_data(self, expt_filepath, timeout=DEFAULT_TIMEOUT):
-        self.dataset = self.wait_for_data_available(close=False,timeout=timeout)
-        self.ds.save_data(self, expt_filepath, self.dataset)
-        print("Done!")
+    def write_data(self, expt_filepath):
+        with self.wait_for_data_available() as f:
+            self.ds.save_data(self, expt_filepath, f)
+            print("Done!")
 
     def remove_incomplete_data(self,delete_data_bool=True):
         # msg = "Something went wrong."
@@ -103,10 +95,25 @@ class Scribe():
             msg = "Destroying incomplete data."
             while True:
                 try:
-                    self.dataset.close()
-                    self.wait_for_data_available(check_period=0.25,close=True)
+                    with self.wait_for_data_available(check_period=0.25) as f:
+                        pass
                     os.remove(self.data_filepath)
-                    break
+                    print(msg)
                 except Exception as e:
-                    print(e)
-            print(msg)
+                    break
+            
+    def _check_data_file_exists(self):
+        """
+        Checks if the data file exists if saving data is enabled. Raises an
+        error if not found.
+        """
+        if hasattr(self, 'run_info'):
+            filepath = getattr(self.run_info, 'filepath', None)
+            if isinstance(filepath, list):
+                # If filepath is a list, check all paths
+                paths = filepath
+            else:
+                paths = [filepath]
+            for path in paths:
+                if path and not os.path.exists(path):
+                    raise RuntimeError(f"Data file for run ID {self.run_info.run_id} not found.")
