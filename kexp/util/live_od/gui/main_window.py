@@ -162,7 +162,7 @@ class LiveODWindow(QWidget):
     def clear_cams(self):
         self.the_baby = None
         self.data_handler = None
-
+        
     def restart_mother(self):
         import time
         time.sleep(0.25)
@@ -287,7 +287,7 @@ class LiveODWindow(QWidget):
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
                 self.the_baby.interrupted = True
-                # self.the_baby.dishonorable_death()
+                self.the_baby.dishonorable_death()
                 print('Acquisition aborted, run ID advanced.')
             except Exception as e:
                 print(e)
@@ -295,7 +295,6 @@ class LiveODWindow(QWidget):
         else:
             # update_run_id()
             pass
-
         self.queue = Queue()
         self.restart_mother()
 
