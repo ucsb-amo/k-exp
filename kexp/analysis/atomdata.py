@@ -17,6 +17,8 @@ import h5py
 from kexp.analysis.helper.datasmith import *
 
 import datetime
+import os
+import time
 
 from kexp.config.camera_id import img_types as img
 
@@ -376,6 +378,7 @@ class atomdata():
                 xvars_to_avg = [xvars_to_avg]
 
             from copy import deepcopy
+
             self._xvars_stored = deepcopy(self.xvars)
             def store_values(struct,keylist):
                 for key in keylist:
@@ -626,9 +629,24 @@ class atomdata():
 
     def _load_data(self, idx=0, path = "", lite=False):
 
-        file, rid = st.get_data_file(idx,path,lite)
-    
-        print(f"run id {rid}")
+        file, rid = st.get_data_file(idx, path, lite)
+
+        # If idx==0, check if the file is locked and try previous files if so
+        if idx <= 0 and path == "" and lite == False:
+            def is_file_locked(filepath):
+                try:
+                    with h5py.File(filepath, 'r'):
+                        return False
+                except OSError:
+                    return True
+
+            while is_file_locked(file):
+                # print(f"File {file} is locked, trying previous file...")
+                idx -= 1
+                file, rid = st.get_data_file(idx)
+                # Optionally, add a small delay to avoid hammering the disk
+                time.sleep(0.05)
+            
         with h5py.File(file,'r') as f:
             self.params = ExptParams()
             self.camera_params = CameraParams()
@@ -651,9 +669,9 @@ class atomdata():
                 cooling_text = ""
                 imaging_text = ""
             self.experiment_code = expt_code(experiment_text,
-                                             params_text,
-                                             cooling_text,
-                                             imaging_text)
+                                                params_text,
+                                                cooling_text,
+                                                imaging_text)
             try:
                 self.sort_idx = f['data']['sort_idx'][()]
                 self.sort_N = f['data']['sort_N'][()]
