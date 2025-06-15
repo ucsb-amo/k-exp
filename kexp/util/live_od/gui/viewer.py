@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 import json
 import pyqtgraph as pg
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QLabel, QPushButton, QPlainTextEdit
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QLabel, QPushButton, QPlainTextEdit, QSlider, QSizePolicy, QLineEdit, QDoubleSpinBox
 from PyQt6.QtCore import Qt
 import sys
 import contextlib
@@ -32,6 +32,11 @@ class LiveODViewer(QWidget):
         self._autoscale_ready = False
         self._autoscale_buffer = []
         self._cmap_name = 'viridis'  # Default colormap is now viridis
+        self._od_min = 0.0
+        self._od_max = 2.5
+        self._od_slider_min = 0.0  # Pin minimum at zero
+        self._od_slider_max = 6.0
+        self._od_slider_steps = int(self._od_slider_max / 0.1) # for 0.025 step size
         self.init_ui()
         
     def init_ui(self):
@@ -102,12 +107,86 @@ class LiveODViewer(QWidget):
 
         sumody_splitter = QSplitter(Qt.Orientation.Vertical)
         sumody_splitter.addWidget(self.sumody_panel)
-        # Add a blank spacer widget below sumody_panel
-        spacer = QWidget()
-        # Set spacer minimum height to match sumodx_panel's minimum height
-        spacer.setMinimumHeight(self.sumodx_panel.minimumHeight())
-        sumody_splitter.addWidget(spacer)
-        sumody_splitter.setSizes([400, 120])
+        # Add OD min/max sliders below sumody_panel
+        od_controls_widget = QWidget()
+        od_controls_layout = QVBoxLayout()
+        od_controls_layout.setContentsMargins(5, 5, 5, 5)
+        od_controls_layout.setSpacing(5)
+
+        # --- Min OD slider with value labels ---
+        min_slider_layout = QVBoxLayout()
+        min_slider_label_row = QHBoxLayout()
+        min_slider_row = QHBoxLayout()
+        min_label = QLabel('Min OD:')
+        min_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.od_min_spinner = QDoubleSpinBox()
+        self.od_min_spinner.setDecimals(1)
+        self.od_min_spinner.setSingleStep(0.1)
+        self.od_min_spinner.setRange(self._od_slider_min, self._od_slider_max)
+        self.od_min_spinner.setValue(self._od_min)
+        self.od_min_spinner.setMaximumWidth(70)
+        self.od_min_spinner.valueChanged.connect(self._on_od_min_spinner_changed)
+        min_left_label = QLabel(f"{self._od_slider_min:.1f}")
+        min_left_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.od_min_slider = QSlider(Qt.Orientation.Horizontal)
+        self.od_min_slider.setMinimum(0)
+        self.od_min_slider.setMaximum(self._od_slider_steps)
+        self.od_min_slider.setValue(int((self._od_min - self._od_slider_min) / (self._od_slider_max - self._od_slider_min) * self._od_slider_steps))
+        self.od_min_slider.valueChanged.connect(self._on_od_slider_changed)
+        self.od_min_slider.setStyleSheet("QSlider::handle:horizontal {height: 28px; width: 18px; border-radius: 6px; background: #0078d7; border: 2px solid #444;} QSlider {height: 24px;}")
+        min_right_label = QLabel(f"{self._od_slider_max:.1f}")
+        min_right_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+        min_slider_label_row.addWidget(min_label)
+        min_slider_label_row.addWidget(self.od_min_spinner)
+
+        min_slider_row.addWidget(min_left_label)
+        min_slider_row.addWidget(self.od_min_slider)
+        min_slider_row.addWidget(min_right_label)
+
+        min_slider_layout.addLayout(min_slider_label_row)
+        min_slider_layout.addLayout(min_slider_row)
+
+        # --- Max OD slider with value labels ---
+        max_slider_layout = QVBoxLayout()
+        max_slider_label_row = QHBoxLayout()
+        max_slider_row = QHBoxLayout()
+        max_label = QLabel('Max OD:')
+        max_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.od_max_spinner = QDoubleSpinBox()
+        self.od_max_spinner.setDecimals(1)
+        self.od_max_spinner.setSingleStep(0.1)
+        self.od_max_spinner.setRange(self._od_slider_min, self._od_slider_max)
+        self.od_max_spinner.setValue(self._od_max)
+        self.od_max_spinner.setMaximumWidth(70)
+        self.od_max_spinner.valueChanged.connect(self._on_od_max_spinner_changed)
+        max_left_label = QLabel(f"{self._od_slider_min:.1f}")
+        max_left_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.od_max_slider = QSlider(Qt.Orientation.Horizontal)
+        self.od_max_slider.setMinimum(0)
+        self.od_max_slider.setMaximum(self._od_slider_steps)
+        self.od_max_slider.setValue(int((self._od_max - self._od_slider_min) / (self._od_slider_max - self._od_slider_min) * self._od_slider_steps))
+        self.od_max_slider.valueChanged.connect(self._on_od_slider_changed)
+        self.od_max_slider.setStyleSheet("QSlider::handle:horizontal {height: 28px; width: 18px; border-radius: 6px; background: #0078d7; border: 2px solid #444;} QSlider {height: 24px;}")
+        max_right_label = QLabel(f"{self._od_slider_max:.1f}")
+        max_right_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+        max_slider_label_row.addWidget(max_label)
+        max_slider_label_row.addWidget(self.od_max_spinner)
+
+        max_slider_row.addWidget(max_left_label)
+        max_slider_row.addWidget(self.od_max_slider)
+        max_slider_row.addWidget(max_right_label)
+
+        max_slider_layout.addLayout(max_slider_label_row)
+        max_slider_layout.addLayout(max_slider_row)
+
+        # --- Add to controls layout ---
+        od_controls_layout.addLayout(min_slider_layout)
+        od_controls_layout.addLayout(max_slider_layout)
+        od_controls_widget.setLayout(od_controls_layout)
+        sumody_splitter.addWidget(od_controls_widget)
+        sumody_splitter.setSizes([400, 80])
 
         # Synchronize vertical split positions
         def sync_vertical_splitter(pos):
@@ -145,6 +224,7 @@ class LiveODViewer(QWidget):
         self.clear_button.clicked.connect(self.clear_plots)
         self.reset_zoom_button.clicked.connect(self.reset_zoom)
         self.od_plot.getViewBox().sigRangeChanged.connect(self.sync_sumod_panels)
+        sync_vertical_splitter(od_and_sumodx_splitter.sizes())
         self.sync_sumod_panels()
 
     def _with_label(self, imgview, label):
@@ -256,14 +336,63 @@ class LiveODViewer(QWidget):
     #     if event.button() == Qt.MouseButton.RightButton:
     #         self.reset_zoom()
 
+    def _on_od_range_changed(self):
+        self._od_min = self.od_min_slider.value()
+        self._od_max = self.od_max_slider.value()
+        # Re-plot OD with new min/max if OD data exists
+        if hasattr(self, '_last_od') and self._last_od is not None:
+            self.plot_od(self._last_od, self._last_sumodx, self._last_sumody, min_od=self._od_min, max_od=self._od_max)
+
+    def _on_od_slider_changed(self):
+        min_val = self.od_min_slider.value() / self._od_slider_steps * (self._od_slider_max - self._od_slider_min) + self._od_slider_min
+        max_val = self.od_max_slider.value() / self._od_slider_steps * (self._od_slider_max - self._od_slider_min) + self._od_slider_min
+        # Prevent min > max
+        if min_val > max_val:
+            if self.sender() == self.od_min_slider:
+                self.od_max_slider.setValue(self.od_min_slider.value())
+                max_val = min_val
+            else:
+                self.od_min_slider.setValue(self.od_max_slider.value())
+                min_val = max_val
+        self._od_min = min_val
+        self._od_max = max_val
+        self.od_min_spinner.blockSignals(True)
+        self.od_max_spinner.blockSignals(True)
+        self.od_min_spinner.setValue(self._od_min)
+        self.od_max_spinner.setValue(self._od_max)
+        self.od_min_spinner.blockSignals(False)
+        self.od_max_spinner.blockSignals(False)
+        if hasattr(self, '_last_od') and self._last_od is not None:
+            self.plot_od(self._last_od, self._last_sumodx, self._last_sumody, min_od=self._od_min, max_od=self._od_max)
+
+    def _on_od_min_spinner_changed(self, val):
+        val = max(self._od_slider_min, min(val, self._od_max))
+        slider_val = int((val - self._od_slider_min) / (self._od_slider_max - self._od_slider_min) * self._od_slider_steps)
+        self.od_min_slider.blockSignals(True)
+        self.od_min_slider.setValue(slider_val)
+        self.od_min_slider.blockSignals(False)
+        self._od_min = val
+        if hasattr(self, '_last_od') and self._last_od is not None:
+            self.plot_od(self._last_od, self._last_sumodx, self._last_sumody, min_od=self._od_min, max_od=self._od_max)
+
+    def _on_od_max_spinner_changed(self, val):
+        val = min(self._od_slider_max, max(val, self._od_min))
+        slider_val = int((val - self._od_slider_min) / (self._od_slider_max - self._od_slider_min) * self._od_slider_steps)
+        self.od_max_slider.blockSignals(True)
+        self.od_max_slider.setValue(slider_val)
+        self.od_max_slider.blockSignals(False)
+        self._od_max = val
+        if hasattr(self, '_last_od') and self._last_od is not None:
+            self.plot_od(self._last_od, self._last_sumodx, self._last_sumody, min_od=self._od_min, max_od=self._od_max)
+
     def plot_od(self, od, sumodx, sumody, min_od=None, max_od=None):
         # If this is the first OD after a clear, set axes to match its shape
         if getattr(self, '_last_od_shape', None) is None and od is not None:
             self.od_plot.setXRange(0, od.shape[1], padding=0)
             self.od_plot.setYRange(0, od.shape[0], padding=0)
         if min_od is None or max_od is None:
-            min_od = float(np.min(od))
-            max_od = float(np.max(od))
+            min_od = self._od_min
+            max_od = self._od_max
         self.od_img_item.setImage(od.T, autoLevels=False, levels=(min_od, max_od))
         self._last_sumodx = sumodx
         self._last_sumody = sumody
