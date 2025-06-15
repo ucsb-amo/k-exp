@@ -11,6 +11,7 @@ from kexp.analysis.atomdata import unpack_group
 from kexp.control.cameras.dummy_cam import DummyCamera
 from kexp.util.live_od.camera_nanny import CameraNanny
 from kexp.util.data.server_talk import get_latest_data_file, run_id_from_filepath
+from kexp.util.increment_run_id import update_run_id
 
 from kexp.base.sub.scribe import CHECK_PERIOD, Scribe
 
@@ -62,7 +63,6 @@ class CameraMother(QThread):
     def read_run_id(self):
         with open(RUN_ID_PATH,'r') as f:
             run_id = int(f.read())
-        f.close()
         return run_id
 
     def watch_for_new_file(self,manage_babies=False):
@@ -90,7 +90,7 @@ class CameraMother(QThread):
 
     def handle_baby_creation(self, file, name, manage_babies):
         if manage_babies:
-            self.data_writer = DataHandler(self.output_queue,dataset_path=file)
+            self.data_writer = DataHandler(self.output_queue,data_filepath=file)
             self.baby = CameraBaby(file,name,self.output_queue,self.camera_nanny)
             self.baby.image_captured.connect(self.data_writer.start)
             self.baby.run()
@@ -121,12 +121,20 @@ class CameraMother(QThread):
 
 class DataHandler(QThread,Scribe):
     got_image_from_queue = pyqtSignal(np.ndarray)
-    timeout = pyqtSignal()
+    save_data_bool_signal = pyqtSignal(int)
+    image_type_signal = pyqtSignal(bool)
 
     def __init__(self,queue:Queue,data_filepath):
+        self.data_filepath = data_filepath
         super().__init__()
         self.queue = queue
-        self.data_filepath = data_filepath
+
+        from kexp.config.expt_params import ExptParams
+        from kexp.config.camera_id import CameraParams
+        from kexp.util.data.run_info import RunInfo
+        self.params = ExptParams()
+        self.camera_params = CameraParams()
+        self.run_info = RunInfo()
         self.interrupted = False
 
     def get_save_data_bool(self,save_data_bool):
@@ -138,40 +146,40 @@ class DataHandler(QThread,Scribe):
         self.N_pwa_per_shot = N_pwa_per_shot
 
     def run(self):
+        if self.interrupted:
+            self.quit()
         self.write_image_to_dataset()
 
-    # def interrupt(self):
-    #     self.interrupted = True
+    def read_params(self):
+        with self.wait_for_data_available() as f:
+            unpack_group(f,'camera_params',self.camera_params)
+            unpack_group(f,'params',self.params)
+            unpack_group(f,'run_info',self.run_info)
+        self.image_type_signal.emit(self.run_info.imaging_type)
+        self.save_data_bool_signal.emit(self.run_info.save_data)
 
     def write_image_to_dataset(self):
         TIMEOUT = 20.
-        if self.save_data:
-            self.dataset = self.wait_for_data_available(close=False,timeout=TIMEOUT)
         try:
-            while True and not self.interrupted:
+            while True:
+                if self.interrupted:
+                    break
                 img, _, idx = self.queue.get(timeout=TIMEOUT)
                 TIMEOUT = 10.
                 img_t = time.time()
                 self.got_image_from_queue.emit(img)
                 if self.save_data:
-                    self.dataset['data']['images'][idx] = img
-                    self.dataset['data']['image_timestamps'][idx] = img_t
-                    print(f"saved {idx+1}/{self.N_img}")
+                    with self.wait_for_data_available(timeout=TIMEOUT) as f:
+                        f['data']['images'][idx] = img
+                        f['data']['image_timestamps'][idx] = img_t
+                        print(f"saved {idx+1}/{self.N_img}")
                 if idx == (self.N_img - 1):
-                    if self.save_data:
-                        self.dataset.close()
-                        print('data closed!')
                     break
         except Exception as e:
-            print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
-            if self.save_data:
-                self.dataset.close()
-            self.timeout.emit()
+            # print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
+            pass
 
-        if self.interrupted and self.save_data:
-            self.dataset.close()
-
-class CameraBaby(QThread,Scribe):
+class CameraBaby(QThread):
     image_captured = pyqtSignal(int)
     camera_connect = pyqtSignal(str)
     camera_grab_start = pyqtSignal(int,int,int)
@@ -179,103 +187,78 @@ class CameraBaby(QThread,Scribe):
     image_type_signal = pyqtSignal(bool)
     honorable_death_signal = pyqtSignal()
     dishonorable_death_signal = pyqtSignal()
-
+    break_signal = pyqtSignal()
     cam_status_signal = pyqtSignal(int)
 
-    def __init__(self,data_filepath,name,output_queue:Queue,
+    def __init__(self,data_handler:DataHandler,
+                 name,output_queue:Queue,
                  camera_nanny:CameraNanny):
         super().__init__()
 
-        from kexp.config.expt_params import ExptParams
-        from kexp.config.camera_id import CameraParams
-        from kexp.util.data.run_info import RunInfo
-        self.params = ExptParams()
-        self.camera_params = CameraParams()
-        self.run_info = RunInfo()
         self.name = name
-
         self.camera_nanny = camera_nanny
         self.queue = output_queue
-        self.dataset = []
         self.death = self.dishonorable_death
-        self.data_filepath = data_filepath
+        self.data_handler = data_handler
+        self.interrupted = False
 
     def run(self):
         try:
             print(f"{self.name}: I am born!")
-            self.dataset = self.wait_for_data_available(close=False) # leaves open
-            self.read_params() # closes
-            self.create_camera() # checks for camera
-            self.cam_status_signal.emit(0)
-            if self.camera.is_opened():
-                self.mark_camera_ready() # opens and closes data
-            else:
-                raise ValueError("Camera not ready")
-            self.cam_status_signal.emit(1)
-            self.check_camera_ready_ack() # opens data and closes
-            self.cam_status_signal.emit(2)
+            self.data_handler.read_params()
+            self.handshake()
             self.grab_loop()
         except Exception as e:
             print(e)
-        self.cam_status_signal.emit(-1)
         self.death()
 
+    def handshake(self):
+        self.create_camera() # checks for camera
+        self.cam_status_signal.emit(0)
+        if self.camera.is_opened():
+            self.data_handler.mark_camera_ready()
+        else:
+            raise ValueError("Camera not ready")
+        self.cam_status_signal.emit(1)
+        self.data_handler.check_camera_ready_ack()
+        self.cam_status_signal.emit(2)
+
     def create_camera(self):
-        self.camera = self.camera_nanny.persistent_get_camera(self.camera_params)
-        self.camera_nanny.update_params(self.camera,self.camera_params)
-        camera_select = self.camera_params.key
+        self.camera = self.camera_nanny.persistent_get_camera(self.data_handler.camera_params)
+        self.camera_nanny.update_params(self.camera,self.data_handler.camera_params)
+        camera_select = self.data_handler.camera_params.key
         if type(camera_select) == bytes: 
             camera_select = camera_select.decode()
         self.camera_connect.emit(camera_select)
-        # self.camera = vars(self.camera_nanny)[self.camera_params.camera_select]
 
     def honorable_death(self):
-        try:
-            self.camera.stop_grab()
-        except:
-            pass
-        self.dataset.close()
+        self.camera.stop_grab()
         print(f"{self.name}: All images captured.")
         print(f"{self.name} has died honorably.")
         time.sleep(0.1)
         self.honorable_death_signal.emit()
+        self.cam_status_signal.emit(-1)
         return True
     
     def dishonorable_death(self,delete_data=True):
-        try:
-            self.camera.stop_grab()
-        except:
-            pass
-        self.update_run_id()
-        self.remove_incomplete_data(delete_data)
+        self.camera.stop_grab()
+        self.data_handler.remove_incomplete_data(delete_data)
         print(f"{self.name} has died dishonorably.")
         time.sleep(0.1)
         self.dishonorable_death_signal.emit()
+        self.cam_status_signal.emit(-1)
         return True
 
-    def read_params(self):
-        unpack_group(self.dataset,'camera_params',self.camera_params)
-        unpack_group(self.dataset,'params',self.params)
-        unpack_group(self.dataset,'run_info',self.run_info)
-        self.image_type_signal.emit(self.run_info.imaging_type)
-        self.save_data_bool_signal.emit(self.run_info.save_data)
-        self.dataset.close()
-
     def grab_loop(self):
-        N_img = int(self.params.N_img)
-        N_shots = int(self.params.N_shots)
-        N_pwa_per_shot = int(self.params.N_pwa_per_shot)
+        N_img = int(self.data_handler.params.N_img)
+        N_shots = int(self.data_handler.params.N_shots)
+        N_pwa_per_shot = int(self.data_handler.params.N_pwa_per_shot)
         self.camera_grab_start.emit(N_img,N_shots,N_pwa_per_shot)
         self.camera.start_grab(N_img,output_queue=self.queue,
-                         timeout=DEFAULT_TIMEOUT)
-        self.death = self.honorable_death
+                    timeout=DEFAULT_TIMEOUT,
+                    check_interrupt_method=self.break_check)
+        if not self.interrupted:
+            self.death = self.honorable_death
 
-    def update_run_id(self):
-        pwd = os.getcwd()
-        os.chdir(DATA_DIR)
-        with open(RUN_ID_PATH,'r') as f:
-            rid = int(f.read())
-        with open(RUN_ID_PATH,'w') as f:
-            line = f"{rid+1}"
-            f.write(line)
-        os.chdir(pwd)
+    def break_check(self):
+        return self.interrupted
