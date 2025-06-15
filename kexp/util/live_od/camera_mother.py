@@ -198,6 +198,7 @@ class CameraBaby(QThread):
 
         self.name = name
         self.camera_nanny = camera_nanny
+        self.camera = DummyCamera()
         self.queue = output_queue
         self.death = self.dishonorable_death
         self.data_handler = data_handler
@@ -211,7 +212,8 @@ class CameraBaby(QThread):
             self.grab_loop()
         except Exception as e:
             print(e)
-        self.death()
+        if not self.interrupted:
+            self.death()
         self.done_signal.emit()
 
     def handshake(self):
