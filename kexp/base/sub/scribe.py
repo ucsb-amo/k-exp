@@ -100,9 +100,11 @@ class Scribe():
                     os.remove(self.data_filepath)
                     print(msg)
                 except Exception as e:
+                    print(e)
+                if not self._check_data_file_exists(raise_error=False):
                     break
-            
-    def _check_data_file_exists(self):
+
+    def _check_data_file_exists(self, raise_error=True) -> TBool:
         """
         Checks if the data file exists if saving data is enabled. Raises an
         error if not found.
@@ -116,4 +118,8 @@ class Scribe():
                 paths = [filepath]
             for path in paths:
                 if path and not os.path.exists(path):
-                    raise RuntimeError(f"Data file for run ID {self.run_info.run_id} not found.")
+                    if raise_error:
+                        raise RuntimeError(f"Data file for run ID {self.run_info.run_id} not found.")
+                    else:
+                        return False
+            return True
