@@ -7,6 +7,9 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 from pylablib.devices.Andor.atmcd32d_lib import wlib as lib
 
+def nothing():
+    return False
+
 class AndorEMCCD(Andor.AndorSDK2Camera):
     def __init__(self, ExposureTime=0., gain = 30, hs_speed:int=0, vs_speed:int=1, vs_amp:int=3,
                  preamp = 2):
@@ -57,7 +60,9 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.open()
 
     def start_grab(self, N_img, output_queue:Queue,
-                    timeout=10., missing_frame="skip", return_info=True, buff_size=None):
+                    timeout=10., missing_frame="skip",
+                      return_info=True, buff_size=None,
+                      check_interrupt_method=nothing):
         """
         Snap `nframes` images (with preset image read mode parameters)
         Modified from pylablib.devices.interface.camera.
@@ -82,6 +87,8 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.start_acquisition(**acq_params)
         try:
             while nacq<N_img:
+                if check_interrupt_method():
+                    break
                 self.wait_for_frame(timeout=timeout)
                 print(f'gotem (img {nacq+1}/{N_img})') # added this line to give print statements
                 if return_info:
