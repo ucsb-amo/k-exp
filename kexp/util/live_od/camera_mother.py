@@ -187,6 +187,7 @@ class CameraBaby(QThread):
     image_type_signal = pyqtSignal(bool)
     honorable_death_signal = pyqtSignal()
     dishonorable_death_signal = pyqtSignal()
+    done_signal = pyqtSignal()
     break_signal = pyqtSignal()
     cam_status_signal = pyqtSignal(int)
 
@@ -211,6 +212,7 @@ class CameraBaby(QThread):
         except Exception as e:
             print(e)
         self.death()
+        self.done_signal.emit()
 
     def handshake(self):
         self.create_camera() # checks for camera

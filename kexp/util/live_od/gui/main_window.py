@@ -150,15 +150,18 @@ class LiveODWindow(QWidget):
         self.the_baby.camera_grab_start.connect(self.reset_count)
 
         self.the_baby.honorable_death_signal.connect(lambda: self.msg(f'Run complete. {name} has died honorably.'))
-        self.the_baby.honorable_death_signal.connect(self.restart_mother)
-        self.the_baby.honorable_death_signal.connect(update_run_id)
 
         self.the_baby.dishonorable_death_signal.connect(lambda: self.msg(f'{name} has died dishonorably. Incomplete data deleted.'))
-        self.the_baby.dishonorable_death_signal.connect(self.restart_mother)
-        self.the_baby.dishonorable_death_signal.connect(update_run_id)
+        
+        self.the_baby.done_signal.connect(self.restart_mother)
+        self.the_baby.done_signal.connect(update_run_id)
 
         self.the_baby.cam_status_signal.connect(self.status_lights.set_cam_status_lights)
         self.the_baby.start()
+
+    def clear_cams(self):
+        self.the_baby = None
+        self.data_handler = None
 
     def restart_mother(self):
         import time
