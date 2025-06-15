@@ -22,8 +22,6 @@ class SuppressPrints:
             sys.stdout = self._original_stdout
 
 class LiveODViewer(QWidget):
-    STATE_PATH = os.path.expanduser('~/.live_od_last_state.pkl')
-    CMAP_PATH = os.path.expanduser('~/.live_od_cmap.json')
     def __init__(self):
         super().__init__()
         self.Nimg = 0
@@ -41,21 +39,26 @@ class LiveODViewer(QWidget):
         self.clear_button = QPushButton('Clear')
         self.image_count_label = QLabel('Image count: 0/0')
         control_bar = QHBoxLayout()
+        
         control_bar.addWidget(self.reset_zoom_button)
         control_bar.addWidget(self.clear_button)
         control_bar.addWidget(self.image_count_label)
         control_bar.addStretch()
+
         self.output_window = QPlainTextEdit()
         self.output_window.setReadOnly(True)
         self.output_window.setMinimumHeight(40)
         self.output_window.setMaximumHeight(16777215)
+        
         self.img_atoms_view = pg.ImageView()
         self.img_light_view = pg.ImageView()
         self.img_dark_view = pg.ImageView()
+
         img_splitter = QSplitter(Qt.Orientation.Horizontal)
         img_splitter.addWidget(self._with_label(self.img_atoms_view, 'Atoms + Light'))
         img_splitter.addWidget(self._with_label(self.img_light_view, 'Light only'))
         img_splitter.addWidget(self._with_label(self.img_dark_view, 'Dark'))
+
         for v in [self.img_atoms_view, self.img_light_view, self.img_dark_view]:
             v.ui.histogram.hide(); v.ui.roiBtn.hide(); v.ui.menuBtn.hide()
             self.set_pg_colormap(v, 'viridis')
@@ -68,24 +71,21 @@ class LiveODViewer(QWidget):
         # Set default axes limits to 0-512 for both x and y
         self.od_plot.setXRange(0, 512, padding=0)
         self.od_plot.setYRange(0, 512, padding=0)
-        # self.od_plot.setLabel('left', 'OD')
-        # self.od_plot.setLabel('bottom', '')
+ 
         self.od_img_item = pg.ImageItem()
         self.od_plot.addItem(self.od_img_item)
         self.od_img_item.setZValue(-10)
         self.set_pg_colormap(self.od_img_item, 'viridis')
         self.sumodx_panel = pg.PlotWidget()
-        # self.sumodx_panel.setLabel('left', '')
-        # self.sumodx_panel.setLabel('bottom', '')
         self.sumodx_panel.setMouseEnabled(x=False, y=True)
         self.sumodx_panel.setMenuEnabled(False)
         self.sumody_panel = pg.PlotWidget()
-        # self.sumody_panel.setLabel('bottom', '')
-        # self.sumody_panel.setLabel('left', '')
+
         self.sumody_panel.setMouseEnabled(x=True, y=False)
         self.sumody_panel.setMenuEnabled(False)
         self.sumody_panel.hideAxis('right'); self.sumody_panel.hideAxis('top')
         self.sumody_panel.showGrid(x=False, y=False)
+        
         self.od_plot.setMouseEnabled(x=True, y=True)
         self.od_plot.setMenuEnabled(True)
         self.od_plot.hideAxis('right'); self.od_plot.hideAxis('top')
@@ -144,7 +144,6 @@ class LiveODViewer(QWidget):
         self.setLayout(layout)
         self.clear_button.clicked.connect(self.clear_plots)
         self.reset_zoom_button.clicked.connect(self.reset_zoom)
-        self.od_plot.scene().sigMouseClicked.connect(self.handle_mouse_click)
         self.od_plot.getViewBox().sigRangeChanged.connect(self.sync_sumod_panels)
         self.sync_sumod_panels()
 
@@ -156,6 +155,7 @@ class LiveODViewer(QWidget):
         layout.addWidget(imgview)
         container.setLayout(layout)
         return container
+    
     def set_pg_colormap(self, imgitem, cmap_name):
         import matplotlib
         lut = (matplotlib.colormaps[cmap_name](np.linspace(0, 1, 256))[:, :3] * 255).astype(np.uint8)
@@ -165,10 +165,12 @@ class LiveODViewer(QWidget):
         else:
             imgitem.setLookupTable(lut)
             imgitem.lut = lut
+
     def set_all_colormaps(self, cmap_name):
         self._cmap_name = cmap_name
         for v in [self.img_atoms_view, self.img_light_view, self.img_dark_view, self.od_img_item]:
             self.set_pg_colormap(v, cmap_name)
+
     def clear_plots(self):
         self.img_atoms_view.clear()
         self.img_light_view.clear()
@@ -186,12 +188,15 @@ class LiveODViewer(QWidget):
         self._autoscale_ready = False
         self._autoscale_buffer = []
         self._roi_set_count = 0
+
     def update_image_count(self, count, total):
         self.image_count_label.setText(f'Image count: {count}/{total}')
+
     def get_img_number(self, N_img, N_shots, N_pwa_per_shot, run_id=None):
         self.Nimg = N_img
         if run_id is not None:
             self._current_run_id = run_id
+
     def plot_images(self, atoms, light, dark):
         if not self._autoscale_ready:
             self._autoscale_buffer.append((atoms, light, dark))
@@ -245,9 +250,11 @@ class LiveODViewer(QWidget):
         self.sumodx_panel.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
         self.sumody_panel.enableAutoRange(axis=pg.ViewBox.XYAxes, enable=True)
         self.sync_sumod_panels()
-    def handle_mouse_click(self, event):
-        if event.button() == Qt.MouseButton.RightButton:
-            self.reset_zoom()
+
+    # def handle_mouse_click(self, event):
+    #     if event.button() == Qt.MouseButton.RightButton:
+    #         self.reset_zoom()
+
     def plot_od(self, od, sumodx, sumody, min_od=None, max_od=None):
         # If this is the first OD after a clear, set axes to match its shape
         if getattr(self, '_last_od_shape', None) is None and od is not None:
