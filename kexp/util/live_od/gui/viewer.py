@@ -63,7 +63,7 @@ class LiveODViewer(QWidget):
             v.ui.histogram.hide(); v.ui.roiBtn.hide(); v.ui.menuBtn.hide()
             self.set_pg_colormap(v, 'viridis')
         # --- Sync zoom/pan between atom, light, and dark images ---
-        self._syncing_image_views = False
+        self._syncing_image_views = True
         self.img_atoms_view.getView().sigRangeChanged.connect(lambda *args: self._sync_image_views(self.img_atoms_view))
         self.img_light_view.getView().sigRangeChanged.connect(lambda *args: self._sync_image_views(self.img_light_view))
         self.img_dark_view.getView().sigRangeChanged.connect(lambda *args: self._sync_image_views(self.img_dark_view))
@@ -225,6 +225,7 @@ class LiveODViewer(QWidget):
         od_vb = self.od_plot.getViewBox()
         x_range, y_range = od_vb.viewRange()
         self.sumodx_panel.setXRange(*x_range, padding=0)
+        self.sumody_panel.setYRange(*y_range, padding=0)
 
         self.od_plot.setYRange(*y_range, padding=0)
         self.od_plot.setXRange(*x_range, padding=0)
