@@ -93,7 +93,17 @@ def get_latest_data_file(lite=False):
     check_for_mapped_data_dir()
     folderpath = get_latest_date_folder(lite)
     pattern = os.path.join(folderpath,'*.hdf5')
-    latest_file = max(glob.iglob(pattern),key=os.path.getmtime)
+    files = list(glob.iglob(pattern))
+    files_sorted = sorted(files, key=os.path.getmtime, reverse=True)
+    latest_file = None
+    for file in files_sorted:
+        try:
+            # Try to access getmtime, which will raise FileNotFoundError if missing
+            os.path.getmtime(file)
+            latest_file = file
+            break
+        except FileNotFoundError:
+            continue
     return latest_file
 
 def recurse_find_data_file(r_id,lite=False,days_ago=0):
