@@ -80,7 +80,7 @@ class ExptParams():
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         
-        self.t_lightsheet_rampup = .7
+        self.t_lightsheet_rampup = .1
         self.t_lightsheet_rampdown = 1.457
         self.t_hf_lightsheet_rampdown = 1.2
         self.t_hf_lightsheet_rampdown2 = .06
@@ -109,7 +109,7 @@ class ExptParams():
         
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
-        self.t_magtrap = 3. # for max atom number use 3 s
+        self.t_magtrap = .81 # for max atom number use 3 s
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .15
@@ -234,7 +234,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.4
+        self.v_pd_lightsheet_rampup_end = 3.7
         self.v_pd_lightsheet_rampdown_end = 1. #4.16
         self.v_pd_hf_lightsheet_rampdown_end = .86 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
