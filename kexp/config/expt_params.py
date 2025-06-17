@@ -108,7 +108,7 @@ class ExptParams():
         self.t_bias_off_wait = 20.e-3
         
         self.t_recover = 40.e-3
-        self.t_magtrap_delay = 2.e-3
+        self.t_magtrap_delay = 1.e-3
         self.t_magtrap = 3. # for max atom number use 3 s
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
@@ -159,9 +159,9 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 19.5
-        self.v_zshim_current = .57
-        self.v_xshim_current = 0.
-        self.v_yshim_current = 2.8
+        self.v_zshim_current = .614
+        self.v_xshim_current = 0.4
+        self.v_yshim_current = 2.86
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -188,33 +188,33 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 11.5
+        self.detune_gm = 10.2
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.78
-        self.v_xshim_current_gm = 0.57
-        self.v_yshim_current_gm = 2.4
+        self.v_zshim_current_gm = 0.771
+        self.v_xshim_current_gm = 0.29
+        self.v_yshim_current_gm = 2.07
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .71 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .539 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .71
+        self.pfrac_d1_r_gm = .99
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.173
-        self.pfrac_r_gmramp_end = 0.529
+        self.pfrac_c_gmramp_end = 0.051
+        self.pfrac_r_gmramp_end = 0.55
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 92.
+        self.i_magtrap_init = 78.
         self.i_magtrap_ramp_end = 95.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
         
-        self.v_zshim_current_magtrap = 0.
+        self.v_zshim_current_magtrap = 0.111
         self.v_xshim_current_magtrap = 0.
-        self.v_yshim_current_magtrap = 8.
+        self.v_yshim_current_magtrap = 9.
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
