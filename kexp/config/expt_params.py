@@ -91,11 +91,11 @@ class ExptParams():
         
         self.t_tweezer_ramp = .56
         self.t_tweezer_hold = 5.e-3
-        self.t_tweezer_1064_ramp = .37
+        self.t_tweezer_1064_ramp = .45
         self.t_tweezer_1064_rampdown = 100.e-3 
         self.t_tweezer_1064_rampdown2 = 15.e-3   
         self.t_tweezer_1064_rampdown3 = .4
-        self.t_hf_tweezer_1064_ramp = .54
+        self.t_hf_tweezer_1064_ramp = .45
         self.t_hf_tweezer_1064_rampdown = 60.e-3 
         self.t_hf_tweezer_1064_rampdown2 = 450.e-3   
         self.t_hf_tweezer_1064_rampdown3 = 470.e-3 
