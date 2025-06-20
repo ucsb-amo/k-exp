@@ -670,7 +670,7 @@ class tweezer():
             fully off, since there is a small voltage divider in the system.
         """        
         if v_awg_am == dv:
-            v_awg_am = self.params.v_tweezer_paint_amp_max
+            v_awg_am = self.params.v_hf_tweezer_paint_amp_max
 
         self.pid1_dac.set(v=.0)
         delay(300.e-6)
@@ -750,13 +750,13 @@ class tweezer():
         if v_start == dv:
             v_start = 0.
         if v_end == dv:
-            v_end = self.params.v_pd_tweezer_1064_ramp_end
+            v_end = self.params.v_pd_hf_tweezer_1064_ramp_end
         if n_steps == di:
             n_steps = self.params.n_tweezer_ramp_steps
         if v_awg_am_max == dv:
-            v_awg_am_max = self.params.v_tweezer_paint_amp_max
+            v_awg_am_max = self.params.v_hf_tweezer_paint_amp_max
         if v_pd_max == dv:
-            v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
+            v_pd_max = self.params.v_pd_hf_tweezer_1064_ramp_end
 
         dt_ramp = t / n_steps
         delta_v = (v_end - v_start)/(n_steps - 1)
@@ -810,10 +810,10 @@ class tweezer():
             frequency with v_pd as with (v_pd_max,v_awg_am_max).
         """        
         if v_awg_am_max == dv:
-            v_awg_am_max = self.params.v_tweezer_paint_amp_max
+            v_awg_am_max = self.params.v_hf_tweezer_paint_amp_max
 
         if v_pd_max == dv:
-            v_pd_max = self.params.v_pd_tweezer_1064_ramp_end
+            v_pd_max = self.params.v_pd_hf_tweezer_1064_ramp_end
 
         p_frac = v_pd / v_pd_max
         # trap frequency propto sqrt( P / h^3 ), where P is power and h is painting

@@ -133,7 +133,7 @@ class lightsheet():
     @kernel
     def on(self, paint=False, v_awg_am=dv):
         if v_awg_am == dv:
-            v_awg_am = self.params.v_tweezer_paint_amp_max
+            v_awg_am = self.params.v_hf_tweezer_paint_amp_max
         if paint:
             self.paint_amp_dac.set(v=v_awg_am)
         else:
