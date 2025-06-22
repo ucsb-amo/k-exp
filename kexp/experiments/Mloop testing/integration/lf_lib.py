@@ -22,10 +22,10 @@ from kexp.analysis.plotting_1d import *
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = load_atomdata(0,crop_type='gm',average_repeats = True)
+        ad = load_atomdata(0,28073)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
-        return np.max(ad.atom_number_density)*sum(ad.atom_number)/len(ad.atom_number) 
+        return np.max(ad.atom_number)
 
 #Cost function is just the negative of the atom number
 def getCost():
@@ -97,14 +97,14 @@ class ExptBuilder():
                 def prepare(self):
                     Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-                    self.p.t_tof = 300.e-6
+                    self.p.t_tof = 1500.e-6
 
                     self.p.frequency_tweezer_list = [74.e6]
-                    a_list = [.16]
+                    a_list = [.2]
                     self.p.amp_tweezer_list = a_list
 
                     {assignment_lines}
-                    
+
                     self.p.t_mot_load = 1.
                     self.p.N_repeats = 1
 
@@ -142,6 +142,11 @@ class ExptBuilder():
                     self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
                                         v_start=self.p.v_pd_lightsheet_rampup_end,
                                         v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
+
+                    # feshbach field ramp to field 2
+                    self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                             i_start=self.p.i_lf_lightsheet_evap1_current,
+                             i_end=self.p.i_lf_tweezer_load_current)
                     
                     self.tweezer.on(paint=False)
                     self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_ramp,
@@ -232,6 +237,7 @@ class CustomInterface(mli.Interface):
         #jared P
         #jared
         self.var_names = var_names
+        # self.first_params = [.292,13.5,.6,9.,1.28,14.,1.8,100.e-3,12.8,.1,510.e-3]
 
         
     #You must include the get_next_cost_dict method in your class
@@ -254,7 +260,7 @@ class CustomInterface(mli.Interface):
 
 
         #I'm not sure how uncertainty will be handled, I think it may be easier to just use the built in noise function of MLoop
-        uncer = 0
+        uncer = 10
 
         #The bad value says if the experiment run failed. Bad should be set to true sometimes, obviously when a full run fails, but also I think some
         #quantification of noise could be useful to prevent things like atom count noise with extremely weak imaging light as talked about in the 26th K notes
