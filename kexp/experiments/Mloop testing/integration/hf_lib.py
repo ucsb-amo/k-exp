@@ -22,10 +22,10 @@ from kexp.analysis.plotting_1d import *
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = load_atomdata(0,crop_type='gm',average_repeats = True)
+        ad = load_atomdata(0,29089)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
-        return np.max(ad.atom_number)*sum(ad.atom_number)/len(ad.atom_number) 
+        return np.max(ad.atom_number)
 
 #Cost function is just the negative of the atom number
 def getCost():
@@ -102,14 +102,14 @@ class ExptBuilder():
                                 camera_select=cameras.andor,
                                 imaging_type=img_types.ABSORPTION)
                     
-                    self.p.t_tof =3000.e-6
+                    self.p.t_tof =2000.e-6
                     # self.xvar('t_tof',np.linspace(30.,800.,10)*1.e-6)
                                  
                     {assignment_lines}
 
-                    self.p.frequency_tweezer_list = [73.6e6,76.e6]
+                    self.p.frequency_tweezer_list = [73.65e6,76.e6]
 
-                    a_list = [.16,.17]
+                    a_list = [.147,.155]
                     self.p.amp_tweezer_list = a_list
 
                     self.p.amp_imaging = .1
@@ -123,8 +123,9 @@ class ExptBuilder():
                 @kernel
                 def scan_kernel(self):
 
-                    self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap3_current)
-                    self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+                    # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+                    self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
+                    # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
                     # self.switch_d2_2d(1)
                     self.mot(self.p.t_mot_load)
@@ -151,9 +152,9 @@ class ExptBuilder():
                                         v_start=self.p.v_pd_lightsheet_rampup_end,
                                         v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
                     
-                    # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                    #                      i_start=self.p.i_hf_lightsheet_evap1_current,
-                    #                      i_end=self.p.i_hf_tweezer_load_current)
+                    self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                                        i_start=self.p.i_hf_lightsheet_evap1_current,
+                                        i_end=self.p.i_hf_tweezer_load_current)
 
                     self.tweezer.on()
                     self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_ramp,
@@ -171,7 +172,7 @@ class ExptBuilder():
                     # delay(self.p.t_lightsheet_hold)
 
                     self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                                        i_start=self.p.i_hf_lightsheet_evap1_current,
+                                        i_start=self.p.i_hf_tweezer_load_current,
                                         i_end=self.p.i_hf_tweezer_evap1_current)
 
                     # tweezer evap 1 with constant trap frequency
@@ -189,10 +190,31 @@ class ExptBuilder():
                                     v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                                     paint=True,keep_trap_frequency_constant=True)
                     
+                    # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                    #                      i_start=self.p.i_hf_tweezer_evap2_current,
+                    #                      i_end=self.p.i_hf_tweezer_evap3_current)
+                    
+                    # delay(2.e-3)
+                    # self.ttl.pd_scope_trig.pulse(1.e-6)
+                    # # tweezer evap 3 with constant trap frequency
+                    # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+                    #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+                    #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                    #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
+                    
+                    # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+                    #                   v_start=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
+                    #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                    #                   paint=True,keep_trap_frequency_constant=True)
+                    
+                    
+                    # delay(.2e-3)
+                    # delay(self.p.t_tweezer_hold)
+                    
                     self.tweezer.off()
 
                     delay(self.p.t_tof)
-                    
+                    # self.flash_repump()
                     self.abs_image()
 
                     self.outer_coil.off()

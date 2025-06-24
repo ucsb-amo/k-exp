@@ -40,37 +40,37 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_lightsheet_hold = .1
 
         # self.xvar('i_lf_tweezer_load_current',np.linspace(12.,17.,8))
-        self.p.i_lf_tweezer_load_current = 15.5
+        # self.p.i_lf_tweezer_load_current = 15.5
 
         # self.xvar('t_tweezer_hold',np.linspace(1.,500.,10)*1.e-3)
         self.p.t_tweezer_hold = 10.e-3
 
         # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-2.,6.,15))
-        self.p.v_lf_tweezer_paint_amp_max = 4.5
+        # self.p.v_lf_tweezer_paint_amp_max = 4.5
 
         # self.xvar('v_pd_lf_tweezer_1064_ramp_end', np.linspace(5.,9.4,10))
-        self.p.v_pd_lf_tweezer_1064_ramp_end = 9.4
+        # self.p.v_pd_lf_tweezer_1064_ramp_end = 9.4
 
         # self.xvar('t_tweezer_1064_ramp', np.linspace(15.,1000.,10)*1.e-3)
         # self.p.t_tweezer_1064_ramp = .5
 
         # self.xvar('i_lf_tweezer_evap1_current',np.linspace(12.5,14.5,8))
-        self.p.i_lf_tweezer_evap1_current = 12.7
+        # self.p.i_lf_tweezer_evap1_current = 12.7
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown_end',np.linspace(.2,3.,8)) 
-        self.p.v_pd_lf_tweezer_1064_rampdown_end = .8
+        # self.p.v_pd_lf_tweezer_1064_rampdown_end = .8
 
         # self.xvar('t_lf_tweezer_1064_rampdown',np.linspace(0.02,.3,8))
-        self.p.t_lf_tweezer_1064_rampdown = 180.e-3
+        # self.p.t_lf_tweezer_1064_rampdown = 180.e-3
 
         # self.xvar('i_lf_tweezer_evap2_current',np.linspace(12.5,14.,8))
-        self.p.i_lf_tweezer_evap2_current = 13.8
+        # self.p.i_lf_tweezer_evap2_current = 13.8
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.07,.2,10))
-        self.p.v_pd_lf_tweezer_1064_rampdown2_end = .11
+        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .11
 
         # self.xvar('t_lf_tweezer_1064_rampdown2',np.linspace(0.1,.8,8))
-        self.p.t_lf_tweezer_1064_rampdown2 = 400.e-3
+        # self.p.t_lf_tweezer_1064_rampdown2 = 400.e-3
 
         # self.xvar('v_pd_tweezer_1064_rampdown3_end',np.linspace(.5,4.5,10))
         # self.p.v_pd_tweezer_1064_rampdown3_end = 1.

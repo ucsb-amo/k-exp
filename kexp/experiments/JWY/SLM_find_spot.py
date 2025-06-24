@@ -9,12 +9,12 @@ from kexp.control.slm.slm import SLM
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('px_slm_phase_mask_position_x',np.linspace(1135.,1145.,11,dtype=int))
-        self.xvar('px_slm_phase_mask_position_y',np.linspace(960.,970.,11,dtype=int))
+        self.xvar('px_slm_phase_mask_position_x',np.linspace(1117.,1137.,21,dtype=int))
+        self.xvar('px_slm_phase_mask_position_y',np.linspace(921.,941.,21,dtype=int))
         # self.xvar('dumdum',[0]*3)
         # self.p.slm_mask = 'spot'
         self.p.phase_slm_mask = 3.14
