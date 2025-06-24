@@ -91,7 +91,7 @@ class rabi_surf(EnvExperiment, Base):
         self.t_idx = self.t_idx + 1
 
     @kernel
-    def scan_kernel(self):
+    def set_up_imaging(self):
         if self.run_info.imaging_type == img_types.DISPERSIVE:
             self.set_imaging_detuning(self.p.frequency_detuned_imaging_midpoint)
             self.dds.imaging.set_dds(amplitude=self.p.amp_pci_imaging)
@@ -103,14 +103,16 @@ class rabi_surf(EnvExperiment, Base):
         self.set_imaging_detuning(self.p.frequency_detuned_pci_during_rabi,
                                    amp=self.p.amp_pci_during_rabi)
 
+    @kernel
+    def scan_kernel(self):
+        self.set_up_imaging()        
+
         ### prepares the atoms and turns on the PID at self.p.i_spin_mixture ###
         self.prepare_lf_tweezers()
         ### start experiment ###
 
         # set up raman beams
-        self.raman.set_transition_frequency(self.p.frequency_raman_transition)
-        self.raman.dds_plus.set_dds(amplitude=self.params.amp_raman_plus)
-        self.raman.dds_minus.set_dds(amplitude=self.params.amp_raman_minus)
+        self.init_raman_beams()
 
         # delay(1.e-3)
 
@@ -170,18 +172,6 @@ class rabi_surf(EnvExperiment, Base):
 
         delay(self.p.t_tof)
         self.abs_image()
-
-        self.post_imaging_cleanup()
-
-    @kernel
-    def post_imaging_cleanup(self):
-
-        self.outer_coil.stop_pid()
-
-        self.outer_coil.off()
-        self.outer_coil.discharge()
-
-        self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)
 
     @kernel
     def run(self):

@@ -15,6 +15,7 @@ from kexp.control.artiq.mirny import Mirny
 from kexp.config.expt_params import ExptParams
 
 from kexp.control.artiq.Shuttler_CH import Shuttler_CH
+from kexp.control.artiq.DDS import DDS
 
 # from jax import AD9910Manager
 from kexp.control.cameras.dummy_cam import DummyCamera
@@ -131,8 +132,9 @@ class Devices():
                                core=self.core)
         
         self.raman = RamanBeamPair(dds_plus=self.dds.raman_plus,
-                                          dds_minus=self.dds.raman_minus,
-                                          params=self.params)
+                                    dds_minus=self.dds.raman_minus,
+                                    params=self.params)
+        self.raman._init()
         
         self.ry_980_eo = SSG3021X()
 
@@ -162,7 +164,7 @@ class Devices():
     @kernel
     def set_all_dds(self):
         for dds in self.dds.dds_list:
-            dds.set_dds()
+            dds.set_dds(init=True)
             dds.dds_device.set_att(0. * dB)
             delay(5.e-6)
 
@@ -188,7 +190,6 @@ class Devices():
             delay(10*us)
 
     def shutdown_sources(self):
-        from kexp.control.relay_control import EthernetRelay
-
+        from kexp import EthernetRelay
         relay = EthernetRelay()
         relay.source_off()

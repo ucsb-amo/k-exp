@@ -100,7 +100,7 @@ def crop_array_by_index(array,include_idx=[0,-1],exclude_idx=[]):
         array = array[idx0:]
     else:
         idxf = int(include_idx[1])
-        array = array[idx0:idxf]
+        array = array[idx0:(idxf+1)]
     
     if exclude_idx:
         exclude_idx = np.array(exclude_idx) - idx0

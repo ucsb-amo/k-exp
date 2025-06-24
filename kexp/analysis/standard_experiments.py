@@ -140,7 +140,7 @@ def rabi_oscillation(ad:atomdata,
 
     # Define the Rabi oscillation function
     def _fit_func_rabi_oscillation(t, Omega, phi, B, A, tau):
-        return 0.5 * (B + A * np.exp(-t/tau) * np.cos(Omega * t + phi) )
+        return B + A/2 * np.exp(-t/tau) * np.cos(Omega * t + phi)
 
     # Suppose these are your data
     pulse_times_array = np.asarray(pulse_times_array)
@@ -280,7 +280,7 @@ def rabi_oscillation(ad:atomdata,
         title = f"Run ID: {ad.run_info.run_id}\n"
         title += f"RF frequency = {rf_frequency_hz/1.e6:1.2f} MHz\n"
         # title += r"f(t) = $A \ \exp(-t/\tau) \cos^2(\Omega t / 2 + \phi) + B$"
-        title += r"$f(t) = 0.5 \ \left[ B + A \ \exp(-t/\tau) \ \cos(\Omega t + \phi) \right]$"
+        title += r"$f(t) = B + (A/2) \exp(-t/\tau) \ \cos(\Omega t + \phi)$"
         if rabi_frequency_hz:
             title += f"\n$\\Omega = 2\\pi \\times {rabi_frequency_hz/1.e3:1.3f}$ kHz"
 

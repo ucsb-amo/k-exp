@@ -6,6 +6,7 @@ from kexp.config.dac_id import dac_frame
 from kexp.control.misc.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.misc.awg_tweezer import tweezer
 from kexp.control.misc.painted_lightsheet import lightsheet
+from kexp.control.misc.raman_beams import RamanBeamPair
 from kexp.config.expt_params import ExptParams
 import numpy as np
 
@@ -27,6 +28,7 @@ class Cooling():
         self.tweezer = tweezer()
         self.lightsheet = lightsheet()
         self.params = ExptParams()
+        self.raman = RamanBeamPair()
         self.p = self.params
 
     ## meta stages
@@ -115,7 +117,6 @@ class Cooling():
                              i_start=self.p.i_lf_tweezer_evap2_current,
                              i_end=self.p.i_spin_mixture)
         
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
 
         delay(40.e-3)
@@ -722,7 +723,7 @@ class Cooling():
                         v_yshim_current=v_yshim_current,
                         v_zshim_current=v_zshim_current)
 
-        self.dds.power_down_cooling()
+        self.power_down_cooling()
         # self.ttl.pd_scope_trig.pulse(1.e-6)
 
         delay(t_delay)
@@ -968,3 +969,54 @@ class Cooling():
         self.dac.xshim_current_control.set(v = v_xshim_current)
         self.dac.yshim_current_control.set(v = v_yshim_current)
         self.dac.zshim_current_control.set(v = v_zshim_current)
+
+    @kernel
+    def power_down_cooling(self):
+        """Turn off the near-resonant light for long hold times to avoid light
+        leakage interacting with the atoms.
+        """
+        self.dds.d1_3d_r.set_dds(amplitude=0.)
+        self.dds.d1_3d_c.set_dds(amplitude=0.)
+        self.dds.d2_3d_c.set_dds(amplitude=0.)
+        self.dds.d2_3d_r.set_dds(amplitude=0.)
+        self.dds.d2_2dv_c.set_dds(amplitude=0.)
+        self.dds.d2_2dv_r.set_dds(amplitude=0.)
+        self.dds.d2_2dh_c.set_dds(amplitude=0.)
+        self.dds.d2_2dh_r.set_dds(amplitude=0.)
+        self.dds.push.set_dds(amplitude=0.)
+        self.dds.mot_killer.set_dds(amplitude=0.)
+        self.dds.optical_pumping.set_dds(amplitude=0.)
+        self.dds.raman_minus.set_dds(amplitude=0.)
+        self.dds.raman_plus.set_dds(amplitude=0.)
+
+        # to avoid sequence errors from all the TTLs being at once
+        self.dds.d1_3d_r.off()
+        self.dds.d1_3d_c.off()
+        self.dds.d2_3d_c.off()
+        self.dds.d2_3d_r.off()
+        self.dds.d2_2dv_c.off()
+        self.dds.d2_2dv_r.off()
+        self.dds.d2_2dh_c.off()
+        self.dds.d2_2dh_r.off()
+        delay_mu(8)
+        self.dds.push.off()
+        self.dds.mot_killer.off()
+        self.dds.optical_pumping.off()
+        self.dds.raman_minus.off()
+        self.dds.raman_plus.off()
+        delay_mu(8)
+
+    @kernel
+    def init_cooling(self):
+        """See 'power_down_cooling`. Reboots the DDS cores for the near-resonant
+        light and sets them to their defaults.
+        """
+        self.dds.d1_3d_r.set_dds(init=True)
+        self.dds.d1_3d_c.set_dds(init=True)
+        self.dds.d2_3d_c.set_dds(init=True)
+        self.dds.d2_3d_r.set_dds(init=True)
+        self.dds.d2_2dh_c.set_dds(init=True)
+        self.dds.d2_2dh_r.set_dds(init=True)
+        self.dds.d2_2dv_c.set_dds(init=True)
+        self.dds.d2_2dv_r.set_dds(init=True)
+        self.dds.push.set_dds(init=True)

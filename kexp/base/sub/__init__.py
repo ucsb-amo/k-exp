@@ -5,3 +5,4 @@ from .dealer import Dealer
 from .cameras import Cameras
 from .scanner import Scanner, xvar
 from .scribe import Scribe
+from .control import Control
