@@ -22,35 +22,36 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
         # self.p.t_pump_to_F1 = 50.e-6
         
-        self.xvar('detune_d2_c_mot',np.linspace(-4.,-2.,8))
-        self.xvar('detune_d2_r_mot',np.linspace(-6.,-3.,8))
-        self.detune_d2_r_mot = -4.04
-        self.detune_d2_c_mot = -3.114
+        # self.xvar('detune_d2_c_mot',np.linspace(-7.,-2.,10))
+        # self.xvar('detune_d2_r_mot',np.linspace(-8.,-2.,10))
+        self.detune_d2_r_mot = -4.7
+        self.detune_d2_c_mot = -3.11
 
         # self.xvar('detune_d1_c_d1cmot',np.linspace(5.,13.,10))
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.,.99,8))
-        self.pfrac_d1_c_d1cmot = 0.57
-        self.detune_d1_c_d1mot = 11.
+        self.pfrac_d1_c_d1cmot = 0.42
+        self.detune_d1_c_d1mot = 6.7
         
         # self.xvar('amp_d2_c_mot',np.linspace(.05,.188,8))
         # self.xvar('amp_d2_r_mot',np.linspace(.05,.188,8))
 
         # self.xvar('pfrac_d1_c_gm',np.linspace(0.6,.99,10)) # optimize GM
         # self.xvar('pfrac_d1_r_gm',np.linspace(0.6,.99,10)) # optimize GM
-        self.p.pfrac_d1_c_gm = 0.86
-        self.p.pfrac_d1_r_gm = 0.95
+        self.p.pfrac_d1_c_gm = 0.687
+        self.p.pfrac_d1_r_gm = 0.64
 
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,2.,10))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,10))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.,10))
-        # self.xvar('v_zshim_current_gm',np.linspace(0.,2.,10)) # GM
+        self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,10))
+        self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.,10))
+        # self.xvar('v_xshim_current_gm',np.linspace(0.,2.,10)) # GM
         # self.xvar('v_yshim_current_gm',np.linspace(0.,9.,10)) # GM
         # self.xvar('v_zshim_current',np.linspace(0.,.8,10))
         # self.xvar('v_xshim_current',np.linspace(0.,2.,10))
+        self.p.v_xshim_current_gm = 1.1
         self.p.v_zshim_current = 0.8
         self.p.v_xshim_current = 0.
-        self.p.v_xshim_current_magtrap = 3.33
-        self.p.v_yshim_current_magtrap = 8.
+        self.p.v_xshim_current_magtrap = 0.55
+        self.p.v_yshim_current_magtrap = 9.
         # self.p.v_yshim_current_magtrap = 5.
         # self.xvar('t_magtrap_delay',np.linspace(0.05,10.,20)*1.e-3)
         # self.p.t_magtrap_delay = 1.e-3
