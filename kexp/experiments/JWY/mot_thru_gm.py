@@ -31,7 +31,7 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_2d_mot_current = 3.3
 
         # self.xvar('i_mot',np.linspace(10.,30.,20))
-        self.xvar('i_mot',[10.,15.,18.,20.,23.,30.,60.,70.]*5)
+        # self.xvar('i_mot',[10.,15.,18.,20.,23.,30.,60.,70.]*5)
         # self.p.i_mot = 19.
 
         # self.xvar('v_zshim_current',np.linspace(0.1,1.4,8))
@@ -43,9 +43,13 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('detune_d1_c_d1cmot',np.linspace(7.,13.5,8))
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,0.,8))
+        self.p.detune_d1_c_d1cmot = 8.857
+        self.p.detune_d2_r_d1cmot = -3.57
 
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.3,.99,10))
-        # self.xvar('amp_d2_r_d1cmot',np.linspace(0.,.188,8))
+        # self.xvar('amp_d2_r_d1cmot',np.linspace(0.,.188,10))
+        self.p.pfrac_d1_c_d1cmot = 0.683
+        self.p.amp_d2_r_d1cmot = 0.06
 
         # self.xvar('i_cmot',np.linspace(15.,35.,30))
         # self.p.i_cmot = 29.
@@ -82,8 +86,8 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(.1,150.,20)*1.e-6)
         # self.p.t_pump_to_F1 = .01e-6
 
-        # self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
-        self.p.t_tof = 20.e-6
+        self.xvar('t_tof',np.linspace(7.8,15.,10)*1.e-3)
+        self.p.t_tof = 3.6e-3
 
         # self.camera_params.exposure_time = 50.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
@@ -105,10 +109,10 @@ class gm_tof(EnvExperiment, Base):
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        # self.cmot_d1(self.p.t_d1cmot)
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.gm(self.p.t_gm * s)
-        # self.gm_ramp(self.p.t_gmramp)
+        self.cmot_d1(self.p.t_d1cmot)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.gm(self.p.t_gm * s)
+        self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 
