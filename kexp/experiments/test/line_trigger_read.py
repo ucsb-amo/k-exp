@@ -4,8 +4,10 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 from artiq.coredevice.ttl import TTLInOut, TTLOut
 from artiq.coredevice.core import Core
-from artiq.language.core import at_mu
+from artiq.language.core import at_mu, now_mu
 from artiq.coredevice.sampler import Sampler
+import csv
+import os
 
 class trap_frequency(EnvExperiment):
 
@@ -19,7 +21,11 @@ class trap_frequency(EnvExperiment):
         self.sampler: Sampler
         self.data = np.zeros(8)
 
-        self.readings = np.zeros(500)
+        self.dt = 25.e-6
+        T = 100.e-3
+        self.N = int(T/self.dt)
+        self.readings = np.zeros(self.N)
+        self.t = np.zeros(self.N,dtype=np.int64)
 
         self.core: Core
         self.ttl_in: TTLInOut
@@ -34,10 +40,23 @@ class trap_frequency(EnvExperiment):
 
         self.core.break_realtime()
 
-        for i in range(len(self.readings)):
+        t0 = now_mu()
+
+        for i in range(self.N):
+            self.t[i] = now_mu() - t0
             self.sampler.sample(self.data)
             self.readings[i] = self.data[0]
-            delay(50.e-6)
+            delay(self.dt)
         
     def analyze(self):
-        print(np.sum(self.readings > 2.))
+
+        # Define output CSV path
+        output_path = os.path.join(os.getcwd(), "readings.csv")
+
+        # Write to CSV
+        with open(output_path, mode="w", newline="") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(["timestamp", "reading"])
+            for timestamp, reading in zip(self.t, self.readings):
+                writer.writerow([timestamp, reading])
+        print(f"Data written to {output_path}")
