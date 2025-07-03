@@ -46,42 +46,49 @@ class trap_frequency(EnvExperiment):
     @kernel
     def wait_for_TTL(self):                              
         
-        # for i in range(self.T):
+        for i in range(self.T):
             
-        t_end = self.ttl_in.gate_rising(500e-3)     #opens gate for rising edges to be detected on TTL0 for 10ms
-                                                    #sets variable t_end as time(in MUs) at which detection stops
-                                            
-        # t_edge = self.ttl_in.timestamp_mu(t_end)    #sets variable t_edge as time(in MUs) at which first edge is detected
-        #                                             #if no edge is detected, sets
-        #                                             #t_edge to -1
-        # # aprint(i)                              
-        # if t_edge > 0:                          #runs if an edge has been detected
-        #     at_mu(t_edge)                       #set time cursor to position of edge
-        #     self.get_time()
-        # else:
-        #     pass
-        t_edge = 1
+            t_end = self.ttl_in.gate_rising(20e-3)     #opens gate for rising edges to be detected on TTL0 for 10ms
+                                                        #sets variable t_end as time(in MUs) at which detection stops
+                                                
+            t_edge = self.ttl_in.timestamp_mu(t_end)    #sets variable t_edge as time(in MUs) at which first edge is detected
+            #                                             #if no edge is detected, sets
+            #                                             #t_edge to -1
+            # # aprint(i)                              
+            if t_edge > 0:                          #runs if an edge has been detected
+                at_mu(t_edge)                       #set time cursor to position of edge
+                self.get_time()
+                # self.ttl_out.pulse(1.e-6)
+                # print(t_edge)
+                # print('hi')
+            else:
+                pass
+            delay(10.e-6)
+        # t_edge = 1
 
-        while t_edge > 0:
-            t_edge = self.ttl_in.timestamp_mu(t_end)
-            if t_edge > 0:
-                self.t[self.idx] = t_edge
-                self.idx += 1
+        # while t_edge > 0:
+        #     t_edge = self.ttl_in.timestamp_mu(t_end)
+        #     if t_edge > 0:
+        #         self.t[self.idx] = t_edge
+        #         self.idx += 1
              
             # delay(10*us)        
         # aprint(self.a)
 
     def analyze(self):
-        print(np.diff(self.t[:self.idx]))
+        ts = np.diff(self.t[:self.idx])
+        print(ts)
+        print(np.diff(ts))
 
-        # Define output CSV path
-        output_path = os.path.join(os.getcwd(), "trig_timestamps.csv")
+        # # Define output CSV path
+        # output_path = os.path.join(os.getcwd(), "trig_timestamps.csv")
 
-        # Write to CSV
-        with open(output_path, mode="w", newline="") as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(["idx", "time"])
-            for idx, time in zip(range(self.idx),self.t):
-                writer.writerow([idx, time])
-        print(f"Data written to {output_path}")
+        # # Write to CSV
+        # with open(output_path, mode="w", newline="") as csvfile:
+        #     writer = csv.writer(csvfile)
+        #     writer.writerow(["idx", "time"])
+        #     for idx, time in zip(range(self.idx),self.t):
+        #         writer.writerow([idx, time])
+        # print(f"Data written to {output_path}")
+        pass
         
