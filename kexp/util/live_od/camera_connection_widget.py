@@ -1,7 +1,9 @@
+from PyQt6.QtWidgets import (QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit, QComboBox)
+from PyQt6.QtCore import QTimer
+import os
+import time
 
-from PyQt6.QtWidgets import (QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit)
-
-from kexp.util.live_od.live_od_plotting import *
+# from kexp.util.live_od.live_od_plotting import *
 
 from kexp import cameras, img_types
 from kexp.control.cameras.dummy_cam import DummyCamera
@@ -34,14 +36,14 @@ class CamConnBar(QWidget):
 
     def setup_layout(self):
         self.layout = QVBoxLayout()
-        label = QLabel("Camera connections")
+        # label = QLabel("Camera connections")
         buttonlayout = QHBoxLayout()
         buttonlayout.addWidget(self.xy_basler_button)
         buttonlayout.addWidget(self.basler_2dmot_button)
         buttonlayout.addWidget(self.z_basler_button)
         buttonlayout.addWidget(self.x_basler_button)
         buttonlayout.addWidget(self.andor)
-        self.layout.addWidget(label)
+        # self.layout.addWidget(label)
         self.layout.addLayout(buttonlayout)
         self.setLayout(self.layout)
 
@@ -71,7 +73,7 @@ class CameraButton(QPushButton):
     def button_pressed(self):
         if self.camera.is_opened():
             self.close_camera()
-            self.msg(f'Connection to {self.camera_params.key} closed.')
+            # self.msg(f'Connection to {self.camera_params.key} closed.')
         else:
             self.open_camera()
     
@@ -119,6 +121,21 @@ class ROISelector(QWidget):
         super().__init__()
         self.setup_widgets()
         self.setup_layout()
+        self._last_roi_mtime = None
+        self._roi_timer = QTimer(self)
+        self._roi_timer.timeout.connect(self.check_roi_file_update)
+        self._roi_timer.start(10000)  # 10 seconds
+
+    def check_roi_file_update(self):
+        try:
+            mtime = os.path.getmtime(ROI_CSV_PATH)
+            if self._last_roi_mtime is None:
+                self._last_roi_mtime = mtime
+            elif mtime != self._last_roi_mtime:
+                self._last_roi_mtime = mtime
+                self.update_rois()
+        except Exception:
+            pass
 
     def setup_widgets(self):
         self.label = QLabel("ROI Selection")

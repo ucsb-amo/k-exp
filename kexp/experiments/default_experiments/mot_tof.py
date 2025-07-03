@@ -11,7 +11,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.arange(-150.,150.,8)*1.e6)
 
 
-        # self.xvar('dumdum',[0]*5)
+        # self.xvar('dumdum',[0]*1000)
 
         self.xvar('t_tof',np.linspace(.05,.5,10)*1.e-3)
         

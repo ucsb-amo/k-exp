@@ -26,7 +26,7 @@ class sampler_test(EnvExperiment):
 
         self.core.break_realtime()
 
-        ch = 30
+        ch = 0
 
         v = [0.,1.,2.,3.,4.,5.,6.,7.]
         

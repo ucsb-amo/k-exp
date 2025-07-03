@@ -18,14 +18,16 @@ class ROI():
                  roi_id=None,
                  key="",
                  use_saved_roi=True,
-                 lite=False):
+                 lite=False,
+                 printouts=True):
         self.roix = [-1,-1]
         self.roiy = [-1,-1]
         self.key = key
         self.run_id = run_id
         self.load_roi(roi_id,
                       use_saved=use_saved_roi,
-                      lite=lite)
+                      lite=lite,
+                      printouts=printouts)
 
     def crop(self,OD):
         """Crops the given ndarray according to the ROI.
@@ -42,7 +44,8 @@ class ROI():
         cropOD = OD.take(idx_y,axis=OD.ndim-2).take(idx_x,axis=OD.ndim-1)
         return cropOD
 
-    def load_roi(self,roi_id=None,use_saved=True,lite=False):
+    def load_roi(self,roi_id=None,use_saved=True,lite=False,
+                 printouts=True):
         """Loads an ROI according to the provided roi_id.
 
         Args:
@@ -52,47 +55,51 @@ class ROI():
             interpreted as an run ID, which will be checked for a saved ROI and
             that ROI will be used. If a string, interprets as a key in the
             roi.xlsx document in the PotassiumData folder.
+            printouts (bool): If True, prints out information about the
+            ROI loading process.
 
             use_saved (bool): If False, ignores saved ROI and forces creation of
             a new one.
         """
         
         # Check for ROI saved in the current data file.
-        saved_roi_bool = self.read_roi_from_h5(lite=lite)
+        saved_roi_bool = self.read_roi_from_h5(lite=lite,printouts=printouts)
         if roi_id == None:
             if saved_roi_bool and use_saved:
-                print("Using saved ROI.")
+                if printouts: print("Using saved ROI.")
+                pass
             elif saved_roi_bool:
-                print("Saved ROI was found, but is being overridden.")
-                print("Specify the new ROI.")
+                if printouts: print("Saved ROI was found, but is being overridden.")
+                if printouts: print("Specify the new ROI.")
                 self.select_roi()
             else:
-                print("Specify the new ROI.")
+                if printouts: print("Specify the new ROI.")
                 self.select_roi()
         else:
             if saved_roi_bool:
-                print("Saved ROI was found, but is being overridden.")
+                if printouts: print("Saved ROI was found, but is being overridden.")
+                pass
 
         # Checks for ROI saved in the specified run ID.
         if isinstance(roi_id,int):
-            print("ROI specified by Run ID. Attempting to load ROI...")
-            saved_roi_bool = self.read_roi_from_h5(roi_id)
+            if printouts: print("ROI specified by Run ID. Attempting to load ROI...")
+            saved_roi_bool = self.read_roi_from_h5(roi_id,printouts=printouts)
             if saved_roi_bool:
-                print(f"Using ROI loaded from run {roi_id}.")
+                if printouts: print(f"Using ROI loaded from run {roi_id}.")
             else:
-                print(f"Specify the new ROI.")
+                if printouts: print(f"Specify the new ROI.")
                 self.select_roi()
 
         if isinstance(roi_id,str):
-            print("ROI specified by string. Referencing roi.xslx spreadsheet (PotassiumData)...")
-            roi_exists = self.read_roi_from_excel(roi_id)
+            if printouts: print("ROI specified by string. Referencing roi.xslx spreadsheet (PotassiumData)...")
+            roi_exists = self.read_roi_from_excel(roi_id,printouts=printouts)
             if not roi_exists:
-                print(f"Creating ROI for key {roi_id}.")
+                if printouts: print(f"Creating ROI for key {roi_id}.")
                 self.select_roi()
                 self._update_excel()
 
         if self.check_for_blank_roi():
-            print("ROI was not specified. Defaulting to whole image.")
+            if printouts: print("ROI was not specified. Defaulting to whole image.")
             px, py = self.get_image_size()
             self.roix = [0,px]
             self.roiy = [0,py]
@@ -127,7 +134,7 @@ class ROI():
             py, px = f['data']['images'].shape[-2:]
         return px, py
 
-    def read_roi_from_h5(self, run_id=[], lite=False):
+    def read_roi_from_h5(self, run_id=[], lite=False, printouts=True):
         """Looks in the hdf5 file with the corresponding run ID and attempts to
         read out a saved ROI. Returns True if successful and False otherwise.
 
@@ -147,13 +154,13 @@ class ROI():
                 roiy = f.attrs['roiy']
             self.roix = roix
             self.roiy = roiy
-            print(f"ROI loaded from run {run_id}.")
+            if printouts: print(f"ROI loaded from run {run_id}.")
             return True
         except:
-            print(f"No ROI saved in run {run_id}.")
+            if printouts: print(f"No ROI saved in run {run_id}.")
             return False
         
-    def read_roi_from_excel(self,key):
+    def read_roi_from_excel(self,key,printouts=True):
         """Reads in the ROI with the corresponding key from the roi spreadsheet
         (roi.xlsx in PotassiumData), if it exists. Returns True if successful
         and False otherwise.
@@ -170,13 +177,13 @@ class ROI():
         roicsv = pd.read_excel(ROI_CSV_PATH)
         keymatch = roicsv.loc[ roicsv['key'] == self.key ]
         if np.any(keymatch):
-            print(f"ROI {key} found.")
+            if printouts: print(f"ROI {key} found.")
             self.key = key
             self.roix = [ keymatch['roix0'].values[0], keymatch['roix1'].values[0] ]
             self.roiy = [ keymatch['roiy0'].values[0], keymatch['roiy1'].values[0] ]
             return True
         else:
-            print(f"ROI with key {key} does not exist.")
+            if printouts: print(f"ROI with key {key} does not exist.")
             return False
 
     def check_for_blank_roi(self):

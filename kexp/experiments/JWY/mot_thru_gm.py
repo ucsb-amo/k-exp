@@ -32,7 +32,7 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('i_mot',np.linspace(10.,30.,20))
         # self.xvar('i_mot',[10.,15.,18.,20.,23.,30.,60.,70.]*5)
-        # self.p.i_mot = 19.
+        self.p.i_mot = 19.5
 
         # self.xvar('v_zshim_current',np.linspace(0.1,1.4,8))
         # self.xvar('v_xshim_current',np.linspace(0.,4.,8))
@@ -41,11 +41,15 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_xshim_current = 0. 
         # self.p.v_yshim_current = 3.5
 
-        # self.xvar('detune_d1_c_d1cmot',np.linspace(7.,13.5,8))
-        # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,0.,8))
+        self.xvar('detune_d1_c_d1cmot',np.linspace(7.,13.5,8))
+        self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,0.,8))
+        self.p.detune_d1_c_d1cmot = 8.857
+        self.p.detune_d2_r_d1cmot = -3.57
 
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.3,.99,10))
-        # self.xvar('amp_d2_r_d1cmot',np.linspace(0.,.188,8))
+        # self.xvar('amp_d2_r_d1cmot',np.linspace(0.,.188,10))
+        self.p.pfrac_d1_c_d1cmot = 0.683
+        self.p.amp_d2_r_d1cmot = 0.06
 
         # self.xvar('i_cmot',np.linspace(15.,35.,30))
         # self.p.i_cmot = 29.
@@ -77,12 +81,13 @@ class gm_tof(EnvExperiment, Base):
         # self.p.pfrac_c_gmramp_end = 0.11
         # self.p.pfrac_r_gmramp_end = 0.11
 
-        # self.xvar('dumdum',[0]*5)
+        # self.xvar('dumdum',[0]*10)
 
         # self.xvar('t_pump_to_F1',np.linspace(.1,150.,20)*1.e-6)
         # self.p.t_pump_to_F1 = .01e-6
 
-        self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(1.,5.,10)*1.e-3)
+        # self.p.t_tof = 3.6e-3
 
         # self.camera_params.exposure_time = 50.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
@@ -91,11 +96,11 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
         # self.p.amp_imaging = .35
         self.p.imaging_state = 2.
-        self.p.t_tof = 15.e-3
+        # self.p.t_tof = 15.e-3
         self.p.t_mot_load = .5
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

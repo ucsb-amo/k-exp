@@ -92,7 +92,7 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_raman_pulse)
         # self.dds.imaging.off()
 
-        self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=30.e6)
+        # self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=30.e6)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.f_raman_sweep_center,
