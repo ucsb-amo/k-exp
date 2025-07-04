@@ -264,7 +264,6 @@ class atomdata():
                 subset = arr[which_shot_idx]
                 _, subset_counts = np.unique(subset, return_counts=True)
                 if np.any(subset_counts > 1):
-                    print(subset_counts)
                     if not np.all(subset_counts == subset_counts[0]):
                         raise ValueError("When slicing into the axis with repeats, you must slice the same number of repeats for each value.")
                     n_repeats = subset_counts[0]
