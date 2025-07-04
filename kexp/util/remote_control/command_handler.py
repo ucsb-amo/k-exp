@@ -2,7 +2,8 @@ import time
 import re
 import logging
 from kexp.control.ethernet_relay import EthernetRelay
-from email_handler import EmailHandler
+from kexp.util.remote_control.email_handler import EmailHandler
+from win10toast import ToastNotifier
 
 logger = logging.getLogger(__name__)
 
@@ -41,49 +42,21 @@ class CommandHandler:
             line = line.strip()
             if not line:
                 continue
-            
-            # Try different delimiters
-            command_found = False
-            
-            # First try '=' and ':' with optional space padding
-            for delimiter in ['=', ':']:
-                if delimiter in line:
-                    parts = line.split(delimiter, 1)
-                    if len(parts) == 2:
-                        keyword = parts[0].strip()
-                        value = parts[1].strip()
-                        if keyword and value:
-                            # Check if this command should be ignored
-                            if not self.email_handler.should_ignore_command(keyword.lower(), value.lower()):
-                                commands[keyword.lower()] = value.lower()
-                            command_found = True
-                            break
-            
-            # If not found with '=' or ':', try single space delimiter (no padding)
-            if not command_found and ' ' in line:
-                parts = line.split(' ', 1)
-                if len(parts) == 2:
-                    keyword = parts[0].strip()
-                    value = parts[1].strip()
-                    # Only accept if both parts are single words (no spaces)
-                    if keyword and value and ' ' not in keyword and ' ' not in value:
-                        # Check if this command should be ignored
-                        if not self.email_handler.should_ignore_command(keyword.lower(), value.lower()):
-                            commands[keyword.lower()] = value.lower()
-                        command_found = True
-            
-            # Also try regex pattern for more flexible matching
-            if not command_found:
-                pattern = r'(\w+)\s*[=:]\s*(\w+)'
-                matches = re.findall(pattern, line, re.IGNORECASE)
-                for keyword, value in matches:
-                    # Check if this command should be ignored
-                    if not self.email_handler.should_ignore_command(keyword.lower(), value.lower()):
-                        commands[keyword.lower()] = value.lower()
+            if line.startswith('YOUR ACCOUNT'):
+                break
+
+            # Also try regex pattern for more flexible matching if not found
+            delimiters = ['=', ':', r'\s']
+            pattern = fr'^(\w+)\s*[{"|".join(delimiters)}]\s*(.+)$'
+            matches = re.findall(pattern, line, re.IGNORECASE)
+            matches = [m for m in matches if len(m) == 2]  # Ensure we have keyword and value
+            for keyword, value in matches:
+                if not self.email_handler.should_ignore_command(keyword.lower(), value.lower()):
+                    commands[keyword.lower()] = value.lower()
         
         return commands
 
-    def process_commands(self, commands):
+    def process_commands(self, sender, commands):
         """
         Process commands from email body
         Returns list of results or None if no commands found
@@ -97,7 +70,10 @@ class CommandHandler:
             else:
                 logger.warning(f"Unknown command: {keyword}")
                 results.append(f"{keyword}: Unknown command")
-        logger.info(f"Processed commands:\n" + "\n     ".join(results))
+        commands_processed_str = f"Processed commands:\n" + "\n     ".join(results)
+        ToastNotifier().show_toast(f"New commands received from {sender}",
+                                   commands_processed_str)
+        logger.info(commands_processed_str)
     
     def add_command_handler(self, keyword, handler_function):
         """

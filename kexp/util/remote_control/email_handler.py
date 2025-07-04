@@ -55,6 +55,20 @@ class EmailHandler:
     def is_sender_whitelisted(self, sender_email):
         """Check if sender email is in the whitelist"""
         sender_email = sender_email.lower().strip()
+        
+        # Special handling for Google Voice emails
+        if sender_email.endswith("@txt.voice.google.com"):
+            # Extract the first two parts (Google Voice number and phone number)
+            # Format: 1{gvoice_number}.1{phone_number}.{variable_part}@txt.voice.google.com
+            match = re.match(r'^(1\d{10}\.1\d{10})\.[^.]+@txt\.voice\.google\.com$', sender_email)
+            if match:
+                gvoice_prefix = match.group(1)
+                # Check if any whitelisted email starts with this prefix
+                for whitelisted_addr in self.whitelist:
+                    if whitelisted_addr.lower().startswith(gvoice_prefix.lower() + ".") and whitelisted_addr.lower().endswith("@txt.voice.google.com"):
+                        return True
+        
+        # Standard email check
         return sender_email in [addr.lower() for addr in self.whitelist]
     
     def extract_sender_email(self, from_field):
@@ -142,16 +156,13 @@ class EmailHandler:
             # Extract sender information
             from_field = msg.get('From', '')
             sender_email = self.extract_sender_email(from_field)
-            subject = msg.get('Subject', '')
-            
-            # logger.info(f"Processing email from {sender_email} with subject: {subject}")
-            
+
             # Check if sender is whitelisted
             if not self.is_sender_whitelisted(sender_email):
                 logger.warning(f"Email from non-whitelisted sender: {sender_email}")
                 return
             else:
-                self.log_whitelisted_sender(sender_email)
+                sender = self.log_whitelisted_sender(sender_email)
             
             # Extract email body
             body = self.extract_email_body(msg)
@@ -162,7 +173,7 @@ class EmailHandler:
                 logger.info("No valid commands found in email")
                 return
             
-            self.process_commands(commands)
+            self.process_commands(sender,commands)
             
         except Exception as e:
             logger.error(f"Error processing email: {e}")
@@ -174,10 +185,14 @@ class EmailHandler:
             if match:
                 phone_number = match.group(1)
                 logger.info(f"Received text from whitelisted phone: {phone_number}")
+                sender = phone_number
             else:
                 logger.info(f"Received text from whitelisted Google Voice email: {sender_email}")
+                sender = sender_email
         else:
             logger.info(f"Received email from whitelisted address: {sender_email}")
+            sender = sender_email
+        return sender
     
     def check_emails(self):
         """
@@ -233,8 +248,8 @@ class EmailHandler:
         if clean_phone not in self.phone_whitelist:
             self.phone_whitelist.append(clean_phone)
             
-            # Generate and add Google Voice email
-            google_voice_email = f"1{GVOICE_NUMBER}.1{clean_phone}.4hRVVsLWBJ@txt.voice.google.com"
+            # Generate and add Google Voice email (note: third part may vary, but whitelist check handles this)
+            google_voice_email = f"1{GVOICE_NUMBER}.1{clean_phone}.placeholder@txt.voice.google.com"
             if google_voice_email not in self.whitelist:
                 self.whitelist.append(google_voice_email)
                 logger.info(f"Added phone {clean_phone} to whitelist")

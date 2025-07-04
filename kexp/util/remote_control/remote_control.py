@@ -1,16 +1,18 @@
-from command_handler import CommandHandler
+from kexp.util.remote_control.command_handler import CommandHandler
 import logging
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-class EmailControl(CommandHandler):
+class RemoteControl(CommandHandler):
     def __init__(self):
         super().__init__()
 
         # Whitelist of approved phone numbers (10 digits, no delimiters)
         self.add_to_whitelist("9165834119")
+        self.add_to_whitelist("5104069659")
+        self.add_to_whitelist("7022366997")
         
         # Whitelist of approved email addresses
         self.add_to_whitelist("pagett.jared@gmail.com")
@@ -26,8 +28,8 @@ class EmailControl(CommandHandler):
         Handle the 'sources' command to turn sources on or off
         """
         try:
-            on_values = ["on", "1", "true"]
-            off_values = ["off", "0", "false"]
+            on_values = ["on", "1", "true", "t"]
+            off_values = ["off", "0", "false", "f"]
 
             value_lower = value.strip().lower()
             if value_lower in on_values:
@@ -39,7 +41,7 @@ class EmailControl(CommandHandler):
                 return "Sources successfully turned OFF"
             else:
                 logger.warning(f"Invalid sources command value: {value}")
-                return f"Invalid sources command. Use 'sources = on' or 'sources = off'"
+                return f"Invalid sources command value: {value}."
             
         except Exception as e:
             logger.error(f"Error controlling sources: {e}")
@@ -47,7 +49,7 @@ class EmailControl(CommandHandler):
         
 def main():
     """Main function to run the command controller"""
-    controller = EmailControl()
+    controller = RemoteControl()
     controller.run_continuous()
 
 if __name__ == "__main__":
