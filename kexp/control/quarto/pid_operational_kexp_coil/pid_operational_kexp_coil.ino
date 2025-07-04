@@ -24,6 +24,7 @@ float SETPOINT1 = 0.0;
 // updated 2025/05/20, worse performance than historical?
 // yes
 // updated 9am 5/21/25
+//updated 7/3/25
 float P10 = 100;
 float I10 = 0.05;
 float P11 = 100;

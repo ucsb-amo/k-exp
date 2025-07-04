@@ -82,7 +82,7 @@ class LiveODWindow(QWidget):
         self.roi_select = ROISelector()
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
         self.plotting_queue = Queue()
-        self.analyzer = Analyzer(self.plotting_queue)
+        self.analyzer = Analyzer(self.plotting_queue, self.viewer_window)
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
         self.status_lights = StatusLightsWidget()
         self.plotter.start()
