@@ -320,7 +320,7 @@ class LiveODViewer(QWidget):
 
     def _plot_sumody(self, sumody, od_shape):
         if sumody is not None:
-            y = np.linspace(0, od_shape[1] - 1, len(sumody))
+            y = np.linspace(0, od_shape[0] - 1, len(sumody))
             x = sumody / np.max(sumody) * od_shape[0] * 0.8 + od_shape[0] * 0.1 if np.max(sumody) > 0 else sumody
             x = (x - np.mean(x)) * self._sumody_scale + np.mean(x)
             self.sumody_panel.clear()
