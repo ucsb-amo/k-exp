@@ -21,7 +21,7 @@ class RemoteControl(CommandHandler):
         self.add_to_whitelist("mbl@gmail.com")
         
         # Command handlers - maps keywords to handler functions
-        self.add_command_handler("sources", self.handle_sources_command)
+        self.add_command_handler(["sources","source","atoms"], self.handle_sources_command)
 
     def handle_sources_command(self, value):
         """

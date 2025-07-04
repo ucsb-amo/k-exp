@@ -7,6 +7,14 @@ from win10toast import ToastNotifier
 
 logger = logging.getLogger(__name__)
 
+class MyToastNotifier(ToastNotifier):
+    def __init__(self):
+        super().__init__()
+
+    def on_destroy(self, hwnd, msg, wparam, lparam):
+        super().on_destroy(hwnd, msg, wparam, lparam)
+        return 0
+
 class CommandHandler:
     """
     Main command controller that handles command parsing and execution
@@ -18,6 +26,10 @@ class CommandHandler:
         
         # Initialize ethernet relay
         self.ethernet_relay = EthernetRelay()
+        
+        # Initialize command handlers and aliases
+        self.command_handlers = {}
+        self.command_aliases = {}  # Maps aliases to canonical command names
 
     def run_continuous(self):
         """
@@ -64,29 +76,42 @@ class CommandHandler:
         
         results = []
         for keyword, value in commands.items():
-            if keyword in self.command_handlers:
-                result = self.command_handlers[keyword](value)
+            # Resolve alias to canonical command name
+            canonical_keyword = self.command_aliases.get(keyword, keyword)
+            
+            if canonical_keyword in self.command_handlers:
+                result = self.command_handlers[canonical_keyword](value)
                 results.append(f"{keyword}: {value} -- {result}")
             else:
                 logger.warning(f"Unknown command: {keyword}")
                 results.append(f"{keyword}: Unknown command")
         commands_processed_str = f"Processed commands:\n" + "\n     ".join(results)
-        ToastNotifier().show_toast(f"New commands received from {sender}",
+        MyToastNotifier().show_toast(f"New commands received from {sender}",
                                    commands_processed_str)
         logger.info(commands_processed_str)
     
-    def add_command_handler(self, keyword, handler_function):
+    def add_command_handler(self, keywords, handler_function):
         """
         Add a new command handler for easy extension
         
         Args:
-            keyword (str): The command keyword to match
+            keywords (str or list): The command keyword(s) to match. Can be a single string or list of strings for aliases
             handler_function (callable): Function that takes (value, sender_email) and returns result string
         """
-        if not hasattr(self, 'command_handlers'):
-            self.command_handlers = {}
-        self.command_handlers[keyword] = handler_function
-        logger.info(f"Added command handler for keyword: {keyword}")
+        # Ensure keywords is a list
+        if isinstance(keywords, str):
+            keywords = [keywords]
+        # Convert all keywords to lowercase
+        keywords = [keyword.lower() for keyword in keywords]
+        # Use the first keyword as the canonical name
+        canonical_keyword = keywords[0]
+        # Add the handler for the canonical keyword
+        self.command_handlers[canonical_keyword] = handler_function
+        # Add all keywords (including canonical) to the alias map
+        for keyword in keywords:
+            self.command_aliases[keyword] = canonical_keyword
+        
+        logger.info(f"Added command handler for keyword(s): {keywords} (canonical: {canonical_keyword})")
     
     def send_slack_notification(self, message):
         """Send a notification message to the Slack channel"""
