@@ -17,9 +17,13 @@ class ramsey(EnvExperiment, Base):
         
         ### 
         # self.xvar('frequency_raman_transition',41.289e6 + np.linspace(-15.e3,15.e3,7))
-        # self.p.t_ramsey = 10.e-6
-        self.p.frequency_raman_transition_detuned = 41394000.0
-        self.xvar('t_ramsey',np.linspace(0.,30.e-6,15))
+        self.p.t_ramsey = 10.e-6
+        df = 100.e3
+        self.p.frequency_raman_transition_detuned = self.p.frequency_raman_transition + df
+        T = 1./df
+        dt = T / 10
+        N_T = 4
+        self.xvar('t_ramsey',np.arange(0.,N_T*T+dt,dt))
 
         # self.p.t_raman_pulse = 0.
         # self.p.amp_raman  = 0.25
@@ -28,7 +32,7 @@ class ramsey(EnvExperiment, Base):
         self.p.amp_tweezer_list = [.99]
         self.p.t_mot_load = 1.
         self.p.t_tof = 300.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 15
 
         self.finish_prepare(shuffle=True)
 

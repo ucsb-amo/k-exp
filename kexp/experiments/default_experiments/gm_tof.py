@@ -35,7 +35,7 @@ class gm_tof(EnvExperiment, Base):
 
         self.cmot_d1(self.p.t_d1cmot)
 
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)

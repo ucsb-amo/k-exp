@@ -7,6 +7,9 @@ from PyQt6.QtCore import QThread, pyqtSignal
 
 from kexp.config.camera_id import cameras
 
+def nothing():
+    return False
+
 class BaslerUSB(pylon.InstantCamera):
     '''
     BaslerUSB is an InstantCamera object which initializes the connected Basler camera.
@@ -54,7 +57,6 @@ class BaslerUSB(pylon.InstantCamera):
             ExposureTime_us = self.ExposureTime.GetMax()
             print(f"Exposure time requested is above camera maximum. Setting to maximum exposure : {ExposureTime_us:1.0f} us")
         self.ExposureTime.SetValue(ExposureTime_us)
-        print(ExposureTime_us)
 
     def set_gain(self,Gain):
         if Gain > self.Gain.GetMax():
@@ -74,13 +76,16 @@ class BaslerUSB(pylon.InstantCamera):
     def is_opened(self):
         return self.IsOpen()
     
-    def start_grab(self,N_img,output_queue:Queue,timeout=10.):
+    def start_grab(self,N_img,output_queue:Queue,timeout=10.,
+                   check_interrupt_method=nothing):
         this_timeout = 20.
         Nimg = int(N_img)
         self.StartGrabbingMax(Nimg, pylon.GrabStrategy_LatestImages)
         count = 0
         while self.IsGrabbing():
             grab = self.RetrieveResult(int(this_timeout*1000), pylon.TimeoutHandling_ThrowException)
+            if check_interrupt_method():
+                break
             if grab.GrabSucceeded():
                 this_timeout = timeout
                 print(f'gotem (img {count+1}/{Nimg})')
@@ -95,5 +100,6 @@ class BaslerUSB(pylon.InstantCamera):
     def stop_grab(self):
         try:
             self.StopGrabbing()
-        except:
+        except Exception as e:
+            print(f"Error stopping grab: {e}")
             pass
