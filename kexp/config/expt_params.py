@@ -146,10 +146,10 @@ class ExptParams():
         self.v_2d_mot_current = 2.7
 
         #MOT
-        self.detune_d2_c_mot = -2.07
+        self.detune_d2_c_mot = -1.25
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.14
+        self.detune_d2_r_mot = -3.4
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -160,8 +160,8 @@ class ExptParams():
 
         self.i_mot = 19.5
         self.v_zshim_current = .614
-        self.v_xshim_current = 0.2
-        self.v_yshim_current = 8.35
+        self.v_xshim_current = 1.43
+        self.v_yshim_current = 2.5
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -191,9 +191,9 @@ class ExptParams():
         self.detune_gm = 9.1
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.771
+        self.v_zshim_current_gm = 0.786
         self.v_xshim_current_gm = 0.5
-        self.v_yshim_current_gm = 2.07
+        self.v_yshim_current_gm = 1.9
 
         self.detune_d1_c_gm = self.detune_gm
         self.pfrac_d1_c_gm = .539 # there is an ND on this photodiode -- much higher power/volt than the repump
