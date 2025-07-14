@@ -67,6 +67,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.6,8))
         # self.p.pfrac_c_gmramp_end = 0.01
         # self.p.pfrac_r_gmramp_end = 0.53
+        self.p.pfrac_c_gmramp_end = 0.18
+        self.p.pfrac_r_gmramp_end = 0.1
         
         # self.xvar('i_magtrap_init',np.linspace(60.,95.,20))
         # self.i_magtrap_init = 82.
