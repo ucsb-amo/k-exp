@@ -8,7 +8,7 @@ class gm_tof(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(-150.,150.,8)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.arange(440.,480.,3)*1.e6)
 
         # self.xvar('detune_push',np.linspace(-2.,2.,10))
         # self.xvar('amp_push',np.linspace(.05,.188,8))
@@ -34,18 +34,18 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('i_mot',[10.,15.,18.,20.,23.,30.,60.,70.]*5)
         # self.p.i_mot = 19.
 
-        # self.xvar('v_zshim_current',np.linspace(0.1,1.4,8))
+        # self.xvar('v_zshim_current',np.linspace(0.4,1.3,8))
         # self.xvar('v_xshim_current',np.linspace(0.,4.,8))
-        # self.xvar('v_yshim_current',np.linspace(0.,9.,8))
-        # self.p.v_zshim_current = 1.1
-        # self.p.v_xshim_current = 0. 
-        # self.p.v_yshim_current = 3.
+        # self.xvar('v_yshim_current',np.linspace(0.,4.,8))
+        # self.p.v_zshim_current = .657
+        # self.p.v_xshim_current = 0.571 
+        # self.p.v_yshim_current = .571
 
         # self.xvar('detune_d1_c_d1cmot',np.linspace(7.,13.5,8))
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,0.,8))
 
-        # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.3,.99,10))
-        # self.xvar('amp_d2_r_d1cmot',np.linspace(0.,.188,8))
+        # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.3,.99,8))
+        # self.xvar('amp_d2_r_d1cmot',np.linspace(0.02,.08,8))
 
         # self.xvar('i_cmot',np.linspace(15.,35.,30))
         # self.p.i_cmot = 29.
@@ -63,19 +63,19 @@ class gm_tof(EnvExperiment, Base):
         # self.pfrac_d1_c_gm = .85
         # self.pfrac_d1_r_gm = .85
 
-        # self.xvar('v_zshim_current_gm',np.linspace(0.5,.9,8))
-        # self.xvar('v_xshim_current_gm',np.linspace(0.1,1.,8))
-        # self.xvar('v_yshim_current_gm',np.linspace(1.,4.,8))
+        # self.xvar('v_zshim_current_gm',np.linspace(0.6,.95,15))
+        # self.xvar('v_xshim_current_gm',np.linspace(0.,1.,8))
+        # self.xvar('v_yshim_current_gm',np.linspace(1.,2.8,8))
 
-        # self.p.v_zshim_current_gm = 0.63
-        # self.p.v_xshim_current_gm = 0.63 
-        # self.p.v_yshim_current_gm = 4.5
+        # self.p.v_zshim_current_gm = 0.8
+        # self.p.v_xshim_current_gm = 0.429
+        # self.p.v_yshim_current_gm = 2.03
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.5,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.4,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.6,8))
 
-        # self.p.pfrac_c_gmramp_end = 0.11
-        # self.p.pfrac_r_gmramp_end = 0.11
+        self.p.pfrac_c_gmramp_end = 0.18
+        self.p.pfrac_r_gmramp_end = 0.1
 
         # self.xvar('dumdum',[0]*5)
 
@@ -90,8 +90,9 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
         # self.p.amp_imaging = .35
-        self.p.imaging_state = 2.
-        self.p.t_tof = 10.e-3
+        self.p.imaging_state = 1.
+        # self.p.imaging_state = 2.
+        self.p.t_tof = 17.e-3
         self.p.t_mot_load = .5
         self.p.N_repeats = 1
 
@@ -112,7 +113,7 @@ class gm_tof(EnvExperiment, Base):
         self.release()
 
         delay(self.p.t_tof)
-        self.flash_repump()
+        self.flash_cooler()
         self.abs_image()
        
     @kernel
