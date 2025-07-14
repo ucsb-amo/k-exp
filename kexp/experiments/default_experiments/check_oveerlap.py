@@ -11,11 +11,11 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.t_tof = 5000.e-6
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
-        self.xvar('dumy',[2]*5)
+        self.xvar('dumy',[0,1,2])
 
         # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
 
@@ -45,6 +45,7 @@ class mag_trap(EnvExperiment, Base):
             self.mot(self.p.t_mot_load)
             self.dds.push.off()
             self.release()
+            self.p.t_tof = 100.e-6
             
         elif self.p.dumy == 1:
             self.mot(self.p.t_mot_load)

@@ -11,18 +11,18 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
-        self.xvar('dumy',[2,3]*5)
+        self.xvar('dumy',[1,2]*5)
 
         # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
 
         # self.xvar('t_magtrap_hold',np.linspace(1.,200.,30)*1.e-3)
         # self.p.t_lightsheet_rampup = .0
 
-        # self.p.v_zshim_current = .3
+        self.p.v_yshim_current = 3.
 
         # self.p.pfrac_c_gmramp_end = 0.11
         # self.p.pfrac_r_gmramp_end = 0.2
