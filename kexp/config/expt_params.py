@@ -202,8 +202,8 @@ class ExptParams():
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = .207 #0.01
-        self.pfrac_r_gmramp_end = .207# 0.729
+        self.pfrac_c_gmramp_end = .01 #0.01
+        self.pfrac_r_gmramp_end = .6# 0.729
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -214,7 +214,7 @@ class ExptParams():
         
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.
-        self.v_yshim_current_magtrap = 9.
+        self.v_yshim_current_magtrap = 9.9
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
