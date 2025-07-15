@@ -14,27 +14,28 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.t_tof = 7000.e-6
-        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
-        # self.xvar('dumy',[0]*20)
+        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        # self.xvar('dumy',[0]*500)
+        # self.xvar('dumy',np.linspace(1.,500.,500))
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
         # self.p.t_pump_to_F1 = 50.e-6
 
         # self.xvar('detune_d2_c_mot',np.linspace(-5.,-2.,8))
         
-        self.xvar('detune_d2_c_mot',np.linspace(-5.5,-1.,8))
-        self.xvar('detune_d2_r_mot',np.linspace(-7.,-1.,8))
+        # self.xvar('detune_d2_c_mot',np.linspace(-5.5,-1.,8))
+        # self.xvar('detune_d2_r_mot',np.linspace(-7.,-1.,8))
         # self.p.detune_d2_c_mot = -3.
         # self.p.detune_d2_r_mot = -3.5
         
         # self.xvar('i_mot',np.linspace(12.,30.,8))
 
         # self.xvar('v_zshim_current',np.linspace(0.1,1.,8))
-        # self.xvar('v_xshim_current',np.linspace(0.,2.,8))
-        # self.xvar('v_yshim_current',np.linspace(0.,3.,8))
-        # self.p.v_zshim_current = .48
-        # self.p.v_xshim_current = .4
-        self.p.v_yshim_current = 1.7
+        # self.xvar('v_xshim_current',np.linspace(0.,0.8,8))
+        # self.xvar('v_yshim_current',np.linspace(0.0,5.,10))
+        # self.p.v_zshim_current = .743
+        # self.p.v_xshim_current = .571
+        # self.p.v_yshim_current = .11
 
         # self.xvar('detune_d2_c_mot',np.linspace(-1.,-3.2,8))
         # self.xvar('detune_d2_r_mot',np.linspace(-4.,-6.,8))
@@ -48,33 +49,31 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_mot',np.linspace(12.,30.,15))
 
         # self.xvar('v_zshim_current_gm',np.linspace(0.1,1.,8))
-        # self.xvar('v_xshim_current_gm',np.linspace(0.,2.,8))
-        # self.xvar('v_yshim_current_gm',np.linspace(0.,3.,8))
-        # self.p.v_zshim_current_gm = .771
-        # self.p.v_xshim_current = .29
-        self.p.v_yshim_current_gm = 1.7
+        # self.xvar('v_xshim_current_gm',np.linspace(0.,1.7,15))
+        # self.xvar('v_yshim_current_gm',np.linspace(1.2,3.,8))
+        # self.p.v_zshim_current_gm = .743
+        # self.p.v_xshim_current_gm = .571
+        # self.p.v_yshim_current_gm = 2.23
 
         # self.xvar('detune_gm', np.linspace(3.,13.5,20))
 
-        # self.xvar('pfrac_d1_c_gm',np.linspace(.2,.99,8))
+        # self.xvar('pfrac_d1_c_gm',np.linspace(.2,.99,15))
         # self.xvar('pfrac_d1_r_gm',np.linspace(0.2,.99,8))
-        # self.p.pfrac_d1_c_gm = .539
-        # self.p.pfrac_d1_r_gm = .99
+        # self.p.pfrac_d1_c_gm = .55
+        # self.p.pfrac_d1_r_gm = .313
 
         # self.xvar('t_gmramp',np.linspace(2.,15.,15)*1.e-3)
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.3,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.6,8))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.5,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.9,15))
         # self.p.pfrac_c_gmramp_end = 0.01
-        # self.p.pfrac_r_gmramp_end = 0.53
-        self.p.pfrac_c_gmramp_end = 0.18
-        self.p.pfrac_r_gmramp_end = 0.1
+        # self.p.pfrac_r_gmramp_end = 0.729
         
         # self.xvar('i_magtrap_init',np.linspace(60.,95.,20))
         # self.i_magtrap_init = 82.
 
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,1.,8))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,15))
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,8))
         # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.,8))
         # self.p.v_zshim_current_magtrap = .572
         # self.p.v_xshim_current_magtrap = 2.5
@@ -84,7 +83,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_shim_delay = .5e-3
 
         # self.xvar('t_magtrap_hold',np.linspace(1.,80.,8)*1.e-3)
-        self.p.t_magtrap_hold = .2
+        self.p.t_magtrap_hold = .15
 
         self.p.N_repeats = 1
         self.p.t_mot_load = .5

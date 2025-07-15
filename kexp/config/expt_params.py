@@ -159,9 +159,9 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 19.5
-        self.v_zshim_current = .657
+        self.v_zshim_current = .743
         self.v_xshim_current = .571
-        self.v_yshim_current = .571
+        self.v_yshim_current = .11
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -191,19 +191,19 @@ class ExptParams():
         self.detune_gm = 9.1
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.8
-        self.v_xshim_current_gm = 0.429
-        self.v_yshim_current_gm = 2.03
+        self.v_zshim_current_gm = 0.743
+        self.v_xshim_current_gm = 0.6
+        self.v_yshim_current_gm = 2.23
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .539 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .55 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .85
+        self.pfrac_d1_r_gm = .313
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
         self.pfrac_c_gmramp_end = 0.01
-        self.pfrac_r_gmramp_end = 0.47
+        self.pfrac_r_gmramp_end = 0.729
         self.n_gmramp_steps = 200
 
         # mag trap

@@ -71,11 +71,12 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_xshim_current_gm = 0.429
         # self.p.v_yshim_current_gm = 2.03
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.5,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.6,8))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.4,10))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.6,10))
 
-        self.p.pfrac_c_gmramp_end = 0.18
-        self.p.pfrac_r_gmramp_end = 0.1
+
+        # self.p.pfrac_c_gmramp_end = 0.18
+        # self.p.pfrac_r_gmramp_end = 0.1
 
         # self.xvar('dumdum',[0]*5)
 
