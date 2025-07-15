@@ -24,10 +24,10 @@ class mag_trap(EnvExperiment, Base):
 
         # self.p.v_yshim_current = 3.
 
-        self.p.pfrac_c_gmramp_end = 0.18
-        self.p.pfrac_r_gmramp_end = 0.1
+        # self.p.pfrac_c_gmramp_end = 0.18
+        # self.p.pfrac_r_gmramp_end = 0.1
 
-        self.p.t_magtrap_hold = .1
+        self.p.t_magtrap_hold = .15
 
         self.p.t_lightsheet_hold = .1
 

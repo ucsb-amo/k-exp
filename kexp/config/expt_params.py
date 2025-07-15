@@ -146,10 +146,10 @@ class ExptParams():
         self.v_2d_mot_current = 2.7
 
         #MOT
-        self.detune_d2_c_mot = -2.8
+        self.detune_d2_c_mot = -2.07
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -5.
+        self.detune_d2_r_mot = -4.2
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -158,10 +158,10 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 14.
-        self.v_zshim_current = 1.
-        self.v_xshim_current = .286
-        self.v_yshim_current = 1.26
+        self.i_mot = 16.
+        self.v_zshim_current = .271
+        self.v_xshim_current = 1.1
+        self.v_yshim_current = .5
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -173,7 +173,7 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 9.857# 12.1
+        self.detune_d1_c_d1cmot = 10.1# 12.1
         self.pfrac_d1_c_d1cmot =  0.69 #.57
 
         self.detune_d2_r_d1cmot = -2.9
@@ -188,22 +188,22 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 9.1
+        self.detune_gm = 10.5
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.743
-        self.v_xshim_current_gm = 0.729
-        self.v_yshim_current_gm = 1.74
+        self.v_zshim_current_gm = 0.871
+        self.v_xshim_current_gm = 0.429
+        self.v_yshim_current_gm = 2.143
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .55 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .85 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .313
+        self.pfrac_d1_r_gm = .85
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.01
-        self.pfrac_r_gmramp_end = 0.729
+        self.pfrac_c_gmramp_end = .207 #0.01
+        self.pfrac_r_gmramp_end = .207# 0.729
         self.n_gmramp_steps = 200
 
         # mag trap

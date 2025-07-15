@@ -57,8 +57,8 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('detune_gm', np.linspace(3.,13.5,20))
 
-        self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
-        self.xvar('pfrac_d1_r_gm',np.linspace(0.1,.99,8))
+        # self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
+        # self.xvar('pfrac_d1_r_gm',np.linspace(0.1,.99,8))
         # self.p.pfrac_d1_c_gm = .539
         # self.p.pfrac_d1_r_gm = .539
 
@@ -66,11 +66,11 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.5,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.01,.5,8))
-        self.p.pfrac_c_gmramp_end = 0.176
-        self.p.pfrac_r_gmramp_end = 0.093
+        # self.p.pfrac_c_gmramp_end = 0.176
+        # self.p.pfrac_r_gmramp_end = 0.093
         
         # self.xvar('i_magtrap_init',np.linspace(60.,95.,20))
-        self.i_magtrap_init = 93.
+        # self.i_magtrap_init = 93.
 
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,5.,20))
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,8))
