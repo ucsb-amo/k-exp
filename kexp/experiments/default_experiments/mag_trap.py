@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_tof = 8.e-3
         # self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(5.,15.,10)*1.e-3)
-        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         # self.xvar('dumy',[0]*5)
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
@@ -42,7 +42,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_magtrap_hold = 0.2
 
         self.p.N_repeats = 1
-        self.p.t_mot_load = 1.
+        self.p.t_mot_load = 0.5
 
         # self.p.amp_imaging = .35
         self.p.imaging_state = 2.

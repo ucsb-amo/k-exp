@@ -13,9 +13,9 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('dumdum',[0]*1000)
 
-        self.xvar('v_yshim_current',np.linspace(0.,9.8,10))
+        # self.xvar('v_yshim_current',np.linspace(0.,9.8,10))
 
-        # self.xvar('t_tof',np.linspace(.05,.5,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(.05,.5,10)*1.e-3)
 
         
         # self.p.amp_imaging = .35
