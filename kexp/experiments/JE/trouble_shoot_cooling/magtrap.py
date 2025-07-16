@@ -13,10 +13,10 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.t_tof = 7000.e-6
+        self.p.t_tof = 9000.e-6
         # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         # self.xvar('dumy',[0]*500)
-        # self.xvar('dumy',np.linspace(1.,500.,500))
+        self.xvar('dumy',np.linspace(1.,500.,500))
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
         # self.p.t_pump_to_F1 = 50.e-6
@@ -77,7 +77,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,20))
         # self.p.v_zshim_current_magtrap = .572
         # self.p.v_xshim_current_magtrap = 2.5
-        self.p.v_yshim_current_magtrap = 4.6
+        # self.p.v_yshim_current_magtrap = 4.6
         # self.xvar('t_magtrap_delay',np.linspace(.5,10.,15)*1.e-3)
         # self.p.t_magtrap_delay = 5.e-3
         # self.p.t_shim_delay = .5e-3
@@ -92,7 +92,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.amp_imaging = .32
         self.p.imaging_state = 2.
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -121,7 +121,7 @@ class mag_trap(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(init_shuttler=False)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()
