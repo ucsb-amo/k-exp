@@ -88,10 +88,10 @@ class LiveODWindow(QWidget):
         self.plotter.start()
 
     def setup_fix_button(self):
-        self.fix_button = QPushButton('Fix')
+        self.fix_button = QPushButton('Reset')
         self.fix_button.setMinimumHeight(40)
         self.fix_button.setStyleSheet('background-color: #ffcccc; font-size: 40px; font-weight: bold;')
-        self.fix_button.clicked.connect(self.fix)
+        self.fix_button.clicked.connect(self.reset)
         self.run_id_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def setup_output_window(self):
@@ -166,6 +166,7 @@ class LiveODWindow(QWidget):
     def restart_mother(self):
         import time
         time.sleep(0.25)
+        self.clear_cams()
         self.camera_mother.start()
 
     def check_new_camera(self, camera_select):
@@ -275,7 +276,7 @@ class LiveODWindow(QWidget):
     def update_image_count(self, count, total):
         self.viewer_window.update_image_count(count, total)
 
-    def fix(self):
+    def reset(self):
         if hasattr(self, 'data_handler') and self.data_handler is not None:
             try:
                 self.data_handler.interrupted = True
@@ -288,12 +289,17 @@ class LiveODWindow(QWidget):
             try:
                 self.the_baby.interrupted = True
                 self.the_baby.dishonorable_death()
-                print('Acquisition aborted, run ID advanced.')
+                msg = 'Acquisition aborted, run ID advanced.'
+                print(msg)
+                self.msg(msg)
             except Exception as e:
                 print(e)
             self.the_baby = None
         else:
-            # update_run_id()
+            msg = 'No active run to abort. Incrementing Run ID.'
+            print(msg)
+            self.msg(msg)
+            update_run_id()
             pass
         self.queue = Queue()
         self.restart_mother()
