@@ -82,7 +82,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(.1,150.,20)*1.e-6)
         # self.p.t_pump_to_F1 = .01e-6
 
-        self.xvar('t_tof',np.linspace(50.,500.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(50.,500.,10)*1.e-6)
 
         # self.camera_params.exposure_time = 50.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time

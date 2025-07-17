@@ -14,8 +14,8 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('amp_push',np.linspace(.05,.188,8))
         # self.p.detune_push = 0.
 
-        self.xvar('detune_d2v_c_2dmot',np.linspace(-4.,0.,8))
-        self.xvar('detune_d2h_c_2dmot',np.linspace(-4.,0.,8))
+        # self.xvar('detune_d2v_c_2dmot',np.linspace(-4.,0.,8))
+        # self.xvar('detune_d2h_c_2dmot',np.linspace(-4.,0.,8))
         # self.xvar('detune_d2v_r_2dmot',np.linspace(-7.,-2.,8))
         # self.xvar('detune_d2h_r_2dmot',np.linspace(-7.,-2.,8))
         # self.p.detune_d2_r_2dmot = -4.4
@@ -27,8 +27,8 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(50.,500.,10)*1.e-6)
         
         self.p.imaging_state = 2.
-        self.p.t_tof = 200.e-6
-        self.p.t_mot_load = .5
+        self.p.t_tof = 300.e-6
+        self.p.t_mot_load = .3
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)

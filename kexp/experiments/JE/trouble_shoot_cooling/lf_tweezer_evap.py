@@ -17,7 +17,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('beans',[0]*15)
 
         # self.xvar('t_tof',np.linspace(100.,1200.,10)*1.e-6)
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 300.e-6
 
         # self.xvar('t_feshbach_field_rampup',np.linspace(15.,100.,10)*1.e-3)
         # self.t_feshbach_field_rampup = 100.e-3
@@ -45,7 +45,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(1.,500.,10)*1.e-3)
         self.p.t_tweezer_hold = 50.e-6
 
-        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-4.,5.,8))
+        self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-4.,5.,8))
         self.p.v_lf_tweezer_paint_amp_max = -.143
 
         # self.xvar('v_pd_lf_tweezer_1064_ramp_end', np.linspace(5.,9.4,8))
