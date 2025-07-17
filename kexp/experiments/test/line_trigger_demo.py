@@ -35,8 +35,8 @@ class line_trigger(EnvExperiment):
                                                     #sets variable t_end as time(in MUs) at which detection stops
                                             
         t_edge = self.ttl_in.timestamp_mu(t_end)    #sets variable t_edge as time(in MUs) at which first edge is detected
-        #                                             #if no edge is detected, sets
-        #                                             #t_edge to -1
+                                                    #if no edge is detected, sets
+                                                    #t_edge to -1
 
         if t_edge > 0:                          #runs if an edge has been detected
             at_mu(t_edge)                       #set time cursor to position of edge

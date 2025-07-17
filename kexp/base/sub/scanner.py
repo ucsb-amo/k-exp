@@ -145,6 +145,7 @@ class Scanner():
             self.core.break_realtime()
 
             self.init_scan_kernel()
+            self.core.break_realtime()
 
             self.scan_kernel()
 

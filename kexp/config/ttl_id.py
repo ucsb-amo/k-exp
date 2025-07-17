@@ -5,43 +5,45 @@ from kexp.control.artiq.TTL import TTL, TTL_IN, TTL_OUT
 
 class ttl_frame():
     def __init__(self):
-        
-        self.coil_discharge_igbt = self.ttl_assign_out(0)
-        self.tweezer_pid2_enable = self.ttl_assign_out(1)
-        self.inner_coil_pid_ttl = self.ttl_assign_out(2)
-        self.outer_coil_pid_ttl = self.ttl_assign_out(3)
-        self.lightsheet_sw = self.ttl_assign_out(4)
-        self.basler = self.ttl_assign_out(5)
-        self.inner_coil_igbt = self.ttl_assign_out(6)
-        self.andor = self.ttl_assign_out(7)
-        self.outer_coil_igbt = self.ttl_assign_out(8)
-        self.hbridge_helmholtz = self.ttl_assign_out(9)
-        self.z_basler = self.ttl_assign_out(10)
-        self.tweezer_pid1_int_hold_zero = self.ttl_assign_out(11)
-        self.lightsheet_pid_int_hold_zero = self.ttl_assign_out(12)
-        self.aod_rf_sw = self.ttl_assign_out(13)
-        self.awg_trigger = self.ttl_assign_out(14)
-        self.zshim_hbridge_flip = self.ttl_assign_out(15)
-        self.pd_scope_trig = self.ttl_assign_out(16)
-        self.pd_scope_trig_2 = self.ttl_assign_out(17)
-        self.imaging_shutter_xy = self.ttl_assign_out(18)
-        self.imaging_shutter_x = self.ttl_assign_out(19)
-        self.basler_2dmot = self.ttl_assign_out(20)
-        self.keithley_trigger = self.ttl_assign_out(48)
-        # self.machine_table_trig = self.ttl_assign_out(25)
 
-        self.line_trigger = self.ttl_assign_in(40)
+        self.ttl_list = []
+        
+        self.coil_discharge_igbt = self.assign_ttl_out(0)
+        self.tweezer_pid2_enable = self.assign_ttl_out(1)
+        self.inner_coil_pid_ttl = self.assign_ttl_out(2)
+        self.outer_coil_pid_ttl = self.assign_ttl_out(3)
+        self.lightsheet_sw = self.assign_ttl_out(4)
+        self.basler = self.assign_ttl_out(5)
+        self.inner_coil_igbt = self.assign_ttl_out(6)
+        self.andor = self.assign_ttl_out(7)
+        self.outer_coil_igbt = self.assign_ttl_out(8)
+        self.hbridge_helmholtz = self.assign_ttl_out(9)
+        self.z_basler = self.assign_ttl_out(10)
+        self.tweezer_pid1_int_hold_zero = self.assign_ttl_out(11)
+        self.lightsheet_pid_int_hold_zero = self.assign_ttl_out(12)
+        self.aod_rf_sw = self.assign_ttl_out(13)
+        self.awg_trigger = self.assign_ttl_out(14)
+        self.zshim_hbridge_flip = self.assign_ttl_out(15)
+        self.pd_scope_trig = self.assign_ttl_out(16)
+        self.pd_scope_trig_2 = self.assign_ttl_out(17)
+        self.imaging_shutter_xy = self.assign_ttl_out(18)
+        self.imaging_shutter_x = self.assign_ttl_out(19)
+        self.basler_2dmot = self.assign_ttl_out(20)
+        self.keithley_trigger = self.assign_ttl_out(48)
+        self.test_trig = self.assign_ttl_out(21)
+
+        self.line_trigger = self.assign_ttl_in(40)
 
         self._write_ttl_keys()
 
         self.camera = TTL
 
-    def ttl_assign_out(self,ch) -> TTL_OUT:
+    def assign_ttl_out(self,ch) -> TTL_OUT:
         this_ttl = TTL_OUT(ch)
         self.ttl_list.append(this_ttl)
         return this_ttl
     
-    def ttl_assign_in(self,ch) -> TTL_IN:
+    def assign_ttl_in(self,ch) -> TTL_IN:
         this_ttl = TTL_IN(ch)
         self.ttl_list.append(this_ttl)
         return this_ttl

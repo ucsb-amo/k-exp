@@ -32,6 +32,8 @@ class TTL_OUT(TTL):
         self.ttl_device.off()
 
 T_LINE_TRIGGER_SAMPLE_INTERVAL = 30.e-3
+T_LINE_TRIGGER_RTIO_DELAY = 5.e-6
+
 class TTL_IN(TTL):
     def __init__(self,ch):
         super().__init__(ch)
@@ -43,10 +45,11 @@ class TTL_IN(TTL):
         t_edge = self.ttl_device.timestamp_mu(t_end)
         if t_edge > 0:
             at_mu(t_edge)
+            delay(T_LINE_TRIGGER_RTIO_DELAY)
 
-class DummyTTL():
+class DummyTTL(TTL):
     def __init__(self):
-        super().__init__()
+        super().__init__(ch=0)
     
     @kernel
     def get_device(self,expt:artiq.experiment.EnvExperiment):
