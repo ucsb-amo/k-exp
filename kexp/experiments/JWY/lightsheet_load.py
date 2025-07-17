@@ -16,10 +16,10 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 200.e-6
-        # self.xvar('t_tof',np.linspace(600,1500.,10)*1.e-6)
+        self.p.t_tof = 600.e-6
+        self.xvar('t_tof',np.linspace(600,1500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
-        # self.xvar('dumy',np.linspace(1.,500.,100))
+        # self.xvar('dumy',[0]*5)
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.15,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.7,8))
@@ -35,13 +35,13 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_magtrap_ramp',np.linspace(.02,.4,10))
         # self.p.t_magtrap_ramp = .4
 
-        # self.xvar('t_lightsheet_rampup',np.linspace(20.,300.,15)*1.e-3)
-        self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,9.,10))
-        # self.p.t_lightsheet_rampup = .3
-        self.p.v_pd_lightsheet_rampup_end = 9.
+        # self.xvar('t_lightsheet_rampup',np.linspace(20.,1000.,10)*1.e-3)
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(2.,9.3,10))
+        self.p.t_lightsheet_rampup = .238
+        self.p.v_pd_lightsheet_rampup_end = 9.3
 
-        # self.xvar('t_magtrap',np.linspace(.1,3.,15))
-        self.p.t_magtrap = .5
+        # self.xvar('t_magtrap',np.linspace(.1,3.,10))
+        self.p.t_magtrap = 2.4
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,10))
         
@@ -54,7 +54,7 @@ class mag_trap(EnvExperiment, Base):
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.
@@ -74,6 +74,7 @@ class mag_trap(EnvExperiment, Base):
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
         delay(self.p.t_lightsheet_hold)
+        # self.inner_coil.snap_off()
 
         self.lightsheet.off()
 
@@ -83,7 +84,7 @@ class mag_trap(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel(init_shuttler=False)
+        self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()

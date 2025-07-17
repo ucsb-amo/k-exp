@@ -126,7 +126,7 @@ def plot_mixOD(ad:atomdata,
 
     if lines:
         for pos in np.arange(px, total_width, px):
-            ax.axvline(pos, color='white', linewidth=0.5)
+            ax.axvline(pos, color='white', linewidth=1)
 
     # Show the plot
     fig.tight_layout()

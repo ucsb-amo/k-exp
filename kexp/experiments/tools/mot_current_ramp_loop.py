@@ -8,12 +8,13 @@ class MOTCurrentRamp(EnvExperiment,Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False)
         self.core_dma = self.get_device("core_dma")
-        self.ch = self.dac_ch_3Dmot_current_control
+        self.ch = self.dac.inner_coil_supply_current.ch
 
-        V1 = self.params.v_mot_current - 0.25
-        V2 = self.params.v_mot_current + 1
+        v0 = 1.17
+        V1 = v0 - 0.3
+        V2 = v0 + 0.5
         T_half = 2
-        fs = 100
+        fs = 50
         self.N = int(2 * T_half * fs)
         self.dt = 1/fs
 
@@ -30,8 +31,8 @@ class MOTCurrentRamp(EnvExperiment,Base):
             for vidx in range(self.N):
                 
                 v = self.vs[vidx]
-                self.zotino.write_dac(self.ch,v)
-                self.zotino.load()
+                self.dac.dac_device.write_dac(self.ch,v)
+                self.dac.dac_device.load()
 
                 if vidx != 0:
                     delay(self.dt * s)
@@ -47,5 +48,5 @@ class MOTCurrentRamp(EnvExperiment,Base):
         ramp_handle = self.core_dma.get_handle("ramp")
         self.core.break_realtime()
         
-        while True:
+        for i in range(30):
             self.core_dma.playback_handle(ramp_handle)

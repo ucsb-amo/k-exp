@@ -306,11 +306,27 @@ class LiveODViewer(QWidget):
     def sync_sumod_panels(self):
         od_vb = self.od_plot.getViewBox()
         x_range, y_range = od_vb.viewRange()
-        self.sumodx_panel.setXRange(*x_range, padding=0)
-        self.sumody_panel.setYRange(*y_range, padding=0)
 
         self.od_plot.setYRange(*y_range, padding=0)
         self.od_plot.setXRange(*x_range, padding=0)
+
+        # Recompute sumodx and sumody for cropped region if OD data exists
+        if hasattr(self, '_last_od') and self._last_od is not None:
+            od = self._last_od
+            # Crop indices
+            x0 = max(int(np.floor(x_range[0])), 0)
+            x1 = min(int(np.ceil(x_range[1])), od.shape[1])
+            y0 = max(int(np.floor(y_range[0])), 0)
+            y1 = min(int(np.ceil(y_range[1])), od.shape[0])
+            # Crop and sum
+            cropped = od[y0:y1, x0:x1]
+            sumodx = np.sum(cropped, axis=0) if cropped.size > 0 else np.zeros(x1 - x0)
+            sumody = np.sum(cropped, axis=1) if cropped.size > 0 else np.zeros(y1 - y0)
+            self._plot_sumodx(sumodx)
+            self._plot_sumody(sumody, cropped.shape)
+
+        # self.sumodx_panel.setXRange(*x_range, padding=0)
+        # self.sumody_panel.setYRange(*y_range, padding=0)
 
     def _plot_sumodx(self, sumodx):
         if sumodx is not None:
@@ -320,12 +336,13 @@ class LiveODViewer(QWidget):
 
     def _plot_sumody(self, sumody, od_shape):
         if sumody is not None:
-            y = np.linspace(0, od_shape[1] - 1, len(sumody))
+            y = np.linspace(0, od_shape[0] - 1, len(sumody))
             x = sumody / np.max(sumody) * od_shape[0] * 0.8 + od_shape[0] * 0.1 if np.max(sumody) > 0 else sumody
             x = (x - np.mean(x)) * self._sumody_scale + np.mean(x)
             self.sumody_panel.clear()
             self.sumody_panel.plot(x, y, pen=pg.mkPen('w', width=2))
             # On first shot of a run, set y axis 0 to 1.5*max
+
     def reset_zoom(self):
         # Reset OD plot axes to original default limits
         self.od_plot.setXRange(0, 512, padding=0)
@@ -420,3 +437,18 @@ class LiveODViewer(QWidget):
             if v is not source_view:
                 v.getView().setRange(xRange=src_range[0], yRange=src_range[1], padding=0)
         self._syncing_image_views = False
+
+    def get_od_view_range(self):
+        """
+        Get the current view range of the OD plot
+        
+        Returns:
+            tuple: (x_range, y_range) where each range is [min, max]
+        """
+        try:
+            od_vb = self.od_plot.getViewBox()
+            x_range, y_range = od_vb.viewRange()
+            return x_range, y_range
+        except Exception as e:
+            # Return default range if anything goes wrong
+            return [0, 512], [0, 512]

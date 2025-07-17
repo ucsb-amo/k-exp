@@ -12,15 +12,21 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('frequency_detuned_imaging',np.arange(350.,450.,3)*1.e6)
 
-        # self.xvar('dumdum',[0]*100)
-
-        self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
-        # self.xvar('t_mot_load',np.linspace(0.25,5.,3))
+        # self.xvar('dumdum',[0]*10)
+        # self.xvar('v_yshim_current',np.linspace(0.,9.8,10))
+        # self.xvar('v_zshim_current_gm',np.linspace(0.6, 1., 10))
+        # self.xvar('v_xshim_current_gm',np.linspace(0.0, 1., 10))
+        # self.xvar('v_yshim_current_gm',np.linspace(0.0, 4., 15))
+        self.xvar('t_tof',np.linspace(12.,20.,2)*1.e-3)
+        # self.xvar('t_tof',np.linspace(300.,10000.,10)*1.e-6)
+        # self.xvar('t_mot_load',np.linspace(0.25,1.,10))
+        # self.xvar('detune_gm',np.linspace(8.5,13.,10))
+        # self.p.v_zshim_current_gm
         
         # self.p.amp_imaging = .35
         self.p.imaging_state = 2.
-        self.p.t_tof = 15.e-3
-        self.p.t_mot_load = .5
+        self.p.t_tof = 10.e-3
+        self.p.t_mot_load = 0.5
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
@@ -49,7 +55,7 @@ class gm_tof(EnvExperiment, Base):
        
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(setup_awg=False)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()

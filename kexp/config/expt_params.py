@@ -25,7 +25,7 @@ class ExptParams():
         # img beam settings
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 19.0e6
-        self.frequency_detuned_imaging_F1 = 420.e6
+        self.frequency_detuned_imaging_F1 = 452.e6
         self.beatlock_sign = -15
         self.N_offset_lock_reference_multiplier = 8
         self.frequency_minimum_offset_beatlock = 150.e6
@@ -127,29 +127,29 @@ class ExptParams():
         self.amp_d1_3d_r = 0.3
 
         # push beam
-        self.detune_push = -0.8
+        self.detune_push = -0.2
         self.amp_push = 0.188
 
         #2D MOT
-        self.detune_d2v_c_2dmot = -2.5
+        self.detune_d2v_c_2dmot = -1.14
         self.amp_d2v_c_2dmot = 0.188
 
-        self.detune_d2h_c_2dmot = -1.7
+        self.detune_d2h_c_2dmot = -2.8
         self.amp_d2h_c_2dmot = 0.188
 
-        self.detune_d2v_r_2dmot = -4.1
+        self.detune_d2v_r_2dmot = -3.4
         self.amp_d2v_r_2dmot = 0.188
 
-        self.detune_d2h_r_2dmot = -6.4
+        self.detune_d2h_r_2dmot = -5.6
         self.amp_d2h_r_2dmot = 0.188
 
-        self.v_2d_mot_current = 2.7
+        self.v_2d_mot_current = 2.5
 
         #MOT
         self.detune_d2_c_mot = -2.07
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.14
+        self.detune_d2_r_mot = -4.2
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -158,10 +158,10 @@ class ExptParams():
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 19.5
-        self.v_zshim_current = .614
-        self.v_xshim_current = 0.2
-        self.v_yshim_current = 2.86
+        self.i_mot = 16.
+        self.v_zshim_current = .271
+        self.v_xshim_current = 1.1
+        self.v_yshim_current = .5
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -173,11 +173,11 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 8.857# 12.1
-        self.pfrac_d1_c_d1cmot =  0.683 #.57
+        self.detune_d1_c_d1cmot = 10.1# 12.1
+        self.pfrac_d1_c_d1cmot =  0.69 #.57
 
-        self.detune_d2_r_d1cmot = -3.57 # -2.9
-        self.amp_d2_r_d1cmot =  0.06# 0.047
+        self.detune_d2_r_d1cmot = -2.9
+        self.amp_d2_r_d1cmot =  0.037 # 0.047
 
         self.detune_d1_c_sweep_d1cmot_start = 9.
         self.detune_d1_c_sweep_d1cmot_end = 7.
@@ -188,22 +188,22 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 9.1
+        self.detune_gm = 10.5
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.771
-        self.v_xshim_current_gm = 0.
-        self.v_yshim_current_gm = 2.07
+        self.v_zshim_current_gm = 0.871
+        self.v_xshim_current_gm = 0.429
+        self.v_yshim_current_gm = 2.143
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .539 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .85 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .99
+        self.pfrac_d1_r_gm = .85
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = 0.01
-        self.pfrac_r_gmramp_end = 0.47
+        self.pfrac_c_gmramp_end = .01 #0.01
+        self.pfrac_r_gmramp_end = .6# 0.729
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -214,7 +214,7 @@ class ExptParams():
         
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.
-        self.v_yshim_current_magtrap = 9.
+        self.v_yshim_current_magtrap = 9.9
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0

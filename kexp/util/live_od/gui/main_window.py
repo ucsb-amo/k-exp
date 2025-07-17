@@ -82,16 +82,16 @@ class LiveODWindow(QWidget):
         self.roi_select = ROISelector()
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
         self.plotting_queue = Queue()
-        self.analyzer = Analyzer(self.plotting_queue)
+        self.analyzer = Analyzer(self.plotting_queue, self.viewer_window)
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
         self.status_lights = StatusLightsWidget()
         self.plotter.start()
 
     def setup_fix_button(self):
-        self.fix_button = QPushButton('Fix')
+        self.fix_button = QPushButton('Reset')
         self.fix_button.setMinimumHeight(40)
         self.fix_button.setStyleSheet('background-color: #ffcccc; font-size: 40px; font-weight: bold;')
-        self.fix_button.clicked.connect(self.fix)
+        self.fix_button.clicked.connect(self.reset)
         self.run_id_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def setup_output_window(self):
@@ -275,26 +275,30 @@ class LiveODWindow(QWidget):
     def update_image_count(self, count, total):
         self.viewer_window.update_image_count(count, total)
 
-    def fix(self):
+    def reset(self):
         if hasattr(self, 'data_handler') and self.data_handler is not None:
             try:
                 self.data_handler.interrupted = True
                 self.data_handler.quit()
             except Exception as e:
                 print(e)
-            self.data_handler = None
                 
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
                 self.the_baby.interrupted = True
                 self.the_baby.dishonorable_death()
-                print('Acquisition aborted, run ID advanced.')
+                msg = 'Acquisition aborted, run ID advanced.'
+                print(msg)
+                self.msg(msg)
             except Exception as e:
                 print(e)
-            self.the_baby = None
         else:
-            # update_run_id()
+            msg = 'No active run to abort. Incrementing Run ID.'
+            print(msg)
+            self.msg(msg)
+            update_run_id()
             pass
+
         self.queue = Queue()
         self.restart_mother()
 
