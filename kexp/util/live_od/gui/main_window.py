@@ -166,7 +166,6 @@ class LiveODWindow(QWidget):
     def restart_mother(self):
         import time
         time.sleep(0.25)
-        self.clear_cams()
         self.camera_mother.start()
 
     def check_new_camera(self, camera_select):
@@ -283,7 +282,6 @@ class LiveODWindow(QWidget):
                 self.data_handler.quit()
             except Exception as e:
                 print(e)
-            self.data_handler = None
                 
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
@@ -294,13 +292,16 @@ class LiveODWindow(QWidget):
                 self.msg(msg)
             except Exception as e:
                 print(e)
-            self.the_baby = None
         else:
             msg = 'No active run to abort. Incrementing Run ID.'
             print(msg)
             self.msg(msg)
             update_run_id()
             pass
+
+        self.the_baby = None
+        self.data_handler = None
+
         self.queue = Queue()
         self.restart_mother()
 
