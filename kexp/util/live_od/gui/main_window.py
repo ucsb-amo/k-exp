@@ -299,9 +299,6 @@ class LiveODWindow(QWidget):
             update_run_id()
             pass
 
-        self.the_baby = None
-        self.data_handler = None
-
         self.queue = Queue()
         self.restart_mother()
 
