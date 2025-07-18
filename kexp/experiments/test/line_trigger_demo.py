@@ -24,10 +24,10 @@ class line_trigger(EnvExperiment):
         self.ttl_out: TTLOut
         self.ttl_trig: TTLOut
  
-        self.N = 1
+        self.N = 5
 
         self.t = np.zeros(10000,dtype=np.int64)
-        self.t2 = np.zeros(10,dtype=np.int64)
+        self.t2 = np.zeros(self.N * 2,dtype=np.int64)
         self.idx = 0
         self.idx2 = 0
 
@@ -80,6 +80,8 @@ class line_trigger(EnvExperiment):
                 at_mu(t_edge)                       #set time cursor to position of edge
                 self.get_slack()
                 delay(5.e-6)
+                # delay(-1.e-6)
+                # self.ttl_trig.pulse(1.e-6)
                 self.ttl_out.pulse(5.e-3)
                 self.edges[self.idx4] = self.edges[self.idx4] + 1
             else:
