@@ -7,12 +7,13 @@ class test2(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
-        self.xvar('p1',np.linspace(0.,10.,1))
+        self.xvar('p1',np.linspace(0.,10.,10))
         self.finish_prepare(shuffle=True)
     
     @kernel
     def scan_kernel(self):
         self.abs_image()
+        delay(0.5*s)
 
     @kernel
     def run(self):

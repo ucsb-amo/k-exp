@@ -287,7 +287,7 @@ class EthernetRelay():
 		self.__socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 		self.__board = Relay_Controller(self.__socket)
 		self.__socket.connect((RELAY0_IP,PORT))
-		self.__socket.settimeout(5.)
+		self.__socket.settimeout(10.)
 
 	def close(self):
 		self.__socket.close()
@@ -311,6 +311,10 @@ class EthernetRelay():
 	def toggle_artiq_power(self):
 		self.connect()
 		_ = self.__board.turn_on_relay_by_index(ARTIQ_RELAY_IDX)
+		self.close()
+		
 		time.sleep(3.)
+
+		self.connect()
 		_ = self.__board.turn_off_relay_by_index(ARTIQ_RELAY_IDX)
 		self.close()

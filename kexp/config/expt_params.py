@@ -81,7 +81,7 @@ class ExptParams():
         self.t_optical_pumping_bias_rampup = 2.e-3
         
         self.t_lightsheet_rampup = .12
-        self.t_lf_lightsheet_rampdown = .6
+        self.t_lf_lightsheet_rampdown = .7
         self.t_hf_lightsheet_rampdown = .6
         self.t_hf_lightsheet_rampdown2 = .02
         self.t_lf_lightsheet_rampdown2 = .02
@@ -109,7 +109,7 @@ class ExptParams():
         
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
-        self.t_magtrap = 1.3
+        self.t_magtrap = 1.5
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .15
@@ -127,20 +127,20 @@ class ExptParams():
         self.amp_d1_3d_r = 0.3
 
         # push beam
-        self.detune_push = -0.2
+        self.detune_push = -1.3
         self.amp_push = 0.188
 
         #2D MOT
-        self.detune_d2v_c_2dmot = -1.14
+        self.detune_d2v_c_2dmot = -1.5
         self.amp_d2v_c_2dmot = 0.188
 
-        self.detune_d2h_c_2dmot = -2.8
+        self.detune_d2h_c_2dmot = -2.2
         self.amp_d2h_c_2dmot = 0.188
 
         self.detune_d2v_r_2dmot = -3.4
         self.amp_d2v_r_2dmot = 0.188
 
-        self.detune_d2h_r_2dmot = -5.6
+        self.detune_d2h_r_2dmot = -4.8
         self.amp_d2h_r_2dmot = 0.188
 
         self.v_2d_mot_current = 2.5
@@ -234,8 +234,8 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.1
-        self.v_pd_lf_lightsheet_rampdown_end = .292 #4.16
+        self.v_pd_lightsheet_rampup_end = 5.
+        self.v_pd_lf_lightsheet_rampdown_end = .443 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = .292 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -335,7 +335,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # low field evap NEW
-        self.i_lf_lightsheet_evap1_current = 13.5
+        self.i_lf_lightsheet_evap1_current = 14.
 
         self.i_lf_tweezer_load_current = 15.5
         self.i_lf_tweezer_evap1_current = 12.7

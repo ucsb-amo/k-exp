@@ -3,11 +3,14 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from kexp.analysis.roi import ROI
 from kexp.analysis.image_processing import compute_OD, process_ODs
 from queue import Queue
+from kamo import Potassium39
 
 class Analyzer(QThread):
     analyzed = pyqtSignal()
     def __init__(self, plotting_queue: Queue, viewer=None):
         super().__init__()
+        # self.atom = Potassium39()
+        
         self.imgs = []
         self.plotting_queue = plotting_queue
         self.roi = []
@@ -88,3 +91,13 @@ class Analyzer(QThread):
             # If anything goes wrong, return the original OD
             print(f"Warning: Could not crop OD to view range: {e}")
             return od, slice(None), slice(None)
+
+    # def compute_atom_number(self,od):
+    #     self.atom_cross_section = self.atom.get_cross_section()
+    #     dx_pixel = self.camera_params.pixel_size_m / self.camera_params.magnification
+        
+    #     self.atom_number_fit_area_x = self.fit_area_x * dx_pixel / self.atom_cross_section
+    #     self.atom_number_fit_area_y = self.fit_area_y * dx_pixel / self.atom_cross_section
+
+    #     self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section
+    #     self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)

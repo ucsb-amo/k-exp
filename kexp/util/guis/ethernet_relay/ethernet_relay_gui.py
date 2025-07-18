@@ -80,7 +80,7 @@ class EthernetRelayGUI(QMainWindow):
         # Control buttons
         button_layout = QHBoxLayout()
         
-        self.toggle_btn = QPushButton("Toggle Source")
+        self.toggle_btn = QPushButton("Turn Source OFF")
         self.toggle_btn.setFont(QFont("Arial", 11))
         self.toggle_btn.setMinimumHeight(40)
         self.update_toggle_button_style()
@@ -135,7 +135,7 @@ class EthernetRelayGUI(QMainWindow):
         """Update the toggle button style based on current source status"""
         if self.source_status:
             # Source is ON - button should show "Turn OFF" and be red
-            self.toggle_btn.setText("Toggle Source")
+            self.toggle_btn.setText("Turn Source OFF")
             self.toggle_btn.setStyleSheet("""
                 QPushButton {
                     background-color: #801b1b;

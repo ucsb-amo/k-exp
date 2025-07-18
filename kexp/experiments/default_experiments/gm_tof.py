@@ -17,7 +17,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('v_zshim_current_gm',np.linspace(0.6, 1., 10))
         # self.xvar('v_xshim_current_gm',np.linspace(0.0, 1., 10))
         # self.xvar('v_yshim_current_gm',np.linspace(0.0, 4., 15))
-        self.xvar('t_tof',np.linspace(12.,20.,2)*1.e-3)
+        self.xvar('t_tof',np.linspace(12.,20.,10)*1.e-3)
         # self.xvar('t_tof',np.linspace(300.,10000.,10)*1.e-6)
         # self.xvar('t_mot_load',np.linspace(0.25,1.,10))
         # self.xvar('detune_gm',np.linspace(8.5,13.,10))
