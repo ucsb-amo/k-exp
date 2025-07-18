@@ -41,11 +41,20 @@ class TTL_IN(TTL):
 
     @kernel
     def wait_for_line_trigger(self):
-        t_end = self.ttl_device.gate_rising(T_LINE_TRIGGER_SAMPLE_INTERVAL)
-        t_edge = self.ttl_device.timestamp_mu(t_end)
-        if t_edge > 0:
-            at_mu(t_edge)
-            delay(T_LINE_TRIGGER_RTIO_DELAY)
+        while True:
+            t_end = self.ttl_device.gate_rising(T_LINE_TRIGGER_SAMPLE_INTERVAL)
+            t_edge = self.ttl_device.timestamp_mu(t_end)
+            
+            while True:
+                t_other_edge = self.ttl_device.timestamp_mu(t_end)
+                if t_other_edge == -1:
+                    break
+            
+            if t_edge > 0:
+                at_mu(t_edge)
+                delay(T_LINE_TRIGGER_RTIO_DELAY)
+                # read out the remaining input events to clear the input FIFO
+                break
 
 class DummyTTL(TTL):
     def __init__(self):

@@ -23,16 +23,19 @@ class line_trigger(EnvExperiment):
         self.ttl_in: TTLInOut
         self.ttl_out: TTLOut
         self.ttl_trig: TTLOut
-
+ 
         self.N = 1
 
         self.t = np.zeros(10000,dtype=np.int64)
-        self.t2 = np.zeros(1000,dtype=np.int64)
+        self.t2 = np.zeros(10,dtype=np.int64)
         self.idx = 0
         self.idx2 = 0
 
         self.tries = np.ones(self.N,dtype=int)
         self.idx3 = 0
+
+        self.edges = np.ones(self.N,dtype=int)
+        self.idx4 = 0
 
     @kernel
     def get_time(self):
@@ -48,50 +51,50 @@ class line_trigger(EnvExperiment):
     def run(self):
 
         self.core.reset()     
-
-        self.get_slack()
-
         self.core.break_realtime()
-
-        self.get_slack()
 
         delay(1.e-6)
         self.ttl_trig.pulse(1.e-6)  
         for _ in range(self.N):
-            self.get_time()
 
             self.wait_for_TTL()
 
-            self.get_time()
-            self.get_slack()
-
             self.core.break_realtime()
             self.idx3 = self.idx3 + 1
+            self.idx4 = self.idx4 + 1
         delay(1.e-3)
 
     @kernel
     def wait_for_TTL(self):          
         edge = False
         while not edge:
-            t = now_mu()
-            t_end = self.ttl_in.gate_rising(30e-3)      #opens gate for rising edges to be detected on TTL0 for 10ms
+            t_end = self.ttl_in.gate_rising(1/60)       #opens gate for rising edges to be detected on TTL0
                                                         #sets variable t_end as time(in MUs) at which detection stops
                                                 
             t_edge = self.ttl_in.timestamp_mu(t_end)    #sets variable t_edge as time(in MUs) at which first edge is detected
                                                         #if no edge is detected, sets
                                                         #t_edge to -1
-            print(t_edge - t)
-            if t_edge > 0:                          #runs if an edge has been detected
+            if t_edge > 0:                              #runs if an edge has been detected
                 edge = True
+                self.get_slack()
                 at_mu(t_edge)                       #set time cursor to position of edge
+                self.get_slack()
                 delay(5.e-6)
-                # self.ttl_out.pulse(5.e-3)
+                self.ttl_out.pulse(5.e-3)
+                self.edges[self.idx4] = self.edges[self.idx4] + 1
             else:
                 # print('hi')
                 self.tries[self.idx3] = self.tries[self.idx3] + 1
 
+            while True:
+                t_edge = self.ttl_in.timestamp_mu(t_end)
+                if t_edge == -1:
+                    break
+                else:
+                    self.edges[self.idx4] = self.edges[self.idx4] + 1
+
     def analyze(self):
-        dt = np.diff(self.t[self.t>0])
-        print(dt)
-        print(self.t2[self.t2!=0])
-        print(self.tries)
+        # dt = np.diff(self.t[self.t>0])
+        # print(dt)
+        print(self.t2)
+        print(self.edges)
