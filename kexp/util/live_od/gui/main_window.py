@@ -301,6 +301,8 @@ class LiveODWindow(QWidget):
 
         self.queue = Queue()
         self.restart_mother()
+        self.the_baby = None
+        self.data_handler = None
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
