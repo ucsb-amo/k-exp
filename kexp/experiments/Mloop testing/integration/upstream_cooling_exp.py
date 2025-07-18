@@ -22,7 +22,7 @@ from kexp.analysis.plotting_1d import *
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = load_atomdata(0,29089)
+        ad = load_atomdata(0,31450)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.max(ad.atom_number)
@@ -99,7 +99,7 @@ class ExptBuilder():
 
                 def prepare(self):
                     Base.__init__(self,setup_camera=True,save_data=True,
-                                camera_select=cameras.andor,
+                                camera_select=cameras.xy_basler,
                                 imaging_type=img_types.ABSORPTION)
                     
                     self.p.t_tof = 9000.e-6
@@ -107,9 +107,11 @@ class ExptBuilder():
                                  
                     {assignment_lines}
 
+                    self.p.t_magtrap_hold = .15
+
                     self.p.imaging_state = 2.
 
-                    self.p.N_repeats = 1
+                    self.p.N_repeats = 3
                     self.p.t_mot_load = .3
 
                     self.finish_prepare(shuffle=True)
@@ -124,7 +126,12 @@ class ExptBuilder():
                     self.gm(self.p.t_gm * s)
                     self.gm_ramp(self.p.t_gmramp)
 
-                    self.release()
+                    self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,
+                                        do_magtrap_rampup=False,
+                                        do_magtrap_hold=False,
+                                        do_magtrap_rampdown=False)
+                    delay(self.p.t_magtrap_hold)
+                    self.inner_coil.snap_off()
 
                     delay(self.p.t_tof)
                     self.flash_repump()
