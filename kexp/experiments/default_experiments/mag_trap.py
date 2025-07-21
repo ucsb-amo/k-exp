@@ -62,6 +62,7 @@ class mag_trap(EnvExperiment, Base):
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,
                                         do_magtrap_rampup=False,
+                                        do_magtrap_hold=False,
                                         do_magtrap_rampdown=False)
         delay(self.p.t_magtrap_hold)
         self.inner_coil.snap_off()
