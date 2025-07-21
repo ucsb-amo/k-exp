@@ -139,7 +139,7 @@ def ensure_ndarray(var, enforce_1d=True):
     """
     if isinstance(var, (float, int)):
         arr = np.array([var])
-    elif isinstance(var, list):
+    elif isinstance(var, list) or isinstance(var,range):
         arr = np.array(var)
     elif isinstance(var, np.ndarray):
         arr = var

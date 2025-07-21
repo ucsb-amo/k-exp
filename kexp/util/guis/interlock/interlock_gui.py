@@ -270,6 +270,7 @@ class MainWindow(QMainWindow):
                     self.button.setEnabled(True)
                     self.button.clicked.connect(self.the_button_was_clicked)
         print("Next dataset")
+        print(self.temperature)
         self.line.setData(self.time, self.temperature)
         self.line_2.setData(self.time, self.flows[0])
         self.line_3.setData(self.time, self.flows[1])
