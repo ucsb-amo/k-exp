@@ -35,15 +35,15 @@ class line_trigger(EnvExperiment):
 
         delay(1.e-6)
 
-        self.ttl_trig.pulse(1.e-6)  
+        self.ttl.ttl_trig.pulse(1.e-6)  
 
         for _ in range(self.N):
 
-            self.ttl_in.wait_for_line_trigger()
-            self.ttl_out.pulse(1.e-3)
+            self.ttl.ttl_in.wait_for_line_trigger()
+            self.ttl.ttl_out.pulse(1.e-3)
 
             self.core.break_realtime()
-            self.ttl_in.clear_input_events()
+            self.ttl.ttl_in.clear_input_events()
             self.core.break_realtime()
 
         delay(1.e-3)
