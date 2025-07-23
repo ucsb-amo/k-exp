@@ -779,7 +779,7 @@ class Cooling():
         self.start_magtrap(v_zshim_current=v_zshim_current,
                            v_yshim_current=v_yshim_current,
                            v_xshim_current=v_xshim_current)
-
+        delay(self.params.t_pre_lightsheet_rampup_delay)
         # ramp up lightsheet over magtrap
         if do_lightsheet_ramp:
             self.lightsheet.ramp(t_lightsheet_ramp,

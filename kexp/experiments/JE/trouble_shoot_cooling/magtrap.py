@@ -13,10 +13,10 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.t_tof = 5000.e-6
-        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
-        #self.xvar('dumy',[0]*5)
-        # self.xvar('dumy',np.linspace(1.,500.,5))
+        self.p.t_tof = 8000.e-6
+        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        self.xvar('dumy',[0]*5)
+        # self.xvar('dumy',np.linspace(1.,800.,800))
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
         # self.p.t_pump_to_F1 = 50.e-6
@@ -64,8 +64,8 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('t_gmramp',np.linspace(2.,15.,15)*1.e-3)
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.2,10))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.4,.8,8))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.3,10))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.01,.8,8))
         # self.p.pfrac_c_gmramp_end = 0.176
         # self.p.pfrac_r_gmramp_end = 0.743
         
@@ -74,7 +74,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,5.,20))
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,8))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,20))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,10))
         # self.p.v_zshim_current_magtrap = .572
         # self.p.v_xshim_current_magtrap = 2.5
         # self.p.v_yshim_current_magtrap = 4.6
@@ -85,8 +85,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_magtrap_hold',np.linspace(1.,80.,8)*1.e-3)
         self.p.t_magtrap_hold = .15
 
-        self.p.N_repeats = 1
-        self.p.t_mot_load = .3
+        self.p.N_repeats = 3
+        self.p.t_mot_load = .5
 
         # self.xvar('amp_imaging',np.linspace(.25,.4,20))
         # self.p.amp_imaging = .32
@@ -96,6 +96,10 @@ class mag_trap(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        self.outer_coil.on()
+        self.outer_coil.set_voltage()
+        self.outer_coil.set_supply(i_supply=0.)
         
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
@@ -118,6 +122,8 @@ class mag_trap(EnvExperiment, Base):
         delay(self.p.t_tof)
         self.flash_repump()
         self.abs_image()
+
+        self.outer_coil.off()
 
     @kernel
     def run(self):

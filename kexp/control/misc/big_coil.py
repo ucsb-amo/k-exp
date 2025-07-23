@@ -1,5 +1,5 @@
 from kexp.control.artiq.DAC_CH import DAC_CH
-from kexp.control.artiq.TTL import TTL
+from kexp.control.artiq.TTL import TTL_OUT
 from kexp.config.expt_params import ExptParams
 from artiq.experiment import kernel, delay, parallel, portable, TFloat
 import numpy as np
@@ -24,8 +24,8 @@ def identity(x) -> TFloat:
 class igbt_magnet():
     def __init__(self,
                  v_control_dac = DAC_CH, i_control_dac = DAC_CH,
-                 pid_dac = DAC_CH, pid_ttl = TTL,
-                 igbt_ttl = TTL, discharge_igbt_ttl = TTL,
+                 pid_dac = DAC_CH, pid_ttl = TTL_OUT,
+                 igbt_ttl = TTL_OUT, discharge_igbt_ttl = TTL_OUT,
                  expt_params:ExptParams = ExptParams(),
                  max_current = 0., max_voltage = 0.,
                  slope_current_per_vdac_supply=1.,
@@ -250,6 +250,12 @@ class igbt_magnet():
         delay(T_ANALOG_DELAY)
         self.pid_ttl.off()
 
+    @kernel
+    def stop_pid_bare(self):
+        """Stops the PID, does nothing to the keysight setpoint
+        """        
+        self.pid_ttl.off()
+
     @kernel(flags={"fast-math"})
     def rampdown(self,t_rampdown=50.e-3):
         """Ramps the coils to off from the current set point.
@@ -271,6 +277,7 @@ class igbt_magnet():
         self.set_supply(0.)
         self.set_voltage(0.)
         delay(T_ANALOG_DELAY)
+        delay(100.e-3)
         self.igbt_ttl.off()
 
     @kernel
@@ -301,8 +308,8 @@ class igbt_magnet():
 class hbridge_magnet(igbt_magnet):
     def __init__(self,
                  v_control_dac = DAC_CH, i_control_dac = DAC_CH,
-                 pid_dac = DAC_CH, pid_ttl = TTL,
-                 hbridge_ttl = TTL, igbt_ttl = TTL, discharge_igbt_ttl = TTL,
+                 pid_dac = DAC_CH, pid_ttl = TTL_OUT,
+                 hbridge_ttl = TTL_OUT, igbt_ttl = TTL_OUT, discharge_igbt_ttl = TTL_OUT,
                  expt_params = ExptParams, max_current = 0., max_voltage = 0.,
                  slope_current_per_vdac_supply=1.,
                  offset_current_per_vdac_supply=0.,

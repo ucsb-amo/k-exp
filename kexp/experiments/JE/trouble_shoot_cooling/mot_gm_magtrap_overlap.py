@@ -11,11 +11,11 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='z_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='z_basler',save_data=False)
 
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
-        self.xvar('dumy',[2,3]*5)
+        self.xvar('dumy',[2,3]*100)
 
         self.p.v_pd_lightsheet_rampup_end = 5.
 
@@ -36,7 +36,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_mot_load = .5
 
-        self.camera_params.exposure_time = 25.e-6
+        self.camera_params.exposure_time = 35.e-6
         self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.gain = 1.
 

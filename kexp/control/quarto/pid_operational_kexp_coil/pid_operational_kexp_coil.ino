@@ -114,7 +114,7 @@ void getMeas1()
   double newadc1 = readADC1_from_ISR();
   inputA = newadc1;
   writeDAC(4,inputA);
-  writeDAC(2, inputB);
+  
   writeDAC(1, inputB);
   // P1 = P11;
   // I1 = I11;
@@ -150,7 +150,7 @@ void getMeas1()
   // else {newdac1 = 0.;}
   
   writeDAC(3,newdac1);
-
+  writeDAC(1, newdac1);
   prevA = inputT;
   // if(abs(newdac1)>Vgs_threshold1)
   // {

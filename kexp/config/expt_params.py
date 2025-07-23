@@ -109,6 +109,7 @@ class ExptParams():
         
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
+        self.t_pre_lightsheet_rampup_delay = 0.e-3
         self.t_magtrap = 1.5
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
@@ -215,6 +216,8 @@ class ExptParams():
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.
         self.v_yshim_current_magtrap = 9.9
+
+        self.v_yshim_current_magtrap_ramp = np.linspace(self.v_yshim_current_magtrap,0.,200)
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
