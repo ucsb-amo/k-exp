@@ -273,6 +273,7 @@ class Image():
         """Takes a light image (PWA), delays, another light image (PWOA), delay,
         then a dark image.
         """        
+        # self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
 
         # atoms image (pwa)
         self.light_image()

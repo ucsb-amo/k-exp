@@ -16,10 +16,10 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 1200.e-6
+        self.p.t_tof = 800.e-6
         # self.xvar('t_tof',np.linspace(600,1500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
-        self.xvar('dumy',np.linspace(1.,1200.,5))
+        self.xvar('dumy',np.linspace(1.,1200.,3))
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.15,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.7,8))
@@ -45,6 +45,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('v_pd_lightsheet_rampdown_end',np.linspace(3.,8.,10))
         
+        # self.xvar('t_lightsheet_hold',np.linspace(0.,1.5,20))
         self.p.t_lightsheet_hold = .1
 
         # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
@@ -53,6 +54,9 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 50.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
+
+        # self.xvar('amp_d2_c_imaging',np.linspace(0.,.188,10))
+        self.p.amp_d2_c_imaging = .188
 
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
@@ -75,10 +79,13 @@ class mag_trap(EnvExperiment, Base):
 
         delay(self.p.t_lightsheet_hold)
 
+
         self.lightsheet.off()
 
+        
         delay(self.p.t_tof)
         self.flash_repump()
+        # self.flash_cooler()
         self.abs_image()
 
     @kernel

@@ -175,6 +175,7 @@ class Cooling():
         if amp == dv:
             amp = self.params.amp_d2_c_imaging
 
+
         self.dds.d2_3d_c.set_dds_gamma(delta=detune,amplitude=amp)
         self.dds.d2_3d_c.on()
         delay(t)
@@ -284,6 +285,10 @@ class Cooling():
         if v_xshim_current == dv:
             v_xshim_current = self.params.v_xshim_current
         ### End Defaults ###
+
+        self.ttl.d2_mot_shutter.on()
+
+        # delay(500.e-3)
             
         self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(20.)
@@ -993,6 +998,7 @@ class Cooling():
         self.dds.optical_pumping.set_dds(amplitude=0.)
         self.dds.raman_minus.set_dds(amplitude=0.)
         self.dds.raman_plus.set_dds(amplitude=0.)
+        # self.dds.imaging.set_dds(amplitude=0.)
 
         # to avoid sequence errors from all the TTLs being at once
         self.dds.d1_3d_r.off()
@@ -1009,6 +1015,7 @@ class Cooling():
         self.dds.optical_pumping.off()
         self.dds.raman_minus.off()
         self.dds.raman_plus.off()
+        # self.dds.imaging.off()
         delay_mu(8)
 
     @kernel

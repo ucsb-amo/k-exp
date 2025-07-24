@@ -82,7 +82,7 @@ class ExptParams():
         
         self.t_lightsheet_rampup = .12
         self.t_lf_lightsheet_rampdown = .7
-        self.t_hf_lightsheet_rampdown = .6
+        self.t_hf_lightsheet_rampdown = .85
         self.t_hf_lightsheet_rampdown2 = .02
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = .01
@@ -114,6 +114,7 @@ class ExptParams():
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .15
+        self.t_yshim_rampdown = 10.e-3
         
         self.t_feshbach_field_rampup = 100.e-3
         self.t_feshbach_field_ramp = 12.e-3
@@ -217,7 +218,7 @@ class ExptParams():
         self.v_xshim_current_magtrap = 0.
         self.v_yshim_current_magtrap = 9.9
 
-        self.v_yshim_current_magtrap_ramp = np.linspace(self.v_yshim_current_magtrap,0.,200)
+        
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -238,8 +239,8 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 5.
-        self.v_pd_lf_lightsheet_rampdown_end = .443 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .292 #4.16
+        self.v_pd_lf_lightsheet_rampdown_end = .33 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .33 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -338,7 +339,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # low field evap NEW
-        self.i_lf_lightsheet_evap1_current = 14.
+        self.i_lf_lightsheet_evap1_current = 15.4
 
         self.i_lf_tweezer_load_current = 15.5
         self.i_lf_tweezer_evap1_current = 12.7
@@ -347,7 +348,7 @@ class ExptParams():
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 192.44
+        self.i_hf_lightsheet_evap1_current = 192.
 
         self.i_hf_tweezer_load_current = 193.3
         self.i_hf_tweezer_evap1_current = 192.86

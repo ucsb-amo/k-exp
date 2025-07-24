@@ -31,6 +31,7 @@ class ttl_frame():
         self.basler_2dmot = self.assign_ttl_out(20)
         self.keithley_trigger = self.assign_ttl_out(48)
         self.test_trig = self.assign_ttl_out(21)
+        self.d2_mot_shutter = self.assign_ttl_out(22)
 
         self.line_trigger = self.assign_ttl_in(40)
 
