@@ -377,18 +377,6 @@ class ExptParams():
 
         self.dt_gmramp = self.t_gmramp / self.n_gmramp_steps
 
-    def compute_d1cmot_detuning_ramp(self):
-        self.detune_d2_r_list_d1cmot = np.linspace(
-            self.detune_d2_r_sweep_d1cmot_start,
-            self.detune_d2_r_sweep_d1cmot_end,
-            self.n_d1cmot_detuning_sweep_steps
-        )
-        self.detune_d1_c_list_d1cmot = np.linspace(
-            self.detune_d1_c_sweep_d1cmot_start,
-            self.detune_d1_c_sweep_d1cmot_end,
-            self.n_d1cmot_detuning_sweep_steps
-        )
-
     def compute_d1_vvas(self):
         cal = DDS_VVA_Calibration()
         self.v_pd_d1_c_d1cmot = cal.power_fraction_to_vva(self.pfrac_d1_c_d1cmot)
