@@ -488,52 +488,54 @@ class Cooling():
 
     @kernel
     def cmot_d1_sweep(self,t,
-            detune_d1_c_list = dvlist,
             v_pd_d1_c = dv,
             amp_d1_c = dv,
-            detune_d2_r_list = dvlist,
             amp_d2_r = dv,
             i_supply = dv):
         
         ### Start Defaults ###
-        if detune_d1_c_list == dvlist:
-            detune_d1_c_list = self.params.detune_d1_c_list_d1cmot
         if v_pd_d1_c == dv:
             v_pd_d1_c = self.params.v_pd_d1_c_d1cmot
         if amp_d1_c == dv:
             amp_d1_c = self.params.amp_d1_3d_c
-        if detune_d2_r_list == dvlist:
-            detune_d2_r_list = self.params.detune_d2_r_list_d1cmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_d1cmot
         if i_supply == dv:
             i_supply = self.params.i_cmot
         ### End Defaults ###
-            
-        dt = t / self.params.n_d1cmot_detuning_sweep_steps
-        self.inner_coil.set_supply(i_supply)
-        self.inner_coil.set_voltage(i_supply)
-        self.inner_coil.on()
 
-        self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c_list[0],
+        # self.inner_coil.set_supply(i_supply)
+        self.inner_coil.set_supply(self.params.i_magtrap_init)
+        # self.inner_coil.set_voltage(i_supply)
+        # self.inner_coil.on()
+
+        n = self.params.n_d1cmot_detuning_sweep_steps
+        dt = t / n
+
+        delta_d1_c_0 = self.params.detune_d1_c_sweep_d1cmot_start
+        delta_d1_c_f = self.params.detune_d1_c_sweep_d1cmot_end
+        df_c = (delta_d1_c_f - delta_d1_c_0)/(n-1)
+
+        delta_d2_r_0 = self.params.detune_d2_r_sweep_d1cmot_start
+        delta_d2_r_f = self.params.detune_d2_r_sweep_d1cmot_end
+        df_r = (delta_d2_r_f - delta_d2_r_0)/(n-1)
+
+        self.dds.d1_3d_c.set_dds_gamma(delta=delta_d1_c_0,
                                        v_pd=v_pd_d1_c)
-        delay(self.params.t_rtio)
-        self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r_list[0],
+        self.dds.d2_3d_r.set_dds_gamma(delta=delta_d2_r_0,
                                        amplitude=amp_d2_r)
 
         # with parallel:
         self.dds.d2_3d_r.on()
         self.dds.d1_3d_c.on()
-        delay(self.params.t_rtio)
+
+        for i in range(n):
+            self.dds.d1_3d_c.set_dds_gamma(delta= delta_d1_c_0 + i*df_c)
+            self.dds.d2_3d_r.set_dds_gamma(delta= delta_d2_r_0 + i*df_r)
+            delay(dt)
+
         self.dds.d2_3d_c.off()
         self.dds.d1_3d_r.off()
-
-        for i in range(self.params.n_d1cmot_detuning_sweep_steps):
-            self.dds.d1_3d_c.set_dds_gamma(delta=detune_d1_c_list[i])
-            self.dds.d2_3d_r.set_dds_gamma(delta=detune_d2_r_list[i])
-            delay(dt)
-        
-        delay(t)
 
     #GM with only D1, turning B field off
     @kernel
