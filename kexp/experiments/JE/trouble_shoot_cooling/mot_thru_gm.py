@@ -93,7 +93,7 @@ class gm_tof(EnvExperiment, Base):
         # self.p.amp_imaging = .35
         # self.p.imaging_state = 1.
         self.p.imaging_state = 2.
-        self.p.t_tof = 500.e-6
+        self.p.t_tof = 50.e-6
         self.p.t_mot_load = .5
         self.p.N_repeats = 1
 

@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         self.p.t_tof = 700.e-6
-        self.xvar('t_tof',np.linspace(100,3000.,15)*1.e-6)
+        self.xvar('t_tof',np.linspace(400,2000.,15)*1.e-6)
 
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0,1])
@@ -59,22 +59,22 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(188.,193.,7))
         # self.p.i_hf_lightsheet_evap1_current = 192.4
-        self.p.i_hf_lightsheet_evap1_current = 192.
+        self.p.i_hf_lightsheet_evap1_current = 187.4
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,.5,10))
-        self.p.v_pd_hf_lightsheet_rampdown_end = .33
+        self.p.v_pd_hf_lightsheet_rampdown_end = 3.73
 
         # self.xvar('t_hf_lightsheet_rampdown',np.linspace(600.,1100.,24)*1.e-3)
-        self.p.t_hf_lightsheet_rampdown = 0.6
+        self.p.t_hf_lightsheet_rampdown = 0.727
 
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.1,.30,9))
-        self.p.v_pd_lightsheet_rampdown2_end = .25
+        self.p.v_pd_lightsheet_rampdown2_end = .8
 
         # self.xvar('t_lightsheet_rampdown2',np.linspace(100.,1000.,8)*1.e-3)
-        self.p.t_lightsheet_rampdown2 = 0.2
+        self.p.t_lightsheet_rampdown2 = 0.74
 
         # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(190.,195.,10))
-        self.p.i_hf_lightsheet_evap2_current = 192.3
+        self.p.i_hf_lightsheet_evap2_current = 189.1
         
         self.p.t_lightsheet_hold = .5
         # self.p.t_yshim_rampdown = 10.e-3

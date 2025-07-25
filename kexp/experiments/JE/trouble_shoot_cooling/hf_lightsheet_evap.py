@@ -12,13 +12,15 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,camera_select='xy_basler',
+        Base.__init__(self,setup_camera=True,save_data=True,camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 1200.e-6
-        self.xvar('t_tof',np.linspace(400,1500.,10)*1.e-6)
+        self.p.t_tof = 100.e-6
+        # self.xvar('t_tof',np.linspace(400,2500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
-        # self.xvar('dumy',[0,1]*1)
+        # self.xvar('dumy',[0,1]*2)
+
+        self.xvar('hf_imaging_detuning', [-594.e6,-494.e6])
 
         # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
 
@@ -64,37 +66,35 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_blow_delay = 5.e-6
         # self.xvar('t_pre_lightsheet_rampup_delay',np.linspace(0.,200.e-3,20))
-        # self.xvar('hf_imaging_detuning',[-120.e6,-15.e6])
-        # self.xvar('t_feshbach_field_rampup',np.linspace(15.,100.,10)*1.e-3)
-        # self.xvar('hf_imaging_detuning', [325.e6,395.e6]*1)
-        # self.xvar('feshbach_delay',np.linspace(1.e-3,50.e-3,10))
-        self.p.feshbach_delay = 10.e-3
+
+        self.xvar('t_feshbach_field_rampup',np.linspace(10.,250.,15)*1.e-3)
+
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,300.,15)*1.e-3)
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(3.,8.3,10))
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(3.,9.5,10))
         # self.p.t_lightsheet_rampup = 4.
-        # self.p.v_pd_lightsheet_rampup_end = 7.
+        # self.p.v_pd_lightsheet_rampup_end = 7.5
 
         # self.xvar('i_evap1_current',np.linspace(191.,195.,8))
         # self.p.i_evap1_current = 193.
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(190.,195.,8))
-        # self.p.i_hf_lightsheet_evap1_current = 192.9
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(187.,194.,8))
+        # self.p.i_hf_lightsheet_evap1_current = 188.
         # self.p.i_hf_lightsheet_evap1_current = 18.
  
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.7,2.,8))
-        # self.p.v_pd_hf_lightsheet_rampdown_end = .88
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.8,4.,8))
+        # self.p.v_pd_hf_lightsheet_rampdown_end = 1.2
 
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1500.,15)*1.e-3)
-        # self.p.t_hf_lightsheet_rampdown = .5
+        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1300.,8)*1.e-3)
+        # self.p.t_hf_lightsheet_rampdown = .27
 
-        # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.1,.3,15))
-        # self.p.v_pd_lightsheet_rampdown2_end = .19
+        # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.3,.9,8))
+        # self.p.v_pd_lightsheet_rampdown2_end = .4
 
         # self.xvar('t_lightsheet_rampdown2',np.linspace(100.,2000.,8)*1.e-3)
-        # self.p.t_lightsheet_rampdown2 = 1.1
+        # self.p.t_lightsheet_rampdown2 = .74
 
-        # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(192.,195.,10))
-        # self.p.i_hf_lightsheet_evap2_current = 193.6
+        # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(189.,194.5,8))
+        # self.p.i_hf_lightsheet_evap2_current = 189.8
         
         self.p.t_lightsheet_hold = .01
 
@@ -106,8 +106,9 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('hf_imaging_detuning', np.arange(-150.,180.,10.)*1.e6)
         
-        # self.xvar('hf_imaging_detuning', np.arange(-670.,-400.,8.)*1.e6)
-        self.p.hf_imaging_detuning = -120.e6
+        # self.xvar('hf_imaging_detuning', np.arange(-650.,-470.,8.)*1.e6)
+        self.p.hf_imaging_detuning = -490.e6
+        # self.p.hf_imaging_detuning = -594.e6
         self.p.blow_out_detuning = -15.e6
        
         # self.camera_params.exposure_time = 25.e-6
@@ -118,12 +119,12 @@ class mag_trap(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
-        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.set_high_field_imaging(i_outer=self.p.i_hf_lightsheet_evap1_current)
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        # self.set_high_field_imaging(i_outer=self.p.i_hf_lightsheet_evap1_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
@@ -142,31 +143,31 @@ class mag_trap(EnvExperiment, Base):
         # feshbach field on, ramp up to field 1
         self.outer_coil.on()
         self.outer_coil.set_voltage()
-
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_hf_lightsheet_evap1_current)
 
         # lightsheet evap 1
-        self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
-                             v_start=self.p.v_pd_lightsheet_rampup_end,
-                             v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
+        # self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
+        #                      v_start=self.p.v_pd_lightsheet_rampup_end,
+        #                      v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
         
         # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
         #                      i_start=self.p.i_hf_lightsheet_evap1_current,
         #                      i_end=self.p.i_hf_lightsheet_evap2_current)
         
-        # lightsheet evap 2
-        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        # # lightsheet evap 2
+        # self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown2,
         #                      v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
-        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        #                      v_end=self.p.v_pd_hf_lightsheet_rampdown2_end)
 
         delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
 
         delay(self.p.t_tof)
-        # self.flash_repump()
         self.abs_image()
+
         # self.lightsheet.off()
 
         self.outer_coil.off()
