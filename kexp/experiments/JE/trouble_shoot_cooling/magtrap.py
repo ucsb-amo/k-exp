@@ -13,8 +13,8 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.t_tof = 7000.e-6
-        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        self.p.t_tof = 8000.e-6
+        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         # self.xvar('dumy',[0]*5)
         # self.xvar('dumy',np.linspace(1.,800.,800))
 
@@ -30,7 +30,7 @@ class mag_trap(EnvExperiment, Base):
         
         # self.xvar('i_mot',np.linspace(12.,30.,20))
 
-        # self.xvar('v_zshim_current',np.linspace(0.0,.7,8))
+        # self.xvar('v_zshim_current',np.linspace(0.0,.6,8))
         # self.xvar('v_xshim_current',np.linspace(0.,2.,8))
         # self.xvar('v_yshim_current',np.linspace(0.0,2.3,15))
         # self.p.v_zshim_current = .743
@@ -48,7 +48,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('i_mot',np.linspace(12.,30.,15))
 
-        # self.xvar('v_zshim_current_gm',np.linspace(0.6,1.5,8))
+        # self.xvar('v_zshim_current_gm',np.linspace(0.6,1.1,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.7,8))
         # self.xvar('v_yshim_current_gm',np.linspace(1.,3.,20))
         # self.p.v_zshim_current_gm = .743
@@ -72,7 +72,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_magtrap_init',np.linspace(60.,95.,20))
         # self.i_magtrap_init = 84.
 
-        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,5.,20))
+        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,.7,10))
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,20))
         # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,10))
         # self.p.v_zshim_current_magtrap = .572
@@ -102,7 +102,9 @@ class mag_trap(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
+
         self.ttl.pd_scope_trig.pulse(1.e-6)
+
         self.gm(self.p.t_gm * s,detune_d1=self.p.detune_gm)
         self.gm_ramp(self.p.t_gmramp,detune_d1=self.p.detune_gm)
 

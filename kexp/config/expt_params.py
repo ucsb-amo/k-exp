@@ -82,7 +82,7 @@ class ExptParams():
         
         self.t_lightsheet_rampup = .12
         self.t_lf_lightsheet_rampdown = .7
-        self.t_hf_lightsheet_rampdown = .85
+        self.t_hf_lightsheet_rampdown = .5
         self.t_hf_lightsheet_rampdown2 = .02
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = .01
@@ -110,13 +110,13 @@ class ExptParams():
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.5
+        self.t_magtrap = 1.3
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
-        self.t_magtrap_rampdown = .15
+        self.t_magtrap_rampdown = .02
         self.t_yshim_rampdown = 10.e-3
         
-        self.t_feshbach_field_rampup = 100.e-3
+        self.t_feshbach_field_rampup = 200.e-3
         self.t_feshbach_field_ramp = 12.e-3
         self.t_feshbach_field_ramp2 = 12.e-3
         self.t_feshbach_field_decay = 20.e-3
@@ -148,10 +148,10 @@ class ExptParams():
         self.v_2d_mot_current = 2.5
 
         #MOT
-        self.detune_d2_c_mot = -2.07
+        self.detune_d2_c_mot = -1.5
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.2
+        self.detune_d2_r_mot = -4.85
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -161,7 +161,7 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 17.6
-        self.v_zshim_current = .2
+        self.v_zshim_current = .17
         self.v_xshim_current = .8
         self.v_yshim_current = 1.4
 
@@ -193,7 +193,7 @@ class ExptParams():
         self.detune_gm = 10.5
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.851
+        self.v_zshim_current_gm = 0.82
         self.v_xshim_current_gm = 0.
         self.v_yshim_current_gm = 2.0
 
@@ -238,9 +238,9 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 5.
+        self.v_pd_lightsheet_rampup_end = 9.5
         self.v_pd_lf_lightsheet_rampdown_end = .33 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .33 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .88 #4.16
         self.v_pd_lightsheet_rampdown2_end = .0
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -311,7 +311,7 @@ class ExptParams():
 
         # feshbach field rampup
         # self.i_feshbach_field_rampup_start = 0.
-        self.n_field_ramp_steps = 1000
+        self.n_field_ramp_steps = 500
         # self.n_feshbach_field_rampup_steps = 100
         # self.n_feshbach_field_ramp_steps = 100
         # self.n_feshbach_field_ramp2_steps = 100
@@ -348,7 +348,7 @@ class ExptParams():
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 192.
+        self.i_hf_lightsheet_evap1_current = 192.9
 
         self.i_hf_tweezer_load_current = 193.3
         self.i_hf_tweezer_evap1_current = 192.86
