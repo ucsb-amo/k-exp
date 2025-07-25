@@ -50,7 +50,6 @@ class igbt_magnet():
         self.slope_current_per_vdac_pid = slope_current_per_vdac_pid
         self.offset_current_per_vdac_pid = offset_current_per_vdac_pid
 
-
     @kernel
     def load_dac(self):
         """It doesn't actually matter that we're calling the load method of a
@@ -96,19 +95,6 @@ class igbt_magnet():
         v_pid = self.current_to_pid_vdac(i_pid)
         self.pid_dac.set(v=v_pid,load_dac=load_dac)
         self.i_pid = i_pid
-
-    @kernel
-    def start_pid_no_overhead(self,i_pid,load_dac=True):
-        """Starts the PID without any overhead.
-
-        Args:
-            i_pid (float): The desired current in A.
-            load_dac (bool, optional): Loads the dac if true. Defaults to True.
-        """        
-        v_pid = self.current_to_pid_vdac(i_pid)
-        self.pid_dac.set(v=v_pid,load_dac=load_dac)
-        self.i_pid = i_pid
-        self.pid_ttl.on()    
         
     @kernel
     def set_voltage(self,v_supply=V_SUPPLY_DEFAULT,load_dac=True):
@@ -199,7 +185,7 @@ class igbt_magnet():
         self.i_pid = i_end
 
     @kernel
-    def start_pid(self, i_pid=dv):
+    def start_pid(self, i_pid=dv, overhead=True):
         """Starts the PID, then sets the supply with some current overhead for
         the PID to eat.
 
@@ -207,6 +193,10 @@ class igbt_magnet():
             i_pid (float, optional): The desired current in A. Defaults to the
             current value of the supply output (as measured by the coil
             transducer).
+            overhead (bool, optional): Whether or not to ramp up the current
+            supply set point after engaging the PID in order to put the mosfet
+            gate-source voltage at a predetermined value for optimum PID
+            performance.
         """        
         ##note for setting coils with the new subtract PID method
         ##the PID target value should only take the target current as a paremeter,
@@ -217,18 +207,23 @@ class igbt_magnet():
         if i_pid == dv:
             i_pid = self.i_supply
 
+        t_ramp = 50.e-3
+        n_steps = 50
+
         self.set_pid(i_pid)
         self.pid_ttl.on()
 
         i_start = i_pid
-        i_end = self.i_pid + compute_pid_overhead(self.i_pid)
-        t_ramp = 50.e-3
-        n_steps = 50
-        delta_i = (i_end - i_start)/(n_steps-1)
-        dt = t_ramp / n_steps
-        for j in range(n_steps):
-            self.set_supply( i_start + delta_i * j )
-            delay(dt)
+        if overhead:
+            i_end = self.i_pid + compute_pid_overhead(self.i_pid)
+            delta_i = (i_end - i_start)/(n_steps-1)
+            dt = t_ramp / n_steps
+            for j in range(n_steps):
+                self.set_supply( i_start + delta_i * j )
+                delay(dt)
+        else:
+            self.set_supply(i_start)
+            delay(t_ramp)
         delay(T_ANALOG_DELAY)
 
     @kernel
@@ -242,18 +237,8 @@ class igbt_magnet():
         """        
         if i_supply == dv:
             i_supply = self.i_pid
-        # self.ramp_supply(t=50.e-3,
-        #           i_start=self.i_supply,
-        #           i_end=i_supply,
-        #           n_steps=100)
         self.set_supply(i_supply)
         delay(T_ANALOG_DELAY)
-        self.pid_ttl.off()
-
-    @kernel
-    def stop_pid_bare(self):
-        """Stops the PID, does nothing to the keysight setpoint
-        """        
         self.pid_ttl.off()
 
     @kernel(flags={"fast-math"})
