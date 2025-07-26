@@ -15,8 +15,8 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,save_data=True,camera_select='xy_basler',
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 2000.e-6
-        self.xvar('t_tof',np.linspace(400,2500.,10)*1.e-6)
+        self.p.t_tof = 3500.e-6
+        self.xvar('t_tof',np.linspace(1000,4000.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0,1]*4)
 
@@ -53,21 +53,6 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_yshim_rampdown',np.linspace(5.,100.,15)*1.e-3)
         # self.p.t_yshim_rampdown = 10.e-3
 
-        # self.xvar('t_eat_spike',np.linspace(40.e-3,2.e-3,10))
-        # self.p.t_eat_spike = 40.e-3
-
-        # self.xvar('t_drop',np.linspace(5.e-6,30.e-6,10))
-        self.p.t_drop = 20.e-6
-
-        # self.xvar('t_int_hold_off_dealy',np.linspace(5.e-6,200.e-6,5))
-        self.p.t_int_hold_off_dealy = 15.e-6
-
-        # self.xvar('t_blow_pulse',np.linspace(0.e-6,10.e-6,6))
-        self.p.t_blow_pulse = 16.e-6
-
-        self.p.t_blow_delay = 5.e-6
-        # self.xvar('t_pre_lightsheet_rampup_delay',np.linspace(0.,200.e-3,20))
-
         # self.xvar('t_feshbach_field_rampup',np.linspace(15.,250.,15)*1.e-3)
         # self.p.t_feshbach_field_rampup = 150.e-3
 
@@ -76,25 +61,25 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_lightsheet_rampup = 4.
         # self.p.v_pd_lightsheet_rampup_end = 7.5
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(180.,195.,15))
-        self.p.i_hf_lightsheet_evap1_current = 186.4
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(180.,193.,8))
+        # self.p.i_hf_lightsheet_evap1_current = 184.
         # self.p.i_hf_lightsheet_evap1_current = 18.
  
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.8,4.,8))
-        self.p.v_pd_hf_lightsheet_rampdown_end = 0.93496006
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.8,3.,8))
+        # self.p.v_pd_hf_lightsheet_rampdown_end = 1.4
 
         # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1500.,8)*1.e-3)
         self.p.t_hf_lightsheet_rampdown = 0.4401463
         # self.p.t_hf_lightsheet_rampdown = 0.4401463
 
-        # self.xvar('v_pd_hf_lightsheet_rampdown2_end',np.linspace(.1,.7,15))
-        self.p.v_pd_hf_lightsheet_rampdown2_end = 0.3
+        # self.xvar('v_pd_hf_lightsheet_rampdown2_end',np.linspace(.1,.4,15))
+        # self.p.v_pd_hf_lightsheet_rampdown2_end = 0.25
 
-        # self.xvar('t_lightsheet_rampdown2',np.linspace(100.,2000.,8)*1.e-3)
-        self.p.t_hf_lightsheet_rampdown2 = 0.68969335
+        # self.xvar('t_hf_lightsheet_rampdown2',np.linspace(100.,1000.,8)*1.e-3)
+        self.p.t_hf_lightsheet_rampdown2 = 0.74
 
-        # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(189.,194.5,8))
-        self.p.i_hf_lightsheet_evap2_current = 193.7
+        # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(192.,194.5,8))
+        # self.p.i_hf_lightsheet_evap2_current = 193.3
         
         self.p.t_lightsheet_hold = .2
 
