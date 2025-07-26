@@ -113,10 +113,10 @@ class ExptParams():
         self.t_magtrap = 1.3
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
-        self.t_magtrap_rampdown = .02
+        self.t_magtrap_rampdown = .087
         self.t_yshim_rampdown = 10.e-3
         
-        self.t_feshbach_field_rampup = 200.e-3
+        self.t_feshbach_field_rampup = 150.e-3
         self.t_feshbach_field_ramp = 12.e-3
         self.t_feshbach_field_ramp2 = 12.e-3
         self.t_feshbach_field_decay = 20.e-3
@@ -161,9 +161,9 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 17.6
-        self.v_zshim_current = .17
-        self.v_xshim_current = .8
-        self.v_yshim_current = 1.4
+        self.v_zshim_current = .22
+        self.v_xshim_current = .85
+        self.v_yshim_current = .82
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -194,18 +194,18 @@ class ExptParams():
         # self.amp_gm = 0.09
 
         self.v_zshim_current_gm = 0.82
-        self.v_xshim_current_gm = 0.
+        self.v_xshim_current_gm = 0.72
         self.v_yshim_current_gm = 2.0
 
         self.detune_d1_c_gm = self.detune_gm
-        self.pfrac_d1_c_gm = .85 # there is an ND on this photodiode -- much higher power/volt than the repump
+        self.pfrac_d1_c_gm = .99 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = self.detune_gm
-        self.pfrac_d1_r_gm = .85
+        self.pfrac_d1_r_gm = .99
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = .1 #0.01
-        self.pfrac_r_gmramp_end = .7# 0.729
+        self.pfrac_c_gmramp_end = .06 #0.01
+        self.pfrac_r_gmramp_end = .82# 0.729
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -217,8 +217,6 @@ class ExptParams():
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.
         self.v_yshim_current_magtrap = 9.9
-
-        
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -311,7 +309,7 @@ class ExptParams():
 
         # feshbach field rampup
         # self.i_feshbach_field_rampup_start = 0.
-        self.n_field_ramp_steps = 500
+        self.n_field_ramp_steps = 1000
         # self.n_feshbach_field_rampup_steps = 100
         # self.n_feshbach_field_ramp_steps = 100
         # self.n_feshbach_field_ramp2_steps = 100

@@ -14,7 +14,7 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.t_tof = 8000.e-6
-        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         # self.xvar('dumy',[0]*5)
         # self.xvar('dumy',np.linspace(1.,800.,800))
 
@@ -30,7 +30,7 @@ class mag_trap(EnvExperiment, Base):
         
         # self.xvar('i_mot',np.linspace(12.,30.,20))
 
-        # self.xvar('v_zshim_current',np.linspace(0.0,.6,8))
+        # self.xvar('v_zshim_current',np.linspace(0.0,.5,8))
         # self.xvar('v_xshim_current',np.linspace(0.,2.,8))
         # self.xvar('v_yshim_current',np.linspace(0.0,2.3,15))
         # self.p.v_zshim_current = .743
@@ -64,8 +64,8 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('t_gmramp',np.linspace(2.,15.,15)*1.e-3)
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.4,20))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.01,.8,8))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.2,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.6,.99,8))
         # self.p.pfrac_c_gmramp_end = 0.176
         # self.p.pfrac_r_gmramp_end = 0.743
         
