@@ -47,7 +47,8 @@ double integral2 = 0.;
 bool pid_enable1 = false;
 bool pid_enable2 = false;
 
-void setup() {
+void setup() 
+{
   configureADC(1,1,0,BIPOLAR_10V,getMeas1);
   configureADC(3,1,0,BIPOLAR_10V,getSet1);
   configureADC(2,1,0,BIPOLAR_10V,getMeas2);
@@ -93,7 +94,8 @@ void tell_name()
 }
 
 //At TTL edges, check value of TTL, clear integrator, and then enable/disable PID depending on value
-void switch1() {
+void switch1() 
+{
   if (triggerRead(1)) {
     pid_enable1 = true;
   } else {
@@ -102,7 +104,8 @@ void switch1() {
   integral1 = 0.;
 }
 
-void clear_integrator(qCommand& qC, Stream& S) {
+void clear_integrator(qCommand& qC, Stream& S) 
+{
   integral1 = 0;
   integral2 = 0;
 }
