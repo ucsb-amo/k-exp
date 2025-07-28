@@ -3,12 +3,12 @@ from kexp.control.cameras.camera_param_classes import CameraParams, BaslerParams
 class camera_frame():
     def __init__(self):
         
-        self.andor = AndorParams(amp_absorption=0.27, exposure_time_abs=15.e-6, em_gain_abs=300.,
+        self.andor = AndorParams(amp_absorption=0.16, exposure_time_abs=15.e-6, em_gain_abs=300.,
                                 amp_fluorescence=0.54, exposure_time_fluor=25.e-6, em_gain_fluor=1.,
                                 amp_dispersive=0.4, exposure_time_dispersive=5.e-6, em_gain_dispersive=300.,
                                 magnification=18.4,
-                                t_light_only_image_delay=75.e-3,
-                                t_dark_image_delay=75.e-3)
+                                t_light_only_image_delay=50.e-3,
+                                t_dark_image_delay=50.e-3)
         
         self.xy_basler = BaslerParams(serial_number='40316451',
                                     exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,

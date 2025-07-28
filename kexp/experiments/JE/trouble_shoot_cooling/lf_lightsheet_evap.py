@@ -21,7 +21,8 @@ class mag_trap(EnvExperiment, Base):
         #self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0,1]*3)
 
-        self.xvar('hf_imaging_detuning', [316.e6,404.e6]*1)
+        # self.xvar('hf_imaging_detuning', [316.e6,404.e6]*1)
+        self.xvar('hf_imaging_detuning', [22.e6,106.e6]*1)
 
         # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
 
@@ -48,12 +49,12 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_shim_delay',np.linspace(0.05,15.,20)*1.e-3)
         # self.p.t_shim_delay = 3.4e-3
 
-        self.xvar('t_magtrap_rampdown',np.linspace(15.,100.,10)*1.e-3)
+        # self.xvar('t_magtrap_rampdown',np.linspace(15.,150.,15)*1.e-3)
 
         # self.xvar('t_eat_spike',np.linspace(40.e-3,2.e-3,10))
         self.p.t_eat_spike = 40.e-3
 
-        # self.xvar('t_feshbach_field_rampup',np.linspace(15.,200.,15)*1.e-3)
+        self.xvar('t_feshbach_field_rampup',np.linspace(5.,150.,20)*1.e-3)
         
         # self.xvar('feshbach_delay',np.linspace(1.e-3,50.e-3,10))
         self.p.feshbach_delay = 10.e-3
@@ -66,9 +67,9 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_evap1_current',np.linspace(191.,195.,8))
         # self.p.i_evap1_current = 193.
 
-        # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(12.,15.,8))
+        # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(50.,58.,8))
         # self.p.i_lf_lightsheet_evap1_current = 18.
-        self.p.i_lf_lightsheet_evap1_current = 13.7
+        self.p.i_lf_lightsheet_evap1_current = 56.
 
         self.p.i_lf_image_current = 15.8
  
@@ -114,7 +115,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('hf_imaging_detuning', np.arange(300.,420.,8.)*1.e6)
         
-        # self.xvar('hf_imaging_detuning', np.arange(-670.,-560.,6.)*1.e6)
+        # self.xvar('hf_imaging_detuning', np.arange(-50.,250.,8.)*1.e6)
         # self.p.hf_imaging_detuning = 327.e6 
         self.p.hf_imaging_detuning = 404.e6
 
@@ -128,7 +129,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -146,8 +147,6 @@ class mag_trap(EnvExperiment, Base):
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=True)
 
-        # self.dac.zshim_current_control.linear_ramp(10.e-3,v_start=0.,v_end=4.,n=500)
-
         self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
 
         # feshbach field on, ramp up to field 1
@@ -156,7 +155,9 @@ class mag_trap(EnvExperiment, Base):
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
-                             i_end=self.p.i_lf_image_current)
+                             i_end=self.p.i_lf_lightsheet_evap1_current,n_steps=500)
+        
+        # self.outer_coil.ramp_pid
 
         # lightsheet evap 1
         # self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
