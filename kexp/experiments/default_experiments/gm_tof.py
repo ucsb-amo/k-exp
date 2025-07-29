@@ -17,11 +17,12 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('v_zshim_current_gm',np.linspace(0.6, 1., 10))
         # self.xvar('v_xshim_current_gm',np.linspace(0.0, 1., 10))
         # self.xvar('v_yshim_current_gm',np.linspace(0.0, 4., 15))
-        self.xvar('t_tof',np.linspace(12.,20.,10)*1.e-3)
+        self.xvar('t_tof',[20.e-3,1.e-3])
+        # self.xvar('t_tof',[1.e-3,20.e-3])
         # self.xvar('t_tof',np.linspace(300.,10000.,10)*1.e-6)
-        # self.xvar('t_mot_load',np.linspace(0.25,1.,10))
-        # self.xvar('detune_gm',np.linspace(8.5,13.,10))
-        # self.p.v_zshim_current_gm
+        self.xvar('t_mot_load',np.linspace(0.1,1.,3))
+        # self.xvar('detune_gm',np.linspace(8.5,13.,3))
+        # self.p.v_zshim_current_gm 
         
         # self.p.amp_imaging = .35
         self.p.imaging_state = 2.

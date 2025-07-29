@@ -81,7 +81,7 @@ class ExptParams():
         self.t_optical_pumping_bias_rampup = 2.e-3
         
         self.t_lightsheet_rampup = .12
-        self.t_lf_lightsheet_rampdown = .7
+        self.t_lf_lightsheet_rampdown = .57
         self.t_hf_lightsheet_rampdown = .64
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
@@ -92,8 +92,8 @@ class ExptParams():
         self.t_tweezer_ramp = .56
         self.t_tweezer_hold = 5.e-3
         self.t_lf_tweezer_1064_ramp = .45
-        self.t_lf_tweezer_1064_rampdown = 180.e-3 
-        self.t_lf_tweezer_1064_rampdown2 = 400.e-3   
+        self.t_lf_tweezer_1064_rampdown = 220.e-3 
+        self.t_lf_tweezer_1064_rampdown2 = 500.e-3   
         self.t_lf_tweezer_1064_rampdown3 = .47
         self.t_hf_tweezer_1064_ramp = .26
         self.t_hf_tweezer_1064_rampdown = 120.e-3 
@@ -117,6 +117,7 @@ class ExptParams():
         self.t_yshim_rampdown = 10.e-3
         
         self.t_feshbach_field_rampup = 150.e-3
+        self.t_lf_feshbach_field_rampup = 50.e-3
         self.t_feshbach_field_ramp = 12.e-3
         self.t_feshbach_field_ramp2 = 12.e-3
         self.t_feshbach_field_decay = 20.e-3
@@ -249,9 +250,9 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45 # brimrose AO
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_lf_tweezer_1064_ramp_end = 6.5
-        self.v_pd_lf_tweezer_1064_rampdown_end = .8
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .11
+        self.v_pd_lf_tweezer_1064_ramp_end = 9.
+        self.v_pd_lf_tweezer_1064_rampdown_end = 1.4
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .14
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.
@@ -286,7 +287,7 @@ class ExptParams():
         self.amp_tweezer_list1 = [.25,.25,.25,.25]
         self.amp_tweezer_list2 = [.25,.25,.25,.25]
 
-        self.v_lf_tweezer_paint_amp_max = 4.5
+        self.v_lf_tweezer_paint_amp_max = 1.1
         self.v_hf_tweezer_paint_amp_max = -2.
 
         # tweezer movement params
@@ -337,11 +338,11 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # low field evap NEW
-        self.i_lf_lightsheet_evap1_current = 15.4
+        self.i_lf_lightsheet_evap1_current = 14.1
 
-        self.i_lf_tweezer_load_current = 15.5
-        self.i_lf_tweezer_evap1_current = 12.7
-        self.i_lf_tweezer_evap2_current = 13.8
+        self.i_lf_tweezer_load_current = 13.7
+        self.i_lf_tweezer_evap1_current = 12.6
+        self.i_lf_tweezer_evap2_current = 12.9
 
         self.i_spin_mixture = 19.48
 

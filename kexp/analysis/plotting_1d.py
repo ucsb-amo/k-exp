@@ -172,7 +172,7 @@ def plot_sum_od_fits(ad:atomdata,axis=0,
             xdata = fits[i].xdata
 
             ax[i].plot(xdata*1.e6,ydata)
-            # ax[i].plot(xdata*1.e6,yfit)
+            ax[i].plot(xdata*1.e6,yfit)
             ax[i].set_ylim([0,1.1*ymax])
 
             ax[i].set_xlabel(xvarlabels[i],rotation='vertical')
