@@ -96,10 +96,6 @@ class Dealer():
             else:
                 sort_idx.append( np.arange(xvar.values.shape[0]) )
                 rng.shuffle(sort_idx[xvar.position])
-                if xvar.position == 0:
-                    sort_idx[xvar.position] = [1,0]
-                if xvar.position == 1:
-                    sort_idx[xvar.position] = [2,0,1]
                 xvar.sort_idx = sort_idx[xvar.position]
             len_list.append(xvar.values.shape[0])
         
