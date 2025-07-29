@@ -96,6 +96,10 @@ class Dealer():
             else:
                 sort_idx.append( np.arange(xvar.values.shape[0]) )
                 rng.shuffle(sort_idx[xvar.position])
+                if xvar.position == 0:
+                    sort_idx[xvar.position] = [1,0]
+                if xvar.position == 1:
+                    sort_idx[xvar.position] = [2,0,1]
                 xvar.sort_idx = sort_idx[xvar.position]
             len_list.append(xvar.values.shape[0])
         
@@ -112,12 +116,6 @@ class Dealer():
             if elem[0] not in self.sort_N:
                 self.sort_N.append(elem[0])
                 self.sort_idx.append(elem[1])
-
-        # pad with [-1]s to allow saving in hdf5 (avoid staggered array)
-        maxN = np.max(self.sort_N)
-        for i in range(len(self.sort_idx)):
-            N_to_pad = maxN - len(self.sort_idx[i])
-            self.sort_idx[i] = np.append(self.sort_idx[i], [-1]*N_to_pad)
 
     def unscramble_images(self,reshuffle=False):
 
@@ -215,7 +213,8 @@ class Dealer():
             protected_keys = ['xvarnames','sort_idx','images',
                               'image_timestamps','sort_N','sort_idx',
                               'xvars','N_repeats','N_shots',
-                              'N_shots_with_repeats','scan_xvars']
+                              'N_shots_with_repeats','scan_xvars',
+                              'xvardims']
             ks = struct.__dict__.keys()
             sort_ks = [k for k in ks if k not in protected_keys]
             for k in sort_ks:

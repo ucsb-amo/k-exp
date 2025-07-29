@@ -71,6 +71,12 @@ class DataSaver():
 
     def get_xvardims(self,expt):
         return [len(xvar.values) for xvar in expt.scan_xvars]
+    
+    def pad_sort_idx(self,expt):
+        maxN = np.max(expt.sort_N)
+        for i in range(len(expt.sort_idx)):
+            N_to_pad = maxN - len(expt.sort_idx[i])
+            expt.sort_idx[i] = np.append(expt.sort_idx[i], [-1]*N_to_pad).astype(int)
 
     def create_data_file(self,expt):
 
@@ -97,6 +103,9 @@ class DataSaver():
         data.create_dataset('images',data=expt.images)
         data.create_dataset('image_timestamps',data=expt.image_timestamps)
         if expt.sort_idx:
+
+            # pad with [-1]s to allow saving in hdf5 (avoid staggered array)
+            self.pad_sort_idx(expt)
             data.create_dataset('sort_idx',data=expt.sort_idx)
             data.create_dataset('sort_N',data=expt.sort_N)
         
