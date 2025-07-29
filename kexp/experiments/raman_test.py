@@ -12,9 +12,9 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(100.,1000.,8)*1.e6)
-        self.p.frequency_detuned_imaging = 340.e6
-        self.xvar('beans',[0]*3)
+        # self.xvar('frequency_detuned_imaging',np.arange(250.,450.,8)*1.e6)
+        self.p.frequency_detuned_imaging = 290.e6
+        # self.xvar('beans',[0]*3)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         
@@ -26,9 +26,9 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('f_raman_sweep_width',np.linspace(3.e3,30.e3,20))
-        self.p.f_raman_sweep_width = 15.e3
+        self.p.f_raman_sweep_width = 50.e3
 
-        # self.xvar('f_raman_sweep_center',np.arange(41.21e6, 41.5e6, self.p.f_raman_sweep_width/2))
+        # self.xvar('f_raman_sweep_center',np.arange(41.e6, 42.e6, self.p.f_raman_sweep_width))
         self.p.f_raman_sweep_center = 43.408e6
         # self.p.f_raman_sweep_center = self.p.frequency_raman_transition
 
@@ -42,12 +42,12 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.p.t_raman_pi_pulse = 2.507e-06
         # self.xvar('t_raman_pulse',np.linspace(0.,self.p.t_raman_pi_pulse,5))
-        # self.xvar('t_raman_pulse',np.linspace(0.,3.,50)*1.e-6)
+        self.xvar('t_raman_pulse',np.linspace(0.,10.,10)*1.e-3)
         self.p.t_raman_pulse = 1.e-3
 
         # self.xvar('amp_raman',np.linspace(0.,self.p.amp_raman,8))
-        # self.p.amp_raman = .15
-        self.p.amp_raman = 0.35
+        self.p.amp_raman = .35
+        # self.p.amp_raman = 0.35
 
         # self.xvar('t_tweezer_hold',np.linspace(1.,500.,10)*1.e-3)
         self.p.t_tweezer_hold = 1.e-6
@@ -64,7 +64,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('amp_imaging',np.linspace(.05,.2,10))
         # self.p.amp_imaging = .15
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -72,7 +72,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel()
         self.set_high_field_imaging(i_outer=self.p.i_spin_mixture,
                                     pid_bool=False)
-        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
@@ -151,35 +151,39 @@ class tweezer_load(EnvExperiment, Base):
         #                   v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
         #                   paint=True,keep_trap_frequency_constant=True,
         #                   v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
+
+        self.dac.supply_current_2dmot.set(v=0.)
         
 
         self.outer_coil.ramp_supply(t=20.e-3,
-                             i_start=self.p.i_lf_tweezer_evap2_current,
+                             i_start=self.p.i_lf_tweezer_evap1_current,
                              i_end=self.p.i_spin_mixture)
         
-        # self.outer_coil.start_pid()
+        self.outer_coil.start_pid()
 
-        # self.init_raman_beams()
+        self.init_raman_beams()
 
-        # self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=self.p.frequency_raman_transition)
+        self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=self.p.frequency_raman_transition)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.f_raman_sweep_center,
         #                  frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
-
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
 
         delay(self.p.t_tof)
 
-        # self.outer_coil.stop_pid()
         # delay(50.e-3)
 
         self.abs_image()
+
+        self.outer_coil.stop_pid()
         
         self.outer_coil.off()
         self.outer_coil.discharge()
+
+        self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)
 
     @kernel
     def run(self):
