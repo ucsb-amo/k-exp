@@ -26,9 +26,9 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('f_raman_sweep_width',np.linspace(3.e3,30.e3,20))
-        self.p.f_raman_sweep_width = 150.e3
+        self.p.f_raman_sweep_width = 350.e3
 
-        # self.xvar('f_raman_sweep_center',np.arange(40.e6, 44.e6, self.p.f_raman_sweep_width))
+        self.xvar('f_raman_sweep_center',np.arange(38.5e6, 46.e6, self.p.f_raman_sweep_width))
         self.p.f_raman_sweep_center = 43.408e6
         # self.p.f_raman_sweep_center = self.p.frequency_raman_transition
 
@@ -42,7 +42,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.p.t_raman_pi_pulse = 2.507e-06
         # self.xvar('t_raman_pulse',np.linspace(0.,self.p.t_raman_pi_pulse,5))
-        self.xvar('t_raman_pulse',np.linspace(0.,50.,10)*1.e-3)
+        # self.xvar('t_raman_pulse',np.linspace(0.,50.,10)*1.e-3)
         self.p.t_raman_pulse = 1.e-3
 
         # self.xvar('amp_raman',np.linspace(0.,self.p.amp_raman,8))
@@ -164,11 +164,11 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(30.e-3)
 
-        self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=self.p.frequency_raman_transition)
+        # self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=self.p.frequency_raman_transition)
 
-        # self.raman.sweep(t=self.p.t_raman_sweep,
-        #                  frequency_center=self.p.f_raman_sweep_center,
-        #                  frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
+        self.raman.sweep(t=self.p.t_raman_sweep,
+                         frequency_center=self.p.f_raman_sweep_center,
+                         frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()

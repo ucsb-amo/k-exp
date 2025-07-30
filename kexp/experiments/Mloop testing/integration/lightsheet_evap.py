@@ -22,7 +22,7 @@ from kexp.analysis.plotting_1d import *
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = load_atomdata(0,33815)
+        ad = load_atomdata(0,35531)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.max(ad.atom_number)
@@ -97,10 +97,10 @@ class ExptBuilder():
             class mag_trap(EnvExperiment, Base):
 
                 def prepare(self):
-                    Base.__init__(self,setup_camera=True,save_data=True,camera_select='andor',
+                    Base.__init__(self,setup_camera=True,save_data=True,camera_select='xy_basler',
                                 imaging_type=img_types.ABSORPTION)
 
-                    self.p.t_tof = 1300.e-6
+                    self.p.t_tof = 4000.e-6
                     {assignment_lines}
 
                     # self.xvar('amp_imaging',np.linspace(.05,.2,10))

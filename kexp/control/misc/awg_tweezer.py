@@ -995,13 +995,14 @@ class tweezer():
 
     def compute_tweezer_phases(self,amplitudes):
         phases = np.zeros([len(amplitudes)])
+        total_amp = np.sum(amplitudes)
         for tweezer_idx in range(len(amplitudes)):
             if tweezer_idx == 0:
                 phases[0] =  360.
             else:
                 phase_ij = 0
                 for j in range(1,tweezer_idx):
-                    phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*amplitudes[tweezer_idx]
+                    phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*(amplitudes[tweezer_idx] / total_amp)
                 phase_i = (phase_ij % 2*np.pi) * 360
                 phases[tweezer_idx] = phase_i
         return phases

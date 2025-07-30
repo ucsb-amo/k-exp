@@ -16,11 +16,13 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('v_yshim_current',np.linspace(0.,9.8,10))
         # self.xvar('v_zshim_current_gm',np.linspace(0.6, 1., 10))
         # self.xvar('v_xshim_current_gm',np.linspace(0.0, 1., 10))
-        # self.xvar('v_yshim_current_gm',np.linspace(0.0, 4., 15))
-        self.xvar('t_tof',[20.e-3,1.e-3])
-        # self.xvar('t_tof',[1.e-3,20.e-3])
+        # self.xvar('v_yshim_current_gm',np.linspace(0.0, 4., 4))
+        # self.xvar('t_tof',[20.e-3,1.e-3])
+        self.xvar('t_tof',np.linspace(1.,20.,2)*1.e-3)
+        self.xvar('t_mot_load',np.linspace(0.05,0.3,3))
+        # self.xvar('t_tof',np.array([1.e-3,10.e-3,20.e-3]))
         # self.xvar('t_tof',np.linspace(300.,10000.,10)*1.e-6)
-        self.xvar('t_mot_load',np.linspace(0.1,1.,3))
+        
         # self.xvar('detune_gm',np.linspace(8.5,13.,3))
         # self.p.v_zshim_current_gm 
         
@@ -65,3 +67,4 @@ class gm_tof(EnvExperiment, Base):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
+        

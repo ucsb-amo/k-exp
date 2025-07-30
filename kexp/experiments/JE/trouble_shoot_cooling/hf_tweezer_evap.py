@@ -17,9 +17,9 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.t_tof = 3700.e-6
-        # self.p.t_tof = 200.e-6
-        # self.xvar('t_tof',np.linspace(1000.,4000.,15)*1.e-6) 
+        self.p.t_tof = 3200.e-6
+        # self.p.t_tof = 300.e-6
+        self.xvar('t_tof',np.linspace(1000.,3500.,15)*1.e-6) 
         # self.xvar('dumy',[0]*3)
     
         # self.xvar('hf_imaging_detuning', [-606.e6,-494.e6]*5)
@@ -45,37 +45,37 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_hf_lightsheet_rampdown2',np.linspace(10.,60.,15)*1.e-3)
         # self.p.t_hf_lightsheet_rampdown2 = .02
 
-        # self.xvar('i_hf_tweezer_load_current',np.linspace(192.,194.5,20))
-        self.p.i_hf_tweezer_load_current = 193.6
+        # self.xvar('i_hf_tweezer_load_current',np.linspace(189.,194.5,8))
+        self.p.i_hf_tweezer_load_current = 192.9
 
         # self.p.i_image_current = 190.
  
         # self.xvar('v_pd_hf_tweezer_1064_ramp_end',np.linspace(5.,9.3,15))
         # self.p.v_pd_hf_tweezer_1064_ramp_end = 6.5
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.5,2.,15))
-        self.p.v_hf_tweezer_paint_amp_max = .03
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-2.,2.,15))
+        self.p.v_hf_tweezer_paint_amp_max = -.3
 
-        # self.xvar('t_hf_tweezer_1064_ramp',np.linspace(.05,.8,15))
-        # self.p.t_hf_tweezer_1064_ramp = .26
+        # self.xvar('t_hf_tweezer_1064_ramp',np.linspace(.05,.6,8))
+        self.p.t_hf_tweezer_1064_ramp = .285
 
-        # self.xvar('i_hf_tweezer_evap1_current',np.linspace(193.,195.5,15))
-        self.p.i_hf_tweezer_evap1_current = 194.2
+        # self.xvar('i_hf_tweezer_evap1_current',np.linspace(192.5,195.,8))
+        self.p.i_hf_tweezer_evap1_current = 193.9
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown_end',np.linspace(.3,2.5,8))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown_end',np.linspace(.3,2.5,15))
         # self.p.v_pd_hf_tweezer_1064_rampdown_end = 1.2
 
-        # self.xvar('t_hf_tweezer_1064_rampdown',np.linspace(20.,200.,8)*1.e-3) 
-        self.p.t_hf_tweezer_1064_rampdown = 70.e-3        
+        # self.xvar('t_hf_tweezer_1064_rampdown',np.linspace(20.,250.,8)*1.e-3) 
+        self.p.t_hf_tweezer_1064_rampdown = 60.e-3        
 
-        # self.xvar('i_hf_tweezer_evap2_current',np.linspace(193.,194.7,8))
-        self.p.i_hf_tweezer_evap2_current = 193.7
+        # self.xvar('i_hf_tweezer_evap2_current',np.linspace(192.5,195.5,20))
+        self.p.i_hf_tweezer_evap2_current = 194.1
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.08,.25,15))
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .14
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.08,.16,8))
+        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .09
 
-        # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(100.,1000.,8)*1.e-3) 
-        self.p.t_hf_tweezer_1064_rampdown2 = 750.e-3  
+        # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(100.,1100.,15)*1.e-3) 
+        self.p.t_hf_tweezer_1064_rampdown2 = 1000.e-3  
 
         # self.xvar('i_hf_tweezer_evap3_current',np.linspace(193.,194.5,8))
         # self.p.i_hf_tweezer_evap3_current = 193.7 
@@ -89,17 +89,17 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_tunnel',np.linspace(180.,194.,20)) 
         self.p.i_tunnel = 190. 
 
-        self.xvar('t_tweezer_hold',np.linspace(0.,100.,30)*1.e-3)
-        self.p.t_tweezer_hold = 2.5e-3
+        # self.xvar('t_tweezer_hold',np.linspace(0.,100.,30)*1.e-3)
+        self.p.t_tweezer_hold = 1.5e-3
 
         # self.xvar('fringe_repeats',np.linspace(1.,300.,300))
 
-        self.p.frequency_tweezer_list = [73.38e6,76.e6]
+        self.p.frequency_tweezer_list = [73.3e6, 75.3e6]
         # self.p.frequency_tweezer_list = [76.e6, 76.5e6]
         # self.p.frequency_tweezer_list = [72.5e6]
 
         # a_list = [.18,.21]
-        a_list = [.172,.185]
+        a_list = [.19,.185]
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('t_tof',np.linspace(1000.,3000.,10)*1.e-6)
@@ -130,8 +130,8 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
+        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
