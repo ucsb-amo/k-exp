@@ -287,7 +287,7 @@ class ExptParams():
         self.amp_tweezer_list1 = [.25,.25,.25,.25]
         self.amp_tweezer_list2 = [.25,.25,.25,.25]
 
-        self.v_lf_tweezer_paint_amp_max = 1.1
+        self.v_lf_tweezer_paint_amp_max = -.5
         self.v_hf_tweezer_paint_amp_max = -2.
 
         # tweezer movement params
@@ -340,8 +340,8 @@ class ExptParams():
         # low field evap NEW
         self.i_lf_lightsheet_evap1_current = 14.1
 
-        self.i_lf_tweezer_load_current = 13.7
-        self.i_lf_tweezer_evap1_current = 12.6
+        self.i_lf_tweezer_load_current = 13.3
+        self.i_lf_tweezer_evap1_current = 12.4
         self.i_lf_tweezer_evap2_current = 12.9
 
         self.i_spin_mixture = 19.48

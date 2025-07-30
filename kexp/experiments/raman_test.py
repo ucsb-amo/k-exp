@@ -21,14 +21,14 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6)
         self.p.t_tof = 100.e-6
 
-        self.p.frequency_tweezer_list = [76.e6]
-        a_list = [.2]
+        self.p.frequency_tweezer_list = [75.3e6]
+        a_list = [.1]
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('f_raman_sweep_width',np.linspace(3.e3,30.e3,20))
-        self.p.f_raman_sweep_width = 350.e3
+        self.p.f_raman_sweep_width = 100.e3
 
-        self.xvar('f_raman_sweep_center',np.arange(38.5e6, 46.e6, self.p.f_raman_sweep_width))
+        # self.xvar('f_raman_sweep_center',np.arange(40.5e6, 43.6e6, self.p.f_raman_sweep_width))
         self.p.f_raman_sweep_center = 43.408e6
         # self.p.f_raman_sweep_center = self.p.frequency_raman_transition
 
@@ -42,7 +42,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.p.t_raman_pi_pulse = 2.507e-06
         # self.xvar('t_raman_pulse',np.linspace(0.,self.p.t_raman_pi_pulse,5))
-        # self.xvar('t_raman_pulse',np.linspace(0.,50.,10)*1.e-3)
+        self.xvar('t_raman_pulse',np.linspace(0.,2.,10)*1.e-3)
         self.p.t_raman_pulse = 1.e-3
 
         # self.xvar('amp_raman',np.linspace(0.,self.p.amp_raman,8))
@@ -94,21 +94,11 @@ class tweezer_load(EnvExperiment, Base):
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_lf_lightsheet_evap1_current)
-        
-        # self.set_imaging_detuning(frequency_detuned=self.p.f_blowout)
-        # self.dds.imaging.set_dds(amplitude=.54)
 
         # lightsheet evap 1
         self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
-        
-        # self.dds.imaging.on()
-        # delay(self.p.t_blowout)
-        # self.dds.imaging.off()
-
-        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        # self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
         
         # feshbach field ramp to field 2
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
@@ -158,17 +148,22 @@ class tweezer_load(EnvExperiment, Base):
                              i_start=self.p.i_lf_tweezer_evap1_current,
                              i_end=self.p.i_spin_mixture)
         
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
 
         self.init_raman_beams()
 
-        delay(30.e-3)
+        delay(75.e-3)
 
-        # self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=self.p.frequency_raman_transition)
+        self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=self.p.frequency_raman_transition)
 
-        self.raman.sweep(t=self.p.t_raman_sweep,
-                         frequency_center=self.p.f_raman_sweep_center,
-                         frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
+        # self.raman.sweep(t=self.p.t_raman_sweep,
+        #                  frequency_center=self.p.f_raman_sweep_center,
+        #                  frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
+
+        # self.dds.raman_plus.on()
+        # delay(self.p.t_raman_pulse)
+        # self.dds.raman_plus.off()
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
