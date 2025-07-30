@@ -33,7 +33,7 @@ def fit_gaussian_sum_dist(sum_dist: np.ndarray, camera_params) -> list[GaussianF
     for i in range(total):
         this_sum_dist = sum_dist_list[i]
         try:
-            fits[i] = GaussianFit(xaxis, this_sum_dist)
+            fits[i] = GaussianFit(xaxis, this_sum_dist, print_errors=False)
         except Exception:
             error_count += 1
             fits[i] = None
