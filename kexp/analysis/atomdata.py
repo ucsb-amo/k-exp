@@ -235,8 +235,9 @@ class atomdata():
             atomdata: The sliced atomdata object.
         """
 
-        ad = atomdata(self.run_info.run_id, avg_repeats=self._analysis_tags.averaged)
-        which_shot_idx = ensure_ndarray(which_shot_idx, enforce_1d=True)
+        ad = atomdata(self.run_info.run_id,
+                       avg_repeats=self._analysis_tags.averaged,
+                       roi_id=self.run_info.run_id)
 
         # repeat handling is broken right now, in that if the repeats are on the
         # first axis, the function won't return an atomdata with all the repeats. To
@@ -305,19 +306,24 @@ class atomdata():
                 taken = np.concatenate([taken, -1 * np.ones(n_pad, dtype=ad.sort_idx[which_xvar_idx].dtype)])
             return taken
         
+        which_shot_idx = ensure_ndarray(which_shot_idx, enforce_1d=True)
+
         # remove the xvars, xvarnames, and xvardims entry for that xvar
         keys = ['xvars','xvarnames','xvardims']
         # only remove the sort_N and sort_idx for this xvar if is the only one of
         # its length (otherwise another xvar also uses that sort_idx list)
         sliced_xvardim = ad.xvardims[which_xvar_idx]
 
-        if not self._analysis_tags.averaged:
+        if not self._analysis_tags.averaged and ad.sort_idx.size != 0:
+            shuffled = True
             sort_N_idx = np.where(ad.sort_N == sliced_xvardim)[0][0]
+        else:
+            shuffled = False
             
         if len(which_shot_idx) == 1 and ad.Nvars > 1:
             # if you are slicing out a single shot, remove the xvar to reduce
             # the dimensionality of the dataset
-            if not self._analysis_tags.averaged:
+            if shuffled:
                 if np.sum(ad.xvardims == sliced_xvardim) == 1:
                     ad.sort_N = remove_element_by_index(ad.sort_N, sort_N_idx)
                     ad.sort_idx = remove_element_by_index(ad.sort_idx, sort_N_idx)
@@ -329,18 +335,17 @@ class atomdata():
             ad.Nvars -= 1
         else:
             # otherwise, just slice the xvar without reducing atomdata dimensionality
-            if ad.sort_idx.size != 0:
-                if not self._analysis_tags.averaged:
-                    ad.sort_N[sort_N_idx] = len(which_shot_idx)
-                    ad.sort_idx[sort_N_idx] = grab_these_sort_idx(which_shot_idx,which_xvar_idx)
-                    # you left out some sort_idx elements, so remap the sort_idx to
-                    # sequential integers starting from 0.
-                    ad.sort_idx[sort_N_idx] = remap_sort_idx_to_sequential(ad.sort_idx[sort_N_idx])
+            if shuffled:
+                ad.sort_N[sort_N_idx] = len(which_shot_idx)
+                ad.sort_idx[sort_N_idx] = grab_these_sort_idx(which_shot_idx,which_xvar_idx)
+                # you left out some sort_idx elements, so remap the sort_idx to
+                # sequential integers starting from 0.
+                ad.sort_idx[sort_N_idx] = remap_sort_idx_to_sequential(ad.sort_idx[sort_N_idx])
 
             ad.xvars[which_xvar_idx] = np.take(ad.xvars[which_xvar_idx],
                                                indices=which_shot_idx,
-                                               axis=which_xvar_idx)
-            ad.xvardims[which_xvar_idx] = len(which_shot_idx)
+                                               axis=0)
+            ad.xvardims[which_xvar_idx] = len(ad.xvars[which_shot_idx])
 
         def slice_ndarray(array):
             return np.take(array,
@@ -351,7 +356,7 @@ class atomdata():
         for k in nd_keys:
             vars(ad)[k] = slice_ndarray(vars(ad)[k])
 
-        ad.params.N_img = np.prod(ad.xvardims * ad.params.N_pwa_per_shot)
+        ad.params.N_img = np.prod(ad.xvardims)
         ad.params.N_shots = int(ad.params.N_shots / sliced_xvardim)
         ad.params.N_shots_with_repeats = int(ad.params.N_shots_with_repeats / sliced_xvardim)
 
@@ -675,8 +680,8 @@ class atomdata():
                 self.sort_idx = f['data']['sort_idx'][()]
                 self.sort_N = f['data']['sort_N'][()]
             except:
-                self.sort_idx = []
-                self.sort_N = []
+                self.sort_idx = np.array([])
+                self.sort_N = np.array([])
                 
 
 # class ConcatAtomdata(atomdata):
