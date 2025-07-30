@@ -116,9 +116,9 @@ void getMeas1()
   static double prevA = 0;
   double newadc1 = readADC1_from_ISR();
   inputA = newadc1;
-  writeDAC(4,inputA);
+  writeDAC(4,inputA);//Ch2 on oscope, as of 7/30/25
   
-  writeDAC(1, inputB);
+  writeDAC(1, inputB);//Ch3 on oscope, as of 7/30/25
   // P1 = P11;
   // I1 = I11;
   //}
@@ -131,12 +131,10 @@ void getMeas1()
     double derivT = (inputT - prevA) * D1;
     newdac1 = prop1 + integral1 + derivT;
   }
-
   else
   {
     newdac1 = 0.;
   }
-  outputA = newadc1;
 
   //Bit overflow check conditions
   if(newdac1>10)
@@ -149,17 +147,12 @@ void getMeas1()
   }
   else {}
 
-  // if(pid_enable1) {newdac1 = 6.;}
-  // else {newdac1 = 0.;}
   
-  writeDAC(3,newdac1);
-  writeDAC(1, newdac1);
+  writeDAC(3, newdac1);//To the FET
   prevA = inputT;
-  // if(abs(newdac1)>Vgs_threshold1)
-  // {
-  //   P1 = P12;
-  //   I1 = I12;
-  // }
+
+
+  //gain scheduling
   if (abs(newdac1)<Vgs_threshold0)
   {
     P1 = P10;
