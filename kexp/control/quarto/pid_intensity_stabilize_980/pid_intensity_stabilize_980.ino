@@ -1,7 +1,7 @@
 #include "qCommand.h"
 qCommand qC;
 
-float SETPOINT1 = 9.0;
+float SETPOINT1 = 8.25;
 float SETPOINT2 = 1.5;
 float P1 = -.055;
 float I1 = -0.006;
