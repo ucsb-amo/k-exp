@@ -14,6 +14,14 @@ double integral2 = 0.;
 bool pid_enable1 = true;
 bool pid_enable2 = true;
 
+struct Cal 
+{
+    uint16_t cal_a;
+    double cal_b;
+    uint16_t cal_c;
+    char cal_d[16];
+};
+
 void setup() {
   configureADC(1, 1, 0, BIPOLAR_10V, getMeas1);
   // configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
@@ -32,6 +40,16 @@ void setup() {
   // enableInterruptTrigger(2,BOTH_EDGES,&switch2);
 
   qC.addCommand("c", clear_integrator);
+
+  Serial.begin(115200);
+  qC.addCommand("ping",ping);
+}
+//asks for quarto name
+void ping(qCommand& qC, Stream& S)
+{
+  struct Cal cal2;
+  readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
+  Serial.println(cal2.cal_d); 
 }
 //At TTL edges, check value of TTL, clear integrator, and then enable/disable PID depending on value
 void switch1() {

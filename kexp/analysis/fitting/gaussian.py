@@ -13,7 +13,8 @@ class GaussianFit(Fit):
                  fractional_peak_prominence = 0.01,
                  use_peak_bases_for_amplitude=False,
                  include_idx = [0,-1],
-                 exclude_idx = []):
+                 exclude_idx = [],
+                 print_errors = True):
         super().__init__(xdata,ydata,
                          include_idx=include_idx,exclude_idx=exclude_idx,
                          savgol_window=20)
@@ -28,7 +29,8 @@ class GaussianFit(Fit):
                              use_peak_bases_for_amplitude,
                              fractional_peak_prominence)
         except Exception as e:
-            print(e)
+            if print_errors:
+                print(e)
             popt = [np.NaN] * 4
             self.y_fitdata = np.zeros(self.ydata.shape); self.y_fitdata.fill(np.NaN)
 
@@ -209,14 +211,13 @@ class MultiGaussianFit(GaussianFit,Fit):
                  include_idx = [0,-1],
                  exclude_idx = []):
         super().__init__(xdata,ydata,
-                         include_idx=include_idx,exclude_idx=exclude_idx,
-                         savgol_window=20)
+                         include_idx=include_idx,exclude_idx=exclude_idx)
 
         self._debug_plotting = debug_plots
         self.N_peaks = N_peaks
         n_params = 4
         self._prepare_fit_result_lists(N_peaks,n_params)
-        self.popt = self._fit(self.xdata,self.ydata,
+        self.popt = self._fit(self.xdata,self.ydata,0,
                               fractional_peak_prominence,
                               fractional_peak_height_at_width,
                               px_boxcar_smoothing_width,
@@ -282,6 +283,7 @@ class MultiGaussianFit(GaussianFit,Fit):
         return y
 
     def _fit(self, x, y,
+            which_peak,
             fractional_peak_prominence,
             fractional_peak_height_at_width,
             px_boxcar_smoothing_width,

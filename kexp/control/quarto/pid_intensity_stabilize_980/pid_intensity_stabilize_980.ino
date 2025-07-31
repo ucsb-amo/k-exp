@@ -1,7 +1,7 @@
 #include "qCommand.h"
 qCommand qC;
 
-float SETPOINT1 = 9.0;
+float SETPOINT1 = 8.25;
 float SETPOINT2 = 1.5;
 float P1 = -.055;
 float I1 = -0.006;
@@ -13,6 +13,14 @@ double integral2 = 0.;
 
 bool pid_enable1 = true;
 bool pid_enable2 = true;
+
+struct Cal 
+{
+    uint16_t cal_a;
+    double cal_b;
+    uint16_t cal_c;
+    char cal_d[16];
+};
 
 void setup() {
   configureADC(1, 1, 0, BIPOLAR_10V, getMeas1);
@@ -32,6 +40,16 @@ void setup() {
   // enableInterruptTrigger(2,BOTH_EDGES,&switch2);
 
   qC.addCommand("c", clear_integrator);
+
+  Serial.begin(115200);
+  qC.addCommand("ping",ping);
+}
+//asks for quarto name
+void ping(qCommand& qC, Stream& S)
+{
+  struct Cal cal2;
+  readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
+  Serial.println(cal2.cal_d); 
 }
 //At TTL edges, check value of TTL, clear integrator, and then enable/disable PID depending on value
 void switch1() {
@@ -61,8 +79,8 @@ void clear_integrator(qCommand& qC, Stream& S) {
 void getMeas1() {
   double newadc1 = readADC1_from_ISR();
   double newdac1 = 0.;
-  // writeDAC(3, newadc1);
-  // writeDAC(4, SETPOINT1);
+  writeDAC(3, newadc1);
+  writeDAC(4, SETPOINT1);
 
   if (pid_enable1) {
     double prop1 = (newadc1 - SETPOINT1) * P1;
@@ -89,8 +107,8 @@ void getSet1() {
 void getMeas2() {
   double newadc2 = readADC3_from_ISR();
   double newdac2 = 0.;
-  writeDAC(3, newadc2);
-  writeDAC(4, SETPOINT2);
+  // writeDAC(3, newadc2);
+  // writeDAC(4, SETPOINT2);
 
   if (pid_enable2) {
     double prop2 = (newadc2 - SETPOINT2) * P2;
