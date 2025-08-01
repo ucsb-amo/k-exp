@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         self.p.t_tof = 2000.e-6
-        self.xvar('t_tof',np.linspace(500,3700.,14)*1.e-6)
+        self.xvar('t_tof',np.linspace(500,4500.,16)*1.e-6)
         # self.xvar('hf_imaging_detuning', [-594.e6,-494.e6])
 
         # self.xvar('t_tof',np.li
@@ -56,7 +56,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_hf_lightsheet_rampdown = 1.17
 
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.22,.6,6))
-        self.p.v_pd_lightsheet_rampdown2_end = .24
+        self.p.v_pd_lightsheet_rampdown2_end = .235
 
         # self.xvar('t_lightsheet_rampdown2',np.linspace(1200.,3500.,12)*1.e-3)
         self.p.t_lightsheet_rampdown2 = 2.7
