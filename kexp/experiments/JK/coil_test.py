@@ -67,6 +67,7 @@ class tweezer_load(EnvExperiment, Base):
         delay(375.e-3)
 
         self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.ttl.line_trigger.wait_for_line_trigger()
 
         self.outer_coil.start_pid()
         delay(125.e-3)

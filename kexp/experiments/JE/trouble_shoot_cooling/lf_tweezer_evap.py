@@ -49,25 +49,25 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_blowout = 10.e-6
 
         # self.xvar('i_lf_tweezer_load_current',np.linspace(12.,17.,20))
-        self.p.i_lf_tweezer_load_current = 13.3        
+        # self.p.i_lf_tweezer_load_current = 13.3        
 
         # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-4.,4.,15))
-        self.p.v_lf_tweezer_paint_amp_max = -0.5
+        # self.p.v_lf_tweezer_paint_amp_max = -0.5
 
         # self.xvar('v_pd_lf_tweezer_1064_ramp_end', np.linspace(5.,9.4,8))
-        self.p.v_pd_lf_tweezer_1064_ramp_end = 9.
+        # self.p.v_pd_lf_tweezer_1064_ramp_end = 9.
 
         # self.xvar('t_tweezer_1064_ramp', np.linspace(15.,1000.,10)*1.e-3)
         # self.p.t_tweezer_1064_ramp = .5
 
         # self.xvar('i_lf_tweezer_evap1_current',np.linspace(11.8,14.1,8))
-        self.p.i_lf_tweezer_evap1_current = 12.4
+        # self.p.i_lf_tweezer_evap1_current = 12.4
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown_end',np.linspace(.4,3.,8)) 
-        self.p.v_pd_lf_tweezer_1064_rampdown_end = 1.4
+        # self.p.v_pd_lf_tweezer_1064_rampdown_end = 1.4
 
         # self.xvar('t_lf_tweezer_1064_rampdown',np.linspace(0.02,.4,15))
-        self.p.t_lf_tweezer_1064_rampdown = 220.e-3
+        # self.p.t_lf_tweezer_1064_rampdown = 220.e-3
 
         # self.xvar('i_lf_tweezer_evap2_current',np.linspace(11.5,13.5,20))
         self.p.i_lf_tweezer_evap2_current = 12.9

@@ -736,6 +736,7 @@ class Cooling():
 
         self.power_down_cooling()
         # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.d2_mot_shutter.on()
 
         delay(t_delay)
              
@@ -1004,6 +1005,7 @@ class Cooling():
         self.dds.raman_minus.set_dds(amplitude=0.)
         self.dds.raman_plus.set_dds(amplitude=0.)
         # self.dds.imaging.set_dds(amplitude=0.)
+        self.dds.antenna_rf.set_dds(amplitude=0.)
 
         # to avoid sequence errors from all the TTLs being at once
         self.dds.d1_3d_r.off()
@@ -1021,6 +1023,7 @@ class Cooling():
         self.dds.raman_minus.off()
         self.dds.raman_plus.off()
         # self.dds.imaging.off()
+        self.dds.antenna_rf.off()
         delay_mu(8)
 
     @kernel

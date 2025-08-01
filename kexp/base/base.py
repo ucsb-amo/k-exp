@@ -198,6 +198,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
     def cleanup_scan_kernel(self):
         self.cleanup_image_count()
         self.reset_coils()
+        self.ttl.line_trigger.clear_input_events()
 
     def prepare_image_array(self):
         if self.run_info.save_data:

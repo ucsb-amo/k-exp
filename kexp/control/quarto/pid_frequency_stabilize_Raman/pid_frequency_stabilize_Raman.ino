@@ -5,12 +5,13 @@ IntervalTimer plot;
 
 double currentSignalValue = 0;
 
-double Vth = 0.3;
-double G1 = 1;
-double P1 = 0.0;
-double I1 = 0.0;
-double D1 = 0.0;
-double setpoint1 = 10;
+
+double Vth = 0.8; //voltage thresold for identifying the peaks
+double G1 = 1; // switich of feedback
+double P1 = 0.0; // p gain for feedback, typically setting it as 0.001
+double I1 = 0.0; // i gain, but it is not quite nessary and setting zero is OK for most cases
+double D1 = 0.0; // same case to i gain
+double setpoint1 = 10; // separation of the peaks we want
 double newadc1 = 0;
 
 double  firstPeakTime = 0;
@@ -60,7 +61,7 @@ void update(void) {
   double currentTime = micros()/1000.000;
   
   int TriggerState = triggerRead(1);
-
+  // searching peaks during a trigger period
   if (lastState == LOW && TriggerState == HIGH) {
     currentRisingEdgeTime = currentTime;
     if (lastRisingEdgeTime != 0) {
@@ -76,7 +77,7 @@ void update(void) {
   }
 
   lastState = TriggerState;
-
+  // identifying the first and second peaks
   if (previousSignalValue > currentSignalValue && previousSignalValue > secondPreviousSignalValue && previousSignalValue > Vth) {
     // static unsigned long lastr = 0; 
     if (!firstPeakDetected) {
@@ -84,14 +85,13 @@ void update(void) {
       firstPeakDetected = true;      
       // delay(2);
     } 
+    // identifying the first and second peaks
     else if (currentTime - firstPeakTime > 2 && firstPeakDetected && secondPeakTime == 0) {
-      // lastr = millis() + 2;
+
       secondPeakTime = currentTime;
       peakSeparation = secondPeakTime - firstPeakTime;
-  
-      // if (feedback > -0.9 && feedback < 0.9) { 
-      //   feedback = (feedback/(P1+0.0000000001) + peakSeparation-setpoint1) * P1; 
-      // } else { feedback = 0; }
+      // calculate the current distance between two peaks
+      // and the difference between current distance and setting distance
       if (feedback < -0.8 && feedback > 0.8) { 
         feedback = 0;
       } else { 

@@ -12,11 +12,11 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,camera_select='xy_basler',
+        Base.__init__(self,setup_camera=True,save_data=True,camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 4000.e-6
-        self.xvar('t_tof',np.linspace(1000,7500.,9)*1.e-6)
+        self.p.t_tof = 2000.e-6
+        self.xvar('t_tof',np.linspace(500,3700.,14)*1.e-6)
         # self.xvar('hf_imaging_detuning', [-594.e6,-494.e6])
 
         # self.xvar('t_tof',np.li
@@ -46,23 +46,23 @@ class mag_trap(EnvExperiment, Base):
         self.p.v_pd_lightsheet_rampup_end = 7.5
 
         # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(188.,193.,7))
-        self.p.i_hf_lightsheet_evap1_current = 194.3
+        self.p.i_hf_lightsheet_evap1_current = 191.
         # self.p.i_hf_lightsheet_evap1_current = 187.4
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,.9,10))
-        self.p.v_pd_hf_lightsheet_rampdown_end = 1.47
+        self.p.v_pd_hf_lightsheet_rampdown_end = .47
 
         # self.xvar('t_hf_lightsheet_rampdown',np.linspace(600.,1100.,24)*1.e-3)
-        self.p.t_hf_lightsheet_rampdown = 1.17
+        # self.p.t_hf_lightsheet_rampdown = 1.17
 
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.22,.6,6))
-        self.p.v_pd_lightsheet_rampdown2_end = .28
+        self.p.v_pd_lightsheet_rampdown2_end = .24
 
-        # self.xvar('t_lightsheet_rampdown2',np.linspace(1700.,2500.,12)*1.e-3)
-        self.p.t_lightsheet_rampdown2 = 0.5
+        # self.xvar('t_lightsheet_rampdown2',np.linspace(1200.,3500.,12)*1.e-3)
+        self.p.t_lightsheet_rampdown2 = 2.7
 
-        # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(191.,196.,12))
-        self.p.i_hf_lightsheet_evap2_current = 194.1
+        # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(192.,194.,14))
+        self.p.i_hf_lightsheet_evap2_current = 193.4
         
         self.p.t_lightsheet_hold = .2
         # self.p.t_yshim_rampdown = 10.e-3

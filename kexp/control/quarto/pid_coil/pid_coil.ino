@@ -10,6 +10,8 @@ double outputB = 0;
 
 float SETPOINT1 = 0.0;
 
+bool blockPID = false;
+
 ///Hard coded gain switching , first number represents inner vs outer, second initial vs long
 // float P10 = 3000;
 // float I10 = 0.01;
@@ -27,8 +29,8 @@ float SETPOINT1 = 0.0;
 //updated 7/3/25
 float P10 = 100;
 float I10 = 0.05;
-float P11 = 100;
-float I11 = 10;
+float P11 = 300;
+float I11 = 20;
 float P1 = 0;
 float I1 = 0;
 float D1 = 0;
@@ -124,7 +126,7 @@ void getMeas1()
   //}
   double newdac1 = 0.;
   inputT = inputA + inputB*CH2F; // I believe we should remove the (1-CH2F) term from the DC part -- fixes observed offset in stabilized current from expected value
-  if (pid_enable1) 
+  if (pid_enable1 && !blockPID) 
   {
     double prop1 = (inputT-SETPOINT1) * P1;
     integral1 += (inputT-SETPOINT1) * I1;

@@ -113,7 +113,7 @@ class ExptParams():
         self.t_magtrap = 1.3
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
-        self.t_magtrap_rampdown = .087
+        self.t_magtrap_rampdown = .05
         self.t_yshim_rampdown = 10.e-3
         
         self.t_feshbach_field_rampup = 150.e-3
