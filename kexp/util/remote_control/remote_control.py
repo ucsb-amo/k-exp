@@ -13,6 +13,7 @@ class RemoteControl(CommandHandler):
         self.add_to_whitelist("9165834119")
         self.add_to_whitelist("5104069659")
         self.add_to_whitelist("7022366997")
+        self.add_to_whitelist("8052848029")
         
         # Whitelist of approved email addresses
         self.add_to_whitelist("pagett.jared@gmail.com")
