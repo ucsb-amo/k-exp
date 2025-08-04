@@ -14,12 +14,13 @@ class RemoteControl(CommandHandler):
         self.add_to_whitelist("5104069659")
         self.add_to_whitelist("7022366997")
         self.add_to_whitelist("8052848029")
+        self.add_to_whitelist("8052847408")
         
         # Whitelist of approved email addresses
         self.add_to_whitelist("pagett.jared@gmail.com")
         self.add_to_whitelist("jestes@ucsb.edu")
         self.add_to_whitelist("jpagett@ucsb.edu")
-        self.add_to_whitelist("mbl@gmail.com")
+        self.add_to_whitelist("mbl@ucsb.edu")
         
         # Command handlers - maps keywords to handler functions
         self.add_command_handler(["sources","source","atoms"], self.handle_sources_command)
