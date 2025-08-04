@@ -99,11 +99,13 @@ class ExptBuilder():
 
                     self.p.t_tof = 1500.e-6
 
-                    self.p.frequency_tweezer_list = [74.e6]
-                    a_list = [.2]
+                    self.p.frequency_tweezer_list = [75.4e6]
+                    a_list = [.1]
                     self.p.amp_tweezer_list = a_list
 
                     {assignment_lines}
+
+                    self.p.t_tweezer_hold = 1.e-3
 
                     self.p.t_mot_load = 1.
                     self.p.N_repeats = 1
@@ -126,6 +128,8 @@ class ExptBuilder():
 
                     self.magtrap_and_load_lightsheet()
 
+                    self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
+
                     # feshbach field on, ramp up to field 1  
                     self.outer_coil.on()
                     # delay(1.e-3)
@@ -133,10 +137,6 @@ class ExptBuilder():
                     self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                                         i_start=0.,
                                         i_end=self.p.i_lf_lightsheet_evap1_current)
-                    
-                    self.set_shims(v_zshim_current=0.,
-                                    v_yshim_current=0.,
-                                    v_xshim_current=0.)
 
                     # lightsheet evap 1
                     self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
@@ -182,7 +182,7 @@ class ExptBuilder():
                                     v_start=self.p.v_pd_lf_tweezer_1064_rampdown_end,
                                     v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
                                     paint=True,keep_trap_frequency_constant=True,v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
-
+                    delay(self.p.t_tweezer_hold)
                     self.tweezer.off()
 
                     delay(self.p.t_tof)

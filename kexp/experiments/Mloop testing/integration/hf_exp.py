@@ -107,6 +107,8 @@ class ExptBuilder():
                                  
                     {assignment_lines}
 
+                    self.p.t_tweezer_hold = 1.e-3
+
                     self.p.frequency_tweezer_list = [73.65e6,76.e6]
 
                     a_list = [.147,.155]
@@ -209,7 +211,7 @@ class ExptBuilder():
                     
                     
                     # delay(.2e-3)
-                    # delay(self.p.t_tweezer_hold)
+                    delay(self.p.t_tweezer_hold)
                     
                     self.tweezer.off()
 

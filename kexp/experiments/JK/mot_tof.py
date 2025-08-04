@@ -10,7 +10,7 @@ class gm_tof(EnvExperiment, Base):
 
         #self.xvar('v_zshim_current',np.linspace(0.,4.,15))
         #self.xvar('v_xshim_current',np.linspace(0.,4.,15))
-        self.xvar('t_tof',np.linspace(.01,.5,30)*1.e-3)
+        self.xvar('t_tof',np.linspace(.01,.5,10)*1.e-3)
         #self.xvar('beans',np.linspace(0.,1.,7))
         #self.xvar('detune_d2_c_mot',np.linspace(-5.,1.,40))
         self.p.detune_d2_c_mot = -2.

@@ -149,10 +149,10 @@ class ExptParams():
         self.v_2d_mot_current = 2.5
 
         #MOT
-        self.detune_d2_c_mot = -1.5
+        self.detune_d2_c_mot = -2.2
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.85
+        self.detune_d2_r_mot = -5.2
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.

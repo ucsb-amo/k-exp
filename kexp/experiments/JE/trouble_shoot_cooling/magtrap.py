@@ -14,7 +14,7 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.t_tof = 8000.e-6
-        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         # self.xvar('dumy',[0]*5)
         # self.xvar('dumy',np.linspace(1.,800.,800))
 
@@ -23,8 +23,8 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('detune_d2_c_mot',np.linspace(-5.,-2.,8))
         
-        # self.xvar('detune_d2_c_mot',np.linspace(-5.5,-1.,8))
-        # self.xvar('detune_d2_r_mot',np.linspace(-7.,-1.,8))
+        self.xvar('detune_d2_c_mot',np.linspace(-5.5,-1.,8))
+        self.xvar('detune_d2_r_mot',np.linspace(-7.,-1.,8))
         # self.p.detune_d2_c_mot = -3.
         # self.p.detune_d2_r_mot = -3.5
         
