@@ -12,6 +12,7 @@ class dac_frame():
         self.dac_device = dac_device
 
         self.dac_ch_list = []
+        self._dummy = DAC_CH(0, self.dac_device)
 
         p = expt_params
 
@@ -51,7 +52,7 @@ class dac_frame():
         '''Adds the assigned keys to the DDS objects so that the user-defined
         names (keys) are available with the DDS objects.'''
         for key in self.__dict__.keys():
-            if isinstance(self.__dict__[key],DAC_CH):
+            if isinstance(self.__dict__[key],DAC_CH) and not key.startswith('_'):
                 self.__dict__[key].key = key
                 self.__dict__[key].set_errmessage()
 

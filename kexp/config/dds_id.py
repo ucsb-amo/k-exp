@@ -54,6 +54,7 @@ class dds_frame():
             self._dac_frame = dac_frame()
 
         self.dds_array = [[DDS(uru,ch,dac_device=self._dac_frame.dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
+        self._dummy = DDS(0,0) # placeholder
 
         # self.aom_name = self.dds_assign(urukul_idx,ch_idx,ao_order,transition,dac_ch_vpd)
         self.antenna_rf = self.dds_assign(0,0,default_freq=200.e6,default_amp=self.p.amp_rf_source)
@@ -210,7 +211,11 @@ class dds_frame():
         First loops through the DDS objects that were explicitly assigned as
         attributes using dds_assign, then fills in the remaining DDS channels.
         """        
-        dds_linlist = [self.__dict__[key] for key in self.__dict__.keys() if isinstance(self.__dict__[key],DDS)]
+        dds_linlist = [
+            self.__dict__[key]
+            for key in self.__dict__.keys()
+            if isinstance(self.__dict__[key], DDS) and not key.startswith('_')
+        ]
         for dds in dds_linlist:
             self.dds_array[dds.urukul_idx][dds.ch] = dds
 

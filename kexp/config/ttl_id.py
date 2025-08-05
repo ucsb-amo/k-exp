@@ -7,6 +7,7 @@ class ttl_frame():
     def __init__(self):
 
         self.ttl_list = []
+        self._dummy = TTL(0)
         
         self.coil_discharge_igbt = self.assign_ttl_out(0)
         self.tweezer_pid2_enable = self.assign_ttl_out(1)
@@ -61,6 +62,6 @@ class ttl_frame():
         '''Adds the assigned keys to the DDS objects so that the user-defined
         names (keys) are available with the DDS objects.'''
         for key in self.__dict__.keys():
-            if isinstance(self.__dict__[key],TTL):
+            if isinstance(self.__dict__[key],TTL) and not key.startswith('_'):
                 self.__dict__[key].key = key
                 
