@@ -12,6 +12,7 @@ class TTL():
     def __init__(self,ch):
         self.ch = ch
         self.name = f'ttl{self.ch}'
+        self.state = 0
         self.key = ""
 
     def get_device(self,expt:artiq.experiment.EnvExperiment):
@@ -25,10 +26,12 @@ class TTL_OUT(TTL):
     @kernel
     def on(self):
         self.ttl_device.on()
+        self.state = 1
 
     @kernel
     def off(self):
         self.ttl_device.off()
+        self.state = 0
 
     @kernel
     def pulse(self,t):
@@ -40,7 +43,6 @@ class TTL_IN(TTL):
     def __init__(self,ch):
         super().__init__(ch)
         self.ttl_device = TTLInOut
-
         self.t_input_gate_end = np.int64(0)
 
     @kernel

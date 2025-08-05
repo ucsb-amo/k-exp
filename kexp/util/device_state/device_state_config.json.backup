@@ -1,0 +1,19 @@
+{
+  "dac": {
+    "inner_coil_pid": {
+      "ch": 18,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "inner_coil_supply_current": {
+      "ch": 8,
+      "max_voltage": 5.9,
+      "voltage": 0.0
+    },
+    "inner_coil_supply_voltage": {
+      "ch": 11,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "lightsheet_paint_amp": {
+      "ch": 

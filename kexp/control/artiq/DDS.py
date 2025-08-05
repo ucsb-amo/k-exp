@@ -20,6 +20,7 @@ class DDS():
       self.ch = ch
       self.frequency = frequency
       self.amplitude = amplitude
+      self.sw_state = 0
       self.aom_order = 0
       self.transition = 'None'
       self.double_pass = True
@@ -200,6 +201,7 @@ class DDS():
          self.dac_device.write_dac(channel=self.dac_ch,voltage=0.)
          if dac_load:
             self.dac_device.load()
+      self.sw_state = 0
 
    @kernel
    def on(self, dac_update = True, dac_load=True):
@@ -209,6 +211,7 @@ class DDS():
          if dac_load:
             self.dac_device.load()
       self.dds_device.sw.on()
+      self.sw_state = 1
 
    @kernel
    def init(self):
