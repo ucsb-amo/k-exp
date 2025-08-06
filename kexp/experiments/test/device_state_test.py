@@ -1,4 +1,4 @@
-from kexp.util.device_state.update_device_states import update_state_from_base
+from kexp.util.device_state.update_state_file import update_state_from_base
 from kexp import Base
 
 from artiq.experiment import *

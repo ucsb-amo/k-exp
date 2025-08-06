@@ -14,8 +14,8 @@ from typing import Dict, Any, Optional, Set, Tuple
 from datetime import datetime
 import hashlib
 import os
-from kexp import Base
-from artiq.language.core import kernel_from_string
+from artiq.language.core import kernel_from_string, now_mu
+from artiq.experiment import kernel, delay
 
 # Import device classes
 try:
@@ -26,16 +26,12 @@ except ImportError as e:
     print(f"Error importing device classes: {e}")
     raise
 
-class dummy():
-    def __init__(self,obj):
-        self.key = obj
-
-class DeviceStateUpdater:
+class Monitor():
     """
     Detects changes in device state configuration and updates hardware devices.
     """
     
-    def __init__(self, base_obj: Base, config_file: Optional[Path] = None):
+    def __init__(self, config_file: Optional[Path] = None):
         """
         Initialize the device state updater.
         
@@ -43,7 +39,6 @@ class DeviceStateUpdater:
             base_obj: Instance of kexp.base.Base with .dac, .dds, .ttl attributes
             config_file: Path to device state config file. If None, uses default location.
         """
-        self.expt = base_obj
         
         if config_file is None:
             self.config_file = Path(os.getenv('code')) / 'k-exp' / \
@@ -65,39 +60,37 @@ class DeviceStateUpdater:
         self._kernel_set_dac = kernel_from_string(["self","_dummy","v"],\
                         f"self.dac._dummy.dac_device.write_dac(channel=self.dac._dummy.ch, voltage=v)")
         
-        self.changes = 0
-        
         # Device lookup dictionaries for faster access
-        self._build_device_lookup()
+        self.__build_device_lookup()
     
-    def _build_device_lookup(self):
+    def __build_device_lookup(self):
         """Build lookup dictionaries for quick device access by name."""
-        self.dds_devices = {}
-        self.ttl_devices = {}
-        self.dac_devices = {}
+        self.__dds_dict = {}
+        self.__ttl_dict = {}
+        self.__dac_dict = {}
         
         # Build DDS device lookup
-        for attr_name in dir(self.expt.dds):
+        for attr_name in dir(self.dds):
             if not attr_name.startswith('_'):
-                attr_value = getattr(self.expt.dds, attr_name)
+                attr_value = getattr(self.dds, attr_name)
                 if isinstance(attr_value, DDS):
-                    self.dds_devices[attr_name] = attr_value
+                    self.__dds_dict[attr_name] = attr_value
         
         # Build TTL device lookup
-        for attr_name in dir(self.expt.ttl):
+        for attr_name in dir(self.ttl):
             if not attr_name.startswith('_') and attr_name not in ['ttl_list', 'camera']:
-                attr_value = getattr(self.expt.ttl, attr_name)
+                attr_value = getattr(self.ttl, attr_name)
                 if isinstance(attr_value, (TTL_OUT, TTL_IN)):
-                    self.ttl_devices[attr_name] = attr_value
+                    self.__ttl_dict[attr_name] = attr_value
         
         # Build DAC device lookup
-        for attr_name in dir(self.expt.dac):
+        for attr_name in dir(self.dac):
             if not attr_name.startswith('_') and attr_name not in ['dac_device', 'dac_ch_list']:
-                attr_value = getattr(self.expt.dac, attr_name)
+                attr_value = getattr(self.dac, attr_name)
                 if isinstance(attr_value, DAC_CH):
-                    self.dac_devices[attr_name] = attr_value
+                    self.__dac_dict[attr_name] = attr_value
     
-    def _load_config_file(self) -> Optional[Dict[str, Any]]:
+    def __load_config_file(self) -> Optional[Dict[str, Any]]:
         """Load configuration file and return data, retrying if file is in use."""
         max_attempts = 100
         wait_time = 0.05
@@ -124,7 +117,7 @@ class DeviceStateUpdater:
         print(f"Failed to load config file {self.config_file} after {max_attempts} attempts due to file being in use.")
         return None
     
-    def detect_changes(self, verbose: bool = True) -> Tuple[Dict[str, Dict[str, Any]], 
+    def __detect_changes(self, verbose: bool = False) -> Tuple[Dict[str, Dict[str, Any]], 
                                                            Dict[str, Dict[str, Any]], 
                                                            Dict[str, Dict[str, Any]]]:
         """
@@ -138,7 +131,7 @@ class DeviceStateUpdater:
             mapping device names to their parameters that need updating.
         """
         # Load current configuration
-        current_config = self._load_config_file()
+        current_config = self.__load_config_file()
         if current_config is None:
             return {}, {}, {}
         
@@ -159,7 +152,7 @@ class DeviceStateUpdater:
         new_dds = current_config.get('dds', {})
         
         for device_name in new_dds.keys():
-            if device_name not in self.dds_devices:
+            if device_name not in self.__dds_dict:
                 if verbose:
                     print(f"Warning: DDS device '{device_name}' not found in base object")
                 continue
@@ -201,13 +194,13 @@ class DeviceStateUpdater:
         new_ttl = current_config.get('ttl', {})
         
         for device_name in new_ttl.keys():
-            if device_name not in self.ttl_devices:
+            if device_name not in self.__ttl_dict:
                 if verbose:
                     print(f"Warning: TTL device '{device_name}' not found in base object")
                 continue
                 
             # Only process TTL_OUT devices
-            if not isinstance(self.ttl_devices[device_name], TTL_OUT):
+            if not isinstance(self.__ttl_dict[device_name], TTL_OUT):
                 continue
                 
             old_config = old_ttl.get(device_name, {})
@@ -229,7 +222,7 @@ class DeviceStateUpdater:
         new_dac = current_config.get('dac', {})
         
         for device_name in new_dac.keys():
-            if device_name not in self.dac_devices:
+            if device_name not in self.__dac_dict:
                 if verbose:
                     print(f"Warning: DAC device '{device_name}' not found in base object")
                 continue
@@ -258,33 +251,39 @@ class DeviceStateUpdater:
             print(f"Detected changes in {total_updates} devices")
         elif verbose:
             print("No device changes detected")
+            pass
         
         return dds_updates, ttl_updates, dac_updates
+
+    @kernel
+    def __set_dds(self,name,frequency,amplitude):
+        self._kernel_set_dds(self,name,frequency,amplitude)
+        pass
+
+    @kernel
+    def __set_dds_vpd(self,name,v_pd):
+        self._kernel_set_dds_dac(self,name,v_pd)
+        pass
+
+    @kernel
+    def __set_dds_sw(self,name,state):
+        self._kernel_set_dds_sw(self,name,bool(state))
+        pass
+
+    @kernel
+    def __set_ttl(self,name,state):
+        self._kernel_set_ttl(self,name,bool(state))
+        pass
+
+    @kernel
+    def __set_dac(self,name,v):
+        self._kernel_set_dac(self,name,v)
+        pass
     
-    from artiq.experiment import kernel
-    @kernel
-    def set_dds(self,name,frequency,amplitude):
-        self._kernel_set_dds(self.expt,name,frequency,amplitude)
-
-    @kernel
-    def set_dds_vpd(self,name,v_pd):
-        self._kernel_set_dds_dac(self.expt,name,v_pd)
-
-    @kernel
-    def set_dds_sw(self,name,state):
-        self._kernel_set_dds_sw(self.expt,name,bool(state))
-
-    @kernel
-    def set_ttl(self,name,state):
-        self._kernel_set_ttl(self.expt,name,bool(state))
-
-    @kernel
-    def set_dac(self,name,v):
-        self._kernel_set_dac(self.expt,name,v)
-    
-    def apply_updates(self, dds_updates: Dict[str, Dict[str, Any]], 
-                     ttl_updates: Dict[str, Dict[str, Any]], 
-                     dac_updates: Dict[str, Dict[str, Any]]):
+    def __apply_updates(self, 
+                        dds_updates: Dict[str, Dict[str, Any]], 
+                        ttl_updates: Dict[str, Dict[str, Any]], 
+                        dac_updates: Dict[str, Dict[str, Any]]):
         """
         Apply the detected updates to the hardware devices.
         
@@ -294,47 +293,45 @@ class DeviceStateUpdater:
             dac_updates: Dict mapping DAC device names to their update parameters
         """
 
-        self.changes = 0
-
         # Apply DDS updates
         for name, updates in dds_updates.items():
-            device = self.dds_devices[name]
+            device = self.__dds_dict[name]
             
             # Update frequency and/or amplitude using set method
             if 'frequency' in updates or 'amplitude' in updates:
                 frequency = updates.get('frequency', device.frequency)
                 amplitude = updates.get('amplitude', device.amplitude)
-                self.set_dds(name,frequency,amplitude)
+                self.__set_dds(name,frequency,amplitude)
 
             # Update v_pd using DAC write
             if 'v_pd' in updates:
                 v_pd = updates['v_pd']
-                self.set_dds_vpd(name,v_pd)
+                self.__set_dds_vpd(name,v_pd)
             
             # Update state using switch on/off
             if 'state' in updates:
                 state = updates['state']
-                self.set_ttl(name,state)
+                self.__set_dds_sw(name,state)
         
         # Apply TTL updates
         for name, updates in ttl_updates.items():
-            device = self.ttl_devices[name]
+            device = self.__ttl_dict[name]
         
             # Update state using on/off methods
             if 'state' in updates:
                 state = updates['state']
-                self.set_ttl(name,state)
+                self.__set_ttl(name,state)
         
         # Apply DAC updates
         for name, updates in dac_updates.items():
-            device = self.dac_devices[name]
+            device = self.__dac_dict[name]
             
             # Update voltage using DAC write
             if 'voltage' in updates:
                 voltage = updates['voltage']
-                self.set_dac(name,voltage)
+                self.__set_dac(name,voltage)
     
-    def check_and_update_devices(self, verbose: bool = True) -> bool:
+    def check_and_update_devices(self, verbose: bool = False):
         """
         Combined method to detect changes and apply updates.
         
@@ -345,16 +342,21 @@ class DeviceStateUpdater:
             bool: True if any devices were updated successfully, False otherwise
         """
         # Detect changes
-        dds_updates, ttl_updates, dac_updates = self.detect_changes(verbose=verbose)
+        dds_updates, ttl_updates, dac_updates = self.__detect_changes(verbose=verbose)
         
         # Check if there are any updates to apply
         if not (dds_updates or ttl_updates or dac_updates):
-            return False
+            self.__apply_updates(dds_updates, ttl_updates, dac_updates)
+
+    @kernel
+    def __start_monitoring_kernel(self,check_interval,verbose):
+        while True:
+            self.core.wait_until_mu(now_mu())
+            delay(check_interval)
+            self.check_and_update_devices()
         
-        # Apply updates
-        self.apply_updates(dds_updates, ttl_updates, dac_updates)
     
-    def start_monitoring(self, check_interval: float = 1.0, verbose: bool = True):
+    def start_monitoring(self, check_interval: float = 0.5, verbose: bool = False):
         """
         Start continuous monitoring of the configuration file.
         
@@ -367,82 +369,9 @@ class DeviceStateUpdater:
         print("Press Ctrl+C to stop")
         
         try:
-            while True:
-                self.check_and_update_devices(verbose=verbose)
-                time.sleep(check_interval)
+            self.__start_monitoring_kernel(check_interval,verbose)
         except KeyboardInterrupt:
             print("\nMonitoring stopped by user")
         except Exception as e:
-            print(f"Error during monitoring: {e}")
-
-# Convenience functions for easy use
-def detect_device_changes(base_obj, config_file: Optional[Path] = None, 
-                         verbose: bool = True) -> Tuple[Dict[str, Dict[str, Any]], 
-                                                       Dict[str, Dict[str, Any]], 
-                                                       Dict[str, Dict[str, Any]]]:
-    """
-    Convenience function to detect device configuration changes.
-    
-    Args:
-        base_obj: Instance of kexp.base.Base with device frames
-        config_file: Path to config file (optional)
-        verbose: Whether to print detailed information
-        
-    Returns:
-        Tuple of (dds_updates, ttl_updates, dac_updates)
-    """
-    updater = DeviceStateUpdater(base_obj, config_file)
-    return updater.detect_changes(verbose=verbose)
-
-def apply_device_updates(base_obj, dds_updates: Dict[str, Dict[str, Any]], 
-                        ttl_updates: Dict[str, Dict[str, Any]], 
-                        dac_updates: Dict[str, Dict[str, Any]], 
-                        verbose: bool = True) -> bool:
-    """
-    Convenience function to apply device updates.
-    
-    Args:
-        base_obj: Instance of kexp.base.Base with device frames
-        dds_updates: DDS device updates
-        ttl_updates: TTL device updates
-        dac_updates: DAC device updates
-        verbose: Whether to print detailed information
-        
-    Returns:
-        bool: True if all updates successful
-    """
-    updater = DeviceStateUpdater(base_obj)
-    return updater.apply_updates(dds_updates, ttl_updates, dac_updates, verbose=verbose)
-
-def check_and_update_devices(base_obj, config_file: Optional[Path] = None, 
-                           verbose: bool = True) -> bool:
-    """
-    Convenience function to check for changes and update devices.
-    
-    Args:
-        base_obj: Instance of kexp.base.Base with device frames
-        config_file: Path to config file (optional)
-        verbose: Whether to print detailed information
-        
-    Returns:
-        bool: True if any devices were updated
-    """
-    updater = DeviceStateUpdater(base_obj, config_file)
-    return updater.check_and_update_devices(verbose=verbose)
-
-# Example usage
-if __name__ == "__main__":
-    print("This module provides device state change detection and updating.")
-    print("Usage examples:")
-    print("")
-    print("# Two-step process:")
-    print("updater = DeviceStateUpdater(your_base_object)")
-    print("dds_updates, ttl_updates, dac_updates = updater.detect_changes()")
-    print("updater.apply_updates(dds_updates, ttl_updates, dac_updates)")
-    print("")
-    print("# Combined process:")
-    print("updater.check_and_update_devices()")
-    print("")
-    print("# Convenience functions:")
-    print("from kexp.util.device_state.device_updater import check_and_update_devices")
-    print("check_and_update_devices(your_base_object)")
+            print("Error during monitoring:")
+            print(e)

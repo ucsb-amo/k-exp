@@ -8,12 +8,12 @@
     "inner_coil_supply_current": {
       "ch": 8,
       "max_voltage": 5.9,
-      "voltage": 0.0
+      "voltage": 1.0
     },
     "inner_coil_supply_voltage": {
       "ch": 11,
       "max_voltage": 9.99,
-      "voltage": 0.0
+      "voltage": 1.0
     },
     "lightsheet_paint_amp": {
       "ch": 0,
@@ -112,7 +112,8 @@
       "aom_order": 0,
       "ch": 0,
       "frequency": 200000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
       "v_pd": 5.0
@@ -121,8 +122,9 @@
       "amplitude": 0.1,
       "aom_order": 0,
       "ch": 2,
-      "frequency": 113981250.0,
-      "state": 1,
+      "frequency": 42260000.0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 3,
       "v_pd": 5.0
@@ -132,7 +134,8 @@
       "aom_order": -1,
       "ch": 3,
       "frequency": 83925000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D1",
       "urukul_idx": 3,
       "v_pd": 5.0
@@ -142,7 +145,8 @@
       "aom_order": 1,
       "ch": 0,
       "frequency": 146925000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D1",
       "urukul_idx": 4,
       "v_pd": 5.0
@@ -152,7 +156,8 @@
       "aom_order": 0,
       "ch": 1,
       "frequency": 42260000.0,
-      "state": 1,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 5,
       "v_pd": 5.0
@@ -162,7 +167,8 @@
       "aom_order": 0,
       "ch": 2,
       "frequency": 150000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 5,
       "v_pd": 5.0
@@ -172,7 +178,8 @@
       "aom_order": 0,
       "ch": 0,
       "frequency": 100000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 5,
       "v_pd": 5.0
@@ -182,7 +189,8 @@
       "aom_order": -1,
       "ch": 0,
       "frequency": 122024999.99999999,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 3,
       "v_pd": 5.0
@@ -192,7 +200,8 @@
       "aom_order": 1,
       "ch": 3,
       "frequency": 101025000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 2,
       "v_pd": 5.0
@@ -202,7 +211,8 @@
       "aom_order": -1,
       "ch": 2,
       "frequency": 119925000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 2,
       "v_pd": 5.0
@@ -212,7 +222,8 @@
       "aom_order": 1,
       "ch": 1,
       "frequency": 105225000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 2,
       "v_pd": 5.0
@@ -222,7 +233,8 @@
       "aom_order": -1,
       "ch": 2,
       "frequency": 122024999.99999999,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 1,
       "v_pd": 5.0
@@ -232,17 +244,19 @@
       "aom_order": 1,
       "ch": 3,
       "frequency": 99824999.99999999,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 1,
       "v_pd": 5.0
     },
     "imaging": {
-      "amplitude": 0.0,
+      "amplitude": 0.54,
       "aom_order": 1,
       "ch": 1,
       "frequency": 350000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 4,
       "v_pd": 5.0
@@ -252,7 +266,8 @@
       "aom_order": -1,
       "ch": 1,
       "frequency": 115425000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 3,
       "v_pd": 5.0
@@ -262,7 +277,8 @@
       "aom_order": -1,
       "ch": 3,
       "frequency": 115425000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D1",
       "urukul_idx": 4,
       "v_pd": 5.0
@@ -272,7 +288,8 @@
       "aom_order": 1,
       "ch": 0,
       "frequency": 111524999.99999999,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 2,
       "v_pd": 5.0
@@ -282,7 +299,8 @@
       "aom_order": 1,
       "ch": 2,
       "frequency": 140000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 4,
       "v_pd": 5.0
@@ -292,7 +310,8 @@
       "aom_order": 1,
       "ch": 3,
       "frequency": 160000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 5,
       "v_pd": 5.0
@@ -302,7 +321,8 @@
       "aom_order": 1,
       "ch": 1,
       "frequency": 80000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
       "v_pd": 5.0
@@ -312,7 +332,8 @@
       "aom_order": 1,
       "ch": 2,
       "frequency": 80000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
       "v_pd": 5.0
@@ -322,7 +343,8 @@
       "aom_order": 1,
       "ch": 3,
       "frequency": 80000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
       "v_pd": 5.0
@@ -332,142 +354,172 @@
       "aom_order": 1,
       "ch": 0,
       "frequency": 200000000.0,
-      "state": 0,
+      "state": "off",
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 1,
       "v_pd": 5.0
     }
   },
   "metadata": {
-    "previous_timestamp": null,
-    "timestamp": "2025-08-05T09:50:02.878870",
-    "total_devices_updated": 69,
-    "updated_from": "live_base_object"
+    "generated_from": [
+      "dac_id.py",
+      "dds_id.py",
+      "sampler_id.py",
+      "shuttler_id.py",
+      "ttl_id.py"
+    ],
+    "timestamp": "2025-08-05T18:13:41.694428"
   },
   "ttl": {
     "andor": {
       "ch": 7,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "aod_rf_sw": {
       "ch": 13,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "awg_trigger": {
       "ch": 14,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "basler": {
       "ch": 5,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "basler_2dmot": {
       "ch": 20,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "coil_discharge_igbt": {
       "ch": 0,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "d2_mot_shutter": {
       "ch": 22,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "hbridge_helmholtz": {
       "ch": 9,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "imaging_shutter_x": {
       "ch": 19,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "imaging_shutter_xy": {
       "ch": 18,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "inner_coil_igbt": {
       "ch": 6,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 1,
       "type": "out"
     },
     "inner_coil_pid_ttl": {
       "ch": 2,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "keithley_trigger": {
       "ch": 48,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "lightsheet_pid_int_hold_zero": {
       "ch": 12,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "lightsheet_sw": {
       "ch": 4,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "line_trigger": {
       "ch": 40,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "in"
     },
     "outer_coil_igbt": {
       "ch": 8,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "outer_coil_pid_ttl": {
       "ch": 3,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "pd_scope_trig": {
       "ch": 16,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "pd_scope_trig_2": {
       "ch": 17,
-      "state": 1,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "test_trig": {
       "ch": 21,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "tweezer_pid1_int_hold_zero": {
       "ch": 11,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "tweezer_pid2_enable": {
       "ch": 1,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "z_basler": {
       "ch": 10,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     },
     "zshim_hbridge_flip": {
       "ch": 15,
-      "state": 0,
+      "state": "off",
+      "ttl_state": 0,
       "type": "out"
     }
   }

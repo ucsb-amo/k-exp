@@ -142,10 +142,12 @@ class Devices():
         self.camera = DummyCamera()
 
     def get_ttl_devices(self):
+        self.ttl._dummy.get_device(self)
         for ttl in self.ttl.ttl_list:
             ttl.ttl_device = self.get_device(ttl.name)
 
     def get_dds_devices(self):
+        self.dds._dummy.get_devices(self)
         for dds in self.dds.dds_list:
             dds.dds_device = self.get_device(dds.name)
             dds.cpld_device = self.get_device(dds.cpld_name)

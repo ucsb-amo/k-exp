@@ -20,7 +20,8 @@ from kexp.config.camera_id import img_types as img
 
 from kexp.util.artiq.async_print import aprint
 
-class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
+class Base(Devices, Cooling, Image, Dealer, Cameras,
+            Scanner, Scribe, Control, Monitor):
     def __init__(self,
                  setup_camera=True,
                  save_data=True,
@@ -58,7 +59,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
 
         self.ds = DataSaver()
 
-    def finish_prepare(self,N_repeats=[],shuffle=True):
+        Monitor.__init__(self)
+
+    def finish_prepare(self,N_repeats=[],shuffle=True,verbose=True):
         """
         To be called at the end of prepare. 
         
@@ -93,7 +96,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
         if shuffle:
             self.shuffle_xvars()
         
-        self.params.N_img = self.get_N_img()
+        self.params.N_img = self.get_N_img(verbose=verbose)
         self.prepare_image_array()
 
         self.params.compute_derived()

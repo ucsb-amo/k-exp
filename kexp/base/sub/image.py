@@ -510,7 +510,7 @@ class Image():
         
         self.set_imaging_detuning(detuning, amp=amp_imaging)
 
-    def get_N_img(self):
+    def get_N_img(self,verbose=True):
         """
         Computes the number of images to be taken during the sequence from the
         length of the specified xvars, stores in self.params.N_img. For
@@ -547,5 +547,6 @@ class Image():
         N_img = images_per_shot * N_img # 3 images per value of independent variable (xvar)
 
         msg += f" {N_img} total images expected."
-        print(msg)
+        if verbose:
+            print(msg)
         return N_img

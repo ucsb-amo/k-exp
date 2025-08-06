@@ -173,7 +173,7 @@ def save_updated_config(config_data: Dict[str, Any], config_file: Path) -> bool:
         
         with open(config_file, 'w') as f:
             json.dump(serializable_config, f, indent=2, sort_keys=True)
-        print(f"Updated configuration saved to: {config_file}")
+        # print(f"Updated configuration saved to: {config_file}")
         return True
     except Exception as e:
         print(f"Error saving configuration file: {e}")
@@ -203,8 +203,8 @@ def update_state_from_base(base_obj, config_file: Optional[Path] = None,
     if config_file is None:
         config_file = script_dir / 'device_state_config.json'
     
-    print(f"Updating device state configuration from live Base object...")
-    print(f"Config file: {config_file}")
+    # print(f"Updating device state configuration from live Base object...")
+    # print(f"Config file: {config_file}")
     
     # Load existing configuration
     existing_config = load_existing_config(config_file)
@@ -215,30 +215,30 @@ def update_state_from_base(base_obj, config_file: Optional[Path] = None,
         try:
             import shutil
             shutil.copy2(config_file, backup_file)
-            print(f"Backup created: {backup_file}")
+            # print(f"Backup created: {backup_file}")
         except Exception as e:
             print(f"Warning: Could not create backup: {e}")
     
     # Extract current device states
-    print("Extracting current device states...")
+    # print("Extracting current device states...")
     
     try:
         dds_devices = extract_live_dds_states(base_obj.dds)
-        print(f"  Found {len(dds_devices)} DDS devices")
+        # print(f"  Found {len(dds_devices)} DDS devices")
     except Exception as e:
         print(f"  Error extracting DDS devices: {e}")
         dds_devices = {}
     
     try:
         ttl_devices = extract_live_ttl_states(base_obj.ttl)
-        print(f"  Found {len(ttl_devices)} TTL devices")
+        # print(f"  Found {len(ttl_devices)} TTL devices")
     except Exception as e:
         print(f"  Error extracting TTL devices: {e}")
         ttl_devices = {}
     
     try:
         dac_devices = extract_live_dac_states(base_obj.dac)
-        print(f"  Found {len(dac_devices)} DAC devices")
+        # print(f"  Found {len(dac_devices)} DAC devices")
     except Exception as e:
         print(f"  Error extracting DAC devices: {e}")
         dac_devices = {}
@@ -265,12 +265,12 @@ def update_state_from_base(base_obj, config_file: Optional[Path] = None,
     # Save updated configuration
     success = save_updated_config(updated_config, config_file)
     
-    if success:
-        print(f"\nSuccessfully updated device states:")
-        print(f"  DDS devices: {len(dds_devices)}")
-        print(f"  TTL devices: {len(ttl_devices)}")
-        print(f"  DAC devices: {len(dac_devices)}")
-        print(f"  Total: {len(dds_devices) + len(ttl_devices) + len(dac_devices)} devices")
+    # if success:
+    #     print(f"\nSuccessfully updated device states:")
+    #     print(f"  DDS devices: {len(dds_devices)}")
+    #     print(f"  TTL devices: {len(ttl_devices)}")
+    #     print(f"  DAC devices: {len(dac_devices)}")
+    #     print(f"  Total: {len(dds_devices) + len(ttl_devices) + len(dac_devices)} devices")
     
     return success
 
