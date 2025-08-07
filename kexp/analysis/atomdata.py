@@ -653,6 +653,7 @@ class atomdata():
             
         with h5py.File(file,'r') as f:
             self.params = ExptParams()
+            self.p = self.params
             self.camera_params = CameraParams()
             self.run_info = RunInfo()
             unpack_group(f,'params',self.params)
