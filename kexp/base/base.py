@@ -117,7 +117,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
                     init_shuttler = True, init_lightsheet = True,
                     setup_awg = True, setup_slm = True):
         if self.setup_camera:
-            self.wait_for_camera_ready(timeout=15.)
+            self.wait_for_camera_ready(timeout=30.)
             print("Camera is ready.")
         if setup_slm:
             self.setup_slm(self.run_info.imaging_type)
