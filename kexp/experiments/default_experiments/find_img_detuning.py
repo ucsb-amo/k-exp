@@ -9,10 +9,10 @@ class img_detuning_calibration(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.imaging_state = 2.
-        self.xvar('frequency_detuned_imaging',np.arange(-20.,30.,3)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.arange(10.,30.,3)*1.e6)
+        self.xvar('frequency_detuned_imaging',np.linspace(19.,28.,15)*1.e6)
         # self.xvar('frequency_detuned_imaging_F1',np.arange(400.,480.,2)*1.e6)
-        self.p.frequency_detuned_imaging_F1
-        self.p.t_tof = 10.e-3
+        self.p.t_tof = 15.e-3
         self.p.N_repeats = 3
         self.p.t_mot_load = .25
         self.finish_prepare(shuffle=True)
