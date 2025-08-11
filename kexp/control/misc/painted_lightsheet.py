@@ -1,6 +1,6 @@
 from kexp.control.artiq.DAC_CH import DAC_CH
 from kexp.control.artiq.DDS import DDS
-from kexp.control.artiq.TTL import TTL
+from kexp.control.artiq.TTL import TTL_OUT
 from kexp.config.expt_params import ExptParams
 from kexp.util.artiq.async_print import aprint
 
@@ -17,7 +17,7 @@ DAC_PAINT_FULLSCALE = 9.99
 class lightsheet():
     def __init__(self, pid_dac = DAC_CH, paint_amp_dac = DAC_CH,
                  alignment_shim_dac = DAC_CH,
-                 sw_ttl = TTL, pid_int_hold_zero_ttl = TTL,
+                 sw_ttl = TTL_OUT, pid_int_hold_zero_ttl = TTL_OUT,
                  expt_params = ExptParams):
         """Controls the light sheet beam.
 
@@ -33,7 +33,7 @@ class lightsheet():
         self.pid_dac = pid_dac
         self.paint_amp_dac = paint_amp_dac
         self.ttl = sw_ttl
-        self.pid_int_zero_ttl = pid_int_hold_zero_ttl
+        self.pid_int_zero_ttl = pid_int_hold_zero_ttl # integrator hold, not zero
         self.alignment_shim_dac = alignment_shim_dac
         self.params = expt_params
 
