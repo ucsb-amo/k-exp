@@ -24,7 +24,7 @@ class ExptParams():
 
         # img beam settings
         self.frequency_ao_imaging = 350.00e6
-        self.frequency_detuned_imaging = 19.0e6
+        self.frequency_detuned_imaging = 24.2e6
         self.frequency_detuned_imaging_F1 = 452.e6
         self.beatlock_sign = -15
         self.N_offset_lock_reference_multiplier = 8
@@ -110,13 +110,13 @@ class ExptParams():
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.3
+        self.t_magtrap = 1.4
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
         self.t_yshim_rampdown = 10.e-3
         
-        self.t_feshbach_field_rampup = 150.e-3
+        self.t_feshbach_field_rampup = 120.e-3
         self.t_lf_feshbach_field_rampup = 50.e-3
         self.t_feshbach_field_ramp = 12.e-3
         self.t_feshbach_field_ramp2 = 12.e-3
@@ -162,8 +162,8 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 17.6
-        self.v_zshim_current = .22
-        self.v_xshim_current = .85
+        self.v_zshim_current = .157
+        self.v_xshim_current = .3
         self.v_yshim_current = .82
 
         #D2 CMOT
@@ -194,8 +194,8 @@ class ExptParams():
         self.detune_gm = 10.5
         # self.amp_gm = 0.09
 
-        self.v_zshim_current_gm = 0.82
-        self.v_xshim_current_gm = 0.72
+        self.v_zshim_current_gm = 0.8143
+        self.v_xshim_current_gm = 0.7286
         self.v_yshim_current_gm = 2.0
 
         self.detune_d1_c_gm = self.detune_gm
@@ -205,8 +205,8 @@ class ExptParams():
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = .06 #0.01
-        self.pfrac_r_gmramp_end = .82# 0.729
+        self.pfrac_c_gmramp_end = .09 #0.01
+        self.pfrac_r_gmramp_end = .88# 0.729
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -237,7 +237,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 7.5
+        self.v_pd_lightsheet_rampup_end = 9.3
         self.v_pd_lf_lightsheet_rampdown_end = .33 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = 1. #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
@@ -338,11 +338,11 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # low field evap NEW
-        self.i_lf_lightsheet_evap1_current = 14.1
+        self.i_lf_lightsheet_evap1_current = 13.6
 
-        self.i_lf_tweezer_load_current = 13.3
-        self.i_lf_tweezer_evap1_current = 12.4
-        self.i_lf_tweezer_evap2_current = 12.9
+        self.i_lf_tweezer_load_current = 13.9
+        self.i_lf_tweezer_evap1_current = 13.0
+        self.i_lf_tweezer_evap2_current = 13.1
 
         self.i_spin_mixture = 19.48
 
