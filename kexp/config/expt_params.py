@@ -91,9 +91,9 @@ class ExptParams():
         
         self.t_tweezer_ramp = .56
         self.t_tweezer_hold = 5.e-3
-        self.t_lf_tweezer_1064_ramp = .45
-        self.t_lf_tweezer_1064_rampdown = 220.e-3 
-        self.t_lf_tweezer_1064_rampdown2 = 500.e-3   
+        self.t_lf_tweezer_1064_ramp = .28
+        self.t_lf_tweezer_1064_rampdown = 237.e-3 
+        self.t_lf_tweezer_1064_rampdown2 = 330.e-3   
         self.t_lf_tweezer_1064_rampdown3 = .47
         self.t_hf_tweezer_1064_ramp = .26
         self.t_hf_tweezer_1064_rampdown = 120.e-3 
@@ -238,7 +238,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 7.3
-        self.v_pd_lf_lightsheet_rampdown_end = 1.5 #4.16
+        self.v_pd_lf_lightsheet_rampdown_end = .8 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = 1. #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -250,9 +250,9 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45 # brimrose AO
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_lf_tweezer_1064_ramp_end = 9.
-        self.v_pd_lf_tweezer_1064_rampdown_end = 1.4
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .14
+        self.v_pd_lf_tweezer_1064_ramp_end = 8.7
+        self.v_pd_lf_tweezer_1064_rampdown_end = .7
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .08
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.
@@ -287,7 +287,7 @@ class ExptParams():
         self.amp_tweezer_list1 = [.25,.25,.25,.25]
         self.amp_tweezer_list2 = [.25,.25,.25,.25]
 
-        self.v_lf_tweezer_paint_amp_max = -.5
+        self.v_lf_tweezer_paint_amp_max = -.9
         self.v_hf_tweezer_paint_amp_max = -2.
 
         # tweezer movement params
@@ -341,8 +341,8 @@ class ExptParams():
         self.i_lf_lightsheet_evap1_current = 13.7
 
         self.i_lf_tweezer_load_current = 13.9
-        self.i_lf_tweezer_evap1_current = 13.0
-        self.i_lf_tweezer_evap2_current = 13.1
+        self.i_lf_tweezer_evap1_current = 13.8
+        self.i_lf_tweezer_evap2_current = 13.5
 
         self.i_spin_mixture = 19.48
 

@@ -97,10 +97,10 @@ class ExptBuilder():
                 def prepare(self):
                     Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-                    self.p.t_tof = 1500.e-6
+                    self.p.t_tof = 1300.e-6
 
-                    self.p.frequency_tweezer_list = [75.4e6]
-                    a_list = [.1]
+                    self.p.frequency_tweezer_list = [75.3e6]
+                    a_list = [.19]
                     self.p.amp_tweezer_list = a_list
 
                     {assignment_lines}
