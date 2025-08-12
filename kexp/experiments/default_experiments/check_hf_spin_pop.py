@@ -29,7 +29,7 @@ class mag_trap(EnvExperiment, Base):
         
         self.p.t_lightsheet_hold = .1
 
-        self.xvar('t_magtrap',np.linspace(.1,2.,10))
+        self.xvar('t_magtrap',np.linspace(.1,2.5,15))
         # self.p.t_magtrap = .5
 
         # self.xvar('t_magtrap_rampdown',np.linspace(15.,200.,10)*1.e-3)

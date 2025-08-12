@@ -62,15 +62,15 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_lightsheet_rampup = 4.
         # self.p.v_pd_lightsheet_rampup_end = 7.3
 
-        self.xvar('i_lf_lightsheet_evap1_current',np.linspace(12.,15.,8))
-        self.p.i_lf_lightsheet_evap1_current = 13.6
+        # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(12.,15.,20))
+        # self.p.i_lf_lightsheet_evap1_current = 13.7
         # self.p.i_lf_lightsheet_evap1_current = 56.
  
         # self.xvar('v_pd_lf_lightsheet_rampdown_end',np.linspace(.2,4.,15))
-        self.p.v_pd_lf_lightsheet_rampdown_end = 1.5
+        # self.p.v_pd_lf_lightsheet_rampdown_end = 1.5
 
-        self.xvar('t_lf_lightsheet_rampdown',np.linspace(20.,1500.,8)*1.e-3)
-        self.p.t_lf_lightsheet_rampdown = 0.5
+        # self.xvar('t_lf_lightsheet_rampdown',np.linspace(20.,1500.,15)*1.e-3)
+        # self.p.t_lf_lightsheet_rampdown = .971
 
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.1,.3,15))
         # self.p.v_pd_lightsheet_rampdown2_end = .19

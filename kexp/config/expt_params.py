@@ -81,7 +81,7 @@ class ExptParams():
         self.t_optical_pumping_bias_rampup = 2.e-3
         
         self.t_lightsheet_rampup = .12
-        self.t_lf_lightsheet_rampdown = .57
+        self.t_lf_lightsheet_rampdown = .971
         self.t_hf_lightsheet_rampdown = .64
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
@@ -110,7 +110,7 @@ class ExptParams():
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.7
+        self.t_magtrap = 1.6
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
@@ -238,7 +238,7 @@ class ExptParams():
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 7.3
-        self.v_pd_lf_lightsheet_rampdown_end = .33 #4.16
+        self.v_pd_lf_lightsheet_rampdown_end = 1.5 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = 1. #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -338,7 +338,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # low field evap NEW
-        self.i_lf_lightsheet_evap1_current = 13.6
+        self.i_lf_lightsheet_evap1_current = 13.7
 
         self.i_lf_tweezer_load_current = 13.9
         self.i_lf_tweezer_evap1_current = 13.0
