@@ -48,10 +48,6 @@ class Monitor():
                 'kexp' / 'util' / 'device_state' / 'device_state_config.json'
         else:
             self.config_file = Path(config_file)
-
-        self.dds = dds_frame
-        self.ttl = ttl_frame
-        self.dac = dac_frame
         
         # Store last known state for change detection
         self.last_config_data = None
