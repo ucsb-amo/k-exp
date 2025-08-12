@@ -278,8 +278,6 @@ class Image():
         # atoms image (pwa)
         self.light_image()
 
-        # self.lightsheet.off()
-
         # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)
         self.light_image()
@@ -299,6 +297,7 @@ class Image():
         self.light_image()
 
         self.tweezer.off()
+        self.lightsheet.off()
 
         # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)

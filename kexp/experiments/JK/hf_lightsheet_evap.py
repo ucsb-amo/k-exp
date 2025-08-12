@@ -100,7 +100,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.amp_imaging = .16
 
 
-        self.p.N_repeats = 7
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
