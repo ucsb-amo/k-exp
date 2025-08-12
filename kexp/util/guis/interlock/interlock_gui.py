@@ -31,6 +31,11 @@ import time
 import re
 import codecs
 import csv
+import os
+import textwrap
+from subprocess import PIPE, run
+
+from interlock_gui_expt_builder import CHDACGUIExptBuilder
 
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -63,7 +68,13 @@ class MainWindow(QMainWindow):
         #         padding: 10px 20px;
         #     }
         # """)
-
+        self.last_valid_data_time = time.time()
+        self.timeout_threshold = 15  # 30 seconds
+        
+        # Timer for checking timeouts
+        self.timeout_timer = QtCore.QTimer()
+        self.timeout_timer.timeout.connect(self.check_data_timeout)
+        self.timeout_timer.start(5000)  # Check every 5 seconds
         self.button = QPushButton("Interlock Active")
         self.button.setStyleSheet("""
             QPushButton {
@@ -176,6 +187,7 @@ class MainWindow(QMainWindow):
     #Function that reads the PLCs serial output and parses to strings readable by the GUI
     def read_PLC(self):
         buffer = None
+        
         try:
             buffer = self.comPort.read(200)
             decoded_string = codecs.decode(buffer, 'utf-8')
@@ -185,7 +197,7 @@ class MainWindow(QMainWindow):
             #interlock is tripped
             self.button.setText("No serial from PLC - loss of power?")
             if not self.has_sent_email:
-                self.send_email()
+                self.send_email_check()
                 self.has_sent_email = True
             self.button.setStyleSheet("""
                 QPushButton {
@@ -209,12 +221,17 @@ class MainWindow(QMainWindow):
         data_segments = re.split(r'/', decoded_string)
         # Initialize the 2D array
         data_array = []
+
+        # Track if we received any valid data this cycle
+        received_valid_data = False
+
         # Parse each segment
         for segment in data_segments:
             #print(segment)
 
             if 'Flowmeter' in segment:
                 #print("jeff")
+                received_valid_data = True
                 flowmeter_match = re.search(r'Flowmeter (\d) reads ([\d\.]+)V', segment)
                 if flowmeter_match:
                     meter_number = int(flowmeter_match.group(1))
@@ -223,14 +240,45 @@ class MainWindow(QMainWindow):
             elif 'Temp' in segment:
                 temp_match = re.search(r'Temp is ([\d\.]+)k', segment)
                 if temp_match:
+                    received_valid_data = True
                     value = float(temp_match.group(1))
                     data_array.append([time.time(),'Temp',0, value])
             elif 'TRIPPED' in segment:
                 tripped = re.search(r'I TRIPPED', segment)    
                 #print("TRIPPED")
+                received_valid_data = True
                 if tripped:
                     data_array.append('I-T')
+        if received_valid_data:
+            self.last_valid_data_time = time.time()
         return data_array
+
+
+    def check_data_timeout(self):
+        """Check if we haven't received any expected data within the timeout period"""
+        current_time = time.time()
+        time_since_last_data = current_time - self.last_valid_data_time
+        
+        if time_since_last_data > self.timeout_threshold:
+            print("Timing out")
+            self.button.setText("Trying to trip interlock")
+            if not self.has_sent_email:
+                self.send_email_check()
+                self.has_sent_email = True
+            self.button.setStyleSheet("""
+                QPushButton {
+                    background-color: orange;
+                    color: white;
+                    font-size: 24px;
+                    font-weight: bold;
+                    padding: 10px 20px;
+                }
+            """)
+            self.button.setEnabled(True)
+            self.button.clicked.connect(self.the_button_was_clicked)
+        else:
+            print("Recieving good data")
+
 
     def update_views(self):
         self.right_view.setGeometry(self.plot_graph.getViewBox().sceneBoundingRect())
@@ -244,7 +292,7 @@ class MainWindow(QMainWindow):
         if data_inc:     
             for i in range(5):
                 if(data_inc[i] != 'I-T'):
-                    print(data_inc[i])
+                    # print(data_inc[i])
                     if(data_inc[i][2] == 0):
                         self.temperature = self.temperature[1:]
                         self.temperature.append(data_inc[i][3]-273)
@@ -256,7 +304,7 @@ class MainWindow(QMainWindow):
                     #interlock is tripped
                     self.button.setText("Interlock Tripped")
                     if not self.has_sent_email:
-                        self.send_email()
+                        self.send_email_tripped()
                         self.has_sent_email = True
                     self.button.setStyleSheet("""
                         QPushButton {
@@ -270,7 +318,7 @@ class MainWindow(QMainWindow):
                     self.button.setEnabled(True)
                     self.button.clicked.connect(self.the_button_was_clicked)
         print("Next dataset")
-        print(self.temperature)
+        print(self.temperature[-1])
         self.line.setData(self.time, self.temperature)
         self.line_2.setData(self.time, self.flows[0])
         self.line_3.setData(self.time, self.flows[1])
@@ -296,7 +344,8 @@ class MainWindow(QMainWindow):
         self.button.setEnabled(False)
         self.button.clicked.disconnect(self.the_button_was_clicked)
 
-    def send_email(self):
+    def send_email_tripped(self):
+        self.switch_dacs_off()
         # # Create a MIME object
         msg = MIMEMultipart()
         msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
@@ -312,13 +361,60 @@ class MainWindow(QMainWindow):
         
         # Send the email
         server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
-        #server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
+        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
+
+        # Close the server connection
+        server.quit()   
+        print("Email sent successfully!")
+        tries = 0
+        try:
+            self.switch_dacs_off()
+            time.sleep(500)
+            tries+=1
+        except tries>200:
+            pass
+        pass
+        pass
+
+    def send_email_check(self):
+        return_code = self.switch_dacs_off()
+        # # Create a MIME object
+        msg = MIMEMultipart()
+        msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
+        msg['To'] = 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'
+        msg['Subject'] = 'K-Interlock Tripped'
+        # Attach the message to the MIME object
+        msg.attach(MIMEText('CHECK K MAGNETS NOW!!! Power supplies should be tripped but CHECK!', 'plain'))
+        
+        # Set up the SMTP server
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
+        server.login('harry.who.is.ultra.cold@gmail.com', 'dvlw elsd mhqb mzfo')
+        
+        # Send the email
+        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
+        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
 
         # Close the server connection
         server.quit()
-        
         print("Email sent successfully!")
+        tries = 0
+        while(return_code != 0):
+            try:
+                return_code = self.switch_dacs_off()
+                time.sleep(500)
+                tries+=1
+            except tries>20:
+                pass
         pass
+
+    #switch DACs off
+    def switch_dacs_off(self):
+        eBuilder =  CHDACGUIExptBuilder()
+        #Get parameters from the provided dictionary
+        #eBuilder.execute_test('detune_gm',params[0])
+        eBuilder.write_experiment_to_file(eBuilder.make_dac_voltage_expt())
+        return eBuilder.run_expt()
 
     def save_to_csv(self):
         import os
