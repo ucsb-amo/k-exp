@@ -19,7 +19,7 @@ def xlabels_1d(xvar0, xvarmult, xvarformat):
         xvarlabels.append(label)
     return xvarlabels
 
-def remap_xticks(func, fmt='', ax=None):
+def remap_xticks(func, fmt='', axis=0, ax=None):
     """
     Remap the current xtick labels by converting their text to float,
     mapping through func, and setting new labels at the same locations.
@@ -30,11 +30,14 @@ def remap_xticks(func, fmt='', ax=None):
     """
     if ax is None:
         ax = plt.gca()
-    label_vals = get_ticklabel_values(ax)
+    label_vals = get_ticklabel_values(axis,ax)
     new_labels = [f"{val:{fmt}}" for val in func(label_vals)]
-    ax.set_xticklabels(new_labels)
+    if axis == 0:
+        ax.set_xticklabels(new_labels)
+    elif axis == 1:
+        ax.set_yticklabels(new_labels)
 
-def format_xticks(fmt, ax=None):
+def format_xticks(fmt, axis=0, ax=None):
     """
     Change the x tick label format for the current axis.
 
@@ -44,17 +47,25 @@ def format_xticks(fmt, ax=None):
     if ax == None:
         ax = plt.gca()
     label_vals = get_ticklabel_values(ax)
-    ax.set_xticklabels([f"{x:{fmt}}" for x in label_vals])
+    new_labels = [f"{val:{fmt}}" for val in label_vals]
+    if axis == 0:
+        ax.set_xticklabels(new_labels)
+    elif axis == 1:
+        ax.set_yticklabels(new_labels)
 
-def get_ticklabel_values(ax=None):
+def get_ticklabel_values(axis=0,ax=None):
     """
     Get the float values of the current x tick labels.
     """
     if ax == None:
         ax = plt.gca()
     # Get current tick locations and labels
-    ticklocs = ax.get_xticks()
-    ticklabels = ax.get_xticklabels()
+    if axis == 0:
+        ticklocs = ax.get_xticks()
+        ticklabels = ax.get_xticklabels()
+    elif axis == 1:
+        ticklocs = ax.get_yticks()
+        ticklabels = ax.get_yticklabels()
     # Convert label text to float
     try:
         label_vals = np.array([float(lbl.get_text()) for lbl in ticklabels])
