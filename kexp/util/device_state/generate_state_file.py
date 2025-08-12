@@ -66,7 +66,6 @@ def extract_dds_devices(frame_obj) -> Dict[str, Dict[str, Any]]:
                 'urukul_idx': getattr(attr_value, 'urukul_idx', 0),
                 'ch': getattr(attr_value, 'ch', 0),
                 'sw_state': sw_state,  # Hardware switch state (0/1)
-                'state': 'on' if sw_state else 'off',  # Human-readable state
                 'transition': getattr(attr_value, 'transition', 'None'),
                 'aom_order': getattr(attr_value, 'aom_order', 0)
             }
@@ -99,7 +98,6 @@ def extract_ttl_devices(frame_obj) -> Dict[str, Dict[str, Any]]:
             devices[attr_name] = {
                 'ch': getattr(attr_value, 'ch', 0),
                 'ttl_state': ttl_state,  # Raw state value (0/1)
-                'state': 'on' if ttl_state else 'off',  # Human-readable state
                 'type': ttl_type
             }
     
@@ -222,10 +220,10 @@ def print_summary(config_data: Dict):
             if device_type == 'dds':
                 print(f"  {name:25} | Freq: {props['frequency']:12.1f} Hz | "
                       f"Amp: {props['amplitude']:5.3f} | V_pd: {props['v_pd']:6.3f} V | "
-                      f"SW: {props['sw_state']} | State: {props['state']}")
+                      f"SW: {props['sw_state']}")
             elif device_type == 'ttl':
                 print(f"  {name:25} | Ch: {props['ch']:2d} | Type: {props['type']:3s} | "
-                      f"TTL: {props['ttl_state']} | State: {props['state']}")
+                      f"TTL: {props['ttl_state']}")
             elif device_type == 'dac':
                 print(f"  {name:25} | Ch: {props['ch']:2d} | "
                       f"Voltage: {props['voltage']:6.3f} V | Max: {props['max_voltage']:6.3f} V")

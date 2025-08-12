@@ -52,15 +52,15 @@ class Monitor():
         # Store last known state for change detection
         self.last_config_data = None
 
-        self._kernel_set_dds = kernel_from_string(["self","device","f","a"],\
+        self._kernel_set_dds = kernel_from_string(["device","f","a"],\
                                                   "device.dds_device.set(frequency=f, amplitude=a)")
-        self._kernel_set_dds_dac = kernel_from_string(["self","device","v"],\
+        self._kernel_set_dds_dac = kernel_from_string(["device","v"],\
                                                       "device.dac_device.write_dac(channel=device.key.dac_ch, voltage=v)")
-        self._kernel_set_dds_sw = kernel_from_string(["self","device","state"],\
+        self._kernel_set_dds_sw = kernel_from_string(["device","state"],\
                         f"device.dds_device.sw.set_o(state)")
-        self._kernel_set_ttl = kernel_from_string(["self","device","state"],\
-                        f"device.set_o(state)")
-        self._kernel_set_dac = kernel_from_string(["self","device","v"],\
+        self._kernel_set_ttl = kernel_from_string(["device","state"],\
+                        f"device.ttl_device.set_o(state)")
+        self._kernel_set_dac = kernel_from_string(["device","v"],\
                         f"device.dac_device.write_dac(channel=device.ch, voltage=v)")
         
         # Device lookup dictionaries for faster access
@@ -184,10 +184,10 @@ class Monitor():
                     print(f"DDS {device_name} v_pd: {old_config.get('v_pd')} -> {new_config['v_pd']}")
             
             # Check state changes
-            if old_config.get('state') != new_config.get('state'):
-                device_updates['state'] = new_config['state']
+            if old_config.get('sw_state') != new_config.get('sw_state'):
+                device_updates['sw_state'] = new_config['sw_state']
                 if verbose:
-                    print(f"DDS {device_name} state: {old_config.get('state')} -> {new_config['state']}")
+                    print(f"DDS {device_name} state: {old_config.get('sw_state')} -> {new_config['sw_state']}")
             
             if device_updates:
                 dds_updates[device_name] = device_updates
@@ -212,10 +212,10 @@ class Monitor():
             device_updates = {}
             
             # Check state changes
-            if old_config.get('state') != new_config.get('state'):
-                device_updates['state'] = new_config['state']
+            if old_config.get('ttl_state') != new_config.get('ttl_state'):
+                device_updates['ttl_state'] = new_config['ttl_state']
                 if verbose:
-                    print(f"TTL {device_name} state: {old_config.get('state')} -> {new_config['state']}")
+                    print(f"TTL {device_name} state: {old_config.get('ttl_state')} -> {new_config['ttl_state']}")
             
             if device_updates:
                 ttl_updates[device_name] = device_updates
@@ -260,28 +260,27 @@ class Monitor():
 
     @kernel
     def __set_dds(self,device_obj,frequency,amplitude):
-        self._kernel_set_dds(self,device_obj,frequency,amplitude)
-        pass
+        self._kernel_set_dds(device_obj,frequency,amplitude)
 
     @kernel
     def __set_dds_vpd(self,device_obj,v_pd):
-        self._kernel_set_dds_dac(self,device_obj,v_pd)
-        pass
+        self._kernel_set_dds_dac(device_obj,v_pd)
 
     @kernel
     def __set_dds_sw(self,device_obj,state):
-        self._kernel_set_dds_sw(self,device_obj,bool(state))
-        pass
+        self._kernel_set_dds_sw(device_obj,bool(state))
 
     @kernel
     def __set_ttl(self,device_obj,state):
-        self._kernel_set_ttl(self,device_obj,bool(state))
+        self._kernel_set_ttl(device_obj,bool(state))
+
+    @kernel
+    def test(self):
         pass
 
     @kernel
     def __set_dac(self,device_obj,v):
-        self._kernel_set_dac(self,device_obj,v)
-        pass
+        self._kernel_set_dac(device_obj,v)
     
     def __apply_updates(self, 
                         dds_updates: Dict[str, Dict[str, Any]], 
@@ -292,7 +291,7 @@ class Monitor():
         
         Args:
             dds_updates: Dict mapping DDS device names to their update parameters
-            ttl_updates: Dict mapping TTL device names to their update parameters  
+            ttl_updates: Dict mapping TTL device names to their update parameters
             dac_updates: Dict mapping DAC device names to their update parameters
         """
 
@@ -304,26 +303,30 @@ class Monitor():
             if 'frequency' in updates or 'amplitude' in updates:
                 frequency = updates.get('frequency', device.frequency)
                 amplitude = updates.get('amplitude', device.amplitude)
-                self.__set_dds(self,device,frequency,amplitude)
+                self.__set_dds(device,frequency,amplitude)
 
             # Update v_pd using DAC write
             if 'v_pd' in updates:
                 v_pd = updates['v_pd']
-                self.__set_dds_vpd(self,device,v_pd)
+                self.__set_dds_vpd(device,v_pd)
             
             # Update state using switch on/off
-            if 'state' in updates:
-                state = updates['state']
-                self.__set_dds_sw(self,device,state)
+            if 'sw_state' in updates:
+                state = updates['sw_state']
+                self.__set_dds_sw(device,bool(state))
         
         # Apply TTL updates
         for name, updates in ttl_updates.items():
             device = self.__ttl_dict[name]
         
             # Update state using on/off methods
-            if 'state' in updates:
-                state = updates['state']
-                self.__set_ttl(self,device,state)
+            if 'ttl_state' in updates:
+                state = updates['ttl_state']
+                print(device)
+                print(state)
+                print(bool(state))
+                self.test()
+                # self.__set_ttl(device,bool(state))
         
         # Apply DAC updates
         for name, updates in dac_updates.items():
@@ -332,7 +335,7 @@ class Monitor():
             # Update voltage using DAC write
             if 'voltage' in updates:
                 voltage = updates['voltage']
-                self.__set_dac(self,device,voltage)
+                self.__set_dac(device,voltage)
     
     def check_and_update_devices(self, verbose: bool = False):
         """
@@ -348,7 +351,7 @@ class Monitor():
         dds_updates, ttl_updates, dac_updates = self.__detect_changes(verbose=verbose)
         
         # Check if there are any updates to apply
-        if not (dds_updates or ttl_updates or dac_updates):
+        if (dds_updates or ttl_updates or dac_updates):
             self.__apply_updates(dds_updates, ttl_updates, dac_updates)
 
     @kernel
@@ -357,7 +360,6 @@ class Monitor():
             self.core.wait_until_mu(now_mu())
             delay(check_interval)
             self.check_and_update_devices()
-        
     
     def start_monitoring(self, check_interval: float = 0.5, verbose: bool = False):
         """

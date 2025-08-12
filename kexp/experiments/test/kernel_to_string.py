@@ -13,9 +13,19 @@ class dummy():
         pass
 
 class test():
-    def __init__(self):
+    def __init__(self,core):
         self._dummy = dummy()
         self.k = kernel_from_string(["obj","state"],"obj.set_o(state)")
+        self.core = core
+
+    def testfunc(self,device):
+        self.do_ttl(device)
+
+    @kernel
+    def do_ttl(self,device):
+        self.k(device,True)
+        delay(2.e-3)
+        self.k(device,False)
 
 class kernel_to_string(EnvExperiment):
 
@@ -25,7 +35,7 @@ class kernel_to_string(EnvExperiment):
 
         # self.ttl.on()
 
-        self.test = test()
+        self.test = test(self.core)
         self._dummy = dummy()
 
     @kernel
@@ -37,6 +47,10 @@ class kernel_to_string(EnvExperiment):
         # delay(2.e-3)
         # self.a(self,"ttl",False)
 
-        self.test.k(self.ttl,True)
-        delay(2.e-3)
-        self.test.k(self.ttl,False)
+        # self.test.k(self.ttl,True)
+        # delay(2.e-3)
+        # self.test.k(self.ttl,False)
+
+        self.test.testfunc(self.ttl)
+
+    
