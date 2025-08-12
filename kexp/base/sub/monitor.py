@@ -22,6 +22,9 @@ try:
     from kexp.control.artiq.DDS import DDS
     from kexp.control.artiq.DAC_CH import DAC_CH
     from kexp.control.artiq.TTL import TTL, TTL_OUT, TTL_IN
+    from kexp.config.dds_id import dds_frame
+    from kexp.config.dac_id import dac_frame
+    from kexp.config.ttl_id import ttl_frame
 except ImportError as e:
     print(f"Error importing device classes: {e}")
     raise
@@ -45,20 +48,24 @@ class Monitor():
                 'kexp' / 'util' / 'device_state' / 'device_state_config.json'
         else:
             self.config_file = Path(config_file)
+
+        self.dds = dds_frame
+        self.ttl = ttl_frame
+        self.dac = dac_frame
         
         # Store last known state for change detection
         self.last_config_data = None
 
-        self._kernel_set_dds = kernel_from_string(["self","_dummy","f","a"],\
-                                                  "self.dds._dummy.dds_device.set(frequency=f, amplitude=a)")
-        self._kernel_set_dds_dac = kernel_from_string(["self","_dummy","v"],\
-                                                      "self.dds._dummy.dac_device.write_dac(channel=self.dds.key.dac_ch, voltage=v)")
-        self._kernel_set_dds_sw = kernel_from_string(["self","_dummy","state"],\
-                        f"self.dds._dummy.dds_device.sw.set_o(state)")
-        self._kernel_set_ttl = kernel_from_string(["self","_dummy","state"],\
-                        f"self.ttl._dummy.set_o(state)")
-        self._kernel_set_dac = kernel_from_string(["self","_dummy","v"],\
-                        f"self.dac._dummy.dac_device.write_dac(channel=self.dac._dummy.ch, voltage=v)")
+        self._kernel_set_dds = kernel_from_string(["self","device","f","a"],\
+                                                  "device.dds_device.set(frequency=f, amplitude=a)")
+        self._kernel_set_dds_dac = kernel_from_string(["self","device","v"],\
+                                                      "device.dac_device.write_dac(channel=device.key.dac_ch, voltage=v)")
+        self._kernel_set_dds_sw = kernel_from_string(["self","device","state"],\
+                        f"device.dds_device.sw.set_o(state)")
+        self._kernel_set_ttl = kernel_from_string(["self","device","state"],\
+                        f"device.set_o(state)")
+        self._kernel_set_dac = kernel_from_string(["self","device","v"],\
+                        f"device.dac_device.write_dac(channel=device.ch, voltage=v)")
         
         # Device lookup dictionaries for faster access
         self.__build_device_lookup()
@@ -256,28 +263,28 @@ class Monitor():
         return dds_updates, ttl_updates, dac_updates
 
     @kernel
-    def __set_dds(self,name,frequency,amplitude):
-        self._kernel_set_dds(self,name,frequency,amplitude)
+    def __set_dds(self,device_obj,frequency,amplitude):
+        self._kernel_set_dds(self,device_obj,frequency,amplitude)
         pass
 
     @kernel
-    def __set_dds_vpd(self,name,v_pd):
-        self._kernel_set_dds_dac(self,name,v_pd)
+    def __set_dds_vpd(self,device_obj,v_pd):
+        self._kernel_set_dds_dac(self,device_obj,v_pd)
         pass
 
     @kernel
-    def __set_dds_sw(self,name,state):
-        self._kernel_set_dds_sw(self,name,bool(state))
+    def __set_dds_sw(self,device_obj,state):
+        self._kernel_set_dds_sw(self,device_obj,bool(state))
         pass
 
     @kernel
-    def __set_ttl(self,name,state):
-        self._kernel_set_ttl(self,name,bool(state))
+    def __set_ttl(self,device_obj,state):
+        self._kernel_set_ttl(self,device_obj,bool(state))
         pass
 
     @kernel
-    def __set_dac(self,name,v):
-        self._kernel_set_dac(self,name,v)
+    def __set_dac(self,device_obj,v):
+        self._kernel_set_dac(self,device_obj,v)
         pass
     
     def __apply_updates(self, 
@@ -301,17 +308,17 @@ class Monitor():
             if 'frequency' in updates or 'amplitude' in updates:
                 frequency = updates.get('frequency', device.frequency)
                 amplitude = updates.get('amplitude', device.amplitude)
-                self.__set_dds(name,frequency,amplitude)
+                self.__set_dds(self,device,frequency,amplitude)
 
             # Update v_pd using DAC write
             if 'v_pd' in updates:
                 v_pd = updates['v_pd']
-                self.__set_dds_vpd(name,v_pd)
+                self.__set_dds_vpd(self,device,v_pd)
             
             # Update state using switch on/off
             if 'state' in updates:
                 state = updates['state']
-                self.__set_dds_sw(name,state)
+                self.__set_dds_sw(self,device,state)
         
         # Apply TTL updates
         for name, updates in ttl_updates.items():
@@ -320,7 +327,7 @@ class Monitor():
             # Update state using on/off methods
             if 'state' in updates:
                 state = updates['state']
-                self.__set_ttl(name,state)
+                self.__set_ttl(self,device,state)
         
         # Apply DAC updates
         for name, updates in dac_updates.items():
@@ -329,7 +336,7 @@ class Monitor():
             # Update voltage using DAC write
             if 'voltage' in updates:
                 voltage = updates['voltage']
-                self.__set_dac(name,voltage)
+                self.__set_dac(self,device,voltage)
     
     def check_and_update_devices(self, verbose: bool = False):
         """

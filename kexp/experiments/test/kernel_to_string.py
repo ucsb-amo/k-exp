@@ -15,7 +15,7 @@ class dummy():
 class test():
     def __init__(self):
         self._dummy = dummy()
-        self.k = kernel_from_string(["self","_dummy","state"],"self._dummy.set_o(state)")
+        self.k = kernel_from_string(["obj","state"],"obj.set_o(state)")
 
 class kernel_to_string(EnvExperiment):
 
@@ -31,6 +31,12 @@ class kernel_to_string(EnvExperiment):
     @kernel
     def run(self):
         self.core.reset()
-        self.test.k(self,"ttl",True)
+
+        # self.a = kernel_from_string(["self","ttl","state"],"self.ttl.set_o(state)")
+        # self.a(self,"ttl",True)
+        # delay(2.e-3)
+        # self.a(self,"ttl",False)
+
+        self.test.k(self.ttl,True)
         delay(2.e-3)
-        self.test.k(self,"ttl",False)
+        self.test.k(self.ttl,False)
