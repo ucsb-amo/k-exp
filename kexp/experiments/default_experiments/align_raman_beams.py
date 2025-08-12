@@ -31,6 +31,8 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.frequency_raman_transition = 40.e6
 
+        self.p.t_delay_until_raman_pulse = 75.e-3
+
         self.finish_prepare(shuffle=True)
 
     @kernel
