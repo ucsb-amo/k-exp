@@ -35,7 +35,7 @@ class mag_trap(EnvExperiment, Base):
         #           + 160.6e6 
         #           + np.arange(-260.,100.,12.)*1.e6)
         self.xvar('frequency_in_situ_imaging',
-                  + np.arange(-0.,736.,36.)*1.e6)
+                  np.arange(120.,180.,3.)*1.e6)
 
         # self.xvar('frequency_in_situ_imaging',
         #           self.p.frequency_detuned_imaging

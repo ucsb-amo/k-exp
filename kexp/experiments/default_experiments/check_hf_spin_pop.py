@@ -22,15 +22,17 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(1000.,3500.,15)*1.e-6) 
         # self.xvar('dumy',[0]*3)
     
-        self.xvar('hf_imaging_detuning', [-602.e6,-490.e6,-394.e6]*1) # 189 A
+        # self.xvar('hf_imaging_detuning', [-602.e6,-490.e6,-394.e6]*1) # 189 A
+        self.xvar('hf_imaging_detuning', [-602.e6,-490.e6]*1) # 189 A
 
         # self.xvar('beans',[0]*3)
         
         self.p.t_lightsheet_hold = .1
 
+        self.xvar('t_magtrap',np.linspace(.1,2.,10))
         # self.p.t_magtrap = .5
 
-        self.xvar('t_magtrap_rampdown',np.linspace(15.,200.,10)*1.e-3)
+        # self.xvar('t_magtrap_rampdown',np.linspace(15.,200.,10)*1.e-3)
 
         # self.xvar('t_feshbach_field_ramp',np.linspace(.015,.2,15))
         # self.p.t_feshbach_field_ramp = 100.e-3

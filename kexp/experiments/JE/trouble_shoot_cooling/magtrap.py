@@ -15,6 +15,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tof = 8000.e-6
         # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        
         # self.xvar('dumy',[0]*5)
         # self.xvar('dumy',np.linspace(1.,800.,800))
 
@@ -23,14 +24,14 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('detune_d2_c_mot',np.linspace(-5.,-2.,8))
         
-        self.xvar('detune_d2_c_mot',np.linspace(-5.5,-1.,8))
-        self.xvar('detune_d2_r_mot',np.linspace(-7.,-1.,8))
+        # self.xvar('detune_d2_c_mot',np.linspace(-5.5,-1.,8))
+        # self.xvar('detune_d2_r_mot',np.linspace(-7.,-1.,8))
         # self.p.detune_d2_c_mot = -3.
         # self.p.detune_d2_r_mot = -3.5
         
         # self.xvar('i_mot',np.linspace(12.,30.,20))
 
-        # self.xvar('v_zshim_current',np.linspace(0.0,.5,8))
+        # self.xvar('v_zshim_current',np.linspace(0.0,1.5,20))
         # self.xvar('v_xshim_current',np.linspace(0.,2.,8))
         # self.xvar('v_yshim_current',np.linspace(0.0,2.3,15))
         # self.p.v_zshim_current = .743
@@ -48,9 +49,9 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('i_mot',np.linspace(12.,30.,15))
 
-        # self.xvar('v_zshim_current_gm',np.linspace(0.6,1.1,8))
+        # self.xvar('v_zshim_current_gm',np.linspace(0.1,1.1,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.7,8))
-        # self.xvar('v_yshim_current_gm',np.linspace(1.,3.,20))
+        # self.xvar('v_yshim_current_gm',np.linspace(.1,3.,20))
         # self.p.v_zshim_current_gm = .743
         # self.p.v_xshim_current_gm = .571
         # self.p.v_yshim_current_gm = 2.23

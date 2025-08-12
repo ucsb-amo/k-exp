@@ -16,14 +16,13 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 1000.e-6
+        self.p.t_tof = 50.e-6
         # self.xvar('t_tof',np.linspace(600,1500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
         # self.xvar('dumy',[0,1]*1)
         # self.p.dumy = 0
         # self.xvar('dumy0',np.linspace(1.,1200.,3))
-
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.15,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.7,8))
         # self.p.pfrac_c_gmramp_end = 0.03
@@ -40,9 +39,10 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,1000.,15)*1.e-3)
         # self.p.t_lightsheet_rampup = .3
-
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(3.,9.3,15))
-        # self.p.v_pd_lightsheet_rampup_end = 7.3
+        self.xvar('hf_imaging_detuning', [-602.e6,-490.e6,-394.e6]*1)
+        # self.xvar('hf_imaging_detuning', np.linspace(-602.e6,-300.e6,10))
+        self.xvar('v_pd_lightsheet_rampup_end',np.linspace(3.,9.3,10))
+        self.p.v_pd_lightsheet_rampup_end = 9.3
 
         # self.xvar('t_magtrap',np.linspace(.1,2.,15))
         # self.p.t_magtrap = .5
@@ -53,7 +53,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_lightsheet_hold = .1
 
         # self.xvar('hf_imaging_detuning', np.arange(0.,470.,8.)*1.e6)
-
+     
         # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
         # self.p.t_imaging_pulse = 2.e-5    
        
@@ -64,9 +64,24 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('amp_d2_c_imaging',np.linspace(0.,.188,10))
         # self.p.amp_d2_c_imaging = .188
 
+        ### RF parameters
+        self.p.do_rf = 0
+        self.p.t_rf_state_xfer_sweep = 1.5e-3
+        # self.p.frequency_rf_state_xfer_sweep_fullwidth = 86.e3 #70.e3
+        # df = self.p.frequency_rf_state_xfer_sweep_fullwidth
+
+        # f_range = 1.2e6 * 3
+        f0 = 462.762e6 # 0 -> 1 at v_zshim = 0. (1.46 G)
+        # f_min, f_max = f0 + np.array([-1,1])*f_range
+        # f = np.arange( f_min, f_max + df, df )
+
+        # self.p.frequency_rf_state_xfer_sweep_center = f0
+        # self.xvar('frequency_rf_state_xfer_sweep_center', f)
+        ###
+
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
-        # self.p.amp_imaging = .1
+        self.p.repump_pre_imaging = 1
         self.p.imaging_state = 2.
 
         self.finish_prepare(shuffle=False)
@@ -74,7 +89,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -87,13 +102,32 @@ class mag_trap(EnvExperiment, Base):
         self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
                                                    self.p.v_yshim_current_magtrap,
                                                    0.,n=100)
-
+        
+        
         delay(self.p.t_lightsheet_hold)
+
+        self.outer_coil.on()
+        self.outer_coil.set_voltage()
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup*1.2,
+                             i_start=0.,
+                             i_end=self.p.i_hf_lightsheet_evap1_current)
+      
+        if self.p.do_rf:
+            self.rf.sweep(t=self.p.t_rf_state_xfer_sweep,
+                        frequency_center=self.p.frequency_rf_state_xfer_sweep_center,
+                        frequency_sweep_fullwidth=self.p.frequency_rf_state_xfer_sweep_fullwidth,
+                        n_steps=self.p.n_rf_sweep_steps)
+        else:
+            delay(self.p.t_rf_state_xfer_sweep)
 
         self.lightsheet.off()
         
         delay(self.p.t_tof)
-        self.flash_repump()
+
+        if self.p.repump_pre_imaging:
+            self.flash_repump()
+        else:
+            delay(self.p.t_repump_flash_imaging)
         # self.flash_cooler()
         self.abs_image()
 

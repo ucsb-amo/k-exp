@@ -110,7 +110,7 @@ class ExptParams():
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.4
+        self.t_magtrap = 1.7
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
@@ -237,7 +237,7 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 9.3
+        self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lf_lightsheet_rampdown_end = .33 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = 1. #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
