@@ -47,6 +47,7 @@ class Control():
         This is typically called at the end of an experiment to ensure
         that the coils are in a safe state for the next experiment.
         """
+    
         self.outer_coil.stop_pid()
         self.outer_coil.off()
         self.outer_coil.discharge()
@@ -55,6 +56,8 @@ class Control():
         self.inner_coil.stop_pid()
         self.inner_coil.off()
         self.inner_coil.discharge()
+
+        self.ttl.d2_mot_shutter.off()
 
     @kernel
     def pi_pulse(self):
