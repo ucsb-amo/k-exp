@@ -14,8 +14,9 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
+        # self.xvar('frequency_detuned_imaging',np.linspace(330.,350.,13)*1.e6)
 
-        self.p.t_tof = 1000.e-6
+        self.p.t_tof = 10.e-6
         # self.xvar('t_tof',np.linspace(200,1500.,10)*1.e-6)
 
         #self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
@@ -112,7 +113,7 @@ class mag_trap(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
         self.set_high_field_imaging(i_outer=self.p.i_lf_lightsheet_evap1_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
