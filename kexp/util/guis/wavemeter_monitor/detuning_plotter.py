@@ -203,8 +203,13 @@ class DetuningPlotter(QtWidgets.QWidget):
                 n1 = self.n1_spin.value()
                 l1 = self.l1_spin.value()
                 j1 = 1/2 if self.j1_combo.currentText() == "1/2" else 3/2
-                freq_thz = self.atom.getTransitionFrequency(n0, l0, j0, n1, l1, j1) / 1e12
-                self.transition_freq_label.setText(f"Transition frequency: {freq_thz:.6f} THz")
+                if (n0, l0, j0, n1, l1, j1) == (4,0,1/2,4,1,1/2):
+                    freq_thz = 389.286305  # Hardcoded for the specific transition
+                    extra_str = " (crossover to F'=2):\n"
+                else:
+                    freq_thz = self.atom.getTransitionFrequency(n0, l0, j0, n1, l1, j1) / 1e12
+                    extra_str = "(ARC):\n"
+                self.transition_freq_label.setText(f"Transition frequency{extra_str} {freq_thz:.6f} THz")
                 self.f0 = freq_thz  # Store f0 in THz
             except Exception as e:
                 self.transition_freq_label.setText("Transition frequency: --")
