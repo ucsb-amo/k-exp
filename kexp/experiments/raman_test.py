@@ -10,11 +10,11 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
         # self.xvar('frequency_detuned_imaging',np.arange(250.,320.,3)*1.e6)
         self.p.frequency_detuned_imaging = 289.e6
-        self.xvar('beans',[0]*500)
+        # self.xvar('beans',[0]*500)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         
@@ -42,25 +42,21 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_raman_transition',np.linspace(41.,43.5,25)*1e6)
         # self.p.frequency_raman_transition = 41.236e6
         # self.p.frequency_raman_transition = 41.3e6
-        # self.p.frequency_raman_transition = 41.10e6
-        self.p.frequency_raman_transition = 42.e6
+        self.p.frequency_raman_transition = 41.10e6
+        # self.p.frequency_raman_transition = 42.e6
 
         # self.xvar('t_delay_until_raman_pulse',np.linspace(0.,75.,5)*1.e-3)
         self.p.t_delay_until_raman_pulse = 75.e-3
 
-        # self.xvar('amp_raman',np.linspace(0.12,.3,5))
-        self.p.amp_raman = .35
+        # self.xvar('amp_raman',np.linspace(0.06,.23,15))
+        self.p.amp_raman = .12
         # self.p.amp_raman = 0.35
 
         # self.p.t_raman_pi_pulse = 2.507e-06
         # self.xvar('t_raman_pulse',np.linspace(0.,500.,5)*1.e-6)
-        # self.xvar('t_raman_pulse',np.linspace(0.,15.,30)*1.e-6)
-        self.p.t_raman_pulse = 150.e-6
+        self.xvar('t_raman_pulse',np.linspace(0.,200.,100)*1.e-6)
+        self.p.t_raman_pulse = 50.e-6
         # self.p.t_raman_pulse = 0.
-    
-        # self.xvar('amp_raman',np.linspace(0.0,.35,3))
-        self.p.amp_raman = .3
-        # self.p.amp_raman = 0.35
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
         self.p.t_tweezer_hold = .1e-3
