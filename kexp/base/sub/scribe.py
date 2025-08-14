@@ -7,6 +7,9 @@ from kexp.config.timeouts import (DEFAULT_TIMEOUT, N_NOTIFY,
                                    CHECK_CAMERA_READY_ACK_PERIOD, REMOVE_DATA_POLL_INTERVAL,
                                    CHECK_FOR_DATA_AVAILABLE_PERIOD as CHECK_PERIOD)
 
+def nothing():
+    pass
+
 class Scribe():
     def __init__(self, data_filepath=""):
         self.ds = DataSaver()
@@ -15,7 +18,8 @@ class Scribe():
 
     def wait_for_data_available(self,openmode='r+',
                                 check_period=CHECK_PERIOD,
-                                timeout=DEFAULT_TIMEOUT):
+                                timeout=DEFAULT_TIMEOUT,
+                                check_interrupt_method=nothing):
         """Blocks until the file at self.datapath is available.
         """
         close = False
@@ -23,6 +27,8 @@ class Scribe():
         count = 0
         while True:
             try:
+                if check_interrupt_method():
+                    break
                 f = h5py.File(self.data_filepath,openmode)
                 return f
             except Exception as e:
@@ -43,7 +49,8 @@ class Scribe():
     def wait_for_camera_ready(self,timeout=-1.) -> TBool:
         count = 1
         t0 = time.time()
-        while True:
+        waiting = True
+        while waiting:
             try:
                 self._check_data_file_exists()
             except:
@@ -61,7 +68,7 @@ class Scribe():
                 if f.attrs['camera_ready']:
                     f.attrs['camera_ready_ack'] = 1
                     print('Acknowledged camera ready signal.')
-                    break
+                    waiting = False
                 else:
                     count += 1
             time.sleep(CHECK_PERIOD)
@@ -89,6 +96,7 @@ class Scribe():
         # msg = "Something went wrong."
         if delete_data_bool:
             msg = "Destroying incomplete data."
+            count = 0
             while True:
                 try:
                     with self.wait_for_data_available(check_period=REMOVE_DATA_POLL_INTERVAL) as f:
@@ -96,7 +104,15 @@ class Scribe():
                     os.remove(self.data_filepath)
                     print(msg)
                 except Exception as e:
-                    print(e)
+                    if "Unable to" in str(e) or "Invalid file name" in str(e) or "cannot access" in str(e):
+                        # file is busy -- wait for available
+                        count += 1
+                        time.sleep(CHECK_PERIOD)
+                        if count == N_NOTIFY:
+                            count = 0
+                            print("Can't open data. Is another process using it?")
+                    else:
+                        raise e
                 if not self._check_data_file_exists(raise_error=False):
                     break
 

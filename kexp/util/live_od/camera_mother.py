@@ -19,7 +19,7 @@ from kexp.config.timeouts import (CAMERA_MOTHER_CHECK_DELAY as CHECK_DELAY,
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from queue import Queue
+from queue import Queue, Empty
 
 DATA_DIR = os.getenv("data")
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
@@ -66,7 +66,7 @@ class CameraMother(QThread):
     def watch_for_new_file(self,manage_babies=False):
         new_file_bool = False
         attempts = -1
-        print("Mother is watching...")
+        print("\nMother is watching...\n")
         count = 0
         while True:
             new_file_bool, latest_file, run_id = self.check_files()
@@ -159,7 +159,8 @@ class DataHandler(QThread,Scribe):
     def write_image_to_dataset(self):
         try:
             if self.save_data:
-                f = self.wait_for_data_available(timeout=DATA_SAVER_TIMEOUT)
+                f = self.wait_for_data_available(timeout=DATA_SAVER_TIMEOUT,
+                                                 check_interrupt_method=self.break_check)
             while True:
                 if self.interrupted:
                     break
@@ -179,6 +180,9 @@ class DataHandler(QThread,Scribe):
             if self.save_data: f.close()
         except:
             pass
+
+    def break_check(self):
+        return self.interrupted
 
 class CameraBaby(QThread):
     image_captured = pyqtSignal(int)
@@ -267,5 +271,4 @@ class CameraBaby(QThread):
             self.death = self.honorable_death
 
     def break_check(self):
-        print('Interrupt submitted, waiting for grab loop termination...')
         return self.interrupted

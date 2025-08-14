@@ -92,6 +92,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         try:
             while nacq<N_img:
                 if check_interrupt_method():
+                    print('Interrupt submitted, waiting for grab loop termination...')
                     break
                 self.wait_for_frame(timeout=TIMEOUT,check_interrupt_method=check_interrupt_method)
                 print(f'gotem (img {nacq+1}/{N_img})') # added this line to give print statements
