@@ -3,13 +3,9 @@ import h5py, time
 import numpy as np
 import os
 from artiq.experiment import TBool, rpc
-
-CHECK_PERIOD = 0.05
-WAIT_PERIOD = 0.1
-T_NOTIFY = 5
-N_NOTIFY = T_NOTIFY // CHECK_PERIOD
-
-DEFAULT_TIMEOUT = 20.
+from kexp.config.timeouts import (DEFAULT_TIMEOUT, N_NOTIFY,
+                                   CHECK_CAMERA_READY_ACK_PERIOD, REMOVE_DATA_POLL_INTERVAL,
+                                   CHECK_FOR_DATA_AVAILABLE_PERIOD as CHECK_PERIOD)
 
 class Scribe():
     def __init__(self, data_filepath=""):
@@ -82,7 +78,7 @@ class Scribe():
                     print('Received ready acknowledgement.')
                     break
                 else:
-                    time.sleep(WAIT_PERIOD)
+                    time.sleep(CHECK_CAMERA_READY_ACK_PERIOD)
         
     def write_data(self, expt_filepath):
         with self.wait_for_data_available() as f:
@@ -95,7 +91,7 @@ class Scribe():
             msg = "Destroying incomplete data."
             while True:
                 try:
-                    with self.wait_for_data_available(check_period=0.25) as f:
+                    with self.wait_for_data_available(check_period=REMOVE_DATA_POLL_INTERVAL) as f:
                         pass
                     os.remove(self.data_filepath)
                     print(msg)

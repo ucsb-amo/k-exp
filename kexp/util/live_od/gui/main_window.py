@@ -300,7 +300,7 @@ class LiveODWindow(QWidget):
             pass
 
         self.queue = Queue()
-        self.restart_mother()
+        # self.restart_mother()
         self.the_baby = None
         self.data_handler = None
 
