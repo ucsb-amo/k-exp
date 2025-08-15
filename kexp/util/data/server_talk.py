@@ -94,7 +94,12 @@ def get_latest_data_file(lite=False):
     folderpath = get_latest_date_folder(lite)
     pattern = os.path.join(folderpath,'*.hdf5')
     files = list(glob.iglob(pattern))
-    files_sorted = sorted(files, key=os.path.getmtime, reverse=True)
+    # Filter out files that do not exist before sorting
+    existing_files = [f for f in files if os.path.exists(f)]
+    files_sorted = sorted(
+        existing_files,
+        key=os.path.getmtime,
+        reverse=True)
     latest_file = None
     for file in files_sorted:
         try:

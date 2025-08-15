@@ -14,6 +14,7 @@ from kexp.util.increment_run_id import update_run_id, RUN_ID_PATH
 from kexp.analysis.image_processing import compute_OD, process_ODs
 import numpy as np
 import os
+import time
 
 class StatusLightsWidget(QWidget):
     def __init__(self):
@@ -286,7 +287,7 @@ class LiveODWindow(QWidget):
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
                 self.the_baby.interrupted = True
-                self.the_baby.dishonorable_death()
+                # self.the_baby.dishonorable_death()
                 msg = 'Acquisition aborted, run ID advanced.'
                 print(msg)
                 self.msg(msg)
@@ -299,8 +300,14 @@ class LiveODWindow(QWidget):
             update_run_id()
             pass
 
+        if self.the_baby is not None:
+            while not getattr(self.the_baby, 'dead', False):
+                QApplication.processEvents()
+                time.sleep(0.05)
+
         self.queue = Queue()
         # self.restart_mother()
+        print('deleted baby')
         self.the_baby = None
         self.data_handler = None
 

@@ -164,18 +164,21 @@ class DataHandler(QThread,Scribe):
             while True:
                 if self.interrupted:
                     break
-                img, _, idx = self.queue.get(timeout=DATA_SAVER_TIMEOUT)
-                img_t = time.time()
-                self.got_image_from_queue.emit(img)
-                if self.save_data:
-                    f['data']['images'][idx] = img
-                    f['data']['image_timestamps'][idx] = img_t
-                    print(f"saved {idx+1}/{self.N_img}")
-                if idx == (self.N_img - 1):
-                    break
+                try:
+                    img, _, idx = self.queue.get(block=False)
+                    img_t = time.time()
+                    self.got_image_from_queue.emit(img)
+                    if self.save_data:
+                        f['data']['images'][idx] = img
+                        f['data']['image_timestamps'][idx] = img_t
+                        print(f"saved {idx+1}/{self.N_img}")
+                    if idx == (self.N_img - 1):
+                        break
+                except:
+                    self.msleep(1)
         except Exception as e:
             # print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
-            pass
+            print(e)
         try:
             if self.save_data: f.close()
         except:
@@ -208,6 +211,7 @@ class CameraBaby(QThread):
         self.death = self.dishonorable_death
         self.data_handler = data_handler
         self.interrupted = False
+        self.dead = False
 
     def run(self):
         try:
@@ -217,10 +221,11 @@ class CameraBaby(QThread):
             self.grab_loop()
         except Exception as e:
             print(e)
-        if not self.interrupted:
-            self.death()
-        else:
+        if self.interrupted:
             print('Grab loop interrupted, shutting down.')
+        self.death()
+        if self.interrupted:
+            self.dead = True
         self.done_signal.emit()
 
     def handshake(self):
