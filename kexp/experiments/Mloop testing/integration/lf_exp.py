@@ -22,7 +22,7 @@ from kexp.analysis.plotting_1d import *
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = load_atomdata(0,37963)
+        ad = load_atomdata(0,39249)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.max(ad.atom_number)
@@ -97,10 +97,10 @@ class ExptBuilder():
                 def prepare(self):
                     Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-                    self.p.t_tof = 700.e-6
+                    self.p.t_tof = 1100.e-6
 
                     self.p.frequency_tweezer_list = [75.3e6]
-                    a_list = [.19]
+                    a_list = [.15]
                     self.p.amp_tweezer_list = a_list
 
                     {assignment_lines}
@@ -157,7 +157,7 @@ class ExptBuilder():
                     # lightsheet ramp down (to off)
                     self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown2,
                                         v_start=self.p.v_pd_lf_lightsheet_rampdown_end,
-                                        v_end=self.p.v_pd_lightsheet_rampdown2_end)
+                                        v_end=self.p.v_pd_lightsheet_rampdown3_end)
                     
                     # delay(self.p.t_lightsheet_hold)
                     self.lightsheet.off()
