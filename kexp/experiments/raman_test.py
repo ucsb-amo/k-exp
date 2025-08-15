@@ -14,7 +14,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('frequency_detuned_imaging',np.arange(250.,320.,3)*1.e6)
         self.p.frequency_detuned_imaging = 289.e6
-        self.xvar('beans',[0]*3)
+        # self.xvar('beans',[0]*500)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         
@@ -41,21 +41,23 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_raman_transition',42.27*1e6 + np.linspace(-1.e5,1.e5,15))
         # self.xvar('frequency_raman_transition',np.linspace(41.,43.5,25)*1e6)
         # self.p.frequency_raman_transition = 41.236e6
-        # self.p.frequency_raman_transition = 41.3e6
-        self.p.frequency_raman_transition = 41.10e6
+        # self.p.frequency_raman_transition = 43.e6
+        self.p.frequency_raman_transition = 41.10e6 # this one
         # self.p.frequency_raman_transition = 42.e6
 
         # self.xvar('t_delay_until_raman_pulse',np.linspace(0.,75.,5)*1.e-3)
         self.p.t_delay_until_raman_pulse = 75.e-3
 
-        # self.xvar('amp_raman',np.linspace(0.06,.23,15))
-        self.p.amp_raman = .12
+        # self.xvar('amp_raman',np.linspace(0.12,.35,5))
+        self.p.amp_raman = .35
         # self.p.amp_raman = 0.35
 
         # self.p.t_raman_pi_pulse = 2.507e-06
-        # self.xvar('t_raman_pulse',np.linspace(0.,500.,5)*1.e-6)
-        # self.xvar('t_raman_pulse',np.linspace(0.,200.,100)*1.e-6)
-        self.p.t_raman_pulse = 50.e-6
+        self.xvar('t_raman_pulse',np.linspace(0.,100.,20)*1.e-6)
+        # self.xvar('t_raman_pulse',np.arange(0.,80.,40)*1.e-6)
+        t_pi_time = 2.6506e-05
+        # self.xvar('t_raman_pulse',np.arange(0.,20. + 1.,8.) * t_pi_time)
+        self.p.t_raman_pulse = 200.e-6
         # self.p.t_raman_pulse = 0.
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
@@ -164,9 +166,11 @@ class tweezer_load(EnvExperiment, Base):
 
         self.init_raman_beams()
 
-        # self.ttl.line_trigger.wait_for_line_trigger()
+        self.ttl.line_trigger.wait_for_line_trigger()
 
         delay(1.e-3)
+
+        # self.ttl.test_trig.pulse(1.e-6)
 
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.dds.raman_minus.set_dds(frequency=self.p.frequency_raman_minus,amplitude=self.p.amp_raman)
