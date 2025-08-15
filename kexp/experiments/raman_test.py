@@ -49,7 +49,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_delay_until_raman_pulse = 75.e-3
 
         # self.xvar('amp_raman',np.linspace(0.12,.35,5))
-        self.p.amp_raman = .13
+        self.p.amp_raman = .35
         # self.p.amp_raman = 0.35
 
         # self.p.t_raman_pi_pulse = 2.507e-06
