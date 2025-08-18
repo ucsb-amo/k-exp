@@ -97,7 +97,8 @@ def rabi_oscillation(ad:atomdata,
                      fit_guess_phase=np.pi/2,
                      fit_guess_amp=1.,
                      fit_guess_offset=1.,
-                     fit_guess_decay_tau=dv):
+                     fit_guess_decay_tau=dv,
+                     figsize=[]):
     """Fits the signal (max-min sumOD) vs. pulse time to extract the rabi
     frequency and pi-pulse time, and produces a plot.
 
@@ -250,7 +251,10 @@ def rabi_oscillation(ad:atomdata,
     
     # Plot the data and the fit
     if plot_bool:
-        fig, ax = plt.subplots(1,1)
+        if figsize:
+            fig, ax = plt.subplots(1,1,figsize=figsize)
+        else:
+            fig, ax = plt.subplots(1,1)
 
         c = [0.,0.4,1.]
         c_data = [0.,0.4,1.,1.]

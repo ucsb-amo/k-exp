@@ -13,6 +13,7 @@ class RamanBeamPair():
         self.dds_plus = dds_plus
         self.dds_minus = dds_minus
         self.params = params
+        self.p = self.params
         self._frequency_center_dds = 0.
 
         self._frequency_array = np.array([0.,0.])
@@ -40,6 +41,16 @@ class RamanBeamPair():
         return self._frequency_array
     
     @kernel
+    def init(self,frequency_transition=dv,amp_raman=dv):
+        if frequency_transition == dv:
+            frequency_transition = self.p.frequency_raman_transition
+        if amp_raman == dv:
+            amp_raman = self.p.amp_raman
+        self.set_transition_frequency(frequency_transition)
+        self.dds_plus.set_dds(amplitude=amp_raman)
+        self.dds_minus.set_dds(amplitude=amp_raman)
+    
+    @kernel
     def set_transition_frequency(self,frequency_transition):
         self._frequency_array = self.state_splitting_to_ao_frequency(frequency_transition)
         self.dds_plus.set_dds(frequency=self._frequency_array[0])
@@ -56,11 +67,13 @@ class RamanBeamPair():
         self.dds_minus.off()
 
     @kernel
-    def pulse(self,t,frequency_transition,
-              set_transition_frequency_bool=True):
+    def pulse(self,t):
+        """Pulses the raman beam. Does not set the DDS channels -- use
+        init_raman_beams for this.
 
-        if set_transition_frequency_bool:
-            self.set_transition_frequency(frequency_transition)
+        Args:
+            t (float): The pulse duration in seconds.
+        """        
         self.on()
         delay(t)
         self.off()

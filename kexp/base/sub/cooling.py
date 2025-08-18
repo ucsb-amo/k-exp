@@ -46,21 +46,22 @@ class Cooling():
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
-        self.magtrap_and_load_lightsheet()
+        self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-        self.set_shims(v_zshim_current=0.,
-                        v_yshim_current=0.,
-                        v_xshim_current=0.)
+        self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
+                                                   self.p.v_yshim_current_magtrap,
+                                                   0.,n=500)
 
-        # feshbach field on, ramp up to field 1
+        # feshbach field on, ramp up to field 1  
         self.outer_coil.on()
+        # delay(1.e-3)
         self.outer_coil.set_voltage()
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_lf_lightsheet_evap1_current)
 
         # lightsheet evap 1
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
+        self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
         
@@ -69,18 +70,17 @@ class Cooling():
                              i_start=self.p.i_lf_lightsheet_evap1_current,
                              i_end=self.p.i_lf_tweezer_load_current)
         
-        #
         self.tweezer.on(paint=False)
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_ramp,
+        self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_ramp,
                           v_start=0.,
                           v_end=self.p.v_pd_lf_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False,
                           v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
         
-        # # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        # lightsheet ramp down (to off)
+        self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown2,
                              v_start=self.p.v_pd_lf_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+                             v_end=self.p.v_pd_lightsheet_rampdown3_end)
         
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
@@ -88,10 +88,9 @@ class Cooling():
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_lf_tweezer_load_current,
                              i_end=self.p.i_lf_tweezer_evap1_current)
-
         
         # # tweezer evap 1 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown,
+        self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown,
                           v_start=self.p.v_pd_lf_tweezer_1064_ramp_end,
                           v_end=self.p.v_pd_lf_tweezer_1064_rampdown_end,
                           paint=True,keep_trap_frequency_constant=True,
@@ -101,18 +100,11 @@ class Cooling():
                              i_start=self.p.i_lf_tweezer_evap1_current,
                              i_end=self.p.i_lf_tweezer_evap2_current)
         
-        # # tweezer evap 2 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown2,
+        # tweezer evap 2 with constant trap frequency
+        self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown2,
                           v_start=self.p.v_pd_lf_tweezer_1064_rampdown_end,
                           v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True,
-                          v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
-        delay(2.e-3)
-        # tweezer evap 3 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_tweezer_1064_rampdown3,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_lf_tweezer_1064_rampdown2_end),
-                          v_end=self.p.v_pd_lf_tweezer_1064_rampdown3_end,
-                          paint=True,keep_trap_frequency_constant=True,low_power=True,
                           v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
 
         self.dac.supply_current_2dmot.set(v=0.)
@@ -121,6 +113,7 @@ class Cooling():
                              i_start=self.p.i_lf_tweezer_evap2_current,
                              i_end=self.p.i_spin_mixture)
         
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
 
         delay(40.e-3)
