@@ -48,13 +48,13 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_raman_pulse',np.arange(0.,15. + 1.,1) * t_pi_time *0.5)
         self.p.t_raman_pi_pulse = t_pi_time
         # self.p.t_raman_pulse = 0.
-        # self.xvar('t_ramsey_wait',np.linspace(0.,1000.,30)*1.e-6)
-        self.p.t_ramsey_wait = 34.5e-6
+        self.xvar('t_ramsey_wait',np.linspace(0.,50.,6)*1.e-6)
+        # self.p.t_ramsey_wait = 34.5e-6
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
         self.p.t_tweezer_hold = .1e-3
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 
