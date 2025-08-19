@@ -127,13 +127,13 @@ class Scanner():
         ExptParams.
         """
 
-        self._check_data_file_exists()
-
         self.pre_scan()
 
         scanning = True
 
         while scanning:
+
+            self._check_data_file_exists()
             
             self.core.wait_until_mu(now_mu())
             self.update_params_from_xvars()
@@ -145,13 +145,12 @@ class Scanner():
             self.core.break_realtime()
 
             self.init_scan_kernel()
+
             self.core.break_realtime()
 
             self.scan_kernel()
 
             self.cleanup_scan_kernel()
-
-            self._check_data_file_exists()
 
             delay(self.params.t_recover)
             self.core.break_realtime()

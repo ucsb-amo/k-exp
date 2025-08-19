@@ -6,6 +6,10 @@ from queue import Queue
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from pylablib.devices.Andor.atmcd32d_lib import wlib as lib
+from pylablib.core.utils import general as general_utils
+from pylablib.core.devio import interface
+
+from kexp.config.timeouts import (CAMERA_GRAB_TIMEOUT_ANDOR as TIMEOUT)
 
 def nothing():
     return False
@@ -60,7 +64,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.open()
 
     def start_grab(self, N_img, output_queue:Queue,
-                    timeout=10., missing_frame="skip",
+                    missing_frame="skip",
                       return_info=True, buff_size=None,
                       check_interrupt_method=nothing):
         """
@@ -78,7 +82,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         if self.get_frame_format()=="array":
             try:
                 self.set_frame_format("chunks")
-                result=self.grab(nframes=N_img,frame_timeout=timeout,missing_frame=missing_frame,return_info=return_info,buff_size=buff_size)
+                result=self.grab(nframes=N_img,frame_timeout=TIMEOUT,missing_frame=missing_frame,return_info=return_info,buff_size=buff_size)
                 return tuple(np.concatenate(r,axis=0) for r in result) if return_info else np.concatenate(result,axis=0)
             finally:
                 self.set_frame_format("array")
@@ -88,8 +92,9 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         try:
             while nacq<N_img:
                 if check_interrupt_method():
+                    print('Interrupt submitted, waiting for grab loop termination...')
                     break
-                self.wait_for_frame(timeout=timeout)
+                self.wait_for_frame(timeout=TIMEOUT,check_interrupt_method=check_interrupt_method)
                 print(f'gotem (img {nacq+1}/{N_img})') # added this line to give print statements
                 if return_info:
                     new_frames,new_info,rng=self.read_multiple_images(missing_frame=missing_frame,return_info=True,return_rng=True)
@@ -126,3 +131,57 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
             self.stop_acquisition()
         except:
             pass
+
+    @interface.use_parameters(since="frame_wait_mode")
+    def wait_for_frame(self, since="lastread", nframes=1, timeout=20., error_on_stopped=False,
+                       check_interrupt_method=nothing):
+        """
+        Wait for one or several new camera frames. (overloaded to accept interrupt)
+
+        `since` specifies the reference point for waiting to acquire `nframes` frames;
+        can be "lastread"`` (from the last read frame), ``"lastwait"`` (wait for the last successful :meth:`wait_for_frame` call),
+        ``"now"`` (from the start of the current call), or ``"start"`` (from the acquisition start, i.e., wait until `nframes` frames have been acquired).
+        `timeout` can be either a number, ``None`` (infinite timeout), or a tuple ``(timeout, frame_timeout)``,
+        in which case the call times out if the total time exceeds ``timeout``, or a single frame wait exceeds ``frame_timeout``.
+        If the call times out, raise ``TimeoutError``.
+        If ``error_on_stopped==True`` and the acquisition is not running, raise ``Error``;
+        otherwise, simply return ``False`` without waiting.
+        """
+        wait_started=False
+        if isinstance(timeout,tuple):
+            timeout,frame_timeout=timeout
+        else:
+            frame_timeout=None
+        ctd=general_utils.Countdown(timeout)
+        frame_ctd=general_utils.Countdown(frame_timeout)
+        if not self.acquisition_in_progress():
+            if error_on_stopped:
+                raise self.Error("waiting for a frame while acquisition is stopped")
+            else:
+                return False
+        last_acquired_frames=None
+        while True:
+            if check_interrupt_method():
+                break
+            acquired_frames=self._get_acquired_frames()
+            if acquired_frames is None:
+                if error_on_stopped:
+                    raise self.Error("waiting for a frame while acquisition is stopped")
+                else:
+                    return False
+            if acquired_frames!=last_acquired_frames:
+                frame_ctd.reset()
+            last_acquired_frames=acquired_frames
+            if not wait_started:
+                self._frame_counter.wait_start(acquired_frames)
+                wait_started=True
+            if self._frame_counter.is_wait_done(acquired_frames,since=since,nframes=nframes):
+                break
+            to,fto=ctd.time_left(),frame_ctd.time_left()
+            if fto is not None:
+                to=fto if to is None else min(to,fto)
+            if to is not None and to<=0:
+                raise self.TimeoutError
+            self._wait_for_next_frame(timeout=to,idx=acquired_frames)
+        self._frame_counter.wait_done()
+        return True

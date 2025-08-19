@@ -13,18 +13,16 @@ from kexp.util.live_od.camera_nanny import CameraNanny
 from kexp.util.data.server_talk import get_latest_data_file, run_id_from_filepath
 from kexp.util.increment_run_id import update_run_id
 
-from kexp.base.sub.scribe import CHECK_PERIOD, Scribe
+from kexp.base.sub.scribe import Scribe
+from kexp.config.timeouts import (CAMERA_MOTHER_CHECK_DELAY as CHECK_DELAY,
+                                   UPDATE_EVERY, DATA_SAVER_TIMEOUT)
 
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from queue import Queue
+from queue import Queue, Empty
 
 DATA_DIR = os.getenv("data")
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
-CHECK_DELAY = 0.2
-LOG_UPDATE_INTERVAL = 2.
-DEFAULT_TIMEOUT = 30.
-UPDATE_EVERY = LOG_UPDATE_INTERVAL // CHECK_DELAY
 
 def nothing():
     pass
@@ -68,7 +66,7 @@ class CameraMother(QThread):
     def watch_for_new_file(self,manage_babies=False):
         new_file_bool = False
         attempts = -1
-        print("Mother is watching...")
+        print("\nMother is watching...\n")
         count = 0
         while True:
             new_file_bool, latest_file, run_id = self.check_files()
@@ -159,25 +157,35 @@ class DataHandler(QThread,Scribe):
         self.save_data_bool_signal.emit(self.run_info.save_data)
 
     def write_image_to_dataset(self):
-        TIMEOUT = 20.
         try:
+            if self.save_data:
+                f = self.wait_for_data_available(timeout=DATA_SAVER_TIMEOUT,
+                                                 check_interrupt_method=self.break_check)
             while True:
                 if self.interrupted:
                     break
-                img, _, idx = self.queue.get(timeout=TIMEOUT)
-                TIMEOUT = 10.
-                img_t = time.time()
-                self.got_image_from_queue.emit(img)
-                if self.save_data:
-                    with self.wait_for_data_available(timeout=TIMEOUT) as f:
+                try:
+                    img, _, idx = self.queue.get(block=False)
+                    img_t = time.time()
+                    self.got_image_from_queue.emit(img)
+                    if self.save_data:
                         f['data']['images'][idx] = img
                         f['data']['image_timestamps'][idx] = img_t
                         print(f"saved {idx+1}/{self.N_img}")
-                if idx == (self.N_img - 1):
-                    break
+                    if idx == (self.N_img - 1):
+                        break
+                except:
+                    self.msleep(1)
         except Exception as e:
             # print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
+            print(e)
+        try:
+            if self.save_data: f.close()
+        except:
             pass
+
+    def break_check(self):
+        return self.interrupted
 
 class CameraBaby(QThread):
     image_captured = pyqtSignal(int)
@@ -203,6 +211,7 @@ class CameraBaby(QThread):
         self.death = self.dishonorable_death
         self.data_handler = data_handler
         self.interrupted = False
+        self.dead = False
 
     def run(self):
         try:
@@ -212,8 +221,11 @@ class CameraBaby(QThread):
             self.grab_loop()
         except Exception as e:
             print(e)
-        if not self.interrupted:
-            self.death()
+        if self.interrupted:
+            print('Grab loop interrupted, shutting down.')
+        self.death()
+        if self.interrupted:
+            self.dead = True
         self.done_signal.emit()
 
     def handshake(self):
@@ -259,7 +271,6 @@ class CameraBaby(QThread):
         N_pwa_per_shot = int(self.data_handler.params.N_pwa_per_shot)
         self.camera_grab_start.emit(N_img,N_shots,N_pwa_per_shot)
         self.camera.start_grab(N_img,output_queue=self.queue,
-                    timeout=DEFAULT_TIMEOUT,
                     check_interrupt_method=self.break_check)
         if not self.interrupted:
             self.death = self.honorable_death

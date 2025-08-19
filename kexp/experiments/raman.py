@@ -53,10 +53,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.amp_raman = 0.35
 
         # self.p.t_raman_pi_pulse = 2.507e-06
-        self.xvar('t_raman_pulse',np.linspace(0.,100.,20)*1.e-6)
-        # self.xvar('t_raman_pulse',np.arange(0.,80.,40)*1.e-6)
-        t_pi_time = 2.6506e-05
-        # self.xvar('t_raman_pulse',np.arange(0.,20. + 1.,8.) * t_pi_time)
+        # self.xvar('t_raman_pulse',np.linspace(0.,300.,100)*1.e-6)
+        self.xvar('t_raman_pulse',np.linspace(0.,30.,30)*1.e-6)
+        # t_pi_time = 5.0937e-06
+        # self.xvar('t_raman_pulse',np.arange(0.,15. + 1.,1) * t_pi_time *0.5)
         self.p.t_raman_pulse = 200.e-6
         # self.p.t_raman_pulse = 0.
 
@@ -182,7 +182,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.dds.raman_minus.off()
         # self.dds.raman_plus.off()
 
-        self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=self.p.frequency_raman_transition)
+        self.raman.pulse(t=self.p.t_raman_pulse)
 
         
         # delay(self.p.t_raman_pulse)

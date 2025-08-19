@@ -21,7 +21,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('beans',[0]*1)
         
-        # self.xvar('t_tof',np.linspace(300.,1500.,15)*1.e-6)
+        self.xvar('t_tof',np.linspace(300.,1500.,15)*1.e-6)
         self.p.t_tof = 1500.e-6
 
         # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(11.,18.,15))
@@ -57,13 +57,13 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_lf_tweezer_1064_rampdown',np.linspace(0.02,.4,20))
         # self.p.t_lf_tweezer_1064_rampdown = 180.e-3
 
-        self.xvar('i_lf_tweezer_evap2_current',np.linspace(12.4,13.9,20))
+        # self.xvar('i_lf_tweezer_evap2_current',np.linspace(12.4,13.9,20))
         # self.p.i_lf_tweezer_evap2_current = 13.0
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.035,.1,15))
         self.p.v_pd_lf_tweezer_1064_rampdown2_end = .11
 
-        self.xvar('t_lf_tweezer_1064_rampdown2',np.linspace(0.1,.8,20))
+        # self.xvar('t_lf_tweezer_1064_rampdown2',np.linspace(0.1,.8,20))
         # self.p.t_lf_tweezer_1064_rampdown2 = 250.e-3
 
         self.p.frequency_tweezer_list = [75.3e6]

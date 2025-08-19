@@ -6,6 +6,8 @@ from queue import Queue
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from kexp.config.camera_id import cameras
+from kexp.config.timeouts import (CAMERA_GRAB_TIMEOUT_BASLER_INIT as TIMEOUT_INIT,
+                                  CAMERA_GRAB_TIMEOUT_BASLER_RUN as TIMEOUT_RUN)
 
 def nothing():
     return False
@@ -76,18 +78,18 @@ class BaslerUSB(pylon.InstantCamera):
     def is_opened(self):
         return self.IsOpen()
     
-    def start_grab(self,N_img,output_queue:Queue,timeout=10.,
+    def start_grab(self,N_img,output_queue:Queue,
                    check_interrupt_method=nothing):
-        this_timeout = 20.
+        this_timeout = TIMEOUT_INIT # initial timeout
         Nimg = int(N_img)
         self.StartGrabbingMax(Nimg, pylon.GrabStrategy_LatestImages)
         count = 0
         while self.IsGrabbing():
-            grab = self.RetrieveResult(int(this_timeout*1000), pylon.TimeoutHandling_ThrowException)
             if check_interrupt_method():
                 break
+            grab = self.RetrieveResult(int(this_timeout*1000), pylon.TimeoutHandling_ThrowException)
             if grab.GrabSucceeded():
-                this_timeout = timeout
+                this_timeout = TIMEOUT_RUN
                 print(f'gotem (img {count+1}/{Nimg})')
                 img = np.uint8(grab.GetArray())
                 img_t = grab.TimeStamp

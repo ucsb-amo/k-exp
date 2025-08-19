@@ -14,6 +14,8 @@ import time
 
 RPC_DELAY = 10.e-3
 
+from kexp.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
+
 # also import the andor camera parameters
 
 from kexp.config.camera_id import img_types as img
@@ -117,7 +119,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
                     init_shuttler = True, init_lightsheet = True,
                     setup_awg = True, setup_slm = True):
         if self.setup_camera:
-            self.wait_for_camera_ready(timeout=30.)
+            self.wait_for_camera_ready(timeout=INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT)
             print("Camera is ready.")
         if setup_slm:
             self.setup_slm(self.run_info.imaging_type)

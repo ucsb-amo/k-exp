@@ -32,10 +32,12 @@ class Control():
         self.p = self.params
 
     @kernel
-    def init_raman_beams(self):
-        self.raman.set_transition_frequency(self.p.frequency_raman_transition)
-        self.raman.dds_plus.set_dds(amplitude=self.params.amp_raman)
-        self.raman.dds_minus.set_dds(amplitude=self.params.amp_raman)
+    def init_raman_beams(self,frequency_transition=dv,amp_raman=dv):
+        if frequency_transition == dv:
+            frequency_transition = self.p.frequency_raman_transition
+        if amp_raman == dv:
+            amp_raman = self.p.amp_raman
+        self.raman.init(frequency_transition,amp_raman)
 
     @kernel
     def reset_coils(self):
@@ -58,17 +60,3 @@ class Control():
         self.inner_coil.discharge()
 
         self.ttl.d2_mot_shutter.off()
-
-    @kernel
-    def pi_pulse(self):
-        self.raman.on()
-        delay(self.p.t_raman_pi_pulse)
-        self.raman.off()
-        
-    @kernel
-    def hadamard(self,):
-        self.raman.on()
-        delay(self.p.t_raman_pi_pulse / 2)
-        self.raman.off()
-
-    
