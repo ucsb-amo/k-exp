@@ -83,6 +83,23 @@ def plot_mixOD(ad:atomdata,
             y_pos = 0
             x_pos += px
 
+    # Add lines between images if requested
+    if lines:
+        if swap_axes:
+            # Draw horizontal lines between rows
+            for pos in np.arange(py, max_height, py):
+                ax.axhline(pos, color='white', linewidth=1)
+            # Draw vertical lines between columns
+            for pos in np.arange(px, total_width, px):
+                ax.axvline(pos, color='white', linewidth=1)
+        else:
+            # Draw vertical lines between columns
+            for pos in np.arange(px, total_width, px):
+                ax.axvline(pos, color='white', linewidth=1)
+            # Draw horizontal lines between rows
+            for pos in np.arange(py, max_height, py):
+                ax.axhline(pos, color='white', linewidth=1)
+
     plt.gca().set_aspect(aspect)
 
     # Set axis labels and title
