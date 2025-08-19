@@ -21,7 +21,7 @@ class StatusLightsWidget(QWidget):
         super().__init__()
         self.lights = {}
         layout = QVBoxLayout()
-        for label in ["cam ready", "ready marked", "ready ack"]:
+        for label in ["baby born", "cam ready", "ready marked", "ready ack"]:
             h = QHBoxLayout()
             light = QFrame()
             light.setFixedSize(18, 18)
@@ -41,14 +41,17 @@ class StatusLightsWidget(QWidget):
     # Add methods to set the lights from signals
     def set_cam_status_lights(self,status_int):
         if status_int == -1:
+            self.set_light("baby born", False)
             self.set_light("cam ready", False)
             self.set_light("ready marked", False)
             self.set_light("ready ack", False)
         elif status_int == 0:
-            self.set_light("cam ready", True)
+            self.set_light("baby born", True)
         elif status_int == 1:
-            self.set_light("ready marked", True)
+            self.set_light("cam ready", True)
         elif status_int == 2:
+            self.set_light("ready marked", True)
+        elif status_int == 3:
             self.set_light("ready ack", True)
 
 class LiveODWindow(QWidget):

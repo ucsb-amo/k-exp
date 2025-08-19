@@ -16,7 +16,7 @@ class sampler_test(EnvExperiment):
         
         self.sampler = self.get_device("sampler0")
         self.sampler: Sampler
-        self.data = np.zeros(8)
+        self.data = np.zeros(8,dtype=float)
 
     @kernel
     def run(self):
@@ -26,7 +26,7 @@ class sampler_test(EnvExperiment):
 
         self.core.break_realtime()
 
-        ch = 0
+        ch = 31
 
         v = [0.,1.,2.,3.,4.,5.,6.,7.]
         
@@ -44,4 +44,4 @@ class sampler_test(EnvExperiment):
 
             delay(1000*ms)
             self.sampler.sample(self.data)
-            print(self.data[0])
+            print(self.data)

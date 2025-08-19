@@ -215,6 +215,7 @@ class CameraBaby(QThread):
 
     def run(self):
         try:
+            self.cam_status_signal.emit(0)
             print(f"{self.name}: I am born!")
             self.data_handler.read_params()
             self.handshake()
@@ -230,14 +231,14 @@ class CameraBaby(QThread):
 
     def handshake(self):
         self.create_camera() # checks for camera
-        self.cam_status_signal.emit(0)
+        self.cam_status_signal.emit(1)
         if self.camera.is_opened():
             self.data_handler.mark_camera_ready()
         else:
             raise ValueError("Camera not ready")
-        self.cam_status_signal.emit(1)
-        self.data_handler.check_camera_ready_ack()
         self.cam_status_signal.emit(2)
+        self.data_handler.check_camera_ready_ack()
+        self.cam_status_signal.emit(3)
 
     def create_camera(self):
         self.camera = self.camera_nanny.persistent_get_camera(self.data_handler.camera_params)

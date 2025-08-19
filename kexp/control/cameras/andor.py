@@ -29,31 +29,13 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.setup_shutter(mode="open")
         self.set_vsspeed(vs_speed)
         self.set_vsamplitude(vs_amp)
-        self.set_hsspeed(hs_speed)
+        self.set_hsspeed(typ=0,hs_speed=hs_speed)
         self.set_acquisition_mode("single")
         self.set_read_mode("image")
         self.set_cooler_mode(mode=1)
         self.set_amp_mode(preamp=preamp)
         self.activate_cameralink(1)
         # self.set_fast_trigger_mode(mode=1)
-
-    def activate_cameralink(self,state=1):
-        lib.SetCameraLinkMode(state)
-
-    def set_emccd_advanced(self):
-        lib.SetEMAdvanced(1)
-
-    def set_fast_trigger_mode(self, mode:int = 1):
-        lib.SetFastExtTrigger(mode)
-
-    def set_cooler_mode(self, mode:int = 1):
-        lib.SetCoolerMode(mode)
-
-    def set_vsamplitude(self, vs_amp:int = 0):
-        lib.SetVSAmplitude(vs_amp)
-
-    def set_hsspeed(self, hs_speed:int = 0):
-        lib.SetHSSpeed(0, hs_speed)
 
     def Close(self):
         self.setup_shutter(mode="closed")
@@ -185,3 +167,98 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
             self._wait_for_next_frame(timeout=to,idx=acquired_frames)
         self._frame_counter.wait_done()
         return True
+    
+    def activate_cameralink(self,state=1):
+        """This function allows the user to enable or disable the Camera Link
+        functionality for the camera. Enabling this functionality will start to
+        stream all acquired data through the camera link interface.
+
+        Args:
+            state (int, optional): Enables/Disables Camera Link mode. 1 - Enable
+            Camera Link 0 - Disable Camera Link. Defaults to 1.
+        """        
+        lib.SetCameraLinkMode(state)
+
+    def set_emccd_advanced(self):
+        """
+        This function turns on and off access to higher EM gain levels within
+        the SDK. Typically, optimal signal to noise ratio and dynamic range is
+        achieved between x1 to x300 EM Gain. Higher gains of > x300 are
+        recommended for single photon counting only. Before using higher levels,
+        you should ensure that light levels do not exceed the regime of tens of
+        photons per pixel, otherwise accelerated ageing of the sensor can occur.
+        """        
+        lib.SetEMAdvanced(1)
+
+    def set_fast_trigger_mode(self, mode:int = 1):
+        """
+        This function will enable fast external triggering. When fast external
+        triggering is enabled the system will NOT wait until a “Keep Clean”
+        cycle has been completed before accepting the next trigger. This setting
+        will only have an effect if the trigger mode has been set to External
+        via SetTriggerMode.
+
+        Args:
+            mode (int, optional): 0 disabled. 1 enabled. Defaults to 1.
+        """        
+        lib.SetFastExtTrigger(mode)
+
+    def set_cooler_mode(self, mode:int = 1):
+        """This function determines whether the cooler is switched off when the
+        camera is shut down.
+
+        Args:
+            mode (int, optional): 1 – Temperature is maintained on ShutDown. 0 –
+            Returns to ambient temperature on ShutDown. Defaults to 1.
+        """        
+        lib.SetCoolerMode(mode)
+
+    def set_vsamplitude(self, vs_amp:int = 0):
+        """
+        If you choose a high readout speed (a low readout time), then you should
+        also consider increasing the amplitude of the Vertical Clock Voltage.
+        There are five levels of amplitude available for you to choose from:
+            • Normal
+            • +1
+            • +2
+            • +3
+            • +4
+        Exercise caution when increasing the amplitude of the vertical clock voltage,
+        since higher clocking voltages may result in increased clock-induced charge
+        (noise) in your signal. In general, only the very highest vertical clocking
+        speeds are likely to benefit from an increased vertical clock voltage amplitude.
+
+        Args:
+            vs_amp (int, optional): See docstring for amplitude settings.
+            Defaults to 0.
+        """        
+        lib.SetVSAmplitude(vs_amp)
+
+    def set_hsspeed(self, typ:int=0, hs_speed:int = 0):
+        """
+        This function will set the speed at which the pixels are shifted into
+        the output node during the readout phase of an acquisition. Typically
+        your camera will be capable of operating at several horizontal shift
+        speeds. To get the actual speed that an index corresponds to use the
+        GetHSSpeed function.
+
+        Args:
+            hs_speed (int, optional): the horizontal speed to be used Valid
+            values 0 to GetNumberHSSpeeds()-1. Defaults to 0. 
+            int type: the type of output amplifier on an EMCCD.
+                0 – Standard EMCCD gain register (default).
+                1 – Conventional CCD register.
+        """        
+        lib.SetHSSpeed(typ, hs_speed)
+
+    def set_isolated_crop_mode_type(self, mode:int=1):
+        """This function determines the method by which data is transferred in
+        isolated crop mode. The default method is High Speed where multiple
+        frames may be stored in the storage area of the sensor before they
+        are read out. In Low Latency mode, each cropped frame is read out as
+        it happens.
+
+        Args:
+            mode (int): 0 – High Speed. 1 – Low Latency. Defaults to 1.
+        """        
+        lib.SetIsolatedCropModeType(mode)

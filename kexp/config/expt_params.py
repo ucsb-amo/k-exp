@@ -33,7 +33,7 @@ class ExptParams():
 
         # low field imaging settings at i_spin_mixture = 19.48
         # (free space)
-        self.frequency_detuned_imaging_m1 = 286.e6
+        self.frequency_detuned_imaging_m1 = 289.e6
         self.frequency_detuned_imaging_0 = 318.e6
         # self.p.frequency_detuned_imaging_midpoint = 300.e6
         self.frequency_detuned_imaging_midpoint = 608.e6
@@ -272,14 +272,17 @@ class ExptParams():
         #tweezers uniformly distributed around center frequency of AOD
         # self.frequency_tweezer_spacing = .7e6*2
         self.frequency_tweezer_spacing = 6.e6*2
-        self.frequency_tweezer_list = [73.7e6,76.e6]
+        # self.frequency_tweezer_list = [73.7e6,76.e6]
         self.frequency_cat_eye_tweezer = 71.3e6
         self.frequency_cateye_threshold = 72.e6
+        self.frequency_tweezer_list = [75.3e6]
 
         # self.frequency_tweezer_auto_compute = False
         # self.amp_tweezer_auto_compute = True
-        self.amp_tweezer_list = [.14,.145]
+        # self.amp_tweezer_list = [.14,.145]
         # self.amp_tweezer_list = [.4,.4]
+        self.amp_tweezer_list = [.15]
+
 
         self.frequency_tweezer_list1 = [72250000.,72833333.33333333,73416666.66666667,74000000.]
         self.frequency_tweezer_list2 = [74050000.,74683333.33333333,75316666.66666667,75950000.]
@@ -329,7 +332,7 @@ class ExptParams():
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
 
-        self.frequency_raman_transition = 41.294e6
+        self.frequency_raman_transition = 41.10e6
 
         # low field evap old
         # self.i_evap1_current = 9.5
