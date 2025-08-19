@@ -233,11 +233,11 @@ class CameraBaby(QThread):
         self.create_camera() # checks for camera
         self.cam_status_signal.emit(1)
         if self.camera.is_opened():
-            self.data_handler.mark_camera_ready()
+            self.data_handler.mark_camera_ready(self.break_check)
         else:
             raise ValueError("Camera not ready")
         self.cam_status_signal.emit(2)
-        self.data_handler.check_camera_ready_ack()
+        self.data_handler.check_camera_ready_ack(self.break_check)
         self.cam_status_signal.emit(3)
 
     def create_camera(self):
