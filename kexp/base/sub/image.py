@@ -420,7 +420,7 @@ class Image():
                 frequency_detuned = self.params.frequency_detuned_imaging
 
         # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
-        beat_sign = -1 
+        beat_sign = self.params.beatlock_sign
 
         f_hyperfine_splitting_4s_MHz = 461.7 * 1.e6
         f_shift_resonance = f_hyperfine_splitting_4s_MHz / 2
