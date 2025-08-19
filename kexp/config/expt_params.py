@@ -26,7 +26,7 @@ class ExptParams():
         self.frequency_ao_imaging = 350.00e6
         self.frequency_detuned_imaging = 24.2e6
         self.frequency_detuned_imaging_F1 = 452.e6
-        self.beatlock_sign = -15
+        self.beatlock_sign = -1
         self.N_offset_lock_reference_multiplier = 8
         self.frequency_minimum_offset_beatlock = 150.e6
         self.imaging_state = 2.
@@ -123,7 +123,7 @@ class ExptParams():
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
-        self.t_raman_pi_pulse = 2.2133e-06
+        self.t_raman_pi_pulse = 5.6723e-06
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
