@@ -182,7 +182,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.dds.raman_minus.off()
         # self.dds.raman_plus.off()
 
-        self.raman.pulse(t=self.p.t_raman_pulse, frequency_transition=self.p.frequency_raman_transition)
+        self.raman.pulse(t=self.p.t_raman_pulse)
 
         
         # delay(self.p.t_raman_pulse)
