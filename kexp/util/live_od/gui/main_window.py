@@ -307,7 +307,6 @@ class LiveODWindow(QWidget):
 
         self.queue = Queue()
         # self.restart_mother()
-        print('deleted baby')
         self.the_baby = None
         self.data_handler = None
 
