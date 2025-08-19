@@ -74,13 +74,13 @@ class Scribe():
             time.sleep(CHECK_PERIOD)
         return True
 
-    def mark_camera_ready(self):
-        with self.wait_for_data_available() as f:
+    def mark_camera_ready(self,check_interrupt_method=nothing):
+        with self.wait_for_data_available(check_interrupt_method=check_interrupt_method) as f:
             f.attrs['camera_ready'] = 1
 
-    def check_camera_ready_ack(self):
+    def check_camera_ready_ack(self,check_interrupt_method=nothing):
         while True:
-            with self.wait_for_data_available() as f:
+            with self.wait_for_data_available(check_interrupt_method=check_interrupt_method) as f:
                 if f.attrs['camera_ready_ack']:
                     print('Received ready acknowledgement.')
                     break
