@@ -201,15 +201,6 @@ class tweezer_load(EnvExperiment, Base):
 
         self.abs_image()
 
-        # self.ttl.d2_mot_shutter.off()
-
-        self.outer_coil.stop_pid()
-        
-        self.outer_coil.off()
-        self.outer_coil.discharge()
-
-        self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)
-
     @kernel
     def run(self):
         self.init_kernel()
