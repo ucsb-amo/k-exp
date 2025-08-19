@@ -144,12 +144,15 @@ class Scanner():
             delay(RPC_DELAY)
             self.core.break_realtime()
 
+            # overloaded in kexp.Base
             self.init_scan_kernel()
 
             self.core.break_realtime()
 
+            # overloaded by user per experiment
             self.scan_kernel()
 
+            # overloaded in kexp.Base
             self.cleanup_scan_kernel()
 
             delay(self.params.t_recover)
