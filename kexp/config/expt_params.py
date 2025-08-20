@@ -123,7 +123,7 @@ class ExptParams():
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
-        self.t_raman_pi_pulse = 5.6723e-06
+        self.t_raman_pi_pulse = 5.6551e-06
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -332,7 +332,7 @@ class ExptParams():
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
 
-        self.frequency_raman_transition = 41.10e6
+        self.frequency_raman_transition = 41.093e6
 
         # low field evap old
         # self.i_evap1_current = 9.5

@@ -18,6 +18,8 @@ class sampler_test(EnvExperiment):
         self.sampler: Sampler
         self.data = np.zeros(8,dtype=float)
 
+        self.v = np.array([1.]*8)
+
     @kernel
     def run(self):
         self.core.reset()
@@ -26,9 +28,7 @@ class sampler_test(EnvExperiment):
 
         self.core.break_realtime()
 
-        ch = 31
-
-        v = [0.,1.,2.,3.,4.,5.,6.,7.]
+        ch = 30
         
         for i in range(len(self.data)):
             self.sampler.set_gain_mu(i,0)
@@ -38,10 +38,10 @@ class sampler_test(EnvExperiment):
         for n in range(len(self.data)):
 
             self.core.break_realtime()
-            self.dac.write_dac(ch,v[n])
+            self.dac.write_dac(ch,self.v[n])
             self.dac.load()
             self.core.break_realtime()
 
             delay(1000*ms)
             self.sampler.sample(self.data)
-            print(self.data)
+            print(self.data[0])

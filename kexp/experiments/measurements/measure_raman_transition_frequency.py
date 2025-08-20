@@ -15,12 +15,13 @@ class measure_rabi_freq(EnvExperiment, Base):
         self.p.amp_raman = .1
 
         self.p.t_raman_sweep = 500.e-6
-        self.p.f_raman_sweep_width = 15.e3
+        self.p.f_raman_sweep_width = 10.e3
         df = self.p.f_raman_sweep_width/1.5
         self.p.f_raman_sweep_center = 41.10e6
         # self.p.f_raman_sweep_center = 43.e6
+        scan_range_half_width = 20.e3
         self.xvar('f_raman_sweep_center',
-                  self.p.f_raman_sweep_center + np.arange(-50.e3, 50.e3, df))
+                  self.p.f_raman_sweep_center + np.arange(-scan_range_half_width, scan_range_half_width, df))
 
         self.p.t_tweezer_hold = .1e-3
         self.p.t_tof = 300.e-6
