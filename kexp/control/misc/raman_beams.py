@@ -10,13 +10,22 @@ dv = -0.1
 di = 0
 
 class RamanBeamPair():
-    def __init__(self,dds_plus=DDS,dds_minus=DDS,params=ExptParams):
+    def __init__(self,dds_plus=DDS,dds_minus=DDS,params=ExptParams,
+                 frequency_transition=0., amplitude=0.):
         self.dds_plus = dds_plus
         self.dds_minus = dds_minus
         self.params = params
         self.p = self.params
-        self._frequency_center_dds = 0.
 
+        self.frequency_transition = frequency_transition
+        self.amplitude = amplitude
+
+        self.global_phase = 0.
+        self.relative_phase = 0.
+
+        self.phase_mode = 0  # 0: independent, 1: synchronized
+
+        self._frequency_center_dds = 0.
         self._frequency_array = np.array([0.,0.])
 
     def _init(self):
@@ -42,45 +51,12 @@ class RamanBeamPair():
         return self._frequency_array
     
     @kernel
-    def init(self,frequency_transition=dv,amp_raman=dv,
-             sync_phase=True, phase_offset=0.):
-        """_summary_
-
-        Args:
-            frequency_transition (float, optional): The two-photon transition
-            frequency to be addressed. Defaults to ExptParams.frequency_raman_transition.
-            amp_raman (float, optional): Amplitude for the raman beam DDSs.
-            Defaults to ExptParams.amp_raman.
-            sync_phase (bool, optional): Sets the DDSs to tracking phase mode
-            and syncs the phase origin to the same timestamp. Defaults to True.
-            phase_offset (float, optional): Phase between dds plus and dds
-            minus. Defaults to 0. Meaningful only if sync_phase is True.
-        """        
-        if frequency_transition == dv:
-            frequency_transition = self.p.frequency_raman_transition
-        if amp_raman == dv:
-            amp_raman = self.p.amp_raman
-        if sync_phase:
-            self.dds_plus.set_phase_mode(1)
-            self.dds_minus.set_phase_mode(1)
-            t0 = now_mu()
-        else:
-            t0 = 0
-        self._frequency_array = self.state_splitting_to_ao_frequency(frequency_transition)
-        self.dds_plus.set_dds(self._frequency_array[0],amp_raman,
-                              t_phase_origin_mu=t0,
-                              phase_offset=0.)
-        self.dds_minus.set_dds(self._frequency_array[1],amp_raman,
-                               t_phase_origin_mu=t0,
-                               phase_offset=phase_offset)
-    
-    @kernel
     def set_transition_frequency(self,frequency_transition=dv):
-        if frequency_transition == dv:
-            frequency_transition = self.p.frequency_raman_transition
-        self._frequency_array = self.state_splitting_to_ao_frequency(frequency_transition)
-        self.dds_plus.set_dds(frequency=self._frequency_array[0])
-        self.dds_minus.set_dds(frequency=self._frequency_array[1])
+        self.set(frequency_transition)
+
+    @kernel
+    def set_phase(self,relative_phase=dv,global_phase=dv):
+        self.set(sync_phase=True,global_phase=global_phase,relative_phase=relative_phase)
 
     @kernel
     def on(self):
@@ -91,6 +67,55 @@ class RamanBeamPair():
     def off(self):
         self.dds_plus.off()
         self.dds_minus.off()
+
+    @kernel
+    def set(self,
+            frequency_transition=dv,
+            amp_raman=dv,
+            sync_phase=True,
+            global_phase=0., relative_phase=0.,
+            init=False):
+        # Determine if frequency, amplitude, or v_pd should be updated
+        freq_changed = (frequency_transition >= 0.) and (frequency_transition != self.frequency_transition)
+        amp_changed = (amp_raman >= 0.) and (amp_raman != self.amplitude)
+        sync_phase_mode_changed = sync_phase != (self.phase_mode == 1)
+        global_phase_changed = global_phase_changed >= 0. and (global_phase != self.global_phase)
+        relative_phase_changed = relative_phase >= 0. and (global_phase != self.global_phase)
+    
+        # Update stored values
+        if freq_changed:
+            self.frequency_transition = frequency_transition if frequency_transition >= 0. else self.frequency_transition
+        if amp_changed:
+            self.amplitude = amp_raman if amp_raman >= 0. else self.amplitude
+        if sync_phase_mode_changed:
+            self.phase_mode = 1 if sync_phase else self.phase_mode
+        if global_phase_changed:
+            self.global_phase = global_phase if global_phase >= 0. else self.global_phase
+        if relative_phase_changed:
+            self.relative_phase = relative_phase if relative_phase >= 0. else self.relative_phase
+
+        if init:
+            freq_changed = True
+            amp_changed = True
+            sync_phase_mode_changed = True
+            global_phase_changed = True
+            relative_phase_changed = True
+
+        t0 = now_mu()
+        if sync_phase_mode_changed or init:
+            self.dds_plus.set_phase_mode(self.phase_mode)
+            self.dds_minus.set_phase_mode(self.phase_mode)
+
+        if freq_changed or amp_changed or global_phase_changed or init:
+            self._frequency_array = self.state_splitting_to_ao_frequency(self.frequency_transition)
+            self.dds_plus.set_dds(self._frequency_array[0],
+                                self.amplitude,
+                                t_phase_origin_mu=t0,
+                                phase_offset=self.global_phase)
+            self.dds_minus.set_dds(self._frequency_array[1],
+                                self.amplitude,
+                                t_phase_origin_mu=t0,
+                                phase_offset=self.global_phase+self.relative_phase)
 
     @kernel
     def pulse(self,t):
@@ -130,10 +155,10 @@ class RamanBeamPair():
         df = (ff-f0)/(n_steps-1)
         dt = t / n_steps
 
-        self.set_transition_frequency(frequency_transition=f0)
+        self.set(frequency_transition=f0)
         self.on()
         for i in range(n_steps):
-            self.set_transition_frequency(frequency_transition=f0+i*df)
+            self.set(frequency_transition=f0+i*df)
             delay(dt)
         self.off()
 

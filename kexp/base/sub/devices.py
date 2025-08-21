@@ -133,6 +133,8 @@ class Devices():
         
         self.raman = RamanBeamPair(dds_plus=self.dds.raman_plus,
                                     dds_minus=self.dds.raman_minus,
+                                    transition_frequency=self.params.frequency_raman_transition,
+                                    amplitude=self.params.amp_raman,
                                     params=self.params)
         self.raman._init()
         
