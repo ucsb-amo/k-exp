@@ -4,6 +4,7 @@ from kexp.control.artiq.DDS import DDS
 from kexp.control.artiq.DAC_CH import DAC_CH
 from kexp.config.expt_params import ExptParams
 from kexp.util.artiq.async_print import aprint
+from artiq.language.core import now_mu, at_mu
 
 dv = -0.1
 di = 0
@@ -41,17 +42,42 @@ class RamanBeamPair():
         return self._frequency_array
     
     @kernel
-    def init(self,frequency_transition=dv,amp_raman=dv):
+    def init(self,frequency_transition=dv,amp_raman=dv,
+             sync_phase=True, phase_offset=0.):
+        """_summary_
+
+        Args:
+            frequency_transition (float, optional): The two-photon transition
+            frequency to be addressed. Defaults to ExptParams.frequency_raman_transition.
+            amp_raman (float, optional): Amplitude for the raman beam DDSs.
+            Defaults to ExptParams.amp_raman.
+            sync_phase (bool, optional): Sets the DDSs to tracking phase mode
+            and syncs the phase origin to the same timestamp. Defaults to True.
+            phase_offset (float, optional): Phase between dds plus and dds
+            minus. Defaults to 0. Meaningful only if sync_phase is True.
+        """        
         if frequency_transition == dv:
             frequency_transition = self.p.frequency_raman_transition
         if amp_raman == dv:
             amp_raman = self.p.amp_raman
-        self.set_transition_frequency(frequency_transition)
-        self.dds_plus.set_dds(amplitude=amp_raman)
-        self.dds_minus.set_dds(amplitude=amp_raman)
+        if sync_phase:
+            self.dds_plus.set_phase_mode(1)
+            self.dds_minus.set_phase_mode(1)
+            t0 = now_mu()
+        else:
+            t0 = 0
+        self._frequency_array = self.state_splitting_to_ao_frequency(frequency_transition)
+        self.dds_plus.set_dds(self._frequency_array[0],amp_raman,
+                              t_phase_origin_mu=t0,
+                              phase_offset=0.)
+        self.dds_minus.set_dds(self._frequency_array[1],amp_raman,
+                               t_phase_origin_mu=t0,
+                               phase_offset=phase_offset)
     
     @kernel
-    def set_transition_frequency(self,frequency_transition):
+    def set_transition_frequency(self,frequency_transition=dv):
+        if frequency_transition == dv:
+            frequency_transition = self.p.frequency_raman_transition
         self._frequency_array = self.state_splitting_to_ao_frequency(frequency_transition)
         self.dds_plus.set_dds(frequency=self._frequency_array[0])
         self.dds_minus.set_dds(frequency=self._frequency_array[1])

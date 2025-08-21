@@ -24,6 +24,7 @@ class DDS():
       self.transition = 'None'
       self.double_pass = True
       self.v_pd = v_pd
+      self.phase_mode = 0
       self.dac_ch = DAC_CH_DEFAULT
       self.key = ""
 
@@ -110,7 +111,9 @@ class DDS():
       return detuning
    
    @kernel(flags={"fast-math"})
-   def set_dds_gamma(self, delta=-1000., amplitude=-0.1, v_pd=-0.1):
+   def set_dds_gamma(self, delta=-1000., amplitude=-0.1, v_pd=-0.1,
+                     phase_offset=0.,
+                     t_phase_origin_mu=np.int64(0)):
       '''
       Sets the DDS frequency and attenuation. Uses delta (detuning) in units of
       gamma, the linewidth of the D1 and D2 transition (Gamma = 2 * pi * 6 MHz).
@@ -131,10 +134,14 @@ class DDS():
       else:
          frequency = self.detuning_to_frequency(linewidths_detuned=delta)
 
-      self.set_dds(frequency=frequency, amplitude=amplitude, v_pd=v_pd)
+      self.set_dds(frequency=frequency, amplitude=amplitude, v_pd=v_pd,
+                   t_phase_origin_mu=t_phase_origin_mu, phase_offset=phase_offset)
 
    @kernel(flags={"fast-math"})
-   def set_dds(self, frequency=-0.1, amplitude=-0.1, v_pd=-0.1, init=False):
+   def set_dds(self, frequency=-0.1, amplitude=-0.1, v_pd=-0.1,
+               phase_offset=0.,
+               t_phase_origin_mu=np.int64(0),
+               init=False):
       """
       Sets the DDS frequency and amplitude. If the DDS is associated with a DAC,
       it also sets the DAC voltage to v_pd.
@@ -176,7 +183,8 @@ class DDS():
       if self.dac_control_bool and (vpd_changed or init):
          self.update_dac_setpoint(self.v_pd)
       if freq_changed or amp_changed or init:
-         self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude)
+         self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude, 
+                             phase=phase_offset, ref_time_mu=t_phase_origin_mu)
    
    @kernel
    def update_dac_setpoint(self, v_pd=-0.1, dac_load = True):
@@ -209,6 +217,23 @@ class DDS():
          if dac_load:
             self.dac_device.load()
       self.dds_device.sw.on()
+
+   @kernel
+   def set_phase_mode(self, mode=0):
+      """
+      Sets the phase mode of the DDS. See ad9910.AD9910.set_phase_mode for
+      details.
+
+      Args:
+          mode (int, optional): Phase mode to set. 0 for continuous phase mode,
+          1 for tracking phase mode. Defaults to 0 (continuous phase mode).
+      """      
+      if mode == 0:
+         self.dds_device.set_phase_mode(ad9910.PHASE_MODE_CONTINUOUS)
+         self.phase_mode = mode
+      elif mode == 1:
+         self.dds_device.set_phase_mode(ad9910.PHASE_MODE_TRACKING)
+         self.phase_mode = mode
 
    @kernel
    def init(self):
