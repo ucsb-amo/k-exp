@@ -56,6 +56,7 @@ class dds_frame():
         self._dummy = DDS(0,0) # placeholder
 
         self.test = self.dds_assign(0,0,default_freq=80.e6,default_amp=0.5)
+        self.test_2 = self.dds_assign(0,1,default_freq=80.e6,default_amp=0.5)
 
         self.core = core
         # self.dds_manager = [DDSManager]
