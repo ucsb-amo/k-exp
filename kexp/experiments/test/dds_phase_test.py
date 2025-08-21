@@ -10,10 +10,8 @@ class ttl_test(EnvExperiment, Base):
         Base.__init__(self,setup_camera=False)
 
         # dt = 1.e-9
-        # self.xvar('dt',[0.,1.e-9]*50)
-        self.p.dt = 0.e-9
-
-        self.p.N_repeats = 32
+        self.xvar('dt',[1.e-9]*1)
+        self.p.dt = 1.e-9
 
         self.finish_prepare(shuffle=False)
 
@@ -34,42 +32,37 @@ class ttl_test(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
+        self.dds.test.dds_device.set_phase_mode(2)
+        # self.dds.test.dds_device.set_phase_mode(0)
+        
+        t0 = now_mu()
+
         f = 1.e6
+        # f2 = 3.14159e6
+        f2 = 10.e6
         phase = 0.
         amp = 0.5
+        self.dds.test.dds_device.set(frequency=f,amplitude=amp,ref_time_mu=t0)
 
-        t_start = now_mu()
-        delay(-10.e-6)
-        
-        self.dds.test.dds_device.set(frequency=f,phase=phase,amplitude=amp,ref_time_mu=t_start)
-        # self.dds.test_2.dds_device.set(frequency=f,phase=phase,amplitude=amp,ref_time_mu=t_start)
-
-        at_mu(t_start)
         self.dds.test.on()
-        # self.dds.test_2.on()
-        delay(20/f)
+        delay(10.e-6)
 
         # trigger
-        self.ttl.test.pulse(1.e-6)
-        delay(-1.e-6)
-        delay(-20.e-9)
-
-        # self.dds.test_2.off()
-        delay(self.p.dt)
-        self.dds.test.off()
-        # delay(self.p.dt)
-        # self.dds.test_2.off()
         
+        self.dds.test.dds_device.set(frequency=f2,amplitude=amp,ref_time_mu=t0)
+        # delay(100.e-9)
+        delay(-500.e-9)
+        self.ttl.test.pulse(1.e-6)
 
-        delay(1.e-3)
+        delay(5.e-6)
+
+        self.dds.test.off()
+
+        delay(0.1)
 
     @kernel
     def run(self):
         self.init_kernel()
-
-        self.dds.test.dds_device.set_phase_mode(2)
-        self.dds.test_2.dds_device.set_phase_mode(2)
-
         self.scan()
 
     def analyze(self):
