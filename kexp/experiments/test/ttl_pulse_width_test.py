@@ -9,7 +9,7 @@ class ttl_test(EnvExperiment, Base):
         Base.__init__(self,setup_camera=False)
 
         # dt = 1.e-9
-        self.xvar('dt',np.linspace(0.,1.e-9,2))
+        self.xvar('dt',[0,1.e-9]*50)
         self.p.dt = 1.e-9
 
         self.finish_prepare(shuffle=False)
@@ -44,7 +44,7 @@ class ttl_test(EnvExperiment, Base):
         delay(self.p.dt)
         self.dds.test_2.off()
 
-        delay(1.)
+        delay(0.1)
 
     @kernel
     def run(self):
