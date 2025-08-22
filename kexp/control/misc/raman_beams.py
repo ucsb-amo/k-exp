@@ -75,11 +75,24 @@ class RamanBeamPair():
         does not change the timeline cursor position. Otherwise, introduces a 5
         us timeline delay.
 
+        Minimum time between pulses when pretriggering to avoid phase skips is 3
+        us.
+
         Args:
-            relative_phase (_type_, optional): _description_. Defaults to dv.
-            global_phase (_type_, optional): _description_. Defaults to dv.
-            t_phase_origin_mu (_type_, optional): _description_. Defaults to di64.
-            pretrigger (bool, optional): _description_. Defaults to True.
+            relative_phase (float, optional): Relative phase between the raman
+            beams. If left unset, does not change the relative phase.
+            global_phase (_type_, optional): Global phase of the raman beams
+            relative to t_phase_origin_mu. If left unset, does not change the
+            global phase.
+            t_phase_origin_mu (_type_, optional): The timestamp used for phase=0
+            for each beam. If this timestamp is T, the phase at time t for a
+            beam of frequency f' is phi(t) = global_phase + f' * (t - T). If
+            unset, does not change the phase origin.
+            pretrigger (bool, optional): Whether or not to pretrigger the set
+            command. If pretrigger is True, the set command runs 5 us before the
+            current timeline cursor position and the function does not change
+            the timeline cursor position. Otherwise, introduces a 5 us timeline
+            delay.
         """        
         
         t = now_mu()
