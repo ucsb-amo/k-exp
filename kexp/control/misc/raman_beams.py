@@ -8,7 +8,6 @@ from artiq.language.core import now_mu, at_mu
 
 dv = -0.1
 di = 0
-di64 = np.int64(0)
 
 class RamanBeamPair():
     def __init__(self,dds_plus=DDS,dds_minus=DDS,params=ExptParams,
@@ -68,7 +67,7 @@ class RamanBeamPair():
 
     @kernel
     def set_phase(self,relative_phase=dv,global_phase=dv,
-                  t_phase_origin_mu=di64,
+                  t_phase_origin_mu=np.int64(-1),
                   pretrigger=True):
         """Shifts the phase of the Raman beams. If pretrigger is True, the phase
         is set 5 us before the current timeline cursor position and the function
@@ -121,7 +120,7 @@ class RamanBeamPair():
             frequency_transition=dv,
             amp_raman=dv,
             global_phase=dv, relative_phase=dv,
-            t_phase_origin_mu=di64,
+            t_phase_origin_mu=np.int64(-1),
             phase_mode=0,
             init=False):
         """
@@ -151,11 +150,12 @@ class RamanBeamPair():
             Updates the internal state of the object and calls the appropriate methods on the
             DDS channels to apply the new settings.
         """
+
         # Determine if frequency, amplitude, or v_pd should be updated
         freq_changed = (frequency_transition >= 0.) and (frequency_transition != self.frequency_transition)
         amp_changed = (amp_raman >= 0.) and (amp_raman != self.amplitude)
         phase_mode_changed = bool(phase_mode) != (self.phase_mode == 1)
-        phase_origin_changed = t_phase_origin_mu > 0. and (t_phase_origin_mu != self.t_phase_origin_mu)
+        phase_origin_changed = t_phase_origin_mu >= 0. and (t_phase_origin_mu != self.t_phase_origin_mu)
         global_phase_changed = global_phase >= 0. and (global_phase != self.global_phase)
         relative_phase_changed = relative_phase >= 0. and (relative_phase != self.relative_phase)
 
