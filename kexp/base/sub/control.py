@@ -1,5 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay, delay_mu, parallel, sequential
+from artiq.language.core import now_mu
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
@@ -12,7 +13,7 @@ import numpy as np
 
 from kexp.util.artiq.async_print import aprint
 
-dv = 100.
+dv = -0.1
 dvlist = np.linspace(1.,1.,5)
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
@@ -32,12 +33,17 @@ class Control():
         self.p = self.params
 
     @kernel
-    def init_raman_beams(self,frequency_transition=dv,amp_raman=dv):
-        if frequency_transition == dv:
-            frequency_transition = self.p.frequency_raman_transition
-        if amp_raman == dv:
-            amp_raman = self.p.amp_raman
-        self.raman.init(frequency_transition,amp_raman)
+    def init_raman_beams(self,frequency_transition=dv,amp_raman=dv,
+                         global_phase=0.,relative_phase=0.,
+                         t_phase_origin_mu=np.int64(-1),
+                         phase_mode=1):
+        if t_phase_origin_mu < 0:
+            t_phase_origin_mu = now_mu()
+        self.raman.set(frequency_transition,amp_raman,
+                       global_phase,relative_phase,
+                       t_phase_origin_mu=t_phase_origin_mu,
+                       phase_mode=phase_mode,
+                       init=True)
 
     @kernel
     def reset_coils(self):

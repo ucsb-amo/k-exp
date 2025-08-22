@@ -12,17 +12,12 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        # self.xvar('frequency_detuned_imaging_m1',np.arange(250.,450.,8)*1.e6)
-
-        # self.xvar('beans',[0]*3)
-        
-        self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6)
-        self.p.t_tof = 10.e-6
-
-        self.p.t_tweezer_hold = 1.e-3
+        self.p.t_tof = 600.e-6
+        self.xvar('t_tof', np.linspace(20.,1500.,10))
+        self.p.t_tweezer_hold = .1e-3
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 
@@ -35,16 +30,15 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
-
         delay(self.p.t_tof)
-
         self.abs_image()
-
+        
     @kernel
     def run(self):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
+        # self.mot_observe()
 
     def analyze(self):
         import os

@@ -13,6 +13,7 @@ from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.sampler_id import sampler_frame
 from kexp.control.artiq.mirny import Mirny
 from kexp.config.expt_params import ExptParams
+from kexp.control.misc.raman_beams import RamanBeamPair
 
 from kexp.control.artiq.Shuttler_CH import Shuttler_CH
 from kexp.control.artiq.DDS import DDS
@@ -133,6 +134,8 @@ class Devices():
         
         self.raman = RamanBeamPair(dds_plus=self.dds.raman_plus,
                                     dds_minus=self.dds.raman_minus,
+                                    frequency_transition=self.params.frequency_raman_transition,
+                                    amplitude=self.params.amp_raman,
                                     params=self.params)
         self.raman._init()
         

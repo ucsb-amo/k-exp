@@ -123,6 +123,8 @@ class Cooling():
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
 
+        self.ttl.d2_mot_shutter.off()
+
         delay(40.e-3)
 
     ## cooling stages
