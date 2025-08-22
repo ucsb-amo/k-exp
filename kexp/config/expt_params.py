@@ -92,8 +92,8 @@ class ExptParams():
         self.t_tweezer_ramp = .56
         self.t_tweezer_hold = 5.e-3
         self.t_lf_tweezer_1064_ramp = .28
-        self.t_lf_tweezer_1064_rampdown = 180.e-3 
-        self.t_lf_tweezer_1064_rampdown2 = 360.e-3   
+        self.t_lf_tweezer_1064_rampdown = 200.e-3 
+        self.t_lf_tweezer_1064_rampdown2 = 450.e-3   
         self.t_lf_tweezer_1064_rampdown3 = .47
         self.t_hf_tweezer_1064_ramp = .26
         self.t_hf_tweezer_1064_rampdown = 120.e-3 
@@ -251,8 +251,8 @@ class ExptParams():
         self.v_pd_tweezer_1064 = 5.
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.2
-        self.v_pd_lf_tweezer_1064_rampdown_end = .329
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .08
+        self.v_pd_lf_tweezer_1064_rampdown_end = .35
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .065
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.
@@ -343,8 +343,8 @@ class ExptParams():
         # low field evap NEW
         self.i_lf_lightsheet_evap1_current = 12.8
 
-        self.i_lf_tweezer_load_current = 16.7
-        self.i_lf_tweezer_evap1_current = 13.69
+        self.i_lf_tweezer_load_current = 16.1
+        self.i_lf_tweezer_evap1_current = 13.9
         self.i_lf_tweezer_evap2_current = 13.2
 
         self.i_spin_mixture = 19.48
