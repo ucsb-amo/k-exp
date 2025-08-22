@@ -124,6 +124,33 @@ class RamanBeamPair():
             t_phase_origin_mu=di64,
             phase_mode=0,
             init=False):
+        """
+        Set the parameters of the Raman beam pair and update the DDS channels as needed.
+
+        This method updates the frequency, amplitude, phase mode, phase origin, global phase,
+        and relative phase of the Raman beams. Only parameters that are explicitly changed
+        (i.e., not left at their default values) will be updated. If `init` is True, all
+        parameters are forced to update regardless of their current values.
+
+        Args:
+            frequency_transition (float, optional): The two-photon transition frequency (Hz).
+                If negative or unchanged, the frequency is not updated.
+            amp_raman (float, optional): The amplitude for the Raman beams.
+                If negative or unchanged, the amplitude is not updated.
+            global_phase (float, optional): The global phase of the Raman beams (radians).
+                If negative or unchanged, the global phase is not updated.
+            relative_phase (float, optional): The relative phase between the Raman beams (radians).
+                If negative or unchanged, the relative phase is not updated.
+            t_phase_origin_mu (int, optional): The phase origin timestamp in machine units.
+                If zero or unchanged, the phase origin is not updated.
+            phase_mode (int, optional): Phase mode (0: independent, 1: synchronized).
+                If unchanged, the phase mode is not updated.
+            init (bool, optional): If True, force all parameters to update regardless of their values.
+
+        Side Effects:
+            Updates the internal state of the object and calls the appropriate methods on the
+            DDS channels to apply the new settings.
+        """
         # Determine if frequency, amplitude, or v_pd should be updated
         freq_changed = (frequency_transition >= 0.) and (frequency_transition != self.frequency_transition)
         amp_changed = (amp_raman >= 0.) and (amp_raman != self.amplitude)

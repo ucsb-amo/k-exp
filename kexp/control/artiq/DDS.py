@@ -145,22 +145,27 @@ class DDS():
    @kernel(flags={"fast-math"})
    def set_dds(self, frequency=-0.1, amplitude=-0.1, v_pd=-0.1, phase=0.,
                t_phase_origin_mu=np.int64(0),
-               init=False, verbose=False):
+               init=False):
       """
-      Sets the DDS frequency and amplitude. If the DDS is associated with a DAC,
-      it also sets the DAC voltage to v_pd.
+      Set the DDS (Direct Digital Synthesizer) frequency, amplitude, phase, and optionally DAC voltage.
+
+      This method updates the DDS device with new frequency, amplitude, and phase values,
+      and, if applicable, sets the associated DAC voltage. Only parameters with non-negative
+      values different from the current state are updated. If `init` is True, all parameters
+      are forced to update regardless of their values.
 
       Args:
-         frequency (float): Frequency in Hz. If negative, the frequency is not
-         updated.
-         amplitude (float): Amplitude in V. If negative, the amplitude is not
-         updated.
-         v_pd (float): Voltage for the DAC. If negative, the voltage is not
-         updated. This is only used if the DDS is controlled by a DAC.
-         phase_offset (float): Phase offset in radians (0 to 2pi). Defaults to 0.
-         init (bool): If True, the DDS is set to the stored parameters, even if
-         no arguments are provided. This is used to set the DDS to a known state
-         at the start of an experiment. Defaults to False.
+         frequency (float, optional): Frequency in Hz. If negative or unchanged, frequency is not updated.
+         amplitude (float, optional): Amplitude in V. If negative or unchanged, amplitude is not updated.
+         v_pd (float, optional): Voltage for the DAC. If negative or unchanged, voltage is not updated.
+               Only used if the DDS is controlled by a DAC.
+         phase (float, optional): Phase offset in radians (0 to 2π). If negative or unchanged, phase is not updated.
+         t_phase_origin_mu (int, optional): Phase origin timestamp in machine units. If zero or unchanged, not updated.
+         init (bool, optional): If True, force all parameters to update regardless of their values.
+
+      Side Effects:
+         Updates the internal state of the DDS object and applies the new settings to the hardware.
+         If the DDS is associated with a DAC, also updates the DAC voltage.
       """
 
       self.update_dac_bool()
