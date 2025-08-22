@@ -322,14 +322,12 @@ class ExptParams():
         self.amp_ao_ry_980_switch = 0.34
 
         # raman
-        self.frequency_raman_plus = 160.e6 
-        self.frequency_raman_minus = 140.e6
         self.amp_raman = .35 # max power & clean pulse shape at 0.35
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
 
-        self.frequency_raman_transition = 41.294e6
+        self.frequency_raman_transition = 200.e3
 
         # low field evap old
         # self.i_evap1_current = 9.5
