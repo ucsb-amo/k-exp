@@ -25,7 +25,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('line_trigger_phase_delay', np.linspace(0.00, 0.017, 10))
         self.p.line_trigger_phase_delay = 0.
         
-        self.xvar('global_phase_shift',np.linspace(0.,np.pi,10))
+        self.xvar('relative_phase_shift',np.linspace(0.,np.pi,10))
+        self.p.relative_phase_shift = 0.
         self.p.global_phase_shift = 0.
 
         self.p.do_pi_pulse = 1
@@ -62,7 +63,8 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(self.p.t_ramsey_delay)
 
-        self.raman.set_phase(global_phase=self.p.global_phase_shift)
+        self.raman.set_phase(global_phase=self.p.global_phase_shift,
+                             relative_phase=self.p.relative_phase_shift)
         self.raman.pulse(self.p.t_raman_pi_pulse/2)
 
     @kernel
