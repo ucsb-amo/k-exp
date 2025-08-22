@@ -56,8 +56,8 @@ class ExptParams():
         # SLM settings
         self.dimension_slm_mask = 25e-6
         self.phase_slm_mask = 0.5 * np.pi
-        self.px_slm_phase_mask_position_x = 1150
-        self.px_slm_phase_mask_position_y = 918
+        self.px_slm_phase_mask_position_x = 1148
+        self.px_slm_phase_mask_position_y = 916
         
         # Cooling timing
         self.t_tof = 20.e-6
@@ -81,7 +81,7 @@ class ExptParams():
         self.t_optical_pumping_bias_rampup = 2.e-3
         
         self.t_lightsheet_rampup = .12
-        self.t_lf_lightsheet_rampdown = .9
+        self.t_lf_lightsheet_rampdown = .7
         self.t_hf_lightsheet_rampdown = .64
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
@@ -92,8 +92,8 @@ class ExptParams():
         self.t_tweezer_ramp = .56
         self.t_tweezer_hold = 5.e-3
         self.t_lf_tweezer_1064_ramp = .28
-        self.t_lf_tweezer_1064_rampdown = 180.e-3 
-        self.t_lf_tweezer_1064_rampdown2 = 250.e-3   
+        self.t_lf_tweezer_1064_rampdown = 200.e-3 
+        self.t_lf_tweezer_1064_rampdown2 = 450.e-3   
         self.t_lf_tweezer_1064_rampdown3 = .47
         self.t_hf_tweezer_1064_ramp = .26
         self.t_hf_tweezer_1064_rampdown = 120.e-3 
@@ -123,7 +123,7 @@ class ExptParams():
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
-        self.t_raman_pi_pulse = 5.6551e-06
+        self.t_raman_pi_pulse = 9.4524e-06
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -250,9 +250,9 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45 # brimrose AO
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_lf_tweezer_1064_ramp_end = 9.3
-        self.v_pd_lf_tweezer_1064_rampdown_end = 1.67
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .11
+        self.v_pd_lf_tweezer_1064_ramp_end = 9.2
+        self.v_pd_lf_tweezer_1064_rampdown_end = .35
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .065
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.
@@ -290,7 +290,7 @@ class ExptParams():
         self.amp_tweezer_list1 = [.25,.25,.25,.25]
         self.amp_tweezer_list2 = [.25,.25,.25,.25]
 
-        self.v_lf_tweezer_paint_amp_max = -1.8
+        self.v_lf_tweezer_paint_amp_max = .2
         self.v_hf_tweezer_paint_amp_max = -2.
 
         # tweezer movement params
@@ -330,7 +330,7 @@ class ExptParams():
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
 
-        self.frequency_raman_transition = 41.093e6
+        self.frequency_raman_transition = 41.08e6
 
         # low field evap old
         # self.i_evap1_current = 9.5
@@ -339,11 +339,11 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # low field evap NEW
-        self.i_lf_lightsheet_evap1_current = 13.7
+        self.i_lf_lightsheet_evap1_current = 12.8
 
-        self.i_lf_tweezer_load_current = 13.75
-        self.i_lf_tweezer_evap1_current = 13.5
-        self.i_lf_tweezer_evap2_current = 13.0
+        self.i_lf_tweezer_load_current = 16.1
+        self.i_lf_tweezer_evap1_current = 13.9
+        self.i_lf_tweezer_evap2_current = 13.2
 
         self.i_spin_mixture = 19.48
 

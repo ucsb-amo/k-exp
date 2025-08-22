@@ -13,19 +13,32 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
         
         # self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6)
-        self.p.t_tof = 300.e-6
-
-        # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-0.1e6, 0.1e6,5))
+        self.p.t_tof = 600.e-6
+        self.line_trigger_phase_delay = 0.0
+        # self.xvar('line_trigger_phase_delay', np.linspace(0., 15.e-3, 10))
+        f_range = 20.e3
+        df = 5.e3
+        self.p.frequency_raman_transition = 41.1095e6
+        self.xvar('frequency_raman_transition',
+                  self.p.frequency_raman_transition + np.arange(-f_range, f_range, df))
 
         # self.xvar('amp_raman',np.linspace(0.12,.35,5))
 
         # self.xvar('t_raman_pulse',np.linspace(0.,300.,100)*1.e-6)
 
-        # self.xvar('t_ramsey_delay',np.linspace(0.,50.,25)*1.e-6)
-        self.p.t_ramsey_delay = 20.e-6
-
+        # T = 1/self.p.frequency_raman_transition
+        # N = 10
+        # dt = T / N
+        # self.xvar('t_ramsey_delay',10.e-6 + np.arange(0.,50.e-9,8.e-9))
+        # self.xvar('t_ramsey_delay',5.e-6 + np.arange(0.,T+dt,dt))
+        self.xvar('t_ramsey_delay', np.linspace(0.,90.,10)*1.e-6)
+        self.p.t_ramsey_delay = 55.e-6
+        # self.xvar('line_trigger_phase_delay', np.linspace(0.00, 0.017, 10))
+        self.p.line_trigger_phase_delay = 0.0057
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
         self.p.t_tweezer_hold = .1e-3
+        # self.xvar('do_pi_pulse',[0,1])
+        self.p.do_pi_pulse = 0
 
         self.xvar('global_phase_shift',np.linspace(0.,np.pi,3))
         self.p.global_phase_shift = 0.
@@ -33,7 +46,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -46,6 +59,12 @@ class tweezer_load(EnvExperiment, Base):
         self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(1.e-3)
+        delay(self.p.line_trigger_phase_delay)
+
+        if self.p.do_pi_pulse:
+            self.raman.pulse(self.p.t_raman_pi_pulse)
+        else:
+            delay(self.p.t_raman_pi_pulse)
         
         self.raman.pulse(self.p.t_raman_pi_pulse/2)
 

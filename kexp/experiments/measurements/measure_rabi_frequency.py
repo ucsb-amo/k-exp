@@ -12,12 +12,12 @@ class measure_rabi_freq(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        self.p.frequency_raman_transition = 41.10e6 # this one
-        self.p.amp_raman = .35
+        # self.p.frequency_raman_transition = 41.10e6 # this one
+        # self.p.amp_raman = .35
         self.xvar('t_raman_pulse',np.linspace(0.,30.,30)*1.e-6)
 
         self.p.t_tweezer_hold = .1e-3
-        self.p.t_tof = 300.e-6
+        self.p.t_tof = 600.e-6
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
