@@ -143,7 +143,7 @@ class DDS():
 
    @kernel(flags={"fast-math"})
    def set_dds(self, frequency=-0.1, amplitude=-0.1, v_pd=-0.1, phase=0.,
-               t_phase_origin_mu=np.int64(0),
+               t_phase_origin_mu=np.int64(-1),
                init=False):
       """
       Set the DDS (Direct Digital Synthesizer) frequency, amplitude, phase, and optionally DAC voltage.
@@ -173,7 +173,7 @@ class DDS():
       freq_changed = (frequency >= 0.) and (frequency != self.frequency)
       amp_changed = (amplitude >= 0.) and (amplitude != self.amplitude)
       vpd_changed = (v_pd >= 0.) and (v_pd != self.v_pd)
-      phase_origin_changed = t_phase_origin_mu > 0. and (t_phase_origin_mu != self.t_phase_origin_mu)
+      phase_origin_changed = t_phase_origin_mu >= 0. and (t_phase_origin_mu != self.t_phase_origin_mu)
       phase_changed = phase >= 0. and (phase != self.phase)
 
       # Update stored values
