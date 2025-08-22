@@ -25,11 +25,21 @@ class ramsey(EnvExperiment, Base):
         N_T = 4
         self.xvar('t_ramsey',np.arange(0.,N_T*T+dt,dt))
 
-        # self.p.t_raman_pulse = 0.
-        # self.p.amp_raman  = 0.25
+        # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-0.1e6, 0.1e6,5))
 
-        self.p.frequency_tweezer_list = [74.e6]
-        self.p.amp_tweezer_list = [.99]
+        # self.xvar('amp_raman',np.linspace(0.12,.35,5))
+
+        # self.xvar('t_raman_pulse',np.linspace(0.,300.,100)*1.e-6)
+
+        # self.xvar('t_ramsey_delay',np.linspace(0.,50.,25)*1.e-6)
+        self.p.t_ramsey_delay = 20.e-6
+
+        # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
+        self.p.t_tweezer_hold = .1e-3
+
+        self.xvar('global_phase_shift',np.linspace(0.,np.pi,3))
+        self.p.global_phase_shift = 0.
+
         self.p.t_mot_load = 1.
         self.p.t_tof = 300.e-6
         self.p.N_repeats = 15
@@ -44,7 +54,12 @@ class ramsey(EnvExperiment, Base):
 
         self.init_raman_beams()
         
-        self.pi_pulse()
+        self.raman.pulse(self.p.t_raman_pi_pulse/2)
+
+        self.raman.set_phase(global_phase=self.p.global_phase_shift)
+        delay(self.p.t_ramsey_delay)
+
+        self.raman.pulse(self.p.t_raman_pi_pulse/2)
 
         self.raman.set_transition_frequency(self.p.frequency_raman_transition_detuned)
 
