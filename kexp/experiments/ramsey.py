@@ -18,9 +18,9 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('line_trigger_phase_delay', np.linspace(0., 15.e-3, 10))
         f_range = 20.e3
         df = 5.e3
-        self.p.frequency_raman_transition = 41.1095e6
-        self.xvar('frequency_raman_transition',
-                  self.p.frequency_raman_transition + np.arange(-f_range, f_range, df))
+        self.p.frequency_raman_transition = 41.099e6
+        # self.xvar('frequency_raman_transition',
+        #           self.p.frequency_raman_transition + np.arange(-f_range, f_range +df, df))
 
         # self.xvar('amp_raman',np.linspace(0.12,.35,5))
 
@@ -41,7 +41,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.do_pi_pulse = 0
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 
