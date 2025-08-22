@@ -13,6 +13,7 @@ import numpy as np
 from kexp.util.artiq.async_print import aprint
 
 dv = -0.1
+di64 = np.int64(0)
 dvlist = np.linspace(1.,1.,5)
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
@@ -33,11 +34,12 @@ class Control():
 
     @kernel
     def init_raman_beams(self,frequency_transition=dv,amp_raman=dv,
-                         global_phase=dv,relative_phase=dv,
+                         global_phase=0.,relative_phase=0.,
+                         t_phase_origin_mu=di64,
                          phase_mode=1):
         self.raman.set(frequency_transition,amp_raman,
                        global_phase,relative_phase,
-                       reset_phase_origin=True,
+                       t_phase_origin_mu=t_phase_origin_mu,
                        phase_mode=phase_mode,
                        init=True)
 

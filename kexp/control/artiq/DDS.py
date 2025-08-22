@@ -12,6 +12,7 @@ from kexp.config.dds_calibration import DDS_Amplitude_Calibration as dds_amp_cal
 from kexp.config.dds_calibration import DDS_VVA_Calibration as dds_vva_cal
 
 DAC_CH_DEFAULT = -1
+di2 = 2
 
 class DDS():
 
@@ -20,6 +21,10 @@ class DDS():
       self.ch = ch
       self.frequency = frequency
       self.amplitude = amplitude
+      self.phase = 0.
+      self.t_phase_origin_mu = np.int64(0)
+
+      self.sw_state = 0
       self.aom_order = 0
       self.transition = 'None'
       self.double_pass = True
@@ -138,10 +143,9 @@ class DDS():
                    t_phase_origin_mu=t_phase_origin_mu, phase_offset=phase_offset)
 
    @kernel(flags={"fast-math"})
-   def set_dds(self, frequency=-0.1, amplitude=-0.1, v_pd=-0.1,
-               phase_offset=0.,
+   def set_dds(self, frequency=-0.1, amplitude=-0.1, v_pd=-0.1, phase=0.,
                t_phase_origin_mu=np.int64(0),
-               init=False):
+               init=False, verbose=False):
       """
       Sets the DDS frequency and amplitude. If the DDS is associated with a DAC,
       it also sets the DAC voltage to v_pd.
@@ -165,6 +169,8 @@ class DDS():
       freq_changed = (frequency >= 0.) and (frequency != self.frequency)
       amp_changed = (amplitude >= 0.) and (amplitude != self.amplitude)
       vpd_changed = (v_pd >= 0.) and (v_pd != self.v_pd)
+      phase_origin_changed = t_phase_origin_mu > 0. and (t_phase_origin_mu != self.t_phase_origin_mu)
+      phase_changed = phase >= 0. and (phase != self.phase)
 
       # Update stored values
       if freq_changed:
@@ -173,19 +179,25 @@ class DDS():
          self.amplitude = amplitude if amplitude >= 0. else self.amplitude
       if self.dac_control_bool and vpd_changed:
          self.v_pd = v_pd if v_pd >= 0. else self.v_pd
+      if phase_origin_changed:
+         self.t_phase_origin_mu = t_phase_origin_mu if t_phase_origin_mu > 0 else self.t_phase_origin_mu
+      if phase_changed:
+         self.phase = phase if phase >= 0. else self.phase
 
       # If init is True, force update
       if init:
          freq_changed = True
          amp_changed = True
          vpd_changed = True
+         phase_origin_changed = True
+         phase_changed = True
 
       # Set DDS and DAC as needed
       if self.dac_control_bool and (vpd_changed or init):
          self.update_dac_setpoint(self.v_pd)
-      if freq_changed or amp_changed or init:
+      if freq_changed or amp_changed or phase_origin_changed or phase_changed or init:
          self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude, 
-                             phase=phase_offset*(2*np.pi), ref_time_mu=t_phase_origin_mu)
+                             phase=self.phase/(2*np.pi), ref_time_mu=self.t_phase_origin_mu)
    
    @kernel
    def update_dac_setpoint(self, v_pd=-0.1, dac_load = True):
