@@ -21,11 +21,14 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('t_raman_pulse',np.linspace(0.,300.,100)*1.e-6)
 
-        self.xvar('t_ramsey_delay',np.linspace(0.,50.,25)*1.e-6)
-        self.p.t_ramsey_delay = 50.e-6
+        # self.xvar('t_ramsey_delay',np.linspace(0.,50.,25)*1.e-6)
+        self.p.t_ramsey_delay = 20.e-6
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
         self.p.t_tweezer_hold = .1e-3
+
+        self.xvar('global_phase_shift',np.linspace(0.,np.pi,3))
+        self.p.global_phase_shift = 0.
 
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
@@ -45,7 +48,10 @@ class tweezer_load(EnvExperiment, Base):
         delay(1.e-3)
         
         self.raman.pulse(self.p.t_raman_pi_pulse/2)
+
+        self.raman.set_phase(global_phase=self.p.global_phase_shift)
         delay(self.p.t_ramsey_delay)
+
         self.raman.pulse(self.p.t_raman_pi_pulse/2)
 
         delay(self.p.t_tweezer_hold)

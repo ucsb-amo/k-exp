@@ -22,6 +22,7 @@ class RamanBeamPair():
 
         self.global_phase = 0.
         self.relative_phase = 0.
+        self.t_phase_origin_mu = np.int64(0)
 
         self.phase_mode = 0  # 0: independent, 1: synchronized
 
@@ -55,8 +56,17 @@ class RamanBeamPair():
         self.set(frequency_transition)
 
     @kernel
-    def set_phase(self,relative_phase=dv,global_phase=dv):
-        self.set(sync_phase=True,global_phase=global_phase,relative_phase=relative_phase)
+    def set_phase(self,relative_phase=dv,global_phase=dv,
+                  reset_phase_origin=False,
+                  pretrigger=True):
+        
+        t = now_mu()
+        self.set(phase_mode=1,
+                 global_phase=global_phase,
+                 relative_phase=relative_phase,
+                 reset_phase_origin=reset_phase_origin)
+        if pretrigger:
+            at_mu(t)
 
     @kernel
     def on(self):
@@ -72,23 +82,24 @@ class RamanBeamPair():
     def set(self,
             frequency_transition=dv,
             amp_raman=dv,
-            sync_phase=True,
             global_phase=0., relative_phase=0.,
+            reset_phase_origin=False,
+            phase_mode=0,
             init=False):
         # Determine if frequency, amplitude, or v_pd should be updated
         freq_changed = (frequency_transition >= 0.) and (frequency_transition != self.frequency_transition)
         amp_changed = (amp_raman >= 0.) and (amp_raman != self.amplitude)
-        sync_phase_mode_changed = sync_phase != (self.phase_mode == 1)
-        global_phase_changed = global_phase_changed >= 0. and (global_phase != self.global_phase)
+        phase_mode_changed = bool(phase_mode) != (self.phase_mode == 1)
+        global_phase_changed = global_phase >= 0. and (global_phase != self.global_phase)
         relative_phase_changed = relative_phase >= 0. and (global_phase != self.global_phase)
-    
+        
         # Update stored values
         if freq_changed:
             self.frequency_transition = frequency_transition if frequency_transition >= 0. else self.frequency_transition
         if amp_changed:
             self.amplitude = amp_raman if amp_raman >= 0. else self.amplitude
-        if sync_phase_mode_changed:
-            self.phase_mode = 1 if sync_phase else self.phase_mode
+        if phase_mode_changed:
+            self.phase_mode = phase_mode
         if global_phase_changed:
             self.global_phase = global_phase if global_phase >= 0. else self.global_phase
         if relative_phase_changed:
@@ -97,24 +108,26 @@ class RamanBeamPair():
         if init:
             freq_changed = True
             amp_changed = True
-            sync_phase_mode_changed = True
+            phase_mode_changed = True
             global_phase_changed = True
             relative_phase_changed = True
-
-        t0 = now_mu()
-        if sync_phase_mode_changed or init:
+        
+        if phase_mode_changed:
             self.dds_plus.set_phase_mode(self.phase_mode)
             self.dds_minus.set_phase_mode(self.phase_mode)
 
-        if freq_changed or amp_changed or global_phase_changed or init:
+        if reset_phase_origin:
+            self.t_phase_origin_mu = now_mu()
+
+        if freq_changed or amp_changed or global_phase_changed or relative_phase_changed:
             self._frequency_array = self.state_splitting_to_ao_frequency(self.frequency_transition)
             self.dds_plus.set_dds(self._frequency_array[0],
                                 self.amplitude,
-                                t_phase_origin_mu=t0,
+                                t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase_offset=self.global_phase)
             self.dds_minus.set_dds(self._frequency_array[1],
                                 self.amplitude,
-                                t_phase_origin_mu=t0,
+                                t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase_offset=self.global_phase+self.relative_phase)
 
     @kernel

@@ -153,6 +153,7 @@ class DDS():
          updated.
          v_pd (float): Voltage for the DAC. If negative, the voltage is not
          updated. This is only used if the DDS is controlled by a DAC.
+         phase_offset (float): Phase offset in radians (0 to 2pi). Defaults to 0.
          init (bool): If True, the DDS is set to the stored parameters, even if
          no arguments are provided. This is used to set the DDS to a known state
          at the start of an experiment. Defaults to False.
@@ -184,7 +185,7 @@ class DDS():
          self.update_dac_setpoint(self.v_pd)
       if freq_changed or amp_changed or init:
          self.dds_device.set(frequency=self.frequency, amplitude=self.amplitude, 
-                             phase=phase_offset, ref_time_mu=t_phase_origin_mu)
+                             phase=phase_offset*(2*np.pi), ref_time_mu=t_phase_origin_mu)
    
    @kernel
    def update_dac_setpoint(self, v_pd=-0.1, dac_load = True):
