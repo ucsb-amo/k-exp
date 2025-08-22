@@ -14,9 +14,9 @@ class tweezer_load(EnvExperiment, Base):
 
         f_range = 20.e3
         df = 5.e3
-        self.p.frequency_raman_transition = 41.1095e6
-        self.xvar('frequency_raman_transition',
-                  self.p.frequency_raman_transition + np.arange(-f_range, f_range, df))
+        self.p.frequency_raman_transition = 41.099e6
+        # self.xvar('frequency_raman_transition',
+        #           self.p.frequency_raman_transition + np.arange(-f_range, f_range +df, df))
 
         # self.xvar('t_ramsey_delay', np.linspace(10.,90.,10)*1.e-6)
         self.p.t_ramsey_delay = 10.e-6
@@ -33,7 +33,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_tweezer_hold = .1e-3
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 
