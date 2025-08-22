@@ -18,14 +18,15 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         
         # self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6)
-        self.p.t_tof = 300.e-6
+        self.p.t_tof = 600.e-6
 
         # self.xvar('frequency_raman_transition',42.27*1e6 + np.linspace(-1.e5,1.e5,15))
         # self.p.frequency_raman_transition = 42.e6
 
         # self.xvar('amp_raman',np.linspace(0.12,.35,5))
+        self.p.amp_raman = 0.35
 
-        self.xvar('t_raman_pulse',np.linspace(0.,30.,30)*1.e-6)
+        self.xvar('t_raman_pulse',np.linspace(0.,100.,60)*1.e-6)
         self.p.t_raman_pulse = 200.e-6
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)

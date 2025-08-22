@@ -32,6 +32,13 @@ class Cooling():
         self.p = self.params
 
     ## meta stages
+    # @kernel
+    # def warmup(self,N=5):
+    #     for _ in range(N):
+    #         self.core.break_realtime()
+    #         self.prepare_lf_tweezers()
+    #         self.tweezer.off()
+
     @kernel
     def prepare_lf_tweezers(self):
         """prepares lf evap tweezers at i_outer = ExptParams.i_spin_mixture with

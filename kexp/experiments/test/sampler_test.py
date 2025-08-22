@@ -18,7 +18,8 @@ class sampler_test(EnvExperiment):
         self.sampler: Sampler
         self.data = np.zeros(8,dtype=float)
 
-        self.v = np.array([1.]*8)
+        # self.v = np.array([1.]*8)
+        self.v = np.linspace(0.,9.,8)
 
     @kernel
     def run(self):
