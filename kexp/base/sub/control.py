@@ -1,5 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay, delay_mu, parallel, sequential
+from artiq.language.core import now_mu
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
@@ -37,6 +38,8 @@ class Control():
                          global_phase=0.,relative_phase=0.,
                          t_phase_origin_mu=di64,
                          phase_mode=1):
+        if t_phase_origin_mu == di64:
+            t_phase_origin_mu = now_mu()
         self.raman.set(frequency_transition,amp_raman,
                        global_phase,relative_phase,
                        t_phase_origin_mu=t_phase_origin_mu,

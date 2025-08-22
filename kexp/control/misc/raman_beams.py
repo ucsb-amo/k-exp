@@ -190,7 +190,7 @@ class RamanBeamPair():
             self.dds_plus.set_dds(self._frequency_array[0],
                                 self.amplitude,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
-                                phase=self.global_phase,verbose=True)
+                                phase=self.global_phase)
             self.dds_minus.set_dds(self._frequency_array[1],
                                 self.amplitude,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
