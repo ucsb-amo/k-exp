@@ -34,9 +34,9 @@ class ExptParams():
         # low field imaging settings at i_spin_mixture = 19.48
         # (free space)
         self.frequency_detuned_imaging_m1 = 289.e6
-        self.frequency_detuned_imaging_0 = 318.e6
-        # self.p.frequency_detuned_imaging_midpoint = 300.e6
-        self.frequency_detuned_imaging_midpoint = 608.e6
+        self.frequency_detuned_imaging_0 = 322.e6
+        self.frequency_detuned_imaging_midpoint = 307.3e6
+        # self.frequency_detuned_imaging_midpoint = 608.e6
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
@@ -55,7 +55,7 @@ class ExptParams():
 
         # SLM settings
         self.dimension_slm_mask = 25e-6
-        self.phase_slm_mask = 0.5 * np.pi
+        self.phase_slm_mask = 0.44 * np.pi
         self.px_slm_phase_mask_position_x = 1148
         self.px_slm_phase_mask_position_y = 916
         
@@ -82,7 +82,7 @@ class ExptParams():
         
         self.t_lightsheet_rampup = .12
         self.t_lf_lightsheet_rampdown = .7
-        self.t_hf_lightsheet_rampdown = .64
+        self.t_hf_lightsheet_rampdown = .7
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = .01
@@ -123,7 +123,7 @@ class ExptParams():
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
-        self.t_raman_pi_pulse = 9.4524e-06
+        self.t_raman_pi_pulse = 8.9305e-06
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -239,7 +239,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lf_lightsheet_rampdown_end = .71 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = 1. #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .71 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -255,7 +255,7 @@ class ExptParams():
         self.v_pd_lf_tweezer_1064_rampdown2_end = .065
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
-        self.v_pd_hf_tweezer_1064_ramp_end = 9.
+        self.v_pd_hf_tweezer_1064_ramp_end = 9.2
         self.v_pd_hf_tweezer_1064_rampdown_end = 1.2
         self.v_pd_hf_tweezer_1064_rampdown2_end = .14
         self.v_pd_hf_tweezer_1064_rampdown3_end = 2.
@@ -350,7 +350,7 @@ class ExptParams():
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 189.
+        self.i_hf_lightsheet_evap1_current = 193.8
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 193.
