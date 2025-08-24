@@ -13,8 +13,8 @@ class gm_tof(EnvExperiment, Base):
                       camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('px_slm_phase_mask_position_x',1148 + np.linspace(-8.,8.,17,dtype=int))
-        self.xvar('px_slm_phase_mask_position_y',916 + np.linspace(-8.,8.,17,dtype=int))
+        self.xvar('px_slm_phase_mask_position_x',1148 + np.linspace(-8.,8.,1,dtype=int))
+        self.xvar('px_slm_phase_mask_position_y',916 + np.linspace(-8.,8.,1,dtype=int))
         # self.xvar('dumdum',[0]*3)
         # self.p.slm_mask = 'spot'
         self.p.phase_slm_mask = 3.14

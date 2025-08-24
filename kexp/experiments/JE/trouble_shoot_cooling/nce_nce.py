@@ -17,10 +17,10 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        # self.p.t_tof = 3800.e-6
-        self.p.t_tof = 800.e-6
-        self.xvar('t_tof',np.linspace(1000.,4800.,10)*1.e-6) 
-        # self.xvar('dumy',[0]*3)
+        self.p.t_tof = 4330.e-6
+        # self.p.t_tof = 600.e-6
+        # self.xvar('t_tof',np.linspace(1000.,5000.,5)*1.e-6) 
+        self.xvar('dumy',[0]*3)
     
         # self.xvar('hf_imaging_detuning', [-617.e6,-505.e6]*1)
 
@@ -75,8 +75,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_hf_tweezer_evap2_current',np.linspace(192.5,194.5,8))
         self.p.i_hf_tweezer_evap2_current = 193.15
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.08,.18,10))
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .15
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.08,.16,15))
+        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .125
 
         # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(100.,1200.,15)*1.e-3) 
         self.p.t_hf_tweezer_1064_rampdown2 = 700.e-3  
@@ -93,17 +93,17 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_tunnel',np.linspace(180.,194.,20)) 
         self.p.i_tunnel = 192. 
 
-        # self.xvar('t_tweezer_hold',np.linspace(0.,50.,10)*1.e-3)
-        self.p.t_tweezer_hold = 5.e-3
+        # self.xvar('t_tweezer_hold',np.linspace(0.,80.,30)*1.e-3)
+        self.p.t_tweezer_hold = 15.e-3
 
         # self.xvar('fringe_repeats',np.linspace(1.,300.,300))
 
-        self.p.frequency_tweezer_list = [73.58e6, 75.4e6]
+        self.p.frequency_tweezer_list = [75.4e6, 76.e6]
         # self.p.frequency_tweezer_list = [76.e6, 76.5e6]
         # self.p.frequency_tweezer_list = [72.5e6]
 
         # a_list = [.18,.21]
-        a_list = [.167,.15]
+        a_list = [.15,.16]
         # a_list = [.15]
         self.p.amp_tweezer_list = a_list
 
