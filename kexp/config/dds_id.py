@@ -55,7 +55,8 @@ class dds_frame():
         self.dds_array = [[DDS(uru,ch,dac_device=self._dac_frame.dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
         self._dummy = DDS(0,0) # placeholder
 
-        self.test = self.dds_assign(0,0,default_freq=80.e6,default_amp=0.5)
+        self.test = self.dds_assign(0,0,default_freq=1.e6,default_amp=0.3)
+        self.test_2 = self.dds_assign(0,1,default_freq=1.e6,default_amp=0.3)
 
         self.core = core
         # self.dds_manager = [DDSManager]

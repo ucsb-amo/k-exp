@@ -11,6 +11,7 @@ from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
 from kexp.config.sampler_id import sampler_frame
 from kexp.config.expt_params import ExptParams
+from kexp.control.misc.raman_beams import RamanBeamPair
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
@@ -114,10 +115,12 @@ class Devices():
         #                        expt_params = self.params,
         #                        core=self.core)
         
-        # self.raman = RamanBeamPair(dds_plus=self.dds.raman_plus,
-        #                             dds_minus=self.dds.raman_minus,
-        #                             params=self.params)
-        # self.raman._init()
+        self.raman = RamanBeamPair(dds_plus=self.dds.test,
+                                    dds_minus=self.dds.test_2,
+                                    frequency_transition=self.params.frequency_raman_transition,
+                                    amplitude=self.params.amp_raman,
+                                    params=self.params)
+        self.raman._init()
         
         # self.ry_980_eo = SSG3021X()
 

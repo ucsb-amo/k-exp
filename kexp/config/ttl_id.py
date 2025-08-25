@@ -10,6 +10,7 @@ class ttl_frame():
         self._dummy = TTL(0)
         
         self.test = self.assign_ttl_out(4)
+        self.test_2 = self.assign_ttl_out(5)
         self.line_trigger = self.assign_ttl_in(0)
 
         self._write_ttl_keys()

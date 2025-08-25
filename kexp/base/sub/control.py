@@ -12,7 +12,8 @@ import numpy as np
 
 from kexp.util.artiq.async_print import aprint
 
-dv = 100.
+dv = -0.1
+di64 = np.int64(0)
 dvlist = np.linspace(1.,1.,5)
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
@@ -28,14 +29,19 @@ class Control():
         # self.tweezer = tweezer()
         # self.lightsheet = lightsheet()
         self.params = ExptParams()
-        # self.raman = RamanBeamPair()
+        self.raman = RamanBeamPair()
         self.p = self.params
 
-    # @kernel
-    # def init_raman_beams(self):
-    #     self.raman.set_transition_frequency(self.p.frequency_raman_transition)
-    #     self.raman.dds_plus.set_dds(amplitude=self.params.amp_raman)
-    #     self.raman.dds_minus.set_dds(amplitude=self.params.amp_raman)
+    @kernel
+    def init_raman_beams(self,frequency_transition=dv,amp_raman=dv,
+                         global_phase=0.,relative_phase=0.,
+                         t_phase_origin_mu=di64,
+                         phase_mode=1):
+        self.raman.set(frequency_transition,amp_raman,
+                       global_phase,relative_phase,
+                       t_phase_origin_mu=t_phase_origin_mu,
+                       phase_mode=phase_mode,
+                       init=True)
 
     # @kernel
     # def reset_coils(self):
