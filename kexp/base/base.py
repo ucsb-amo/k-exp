@@ -21,7 +21,7 @@ from kexp.config.camera_id import img_types as img
 from kexp.util.artiq.async_print import aprint
 
 class Base(Devices, Cooling, Image, Dealer, Cameras,
-            Scanner, Scribe, Control, Monitor):
+            Scanner, Scribe, Control):
     def __init__(self,
                  setup_camera=True,
                  save_data=True,
@@ -46,6 +46,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras,
 
         self.prepare_devices(expt_params=self.params)
 
+        self.monitor = Monitor(expt=self)
+
         self.choose_camera(setup_camera,imaging_type,camera_select)
 
         self.images = []
@@ -58,8 +60,6 @@ class Base(Devices, Cooling, Image, Dealer, Cameras,
         self._setup_awg = False
 
         self.ds = DataSaver()
-
-        Monitor.__init__(self)
 
     def finish_prepare(self,N_repeats=[],shuffle=True,verbose=True):
         """

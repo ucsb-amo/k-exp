@@ -8,10 +8,20 @@
   },
   "dds": {
     "test": {
-      "amplitude": 0.5,
+      "amplitude": 0.3,
       "aom_order": 0,
       "ch": 0,
-      "frequency": 80000000.0,
+      "frequency": 1000000.0,
+      "sw_state": 0,
+      "transition": "None",
+      "urukul_idx": 0,
+      "v_pd": 5.0
+    },
+    "test_2": {
+      "amplitude": 0.3,
+      "aom_order": 0,
+      "ch": 1,
+      "frequency": 1000000.0,
       "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
@@ -26,7 +36,7 @@
       "shuttler_id.py",
       "ttl_id.py"
     ],
-    "timestamp": "2025-08-12T10:24:09.476744"
+    "timestamp": "2025-08-25T11:28:57.126542"
   },
   "ttl": {
     "line_trigger": {
@@ -36,7 +46,12 @@
     },
     "test": {
       "ch": 4,
-      "ttl_state": 1,
+      "ttl_state": 0,
+      "type": "out"
+    },
+    "test_2": {
+      "ch": 5,
+      "ttl_state": 0,
       "type": "out"
     }
   }
