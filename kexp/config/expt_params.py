@@ -149,10 +149,10 @@ class ExptParams():
         self.v_2d_mot_current = 2.5
 
         #MOT
-        self.detune_d2_c_mot = -2.2
+        self.detune_d2_c_mot = -2.3
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -5.2
+        self.detune_d2_r_mot = -5.4
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -205,8 +205,8 @@ class ExptParams():
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = .09 #0.01
-        self.pfrac_r_gmramp_end = .88# 0.729
+        self.pfrac_c_gmramp_end = .06 #0.01
+        self.pfrac_r_gmramp_end = .93# 0.729
         self.n_gmramp_steps = 200
 
         # mag trap
