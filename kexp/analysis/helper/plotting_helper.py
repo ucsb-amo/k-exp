@@ -37,7 +37,7 @@ def remap_xticks(func, fmt='', axis=0, ax=None):
     elif axis == 1:
         ax.set_yticklabels(new_labels)
 
-def format_xticks(fmt, axis=0, ax=None):
+def format_ticks(fmt, axis=0, ax=None):
     """
     Change the x tick label format for the current axis.
 
@@ -46,7 +46,7 @@ def format_xticks(fmt, axis=0, ax=None):
     """
     if ax == None:
         ax = plt.gca()
-    label_vals = get_ticklabel_values(ax)
+    label_vals = get_ticklabel_values(axis,ax)
     new_labels = [f"{val:{fmt}}" for val in label_vals]
     if axis == 0:
         ax.set_xticklabels(new_labels)

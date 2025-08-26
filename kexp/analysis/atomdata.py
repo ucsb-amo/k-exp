@@ -169,8 +169,14 @@ class atomdata():
         self.sum_od_x = np.sum(self.od,self.od.ndim-2)
         self.sum_od_y = np.sum(self.od,self.od.ndim-1)
 
-        self.axis_x = self.camera_params.pixel_size_m / self.camera_params.magnification * np.arange(self.sum_od_x.shape[-1])
-        self.axis_y = self.camera_params.pixel_size_m / self.camera_params.magnification * np.arange(self.sum_od_x.shape[-1])
+        self.axis_camera_px_x = np.arange(self.sum_od_x.shape[-1])
+        self.axis_camera_px_y = np.arange(self.sum_od_y.shape[-1])
+
+        self.axis_camera_x = self.camera_params.pixel_size_m * self.axis_camera_px_x
+        self.axis_camera_y = self.camera_params.pixel_size_m * self.axis_camera_px_y
+
+        self.axis_x = self.axis_camera_x / self.camera_params.magnification
+        self.axis_y = self.axis_camera_y / self.camera_params.magnification
         
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
