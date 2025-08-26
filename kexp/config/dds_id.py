@@ -53,7 +53,6 @@ class dds_frame():
             self._dac_frame = dac_frame()
 
         self.dds_array = [[DDS(uru,ch,dac_device=self._dac_frame.dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
-        self._dummy = DDS(0,0) # placeholder
 
         self.test = self.dds_assign(0,0,default_freq=1.e6,default_amp=0.3)
         self.test_2 = self.dds_assign(0,1,default_freq=1.e6,default_amp=0.3)
@@ -149,7 +148,9 @@ class dds_frame():
             ch = idx[1]
             freq, amp, v_pd = 0., 0., 0.
             this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame.dac_device)
+            this_dds.key = f"urukul{uru}_ch{ch}"
             self.dds_array[uru][ch] = this_dds
+            vars(self)[this_dds.key] = this_dds
 
     @portable
     def reset_defaults(self):

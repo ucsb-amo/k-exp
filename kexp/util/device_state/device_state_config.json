@@ -1,5 +1,160 @@
 {
   "dac": {
+    "dac_ch1": {
+      "ch": 1,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch10": {
+      "ch": 10,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch11": {
+      "ch": 11,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch12": {
+      "ch": 12,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch13": {
+      "ch": 13,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch14": {
+      "ch": 14,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch15": {
+      "ch": 15,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch16": {
+      "ch": 16,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch17": {
+      "ch": 17,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch18": {
+      "ch": 18,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch19": {
+      "ch": 19,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch2": {
+      "ch": 2,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch20": {
+      "ch": 20,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch21": {
+      "ch": 21,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch22": {
+      "ch": 22,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch23": {
+      "ch": 23,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch24": {
+      "ch": 24,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch25": {
+      "ch": 25,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch26": {
+      "ch": 26,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch27": {
+      "ch": 27,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch28": {
+      "ch": 28,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch29": {
+      "ch": 29,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch3": {
+      "ch": 3,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch30": {
+      "ch": 30,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch31": {
+      "ch": 31,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch4": {
+      "ch": 4,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch5": {
+      "ch": 5,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch6": {
+      "ch": 6,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch7": {
+      "ch": 7,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch8": {
+      "ch": 8,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch9": {
+      "ch": 9,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
     "test": {
       "ch": 0,
       "max_voltage": 9.99,
@@ -11,6 +166,7 @@
       "amplitude": 0.3,
       "aom_order": 0,
       "ch": 0,
+      "dac_ch": -1,
       "frequency": 1000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -21,11 +177,34 @@
       "amplitude": 0.3,
       "aom_order": 0,
       "ch": 1,
+      "dac_ch": -1,
       "frequency": 1000000.0,
       "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
       "v_pd": 5.0
+    },
+    "urukul0_ch2": {
+      "amplitude": 0.0,
+      "aom_order": 0,
+      "ch": 2,
+      "dac_ch": -1,
+      "frequency": 0.0,
+      "sw_state": 0,
+      "transition": "None",
+      "urukul_idx": 0,
+      "v_pd": 0.0
+    },
+    "urukul0_ch3": {
+      "amplitude": 0.0,
+      "aom_order": 0,
+      "ch": 3,
+      "dac_ch": -1,
+      "frequency": 0.0,
+      "sw_state": 0,
+      "transition": "None",
+      "urukul_idx": 0,
+      "v_pd": 0.0
     }
   },
   "metadata": {
@@ -36,14 +215,9 @@
       "shuttler_id.py",
       "ttl_id.py"
     ],
-    "timestamp": "2025-08-25T11:28:57.126542"
+    "timestamp": "2025-08-25T16:57:19.605924"
   },
   "ttl": {
-    "line_trigger": {
-      "ch": 0,
-      "ttl_state": 0,
-      "type": "in"
-    },
     "test": {
       "ch": 4,
       "ttl_state": 0,
@@ -51,6 +225,16 @@
     },
     "test_2": {
       "ch": 5,
+      "ttl_state": 0,
+      "type": "out"
+    },
+    "ttl6": {
+      "ch": 6,
+      "ttl_state": 0,
+      "type": "out"
+    },
+    "ttl7": {
+      "ch": 7,
       "ttl_state": 0,
       "type": "out"
     }

@@ -234,6 +234,15 @@ class DDS():
       self.sw_state = 1
 
    @kernel
+   def set_sw(self, state):
+      if state:
+         self.dds_device.sw.on()
+         self.sw_state = 1
+      else:
+         self.dds_device.sw.off()
+         self.sw_state = 0
+
+   @kernel
    def set_phase_mode(self, mode=0):
       """
       Sets the phase mode of the DDS. See ad9910.AD9910.set_phase_mode for

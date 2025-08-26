@@ -73,26 +73,26 @@ class Monitor:
                     self.dds_dict[attr_name] = attr_value
                     self.dds_frequency_amplitude_kernels.append(kernel_from_string(
                         ["expt","f", "a"],
-                        f"expt.dds.{attr_name}.dds_device.set(frequency=f, amplitude=a)"
+                        f"expt.dds.{attr_name}.set_dds(frequency=f, amplitude=a)"
                     ))
                     self.dds_vpd_kernels.append(kernel_from_string(
-                        ["expt","v_pd"],
-                        f"expt.dds.{attr_name}.dac_device.write_dac(channel=expt.dds.{attr_name}.dac_ch, voltage=v_pd)"
+                        ["expt","v_pd_val"],
+                        f"expt.dds.{attr_name}.set_dds(v_pd=v_pd_val)"
                     ))
                     self.dds_sw_state_kernels.append(kernel_from_string(
                         ["expt","state"],
-                        f"expt.dds.{attr_name}.dds_device.sw.set_o(state)"
+                        f"expt.dds.{attr_name}.set_sw(state);"
                     ))
 
         # Build TTL device kernels
         for attr_name in dir(self.ttl):
             if not attr_name.startswith('_') and attr_name not in ['ttl_list', 'camera']:
                 attr_value = getattr(self.ttl, attr_name)
-                if isinstance(attr_value, (TTL_OUT, TTL_IN)):
+                if isinstance(attr_value, (TTL_OUT)):
                     self.ttl_dict[attr_name] = attr_value
                     self.ttl_kernels.append(kernel_from_string(
                         ["expt","state"],
-                        f"expt.ttl.{attr_name}.ttl_device.set_o(state)"
+                        f"expt.ttl.{attr_name}.set_state(state)"
                     ))
 
         # Build DAC device kernels
@@ -103,7 +103,7 @@ class Monitor:
                     self.dac_dict[attr_name] = attr_value
                     self.dac_kernels.append(kernel_from_string(
                         ["expt","v"],
-                        f"expt.dac.{attr_name}.dac_device.write_dac(channel=expt.dac.{attr_name}.ch, voltage=v)"
+                        f"expt.dac.{attr_name}.set(v)"
                     ))
 
     def load_config_file(self) -> Optional[dict]:

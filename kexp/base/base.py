@@ -228,5 +228,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras,
                 self.write_data(expt_filepath)
             else:
                 self.remove_incomplete_data()
+
+        
+        from kexp.util.device_state import update_device_states
+        update_device_states(self)
                 
         server_talk.play_random_sound()

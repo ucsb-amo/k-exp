@@ -1,473 +1,237 @@
 {
   "dac": {
-    "inner_coil_pid": {
-      "ch": 18,
+    "dac_ch1": {
+      "ch": 1,
       "max_voltage": 9.99,
       "voltage": 0.0
     },
-    "inner_coil_supply_current": {
-      "ch": 8,
-      "max_voltage": 5.9,
-      "voltage": 1.0
-    },
-    "inner_coil_supply_voltage": {
-      "ch": 11,
-      "max_voltage": 9.99,
-      "voltage": 1.0
-    },
-    "lightsheet_paint_amp": {
-      "ch": 0,
-      "max_voltage": 9.99,
-      "voltage": 0.0
-    },
-    "outer_coil_pid": {
-      "ch": 19,
-      "max_voltage": 9.99,
-      "voltage": 0.0
-    },
-    "outer_coil_supply_current": {
-      "ch": 9,
-      "max_voltage": 7.0,
-      "voltage": 0.0
-    },
-    "outer_coil_supply_voltage": {
+    "dac_ch10": {
       "ch": 10,
       "max_voltage": 9.99,
       "voltage": 0.0
     },
-    "supply_current_2dmot": {
-      "ch": 4,
+    "dac_ch11": {
+      "ch": 11,
       "max_voltage": 9.99,
-      "voltage": 2.447
+      "voltage": 0.0
     },
-    "test_dac": {
+    "dac_ch12": {
+      "ch": 12,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch13": {
+      "ch": 13,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch14": {
+      "ch": 14,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch15": {
+      "ch": 15,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch16": {
+      "ch": 16,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch17": {
+      "ch": 17,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch18": {
+      "ch": 18,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch19": {
+      "ch": 19,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch2": {
+      "ch": 2,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch20": {
+      "ch": 20,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch21": {
+      "ch": 21,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch22": {
+      "ch": 22,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch23": {
+      "ch": 23,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch24": {
+      "ch": 24,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch25": {
+      "ch": 25,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch26": {
+      "ch": 26,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch27": {
+      "ch": 27,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch28": {
+      "ch": 28,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch29": {
+      "ch": 29,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch3": {
+      "ch": 3,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch30": {
       "ch": 30,
       "max_voltage": 9.99,
       "voltage": 0.0
     },
-    "tweezer_paint_amp": {
-      "ch": 16,
+    "dac_ch31": {
+      "ch": 31,
       "max_voltage": 9.99,
       "voltage": 0.0
     },
-    "v_pd_tweezer_pid1": {
-      "ch": 12,
-      "max_voltage": 9.99,
-      "voltage": 9.7
-    },
-    "v_pd_tweezer_pid2": {
-      "ch": 17,
-      "max_voltage": 10.0,
-      "voltage": 6.0
-    },
-    "vco_rf": {
-      "ch": 13,
+    "dac_ch4": {
+      "ch": 4,
       "max_voltage": 9.99,
       "voltage": 0.0
     },
-    "vva_d1_3d_c": {
-      "ch": 2,
-      "max_voltage": 9.99,
-      "voltage": 3.7266666666666657
-    },
-    "vva_d1_3d_r": {
-      "ch": 3,
-      "max_voltage": 9.99,
-      "voltage": 3.7266666666666657
-    },
-    "vva_lightsheet": {
-      "ch": 1,
-      "max_voltage": 9.99,
-      "voltage": 9.7
-    },
-    "vva_ry_405": {
-      "ch": 14,
-      "max_voltage": 9.99,
-      "voltage": 0.0
-    },
-    "vva_ry_980": {
-      "ch": 15,
-      "max_voltage": 9.99,
-      "voltage": 0.0
-    },
-    "xshim_current_control": {
+    "dac_ch5": {
       "ch": 5,
       "max_voltage": 9.99,
-      "voltage": 0.85
+      "voltage": 0.0
     },
-    "yshim_current_control": {
+    "dac_ch6": {
       "ch": 6,
       "max_voltage": 9.99,
-      "voltage": 0.82
+      "voltage": 0.0
     },
-    "zshim_current_control": {
+    "dac_ch7": {
       "ch": 7,
       "max_voltage": 9.99,
-      "voltage": 0.22
+      "voltage": 0.0
+    },
+    "dac_ch8": {
+      "ch": 8,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "dac_ch9": {
+      "ch": 9,
+      "max_voltage": 9.99,
+      "voltage": 0.0
+    },
+    "test": {
+      "ch": 0,
+      "max_voltage": 9.99,
+      "voltage": 0.0
     }
   },
   "dds": {
-    "antenna_rf": {
-      "amplitude": 0.99,
+    "test": {
+      "amplitude": 0.3,
       "aom_order": 0,
       "ch": 0,
-      "frequency": 200000000.0,
-      "state": 0,
+      "frequency": 1000000.0,
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
       "v_pd": 5.0
     },
-    "beatlock_ref": {
-      "amplitude": 0.1,
-      "aom_order": 0,
-      "ch": 2,
-      "frequency": 113981250.0,
-      "state": 1,
-      "transition": "None",
-      "urukul_idx": 3,
-      "v_pd": 5.0
-    },
-    "d1_3d_c": {
+    "test_2": {
       "amplitude": 0.3,
-      "aom_order": -1,
-      "ch": 3,
-      "frequency": 83925000.0,
-      "state": 0,
-      "transition": "D1",
-      "urukul_idx": 3,
-      "v_pd": 5.0
-    },
-    "d1_3d_r": {
-      "amplitude": 0.3,
-      "aom_order": 1,
-      "ch": 0,
-      "frequency": 146925000.0,
-      "state": 0,
-      "transition": "D1",
-      "urukul_idx": 4,
-      "v_pd": 5.0
-    },
-    "d1_beatlock_ref": {
-      "amplitude": 0.1,
       "aom_order": 0,
       "ch": 1,
-      "frequency": 42260000.0,
-      "state": 1,
+      "frequency": 1000000.0,
+      "sw_state": 0,
       "transition": "None",
-      "urukul_idx": 5,
+      "urukul_idx": 0,
       "v_pd": 5.0
     },
-    "d1_blueshield": {
-      "amplitude": 0.21,
-      "aom_order": 0,
-      "ch": 2,
-      "frequency": 150000000.0,
-      "state": 0,
-      "transition": "None",
-      "urukul_idx": 5,
-      "v_pd": 5.0
-    },
-    "d1_probe": {
-      "amplitude": 0.21,
-      "aom_order": 0,
-      "ch": 0,
-      "frequency": 100000000.0,
-      "state": 0,
-      "transition": "None",
-      "urukul_idx": 5,
-      "v_pd": 5.0
-    },
-    "d2_2dh_c": {
-      "amplitude": 0.168,
-      "aom_order": -1,
-      "ch": 0,
-      "frequency": 122024999.99999999,
-      "state": 0,
-      "transition": "D2",
-      "urukul_idx": 3,
-      "v_pd": 5.0
-    },
-    "d2_2dh_r": {
-      "amplitude": 0.188,
-      "aom_order": 1,
-      "ch": 3,
-      "frequency": 101025000.0,
-      "state": 0,
-      "transition": "D2",
-      "urukul_idx": 2,
-      "v_pd": 5.0
-    },
-    "d2_2dv_c": {
-      "amplitude": 0.188,
-      "aom_order": -1,
-      "ch": 2,
-      "frequency": 119925000.0,
-      "state": 0,
-      "transition": "D2",
-      "urukul_idx": 2,
-      "v_pd": 5.0
-    },
-    "d2_2dv_r": {
-      "amplitude": 0.188,
-      "aom_order": 1,
-      "ch": 1,
-      "frequency": 105225000.0,
-      "state": 0,
-      "transition": "D2",
-      "urukul_idx": 2,
-      "v_pd": 5.0
-    },
-    "d2_3d_c": {
-      "amplitude": 0.188,
-      "aom_order": -1,
-      "ch": 2,
-      "frequency": 122024999.99999999,
-      "state": 0,
-      "transition": "D2",
-      "urukul_idx": 1,
-      "v_pd": 5.0
-    },
-    "d2_3d_r": {
-      "amplitude": 0.188,
-      "aom_order": 1,
-      "ch": 3,
-      "frequency": 99824999.99999999,
-      "state": 0,
-      "transition": "D2",
-      "urukul_idx": 1,
-      "v_pd": 5.0
-    },
-    "imaging": {
+    "urukul0_ch2": {
       "amplitude": 0.0,
-      "aom_order": 1,
-      "ch": 1,
-      "frequency": 350000000.0,
-      "state": 0,
-      "transition": "None",
-      "urukul_idx": 4,
-      "v_pd": 5.0
-    },
-    "mot_killer": {
-      "amplitude": 0.188,
-      "aom_order": -1,
-      "ch": 1,
-      "frequency": 115425000.0,
-      "state": 0,
-      "transition": "D2",
-      "urukul_idx": 3,
-      "v_pd": 5.0
-    },
-    "optical_pumping": {
-      "amplitude": 0.25,
-      "aom_order": -1,
-      "ch": 3,
-      "frequency": 115425000.0,
-      "state": 0,
-      "transition": "D1",
-      "urukul_idx": 4,
-      "v_pd": 5.0
-    },
-    "push": {
-      "amplitude": 0.188,
-      "aom_order": 1,
-      "ch": 0,
-      "frequency": 111524999.99999999,
-      "state": 0,
-      "transition": "D2",
-      "urukul_idx": 2,
-      "v_pd": 5.0
-    },
-    "raman_minus": {
-      "amplitude": 0.35,
-      "aom_order": 1,
+      "aom_order": 0,
       "ch": 2,
-      "frequency": 140000000.0,
-      "state": 0,
+      "frequency": 0.0,
+      "sw_state": 0,
       "transition": "None",
-      "urukul_idx": 4,
-      "v_pd": 5.0
+      "urukul_idx": 0,
+      "v_pd": 0.0
     },
-    "raman_plus": {
-      "amplitude": 0.35,
-      "aom_order": 1,
+    "urukul0_ch3": {
+      "amplitude": 0.0,
+      "aom_order": 0,
       "ch": 3,
-      "frequency": 160000000.0,
-      "state": 0,
-      "transition": "None",
-      "urukul_idx": 5,
-      "v_pd": 5.0
-    },
-    "ry_405_switch": {
-      "amplitude": 0.1,
-      "aom_order": 1,
-      "ch": 1,
-      "frequency": 80000000.0,
-      "state": 0,
+      "frequency": 0.0,
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
-      "v_pd": 5.0
-    },
-    "ry_980_switch": {
-      "amplitude": 0.34,
-      "aom_order": 1,
-      "ch": 2,
-      "frequency": 80000000.0,
-      "state": 0,
-      "transition": "None",
-      "urukul_idx": 0,
-      "v_pd": 5.0
-    },
-    "tweezer_pid_1": {
-      "amplitude": 0.45,
-      "aom_order": 1,
-      "ch": 3,
-      "frequency": 80000000.0,
-      "state": 0,
-      "transition": "None",
-      "urukul_idx": 0,
-      "v_pd": 5.0
-    },
-    "tweezer_pid_2": {
-      "amplitude": 0.45,
-      "aom_order": 1,
-      "ch": 0,
-      "frequency": 200000000.0,
-      "state": 0,
-      "transition": "None",
-      "urukul_idx": 1,
-      "v_pd": 5.0
+      "v_pd": 0.0
     }
   },
   "metadata": {
-    "previous_timestamp": "2025-08-05T12:20:54.489150",
-    "timestamp": "2025-08-05T15:25:29.365536",
-    "total_devices_updated": 69,
-    "updated_from": "live_base_object"
+    "generated_from": [
+      "dac_id.py",
+      "dds_id.py",
+      "sampler_id.py",
+      "shuttler_id.py",
+      "ttl_id.py"
+    ],
+    "timestamp": "2025-08-25T16:47:40.846244"
   },
   "ttl": {
-    "andor": {
-      "ch": 7,
-      "state": 0,
-      "type": "out"
-    },
-    "aod_rf_sw": {
-      "ch": 13,
-      "state": 0,
-      "type": "out"
-    },
-    "awg_trigger": {
-      "ch": 14,
-      "state": 0,
-      "type": "out"
-    },
-    "basler": {
-      "ch": 5,
-      "state": 0,
-      "type": "out"
-    },
-    "basler_2dmot": {
-      "ch": 20,
-      "state": 0,
-      "type": "out"
-    },
-    "coil_discharge_igbt": {
-      "ch": 0,
-      "state": 0,
-      "type": "out"
-    },
-    "d2_mot_shutter": {
-      "ch": 22,
-      "state": 0,
-      "type": "out"
-    },
-    "hbridge_helmholtz": {
-      "ch": 9,
-      "state": 0,
-      "type": "out"
-    },
-    "imaging_shutter_x": {
-      "ch": 19,
-      "state": 0,
-      "type": "out"
-    },
-    "imaging_shutter_xy": {
-      "ch": 18,
-      "state": 0,
-      "type": "out"
-    },
-    "inner_coil_igbt": {
-      "ch": 6,
-      "state": 1,
-      "type": "out"
-    },
-    "inner_coil_pid_ttl": {
-      "ch": 2,
-      "state": 0,
-      "type": "out"
-    },
-    "keithley_trigger": {
-      "ch": 48,
-      "state": 0,
-      "type": "out"
-    },
-    "lightsheet_pid_int_hold_zero": {
-      "ch": 12,
-      "state": 0,
-      "type": "out"
-    },
-    "lightsheet_sw": {
+    "test": {
       "ch": 4,
-      "state": 0,
+      "ttl_state": 0,
       "type": "out"
     },
-    "line_trigger": {
-      "ch": 40,
-      "state": 0,
-      "type": "in"
-    },
-    "outer_coil_igbt": {
-      "ch": 8,
-      "state": 0,
+    "test_2": {
+      "ch": 5,
+      "ttl_state": 0,
       "type": "out"
     },
-    "outer_coil_pid_ttl": {
-      "ch": 3,
-      "state": 0,
+    "ttl6": {
+      "ch": 6,
+      "ttl_state": 0,
       "type": "out"
     },
-    "pd_scope_trig": {
-      "ch": 16,
-      "state": 0,
-      "type": "out"
-    },
-    "pd_scope_trig_2": {
-      "ch": 17,
-      "state": 0,
-      "type": "out"
-    },
-    "test_trig": {
-      "ch": 21,
-      "state": 0,
-      "type": "out"
-    },
-    "tweezer_pid1_int_hold_zero": {
-      "ch": 11,
-      "state": 0,
-      "type": "out"
-    },
-    "tweezer_pid2_enable": {
-      "ch": 1,
-      "state": 0,
-      "type": "out"
-    },
-    "z_basler": {
-      "ch": 10,
-      "state": 0,
-      "type": "out"
-    },
-    "zshim_hbridge_flip": {
-      "ch": 15,
-      "state": 0,
+    "ttl7": {
+      "ch": 7,
+      "ttl_state": 0,
       "type": "out"
     }
   }

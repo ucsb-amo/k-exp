@@ -34,6 +34,13 @@ class TTL_OUT(TTL):
         self.state = 0
 
     @kernel
+    def set_state(self, state):
+      if state:
+         self.on()
+      else:
+         self.off()
+
+    @kernel
     def pulse(self,t):
         self.ttl_device.on()
         delay(t)

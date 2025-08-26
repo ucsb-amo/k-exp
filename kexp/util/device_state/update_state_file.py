@@ -70,23 +70,15 @@ def extract_live_dds_states(dds_frame) -> Dict[str, Dict[str, Any]]:
         # Check if it's a DDS object using isinstance
         if isinstance(attr_value, DDS):
             # Get current live values and ensure JSON serializable
-            frequency = ensure_json_serializable(getattr(attr_value, 'frequency', 0.0))
-            amplitude = ensure_json_serializable(getattr(attr_value, 'amplitude', 0.0))
-            v_pd = ensure_json_serializable(getattr(attr_value, 'v_pd', 0.0))
-            sw_state = ensure_json_serializable(getattr(attr_value, 'sw_state', 0))
-            urukul_idx = ensure_json_serializable(getattr(attr_value, 'urukul_idx', 0))
-            ch = ensure_json_serializable(getattr(attr_value, 'ch', 0))
-            aom_order = ensure_json_serializable(getattr(attr_value, 'aom_order', 0))
-            
             devices[attr_name] = {
-                'frequency': float(frequency),
-                'amplitude': float(amplitude),
-                'v_pd': float(v_pd),
-                'urukul_idx': int(urukul_idx),
-                'ch': int(ch),
-                'state': int(sw_state),  # Store as integer (0/1)
+                'frequency': ensure_json_serializable(getattr(attr_value, 'frequency', 0.0)),
+                'amplitude': ensure_json_serializable(getattr(attr_value, 'amplitude', 0.0)),
+                'v_pd': ensure_json_serializable(getattr(attr_value, 'v_pd', 0.0)),
+                'urukul_idx': ensure_json_serializable(getattr(attr_value, 'urukul_idx', 0)),
+                'ch': ensure_json_serializable(getattr(attr_value, 'ch', 0)),
+                'sw_state': ensure_json_serializable(getattr(attr_value, 'sw_state', 0)),
                 'transition': str(getattr(attr_value, 'transition', 'None')),
-                'aom_order': int(aom_order)
+                'aom_order': ensure_json_serializable(getattr(attr_value, 'aom_order', 0))
             }
     
     return devices
@@ -112,13 +104,10 @@ def extract_live_ttl_states(ttl_frame) -> Dict[str, Dict[str, Any]]:
                 ttl_type = 'out'
             
             # Get actual state from the TTL object and ensure JSON serializable
-            ttl_state = ensure_json_serializable(getattr(attr_value, 'state', 0))
-            ch = ensure_json_serializable(getattr(attr_value, 'ch', 0))
-            
             devices[attr_name] = {
-                'ch': int(ch),
-                'state': int(ttl_state),  # Store as integer (0/1)
-                'type': str(ttl_type)
+                'ch': ensure_json_serializable(getattr(attr_value, 'ch', 0)),
+                'ttl_state': ensure_json_serializable(getattr(attr_value, 'state', 0)),
+                'type': ttl_type
             }
     
     return devices
@@ -136,15 +125,10 @@ def extract_live_dac_states(dac_frame) -> Dict[str, Dict[str, Any]]:
         
         # Check if it's a DAC_CH object using isinstance
         if isinstance(attr_value, DAC_CH):
-            # Get current live voltage value and ensure JSON serializable
-            voltage = ensure_json_serializable(getattr(attr_value, 'v', 0.0))
-            max_voltage = ensure_json_serializable(getattr(attr_value, 'max_v', 9.99))
-            ch = ensure_json_serializable(getattr(attr_value, 'ch', 0))
-            
             devices[attr_name] = {
-                'ch': int(ch),
-                'voltage': float(voltage),
-                'max_voltage': float(max_voltage)
+                'ch': ensure_json_serializable(getattr(attr_value, 'ch', 0)),
+                'voltage': ensure_json_serializable(getattr(attr_value, 'v', 0.0)),
+                'max_voltage': ensure_json_serializable(getattr(attr_value, 'max_v', 9.99))
             }
     
     return devices
@@ -177,10 +161,9 @@ def save_updated_config(config_data: Dict[str, Any], config_file: Path) -> bool:
         return True
     except Exception as e:
         print(f"Error saving configuration file: {e}")
-        print(f"Error details: {type(e).__name__}: {e}")
         return False
 
-def update_state_from_base(base_obj, config_file: Optional[Path] = None, 
+def update_device_states(base_obj, config_file: Optional[Path] = None, 
                           backup_existing: bool = True) -> bool:
     """
     Update device state configuration from a live Base object.

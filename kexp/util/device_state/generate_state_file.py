@@ -16,6 +16,7 @@ import os
 import sys
 import importlib.util
 import json
+import numpy as np
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -49,25 +50,21 @@ def extract_dds_devices(frame_obj) -> Dict[str, Dict[str, Any]]:
     """Extract DDS device states from a dds_frame object."""
     devices = {}
     
-    # Look for attributes that are DDS objects (assigned via dds_assign)
-    for attr_name in dir(frame_obj):
-        if attr_name.startswith('_'):
-            continue
-            
-        attr_value = getattr(frame_obj, attr_name)
-        
-        # Check if it's a DDS object using isinstance
-        if isinstance(attr_value, DDS):
-            sw_state = getattr(attr_value, 'sw_state', 0)
-            devices[attr_name] = {
-                'frequency': getattr(attr_value, 'frequency', 0.0),
-                'amplitude': getattr(attr_value, 'amplitude', 0.0),
-                'v_pd': getattr(attr_value, 'v_pd', 0.0),  # voltage photodiode setpoint
-                'urukul_idx': getattr(attr_value, 'urukul_idx', 0),
-                'ch': getattr(attr_value, 'ch', 0),
+    # Iterate over _dds_list to extract DDS devices
+    dds_list = getattr(frame_obj, 'dds_list', [])
+    for dds_device in dds_list:
+        if isinstance(dds_device, DDS):
+            sw_state = getattr(dds_device, 'sw_state', 0)
+            devices[dds_device.key] = {
+                'frequency': getattr(dds_device, 'frequency', 0.0),
+                'amplitude': getattr(dds_device, 'amplitude', 0.0),
+                'v_pd': getattr(dds_device, 'v_pd', 0.0),  # voltage photodiode setpoint
+                'urukul_idx': getattr(dds_device, 'urukul_idx', 0),
+                'ch': getattr(dds_device, 'ch', 0),
                 'sw_state': sw_state,  # Hardware switch state (0/1)
-                'transition': getattr(attr_value, 'transition', 'None'),
-                'aom_order': getattr(attr_value, 'aom_order', 0)
+                'transition': getattr(dds_device, 'transition', 'None'),
+                'aom_order': getattr(dds_device, 'aom_order', 0),
+                'dac_ch': getattr(dds_device, 'dac_ch', -1)
             }
     
     return devices
@@ -76,27 +73,22 @@ def extract_ttl_devices(frame_obj) -> Dict[str, Dict[str, Any]]:
     """Extract TTL device states from a ttl_frame object."""
     devices = {}
     
-    # Look for attributes that are TTL objects (assigned via assign_ttl_out/assign_ttl_in)
-    for attr_name in dir(frame_obj):
-        if attr_name.startswith('_') or attr_name in ['ttl_list', 'camera']:
-            continue
-            
-        attr_value = getattr(frame_obj, attr_name)
-        
-        # Check if it's a TTL object using isinstance
-        if isinstance(attr_value, TTL):
+    # Iterate over _ttl_list to extract TTL devices
+    ttl_list = getattr(frame_obj, 'ttl_list', [])
+    for ttl_device in ttl_list:
+        if isinstance(ttl_device, TTL_OUT):
             # Determine the specific TTL type
             ttl_type = 'out'
-            if isinstance(attr_value, TTL_IN):
-                ttl_type = 'in'
-            elif isinstance(attr_value, TTL_OUT):
-                ttl_type = 'out'
+            # if isinstance(ttl_device, TTL_IN):
+            #     ttl_type = 'in'
+            # elif isinstance(ttl_device, TTL_OUT):
+            #     ttl_type = 'out'
             
             # Get actual state from the TTL object
-            ttl_state = getattr(attr_value, 'state', 0)
+            ttl_state = getattr(ttl_device, 'state', 0)
             
-            devices[attr_name] = {
-                'ch': getattr(attr_value, 'ch', 0),
+            devices[ttl_device.key] = {
+                'ch': getattr(ttl_device, 'ch', 0),
                 'ttl_state': ttl_state,  # Raw state value (0/1)
                 'type': ttl_type
             }
@@ -107,19 +99,14 @@ def extract_dac_devices(frame_obj) -> Dict[str, Dict[str, Any]]:
     """Extract DAC device states from a dac_frame object."""
     devices = {}
     
-    # Look for attributes that are DAC_CH objects (assigned via assign_dac_ch)
-    for attr_name in dir(frame_obj):
-        if attr_name.startswith('_') or attr_name in ['dac_device', 'dac_ch_list']:
-            continue
-            
-        attr_value = getattr(frame_obj, attr_name)
-        
-        # Check if it's a DAC_CH object using isinstance
-        if isinstance(attr_value, DAC_CH):
-            devices[attr_name] = {
-                'ch': getattr(attr_value, 'ch', 0),
-                'voltage': getattr(attr_value, 'v', 0.0),
-                'max_voltage': getattr(attr_value, 'max_v', 9.99)
+    # Iterate over _dac_ch_list to extract DAC devices
+    dac_ch_list = getattr(frame_obj, 'dac_ch_list', [])
+    for dac_device in dac_ch_list:
+        if isinstance(dac_device, DAC_CH):
+            devices[dac_device.key] = {
+                'ch': getattr(dac_device, 'ch', 0),
+                'voltage': getattr(dac_device, 'v', 0.0),
+                'max_voltage': getattr(dac_device, 'max_v', 9.99)
             }
     
     return devices
@@ -196,9 +183,19 @@ def save_config_file(config_data: Dict, output_file: str = None):
     else:
         output_file = Path(output_file)
     
+    # Helper function to convert numpy types to native Python types
+    def convert_numpy_types(obj):
+        if isinstance(obj, (np.integer, np.int32, np.int64)):
+            return int(obj)
+        if isinstance(obj, (np.floating, np.float32, np.float64)):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return obj
+
     try:
         with open(output_file, 'w') as f:
-            json.dump(config_data, f, indent=2, sort_keys=True)
+            json.dump(config_data, f, indent=2, sort_keys=True, default=convert_numpy_types)
         print(f"\nConfiguration saved to: {output_file}")
         return output_file
     except Exception as e:
