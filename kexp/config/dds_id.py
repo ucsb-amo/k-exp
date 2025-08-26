@@ -54,7 +54,7 @@ class dds_frame():
 
         self.dds_array = [[DDS(uru,ch,dac_device=self._dac_frame.dac_device) for ch in range(N_ch)] for uru in range(N_uru)]
 
-        self.test = self.dds_assign(0,0,default_freq=1.e6,default_amp=0.3)
+        self.test = self.dds_assign(0,0,default_freq=1.e6,default_amp=0.3,transition="D2",ao_order=1)
         self.test_2 = self.dds_assign(0,1,default_freq=1.e6,default_amp=0.3)
 
         self.core = core
@@ -101,6 +101,8 @@ class dds_frame():
                    frequency=default_freq,
                    amplitude=default_amp,
                    v_pd=5.0)
+        if ao_order == 0 and transition != "None":
+            raise ValueError(f'Error assigning urukul{uru}_ch{ch} -- if transition is provided, the AO order must be specified to compute detunings.')
         dds0.aom_order = ao_order
         dds0.transition = transition
         dds0.dac_ch = dac_ch_vpd

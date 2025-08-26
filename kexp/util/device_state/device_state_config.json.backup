@@ -163,9 +163,10 @@
   },
   "dds": {
     "test": {
-      "amplitude": 0.3,
+      "amplitude": 0.1,
       "aom_order": 0,
       "ch": 0,
+      "dac_ch": -1,
       "frequency": 1000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -176,6 +177,7 @@
       "amplitude": 0.3,
       "aom_order": 0,
       "ch": 1,
+      "dac_ch": -1,
       "frequency": 1000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -186,6 +188,7 @@
       "amplitude": 0.0,
       "aom_order": 0,
       "ch": 2,
+      "dac_ch": -1,
       "frequency": 0.0,
       "sw_state": 0,
       "transition": "None",
@@ -196,6 +199,7 @@
       "amplitude": 0.0,
       "aom_order": 0,
       "ch": 3,
+      "dac_ch": -1,
       "frequency": 0.0,
       "sw_state": 0,
       "transition": "None",
@@ -211,7 +215,7 @@
       "shuttler_id.py",
       "ttl_id.py"
     ],
-    "timestamp": "2025-08-25T16:47:40.846244"
+    "timestamp": "2025-08-25T16:57:19.605924"
   },
   "ttl": {
     "test": {

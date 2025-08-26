@@ -11,24 +11,16 @@ class testcrate_base(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False)
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(run_id=False,init_lightsheet=False,setup_awg=False,setup_slm=False,dds_set=False,
+                         dds_off=False,beat_ref_on=True,init_shuttler=False)
 
-        for _ in range(1000):
+        while True:
             self.core.wait_until_mu(now_mu())
             self.monitor.sync_change_list()
             self.core.break_realtime()
             self.monitor.apply_updates()
-            delay(0.25*s)
-
-        self.ttl.test.on()
-
-    def analyze(self):
-        import os
-        expt_filepath = os.path.abspath(__file__)
-        self.end(expt_filepath)
-        
-        
+            delay(0.125*s)

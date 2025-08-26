@@ -163,26 +163,30 @@
   },
   "dds": {
     "test": {
-      "amplitude": 0.3,
-      "aom_order": 0,
-      "ch": 0,
+      "amplitude": 0.43,
+      "aom_order": 1,
+      "ch": 4,
       "dac_ch": -1,
-      "frequency": 1000000.0,
+      "frequency": 96100000.0,
       "sw_state": 0,
-      "transition": "None",
+      "transition": "D2",
       "urukul_idx": 0,
-      "v_pd": 5.0
+      "v_pd": 5.0,
+      "ttl_state": 0,
+      "type": "out"
     },
     "test_2": {
       "amplitude": 0.3,
       "aom_order": 0,
-      "ch": 1,
+      "ch": 5,
       "dac_ch": -1,
-      "frequency": 1000000.0,
+      "frequency": 2000000.0,
       "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
-      "v_pd": 5.0
+      "v_pd": 5.0,
+      "ttl_state": 1,
+      "type": "out"
     },
     "urukul0_ch2": {
       "amplitude": 0.0,
@@ -215,7 +219,7 @@
       "shuttler_id.py",
       "ttl_id.py"
     ],
-    "timestamp": "2025-08-25T16:57:19.605924"
+    "timestamp": "2025-08-26T13:34:42.638704"
   },
   "ttl": {
     "test": {
