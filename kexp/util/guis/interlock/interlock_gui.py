@@ -382,9 +382,9 @@ class MainWindow(QMainWindow):
         msg = MIMEMultipart()
         msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
         msg['To'] = 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'
-        msg['Subject'] = 'K-Interlock Tripped'
+        msg['Subject'] = 'K-Interlock Lost connection with Kong'
         # Attach the message to the MIME object
-        msg.attach(MIMEText('CHECK K MAGNETS NOW!!! Power supplies should be tripped but CHECK!', 'plain'))
+        msg.attach(MIMEText('K Interlock has lost connection with kong -- check', 'plain'))
         
         # Set up the SMTP server
         server = smtplib.SMTP('smtp.gmail.com', 587)

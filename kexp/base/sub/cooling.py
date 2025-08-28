@@ -941,6 +941,8 @@ class Cooling():
         self.dds.ry_405_switch.set_dds(frequency=frequency_ry_980,
                                 amplitude=amp_ry_980)
         
+        self.ttl.d2_mot_shutter.on()
+        
         
         self.set_shims(v_zshim_current=v_zshim_current)
 

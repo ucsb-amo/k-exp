@@ -32,6 +32,7 @@ class ttl_frame():
         self.keithley_trigger = self.assign_ttl_out(48)
         self.test_trig = self.assign_ttl_out(21)
         self.d2_mot_shutter = self.assign_ttl_out(22)
+        self.z_shim_pid_int_hold_zero = self.assign_ttl_out(56)
 
         self.line_trigger = self.assign_ttl_in(40)
 
