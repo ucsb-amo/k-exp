@@ -1,4 +1,5 @@
 from kexp.analysis.fitting import Fit, GaussianFit
+from kexp.analysis.helper import normalize
 
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
@@ -68,11 +69,19 @@ class Sine(Fit):
         amplitude_guess = rms
 
         prom = rms/2
-        idx, _ = find_peaks(y, prominence=prom)
-        lambda_guess = np.mean(np.diff(x[idx]))
+        idx, _ = find_peaks(normalize(y), prominence=prom)
+        if len(idx) > 1:
+            lambda_guess = np.mean(np.diff(x[idx]))
+        else:
+            lambda_guess = abs(x[np.argmax(y)] - x[np.argmin(y)])
         k_guess = 2*np.pi/lambda_guess
-        phase_guess = (- k_guess * x[0])%(2*np.pi)
-        # phase_guess = 1
+        
+        if y[0] - y_offset_guess < -amplitude_guess:
+            phase_guess = np.pi
+        elif y[0] - y_offset_guess > amplitude_guess:
+            phase_guess = -np.pi
+        else:
+            phase_guess = 0.
         
         return amplitude_guess, y_offset_guess, k_guess, phase_guess
     
