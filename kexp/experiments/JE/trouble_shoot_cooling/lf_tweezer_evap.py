@@ -22,7 +22,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('beans',[0]*50)
         
         self.xvar('t_tof',np.linspace(100.,2000.,20)*1.e-6)
-        self.p.t_tof = 2200.e-6
+        self.p.t_tof = 1000.e-6
 
         # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(11.,18.,15))
         # self.p.i_lf_lightsheet_evap1_current = 13.6
@@ -82,7 +82,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        # self.xvar('amp_imaging',np.linspace(.05,.2,10))
+        # self.xvar('amp_imaging',np.linspace(.07,.25,10))
         # self.p.amp_imaging = .15
 
         self.finish_prepare(shuffle=True)

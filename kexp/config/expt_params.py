@@ -195,8 +195,8 @@ class ExptParams():
         # self.amp_gm = 0.09
 
         self.v_zshim_current_gm = 0.8
-        self.v_xshim_current_gm = 0.7286
-        self.v_yshim_current_gm = 2.0
+        self.v_xshim_current_gm = 0.5
+        self.v_yshim_current_gm = 2.17
 
         self.detune_d1_c_gm = self.detune_gm
         self.pfrac_d1_c_gm = .99 # there is an ND on this photodiode -- much higher power/volt than the repump
@@ -205,8 +205,8 @@ class ExptParams():
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = .06 #0.01
-        self.pfrac_r_gmramp_end = .93# 0.729
+        self.pfrac_c_gmramp_end = .04 #0.01
+        self.pfrac_r_gmramp_end = .764# 0.729
         self.n_gmramp_steps = 200
 
         # mag trap
