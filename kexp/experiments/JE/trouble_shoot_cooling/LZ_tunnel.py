@@ -96,16 +96,16 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(0.,500.,10)*1.e-3)
         self.p.t_tweezer_hold = .1e-3
 
-        # self.xvar('t_amp_ramp',np.linspace(100.,800.,10)*1.e-3)
+        self.xvar('t_amp_ramp',np.linspace(50.,600.,10)*1.e-3)
         self.p.t_amp_ramp = .5
 
         self.p.amp_tweezer_initial = .05
-        self.xvar('amp_tweezer_final',np.linspace(.15,.2,10))
-        self.p.amp_tweezer_final = .165
+        # self.xvar('amp_tweezer_final',np.linspace(.15,.25,10))
+        self.p.amp_tweezer_final = .2
 
         # self.xvar('fringe_repeats',np.linspace(1.,300.,300))
 
-        self.p.frequency_tweezer_list = [73.7e6, 75.4e6]
+        self.p.frequency_tweezer_list = [73.68e6, 75.4e6]
         # self.p.frequency_tweezer_list = [76.e6, 76.5e6]
         # self.p.frequency_tweezer_list = [72.5e6]
 

@@ -93,19 +93,24 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_tunnel',np.linspace(180.,194.,20)) 
         self.p.i_tunnel = 182. 
 
-        # self.xvar('t_tweezer_hold',np.linspace(0.,500.,10)*1.e-3)
-        self.p.t_tweezer_hold = .1e-3
+        self.xvar('t_tweezer_hold',np.linspace(0.,500.,20)*1.e-3)
+        self.p.t_tweezer_hold = 500.e-3
 
         # self.xvar('t_amp_ramp',np.linspace(100.,800.,10)*1.e-3)
         self.p.t_amp_ramp = .5
 
-        self.p.amp_tweezer_initial = .05
-        self.xvar('amp_tweezer_final',np.linspace(.15,.2,10))
-        self.p.amp_tweezer_final = .165
+        self.p.amp_tweezer_initial = .0
+        # self.xvar('amp_tweezer_final',np.linspace(.15,.19,20))
+        self.p.amp_tweezer_final = .1711
+
+        # self.xvar('x_tweezer_move',np.linspace(-2.6e-6,-3.e-6,20))
+        self.p.x_tweezer_move = -2.9e-6
+
+        self.p.t_tweezer_move = 5.e-3
 
         # self.xvar('fringe_repeats',np.linspace(1.,300.,300))
 
-        self.p.frequency_tweezer_list = [73.7e6, 75.4e6]
+        self.p.frequency_tweezer_list = [73.2e6, 75.4e6]
         # self.p.frequency_tweezer_list = [76.e6, 76.5e6]
         # self.p.frequency_tweezer_list = [72.5e6]
 
@@ -148,8 +153,15 @@ class mag_trap(EnvExperiment, Base):
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.tweezer.traps[0].set_amp(self.p.amp_tweezer_initial,trigger=True)
+        delay(10.e-3)
 
-        self.tweezer.traps[0].linear_amplitude_ramp(self.p.t_amp_ramp,amp_f=self.p.amp_tweezer_final,trigger=False)
+        self.tweezer.traps[0].set_amp(self.p.amp_tweezer_final,trigger=False)
+        delay(10.e-3)
+
+        self.tweezer.traps[0].cubic_move(self.p.t_tweezer_move,x_move=self.p.x_tweezer_move,trigger=False)
+        delay(10.e-3)
+
+        # self.tweezer.traps[0].linear_amplitude_ramp(self.p.t_amp_ramp,amp_f=self.p.amp_tweezer_final,trigger=False)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -215,9 +227,12 @@ class mag_trap(EnvExperiment, Base):
                              i_start=self.p.i_hf_tweezer_evap2_current,
                              i_end=self.p.i_tunnel)
         
-        delay(1.e-3)
+        # delay(1.e-3)
         self.tweezer.trigger()
-        delay(self.p.t_amp_ramp)
+        delay(10.e-3)
+        self.tweezer.trigger()
+        delay(self.p.t_tweezer_move)
+
         delay(self.p.t_tweezer_hold)
         
         self.tweezer.off()
