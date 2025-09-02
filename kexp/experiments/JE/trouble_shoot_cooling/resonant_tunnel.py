@@ -93,20 +93,22 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_tunnel',np.linspace(180.,194.,20)) 
         self.p.i_tunnel = 182. 
 
-        self.xvar('t_tweezer_hold',np.linspace(0.,500.,20)*1.e-3)
-        self.p.t_tweezer_hold = 500.e-3
+        
 
         # self.xvar('t_amp_ramp',np.linspace(100.,800.,10)*1.e-3)
         self.p.t_amp_ramp = .5
 
         self.p.amp_tweezer_initial = .0
-        # self.xvar('amp_tweezer_final',np.linspace(.15,.19,20))
+        self.xvar('amp_tweezer_final',np.linspace(.15,.175,40))
         self.p.amp_tweezer_final = .1711
 
         # self.xvar('x_tweezer_move',np.linspace(-2.6e-6,-3.e-6,20))
-        self.p.x_tweezer_move = -2.9e-6
+        self.p.x_tweezer_move = -2.8e-6
 
         self.p.t_tweezer_move = 5.e-3
+
+        # self.xvar('t_tweezer_hold',np.linspace(50.,800.,5)*1.e-3)
+        self.p.t_tweezer_hold = 500.e-3
 
         # self.xvar('fringe_repeats',np.linspace(1.,300.,300))
 

@@ -21,7 +21,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('beans',[0]*50)
         
-        self.xvar('t_tof',np.linspace(100.,2000.,20)*1.e-6)
+        self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
         self.p.t_tof = 1000.e-6
 
         # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(11.,18.,15))

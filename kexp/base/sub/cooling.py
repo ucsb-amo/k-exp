@@ -287,10 +287,12 @@ class Cooling():
         if v_xshim_current == dv:
             v_xshim_current = self.params.v_xshim_current
         ### End Defaults ###
+        
+        delay(1.e-3)
 
         self.ttl.d2_mot_shutter.on()
 
-        # delay(500.e-3)
+        delay(1.e-3)
             
         self.inner_coil.set_supply(i_supply)
         self.inner_coil.set_voltage(20.)
