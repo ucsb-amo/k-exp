@@ -12,14 +12,14 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        f_range = 15.e3
+        f_range = 12.e3
         df = 3.e3
-        self.p.frequency_raman_transition = 41.095e6
-        # self.xvar('frequency_raman_transition',
-        #           self.p.frequency_raman_transition + np.arange(-f_range, f_range +df, df))
+        self.p.frequency_raman_transition = 41.144e6
+        self.xvar('frequency_raman_transition',
+                  self.p.frequency_raman_transition + np.arange(-f_range, f_range +df, df))
 
-        self.xvar('t_ramsey_delay', np.linspace(0.,100.,10)*1.e-6)
-        # self.p.t_ramsey_delay = 10.e-6
+        self.xvar('t_ramsey_delay', np.linspace(0.,90.,5)*1.e-6)
+        self.p.t_ramsey_delay = 10.e-6
         # self.p.t_ramsey_delay = 5.e-6
 
         # self.xvar('line_trigger_phase_delay', np.linspace(0.00, 0.017, 10))
@@ -32,7 +32,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.do_pi_pulse = 0
 
         self.p.t_tof = 600.e-6
-        self.p.t_tweezer_hold = .1e-3
+        self.p.t_tweezer_hold = .01e-3
 
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
