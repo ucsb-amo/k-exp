@@ -251,6 +251,7 @@ class roi_creator():
         filepath, _ = st.get_data_file(run_id)
         self.h5_file = h5py.File(filepath)
         self.N_img = self.h5_file['data']['images'].shape[0]//3
+        self.analysis_type = self.h5_file['run_info']['imaging_type']
 
         self.image = self.get_od(0)
 
@@ -270,7 +271,7 @@ class roi_creator():
         pwa = self.h5_file['data']['images'][3*idx]
         pwoa = self.h5_file['data']['images'][3*idx+1]
         dark = self.h5_file['data']['images'][3*idx+2]
-        od = compute_OD(pwa,pwoa,dark)
+        od = compute_OD(pwa,pwoa,dark,self.analysis_type)
         return od
         
     def get_roi_rectangle(self):
@@ -350,7 +351,7 @@ class roi_creator():
         def adjust_colormap_scale(key):
             """Adjusts the colormap scale factor based on arrow key input."""
             step_size = 0.1
-            max_joos = 0.05
+            max_joos = 0.005
             if key == 0x260000:  # Up arrow key (increase fraction)
                 self.cmap_juice_factor = max(self.cmap_juice_factor - step_size, max_joos)
             elif key == 0x280000:  # Down arrow key (decrease fraction)
@@ -362,6 +363,7 @@ class roi_creator():
             # normalized_image = image
             max_pixel_value = np.max(image)  # Find the maximum pixel value in the original unnormalized image
             threshold = self.cmap_juice_factor * max_pixel_value  # Apply scaling factor
+            print(threshold)
 
             # Normalize with the threshold
             normalized_image = np.clip(image, 0, threshold)
