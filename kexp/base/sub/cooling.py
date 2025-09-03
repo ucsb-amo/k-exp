@@ -120,7 +120,7 @@ class Cooling():
                              i_start=self.p.i_lf_tweezer_evap2_current,
                              i_end=self.p.i_spin_mixture)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
 
         self.ttl.d2_mot_shutter.off()
@@ -287,7 +287,7 @@ class Cooling():
         if v_xshim_current == dv:
             v_xshim_current = self.params.v_xshim_current
         ### End Defaults ###
-        
+
         delay(1.e-3)
 
         self.ttl.d2_mot_shutter.on()
