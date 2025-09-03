@@ -251,7 +251,10 @@ class roi_creator():
         filepath, _ = st.get_data_file(run_id)
         self.h5_file = h5py.File(filepath)
         self.N_img = self.h5_file['data']['images'].shape[0]//3
-        self.analysis_type = self.h5_file['run_info']['imaging_type']
+        try:
+            self.analysis_type = self.h5_file['run_info']['imaging_type']
+        except:
+            self.analysis_type = 0
 
         self.image = self.get_od(0)
 
