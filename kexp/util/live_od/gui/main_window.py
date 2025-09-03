@@ -280,6 +280,12 @@ class LiveODWindow(QWidget):
         self.viewer_window.update_image_count(count, total)
 
     def reset(self):
+        if hasattr(self, 'camera_nanny'):
+            try:
+                self.camera_nanny.interrupted = True
+            except Exception as e:
+                print(e)
+        
         if hasattr(self, 'data_handler') and self.data_handler is not None:
             try:
                 self.data_handler.interrupted = True
