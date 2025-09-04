@@ -186,6 +186,8 @@ class atomdata():
         if self._analysis_tags.imaging_type == img.ABSORPTION:
             self.compute_atom_number()
 
+        self.integrated_od = np.sum(np.sum(self.od,-2),-1)
+
     def _sort_images(self):
         imgs_tuple = self._dealer.deal_data_ndarray(self.images)
         self.img_atoms = imgs_tuple[0]
@@ -222,7 +224,7 @@ class atomdata():
         self.atom_number_fit_area_x = self.fit_area_x * dx_pixel / self.atom_cross_section
         self.atom_number_fit_area_y = self.fit_area_y * dx_pixel / self.atom_cross_section
 
-        self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section
+        self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section  
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
     def slice_atomdata(self, which_shot_idx=0, which_xvar_idx=0):
