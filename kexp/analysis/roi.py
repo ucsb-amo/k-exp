@@ -254,8 +254,7 @@ class roi_creator():
         self.h5_file = h5py.File(filepath)
         self.N_img = self.h5_file['data']['images'].shape[0]//3
         try:
-            self.analysis_type = int(self.h5_file['run_info']['imaging_type'])
-            print(self.analysis_type)
+            self.analysis_type = self.h5_file['run_info']['imaging_type'][()]
         except Exception as e:
             print(e)
             self.analysis_type = img_types.ABSORPTION
@@ -306,7 +305,7 @@ class roi_creator():
         zooming = False
         zoom_region = None  # Store zoomed region coordinates
         if self.analysis_type != img_types.ABSORPTION:
-            self.cmap_juice_factor = 0.05
+            self.cmap_juice_factor = 0.01
         else:
             self.cmap_juice_factor = 0.8
 
@@ -360,8 +359,8 @@ class roi_creator():
 
         def adjust_colormap_scale(key):
             """Adjusts the colormap scale factor based on arrow key input."""
-            step_size = 0.01 if self.analysis_type == img_types.DISPERSIVE else 0.1
-            max_joos = 0.001 if self.analysis_type == img_types.DISPERSIVE else 0.05
+            step_size = 0.00025 if self.analysis_type == img_types.DISPERSIVE else 0.1
+            max_joos = 0.0005 if self.analysis_type == img_types.DISPERSIVE else 0.05
             if key == 0x260000:  # Up arrow key (increase fraction)
                 self.cmap_juice_factor = max(self.cmap_juice_factor - step_size, max_joos)
             elif key == 0x280000:  # Down arrow key (decrease fraction)
