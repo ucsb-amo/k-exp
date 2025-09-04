@@ -59,9 +59,6 @@ class Devices():
         self.grabber = self.get_device("grabber0")
         self.grabber: Grabber
 
-        # slm
-        self.slm = SLM(expt_params=self.params, core=self.core)
-
         # sampler channels
         self.sampler = sampler_frame(sampler_device=sampler)
 
@@ -82,6 +79,9 @@ class Devices():
         # self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
+
+                # slm
+        self.slm = SLM(expt_params=self.params, core=self.core, monitor_ttl=self.ttl.slm_update)
 
         self.rf = doubled_rf(dds_ch=self.dds.antenna_rf, expt_params=self.params)
 

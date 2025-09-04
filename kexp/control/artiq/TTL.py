@@ -5,7 +5,7 @@ import artiq.experiment
 import numpy as np
 
 T_LINE_TRIGGER_SAMPLE_INTERVAL = 1/60 * 1.05
-T_LINE_TRIGGER_RTIO_DELAY = 100.e-6
+T_INPUT_TRIGGER_RTIO_DELAY = 100.e-6
 dv = np.int64(-1)
 
 class TTL():
@@ -37,21 +37,21 @@ class TTL_OUT(TTL):
         self.ttl_device.off()
 
 class TTL_IN(TTL):
-    def __init__(self,ch):
+    def __init__(self, ch, t_gate_window):
         super().__init__(ch)
         self.ttl_device = TTLInOut
-
+        self.t_gate_window = t_gate_window
         self.t_input_gate_end = np.int64(0)
 
     @kernel
-    def wait_for_line_trigger(self):
+    def wait_for_trigger(self):
         while True:
-            t_end = self.ttl_device.gate_rising(T_LINE_TRIGGER_SAMPLE_INTERVAL)
+            t_end = self.ttl_device.gate_rising(self.t_gate_window)
             t_edge = self.ttl_device.timestamp_mu(t_end)
             self.t_input_gate_end = t_end
             if t_edge > 0:
                 at_mu(t_edge)
-                delay(T_LINE_TRIGGER_RTIO_DELAY)
+                delay(T_INPUT_TRIGGER_RTIO_DELAY)
                 break
 
     @kernel

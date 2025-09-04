@@ -2,6 +2,7 @@ import socket
 from artiq.coredevice.core import Core
 from artiq.language.core import now_mu, delay, kernel
 from kexp.config.expt_params import ExptParams
+from kexp.control.artiq.TTL import TTL_IN
 import numpy as np
 import threading
 # from kexp.control.slm.PatternApp import Patternapp  # Assuming this file defines the PatternApp class
@@ -14,11 +15,13 @@ SLM_RPC_DELAY = 1.
 
 class SLM:
     def __init__(self, expt_params=ExptParams(), core=Core,
+                 monitor_ttl=TTL_IN,
                  server_ip='192.168.1.102', server_port=5000):
         self.server_ip = server_ip
         self.server_port = server_port
         self.params = expt_params
         self.core = core
+        self.monitor_ttl = monitor_ttl
 
     def write_phase_mask(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot'):
         """Writes a phase spot of given dimension and phase to the specified
@@ -95,9 +98,12 @@ class SLM:
             mask_type (str): The type of mask. It can be spot, grating or cross. 
             Defaults to ExptParams.slm_mask.
         """    
+        self.monitor_ttl.ttl_device.watch_stay_on()
         self.core.wait_until_mu(now_mu())
         self.write_phase_mask(dimension, phase, x_center, y_center, mask_type)
         delay(SLM_RPC_DELAY)
+        delay(1.)
+        self.monitor_ttl.ttl_device.watch_done()
 
     def _send_command(self, command):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:

@@ -7,6 +7,7 @@ class ttl_frame():
     def __init__(self):
 
         self.ttl_list = []
+        self.ttl_in_list = []
         
         self.coil_discharge_igbt = self.assign_ttl_out(0)
         self.tweezer_pid2_enable = self.assign_ttl_out(1)
@@ -32,9 +33,11 @@ class ttl_frame():
         self.keithley_trigger = self.assign_ttl_out(48)
         self.test_trig = self.assign_ttl_out(21)
         self.d2_mot_shutter = self.assign_ttl_out(22)
+        self.pd_scope_trig3 = self.assign_ttl_out(24)
         self.z_shim_pid_int_hold_zero = self.assign_ttl_out(56)
 
-        self.line_trigger = self.assign_ttl_in(40)
+        self.line_trigger = self.assign_ttl_in(40, t_gate_window=1/60 * 1.05)
+        self.slm_update = self.assign_ttl_in(42, t_gate_window=1.)
 
         self._write_ttl_keys()
 
@@ -45,9 +48,10 @@ class ttl_frame():
         self.ttl_list.append(this_ttl)
         return this_ttl
     
-    def assign_ttl_in(self,ch) -> TTL_IN:
-        this_ttl = TTL_IN(ch)
+    def assign_ttl_in(self,ch,t_gate_window) -> TTL_IN:
+        this_ttl = TTL_IN(ch,t_gate_window)
         self.ttl_list.append(this_ttl)
+        self.ttl_in_list.append(this_ttl)
         return this_ttl
     
     def ttl_by_ch(self,ch) -> TTL:
