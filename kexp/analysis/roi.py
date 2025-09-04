@@ -253,11 +253,11 @@ class roi_creator():
         filepath, _ = st.get_data_file(run_id)
         self.h5_file = h5py.File(filepath)
         self.N_img = self.h5_file['data']['images'].shape[0]//3
-        try:
-            self.analysis_type = self.h5_file['run_info']['imaging_type'][()]
-        except Exception as e:
-            print(e)
-            self.analysis_type = img_types.ABSORPTION
+        # try:
+        #     self.analysis_type = self.h5_file['run_info']['imaging_type'][()]
+        # except Exception as e:
+        #     print(e)
+        self.analysis_type = img_types.ABSORPTION
 
         self.image = self.get_od(0)
 
@@ -304,10 +304,11 @@ class roi_creator():
         img_index = 0
         zooming = False
         zoom_region = None  # Store zoomed region coordinates
-        if self.analysis_type != img_types.ABSORPTION:
-            self.cmap_juice_factor = 0.01
-        else:
-            self.cmap_juice_factor = 0.8
+        # if self.analysis_type != img_types.ABSORPTION:
+        #     self.cmap_juice_factor = 0.01
+        # else:
+        #     self.cmap_juice_factor = 0.8
+        self.cmap_juice_factor = 1.
 
         def draw_rectangle(event, x, y, flags, param):
             nonlocal image, zoom_region, zooming
