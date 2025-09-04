@@ -17,6 +17,7 @@ class test(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         self.slm.write_phase_mask_kernel()
+        delay(1.)
         self.abs_image()
        
     @kernel

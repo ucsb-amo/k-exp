@@ -2,6 +2,7 @@ from artiq.experiment import delay, kernel
 from artiq.language.core import at_mu
 from artiq.coredevice.ttl import TTLOut, TTLInOut
 import artiq.experiment
+from kexp.util.artiq.async_print import aprint
 import numpy as np
 
 T_LINE_TRIGGER_SAMPLE_INTERVAL = 1/60 * 1.05
@@ -44,14 +45,15 @@ class TTL_IN(TTL):
         self.t_input_gate_end = np.int64(0)
 
     @kernel
-    def wait_for_trigger(self):
+    def wait_for_trigger(self,t_rtio_delay=T_INPUT_TRIGGER_RTIO_DELAY):
         while True:
             t_end = self.ttl_device.gate_rising(self.t_gate_window)
             t_edge = self.ttl_device.timestamp_mu(t_end)
             self.t_input_gate_end = t_end
             if t_edge > 0:
+                aprint(t_edge)
                 at_mu(t_edge)
-                delay(T_INPUT_TRIGGER_RTIO_DELAY)
+                delay(t_rtio_delay)
                 break
 
     @kernel
