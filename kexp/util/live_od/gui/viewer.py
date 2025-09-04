@@ -424,7 +424,9 @@ class LiveODViewer(QWidget):
 
     def handle_plot_data(self, to_plot):
         img_atoms, img_light, img_dark, od, sum_od_x, sum_od_y = to_plot
+        self._syncing_image_views = True # workaround for not having image sizes reset on replotting new images
         self.plot_images(img_atoms, img_light, img_dark)
+        self._syncing_image_views = False
         self.plot_od(od, sum_od_x, sum_od_y)
 
     def _sync_image_views(self, source_view):
