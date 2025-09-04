@@ -1,6 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base, img_types
+from kexp import Base, img_types, cameras
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 from kexp.control.slm.slm import SLM
@@ -10,19 +10,23 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,
+                      camera_select=cameras.andor,
+                      imaging_type=img_types.DISPERSIVE,
+                      save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(300.,384.,3)*1.e6)
-        self.p.frequency_detuned_imaging = 343.e6
+        # self.xvar('frequency_detuned_imaging',np.arange(200.,310.,8)*1.e6)
+        # self.p.frequency_detuned_imaging = 343.e6
+        # self.p.frequency_detuned_imaging = 264.e6
         
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         # self.xvar('frequency_detuned_imaging', [342.e6,364.e6]*1) # 13.1 A
 
-        # self.xvar('beans',[0]*5)
+        # self.xvar('beans',[0]*500)
         
-        self.xvar('t_tof',np.linspace(100.,2000.,15)*1.e-6)
-        self.p.t_tof = 100.e-6
+        # self.xvar('t_tof',np.linspace(100.,2000.,15)*1.e-6)
+        self.p.t_tof = 500.e-6
 
         # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(11.,18.,15))
         # self.p.i_lf_lightsheet_evap1_current = 13.6
@@ -82,18 +86,20 @@ class tweezer_load(EnvExperiment, Base):
         # self.camera_params.exposure_time = 25.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        # self.xvar('amp_imaging',np.linspace(.07,.25,10))
-        # self.p.amp_imaging = .15
+        # self.xvar('amp_imaging',np.linspace(.1,.45,10))
+        # self.p.amp_imaging = .33
+
+        # self.xvar('phase_slm_mask',np.linspace(0.,1.,10)*np.pi)
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        # self.slm.write_phase_mask_kernel()
+        self.slm.write_phase_mask_kernel(dimension=0.,phase=0.)
         # self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_load_current,
         #                             pid_bool=False)
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_midpoint)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)

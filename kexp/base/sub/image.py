@@ -275,6 +275,7 @@ class Image():
         """        
         # self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
         self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
         # atoms image (pwa)
         self.light_image()
 
