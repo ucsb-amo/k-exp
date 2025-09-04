@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 import json
 import pyqtgraph as pg
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QLabel, QPushButton, QPlainTextEdit, QSlider, QSizePolicy, QLineEdit, QDoubleSpinBox
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QLabel, QPushButton, QPlainTextEdit, QSlider, QSizePolicy, QLineEdit, QDoubleSpinBox, QCheckBox
 from PyQt6.QtCore import Qt
 import sys
 import contextlib
@@ -37,6 +37,8 @@ class LiveODViewer(QWidget):
         self._od_slider_min = 0.0  # Pin minimum at zero
         self._od_slider_max = 6.0
         self._od_slider_steps = int(self._od_slider_max / 0.1) # for 0.025 step size
+        self._lock_views = False  # Track lock state
+        self._syncing_all_views = False  # Prevent recursion
         self.init_ui()
         
     def init_ui(self):
@@ -44,10 +46,16 @@ class LiveODViewer(QWidget):
         self.clear_button = QPushButton('Clear')
         self.image_count_label = QLabel('Image count: 0/0')
         control_bar = QHBoxLayout()
-        
+
+        self.lock_views_checkbox = QCheckBox("Lock view ranges")
+        self.lock_views_checkbox.setChecked(False)
+        self.lock_views_checkbox.stateChanged.connect(self._on_lock_views_changed)
+
         control_bar.addWidget(self.reset_zoom_button)
         control_bar.addWidget(self.clear_button)
+        control_bar.addWidget(self.lock_views_checkbox)
         control_bar.addWidget(self.image_count_label)
+
         control_bar.addStretch()
 
         self.output_window = QPlainTextEdit()
@@ -224,10 +232,52 @@ class LiveODViewer(QWidget):
         self.clear_button.clicked.connect(self.clear_plots)
         self.reset_zoom_button.clicked.connect(self.reset_zoom)
         self.od_plot.getViewBox().sigRangeChanged.connect(self.sync_sumod_panels)
+
+        # Connect all view range signals
+        self.img_atoms_view.getView().sigRangeChanged.connect(lambda *args: self._on_any_view_range_changed('atoms'))
+        self.img_light_view.getView().sigRangeChanged.connect(lambda *args: self._on_any_view_range_changed('light'))
+        self.img_dark_view.getView().sigRangeChanged.connect(lambda *args: self._on_any_view_range_changed('dark'))
+        self.od_plot.getViewBox().sigRangeChanged.connect(lambda *args: self._on_any_view_range_changed('od'))
         
         self.sync_sumod_panels()
         sync_vertical_splitter(od_and_sumodx_splitter.sizes())
         sync_vertical_splitter_reverse(sumody_splitter.sizes())
+
+    def _on_lock_views_changed(self, state):
+        self._lock_views = bool(state)
+        if self._lock_views:
+            # When locking, immediately sync all to the current atoms view
+            ref_range = self.img_atoms_view.getView().viewRange()
+            self._sync_all_views(ref_range)
+
+    def _on_any_view_range_changed(self, source):
+        if not self._lock_views or self._syncing_all_views:
+            return
+        # Get the new range from the source
+        if source == 'atoms':
+            ref_range = self.img_atoms_view.getView().viewRange()
+        elif source == 'light':
+            ref_range = self.img_light_view.getView().viewRange()
+        elif source == 'dark':
+            ref_range = self.img_dark_view.getView().viewRange()
+        elif source == 'od':
+            ref_range = self.od_plot.getViewBox().viewRange()
+        else:
+            return
+        self._sync_all_views(ref_range, exclude=source)
+
+    def _sync_all_views(self, ref_range, exclude=None):
+        self._syncing_all_views = True
+        # ref_range: [xRange, yRange]
+        if exclude != 'atoms':
+            self.img_atoms_view.getView().setRange(xRange=ref_range[0], yRange=ref_range[1], padding=0)
+        if exclude != 'light':
+            self.img_light_view.getView().setRange(xRange=ref_range[0], yRange=ref_range[1], padding=0)
+        if exclude != 'dark':
+            self.img_dark_view.getView().setRange(xRange=ref_range[0], yRange=ref_range[1], padding=0)
+        if exclude != 'od':
+            self.od_plot.getViewBox().setRange(xRange=ref_range[0], yRange=ref_range[1], padding=0)
+        self._syncing_all_views = False
 
     def _with_label(self, imgview, label):
         container = QWidget()
@@ -270,6 +320,9 @@ class LiveODViewer(QWidget):
         self._autoscale_ready = False
         self._autoscale_buffer = []
         self._roi_set_count = 0
+        self._first_image_received = 0
+        if hasattr(self, '_last_view_ranges'):
+            del self._last_view_ranges
 
     def update_image_count(self, count, total):
         self.image_count_label.setText(f'Image count: {count}/{total}')
@@ -280,6 +333,19 @@ class LiveODViewer(QWidget):
             self._current_run_id = run_id
 
     def plot_images(self, atoms, light, dark):
+        # Determine if this is the first image after a clear
+        is_first = not hasattr(self, '_last_view_ranges') or self._first_image_received == 0
+
+        # Save current view ranges (for subsequent calls)
+        atoms_range = self.img_atoms_view.getView().viewRange()
+        light_range = self.img_light_view.getView().viewRange()
+        dark_range = self.img_dark_view.getView().viewRange()
+        self._last_view_ranges = {
+            'atoms': atoms_range,
+            'light': light_range,
+            'dark': dark_range
+        }
+
         if not self._autoscale_ready:
             self._autoscale_buffer.append((atoms, light, dark))
             if len(self._autoscale_buffer) >= 1:
@@ -302,6 +368,20 @@ class LiveODViewer(QWidget):
         self._last_atoms = atoms
         self._last_light = light
         self._last_dark = dark
+
+        # Set view range
+        if is_first:
+            # Set to full image range
+            shape = atoms.T.shape
+            self.img_atoms_view.getView().setRange(xRange=[0, shape[0]], yRange=[0, shape[1]], padding=0)
+            self.img_light_view.getView().setRange(xRange=[0, shape[0]], yRange=[0, shape[1]], padding=0)
+            self.img_dark_view.getView().setRange(xRange=[0, shape[0]], yRange=[0, shape[1]], padding=0)
+            self._first_image_received = 1
+        else:
+            # Restore previous view ranges
+            self.img_atoms_view.getView().setRange(xRange=self._last_view_ranges['atoms'][0], yRange=self._last_view_ranges['atoms'][1], padding=0)
+            self.img_light_view.getView().setRange(xRange=self._last_view_ranges['light'][0], yRange=self._last_view_ranges['light'][1], padding=0)
+            self.img_dark_view.getView().setRange(xRange=self._last_view_ranges['dark'][0], yRange=self._last_view_ranges['dark'][1], padding=0)
 
     def sync_sumod_panels(self):
         od_vb = self.od_plot.getViewBox()

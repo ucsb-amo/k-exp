@@ -6,6 +6,8 @@ import cv2
 import kexp.util.data.server_talk as st
 from kexp.analysis.image_processing.compute_ODs import compute_OD
 
+from kexp.control.cameras.camera_param_classes import img_types
+
 import h5py
 from copy import deepcopy
 
@@ -252,9 +254,11 @@ class roi_creator():
         self.h5_file = h5py.File(filepath)
         self.N_img = self.h5_file['data']['images'].shape[0]//3
         try:
-            self.analysis_type = self.h5_file['run_info']['imaging_type']
-        except:
-            self.analysis_type = 0
+            self.analysis_type = int(self.h5_file['run_info']['imaging_type'])
+            print(self.analysis_type)
+        except Exception as e:
+            print(e)
+            self.analysis_type = img_types.ABSORPTION
 
         self.image = self.get_od(0)
 
@@ -301,7 +305,10 @@ class roi_creator():
         img_index = 0
         zooming = False
         zoom_region = None  # Store zoomed region coordinates
-        self.cmap_juice_factor = 1.
+        if self.analysis_type != img_types.ABSORPTION:
+            self.cmap_juice_factor = 0.05
+        else:
+            self.cmap_juice_factor = 0.8
 
         def draw_rectangle(event, x, y, flags, param):
             nonlocal image, zoom_region, zooming
@@ -353,8 +360,8 @@ class roi_creator():
 
         def adjust_colormap_scale(key):
             """Adjusts the colormap scale factor based on arrow key input."""
-            step_size = 0.1
-            max_joos = 0.005
+            step_size = 0.01 if self.analysis_type == img_types.DISPERSIVE else 0.1
+            max_joos = 0.001 if self.analysis_type == img_types.DISPERSIVE else 0.05
             if key == 0x260000:  # Up arrow key (increase fraction)
                 self.cmap_juice_factor = max(self.cmap_juice_factor - step_size, max_joos)
             elif key == 0x280000:  # Down arrow key (decrease fraction)
@@ -366,7 +373,6 @@ class roi_creator():
             # normalized_image = image
             max_pixel_value = np.max(image)  # Find the maximum pixel value in the original unnormalized image
             threshold = self.cmap_juice_factor * max_pixel_value  # Apply scaling factor
-            print(threshold)
 
             # Normalize with the threshold
             normalized_image = np.clip(image, 0, threshold)
