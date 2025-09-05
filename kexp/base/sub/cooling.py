@@ -77,7 +77,7 @@ class Cooling():
                              i_start=self.p.i_lf_lightsheet_evap1_current,
                              i_end=self.p.i_lf_tweezer_load_current)
         
-        self.tweezer.on(paint=False)
+        self.tweezer.on(paint=True)
         self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_ramp,
                           v_start=0.,
                           v_end=self.p.v_pd_lf_tweezer_1064_ramp_end,

@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_tof = 8000.e-6
         self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
-        # self.xvar('dumy',[0]*100)
+        # self.xvar('dumy',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)

@@ -279,7 +279,7 @@ def rabi_oscillation(ad:atomdata,
         ax.set_ylabel('fractional state population')
         ax.set_xlabel('t (us)')
 
-        ax.legend(loc='lower right')
+        # ax.legend(loc='lower right')
         
         title = f"Run ID: {ad.run_info.run_id}\n"
         title += f"RF frequency = {rf_frequency_hz/1.e6:1.2f} MHz\n"

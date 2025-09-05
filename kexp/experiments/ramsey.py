@@ -12,9 +12,9 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
 
-        f_range = 12.e3
+        f_range = 15.e3
         df = 3.e3
-        self.p.frequency_raman_transition = 41.144e6
+        self.p.frequency_raman_transition = 41.28e6
         self.xvar('frequency_raman_transition',
                   self.p.frequency_raman_transition + np.arange(-f_range, f_range +df, df))
 

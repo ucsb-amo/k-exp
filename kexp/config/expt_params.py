@@ -33,7 +33,7 @@ class ExptParams():
 
         # low field imaging settings at i_spin_mixture = 19.48
         # (free space)
-        self.frequency_detuned_imaging_m1 = 289.e6
+        self.frequency_detuned_imaging_m1 = 290.e6
         self.frequency_detuned_imaging_0 = 322.e6
         self.frequency_detuned_imaging_midpoint = 307.3e6
         # self.frequency_detuned_imaging_midpoint = 608.e6
@@ -54,10 +54,10 @@ class ExptParams():
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 25e-6
-        self.phase_slm_mask = 0.44 * np.pi
-        self.px_slm_phase_mask_position_x = 1147
-        self.px_slm_phase_mask_position_y = 916
+        self.dimension_slm_mask = 120e-6
+        self.phase_slm_mask = 1.745 * np.pi # 0.44 * np.pi
+        self.px_slm_phase_mask_position_x = 1148
+        self.px_slm_phase_mask_position_y = 915
         
         # Cooling timing
         self.t_tof = 20.e-6
@@ -252,7 +252,7 @@ class ExptParams():
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.2
         self.v_pd_lf_tweezer_1064_rampdown_end = .865
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .14
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .16
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
@@ -290,7 +290,7 @@ class ExptParams():
         self.amp_tweezer_list1 = [.25,.25,.25,.25]
         self.amp_tweezer_list2 = [.25,.25,.25,.25]
 
-        self.v_lf_tweezer_paint_amp_max = .857
+        self.v_lf_tweezer_paint_amp_max = -.857
         self.v_hf_tweezer_paint_amp_max = 1.
 
         # tweezer movement params
@@ -343,7 +343,7 @@ class ExptParams():
         # low field evap NEW
         self.i_lf_lightsheet_evap1_current = 12.8
 
-        self.i_lf_tweezer_load_current = 16.1
+        self.i_lf_tweezer_load_current = 14.9
         self.i_lf_tweezer_evap1_current = 13.9
         self.i_lf_tweezer_evap2_current = 13.2
 
