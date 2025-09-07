@@ -15,7 +15,7 @@ class tweezer_load(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(260.,320.,5)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.arange(100.,315.,8)*1.e6)
         # self.xvar('beans',[0]*10)
 
         # self.p.beans = 0
@@ -36,8 +36,9 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        self.xvar('t_raman_pulse',np.linspace(0.,100.,20)*1.e-6)
-        self.p.t_raman_pulse = 80.e-6
+        # self.xvar('t_raman_pulse',np.linspace(0., self.p.t_raman_pi_pulse,15))
+        # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse])
+        self.p.t_raman_pulse = 0.
 
         # self.p.frequency_detuned_imaging_half = 289.e6 # (self.p.frequency_detuned_imaging_m1 + self.p.frequency_detuned_imaging_0)/2
         # self.xvar('frequency_detuned_imaging_midpoint',np.arange(600.,660,5)*1.e6)
@@ -55,13 +56,13 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_tweezer_hold = .01e-3
         # self.xvar('dimension_slm_mask',np.linspace(0.,3000.e-6,5))
         # self.p.dimension_slm_mask = 3000.e-6
-        # self.xvar('phase_slm_mask',np.linspace(0.,np.pi,10))
+        self.xvar('phase_slm_mask',np.linspace(0.,np.pi,10))
         # self.xvar('px_slm_phase_mask_position_x',1147 + np.linspace(-10.,10.,5,dtype=int))
         # self.p.px_slm_phase_mask_position_x
-        # self.p.phase_slm_mask = 1.4
+        self.p.phase_slm_mask = np.pi / 2
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 
@@ -69,7 +70,7 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_midpoint)
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.prepare_lf_tweezers()
 

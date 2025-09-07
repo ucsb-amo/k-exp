@@ -134,10 +134,10 @@ class ExptParams():
         self.amp_push = 0.188
 
         #2D MOT
-        self.detune_d2v_c_2dmot = -1.5
+        self.detune_d2v_c_2dmot = -2.86
         self.amp_d2v_c_2dmot = 0.188
 
-        self.detune_d2h_c_2dmot = -2.2
+        self.detune_d2h_c_2dmot = -2.286
         self.amp_d2h_c_2dmot = 0.188
 
         self.detune_d2v_r_2dmot = -3.4
@@ -252,7 +252,7 @@ class ExptParams():
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.2
         self.v_pd_lf_tweezer_1064_rampdown_end = .865
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .16
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .15
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
@@ -290,7 +290,7 @@ class ExptParams():
         self.amp_tweezer_list1 = [.25,.25,.25,.25]
         self.amp_tweezer_list2 = [.25,.25,.25,.25]
 
-        self.v_lf_tweezer_paint_amp_max = -.857
+        self.v_lf_tweezer_paint_amp_max = .857
         self.v_hf_tweezer_paint_amp_max = 1.
 
         # tweezer movement params
@@ -343,7 +343,7 @@ class ExptParams():
         # low field evap NEW
         self.i_lf_lightsheet_evap1_current = 12.8
 
-        self.i_lf_tweezer_load_current = 14.9
+        self.i_lf_tweezer_load_current = 15.4
         self.i_lf_tweezer_evap1_current = 13.9
         self.i_lf_tweezer_evap2_current = 13.2
 
@@ -353,7 +353,7 @@ class ExptParams():
         self.i_hf_lightsheet_evap1_current = 193.8
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 192.5
+        self.i_hf_tweezer_load_current = 192.8
         self.i_hf_tweezer_evap1_current = 193.0
         self.i_hf_tweezer_evap2_current = 193.15
 

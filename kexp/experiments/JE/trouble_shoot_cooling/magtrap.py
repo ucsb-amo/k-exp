@@ -22,6 +22,15 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
         # self.p.t_pump_to_F1 = 50.e-6
 
+        # self.xvar('detune_d2v_c_2dmot',np.linspace(-4.,0.,8))
+        # self.xvar('detune_d2h_c_2dmot',np.linspace(-4.,0.,8))
+        # self.xvar('detune_d2v_r_2dmot',np.linspace(-7.,-2.,8))
+        # self.xvar('detune_d2h_r_2dmot',np.linspace(-7.,-2.,8))
+        # self.p.detune_d2_r_2dmot = -4.4
+        # self.p.detune_d2_c_2dmot = -1.6
+
+        # self.xvar('v_2d_mot_current',np.linspace(.5,4.,15))
+
         # self.xvar('detune_d2_c_mot',np.linspace(-5.,-2.,8))
         
         # self.xvar('detune_d2_c_mot',np.linspace(-5.5,-1.,8))

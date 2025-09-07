@@ -23,10 +23,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         # self.xvar('frequency_detuned_imaging', [342.e6,364.e6]*1) # 13.1 A
 
-        self.xvar('beans',np.linspace(0.,50.,50))
+        # self.xvar('beans',np.linspace(0.,50.,50))
         
-        # self.xvar('t_tof',np.linspace(500.,2000.,15)*1.e-6)
-        self.p.t_tof = 800.e-6
+        self.xvar('t_tof',np.linspace(500.,2000.,15)*1.e-6)
+        self.p.t_tof = 1800.e-6
 
         # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(11.,18.,15))
         # self.p.i_lf_lightsheet_evap1_current = 13.6
@@ -65,7 +65,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.i_lf_tweezer_evap2_current = 13.2
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.1,.19,10))
-        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .15
+        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .14
 
         # self.xvar('t_lf_tweezer_1064_rampdown2',np.linspace(0.1,.7,20))
         # self.p.t_lf_tweezer_1064_rampdown2 =360.6e-3
