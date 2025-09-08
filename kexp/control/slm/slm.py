@@ -20,7 +20,7 @@ class SLM:
         self.params = expt_params
         self.core = core
 
-    def write_phase_mask(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot'):
+    def write_phase_mask(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot', initialize=False):
         """Writes a phase spot of given dimension and phase to the specified
         position on the slm display.
 
@@ -66,7 +66,8 @@ class SLM:
                     "mask": mask,
                     "center": [x_center, y_center],
                     "phase": phase/np.pi,
-                    "dimension": dimension
+                    "dimension": dimension,
+                    "initialize": initialize
                 }
             # command = f"{int(dimension)} {phase/np.pi} {x_center} {y_center} {mask}"
             self._send_command(command)
@@ -76,7 +77,7 @@ class SLM:
             print(f"Error sending phase spot: {e}")
 
     @kernel
-    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot'):
+    def write_phase_mask_kernel(self, dimension=dv, phase=dv, x_center=di, y_center=di, mask_type='spot',initialize=False):
         """Writes a phase spot of given dimension and phase to the specified
         position on the slm display.
 
@@ -96,7 +97,7 @@ class SLM:
             Defaults to ExptParams.slm_mask.
         """    
         self.core.wait_until_mu(now_mu())
-        self.write_phase_mask(dimension, phase, x_center, y_center, mask_type)
+        self.write_phase_mask(dimension, phase, x_center, y_center, mask_type, initialize)
         delay(SLM_RPC_DELAY)
 
     def _send_command(self, command):
