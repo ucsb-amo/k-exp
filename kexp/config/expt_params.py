@@ -252,7 +252,7 @@ class ExptParams():
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.2
         self.v_pd_lf_tweezer_1064_rampdown_end = .865
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .15
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .17
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2

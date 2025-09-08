@@ -13,17 +13,17 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(100.,315.,8)*1.e6)
-        # self.xvar('beans',[0]*10)
+        # self.xvar('beans',[0,1]*10)
 
-        # self.p.beans = 0
+        self.p.beans = 1
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         
         # self.xvar('t_tof',np.linspace(10.,500.,2)*1.e-6)
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 600.e-6
 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 41.1e6
@@ -31,14 +31,17 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_raman_sweep_center', 41.12e6 + np.arange(-400.e3,400.e3,self.p.frequency_raman_sweep_width))
 
         # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-5.e5,5.e5,10))
-        self.p.frequency_raman_transition = 41.286e6
+        self.p.frequency_raman_transition = 41.26e6
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        # self.xvar('t_raman_pulse',np.linspace(0., self.p.t_raman_pi_pulse,15))
+        # self.xvar('t_raman_pulse',np.linspace(0., 250.e-6,150))
         # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse])
         self.p.t_raman_pulse = 0.
+
+        self.xvar('_t_tweezer_kill',np.linspace(0., 100.e-3,10))
+        self.p._t_tweezer_kill = 10.e-3
 
         # self.p.frequency_detuned_imaging_half = 289.e6 # (self.p.frequency_detuned_imaging_m1 + self.p.frequency_detuned_imaging_0)/2
         # self.xvar('frequency_detuned_imaging_midpoint',np.arange(600.,660,5)*1.e6)
@@ -56,32 +59,34 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_tweezer_hold = .01e-3
         # self.xvar('dimension_slm_mask',np.linspace(0.,3000.e-6,5))
         # self.p.dimension_slm_mask = 3000.e-6
-        self.xvar('phase_slm_mask',np.linspace(0.,np.pi,10))
+        # self.xvar('phase_slm_mask',np.linspace(0.,np.pi,10))
         # self.xvar('px_slm_phase_mask_position_x',1147 + np.linspace(-10.,10.,5,dtype=int))
         # self.p.px_slm_phase_mask_position_x
         self.p.phase_slm_mask = np.pi / 2
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
-        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_midpoint)
-        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_m1)
+        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.prepare_lf_tweezers()
 
+        self.dds.mot_killer.set_dds_gamma(delta=0.,amplitude=.188)
+
         self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
 
-        self.ttl.line_trigger.wait_for_line_trigger()
+        # self.ttl.line_trigger.wait_for_line_trigger()
 
         delay(5.7e-3)
 
         # self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.raman.pulse(t=self.p.t_raman_pulse)
+        # self.raman.pulse(t=self.p.t_raman_pulse)
 
         # if self.p.beans:
         #     self.raman.pulse(t=self.p.t_raman_pi_pulse)
@@ -95,6 +100,13 @@ class tweezer_load(EnvExperiment, Base):
 
         # delay(self.p.t_raman_pulse)
 
+        if self.p.beans:
+            self.dds.mot_killer.on()
+            delay(self.p._t_tweezer_kill)
+            self.dds.mot_killer.off()
+        else:
+            delay(self.p._t_tweezer_kill)
+
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
 
@@ -107,7 +119,7 @@ class tweezer_load(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        # self.mot_observe()
+        self.mot_observe()
 
     def analyze(self):
         import os

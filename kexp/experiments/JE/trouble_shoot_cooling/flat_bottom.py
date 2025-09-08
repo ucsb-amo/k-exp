@@ -17,10 +17,10 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.t_tof =3500.e-6
+        self.p.t_tof =3900.e-6
         # self.p.t_tof = 1000.e-6
-        # self.xvar('t_tof',np.linspace(2000.,4500.,20)*1.e-6) 
-        # self.xvar('dumy',[0]*10)
+        # self.xvar('t_tof',np.linspace(2000.,4500.,15)*1.e-6) 
+        # self.xvar('dumy',[0]*5)
     
         # self.xvar('hf_imaging_detuning', [-617.e6,-505.e6]*1)
 
@@ -56,9 +56,9 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_pd_hf_tweezer_1064_ramp_end',np.linspace(5.,9.3,15))
         # self.p.v_pd_hf_tweezer_1064_ramp_end = 6.5
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-2.,2.,12))
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-2.,2.,10))
         # self.p.v_hf_tweezer_paint_amp_max = 1.
-        self.p.v_hf_tweezer_paint_amp_max = .545
+        self.p.v_hf_tweezer_paint_amp_max = .6
 
         # self.xvar('t_hf_tweezer_1064_ramp',np.linspace(.05,.6,8))
         # self.p.t_hf_tweezer_1064_ramp = .285
@@ -104,24 +104,26 @@ class mag_trap(EnvExperiment, Base):
         # self.p.frequency_tweezer_list = [76.e6, 76.5e6]
         # self.p.frequency_tweezer_list = [72.5e6]
 
+        # self.xvar('ce_amp',np.linspace(.162,.165,10))
         # a_list = [.164,.15]
-        a_list = [.1607,.15]
+        a_list = [.1628,.15]
         # a_list = [self.p.amp_tweezer_final,.15]
         # a_list = [.15]
         self.p.amp_tweezer_list = a_list
 
-        # self.xvar('x_tweezer_move',np.linspace(.6e-6,1.2e-6,5))
-        self.p.x_tweezer_move = .9e-6
-        # self.xvar('t_tweezer_move',np.linspace(5.e-3,30.e-3,25))
-        self.p.t_tweezer_move = 15.e-3
+        # self.xvar('x_tweezer_move',np.linspace(.6e-6,1.2e-6,10))
+        self.p.x_tweezer_move = .8e-6
+        # self.xvar('t_tweezer_move',np.linspace(1.e-3,30.e-3,10))
+        self.p.t_tweezer_move = 17.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,3000.,10)*1.e-6)
 
-        # self.xvar('hf_imaging_detuning', np.arange(-650.,-500.,8.)*1.e6)
+        # self.xvar('hf_imaging_detuning', np.arange(-630.,-600.,2.)*1.e6)
         # self.p.hf_imaging_detuning = -602.e6 # 190.
         # self.p.hf_imaging_detuning = -609.e6 # 192.
-        self.p.hf_imaging_detuning = -615.e6 # 193.2
+        # self.p.hf_imaging_detuning = -615.e6 # 193.2
         # self.p.hf_imaging_detuning = -562.e6 # 182.
+        self.p.hf_imaging_detuning = -620.e6 # 182.
 
         # self.xvar('t_imaging_pulse',np.linspace(10.,500.,10)*1.e-6)
         # self.p.t_imaging_pulse = 20.e-6    
@@ -135,7 +137,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.
 
-        self.p.N_repeats = 700
+        self.p.N_repeats = 500
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -143,12 +145,12 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
-        # self.tweezer.traps[0].set_frequency(f=self.p.ce_frequency)
-        delay(10.e-3)
+        # self.tweezer.traps[0].set_amp(amp=self.p.ce_amp)
+        # delay(10.e-3)
 
         self.tweezer.traps[0].cubic_move(self.p.t_tweezer_move,x_move=self.p.x_tweezer_move,trigger=False)
         delay(100.e-3)

@@ -13,16 +13,16 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select=cameras.xy_basler,
+                      camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 1000.e-6
+        self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(20,600.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
-        # self.xvar('dumy',[0,1]*500)
+        self.xvar('dumy',[0,1]*5)
         # self.p.dumy = 0
-        self.xvar('dumy0',np.linspace(0.,50.,50))
+        # self.xvar('dumy0',np.linspace(0.,50.,50))
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.15,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.1,.7,8))
@@ -75,6 +75,7 @@ class mag_trap(EnvExperiment, Base):
     def scan_kernel(self):
 
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.dds.mot_killer.set_dds_gamma(0.,amplitude=.188)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -87,15 +88,18 @@ class mag_trap(EnvExperiment, Base):
         self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
                                                    self.p.v_yshim_current_magtrap,
                                                    0.,n=100)
-
+        self.dds.mot_killer.on()
         delay(self.p.t_lightsheet_hold)
-
+        
         self.lightsheet.off()
         
         delay(self.p.t_tof)
         self.flash_repump()
         # self.flash_cooler()
         self.abs_image()
+
+        self.dds.mot_killer.off()
+        
 
     @kernel
     def run(self):

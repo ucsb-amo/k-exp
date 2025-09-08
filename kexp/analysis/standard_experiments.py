@@ -235,7 +235,7 @@ def rabi_oscillation(ad:atomdata,
         y_fit = _fit_func_rabi_oscillation(times, *popt)
 
         # Print the fit parameters
-        # print(r"Fit function: f(t) = A * exp(-t/tau) * (cos(Omega t / 2 + phi))**2 + B")
+        print(r"Fit function: f(t) = A * exp(-t/tau) * (cos(Omega t / 2 + phi))**2 + B")
         print(f"Omega = 2*pi*{popt[0]/(2*np.pi)/1.e3:1.2f} kHz"
               +f"\n phi = {popt[1]},\n A = {popt[3]},"
               +f"\n B = {popt[2]},"
@@ -279,7 +279,7 @@ def rabi_oscillation(ad:atomdata,
         ax.set_ylabel('fractional state population')
         ax.set_xlabel('t (us)')
 
-        # ax.legend(loc='lower right')
+        ax.legend(loc='lower right')
         
         title = f"Run ID: {ad.run_info.run_id}\n"
         title += f"RF frequency = {rf_frequency_hz/1.e6:1.2f} MHz\n"
