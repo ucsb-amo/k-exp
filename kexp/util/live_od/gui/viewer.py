@@ -50,6 +50,7 @@ class LiveODViewer(QWidget):
         self.lock_views_checkbox = QCheckBox("Lock view ranges")
         self.lock_views_checkbox.setChecked(True)
         self.lock_views_checkbox.stateChanged.connect(self._on_lock_views_changed)
+        self._on_lock_views_changed()
 
         control_bar.addWidget(self.reset_zoom_button)
         control_bar.addWidget(self.clear_button)
