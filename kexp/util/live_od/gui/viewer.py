@@ -50,7 +50,6 @@ class LiveODViewer(QWidget):
         self.lock_views_checkbox = QCheckBox("Lock view ranges")
         self.lock_views_checkbox.setChecked(True)
         self.lock_views_checkbox.stateChanged.connect(self._on_lock_views_changed)
-        self._on_lock_views_changed()
 
         control_bar.addWidget(self.reset_zoom_button)
         control_bar.addWidget(self.clear_button)
@@ -240,6 +239,8 @@ class LiveODViewer(QWidget):
         self.img_dark_view.getView().sigRangeChanged.connect(lambda *args: self._on_any_view_range_changed('dark'))
         self.od_plot.getViewBox().sigRangeChanged.connect(lambda *args: self._on_any_view_range_changed('od'))
         
+        self._on_lock_views_changed(True)
+
         self.sync_sumod_panels()
         sync_vertical_splitter(od_and_sumodx_splitter.sizes())
         sync_vertical_splitter_reverse(sumody_splitter.sizes())
