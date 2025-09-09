@@ -36,11 +36,11 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        # self.xvar('t_raman_pulse',np.linspace(0., 250.e-6,150))
+        self.xvar('t_raman_pulse',np.linspace(0.,100.e-6,30))
         # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse])
         self.p.t_raman_pulse = 0.
 
-        self.xvar('_t_tweezer_kill',np.linspace(0., 100.e-3,10))
+        # self.xvar('_t_tweezer_kill',np.linspace(0., 100.e-3,10))
         self.p._t_tweezer_kill = 10.e-3
 
         # self.p.frequency_detuned_imaging_half = 289.e6 # (self.p.frequency_detuned_imaging_m1 + self.p.frequency_detuned_imaging_0)/2
@@ -49,7 +49,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.linspace(100.,290,25)*1.e6)
         self.p.frequency_detuned_imaging = 190.7e6
 
-        self.p.amp_imaging = .5
+        # self.p.amp_imaging = .5
         # self.xvar('amp_imaging',np.linspace(0.2,.5,6))
         # self.camera_params.amp_imaging = .4
         # self.camera_params.exposure_time = 15.e-6
@@ -77,16 +77,16 @@ class tweezer_load(EnvExperiment, Base):
 
         self.prepare_lf_tweezers()
 
-        self.dds.mot_killer.set_dds_gamma(delta=0.,amplitude=.188)
+        # self.dds.mot_killer.set_dds_gamma(delta=0.,amplitude=.188)
 
         self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
 
-        # self.ttl.line_trigger.wait_for_line_trigger()
+        self.ttl.line_trigger.wait_for_line_trigger()
 
         delay(5.7e-3)
 
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.raman.pulse(t=self.p.t_raman_pulse)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.raman.pulse(t=self.p.t_raman_pulse)
 
         # if self.p.beans:
         #     self.raman.pulse(t=self.p.t_raman_pi_pulse)
@@ -100,12 +100,12 @@ class tweezer_load(EnvExperiment, Base):
 
         # delay(self.p.t_raman_pulse)
 
-        if self.p.beans:
-            self.dds.mot_killer.on()
-            delay(self.p._t_tweezer_kill)
-            self.dds.mot_killer.off()
-        else:
-            delay(self.p._t_tweezer_kill)
+        # if self.p.beans:
+        #     self.dds.mot_killer.on()
+        #     delay(self.p._t_tweezer_kill)
+        #     self.dds.mot_killer.off()
+        # else:
+        #     delay(self.p._t_tweezer_kill)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()

@@ -15,18 +15,19 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION,
                       save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(200.,310.,8)*1.e6)
-        self.p.frequency_detuned_imaging = 343.e6 # 13.2 A
-        # self.p.frequency_detuned_imaging = 264.e6
+        # self.xvar('frequency_detuned_imaging',np.arange(240.,360.,8)*1.e6)
+        # self.p.frequency_detuned_imaging = 343.e6 # 13.2 A
+        # self.p.frequency_detuned_imaging = 370.e6
+        self.p.frequency_detuned_imaging = 256.e6
         
 
-        # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
+        # self.xvar('hf_imaging_detuning', [272.e6,336.e6]*50)
         # self.xvar('frequency_detuned_imaging', [342.e6,364.e6]*1) # 13.1 A
 
         self.xvar('beans',np.linspace(0.,50.,10))
         
         # self.xvar('t_tof',np.linspace(500.,2000.,15)*1.e-6)
-        self.p.t_tof = 600.e-6
+        self.p.t_tof = 20.e-6
 
         # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(11.,18.,15))
         # self.p.i_lf_lightsheet_evap1_current = 13.6
@@ -83,7 +84,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.N_repeats = 1
 
         # self.camera_params.amp_imaging = .12
-        self.camera_params.exposure_time = 20.e-6
+        self.camera_params.exposure_time = 40.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
         # self.xvar('amp_imaging',np.linspace(.1,.45,10))
@@ -91,7 +92,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('phase_slm_mask',np.linspace(0.,1.,10)*np.pi)
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
