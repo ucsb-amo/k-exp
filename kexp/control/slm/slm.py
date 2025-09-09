@@ -38,6 +38,8 @@ class SLM:
             ExptParams.px_slm_phase_mask_position_y. 
             mask_type (str): The type of mask. It can be spot, grating or cross. 
             Defaults to ExptParams.slm_mask.
+            initialize (booling): True for doing initialization on client side, and False 
+            for letting SLM self-reinitialze automatically. 
         """        
         if dimension == dv:
             dimension = self.params.dimension_slm_mask
