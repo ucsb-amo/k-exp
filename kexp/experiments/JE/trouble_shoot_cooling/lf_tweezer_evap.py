@@ -13,21 +13,23 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      save_data=True)
+                      save_data=False)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(240.,360.,8)*1.e6)
-        # self.p.frequency_detuned_imaging = 343.e6 # 13.2 A
+        # self.xvar('frequency_detuned_imaging',np.linspace(-200.,300.,10)*1.e6)
+        self.p.frequency_detuned_imaging = 343.e6 # 13.2 A
         # self.p.frequency_detuned_imaging = 370.e6
-        self.p.frequency_detuned_imaging = 256.e6
+        # self.p.frequency_detuned_imaging = 256.e6
+        # self.p.frequency_detuned_imaging = -150.e6
         
 
         # self.xvar('hf_imaging_detuning', [272.e6,336.e6]*50)
         # self.xvar('frequency_detuned_imaging', [342.e6,364.e6]*1) # 13.1 A
 
-        self.xvar('beans',np.linspace(0.,50.,10))
+        self.xvar('beans',[0,1]*500)
+        self.p.beans = 1
         
-        # self.xvar('t_tof',np.linspace(500.,2000.,15)*1.e-6)
-        self.p.t_tof = 20.e-6
+        # self.xvar('t_tof',np.linspace(20.,150.,10)*1.e-6)
+        self.p.t_tof = 120.e-6
 
         # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(11.,18.,15))
         # self.p.i_lf_lightsheet_evap1_current = 13.6
@@ -86,98 +88,103 @@ class tweezer_load(EnvExperiment, Base):
         # self.camera_params.amp_imaging = .12
         self.camera_params.exposure_time = 40.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
+        self.camera_params.amp_imaging = 0.54
 
-        # self.xvar('amp_imaging',np.linspace(.1,.45,10))
-        # self.p.amp_imaging = .33
+        # self.xvar('amp_imaging',np.linspace(.1,.54,10))
+        self.p.amp_imaging = .54
 
         # self.xvar('phase_slm_mask',np.linspace(0.,1.,10)*np.pi)
+        self.p.phase_slm_mask = 0.
 
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
 
-        # self.slm.write_phase_mask_kernel(dimension=0.,phase=0.)
+        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         # self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_load_current,
         #                             pid_bool=False)
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
-        self.switch_d2_2d(1)
-        self.mot(self.p.t_mot_load)
-        self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot * s)
-        
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
+        if self.p.beans:
+            self.switch_d2_2d(1)
+            self.mot(self.p.t_mot_load)
+            self.dds.push.off()
+            self.cmot_d1(self.p.t_d1cmot * s)
+            
+            self.gm(self.p.t_gm * s)
+            self.gm_ramp(self.p.t_gmramp)
 
-        self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
+            self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-        self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
-        
-        self.ttl.d2_mot_shutter.off()
-        # feshbach field on, ramp up to field 1  
-        self.outer_coil.on()
-        # delay(1.e-3)
-        self.outer_coil.set_voltage()
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
-                             i_start=0.,
-                             i_end=self.p.i_lf_lightsheet_evap1_current)
+            self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
+            
+            self.ttl.d2_mot_shutter.off()
+            # feshbach field on, ramp up to field 1  
+            self.outer_coil.on()
+            # delay(1.e-3)
+            self.outer_coil.set_voltage()
+            self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
+                                i_start=0.,
+                                i_end=self.p.i_lf_lightsheet_evap1_current)
 
-        # lightsheet evap 1
-        self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
-                             v_start=self.p.v_pd_lightsheet_rampup_end,
-                             v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
-        
-        # feshbach field ramp to field 2
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_lf_lightsheet_evap1_current,
-                             i_end=self.p.i_lf_tweezer_load_current)
-        
-        self.tweezer.on(paint=True)
-        self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_ramp,
-                          v_start=0.,
-                          v_end=self.p.v_pd_lf_tweezer_1064_ramp_end,
-                          paint=True,keep_trap_frequency_constant=False,
-                          v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
-        
-        # delay(self.p.t_tweezer_soak)
-        
-        # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_lf_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown3_end)
-        
-        # delay(self.p.t_lightsheet_hold)
-        self.lightsheet.off()
+            # lightsheet evap 1
+            self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
+                                v_start=self.p.v_pd_lightsheet_rampup_end,
+                                v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
+            
+            # feshbach field ramp to field 2
+            self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                                i_start=self.p.i_lf_lightsheet_evap1_current,
+                                i_end=self.p.i_lf_tweezer_load_current)
+            
+            self.tweezer.on(paint=True)
+            self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_ramp,
+                            v_start=0.,
+                            v_end=self.p.v_pd_lf_tweezer_1064_ramp_end,
+                            paint=True,keep_trap_frequency_constant=False,
+                            v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
+            
+            # delay(self.p.t_tweezer_soak)
+            
+            # lightsheet ramp down (to off)
+            self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown2,
+                                v_start=self.p.v_pd_lf_lightsheet_rampdown_end,
+                                v_end=self.p.v_pd_lightsheet_rampdown3_end)
+            
+            # delay(self.p.t_lightsheet_hold)
+            self.lightsheet.off()
 
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_lf_tweezer_load_current,
-                             i_end=self.p.i_lf_tweezer_evap1_current)
-        
-        # # tweezer evap 1 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown,
-                          v_start=self.p.v_pd_lf_tweezer_1064_ramp_end,
-                          v_end=self.p.v_pd_lf_tweezer_1064_rampdown_end,
-                          paint=True,keep_trap_frequency_constant=True,
-                          v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
-        
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_lf_tweezer_evap1_current,
-                             i_end=self.p.i_lf_tweezer_evap2_current)
-        
-        # tweezer evap 2 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown2,
-                          v_start=self.p.v_pd_lf_tweezer_1064_rampdown_end,
-                          v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
-                          paint=True,keep_trap_frequency_constant=True,
-                          v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
+            self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                                i_start=self.p.i_lf_tweezer_load_current,
+                                i_end=self.p.i_lf_tweezer_evap1_current)
+            
+            # # tweezer evap 1 with constant trap frequency
+            self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown,
+                            v_start=self.p.v_pd_lf_tweezer_1064_ramp_end,
+                            v_end=self.p.v_pd_lf_tweezer_1064_rampdown_end,
+                            paint=True,keep_trap_frequency_constant=True,
+                            v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
+            
+            self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                                i_start=self.p.i_lf_tweezer_evap1_current,
+                                i_end=self.p.i_lf_tweezer_evap2_current)
+            
+            # tweezer evap 2 with constant trap frequency
+            self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown2,
+                            v_start=self.p.v_pd_lf_tweezer_1064_rampdown_end,
+                            v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
+                            paint=True,keep_trap_frequency_constant=True,
+                            v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
 
 
-        delay(self.p.t_tweezer_hold)
-        self.tweezer.off()
+            delay(self.p.t_tweezer_hold)
+            self.tweezer.off()
 
-        delay(self.p.t_tof)
+            delay(self.p.t_tof)
+        else:
+            delay(0.15)
 
         self.abs_image()
         
@@ -186,7 +193,7 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel(setup_awg=True,setup_slm=False)
+        self.init_kernel(setup_awg=True,setup_slm=True)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         # self.mot_observe()
