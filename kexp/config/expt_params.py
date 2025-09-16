@@ -35,7 +35,7 @@ class ExptParams():
         # (free space)
         self.frequency_detuned_imaging_m1 = 290.e6
         self.frequency_detuned_imaging_0 = 322.e6
-        self.frequency_detuned_imaging_midpoint = 307.3e6
+        self.frequency_detuned_imaging_midpoint = 301.3e6
         # self.frequency_detuned_imaging_midpoint = 608.e6
 
         ## 3D MOT beam imaging settings        
@@ -54,10 +54,10 @@ class ExptParams():
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 120e-6
-        self.phase_slm_mask = 1.745 * np.pi # 0.44 * np.pi
-        self.px_slm_phase_mask_position_x = 1148
-        self.px_slm_phase_mask_position_y = 915
+        self.dimension_slm_mask = 30e-6
+        self.phase_slm_mask = 2.09 # 0.44 * np.pi
+        self.px_slm_phase_mask_position_x = 1119   
+        self.px_slm_phase_mask_position_y = 862
         
         # Cooling timing
         self.t_tof = 20.e-6
@@ -123,7 +123,7 @@ class ExptParams():
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
-        self.t_raman_pi_pulse = 1.1026e-05
+        self.t_raman_pi_pulse = 1.2066e-05
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3

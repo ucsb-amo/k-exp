@@ -10,28 +10,40 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True,
+                      imaging_type=img_types.ABSORPTION)
 
-        # self.xvar('frequency_detuned_imaging_m1',np.arange(250.,450.,8)*1.e6)
+        # self.xvar('beans',[0]*500)
+    
+        self.p.t_tof = 60.e-6
 
-        # self.xvar('beans',[0]*3)
+        self.p.t_raman_sweep = 1.e-3
+        self.p.frequency_raman_transition = 41.245e6
         
-        self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
-        self.p.t_tof = 700.e-6
+        self.xvar('t_raman_pulse',np.linspace(0.,70.e-6,30))
+        self.p.amp_raman = 0.35
 
-        self.p.t_tweezer_hold = 1.e-3
-
+        self.p.t_tweezer_hold = .1e-3
         self.p.t_mot_load = 1.
+        
         self.p.N_repeats = 1
-
+        self.camera_params.exposure_time = 60.e-6
+        self.p.t_imaging_pulse = self.camera_params.exposure_time
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
-
-        self.set_imaging_detuning(self.p.frequency_detuned_imaging_m1)
+        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_m1)
 
         self.prepare_lf_tweezers()
+
+        self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
+
+        self.ttl.line_trigger.wait_for_line_trigger()
+
+        delay(5.7e-3)
+
+        self.raman.pulse(t=self.p.t_raman_pulse)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -45,6 +57,7 @@ class tweezer_load(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
+        # self.mot_observe()
 
     def analyze(self):
         import os
