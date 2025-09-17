@@ -16,14 +16,14 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,330.,3)*1.e6)
-        self.xvar('beans',[0,1]*50)
+        # self.xvar('beans',[0,1]*50)
 
         self.p.beans = 1
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         
         # self.xvar('t_tof',np.linspace(10.,500.,2)*1.e-6)
-        self.p.t_tof = 60.e-6
+        self.p.t_tof = 120.e-6
 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 41.1e6
@@ -50,10 +50,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.frequency_detuned_imaging = 318.75e6
 
         # self.p.amp_imaging = .2
-        # self.xvar('amp_imaging',np.linspace(0.1,.5,6))
+        self.xvar('amp_imaging',np.linspace(0.1,.5,10))
         # self.camera_params.amp_imaging = .4
-        self.camera_params.exposure_time = 60.e-6
-        self.p.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.exposure_time = 60.e-6
+        # self.p.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.gain = 1.
     
         self.p.t_tweezer_hold = .1e-3
@@ -65,7 +65,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.phase_slm_mask = 2.09
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 5
 
         self.finish_prepare(shuffle=False)
 
@@ -73,7 +73,7 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_m1)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.prepare_lf_tweezers()
 
@@ -88,12 +88,12 @@ class tweezer_load(EnvExperiment, Base):
         self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.raman.pulse(t=self.p.t_raman_pulse)
 
-        if self.p.beans:
-            self.raman.pulse(t=self.p.t_raman_pi_pulse)
-            # self.slm.write_phase_mask_kernel(phase=0.)
-        else:
-            # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-            delay(self.p.t_raman_pi_pulse)
+        # if self.p.beans:
+        #     self.raman.pulse(t=self.p.t_raman_pi_pulse)
+        #     # self.slm.write_phase_mask_kernel(phase=0.)
+        # else:
+        #     # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        #     delay(self.p.t_raman_pi_pulse)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,
