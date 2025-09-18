@@ -6,6 +6,7 @@ from kexp.util.artiq.async_print import aprint
 from kexp.control.slm.slm import SLM
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
+from artiq.coredevice.sampler import Sampler
 
 class tweezer_load(EnvExperiment, Base):
 
@@ -16,7 +17,7 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,330.,3)*1.e6)
-        # self.xvar('beans',[0,1]*50)
+        self.xvar('beans',[0,1]*50)
 
         self.p.beans = 1
 
@@ -49,10 +50,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.linspace(280.,400,11)*1.e6)
         # self.p.frequency_detuned_imaging = 318.75e6
 
-        # self.p.amp_imaging = .2
-        self.xvar('amp_imaging',np.linspace(0.1,.5,10))
+        self.p.amp_imaging = .3
+        # self.xvar('amp_imaging',np.linspace(0.1,.5,10))
         # self.camera_params.amp_imaging = .4
-        # self.camera_params.exposure_time = 60.e-6
+        # self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.gain = 1.
     
@@ -64,8 +65,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.px_slm_phase_mask_position_x
         self.p.phase_slm_mask = 2.09
         self.p.t_mot_load = 1.
+
+        self.sampler.gains = np.array([1,0,0,0,0,0,0,0])
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=False)
 
@@ -75,17 +78,21 @@ class tweezer_load(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
+        self.sampler.init()
+        # self.sampler.set_gain_mu(0,2)
+        delay(10.e-3)
+
         self.prepare_lf_tweezers()
 
         # self.dds.mot_killer.set_dds_gamma(delta=0.,amplitude=.188)
 
         self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
 
-        self.ttl.line_trigger.wait_for_line_trigger()
+        # self.ttl.line_trigger.wait_for_line_trigger()
 
         delay(5.7e-3)
 
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.raman.pulse(t=self.p.t_raman_pulse)
 
         # if self.p.beans:
@@ -112,12 +119,14 @@ class tweezer_load(EnvExperiment, Base):
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
         delay(self.p.t_tof)
-        # if self.p.beans:
-        #     delay(10.e-3)
-        # else:
-        #     delay(self.p.t_tof)
+        if self.p.beans:
+            delay(10.e-3)
+        else:
+            delay(self.p.t_tof)
 
         self.abs_image()
+
+        # print(self.sampler.samples)
 
     @kernel
     def run(self):
