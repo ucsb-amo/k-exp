@@ -119,6 +119,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
                     init_dac = True,
                     dds_set = True, 
                     dds_off = True, 
+                    beat_ref_on=True,
                     init_shuttler = True, 
                     init_lightsheet = True,
                     setup_awg = True, 
