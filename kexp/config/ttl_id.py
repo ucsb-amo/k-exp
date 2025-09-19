@@ -41,7 +41,7 @@ class ttl_frame():
 
         self._write_ttl_keys()
 
-        self.camera = TTL
+        self.camera = TTL_OUT
 
     def assign_ttl_out(self,ch) -> TTL_OUT:
         this_ttl = TTL_OUT(ch)
