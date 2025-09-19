@@ -1,6 +1,7 @@
 from pylablib.devices import Andor
 from pylablib.devices.interface.camera import trim_frames
 import numpy as np
+import time
 
 from queue import Queue
 from PyQt6.QtCore import QThread, pyqtSignal
@@ -37,6 +38,8 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.activate_cameralink(1)
         # self.set_fast_trigger_mode(mode=1)
 
+        self._internal_output_queue = Queue()
+
     def Close(self):
         self.setup_shutter(mode="closed")
         self.close()
@@ -45,10 +48,10 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.setup_shutter(mode="open")
         self.open()
 
-    def start_grab(self, N_img, output_queue:Queue,
+    def start_grab(self, N_img, output_queue:Queue=None,
                     missing_frame="skip",
-                      return_info=True, buff_size=None,
-                      check_interrupt_method=nothing):
+                    return_info=True, buff_size=None,
+                    check_interrupt_method=nothing):
         """
         Snap `nframes` images (with preset image read mode parameters)
         Modified from pylablib.devices.interface.camera.
@@ -61,6 +64,9 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         If ``return_info==True``, return tuple ``(frames, infos)``, where ``infos`` is a list of frame info tuples (camera-dependent);
         if some frames are missing and ``missing_frame!="skip"``, the corresponding frame info is ``None``.
         """
+        if output_queue == None:
+            output_queue = self._internal_output_queue
+
         if self.get_frame_format()=="array":
             try:
                 self.set_frame_format("chunks")
@@ -85,8 +91,8 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
                     new_frames,rng=self.read_multiple_images(missing_frame=missing_frame,return_rng=True)
                 for frame in new_frames:
                         if isinstance(frame,np.ndarray):
-                            # img_timestamp = time.time()
-                            img_timestamp = 0.
+                            img_timestamp = time.time()
+                            # img_timestamp = 0.
                             output_queue.put((frame,img_timestamp,nacq))
                 frames+=new_frames
                 nacq+=rng[1]-rng[0]
