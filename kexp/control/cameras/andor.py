@@ -16,13 +16,20 @@ def nothing():
     return False
 
 class AndorEMCCD(Andor.AndorSDK2Camera):
-    def __init__(self, ExposureTime=0., gain = 30, hs_speed:int=0, vs_speed:int=1, vs_amp:int=3,
-                 preamp = 2):
+    def __init__(self,
+                ExposureTime=0.,
+                gain = 30,
+                hs_speed:int=0,
+                vs_speed:int=1,
+                vs_amp:int=3,
+                preamp = 2):
         # overwrite a broken method in the parent class
         self._initial_setup_temperature = self._initial_setup_temperature_fixed
         # init the parent class
         super().__init__(temperature=-60,fan_mode="full")
         # run startup setting methods
+        self.activate_cameralink()
+        self.enable_frame_transfer_mode(enable=True)
         self.set_emccd_advanced()
         self.set_EMCCD_gain(gain=gain)
         self.set_exposure(ExposureTime)
@@ -35,7 +42,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.set_read_mode("image")
         self.set_cooler_mode(mode=1)
         self.set_amp_mode(preamp=preamp)
-        self.activate_cameralink(1)
+        
         # self.set_fast_trigger_mode(mode=1)
 
         self._internal_output_queue = Queue()
