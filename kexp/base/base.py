@@ -114,10 +114,15 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
         pass
 
     @kernel
-    def init_kernel(self, run_id = True, init_dds =  True, init_dac = True,
-                    dds_set = True, dds_off = True, beat_ref_on=True,
-                    init_shuttler = True, init_lightsheet = True,
-                    setup_awg = True, setup_slm = True):
+    def init_kernel(self, run_id = True,
+                    init_dds =  True, 
+                    init_dac = True,
+                    dds_set = True, 
+                    dds_off = True, 
+                    init_shuttler = True, 
+                    init_lightsheet = True,
+                    setup_awg = True, 
+                    setup_slm = True):
         if self.setup_camera:
             self.wait_for_camera_ready(timeout=INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT)
             print("Camera is ready.")
