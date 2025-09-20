@@ -28,8 +28,8 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         # init the parent class
         super().__init__(temperature=-60,fan_mode="full")
         # run startup setting methods
-        self.activate_cameralink()
-        self.enable_frame_transfer_mode(enable=True)
+        # self.activate_cameralink()
+        # self.enable_frame_transfer_mode(enable=True)
         self.set_emccd_advanced()
         self.set_EMCCD_gain(gain=gain)
         self.set_exposure(ExposureTime)
@@ -42,6 +42,7 @@ class AndorEMCCD(Andor.AndorSDK2Camera):
         self.set_read_mode("image")
         self.set_cooler_mode(mode=1)
         self.set_amp_mode(preamp=preamp)
+        self.activate_cameralink(1)
         
         # self.set_fast_trigger_mode(mode=1)
 
