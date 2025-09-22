@@ -30,6 +30,9 @@ class DataSaver():
                 f = data_object
             else:
                 f = h5py.File(fpath,'r+')
+                
+            if hasattr(expt,'scope_data'):
+                f['data'].create_dataset('scope_data',data=expt.scope_data)
 
             if expt.sort_idx:
                 expt.images = np.array(f['data']['images'])
@@ -103,7 +106,6 @@ class DataSaver():
         data.create_dataset('images',data=expt.images)
         data.create_dataset('image_timestamps',data=expt.image_timestamps)
         if expt.sort_idx:
-
             # pad with [-1]s to allow saving in hdf5 (avoid staggered array)
             self.pad_sort_idx(expt)
             data.create_dataset('sort_idx',data=expt.sort_idx)
