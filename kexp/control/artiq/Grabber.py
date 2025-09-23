@@ -51,15 +51,6 @@ class Grabber(grabber_artiq):
         """
         Retrieves the accumulated values for one frame from the ROI engines.
         Blocks until values are available or timeout is reached.
-
-        The input list must be a list of integers of the same length as there
-        are enabled ROI engines. This method replaces the elements of the
-        input list with the outputs of the enabled ROI engines, sorted by
-        number.
-
-        If the number of elements in the list does not match the number of
-        ROI engines that produced output, an exception will be raised during
-        this call or the next.
         
         If the timeout is reached before data is available, the exception
         :exc:`GrabberTimeoutException` is raised.
@@ -78,7 +69,7 @@ class Grabber(grabber_artiq):
         if sentinel != self.grabber_device.sentinel:
             raise OutOfSyncException
 
-        for i in range(self._roi_counter):
+        for i in range(self._roi_counter+1):
             timestamp, roi_output = rtio_input_timestamped_data(timeout_mu, channel)
             if roi_output == self.grabber_device.sentinel:
                 raise OutOfSyncException
