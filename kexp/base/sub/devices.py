@@ -56,8 +56,8 @@ class Devices():
         self.core_dma = self.get_device("core_dma")
         zotino = self.get_device("zotino0")
         sampler = self.get_device("sampler0")
-        self.grabber = self.get_device("grabber0")
-        self.grabber: Grabber
+        # self.grabber = self.get_device("grabber0")
+        # self.grabber: Grabber
 
         # slm
         self.slm = SLM(expt_params=self.params, core=self.core)
