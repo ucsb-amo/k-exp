@@ -8,6 +8,13 @@ class ScopeData:
         self.xvardims = []
         self._scope_trace_taken = False
 
+    def close(self):
+        for scope in self.scopes:
+            try:
+                scope.close()
+            except:
+                pass
+
 class TektronixScope_TBS1104():
     def __init__(self,device_id="",label="",
                  scope_data=ScopeData()):
