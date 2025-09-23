@@ -40,7 +40,7 @@ class tweezer_load(EnvExperiment, Base):
         self.core.reset()
 
         # self.grabber.setup_roi(0,0,0,1,1)
-        self.grabber.setup_roi(0,0,512,512)
+        self.grabber.setup_roi(0,0,1,1)
         # self.grabber.setup_roi(0,0,0,512,512)
         self.core.break_realtime()
 
@@ -50,7 +50,9 @@ class tweezer_load(EnvExperiment, Base):
 
             self.ttl.camera.pulse(1.e-6)
 
+            self.t = now_mu()
             self.grabber.read_roi(now_mu()+np.int64(3.e9))
+            self.tf = now_mu()
 
             self.core.break_realtime()
             self.grabber.gate_roi()
@@ -61,3 +63,4 @@ class tweezer_load(EnvExperiment, Base):
         print(self.grabber.data)
         print(self.grabber.timestamps)
         # pass
+        print(self.tf - self.t)
