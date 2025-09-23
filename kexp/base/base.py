@@ -230,6 +230,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
     
     def end(self, expt_filepath):
 
+        self.scope_data.close()
+
         if self.setup_camera:
             if self.run_info.save_data:
                 self.cleanup_scanned()
