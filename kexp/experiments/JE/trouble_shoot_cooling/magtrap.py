@@ -13,8 +13,8 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.t_tof = 8000.e-6
-        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        self.p.t_tof = 10000.e-6
+        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
         # self.xvar('dumy',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
@@ -53,7 +53,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,-2.,8))
         # self.xvar('amp_d2_r_d1cmot',np.linspace(.02,.08,8))
 
-        self.p.detune_d1_c_d1cmot = 7.5
+        # self.p.detune_d1_c_d1cmot = 7.5
 
         # self.xvar('detune_d1_c_d1cmot',np.linspace(3.,13.,8))
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(.1,.99,15))
@@ -67,8 +67,8 @@ class mag_trap(EnvExperiment, Base):
         # self.p.v_xshim_current_gm = .571
         # self.p.v_yshim_current_gm = 2.23
 
-        # self.xvar('detune_gm', np.linspace(3.,13.5,8))
-        self.p.detune_gm = 7.5
+        # self.xvar('detune_gm', np.linspace(3.,13.,8))
+        # self.p.detune_gm = 7.5
 
         # self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
         # self.xvar('pfrac_d1_r_gm',np.linspace(0.1,.99,8))
@@ -79,7 +79,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.3,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.2,.99,8))
-        self.p.pfrac_c_gmramp_end = 0.05
+        # self.p.pfrac_c_gmramp_end = 0.05
         # self.p.pfrac_r_gmramp_end = 0.743
         
         # self.xvar('i_magtrap_init',np.linspace(60.,95.,20))
@@ -112,6 +112,8 @@ class mag_trap(EnvExperiment, Base):
         
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
+        self.load_2D_mot(self.p.t_2D_mot_load_delay)
+
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
@@ -137,7 +139,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def run(self):
         self.init_kernel(init_shuttler=False)
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
+        
         self.scan()
         self.mot_observe()
 

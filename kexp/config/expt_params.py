@@ -134,16 +134,16 @@ class ExptParams():
         self.amp_push = 0.188
 
         #2D MOT
-        self.detune_d2v_c_2dmot = -2.86
+        self.detune_d2v_c_2dmot = -3.43
         self.amp_d2v_c_2dmot = 0.188
 
-        self.detune_d2h_c_2dmot = -2.286
+        self.detune_d2h_c_2dmot = -1.143
         self.amp_d2h_c_2dmot = 0.188
 
-        self.detune_d2v_r_2dmot = -3.4
+        self.detune_d2v_r_2dmot = -4.14
         self.amp_d2v_r_2dmot = 0.188
 
-        self.detune_d2h_r_2dmot = -4.8
+        self.detune_d2h_r_2dmot = -5.571
         self.amp_d2h_r_2dmot = 0.188
 
         self.v_2d_mot_current = 2.5
@@ -176,7 +176,7 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 9.5 # 12.1
+        self.detune_d1_c_d1cmot = 7.5 # 12.1
         self.pfrac_d1_c_d1cmot =  0.85 # .57
 
         self.detune_d2_r_d1cmot = -2.5
@@ -191,7 +191,7 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 10.5
+        self.detune_gm = 7.5
         # self.amp_gm = 0.09
 
         self.v_zshim_current_gm = 0.8
@@ -205,7 +205,7 @@ class ExptParams():
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        self.pfrac_c_gmramp_end = .04 #0.01
+        self.pfrac_c_gmramp_end = .05 #0.01
         self.pfrac_r_gmramp_end = .764# 0.729
         self.n_gmramp_steps = 200
 
@@ -290,7 +290,7 @@ class ExptParams():
         self.amp_tweezer_list1 = [.25,.25,.25,.25]
         self.amp_tweezer_list2 = [.25,.25,.25,.25]
 
-        self.v_lf_tweezer_paint_amp_max = .857
+        # self.v_lf_tweezer_paint_amp_max = .857
         self.v_hf_tweezer_paint_amp_max = 1.
 
         # tweezer movement params
