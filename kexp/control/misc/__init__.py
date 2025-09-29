@@ -1,0 +1,1 @@
+from .tektronix_tbs1104 import ScopeData

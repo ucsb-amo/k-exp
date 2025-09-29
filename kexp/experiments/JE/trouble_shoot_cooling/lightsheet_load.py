@@ -13,14 +13,14 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select=cameras.andor,
+                      camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 20.e-6
-        # self.xvar('t_tof',np.linspace(20,600.,10)*1.e-6)
+        self.p.t_tof = 800.e-6
+        self.xvar('t_tof',np.linspace(100,1000.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
-        self.xvar('dumy',[0,1]*5)
+        # self.xvar('dumy',[0,1]*5)
         # self.p.dumy = 0
         # self.xvar('dumy0',np.linspace(0.,50.,50))
 
@@ -52,7 +52,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_hold',np.linspace(0.,1.5,20))
         self.p.t_lightsheet_hold = .1
 
-        # self.xvar('hf_imaging_detuning', np.arange(0.,470.,8.)*1.e6)
+        # self.xvar('hf_imaging_detuning', np.arange(-10.,40.,3.)*1.e6)
 
         # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
         # self.p.t_imaging_pulse = 2.e-5    
@@ -61,10 +61,10 @@ class mag_trap(EnvExperiment, Base):
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
 
-        # self.xvar('amp_d2_c_imaging',np.linspace(0.,.188,10))
+        # self.xvar('amp_imaging',np.linspace(0.13,.18,10))
         # self.p.amp_d2_c_imaging = .188
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.
@@ -75,7 +75,8 @@ class mag_trap(EnvExperiment, Base):
     def scan_kernel(self):
 
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.dds.mot_killer.set_dds_gamma(0.,amplitude=.188)
+        # self.dds.mot_killer.set_dds_gamma(0.,amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds_gamma(amplitude=self.p.amp_imaging)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -88,7 +89,7 @@ class mag_trap(EnvExperiment, Base):
         self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
                                                    self.p.v_yshim_current_magtrap,
                                                    0.,n=100)
-        self.dds.mot_killer.on()
+        # self.dds.mot_killer.on()
         delay(self.p.t_lightsheet_hold)
         
         self.lightsheet.off()
@@ -98,7 +99,7 @@ class mag_trap(EnvExperiment, Base):
         # self.flash_cooler()
         self.abs_image()
 
-        self.dds.mot_killer.off()
+        # self.dds.mot_killer.off()
         
 
     @kernel

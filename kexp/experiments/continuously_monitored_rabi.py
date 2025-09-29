@@ -39,7 +39,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
         # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse])
-        self.p.t_raman_pulse = 23.e-6
+        self.p.t_raman_pulse = 24.e-6
 
         # self.xvar('_t_tweezer_kill',np.linspace(0., 100.e-3,10))
         self.p._t_tweezer_kill = 10.e-3
@@ -50,7 +50,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.linspace(280.,400,11)*1.e6)
         # self.p.frequency_detuned_imaging = 318.75e6
 
-        self.p.amp_imaging = .16
+        self.p.amp_imaging = .25
         # self.xvar('amp_imaging',np.linspace(0.05,.2,10))
         # self.camera_params.amp_imaging = .4
         self.camera_params.exposure_time = 10.e-6
@@ -61,7 +61,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_tweezer_hold = 7.e-3
         # self.xvar('dimension_slm_mask',np.linspace(0.,200.e-6,10))
         self.p.dimension_slm_mask = 100.e-6
-        self.xvar('phase_slm_mask',np.linspace(np.pi,2*np.pi,15))
+        self.xvar('phase_slm_mask',np.linspace(0.3*np.pi,.7*np.pi,10))
         self.p.phase_slm_mask = .35*np.pi
         # self.xvar('px_slm_phase_mask_position_x',1147 + np.linspace(-10.,10.,5,dtype=int))
         # self.p.px_slm_phase_mask_position_x

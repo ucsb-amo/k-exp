@@ -11,6 +11,7 @@ from kexp.util.data.counter import counter
 from kexp.util.data import server_talk
 from artiq.language.core import kernel_from_string, now_mu
 import time
+from kexp.control.misc.tektronix_tbs1104 import ScopeData
 
 RPC_DELAY = 10.e-3
 
@@ -39,6 +40,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
 
         self.setup_camera = setup_camera
         self.run_info = RunInfo(self,save_data)
+        self.scope_data = ScopeData()
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
         self._counter = counter()
 
@@ -104,6 +106,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
         if self.tweezer.traps == []:
             self.tweezer.add_tweezer_list()
         self.tweezer.save_trap_list()
+
+        self.xvardims = [len(xvar.values) for xvar in self.scan_xvars]
+        self.scope_data.xvardims = self.xvardims
 
         if self.setup_camera:
             self.data_filepath = self.ds.create_data_file(self)
@@ -224,6 +229,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
             self.image_timestamps = np.array([0])
     
     def end(self, expt_filepath):
+
+        self.scope_data.close()
 
         if self.setup_camera:
             if self.run_info.save_data:

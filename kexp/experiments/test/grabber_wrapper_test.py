@@ -5,10 +5,15 @@ from kexp import Base, cameras, img_types
 from kexp.control.artiq.TTL import TTL_OUT
 import numpy as np
 
+from kexp.control.artiq.Grabber import Grabber
+
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False)
+
+        self.grabber = Grabber(expt=self)
+
         self.camera_params = cameras.andor
         self.camera_params.select_imaging_type(imaging_type=img_types.ABSORPTION)
         self.ttl.camera = self.ttl.andor
@@ -17,7 +22,8 @@ class tweezer_load(EnvExperiment, Base):
 
         self.xvar('dum',[0]*self.N)
 
-        self.grabber_data = np.array([0])
+        self.t = np.int64(0)
+        self.tf = np.int64(0)
 
         self.finish_prepare(shuffle=True)
 
@@ -33,26 +39,28 @@ class tweezer_load(EnvExperiment, Base):
                          dds_off=False)
         self.core.reset()
 
-        self.grabber.setup_roi(0,0,0,1,1)
+        # self.grabber.setup_roi(0,0,0,1,1)
+        self.grabber.setup_roi(0,0,1,1)
         # self.grabber.setup_roi(0,0,0,512,512)
         self.core.break_realtime()
 
-        t = np.int64(0)
-        tf = np.int64(0)
-
         for _ in range(self.N):
 
-            self.grabber.gate_roi(0b1)
+            self.grabber.gate_roi()
 
             self.ttl.camera.pulse(1.e-6)
 
-            t = now_mu()
-            self.grabber.input_mu(self.grabber_data,timeout_mu=now_mu()+np.int64(3.e9))
+            self.t = now_mu()
+            self.grabber.read_roi(now_mu()+np.int64(3.e9))
+            self.tf = now_mu()
 
             self.core.break_realtime()
-            self.grabber.gate_roi(0b0)
+            self.grabber.gate_roi()
             
             delay(1.)
 
     def analyze(self):
-        print(self.grabber_data)
+        print(self.grabber.data)
+        print(self.grabber.timestamps)
+        # pass
+        print(self.tf - self.t)
