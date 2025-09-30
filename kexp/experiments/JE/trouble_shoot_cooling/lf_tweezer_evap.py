@@ -11,7 +11,7 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
-                      camera_select=cameras.andor,
+                      camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION,
                       save_data=True)
 
@@ -52,7 +52,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_soak',np.linspace(0.,500.,15)*1.e-3)
         # self.p.t_tweezer_soak = 35.e-3
 
-        self.xvar('paint_amp',np.linspace(-6.,2.,15))
+        self.xvar('paint_amp',np.linspace(-6.,2.,1))
         # self.p.v_lf_tweezer_paint_amp_max = .55
 
         # self.xvar('i_lf_tweezer_evap1_current',np.linspace(12.4,17.,20))

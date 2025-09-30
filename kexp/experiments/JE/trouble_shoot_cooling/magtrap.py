@@ -11,12 +11,12 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.t_tof = 8000.e-6
+        self.p.t_tof = 9000.e-6
         # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
-        self.xvar('dumy',[0]*500)
+        # self.xvar('dumy',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
@@ -55,7 +55,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.detune_d1_c_d1cmot = 10.5
 
-        # self.xvar('detune_d1_c_d1cmot',np.linspace(3.,13.,8))
+        self.xvar('detune_d1_c_d1cmot',np.linspace(3.,13.,8))
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(.1,.99,15))
 
         # self.xvar('i_mot',np.linspace(12.,30.,15))
@@ -67,7 +67,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.v_xshim_current_gm = .571
         # self.p.v_yshim_current_gm = 2.23
 
-        # self.xvar('detune_gm', np.linspace(3.,13.,8))
+        self.xvar('detune_gm', np.linspace(3.,13.,8))
         self.p.detune_gm = 10.5
 
         # self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
@@ -110,7 +110,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
 

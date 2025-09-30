@@ -249,7 +249,10 @@ class CameraBaby(QThread):
         self.camera_connect.emit(camera_select)
 
     def honorable_death(self):
-        self.camera.stop_grab()
+        try:
+            self.camera.stop_grab()
+        except:
+            pass
         print(f"{self.name}: All images captured.")
         print(f"{self.name} has died honorably.")
         time.sleep(0.1)
@@ -258,7 +261,10 @@ class CameraBaby(QThread):
         return True
     
     def dishonorable_death(self,delete_data=True):
-        self.camera.stop_grab()
+        try:
+            self.camera.stop_grab()
+        except:
+            pass
         self.data_handler.remove_incomplete_data(delete_data)
         print(f"{self.name} has died dishonorably.")
         time.sleep(0.1)

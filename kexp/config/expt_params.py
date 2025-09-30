@@ -176,7 +176,7 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 7.5 # 12.1
+        self.detune_d1_c_d1cmot = 9.5 # 12.1
         self.pfrac_d1_c_d1cmot =  0.85 # .57
 
         self.detune_d2_r_d1cmot = -2.5
@@ -191,7 +191,7 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 7.5
+        self.detune_gm = 9.5
         # self.amp_gm = 0.09
 
         self.v_zshim_current_gm = 0.8

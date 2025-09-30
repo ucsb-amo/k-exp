@@ -141,7 +141,7 @@ class Devices():
                                     params=self.params)
         self.raman._init()
         
-        self.ry_980_eo = SSG3021X()
+        # self.ry_980_eo = SSG3021X()
 
         # camera placeholder
         self.camera = DummyCamera()
