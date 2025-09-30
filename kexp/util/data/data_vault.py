@@ -6,7 +6,6 @@ import h5py
 
 from kexp.util.data.server_talk import check_for_mapped_data_dir, get_run_id, update_run_id
 from kexp.base.sub.dealer import Dealer
-# from kexp.base.base import Base
 
 data_dir = os.getenv("data")
 
@@ -30,6 +29,14 @@ class DataSaver():
                 f = data_object
             else:
                 f = h5py.File(fpath,'r+')
+
+            if expt.scope_data._scope_trace_taken:
+                scope_data = f['data'].create_group('scope_data')
+                for scope in expt.scope_data.scopes:
+                    data = scope.reshape_data()
+                    if expt.sort_idx:
+                        data = expt._unshuffle_ndarray(data,exclude_dims=2)
+                    scope_data.create_dataset(scope.label,data=data)
 
             if expt.sort_idx:
                 expt.images = np.array(f['data']['images'])
@@ -103,7 +110,6 @@ class DataSaver():
         data.create_dataset('images',data=expt.images)
         data.create_dataset('image_timestamps',data=expt.image_timestamps)
         if expt.sort_idx:
-
             # pad with [-1]s to allow saving in hdf5 (avoid staggered array)
             self.pad_sort_idx(expt)
             data.create_dataset('sort_idx',data=expt.sort_idx)

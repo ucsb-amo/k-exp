@@ -6,6 +6,8 @@ import cv2
 import kexp.util.data.server_talk as st
 from kexp.analysis.image_processing.compute_ODs import compute_OD
 
+from kexp.control.cameras.camera_param_classes import img_types
+
 import h5py
 from copy import deepcopy
 
@@ -251,6 +253,11 @@ class roi_creator():
         filepath, _ = st.get_data_file(run_id)
         self.h5_file = h5py.File(filepath)
         self.N_img = self.h5_file['data']['images'].shape[0]//3
+        # try:
+        #     self.analysis_type = self.h5_file['run_info']['imaging_type'][()]
+        # except Exception as e:
+        #     print(e)
+        self.analysis_type = img_types.ABSORPTION
 
         self.image = self.get_od(0)
 
@@ -270,7 +277,7 @@ class roi_creator():
         pwa = self.h5_file['data']['images'][3*idx]
         pwoa = self.h5_file['data']['images'][3*idx+1]
         dark = self.h5_file['data']['images'][3*idx+2]
-        od = compute_OD(pwa,pwoa,dark)
+        od = compute_OD(pwa,pwoa,dark,self.analysis_type)
         return od
         
     def get_roi_rectangle(self):
@@ -297,6 +304,10 @@ class roi_creator():
         img_index = 0
         zooming = False
         zoom_region = None  # Store zoomed region coordinates
+        # if self.analysis_type != img_types.ABSORPTION:
+        #     self.cmap_juice_factor = 0.01
+        # else:
+        #     self.cmap_juice_factor = 0.8
         self.cmap_juice_factor = 1.
 
         def draw_rectangle(event, x, y, flags, param):
@@ -349,8 +360,8 @@ class roi_creator():
 
         def adjust_colormap_scale(key):
             """Adjusts the colormap scale factor based on arrow key input."""
-            step_size = 0.1
-            max_joos = 0.05
+            step_size = 0.00025 if self.analysis_type == img_types.DISPERSIVE else 0.1
+            max_joos = 0.0005 if self.analysis_type == img_types.DISPERSIVE else 0.05
             if key == 0x260000:  # Up arrow key (increase fraction)
                 self.cmap_juice_factor = max(self.cmap_juice_factor - step_size, max_joos)
             elif key == 0x280000:  # Down arrow key (decrease fraction)

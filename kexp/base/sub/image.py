@@ -17,6 +17,7 @@ from kexp.calibrations import (high_field_imaging_detuning,
                                 low_field_pid_imaging_detuning,
                                 I_LF_HF_THRESHOLD)
 from kexp.config.camera_id import img_types as img, cameras
+from artiq.coredevice.sampler import Sampler
 
 dv = -10.e9
 

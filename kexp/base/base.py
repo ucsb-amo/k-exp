@@ -11,8 +11,11 @@ from kexp.util.data.counter import counter
 from kexp.util.data import server_talk
 from artiq.language.core import kernel_from_string, now_mu
 import time
+from kexp.control.misc.tektronix_tbs1104 import ScopeData
 
 RPC_DELAY = 10.e-3
+
+from kexp.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 # also import the andor camera parameters
 
@@ -38,6 +41,7 @@ class Base(Devices, Cooling, Image, Dealer, Cameras,
 
         self.setup_camera = setup_camera
         self.run_info = RunInfo(self,save_data)
+        self.scope_data = ScopeData()
         self._ridstr = " Run ID: "+ str(self.run_info.run_id)
         self._counter = counter()
 
@@ -106,6 +110,9 @@ class Base(Devices, Cooling, Image, Dealer, Cameras,
         #     self.tweezer.add_tweezer_list()
         # self.tweezer.save_trap_list()
 
+        self.xvardims = [len(xvar.values) for xvar in self.scan_xvars]
+        self.scope_data.xvardims = self.xvardims
+
         if self.setup_camera:
             self.data_filepath = self.ds.create_data_file(self)
 
@@ -115,12 +122,18 @@ class Base(Devices, Cooling, Image, Dealer, Cameras,
         pass
 
     @kernel
-    def init_kernel(self, run_id = True, init_dds =  True, init_dac = True,
-                    dds_set = True, dds_off = True, beat_ref_on=True,
-                    init_shuttler = True, init_lightsheet = True,
-                    setup_awg = True, setup_slm = True):
+    def init_kernel(self, run_id = True,
+                    init_dds =  True, 
+                    init_dac = True,
+                    dds_set = True, 
+                    dds_off = True, 
+                    beat_ref_on=True,
+                    init_shuttler = True, 
+                    init_lightsheet = True,
+                    setup_awg = True, 
+                    setup_slm = True):
         if self.setup_camera:
-            self.wait_for_camera_ready(timeout=30.)
+            self.wait_for_camera_ready(timeout=INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT)
             print("Camera is ready.")
         # if setup_slm:
         #     self.setup_slm(self.run_info.imaging_type)
@@ -221,6 +234,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras,
             self.image_timestamps = np.array([0])
     
     def end(self, expt_filepath):
+
+        self.scope_data.close()
 
         if self.setup_camera:
             if self.run_info.save_data:

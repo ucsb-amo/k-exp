@@ -779,7 +779,9 @@ class tweezer():
             v = v_start + i * delta_v
             if paint:
                 if keep_trap_frequency_constant:
-                    v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v,v_pd_max)
+                    v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v,
+                                                                      v_pd_max,
+                                                                      v_awg_am_max)
                 else:
                     v_awg_amp_mod = v_awg_am_max
                 self.paint_amp_dac.set(v_awg_amp_mod,load_dac=True)

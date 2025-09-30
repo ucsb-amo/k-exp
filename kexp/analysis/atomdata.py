@@ -169,8 +169,14 @@ class atomdata():
         self.sum_od_x = np.sum(self.od,self.od.ndim-2)
         self.sum_od_y = np.sum(self.od,self.od.ndim-1)
 
-        self.axis_x = self.camera_params.pixel_size_m / self.camera_params.magnification * np.arange(self.sum_od_x.shape[-1])
-        self.axis_y = self.camera_params.pixel_size_m / self.camera_params.magnification * np.arange(self.sum_od_x.shape[-1])
+        self.axis_camera_px_x = np.arange(self.sum_od_x.shape[-1])
+        self.axis_camera_px_y = np.arange(self.sum_od_y.shape[-1])
+
+        self.axis_camera_x = self.camera_params.pixel_size_m * self.axis_camera_px_x
+        self.axis_camera_y = self.camera_params.pixel_size_m * self.axis_camera_px_y
+
+        self.axis_x = self.axis_camera_x / self.camera_params.magnification
+        self.axis_y = self.axis_camera_y / self.camera_params.magnification
         
         self.cloudfit_x = fit_gaussian_sum_dist(self.sum_od_x,self.camera_params)
         self.cloudfit_y = fit_gaussian_sum_dist(self.sum_od_y,self.camera_params)
@@ -179,6 +185,8 @@ class atomdata():
         
         if self._analysis_tags.imaging_type == img.ABSORPTION:
             self.compute_atom_number()
+
+        self.integrated_od = np.sum(np.sum(self.od,-2),-1)
 
     def _sort_images(self):
         imgs_tuple = self._dealer.deal_data_ndarray(self.images)
@@ -216,7 +224,7 @@ class atomdata():
         self.atom_number_fit_area_x = self.fit_area_x * dx_pixel / self.atom_cross_section
         self.atom_number_fit_area_y = self.fit_area_y * dx_pixel / self.atom_cross_section
 
-        self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section
+        self.atom_number_density = self.od * dx_pixel**2 / self.atom_cross_section  
         self.atom_number = np.sum(np.sum(self.atom_number_density,-2),-1)
 
     def slice_atomdata(self, which_shot_idx=0, which_xvar_idx=0):

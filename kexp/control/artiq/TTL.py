@@ -4,7 +4,7 @@ from artiq.coredevice.ttl import TTLOut, TTLInOut
 import artiq.experiment
 import numpy as np
 
-T_LINE_TRIGGER_SAMPLE_INTERVAL = 1/60
+T_LINE_TRIGGER_SAMPLE_INTERVAL = 1/60 * 1.05
 T_LINE_TRIGGER_RTIO_DELAY = 100.e-6
 dv = np.int64(-1)
 

@@ -147,8 +147,12 @@ class DDS():
                t_phase_origin_mu=np.int64(0),
                init=False, verbose=False):
       """
-      Sets the DDS frequency and amplitude. If the DDS is associated with a DAC,
-      it also sets the DAC voltage to v_pd.
+      Set the DDS (Direct Digital Synthesizer) frequency, amplitude, phase, and optionally DAC voltage.
+
+      This method updates the DDS device with new frequency, amplitude, and phase values,
+      and, if applicable, sets the associated DAC voltage. Only parameters with non-negative
+      values different from the current state are updated. If `init` is True, all parameters
+      are forced to update regardless of their values.
 
       Args:
          frequency (float): Frequency in Hz. If negative, the frequency is not
@@ -241,6 +245,23 @@ class DDS():
       else:
          self.dds_device.sw.off()
          self.sw_state = 0
+
+   @kernel
+   def set_phase_mode(self, mode=0):
+      """
+      Sets the phase mode of the DDS. See ad9910.AD9910.set_phase_mode for
+      details.
+
+      Args:
+          mode (int, optional): Phase mode to set. 0 for continuous phase mode,
+          1 for tracking phase mode. Defaults to 0 (continuous phase mode).
+      """      
+      if mode == 0:
+         self.dds_device.set_phase_mode(ad9910.PHASE_MODE_CONTINUOUS)
+         self.phase_mode = mode
+      elif mode == 1:
+         self.dds_device.set_phase_mode(ad9910.PHASE_MODE_TRACKING)
+         self.phase_mode = mode
 
    @kernel
    def set_phase_mode(self, mode=0):

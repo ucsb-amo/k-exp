@@ -127,13 +127,13 @@ class Scanner():
         ExptParams.
         """
 
-        self._check_data_file_exists()
-
         self.pre_scan()
 
         scanning = True
 
         while scanning:
+
+            self._check_data_file_exists()
             
             self.core.wait_until_mu(now_mu())
             self.update_params_from_xvars()
@@ -144,14 +144,16 @@ class Scanner():
             delay(RPC_DELAY)
             self.core.break_realtime()
 
+            # overloaded in kexp.Base
             self.init_scan_kernel()
+
             self.core.break_realtime()
 
+            # overloaded by user per experiment
             self.scan_kernel()
 
+            # overloaded in kexp.Base
             self.cleanup_scan_kernel()
-
-            self._check_data_file_exists()
 
             delay(self.params.t_recover)
             self.core.break_realtime()

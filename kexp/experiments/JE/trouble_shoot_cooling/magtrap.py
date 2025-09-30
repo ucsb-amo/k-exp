@@ -11,29 +11,38 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         self.p.t_tof = 8000.e-6
         # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
-        # self.xvar('dumy',[0]*5)
+        self.xvar('dumy',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
         # self.p.t_pump_to_F1 = 50.e-6
 
+        # self.xvar('detune_d2v_c_2dmot',np.linspace(-4.,0.,8))
+        # self.xvar('detune_d2h_c_2dmot',np.linspace(-4.,0.,8))
+        # self.xvar('detune_d2v_r_2dmot',np.linspace(-7.,-2.,8))
+        # self.xvar('detune_d2h_r_2dmot',np.linspace(-7.,-2.,8))
+        # self.p.detune_d2_r_2dmot = -4.4
+        # self.p.detune_d2_c_2dmot = -1.6
+
+        # self.xvar('v_2d_mot_current',np.linspace(.5,4.,15))
+
         # self.xvar('detune_d2_c_mot',np.linspace(-5.,-2.,8))
         
         # self.xvar('detune_d2_c_mot',np.linspace(-5.5,-1.,8))
-        # self.xvar('detune_d2_r_mot',np.linspace(-7.,-1.,8))
+        # self.xvar('detune_d2_r_mot',np.linspace(-6.5,-3.,8))
         # self.p.detune_d2_c_mot = -3.
         # self.p.detune_d2_r_mot = -3.5
         
         # self.xvar('i_mot',np.linspace(12.,30.,20))
 
-        # self.xvar('v_zshim_current',np.linspace(0.0,1.5,20))
+        # self.xvar('v_zshim_current',np.linspace(0.0,.8,8))
         # self.xvar('v_xshim_current',np.linspace(0.,2.,8))
-        # self.xvar('v_yshim_current',np.linspace(0.0,2.3,15))
+        # self.xvar('v_yshim_current',np.linspace(0.0,2.3,8))
         # self.p.v_zshim_current = .743
         # self.p.v_xshim_current = .571
         # self.p.v_yshim_current = .11
@@ -44,19 +53,22 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,-2.,8))
         # self.xvar('amp_d2_r_d1cmot',np.linspace(.02,.08,8))
 
-        # self.xvar('detune_d1_c_d1cmot',np.linspace(5.,13.,8))
+        self.p.detune_d1_c_d1cmot = 10.5
+
+        # self.xvar('detune_d1_c_d1cmot',np.linspace(3.,13.,8))
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(.1,.99,15))
 
         # self.xvar('i_mot',np.linspace(12.,30.,15))
 
-        # self.xvar('v_zshim_current_gm',np.linspace(0.1,1.1,8))
+        # self.xvar('v_zshim_current_gm',np.linspace(0.3,1.,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.7,8))
-        # self.xvar('v_yshim_current_gm',np.linspace(.1,3.,20))
+        # self.xvar('v_yshim_current_gm',np.linspace(.1,3.,8))
         # self.p.v_zshim_current_gm = .743
         # self.p.v_xshim_current_gm = .571
         # self.p.v_yshim_current_gm = 2.23
 
-        # self.xvar('detune_gm', np.linspace(3.,13.5,20))
+        # self.xvar('detune_gm', np.linspace(3.,13.,8))
+        self.p.detune_gm = 10.5
 
         # self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
         # self.xvar('pfrac_d1_r_gm',np.linspace(0.1,.99,8))
@@ -65,9 +77,9 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('t_gmramp',np.linspace(2.,15.,15)*1.e-3)
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.2,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.6,.99,8))
-        # self.p.pfrac_c_gmramp_end = 0.176
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.3,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.2,.99,8))
+        # self.p.pfrac_c_gmramp_end = 0.05
         # self.p.pfrac_r_gmramp_end = 0.743
         
         # self.xvar('i_magtrap_init',np.linspace(60.,95.,20))
@@ -90,7 +102,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_mot_load = .5
 
         # self.xvar('amp_imaging',np.linspace(.25,.4,20))
-        # self.p.amp_imaging = .32
+        self.p.amp_imaging = .17
         self.p.imaging_state = 2.
 
         self.finish_prepare(shuffle=True)
@@ -98,7 +110,9 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+
+        self.load_2D_mot(self.p.t_2D_mot_load_delay)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -125,7 +139,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def run(self):
         self.init_kernel(init_shuttler=False)
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
+        
         self.scan()
         self.mot_observe()
 

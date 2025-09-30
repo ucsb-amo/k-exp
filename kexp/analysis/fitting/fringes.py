@@ -7,12 +7,15 @@ import numpy as np
 
 class SineEnvelope(Fit):
     def __init__(self,xdata,ydata,
-                 include_idx=[0,-1],exclude_idx=[]):
+                include_idx=[0,-1],exclude_idx=[],
+                override_center=None):
         super().__init__(xdata,ydata,
                         include_idx=include_idx,exclude_idx=exclude_idx,
                         savgol_window=20)
 
         # self.xdata, self.ydata = self.remove_infnan(self.xdata,self.ydata)
+
+        self.override_center = override_center
 
         try:
             gfit = GaussianFit(xdata,ydata)
@@ -41,7 +44,11 @@ class SineEnvelope(Fit):
 
 
     def _fit_func(self, x, amplitude, sigma, x_center, y_offset, contrast, k, phase):
-        return y_offset + amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) ) * ( 1 + contrast * np.cos(k * (x-x_center) + phase) )
+        if self.override_center != None:
+            x0 = self.override_center 
+        else:
+            x0 = x_center
+        return y_offset + amplitude * np.exp( -(x-x_center)**2 / (2 * sigma**2) ) * ( 1 + contrast * np.cos(k * (x-x0) + phase) )
 
     def _fit(self, x, y):
         '''
