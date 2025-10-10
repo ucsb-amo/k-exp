@@ -11,7 +11,7 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
-                      camera_select=cameras.xy_basler,
+                      camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
                       save_data=True)
 
@@ -52,7 +52,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_soak',np.linspace(0.,500.,15)*1.e-3)
         # self.p.t_tweezer_soak = 35.e-3
 
-        self.xvar('paint_amp',np.linspace(-6.,2.,1))
+        self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-6.,2.,20))
         # self.p.v_lf_tweezer_paint_amp_max = .55
 
         # self.xvar('i_lf_tweezer_evap1_current',np.linspace(12.4,17.,20))
@@ -91,7 +91,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.camera_params.amp_imaging = 0.54
 
         # self.xvar('amp_imaging',np.linspace(.1,.54,10))
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .54
 
         # self.xvar('phase_slm_mask',np.linspace(0.,1.,10)*np.pi)
         # self.xvar('phase_slm_mask',[1.745,3.14]*50)
@@ -103,10 +103,10 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
 
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap2_current,
+        self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_load_current,
                                     pid_bool=False)
         # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -144,7 +144,7 @@ class tweezer_load(EnvExperiment, Base):
                         v_start=0.,
                         v_end=self.p.v_pd_lf_tweezer_1064_ramp_end,
                         paint=True,keep_trap_frequency_constant=False,
-                        v_awg_am_max=self.p.paint_amp)
+                        v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
         
         # delay(self.p.t_tweezer_soak)
         
@@ -156,27 +156,27 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_lightsheet_hold)
         self.lightsheet.off()
 
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                            i_start=self.p.i_lf_tweezer_load_current,
-                            i_end=self.p.i_lf_tweezer_evap1_current)
+        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+        #                     i_start=self.p.i_lf_tweezer_load_current,
+        #                     i_end=self.p.i_lf_tweezer_evap1_current)
         
-        # # tweezer evap 1 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown,
-                        v_start=self.p.v_pd_lf_tweezer_1064_ramp_end,
-                        v_end=self.p.v_pd_lf_tweezer_1064_rampdown_end,
-                        paint=True,keep_trap_frequency_constant=True,
-                        v_awg_am_max=self.p.paint_amp)
+        # # # tweezer evap 1 with constant trap frequency
+        # self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown,
+        #                 v_start=self.p.v_pd_lf_tweezer_1064_ramp_end,
+        #                 v_end=self.p.v_pd_lf_tweezer_1064_rampdown_end,
+        #                 paint=True,keep_trap_frequency_constant=True,
+        #                 v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
         
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                            i_start=self.p.i_lf_tweezer_evap1_current,
-                            i_end=self.p.i_lf_tweezer_evap2_current)
+        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+        #                     i_start=self.p.i_lf_tweezer_evap1_current,
+        #                     i_end=self.p.i_lf_tweezer_evap2_current)
         
-        # tweezer evap 2 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown2,
-                        v_start=self.p.v_pd_lf_tweezer_1064_rampdown_end,
-                        v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
-                        paint=True,keep_trap_frequency_constant=True,
-                        v_awg_am_max=self.p.paint_amp)
+        # # tweezer evap 2 with constant trap frequency
+        # self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown2,
+        #                 v_start=self.p.v_pd_lf_tweezer_1064_rampdown_end,
+        #                 v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
+        #                 paint=True,keep_trap_frequency_constant=True,
+        #                 v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
 
 
         delay(self.p.t_tweezer_hold)

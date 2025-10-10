@@ -17,7 +17,7 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,330.,3)*1.e6)
-        self.xvar('beans',[0,1]*100)
+        self.xvar('beans',[0]*100)
 
         self.p.beans = 0
 
@@ -53,8 +53,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.linspace(280.,400,11)*1.e6)
         # self.p.frequency_detuned_imaging = 318.75e6
 
-        self.p.amp_imaging = .2
-        # self.xvar('amp_imaging',np.linspace(0.05,.2,10))
+        self.p.amp_imaging = .54
+        # self.xvar('amp_imaging',np.linspace(0.3,.7,10))
         # self.camera_params.amp_imaging = .4
         # self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
@@ -74,7 +74,7 @@ class tweezer_load(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):

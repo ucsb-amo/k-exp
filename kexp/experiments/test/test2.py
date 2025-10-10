@@ -6,12 +6,13 @@ import numpy as np
 class test2(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
-        self.xvar('p1',np.linspace(0.,10.,10))
+        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=False)
+        self.xvar('p1',np.linspace(0.,10.,100))
         self.finish_prepare(shuffle=True)
     
     @kernel
     def scan_kernel(self):
+        self.power_down_cooling()
         self.abs_image()
         delay(0.5*s)
 
