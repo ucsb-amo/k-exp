@@ -20,11 +20,12 @@ class tweezer_load(EnvExperiment, Base):
 
         self.xvar('beans',[1]*1000)
 
-        self.p.amp_imaging = .25
+        # self.p.amp_imaging = .25
+        self.p.amp_imaging = .2
 
         self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
-        self.p.t_imaging_pulse = 25.e-6
+        self.p.t_imaging_pulse = 10.e-6
         
         self.p.N_repeats = 1
 
@@ -32,16 +33,17 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_m1)
+        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_m1,
+                                  amp=self.p.amp_imaging)
         delay(0.25)
         self.abs_image()
 
     @kernel
     def run(self):
         self.init_kernel()
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
+        # self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe()
+        # self.mot_observe()
 
     def analyze(self):
         import os

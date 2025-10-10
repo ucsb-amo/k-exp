@@ -13,17 +13,20 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=True,
+                      save_data=False,
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,330.,3)*1.e6)
-        # self.xvar('beans',[0]*100)
+        self.xvar('beans',[0,1]*100)
 
         self.p.beans = 0
 
+        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-.3,1.8,10))
+        # self.p.v_lf_tweezer_paint_amp_max = .55
+
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         
-        # self.xvar('t_tof',np.linspace(10.,500.,2)*1.e-6)
+        # self.xvar('t_tof',np.linspace(20.,2000.,20)*1.e-6)
         self.p.t_tof = 20.e-6
 
         self.p.t_raman_sweep = 1.e-3
@@ -51,7 +54,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.frequency_detuned_imaging = 318.75e6
 
         self.p.amp_imaging = .2
-        self.xvar('amp_imaging',np.linspace(0.05,.2,10))
+        # self.xvar('amp_imaging',np.linspace(0.05,.2,10))
         # self.camera_params.amp_imaging = .4
         # self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
