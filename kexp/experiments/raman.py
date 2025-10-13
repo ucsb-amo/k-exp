@@ -17,20 +17,26 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,330.,3)*1.e6)
-        # self.xvar('beans',[0]*20)
+        self.xvar('beans',[0]*100)
+
+        # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
+
+        # self.p.frequency_detuned_imaging_half = 289.e6 # (self.p.frequency_detuned_imaging_m1 + self.p.frequency_detuned_imaging_0)/2
+        # self.xvar('frequency_detuned_imaging_midpoint',np.arange(600.,660,5)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.linspace(280.,400,11)*1.e6)
+        # self.p.frequency_detuned_imaging = 318.75e6
 
         self.p.beans = 0
 
-        self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-2.,2.,8))
-        # self.p.v_lf_tweezer_paint_amp_max = .55
+        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-2.,2.,8))
+        # self.p.v_lf_tweezer_paint_amp_max = 1.43
 
-        self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.09,.2,8))
-        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .17
+        # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.09,.2,20))
+        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .118
 
-        # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         
-        # self.xvar('t_tof',np.linspace(20.,2000.,20)*1.e-6)
-        self.p.t_tof = 1500.e-6
+        # self.xvar('t_tof',np.linspace(800.,2500.,15)*1.e-6)
+        self.p.t_tof = 20.e-6
 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 41.1e6
@@ -48,32 +54,24 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_raman_pulse = 0.
 
         # self.xvar('_t_tweezer_kill',np.linspace(0., 100.e-3,10))
-        self.p._t_tweezer_kill = 10.e-3
-
-        # self.p.frequency_detuned_imaging_half = 289.e6 # (self.p.frequency_detuned_imaging_m1 + self.p.frequency_detuned_imaging_0)/2
-        # self.xvar('frequency_detuned_imaging_midpoint',np.arange(600.,660,5)*1.e6)
+        # self.p._t_tweezer_kill = 10.e-3
+        
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
-        # self.xvar('frequency_detuned_imaging',np.linspace(280.,400,11)*1.e6)
-        # self.p.frequency_detuned_imaging = 318.75e6
+        self.p.t_tweezer_hold = .1e-3
 
         self.p.amp_imaging = .12
         # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
-        # self.camera_params.amp_imaging = .4
-        # self.camera_params.exposure_time = 10.e-6
-        # self.p.t_imaging_pulse = self.camera_params.exposure_time
-        # self.p.t_imaging_pulse = 1.e-3
-        # self.camera_params.gain = 1.
-    
-        self.p.t_tweezer_hold = .1e-3
+
+        
         # self.xvar('dimension_slm_mask',np.linspace(0.,200.e-6,10))
-        self.p.dimension_slm_mask = 50.e-6
+        # self.p.dimension_slm_mask = 50.e-6
         # self.xvar('phase_slm_mask',np.linspace(0.,np.pi,10))
         # self.xvar('px_slm_phase_mask_position_x',1147 + np.linspace(-10.,10.,5,dtype=int))
         # self.p.px_slm_phase_mask_position_x
-        self.p.phase_slm_mask = 2.09
+        # self.p.phase_slm_mask = 2.09
         self.p.t_mot_load = 1.
 
-        self.sampler.gains = np.array([1,0,0,0,0,0,0,0])
+        # self.sampler.gains = np.array([1,0,0,0,0,0,0,0])
         
         self.p.N_repeats = 1
 
