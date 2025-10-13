@@ -237,7 +237,8 @@ class ExptParams():
 
         self.v_pd_lightsheet = 7.56
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 7.3
+        # self.v_pd_lightsheet_rampup_end = 7.3
+        self.v_pd_lightsheet_rampup_end = 9.3
         self.v_pd_lf_lightsheet_rampdown_end = .71 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = .65 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
@@ -261,34 +262,15 @@ class ExptParams():
         self.v_pd_hf_tweezer_1064_rampdown3_end = 2.
         self.n_tweezer_ramp_steps = 1000
 
-        self.v_pd_tweezer_1064_adiabatic_stretch_ramp_end = 9.
-        # self.n_tweezer_1064_adiabatic_stretch_ramp_steps = 1000
-
         self.n_tweezers = 2
 
         self.frequency_aod_center = 75.e6
 
-        #frequency spacing between each tweezer in the array
-        #tweezers uniformly distributed around center frequency of AOD
-        # self.frequency_tweezer_spacing = .7e6*2
-        self.frequency_tweezer_spacing = 6.e6*2
-        # self.frequency_tweezer_list = [73.7e6,76.e6]
-        self.frequency_cat_eye_tweezer = 71.3e6
-        self.frequency_cateye_threshold = 72.e6
         self.frequency_tweezer_list = [75.4e6]
 
         # self.frequency_tweezer_auto_compute = False
         # self.amp_tweezer_auto_compute = True
-        # self.amp_tweezer_list = [.14,.145]
-        # self.amp_tweezer_list = [.4,.4]
         self.amp_tweezer_list = [.15]
-
-
-        self.frequency_tweezer_list1 = [72250000.,72833333.33333333,73416666.66666667,74000000.]
-        self.frequency_tweezer_list2 = [74050000.,74683333.33333333,75316666.66666667,75950000.]
-
-        self.amp_tweezer_list1 = [.25,.25,.25,.25]
-        self.amp_tweezer_list2 = [.25,.25,.25,.25]
 
         self.v_lf_tweezer_paint_amp_max = .633
         self.v_hf_tweezer_paint_amp_max = 1.
@@ -353,7 +335,7 @@ class ExptParams():
         self.i_hf_lightsheet_evap1_current = 193.8
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 192.8
+        self.i_hf_tweezer_load_current = 192.7
         self.i_hf_tweezer_evap1_current = 193.0
         self.i_hf_tweezer_evap2_current = 193.15
 

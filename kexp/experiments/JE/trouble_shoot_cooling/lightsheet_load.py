@@ -17,7 +17,7 @@ class mag_trap(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         self.p.t_tof = 800.e-6
-        self.xvar('t_tof',np.linspace(100,1000.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(300,1000.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
         # self.xvar('dumy',[0,1]*5)
@@ -41,7 +41,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,1000.,15)*1.e-3)
         # self.p.t_lightsheet_rampup = .3
 
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(3.,7.5,15))
+        self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,9.5,15))
         # self.p.v_pd_lightsheet_rampup_end = 7.3
 
         # self.xvar('t_magtrap',np.linspace(.5,2.,10))
@@ -61,10 +61,10 @@ class mag_trap(EnvExperiment, Base):
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
 
-        # self.xvar('amp_imaging',np.linspace(0.13,.18,10))
-        # self.p.amp_d2_c_imaging = .188
+        # self.xvar('amp_imaging',np.linspace(0.09,.2,10))
+        # self.p.amp_imaging = .11
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.

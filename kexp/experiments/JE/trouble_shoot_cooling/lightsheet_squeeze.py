@@ -208,12 +208,18 @@ class mag_trap(EnvExperiment, Base):
         #                      i_start=self.p.i_hf_tweezer_evap2_current,
         #                      i_end=self.p.i_tunnel)
         
+        self.lightsheet.ramp(t=self.p.t_lightsheet_squeeze,
+                                v_start=self.p.v_pd_lightsheet_rampdown3_end,
+                                v_end=self.p.v_pd_lightsheet_squeeze)
+        
         delay(self.p.t_tweezer_hold)
         
         self.tweezer.off()
 
         delay(self.p.t_tof)
         self.abs_image()
+
+        self.lightsheet.off()
 
         # self.tweezer.off()
 

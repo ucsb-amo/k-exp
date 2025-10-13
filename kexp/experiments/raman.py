@@ -13,21 +13,24 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=False,
+                      save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,330.,3)*1.e6)
-        self.xvar('beans',[0]*100)
+        # self.xvar('beans',[0]*20)
 
         self.p.beans = 0
 
-        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-.3,1.8,10))
+        self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-2.,2.,8))
         # self.p.v_lf_tweezer_paint_amp_max = .55
+
+        self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.09,.2,8))
+        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .17
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         
         # self.xvar('t_tof',np.linspace(20.,2000.,20)*1.e-6)
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 1500.e-6
 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 41.1e6
@@ -53,8 +56,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_detuned_imaging',np.linspace(280.,400,11)*1.e6)
         # self.p.frequency_detuned_imaging = 318.75e6
 
-        self.p.amp_imaging = .54
-        # self.xvar('amp_imaging',np.linspace(0.3,.7,10))
+        self.p.amp_imaging = .12
+        # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
         # self.camera_params.amp_imaging = .4
         # self.camera_params.exposure_time = 10.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
@@ -74,7 +77,7 @@ class tweezer_load(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -90,7 +93,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.dds.mot_killer.set_dds_gamma(delta=0.,amplitude=.188)
 
-        self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
+        # self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
 
         # self.ttl.line_trigger.wait_for_line_trigger()
 

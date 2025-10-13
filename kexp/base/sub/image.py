@@ -111,7 +111,7 @@ class Image():
                            detune_r=dv,
                            amp_c=dv,
                            amp_r=dv,
-                           andor_fluor_with_d2_3d_beams = True):
+                           andor_fluor_with_d2_3d_beams = False):
         """Pulses the relevant imaging light for time t. Which beam(s) is pulsed depends on RunInfo.imaging_type.
 
         - For Andor, pulses the normal imaging beam DDS for both absorption and
@@ -299,6 +299,8 @@ class Image():
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         # atoms image (pwa)
         self.light_image0()
+
+        # self.lightsheet.off()
 
         # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)
