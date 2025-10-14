@@ -17,7 +17,7 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,300.,1)*1.e6)
-        self.xvar('beans',[0]*10)
+        # self.xvar('beans',[0]*10)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 

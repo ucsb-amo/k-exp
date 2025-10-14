@@ -66,10 +66,11 @@ class TweezerMovesLib():
         """        
         A = modulation_amplitude
         fm = modulation_frequency
-        if t < t_mod_amplitude_ramp and t_mod_amplitude_ramp != 0.:
-            A = (modulation_amplitude/t_mod_amplitude_ramp) * t 
-        else:
-            A = modulation_amplitude
+        
+        A = np.ones_like(t) * modulation_amplitude
+        mask = t<t_mod_amplitude_ramp
+        A[mask] = A[mask] * (t[mask]/t_mod_amplitude_ramp)
+
         return A*np.sin(2*np.pi*fm*t + np.pi/2)
         
     def linear(self,t,t_move,y0,yf) -> TFloat:
