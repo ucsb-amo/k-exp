@@ -235,10 +235,10 @@ class ExptParams():
         self.v_pd_lightsheet_pd_minimum = 0.046
         self.v_lightsheet_paint_amp_max = 6.0
 
-        self.v_pd_lightsheet = 7.56
+        self.v_pd_lightsheet = 7.5
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         # self.v_pd_lightsheet_rampup_end = 7.3
-        self.v_pd_lightsheet_rampup_end = 9.3
+        self.v_pd_lightsheet_rampup_end = 7.5
         self.v_pd_lf_lightsheet_rampdown_end = .71 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = .65 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
