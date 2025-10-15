@@ -14,9 +14,9 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
-        self.p.t_tof = 3000.e-6
+        self.p.t_tof = 300.e-6
         # self.p.t_tof = 500.e-6
-        self.xvar('t_tof',np.linspace(200,4000.,6)*1.e-6)
+        # self.xvar('t_tof',np.linspace(200,4000.,6)*1.e-6)
         # self.xvar('hf_imaging_detuning', [-594.e6,-494.e6])
 
         # self.xvar('t_tof',np.li
@@ -43,7 +43,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_blow_pulse = 16.e-6
 
         self.p.t_blow_delay = 5.e-6
-        self.p.v_pd_lightsheet_rampup_end = 7.5
+        self.p.v_pd_lightsheet_rampup_end = 8.1
 
         # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.,196.,14))
         self.p.i_hf_lightsheet_evap1_current = 193.7
