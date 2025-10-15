@@ -14,14 +14,14 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
-        self.p.t_tof = 300.e-6
-        # self.p.t_tof = 500.e-6
-        # self.xvar('t_tof',np.linspace(200,4000.,6)*1.e-6)
+        # self.p.t_tof = 3000.e-6
+        self.p.t_tof = 20.e-6
+        # self.xvar('t_tof',np.linspace(200,3000.,6)*1.e-6)
         # self.xvar('hf_imaging_detuning', [-594.e6,-494.e6])
 
         # self.xvar('t_tof',np.li
         # \nspace(5.,20.,10)*1.e-3)
-        # self.xvar('dumy',[0,1])
+        self.xvar('dumy',[0,1]*50)
 
         # self.xvar('t_pump_to_F1',np.linspace(0.05,10.,10)*1.e-6)
 
@@ -45,18 +45,18 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_blow_delay = 5.e-6
         self.p.v_pd_lightsheet_rampup_end = 8.1
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.,196.,14))
-        self.p.i_hf_lightsheet_evap1_current = 193.7
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(189.,196.,14))
+        self.p.i_hf_lightsheet_evap1_current = 191.7
         # self.p.i_hf_lightsheet_evap1_current = 187.4
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,.9,10))
         self.p.v_pd_hf_lightsheet_rampdown_end = .47
 
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(600.,1100.,24)*1.e-3)
-        # self.p.t_hf_lightsheet_rampdown = 1.17
+        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(300.,1600.,14)*1.e-3)
+        self.p.t_hf_lightsheet_rampdown = 1.2
 
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.22,.4,6))
-        self.p.v_pd_lightsheet_rampdown2_end = .22
+        self.p.v_pd_lightsheet_rampdown2_end = .235
 
         # self.xvar('t_lightsheet_rampdown2',np.linspace(1200.,3500.,7)*1.e-3)
         self.p.t_lightsheet_rampdown2 = 2.73
@@ -148,10 +148,10 @@ class mag_trap(EnvExperiment, Base):
         #                   paint=True,keep_trap_frequency_constant=True)
 
 
-        # # #lightsheet evap 2
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        # # # #lightsheet evap 2
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        #                      v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
 
 
         #delay(self.p.t_lightsheet_hold)

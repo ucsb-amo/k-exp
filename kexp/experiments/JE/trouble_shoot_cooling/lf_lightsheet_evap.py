@@ -12,10 +12,10 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,camera_select='xy_basler',
+        Base.__init__(self,setup_camera=True,save_data=True,camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 800.e-6
+        self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(20,500.,10)*1.e-6)
 
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
@@ -60,17 +60,17 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,1000.,10)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(3.,8.3,10))
         # self.p.t_lightsheet_rampup = 4.
-        # self.p.v_pd_lightsheet_rampup_end = 7.3
+        self.p.v_pd_lightsheet_rampup_end = 8.2
 
-        self.xvar('i_lf_lightsheet_evap1_current',np.linspace(12.,14.5,8))
+        # self.xvar('i_lf_lightsheet_evap1_current',np.linspace(12.,15.,20))
         # self.p.i_lf_lightsheet_evap1_current = 13.7
         # self.p.i_lf_lightsheet_evap1_current = 56.
  
-        self.xvar('v_pd_lf_lightsheet_rampdown_end',np.linspace(.3,2.,8))
-        # self.p.v_pd_lf_lightsheet_rampdown_end = 1.5
+        # self.xvar('v_pd_lf_lightsheet_rampdown_end',np.linspace(.3,2.,8))
+        self.p.v_pd_lf_lightsheet_rampdown_end = .47
 
         # self.xvar('t_lf_lightsheet_rampdown',np.linspace(20.,1500.,8)*1.e-3)
-        # self.p.t_lf_lightsheet_rampdown = .971
+        self.p.t_lf_lightsheet_rampdown = 1.2
 
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.1,.3,15))
         # self.p.v_pd_lightsheet_rampdown2_end = .19
