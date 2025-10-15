@@ -16,26 +16,19 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(300,1000.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
         # self.xvar('dumy',[0,1]*50)
         # self.p.dumy = 0
         # self.xvar('dumy0',np.linspace(0.,50.,50))
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,8.5,10))
-        self.p.v_pd_lightsheet_rampup_end = 8.1
+        
         # self.xvar('t_lightsheet_hold',np.linspace(0.,1.5,20))
         self.p.t_lightsheet_hold = .1
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.3,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.2,.99,8))
-        # self.p.pfrac_c_gmramp_end = 0.05
-        # self.p.pfrac_r_gmramp_end = 0.743
-
-        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,1.,8))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,8))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,8))
+        self.p.frequency_imaging_eo = 230.5e6
+        self.p.amp_imaging_eo = .2
 
         # self.xvar('hf_imaging_detuning', np.arange(-10.,40.,3.)*1.e6)
 
@@ -45,8 +38,8 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 50.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
-
-        # self.xvar('amp_imaging',np.linspace(0.09,.2,10))
+        self.xvar('amp_imaging_eo',np.linspace(0.,1.,20)*1e6)
+        # self.xvar('amp_imaging_eo',np.linspace(0.09,.1,10))
         # self.p.amp_imaging = .11
 
         self.p.N_repeats = 1
@@ -54,11 +47,14 @@ class mag_trap(EnvExperiment, Base):
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
-        # self.set_imaging_detuning(frequency_detuned=-230.e6)
+
+        self.set_imaging_detuning(frequency_detuned=0.)
+
+        # self.dds.mot_killer.set_dds_gamma(0.,amplitude=self.p.amp_imaging)
         # self.dds.imaging.set_dds_gamma(amplitude=self.p.amp_imaging)
 
         self.mot(self.p.t_mot_load)
@@ -72,15 +68,20 @@ class mag_trap(EnvExperiment, Base):
         self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
                                                    self.p.v_yshim_current_magtrap,
                                                    0.,n=100)
-                                                   
+        # self.dds.mot_killer.on()
         delay(self.p.t_lightsheet_hold)
 
         self.lightsheet.off()
         
+        self.dds.imaging_eo.set_dds(frequency=self.p.frequency_imaging_eo,amplitude=self.p.amp_imaging_eo)
+        self.dds.imaging_eo.on()
         delay(self.p.t_tof)
         self.flash_repump()
         # self.flash_cooler()
         self.abs_image()
+        self.dds.imaging_eo.off()
+
+        # self.dds.mot_killer.off()
         
 
     @kernel

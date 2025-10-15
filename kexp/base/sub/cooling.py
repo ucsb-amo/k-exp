@@ -937,11 +937,11 @@ class Cooling():
         self.dds.push.set_dds_gamma(delta=detune_push,
                                  amplitude=amp_push)
         delay(self.params.t_rtio)
-        self.dds.ry_980_switch.set_dds(frequency=frequency_ry_405,
-                                amplitude=amp_ry_405)
-        delay(self.params.t_rtio)
-        self.dds.ry_405_switch.set_dds(frequency=frequency_ry_980,
-                                amplitude=amp_ry_980)
+        # self.dds.ry_980_switch.set_dds(frequency=frequency_ry_405,
+        #                         amplitude=amp_ry_405)
+        # delay(self.params.t_rtio)
+        # self.dds.ry_405_switch.set_dds(frequency=frequency_ry_980,
+        #                         amplitude=amp_ry_980)
         
         self.ttl.d2_mot_shutter.on()
         
@@ -961,8 +961,8 @@ class Cooling():
 
         self.dac.supply_current_2dmot.set(v=v_2d_mot_supply)
 
-        self.dds.ry_405_switch.on()
-        self.dds.ry_980_switch.on()
+        # self.dds.ry_405_switch.on()
+        # self.dds.ry_980_switch.on()
 
         self.dds.beatlock_ref.on()
 

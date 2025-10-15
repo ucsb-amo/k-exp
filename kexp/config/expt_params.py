@@ -217,7 +217,7 @@ class ExptParams():
         
         self.v_zshim_current_magtrap = 0.
         self.v_xshim_current_magtrap = 0.
-        self.v_yshim_current_magtrap = 9.9
+        self.v_yshim_current_magtrap = 8.
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -235,11 +235,11 @@ class ExptParams():
         self.v_pd_lightsheet_pd_minimum = 0.046
         self.v_lightsheet_paint_amp_max = 6.0
 
-        self.v_pd_lightsheet = 7.56
+        self.v_pd_lightsheet = 7.5
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         # self.v_pd_lightsheet_rampup_end = 7.3
-        self.v_pd_lightsheet_rampup_end = 9.3
-        self.v_pd_lf_lightsheet_rampdown_end = .71 #4.16
+        self.v_pd_lightsheet_rampup_end = 8.1
+        self.v_pd_lf_lightsheet_rampdown_end = 1. #4.16
         self.v_pd_hf_lightsheet_rampdown_end = .65 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -329,7 +329,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # low field evap NEW
-        self.i_lf_lightsheet_evap1_current = 12.8
+        self.i_lf_lightsheet_evap1_current = 13.4
 
         self.i_lf_tweezer_load_current = 15.4
         self.i_lf_tweezer_evap1_current = 13.9

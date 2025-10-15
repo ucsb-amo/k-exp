@@ -105,12 +105,6 @@ class dds_frame():
         self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1',
                                     default_detuning = self.p.detune_optical_pumping_r_op,
                                     default_amp = self.p.amp_optical_pumping_r_op)
-        self.ry_405_switch = self.dds_assign(0,1, ao_order = 1,
-                                      default_freq=self.p.frequency_ao_ry_405_switch,
-                                      default_amp=self.p.amp_ao_ry_405_switch) #-11.0 dBm on the 405 IntraAction
-        self.ry_980_switch = self.dds_assign(0,2, ao_order = 1,
-                                      default_freq=self.p.frequency_ao_ry_980_switch,
-                                      default_amp=self.p.amp_ao_ry_980_switch) #500.0mVpp which is ~-2dBm for the 980 G&H
         self.tweezer_pid_1 = self.dds_assign(0,3, ao_order = 1,
                                     default_freq = 80.e6,
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid1.ch,
@@ -119,6 +113,9 @@ class dds_frame():
                                     default_freq = 200.e6,
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
                                     default_amp = self.p.amp_tweezer_pid2)
+        self.imaging_eo = self.dds_assign(1,1,
+                                    default_freq = 1.e6,
+                                    default_amp = 0.)
         self.d1_probe = self.dds_assign(5,0,
                                     default_freq=100.e6,
                                     default_amp=0.21)

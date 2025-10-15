@@ -47,7 +47,8 @@ class TweezerMovesLib():
     
     def sinusoidal_modulation(self,t,
                               modulation_amplitude,
-                              modulation_frequency) -> TFloat:
+                              modulation_frequency,
+                              t_mod_amplitude_ramp=0.) -> TFloat:
         """A sinusoidal modulation of position vs. time.
 
         Args:
@@ -56,14 +57,22 @@ class TweezerMovesLib():
             that the tweezer should be shaken over.
             modulation_frequency (float): The frequency (in Hz) at which the
             modulation will take place.
+            t_mod_amplitude_ramp (float): If nonzero, specifies the time (in s)
+            over which the modulation amplitude should be linearly ramped from
+            zero to the specified modulation_amplitude.
 
         Returns:
             float or np.array: displacement vs time.
         """        
         A = modulation_amplitude
         fm = modulation_frequency
+        
+        A = np.ones_like(t) * modulation_amplitude
+        mask = t<t_mod_amplitude_ramp
+        A[mask] = A[mask] * (t[mask]/t_mod_amplitude_ramp)
+
         return A*np.sin(2*np.pi*fm*t + np.pi/2)
-    
+        
     def linear(self,t,t_move,y0,yf) -> TFloat:
         slope = (yf - y0) / t_move
         return slope * t + y0
@@ -233,6 +242,7 @@ class TweezerTrap():
     def compute_sinusoidal_modulation(self,
                                       t_move,x_amplitude,
                                       modulation_frequency,
+                                      t_mod_amp_ramp,
                                       dt=dv):
         """Compute the frequency slopes required for a sinusoidal move profile.
 
@@ -248,7 +258,9 @@ class TweezerTrap():
         if dt == dv:
             self.p.t_tweezer_movement_dt
         self.compute_slopes(t_move,self.moves.sinusoidal_modulation,
-                                    x_amplitude,modulation_frequency,
+                                    x_amplitude,
+                                    modulation_frequency,
+                                    t_mod_amp_ramp,
                                     dt = dt)
     
     
@@ -278,19 +290,21 @@ class TweezerTrap():
         self.move(t_move, trigger=trigger, slopes=True)
     
     @kernel
-    def sine_move(self,t_mod,x_mod,f_mod,
+    def sine_move(self,t_mod,x_mod,f_mod,t_xmod_ramp=0.,
                   dt=dv,trigger=True):
         """Executes a sinusoidal move for this tweezer trap.
 
         Args:
             t_move (float): the total duration (in s) of the move.
-            x_amplitude (float): the displacement amplitude (in m) for the move.
-            modulation_frequency (float): the modulation frequency (in Hz) for
+            x_mod (float): the displacement amplitude (in m) for the move.
+            f_mod (float): the modulation frequency (in Hz) for
             the move.
+            t_xmod_ramp (float): if nonzero, the time (in s) to linearly ramp
+            the modulation amplitude from 0 to x_mod.
         """
         if dt == dv:
             self.p.t_tweezer_movement_dt
-        self.compute_sinusoidal_modulation(t_mod,x_mod,f_mod)
+        self.compute_sinusoidal_modulation(t_mod,x_mod,f_mod,t_xmod_ramp)
         self.move(t_mod, trigger=trigger, slopes=True)
 
     @kernel
@@ -1025,10 +1039,11 @@ class tweezer():
     @kernel
     def sine_move(self,tweezer_idx,
                   t_mod,x_mod,f_mod,
+                  t_xmod_ramp=0.,
                   dt=dv,trigger=True):
         if dt == dv:
             dt = self.params.t_tweezer_movement_dt
-        self.traps[tweezer_idx].sine_move(t_mod,x_mod,f_mod,
+        self.traps[tweezer_idx].sine_move(t_mod,x_mod,f_mod,t_xmod_ramp,
                                           trigger=trigger)
 
     @kernel

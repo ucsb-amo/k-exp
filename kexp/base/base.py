@@ -202,8 +202,8 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
         self.dds.d1_blueshield.on()
         self.dds.d1_probe.on()
         delay_mu(8)
-        self.dds.ry_405_switch.on()
-        self.dds.ry_980_switch.on()
+        # self.dds.ry_405_switch.on()
+        # self.dds.ry_980_switch.on()
         
         self.dds.d1_beatlock_ref.on()
 
