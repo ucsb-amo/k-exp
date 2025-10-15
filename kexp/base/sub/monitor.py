@@ -12,6 +12,11 @@ from kexp.control.artiq import DDS, DAC_CH, TTL_OUT, TTL_IN
 from kexp.config.dds_id import dds_frame
 from kexp.config.dac_id import dac_frame
 from kexp.config.ttl_id import ttl_frame
+from kexp.util.artiq.async_print import aprint
+
+DEFAULT_UPDATE_2FLOAT = (-1, 0.0, 0.0)
+DEFAULT_UPDATE_FLOAT = (-1, 0.0)
+DEFAULT_UPDATE_BOOL = (-1, False)
 
 class Monitor:
     """
@@ -52,12 +57,12 @@ class Monitor:
         self.build_device_lookup()
 
     def clear_update_lists(self):
-        N = 100
-        self.dds_frequency_amplitude_updates = [(-1, 0.0, 0.0)] * N
-        self.dds_vpd_updates = [(-1, 0.0)] * N
-        self.dds_sw_state_updates = [(-1, False)] * N
-        self.ttl_updates = [(-1, False)] * N
-        self.dac_updates = [(-1, 0.0)] * N
+        N = 500
+        self.dds_frequency_amplitude_updates = [DEFAULT_UPDATE_2FLOAT] * N
+        self.dds_vpd_updates = [DEFAULT_UPDATE_FLOAT] * N
+        self.dds_sw_state_updates = [DEFAULT_UPDATE_BOOL] * N
+        self.ttl_updates = [DEFAULT_UPDATE_BOOL] * N
+        self.dac_updates = [DEFAULT_UPDATE_FLOAT] * N
     
     def build_device_lookup(self):
         """Build lookup dictionaries and preallocate kernel function lists."""
@@ -66,11 +71,12 @@ class Monitor:
         self.dac_dict = {}
 
         # Build DDS device kernels
+        dds_idx = 0
         for attr_name in dir(self.dds):
             if not attr_name.startswith('_'):
                 attr_value = getattr(self.dds, attr_name)
                 if isinstance(attr_value, DDS):
-                    self.dds_dict[attr_name] = attr_value
+                    self.dds_dict[attr_name] = dds_idx
                     self.dds_frequency_amplitude_kernels.append(kernel_from_string(
                         ["expt","f", "a"],
                         f"expt.dds.{attr_name}.set_dds(frequency=f, amplitude=a)"
@@ -83,28 +89,32 @@ class Monitor:
                         ["expt","state"],
                         f"expt.dds.{attr_name}.set_sw(state);"
                     ))
+                    dds_idx += 1
 
+        ttl_idx = 0
         # Build TTL device kernels
         for attr_name in dir(self.ttl):
             if not attr_name.startswith('_') and attr_name not in ['ttl_list', 'camera']:
                 attr_value = getattr(self.ttl, attr_name)
                 if isinstance(attr_value, (TTL_OUT)):
-                    self.ttl_dict[attr_name] = attr_value
+                    self.ttl_dict[attr_name] = ttl_idx
                     self.ttl_kernels.append(kernel_from_string(
                         ["expt","state"],
                         f"expt.ttl.{attr_name}.set_state(state)"
                     ))
 
+        dac_idx = 0
         # Build DAC device kernels
         for attr_name in dir(self.dac):
             if not attr_name.startswith('_') and attr_name not in ['dac_device', 'dac_ch_list']:
                 attr_value = getattr(self.dac, attr_name)
                 if isinstance(attr_value, DAC_CH):
-                    self.dac_dict[attr_name] = attr_value
+                    self.dac_dict[attr_name] = dac_idx
                     self.dac_kernels.append(kernel_from_string(
                         ["expt","v"],
                         f"expt.dac.{attr_name}.set(v)"
                     ))
+                    dac_idx += 1
 
     def load_config_file(self) -> Optional[dict]:
         """Load configuration file and return data, retrying if file is in use."""
@@ -173,26 +183,27 @@ class Monitor:
             if device_name not in self.dds_dict:
                 continue
             old_config = old_dds.get(device_name, {})
-            index = self.dds_frequency_amplitude_kernels.index(self.dds_frequency_amplitude_kernels[0])
+            kernel_index = self.dds_dict.get(device_name, -1)
 
             if old_config.get('frequency') != new_config.get('frequency') or \
             old_config.get('amplitude') != new_config.get('amplitude'):
-                self.dds_frequency_amplitude_updates[index] = (
-                    index, new_config['frequency'], new_config['amplitude'])
+                update_index = self.dds_frequency_amplitude_updates.index(DEFAULT_UPDATE_2FLOAT)
+                self.dds_frequency_amplitude_updates[update_index] = (
+                    kernel_index, new_config['frequency'], new_config['amplitude'])
                 changes_detected = True
                 if verbose:
                     print(f"DDS {device_name}: Frequency/Amplitude changed to {new_config['frequency']}/{new_config['amplitude']}")
 
             if old_config.get('v_pd') != new_config.get('v_pd'):
-                self.dds_vpd_updates[index] = (
-                    index, new_config['v_pd']
-                )
+                update_index = self.dds_vpd_updates.index(DEFAULT_UPDATE_FLOAT)
+                self.dds_vpd_updates[update_index] = (kernel_index, new_config['v_pd'])
                 changes_detected = True
                 if verbose:
                     print(f"DDS {device_name}: V_PD changed to {new_config['v_pd']}")
 
             if old_config.get('sw_state') != new_config.get('sw_state'):
-                self.dds_sw_state_updates[index] = (index, new_config['sw_state'])
+                update_index = self.dds_sw_state_updates.index(DEFAULT_UPDATE_BOOL)
+                self.dds_sw_state_updates[update_index] = (kernel_index, new_config['sw_state'])
                 changes_detected = True
                 if verbose:
                     print(f"DDS {device_name}: SW State changed to {new_config['sw_state']}")
@@ -203,9 +214,10 @@ class Monitor:
         for device_name, new_config in new_ttl.items():
             if device_name not in self.ttl_dict:
                 continue
-            index = self.ttl_kernels.index(self.ttl_kernels[0])
             if old_ttl.get(device_name, {}).get('ttl_state') != new_config.get('ttl_state'):
-                self.ttl_updates[index] = (index, new_config['ttl_state'])
+                kernel_index = self.ttl_dict.get(device_name, -1)
+                update_index = self.ttl_updates.index(DEFAULT_UPDATE_BOOL) # get next update from start of list
+                self.ttl_updates[update_index] = (kernel_index, new_config['ttl_state'])
                 changes_detected = True
                 if verbose:
                     print(f"TTL {device_name}: State changed to {new_config['ttl_state']}")
@@ -216,9 +228,10 @@ class Monitor:
         for device_name, new_config in new_dac.items():
             if device_name not in self.dac_dict:
                 continue
-            index = self.dac_kernels.index(self.dac_kernels[0])
             if abs(old_dac.get(device_name, {}).get('voltage', 0.0) - new_config.get('voltage', 0.0)) > 1e-6:
-                self.dac_updates[index] = (index, new_config['voltage'])
+                kernel_index = self.dac_dict.get(device_name, -1)
+                update_index = self.dac_updates.index(DEFAULT_UPDATE_FLOAT)
+                self.dac_updates[update_index] = (kernel_index, new_config['voltage'])
                 changes_detected = True
                 if verbose:
                     print(f"DAC {device_name}: Voltage changed to {new_config['voltage']}")

@@ -6,6 +6,7 @@ from kexp.util.artiq.async_print import aprint
 from artiq.language.core import now_mu
 from kexp.control.artiq import DDS
 
+# maybe liveOD runs this when an experiment is not running? It knows when experiments are running...
 
 class testcrate_base(EnvExperiment, Base):
 

@@ -231,7 +231,7 @@ class DetuningPlotter(QtWidgets.QWidget):
             freq = float(self.fzw.ask('MEAS,FREQ').split(' ')[0])
             if self.f0 is None:
                 return np.nan
-            detuning = (freq - self.f0) * 1.e3  # GHz
+            detuning = (freq - self.f 0) * 1.e3  # GHz
             return detuning
         except Exception as e:
             print("Error getting detuning:", e)

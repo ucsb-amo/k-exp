@@ -24,7 +24,7 @@ except ImportError:
 
 class DeviceWidget(QGroupBox):
     """Base class for device control widgets"""
-    value_changed = pyqtSignal(str, dict)
+    value_changed = pyqtSignal(str, str, dict)
     
     def __init__(self, device_name: str, device_config: Dict[str, Any]):
         super().__init__(device_name)
@@ -123,7 +123,6 @@ class DDSWidget(DeviceWidget):
 
         if unit == "Γ":
             # Convert MHz to Γ
-            print('bye')
             if DDS_AVAILABLE and self.dds_frame_obj:
                 try:
                     uru_idx = self.device_config["urukul_idx"]
@@ -138,7 +137,6 @@ class DDSWidget(DeviceWidget):
                     print(e)
         elif unit == "MHz":
             # Convert Γ to MHz
-            print('hi')
             if DDS_AVAILABLE and self.dds_frame_obj:
                 try:
                     uru_idx = self.device_config["urukul_idx"]
