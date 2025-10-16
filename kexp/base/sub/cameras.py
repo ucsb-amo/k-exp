@@ -1,17 +1,20 @@
-from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential
-from kexp.config.dds_id import dds_frame
-from kexp.config.ttl_id import ttl_frame
-from kexp.control.artiq.TTL import TTL, DummyTTL
-from kexp.config.expt_params import ExptParams
-from kexp.config.camera_id import cameras, img_types, CameraParams
-from kexp.control import BaslerUSB, AndorEMCCD, DummyCamera
-from kexp.control.slm.slm import SLM
-from kexp.util.data.run_info import RunInfo
 import pypylon.pylon as py
 import numpy as np
-from kexp.util.artiq.async_print import aprint
 import logging
+
+from artiq.experiment import *
+from artiq.experiment import delay, parallel, sequential
+
+from wax.control.artiq.TTL import TTL, DummyTTL
+from wax.control import BaslerUSB, AndorEMCCD, DummyCamera
+from wax.control.slm.slm import SLM
+from wax.util.data.run_info import RunInfo
+from wax import aprint
+
+from kexp.config.dds_id import dds_frame
+from kexp.config.ttl_id import ttl_frame
+from kexp.config.expt_params import ExptParams
+from kexp.config.camera_id import cameras, img_types, CameraParams
 
 class Cameras():
     def __init__(self):

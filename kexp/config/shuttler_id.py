@@ -4,7 +4,7 @@ from artiq.experiment import kernel, portable
 from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
 
-from kexp.control.artiq.Shuttler_CH import Shuttler_CH
+from wax.control.artiq.Shuttler_CH import Shuttler_CH
 
 class shuttler_frame():
     def __init__(self):

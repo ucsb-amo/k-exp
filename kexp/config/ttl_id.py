@@ -1,7 +1,7 @@
 import numpy as np
 from artiq.experiment import kernel
 from artiq.coredevice.ttl import TTLOut, TTLInOut
-from kexp.control.artiq.TTL import TTL, TTL_IN, TTL_OUT
+from wax.control.artiq.TTL import TTL, TTL_IN, TTL_OUT
 
 class ttl_frame():
     def __init__(self):

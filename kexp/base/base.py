@@ -8,10 +8,8 @@ RPC_DELAY = 10.e-3
 
 from kexp.base.sub import *
 from kexp.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
-from kexp.config.camera_id import img_types as img
 
-from wax import Expt
-from wax.util.artiq.async_print import aprint
+from wax import Expt, aprint, img_types as img
 
 class Base(Expt, Devices, Cooling, Image, Cameras, Control):
     def __init__(self,

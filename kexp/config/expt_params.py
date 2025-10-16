@@ -1,6 +1,5 @@
 import numpy as np
 from kexp.config.dds_calibration import DDS_VVA_Calibration
-from kexp.util.artiq.async_print import aprint
 
 class ExptParams():
     def __init__(self):

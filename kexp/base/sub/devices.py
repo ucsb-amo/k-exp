@@ -12,21 +12,20 @@ from kexp.config.dac_id import dac_frame
 from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.sampler_id import sampler_frame
 
+from kexp.control.big_coil import igbt_magnet, hbridge_magnet
+from kexp.control.painted_lightsheet import lightsheet
+from kexp.control.awg_tweezer import tweezer
+from kexp.control.doubled_rf import doubled_rf
+from kexp.control.raman_beams import RamanBeamPair
+
 from kexp.config.expt_params import ExptParams
 
-from wax.control.cameras.dummy_cam import DummyCamera
-from wax.control.artiq.mirny import Mirny
-from wax.control.misc.raman_beams import RamanBeamPair
-from wax.control.artiq.Shuttler_CH import Shuttler_CH
 from wax.control.artiq.DDS import DDS
-
-from wax.control.misc.big_coil import igbt_magnet, hbridge_magnet
-from wax.control.misc.painted_lightsheet import lightsheet
-from wax.control.misc.awg_tweezer import tweezer
-from wax.control.misc.doubled_rf import doubled_rf
-from wax.control.misc.raman_beams import RamanBeamPair
+from wax.control.artiq.mirny import Mirny
+from wax.control.artiq.Shuttler_CH import Shuttler_CH
 from wax.control.misc.ssg3021x import SSG3021X
 from wax.control.slm.slm import SLM
+from wax.control.cameras.dummy_cam import DummyCamera
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,

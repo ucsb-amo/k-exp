@@ -1,7 +1,7 @@
 import numpy as np
 from artiq.experiment import kernel, TFloat, TArray
 from artiq.coredevice.sampler import Sampler
-from kexp.control.artiq.Sampler_CH import Sampler_CH
+from wax.control.artiq.Sampler_CH import Sampler_CH
 
 class sampler_frame():
     def __init__(self, sampler_device = Sampler):
