@@ -1,49 +1,33 @@
-import inspect
-import os
 from artiq.experiment import *
 from artiq.experiment import delay, delay_mu
 import numpy as np
-from kexp.config.expt_params import ExptParams
-from kexp.base.sub import *
-from kexp.util.data.data_vault import DataSaver
-from kexp.util.data.run_info import RunInfo
-from kexp.util.data.counter import counter
-from kexp.util.data import server_talk
+
 from artiq.language.core import kernel_from_string, now_mu
-import time
-from kexp.control.misc.tektronix_tbs1104 import ScopeData
 
 RPC_DELAY = 10.e-3
 
+from kexp.base.sub import *
 from kexp.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
-
-# also import the andor camera parameters
-
 from kexp.config.camera_id import img_types as img
 
-from kexp.util.artiq.async_print import aprint
+from wax import Expt
+from wax.util.artiq.async_print import aprint
 
-class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
+class Base(Expt, Devices, Cooling, Image, Cameras, Control):
     def __init__(self,
                  setup_camera=True,
                  save_data=True,
                  imaging_type=img.ABSORPTION,
                  absorption_image=None,
                  camera_select="xy_basler"):
-        
-        if absorption_image != None:
-            print("Warning: The argument 'absorption_image' is depreciated -- change it out for 'imaging_type'")
-            print("Defaulting to absorption imaging.")
 
-        Scanner.__init__(self)
+        Expt.__init__(self,
+                    absorption_image=absorption_image,
+                    save_data=save_data,
+                    setup_camera=setup_camera)
         super().__init__()
 
-        self.setup_camera = setup_camera
-        self.run_info = RunInfo(self,save_data)
-        self.scope_data = ScopeData()
-        self._ridstr = " Run ID: "+ str(self.run_info.run_id)
-        self._counter = counter()
-
+        from kexp.config.expt_params import ExptParams
         self.params = ExptParams()
         self.p = self.params
 
@@ -51,69 +35,16 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
 
         self.choose_camera(setup_camera,imaging_type,camera_select)
 
-        self.images = []
-        self.image_timestamps = []
-
-        self.xvarnames = []
-        self.sort_idx = []
-        self.sort_N = []
-
-        self._setup_awg = False
-
-        self.ds = DataSaver()
-
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
-        To be called at the end of prepare. 
-        
-        Automatically adds repeats either if specified in N_repeats argument or
-        if previously specified in self.params.N_repeats. 
-        
-        Shuffles xvars if specified (defaults to True). Computes the number of
-        images to be taken from the imaging method and the length of the xvar
-        arrays.
-
-        Computes derived parameters within ExptParams.
-
-        Accepts an additional compute_derived method that is user defined in the
-        experiment file. This is to allow for recomputation of derived
-        parameters that the user created in the experiment file at each step in
-        a scan. This must be an RPC -- no kernel decorator.
+        To be called at the end of prepare.
         """
 
-        if self.run_info.imaging_type == img.ABSORPTION:
-            if self.params.N_pwa_per_shot > 1:
-                print("You indicated more than one PWA per shot, but the analysis is set to absorption imaging. Setting # PWA to 1.")
-            self.params.N_pwa_per_shot = 1
-
-        if not self.xvarnames:
-            self.xvar("dummy",[0])
-        if self.xvarnames and not self.scan_xvars:
-            for key in self.xvarnames:
-                self.xvar(key,vars(self.params)[key])
-        
-        self.repeat_xvars(N_repeats=N_repeats)
-        
-        if shuffle:
-            self.shuffle_xvars()
-        
-        self.params.N_img = self.get_N_img()
-        self.prepare_image_array()
-
-        self.params.compute_derived()
-        self.compute_new_derived()
+        self.finish_prepare_wax()
 
         if self.tweezer.traps == []:
             self.tweezer.add_tweezer_list()
         self.tweezer.save_trap_list()
-
-        self.xvardims = [len(xvar.values) for xvar in self.scan_xvars]
-        self.scope_data.xvardims = self.xvardims
-
-        if self.setup_camera:
-            self.data_filepath = self.ds.create_data_file(self)
-
-        self.generate_assignment_kernels()
     
     def compute_new_derived(self):
         pass
@@ -212,31 +143,3 @@ class Base(Devices, Cooling, Image, Dealer, Cameras, Scanner, Scribe, Control):
         self.cleanup_image_count()
         self.reset_coils()
         self.ttl.line_trigger.clear_input_events()
-
-    def prepare_image_array(self):
-        if self.run_info.save_data:
-            print(self.camera_params.camera_type)
-            if self.camera_params.camera_type == 'andor':
-                dtype = np.uint16
-            elif self.camera_params.camera_type == 'basler':
-                dtype = np.uint8
-            else:
-                dtype = np.uint8
-            self.images = np.zeros((self.params.N_img,)+self.camera_params.resolution,dtype=dtype)
-            self.image_timestamps = np.zeros((self.params.N_img,))
-        else:
-            self.images = np.array([0])
-            self.image_timestamps = np.array([0])
-    
-    def end(self, expt_filepath):
-
-        self.scope_data.close()
-
-        if self.setup_camera:
-            if self.run_info.save_data:
-                self.cleanup_scanned()
-                self.write_data(expt_filepath)
-            else:
-                self.remove_incomplete_data()
-                
-        server_talk.play_random_sound()
