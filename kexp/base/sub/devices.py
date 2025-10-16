@@ -1,3 +1,5 @@
+import numpy as np
+
 from artiq.experiment import *
 from artiq.experiment import delay_mu, delay
 from artiq.coredevice.ttl import TTLOut
@@ -5,6 +7,15 @@ from artiq.coredevice.core import Core
 from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
 from artiq.coredevice.grabber import Grabber
+
+from wax.control.artiq.DDS import DDS
+from wax.control.artiq.mirny import Mirny
+from wax.control.artiq.Shuttler_CH import Shuttler_CH
+from wax.control.misc.ssg3021x import SSG3021X
+from wax.control.slm.slm import SLM
+from wax.control.cameras.dummy_cam import DummyCamera
+
+from kexp.config.expt_params import ExptParams
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
@@ -18,21 +29,10 @@ from kexp.control.awg_tweezer import tweezer
 from kexp.control.doubled_rf import doubled_rf
 from kexp.control.raman_beams import RamanBeamPair
 
-from kexp.config.expt_params import ExptParams
-
-from wax.control.artiq.DDS import DDS
-from wax.control.artiq.mirny import Mirny
-from wax.control.artiq.Shuttler_CH import Shuttler_CH
-from wax.control.misc.ssg3021x import SSG3021X
-from wax.control.slm.slm import SLM
-from wax.control.cameras.dummy_cam import DummyCamera
-
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
                                        slope_i_transducer_per_v_setpoint_pid_outer,
                                        offset_i_transducer_per_v_setpoint_pid_outer)
-
-import numpy as np
 
 dv = -0.1
 d_exptparams = ExptParams()

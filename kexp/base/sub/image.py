@@ -7,7 +7,6 @@ from artiq.experiment import delay, parallel, sequential, delay_mu
 from wax.control import BaslerUSB, AndorEMCCD, DummyCamera
 from wax.util.data.run_info import RunInfo
 from wax.util.data.counter import counter
-from wax import aprint
 
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame

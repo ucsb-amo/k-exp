@@ -12,8 +12,6 @@ from kexp.control.raman_beams import RamanBeamPair
 
 import numpy as np
 
-from wax import aprint
-
 dv = 100.
 dvlist = np.linspace(1.,1.,5)
 

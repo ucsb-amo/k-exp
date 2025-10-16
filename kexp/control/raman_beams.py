@@ -3,7 +3,6 @@ import numpy as np
 from artiq.experiment import kernel, portable, delay, TArray, TFloat, parallel
 from artiq.language.core import now_mu, at_mu
 
-from wax import aprint
 from wax.control.artiq.DDS import DDS
 from wax.control.artiq.DAC_CH import DAC_CH
 
