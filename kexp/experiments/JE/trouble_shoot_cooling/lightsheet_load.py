@@ -20,18 +20,18 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(300,1000.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
-        # self.xvar('dumy',[0,1]*50)
+        # self.xvar('dumy',[0]*5)
         # self.p.dumy = 0
         # self.xvar('dumy0',np.linspace(0.,50.,50))
 
-        # self.xvar('i_magtrap_init',np.linspace(40.,95.,20))
+        # self.xvar('i_magtrap_init',np.linspace(30.,90.,20))
         # self.i_magtrap_init = 84.
 
-        # self.xvar('t_magtrap',np.linspace(500.,2500.,20)*1.e-3)
+        # self.xvar('t_magtrap',np.linspace(500.,3000.,10)*1.e-3)
         # self.p.t_magtrap = .15
 
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,8.,10))
-        # self.p.v_pd_lightsheet_rampup_end = 8.1
+        self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,9.9,10))
+        self.p.v_pd_lightsheet_rampup_end = 8.5
         # self.xvar('t_lightsheet_hold',np.linspace(0.,1.5,20))
         self.p.t_lightsheet_hold = .1
 

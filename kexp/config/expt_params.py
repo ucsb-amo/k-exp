@@ -210,7 +210,7 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 84.
+        self.i_magtrap_init = 95.
         self.i_magtrap_ramp_end = 95.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
@@ -238,8 +238,8 @@ class ExptParams():
         self.v_pd_lightsheet = 7.5
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         # self.v_pd_lightsheet_rampup_end = 7.3
-        self.v_pd_lightsheet_rampup_end = 8.1
-        self.v_pd_lf_lightsheet_rampdown_end = 1. #4.16
+        self.v_pd_lightsheet_rampup_end = 8.2
+        self.v_pd_lf_lightsheet_rampdown_end = .47 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = .65 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
