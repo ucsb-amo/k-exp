@@ -30,7 +30,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_raman_sweep_center', 41.12e6 + np.arange(-400.e3,400.e3,self.p.frequency_raman_sweep_width))
 
         # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-5.e5,5.e5,10))
-        self.p.frequency_raman_transition = 41.245e6
+        self.p.frequency_raman_transition = 41.235e6
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
@@ -99,7 +99,7 @@ class tweezer_load(EnvExperiment, Base):
         self.dds.imaging.off()        
 
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_m1)
-        self.dds.imaging.set_dds(amplitude=.2)
+        self.dds.imaging.set_dds(amplitude=.12)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
