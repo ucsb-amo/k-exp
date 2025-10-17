@@ -15,6 +15,11 @@ class ScopeData:
             except:
                 pass
 
+    def add_scope(self,device_id="",label=""):
+        scope = TektronixScope_TBS1104(device_id=device_id,label=label,
+                               scope_data=self)
+        return scope
+
 class TektronixScope_TBS1104():
     def __init__(self,device_id="",label="",
                  scope_data=ScopeData()):
@@ -45,6 +50,9 @@ class TektronixScope_TBS1104():
 
         self.data = []
 
+    def close(self):
+        self.scope.close()
+
     def read_sweep(self,channels) -> TBool:
         """Read out the specified channels and records result to self.data.
         Channels not read in will be stored as all zeros.
@@ -59,8 +67,8 @@ class TektronixScope_TBS1104():
             channels = [channels]
         channels = np.asarray(channels)
         self._scope_data._scope_trace_taken = True
-        sweeps = self.scope.read_multiple_sweeps(np.array(channels) + 1)
-        Npts = len(sweeps[0][:,0])
+        sweeps = self.scope.read_multiple_sweeps(list(np.array(channels) + 1))
+        Npts = np.array(sweeps).shape[1]
         data = np.zeros((4,2,Npts))
         for idx in range(3):
             if idx in channels:
@@ -72,8 +80,8 @@ class TektronixScope_TBS1104():
     def reshape_data(self):
         if self.data != []:
             self.data = np.array(self.data)
-            Npts = len(self.data[0][0])
-            self.data = self.data.reshape(*self._scope_data.xvardims,2,Npts)
+            Npts = np.array(self.data).shape[-1]
+            self.data = self.data.reshape(*self._scope_data.xvardims,4,2,Npts)
 
     def handle_devid_input(self,device_id):
         default = (device_id == "")
