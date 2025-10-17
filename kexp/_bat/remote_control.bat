@@ -1,4 +1,4 @@
 call %kpy%
-cd %code%/wax
-python %code%\wax\wax\util\remote_control\remote_control.py
+cd %code%/k-exp
+python %code%\k-exp\kexp\util\remote_control\remote_control.py
 pause

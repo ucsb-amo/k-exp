@@ -1,4 +1,4 @@
 call %kpy%
-cd %code%\wax\wax\experiments\tools
+cd %code%\k-exp\kexp\experiments\tools
 ar mot_observe.py
 pause
