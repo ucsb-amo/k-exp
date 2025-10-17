@@ -1,7 +1,10 @@
-from waxx.control.artiq.DDS import DDS
-from waxx.config.expt_params import ExptParams
 from artiq.experiment import kernel, delay, parallel, portable, TFloat
 from artiq.experiment import *
+
+from waxx.control.artiq.DDS import DDS
+
+from kexp.config import ExptParams
+
 import numpy as np
 
 dv = -0.1
