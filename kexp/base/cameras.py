@@ -23,7 +23,6 @@ class Cameras():
         self.camera_params = CameraParams()
         self.run_info = RunInfo()
         self.ttl = ttl_frame()
-        self.slm = SLM()
 
     ### Camera setup functions ###
 
@@ -60,13 +59,13 @@ class Cameras():
         self.run_info.imaging_type = imaging_type
         # self.setup_slm(imaging_type)
 
-    @kernel
-    def setup_slm(self, imaging_type):
-        if self.camera_params.camera_type == cameras.andor.key:
-            if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
-                self.slm.write_phase_mask_kernel(0.,0.)
-            elif imaging_type == img_types.DISPERSIVE:
-                self.slm.write_phase_mask_kernel()
+    # @kernel
+    # def setup_slm(self, imaging_type):
+    #     if self.camera_params.camera_type == cameras.andor.key:
+    #         if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
+    #             self.slm.write_phase_mask_kernel(0.,0.)
+    #         elif imaging_type == img_types.DISPERSIVE:
+    #             self.slm.write_phase_mask_kernel()
 
     def assign_camera_stuff(self,
                             camera:CameraParams,
