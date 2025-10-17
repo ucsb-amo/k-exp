@@ -7,7 +7,7 @@ from artiq.language.core import kernel_from_string, now_mu
 RPC_DELAY = 10.e-3
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control
-from kexp.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
+from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from waxx import Expt, img_types as img
 
