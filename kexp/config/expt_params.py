@@ -320,7 +320,7 @@ class ExptParams():
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.n_raman_sweep_steps = 100
 
-        self.frequency_raman_transition = 41.099e6
+        self.frequency_raman_transition = 41.225e6
 
         # low field evap old
         # self.i_evap1_current = 9.5
