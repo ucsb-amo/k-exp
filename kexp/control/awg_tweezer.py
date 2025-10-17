@@ -1,5 +1,5 @@
 from waxx.control.artiq.DAC_CH import DAC_CH
-from waxx.control.artiq.TTL import TTL
+from waxx.control.artiq.TTL import TTL_OUT
 from waxx.control.artiq.DDS import DDS
 import waxx.control.tweezer.spectrum_DDS_tweezer as wax_tweezer
 
@@ -25,7 +25,8 @@ class TweezerTrap(wax_tweezer.TweezerTrap):
                  amplitude=dv,
                  cateye:bool=False,
                  frequency=dv,
-                 awg_trigger_ttl=TTL,
+                 awg_trigger_ttl=TTL_OUT,
+                 tweezer_xmesh=KEXP_TWEEZER_XMESH,
                  expt_params=ExptParams(),
                  core=Core):
         
@@ -33,7 +34,7 @@ class TweezerTrap(wax_tweezer.TweezerTrap):
                          amplitude=amplitude,
                          cateye=cateye,
                          frequency=frequency,
-                         tweezer_xmesh=KEXP_TWEEZER_XMESH,
+                         tweezer_xmesh=tweezer_xmesh,
                          awg_trigger_ttl=awg_trigger_ttl,
                          expt_params=expt_params,
                          core=core)
@@ -49,10 +50,10 @@ class tweezer(wax_tweezer.TweezerController):
     def __init__(self,
                   ao1_dds=DDS, pid1_dac=DAC_CH, 
                   ao2_dds=DDS, pid2_dac=DAC_CH,
-                  sw_ttl=TTL,
-                  awg_trg_ttl=TTL,
-                  pid1_int_hold_zero_ttl=TTL,
-                  pid2_enable_ttl=TTL,
+                  sw_ttl=TTL_OUT,
+                  awg_trg_ttl=TTL_OUT,
+                  pid1_int_hold_zero_ttl=TTL_OUT,
+                  pid2_enable_ttl=TTL_OUT,
                   painting_dac=DAC_CH,
                   expt_params=ExptParams(),
                   core=Core):
@@ -64,6 +65,8 @@ class tweezer(wax_tweezer.TweezerController):
                          tweezer_xmesh=KEXP_TWEEZER_XMESH,
                          expt_params=expt_params,
                          core=core)
+        
+        self.params = expt_params # assigned in super init, but just for vscode
 
         self.ao1_dds = ao1_dds
         self.pid1_dac = pid1_dac
@@ -73,6 +76,10 @@ class tweezer(wax_tweezer.TweezerController):
         self.pid1_int_hold_zero = pid1_int_hold_zero_ttl
         self.pid2_enable_ttl = pid2_enable_ttl
         self.paint_amp_dac = painting_dac
+
+    @kernel
+    def painting_off(self):
+        self.paint_amp_dac.set(v=-7.)
 
     @kernel
     def on(self,paint=False,v_awg_am=dv):

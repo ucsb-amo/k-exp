@@ -2,7 +2,9 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base, cameras, img_types
 import numpy as np
-from kexp.util.artiq.async_print import aprint
+
+from waxx.util.artiq.async_print import aprint
+
 from artiq.language.core import now_mu, at_mu
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
