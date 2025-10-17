@@ -28,8 +28,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('beans',[0]*100)
         self.p.beans = 1
         
-        self.xvar('t_tof',np.linspace(20.,1000.,20)*1.e-6)
-        self.p.t_tof = 1400.e-6
+        # self.xvar('t_tof',np.linspace(700.,1900.,10)*1.e-6)
+        self.p.t_tof = 1800.e-6
 
         # self.xvar('t_magtrap',np.linspace(500.,2500.,10)*1.e-6)
 
@@ -42,37 +42,37 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_lf_lightsheet_rampdown = .5
  
         # self.xvar('v_pd_lf_lightsheet_rampdown_end',np.linspace(.3,1.,15))
-        self.p.v_pd_lf_lightsheet_rampdown_end = .55
+        # self.p.v_pd_lf_lightsheet_rampdown_end = .55
 
-        # self.xvar('v_pd_lf_tweezer_1064_ramp_end',np.linspace(5.,9.3,8))
+        # self.xvar('v_pd_lf_tweezer_1064_ramp_end',np.linspace(3.,9.3,15))
         # self.p.v_pd_lf_tweezer_1064_ramp_end = 8.2
 
         # self.xvar('t_lf_tweezer_1064_ramp',np.linspace(.02,.8,8))
         # self.p.t_lf_tweezer_1064_ramp = .28
 
         # self.xvar('i_lf_tweezer_load_current',np.linspace(12.5,16.,20))
-        self.p.i_lf_tweezer_load_current = 15.
+        # self.p.i_lf_tweezer_load_current = 15.
 
         # self.xvar('t_tweezer_soak',np.linspace(0.,500.,15)*1.e-3)
         # self.p.t_tweezer_soak = 35.e-3
 
-        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-.5,3.,8))
-        self.p.v_lf_tweezer_paint_amp_max = 1.
+        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-1.,3.,15))
+        # self.p.v_lf_tweezer_paint_amp_max = 1.7
 
-        # self.xvar('i_lf_tweezer_evap1_current',np.linspace(12.4,15.,20))
-        self.p.i_lf_tweezer_evap1_current = 13.6
+        # self.xvar('i_lf_tweezer_evap1_current',np.linspace(11.5,13.8,20))
+        # self.p.i_lf_tweezer_evap1_current = 13.
 
-        # self.xvar('v_pd_lf_tweezer_1064_rampdown_end',np.linspace(.3,2.,15)) 
-        self.p.v_pd_lf_tweezer_1064_rampdown_end = 1.
+        # self.xvar('v_pd_lf_tweezer_1064_rampdown_end',np.linspace(.9,3.,15)) 
+        # self.p.v_pd_lf_tweezer_1064_rampdown_end = 1.25
 
         # self.xvar('t_lf_tweezer_1064_rampdown',np.linspace(0.02,.4,20))
-        # self.p.t_lf_tweezer_1064_rampdown = .2
+        # self.p.t_lf_tweezer_1064_rampdown = .14
 
-        # self.xvar('i_lf_tweezer_evap2_current',np.linspace(12.4,15.,15))
-        # self.p.i_lf_tweezer_evap2_current = 13.2
+        # self.xvar('i_lf_tweezer_evap2_current',np.linspace(12.4,14.,8))
+        # self.p.i_lf_tweezer_evap2_current = 13.
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.08,.2,20))
-        self.p.v_pd_lf_tweezer_1064_rampdown2_end = .145
+        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .163
 
         # self.xvar('t_lf_tweezer_1064_rampdown2',np.linspace(0.1,.7,20))
         # self.p.t_lf_tweezer_1064_rampdown2 =360.6e-3
@@ -82,7 +82,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,100.,15)*1.e-3)
-        self.p.t_tweezer_hold = 60.e-3
+        self.p.t_tweezer_hold = 10.e-3
 
         # self.xvar('beans',[0,1])
 
@@ -107,8 +107,8 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
 
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        # self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap1_current,
-        #                             pid_bool=False)
+        # self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap2_current,
+                                    # pid_bool=False)
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
@@ -181,6 +181,10 @@ class tweezer_load(EnvExperiment, Base):
                         v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
                         paint=True,keep_trap_frequency_constant=True,
                         v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
+        
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                            i_start=self.p.i_lf_tweezer_evap2_current,
+                            i_end=13.2)
 
 
         delay(self.p.t_tweezer_hold)

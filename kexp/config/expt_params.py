@@ -92,7 +92,7 @@ class ExptParams():
         self.t_tweezer_ramp = .56
         self.t_tweezer_hold = 5.e-3
         self.t_lf_tweezer_1064_ramp = .28
-        self.t_lf_tweezer_1064_rampdown = 200.e-3 
+        self.t_lf_tweezer_1064_rampdown = 140.e-3 
         self.t_lf_tweezer_1064_rampdown2 = 450.e-3   
         self.t_lf_tweezer_1064_rampdown3 = .47
         self.t_hf_tweezer_1064_ramp = .285
@@ -239,7 +239,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 9.2
-        self.v_pd_lf_lightsheet_rampdown_end = .8 #4.16
+        self.v_pd_lf_lightsheet_rampdown_end = .55 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = .65 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -252,8 +252,8 @@ class ExptParams():
         self.v_pd_tweezer_1064 = 5.
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.2
-        self.v_pd_lf_tweezer_1064_rampdown_end = .865
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .118
+        self.v_pd_lf_tweezer_1064_rampdown_end = 1.25
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .163
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
@@ -278,7 +278,7 @@ class ExptParams():
         # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.15]
 
-        self.v_lf_tweezer_paint_amp_max = 1.43
+        self.v_lf_tweezer_paint_amp_max = 1.7
         self.v_hf_tweezer_paint_amp_max = -.286
 
         # tweezer movement params
@@ -331,9 +331,9 @@ class ExptParams():
         # low field evap NEW
         self.i_lf_lightsheet_evap1_current = 13.
 
-        self.i_lf_tweezer_load_current = 15.4
-        self.i_lf_tweezer_evap1_current = 13.9
-        self.i_lf_tweezer_evap2_current = 13.2
+        self.i_lf_tweezer_load_current = 15.
+        self.i_lf_tweezer_evap1_current = 13.0
+        self.i_lf_tweezer_evap2_current = 13.0
 
         self.i_spin_mixture = 19.48
 

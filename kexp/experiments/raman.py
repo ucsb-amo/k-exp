@@ -52,7 +52,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        # self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
+        self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
         # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse])
         self.p.t_raman_pulse = 0.
 
