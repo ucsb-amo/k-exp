@@ -25,11 +25,11 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('hf_imaging_detuning', [272.e6,336.e6]*50)
         # self.xvar('frequency_detuned_imaging', [342.e6,364.e6]*1) # 13.1 A
 
-        # self.xvar('beans',[0]*100)
+        self.xvar('beans',[0]*10)
         self.p.beans = 1
         
-        # self.xvar('t_tof',np.linspace(700.,1900.,10)*1.e-6)
-        self.p.t_tof = 1800.e-6
+        # self.xvar('t_tof',np.linspace(20.,400.,10)*1.e-6)
+        self.p.t_tof = 20.e-6
 
         # self.xvar('t_magtrap',np.linspace(500.,2500.,10)*1.e-6)
 
@@ -72,7 +72,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.i_lf_tweezer_evap2_current = 13.
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.08,.2,20))
-        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .163
+        self.p.v_pd_lf_tweezer_1064_rampdown2_end = .18
 
         # self.xvar('t_lf_tweezer_1064_rampdown2',np.linspace(0.1,.7,20))
         # self.p.t_lf_tweezer_1064_rampdown2 =360.6e-3
@@ -82,7 +82,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,100.,15)*1.e-3)
-        self.p.t_tweezer_hold = 10.e-3
+        self.p.t_tweezer_hold = 40.e-3
 
         # self.xvar('beans',[0,1])
 
@@ -90,12 +90,12 @@ class tweezer_load(EnvExperiment, Base):
         self.p.N_repeats = 1
 
         # self.camera_params.amp_imaging = .12
-        # self.camera_params.exposure_time = 20.e-6
-        # self.p.t_imaging_pulse = self.camera_params.exposure_time
+        self.camera_params.exposure_time = 20.e-6
+        self.p.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.amp_imaging = 0.54
 
         # self.xvar('amp_imaging',np.linspace(.1,.54,10))
-        self.p.amp_imaging = .12
+        self.p.amp_imaging = .15
 
         # self.xvar('phase_slm_mask',np.linspace(0.,1.,10)*np.pi)
         # self.xvar('phase_slm_mask',[1.745,3.14]*50)
@@ -110,7 +110,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap2_current,
                                     # pid_bool=False)
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
