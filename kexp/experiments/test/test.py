@@ -2,11 +2,6 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base, img_types, cameras
 import numpy as np
-from kexp.util.artiq.async_print import aprint
-from kexp.control.slm.slm import SLM
-from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
-from kexp.calibrations.imaging import high_field_imaging_detuning
-from artiq.coredevice.sampler import Sampler
 
 class tweezer_load(EnvExperiment, Base):
 
@@ -18,7 +13,7 @@ class tweezer_load(EnvExperiment, Base):
         self.camera_params = cameras.andor
         self.ttl.camera = self.ttl.andor
 
-        self.xvar('beans',[1]*1000)
+        self.xvar('beans',[1]*1)
 
         # self.p.amp_imaging = .25
         self.p.amp_imaging = .2
