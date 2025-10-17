@@ -3,8 +3,8 @@ import numpy as np
 from artiq.experiment import kernel, portable, delay, TArray, TFloat, parallel
 from artiq.language.core import now_mu, at_mu
 
-from wax.control.artiq.DDS import DDS
-from wax.control.artiq.DAC_CH import DAC_CH
+from waxx.control.artiq.DDS import DDS
+from waxx.control.artiq.DAC_CH import DAC_CH
 
 from kexp.config.expt_params import ExptParams
 

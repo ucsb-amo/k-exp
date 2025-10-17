@@ -1,7 +1,7 @@
 import numpy as np
 from artiq.experiment import kernel
 from artiq.coredevice.zotino import Zotino
-from wax.control.artiq.DAC_CH import DAC_CH
+from waxx.control.artiq.DAC_CH import DAC_CH
 from kexp.config.expt_params import ExptParams
 
 FORBIDDEN_CH = []

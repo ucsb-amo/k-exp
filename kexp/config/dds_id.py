@@ -4,8 +4,8 @@ from artiq.coredevice import ad53xx
 from artiq.experiment import kernel, portable
 from artiq.language.core import delay_mu
 
-from wax.control.artiq.DDS import DDS
-from wax.control.artiq.dummy_core import DummyCore
+from waxx.control.artiq.DDS import DDS
+from waxx.control.artiq.dummy_core import DummyCore
 
 from kexp.config.dac_id import dac_frame
 from kexp.config.shuttler_id import shuttler_frame

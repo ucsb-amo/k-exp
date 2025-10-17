@@ -4,9 +4,10 @@ import numpy as np
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential, delay_mu
 
-from wax.control import BaslerUSB, AndorEMCCD, DummyCamera
-from wax.util.data.run_info import RunInfo
-from wax.util.data.counter import counter
+from waxa.data.run_info import RunInfo
+from waxa.data.counter import counter
+
+from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
 
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
@@ -21,7 +22,7 @@ from kexp.calibrations import (high_field_imaging_detuning,
                                 low_field_pid_imaging_detuning,
                                 I_LF_HF_THRESHOLD)
 from kexp.config.camera_id import img_types as img, cameras
-from artiq.coredevice.sampler import Sampler
+
 
 dv = -10.e9
 

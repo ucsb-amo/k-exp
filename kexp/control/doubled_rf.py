@@ -1,5 +1,5 @@
-from wax.control.artiq.DDS import DDS
-from wax.config.expt_params import ExptParams
+from waxx.control.artiq.DDS import DDS
+from waxx.config.expt_params import ExptParams
 from artiq.experiment import kernel, delay, parallel, portable, TFloat
 from artiq.experiment import *
 import numpy as np

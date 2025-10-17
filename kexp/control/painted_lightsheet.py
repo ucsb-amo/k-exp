@@ -1,6 +1,6 @@
-from wax.control.artiq.DAC_CH import DAC_CH
-from wax.control.artiq.DDS import DDS
-from wax.control.artiq.TTL import TTL_OUT
+from waxx.control.artiq.DAC_CH import DAC_CH
+from waxx.control.artiq.DDS import DDS
+from waxx.control.artiq.TTL import TTL_OUT
 
 from kexp.config.expt_params import ExptParams
 

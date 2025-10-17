@@ -1,7 +1,7 @@
-from wax.control.artiq.DAC_CH import DAC_CH
-from wax.control.artiq.TTL import TTL
-from wax.control.artiq.DDS import DDS
-import wax.control.tweezer.spectrum_DDS_tweezer as wax_tweezer
+from waxx.control.artiq.DAC_CH import DAC_CH
+from waxx.control.artiq.TTL import TTL
+from waxx.control.artiq.DDS import DDS
+import waxx.control.tweezer.spectrum_DDS_tweezer as wax_tweezer
 
 from artiq.language.core import now_mu
 from artiq.coredevice.core import Core

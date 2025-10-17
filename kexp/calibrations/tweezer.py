@@ -34,5 +34,5 @@ X_TO_F_OFFSET_NCE = -0.000442464
 X_PER_F_CE = -5.7971e-12
 X_PER_F_NCE = 5.7971e-12
 
-from wax.control.tweezer.tweezer_xmesh import tweezer_xmesh as mesh
+from waxx.control.tweezer.tweezer_xmesh import tweezer_xmesh as mesh
 tweezer_xmesh = mesh(F_CE_MAX,F_CE_MIN,F_NCE_MAX,F_NCE_MIN,X_TO_F_OFFSET_CE,X_TO_F_OFFSET_NCE,X_PER_F_CE,X_PER_F_NCE)

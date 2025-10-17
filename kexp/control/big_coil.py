@@ -1,8 +1,8 @@
 from artiq.experiment import kernel, delay, parallel, portable, TFloat
 import numpy as np
 
-from wax.control.artiq.DAC_CH import DAC_CH
-from wax.control.artiq.TTL import TTL_OUT
+from waxx.control.artiq.DAC_CH import DAC_CH
+from waxx.control.artiq.TTL import TTL_OUT
 
 from kexp.config.expt_params import ExptParams
 from kexp.calibrations.magnets import compute_pid_overhead

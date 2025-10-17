@@ -8,12 +8,12 @@ from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
 from artiq.coredevice.grabber import Grabber
 
-from wax.control.artiq.DDS import DDS
-from wax.control.artiq.mirny import Mirny
-from wax.control.artiq.Shuttler_CH import Shuttler_CH
-from wax.control.misc.ssg3021x import SSG3021X
-from wax.control.slm.slm import SLM
-from wax.control.cameras.dummy_cam import DummyCamera
+from waxx.control.artiq.DDS import DDS
+from waxx.control.artiq.mirny import Mirny
+from waxx.control.artiq.Shuttler_CH import Shuttler_CH
+from waxx.control.misc.ssg3021x import SSG3021X
+from waxx.control.slm.slm import SLM
+from waxx.control.cameras.dummy_cam import DummyCamera
 
 from kexp.config.expt_params import ExptParams
 

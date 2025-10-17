@@ -5,10 +5,11 @@ import logging
 from artiq.experiment import *
 from artiq.experiment import delay, parallel, sequential
 
-from wax.control.artiq.TTL import TTL, DummyTTL
-from wax.control import BaslerUSB, AndorEMCCD, DummyCamera
-from wax.control.slm.slm import SLM
-from wax.util.data.run_info import RunInfo
+from waxa.data.run_info import RunInfo
+
+from waxx.control.artiq.TTL import TTL, DummyTTL
+from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
+from waxx.control.slm.slm import SLM
 
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
