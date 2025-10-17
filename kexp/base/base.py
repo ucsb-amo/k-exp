@@ -19,11 +19,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
                  absorption_image=None,
                  camera_select="xy_basler"):
 
-        Expt.__init__(self,
-                    absorption_image=absorption_image,
-                    save_data=save_data,
-                    setup_camera=setup_camera)
-        super().__init__()
+        super().__init__(setup_camera=setup_camera,
+                         absorption_image=absorption_image,
+                         save_data=save_data)
 
         from kexp.config.expt_params import ExptParams
         self.params = ExptParams()
