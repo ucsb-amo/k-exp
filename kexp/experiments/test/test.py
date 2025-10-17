@@ -7,7 +7,6 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False,
-                      save_data=False,
                       imaging_type=img_types.ABSORPTION)
 
         self.camera_params = cameras.andor

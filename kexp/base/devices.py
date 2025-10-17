@@ -73,7 +73,6 @@ class Devices():
 
         # set up dds_frame
         self.dds = dds_frame(dac_frame_obj=self.dac,
-                             shuttler_frame_obj=self.shuttler,
                               core=self.core, expt_params=self.params)
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
@@ -104,8 +103,9 @@ class Devices():
     def set_all_dds(self):
         for dds in self.dds.dds_list:
             dds.set_dds(init=True)
+            delay(1.e-6)
             dds.dds_device.set_att(0. * dB)
-            delay(5.e-6)
+            delay(1.e-6)
 
     @kernel
     def switch_all_dds(self,state):
