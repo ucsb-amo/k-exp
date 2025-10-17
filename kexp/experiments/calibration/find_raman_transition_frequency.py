@@ -18,15 +18,15 @@ class rabi_surf(EnvExperiment, Base):
 
         ### Experiment setup
 
-        self.p.f_raman_sweep_width = 15.e3
+        self.p.f_raman_sweep_width = 20.e3
 
-        sweep_scan_width = 150.e3
+        sweep_scan_width = 80.e3
         self.xvar('f_raman_sweep_center',
-                  41.215e6 + np.arange(-sweep_scan_width, sweep_scan_width, self.p.f_raman_sweep_width))
+                  41.245e6 + np.arange(-sweep_scan_width, sweep_scan_width, self.p.f_raman_sweep_width))
 
-        self.p.t_raman_sweep = 500.e-6
+        self.p.t_raman_sweep = 1000.e-6
 
-        self.p.amp_raman = 0.08
+        self.p.amp_raman = 0.19
 
         ### misc params ###
         self.p.t_tof = 20.e-6
@@ -43,6 +43,7 @@ class rabi_surf(EnvExperiment, Base):
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         ### prepares the atoms and turns on the PID at self.p.i_spin_mixture ###
         self.prepare_lf_tweezers()
+
         ### start experiment ###
 
         self.init_raman_beams()
@@ -51,6 +52,8 @@ class rabi_surf(EnvExperiment, Base):
                          frequency_center=self.p.f_raman_sweep_center,
                          frequency_sweep_fullwidth=self.p.f_raman_sweep_width,
                          n_steps=50)
+
+        # delay(self.p.t_raman_sweep)
 
         self.tweezer.off()
 

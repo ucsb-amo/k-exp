@@ -39,6 +39,8 @@ class Control():
                          phase_mode=1):
         if t_phase_origin_mu < 0:
             t_phase_origin_mu = now_mu()
+        if amp_raman == dv:
+            amp_raman = self.params.amp_raman
         self.raman.set(frequency_transition,amp_raman,
                        global_phase,relative_phase,
                        t_phase_origin_mu=t_phase_origin_mu,

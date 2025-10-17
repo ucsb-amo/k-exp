@@ -44,15 +44,15 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 41.225e6
         self.p.frequency_raman_sweep_width = 10.e3
-        self.xvar('frequency_raman_sweep_center', 41.225e6 + np.arange(-60.e3,60.e3,self.p.frequency_raman_sweep_width))
+        # self.xvar('frequency_raman_sweep_center', 41.225e6 + np.arange(-60.e3,60.e3,self.p.frequency_raman_sweep_width))
 
         # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-5.e5,5.e5,10))
-        self.p.frequency_raman_transition = 41.225e6
+        self.p.frequency_raman_transition = 41.235e6
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
-        self.p.amp_raman = 0.06
+        self.p.amp_raman = 0.35
 
-        # self.xvar('t_raman_pulse',np.linspace(0.,150.e-6,60))
+        self.xvar('t_raman_pulse',np.linspace(0.,150.e-6,60))
         # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse])
         self.p.t_raman_pulse = 1.2158e-5
 
@@ -60,7 +60,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p._t_tweezer_kill = 10.e-3
         
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
-        self.p.t_tweezer_hold = .1e-3
+        self.p.t_tweezer_hold = .01e-3
 
         self.p.amp_imaging = .15
         # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
@@ -94,14 +94,14 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.dds.mot_killer.set_dds_gamma(delta=0.,amplitude=.188)
 
-        # self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
+        self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
         # self.init_raman_beams()
-        # self.ttl.line_trigger.wait_for_line_trigger()
+        self.ttl.line_trigger.wait_for_line_trigger()
 
-        # delay(5.7e-3)
+        delay(5.7e-3)
 
         # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.raman.pulse(t=self.p.t_raman_pulse)
+        self.raman.pulse(t=self.p.t_raman_pulse)
 
         # if self.p.beans:
         #     self.raman.pulse(t=self.p.t_raman_pi_pulse)
