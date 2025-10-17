@@ -38,4 +38,7 @@ class Image():
         self.scan_xvars = []
         self._counter = counter()
 
+    def abs_image(self):
+        pass
+
     ### Imaging sequences ###
