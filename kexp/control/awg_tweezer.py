@@ -1,7 +1,7 @@
 from wax.control.artiq.DAC_CH import DAC_CH
 from wax.control.artiq.TTL import TTL
 from wax.control.artiq.DDS import DDS
-import wax.control.tweezer.awg_tweezer as wax_tweezer
+import wax.control.tweezer.spectrum_DDS_tweezer as wax_tweezer
 
 from artiq.language.core import now_mu
 from artiq.coredevice.core import Core
@@ -15,7 +15,6 @@ import numpy as np
 # di = 666420695318008 #causes failure #lmao
 di = 0
 dv = -1000.
-dv_array = np.array([dv])
 
 AWG_IP = 'TCPIP::192.168.1.83::inst0::INSTR'
 from kexp.calibrations.tweezer import tweezer_xmesh as KEXP_TWEEZER_XMESH
