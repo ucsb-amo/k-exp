@@ -54,10 +54,10 @@ class ExptParams():
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 30e-6
+        self.dimension_slm_mask = 100e-6
         self.phase_slm_mask = 2.09 # 0.44 * np.pi
-        self.px_slm_phase_mask_position_x = 1119   
-        self.px_slm_phase_mask_position_y = 862
+        self.px_slm_phase_mask_position_x = 1040   
+        self.px_slm_phase_mask_position_y = 821
         
         # Cooling timing
         self.t_tof = 20.e-6

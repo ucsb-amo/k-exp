@@ -14,10 +14,10 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.DISPERSIVE)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,300.,1)*1.e6)
-        # self.xvar('beans',[0]*50)
+        # self.xvar('beans',[0,1]*50)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
@@ -47,14 +47,14 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_raman_sweep_center', 41.225e6 + np.arange(-60.e3,60.e3,self.p.frequency_raman_sweep_width))
 
         # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-5.e5,5.e5,10))
-        self.p.frequency_raman_transition = 41.235e6
+        self.p.frequency_raman_transition = 41.225e6
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        self.xvar('t_raman_pulse',np.linspace(0.,150.e-6,60))
-        # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse])
-        self.p.t_raman_pulse = 1.2158e-5
+        # self.xvar('t_raman_pulse',np.linspace(0.,25.e-6,20))
+        # self.xvar('t_raman_pulse',[6.5e-6,14.e-6]*50)
+        self.p.t_raman_pulse = 42.e-6
 
         # self.xvar('_t_tweezer_kill',np.linspace(0., 100.e-3,10))
         # self.p._t_tweezer_kill = 10.e-3
@@ -62,27 +62,28 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
         self.p.t_tweezer_hold = .01e-3
 
-        self.p.amp_imaging = .15
-        # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
+        self.p.amp_imaging = .13
+        # self.xvar('amp_imaging',np.linspace(0.1,.18,10))
 
+        # self.xvar('frequency_detuned_imaging',np.arange(590.,630.,4)*1.e6)
         
         # self.xvar('dimension_slm_mask',np.linspace(0.,200.e-6,10))
         # self.p.dimension_slm_mask = 50.e-6
         # self.xvar('phase_slm_mask',np.linspace(0.,np.pi,10))
         # self.xvar('px_slm_phase_mask_position_x',1147 + np.linspace(-10.,10.,5,dtype=int))
         # self.p.px_slm_phase_mask_position_x
-        # self.p.phase_slm_mask = 2.09
+        self.p.phase_slm_mask = .33333334 * np.pi
         self.p.t_mot_load = 1.
 
         # self.sampler.gains = np.array([1,0,0,0,0,0,0,0])
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 100
 
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
-        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_m1)
+        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_midpoint)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
@@ -100,8 +101,13 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(5.7e-3)
 
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.dds.imaging.on()
+
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        
         self.raman.pulse(t=self.p.t_raman_pulse)
+
+        self.dds.imaging.off()   
 
         # if self.p.beans:
         #     self.raman.pulse(t=self.p.t_raman_pi_pulse)
@@ -126,7 +132,7 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
-        delay(self.p.t_tof)
+        delay(self.p.t_tof)     
 
         # if self.p.beans:
         #     delay(10.e-3)
@@ -135,7 +141,19 @@ class tweezer_load(EnvExperiment, Base):
 
         self.abs_image()
 
-        # print(self.sampler.samples)
+    # @kernel
+    # def abs_image_trig(self):
+    #     self.ttl.pd_scope_trig.pulse(1.e-6)
+    #     self.ttl.pd_scope_trig3.pulse(1.e-6)
+    #     self.light_image()
+
+    #     delay(self.camera_params.t_light_only_image_delay * s)
+    #     self.light_image()
+
+    #     self.close_imaging_shutters()
+
+    #     delay(self.camera_params.t_dark_image_delay * s)
+    #     self.dark_image()
 
     @kernel
     def run(self):
