@@ -2,8 +2,6 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base, img_types
 import numpy as np
-from kexp.util.artiq.async_print import aprint
-from kexp.control.slm.slm import SLM
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 

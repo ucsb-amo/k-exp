@@ -1,17 +1,14 @@
-from PyQt6.QtWidgets import (QLabel, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QPlainTextEdit, QComboBox)
+from PyQt6.QtWidgets import (QLabel, QWidget, QVBoxLayout, QHBoxLayout,
+                              QPushButton, QPlainTextEdit, QComboBox)
 from PyQt6.QtCore import QTimer
 import os
-import time
-
-# from kexp.util.live_od.live_od_plotting import *
-
-from kexp import cameras, img_types
-from kexp.control.cameras.dummy_cam import DummyCamera
-from kexp.control.cameras.camera_param_classes import CameraParams
-from kexp.util.live_od import CameraNanny
-
-from kexp.analysis.roi import ROI_CSV_PATH
 import pandas as pd
+
+from waxa.roi import ROI_CSV_PATH
+from waxx.control.cameras import DummyCamera, CameraParams
+
+from kexp import cameras
+from kexp.util.live_od import CameraNanny
 
 class CamConnBar(QWidget):
     def __init__(self,camera_nanny,output_window):

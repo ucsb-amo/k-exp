@@ -2,7 +2,7 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base
 import numpy as np
-from kexp.util.artiq.async_print import aprint
+from waxx.util.artiq.async_print import aprint
 
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning

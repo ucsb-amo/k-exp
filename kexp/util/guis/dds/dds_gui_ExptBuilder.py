@@ -1,8 +1,9 @@
 import os
 import textwrap
 from subprocess import PIPE, run
-from kexp.control.artiq.DDS import DDS
+from waxx.control.artiq.DDS import DDS
 import numpy as np
+
 from kexp.config.dds_id import dds_frame
 
 class DDSGUIExptBuilder():

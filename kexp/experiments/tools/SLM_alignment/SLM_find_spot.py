@@ -1,9 +1,11 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base, cameras, img_types
+
 import numpy as np
-from kexp.util.artiq.async_print import aprint
-from kexp.control.slm.slm import SLM
+
+from waxx.util.artiq.async_print import aprint
+
+from kexp import Base, cameras, img_types
 
 # SLM.write_phase_spot(100e-6,3.14,960,200)
 class gm_tof(EnvExperiment, Base):
@@ -13,8 +15,8 @@ class gm_tof(EnvExperiment, Base):
                       camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('px_slm_phase_mask_position_x',1118 + np.linspace(-10.,10.,21,dtype=int))
-        self.xvar('px_slm_phase_mask_position_y',861 + np.linspace(-10.,10.,21,dtype=int))
+        self.xvar('px_slm_phase_mask_position_x',1040 + np.linspace(-10.,10.,21,dtype=int))
+        self.xvar('px_slm_phase_mask_position_y',829 + np.linspace(-10.,10.,21,dtype=int))
         # self.xvar('dumdum',[0]*3)
         # self.p.slm_mask = 'spot'
         self.p.phase_slm_mask = 3.14

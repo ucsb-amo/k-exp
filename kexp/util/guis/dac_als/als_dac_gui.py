@@ -1,4 +1,4 @@
-from kexp.control.als_remote_control import als_power_to_voltage, als_voltage_to_power
+from wax.control.als_remote_control import als_power_to_voltage, als_voltage_to_power
 import numpy as np
 
 import sys
