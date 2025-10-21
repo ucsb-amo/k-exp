@@ -15,7 +15,7 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,300.,1)*1.e6)
-        # self.xvar('beans',[0,1]*50)
+        self.xvar('beans',[0,1]*50)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
@@ -33,7 +33,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.v_lf_tweezer_paint_amp_max = 1.43
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.09,.2,20))
-        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .118
+        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .16
 
         
         # self.xvar('t_tof',np.linspace(800.,2500.,15)*1.e-6)
@@ -50,9 +50,9 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
+        # self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
         # self.xvar('t_raman_pulse',[12.e-6,24.e-6])
-        self.p.t_raman_pulse = 42.e-6
+        self.p.t_raman_pulse = 23.e-6
 
         # self.xvar('_t_tweezer_kill',np.linspace(0., 100.e-3,10))
         # self.p._t_tweezer_kill = 10.e-3
@@ -60,7 +60,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
         self.p.t_tweezer_hold = .01e-3
 
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .15
         # self.xvar('amp_imaging',np.linspace(0.1,.18,10))
 
         # self.xvar('frequency_detuned_imaging',np.arange(590.,630.,4)*1.e6)
@@ -75,9 +75,9 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.sampler.gains = np.array([1,0,0,0,0,0,0,0])
         
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -96,7 +96,7 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(5.7e-3)
 
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.raman.pulse(t=self.p.t_raman_pulse)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
@@ -108,7 +108,11 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
-        delay(self.p.t_tof)
+
+        if self.p.beans:
+            delay(self.p.t_tof)
+        else:
+            delay(10.e-3)
 
         self.abs_image()
 
