@@ -28,7 +28,7 @@ class ExptParams():
         self.beatlock_sign = -1
         self.N_offset_lock_reference_multiplier = 8
         self.frequency_minimum_offset_beatlock = 150.e6
-        self.imaging_state = 2.
+        self.imaging_state = 2. 
 
         # low field imaging settings at i_spin_mixture = 19.48
         # (free space)
