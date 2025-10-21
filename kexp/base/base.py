@@ -36,7 +36,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         To be called at the end of prepare.
         """
 
-        self.finish_prepare_wax()
+        self.finish_prepare_wax(N_repeats=N_repeats,
+                                shuffle=shuffle)
     
     def compute_new_derived(self):
         pass
