@@ -91,7 +91,7 @@ class dds_frame():
                                     default_amp = self.p.amp_d1_3d_r)
         self.imaging = self.dds_assign(4,1, ao_order = 1,
                                     default_freq = self.p.frequency_ao_imaging,
-                                    default_amp = 1.0) #0.54)
+                                    default_amp = 0.54) #0.54)
         # self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1',
         #                             default_detuning = self.p.detune_optical_pumping_op,
         #                             default_amp = self.p.amp_optical_pumping_op)
@@ -115,8 +115,8 @@ class dds_frame():
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
                                     default_amp = self.p.amp_tweezer_pid2)
         self.imaging_eo = self.dds_assign(1,1,
-                                    default_freq = 1.e6,
-                                    default_amp = 0.)
+                                    default_freq = 2.e6,
+                                    default_amp = 1.)
         self.d1_probe = self.dds_assign(5,0,
                                     default_freq=100.e6,
                                     default_amp=0.21)
