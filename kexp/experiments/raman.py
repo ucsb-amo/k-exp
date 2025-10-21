@@ -15,7 +15,7 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,300.,1)*1.e6)
-        # self.xvar('beans',[0]*10)
+        self.xvar('beans',[0,1]*50)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
@@ -33,43 +33,44 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.v_lf_tweezer_paint_amp_max = 1.43
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.09,.2,20))
-        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .118
+        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .16
 
         
         # self.xvar('t_tof',np.linspace(800.,2500.,15)*1.e-6)
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 1.e-6
 
         self.p.t_raman_sweep = 1.e-3
-        self.p.frequency_raman_sweep_center = 41.1e6
-        self.p.frequency_raman_sweep_width = 20.e3
-        # self.xvar('frequency_raman_sweep_center', 41.12e6 + np.arange(-400.e3,400.e3,self.p.frequency_raman_sweep_width))
+        self.p.frequency_raman_sweep_center = 41.225e6
+        self.p.frequency_raman_sweep_width = 10.e3
+        # self.xvar('frequency_raman_sweep_center', 41.225e6 + np.arange(-60.e3,60.e3,self.p.frequency_raman_sweep_width))
 
         # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-5.e5,5.e5,10))
-        self.p.frequency_raman_transition = 41.245e6
+        self.p.frequency_raman_transition = 41.225e6
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
         # self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
-        # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse])
-        self.p.t_raman_pulse = 0.
+        # self.xvar('t_raman_pulse',[12.e-6,24.e-6])
+        self.p.t_raman_pulse = 23.e-6
 
         # self.xvar('_t_tweezer_kill',np.linspace(0., 100.e-3,10))
         # self.p._t_tweezer_kill = 10.e-3
         
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
-        self.p.t_tweezer_hold = .1e-3
+        self.p.t_tweezer_hold = .01e-3
 
-        self.p.amp_imaging = .12
-        # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
+        self.p.amp_imaging = .15
+        # self.xvar('amp_imaging',np.linspace(0.1,.18,10))
 
+        # self.xvar('frequency_detuned_imaging',np.arange(590.,630.,4)*1.e6)
         
         # self.xvar('dimension_slm_mask',np.linspace(0.,200.e-6,10))
         # self.p.dimension_slm_mask = 50.e-6
         # self.xvar('phase_slm_mask',np.linspace(0.,np.pi,10))
         # self.xvar('px_slm_phase_mask_position_x',1147 + np.linspace(-10.,10.,5,dtype=int))
         # self.p.px_slm_phase_mask_position_x
-        # self.p.phase_slm_mask = 2.09
+        self.p.phase_slm_mask = .5 * np.pi
         self.p.t_mot_load = 1.
 
         # self.sampler.gains = np.array([1,0,0,0,0,0,0,0])
@@ -90,23 +91,13 @@ class tweezer_load(EnvExperiment, Base):
 
         self.prepare_lf_tweezers()
 
-        # self.dds.mot_killer.set_dds_gamma(delta=0.,amplitude=.188)
-
-        # self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
-
-        # self.ttl.line_trigger.wait_for_line_trigger()
+        self.init_raman_beams(self.p.frequency_raman_transition,self.p.amp_raman)
+        self.ttl.line_trigger.wait_for_line_trigger()
 
         delay(5.7e-3)
 
         # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.raman.pulse(t=self.p.t_raman_pulse)
-
-        # if self.p.beans:
-        #     self.raman.pulse(t=self.p.t_raman_pi_pulse)
-        #     # self.slm.write_phase_mask_kernel(phase=0.)
-        # else:
-        #     # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        #     delay(self.p.t_raman_pi_pulse)
+        self.raman.pulse(t=self.p.t_raman_pulse)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,
@@ -115,25 +106,15 @@ class tweezer_load(EnvExperiment, Base):
 
         # delay(self.p.t_raman_pulse)
 
-        # if self.p.beans:
-        #     self.dds.mot_killer.on()
-        #     delay(self.p._t_tweezer_kill)
-        #     self.dds.mot_killer.off()
-        # else:
-        #     delay(self.p._t_tweezer_kill)
-
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
-        # delay(self.p.t_tof)
 
         if self.p.beans:
-            delay(10.e-3)
-        else:
             delay(self.p.t_tof)
+        else:
+            delay(10.e-3)
 
         self.abs_image()
-
-        # print(self.sampler.samples)
 
     @kernel
     def run(self):

@@ -5,7 +5,7 @@ from kexp import Base
 import numpy as np
 from kexp.util.artiq.async_print import aprint
 
-from kexp.control.misc.tektronix_tbs1104 import TektronixScope_TBS1104
+from waxx.control.misc.tektronix_tbs1104 import TektronixScope_TBS1104
 
 class scope_data(EnvExperiment, Base):
 
