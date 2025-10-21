@@ -11,9 +11,9 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         self.camera_params = cameras.andor
-        self.ttl.camera = self.ttl.andor
+        self.ttl.camera = self.ttl.test
 
-        self.xvar('beans',[1]*1)
+        self.xvar('beans',[1]*3)
 
         # self.p.amp_imaging = .25
         self.p.amp_imaging = .2
@@ -24,21 +24,19 @@ class tweezer_load(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108")
+
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
-        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging_m1,
-                                  amp=self.p.amp_imaging)
-        delay(0.25)
         self.abs_image()
+        self.scope.read_sweep(3)
 
     @kernel
     def run(self):
         self.init_kernel()
-        # self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        # self.mot_observe()
 
     def analyze(self):
         import os
