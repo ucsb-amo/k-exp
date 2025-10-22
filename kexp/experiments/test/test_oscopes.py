@@ -1,36 +1,23 @@
 from artiq.experiment import *
-from artiq.experiment import delay
 from kexp import Base, img_types, cameras
-import numpy as np
 
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
-                      save_data=False,
-                      imaging_type=img_types.ABSORPTION)
+        Base.__init__(self,
+                      setup_camera=True,
+                      save_data=True,
+                      camera_select=cameras.andor)
 
-        self.camera_params = cameras.andor
-        self.ttl.camera = self.ttl.test
+        self.xvar('xv0',[1]*2)
+        self.xvar('xv1',[1]*3)
 
-        self.xvar('beans',[1]*3)
-
-        # self.p.amp_imaging = .25
-        self.p.amp_imaging = .2
-
-        self.camera_params.exposure_time = 10.e-6
-        # self.p.t_imaging_pulse = self.camera_params.exposure_time
-        self.p.t_imaging_pulse = 10.e-6
-        
-        self.p.N_repeats = 1
-
-        self.scope = self.scope_data.add_siglent_scope("192.168.1.108")
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD')
 
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
-        self.abs_image()
         self.scope.read_sweep(3)
 
     @kernel
