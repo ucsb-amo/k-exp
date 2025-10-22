@@ -15,7 +15,7 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,300.,1)*1.e6)
-        self.xvar('beans',[0,1]*50)
+        # self.xvar('beans',[0,1]*50)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
@@ -45,12 +45,12 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_raman_sweep_center', 41.225e6 + np.arange(-60.e3,60.e3,self.p.frequency_raman_sweep_width))
 
         # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-5.e5,5.e5,10))
-        self.p.frequency_raman_transition = 41.225e6
+        self.p.frequency_raman_transition = 41.2e6
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        # self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
+        self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
         # self.xvar('t_raman_pulse',[12.e-6,24.e-6])
         self.p.t_raman_pulse = 23.e-6
 
