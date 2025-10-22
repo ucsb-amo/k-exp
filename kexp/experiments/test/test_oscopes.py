@@ -28,7 +28,7 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(setup_slm=False)
         self.scan()
 
     def analyze(self):

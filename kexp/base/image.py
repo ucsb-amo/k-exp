@@ -497,7 +497,7 @@ class Image():
             
         f_beatlock_ref = self.imaging_detuning_to_beat_ref(frequency_detuned=frequency_detuned)
 
-        self.dds.imaging.set_dds(frequency=self.params.frequency_ao_imaging,amplitude=amp)
+        self.dds.imaging.set_dds(amplitude=amp)
 
         f_minimum_offset_frequency = self.params.frequency_minimum_offset_beatlock
         f_offset = f_beatlock_ref * self.params.N_offset_lock_reference_multiplier
