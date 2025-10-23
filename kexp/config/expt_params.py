@@ -22,7 +22,6 @@ class ExptParams():
         self.t_imaging_pulse = 10.e-6
 
         # img beam settings
-        self.frequency_ao_imaging = 335.e6 # 350.00e6
         self.frequency_detuned_imaging = 22.25e6
         self.frequency_detuned_imaging_F1 = 452.e6
         self.beatlock_sign = -1

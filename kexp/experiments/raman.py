@@ -19,11 +19,6 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
-        # self.p.frequency_detuned_imaging_half = 289.e6 # (self.p.frequency_detuned_imaging_m1 + self.p.frequency_detuned_imaging_0)/2
-        # self.xvar('frequency_detuned_imaging_midpoint',np.arange(600.,660,5)*1.e6)
-        # self.xvar('frequency_detuned_imaging',np.linspace(280.,400,11)*1.e6)
-        # self.p.frequency_detuned_imaging = 318.75e6
-
         self.camera_params.exposure_time = 20.e-6
         self.params.t_imaging_pulse = self.camera_params.exposure_time
 
@@ -37,7 +32,7 @@ class tweezer_load(EnvExperiment, Base):
 
         
         # self.xvar('t_tof',np.linspace(800.,2500.,15)*1.e-6)
-        self.p.t_tof = 1.e-6
+        self.p.t_tof = 20.e-6
 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 41.225e6
@@ -50,7 +45,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
+        self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,30))
         # self.xvar('t_raman_pulse',[12.e-6,24.e-6])
         self.p.t_raman_pulse = 23.e-6
 
@@ -87,7 +82,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.sampler.init()
         # self.sampler.set_gain_mu(0,2)
-        delay(10.e-3)
+        # delay(10.e-3)
 
         self.prepare_lf_tweezers()
 
@@ -98,6 +93,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.raman.pulse(t=self.p.t_raman_pulse)
+        # delay(self.p.t_raman_pulse)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,
@@ -109,10 +105,7 @@ class tweezer_load(EnvExperiment, Base):
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
 
-        if self.p.beans:
-            delay(self.p.t_tof)
-        else:
-            delay(10.e-3)
+        delay(self.p.t_tof)
 
         self.abs_image()
 

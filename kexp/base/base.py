@@ -36,7 +36,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         To be called at the end of prepare.
         """
 
-        self.finish_prepare_wax()
+        self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
         if self.tweezer.traps == []:
             self.tweezer.add_tweezer_list()
