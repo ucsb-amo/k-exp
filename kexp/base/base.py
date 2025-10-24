@@ -38,6 +38,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
+        self.dds.stash_defaults()
+
         if self.tweezer.traps == []:
             self.tweezer.add_tweezer_list()
         self.tweezer.save_trap_list()
