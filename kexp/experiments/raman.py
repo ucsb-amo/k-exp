@@ -32,7 +32,7 @@ class tweezer_load(EnvExperiment, Base):
 
         
         # self.xvar('t_tof',np.linspace(800.,2500.,15)*1.e-6)
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 2.e-6
 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 41.225e6
@@ -45,7 +45,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,30))
+        self.xvar('t_raman_pulse',np.arange(0.,800.e-6,25e-6))
         # self.xvar('t_raman_pulse',[12.e-6,24.e-6])
         self.p.t_raman_pulse = 23.e-6
 

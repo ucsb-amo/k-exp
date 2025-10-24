@@ -29,11 +29,11 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_raman_transition = 41.2e6
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
-        self.p.amp_raman = 0.35
+        self.p.amp_raman = 0.15
 
         # self.xvar('t_raman_pulse',np.linspace(0.,25.e-6,20))
         # self.xvar('t_raman_pulse',[17.e-6,0.])
-        self.p.t_raman_pulse = 100.e-6
+        self.p.t_raman_pulse = 750.e-6
 
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.09,.3,10))
 
@@ -43,36 +43,36 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
         self.p.t_tweezer_hold = 20.e-3
 
-        self.p.amp_imaging = .08
-        # self.xvar('amp_imaging',np.linspace(0.1,.5,10))
+        self.p.amp_imaging = .13
+        self.xvar('amp_imaging',np.linspace(0.1,.13,5))
 
         # self.xvar('frequency_detuned_imaging',np.arange(320.,420.,5)*1.e6)
-        self.p.frequency_detuned_imaging = 368.e6
+        self.p.frequency_detuned_imaging = 355.e6
 
         # self.p.frequency_ao_imaging = 375.e6
 
         self.p.frequency_detuned_imaging_midpoint = 307.e6
         
         # self.xvar('dimension_slm_mask',np.linspace(1.e-6,200.e-6,10))
-        self.p.dimension_slm_mask = 25.e-6
-        self.xvar('phase_slm_mask',np.linspace(0.,2*np.pi,20))
+        self.p.dimension_slm_mask = 50.e-6
+        # self.xvar('phase_slm_mask',np.linspace(0.,2*np.pi,20))
         # self.p.phase_slm_mask = 1.8 * np.pi
-        self.p.phase_slm_mask = np.pi / 2
+        self.p.phase_slm_mask = .63 * np.pi
         self.p.t_mot_load = 1.
 
         # self.sampler.gains = np.array([1,0,0,0,0,0,0,0])
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 50
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD')
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
         
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging)
-        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         # self.sampler.init()
@@ -98,13 +98,13 @@ class tweezer_load(EnvExperiment, Base):
 
         self.abs_image()
 
-        delay(1.e-3)
+        delay(10.e-3)
 
         self.core.wait_until_mu(now_mu())
         self.scope.read_sweep(3)
         self.core.break_realtime()
 
-        delay(1.e-3)
+        delay(10.e-3)
 
     @kernel
     def run(self):

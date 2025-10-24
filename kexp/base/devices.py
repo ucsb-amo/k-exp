@@ -37,6 +37,8 @@ from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_
 dv = -0.1
 d_exptparams = ExptParams()
 
+from waxx.util.artiq.async_print import aprint
+
 class Devices():
 
     def prepare_devices(self,expt_params:ExptParams=d_exptparams):

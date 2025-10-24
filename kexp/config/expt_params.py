@@ -121,7 +121,7 @@ class ExptParams():
         self.t_feshbach_field_decay = 20.e-3
         self.t_forced_evap_ramp = 2.
 
-        self.t_raman_pi_pulse = 1.785e-05
+        self.t_raman_pi_pulse = 1.2392e-05 #47488
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
