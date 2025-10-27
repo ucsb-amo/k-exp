@@ -45,9 +45,9 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
 
-        self.xvar('t_raman_pulse',np.arange(0.,800.e-6,25e-6))
+        self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,30))
         # self.xvar('t_raman_pulse',[12.e-6,24.e-6])
-        self.p.t_raman_pulse = 23.e-6
+        self.p.t_raman_pulse = 12.e-6
 
         # self.xvar('_t_tweezer_kill',np.linspace(0., 100.e-3,10))
         # self.p._t_tweezer_kill = 10.e-3
@@ -55,7 +55,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(0.,1.5,10)*1.e-3)
         self.p.t_tweezer_hold = .01e-3
 
-        self.p.amp_imaging = .15
+        self.p.amp_imaging = .144
         # self.xvar('amp_imaging',np.linspace(0.1,.18,10))
 
         # self.xvar('frequency_detuned_imaging',np.arange(590.,630.,4)*1.e6)
@@ -72,7 +72,7 @@ class tweezer_load(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
