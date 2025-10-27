@@ -58,6 +58,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
                     init_lightsheet = True,
                     setup_awg = True, 
                     setup_slm = True):
+        
+        self.core.reset()
+
         if self.setup_camera:
             self.wait_for_camera_ready(timeout=INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT)
             print("Camera is ready.")
@@ -92,6 +95,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):
+        
+        self.core.reset()
         
         self.set_imaging_shutters()
         self.init_cooling()
