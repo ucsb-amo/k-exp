@@ -8,6 +8,7 @@ from waxa.data.run_info import RunInfo
 from waxa.data.counter import counter
 
 from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
+from waxx.control.beat_lock import BeatLockImaging
 from waxx.util.artiq.async_print import aprint
 
 from kexp.config.dds_id import dds_frame
@@ -31,6 +32,7 @@ class Image():
     def __init__(self):
         self.dds = dds_frame()
         self.ttl = ttl_frame()
+        self.imaging = BeatLockImaging()
         self.params = ExptParams()
         self.camera_params = CameraParams()
         self.setup_camera = True
@@ -449,25 +451,7 @@ class Image():
             elif self.params.imaging_state == 2.:
                 frequency_detuned = self.params.frequency_detuned_imaging
 
-        # +1 for lock greater frequency than reference (Gain switch "+"), vice versa ("-")
-        beat_sign = self.params.beatlock_sign
-
-        f_hyperfine_splitting_4s_MHz = 461.7 * 1.e6
-        f_shift_resonance = f_hyperfine_splitting_4s_MHz / 2
-
-        f_ao_shift = self.dds.imaging.frequency * self.dds.imaging.aom_order * 2
-
-        #f_offset = beat_sign * ( detuning - (f_shift_resonance + f_ao_shift) )
-        f_offset = beat_sign * (frequency_detuned - f_ao_shift - f_shift_resonance)
-
-        f_beatlock_ref = f_offset / self.params.N_offset_lock_reference_multiplier
-
-        if f_offset < self.params.frequency_minimum_offset_beatlock:
-            aprint("The requested detuning results in an offset less than the minimum beat note frequency for the lock.")
-        if f_beatlock_ref < 0.:
-            aprint("The requested detuning would require a negative reference frequency. You'll need to flip the beat lock sign to reach this detuning.")
-        if f_beatlock_ref > 400.e6:
-            aprint("Invalid beatlock reference frequency for requested detuning (>400 MHz). Must be less than 400 MHz for ARTIQ DDS. Consider changing the beat lock reference multiplier.")
+        f_beatlock_ref = self.imaging.imaging_detuning_to_beat_ref(frequency_detuned)
 
         return f_beatlock_ref
 
@@ -495,26 +479,7 @@ class Image():
             elif self.params.imaging_state == 2.:
                 frequency_detuned = self.params.frequency_detuned_imaging
             
-        f_beatlock_ref = self.imaging_detuning_to_beat_ref(frequency_detuned=frequency_detuned)
-
-        self.dds.imaging.set_dds(amplitude=amp)
-
-        f_minimum_offset_frequency = self.params.frequency_minimum_offset_beatlock
-        f_offset = f_beatlock_ref * self.params.N_offset_lock_reference_multiplier
-        if f_offset < f_minimum_offset_frequency:
-            try: 
-                self.camera.Close()
-            except: pass
-            raise ValueError("The beat lock is unhappy at a lock point below the minimum offset.")
-        
-        if f_beatlock_ref < 0.:
-            try: 
-                self.camera.Close()
-            except: pass
-            raise ValueError("You tried to set the DDS to a negative frequency!")
-        
-        self.dds.beatlock_ref.set_dds(frequency=f_beatlock_ref)
-        self.dds.beatlock_ref.on()
+        self.imaging.set_imaging_detuning(frequency_detuned,amp)
 
     @kernel(flags={"fast-math"})
     def set_high_field_imaging(self, i_outer, pid_bool=False, amp_imaging = dv):

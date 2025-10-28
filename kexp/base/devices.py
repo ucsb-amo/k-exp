@@ -12,6 +12,7 @@ from waxx.control.artiq.DDS import DDS
 from waxx.control.artiq.mirny import Mirny
 from waxx.control.artiq.Shuttler_CH import Shuttler_CH
 from waxx.control.misc.ssg3021x import SSG3021X
+from waxx.control.beat_lock import BeatLockImaging
 from waxx.control.slm.slm import SLM
 from waxx.control.cameras.dummy_cam import DummyCamera
 
@@ -140,6 +141,12 @@ class Devices():
                                     amplitude=self.params.amp_raman,
                                     params=self.params)
         self.raman._init()
+
+        self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
+                                       dds_beatref=self.dds.beatlock_ref,
+                                       N_beatref_mult=8, beatref_sign=-1,
+                                       frequency_minimum_beat=250.e6,
+                                       expt_params=self.params)
         
         # self.ry_980_eo = SSG3021X()
 
