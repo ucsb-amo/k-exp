@@ -117,14 +117,14 @@ class dds_frame():
         self.imaging_eo = self.dds_assign(1,1,
                                     default_freq = 2.e6,
                                     default_amp = 1.)
-        self.d1_probe = self.dds_assign(5,0,
-                                    default_freq=100.e6,
-                                    default_amp=0.21)
         self.d1_beatlock_ref = self.dds_assign(5,1,
                                     default_freq=42.26e6,
                                     default_amp=0.1)
-        self.d1_blueshield = self.dds_assign(5,2,
-                                    default_freq=150.e6,
+        self.polmod_s = self.dds_assign(5,0,
+                                    default_freq=101.e6,
+                                    default_amp=0.21)
+        self.polmod_p = self.dds_assign(5,2,
+                                    default_freq=99.e6,
                                     default_amp=0.21)
         self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_c_mot,

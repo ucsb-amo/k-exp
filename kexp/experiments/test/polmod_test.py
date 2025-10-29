@@ -1,0 +1,25 @@
+from artiq.experiment import *
+from artiq.experiment import delay
+from kexp import Base, cameras, img_types
+import numpy as np
+from kexp.util.artiq.async_print import aprint
+
+class lightsheet_from_magtrap(EnvExperiment, Base):
+
+    def prepare(self):
+        Base.__init__(self,setup_camera=True,
+                      camera_select=cameras.andor,
+                      imaging_type=img_types.ABSORPTION)
+
+        self.finish_prepare(shuffle=True)
+
+    @kernel
+    def run(self):
+        self.init_kernel(setup_awg=False)
+
+        self.imaging.set_polmod(2.e6)
+
+    def analyze(self):
+        import os
+        expt_filepath = os.path.abspath(__file__)
+        self.end(expt_filepath)

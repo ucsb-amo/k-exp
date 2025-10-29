@@ -2,13 +2,13 @@ import pypylon.pylon as py
 import numpy as np
 
 from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential, delay_mu
+from artiq.language.core import delay, parallel, sequential, delay_mu, now_mu
 
 from waxa.data.run_info import RunInfo
 from waxa.data.counter import counter
 
 from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
-from waxx.control.beat_lock import BeatLockImaging
+from waxx.control.beat_lock import PolModBeatLock
 from waxx.util.artiq.async_print import aprint
 
 from kexp.config.dds_id import dds_frame
@@ -32,7 +32,7 @@ class Image():
     def __init__(self):
         self.dds = dds_frame()
         self.ttl = ttl_frame()
-        self.imaging = BeatLockImaging()
+        self.imaging = PolModBeatLock()
         self.params = ExptParams()
         self.camera_params = CameraParams()
         self.setup_camera = True
@@ -186,11 +186,7 @@ class Image():
         Args:
             t (float): The time of the imaging pulse.
         """        
-        self.dds.imaging.on()
-        # self.ttl.img_beam_sw.on()
-        delay(t)
-        # self.ttl.img_beam_sw.off()
-        self.dds.imaging.off()
+        self.imaging.pulse(t)
 
     @kernel
     def pulse_2d_mot_beams(self,t,
@@ -399,7 +395,6 @@ class Image():
         self._counter.img_idx = self._counter.img_idx + 1
         delay(t_adv * s)
 
-
     @kernel
     def cleanup_image_count(self):
         N_pwa_target = self.params.N_pwa_per_shot
@@ -456,7 +451,8 @@ class Image():
         return f_beatlock_ref
 
     @kernel(flags={"fast-math"})
-    def set_imaging_detuning(self, frequency_detuned = dv, amp = dv):
+    def set_imaging_detuning(self, frequency_detuned = dv, amp = dv,
+                             frequency_polmod=0.):
         '''
         Sets the detuning of the beat-locked imaging laser (in Hz).
 
@@ -479,7 +475,7 @@ class Image():
             elif self.params.imaging_state == 2.:
                 frequency_detuned = self.params.frequency_detuned_imaging
             
-        self.imaging.set_imaging_detuning(frequency_detuned,amp)
+        self.imaging.set_imaging_detuning(frequency_detuned,amp,frequency_polmod)
 
     @kernel(flags={"fast-math"})
     def set_high_field_imaging(self, i_outer, pid_bool=False, amp_imaging = dv):
@@ -503,3 +499,19 @@ class Image():
             detuning = low_field_pid_imaging_detuning(i_pid=i_outer)
         
         self.set_imaging_detuning(detuning, amp=amp_imaging)
+
+    @kernel
+    def init_imaging(self,
+                    frequency_polmod=dv,
+                    global_phase=0.,relative_phase=0.,
+                    t_phase_origin_mu=np.int64(-1),
+                    phase_mode=1):
+        if t_phase_origin_mu < 0:
+            t_phase_origin_mu = now_mu()
+        if amp_raman == dv:
+            amp_raman = self.params.amp_raman
+        self.imaging.set_polmod(frequency_polmod,
+                        global_phase,relative_phase,
+                        t_phase_origin_mu=t_phase_origin_mu,
+                        phase_mode=phase_mode,
+                        init=True)
