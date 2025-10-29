@@ -120,10 +120,10 @@ class dds_frame():
         self.d1_beatlock_ref = self.dds_assign(5,1,
                                     default_freq=42.26e6,
                                     default_amp=0.1)
-        self.polmod_s = self.dds_assign(5,0,
+        self.polmod_v = self.dds_assign(5,0,
                                     default_freq=101.e6,
                                     default_amp=0.21)
-        self.polmod_p = self.dds_assign(5,2,
+        self.polmod_h = self.dds_assign(5,2,
                                     default_freq=99.e6,
                                     default_amp=0.21)
         self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',

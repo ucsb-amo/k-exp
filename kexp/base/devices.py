@@ -148,8 +148,8 @@ class Devices():
         #                                frequency_minimum_beat=250.e6,
         #                                expt_params=self.params)
         self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
-                                    dds_polmod_p=self.dds.polmod_p,
-                                    dds_polmod_s=self.dds.polmod_s,
+                                    dds_polmod_p=self.dds.polmod_v,
+                                    dds_polmod_s=self.dds.polmod_h,
                                     dds_beatref=self.dds.beatlock_ref,
                                     N_beatref_mult=8, beatref_sign=-1,
                                     frequency_minimum_beat=250.e6,

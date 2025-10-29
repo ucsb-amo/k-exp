@@ -423,33 +423,6 @@ class Image():
         self._counter.img_idx = 0
     ###
 
-    @portable(flags={"fast-math"})
-    def imaging_detuning_to_beat_ref(self, frequency_detuned=dv) -> TFloat:
-        """Converts a desired imaging detuning to the required beat lock reference.
-
-        Makes reference to the beat lock sign, which DDS channel drives the AO
-        to frequency shift the imaging light, and the reference multiplier
-        setting on the beat lock controller.
-
-        Args:
-            frequency_detuned (float, optional): The desired imaging detuning
-            from the brightest D2 resonance in Hz. Whether the detuning is
-            relative to F=2 -> 4P3/2 or F=1 -> 4P3/2 depends on the parameter
-            ExptParams.imaging_state (if == 1: F=1, if == 2: F=2)
-
-        Returns:
-            TFloat: the required beat lock reference frequency in Hz.
-        """        
-        if frequency_detuned == dv:
-            if self.params.imaging_state == 1.:
-                frequency_detuned = self.params.frequency_detuned_imaging_F1
-            elif self.params.imaging_state == 2.:
-                frequency_detuned = self.params.frequency_detuned_imaging
-
-        f_beatlock_ref = self.imaging.imaging_detuning_to_beat_ref(frequency_detuned)
-
-        return f_beatlock_ref
-
     @kernel(flags={"fast-math"})
     def set_imaging_detuning(self, frequency_detuned = dv, amp = dv,
                              frequency_polmod=0.):
@@ -469,6 +442,7 @@ class Image():
         # determine this manually -- minimum offset frequency where the offset lock is happy
         if amp == dv:
             amp = self.camera_params.amp_imaging
+
         if frequency_detuned == dv:
             if self.params.imaging_state == 1.:
                 frequency_detuned = self.params.frequency_detuned_imaging_F1
@@ -478,7 +452,10 @@ class Image():
         self.imaging.set_imaging_detuning(frequency_detuned,amp,frequency_polmod)
 
     @kernel(flags={"fast-math"})
-    def set_high_field_imaging(self, i_outer, pid_bool=False, amp_imaging = dv):
+    def set_high_field_imaging(self, i_outer,
+                                pid_bool=False,
+                                amp_imaging = dv,
+                                frequency_polmod=0.):
         """Sets the high field imaging detuning according to the current in the
         outer coil (as measured on a transducer). Also sets the imaging DDS
         amplitude.
@@ -498,18 +475,16 @@ class Image():
         else:
             detuning = low_field_pid_imaging_detuning(i_pid=i_outer)
         
-        self.set_imaging_detuning(detuning, amp=amp_imaging)
+        self.set_imaging_detuning(detuning, amp=amp_imaging, frequency_polmod=frequency_polmod)
 
     @kernel
     def init_imaging(self,
-                    frequency_polmod=dv,
+                    frequency_polmod=0.,
                     global_phase=0.,relative_phase=0.,
                     t_phase_origin_mu=np.int64(-1),
                     phase_mode=1):
         if t_phase_origin_mu < 0:
             t_phase_origin_mu = now_mu()
-        if amp_raman == dv:
-            amp_raman = self.params.amp_raman
         self.imaging.set_polmod(frequency_polmod,
                         global_phase,relative_phase,
                         t_phase_origin_mu=t_phase_origin_mu,
