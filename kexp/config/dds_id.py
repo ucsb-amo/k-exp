@@ -121,11 +121,13 @@ class dds_frame():
                                     default_freq=42.26e6,
                                     default_amp=0.1)
         self.polmod_v = self.dds_assign(5,0,
-                                    default_freq=101.e6,
-                                    default_amp=0.3)
+                                        ao_order=1,
+                                        default_freq=101.e6,
+                                        default_amp=0.3)
         self.polmod_h = self.dds_assign(5,2,
-                                    default_freq=99.e6,
-                                    default_amp=0.3)
+                                        ao_order=1,
+                                        default_freq=99.e6,
+                                        default_amp=0.3)
         self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_c_mot,
                                     default_amp = self.p.amp_d2_c_mot)
