@@ -12,20 +12,22 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         self._polmod_config = True
 
-        self.xvar('kill',[0]*1000)
+        self.xvar('kill',[0]*1)
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def run(self):
         self.init_kernel(setup_awg=False)
-        self.imaging.init(frequency_polmod=400.e3)
+        self.imaging.init(frequency_polmod=1.9e6)
         # self.imaging.init(frequency_polmod=0.)
         self.scan()
 
     @kernel
     def scan_kernel(self):
 
+        # self.dds.polmod_h.off()
+        # self.dds.polmod_v.on()
         
         self.dds.imaging.set_dds(amplitude=0.5)
         self.ttl.imaging_shutter_x.on()
@@ -38,10 +40,12 @@ class lightsheet_from_magtrap(EnvExperiment, Base):
         self.imaging.set_phase(0.,
                                0.,
                                t_phase_origin_mu=now_mu(),
-                                 pretrigger=True)
+                                 pretrigger=False)
         self.ttl.pd_scope_trig3.pulse(dt)
-        delay(-dt)
-        self.imaging.pulse(tau)
+        self.ttl.pd_scope_trig.pulse(dt)
+        # delay(-dt)
+        # self.imaging.pulse(tau)
+        self.imaging.on()
         delay(T)
 
     def analyze(self):
