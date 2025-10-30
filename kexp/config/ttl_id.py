@@ -32,14 +32,14 @@ class ttl_frame():
         self.keithley_trigger = self.assign_ttl_out(48)
         self.test_trig = self.assign_ttl_out(21)
         self.d2_mot_shutter = self.assign_ttl_out(22)
-        self.pd_scope_trig3 =self.assign_ttl_out(24)
+        self.pd_scope_trig3 = self.assign_ttl_out(24)
         self.z_shim_pid_int_hold_zero = self.assign_ttl_out(56)
 
         self.line_trigger = self.assign_ttl_in(40)
 
         self._write_ttl_keys()
 
-        self.camera = TTL
+        self.camera = TTL_OUT
 
     def assign_ttl_out(self,ch) -> TTL_OUT:
         this_ttl = TTL_OUT(ch)

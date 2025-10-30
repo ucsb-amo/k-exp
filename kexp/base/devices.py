@@ -140,26 +140,31 @@ class Devices():
                                     frequency_transition=self.params.frequency_raman_transition,
                                     amplitude=self.params.amp_raman,
                                     params=self.params)
-        self.raman._init()
-
-        # self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
-        #                                dds_beatref=self.dds.beatlock_ref,
-        #                                N_beatref_mult=8, beatref_sign=-1,
-        #                                frequency_minimum_beat=250.e6,
-        #                                expt_params=self.params)
-        self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
-                                    dds_polmod_p=self.dds.polmod_v,
-                                    dds_polmod_s=self.dds.polmod_h,
-                                    dds_beatref=self.dds.beatlock_ref,
-                                    N_beatref_mult=8, beatref_sign=-1,
-                                    frequency_minimum_beat=250.e6,
-                                    expt_params=self.params)
-        self.imaging._init()
         
         # self.ry_980_eo = SSG3021X()
 
         # camera placeholder
         self.camera = DummyCamera()
+
+    def configure_imaging_system(self, polmod_ao_bool):
+        N = 8
+        beatref_sign = -1
+        f_min_beat = 250.e6
+        if polmod_ao_bool:
+            self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
+                                    dds_polmod_v=self.dds.polmod_v,
+                                    dds_polmod_h=self.dds.polmod_h,
+                                    dds_beatref=self.dds.beatlock_ref,
+                                    N_beatref_mult=N, beatref_sign=beatref_sign,
+                                    frequency_minimum_beat=f_min_beat,
+                                    expt_params=self.params)
+        else:
+            self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
+                                           dds_beatref=self.dds.beatlock_ref,
+                                           N_beatref_mult=N,
+                                           beatref_sign=beatref_sign,
+                                           frequency_minimum_beat=f_min_beat,
+                                           expt_params=self.params)
 
     def get_ttl_devices(self):
         for ttl in self.ttl.ttl_list:

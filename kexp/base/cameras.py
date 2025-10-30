@@ -10,6 +10,7 @@ from waxa.data.run_info import RunInfo
 from waxx.control.artiq.TTL import TTL, DummyTTL
 from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
 from waxx.control.slm.slm import SLM
+from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock
 
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
@@ -37,6 +38,8 @@ class Cameras():
             if not isinstance(camera,CameraParams):
                 raise ValueError(f'The requested camera with key {key} was not found.')
 
+        polmod_configuration = False
+
         if not setup_camera:
             self.camera = DummyCamera()
             self.camera_params = CameraParams()
@@ -52,13 +55,14 @@ class Cameras():
                     ttl = self.ttl.z_basler
                 case cameras.andor.key:
                     ttl = self.ttl.andor
+                    polmod_configuration = True
                 case cameras.basler_2dmot.key:
                     ttl = self.ttl.basler_2dmot
                 case _:
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
             self.assign_camera_stuff(camera,camera_ttl=ttl,imaging_type=imaging_type)
         self.run_info.imaging_type = imaging_type
-        # self.setup_slm(imaging_type)
+        return polmod_configuration
 
     @kernel
     def setup_slm(self, imaging_type):

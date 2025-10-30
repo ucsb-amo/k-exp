@@ -424,8 +424,7 @@ class Image():
     ###
 
     @kernel(flags={"fast-math"})
-    def set_imaging_detuning(self, frequency_detuned = dv, amp = dv,
-                             frequency_polmod=0.):
+    def set_imaging_detuning(self, frequency_detuned = dv, amp = dv):
         '''
         Sets the detuning of the beat-locked imaging laser (in Hz).
 
@@ -449,13 +448,12 @@ class Image():
             elif self.params.imaging_state == 2.:
                 frequency_detuned = self.params.frequency_detuned_imaging
             
-        self.imaging.set_imaging_detuning(frequency_detuned,amp,frequency_polmod)
+        self.imaging.set_imaging_detuning(frequency_detuned,amp)
 
     @kernel(flags={"fast-math"})
     def set_high_field_imaging(self, i_outer,
                                 pid_bool=False,
-                                amp_imaging = dv,
-                                frequency_polmod=0.):
+                                amp_imaging = dv):
         """Sets the high field imaging detuning according to the current in the
         outer coil (as measured on a transducer). Also sets the imaging DDS
         amplitude.
@@ -475,7 +473,7 @@ class Image():
         else:
             detuning = low_field_pid_imaging_detuning(i_pid=i_outer)
         
-        self.set_imaging_detuning(detuning, amp=amp_imaging, frequency_polmod=frequency_polmod)
+        self.set_imaging_detuning(detuning, amp=amp_imaging)
 
     @kernel
     def init_imaging(self,

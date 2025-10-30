@@ -1,13 +1,12 @@
-from artiq.experiment import *
-from artiq.experiment import delay, delay_mu
 import numpy as np
 
-from artiq.language.core import kernel_from_string, now_mu
+from artiq.experiment import *
+from artiq.language.core import kernel_from_string, now_mu, delay
 
-RPC_DELAY = 10.e-3
+from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control
-from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
+from kexp.config.camera_id import cameras
 
 from waxx import Expt, img_types as img
 
@@ -17,7 +16,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
                  save_data=True,
                  imaging_type=img.ABSORPTION,
                  absorption_image=None,
-                 camera_select="xy_basler"):
+                 camera_select=cameras.xy_basler):
 
         super().__init__(setup_camera=setup_camera,
                          absorption_image=absorption_image,
@@ -29,7 +28,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.prepare_devices(expt_params=self.params)
 
-        self.choose_camera(setup_camera,imaging_type,camera_select)
+        self._polmod_config = self.choose_camera(setup_camera,imaging_type,camera_select)
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
@@ -38,6 +37,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
+        self.configure_imaging_system(polmod_ao_bool=self._polmod_config)
         self.dds.stash_defaults()
 
         if self.tweezer.traps == []:
@@ -132,10 +132,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
-
-        self.dds.d1_blueshield.on()
-        self.dds.d1_probe.on()
-        delay_mu(8)
+        
         # self.dds.ry_405_switch.on()
         # self.dds.ry_980_switch.on()
         

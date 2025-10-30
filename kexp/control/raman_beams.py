@@ -34,6 +34,7 @@ class RamanBeamPair():
         self.t_timeline = np.zeros(5,dtype=np.int64)
         self.t_rtio = np.zeros(5,dtype=np.int64)
         self.t_idx = 0
+        self._init()
 
     @kernel
     def get_t(self):
