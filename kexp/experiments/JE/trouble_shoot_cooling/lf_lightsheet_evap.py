@@ -66,11 +66,11 @@ class mag_trap(EnvExperiment, Base):
         # self.p.i_lf_lightsheet_evap1_current = 13.
         # self.p.i_lf_lightsheet_evap1_current = 56.
  
-        # self.xvar('v_pd_lf_lightsheet_rampdown_end',np.linspace(.3,4.,15))
+        # self.xvar('v_pd_lf_lightsheet_rampdown_end',np.linspace(.41,1.5,10))
         # self.p.v_pd_lf_lightsheet_rampdown_end = .8
 
-        # self.xvar('t_lf_lightsheet_rampdown',np.linspace(200.,1500.,10)*1.e-3)
-        # self.p.t_lf_lightsheet_rampdown = .92
+        # self.xvar('t_lf_lightsheet_rampdown',np.linspace(200.,1500.,8)*1.e-3)
+        # self.p.t_lf_lightsheet_rampdown = 1.13
 
         # self.xvar('v_pd_lightsheet_rampdown2_end',np.linspace(.1,.3,15))
         # self.p.v_pd_lightsheet_rampdown2_end = .19
@@ -113,7 +113,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.set_high_field_imaging(i_outer=self.p.i_lf_lightsheet_evap1_current)
+        self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_load_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
@@ -142,9 +142,9 @@ class mag_trap(EnvExperiment, Base):
                              v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-        #                      i_start=self.p.i_hf_lightsheet_evap1_current,
-        #                      i_end=self.p.i_hf_lightsheet_evap2_current)
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                             i_start=self.p.i_hf_lightsheet_evap1_current,
+                             i_end=self.p.i_lf_tweezer_load_current)
         
         # lightsheet evap 2
         # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,

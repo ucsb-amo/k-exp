@@ -79,7 +79,7 @@ class ExptParams():
         self.t_optical_pumping_bias_rampup = 2.e-3
         
         self.t_lightsheet_rampup = .16
-        self.t_lf_lightsheet_rampdown = .92
+        self.t_lf_lightsheet_rampdown = 1.13
         self.t_hf_lightsheet_rampdown = .7
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
@@ -101,6 +101,8 @@ class ExptParams():
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
+
+        self.t_ramp_down_painting_amp = 50.e-3
         
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
@@ -237,7 +239,7 @@ class ExptParams():
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 9.2
-        self.v_pd_lf_lightsheet_rampdown_end = .55 #4.16
+        self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = .65 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
@@ -251,7 +253,7 @@ class ExptParams():
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.2
         self.v_pd_lf_tweezer_1064_rampdown_end = 1.25
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .163
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .15
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
@@ -276,8 +278,10 @@ class ExptParams():
         # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.15]
 
-        self.v_lf_tweezer_paint_amp_max = 1.7
+        self.v_lf_tweezer_paint_amp_max = 3.8
         self.v_hf_tweezer_paint_amp_max = -.286
+
+        self.v_paint_amp_end = -5.
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -327,7 +331,7 @@ class ExptParams():
         # self.i_evap3_current = 16.4
 
         # low field evap NEW
-        self.i_lf_lightsheet_evap1_current = 13.
+        self.i_lf_lightsheet_evap1_current = 15.8
 
         self.i_lf_tweezer_load_current = 15.
         self.i_lf_tweezer_evap1_current = 13.0
