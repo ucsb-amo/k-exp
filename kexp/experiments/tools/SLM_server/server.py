@@ -297,34 +297,8 @@ def analyze_command(command):
         return (dimension, phase, center_x, center_y, grating_spacing, angle_deg, mask, init_flag)
 
     except json.JSONDecodeError:
-        parts = command.split()
-        if len(parts) == 3:
-            try:
-                dimension = int(parts[0])
-                phase = float(parts[1])
-                mask = int(parts[2])
-                return (dimension, phase, center_x, center_y, grating_spacing, angle_deg, mask, init_flag)
-            except ValueError:
-                print("Plaintext 3-arg parse failed.")
-                return None
 
-        elif len(parts) == 7:
-            try:
-                dimension = int(parts[0])
-                phase = float(parts[1])
-                center_x = int(parts[2])
-                center_y = int(parts[3])
-                grating_spacing = int(parts[4])
-                angle_deg = float(parts[5])
-                mask = int(parts[6])
-                return (dimension, phase, center_x, center_y, grating_spacing, angle_deg, mask, init_flag)
-            except ValueError:
-                print("Plaintext 7-arg parse failed.")
-                return None
-
-        else:
-            print("Wrong plaintext format length.")
-            return None
+        return None
 
 if __name__ == '__main__':
     threading.Thread(target=slm_worker, daemon=True).start()
