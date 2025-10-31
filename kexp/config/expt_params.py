@@ -54,8 +54,8 @@ class ExptParams():
         # SLM settings
         self.dimension_slm_mask = 100e-6
         self.phase_slm_mask = 2.09 # 0.44 * np.pi
-        self.px_slm_phase_mask_position_x = 1040   
-        self.px_slm_phase_mask_position_y = 821
+        self.px_slm_phase_mask_position_x = 1111
+        self.px_slm_phase_mask_position_y = 612
         
         # Cooling timing
         self.t_tof = 20.e-6
