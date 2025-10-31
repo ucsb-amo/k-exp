@@ -71,7 +71,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         if setup_awg:
             self._setup_awg = setup_awg
             self.tweezer.awg_init()
-        self.core.reset() # clears RTIO
+        self.core.break_realtime()
         if init_dac:
             self.dac.dac_device.init() # initializes DAC
             delay(self.params.t_rtio)
