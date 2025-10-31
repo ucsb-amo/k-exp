@@ -13,7 +13,7 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select=cameras.xy_basler,
+                      camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
         self.p.t_tof = 30.e-6
@@ -24,8 +24,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_magtrap',np.linspace(.1,3.,15))
         self.p.t_magtrap = 1.
         
-        self.xvar('t_lightsheet_hold',np.linspace(0.05,1.,5))
-        self.p.t_lightsheet_hold = .3
+        # self.xvar('t_lightsheet_hold',np.linspace(0.05,1.,5))
+        self.p.t_lightsheet_hold = .1
 
         # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
         # self.p.t_imaging_pulse = 2.e-5
@@ -43,6 +43,8 @@ class mag_trap(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        self.dds.imaging.set_dds(amplitude=0.45)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
