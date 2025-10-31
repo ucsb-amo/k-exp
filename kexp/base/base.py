@@ -7,6 +7,7 @@ from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control
 from kexp.config.camera_id import cameras
+from kexp.config.init_config import InitConfig
 
 from waxx import Expt, img_types as img
 
@@ -25,6 +26,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         from kexp.config.expt_params import ExptParams
         self.params = ExptParams()
         self.p = self.params
+
+        self._init_cfg = InitConfig()
 
         self.prepare_devices(expt_params=self.params)
 
@@ -56,47 +59,65 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
                     beat_ref_on=True,
                     init_shuttler = True, 
                     init_lightsheet = True,
+                    init_img = True,
                     setup_awg = True, 
                     setup_slm = True):
         
+        self._init_cfg.update_values(print_runid=run_id,
+                                    setup_camera=self.setup_camera,
+                                    init_dds=init_dds,
+                                    init_dac=init_dac,
+                                    dds_default=dds_set,
+                                    dds_off=dds_off,
+                                    beat_ref_on=beat_ref_on,
+                                    init_img=init_img,
+                                    init_shuttler=init_shuttler,
+                                    init_lightsheet=init_lightsheet,
+                                    setup_awg=setup_awg, 
+                                    setup_slm=setup_slm)
         self.core.reset()
 
-        if self.setup_camera:
+        if self._init_cfg.setup_camera:
             self.wait_for_camera_ready(timeout=INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT)
             print("Camera is ready.")
-        if setup_slm:
+        if self._init_cfg.setup_slm:
             self.setup_slm(self.run_info.imaging_type)
-        if run_id:
+        if self._init_cfg.print_runid:
             print(self._ridstr) # prints run ID to terminal
-        if setup_awg:
+        if self._init_cfg.setup_awg:
             self._setup_awg = setup_awg
             self.tweezer.awg_init()
         self.core.break_realtime()
-        if init_dac:
+        if self._init_cfg.init_dac:
             self.dac.dac_device.init() # initializes DAC
             delay(self.params.t_rtio)
-        if init_shuttler:
+        if self._init_cfg.init_shuttler:
             self.shuttler.init()
             self.core.break_realtime()
-        if init_dds:
+        if self._init_cfg.init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
             self.init_all_dds() # initializes DDS channels
-        if dds_set:
+        if self._init_cfg.dds_default:
             delay(1*ms)
             self.set_all_dds() # set DDS to default values
+        if self._init_cfg.init_img:
             self.imaging.init()
             self.set_imaging_detuning()
-        if dds_off:
+        if self._init_cfg.dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
-        if beat_ref_on:
+        if self._init_cfg.beat_ref_on:
             self.dds.beatlock_ref.on()
             self.dds.d1_beatlock_ref.on()
-        if init_lightsheet:
+        if self._init_cfg.init_lightsheet:
             self.lightsheet.init()
         
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):
         
+        self.core.wait_until_mu(now_mu())
+        for scope in self.scope_data.scopes:
+            scope.arm()
+            
         self.core.reset()
         
         self.set_imaging_shutters()
