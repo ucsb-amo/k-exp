@@ -1,26 +1,27 @@
 import sys
 from queue import Queue
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
-from PyQt6.QtGui import QFont, QIcon
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer
-from PyQt6.QtCore import QThread
+from PyQt6.QtGui import QFont, QIcon, QGuiApplication
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
+import numpy as np
+import time
+
+from waxa import ROI
+from waxa.data.increment_run_id import update_run_id, RUN_ID_PATH
+from waxa.image_processing import compute_OD, process_ODs
+
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
 from kexp.util.live_od.camera_connection_widget import CamConnBar, ROISelector
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.analyzer import Analyzer
 from kexp.util.live_od.gui.plotter import LiveODPlotter
-from kexp.analysis.roi import ROI
-from kexp.util.increment_run_id import update_run_id, RUN_ID_PATH
-from kexp.analysis.image_processing import compute_OD, process_ODs
-import numpy as np
-import os
 
 class StatusLightsWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.lights = {}
         layout = QVBoxLayout()
-        for label in ["cam ready", "ready marked", "ready ack"]:
+        for label in ["baby born", "cam ready", "ready marked", "ready ack"]:
             h = QHBoxLayout()
             light = QFrame()
             light.setFixedSize(18, 18)
@@ -40,14 +41,17 @@ class StatusLightsWidget(QWidget):
     # Add methods to set the lights from signals
     def set_cam_status_lights(self,status_int):
         if status_int == -1:
+            self.set_light("baby born", False)
             self.set_light("cam ready", False)
             self.set_light("ready marked", False)
             self.set_light("ready ack", False)
         elif status_int == 0:
-            self.set_light("cam ready", True)
+            self.set_light("baby born", True)
         elif status_int == 1:
-            self.set_light("ready marked", True)
+            self.set_light("cam ready", True)
         elif status_int == 2:
+            self.set_light("ready marked", True)
+        elif status_int == 3:
             self.set_light("ready ack", True)
 
 class LiveODWindow(QWidget):
@@ -79,6 +83,8 @@ class LiveODWindow(QWidget):
         self.setup_output_window()
         self.setup_fix_button()
         self.camera_conn_bar = CamConnBar(self.camera_nanny, self.output_window)
+
+        self.setup_screenshot_button()
         self.roi_select = ROISelector()
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
         self.plotting_queue = Queue()
@@ -86,6 +92,12 @@ class LiveODWindow(QWidget):
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
         self.status_lights = StatusLightsWidget()
         self.plotter.start()
+
+    def setup_screenshot_button(self):
+        self.screenshot_button = QPushButton("📷 Screenshot 📷")
+        self.screenshot_button.setStyleSheet('background-color: #3464eb; font-size: 16px; color: #f2f2f2; font-weight: bold;')
+        self.screenshot_button.clicked.connect(self.copy_screenshot_to_clipboard)
+        self.screenshot_button.clicked.connect(lambda: self.msg("Screenshot copied to clipboard."))
 
     def setup_fix_button(self):
         self.fix_button = QPushButton('Reset')
@@ -122,6 +134,7 @@ class LiveODWindow(QWidget):
         control_bar = QHBoxLayout()
         cam_bar = QVBoxLayout()
         cam_bar.addWidget(self.run_id_label)
+        cam_bar.addWidget(self.screenshot_button) 
         cam_bar.addWidget(self.camera_conn_bar)
         control_bar.addLayout(cam_bar)
         control_bar.addWidget(self.status_lights)
@@ -131,6 +144,14 @@ class LiveODWindow(QWidget):
         layout.addLayout(control_bar)
         layout.addWidget(self.viewer_window)
         self.setLayout(layout)
+    
+    # Slot to copy screenshot
+    def copy_screenshot_to_clipboard(self):
+        # Grab the window as a QPixmap
+        pixmap = self.grab()  # If this is your main window
+        # Copy to clipboard
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setPixmap(pixmap)
 
     def create_camera_baby(self, file, name):
         self.data_handler = DataHandler(self.queue, data_filepath=file)
@@ -276,6 +297,12 @@ class LiveODWindow(QWidget):
         self.viewer_window.update_image_count(count, total)
 
     def reset(self):
+        if hasattr(self, 'camera_nanny'):
+            try:
+                self.camera_nanny.interrupted = True
+            except Exception as e:
+                print(e)
+        
         if hasattr(self, 'data_handler') and self.data_handler is not None:
             try:
                 self.data_handler.interrupted = True
@@ -286,7 +313,7 @@ class LiveODWindow(QWidget):
         if hasattr(self, 'the_baby') and self.the_baby is not None:
             try:
                 self.the_baby.interrupted = True
-                self.the_baby.dishonorable_death()
+                # self.the_baby.dishonorable_death()
                 msg = 'Acquisition aborted, run ID advanced.'
                 print(msg)
                 self.msg(msg)
@@ -299,10 +326,16 @@ class LiveODWindow(QWidget):
             update_run_id()
             pass
 
+        if self.the_baby is not None:
+            while not getattr(self.the_baby, 'dead', False):
+                QApplication.processEvents()
+                time.sleep(0.05)
+
         self.queue = Queue()
-        self.restart_mother()
+        # self.restart_mother()
         self.the_baby = None
         self.data_handler = None
+        self.camera_nanny.interrupted = False
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

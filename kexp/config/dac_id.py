@@ -1,7 +1,7 @@
 import numpy as np
 from artiq.experiment import kernel
 from artiq.coredevice.zotino import Zotino
-from kexp.control.artiq.DAC_CH import DAC_CH
+from waxx.control.artiq.DAC_CH import DAC_CH
 from kexp.config.expt_params import ExptParams
 
 FORBIDDEN_CH = []
@@ -35,6 +35,7 @@ class dac_frame():
         self.v_pd_tweezer_pid2 = self.assign_dac_ch(17,v=6.,max_v=10.)
         self.inner_coil_pid = self.assign_dac_ch(18)
         self.outer_coil_pid = self.assign_dac_ch(19)
+        self.z_shim_mosfet_gate = self.assign_dac_ch(25)
         self.test_dac = self.assign_dac_ch(30)
 
         self._write_dac_keys()

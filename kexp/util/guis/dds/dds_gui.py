@@ -12,11 +12,11 @@ import kexp.config.dds_id as dds_id
 from dds_gui_ExptBuilder import DDSGUIExptBuilder
 import copy
 
-from kexp.control.artiq import DDS
+from waxx.control.artiq import DDS
 import os
 
 CODE_DIR = os.environ.get("code")
-CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","dds_state.py")
+# CONFIG_PATH = os.path.join(CODE_DIR,"k-exp","kexp","config","dds_state.py")
 
 DISABLE_REVERT_BUTTON = True
 

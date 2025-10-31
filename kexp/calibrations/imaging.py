@@ -18,6 +18,13 @@ def high_field_imaging_detuning(i_transducer) -> TFloat:
       + yintercept_imaging_frequency_per_i_transducer_hf
     return detuning
 
+
+# @portable
+# def high_field_pid_imaging_detuning(i_transducer) -> TFloat:
+#     detuning = slope_imaging_frequency_per_i_transducer_hf * i_transducer \
+#       + yintercept_imaging_frequency_per_i_transducer_hf
+#     return detuning
+
 # run 23078
 # all shims set to zero during feshbach field
 # slope_imaging_frequency_per_i_transducer_lf = -8355555.540425534

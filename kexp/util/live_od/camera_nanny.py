@@ -1,24 +1,29 @@
-from kexp.control.cameras.dummy_cam import DummyCamera
-from kexp.control.cameras.basler_usb import BaslerUSB
-from kexp.control.cameras.andor import AndorEMCCD
-
-from kexp.control.cameras.camera_param_classes import CameraParams
-
 import numpy as np
-import pypylon.pylon as py
-
 import time
+
+from waxx.control import AndorEMCCD, BaslerUSB, DummyCamera
+from waxx.control.cameras.camera_param_classes import CameraParams
 
 CHECK_EVERY = 0.2
 CHECK_PERIOD = 2.0
 N_NOTIFY = CHECK_PERIOD // CHECK_EVERY
+
+def nothing():
+    pass
     
 class CameraNanny():
+    def __init__(self):
+        self.interrupted = False
+
+    def break_check(self):
+        return self.interrupted
 
     def persistent_get_camera(self,camera_params) -> DummyCamera:
         got_camera = False
         count = 1
         while not got_camera:
+            if self.break_check():
+                break
             camera = self.get_camera(camera_params)
             if type(camera) == DummyCamera:
                 count += 1

@@ -1,9 +1,7 @@
 import numpy as np
 from PyQt6.QtCore import QThread, pyqtSignal
-from kexp.analysis.roi import ROI
-from kexp.analysis.image_processing import compute_OD, process_ODs
+from waxa.image_processing import compute_OD, process_ODs
 from queue import Queue
-from kamo import Potassium39
 
 class Analyzer(QThread):
     analyzed = pyqtSignal()

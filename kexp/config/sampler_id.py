@@ -1,25 +1,27 @@
 import numpy as np
 from artiq.experiment import kernel, TFloat, TArray
 from artiq.coredevice.sampler import Sampler
-from kexp.control.artiq.Sampler_CH import Sampler_CH
+from waxx.control.artiq.Sampler_CH import Sampler_CH
 
 class sampler_frame():
     def __init__(self, sampler_device = Sampler):
 
         self.sampler_device = sampler_device
         self.samples = np.zeros(8,dtype=float)
+        self.gains = np.zeros(8,dtype=int)
         
         ### begin assignments
  
-        self.test = self.sampler_assign(0)
+        self.test = self.sampler_assign(0,gain=3)
 
         ### end assignments
 
         self._write_sampler_keys()
 
-    def sampler_assign(self,ch) -> Sampler_CH:
-        this_ch = Sampler_CH(ch,sample_array=self.samples)
+    def sampler_assign(self,ch,gain=0) -> Sampler_CH:
+        this_ch = Sampler_CH(ch,gain=gain,sample_array=self.samples)
         this_ch.sampler_device = self.sampler_device
+        self.gains[ch] = gain
         return this_ch
     
     def _write_sampler_keys(self):
@@ -36,5 +38,5 @@ class sampler_frame():
     @kernel
     def init(self):
         self.sampler_device.init()
-        for i in range(8):
-            self.sampler_device.set_gain_mu(i,0)
+        for ch in range(8):
+            self.sampler_device.set_gain_mu(ch,self.gains[ch])
