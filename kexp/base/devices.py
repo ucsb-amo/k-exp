@@ -8,15 +8,15 @@ from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
 from artiq.coredevice.grabber import Grabber
 
+from kexp.config.expt_params import ExptParams
+
+from waxx.control.slm.slm import SLM
 from waxx.control.artiq.DDS import DDS
 from waxx.control.artiq.mirny import Mirny
 from waxx.control.artiq.Shuttler_CH import Shuttler_CH
 from waxx.control.misc.ssg3021x import SSG3021X
 from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock
-from waxx.control.slm.slm import SLM
 from waxx.control.cameras.dummy_cam import DummyCamera
-
-from kexp.config.expt_params import ExptParams
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
