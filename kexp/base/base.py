@@ -139,12 +139,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         
         self.dds.d1_beatlock_ref.on()
 
-        for scope in self.scope_data.scopes:
-            try:
-                scope.arm()
-            except:
-                pass
-
     @kernel
     def cleanup_scan_kernel(self):
         self.cleanup_image_count()
