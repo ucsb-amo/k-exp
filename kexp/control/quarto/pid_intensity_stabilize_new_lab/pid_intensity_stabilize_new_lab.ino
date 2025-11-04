@@ -1,8 +1,8 @@
 #include "qCommand.h"
 qCommand qC;
 
-float SETPOINT1 = 3; // atoms
-float SETPOINT2 = 7; // cavity
+float SETPOINT1 = 3; // 405
+float SETPOINT2 = 7; // 980
 float P1 = -.055;
 float I1 = -0.006;
 float P2 = -0.055;
@@ -79,8 +79,8 @@ void clear_integrator(qCommand& qC, Stream& S) {
 void getMeas1() {
   double newadc1 = readADC1_from_ISR();
   double newdac1 = 0.;
-  writeDAC(1, newadc1);
-  writeDAC(2, SETPOINT1);
+  writeDAC(3, newadc1);
+  writeDAC(4, SETPOINT1);
 
   if (pid_enable1) {
     double prop1 = (newadc1 - SETPOINT1) * P1;
@@ -101,7 +101,7 @@ void getMeas1() {
 }
 
 void getSet1() {
-  SETPOINT1 = readADC2_from_ISR();
+  // SETPOINT1 = readADC2_from_ISR();
 }
 
 void getMeas2() {
@@ -125,7 +125,7 @@ void getMeas2() {
     newdac2 = 0.;
   } else {
   }
-  writeDAC(3, newdac2);
+  writeDAC(2, newdac2);
 }
 
 void getSet2() {
