@@ -19,8 +19,8 @@ class img_amp_calibration(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_high_field_imaging(i_outer=self.p.i_evap1_current,
-                                    imaging_amp=self.p.amp_imaging)
+        self.set_high_field_imaging(i_outer=self.p.i_lf_lightsheet_evap1_current,
+                                    amp_imaging=self.p.amp_imaging)
 
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -37,13 +37,13 @@ class img_amp_calibration(EnvExperiment, Base):
         self.outer_coil.on()
         delay(1.e-3)
         self.outer_coil.set_voltage()
-        self.outer_coil.ramp(t=self.p.t_feshbach_field_rampup,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
-                             i_end=self.p.i_evap1_current)
+                             i_end=self.p.i_lf_lightsheet_evap1_current)
 
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown,
+        self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown_end)
+                             v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
 
         self.lightsheet.off()
     

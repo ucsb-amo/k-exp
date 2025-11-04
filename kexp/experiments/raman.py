@@ -15,7 +15,7 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,300.,1)*1.e6)
-        self.xvar('beans',[0,1]*2)
+        # self.xvar('beans',[0,1]*2)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
@@ -67,7 +67,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('phase_slm_mask',np.linspace(0.,np.pi,10))
         # self.xvar('px_slm_phase_mask_position_x',1147 + np.linspace(-10.,10.,5,dtype=int))
         # self.p.px_slm_phase_mask_position_x
-        self.p.phase_slm_mask = .5 * np.pi
+        self.p.phase_slm_mask = 0 * np.pi
         self.p.t_mot_load = 1.
 
         # self.sampler.gains = np.array([1,0,0,0,0,0,0,0])
@@ -95,8 +95,8 @@ class tweezer_load(EnvExperiment, Base):
         delay(5.7e-3)
 
         # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.raman.pulse(t=self.p.t_raman_pulse)
-        # delay(self.p.t_raman_pulse)
+        self.raman.pulse(t=self.p.t_raman_pulse)
+        delay(self.p.t_raman_pulse)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,

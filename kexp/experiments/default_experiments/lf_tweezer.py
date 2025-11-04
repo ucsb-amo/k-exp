@@ -3,7 +3,6 @@ from artiq.experiment import delay
 from kexp import Base, img_types
 import numpy as np
 from kexp.util.artiq.async_print import aprint
-from kexp.control.slm.slm import SLM
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 
@@ -16,13 +15,13 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('beans',[0]*3)
         
-        self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
-        self.p.t_tof = 700.e-6
+        # self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
+        self.p.t_tof = 200.e-6
 
         self.p.t_tweezer_hold = 1.e-3
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 10
 
         self.finish_prepare(shuffle=True)
 
