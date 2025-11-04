@@ -1,11 +1,11 @@
 #include "qCommand.h"
 qCommand qC;
 
-float SETPOINT1 = 3; // 405
-float SETPOINT2 = 7; // 980
+float SETPOINT1 = 3.5; // 405
+float SETPOINT2 = 7.5; // 980
 float P1 = -.055;
 float I1 = -0.006;
-float P2 = -0.055;
+float P2 = -0.02;
 float I2 = -0.006;
 
 double integral1 = 0.;
@@ -23,9 +23,9 @@ struct Cal
 };
 
 void setup() {
-  configureADC(1, 1, 0, BIPOLAR_10V, getMeas1);
+  configureADC(1, 1, 0, BIPOLAR_5V, getMeas1);
   // configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
-  configureADC(3, 1, 0, BIPOLAR_2500mV, getMeas2);
+  configureADC(3, 1, 0, BIPOLAR_10V, getMeas2);
   // configureADC(4,1,0,BIPOLAR_10V,getSet2);
 
   qC.assignVariable("p1", &P1);
