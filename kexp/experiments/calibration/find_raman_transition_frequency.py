@@ -24,14 +24,14 @@ class rabi_surf(EnvExperiment, Base):
 
         sweep_scan_width = 80.e3
         self.xvar('f_raman_sweep_center',
-                  41.245e6 + np.arange(-sweep_scan_width, sweep_scan_width, self.p.f_raman_sweep_width))
+                  41.2e6 + np.arange(-sweep_scan_width, sweep_scan_width, self.p.f_raman_sweep_width))
 
         self.p.t_raman_sweep = 1000.e-6
 
         self.p.amp_raman = 0.19
 
         ### misc params ###
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 250.e-6
 
         self.p.amp_imaging = .15
         self.camera_params.exposure_time = 20.e-6

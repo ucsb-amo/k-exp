@@ -16,8 +16,8 @@ class gm_tof(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         N = 11
-        self.xvar('px_slm_phase_mask_position_x',1038 + np.linspace(-10.,10.,N,dtype=int))
-        self.xvar('px_slm_phase_mask_position_y',841 + np.linspace(-10.,10.,N,dtype=int))
+        self.xvar('px_slm_phase_mask_position_x',1036 + np.linspace(-10.,10.,N,dtype=int))
+        self.xvar('px_slm_phase_mask_position_y',837 + np.linspace(-10.,10.,N,dtype=int))
         # self.xvar('dimension_slm_mask', np.arange(10.,200.,10,dtype=int)*1e-6)
         # self.xvar('dumdum',[0]*3)
         # self.p.slm_mask = 'spot'

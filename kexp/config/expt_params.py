@@ -54,8 +54,8 @@ class ExptParams():
         # SLM settings
         self.dimension_slm_mask = 100e-6
         self.phase_slm_mask = 2.09 # 0.44 * np.pi
-        self.px_slm_phase_mask_position_x = 1036
-        self.px_slm_phase_mask_position_y = 837
+        self.px_slm_phase_mask_position_x = 1034
+        self.px_slm_phase_mask_position_y = 835
         
         # Cooling timing
         self.t_tof = 20.e-6
@@ -102,7 +102,7 @@ class ExptParams():
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_ramp_down_painting_amp = 50.e-3
+        self.t_ramp_down_painting_amp = 100.e-3
         
         self.t_mot_reload = 2.
         self.t_bias_off_wait = 20.e-3
@@ -233,7 +233,7 @@ class ExptParams():
         # self.amp_lightsheet = 0.6
         # self.frequency_ao_lightsheet = 80.e6
         self.v_pd_lightsheet_pd_minimum = 0.046
-        self.v_lightsheet_paint_amp_max = 6.0
+        self.v_lightsheet_paint_amp_max = 3.6
 
         self.v_pd_lightsheet = 7.5
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum

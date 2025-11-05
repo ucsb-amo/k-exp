@@ -23,10 +23,10 @@ class tweezer_load(EnvExperiment, Base):
         self.p.beans = 0
         
         # self.xvar('t_tof',np.linspace(10.,500.,10)*1.e-6)
-        self.p.t_tof = 228.e-6
+        self.p.t_tof = 133.e-6
 
         # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-5.e5,5.e5,10))
-        self.p.frequency_raman_transition = 41.2e6
+        self.p.frequency_raman_transition = 41.25e6
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.amp_raman = 0.35
@@ -56,13 +56,13 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('dimension_slm_mask',np.linspace(1.e-6,200.e-6,10))
         self.p.dimension_slm_mask = 50.e-6
         self.xvar('phase_slm_mask',np.linspace(0.,2*np.pi,10))
-        self.p.phase_slm_mask = 5.6
+        self.p.phase_slm_mask = 0.22 * np.pi
         # self.p.phase_slm_mask = .63 * np.pi
         self.p.t_mot_load = 1.
 
         # self.sampler.gains = np.array([1,0,0,0,0,0,0,0])
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 10
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD')
 
@@ -88,10 +88,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.tweezer.off()
         delay(5.7e-3)
 
-        # self.dds.imaging.on()
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.raman.pulse(t=self.p.t_raman_pulse)
-        # self.dds.imaging.off()   
+        self.dds.imaging.on()
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.raman.pulse(t=self.p.t_raman_pulse)
+        self.dds.imaging.off()   
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -101,9 +101,9 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(20.e-3)
 
-        # self.core.wait_until_mu(now_mu())
-        # self.scope.read_sweep(3)
-        # self.core.break_realtime()
+        self.core.wait_until_mu(now_mu())
+        self.scope.read_sweep(3)
+        self.core.break_realtime()
 
         delay(20.e-3)
 
