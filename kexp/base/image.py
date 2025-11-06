@@ -88,24 +88,6 @@ class Image():
         self._counter.light_img_idx = self._counter.light_img_idx + 1
 
     @kernel
-    def light_image0(self, t=dv):
-        """Takes an image (PWA or PWOA). Leaves the timeline cursor at the end
-        of the camera exposure time (camera_params.exposure_time).
-
-        Args:
-            t (float, optional): The imaging light pulse time. Defaults to
-            ExptParams.t_imaging pulse.
-        """        
-        if t == dv:
-            t = self.params.t_imaging_pulse
-        self.trigger_camera()
-        self.pulse_imaging_light(t)
-        # self.sampler.sample()
-        delay(self.camera_params.exposure_time - t)
-        self._counter.light_img_idx = self._counter.light_img_idx + 1
-        # delay(1.e-3)
-
-    @kernel
     def dark_image(self):
         self.kill_imaging_light()
         self.trigger_camera()
@@ -302,7 +284,7 @@ class Image():
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.ttl.pd_scope_trig3.pulse(1.e-6)
         # atoms image (pwa)
-        self.light_image0()
+        self.light_image()
 
         # self.lightsheet.off()
 
