@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay
+from artiq.language.core import delay, now_mu
 from kexp import Base, img_types, cameras
 import numpy as np
 from kexp.util.artiq.async_print import aprint
@@ -28,8 +28,8 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('beans',[0]*5)
         self.p.beans = 1
         
-        # self.xvar('t_tof',np.linspace(1.,300.,10)*1.e-6)
-        self.p.t_tof = 10.e-6
+        self.xvar('t_tof',np.linspace(10.,100.,2)*1.e-6)
+        # self.p.t_tof = 10.e-6
 
         # self.xvar('t_magtrap',np.linspace(500.,2500.,10)*1.e-6)
 
@@ -78,7 +78,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_lf_tweezer_1064_rampdown2',np.linspace(0.1,.7,20))
         # self.p.t_lf_tweezer_1064_rampdown2 =360.6e-3
 
-        self.xvar('frequency_detuned_imaging_m1',self.p.frequency_detuned_imaging_m1 + np.linspace(-3.,3.,12)*1.e6)
+        # self.xvar('frequency_detuned_imaging_m1',self.p.frequency_detuned_imaging_m1 + np.linspace(-3.,3.,12)*1.e6)
 
         # self.xvar('t_ramp_down_painting_amp',np.linspace(15.,400.,10)*1.e-3)
         self.p.t_ramp_down_painting_amp = 200.e-3
@@ -96,7 +96,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('beans',[0,1])
 
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
 
         # self.camera_params.amp_imaging = .12
         self.camera_params.exposure_time = 20.e-6
@@ -104,7 +104,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.camera_params.amp_imaging = 0.54
 
         # self.xvar('amp_imaging',np.linspace(.2,.45,10))
-        self.p.amp_imaging = .15
+        self.p.amp_imaging = .25
 
         # self.xvar('phase_slm_mask',np.linspace(0.,1.,10)*np.pi)
         # self.xvar('phase_slm_mask',[1.745,3.14]*50)
