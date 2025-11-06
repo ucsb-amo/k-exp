@@ -28,7 +28,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.prepare_devices(expt_params=self.params)
 
-        self._polmod_config = self.choose_camera(setup_camera,imaging_type,camera_select)
+        # self._polmod_config = self.choose_camera(setup_camera,imaging_type,camera_select)
+        _polmod_config = self.choose_camera(setup_camera,imaging_type,camera_select)
+        self.configure_imaging_system(polmod_ao_bool=_polmod_config)
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
@@ -37,7 +39,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
-        self.configure_imaging_system(polmod_ao_bool=self._polmod_config)
+        # self.configure_imaging_system(polmod_ao_bool=self._polmod_config)
         self.dds.stash_defaults()
 
         if self.tweezer.traps == []:
@@ -96,6 +98,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):
+
+        self.core.wait_until_mu(now_mu())
+        self.scope_data.arm()
+        self.core.break_realtime()
         
         self.core.reset()
         
