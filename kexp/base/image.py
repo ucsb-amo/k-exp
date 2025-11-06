@@ -32,8 +32,12 @@ class Image():
     def __init__(self):
         self.dds = dds_frame()
         self.ttl = ttl_frame()
-        self.imaging = PolModBeatLock()
         self.params = ExptParams()
+        self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
+                                      dds_polmod_v=self.dds.polmod_v,
+                                      dds_polmod_h=self.dds.polmod_h,
+                                      dds_beatref=self.dds.beatlock_ref,
+                                      expt_params=self.params)
         self.camera_params = CameraParams()
         self.setup_camera = True
         self.run_info = RunInfo()
