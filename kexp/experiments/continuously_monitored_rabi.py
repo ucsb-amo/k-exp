@@ -25,16 +25,17 @@ class tweezer_load(EnvExperiment, Base):
         
         # self.xvar('amp_imaging',np.linspace(0.15,.54,10))
         # self.p.amp_imaging = .28
-        self.p.amp_imaging = .54
+        self.p.amp_imaging = .28
         # self.xvar('frequency_detuned_imaging',np.arange(290.,413.,3)*1.e6)
         self.p.frequency_detuned_imaging = 355.e6
         self.p.frequency_detuned_imaging_midpoint = 308.e6
         
-        # self.xvar('dimension_slm_mask',np.linspace(1.e-6,200.e-6,10))
+        self.xvar('dimension_slm_mask',np.linspace(1.e-6,200.e-6,10))
         self.p.dimension_slm_mask = 50.e-6
         # self.xvar('phase_slm_mask',np.linspace(0.,2.7*np.pi,10))
         self.p.phase_slm_mask = 0.5 * np.pi
 
+        # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 10.e-3
         self.p.t_tof = 133.e-6
         self.p.t_mot_load = 1.
@@ -42,11 +43,11 @@ class tweezer_load(EnvExperiment, Base):
         self.camera_params.exposure_time = 10.e-6
         self.params.t_imaging_pulse = self.camera_params.exposure_time
         
-        self.p.N_repeats = 50
+        self.p.N_repeats = 10
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -62,14 +63,16 @@ class tweezer_load(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(5.7e-3)
 
-        self.raman.pulse(t=self.p.t_raman_stateprep_pulse)
+        # self.raman.pulse(t=self.p.t_raman_stateprep_pulse)
 
         self.dds.imaging.on()
-        # self.raman.on()
+        self.raman.on()
         self.ttl.pd_scope_trig.pulse(1.e-6)
         delay(self.p.t_continuous_rabi)
         self.dds.imaging.off()
-        # self.raman.off()
+        self.raman.off()
+
+        # self.imaging.init(frequency_polmod=10.e3,t_phase_origin_mu=now_mu())
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -77,10 +80,9 @@ class tweezer_load(EnvExperiment, Base):
 
         self.abs_image()
 
-        # self.core.wait_until_mu(now_mu())
-        # self.scope.read_sweep(0)
-        # self.core.break_realtime()
-
+        self.core.wait_until_mu(now_mu())
+        self.scope.read_sweep(0)
+        self.core.break_realtime()
         delay(20.e-3)
 
     @kernel
@@ -88,7 +90,7 @@ class tweezer_load(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
 
-        self.imaging.init(frequency_polmod=1.99e6)
+        
 
         self.scan()
         self.mot_observe()
