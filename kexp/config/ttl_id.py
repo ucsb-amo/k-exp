@@ -34,6 +34,7 @@ class ttl_frame():
         self.d2_mot_shutter = self.assign_ttl_out(22)
         self.pd_scope_trig3 = self.assign_ttl_out(24)
         self.z_shim_pid_int_hold_zero = self.assign_ttl_out(56)
+        self.b_field_stab_SRS_blanking_input = self.assign_ttl_out(50)
 
         self.line_trigger = self.assign_ttl_in(40)
 

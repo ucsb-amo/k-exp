@@ -255,12 +255,12 @@ class ExptParams():
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.2
         self.v_pd_lf_tweezer_1064_rampdown_end = 1.25
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .15
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .16
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
         self.v_pd_hf_tweezer_1064_rampdown_end = 1.13
-        self.v_pd_hf_tweezer_1064_rampdown2_end = .15
+        self.v_pd_hf_tweezer_1064_rampdown2_end = .12
         self.v_pd_hf_tweezer_1064_rampdown3_end = 2.
         self.n_tweezer_ramp_steps = 1000
 
@@ -274,14 +274,14 @@ class ExptParams():
 
         self.frequency_aod_center = 75.e6
 
-        self.frequency_tweezer_list = [75.4e6]
+        self.frequency_tweezer_list = [75.8e6]
 
         # self.frequency_tweezer_auto_compute = False
         # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.15]
 
-        self.v_lf_tweezer_paint_amp_max = 3.8
-        self.v_hf_tweezer_paint_amp_max = 3.8
+        self.v_lf_tweezer_paint_amp_max = 0.
+        self.v_hf_tweezer_paint_amp_max = 2.3
 
         self.v_paint_amp_end = -5.
         self.v_hf_paint_amp_end = -5.4
@@ -336,7 +336,7 @@ class ExptParams():
         # low field evap NEW
         self.i_lf_lightsheet_evap1_current = 15.8
 
-        self.i_lf_tweezer_load_current = 15.
+        self.i_lf_tweezer_load_current = 15.3
         self.i_lf_tweezer_evap1_current = 13.0
         self.i_lf_tweezer_evap2_current = 13.0
 
@@ -347,8 +347,8 @@ class ExptParams():
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 192.7
-        self.i_hf_tweezer_evap1_current = 193.9
-        self.i_hf_tweezer_evap2_current = 193.15
+        self.i_hf_tweezer_evap1_current = 192.7
+        self.i_hf_tweezer_evap2_current = 193.
 
         self.i_non_inter = 182.
 
