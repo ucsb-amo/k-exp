@@ -15,27 +15,29 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,300.,1)*1.e6)
-        # self.xvar('beans',[0,1]*2)
+        self.xvar('beans',[0,1]*50)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
         # self.camera_params.exposure_time = 20.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.p.beans = 0
+        # self.p.beans = 1
 
-        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(0.,6.,15))
-        # self.p.v_lf_tweezer_paint_amp_max = 1.43
+        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-4.,2.,15))
+        # self.p.v_lf_tweezer_paint_amp_max = -1.43
 
         # self.xvar('i_lf_tweezer_load_current',np.linspace(12.5,16.,20))
 
-        # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.05,.2,10))
+        # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.05,.2,15))
         # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .13
+
+        # self.xvar('v_paint_amp_end',np.linspace(-6.5,-4.,10))
 
         # self.xvar('v_pd_lf_lightsheet_rampdown_end',np.linspace(.25,1.5,10))
 
         # self.xvar('t_tof',np.linspace(2.,500.,20)*1.e-6)
-        self.p.t_tof = 300.e-6
+        self.p.t_tof = 50.e-6
 
         # self.p.t_raman_sweep = 1.e-3
         # self.p.frequency_raman_sweep_center = 41.225e6
@@ -108,9 +110,14 @@ class tweezer_load(EnvExperiment, Base):
         # delay(self.p.t_raman_pulse)
 
         delay(self.p.t_tweezer_hold)
+
+        
         self.tweezer.off()
 
-        delay(self.p.t_tof)
+        if self.p.beans:
+            delay(self.p.t_tof)
+        else:
+            delay(10.e-3)
 
         self.abs_image()
 

@@ -208,17 +208,17 @@ class Cooling():
                              i_start=self.p.i_lf_tweezer_evap2_current,
                              i_end=self.p.i_spin_mixture)
         
-        # self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
-        #                                        v_start=self.dac.tweezer_paint_amp.v,
-        #                                        v_end=self.p.v_paint_amp_end,
-        #                                        n=1000)
+        self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
+                                               v_start=self.dac.tweezer_paint_amp.v,
+                                               v_end=self.p.v_paint_amp_end,
+                                               n=1000)
         
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
 
         self.ttl.d2_mot_shutter.off()
 
-        delay(75.e-3)
+        delay(80.e-3)
 
     ## cooling stages
 

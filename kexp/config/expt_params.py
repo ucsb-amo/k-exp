@@ -255,7 +255,7 @@ class ExptParams():
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.2
         self.v_pd_lf_tweezer_1064_rampdown_end = 1.25
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .16
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .13
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
@@ -280,10 +280,10 @@ class ExptParams():
         # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.15]
 
-        self.v_lf_tweezer_paint_amp_max = 0.
+        self.v_lf_tweezer_paint_amp_max = -1.43
         self.v_hf_tweezer_paint_amp_max = 2.3
 
-        self.v_paint_amp_end = -5.
+        self.v_paint_amp_end = -5.4
         self.v_hf_paint_amp_end = -5.4
 
         # tweezer movement params
