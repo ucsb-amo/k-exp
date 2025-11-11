@@ -8,7 +8,8 @@ class mot_kill_405(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False)
 
-        self.p.i_non_inter = 180.0
+        self.p.i_non_inter = 182.0
+        self.p.i_overhead = 70.0
 
         self.finish_prepare(shuffle=False)
        
@@ -56,7 +57,7 @@ class mot_kill_405(EnvExperiment, Base):
         delay(100.e-3)
 
         self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.outer_coil.start_pid()
+        self.outer_coil.start_pid(i_overhead=self.p.i_overhead)
 
         delay(100.e-3)
         

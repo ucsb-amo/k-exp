@@ -186,7 +186,7 @@ class igbt_magnet():
         self.i_pid = i_end
 
     @kernel
-    def start_pid(self, i_pid=dv, overhead=True):
+    def start_pid(self, i_pid=dv, overhead=True, i_overhead=dv):
         """Starts the PID, then sets the supply with some current overhead for
         the PID to eat.
 
@@ -216,7 +216,9 @@ class igbt_magnet():
 
         i_start = i_pid
         if overhead:
-            i_end = self.i_pid + compute_pid_overhead(self.i_pid)
+            if i_overhead == dv:
+                i_overhead = compute_pid_overhead(self.i_pid)
+            i_end = self.i_pid + i_overhead
             delta_i = (i_end - i_start)/(n_steps-1)
             dt = t_ramp / n_steps
             for j in range(n_steps):

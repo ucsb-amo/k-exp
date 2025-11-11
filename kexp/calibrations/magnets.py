@@ -34,6 +34,8 @@ def compute_pid_overhead(i_pid) -> TFloat:
     Returns:
         float: the excess current (in A) that the keysight will run over the desired pid current
     """        
+    # if i_pid > 50.:
+    #     slope_overhead_per_i_transducer = slope_overhead_per_i_transducer * (  )
     keysight_overhead = i_pid * slope_overhead_per_i_transducer +  offset_overhead_per_i_transducer
     return keysight_overhead
 
