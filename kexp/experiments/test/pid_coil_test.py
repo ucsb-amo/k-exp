@@ -8,6 +8,8 @@ class mot_kill_405(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False)
 
+        self.p.i_non_inter = 180.0
+
         self.finish_prepare(shuffle=False)
        
     @kernel
