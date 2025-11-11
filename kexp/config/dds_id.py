@@ -98,7 +98,7 @@ class dds_frame():
 
         self.raman_minus = self.dds_assign(4,2, ao_order = 1,
                                     default_freq = 80.e6,
-                                    default_amp = 0.29)
+                                    default_amp = 0.24)
         self.raman_plus = self.dds_assign(5,3, ao_order = 1,
                                     default_freq = 150.e6,
                                     default_amp = 0.35)
