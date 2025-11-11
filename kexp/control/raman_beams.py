@@ -11,6 +11,9 @@ from kexp.config.expt_params import ExptParams
 dv = -0.1
 di = 0
 
+RAMAN_PLUS_IDX = 0
+RAMAN_MINUS_IDX = 1
+
 class RamanBeamPair():
     def __init__(self,dds_plus=DDS,dds_minus=DDS,params=ExptParams,
                  frequency_transition=0., amplitude=0.):
@@ -56,11 +59,11 @@ class RamanBeamPair():
         df = frequency_state_splitting / 4
 
         if order_plus * order_minus == -1:
-            self._frequency_array[0] = df
-            self._frequency_array[1] = df
+            self._frequency_array[RAMAN_PLUS_IDX] = df
+            self._frequency_array[RAMAN_MINUS_IDX] = df
         else:
-            self._frequency_array[0] = self._frequency_center_dds + df
-            self._frequency_array[1] = self._frequency_center_dds - df
+            self._frequency_array[RAMAN_PLUS_IDX] = self._frequency_center_dds + df
+            self._frequency_array[RAMAN_MINUS_IDX] = self._frequency_center_dds - df
 
         return self._frequency_array
     
@@ -190,11 +193,11 @@ class RamanBeamPair():
 
         if freq_changed or amp_changed or phase_origin_changed or global_phase_changed or relative_phase_changed:
             self._frequency_array = self.state_splitting_to_ao_frequency(self.frequency_transition)
-            self.dds_plus.set_dds(self._frequency_array[0],
+            self.dds_plus.set_dds(self._frequency_array[RAMAN_PLUS_IDX],
                                 self.amplitude,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase=self.global_phase)
-            self.dds_minus.set_dds(self._frequency_array[1],
+            self.dds_minus.set_dds(self._frequency_array[RAMAN_MINUS_IDX],
                                 self.amplitude,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase=self.global_phase+self.relative_phase)
