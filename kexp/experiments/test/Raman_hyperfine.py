@@ -18,17 +18,18 @@ class mag_trap(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.p.t_tof = 4250.e-6
-        # self.xvar('t_tof',np.linspace(10.,400.,10)*1.e-6) 
+        # self.xvar('t_tof',np.linspace(10.,1000.,10)*1.e-6) 
 
-        self.p.t_tof = 500.e-6
+
+        self.p.t_tof = 300.e-6
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,1.,15))
-        # self.p.v_hf_tweezer_paint_amp_max = -1.43
+        self.p.v_hf_tweezer_paint_amp_max = -1.8
 
         # self.xvar('i_hf_tweezer_load_current',np.linspace(12.5,16.,20))
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.05,.15,8))
-        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .13
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.1,.2,15))
+        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .16
 
         # self.xvar('v_hf_paint_amp_end',np.linspace(-6.5,-4.,15))
 
@@ -59,8 +60,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_raman_pulse',[12.e-6,24.e-6])
         # self.p.t_raman_pulse = 12.e-6
         self.p.t_raman_pulse = 23.6e-6
-        self.xvar('t_tweezer_hold',np.linspace(0.,100.,100)*1.e-3)
-        self.p.t_tweezer_hold = 0.01e-3
+        # self.xvar('t_tweezer_hold',np.linspace(0.,100.,10)*1.e-3)
+        self.p.t_tweezer_hold = 55.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,3000.,10)*1.e-6)
 
