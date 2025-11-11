@@ -159,8 +159,8 @@ class RamanBeamPair():
         Args:
             frequency_transition (float, optional): The two-photon transition frequency (Hz).
                 If negative or unchanged, the frequency is not updated.
-            amp_raman (float, optional): The amplitude for the Raman beams.
-                If negative or unchanged, the amplitude is not updated.
+            fraction_power_raman (float, optional): The fractional power for the Raman beams.
+                If negative or unchanged, the power is not updated.
             global_phase (float, optional): The global phase of the Raman beams (radians).
                 If negative or unchanged, the global phase is not updated.
             relative_phase (float, optional): The relative phase between the Raman beams (radians).
