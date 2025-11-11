@@ -1,123 +1,118 @@
 #include "qCommand.h"
+
 qCommand qC;
 IntervalTimer DAC_Timer; 
 IntervalTimer plot;
 
+volatile bool trigger1Activated = false;
 double currentSignalValue = 0;
+double peakSeparation = 0;
+double feedback = 0;
+double er = 0, i_er = 0, d_er = 0;
 
-
-double Vth = 0.8; //voltage thresold for identifying the peaks
-double G1 = 1; // switich of feedback
-double P1 = 0.0; // p gain for feedback, typically setting it as 0.001
-double I1 = 0.0; // i gain, but it is not quite nessary and setting zero is OK for most cases
-double D1 = 0.0; // same case to i gain
-double setpoint1 = 10; // separation of the peaks we want
-double newadc1 = 0;
-
-double  firstPeakTime = 0;
-double  secondPeakTime = 0;
-bool firstPeakDetected = false;
-double startTime = 0;
-double  peakSeparation = 0;
+double Vth = 5;
+double G1 = 1;
+double P1 = 0.01;
+double I1 = 0.0;
+double D1 = 0.0;
+double setpoint1 = 18;
+double Lock = 1;
 
 unsigned long lastRisingEdgeTime = 0;
 unsigned long currentRisingEdgeTime = 0;
 unsigned long period = 0;
 int lastState = LOW;
-double feedback = 0;
-double er = 0;
-double i_er = 0;
-double d_er = 0;
-int s = 0;
 
 void setup() {
-  configureADC(1,1,0,BIPOLAR_10V,getADC1);
+  configureADC(1, 1, 0, BIPOLAR_10V, getADC1);
 
-  qC.assignVariable("setp",&setpoint1);
-  qC.assignVariable("vth",&Vth);
-  qC.assignVariable("g1",&G1);
-  qC.assignVariable("p1",&P1);  
-  qC.assignVariable("i1",&I1);
-  qC.assignVariable("d1",&D1);
-  qC.assignVariable("serial",&s);
-  enableInterruptTrigger(1,BOTH_EDGES,&hold1);
+  qC.assignVariable("sep", &peakSeparation);
+  qC.assignVariable("setp", &setpoint1);
+  qC.assignVariable("vth", &Vth);
+  qC.assignVariable("g1", &G1);
+  qC.assignVariable("p1", &P1);
+  qC.assignVariable("i1", &I1);
+  qC.assignVariable("d1", &D1);
+  qC.assignVariable("lock", &Lock);
+
+  enableInterruptTrigger(1, BOTH_EDGES, hold1);
 }
 
 void hold1() {
-  if (triggerRead(1)) {
-    plot.begin(update, 1e1);
-  } else {
-  }
+  if (triggerRead(1)) trigger1Activated = true;
 }
 
-void getADC1(void) {
-  double newadc1 = readADC1_from_ISR(); //read ADC voltage
-  currentSignalValue = newadc1;
+void getADC1() {
+  currentSignalValue = readADC1_from_ISR();
 }
 
-void update(void) {
-  static double previousSignalValue = 0;
-  static double secondPreviousSignalValue = 0;  
-  double currentTime = micros()/1000.000;
-  
-  int TriggerState = triggerRead(1);
-  // searching peaks during a trigger period
-  if (lastState == LOW && TriggerState == HIGH) {
+void update() {
+  static double prevVal = 0, prev2Val = 0;
+  static double firstPeakTime = 0, secondPeakTime = 0;
+  static bool firstDetected = false;
+
+  const double currentTime = micros() / 1000.0;
+  const int triggerState = triggerRead(1);
+
+  // Detect period by rising edges
+  if (lastState == LOW && triggerState == HIGH) {
     currentRisingEdgeTime = currentTime;
-    if (lastRisingEdgeTime != 0) {
-      period = currentRisingEdgeTime - lastRisingEdgeTime;
-    }
+    if (lastRisingEdgeTime) period = currentRisingEdgeTime - lastRisingEdgeTime;
     lastRisingEdgeTime = currentRisingEdgeTime;
-    if (currentTime - startTime >= period) {
-      startTime = currentTime;
-      firstPeakDetected = false;
-      firstPeakTime = 0;
-      secondPeakTime = 0;
+    firstDetected = false;
+    firstPeakTime = secondPeakTime = 0;
+  }
+  lastState = triggerState;
+
+  // Peak detection
+  const bool isPeak = (prevVal > prev2Val && prevVal > currentSignalValue && prevVal > Vth);
+  if (!isPeak) {
+    prev2Val = prevVal;
+    prevVal = currentSignalValue;
+    return;
+  }
+
+  if (!firstDetected) {
+    firstDetected = true;
+    firstPeakTime = currentTime;
+  } else if (currentTime - firstPeakTime > 2 && !secondPeakTime) {
+    secondPeakTime = currentTime;
+    peakSeparation = secondPeakTime - firstPeakTime;
+
+    if (Lock == 1 && fabs(feedback) < 1.5) {
+      const double errNow = peakSeparation - setpoint1;
+      i_er += errNow;
+      d_er = errNow - er;
+      er = errNow;
+      feedback += (P1 * er + I1 * i_er + D1 * d_er) * G1;
+    } else {
+      feedback = 0;
     }
+    writeDAC(1, feedback);
   }
 
-  lastState = TriggerState;
-  // identifying the first and second peaks
-  if (previousSignalValue > currentSignalValue && previousSignalValue > secondPreviousSignalValue && previousSignalValue > Vth) {
-    // static unsigned long lastr = 0; 
-    if (!firstPeakDetected) {
-      firstPeakTime = currentTime;
-      firstPeakDetected = true;      
-      // delay(2);
-    } 
-    // identifying the first and second peaks
-    else if (currentTime - firstPeakTime > 2 && firstPeakDetected && secondPeakTime == 0) {
-
-      secondPeakTime = currentTime;
-      peakSeparation = secondPeakTime - firstPeakTime;
-      // calculate the current distance between two peaks
-      // and the difference between current distance and setting distance
-      if (feedback < -0.8 && feedback > 0.8) { 
-        feedback = 0;
-      } else { 
-        i_er = peakSeparation-setpoint1 + er;
-        d_er = peakSeparation-setpoint1 - er;
-        er = peakSeparation-setpoint1;
-        feedback = (feedback + er * P1 + i_er * I1 + d_er * D1) * G1;  
-      }
-      writeDAC(1, feedback);
-    }  
-  }
-  secondPreviousSignalValue = previousSignalValue;
-  previousSignalValue = currentSignalValue;
+  prev2Val = prevVal;
+  prevVal = currentSignalValue;
 }
 
 void loop() {
-  qC.readSerial(Serial);  
-  if (s == 1){
-  static unsigned long lastrun = 0;    
-	if (millis() > lastrun) { 
-    	lastrun = millis() + 10*period;
-	    toggleLEDGreen();
-      Serial.println(peakSeparation, 3);         //Serial.println(", ");
-        //  Serial.print(feedback, 4);         Serial.print(", ");
-        //  Serial.print(setpoint1, 4);          Serial.print(", ");
-        //  Serial.println(period, 4);
-	}
+  static bool timerStarted = false;
+  static unsigned long lastPrint = 0;
+
+  if (trigger1Activated && !timerStarted) {
+    plot.end();
+    plot.begin(update, 10);
+    timerStarted = true;
+    trigger1Activated = false;
+  }
+
+  qC.readSerial(Serial);
+
+  if (millis() - lastPrint >= 10 * (period ? period : 1)) {
+    lastPrint = millis();
+    toggleLEDGreen();
+    Serial.print(peakSeparation, 3); Serial.print(", ");
+    Serial.print(er, 3); Serial.print(", ");
+    Serial.println(feedback, 4);
   }
 }
