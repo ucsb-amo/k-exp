@@ -54,7 +54,9 @@ class mot_kill_405(EnvExperiment, Base):
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid(i_overhead=self.p.i_overhead)
 
-        delay(200.e-3)
+        delay(500.e-3)
+
+        self.outer_coil.stop_pid()
 
         self.outer_coil.off()
        
