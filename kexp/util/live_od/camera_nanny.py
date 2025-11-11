@@ -1,13 +1,8 @@
-from kexp.control.cameras.dummy_cam import DummyCamera
-from kexp.control.cameras.basler_usb import BaslerUSB
-from kexp.control.cameras.andor import AndorEMCCD
-
-from kexp.control.cameras.camera_param_classes import CameraParams
-
 import numpy as np
-import pypylon.pylon as py
-
 import time
+
+from waxx.control import AndorEMCCD, BaslerUSB, DummyCamera
+from waxx.control.cameras.camera_param_classes import CameraParams
 
 CHECK_EVERY = 0.2
 CHECK_PERIOD = 2.0

@@ -1,24 +1,25 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base, img_types
+from kexp import Base, img_types, cameras
 import numpy as np
-from kexp.util.artiq.async_print import aprint
-from kexp.control.slm.slm import SLM
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 
 class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='andor',save_data=True)
+        Base.__init__(self,setup_camera=True,
+                      camera_select=cameras.andor,
+                      imaging_type=img_types.ABSORPTION,
+                      save_data=True)
 
-        f_range = 12.e3
+        f_range = 30.e3
         df = 3.e3
-        self.p.frequency_raman_transition = 41.144e6
+        self.p.frequency_raman_transition = 41.2e6
         self.xvar('frequency_raman_transition',
                   self.p.frequency_raman_transition + np.arange(-f_range, f_range +df, df))
 
-        self.xvar('t_ramsey_delay', np.linspace(0.,90.,5)*1.e-6)
+        self.xvar('t_ramsey_delay', np.linspace(0.,50.,20)*1.e-6)
         self.p.t_ramsey_delay = 10.e-6
         # self.p.t_ramsey_delay = 5.e-6
 
@@ -31,7 +32,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.do_pi_pulse = 0
 
-        self.p.t_tof = 600.e-6
+        self.p.t_tof = 2.e-6
         self.p.t_tweezer_hold = .01e-3
 
         self.p.t_mot_load = 1.

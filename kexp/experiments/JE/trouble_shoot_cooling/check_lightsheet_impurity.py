@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 50.e-6
+        self.p.t_tof = 100.e-6
         # self.xvar('t_tof',np.linspace(600,1500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
@@ -41,7 +41,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_lightsheet_rampup = .3
         self.xvar('hf_imaging_detuning', [-602.e6,-490.e6,-394.e6]*1)
         # self.xvar('hf_imaging_detuning', np.linspace(-602.e6,-300.e6,10))
-        self.xvar('v_pd_lightsheet_rampup_end',np.linspace(3.,9.3,10))
+        self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,9.3,10))
         self.p.v_pd_lightsheet_rampup_end = 9.3
 
         # self.xvar('t_magtrap',np.linspace(.1,2.,15))
@@ -112,22 +112,10 @@ class mag_trap(EnvExperiment, Base):
                              i_start=0.,
                              i_end=self.p.i_hf_lightsheet_evap1_current)
       
-        if self.p.do_rf:
-            self.rf.sweep(t=self.p.t_rf_state_xfer_sweep,
-                        frequency_center=self.p.frequency_rf_state_xfer_sweep_center,
-                        frequency_sweep_fullwidth=self.p.frequency_rf_state_xfer_sweep_fullwidth,
-                        n_steps=self.p.n_rf_sweep_steps)
-        else:
-            delay(self.p.t_rf_state_xfer_sweep)
 
         self.lightsheet.off()
         
         delay(self.p.t_tof)
-
-        if self.p.repump_pre_imaging:
-            self.flash_repump()
-        else:
-            delay(self.p.t_repump_flash_imaging)
         # self.flash_cooler()
         self.abs_image()
 

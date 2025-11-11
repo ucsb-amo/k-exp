@@ -60,7 +60,7 @@ device_db = {
     },
 }
 
-# master peripherals
+# master peripherals (machine table crate)
 
 device_db["grabber0"] = {
     "type": "local",
@@ -574,7 +574,7 @@ device_db["led1"] = {
     "arguments": {"channel": 0x00002a}
 }
 
-# DEST#1 peripherals
+# DEST#1 peripherals (laser table)
 
 device_db["core"]["arguments"]["satellite_cpu_targets"][1] = "rv32g"
 
@@ -1227,7 +1227,7 @@ device_db["led4"] = {
     "arguments": {"channel": 0x010032}
 }
 
-# DEST#2 peripherals
+# DEST#2 peripherals (shuttler crate)
 
 device_db["core"]["arguments"]["satellite_cpu_targets"][2] = "rv32g"
 
@@ -1588,7 +1588,7 @@ device_db["led7"] = {
     "arguments": {"channel": 0x020032}
 }
 
-# DEST#5 peripherals
+# DEST#5 peripherals (the shuttler itself)
 
 device_db["core"]["arguments"]["satellite_cpu_targets"][5] = "rv32g"
 

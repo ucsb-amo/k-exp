@@ -3,7 +3,7 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 from artiq.language.core import kernel_from_string, now_mu
-from kexp.control import objective_stages
+from kexp.control.misc import objective_stages
 
 class scan_stages(EnvExperiment, Base):
 

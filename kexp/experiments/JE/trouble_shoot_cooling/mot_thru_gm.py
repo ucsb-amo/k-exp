@@ -6,9 +6,12 @@ import numpy as np
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
+        Base.__init__(self,
+                      setup_camera=True,
+                      camera_select='xy_basler',
+                      save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(440.,480.,3)*1.e6)
+        # self.xvar('frequency_detuned_imaging',np.arange(-100.,100.,6)*1.e6)
 
         # self.xvar('detune_push',np.linspace(-5.,2.,20))
         # self.xvar('amp_push',np.linspace(.05,.188,8))
@@ -41,8 +44,9 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_xshim_current = 1.1
         # self.p.v_yshim_current = .5
 
-        # self.xvar('detune_d1_c_d1cmot',np.linspace(5.,13.,15))
+        # self.xvar('detune_d1_c_d1cmot',np.linspace(1.,13.,15))
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,0.,8))
+        # self.p.detune_d1_c_d1cmot = 9.5
 
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.3,.99,8))
         # self.xvar('amp_d2_r_d1cmot',np.linspace(0.02,.08,8))
@@ -52,8 +56,8 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('detune_d1_c_gm',np.linspace(2.,12.,8))
         # self.xvar('detune_d1_r_gm',np.linspace(2.,12.,8))
-        # self.xvar('detune_d1_gm',np.linspace(5.,13.5,15))
-        # self.p.detune_d1_gm = 11.2
+        # self.xvar('detune_d1_gm',np.linspace(2.,13.5,15))
+        # self.p.detune_d1_gm = 9.5
 
         # self.p.detune_d1_c_gm = 13.
         # self.p.detune_d1_r_gm = 13.
@@ -77,7 +81,7 @@ class gm_tof(EnvExperiment, Base):
         # self.p.pfrac_c_gmramp_end = 0.207
         # self.p.pfrac_r_gmramp_end = 0.207
 
-        # self.xvar('dumdum',[0]*5)
+        # self.xvar('dumdum',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
 
         # self.xvar('t_pump_to_F1',np.linspace(.1,150.,20)*1.e-6)
@@ -90,10 +94,10 @@ class gm_tof(EnvExperiment, Base):
         # self.camera_params.gain = 1.
 
         # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
-        # self.p.amp_imaging = .35
+        self.p.amp_imaging = .18
         # self.p.imaging_state = 1.
         self.p.imaging_state = 2.
-        self.p.t_tof = 50.e-6
+        self.p.t_tof = 12000.e-6
         self.p.t_mot_load = .5
         self.p.N_repeats = 1
 
@@ -101,14 +105,15 @@ class gm_tof(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot)
         self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.gm(self.p.t_gm * s)
+        self.gm(self.p.t_gm,
+                detune_d1=self.p.detune_d1_gm)
         self.gm_ramp(self.p.t_gmramp)
 
         self.release()

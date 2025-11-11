@@ -15,7 +15,7 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,save_data=True,camera_select='xy_basler',
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 1800.e-6
+        self.p.t_tof = 1000.e-6
         # self.xvar('t_tof',np.linspace(20,200.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0,1]*4)
@@ -57,11 +57,11 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_feshbach_field_rampup = 150.e-3
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,300.,15)*1.e-3)
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,9.5,10))
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,8.,10))
         # self.p.t_lightsheet_rampup = 4.
-        # self.p.v_pd_lightsheet_rampup_end = 7.5
+        self.p.v_pd_lightsheet_rampup_end = 7.2
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.,196.,20))
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.,196.,8))
         # self.p.i_hf_lightsheet_evap1_current = 184.
         # self.p.i_hf_lightsheet_evap1_current = 18.
  
@@ -69,14 +69,14 @@ class mag_trap(EnvExperiment, Base):
         # self.p.v_pd_hf_lightsheet_rampdown_end = 1.4
 
         # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1500.,8)*1.e-3)
-        self.p.t_hf_lightsheet_rampdown = .7
+        # self.p.t_hf_lightsheet_rampdown = .7
         # self.p.t_hf_lightsheet_rampdown = 0.4401463
 
         # self.xvar('v_pd_hf_lightsheet_rampdown2_end',np.linspace(.1,.4,15))
         # self.p.v_pd_hf_lightsheet_rampdown2_end = 0.25
 
         # self.xvar('t_hf_lightsheet_rampdown2',np.linspace(100.,1000.,8)*1.e-3)
-        self.p.t_hf_lightsheet_rampdown2 = 0.74
+        # self.p.t_hf_lightsheet_rampdown2 = 0.74
 
         # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(192.,194.5,8))
         # self.p.i_hf_lightsheet_evap2_current = 193.3
@@ -92,7 +92,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('hf_imaging_detuning', np.arange(-150.,180.,10.)*1.e6)
         
         # self.xvar('hf_imaging_detuning', np.arange(-650.,-470.,8.)*1.e6)
-        self.p.hf_imaging_detuning = -490.e6
+        # self.p.hf_imaging_detuning = -490.e6
         # self.p.hf_imaging_detuning = -594.e6
        
         # self.camera_params.exposure_time = 25.e-6
@@ -103,7 +103,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

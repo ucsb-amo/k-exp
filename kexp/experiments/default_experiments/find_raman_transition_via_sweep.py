@@ -23,15 +23,17 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 41.1e6
-        self.p.frequency_raman_sweep_width = 15.e3
-        self.xvar('frequency_raman_sweep_center', 41.1e6 + np.arange(-30.e3,30.e3,self.p.frequency_raman_sweep_width))
+        self.p.frequency_raman_sweep_width = 5.e3
+        self.xvar('frequency_raman_sweep_center', 41.245e6 + np.arange(-50.e3,50.e3,self.p.frequency_raman_sweep_width))
 
-        self.p.amp_raman = 0.1
+        self.p.amp_raman = 0.08
 
         self.p.t_tweezer_hold = .1e-3
         self.p.t_mot_load = 1.
+        # self.camera_params.exposure_time = 10.e-6
+        # self.p.t_imaging_pulse = self.camera_params.exposure_time
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 

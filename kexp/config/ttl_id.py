@@ -1,14 +1,14 @@
 import numpy as np
 from artiq.experiment import kernel
 from artiq.coredevice.ttl import TTLOut, TTLInOut
-from kexp.control.artiq.TTL import TTL, TTL_IN, TTL_OUT
+from waxx.control.artiq.TTL import TTL, TTL_IN, TTL_OUT
 
 class ttl_frame():
     def __init__(self):
 
         self.ttl_list = []
         
-        self.coil_discharge_igbt = self.assign_ttl_out(0)
+        self.img_beam_sw = self.assign_ttl_out(0)
         self.tweezer_pid2_enable = self.assign_ttl_out(1)
         self.inner_coil_pid_ttl = self.assign_ttl_out(2)
         self.outer_coil_pid_ttl = self.assign_ttl_out(3)
@@ -32,6 +32,7 @@ class ttl_frame():
         self.keithley_trigger = self.assign_ttl_out(48)
         self.test_trig = self.assign_ttl_out(21)
         self.d2_mot_shutter = self.assign_ttl_out(22)
+        self.pd_scope_trig3 =self.assign_ttl_out(24)
         self.z_shim_pid_int_hold_zero = self.assign_ttl_out(56)
 
         self.line_trigger = self.assign_ttl_in(40)

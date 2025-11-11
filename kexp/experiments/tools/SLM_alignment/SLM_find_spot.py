@@ -1,9 +1,11 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base, cameras, img_types
+
 import numpy as np
-from kexp.util.artiq.async_print import aprint
-from kexp.control.slm.slm import SLM
+
+from waxx.util.artiq.async_print import aprint
+
+from kexp import Base, cameras, img_types
 
 # SLM.write_phase_spot(100e-6,3.14,960,200)
 class gm_tof(EnvExperiment, Base):
@@ -13,19 +15,18 @@ class gm_tof(EnvExperiment, Base):
                       camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('px_slm_phase_mask_position_x',1148 + np.linspace(-8.,8.,5,dtype=int))
-        self.xvar('px_slm_phase_mask_position_y',916 + np.linspace(-8.,8.,5,dtype=int))
+        self.xvar('px_slm_phase_mask_position_x',1040 + np.linspace(-10.,10.,11,dtype=int))
+        self.xvar('px_slm_phase_mask_position_y',821 + np.linspace(-10.,10.,11,dtype=int))
+        # self.xvar('dimension_slm_mask', np.arange(10.,200.,10,dtype=int)*1e-6)
         # self.xvar('dumdum',[0]*3)
         # self.p.slm_mask = 'spot'
-        self.p.phase_slm_mask = 3.14
+        self.p.phase_slm_mask = np.pi
         self.p.dimension_slm_mask = 10e-6
-        # self.p.px_slm_phase_mask_position_x = 1009
-        # self.p.px_slm_phase_mask_position_y = 1012
+        # self.p.px_slm_phase_mask_position_x = 1040
+        # self.p.px_slm_phase_mask_position_y = 821
         self.p.amp_imaging = .35
         self.p.N_repeats = 1
-        self.finish_prepare(shuffle=True)
-    
-        
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
