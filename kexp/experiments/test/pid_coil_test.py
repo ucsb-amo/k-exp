@@ -51,13 +51,12 @@ class mot_kill_405(EnvExperiment, Base):
                              i_end=self.p.i_non_inter)
 
         self.ttl.b_field_stab_SRS_blanking_input.off()
-        delay(1.e-3)
+        delay(100.e-3)
 
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
 
         delay(100.e-3)
-
         
     def analyze(self):
         import os
