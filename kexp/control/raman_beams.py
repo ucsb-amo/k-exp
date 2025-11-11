@@ -6,17 +6,23 @@ from artiq.language.core import now_mu, at_mu
 from waxx.control.artiq.DDS import DDS
 from waxx.control.artiq.DAC_CH import DAC_CH
 
-from kexp.config.expt_params import ExptParams
-
 dv = -0.1
 di = 0
 
 RAMAN_PLUS_IDX = 0
 RAMAN_MINUS_IDX = 1
 
+from kexp.config.expt_params import ExptParams
+from kexp.config.dds_id import dds_frame
+dds = dds_frame()
+
 class RamanBeamPair():
-    def __init__(self,dds_plus=DDS,dds_minus=DDS,params=ExptParams,
-                 frequency_transition=0., amplitude=0.):
+    def __init__(self,
+                 dds_plus=dds.raman_plus,
+                 dds_minus=dds.raman_minus,
+                 params=ExptParams(),
+                 frequency_transition=0.,
+                 amplitude=0.):
         self.dds_plus = dds_plus
         self.dds_minus = dds_minus
         self.params = params
@@ -31,7 +37,9 @@ class RamanBeamPair():
 
         self.phase_mode = 0  # 0: independent, 1: synchronized
 
-        self._frequency_center_dds = 0.
+        # self._frequency_center_dds = 0.
+        self._frequency_center_plus = 0.
+        self._frequency_center_minus = 0.
         self._frequency_array = np.array([0.,0.])
 
         self.t_timeline = np.zeros(5,dtype=np.int64)
@@ -46,9 +54,11 @@ class RamanBeamPair():
         self.t_idx += 1
 
     def _init(self):
-        self._frequency_center_dds = (self.dds_plus.frequency + self.dds_minus.frequency)/2
-        if abs(self._frequency_center_dds - self.dds_plus.frequency) != abs(self._frequency_center_dds - self.dds_minus.frequency):
-            raise ValueError("The - and + DDS frequencies should be equidistant from their mean for optimal efficiency.")
+        # self._frequency_center_dds = (self.dds_plus.frequency + self.dds_minus.frequency)/2
+        # if abs(self._frequency_center_dds - self.dds_plus.frequency) != abs(self._frequency_center_dds - self.dds_minus.frequency):
+        #     raise ValueError("The - and + DDS frequencies should be equidistant from their mean for optimal efficiency.")
+        self._frequency_center_plus = self.dds_plus.frequency
+        self._frequency_center_minus = self.dds_minus.frequency
 
     @portable(flags={"fast-math"})
     def state_splitting_to_ao_frequency(self,frequency_state_splitting) -> TArray(TFloat):
@@ -56,14 +66,18 @@ class RamanBeamPair():
         order_plus = self.dds_plus.aom_order
         order_minus = self.dds_minus.aom_order
 
-        df = frequency_state_splitting / 2
+        delta = frequency_state_splitting
 
-        # if order_plus * order_minus == -1:
-        #     self._frequency_array[RAMAN_PLUS_IDX] = df
-        #     self._frequency_array[RAMAN_MINUS_IDX] = df
-        # else:
-        self._frequency_array[RAMAN_PLUS_IDX] = self.dds_plus.frequency
-        self._frequency_array[RAMAN_MINUS_IDX] = df
+        fcp = self._frequency_center_plus
+        fcm = self._frequency_center_minus
+
+        a = order_plus * order_minus # relative order
+
+        df_plus = (delta/2 - (fcp-a*fcm))/(1+a*fcm/fcp)
+        df_minus = - df_plus * fcm/fcp
+
+        self._frequency_array[RAMAN_PLUS_IDX] = fcp + df_plus
+        self._frequency_array[RAMAN_MINUS_IDX] = fcm + df_minus
 
         return self._frequency_array
     
