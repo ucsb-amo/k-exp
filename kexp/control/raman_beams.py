@@ -56,14 +56,14 @@ class RamanBeamPair():
         order_plus = self.dds_plus.aom_order
         order_minus = self.dds_minus.aom_order
 
-        df = frequency_state_splitting / 4
+        df = frequency_state_splitting / 2
 
-        if order_plus * order_minus == -1:
-            self._frequency_array[RAMAN_PLUS_IDX] = df
-            self._frequency_array[RAMAN_MINUS_IDX] = df
-        else:
-            self._frequency_array[RAMAN_PLUS_IDX] = self._frequency_center_dds + df
-            self._frequency_array[RAMAN_MINUS_IDX] = self._frequency_center_dds - df
+        # if order_plus * order_minus == -1:
+        #     self._frequency_array[RAMAN_PLUS_IDX] = df
+        #     self._frequency_array[RAMAN_MINUS_IDX] = df
+        # else:
+        self._frequency_array[RAMAN_PLUS_IDX] = self.dds_plus.frequency
+        self._frequency_array[RAMAN_MINUS_IDX] = df
 
         return self._frequency_array
     
@@ -113,12 +113,12 @@ class RamanBeamPair():
 
     @kernel
     def on(self):
-        self.dds_plus.on()
+        self.dds_plus.off()
         self.dds_minus.on()
 
     @kernel
     def off(self):
-        self.dds_plus.off()
+        self.dds_plus.on()
         self.dds_minus.off()
 
     @kernel
