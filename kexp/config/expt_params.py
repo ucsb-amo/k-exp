@@ -320,9 +320,9 @@ class ExptParams():
         # raman
         self.frequency_raman_plus = 150.e6 
         self.frequency_raman_minus = 80.e6
-        self.amp_raman = .35 # max power & clean pulse shape at 0.35
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
+        self.fraction_power_raman = 1.
         self.n_raman_sweep_steps = 100
 
         self.frequency_raman_transition = 41.25e6

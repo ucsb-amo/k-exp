@@ -97,11 +97,11 @@ class dds_frame():
         #                             default_amp = self.p.amp_optical_pumping_op)
 
         self.raman_minus = self.dds_assign(4,2, ao_order = 1,
-                                    default_freq = self.p.frequency_raman_minus,
-                                    default_amp = self.p.amp_raman)
+                                    default_freq = 80.e6,
+                                    default_amp = 0.29)
         self.raman_plus = self.dds_assign(5,3, ao_order = 1,
-                                    default_freq = self.p.frequency_raman_plus,
-                                    default_amp = self.p.amp_raman)
+                                    default_freq = 150.e6,
+                                    default_amp = 0.35)
         
         self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1',
                                     default_detuning = self.p.detune_optical_pumping_r_op,

@@ -22,14 +22,15 @@ class RamanBeamPair():
                  dds_minus=dds.raman_minus,
                  params=ExptParams(),
                  frequency_transition=0.,
-                 amplitude=0.):
+                 fraction_power=0.):
         self.dds_plus = dds_plus
         self.dds_minus = dds_minus
         self.params = params
         self.p = self.params
 
         self.frequency_transition = frequency_transition
-        self.amplitude = amplitude
+        # self.amplitude = amplitude
+        self.fraction_power = fraction_power
 
         self.global_phase = 0.
         self.relative_phase = 0.
@@ -41,6 +42,8 @@ class RamanBeamPair():
         self._frequency_center_plus = 0.
         self._frequency_center_minus = 0.
         self._frequency_array = np.array([0.,0.])
+        self._amplitude_plus = 0.
+        self._amplitude_minus = 0.
 
         self.t_timeline = np.zeros(5,dtype=np.int64)
         self.t_rtio = np.zeros(5,dtype=np.int64)
@@ -59,6 +62,8 @@ class RamanBeamPair():
         #     raise ValueError("The - and + DDS frequencies should be equidistant from their mean for optimal efficiency.")
         self._frequency_center_plus = self.dds_plus.frequency
         self._frequency_center_minus = self.dds_minus.frequency
+        self._amplitude_plus = self.dds_plus.amplitude
+        self._amplitude_minus = self.dds_minus.amplitude
 
     @portable(flags={"fast-math"})
     def state_splitting_to_ao_frequency(self,frequency_state_splitting) -> TArray(TFloat):
@@ -138,7 +143,7 @@ class RamanBeamPair():
     @kernel
     def set(self,
             frequency_transition=dv,
-            amp_raman=dv,
+            fraction_power_raman=dv,
             global_phase=dv, relative_phase=dv,
             t_phase_origin_mu=np.int64(-1),
             phase_mode=0,
@@ -173,7 +178,7 @@ class RamanBeamPair():
 
         # Determine if frequency, amplitude, or v_pd should be updated
         freq_changed = (frequency_transition >= 0.) and (frequency_transition != self.frequency_transition)
-        amp_changed = (amp_raman >= 0.) and (amp_raman != self.amplitude)
+        fraction_power_changed = (fraction_power_raman >= 0.) and (fraction_power_raman != self.fraction_power)
         phase_mode_changed = bool(phase_mode) != (self.phase_mode == 1)
         phase_origin_changed = t_phase_origin_mu >= 0. and (t_phase_origin_mu != self.t_phase_origin_mu)
         global_phase_changed = global_phase >= 0. and (global_phase != self.global_phase)
@@ -182,8 +187,8 @@ class RamanBeamPair():
         # Update stored values
         if freq_changed:
             self.frequency_transition = frequency_transition if frequency_transition >= 0. else self.frequency_transition
-        if amp_changed:
-            self.amplitude = amp_raman if amp_raman >= 0. else self.amplitude
+        if fraction_power_changed:
+            self.fraction_power = fraction_power_raman if fraction_power_raman >= 0. else self.fraction_power
         if phase_mode_changed:
             self.phase_mode = phase_mode
         if phase_origin_changed:
@@ -195,7 +200,7 @@ class RamanBeamPair():
 
         if init:
             freq_changed = True
-            amp_changed = True
+            fraction_power_changed = True
             phase_mode_changed = True
             phase_origin_changed = True
             global_phase_changed = True
@@ -205,14 +210,18 @@ class RamanBeamPair():
             self.dds_plus.set_phase_mode(self.phase_mode)
             self.dds_minus.set_phase_mode(self.phase_mode)
 
-        if freq_changed or amp_changed or phase_origin_changed or global_phase_changed or relative_phase_changed:
+        if freq_changed or fraction_power_changed or phase_origin_changed or global_phase_changed or relative_phase_changed:
             self._frequency_array = self.state_splitting_to_ao_frequency(self.frequency_transition)
+
+            amp_plus = np.sqrt(self.fraction_power) * self._amplitude_plus
+            amp_minus = np.sqrt(self.fraction_power) * self._amplitude_minus
+
             self.dds_plus.set_dds(self._frequency_array[RAMAN_PLUS_IDX],
-                                self.amplitude,
+                                amp_plus,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase=self.global_phase)
             self.dds_minus.set_dds(self._frequency_array[RAMAN_MINUS_IDX],
-                                self.amplitude,
+                                amp_minus,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase=self.global_phase+self.relative_phase)
 
