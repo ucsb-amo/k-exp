@@ -12,14 +12,9 @@ class mot_kill_405(EnvExperiment, Base):
         self.p.i_overhead = 70.0
 
         self.finish_prepare(shuffle=False)
-       
+
     @kernel
-    def run(self):
-        self.init_kernel(dds_off=False,dds_set=False,init_dds=False,
-                         init_shuttler=False,init_lightsheet=False,
-                         init_dac=False,setup_awg=False,
-                         setup_slm=False)
-        
+    def scan_kernel(self):
         self.ttl.b_field_stab_SRS_blanking_input.on()
         delay(1.e-3)
         
@@ -59,7 +54,20 @@ class mot_kill_405(EnvExperiment, Base):
         self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid(i_overhead=self.p.i_overhead)
 
-        delay(100.e-3)
+        delay(200.e-3)
+
+        self.outer_coil.off()
+       
+    @kernel
+    def run(self):
+        self.init_kernel(dds_off=False,dds_set=False,init_dds=False,
+                         init_shuttler=False,init_lightsheet=False,
+                         init_dac=False,setup_awg=False,
+                         setup_slm=False)
+        self.scan()
+
+        self.outer_coil.off()
+        
         
     def analyze(self):
         import os
