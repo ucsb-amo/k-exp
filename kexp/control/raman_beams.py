@@ -132,12 +132,12 @@ class RamanBeamPair():
 
     @kernel
     def on(self):
-        self.dds_plus.off()
+        self.dds_plus.on()
         self.dds_minus.on()
 
     @kernel
     def off(self):
-        self.dds_plus.on()
+        self.dds_plus.off()
         self.dds_minus.off()
 
     @kernel
