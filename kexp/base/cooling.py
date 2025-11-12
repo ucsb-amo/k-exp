@@ -120,7 +120,7 @@ class Cooling():
 
         # delay(100.e-3)
 
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
 
         self.outer_coil.start_pid()
 
@@ -214,7 +214,7 @@ class Cooling():
                                                v_end=self.p.v_paint_amp_end,
                                                n=1000)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.outer_coil.start_pid()
 
         self.ttl.d2_mot_shutter.off()
