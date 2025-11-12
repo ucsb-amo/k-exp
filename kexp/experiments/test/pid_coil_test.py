@@ -10,6 +10,7 @@ class mot_kill_405(EnvExperiment, Base):
 
         self.p.i_non_inter = 182.0
         self.p.i_overhead = 70.0
+        self.xvar('beans',[0,1]*50)
 
         self.finish_prepare(shuffle=False)
 
@@ -47,14 +48,17 @@ class mot_kill_405(EnvExperiment, Base):
 
         self.outer_coil.ramp_supply(t=30.e-3,
                              i_end=self.p.i_non_inter)
+        
+        # delay(500.e-3)
+
 
         self.ttl.b_field_stab_SRS_blanking_input.off()
-        delay(100.e-3)
-
+        delay(500.e-3)
         self.ttl.pd_scope_trig.pulse(1.e-6)
+
         self.outer_coil.start_pid(i_overhead=self.p.i_overhead)
 
-        delay(500.e-3)
+        delay(800.e-3)
 
         self.outer_coil.stop_pid()
 
