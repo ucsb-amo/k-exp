@@ -16,7 +16,7 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.DISPERSIVE)
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
-        self.p.amp_raman = 0.35
+        self.params.fraction_power_raman = 1.
         # self.xvar('t_raman_stateprep_pulse',np.linspace(0.,25.e-6,20))
         # self.xvar('t_raman_stateprep_pulse',[0, 12.2e-6])
 
@@ -25,15 +25,15 @@ class tweezer_load(EnvExperiment, Base):
         
         # self.xvar('amp_imaging',np.linspace(0.15,.54,10))
         # self.p.amp_imaging = .28
-        self.p.amp_imaging = .28
+        self.p.amp_imaging = .39
         # self.xvar('frequency_detuned_imaging',np.arange(290.,413.,3)*1.e6)
         self.p.frequency_detuned_imaging = 355.e6
         self.p.frequency_detuned_imaging_midpoint = 308.e6
         
-        self.xvar('dimension_slm_mask',np.linspace(1.e-6,200.e-6,10))
+        # self.xvar('dimension_slm_mask',np.linspace(1.e-6,200.e-6,10))
         self.p.dimension_slm_mask = 50.e-6
         # self.xvar('phase_slm_mask',np.linspace(0.,2.7*np.pi,10))
-        self.p.phase_slm_mask = 0.5 * np.pi
+        self.p.phase_slm_mask = 1.7 * np.pi
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 10.e-3
