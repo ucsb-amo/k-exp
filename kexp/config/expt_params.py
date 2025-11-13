@@ -281,7 +281,7 @@ class ExptParams():
         self.amp_tweezer_list = [.15]
 
         self.v_lf_tweezer_paint_amp_max = -1.43
-        self.v_hf_tweezer_paint_amp_max = -1.8
+        self.v_hf_tweezer_paint_amp_max = -1.1
 
         self.v_paint_amp_end = -5.4
         self.v_hf_paint_amp_end = -5.25
@@ -346,7 +346,7 @@ class ExptParams():
         self.i_hf_lightsheet_evap1_current = 192.1
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 192.7
+        self.i_hf_tweezer_load_current = 192.9
         self.i_hf_tweezer_evap1_current = 192.7
         self.i_hf_tweezer_evap2_current = 193.
 
