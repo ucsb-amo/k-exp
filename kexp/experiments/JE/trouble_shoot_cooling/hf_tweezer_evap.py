@@ -20,7 +20,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_tof = 4250.e-6
         self.p.t_tof = 100.e-6
         # self.xvar('t_tof',np.linspace(100.,3500.,10)*1.e-6) 
-        self.xvar('dumy',[0]*3)
+        self.xvar('dumy',[0]*10)
     
         # self.xvar('hf_imaging_detuning', [-617.e6,-505.e6]*1)
 
