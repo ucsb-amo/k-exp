@@ -35,13 +35,12 @@ import os
 import textwrap
 from subprocess import PIPE, run
 
-from interlock_gui_expt_builder import CHDACGUIExptBuilder
-
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 #import space
 
+from kexp import EthernetRelay
 
 # You need one (and only one) QApplication instance per application.
 # Pass in sys.argv to allow command line arguments for your app.
@@ -54,6 +53,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         #If error called here, check if something else is using comport, eg arduino serial monitor is open
         self.comPort = serial.Serial(port='COM5', baudrate=9600, timeout=1) 
+
+        self._ethernet_relay = EthernetRelay()
         
         self.setWindowTitle("Interlock GUI")
         # button = QPushButton("RESET INTERLOCK!")
@@ -184,6 +185,17 @@ class MainWindow(QMainWindow):
         # to take up all the space in the window by default.
         self.setCentralWidget(widget)
 
+    def kill_magnets_persistent(self):
+        while True:
+            try:        
+                self._ethernet_relay.kill_magnets()
+                magnets_still_on_for_some_reason = self._ethernet_relay.read_magnet_status()
+                if not magnets_still_on_for_some_reason:
+                    break
+            except:
+                print("Killing magnets failed for some reason. Freaking out, trying again.")
+                pass
+
     #Function that reads the PLCs serial output and parses to strings readable by the GUI
     def read_PLC(self):
         buffer = None
@@ -210,6 +222,7 @@ class MainWindow(QMainWindow):
             """)
             self.button.setEnabled(True)
             self.button.clicked.connect(self.the_button_was_clicked)
+            self.kill_magnets_persistent()
 
         #print(buffer)
         #print(decoded_string)
@@ -276,6 +289,7 @@ class MainWindow(QMainWindow):
             """)
             self.button.setEnabled(True)
             self.button.clicked.connect(self.the_button_was_clicked)
+            self.kill_magnets_persistent()
         else:
             print("Recieving good data")
 
@@ -345,7 +359,6 @@ class MainWindow(QMainWindow):
         self.button.clicked.disconnect(self.the_button_was_clicked)
 
     def send_email_tripped(self):
-        self.switch_dacs_off()
         # # Create a MIME object
         msg = MIMEMultipart()
         msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
@@ -366,18 +379,8 @@ class MainWindow(QMainWindow):
         # Close the server connection
         server.quit()   
         print("Email sent successfully!")
-        tries = 0
-        try:
-            self.switch_dacs_off()
-            time.sleep(500)
-            tries+=1
-        except tries>200:
-            pass
-        pass
-        pass
 
     def send_email_check(self):
-        return_code = self.switch_dacs_off()
         # # Create a MIME object
         msg = MIMEMultipart()
         msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
@@ -398,23 +401,6 @@ class MainWindow(QMainWindow):
         # Close the server connection
         server.quit()
         print("Email sent successfully!")
-        tries = 0
-        while(return_code != 0):
-            try:
-                return_code = self.switch_dacs_off()
-                time.sleep(500)
-                tries+=1
-            except tries>20:
-                pass
-        pass
-
-    #switch DACs off
-    def switch_dacs_off(self):
-        eBuilder =  CHDACGUIExptBuilder()
-        #Get parameters from the provided dictionary
-        #eBuilder.execute_test('detune_gm',params[0])
-        eBuilder.write_experiment_to_file(eBuilder.make_dac_voltage_expt())
-        return eBuilder.run_expt()
 
     def save_to_csv(self):
         import os
