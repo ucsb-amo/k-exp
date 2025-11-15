@@ -1,15 +1,15 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base
+from kexp import Base, cameras
 import numpy as np
 
 class img_amp_calibration(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select=cameras.xy_basler,save_data=True)
 
         self.p.imaging_state = 2.
-        self.xvar('amp_imaging',np.linspace(0.13,0.2,10))
+        self.xvar('amp_imaging',np.linspace(0.05,0.2,10))
         self.p.t_tof = 17.e-3
         self.p.N_repeats = 2
         self.p.t_mot_load = .1

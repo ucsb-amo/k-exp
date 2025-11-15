@@ -6,7 +6,7 @@ import numpy as np
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=False)
 
         # self.xvar('frequency_detuned_imaging',np.arange(-50.,50.,5)*1.e6)
 
@@ -15,14 +15,15 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('v_yshim_current',np.linspace(0.,9.8,10))
 
-        self.xvar('t_tof',np.linspace(.05,.5,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(.05,.5,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(0.4,1.2,10)*1.e-3)
 
         
         # self.p.amp_imaging = .35
         self.p.imaging_state = 2.
         self.p.t_tof = 20e-6
         self.p.t_mot_load = 0.5
-        self.p.N_repeats = 1
+        self.p.N_repeats = 1000
 
         self.finish_prepare(shuffle=False)
 
@@ -34,6 +35,7 @@ class gm_tof(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
 
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.release()
 
         delay(self.p.t_tof)

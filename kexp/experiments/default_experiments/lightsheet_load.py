@@ -13,16 +13,16 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select=cameras.andor,
+                      camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 30.e-6
-        self.xvar('t_tof',np.linspace(20,1000.,10)*1.e-6)
-        # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
+        # self.p.t_tof = 30.e-6
+        # self.xvar('t_tof',np.linspace(20,1000.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(20.,1000.,10)*1.e-6)
         # self.xvar('dumy',[0]*100)
 
         # self.xvar('t_magtrap',np.linspace(.1,3.,15))
-        self.p.t_magtrap = 1.
+        # self.p.t_magtrap = 1.
         
         # self.xvar('t_lightsheet_hold',np.linspace(0.05,1.,5))
         self.p.t_lightsheet_hold = .1
@@ -44,7 +44,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.dds.imaging.set_dds(amplitude=0.45)
+        # self.dds.imaging.set_dds(amplitude=0.45)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -53,6 +53,7 @@ class mag_trap(EnvExperiment, Base):
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
         delay(self.p.t_lightsheet_hold)

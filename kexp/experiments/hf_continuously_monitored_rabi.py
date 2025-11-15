@@ -39,7 +39,7 @@ class tweezer_load(EnvExperiment, Base):
         
         # self.xvar('dimension_slm_mask',np.linspace(10.e-6,200.e-6,10))
         # self.p.dimension_slm_mask = 50.e-6
-        # self.xvar('phase_slm_mask',np.linspace(0.,2.7*np.pi,10))
+        # self.xvar('phase_slm_mask',znp.linspace(0.,2.7*np.pi,10))
         self.p.phase_slm_mask = .6 * np.pi
         self.p.dimension_slm_mask = 100.e-6
 

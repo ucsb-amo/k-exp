@@ -193,7 +193,7 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 7.28
+        self.detune_gm = 7.37
         # self.amp_gm = 0.09
 
         self.v_zshim_current_gm = 0.7
