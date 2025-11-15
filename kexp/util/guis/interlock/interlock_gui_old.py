@@ -44,7 +44,6 @@ from kexp import EthernetRelay
 # If you know you won't use command line arguments QApplication([]) works too.
 
 test_arr = [[1721757533.8153138,'Temp', 0, 294.95074],[1721757534.8153138,'Temp', 0, 293.95074],[1721757535.8153138,'Temp', 0, 295.95074],[1721757536.8153138,'Temp', 0, 294.95074],[1721757537.8153138,'Temp', 0, 296.95074]]
-T_TIMEOUT_WRONG_OPTA_DATA = 60.
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -202,7 +201,6 @@ class MainWindow(QMainWindow):
             """)
             self.button.setEnabled(True)
             self.button.clicked.connect(self.the_button_was_clicked)
-            self.kill_magnets_persistent()
 
         #print(buffer)
         #print(decoded_string)
@@ -279,9 +277,17 @@ class MainWindow(QMainWindow):
                             self.button.clicked.connect(self.the_button_was_clicked)
                         break
                     except:
-                        if time.time() - t_start > T_TIMEOUT_WRONG_OPTA_DATA:
-                            print(f"Corrupted data received for {T_TIMEOUT_WRONG_OPTA_DATA} seconds. Killing magnets with ethernet relay.")
-                            self.kill_magnets_persistent()
+                        if time.time() - t_start > 15.:
+                            print("No data received for 15 seconds. Killing magnets with ethernet relay.")
+                        while True:
+                            try:        
+                                self._ethernet_relay.kill_magnets()
+                                magnets_still_on_for_some_reason = self._ethernet_relay.read_magnet_status()
+                                if not magnets_still_on_for_some_reason:
+                                    break
+                            except:
+                                print("Killing magnets failed for some reason. Freaking out, trying again.")
+                                pass
 
         print("Next dataset")
         self.line.setData(self.time, self.temperature)
@@ -291,17 +297,6 @@ class MainWindow(QMainWindow):
         self.line_5.setData(self.time, self.flows[3])
     #infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com
     
-    def kill_magnets_persistent(self):
-        while True:
-            try:        
-                self._ethernet_relay.kill_magnets()
-                magnets_still_on_for_some_reason = self._ethernet_relay.read_magnet_status()
-                if not magnets_still_on_for_some_reason:
-                    break
-            except:
-                print("Killing magnets failed for some reason. Freaking out, trying again.")
-                pass
-
     def the_button_was_clicked(self):
         print("Interlock reset")
         self.comPort.write(b'O')
