@@ -6,6 +6,7 @@ from artiq.experiment import portable, TFloat
 # currents set using transducer (not supply set point)
 
 I_LF_HF_THRESHOLD = 45.
+VPD_IMG_X_MAX = 1.
 
 # run 22849
 # all shims set to zero during feshbach field
@@ -17,7 +18,6 @@ def high_field_imaging_detuning(i_transducer) -> TFloat:
     detuning = slope_imaging_frequency_per_i_transducer_hf * i_transducer \
       + yintercept_imaging_frequency_per_i_transducer_hf
     return detuning
-
 
 # @portable
 # def high_field_pid_imaging_detuning(i_transducer) -> TFloat:
