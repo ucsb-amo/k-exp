@@ -1,5 +1,6 @@
 RELAY0_IP = "192.168.1.88"
 PORT = 2101
+MAGNET_INHIBIT_IDX = 2
 SOURCE_RELAY_IDX = 3
 ARTIQ_RELAY_IDX = 4
 
@@ -317,4 +318,14 @@ class EthernetRelay():
 
 		self.connect()
 		_ = self.__board.turn_off_relay_by_index(ARTIQ_RELAY_IDX)
+		self.close()
+
+	def enable_magnets(self):
+		self.connect()
+		_ = self.__board.turn_on_relay_by_index(MAGNET_INHIBIT_IDX)
+		self.close()
+
+	def kill_magnets(self):
+		self.connect()
+		_ = self.__board.turn_off_relay_by_index(MAGNET_INHIBIT_IDX)
 		self.close()
