@@ -37,7 +37,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 #import space
 
-from kexp import EthernetRelay
 
 # You need one (and only one) QApplication instance per application.
 # Pass in sys.argv to allow command line arguments for your app.
@@ -50,8 +49,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         #If error called here, check if something else is using comport, eg arduino serial monitor is open
         self.comPort = serial.Serial(port='COM5', baudrate=9600, timeout=1) 
-
-        self._ethernet_relay = EthernetRelay()
         
         self.setWindowTitle("Interlock GUI")
         # button = QPushButton("RESET INTERLOCK!")
@@ -244,51 +241,34 @@ class MainWindow(QMainWindow):
         #self.time.append(self.time[-1] + 1)
         ##Function needs to grab data until it gets all neccessary types
         data_inc = self.read_PLC()
-        t_start = time.time()
         if data_inc:     
             for i in range(5):
-                while True:
-                    try:
-                        if(data_inc[i] != 'I-T'):
-                            print(data_inc[i])
-                            if(data_inc[i][2] == 0):
-                                self.temperature = self.temperature[1:]
-                                self.temperature.append(data_inc[i][3]-273)
-                            else:
-                                self.flows[data_inc[i][2]-1] = self.flows[data_inc[i][2]-1][1:]
-                                self.flows[data_inc[i][2]-1].append(data_inc[i][3])
-                            #print(data_inc[i][3])
-                        elif(data_inc[i] == 'I-T'):
-                            #interlock is tripped
-                            self.button.setText("Interlock Tripped")
-                            if not self.has_sent_email:
-                                self.send_email()
-                                self.has_sent_email = True
-                            self.button.setStyleSheet("""
-                                QPushButton {
-                                    background-color: red;
-                                    color: white;
-                                    font-size: 24px;
-                                    font-weight: bold;
-                                    padding: 10px 20px;
-                                }
-                            """)
-                            self.button.setEnabled(True)
-                            self.button.clicked.connect(self.the_button_was_clicked)
-                        break
-                    except:
-                        if time.time() - t_start > 15.:
-                            print("No data received for 15 seconds. Killing magnets with ethernet relay.")
-                        while True:
-                            try:        
-                                self._ethernet_relay.kill_magnets()
-                                magnets_still_on_for_some_reason = self._ethernet_relay.read_magnet_status()
-                                if not magnets_still_on_for_some_reason:
-                                    break
-                            except:
-                                print("Killing magnets failed for some reason. Freaking out, trying again.")
-                                pass
-
+                if(data_inc[i] != 'I-T'):
+                    print(data_inc[i])
+                    if(data_inc[i][2] == 0):
+                        self.temperature = self.temperature[1:]
+                        self.temperature.append(data_inc[i][3]-273)
+                    else:
+                        self.flows[data_inc[i][2]-1] = self.flows[data_inc[i][2]-1][1:]
+                        self.flows[data_inc[i][2]-1].append(data_inc[i][3])
+                    #print(data_inc[i][3])
+                elif(data_inc[i] == 'I-T'):
+                    #interlock is tripped
+                    self.button.setText("Interlock Tripped")
+                    if not self.has_sent_email:
+                        self.send_email()
+                        self.has_sent_email = True
+                    self.button.setStyleSheet("""
+                        QPushButton {
+                            background-color: red;
+                            color: white;
+                            font-size: 24px;
+                            font-weight: bold;
+                            padding: 10px 20px;
+                        }
+                    """)
+                    self.button.setEnabled(True)
+                    self.button.clicked.connect(self.the_button_was_clicked)
         print("Next dataset")
         self.line.setData(self.time, self.temperature)
         self.line_2.setData(self.time, self.flows[0])
