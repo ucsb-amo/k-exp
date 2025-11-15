@@ -330,8 +330,8 @@ class MainWindow(QMainWindow):
         server.login('harry.who.is.ultra.cold@gmail.com', 'dvlw elsd mhqb mzfo')
         
         # Send the email
-        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
-        #server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
+        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
+        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
 
         # Close the server connection
         server.quit()
