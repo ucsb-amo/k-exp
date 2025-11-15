@@ -329,3 +329,9 @@ class EthernetRelay():
 		self.connect()
 		_ = self.__board.turn_off_relay_by_index(MAGNET_INHIBIT_IDX)
 		self.close()
+
+	def read_magnet_status(self):
+		self.connect()
+		out = bool(self.__board.get_relay_status_by_index(MAGNET_INHIBIT_IDX)[0])
+		self.close()
+		return out
