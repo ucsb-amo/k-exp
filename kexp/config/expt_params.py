@@ -193,16 +193,14 @@ class ExptParams():
         self.i_cmot = 20.
         
         #GM
-        self.detune_gm = 7.37
-        # self.amp_gm = 0.09
 
         self.v_zshim_current_gm = 0.7
         self.v_xshim_current_gm = 0.4
         self.v_yshim_current_gm = 2.
 
-        self.detune_d1_c_gm = self.detune_gm
+        self.detune_d1_c_gm = 7. # 7.37
         self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
-        self.detune_d1_r_gm = self.detune_gm
+        self.detune_d1_r_gm = 7.
         self.pfrac_d1_r_gm = .99
 
         # Discrete GM ramp
