@@ -12,7 +12,7 @@ class camera_frame():
         
         self.xy_basler = BaslerParams(serial_number='40316451',
                                     exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
-                                    exposure_time_abs = 19.e-6, amp_absorption = 0.10,
+                                    exposure_time_abs = 19.e-6, amp_absorption = 0.083, gain_abs=30.,
                                     exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
                                     magnification=0.5)
         
