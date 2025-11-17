@@ -1,12 +1,4 @@
-/**
-  Opta's Analog Input Terminals
-  Name: opta_analog_inputs_example.ino
-  Purpose: This sketch demonstrates the use of I1, I2, and I3 input 
-  terminals as analog inputs on Opta.
 
-  @author Arduino PRO Content Team
-  @version 2.0 22/07/23
-*/
 
 //import processing.serial.*;
 
@@ -77,7 +69,7 @@ void loop() {
   ///If temp too high or low shut off magnets
   if (temp>tempUpperBound|| temp < tempLowerBound )
   {
-    //Serial.println("SHUTTING OFF POWER SUPPLY DUE TO TEMPERATURE");
+    Serial.println("SHUTTING OFF POWER SUPPLY DUE TO TEMPERATURE");
     digitalWrite(safPin, LOW);
     isTripped = true; 
   }
@@ -92,38 +84,38 @@ void loop() {
     Serial.println("V/");
     if(flows[i]<flowLowerBound || flows[i]>flowUpperBound)
     {
-      // Serial.print("SHUTTING OFF POWER SUPPLY DUE TO FLOW RATE of flowmeter ");
-      // Serial.print(i+1);
-      // Serial.println(" being out of bounds");
+      Serial.print("SHUTTING OFF POWER SUPPLY DUE TO FLOW RATE of flowmeter ");
+      Serial.print(i+1);
+      Serial.println(" being out of bounds");
       digitalWrite(safPin, LOW);
       isTripped = true;
     }
     delay(200);
   }
 
-  if (Serial.available() > 0) {
-    // read the incoming byte: bite 
-    int incomingByte = Serial.read();    
-    // say what you got:
-    //Serial.print("I received: ");
-    //Serial.println(incomingByte, DEC);
-    ///Manually switch magnets back on, if tripped, will imediiately switch off
-    if(incomingByte == 79)
-    {
-        isTripped = false;
-        digitalWrite(safPin, HIGH);
-    }
-  }
+  // if (Serial.available() > 0) {
+  //   // read the incoming byte:
+  //   int incomingByte = Serial.read();    
+  //   // say what you got:
+  //   Serial.print("I received: ");
+  //   Serial.println(incomingByte, DEC);
+  //   ///Manually switch magnets back on, if tripped, will imediiately switch off
+  //   if(incomingByte == 79)
+  //   {
+  //       isTripped = false;
+  //       digitalWrite(safPin, HIGH);
+  //   }
+  // }
   if(isTripped)
   {
     Serial.println("I TRIPPED");
   }
 
   // Delay for half a second before reading the terminals again.
-  //delay(500);
+  delay(250);
 }
 
-// This function reads the value from the specified pin, converts it to voltage, and prints the result.
+// This function reads the value from the specified pin, converts it to voltage and does not print ignore that part of the name
 float readAndPrint(int terminal) {
   // Read the input value from the analog pin.
   int terminalValue = analogRead(terminal);

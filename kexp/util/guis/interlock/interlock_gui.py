@@ -1,6 +1,7 @@
 from PyQt6 import QtCore
 import pyqtgraph as pg
 from random import randint
+import sympy as sympy
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -45,7 +46,7 @@ from kexp import EthernetRelay
 # You need one (and only one) QApplication instance per application.
 # Pass in sys.argv to allow command line arguments for your app.
 # If you know you won't use command line arguments QApplication([]) works too.
-
+primes = [2,3,5,7,11]
 test_arr = [[1721757533.8153138,'Temp', 0, 294.95074],[1721757534.8153138,'Temp', 0, 293.95074],[1721757535.8153138,'Temp', 0, 295.95074],[1721757536.8153138,'Temp', 0, 294.95074],[1721757537.8153138,'Temp', 0, 296.95074]]
 
 class MainWindow(QMainWindow):
@@ -55,7 +56,7 @@ class MainWindow(QMainWindow):
         self.comPort = serial.Serial(port='COM5', baudrate=9600, timeout=1) 
 
         self._ethernet_relay = EthernetRelay()
-        
+        self._ethernet_relay.enable_magnets()
         self.setWindowTitle("Interlock GUI")
         # button = QPushButton("RESET INTERLOCK!")
         # button.setCheckable(True)
@@ -70,8 +71,8 @@ class MainWindow(QMainWindow):
         #     }
         # """)
         self.last_valid_data_time = time.time()
-        self.timeout_threshold = 15  # 30 seconds
-        
+        self.timeout_threshold = 15 
+
         # Timer for checking timeouts
         self.timeout_timer = QtCore.QTimer()
         self.timeout_timer.timeout.connect(self.check_data_timeout)
@@ -235,8 +236,8 @@ class MainWindow(QMainWindow):
         # Initialize the 2D array
         data_array = []
 
-        # Track if we received any valid data this cycle
-        received_valid_data = False
+        # Track if we received any valid data this cycle by multiplying primes 
+        received_valid_data = 1
 
         # Parse each segment
         for segment in data_segments:
@@ -244,26 +245,37 @@ class MainWindow(QMainWindow):
 
             if 'Flowmeter' in segment:
                 #print("jeff")
-                received_valid_data = True
                 flowmeter_match = re.search(r'Flowmeter (\d) reads ([\d\.]+)V', segment)
                 if flowmeter_match:
                     meter_number = int(flowmeter_match.group(1))
+                    # print(meter_number)
+                    received_valid_data*=primes[meter_number-1]
+                    # print(f"Flow meter number {meter_number} corresponds to the prime {primes[meter_number-1]}.")
                     value = float(flowmeter_match.group(2))
                     data_array.append([time.time(),'Flowmeter', meter_number, value])
+                    #Each flowmeter has a different asigned prime -- at the end if 
+                    #we dont get all the prime factors out, we couldnt have had data from all the flowmeters
+
+
             elif 'Temp' in segment:
                 temp_match = re.search(r'Temp is ([\d\.]+)k', segment)
                 if temp_match:
-                    received_valid_data = True
+                    received_valid_data*=primes[4]
                     value = float(temp_match.group(1))
                     data_array.append([time.time(),'Temp',0, value])
             elif 'TRIPPED' in segment:
                 tripped = re.search(r'I TRIPPED', segment)    
                 #print("TRIPPED")
-                received_valid_data = True
+                received_valid_data = 2310
                 if tripped:
                     data_array.append('I-T')
-        if received_valid_data:
+        checksum_cont_primes = list(sympy.ntheory.factorint(received_valid_data).keys())
+        print(f"Checksum contains primes {checksum_cont_primes}, should contain, 2, 3, 5, 7 & 11.")
+        if all(val in checksum_cont_primes for val in primes):
+            print("Recieving good data")
             self.last_valid_data_time = time.time()
+        else:
+            print("Not recieving good data.")
         return data_array
 
 
@@ -290,8 +302,9 @@ class MainWindow(QMainWindow):
             self.button.setEnabled(True)
             self.button.clicked.connect(self.the_button_was_clicked)
             self.kill_magnets_persistent()
-        else:
-            print("Recieving good data")
+        # else:
+            
+            # print("Recieving good data")
 
 
     def update_views(self):
@@ -332,7 +345,7 @@ class MainWindow(QMainWindow):
                     self.button.setEnabled(True)
                     self.button.clicked.connect(self.the_button_was_clicked)
         print("Next dataset")
-        print(self.temperature[-1])
+        print(f"Chiller water temperature is {self.temperature[-1]}c")
         self.line.setData(self.time, self.temperature)
         self.line_2.setData(self.time, self.flows[0])
         self.line_3.setData(self.time, self.flows[1])
@@ -373,8 +386,8 @@ class MainWindow(QMainWindow):
         server.login('harry.who.is.ultra.cold@gmail.com', 'dvlw elsd mhqb mzfo')
         
         # Send the email
-        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
-        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
+        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
+        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
 
         # Close the server connection
         server.quit()   
@@ -396,7 +409,7 @@ class MainWindow(QMainWindow):
         
         # Send the email
         # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
-        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
+        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
 
         # Close the server connection
         server.quit()
