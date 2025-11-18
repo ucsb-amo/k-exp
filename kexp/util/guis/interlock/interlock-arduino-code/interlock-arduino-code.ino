@@ -17,7 +17,7 @@ float bleh =330.1;
 // Array of terminals.
 const int TERMINALS[] = {A0, A1, A2, A3, A4, A5, A6};
 
-const float tempUpperBound = 303;
+const float tempUpperBound = 306;
 const float tempLowerBound = 280;
 const float flowLowerBound = 3.0;
 const float flowUpperBound = 8.0;
