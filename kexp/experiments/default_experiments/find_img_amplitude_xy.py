@@ -11,14 +11,14 @@ class img_amp_calibration(EnvExperiment, Base):
                       save_data=True)
 
         self.p.imaging_state = 2.
-        self.xvar('amp_imaging',np.linspace(0.07,0.11,10))
-        # self.p.amp_imaging = 0.09
+        # self.xvar('amp_imaging',np.linspace(0.11,0.11,3))
+        self.p.amp_imaging = 0.1
 
-        # self.camera_params.gain = 30.
+        self.camera_params.gain = 16.
 
-        self.p.t_tof = 10.e-3
+        self.p.t_tof = 15.e-3
         self.p.N_repeats = 10
-        self.p.t_mot_load = .1
+        self.p.t_mot_load = .5
         self.finish_prepare(shuffle=True)
 
     @kernel

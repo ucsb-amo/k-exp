@@ -38,9 +38,9 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,2.,10))
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,2.,10))
         # self.xvar('v_yshim_current_magtrap',np.linspace(2.,9.9,10))
-        self.p.v_zshim_current_magtrap = 0.67
-        self.p.v_xshim_current_magtrap = 0.
-        self.p.v_yshim_current_magtrap = 5.50
+        # self.p.v_zshim_current_magtrap = 0.67
+        # self.p.v_xshim_current_magtrap = 0.
+        # self.p.v_yshim_current_magtrap = 5.50
         # self.xvar('t_magtrap_delay',np.linspace(0.05,10.,20)*1.e-3)
         # self.p.t_magtrap_delay = 1.e-3
         # self.p.t_shim_delay = .5e-3

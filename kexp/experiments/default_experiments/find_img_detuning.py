@@ -32,6 +32,7 @@ class img_detuning_calibration(EnvExperiment, Base):
         self.release()
 
         delay(self.p.t_tof)
+        self.flash_repump()
         self.abs_image()
        
     @kernel

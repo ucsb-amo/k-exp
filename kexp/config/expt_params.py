@@ -68,7 +68,7 @@ class ExptParams():
         self.t_d2cmot = 50.e-3
         self.t_d1cmot = 10.e-3
         
-        self.t_magnet_off_pretrigger = 0.e-3
+        self.t_magnet_off_pretrigger = 220.e-6
         self.t_shim_change_pretrigger = 0.e-3
        
         self.t_gm = 3.e-3
