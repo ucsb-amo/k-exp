@@ -190,6 +190,7 @@ class MainWindow(QMainWindow):
         while True:
             try:        
                 self._ethernet_relay.kill_magnets()
+                print("Killing magnets")
                 magnets_still_on_for_some_reason = self._ethernet_relay.read_magnet_status()
                 if not magnets_still_on_for_some_reason:
                     break
@@ -345,7 +346,7 @@ class MainWindow(QMainWindow):
                     self.button.setEnabled(True)
                     self.button.clicked.connect(self.the_button_was_clicked)
         print("Next dataset")
-        print(f"Chiller water temperature is {self.temperature[-1]}c")
+        print(f"Chiller water temperature is {self.temperature[-1]:.3f}c")
         self.line.setData(self.time, self.temperature)
         self.line_2.setData(self.time, self.flows[0])
         self.line_3.setData(self.time, self.flows[1])
