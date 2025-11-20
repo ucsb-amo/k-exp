@@ -201,8 +201,8 @@ class ExptParams():
         self.pfrac_d1_c_d1cmot = 1.0
         self.pfrac_d1_c_gm = 1.0
         self.pfrac_d1_r_gm = 0.45
-        self.pfrac_c_gmramp_end = 0.26
-        self.pfrac_r_gmramp_end = 0.19
+        self.pfrac_c_gmramp_end = 0.136
+        self.pfrac_r_gmramp_end = 0.22
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
@@ -225,9 +225,12 @@ class ExptParams():
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
         
-        self.v_zshim_current_magtrap = 0.
-        self.v_xshim_current_magtrap = 0.
-        self.v_yshim_current_magtrap = 8.
+        # self.v_zshim_current_magtrap = 0.67
+        # self.v_xshim_current_magtrap = 0.
+        # self.v_yshim_current_magtrap = 6.4
+        self.v_zshim_current_magtrap = 0.11
+        self.v_xshim_current_magtrap = 0.0
+        self.v_yshim_current_magtrap = 3.
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
