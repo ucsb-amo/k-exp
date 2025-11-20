@@ -96,10 +96,10 @@ class dds_frame():
         #                             default_detuning = self.p.detune_optical_pumping_op,
         #                             default_amp = self.p.amp_optical_pumping_op)
 
-        self.raman_minus = self.dds_assign(4,2, ao_order = 1,
+        self.raman_80_plus = self.dds_assign(4,2, ao_order = 1,
                                     default_freq = 80.e6,
                                     default_amp = 0.24)
-        self.raman_plus = self.dds_assign(5,3, ao_order = 1,
+        self.raman_150_plus = self.dds_assign(5,3, ao_order = 1,
                                     default_freq = 150.e6,
                                     default_amp = 0.33)
         
@@ -120,13 +120,13 @@ class dds_frame():
         self.d1_beatlock_ref = self.dds_assign(5,1,
                                     default_freq=42.26e6,
                                     default_amp=0.1)
-        self.polmod_v = self.dds_assign(5,0,
+        self.raman_150_minus = self.dds_assign(5,0,
                                         ao_order=1,
                                         default_freq=101.e6,
                                         default_amp=0.3)
-        self.polmod_h = self.dds_assign(5,2,
+        self.imaging_pid = self.dds_assign(5,2,
                                         ao_order=1,
-                                        default_freq=99.e6,
+                                        default_freq=100.e6,
                                         default_amp=0.3)
         self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_c_mot,

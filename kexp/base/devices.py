@@ -136,8 +136,14 @@ class Devices():
                                expt_params = self.params,
                                core=self.core)
         
-        self.raman = RamanBeamPair(dds_plus=self.dds.raman_plus,
-                                    dds_minus=self.dds.raman_minus,
+        self.raman = RamanBeamPair(dds0=self.dds.raman_150_plus,
+                                    dds1=self.dds.raman_80_plus,
+                                    frequency_transition=self.params.frequency_raman_transition,
+                                    fraction_power=self.params.fraction_power_raman,
+                                    params=self.params)
+        
+        self.raman_nf = RamanBeamPair(dds0=self.dds.raman_150_minus,
+                                    dds1=self.dds.raman_80_plus,
                                     frequency_transition=self.params.frequency_raman_transition,
                                     fraction_power=self.params.fraction_power_raman,
                                     params=self.params)
@@ -151,17 +157,9 @@ class Devices():
         N = 8
         beatref_sign = -1
         f_min_beat = 250.e6
-        if imaging_configuration == img_config.POLMOD:
-            self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
-                                    dds_polmod_v=self.dds.polmod_v,
-                                    dds_polmod_h=self.dds.polmod_h,
-                                    dds_beatref=self.dds.beatlock_ref,
-                                    pid_override_ttl=self.ttl.imaging_pid_manual_override,
-                                    N_beatref_mult=N, beatref_sign=beatref_sign,
-                                    frequency_minimum_beat=f_min_beat,
-                                    expt_params=self.params)
-        elif imaging_configuration == img_config.PID:
-            self.imaging = BeatLockImagingPID(dds_sw=self.dds.polmod_h,
+        
+        if imaging_configuration == img_config.PID:
+            self.imaging = BeatLockImagingPID(dds_sw=self.dds.imaging_pid,
                                               dds_beatref=self.dds.beatlock_ref,
                                               dds_pid=self.dds.imaging,
                                               pid_int_clear_ttl=self.ttl.imaging_pid_int_clear_hold,
@@ -178,6 +176,15 @@ class Devices():
                                            beatref_sign=beatref_sign,
                                            frequency_minimum_beat=f_min_beat,
                                            expt_params=self.params)
+        # elif imaging_configuration == img_config.POLMOD:
+        #     self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
+        #                             dds_polmod_v=self.dds.polmod_v,
+        #                             dds_polmod_h=self.dds.polmod_h,
+        #                             dds_beatref=self.dds.beatlock_ref,
+        #                             pid_override_ttl=self.ttl.imaging_pid_manual_override,
+        #                             N_beatref_mult=N, beatref_sign=beatref_sign,
+        #                             frequency_minimum_beat=f_min_beat,
+        #                             expt_params=self.params)
 
     def get_ttl_devices(self):
         for ttl in self.ttl.ttl_list:
