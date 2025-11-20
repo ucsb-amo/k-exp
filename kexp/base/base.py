@@ -29,8 +29,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.prepare_devices(expt_params=self.params)
 
         # self._polmod_config = self.choose_camera(setup_camera,imaging_type,camera_select)
-        _polmod_config = self.choose_camera(setup_camera,imaging_type,camera_select)
-        self.configure_imaging_system(polmod_ao_bool=_polmod_config)
+        _img_config = self.choose_camera(setup_camera,imaging_type,camera_select)
+        self.configure_imaging_system(imaging_configuration=_img_config)
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """

@@ -17,6 +17,13 @@ from kexp.config.ttl_id import ttl_frame
 from kexp.config.expt_params import ExptParams
 from kexp.config.camera_id import cameras, img_types, CameraParams
 
+class ImagingConfigurations():
+    SWITCH = 0
+    PID = 1
+    POLMOD = 2
+
+img_config = ImagingConfigurations()
+
 class Cameras():
     def __init__(self):
         self.dds = dds_frame()
@@ -38,7 +45,7 @@ class Cameras():
             if not isinstance(camera,CameraParams):
                 raise ValueError(f'The requested camera with key {key} was not found.')
 
-        polmod_configuration = False
+        _img_config_bit = img_config.SWITCH
 
         if not setup_camera:
             self.camera = DummyCamera()
@@ -55,14 +62,15 @@ class Cameras():
                     ttl = self.ttl.z_basler
                 case cameras.andor.key:
                     ttl = self.ttl.andor
-                    polmod_configuration = True
+                    # _img_config_bit = img_config.POLMOD
+                    _img_config_bit = img_config.PID
                 case cameras.basler_2dmot.key:
                     ttl = self.ttl.basler_2dmot
                 case _:
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
             self.assign_camera_stuff(camera,camera_ttl=ttl,imaging_type=imaging_type)
         self.run_info.imaging_type = imaging_type
-        return polmod_configuration
+        return _img_config_bit
 
     @kernel
     def setup_slm(self, imaging_type):
