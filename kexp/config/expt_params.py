@@ -178,11 +178,11 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 9.5 # 12.1
-        self.pfrac_d1_c_d1cmot =  0.85 # .57
+        self.detune_d1_c_d1cmot = 8.5 # 12.1
+        self.pfrac_d1_c_d1cmot =  0.86 # .57
 
-        self.detune_d2_r_d1cmot = -3.29
-        self.amp_d2_r_d1cmot =  0.037 # 0.047
+        self.detune_d2_r_d1cmot = -2.86
+        self.amp_d2_r_d1cmot =  0.07 # 0.047
 
         self.detune_d1_c_sweep_d1cmot_start = 9.
         self.detune_d1_c_sweep_d1cmot_end = 7.
@@ -195,14 +195,15 @@ class ExptParams():
         #GM
 
         self.v_zshim_current_gm = 0.8
-        self.v_xshim_current_gm = 0.5
+        self.v_xshim_current_gm = 0.0
         self.v_yshim_current_gm = 2.15
 
         self.pfrac_d1_c_d1cmot = 1.0
-        self.pfrac_d1_c_gm = 1.0
-        self.pfrac_d1_r_gm = 0.45
-        self.pfrac_c_gmramp_end = 0.136
-        self.pfrac_r_gmramp_end = 0.22
+        self.pfrac_d1_c_gm = .73
+        self.pfrac_d1_r_gm = 0.99
+
+        self.pfrac_c_gmramp_end = 0.05
+        self.pfrac_r_gmramp_end = 0.65
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
@@ -228,9 +229,9 @@ class ExptParams():
         # self.v_zshim_current_magtrap = 0.67
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
-        self.v_zshim_current_magtrap = 0.11
+        self.v_zshim_current_magtrap = 0.0
         self.v_xshim_current_magtrap = 0.0
-        self.v_yshim_current_magtrap = 3.
+        self.v_yshim_current_magtrap = 8.
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0

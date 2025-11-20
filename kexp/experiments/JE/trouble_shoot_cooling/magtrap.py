@@ -13,7 +13,7 @@ class mag_trap(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
-        self.p.t_tof = 8000.e-6
+        self.p.t_tof = 10000.e-6
         self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
         # self.xvar('dumy',[0]*500)
@@ -40,47 +40,45 @@ class mag_trap(EnvExperiment, Base):
         
         # self.xvar('i_mot',np.linspace(12.,30.,20))
 
-        # self.xvar('v_zshim_current',np.linspace(0.15,.7,15))
+        # self.xvar('v_zshim_current',np.linspace(0.0,1.,8))
         # self.xvar('v_xshim_current',np.linspace(0.,2.,8))
-        # self.xvar('v_yshim_current',np.linspace(0.0,5.,20))
+        # self.xvar('v_yshim_current',np.linspace(0.0,3.,8))
         # self.p.v_zshim_current = .743
         # self.p.v_xshim_current = .571
         # self.p.v_yshim_current = .11
 
-        # self.xvar('detune_d2_c_mot',np.linspace(-5.,-1.,8))
-        # self.xvar('detune_d2_r_mot',np.linspace(-6.,-2.,8))
-
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,-2.,8))
-        # self.xvar('amp_d2_r_d1cmot',np.linspace(.02,.07,15))
+        # self.xvar('amp_d2_r_d1cmot',np.linspace(.02,.1,8))
 
         # self.p.detune_d1_c_d1cmot = 4.
 
         # self.xvar('detune_d1_c_d1cmot',np.linspace(0.,10.,8))
-        # self.xvar('pfrac_d1_c_d1cmot',np.linspace(.1,.99,8))
+        # self.xvar('pfrac_d1_c_d1cmot',np.linspace(.1,.99,15))
+        # self.p.pfrac_d1_c_d1cmot = .73
 
         # self.xvar('i_mot',np.linspace(12.,30.,15))
 
-        # self.xvar('v_zshim_current_gm',np.linspace(0.3,1.,8))
+        # self.xvar('v_zshim_current_gm',np.linspace(0.1,2.,15))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.7,8))
         # self.xvar('v_yshim_current_gm',np.linspace(.0,3.,8))
         # self.p.v_zshim_current_gm = .743
-        # self.p.v_xshim_current_gm = .571
+        # self.p.v_xshim_current_gm = .0
         # self.p.v_yshim_current_gm = 2.23
 
         # self.xvar('detune_gm', np.linspace(3.,13.,15))
-        # self.p.detune_gm = 7.3
+        # self.p.detune_gm = 7.
 
         # self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
         # self.xvar('pfrac_d1_r_gm',np.linspace(0.1,.99,8))
-        # self.p.pfrac_d1_c_gm = .539
-        # self.p.pfrac_d1_r_gm = .539
+        # self.p.pfrac_d1_c_gm = .73
+        # self.p.pfrac_d1_r_gm = .99
 
         # self.xvar('t_gmramp',np.linspace(2.,15.,15)*1.e-3)
 
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.3,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.2,.99,8))
         # self.p.pfrac_c_gmramp_end = 0.05
-        # self.p.pfrac_r_gmramp_end = 0.743
+        # self.p.pfrac_r_gmramp_end = 0.65
         
         # self.xvar('i_magtrap_init',np.linspace(40.,95.,20))
         # self.i_magtrap_init = 84.
@@ -88,9 +86,9 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,.7,10))
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,20))
         # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,10))
-        # self.p.v_zshim_current_magtrap = .572
-        # self.p.v_xshim_current_magtrap = 2.5
-        # self.p.v_yshim_current_magtrap = 4.6
+        # self.p.v_zshim_current_magtrap = .0
+        # self.p.v_xshim_current_magtrap = 0.
+        # self.p.v_yshim_current_magtrap = 8.
         # self.xvar('t_magtrap_delay',np.linspace(.5,10.,15)*1.e-3)
         # self.p.t_magtrap_delay = 5.e-3
         # self.p.t_shim_delay = .5e-3
@@ -102,7 +100,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_mot_load = .5
 
         # self.xvar('amp_imaging',np.linspace(.06,.1,15))
-        self.p.amp_imaging = .08
+        # self.p.amp_imaging = .08
         self.p.imaging_state = 2.
 
         # self.camera_params.exposure_time = 50.e-6
@@ -113,7 +111,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         # self.load_2D_mot(self.p.t_2D_mot_load_delay)
 
