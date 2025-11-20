@@ -2,13 +2,13 @@ import pypylon.pylon as py
 import numpy as np
 
 from artiq.experiment import *
-from artiq.experiment import delay, parallel, sequential, delay_mu
+from artiq.language.core import delay, parallel, sequential, delay_mu, now_mu
 
 from waxa.data.run_info import RunInfo
 from waxa.data.counter import counter
 
 from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
-from waxx.control.beat_lock import BeatLockImaging
+from waxx.control.beat_lock import PolModBeatLock
 from waxx.util.artiq.async_print import aprint
 
 from kexp.config.dds_id import dds_frame
@@ -32,8 +32,12 @@ class Image():
     def __init__(self):
         self.dds = dds_frame()
         self.ttl = ttl_frame()
-        self.imaging = BeatLockImaging()
         self.params = ExptParams()
+        self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
+                                      dds_polmod_v=self.dds.polmod_v,
+                                      dds_polmod_h=self.dds.polmod_h,
+                                      dds_beatref=self.dds.beatlock_ref,
+                                      expt_params=self.params)
         self.camera_params = CameraParams()
         self.setup_camera = True
         self.run_info = RunInfo()
@@ -86,24 +90,6 @@ class Image():
         self.pulse_imaging_light(t)
         delay(self.camera_params.exposure_time - t)
         self._counter.light_img_idx = self._counter.light_img_idx + 1
-
-    @kernel
-    def light_image0(self, t=dv):
-        """Takes an image (PWA or PWOA). Leaves the timeline cursor at the end
-        of the camera exposure time (camera_params.exposure_time).
-
-        Args:
-            t (float, optional): The imaging light pulse time. Defaults to
-            ExptParams.t_imaging pulse.
-        """        
-        if t == dv:
-            t = self.params.t_imaging_pulse
-        self.trigger_camera()
-        self.pulse_imaging_light(t)
-        # self.sampler.sample()
-        delay(self.camera_params.exposure_time - t)
-        self._counter.light_img_idx = self._counter.light_img_idx + 1
-        # delay(1.e-3)
 
     @kernel
     def dark_image(self):
@@ -186,11 +172,7 @@ class Image():
         Args:
             t (float): The time of the imaging pulse.
         """        
-        self.dds.imaging.on()
-        # self.ttl.img_beam_sw.on()
-        delay(t)
-        # self.ttl.img_beam_sw.off()
-        self.dds.imaging.off()
+        self.imaging.pulse(t)
 
     @kernel
     def pulse_2d_mot_beams(self,t,
@@ -306,7 +288,7 @@ class Image():
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.ttl.pd_scope_trig3.pulse(1.e-6)
         # atoms image (pwa)
-        self.light_image0()
+        self.light_image()
 
         # self.lightsheet.off()
 
@@ -399,7 +381,6 @@ class Image():
         self._counter.img_idx = self._counter.img_idx + 1
         delay(t_adv * s)
 
-
     @kernel
     def cleanup_image_count(self):
         N_pwa_target = self.params.N_pwa_per_shot
@@ -428,33 +409,6 @@ class Image():
         self._counter.img_idx = 0
     ###
 
-    @portable(flags={"fast-math"})
-    def imaging_detuning_to_beat_ref(self, frequency_detuned=dv) -> TFloat:
-        """Converts a desired imaging detuning to the required beat lock reference.
-
-        Makes reference to the beat lock sign, which DDS channel drives the AO
-        to frequency shift the imaging light, and the reference multiplier
-        setting on the beat lock controller.
-
-        Args:
-            frequency_detuned (float, optional): The desired imaging detuning
-            from the brightest D2 resonance in Hz. Whether the detuning is
-            relative to F=2 -> 4P3/2 or F=1 -> 4P3/2 depends on the parameter
-            ExptParams.imaging_state (if == 1: F=1, if == 2: F=2)
-
-        Returns:
-            TFloat: the required beat lock reference frequency in Hz.
-        """        
-        if frequency_detuned == dv:
-            if self.params.imaging_state == 1.:
-                frequency_detuned = self.params.frequency_detuned_imaging_F1
-            elif self.params.imaging_state == 2.:
-                frequency_detuned = self.params.frequency_detuned_imaging
-
-        f_beatlock_ref = self.imaging.imaging_detuning_to_beat_ref(frequency_detuned)
-
-        return f_beatlock_ref
-
     @kernel(flags={"fast-math"})
     def set_imaging_detuning(self, frequency_detuned = dv, amp = dv):
         '''
@@ -473,6 +427,7 @@ class Image():
         # determine this manually -- minimum offset frequency where the offset lock is happy
         if amp == dv:
             amp = self.camera_params.amp_imaging
+
         if frequency_detuned == dv:
             if self.params.imaging_state == 1.:
                 frequency_detuned = self.params.frequency_detuned_imaging_F1
@@ -482,7 +437,9 @@ class Image():
         self.imaging.set_imaging_detuning(frequency_detuned,amp)
 
     @kernel(flags={"fast-math"})
-    def set_high_field_imaging(self, i_outer, pid_bool=False, amp_imaging = dv):
+    def set_high_field_imaging(self, i_outer,
+                                pid_bool=False,
+                                amp_imaging = dv):
         """Sets the high field imaging detuning according to the current in the
         outer coil (as measured on a transducer). Also sets the imaging DDS
         amplitude.
@@ -503,3 +460,15 @@ class Image():
             detuning = low_field_pid_imaging_detuning(i_pid=i_outer)
         
         self.set_imaging_detuning(detuning, amp=amp_imaging)
+
+    @kernel
+    def init_imaging(self,
+                    frequency_polmod=0.,
+                    global_phase=0.,relative_phase=0.,
+                    t_phase_origin_mu=np.int64(-1),
+                    phase_mode=1):
+        self.imaging.init(frequency_polmod,
+                        global_phase,relative_phase,
+                        t_phase_origin_mu=t_phase_origin_mu,
+                        phase_mode=phase_mode,
+                        init=True)

@@ -14,8 +14,14 @@ offset_i_transducer_per_v_setpoint_pid_outer  = -0.3520810805908351
 
 # slope_overhead_per_i_transducer = 0.3569422
 # offset_overhead_per_i_transducer = -0.04
-slope_overhead_per_i_transducer = 0.37548
-offset_overhead_per_i_transducer = -1.25112
+
+# slope_overhead_per_i_transducer = 0.37548
+# slope_overhead_per_i_transducer = 0.05
+# offset_overhead_per_i_transducer = -1.25112
+
+# 2025-11-11 fudged to make it work only near I=20A (LF), I=182A (LF)
+slope_overhead_per_i_transducer = 0.393
+offset_overhead_per_i_transducer = -1.593
 
 @portable
 def compute_pid_overhead(i_pid) -> TFloat:
@@ -32,6 +38,8 @@ def compute_pid_overhead(i_pid) -> TFloat:
     Returns:
         float: the excess current (in A) that the keysight will run over the desired pid current
     """        
+    # if i_pid > 50.:
+    #     slope_overhead_per_i_transducer = slope_overhead_per_i_transducer * (  )
     keysight_overhead = i_pid * slope_overhead_per_i_transducer +  offset_overhead_per_i_transducer
     return keysight_overhead
 

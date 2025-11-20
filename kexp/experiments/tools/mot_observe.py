@@ -8,6 +8,7 @@ class mot_observe(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self, setup_camera = False)
+        self.finish_prepare()
 
     @kernel
     def run(self):

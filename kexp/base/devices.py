@@ -8,15 +8,15 @@ from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
 from artiq.coredevice.grabber import Grabber
 
+from kexp.config.expt_params import ExptParams
+
+from waxx.control.slm.slm import SLM
 from waxx.control.artiq.DDS import DDS
 from waxx.control.artiq.mirny import Mirny
 from waxx.control.artiq.Shuttler_CH import Shuttler_CH
 from waxx.control.misc.ssg3021x import SSG3021X
-from waxx.control.beat_lock import BeatLockImaging
-from waxx.control.slm.slm import SLM
+from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock
 from waxx.control.cameras.dummy_cam import DummyCamera
-
-from kexp.config.expt_params import ExptParams
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
@@ -138,20 +138,33 @@ class Devices():
         self.raman = RamanBeamPair(dds_plus=self.dds.raman_plus,
                                     dds_minus=self.dds.raman_minus,
                                     frequency_transition=self.params.frequency_raman_transition,
-                                    amplitude=self.params.amp_raman,
+                                    fraction_power=self.params.fraction_power_raman,
                                     params=self.params)
-        self.raman._init()
-
-        self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
-                                       dds_beatref=self.dds.beatlock_ref,
-                                       N_beatref_mult=8, beatref_sign=-1,
-                                       frequency_minimum_beat=250.e6,
-                                       expt_params=self.params)
         
         # self.ry_980_eo = SSG3021X()
 
         # camera placeholder
         self.camera = DummyCamera()
+
+    def configure_imaging_system(self, polmod_ao_bool):
+        N = 8
+        beatref_sign = -1
+        f_min_beat = 250.e6
+        if polmod_ao_bool:
+            self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
+                                    dds_polmod_v=self.dds.polmod_v,
+                                    dds_polmod_h=self.dds.polmod_h,
+                                    dds_beatref=self.dds.beatlock_ref,
+                                    N_beatref_mult=N, beatref_sign=beatref_sign,
+                                    frequency_minimum_beat=f_min_beat,
+                                    expt_params=self.params)
+        else:
+            self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
+                                           dds_beatref=self.dds.beatlock_ref,
+                                           N_beatref_mult=N,
+                                           beatref_sign=beatref_sign,
+                                           frequency_minimum_beat=f_min_beat,
+                                           expt_params=self.params)
 
     def get_ttl_devices(self):
         for ttl in self.ttl.ttl_list:

@@ -1,7 +1,7 @@
 import time
 import re
 import logging
-from kexp.control.ethernet_relay import EthernetRelay
+from kexp.control.misc.ethernet_relay import EthernetRelay
 from kexp.util.remote_control.email_handler import EmailHandler
 from win10toast import ToastNotifier
 

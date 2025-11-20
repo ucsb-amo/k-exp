@@ -27,10 +27,10 @@ bool blockPID = false;
 // yes
 // updated 9am 5/21/25
 //updated 7/3/25
-float P10 = 100;
-float I10 = 0.05;
-float P11 = 300;
-float I11 = 20;
+float P10 = 200;
+float I10 = 0.2;
+float P11 = 100;
+float I11 = 0.1;
 float P1 = 0;
 float I1 = 0;
 float D1 = 0;
@@ -40,7 +40,7 @@ float D1 = 0;
 //float CH2F2 = 0.05;
 float CH2F = (2/3)*0.05;
 
-float Vgs_threshold0 = 5.2;
+float gain_change_threshold = 0.0005;
 //float Vgs_threshold1 = 5.7;
 
 double integral1 = 0.;
@@ -48,6 +48,8 @@ double integral2 = 0.;
 
 bool pid_enable1 = false;
 bool pid_enable2 = false;
+
+
 
 void setup() 
 {
@@ -65,7 +67,7 @@ void setup()
 
   qC.assignVariable("ch2",&CH2F);
 
-  qC.assignVariable("v0",&Vgs_threshold0);
+  qC.assignVariable("g0",&gain_change_threshold);
   //qC.assignVariable("v1",&Vgs_threshold1);
 
   enableInterruptTrigger(1,BOTH_EDGES,&switch1);
@@ -76,6 +78,11 @@ void setup()
   qC.addCommand("name",tell_name);
   P1 = P10;
   I1 = I10;
+}
+
+void get_gains()
+{
+  
 }
 
 void switch_on()
@@ -126,10 +133,11 @@ void getMeas1()
   //}
   double newdac1 = 0.;
   inputT = inputA + inputB*CH2F; // I believe we should remove the (1-CH2F) term from the DC part -- fixes observed offset in stabilized current from expected value
+  double error = inputT-SETPOINT1;
   if (pid_enable1 && !blockPID) 
   {
-    double prop1 = (inputT-SETPOINT1) * P1;
-    integral1 += (inputT-SETPOINT1) * I1;
+    double prop1 = error * P1;
+    integral1 += (error) * I1;
     double derivT = (inputT - prevA) * D1;
     newdac1 = prop1 + integral1 + derivT;
   }
@@ -155,7 +163,7 @@ void getMeas1()
 
 
   //gain scheduling
-  if (abs(newdac1)<Vgs_threshold0)
+  if (abs(error)>gain_change_threshold)
   {
     P1 = P10;
     I1 = I10;

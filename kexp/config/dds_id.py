@@ -97,11 +97,11 @@ class dds_frame():
         #                             default_amp = self.p.amp_optical_pumping_op)
 
         self.raman_minus = self.dds_assign(4,2, ao_order = 1,
-                                    default_freq = self.p.frequency_raman_minus,
-                                    default_amp = self.p.amp_raman)
+                                    default_freq = 80.e6,
+                                    default_amp = 0.24)
         self.raman_plus = self.dds_assign(5,3, ao_order = 1,
-                                    default_freq = self.p.frequency_raman_plus,
-                                    default_amp = self.p.amp_raman)
+                                    default_freq = 150.e6,
+                                    default_amp = 0.33)
         
         self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1',
                                     default_detuning = self.p.detune_optical_pumping_r_op,
@@ -117,15 +117,17 @@ class dds_frame():
         self.imaging_eo = self.dds_assign(1,1,
                                     default_freq = 2.e6,
                                     default_amp = 1.)
-        self.d1_probe = self.dds_assign(5,0,
-                                    default_freq=100.e6,
-                                    default_amp=0.21)
         self.d1_beatlock_ref = self.dds_assign(5,1,
                                     default_freq=42.26e6,
                                     default_amp=0.1)
-        self.d1_blueshield = self.dds_assign(5,2,
-                                    default_freq=150.e6,
-                                    default_amp=0.21)
+        self.polmod_v = self.dds_assign(5,0,
+                                        ao_order=1,
+                                        default_freq=101.e6,
+                                        default_amp=0.3)
+        self.polmod_h = self.dds_assign(5,2,
+                                        ao_order=1,
+                                        default_freq=99.e6,
+                                        default_amp=0.3)
         self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_c_mot,
                                     default_amp = self.p.amp_d2_c_mot)

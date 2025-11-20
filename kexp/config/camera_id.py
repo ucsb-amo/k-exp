@@ -3,7 +3,7 @@ from waxx.control.cameras.camera_param_classes import CameraParams, BaslerParams
 class camera_frame():
     def __init__(self):
         
-        self.andor = AndorParams(amp_absorption=0.12, exposure_time_abs=10.e-6, em_gain_abs=300.,
+        self.andor = AndorParams(amp_absorption=0.35, exposure_time_abs=10.e-6, em_gain_abs=300.,
                                 amp_fluorescence=0.54, exposure_time_fluor=25.e-6, em_gain_fluor=1.,
                                 amp_dispersive=0.4, exposure_time_dispersive=5.e-6, em_gain_dispersive=300.,
                                 magnification=18.4,
@@ -12,7 +12,7 @@ class camera_frame():
         
         self.xy_basler = BaslerParams(serial_number='40316451',
                                     exposure_time_fluor = 1.e-3, amp_fluorescence=0.5,
-                                    exposure_time_abs = 19.e-6, amp_absorption = 0.129,
+                                    exposure_time_abs = 19.e-6, amp_absorption = 0.083, gain_abs=24.,
                                     exposure_time_dispersive = 100.e-6, amp_dispersive = 0.248,
                                     magnification=0.5)
         

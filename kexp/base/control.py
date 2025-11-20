@@ -33,15 +33,19 @@ class Control():
         self.p = self.params
 
     @kernel
-    def init_raman_beams(self,frequency_transition=dv,amp_raman=dv,
+    def init_raman_beams(self,
+                         frequency_transition=dv,
+                         fraction_power=dv,
                          global_phase=0.,relative_phase=0.,
                          t_phase_origin_mu=np.int64(-1),
                          phase_mode=1):
         if t_phase_origin_mu < 0:
             t_phase_origin_mu = now_mu()
-        if amp_raman == dv:
-            amp_raman = self.params.amp_raman
-        self.raman.set(frequency_transition,amp_raman,
+        if frequency_transition == dv:
+            frequency_transition = self.params.frequency_raman_transition
+        if fraction_power == dv:
+            fraction_power = self.params.fraction_power_raman
+        self.raman.set(frequency_transition,fraction_power,
                        global_phase,relative_phase,
                        t_phase_origin_mu=t_phase_origin_mu,
                        phase_mode=phase_mode,

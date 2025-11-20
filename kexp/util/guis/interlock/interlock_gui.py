@@ -1,6 +1,7 @@
 from PyQt6 import QtCore
 import pyqtgraph as pg
 from random import randint
+import sympy as sympy
 from PyQt6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -35,18 +36,17 @@ import os
 import textwrap
 from subprocess import PIPE, run
 
-from interlock_gui_expt_builder import CHDACGUIExptBuilder
-
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 #import space
 
+from kexp import EthernetRelay
 
 # You need one (and only one) QApplication instance per application.
 # Pass in sys.argv to allow command line arguments for your app.
 # If you know you won't use command line arguments QApplication([]) works too.
-
+primes = [2,3,5,7,11]
 test_arr = [[1721757533.8153138,'Temp', 0, 294.95074],[1721757534.8153138,'Temp', 0, 293.95074],[1721757535.8153138,'Temp', 0, 295.95074],[1721757536.8153138,'Temp', 0, 294.95074],[1721757537.8153138,'Temp', 0, 296.95074]]
 
 class MainWindow(QMainWindow):
@@ -54,7 +54,9 @@ class MainWindow(QMainWindow):
         super().__init__()
         #If error called here, check if something else is using comport, eg arduino serial monitor is open
         self.comPort = serial.Serial(port='COM5', baudrate=9600, timeout=1) 
-        
+
+        self._ethernet_relay = EthernetRelay()
+        self._ethernet_relay.enable_magnets()
         self.setWindowTitle("Interlock GUI")
         # button = QPushButton("RESET INTERLOCK!")
         # button.setCheckable(True)
@@ -69,8 +71,8 @@ class MainWindow(QMainWindow):
         #     }
         # """)
         self.last_valid_data_time = time.time()
-        self.timeout_threshold = 15  # 30 seconds
-        
+        self.timeout_threshold = 15 
+
         # Timer for checking timeouts
         self.timeout_timer = QtCore.QTimer()
         self.timeout_timer.timeout.connect(self.check_data_timeout)
@@ -184,6 +186,18 @@ class MainWindow(QMainWindow):
         # to take up all the space in the window by default.
         self.setCentralWidget(widget)
 
+    def kill_magnets_persistent(self):
+        while True:
+            try:        
+                self._ethernet_relay.kill_magnets()
+                print("Killing magnets")
+                magnets_still_on_for_some_reason = self._ethernet_relay.read_magnet_status()
+                if not magnets_still_on_for_some_reason:
+                    break
+            except:
+                print("Killing magnets failed for some reason. Freaking out, trying again.")
+                pass
+
     #Function that reads the PLCs serial output and parses to strings readable by the GUI
     def read_PLC(self):
         buffer = None
@@ -210,6 +224,7 @@ class MainWindow(QMainWindow):
             """)
             self.button.setEnabled(True)
             self.button.clicked.connect(self.the_button_was_clicked)
+            self.kill_magnets_persistent()
 
         #print(buffer)
         #print(decoded_string)
@@ -222,8 +237,8 @@ class MainWindow(QMainWindow):
         # Initialize the 2D array
         data_array = []
 
-        # Track if we received any valid data this cycle
-        received_valid_data = False
+        # Track if we received any valid data this cycle by multiplying primes 
+        received_valid_data = 1
 
         # Parse each segment
         for segment in data_segments:
@@ -231,26 +246,37 @@ class MainWindow(QMainWindow):
 
             if 'Flowmeter' in segment:
                 #print("jeff")
-                received_valid_data = True
                 flowmeter_match = re.search(r'Flowmeter (\d) reads ([\d\.]+)V', segment)
                 if flowmeter_match:
                     meter_number = int(flowmeter_match.group(1))
+                    # print(meter_number)
+                    received_valid_data*=primes[meter_number-1]
+                    # print(f"Flow meter number {meter_number} corresponds to the prime {primes[meter_number-1]}.")
                     value = float(flowmeter_match.group(2))
                     data_array.append([time.time(),'Flowmeter', meter_number, value])
+                    #Each flowmeter has a different asigned prime -- at the end if 
+                    #we dont get all the prime factors out, we couldnt have had data from all the flowmeters
+
+
             elif 'Temp' in segment:
                 temp_match = re.search(r'Temp is ([\d\.]+)k', segment)
                 if temp_match:
-                    received_valid_data = True
+                    received_valid_data*=primes[4]
                     value = float(temp_match.group(1))
                     data_array.append([time.time(),'Temp',0, value])
             elif 'TRIPPED' in segment:
                 tripped = re.search(r'I TRIPPED', segment)    
                 #print("TRIPPED")
-                received_valid_data = True
+                received_valid_data = 2310
                 if tripped:
                     data_array.append('I-T')
-        if received_valid_data:
+        checksum_cont_primes = list(sympy.ntheory.factorint(received_valid_data).keys())
+        print(f"Checksum contains primes {checksum_cont_primes}, should contain, 2, 3, 5, 7 & 11.")
+        if all(val in checksum_cont_primes for val in primes):
+            print("Recieving good data")
             self.last_valid_data_time = time.time()
+        else:
+            print("Not recieving good data.")
         return data_array
 
 
@@ -276,8 +302,10 @@ class MainWindow(QMainWindow):
             """)
             self.button.setEnabled(True)
             self.button.clicked.connect(self.the_button_was_clicked)
-        else:
-            print("Recieving good data")
+            self.kill_magnets_persistent()
+        # else:
+            
+            # print("Recieving good data")
 
 
     def update_views(self):
@@ -318,7 +346,7 @@ class MainWindow(QMainWindow):
                     self.button.setEnabled(True)
                     self.button.clicked.connect(self.the_button_was_clicked)
         print("Next dataset")
-        print(self.temperature[-1])
+        print(f"Chiller water temperature is {self.temperature[-1]:.3f}c")
         self.line.setData(self.time, self.temperature)
         self.line_2.setData(self.time, self.flows[0])
         self.line_3.setData(self.time, self.flows[1])
@@ -345,7 +373,6 @@ class MainWindow(QMainWindow):
         self.button.clicked.disconnect(self.the_button_was_clicked)
 
     def send_email_tripped(self):
-        self.switch_dacs_off()
         # # Create a MIME object
         msg = MIMEMultipart()
         msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
@@ -366,18 +393,8 @@ class MainWindow(QMainWindow):
         # Close the server connection
         server.quit()   
         print("Email sent successfully!")
-        tries = 0
-        try:
-            self.switch_dacs_off()
-            time.sleep(500)
-            tries+=1
-        except tries>200:
-            pass
-        pass
-        pass
 
     def send_email_check(self):
-        return_code = self.switch_dacs_off()
         # # Create a MIME object
         msg = MIMEMultipart()
         msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
@@ -398,23 +415,6 @@ class MainWindow(QMainWindow):
         # Close the server connection
         server.quit()
         print("Email sent successfully!")
-        tries = 0
-        while(return_code != 0):
-            try:
-                return_code = self.switch_dacs_off()
-                time.sleep(500)
-                tries+=1
-            except tries>20:
-                pass
-        pass
-
-    #switch DACs off
-    def switch_dacs_off(self):
-        eBuilder =  CHDACGUIExptBuilder()
-        #Get parameters from the provided dictionary
-        #eBuilder.execute_test('detune_gm',params[0])
-        eBuilder.write_experiment_to_file(eBuilder.make_dac_voltage_expt())
-        return eBuilder.run_expt()
 
     def save_to_csv(self):
         import os

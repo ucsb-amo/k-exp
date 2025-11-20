@@ -1,21 +1,25 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base
+from kexp import Base, cameras
 import numpy as np
 
 class img_amp_calibration(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
+        Base.__init__(self,setup_camera=True,
+                      camera_select=cameras.xy_basler,
+                      save_data=True)
 
         self.p.imaging_state = 2.
-        self.xvar('amp_imaging',np.linspace(0.13,0.2,10))
-        self.p.t_tof = 17.e-3
-        self.p.N_repeats = 2
-        self.p.t_mot_load = .1
-        self.finish_prepare(shuffle=True)
+        # self.xvar('amp_imaging',np.linspace(0.11,0.11,3))
+        self.p.amp_imaging = 0.1
 
-        self.camera_params.amp_imaging
+        self.camera_params.gain = 16.
+
+        self.p.t_tof = 15.e-3
+        self.p.N_repeats = 10
+        self.p.t_mot_load = .5
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -27,9 +31,8 @@ class img_amp_calibration(EnvExperiment, Base):
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot)
         self.gm(self.p.t_gm * s)
-        self.ttl.pd_scope_trig.on()
+        self.ttl.pd_scope_trig.pulse(1.e-8)
         self.gm_ramp(self.p.t_gmramp)
-        self.ttl.pd_scope_trig.off()
 
         self.release()
 
