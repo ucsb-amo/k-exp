@@ -29,12 +29,15 @@ class ttl_frame():
         self.imaging_shutter_xy = self.assign_ttl_out(18)
         self.imaging_shutter_x = self.assign_ttl_out(19)
         self.basler_2dmot = self.assign_ttl_out(20)
-        self.keithley_trigger = self.assign_ttl_out(48)
         self.test_trig = self.assign_ttl_out(21)
         self.d2_mot_shutter = self.assign_ttl_out(22)
         self.pd_scope_trig3 = self.assign_ttl_out(24)
-        self.z_shim_pid_int_hold_zero = self.assign_ttl_out(56)
+
+        self.keithley_trigger = self.assign_ttl_out(48)
+        self.imaging_pid_int_clear_hold = self.assign_ttl_out(49)
         self.b_field_stab_SRS_blanking_input = self.assign_ttl_out(50)
+        self.imaging_pid_manual_override = self.assign_ttl_out(51)
+        self.z_shim_pid_int_hold_zero = self.assign_ttl_out(56)
 
         self.line_trigger = self.assign_ttl_in(40)
 
