@@ -13,7 +13,7 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.ABSORPTION)
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.params.fraction_power_raman = 1.
@@ -46,14 +46,14 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_raman_stateprep_pulse',[0.e-6,29.e-6]*50)
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
-        self.p.t_tweezer_hold = 100.e-3
+        self.p.t_tweezer_hold = 1.e-3
         self.p.t_tof = 133.e-6
         self.p.t_mot_load = 1.
 
         self.camera_params.exposure_time = 20.e-6
         self.params.t_imaging_pulse = self.camera_params.exposure_time
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 20
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -62,29 +62,29 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning_mid)
+        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
         # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
-        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
 
-        self.init_raman_beams()
+        # self.init_raman_beams()
 
-        self.ttl.line_trigger.wait_for_line_trigger()
-        delay(5.7e-3)
+        # self.ttl.line_trigger.wait_for_line_trigger()
+        # delay(5.7e-3)
 
         # self.raman.pulse(t=self.p.t_raman_stateprep_pulse)
 
-        self.dds.imaging.on()
-        self.raman.on()
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-        delay(self.p.t_continuous_rabi)
-        self.raman.off()
-        self.dds.imaging.off()
+        # self.dds.imaging.on()
+        # self.raman.on()
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        # delay(self.p.t_continuous_rabi)
+        # self.raman.off()
+        # self.dds.imaging.off()
         
-        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
-        self.dds.imaging.set_dds(amplitude=.35)
+        # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
+        # self.dds.imaging.set_dds(amplitude=.35)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -97,9 +97,9 @@ class tweezer_load(EnvExperiment, Base):
 
         self.outer_coil.off()
 
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
-        self.core.break_realtime()
+        # self.core.wait_until_mu(now_mu())
+        # self.scope.read_sweep(0)
+        # self.core.break_realtime()
         delay(20.e-3)
 
     @kernel

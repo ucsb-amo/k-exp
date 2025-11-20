@@ -15,7 +15,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
-        self.xvar('dumy',[0,1,2]*10)
+        self.xvar('dumy',[2,3]*10)
 
         # self.p.v_pd_lightsheet_rampup_end = 7.3
 
