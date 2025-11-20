@@ -10,12 +10,12 @@ double peakSeparation = 0;
 double feedback = 0;
 double er = 0, i_er = 0, d_er = 0;
 
-double Vth = 1;
+double Vth = 5;
 double G1 = 1;
 double P1 = 0.01;
 double I1 = 0.0;
 double D1 = 0.0;
-double setpoint1 = 36;
+double setpoint1 = 18;
 double Lock = 1;
 
 unsigned long lastRisingEdgeTime = 0;
