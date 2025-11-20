@@ -13,6 +13,7 @@ float P1 = -0.055;
 float I1 = -0.005;
 double integral1 = 0.;
 bool pid_enable1 = true;
+bool manual_override1 = false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -27,9 +28,18 @@ void setup() {
   qC.assignVariable("set1", &SETPOINT1);
 
   enableInterruptTrigger(1,BOTH_EDGES,&switch1);
+  enableInterruptTrigger(2,BOTH_EDGES,&manualOverride);
 
   qC.addCommand("c", clear_integrator);
 }
+
+void manualOverride() {
+  if (triggerRead(2)) {
+    manual_override1 = true;
+  } else {
+    manual_override1 = false;
+    clear_integrator()
+  }
 
 //Read ADC, output ADC value at Ch3 and set point on CH4, calculate PID, output PID at CH1
 void pid1() {
@@ -55,6 +65,11 @@ void pid1() {
     newdac1 = 0.;
   } else {
   }
+
+  if (manual_override1) {
+    newdac1 = 9.9;
+  }
+
   writeDAC(1, newdac1);
 }
 
