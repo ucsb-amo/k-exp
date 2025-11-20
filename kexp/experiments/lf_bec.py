@@ -14,22 +14,43 @@ class tweezer_load(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
+        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-4.,1.,8))
+        self.p.v_lf_tweezer_paint_amp_max = -3.29
+        
+        # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.08,.2,8))
+        self.p.v_pd_lf_tweezer_1064_rampdown2_end = .1
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,300.,1)*1.e6)
         # self.xvar('beans',[0]*50)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
-        # self.xvar('t_tof',np.linspace(50.,1000.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(300.,2000.,10)*1.e-6)
         self.p.t_tof = 500.e-6
 
-        # self.xvar('t_tweezer_hold',np.logspace(np.log10(2.e-3), np.log10(100.e-3), 20))
-        self.xvar('t_tweezer_hold',np.linspace(2.e-3,100.e-3,20))
+        # self.xvar('v_paint_amp_end',np.linspace(-6.,-5.,10))
+
+        self.p.t_rf_sweep = 90.e-3
+        self.p.f_rf_sweep_width = 200.e3
+
+        self.xvar('f_rf_sweep_center',461.7e6 + np.arange(-2.e6,2.e6,self.p.f_rf_sweep_width))
+
+        # self.xvar('t_ramp_off',np.linspace(2.e-3,50.e-3,10))
+        self.p.t_ramp_off = 5.e-3
+
+        # self.xvar('v_x_shim_pol_contrast',np.linspace(.5,9.,20))
+        self.p.v_x_shim_pol_contrast = 1.5
+
+        # self.xvar('t_tweezer_hold',np.logspace(np.log10(3.e-3), np.log10(200.e-3), 30))
+        # self.xvar('t_tweezer_hold',np.linspace(2.e-3,100.e-3,20))
         
-        self.p.t_tweezer_hold = 3.e-3
+        self.p.t_tweezer_hold = 1.e-3
 
         self.p.amp_imaging = .35
         # self.xvar('amp_imaging',np.linspace(0.15,.5,15))
+
+        self.camera_params.exposure_time = 20.e-6
+        self.p.t_imaging_pulse = self.camera_params.exposure_time
 
         self.p.t_mot_load = 1.
 
@@ -49,8 +70,21 @@ class tweezer_load(EnvExperiment, Base):
         self.prepare_lf_tweezers()
         
         delay(5.e-3)
+
+        self.dac.xshim_current_control.set(v=self.p.v_x_shim_pol_contrast)
+
         self.ttl.pd_scope_trig.pulse(1.e-6)
+        
         self.outer_coil.snap_off()
+
+        self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
+                                               v_start=self.dac.tweezer_paint_amp.v,
+                                               v_end=self.p.v_paint_amp_end,
+                                               n=1000)
+        
+        self.rf.sweep(t=self.p.t_rf_sweep,
+                      frequency_center=self.p.f_rf_sweep_center,
+                      frequency_sweep_fullwidth=self.p.f_rf_sweep_width)
 
         delay(self.p.t_tweezer_hold)
 

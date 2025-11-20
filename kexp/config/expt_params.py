@@ -295,7 +295,7 @@ class ExptParams():
         self.v_lf_tweezer_paint_amp_max = -1.43
         self.v_hf_tweezer_paint_amp_max = -1.1
 
-        self.v_paint_amp_end = -5.4
+        self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.25
 
         # tweezer movement params
