@@ -209,10 +209,10 @@ class Cooling():
         #                      i_start=self.p.i_lf_tweezer_evap2_current,
         #                      i_end=self.p.i_spin_mixture)
         
-        self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
-                                               v_start=self.dac.tweezer_paint_amp.v,
-                                               v_end=self.p.v_paint_amp_end,
-                                               n=1000)
+        # self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
+        #                                        v_start=self.dac.tweezer_paint_amp.v,
+        #                                        v_end=self.p.v_paint_amp_end,
+        #                                        n=1000)
         
         
         # self.outer_coil.start_pid()
@@ -1102,8 +1102,8 @@ class Cooling():
         self.dds.push.set_dds(amplitude=0.)
         self.dds.mot_killer.set_dds(amplitude=0.)
         self.dds.optical_pumping.set_dds(amplitude=0.)
-        self.dds.raman_minus.set_dds(amplitude=0.)
-        self.dds.raman_plus.set_dds(amplitude=0.)
+        # self.dds.raman_minus.set_dds(amplitude=0.)
+        # self.dds.raman_plus.set_dds(amplitude=0.)
         # self.dds.imaging.set_dds(amplitude=0.)
         self.dds.antenna_rf.set_dds(amplitude=0.)
 
@@ -1120,8 +1120,8 @@ class Cooling():
         self.dds.push.off()
         self.dds.mot_killer.off()
         self.dds.optical_pumping.off()
-        self.dds.raman_minus.off()
-        self.dds.raman_plus.off()
+        # self.dds.raman_minus.off()
+        # self.dds.raman_plus.off()
         # self.dds.imaging.off()
         self.dds.antenna_rf.off()
         delay_mu(8)
