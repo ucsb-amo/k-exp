@@ -38,8 +38,9 @@ void manualOverride() {
     manual_override1 = true;
   } else {
     manual_override1 = false;
-    clear_integrator()
+    integral1 = 0;
   }
+}
 
 //Read ADC, output ADC value at Ch3 and set point on CH4, calculate PID, output PID at CH1
 void pid1() {
@@ -91,8 +92,7 @@ void clear_integrator(qCommand& qC, Stream& S) {
   integral1 = 0;
 }
 
-void ping(qCommand& qC, Stream& S)
-{
+void ping(qCommand& qC, Stream& S) {
   struct Cal cal2;
   readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
   Serial.println(cal2.cal_d); 
