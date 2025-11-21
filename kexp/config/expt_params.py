@@ -231,7 +231,7 @@ class ExptParams():
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
         self.v_xshim_current_magtrap = 0.0
-        self.v_yshim_current_magtrap = 8.
+        self.v_yshim_current_magtrap = 9.9
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -330,14 +330,14 @@ class ExptParams():
         self.amp_ao_ry_980_switch = 0.34
 
         # raman
-        self.frequency_raman_plus = 150.e6 
-        self.frequency_raman_minus = 80.e6
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
         self.fraction_power_raman = 1.
+        self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 
         self.frequency_raman_transition = 41.25e6
+        self.frequency_raman_transition_nf = 460.7e6
 
         # low field evap old
         # self.i_evap1_current = 9.5

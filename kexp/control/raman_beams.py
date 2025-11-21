@@ -19,7 +19,7 @@ dds = dds_frame()
 class RamanBeamPair():
     def __init__(self,
                  dds0=dds.raman_80_plus,
-                 dds1=dds.raman_150_plus,
+                 dds1=dds.raman_150_minus,
                  params=ExptParams(),
                  frequency_transition=0.,
                  fraction_power=0.):
@@ -42,8 +42,8 @@ class RamanBeamPair():
         self._frequency_center_plus = 0.
         self._frequency_center_minus = 0.
         self._frequency_array = np.array([0.,0.])
-        self._amplitude_plus = 0.
-        self._amplitude_minus = 0.
+        self._amplitude_0 = 0.
+        self._amplitude_1 = 0.
 
         self.t_timeline = np.zeros(5,dtype=np.int64)
         self.t_rtio = np.zeros(5,dtype=np.int64)
@@ -213,15 +213,15 @@ class RamanBeamPair():
         if freq_changed or fraction_power_changed or phase_origin_changed or global_phase_changed or relative_phase_changed:
             self._frequency_array = self.state_splitting_to_ao_frequency(self.frequency_transition)
 
-            amp_plus = np.sqrt(self.fraction_power) * self._amplitude_plus
-            amp_minus = np.sqrt(self.fraction_power) * self._amplitude_minus
+            amp0 = np.sqrt(self.fraction_power) * self._amplitude_0
+            amp1 = np.sqrt(self.fraction_power) * self._amplitude_1
 
             self.dds0.set_dds(self._frequency_array[DDS0_IDX],
-                                amp_plus,
+                                amp0,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase=self.global_phase)
             self.dds1.set_dds(self._frequency_array[DDS1_IDX],
-                                amp_minus,
+                                amp1,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase=self.global_phase+self.relative_phase)
 

@@ -129,6 +129,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
         elif self.p.imaging_state == 2.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
+        
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         if self._setup_awg:
@@ -143,6 +144,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
+
+        # self.dds.raman_150_minus.on()
+        # self.dds.raman_150_plus.on()
+        # self.dds.raman_80_plus.on()
         
         # self.dds.ry_405_switch.on()
         # self.dds.ry_980_switch.on()
