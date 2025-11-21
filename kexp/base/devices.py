@@ -159,7 +159,7 @@ class Devices():
         f_min_beat = 250.e6
         
         if imaging_configuration == img_config.PID:
-            self.imaging = BeatLockImagingPID(dds_sw=self.dds.imaging_pid,
+            self.imaging = BeatLockImagingPID(dds_sw=self.dds.imaging_x_switch,
                                               dds_beatref=self.dds.beatlock_ref,
                                               dds_pid=self.dds.imaging,
                                               pid_int_clear_ttl=self.ttl.imaging_pid_int_clear_hold,

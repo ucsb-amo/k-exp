@@ -8,7 +8,7 @@ from waxa.data.run_info import RunInfo
 from waxa.data.counter import counter
 
 from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
-from waxx.control.beat_lock import PolModBeatLock
+from waxx.control.beat_lock import BeatLockImagingPID
 from waxx.util.artiq.async_print import aprint
 
 from kexp.config.dds_id import dds_frame
@@ -33,9 +33,8 @@ class Image():
         self.dds = dds_frame()
         self.ttl = ttl_frame()
         self.params = ExptParams()
-        self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
-                                      dds_polmod_v=self.dds.polmod_v,
-                                      dds_polmod_h=self.dds.polmod_h,
+        self.imaging = BeatLockImagingPID(dds_sw=self.dds.imaging_x_switch,
+                                      dds_pid=self.dds.imaging,
                                       dds_beatref=self.dds.beatlock_ref,
                                       expt_params=self.params)
         self.camera_params = CameraParams()

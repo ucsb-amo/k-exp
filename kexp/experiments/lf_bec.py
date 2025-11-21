@@ -32,8 +32,9 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_rf_sweep = 90.e-3
         self.p.f_rf_sweep_width = 200.e3
+        self.p.f_rf_sweep_center = 461.7e6
 
-        self.xvar('f_rf_sweep_center',461.7e6 + np.arange(-2.e6,2.e6,self.p.f_rf_sweep_width))
+        # self.xvar('f_rf_sweep_center',461.7e6 + np.arange(-2.e6,2.e6,self.p.f_rf_sweep_width))
 
         # self.xvar('t_ramp_off',np.linspace(2.e-3,50.e-3,10))
         self.p.t_ramp_off = 5.e-3
@@ -46,7 +47,7 @@ class tweezer_load(EnvExperiment, Base):
         
         self.p.t_tweezer_hold = 1.e-3
 
-        self.p.amp_imaging = .35
+        # self.p.amp_imaging = .35
         # self.xvar('amp_imaging',np.linspace(0.15,.5,15))
 
         self.camera_params.exposure_time = 20.e-6
@@ -66,6 +67,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap2_current,
         #                             pid_bool=False)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.imaging.set_power(amp=self.camera_params.amp_imaging)
 
         self.prepare_lf_tweezers()
         
