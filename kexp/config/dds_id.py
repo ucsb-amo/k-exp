@@ -91,7 +91,12 @@ class dds_frame():
                                     default_amp = self.p.amp_d1_3d_r)
         self.imaging = self.dds_assign(4,1, ao_order = 1,
                                     default_freq = 350.e6,
-                                    default_amp = 0.54) #0.54)
+                                    default_amp = 0.5,
+                                    dac_ch_vpd=self._dac_frame.imaging_pid.ch)
+        self.imaging_x_switch = self.dds_assign(5,2,
+                                        ao_order=1,
+                                        default_freq=100.e6,
+                                        default_amp=0.3)
         # self.op_r = self.dds_assign(4,2, ao_order = 1, transition = 'D1',
         #                             default_detuning = self.p.detune_optical_pumping_op,
         #                             default_amp = self.p.amp_optical_pumping_op)
@@ -105,7 +110,7 @@ class dds_frame():
         self.raman_150_minus = self.dds_assign(5,0,
                                         ao_order=-1,
                                         default_freq=150.e6,
-                                        default_amp=0.3)
+                                        default_amp=0.33)
         
         self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1',
                                     default_detuning = self.p.detune_optical_pumping_r_op,
@@ -125,11 +130,7 @@ class dds_frame():
                                     default_freq=42.26e6,
                                     default_amp=0.1)
         
-        self.imaging_x_switch = self.dds_assign(5,2,
-                                        ao_order=1,
-                                        default_freq=100.e6,
-                                        default_amp=0.3,
-                                        dac_ch_vpd=self._dac_frame.imaging_pid.ch)
+        
         self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_c_mot,
                                     default_amp = self.p.amp_d2_c_mot)
