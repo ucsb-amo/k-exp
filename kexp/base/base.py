@@ -9,6 +9,7 @@ from kexp.base import Devices, Cooling, Image, Cameras, Control
 from kexp.config.camera_id import cameras
 
 from waxx import Expt, img_types as img
+from waxx.control.beat_lock import BeatLockImagingPID
 from kexp.util.artiq.async_print import aprint
 
 class Base(Expt, Devices, Cooling, Image, Cameras, Control):
@@ -125,11 +126,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.dds.d1_beatlock_ref.set_dds(frequency=42.e6)
 
         if self.p.imaging_state == 1.:
-            self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1,
-                                      amp=self.camera_params.amp_imaging)
+            self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
         elif self.p.imaging_state == 2.:
-            self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging,
-                                      amp=self.camera_params.amp_imaging)
+            self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
+        self.imaging.set_power(self.camera_params.amp_imaging)
 
         if self._setup_awg:
             if two_d_tweezers:
