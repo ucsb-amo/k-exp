@@ -20,8 +20,8 @@ void setup() {
   Serial.begin(115200);
   qC.addCommand("ping",ping);
 
-  configureADC(1, 1, 0, BIPOLAR_10V, pid1);
-  configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
+  configureADC(1, 1, 0, BIPOLAR_1250mV, pid1);
+  configureADC(2, 1, 0, BIPOLAR_1250mV, getSet1);
 
   qC.assignVariable("p1", &P1);
   qC.assignVariable("i1", &I1);
