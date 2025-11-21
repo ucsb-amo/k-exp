@@ -31,6 +31,11 @@ void setup() {
   enableInterruptTrigger(2,BOTH_EDGES,&manualOverride);
 
   qC.addCommand("c", clear_integrator);
+  qC.addCommand("m", toggleManual);
+}
+
+void toggleManual(qCommand& qC, Stream& S) {
+  manual_override1 = !manual_override1;
 }
 
 void manualOverride() {
