@@ -142,11 +142,11 @@ class Devices():
                                     fraction_power=self.params.fraction_power_raman,
                                     params=self.params)
         
-        self.raman_lf_hf = RamanBeamPair(dds0=self.dds.raman_150_minus,
-                                        dds1=self.dds.raman_80_plus,
-                                        frequency_transition=self.params.frequency_raman_transition,
-                                        fraction_power=self.params.fraction_power_raman,
-                                        params=self.params)
+        # self.raman_lf_hf = RamanBeamPair(dds0=self.dds.raman_150_minus,
+        #                                 dds1=self.dds.raman_80_plus,
+        #                                 frequency_transition=self.params.frequency_raman_transition,
+        #                                 fraction_power=self.params.fraction_power_raman,
+        #                                 params=self.params)
         
         self.raman_nf = RamanBeamPair(dds0=self.dds.raman_150_minus,
                                     dds1=self.dds.raman_80_plus,
