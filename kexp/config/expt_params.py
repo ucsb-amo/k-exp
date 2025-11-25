@@ -23,7 +23,7 @@ class ExptParams():
 
         # img beam settings
         self.frequency_detuned_imaging = 22.25e6
-        self.frequency_detuned_imaging_F1 = 452.e6
+        self.frequency_detuned_imaging_F1 = 445.e6
         self.beatlock_sign = -1
         self.N_offset_lock_reference_multiplier = 8
         self.frequency_minimum_offset_beatlock = 150.e6
@@ -265,7 +265,7 @@ class ExptParams():
         self.amp_tweezer_pid2 = .45 # brimrose AO
         self.v_pd_tweezer_1064 = 5.
 
-        self.v_pd_lf_tweezer_1064_ramp_end = 9.2
+        self.v_pd_lf_tweezer_1064_ramp_end = 9.5
         self.v_pd_lf_tweezer_1064_rampdown_end = 1.25
         self.v_pd_lf_tweezer_1064_rampdown2_end = .13
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
@@ -348,7 +348,8 @@ class ExptParams():
         # low field evap NEW
         self.i_lf_lightsheet_evap1_current = 15.8
 
-        self.i_lf_tweezer_load_current = 15.3
+        # self.i_lf_tweezer_load_current = 15.3
+        self.i_lf_tweezer_load_current = 13.0
         self.i_lf_tweezer_evap1_current = 13.0
         self.i_lf_tweezer_evap2_current = 13.0
 
