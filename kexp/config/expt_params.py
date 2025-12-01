@@ -24,11 +24,13 @@ class ExptParams():
         # img beam settings
         self.frequency_detuned_imaging = 22.25e6
         self.frequency_detuned_imaging_F1 = 445.e6
+        self.imaging_state = 2. 
+        
+        # beatlock settings
         self.beatlock_sign = -1
         self.N_offset_lock_reference_multiplier = 8
-        self.frequency_minimum_offset_beatlock = 150.e6
-        self.imaging_state = 2. 
-
+        self.frequency_minimum_offset_beatlock = 250.e6
+        
         # low field imaging settings at i_spin_mixture = 19.48
         # (free space)
         self.frequency_detuned_imaging_m1 = 290.e6

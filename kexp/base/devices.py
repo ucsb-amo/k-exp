@@ -160,9 +160,6 @@ class Devices():
         self.camera = DummyCamera()
 
     def configure_imaging_system(self, imaging_configuration):
-        N = 8
-        beatref_sign = -1
-        f_min_beat = 250.e6
         
         if imaging_configuration == img_config.PID:
             self.imaging = BeatLockImagingPID(dds_sw=self.dds.imaging_x_switch,
@@ -170,17 +167,11 @@ class Devices():
                                               dds_pid=self.dds.imaging,
                                               pid_int_clear_ttl=self.ttl.imaging_pid_int_clear_hold,
                                               pid_override_ttl=self.ttl.imaging_pid_manual_override,
-                                              N_beatref_mult=N,
-                                              beatref_sign=beatref_sign,
-                                              frequency_minimum_beat=f_min_beat,
                                               expt_params=self.params)
         elif imaging_configuration == img_config.SWITCH:
             self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
                                            dds_beatref=self.dds.beatlock_ref,
                                            pid_override_ttl=self.ttl.imaging_pid_manual_override,
-                                           N_beatref_mult=N,
-                                           beatref_sign=beatref_sign,
-                                           frequency_minimum_beat=f_min_beat,
                                            expt_params=self.params)
         # elif imaging_configuration == img_config.POLMOD:
         #     self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
