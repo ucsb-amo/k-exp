@@ -59,6 +59,14 @@ void pid1() {
   if (pid_enable1) {
     double prop1 = (newadc1 - SETPOINT1) * P1;
     integral1 += (newadc1 - SETPOINT1) * I1;
+
+    if (integral1 > 5.) {
+      integral1 = 5.;
+    } else if (integral1 < 0.) {
+      integral1 = 0.;
+    } else {
+    }
+    
     newdac1 = prop1 + integral1;
   } else {
     newdac1 = 0.;
