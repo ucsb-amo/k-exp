@@ -10,19 +10,11 @@ from waxa.data.run_info import RunInfo
 from waxx.control.artiq.TTL import TTL, DummyTTL
 from waxx.control import BaslerUSB, AndorEMCCD, DummyCamera
 from waxx.control.slm.slm import SLM
-from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock
 
 from kexp.config.dds_id import dds_frame
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.expt_params import ExptParams
 from kexp.config.camera_id import cameras, img_types, CameraParams
-
-class ImagingConfigurations():
-    SWITCH = 0
-    PID = 1
-    POLMOD = 2
-
-img_config = ImagingConfigurations()
 
 class Cameras():
     def __init__(self):
@@ -31,7 +23,6 @@ class Cameras():
         self.camera_params = CameraParams()
         self.run_info = RunInfo()
         self.ttl = ttl_frame()
-        self.slm = SLM()
 
     ### Camera setup functions ###
 
@@ -44,8 +35,6 @@ class Cameras():
             camera = vars(cameras)[key]
             if not isinstance(camera,CameraParams):
                 raise ValueError(f'The requested camera with key {key} was not found.')
-
-        _img_config_bit = img_config.SWITCH
 
         if not setup_camera:
             self.camera = DummyCamera()
@@ -62,23 +51,21 @@ class Cameras():
                     ttl = self.ttl.z_basler
                 case cameras.andor.key:
                     ttl = self.ttl.andor
-                    # _img_config_bit = img_config.POLMOD
-                    _img_config_bit = img_config.PID
                 case cameras.basler_2dmot.key:
                     ttl = self.ttl.basler_2dmot
                 case _:
                     raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
             self.assign_camera_stuff(camera,camera_ttl=ttl,imaging_type=imaging_type)
         self.run_info.imaging_type = imaging_type
-        return _img_config_bit
+        # self.setup_slm(imaging_type)
 
-    @kernel
-    def setup_slm(self, imaging_type):
-        if self.camera_params.camera_type == cameras.andor.key:
-            if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
-                self.slm.write_phase_mask_kernel(0.,0.)
-            elif imaging_type == img_types.DISPERSIVE:
-                self.slm.write_phase_mask_kernel()
+    # @kernel
+    # def setup_slm(self, imaging_type):
+    #     if self.camera_params.camera_type == cameras.andor.key:
+    #         if imaging_type == img_types.ABSORPTION or imaging_type == img_types.ABSORPTION:
+    #             self.slm.write_phase_mask_kernel(0.,0.)
+    #         elif imaging_type == img_types.DISPERSIVE:
+    #             self.slm.write_phase_mask_kernel()
 
     def assign_camera_stuff(self,
                             camera:CameraParams,
