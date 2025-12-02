@@ -18,8 +18,8 @@ dds = dds_frame()
 
 class RamanBeamPair():
     def __init__(self,
-                 dds0=dds.raman_80_plus,
-                 dds1=dds.raman_150_minus,
+                 dds0=dds.test,
+                 dds1=dds.test_2,
                  params=ExptParams(),
                  frequency_transition=0.,
                  fraction_power=0.):
