@@ -54,6 +54,8 @@ void pid1() {
   double newadc1 = readADC1_from_ISR();
   double newdac1 = 0.;
 
+  newadc1 = handle_overflow(newadc1);
+
   // monitoring outputs
   writeDAC(3, newadc1);
   writeDAC(4, SETPOINT1);
@@ -75,12 +77,7 @@ void pid1() {
   }
 
   ///Bit overflow check conditions
-  if (newdac1 > 10) {
-    newdac1 = 9.9;
-  } else if (newdac1 < 0) {
-    newdac1 = 0.;
-  } else {
-  }
+  newdac1 = handle_overflow(newdac1);
 
   if (manual_override1) {
     newdac1 = 9.9;
@@ -91,6 +88,7 @@ void pid1() {
 
 void getSet1() {
   SETPOINT1 = readADC2_from_ISR();
+  SETPOINT1 = handle_overflow(SETPOINT1);
 }
 
 //At TTL edges, check value of TTL, clear integrator, and then enable/disable PID depending on value
@@ -105,6 +103,16 @@ void switch1() {
 
 void clear_integrator(qCommand& qC, Stream& S) {
   integral1 = 0;
+}
+
+float handle_overflow(float num) {
+  if (num > 10) {
+    num = 9.99;
+  } else if (num < 0) {
+    num = 0.;
+  } else {
+  }
+  return num;
 }
 
 void ping(qCommand& qC, Stream& S) {
