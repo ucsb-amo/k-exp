@@ -19,7 +19,7 @@ from artiq.coredevice import ad9910
 from kexp.config.expt_params import ExptParams
 from kexp.util.db.device_db import device_db
 
-N_uru = 6
+N_uru = 1
 N_ch = 4
 shape = (N_uru,N_ch)
 
