@@ -14,33 +14,16 @@ class tweezer_load(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        # self.xvar('i_lf_tweezer_load_current',np.linspace(12.,17.,15))
-
-        # self.xvar('v_pd_lf_tweezer_1064_ramp_end',np.linspace(5.,9.5,15))
-        # self.p.v_pd_lf_tweezer_1064_ramp_end = 9.5
-
         # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-5.,.0,8))
         self.p.v_lf_tweezer_paint_amp_max = -.71
         
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.08,.23,8))
         self.p.v_pd_lf_tweezer_1064_rampdown2_end = .2
 
-        # self.xvar('frequency_detuned_imaging',np.arange(400.,470.,5)*1.e6)
         # self.xvar('beans',[0,1]*50)
-        self.p.frequency_detuned_imaging_0 = -50.e6
 
-        # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
-
-        self.xvar('t_tof',np.linspace(100.,1800.,10)*1.e-6)
-        self.p.t_tof = 1300.e-6
-
-        # self.xvar('v_paint_amp_end',np.linspace(-6.,-5.,10))
-
-        self.p.t_rf_sweep = 90.e-3
-        self.p.f_rf_sweep_width = 100.e3
-        self.p.f_rf_sweep_center = 461.7e6
-
-        # self.xvar('f_rf_sweep_center',460.7e6 + np.arange(-500.e6,500.e6,self.p.f_rf_sweep_width))
+        # self.xvar('t_tof',np.linspace(100.,1800.,10)*1.e-6)
+        self.p.t_tof = 100.e-6
 
         self.p.t_raman_sweep = 1.e-3
         self.p.f_raman_sweep_width = 100.e3
@@ -49,7 +32,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('f_raman_sweep_center',465.1e6 + np.arange(-1.e6,1.e6,self.p.f_raman_sweep_width))
 
         # self.xvar('fraction_power_raman_nf',np.linspace(.1,.8,self.p.f_rf_sweep_width))
-        self.p.fraction_power_raman_nf = .5
+        self.p.fraction_power_raman_nf = 1.
 
         # self.p.frequency_raman_transition_nf = 447.325e6
 
@@ -76,7 +59,7 @@ class tweezer_load(EnvExperiment, Base):
         self.camera_params.exposure_time = 20.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.p.t_mot_load = 1.3
+        self.p.t_mot_load = 1.
 
         self.p.imaging_state = 2
         
@@ -107,10 +90,10 @@ class tweezer_load(EnvExperiment, Base):
         
         delay(5.e-3)
 
-        # self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
-        #                                        v_start=self.dac.tweezer_paint_amp.v,
-        #                                        v_end=self.p.v_paint_amp_end,
-        #                                        n=1000)
+        self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
+                                               v_start=self.dac.tweezer_paint_amp.v,
+                                               v_end=self.p.v_paint_amp_end,
+                                               n=1000)
 
         # self.init_raman_beams_nf()
 

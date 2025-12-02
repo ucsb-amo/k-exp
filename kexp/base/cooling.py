@@ -142,6 +142,8 @@ class Cooling():
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
+        # delay(100.e-3)
+
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
         self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
@@ -205,9 +207,9 @@ class Cooling():
 
         self.dac.supply_current_2dmot.set(v=0.)
 
-        # self.outer_coil.ramp_supply(t=20.e-3,
-        #                      i_start=self.p.i_lf_tweezer_evap2_current,
-        #                      i_end=self.p.i_spin_mixture)
+        self.outer_coil.ramp_supply(t=20.e-3,
+                             i_start=self.p.i_lf_tweezer_evap2_current,
+                             i_end=self.p.i_spin_mixture)
         
         # self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
         #                                        v_start=self.dac.tweezer_paint_amp.v,

@@ -9,7 +9,7 @@ struct Cal
 };
 
 float SETPOINT1 = 1.;
-float P1 = -0.055;
+float P1 = -0.005;
 float I1 = -0.005;
 double integral1 = 0.;
 bool pid_enable1 = true;
@@ -20,8 +20,10 @@ void setup() {
   Serial.begin(115200);
   qC.addCommand("ping",ping);
 
-  configureADC(1, 1, 0, BIPOLAR_1250mV, pid1);
-  configureADC(2, 1, 0, BIPOLAR_1250mV, getSet1);
+  configureADC(1, 1, 0, BIPOLAR_10V, pid1);
+  configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
+  // configureADC(1, 1, 0, BIPOLAR_1250mV, pid1);
+  // configureADC(2, 1, 0, BIPOLAR_1250mV, getSet1);
 
   qC.assignVariable("p1", &P1);
   qC.assignVariable("i1", &I1);
@@ -94,9 +96,9 @@ void getSet1() {
 //At TTL edges, check value of TTL, clear integrator, and then enable/disable PID depending on value
 void switch1() {
   if (triggerRead(1)) {
-    pid_enable1 = true;
-  } else {
     pid_enable1 = false;
+  } else {
+    pid_enable1 = true;
   }
   integral1 = 0.;
 }
