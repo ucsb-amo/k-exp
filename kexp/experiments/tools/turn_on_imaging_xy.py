@@ -38,6 +38,7 @@ class turn_on_imaging(EnvExperiment, Base):
         self.imaging.set_imaging_detuning(frequency_detuned)
         delay(1.e-3)
         self.imaging.set_power(amp_imaging)
+        self.imaging.on()
 
     def analyze(self):
         import os
