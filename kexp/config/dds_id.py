@@ -12,6 +12,8 @@ from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.dds_calibration import DDS_Amplitude_Calibration
 from kexp.config.dds_calibration import DDS_VVA_Calibration
 
+from kexp.util.db.device_db import device_db
+
 # from jax import AD9910Manager, RAMProfile, RAMType
 from artiq.coredevice import ad9910
 
@@ -181,7 +183,8 @@ class dds_frame():
         dds0 = DDS(urukul_idx=uru,ch=ch,
                    frequency=default_freq,
                    amplitude=default_amp,
-                   v_pd=5.0)
+                   v_pd=5.0,
+                   device_db=device_db)
         dds0.aom_order = ao_order
         dds0.transition = transition
         dds0.dac_ch = dac_ch_vpd
@@ -224,7 +227,7 @@ class dds_frame():
             uru = idx[0]
             ch = idx[1]
             freq, amp, v_pd = 0., 0., 0.
-            this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame.dac_device)
+            this_dds = DDS(uru,ch,freq,amp,v_pd,dac_device=self._dac_frame.dac_device,device_db=device_db)
             self.dds_array[uru][ch] = this_dds
 
     @portable
