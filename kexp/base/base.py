@@ -9,6 +9,8 @@ from kexp.base import Devices, Cooling, Image, Cameras, Control
 from kexp.config.camera_id import cameras
 
 from waxx import Expt, img_types as img
+from waxx.control.beat_lock import BeatLockImagingPID
+from kexp.util.artiq.async_print import aprint
 
 class Base(Expt, Devices, Cooling, Image, Cameras, Control):
     def __init__(self,
@@ -29,8 +31,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.prepare_devices(expt_params=self.params)
 
         # self._polmod_config = self.choose_camera(setup_camera,imaging_type,camera_select)
-        _polmod_config = self.choose_camera(setup_camera,imaging_type,camera_select)
-        self.configure_imaging_system(polmod_ao_bool=_polmod_config)
+        _img_config = self.choose_camera(setup_camera,imaging_type,camera_select)
+        self.configure_imaging_system(imaging_configuration=_img_config)
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
@@ -55,6 +57,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
                     init_dac = True,
                     dds_set = True, 
                     dds_off = True, 
+                    init_imaging = True,
                     beat_ref_on=True,
                     init_shuttler = True, 
                     init_lightsheet = True,
@@ -86,10 +89,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         if dds_set:
             delay(1*ms)
             self.set_all_dds() # set DDS to default values
-            self.imaging.init()
-            self.set_imaging_detuning()
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
+        if init_imaging:
+            self.imaging.init()
+            self.set_imaging_detuning()
         if beat_ref_on:
             self.dds.beatlock_ref.on()
             self.dds.d1_beatlock_ref.on()
@@ -119,13 +123,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.dds.d2_2dv_r.on()
         self.dds.push.on()
 
-        self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
         self.dds.d1_beatlock_ref.set_dds(frequency=42.e6)
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
         elif self.p.imaging_state == 2.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
+        
+        self.imaging.set_power(self.camera_params.amp_imaging)
 
         if self._setup_awg:
             if two_d_tweezers:
@@ -139,6 +144,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
+
+        # self.dds.raman_150_minus.on()
+        # self.dds.raman_150_plus.on()
+        # self.dds.raman_80_plus.on()
         
         # self.dds.ry_405_switch.on()
         # self.dds.ry_980_switch.on()

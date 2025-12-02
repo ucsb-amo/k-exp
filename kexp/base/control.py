@@ -20,7 +20,7 @@ from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 
 class Control():
     def __init__(self):
-        # just to get syntax highlighting
+        # just to get syntax highlighting, placeholders
         self.dds = dds_frame()
         self.ttl = ttl_frame()
         self.dac = dac_frame()
@@ -30,6 +30,7 @@ class Control():
         self.lightsheet = lightsheet()
         self.params = ExptParams()
         self.raman = RamanBeamPair()
+        self.raman_nf = RamanBeamPair()
         self.p = self.params
 
     @kernel
@@ -46,6 +47,25 @@ class Control():
         if fraction_power == dv:
             fraction_power = self.params.fraction_power_raman
         self.raman.set(frequency_transition,fraction_power,
+                       global_phase,relative_phase,
+                       t_phase_origin_mu=t_phase_origin_mu,
+                       phase_mode=phase_mode,
+                       init=True)
+        
+    @kernel
+    def init_raman_beams_nf(self,
+                         frequency_transition=dv,
+                         fraction_power=dv,
+                         global_phase=0.,relative_phase=0.,
+                         t_phase_origin_mu=np.int64(-1),
+                         phase_mode=1):
+        if t_phase_origin_mu < 0:
+            t_phase_origin_mu = now_mu()
+        if frequency_transition == dv:
+            frequency_transition = self.params.frequency_raman_transition_nf
+        if fraction_power == dv:
+            fraction_power = self.params.fraction_power_raman_nf
+        self.raman_nf.set(frequency_transition,fraction_power,
                        global_phase,relative_phase,
                        t_phase_origin_mu=t_phase_origin_mu,
                        phase_mode=phase_mode,

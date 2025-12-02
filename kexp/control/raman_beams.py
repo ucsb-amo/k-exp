@@ -9,8 +9,8 @@ from waxx.control.artiq.DAC_CH import DAC_CH
 dv = -0.1
 di = 0
 
-RAMAN_PLUS_IDX = 0
-RAMAN_MINUS_IDX = 1
+DDS0_IDX = 0
+DDS1_IDX = 1
 
 from kexp.config.expt_params import ExptParams
 from kexp.config.dds_id import dds_frame
@@ -18,13 +18,13 @@ dds = dds_frame()
 
 class RamanBeamPair():
     def __init__(self,
-                 dds_plus=dds.raman_plus,
-                 dds_minus=dds.raman_minus,
+                 dds0=dds.raman_80_plus,
+                 dds1=dds.raman_150_minus,
                  params=ExptParams(),
                  frequency_transition=0.,
                  fraction_power=0.):
-        self.dds_plus = dds_plus
-        self.dds_minus = dds_minus
+        self.dds0 = dds0
+        self.dds1 = dds1
         self.params = params
         self.p = self.params
 
@@ -42,8 +42,8 @@ class RamanBeamPair():
         self._frequency_center_plus = 0.
         self._frequency_center_minus = 0.
         self._frequency_array = np.array([0.,0.])
-        self._amplitude_plus = 0.
-        self._amplitude_minus = 0.
+        self._amplitude_0 = 0.
+        self._amplitude_1 = 0.
 
         self.t_timeline = np.zeros(5,dtype=np.int64)
         self.t_rtio = np.zeros(5,dtype=np.int64)
@@ -57,32 +57,32 @@ class RamanBeamPair():
         self.t_idx += 1
 
     def _init(self):
-        # self._frequency_center_dds = (self.dds_plus.frequency + self.dds_minus.frequency)/2
-        # if abs(self._frequency_center_dds - self.dds_plus.frequency) != abs(self._frequency_center_dds - self.dds_minus.frequency):
+        # self._frequency_center_dds = (self.dds0.frequency + self.dds1.frequency)/2
+        # if abs(self._frequency_center_dds - self.dds0.frequency) != abs(self._frequency_center_dds - self.dds1.frequency):
         #     raise ValueError("The - and + DDS frequencies should be equidistant from their mean for optimal efficiency.")
-        self._frequency_center_plus = self.dds_plus.frequency
-        self._frequency_center_minus = self.dds_minus.frequency
-        self._amplitude_plus = self.dds_plus.amplitude
-        self._amplitude_minus = self.dds_minus.amplitude
+        self._frequency_center_0 = self.dds0.frequency
+        self._frequency_center_1 = self.dds1.frequency
+        self._amplitude_0 = self.dds0.amplitude
+        self._amplitude_1 = self.dds1.amplitude
 
     @portable(flags={"fast-math"})
     def state_splitting_to_ao_frequency(self,frequency_state_splitting) -> TArray(TFloat):
 
-        order_plus = self.dds_plus.aom_order
-        order_minus = self.dds_minus.aom_order
+        order_plus = self.dds0.aom_order
+        order_minus = self.dds1.aom_order
 
         delta = frequency_state_splitting
 
-        fcp = self._frequency_center_plus
-        fcm = self._frequency_center_minus
+        fc0 = self._frequency_center_0
+        fc1 = self._frequency_center_1
 
         a = order_plus * order_minus # relative order
 
-        df_plus = (delta/2 - (fcp-a*fcm))/(1+a*fcm/fcp)
-        df_minus = - df_plus * fcm/fcp
+        df_0 = (delta/2 - (fc0-a*fc1))/(1+a*fc1/fc0)
+        df_1 = - df_0 * fc1/fc0
 
-        self._frequency_array[RAMAN_PLUS_IDX] = fcp + df_plus
-        self._frequency_array[RAMAN_MINUS_IDX] = fcm + df_minus
+        self._frequency_array[DDS0_IDX] = fc0 + df_0
+        self._frequency_array[DDS1_IDX] = fc1 + df_1
 
         return self._frequency_array
     
@@ -132,13 +132,13 @@ class RamanBeamPair():
 
     @kernel
     def on(self):
-        self.dds_plus.on()
-        self.dds_minus.on()
+        self.dds0.on()
+        self.dds1.on()
 
     @kernel
     def off(self):
-        self.dds_plus.off()
-        self.dds_minus.off()
+        self.dds0.off()
+        self.dds1.off()
 
     @kernel
     def set(self,
@@ -207,21 +207,21 @@ class RamanBeamPair():
             relative_phase_changed = True
         
         if phase_mode_changed:
-            self.dds_plus.set_phase_mode(self.phase_mode)
-            self.dds_minus.set_phase_mode(self.phase_mode)
+            self.dds0.set_phase_mode(self.phase_mode)
+            self.dds1.set_phase_mode(self.phase_mode)
 
         if freq_changed or fraction_power_changed or phase_origin_changed or global_phase_changed or relative_phase_changed:
             self._frequency_array = self.state_splitting_to_ao_frequency(self.frequency_transition)
 
-            amp_plus = np.sqrt(self.fraction_power) * self._amplitude_plus
-            amp_minus = np.sqrt(self.fraction_power) * self._amplitude_minus
+            amp0 = np.sqrt(self.fraction_power) * self._amplitude_0
+            amp1 = np.sqrt(self.fraction_power) * self._amplitude_1
 
-            self.dds_plus.set_dds(self._frequency_array[RAMAN_PLUS_IDX],
-                                amp_plus,
+            self.dds0.set_dds(self._frequency_array[DDS0_IDX],
+                                amp0,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase=self.global_phase)
-            self.dds_minus.set_dds(self._frequency_array[RAMAN_MINUS_IDX],
-                                amp_minus,
+            self.dds1.set_dds(self._frequency_array[DDS1_IDX],
+                                amp1,
                                 t_phase_origin_mu=self.t_phase_origin_mu,
                                 phase=self.global_phase+self.relative_phase)
 

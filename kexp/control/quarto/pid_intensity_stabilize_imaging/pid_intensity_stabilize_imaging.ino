@@ -13,22 +13,38 @@ float P1 = -0.055;
 float I1 = -0.005;
 double integral1 = 0.;
 bool pid_enable1 = true;
+bool manual_override1 = false;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   qC.addCommand("ping",ping);
 
-  configureADC(1, 1, 0, BIPOLAR_10V, pid1);
-  configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
+  configureADC(1, 1, 0, BIPOLAR_1250mV, pid1);
+  configureADC(2, 1, 0, BIPOLAR_1250mV, getSet1);
 
   qC.assignVariable("p1", &P1);
   qC.assignVariable("i1", &I1);
   qC.assignVariable("set1", &SETPOINT1);
 
   enableInterruptTrigger(1,BOTH_EDGES,&switch1);
+  enableInterruptTrigger(2,BOTH_EDGES,&manualOverride);
 
   qC.addCommand("c", clear_integrator);
+  qC.addCommand("m", toggleManual);
+}
+
+void toggleManual(qCommand& qC, Stream& S) {
+  manual_override1 = !manual_override1;
+}
+
+void manualOverride() {
+  if (triggerRead(2)) {
+    manual_override1 = true;
+  } else {
+    manual_override1 = false;
+    integral1 = 0;
+  }
 }
 
 //Read ADC, output ADC value at Ch3 and set point on CH4, calculate PID, output PID at CH1
@@ -43,6 +59,14 @@ void pid1() {
   if (pid_enable1) {
     double prop1 = (newadc1 - SETPOINT1) * P1;
     integral1 += (newadc1 - SETPOINT1) * I1;
+
+    if (integral1 > 5.) {
+      integral1 = 5.;
+    } else if (integral1 < 0.) {
+      integral1 = 0.;
+    } else {
+    }
+    
     newdac1 = prop1 + integral1;
   } else {
     newdac1 = 0.;
@@ -55,6 +79,11 @@ void pid1() {
     newdac1 = 0.;
   } else {
   }
+
+  if (manual_override1) {
+    newdac1 = 9.9;
+  }
+
   writeDAC(1, newdac1);
 }
 
@@ -76,8 +105,7 @@ void clear_integrator(qCommand& qC, Stream& S) {
   integral1 = 0;
 }
 
-void ping(qCommand& qC, Stream& S)
-{
+void ping(qCommand& qC, Stream& S) {
   struct Cal cal2;
   readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
   Serial.println(cal2.cal_d); 

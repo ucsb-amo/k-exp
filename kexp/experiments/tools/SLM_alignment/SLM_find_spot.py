@@ -15,7 +15,7 @@ class gm_tof(EnvExperiment, Base):
                       camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-        N = 11
+        N = 21
         self.xvar('px_slm_phase_mask_position_x',1034 + np.linspace(-10.,10.,N,dtype=int))
         self.xvar('px_slm_phase_mask_position_y',835 + np.linspace(-10.,10.,N,dtype=int))
         # self.xvar('dimension_slm_mask', np.arange(10.,200.,10,dtype=int)*1e-6)

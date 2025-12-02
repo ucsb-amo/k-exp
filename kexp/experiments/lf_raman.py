@@ -17,7 +17,7 @@ class tweezer_load(EnvExperiment, Base):
 
 
         # self.xvar('frequency_detuned_imaging',np.arange(280.,300.,1)*1.e6)
-        self.xvar('beans',[0,1]*50)
+        # self.xvar('beans',[0,1]*50)
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
@@ -41,16 +41,16 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(2.,500.,20)*1.e-6)
         self.p.t_tof = 50.e-6
 
-        # self.p.t_raman_sweep = 1.e-3
-        # self.p.frequency_raman_sweep_center = 41.225e6
-        # self.p.frequency_raman_sweep_width = 10.e3
-        # self.xvar('frequency_raman_sweep_center', 41.225e6 + np.arange(-60.e3,60.e3,self.p.frequency_raman_sweep_width))
+        self.p.t_raman_sweep = 1.e-3
+        self.p.frequency_raman_sweep_center = 41.225e6
+        self.p.frequency_raman_sweep_width = 10.e3
+        self.xvar('frequency_raman_sweep_center', 41.225e6 + np.arange(-60.e3,60.e3,self.p.frequency_raman_sweep_width))
 
         # self.xvar('frequency_raman_transition',41.1*1e6 + np.linspace(-5.e5,5.e5,10))
         self.p.frequency_raman_transition = 41.25e6
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
-        self.p.amp_raman = 0.35
+        self.p.amp_raman = 0.1
 
         # self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
         # self.xvar('t_raman_pulse',[12.e-6,24.e-6])
@@ -100,6 +100,10 @@ class tweezer_load(EnvExperiment, Base):
 
         # delay(5.7e-3)
 
+        # self.raman.sweep(t=self.p.t_raman_sweep,
+        #                  frequency_center=self.p.frequency_raman_sweep_center,
+        #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
+        #                  n_steps=50)
         
         # self.raman.pulse(t=self.p.t_raman_pulse)
         # delay(self.p.t_raman_pulse)
@@ -116,10 +120,10 @@ class tweezer_load(EnvExperiment, Base):
         
         self.tweezer.off()
 
-        if self.p.beans:
-            delay(self.p.t_tof)
-        else:
-            delay(10.e-3)
+        # if self.p.beans:
+        #     delay(self.p.t_tof)
+        # else:
+        #     delay(10.e-3)
 
         self.abs_image()
 
