@@ -67,6 +67,11 @@ class LiveODWindow(QWidget):
         self.camera_mother = CameraMother(start_watching=False, manage_babies=False, output_queue=self.queue, camera_nanny=self.camera_nanny, N_runs=1)
         self.monitor_manager = MonitorManager()
         self.monitor_manager.msg.connect(self.msg)
+
+        self.monitor_checker = QTimer()
+        self.monitor_checker.setInterval(150)
+        self.monitor_checker.timeout.connect(self.check_monitor)
+        
         self.the_baby = None
         self.last_camera = ""
         self.img_count = 0
@@ -74,8 +79,10 @@ class LiveODWindow(QWidget):
         self.setup_widgets()
         self.setup_layout()
         self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
+        
         self.camera_mother.start()
         self.monitor_manager.start()
+        self.monitor_checker.start()
 
     def update_run_id_label(self):
         try:
@@ -93,6 +100,7 @@ class LiveODWindow(QWidget):
         self.camera_conn_bar = CamConnBar(self.camera_nanny, self.output_window)
 
         self.setup_screenshot_button()
+        self.setup_monitor_restart_button()
         self.roi_select = ROISelector()
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
         self.plotting_queue = Queue()
@@ -100,6 +108,25 @@ class LiveODWindow(QWidget):
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
         self.status_lights = StatusLightsWidget()
         self.plotter.start()
+
+    def check_monitor(self):
+        if self.monitor_manager.isRunning():
+            self.monitor_restart_button.setStyleSheet('background-color: #696969; font-size: 20px; font-weight: bold;')
+            try:
+                self.monitor_restart_button.clicked.disconnect()
+            except:
+                pass
+        else:
+            self.monitor_restart_button.setStyleSheet('background-color: #a31a1a; font-size: 20px; font-weight: bold;')
+            self.monitor_restart_button.clicked.connect(self.restart_monitor)
+            self.monitor_restart_button.clicked.connect(lambda: self.msg("Restarting monitor."))
+
+    def setup_monitor_restart_button(self):
+        self.monitor_restart_button = QPushButton("Restart\nMonitor")
+        self.monitor_restart_button.clicked.connect(self.restart_monitor)
+        self.monitor_restart_button.clicked.connect(lambda: self.msg("Restarting monitor."))
+        self.monitor_restart_button.setMinimumHeight(40)
+        self.monitor_restart_button.setStyleSheet('background-color: #a31a1a; font-size: 20px; font-weight: bold;')
 
     def setup_screenshot_button(self):
         self.screenshot_button = QPushButton("📷 Screenshot 📷")
@@ -112,7 +139,7 @@ class LiveODWindow(QWidget):
         self.fix_button.setMinimumHeight(40)
         self.fix_button.setStyleSheet('background-color: #ffcccc; font-size: 40px; font-weight: bold;')
         self.fix_button.clicked.connect(self.reset)
-        self.run_id_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.run_id_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def setup_output_window(self):
         font = QFont()
@@ -147,6 +174,7 @@ class LiveODWindow(QWidget):
         control_bar.addLayout(cam_bar)
         control_bar.addWidget(self.status_lights)
         control_bar.addWidget(self.roi_select)
+        control_bar.addWidget(self.monitor_restart_button)
         control_bar.addWidget(self.fix_button)
         # control_bar.addStretch()
         layout.addLayout(control_bar)
@@ -352,6 +380,13 @@ class LiveODWindow(QWidget):
         self.the_baby = None
         self.data_handler = None
         self.camera_nanny.interrupted = False
+
+        time.sleep(0.1)
+        if not self.monitor_manager.isRunning():
+            try:
+                self.restart_monitor()
+            except Exception as e:
+                print(e)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
