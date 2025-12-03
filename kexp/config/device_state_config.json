@@ -43,12 +43,12 @@
   },
   "dds": {
     "test": {
-      "amplitude": 0.1,
+      "amplitude": 0.2,
       "aom_order": 0,
       "ch": 0,
       "dac_ch": 0,
       "frequency": 2000000.0,
-      "sw_state": 1,
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
       "v_pd": 2.0
