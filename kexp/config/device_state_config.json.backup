@@ -91,8 +91,8 @@
       "shuttler_id.py",
       "ttl_id.py"
     ],
-    "previous_timestamp": "2025-12-03T12:03:08.871822",
-    "timestamp": "2025-12-03T12:05:06.103699",
+    "previous_timestamp": "2025-12-03T12:02:54.709025",
+    "timestamp": "2025-12-03T12:03:08.871822",
     "total_devices_updated": 16,
     "updated_from": "live_base_object"
   },
