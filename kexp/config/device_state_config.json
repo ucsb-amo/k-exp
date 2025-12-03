@@ -3,17 +3,17 @@
     "test": {
       "ch": 0,
       "max_voltage": 9.99,
-      "voltage": 0.0
+      "voltage": 1.0
     },
     "zotino0_ch1": {
       "ch": 1,
       "max_voltage": 9.99,
-      "voltage": 1.0
+      "voltage": 0.0
     },
     "zotino0_ch2": {
       "ch": 2,
       "max_voltage": 9.99,
-      "voltage": 0.0
+      "voltage": 1.0
     },
     "zotino0_ch3": {
       "ch": 3,
@@ -43,37 +43,39 @@
   },
   "dds": {
     "test": {
-      "amplitude": 0.1,
-      "aom_order": 0,
-      "ch": 4,
-      "dac_ch": -1,
-      "frequency": 2000000.0,
-      "sw_state": 0,
-      "transition": "None",
-      "urukul_idx": 0,
-      "v_pd": 5.0,
-      "max_voltage": 9.99,
-      "voltage": 1.0,
-      "ttl_state": 0,
-      "type": "out"
-    },
-    "test_2": {
       "amplitude": 0.3,
       "aom_order": 0,
-      "ch": 1,
+      "ch": 0,
       "dac_ch": -1,
       "frequency": 1000000.0,
       "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
-      "v_pd": 5.0
+      "v_pd": 5.0,
+      "ttl_state": 1,
+      "type": "out",
+      "max_voltage": 9.99,
+      "voltage": 1.0
+    },
+    "test_2": {
+      "amplitude": 0.3,
+      "aom_order": 0,
+      "ch": 5,
+      "dac_ch": -1,
+      "frequency": 1000000.0,
+      "sw_state": 0,
+      "transition": "None",
+      "urukul_idx": 0,
+      "v_pd": 5.0,
+      "ttl_state": 1,
+      "type": "out"
     },
     "urukul0_ch2": {
       "amplitude": 0.0,
       "aom_order": 0,
       "ch": 2,
       "dac_ch": -1,
-      "frequency": 1000000.0,
+      "frequency": 0.0,
       "sw_state": 0,
       "transition": "None",
       "urukul_idx": 0,
@@ -99,7 +101,7 @@
       "shuttler_id.py",
       "ttl_id.py"
     ],
-    "timestamp": "2025-12-02T15:59:13.395407"
+    "timestamp": "2025-12-02T16:25:57.481386"
   },
   "ttl": {
     "test": {
