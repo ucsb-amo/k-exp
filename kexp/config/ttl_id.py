@@ -1,12 +1,20 @@
 import numpy as np
 from artiq.experiment import kernel
 from artiq.coredevice.ttl import TTLOut, TTLInOut
+
+from waxx.config.ttl_id import ttl_frame as ttl_frame_waxx
 from waxx.control.artiq.TTL import TTL, TTL_IN, TTL_OUT
 
-class ttl_frame():
+from kexp.util.db.device_db import device_db
+
+N_TTL = 88
+
+class ttl_frame(ttl_frame_waxx):
     def __init__(self):
 
-        self.ttl_list = []
+        self._db = device_db
+
+        self.setup(N_TTL)
         
         self.img_beam_sw = self.assign_ttl_out(0)
         self.tweezer_pid2_enable = self.assign_ttl_out(1)
@@ -41,32 +49,4 @@ class ttl_frame():
 
         self.line_trigger = self.assign_ttl_in(40)
 
-        self._write_ttl_keys()
-
-        self.camera = TTL_OUT
-
-    def assign_ttl_out(self,ch) -> TTL_OUT:
-        this_ttl = TTL_OUT(ch)
-        self.ttl_list.append(this_ttl)
-        return this_ttl
-    
-    def assign_ttl_in(self,ch) -> TTL_IN:
-        this_ttl = TTL_IN(ch)
-        self.ttl_list.append(this_ttl)
-        return this_ttl
-    
-    def ttl_by_ch(self,ch) -> TTL:
-        ch_list = [ttl.ch for ttl in self.ttl_list]
-        if ch in ch_list:
-            ch_idx = ch_list.index(ch)
-            return self.ttl_list[ch_idx]
-        else:
-            raise ValueError(f"TTL ch {ch} not assigned in ttl_id.")
-    
-    def _write_ttl_keys(self):
-        '''Adds the assigned keys to the DDS objects so that the user-defined
-        names (keys) are available with the DDS objects.'''
-        for key in self.__dict__.keys():
-            if isinstance(self.__dict__[key],TTL):
-                self.__dict__[key].key = key
-                
+        self.cleanup()

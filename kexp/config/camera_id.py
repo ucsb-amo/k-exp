@@ -1,7 +1,10 @@
 from waxx.control.cameras.camera_param_classes import CameraParams, BaslerParams, AndorParams, img_types
+from waxx.config.camera_id import camera_frame as camera_frame_waxx
 
-class camera_frame():
+class camera_frame(camera_frame_waxx):
     def __init__(self):
+
+        self.setup()
         
         # self.andor = AndorParams(amp_absorption=0.284, exposure_time_abs=10.e-6, em_gain_abs=300.,
         #                         amp_fluorescence=0.54, exposure_time_fluor=25.e-6, em_gain_fluor=1.,
@@ -38,16 +41,7 @@ class camera_frame():
         self.basler_2dmot = BaslerParams(serial_number='40411037',
                                          trigger_source='Line2')
         
-        self.img_types = img_types
-        self.write_keys()
-    
-    def write_keys(self):
-        """Adds the assigned keys to the CameraParams objects so that the
-        user-defined names (key) are available with the CameraParams
-        objects."""
-        for key in self.__dict__.keys():
-            if isinstance(self.__dict__[key],CameraParams):
-                self.__dict__[key].key = key
+        self.cleanup()
         
 cameras = camera_frame()
 
