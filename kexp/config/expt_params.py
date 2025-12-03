@@ -269,7 +269,7 @@ class ExptParams():
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.5
         self.v_pd_lf_tweezer_1064_rampdown_end = 1.25
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .13
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .18
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
@@ -294,7 +294,7 @@ class ExptParams():
         # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.15]
 
-        self.v_lf_tweezer_paint_amp_max = -1.43
+        self.v_lf_tweezer_paint_amp_max = -.57
         self.v_hf_tweezer_paint_amp_max = -1.1
 
         self.v_paint_amp_end = -5.444444
@@ -338,8 +338,10 @@ class ExptParams():
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 
-        self.frequency_raman_transition = 41.25e6
-        self.frequency_raman_transition_nf = 460.7e6
+        self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
+        self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
+        self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
+        self.frequency_raman_transition_nf_10_21 = 462.85e6 # 1.5 G 1,-1 to 2,0
 
         # low field evap old
         # self.i_evap1_current = 9.5
@@ -352,8 +354,8 @@ class ExptParams():
 
         # self.i_lf_tweezer_load_current = 15.3
         self.i_lf_tweezer_load_current = 13.0
-        self.i_lf_tweezer_evap1_current = 13.0
-        self.i_lf_tweezer_evap2_current = 13.0
+        self.i_lf_tweezer_evap1_current = 12.44
+        self.i_lf_tweezer_evap2_current = 12.63
 
         self.i_spin_mixture = 19.48
 

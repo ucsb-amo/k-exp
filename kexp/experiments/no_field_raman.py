@@ -15,15 +15,19 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-5.,.0,8))
-        self.p.v_lf_tweezer_paint_amp_max = -.71
+        # self.p.v_lf_tweezer_paint_amp_max = -.71
         
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.08,.23,8))
-        self.p.v_pd_lf_tweezer_1064_rampdown2_end = .2
+        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .2
 
         # self.xvar('beans',[0,1]*50)
+        
+        self.xvar('t_xshim_rampdown',np.linspace(1.e-3,20.e-3,10))
+
+        self.p.t_xshim_rampdown = 10.e-3
 
         # self.xvar('t_tof',np.linspace(100.,1800.,10)*1.e-6)
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 1200.e-6
 
         self.p.t_raman_sweep = 1.e-3
         self.p.f_raman_sweep_width = 100.e3
@@ -49,11 +53,11 @@ class tweezer_load(EnvExperiment, Base):
         self.p.v_x_shim_pol_contrast = 1.5
 
         # self.xvar('t_tweezer_hold',np.logspace(np.log10(3.e-3), np.log10(200.e-3), 30))
-        # self.xvar('t_tweezer_hold',np.linspace(0.e-3,20.e-3,20))
+        # self.xvar('t_tweezer_hold',np.linspace(0.e-3,100.e-3,10))
         
-        self.p.t_tweezer_hold = 10.e-3
+        self.p.t_tweezer_hold = 0.e-3
 
-        self.p.amp_imaging = .1
+        self.p.amp_imaging = .321
         # self.xvar('amp_imaging',np.linspace(0.15,.5,15))
 
         self.camera_params.exposure_time = 20.e-6
@@ -70,8 +74,8 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         # self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        # self.imaging.set_power(amp=self.camera_params.amp_imaging)
+        
+        self.imaging.set_power(power_control_parameter=self.camera_params.amp_imaging)
 
         self.prepare_lf_tweezers()
 
@@ -83,12 +87,12 @@ class tweezer_load(EnvExperiment, Base):
         
         self.outer_coil.snap_off()
 
-        self.dac.xshim_current_control.linear_ramp(t=20.e-3,
+        self.dac.xshim_current_control.linear_ramp(t=self.p.t_xshim_rampdown,
                                                    v_start=9.99,
                                                    v_end=self.p.v_x_shim_pol_contrast,
-                                                   n=500)
+                                                   n=100)
         
-        delay(5.e-3)
+        delay(2.e-3)
 
         self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
                                                v_start=self.dac.tweezer_paint_amp.v,
