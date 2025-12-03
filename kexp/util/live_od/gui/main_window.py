@@ -1,10 +1,13 @@
 import sys
 from queue import Queue
+from pathlib import Path
+import os
+import numpy as np
+import time
+
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
 from PyQt6.QtGui import QFont, QIcon, QGuiApplication
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
-import numpy as np
-import time
 
 from waxa import ROI
 from waxa.data.increment_run_id import update_run_id, RUN_ID_PATH
@@ -12,6 +15,7 @@ from waxa.image_processing import compute_OD, process_ODs
 
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
 from kexp.util.live_od.camera_connection_widget import CamConnBar, ROISelector
+from kexp.util.live_od.monitor_manager import MonitorManager
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.analyzer import Analyzer
 from kexp.util.live_od.gui.plotter import LiveODPlotter
@@ -61,6 +65,9 @@ class LiveODWindow(QWidget):
         self.queue = Queue()
         self.camera_nanny = CameraNanny()
         self.camera_mother = CameraMother(start_watching=False, manage_babies=False, output_queue=self.queue, camera_nanny=self.camera_nanny, N_runs=1)
+        self.monitor_manager = MonitorManager()
+        self.monitor_manager.msg.connect(self.msg)
+        self.the_baby = None
         self.last_camera = ""
         self.img_count = 0
         self.img_count_run = 0
@@ -68,6 +75,7 @@ class LiveODWindow(QWidget):
         self.setup_layout()
         self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
         self.camera_mother.start()
+        self.monitor_manager.start()
 
     def update_run_id_label(self):
         try:
@@ -154,6 +162,8 @@ class LiveODWindow(QWidget):
         clipboard.setPixmap(pixmap)
 
     def create_camera_baby(self, file, name):
+        self.monitor_manager.terminate()
+
         self.data_handler = DataHandler(self.queue, data_filepath=file)
         self.the_baby = CameraBaby(self.data_handler, name, self.queue, self.camera_nanny)
         self.data_handler.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
@@ -176,6 +186,7 @@ class LiveODWindow(QWidget):
         
         self.the_baby.done_signal.connect(self.restart_mother)
         self.the_baby.done_signal.connect(update_run_id)
+        self.the_baby.done_signal.connect(self.restart_monitor)
 
         self.the_baby.cam_status_signal.connect(self.status_lights.set_cam_status_lights)
         self.the_baby.start()
@@ -186,8 +197,13 @@ class LiveODWindow(QWidget):
         
     def restart_mother(self):
         import time
-        time.sleep(0.25)
+        time.sleep(0.125)
         self.camera_mother.start()
+
+    def restart_monitor(self):
+        import time
+        time.sleep(0.125)
+        self.monitor_manager.start()
 
     def check_new_camera(self, camera_select):
         # Update button color immediately when camera connection changes
