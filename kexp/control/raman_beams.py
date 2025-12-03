@@ -68,21 +68,27 @@ class RamanBeamPair():
     @portable(flags={"fast-math"})
     def state_splitting_to_ao_frequency(self,frequency_state_splitting) -> TArray(TFloat):
 
-        order_plus = self.dds0.aom_order
-        order_minus = self.dds1.aom_order
+        a0 = self.dds0.aom_order
+        a1 = self.dds1.aom_order
 
         delta = frequency_state_splitting
 
         fc0 = self._frequency_center_0
         fc1 = self._frequency_center_1
 
-        a = order_plus * order_minus # relative order
+        # if a0 * a1 < 0:
+        #     df_0 = (delta/2 - (fc0 + fc1))/(1 + fc1/fc0)
+            
 
-        df_0 = (delta/2 - (fc0-a*fc1))/(1+a*fc1/fc0)
-        df_1 = - df_0 * fc1/fc0
+        # if a0 * a1 > 0:
+        #     df_0 = (delta/2 - (fc0 - fc1))/(1 + fc1/fc0)
+
+
+        df_0 = (delta/2-(fc0-a0*a1*fc1))/(1 + fc1/fc0)
+        df_1 = df_0 * fc1/fc0
 
         self._frequency_array[DDS0_IDX] = fc0 + df_0
-        self._frequency_array[DDS1_IDX] = fc1 + df_1
+        self._frequency_array[DDS1_IDX] = fc1 - df_1
 
         return self._frequency_array
     
