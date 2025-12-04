@@ -343,7 +343,7 @@
       "aom_order": 1,
       "ch": 0,
       "dac_ch": -1,
-      "frequency": 111524999.99999999,
+      "frequency": 111525000.0,
       "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 2,
