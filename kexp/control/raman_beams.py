@@ -12,6 +12,8 @@ di = 0
 DDS0_IDX = 0
 DDS1_IDX = 1
 
+from waxx.util.artiq.async_print import aprint
+
 from kexp.config.expt_params import ExptParams
 from kexp.config.dds_id import dds_frame
 dds = dds_frame()
@@ -41,6 +43,7 @@ class RamanBeamPair():
         # self._frequency_center_dds = 0.
         self._frequency_center_plus = 0.
         self._frequency_center_minus = 0.
+        self._relative_sign_fcenter = 0
         self._frequency_array = np.array([0.,0.])
         self._amplitude_0 = 0.
         self._amplitude_1 = 0.
@@ -62,6 +65,7 @@ class RamanBeamPair():
         #     raise ValueError("The - and + DDS frequencies should be equidistant from their mean for optimal efficiency.")
         self._frequency_center_0 = self.dds0.frequency
         self._frequency_center_1 = self.dds1.frequency
+        self._relative_sign_fcenter = np.sign(self._frequency_center_0-self._frequency_center_1)
         self._amplitude_0 = self.dds0.amplitude
         self._amplitude_1 = self.dds1.amplitude
 
@@ -76,19 +80,20 @@ class RamanBeamPair():
         fc0 = self._frequency_center_0
         fc1 = self._frequency_center_1
 
-        # if a0 * a1 < 0:
-        #     df_0 = (delta/2 - (fc0 + fc1))/(1 + fc1/fc0)
-            
+        s = self._relative_sign_fcenter
 
-        # if a0 * a1 > 0:
-        #     df_0 = (delta/2 - (fc0 - fc1))/(1 + fc1/fc0)
+        if a0 * a1 > 0:
+            df_0 = (delta/2 - s * (fc0 - fc1))/(1 + fc1/fc0)
+            c0 = s
+        else:
+            df_0 = a0 * (delta/2 - (fc0 + fc1))/(1 - fc1/fc0)
+            c0 = -s
 
-
-        df_0 = (delta/2-(fc0-a0*a1*fc1))/(1 + fc1/fc0)
+        c1 = -c0
         df_1 = df_0 * fc1/fc0
 
-        self._frequency_array[DDS0_IDX] = fc0 + df_0
-        self._frequency_array[DDS1_IDX] = fc1 - df_1
+        self._frequency_array[DDS0_IDX] = fc0 + c0 * df_0
+        self._frequency_array[DDS1_IDX] = fc1 + c1 * df_1
 
         return self._frequency_array
     
@@ -278,4 +283,3 @@ class RamanBeamPair():
             self.set(frequency_transition=f0+i*df)
             delay(dt)
         self.off()
-
