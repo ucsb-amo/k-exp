@@ -67,8 +67,13 @@ class RamanBeamPair():
         self._frequency_center_1 = self.dds1.frequency
         self._amplitude_0 = self.dds0.amplitude
         self._amplitude_1 = self.dds1.amplitude
-        self._frequency_diff = np.abs(self._frequency_center_0 - self._frequency_center_1)
+
         self._frequency_ratio = self._frequency_center_1/self._frequency_center_0
+
+        fc0 = self._frequency_center_0
+        fc1 = self._frequency_center_1
+
+        self._frequency_diff_sign = np.sign(fc0 - fc1)
 
     @portable(flags={"fast-math"})
     def state_splitting_to_ao_frequency(self,frequency_state_splitting) -> TArray(TFloat):
@@ -83,22 +88,22 @@ class RamanBeamPair():
 
         f = self._frequency_ratio
 
-        if delta/2 < self._frequency_diff:
-            s = -1
-        else:
-            s = 1
+        sgn = self._frequency_diff_sign
 
         if a0 * a1 > 0:
-            df_0 = (delta/2 - s * (fc0 - fc1))/(1 + f)
+            df_0 = (delta/2 - sgn * (fc0 - fc1))/(1 + f)
+            c0 = sgn
         else:
-            df_0 = (delta/2 - (fc0 + fc1))/(1 - f)
+            df_0 = (delta/2 - (fc0 + fc1))/(1 + f)
+            c0 = 1
 
         df_1 = df_0 * f
 
-        self._frequency_array[DDS0_IDX] = fc0 + df_0
-        self._frequency_array[DDS1_IDX] = fc1 + df_1
+        self._frequency_array[DDS0_IDX] = fc0 + c0 * df_0
+        self._frequency_array[DDS1_IDX] = fc1 - c0 * a0 * a1 * df_1
 
         return self._frequency_array
+
     
     @kernel
     def set_transition_frequency(self,frequency_transition=dv):
