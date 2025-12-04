@@ -19,7 +19,7 @@ class ExptParams():
         self.t_contactor_open_delay = 12.e-3
 
         #Imaging
-        self.t_imaging_pulse = 10.e-6
+        self.t_imaging_pulse = 20.e-6
 
         # img beam settings
         self.frequency_detuned_imaging = 22.25e6
