@@ -22,6 +22,8 @@ class testcrate_base(EnvExperiment, Base):
                          dds_set=False,
                          init_dac=True,
                          init_dds=True)
+        
+        self.monitor.signal_ready()
 
         while True:
             self.core.wait_until_mu(now_mu())

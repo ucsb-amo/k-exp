@@ -15,7 +15,7 @@ from waxa.image_processing import compute_OD, process_ODs
 
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
 from kexp.util.live_od.camera_connection_widget import CamConnBar, ROISelector
-from kexp.util.live_od.monitor_manager import MonitorManager
+from waxx.util.guis.monitor_manager import MonitorManager
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.analyzer import Analyzer
 from kexp.util.live_od.gui.plotter import LiveODPlotter
