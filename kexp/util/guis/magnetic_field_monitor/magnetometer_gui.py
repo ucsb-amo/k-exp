@@ -272,7 +272,7 @@ class MagnetometerGUI(QMainWindow):
             plot.setLabel('left', ylabel)
             plot.setLabel('bottom', 'Time (s)')
             plot.showGrid(x=True, y=True, alpha=0.3)
-            plot.setDownsampling(mode='peak')
+            plot.setDownsampling(auto=True, mode='peak')
             plot.setClipToView(True)
             
             # Create curve
