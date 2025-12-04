@@ -20,5 +20,7 @@ class mot_observe(EnvExperiment, Base):
         self.mot_observe()
 
     def analyze(self):
-
+        import os
+        expt_filepath = os.path.abspath(__file__)
+        self.end(expt_filepath)
         print("Done!")
