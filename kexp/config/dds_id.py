@@ -95,7 +95,7 @@ class dds_frame(dds_frame_waxx):
 
         self.raman_80_plus = self.dds_assign(4,2, ao_order = 1,
                                     default_freq = 80.e6,
-                                    default_amp = 0.24)
+                                    default_amp = 0.277)
         self.raman_150_plus = self.dds_assign(5,3, ao_order = 1,
                                     default_freq = 150.e6,
                                     default_amp = 0.324)

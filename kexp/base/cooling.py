@@ -221,7 +221,7 @@ class Cooling():
 
         # self.ttl.d2_mot_shutter.off()
 
-        delay(80.e-3)
+        # delay(80.e-3)
 
     ## cooling stages
 

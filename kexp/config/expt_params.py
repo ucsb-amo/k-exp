@@ -269,7 +269,7 @@ class ExptParams():
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.5
         self.v_pd_lf_tweezer_1064_rampdown_end = 1.25
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .18
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .15
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
@@ -294,7 +294,7 @@ class ExptParams():
         # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.15]
 
-        self.v_lf_tweezer_paint_amp_max = -.57
+        self.v_lf_tweezer_paint_amp_max = -1.71
         self.v_hf_tweezer_paint_amp_max = -1.1
 
         self.v_paint_amp_end = -5.444444
