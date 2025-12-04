@@ -23,6 +23,8 @@ class testcrate_base(EnvExperiment, Base):
         #                  init_dac=True,
         #                  init_dds=True)
 
+        self.monitor.signal_ready()
+
         while True:
             self.core.wait_until_mu(now_mu())
             self.monitor.sync_change_list(verbose=False)
