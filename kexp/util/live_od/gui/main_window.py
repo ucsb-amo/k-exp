@@ -61,6 +61,8 @@ class LiveODWindow(QWidget):
         self.queue = Queue()
         self.camera_nanny = CameraNanny()
         self.camera_mother = CameraMother(start_watching=False, manage_babies=False, output_queue=self.queue, camera_nanny=self.camera_nanny, N_runs=1)
+
+        self.the_baby = None
         self.last_camera = ""
         self.img_count = 0
         self.img_count_run = 0
