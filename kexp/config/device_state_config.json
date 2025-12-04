@@ -350,7 +350,7 @@
       "v_pd": 5.0
     },
     "raman_150_minus": {
-      "amplitude": 0.33,
+      "amplitude": 0.324,
       "aom_order": -1,
       "ch": 0,
       "dac_ch": -1,
@@ -361,7 +361,7 @@
       "v_pd": 5.0
     },
     "raman_150_plus": {
-      "amplitude": 0.33,
+      "amplitude": 0.324,
       "aom_order": 1,
       "ch": 3,
       "dac_ch": -1,
@@ -435,7 +435,7 @@
       "shuttler_id.py",
       "ttl_id.py"
     ],
-    "timestamp": "2025-12-03T10:43:06.393401"
+    "timestamp": "2025-12-03T16:39:36.930535"
   },
   "ttl": {
     "andor": {
