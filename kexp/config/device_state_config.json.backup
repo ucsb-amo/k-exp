@@ -13,17 +13,17 @@
     "inner_coil_supply_current": {
       "ch": 8,
       "max_voltage": 5.9,
-      "voltage": 1.0470588235294118
+      "voltage": 0.0
     },
     "inner_coil_supply_voltage": {
       "ch": 11,
       "max_voltage": 9.99,
-      "voltage": 1.125
+      "voltage": 0.0
     },
     "lightsheet_paint_amp": {
       "ch": 0,
       "max_voltage": 9.99,
-      "voltage": -7.0
+      "voltage": 0.0
     },
     "outer_coil_pid": {
       "ch": 19,
@@ -33,7 +33,7 @@
     "outer_coil_supply_current": {
       "ch": 9,
       "max_voltage": 7.0,
-      "voltage": -0.013000108696065908
+      "voltage": 0.0
     },
     "outer_coil_supply_voltage": {
       "ch": 10,
@@ -43,7 +43,7 @@
     "supply_current_2dmot": {
       "ch": 4,
       "max_voltage": 9.99,
-      "voltage": 2.3
+      "voltage": 2.447
     },
     "test_dac": {
       "ch": 30,
@@ -166,6 +166,7 @@
       "amplitude": 0.99,
       "aom_order": 0,
       "ch": 0,
+      "dac_ch": -1,
       "frequency": 200000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -176,8 +177,9 @@
       "amplitude": 0.1,
       "aom_order": 0,
       "ch": 2,
-      "frequency": 113575000.0,
-      "sw_state": 1,
+      "dac_ch": -1,
+      "frequency": 42260000.0,
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 3,
       "v_pd": 5.0
@@ -186,6 +188,7 @@
       "amplitude": 0.3,
       "aom_order": -1,
       "ch": 3,
+      "dac_ch": 2,
       "frequency": 94425000.0,
       "sw_state": 0,
       "transition": "D1",
@@ -196,6 +199,7 @@
       "amplitude": 0.3,
       "aom_order": 1,
       "ch": 0,
+      "dac_ch": 3,
       "frequency": 136425000.0,
       "sw_state": 0,
       "transition": "D1",
@@ -206,8 +210,9 @@
       "amplitude": 0.1,
       "aom_order": 0,
       "ch": 1,
+      "dac_ch": -1,
       "frequency": 42260000.0,
-      "sw_state": 1,
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 5,
       "v_pd": 5.0
@@ -216,8 +221,9 @@
       "amplitude": 0.188,
       "aom_order": -1,
       "ch": 0,
+      "dac_ch": -1,
       "frequency": 120555000.0,
-      "sw_state": 1,
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 3,
       "v_pd": 5.0
@@ -226,8 +232,9 @@
       "amplitude": 0.188,
       "aom_order": 1,
       "ch": 3,
+      "dac_ch": -1,
       "frequency": 97425000.0,
-      "sw_state": 1,
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 2,
       "v_pd": 5.0
@@ -236,8 +243,9 @@
       "amplitude": 0.188,
       "aom_order": -1,
       "ch": 2,
+      "dac_ch": -1,
       "frequency": 125715000.0,
-      "sw_state": 1,
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 2,
       "v_pd": 5.0
@@ -246,8 +254,9 @@
       "amplitude": 0.188,
       "aom_order": 1,
       "ch": 1,
+      "dac_ch": -1,
       "frequency": 104625000.0,
-      "sw_state": 1,
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 2,
       "v_pd": 5.0
@@ -256,8 +265,9 @@
       "amplitude": 0.188,
       "aom_order": -1,
       "ch": 2,
+      "dac_ch": -1,
       "frequency": 122715000.0,
-      "sw_state": 1,
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 1,
       "v_pd": 5.0
@@ -266,8 +276,9 @@
       "amplitude": 0.188,
       "aom_order": 1,
       "ch": 3,
+      "dac_ch": -1,
       "frequency": 99525000.0,
-      "sw_state": 1,
+      "sw_state": 0,
       "transition": "D2",
       "urukul_idx": 1,
       "v_pd": 5.0
@@ -276,8 +287,9 @@
       "amplitude": 0.5,
       "aom_order": 1,
       "ch": 1,
+      "dac_ch": 20,
       "frequency": 350000000.0,
-      "sw_state": 1,
+      "sw_state": 0,
       "transition": "None",
       "urukul_idx": 4,
       "v_pd": 5.0
@@ -286,6 +298,7 @@
       "amplitude": 1.0,
       "aom_order": 0,
       "ch": 1,
+      "dac_ch": -1,
       "frequency": 2000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -296,6 +309,7 @@
       "amplitude": 0.3,
       "aom_order": 1,
       "ch": 2,
+      "dac_ch": -1,
       "frequency": 100000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -306,6 +320,7 @@
       "amplitude": 0.188,
       "aom_order": -1,
       "ch": 1,
+      "dac_ch": -1,
       "frequency": 115425000.0,
       "sw_state": 0,
       "transition": "D2",
@@ -316,6 +331,7 @@
       "amplitude": 0.25,
       "aom_order": -1,
       "ch": 3,
+      "dac_ch": -1,
       "frequency": 115425000.0,
       "sw_state": 0,
       "transition": "D1",
@@ -326,7 +342,8 @@
       "amplitude": 0.188,
       "aom_order": 1,
       "ch": 0,
-      "frequency": 111524999.99999999,
+      "dac_ch": -1,
+      "frequency": 111525000.0,
       "sw_state": 1,
       "transition": "D2",
       "urukul_idx": 2,
@@ -336,6 +353,7 @@
       "amplitude": 0.324,
       "aom_order": -1,
       "ch": 0,
+      "dac_ch": -1,
       "frequency": 150000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -346,6 +364,7 @@
       "amplitude": 0.324,
       "aom_order": 1,
       "ch": 3,
+      "dac_ch": -1,
       "frequency": 150000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -356,6 +375,7 @@
       "amplitude": 0.24,
       "aom_order": 1,
       "ch": 2,
+      "dac_ch": -1,
       "frequency": 80000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -366,6 +386,7 @@
       "amplitude": 0.45,
       "aom_order": 1,
       "ch": 3,
+      "dac_ch": 12,
       "frequency": 80000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -376,6 +397,7 @@
       "amplitude": 0.45,
       "aom_order": 1,
       "ch": 0,
+      "dac_ch": 17,
       "frequency": 200000000.0,
       "sw_state": 0,
       "transition": "None",
@@ -386,6 +408,7 @@
       "amplitude": 0.0,
       "aom_order": 0,
       "ch": 1,
+      "dac_ch": -1,
       "frequency": 0.0,
       "sw_state": 0,
       "transition": "None",
@@ -396,6 +419,7 @@
       "amplitude": 0.0,
       "aom_order": 0,
       "ch": 2,
+      "dac_ch": -1,
       "frequency": 0.0,
       "sw_state": 0,
       "transition": "None",
@@ -411,10 +435,7 @@
       "shuttler_id.py",
       "ttl_id.py"
     ],
-    "previous_timestamp": "2025-12-03T16:39:36.930535",
-    "timestamp": "2025-12-03T17:32:54.470714",
-    "total_devices_updated": 136,
-    "updated_from": "live_base_object"
+    "timestamp": "2025-12-03T16:39:36.930535"
   },
   "ttl": {
     "andor": {
@@ -449,7 +470,7 @@
     },
     "d2_mot_shutter": {
       "ch": 22,
-      "ttl_state": 1,
+      "ttl_state": 0,
       "type": "out"
     },
     "hbridge_helmholtz": {
@@ -464,7 +485,7 @@
     },
     "imaging_pid_manual_override": {
       "ch": 51,
-      "ttl_state": 1,
+      "ttl_state": 0,
       "type": "out"
     },
     "imaging_shutter_x": {
@@ -484,7 +505,7 @@
     },
     "inner_coil_igbt": {
       "ch": 6,
-      "ttl_state": 1,
+      "ttl_state": 0,
       "type": "out"
     },
     "inner_coil_pid_ttl": {
