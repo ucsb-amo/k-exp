@@ -15,7 +15,6 @@ from waxa.image_processing import compute_OD, process_ODs
 
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
 from kexp.util.live_od.camera_connection_widget import CamConnBar, ROISelector
-from waxx.util.guis.monitor_manager import MonitorManager
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.analyzer import Analyzer
 from kexp.util.live_od.gui.plotter import LiveODPlotter
@@ -65,13 +64,7 @@ class LiveODWindow(QWidget):
         self.queue = Queue()
         self.camera_nanny = CameraNanny()
         self.camera_mother = CameraMother(start_watching=False, manage_babies=False, output_queue=self.queue, camera_nanny=self.camera_nanny, N_runs=1)
-        self.monitor_manager = MonitorManager()
-        self.monitor_manager.msg.connect(self.msg)
 
-        self.monitor_checker = QTimer()
-        self.monitor_checker.setInterval(150)
-        self.monitor_checker.timeout.connect(self.check_monitor)
-        
         self.the_baby = None
         self.last_camera = ""
         self.img_count = 0
@@ -81,8 +74,6 @@ class LiveODWindow(QWidget):
         self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
         
         self.camera_mother.start()
-        self.monitor_manager.start()
-        self.monitor_checker.start()
 
     def update_run_id_label(self):
         try:
@@ -100,7 +91,6 @@ class LiveODWindow(QWidget):
         self.camera_conn_bar = CamConnBar(self.camera_nanny, self.output_window)
 
         self.setup_screenshot_button()
-        self.setup_monitor_restart_button()
         self.roi_select = ROISelector()
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
         self.plotting_queue = Queue()
@@ -108,25 +98,6 @@ class LiveODWindow(QWidget):
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
         self.status_lights = StatusLightsWidget()
         self.plotter.start()
-
-    def check_monitor(self):
-        if self.monitor_manager.isRunning():
-            self.monitor_restart_button.setStyleSheet('background-color: #696969; font-size: 20px; font-weight: bold;')
-            try:
-                self.monitor_restart_button.clicked.disconnect()
-            except:
-                pass
-        else:
-            self.monitor_restart_button.setStyleSheet('background-color: #a31a1a; font-size: 20px; font-weight: bold;')
-            self.monitor_restart_button.clicked.connect(self.restart_monitor)
-            self.monitor_restart_button.clicked.connect(lambda: self.msg("Restarting monitor."))
-
-    def setup_monitor_restart_button(self):
-        self.monitor_restart_button = QPushButton("Restart\nMonitor")
-        self.monitor_restart_button.clicked.connect(self.restart_monitor)
-        self.monitor_restart_button.clicked.connect(lambda: self.msg("Restarting monitor."))
-        self.monitor_restart_button.setMinimumHeight(40)
-        self.monitor_restart_button.setStyleSheet('background-color: #a31a1a; font-size: 20px; font-weight: bold;')
 
     def setup_screenshot_button(self):
         self.screenshot_button = QPushButton("📷 Screenshot 📷")
@@ -174,7 +145,6 @@ class LiveODWindow(QWidget):
         control_bar.addLayout(cam_bar)
         control_bar.addWidget(self.status_lights)
         control_bar.addWidget(self.roi_select)
-        control_bar.addWidget(self.monitor_restart_button)
         control_bar.addWidget(self.fix_button)
         # control_bar.addStretch()
         layout.addLayout(control_bar)
@@ -190,7 +160,6 @@ class LiveODWindow(QWidget):
         clipboard.setPixmap(pixmap)
 
     def create_camera_baby(self, file, name):
-        self.monitor_manager.terminate()
 
         self.data_handler = DataHandler(self.queue, data_filepath=file)
         self.the_baby = CameraBaby(self.data_handler, name, self.queue, self.camera_nanny)
@@ -214,7 +183,6 @@ class LiveODWindow(QWidget):
         
         self.the_baby.done_signal.connect(self.restart_mother)
         self.the_baby.done_signal.connect(update_run_id)
-        self.the_baby.done_signal.connect(self.restart_monitor)
 
         self.the_baby.cam_status_signal.connect(self.status_lights.set_cam_status_lights)
         self.the_baby.start()
@@ -227,11 +195,6 @@ class LiveODWindow(QWidget):
         import time
         time.sleep(0.125)
         self.camera_mother.start()
-
-    def restart_monitor(self):
-        import time
-        time.sleep(0.125)
-        self.monitor_manager.start()
 
     def check_new_camera(self, camera_select):
         # Update button color immediately when camera connection changes
@@ -380,13 +343,6 @@ class LiveODWindow(QWidget):
         self.the_baby = None
         self.data_handler = None
         self.camera_nanny.interrupted = False
-
-        time.sleep(0.1)
-        if not self.monitor_manager.isRunning():
-            try:
-                self.restart_monitor()
-            except Exception as e:
-                print(e)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
