@@ -18,7 +18,7 @@ class gm_tof(EnvExperiment, Base):
         self.p.amp_imaging = .18
         self.p.imaging_state = 2.
         self.p.t_tof = 19.e-3
-        self.p.t_mot_load = 0.1
+        self.p.t_mot_load = 0.5
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
@@ -30,6 +30,8 @@ class gm_tof(EnvExperiment, Base):
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
+
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
         self.cmot_d1(self.p.t_d1cmot)
 

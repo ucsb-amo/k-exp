@@ -5,6 +5,7 @@ import numpy as np
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
+from waxx.util.artiq.async_print import aprint
 
 class tweezer_load(EnvExperiment, Base):
 
@@ -22,21 +23,21 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('beans',[0,1]*50)
         
-        self.xvar('t_xshim_rampdown',np.linspace(1.e-3,20.e-3,10))
+        # self.xvar('t_xshim_rampdown',np.linspace(1.e-3,20.e-3,10))
 
-        self.p.t_xshim_rampdown = 10.e-3
+        self.p.t_xshim_rampdown = 20.e-3
 
         # self.xvar('t_tof',np.linspace(100.,1800.,10)*1.e-6)
-        self.p.t_tof = 1200.e-6
+        self.p.t_tof = 100.e-6
 
-        self.p.t_raman_sweep = 1.e-3
-        self.p.f_raman_sweep_width = 100.e3
+        self.p.t_raman_sweep = .5e-3
+        self.p.f_raman_sweep_width = 10.e3
         self.p.f_raman_sweep_center = 447.45e6
 
-        # self.xvar('f_raman_sweep_center',465.1e6 + np.arange(-1.e6,1.e6,self.p.f_raman_sweep_width))
+        # self.xvar('f_raman_sweep_center',447.35e6 + np.arange(-100.e3,100.e3,self.p.f_raman_sweep_width))
 
-        # self.xvar('fraction_power_raman_nf',np.linspace(.1,.8,self.p.f_rf_sweep_width))
-        self.p.fraction_power_raman_nf = 1.
+        # self.xvar('fraction_power_raman_nf',np.linspace(.0,.15,10))
+        self.p.fraction_power_raman_nf = .05
 
         # self.p.frequency_raman_transition_nf = 447.325e6
 
@@ -55,19 +56,19 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.logspace(np.log10(3.e-3), np.log10(200.e-3), 30))
         # self.xvar('t_tweezer_hold',np.linspace(0.e-3,100.e-3,10))
         
-        self.p.t_tweezer_hold = 0.e-3
+        self.p.t_tweezer_hold = 1.e-3
 
         self.p.amp_imaging = .321
         # self.xvar('amp_imaging',np.linspace(0.15,.5,15))
 
-        self.camera_params.exposure_time = 20.e-6
-        self.p.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.exposure_time = 20.e-6
+        # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
         self.p.t_mot_load = 1.
 
         self.p.imaging_state = 2
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 100
 
         self.finish_prepare(shuffle=True)
 
@@ -75,11 +76,11 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
         # self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging)
         
-        self.imaging.set_power(power_control_parameter=self.camera_params.amp_imaging)
+        # self.imaging.set_power(power_control_parameter=self.camera_params.amp_imaging)
 
         self.prepare_lf_tweezers()
 
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
 
         self.dac.xshim_current_control.linear_ramp(t=20.e-3,v_start=0.,v_end=9.99,n=500)
 
@@ -99,7 +100,7 @@ class tweezer_load(EnvExperiment, Base):
                                                v_end=self.p.v_paint_amp_end,
                                                n=1000)
 
-        # self.init_raman_beams_nf()
+        # self.init_raman_beams_nf(frequency_transition=self.p.f_raman_sweep_center,fraction_power=self.p.fraction_power_raman_nf)
 
         # self.raman_nf.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.f_raman_sweep_center,

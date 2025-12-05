@@ -31,15 +31,15 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('frequency_raman_sweep_center', 41.245e6 + np.arange(-50.e3,50.e3,self.p.frequency_raman_sweep_width))
 
         # self.p.frequency_raman_lf = 406.15e6
-        self.p.frequency_raman_lf = 406.15e6
+        self.p.frequency_raman_lf = 447.45e6
         self.p.frequency_raman_sweep_center = self.p.frequency_raman_lf
 
-        f_sweep_range = 1000.e3
+        f_sweep_range = 500.e3
         df_sweep = self.p.frequency_raman_sweep_width
         self.xvar('frequency_raman_sweep_center', self.p.frequency_raman_lf + np.arange(-f_sweep_range,f_sweep_range+df_sweep,df_sweep))
 
         # self.xvar('fraction_power_raman',np.linspace(0.05,0.25,5))
-        self.p.fraction_power_raman = 0.5
+        self.p.fraction_power_raman = 0.1
         # self.p.fraction_power_raman = .25
 
         self.p.t_tweezer_hold = .001e-3
@@ -60,8 +60,6 @@ class tweezer_load(EnvExperiment, Base):
         self.init_raman_beams_nf(frequency_transition=self.p.frequency_raman_lf,
                                  fraction_power=self.p.fraction_power_raman)
         
-        aprint(self.raman_nf._frequency_array)
-
         delay(1.e-3)
 
         # aprint(self.p.frequency_raman_sweep_center)

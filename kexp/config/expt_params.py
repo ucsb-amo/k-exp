@@ -201,6 +201,7 @@ class ExptParams():
         self.v_yshim_current_gm = 2.15
 
         self.pfrac_d1_c_d1cmot = 1.0
+
         self.pfrac_d1_c_gm = .73
         self.pfrac_d1_r_gm = 0.99
 
