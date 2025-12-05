@@ -1,4 +1,4 @@
 call %kpy%
-cd %code%\wax\waxx-src\waxx
-python %code%\wax\waxx-src\waxx\util\guis\monitor_server_gui.py
+cd %code%\k-exp
+python %code%\k-exp\kexp\util\guis\device_state_gui\monitor_server_gui.py
 pause

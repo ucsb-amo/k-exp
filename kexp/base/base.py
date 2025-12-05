@@ -3,13 +3,14 @@ import numpy as np
 from artiq.experiment import *
 from artiq.language.core import kernel_from_string, now_mu, delay
 
+from waxx import Expt, img_types as img
+from waxx.base import Monitor
 from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control
 from kexp.config.camera_id import cameras
+from kexp.config.monitor_config import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH
 
-from waxx import Expt, img_types as img
-from waxx.control.beat_lock import BeatLockImagingPID
 from kexp.util.artiq.async_print import aprint
 
 class Base(Expt, Devices, Cooling, Image, Cameras, Control):
@@ -27,6 +28,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         from kexp.config.expt_params import ExptParams
         self.params = ExptParams()
         self.p = self.params
+
+        self.monitor = Monitor(self,
+                               monitor_server_ip=MONITOR_SERVER_IP,
+                               device_state_json_path=MONITOR_STATE_FILEPATH)
 
         self.prepare_devices(expt_params=self.params)
 
