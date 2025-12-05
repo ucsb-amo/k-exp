@@ -16,6 +16,7 @@ from waxx.control.artiq.mirny import Mirny
 from waxx.control.artiq.Shuttler_CH import Shuttler_CH
 from waxx.control.misc.ssg3021x import SSG3021X
 from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock, BeatLockImagingPID
+from waxx.control.raman_beams import RamanBeamPair
 from waxx.control.cameras.dummy_cam import DummyCamera
 
 from kexp.config.dds_id import dds_frame, N_uru
@@ -28,7 +29,6 @@ from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
 from kexp.control.awg_tweezer import tweezer
 from kexp.control.doubled_rf import doubled_rf
-from kexp.control.raman_beams import RamanBeamPair
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
