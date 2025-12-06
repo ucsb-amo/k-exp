@@ -15,8 +15,8 @@ class tweezer_load(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-5.,.0,8))
-        # self.p.v_lf_tweezer_paint_amp_max = -.71
+        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-5.,.0,15))
+        self.p.v_lf_tweezer_paint_amp_max = -2.86
         
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.08,.23,8))
         # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .2
@@ -27,36 +27,42 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_xshim_rampdown = 20.e-3
 
-        # self.xvar('t_tof',np.linspace(100.,1800.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(100.,1800.,10)*1.e-6)
         self.p.t_tof = 100.e-6
 
-        self.p.t_raman_sweep = .5e-3
-        self.p.f_raman_sweep_width = 10.e3
-        self.p.f_raman_sweep_center = 447.45e6
+        self.p.t_raman_sweep = 1.e-3
+        self.p.f_raman_sweep_width = 200.e3
+        self.p.f_raman_sweep_center = 458.5e6
 
-        # self.xvar('f_raman_sweep_center',447.35e6 + np.arange(-100.e3,100.e3,self.p.f_raman_sweep_width))
+        # self.xvar('v_x_shim_pol_contrast',np.linspace(1.0,2.,4))
+
+        self.p.v_xcancel = 5.
+        self.p.v_ycancel = 0.
+        self.p.v_zcancel = 2.5
+        # self.xvar('v_zcancel',np.linspace(0.,4.,5))
+
+        # self.xvar('f_raman_sweep_center',458.5e6 + np.arange(-1000.e3,5000.e3,self.p.f_raman_sweep_width))
+        # self.xvar('f_raman_sweep_center',np.arange(458.0e6,458.8e6+self.p.f_raman_sweep_width,self.p.f_raman_sweep_width))
 
         # self.xvar('fraction_power_raman_nf',np.linspace(.0,.15,10))
-        self.p.fraction_power_raman_nf = .05
+        self.p.fraction_power_raman_nf = .1
 
         # self.p.frequency_raman_transition_nf = 447.325e6
 
-        self.p.frequency_raman_transition_nf = 460.61e6
+        self.p.frequency_raman_transition_nf = 458.5e6
 
-        # self.xvar('t_raman_pulse',np.linspace(0.e-6,30.e-6,15))
-        self.p.t_raman_pulse = 15.5e-6
+        # self.xvar('t_raman_pulse',np.linspace(0.e-6,100.e-6,10))
+        # self.p.t_raman_pulse = 15.5e-6
         # self.p.t_raman_pulse = 200.e-6
 
         # self.xvar('t_ramp_off',np.linspace(2.e-3,50.e-3,10))
         self.p.t_ramp_off = 5.e-3
+        
+        self.p.v_x_shim_pol_contrast = 5. # .5 to 3. 
 
-        # self.xvar('v_x_shim_pol_contrast',np.linspace(.5,9.,20))
-        self.p.v_x_shim_pol_contrast = 1.5
-
-        # self.xvar('t_tweezer_hold',np.logspace(np.log10(3.e-3), np.log10(200.e-3), 30))
         # self.xvar('t_tweezer_hold',np.linspace(0.e-3,100.e-3,10))
         
-        self.p.t_tweezer_hold = 1.e-3
+        self.p.t_tweezer_hold = 0.e-3
 
         self.p.amp_imaging = .321
         # self.xvar('amp_imaging',np.linspace(0.15,.5,15))
@@ -68,7 +74,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.imaging_state = 2
         
-        self.p.N_repeats = 100
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
 
@@ -80,7 +86,11 @@ class tweezer_load(EnvExperiment, Base):
 
         self.prepare_lf_tweezers()
 
-        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        # self.ttl.pd_scope_trig3.pulse(1.e-6)
+
+        self.set_shims(v_xshim_current = self.p.v_xcancel,
+                       v_yshim_current= self.p.v_ycancel,
+                       v_zshim_current= self.p.v_zcancel)
 
         self.dac.xshim_current_control.linear_ramp(t=20.e-3,v_start=0.,v_end=9.99,n=500)
 

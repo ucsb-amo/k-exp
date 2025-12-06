@@ -196,9 +196,9 @@ class ExptParams():
         
         #GM
 
-        self.v_zshim_current_gm = 0.8
-        self.v_xshim_current_gm = 0.0
-        self.v_yshim_current_gm = 2.15
+        self.v_zshim_current_gm = 0.91
+        self.v_xshim_current_gm = 0.49
+        self.v_yshim_current_gm = 1.71
 
         self.pfrac_d1_c_d1cmot = 1.0
 
@@ -206,7 +206,7 @@ class ExptParams():
         self.pfrac_d1_r_gm = 0.99
 
         self.pfrac_c_gmramp_end = 0.05
-        self.pfrac_r_gmramp_end = 0.65
+        self.pfrac_r_gmramp_end = 0.85
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
@@ -225,7 +225,7 @@ class ExptParams():
 
         # mag trap
         self.i_magtrap_init = 95.
-        self.i_magtrap_ramp_end = 95.
+        self.i_magtrap_ramp_end = 169.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
         
@@ -270,7 +270,7 @@ class ExptParams():
 
         self.v_pd_lf_tweezer_1064_ramp_end = 9.5
         self.v_pd_lf_tweezer_1064_rampdown_end = 1.25
-        self.v_pd_lf_tweezer_1064_rampdown2_end = .15
+        self.v_pd_lf_tweezer_1064_rampdown2_end = .18
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
@@ -295,7 +295,7 @@ class ExptParams():
         # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.15]
 
-        self.v_lf_tweezer_paint_amp_max = -1.71
+        self.v_lf_tweezer_paint_amp_max = -.286
         self.v_hf_tweezer_paint_amp_max = -1.1
 
         self.v_paint_amp_end = -5.444444
