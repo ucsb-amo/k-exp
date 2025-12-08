@@ -22,13 +22,13 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
 
-        # self.xvar('i_lf_tweezer_load_current',np.linspace(12.5,16.,15))
+        # self.xvar('i_lf_tweezer_load_current',np.linspace(12.5,16.,8))
         # self.p.i_lf_tweezer_load_current = 15.
 
         # self.xvar('t_tweezer_soak',np.linspace(0.,500.,15)*1.e-3)
         # self.p.t_tweezer_soak = 35.e-3
 
-        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-2.,1.,15))
+        # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-4.,0.,8))
         # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-1.5,0.33,7))
         # self.p.v_lf_tweezer_paint_amp_max = -1.71
 
@@ -52,7 +52,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_lf_tweezer_1064_rampdown2 =360.6e-3
 
         # self.xvar('t_tof',np.linspace(100.,1500.,10)*1.e-6)
-        self.p.t_tof = 1000.e-6
+        self.p.t_tof = 800.e-6
 
         # self.xvar('v_paint_amp_end',np.linspace(-6.,-5.,10))
 

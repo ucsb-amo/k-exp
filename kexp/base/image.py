@@ -289,6 +289,8 @@ class Image():
         # atoms image (pwa)
         self.light_image()
 
+        self.tweezer.off()
+
         # self.lightsheet.off()
 
         # light-only image (pwoa)

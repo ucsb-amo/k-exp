@@ -15,7 +15,7 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('dumdum',[0]*1000)
 
-        self.xvar('t_tof',np.linspace(0.4,1.2,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(0.03,1.2,10)*1.e-3)
 
         self.p.t_tof = 1.e-3
 

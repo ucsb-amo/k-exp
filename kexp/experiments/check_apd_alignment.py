@@ -68,7 +68,7 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         # self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_imaging)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.imaging.set_power(amp=self.camera_params.amp_imaging)
 
         self.prepare_lf_tweezers()
