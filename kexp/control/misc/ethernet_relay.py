@@ -281,8 +281,8 @@ class Relay_Controller:
 
 class EthernetRelay():
 	def __init__(self):
-		self.__socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-		self.__board = Relay_Controller(self.__socket)
+		self.__socket = None
+		self.__board = None
 
 	def connect(self):
 		self.__socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
@@ -291,7 +291,10 @@ class EthernetRelay():
 		self.__socket.settimeout(10.)
 
 	def close(self):
-		self.__socket.close()
+		if self.__socket:
+			self.__socket.close()
+		self.__socket = None
+		self.__board = None
 		
 	def read_source_status(self):
 		self.connect()
