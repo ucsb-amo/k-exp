@@ -21,7 +21,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.1,.23,15))
         self.p.v_pd_lf_tweezer_1064_rampdown2_end = .164
 
-        # self.xvar('beans',[0,1]*50)
+        self.xvar('beans',[0,1]*50)
         
         # self.xvar('t_xshim_rampdown',np.linspace(1.e-3,20.e-3,10))
 
@@ -121,8 +121,10 @@ class tweezer_load(EnvExperiment, Base):
         delay(self.p.t_tweezer_hold)
 
         self.tweezer.off()
-
-        delay(self.p.t_tof)
+        if self.p.beans:
+            delay(self.p.t_tof)
+        else:
+            delay(10.e-3)
         # self.flash_repump()
         self.abs_image()
 

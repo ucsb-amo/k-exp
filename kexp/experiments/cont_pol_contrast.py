@@ -12,7 +12,7 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.DISPERSIVE)
 
         # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-3.5,.5,8))
         self.p.v_lf_tweezer_paint_amp_max = -1.21
@@ -23,7 +23,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('beans',[0,1]*1)
         self.p.beans = 1
 
-        self.xvar('frequency_detuned_imaging_pol_contrast',np.linspace(-500.e6,200.e6,10))
+        self.xvar('frequency_detuned_imaging_pol_contrast',np.linspace(0.e6,440.e6,20))
         self.p.frequency_detuned_imaging_pol_contrast = 200.e6
         # self.p.frequency_detuned_imaging_pol_contrast = 222.e6
 
@@ -51,15 +51,15 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('dimension_slm_mask',np.linspace(10.e-6,100.e-6,10))
         # self.p.dimension_slm_mask = 50.e-6
         # self.xvar('phase_slm_mask',np.linspace(0.,2.7*np.pi,20))
-        self.p.phase_slm_mask = 1.14 * np.pi
+        self.p.phase_slm_mask = 0. * np.pi
         self.p.dimension_slm_mask = 100.e-6
 
-        self.xvar('v_power_imaging',np.linspace(2.,9.9,10))
+        self.xvar('v_power_imaging',np.linspace(1.,8.,5))
         self.p.v_power_imaging = 8.
         # self.xvar('amp_imaging',np.linspace(0.07,.075,5))
         # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
         self.p.hf_imaging_detuning  = 22.25e6
-        self.camera_params.exposure_time = 15.e-6
+        self.camera_params.exposure_time = 20.e-6
         self.p.t_imaging_pulse = self.camera_params.exposure_time
 
         self.p.t_mot_load = 1.
