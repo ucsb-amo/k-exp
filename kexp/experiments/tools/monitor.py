@@ -15,8 +15,15 @@ class testcrate_base(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel(run_id=False,init_lightsheet=False,setup_awg=False,setup_slm=False,dds_set=False,
-                         dds_off=False,beat_ref_on=True,init_shuttler=False)
+        self.init_kernel(run_id=False,
+                         init_lightsheet=False,
+                         setup_awg=False,
+                         setup_slm=False,
+                         dds_set=False,
+                         dds_off=False,
+                         beat_ref_on=True,
+                         init_shuttler=False,
+                         init_imaging=False)
         # self.init_kernel(run_id=False,
         #                  dds_off=False,
         #                  dds_set=False,
