@@ -39,6 +39,13 @@ class SiglentPIDBeam():
         self.siglent_output = self.siglent.state
         self.v_pd = self.dac_pid.v
 
+    @portable
+    def _read_params(self):
+        self.siglent.fetch_state()
+        self.frequency = self.siglent.frequency
+        self.amplitude_vpp = self.siglent.amplitude_vpp
+        self.state = self.siglent.state
+
 class SiglentDDSBeam(SiglentPIDBeam):
     def __init__(self,
                   siglent_ch:SDG6000X_CH,
