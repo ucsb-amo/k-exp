@@ -15,7 +15,7 @@ def main():
     
     # Create and show main window
     window = DeviceStateGUI(monitor_server_ip=MONITOR_SERVER_IP,
-                            monitor_sever_port=MONITOR_SERVER_PORT,
+                            monitor_server_port=MONITOR_SERVER_PORT,
                             device_state_json_path=MONITOR_STATE_FILEPATH,
                             dds_frame=dds_frame())
     window.show()
