@@ -71,7 +71,7 @@ class EthernetRelayGUI(QMainWindow):
         # Status display
         status_layout = QHBoxLayout()
         status_label = QLabel("Source Status:")
-        status_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        status_label.setFont(QFont("Arial", 12))
         self.status_indicator = QLabel("UNKNOWN")
         self.status_indicator.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         self.status_indicator.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -103,7 +103,7 @@ class EthernetRelayGUI(QMainWindow):
         
         # Combined status display and control button
         self.magnet_status_btn = QPushButton("UNKNOWN")
-        self.magnet_status_btn.setFont(QFont("Arial", 11, QFont.Weight.Bold))
+        self.magnet_status_btn.setFont(QFont("Arial", 11))
         self.magnet_status_btn.clicked.connect(self.toggle_magnet)
         self.update_magnet_status_button()
         
@@ -200,6 +200,10 @@ class EthernetRelayGUI(QMainWindow):
         
     def update_status_indicator(self, is_on):
         """Update the visual status indicator"""
+        # Only update if status has changed
+        if is_on == self.source_status:
+            return
+            
         if is_on:
             self.status_indicator.setText("ON")
             self.status_indicator.setStyleSheet("""
@@ -227,10 +231,13 @@ class EthernetRelayGUI(QMainWindow):
         
         self.source_status = is_on
         self.update_toggle_button_style()
-        self.update_toggle_button_style()
         
     def update_magnet_status_button(self, is_on=None):
         """Update the magnet status button display and style"""
+        # Only update if status has changed
+        if is_on is not None and is_on == self.magnet_status:
+            return
+            
         if is_on is not None:
             self.magnet_status = is_on
             
@@ -244,7 +251,6 @@ class EthernetRelayGUI(QMainWindow):
                     border: none;
                     padding: 10px;
                     border-radius: 5px;
-                    font-weight: bold;
                 }
                 QPushButton:hover {
                     background-color: #616161;
@@ -267,7 +273,6 @@ class EthernetRelayGUI(QMainWindow):
                     border: none;
                     padding: 10px;
                     border-radius: 5px;
-                    font-weight: bold;
                 }
                 QPushButton:hover {
                     background-color: #b71c1c;
@@ -284,32 +289,6 @@ class EthernetRelayGUI(QMainWindow):
     def update_status(self):
         """Update the source and magnet status"""
         self.set_buttons_enabled(False)
-        self.status_indicator.setText("CHECKING...")
-        self.status_indicator.setStyleSheet("""
-            QLabel {
-                background-color: #FFC107;
-                color: black;
-                padding: 5px;
-                border: 2px solid #FFC107;
-                border-radius: 5px;
-                font-weight: bold;
-            }
-        """)
-        self.magnet_status_btn.setText("CHECKING...")
-        self.magnet_status_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #FFC107;
-                color: black;
-                border: none;
-                padding: 10px;
-                border-radius: 5px;
-                font-weight: bold;
-            }
-            QPushButton:disabled {
-                background-color: #cccccc;
-                color: #666666;
-            }
-        """)
         
         # Use worker thread to check status
         self.status_worker = RelayWorker(self.relay, 'read_status')
