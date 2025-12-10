@@ -30,7 +30,7 @@ from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
 from kexp.control.awg_tweezer import tweezer
 from kexp.control.doubled_rf import doubled_rf
-from kexp.control.rydberg_lasers import RydbergLasers
+from kexp.control.rydberg_lasers import RydbergLasers, CavityAOControlledRyDDSBeam
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
@@ -158,8 +158,16 @@ class Devices():
         
         # self.ry_980_eo = SSG3021X()
 
-        # self.siglent = siglent_frame()
-        # self.rydberg = RydbergLasers(siglent_405_cavity=self.siglent.siglent_405,
+        self.siglent = siglent_frame(self.core)
+
+        self.ry_405 = CavityAOControlledRyDDSBeam(
+                            siglent_ch=self.siglent.siglent_405,
+                            dds_sw=self.dds.ry_405,
+                            ao_order_cavity=1,
+                            ao_order_pid=-1,
+                            frequency_pid_ao=80.e6)
+        
+        # self.ry_405.set_power()
 
         # camera placeholder
         self.camera = DummyCamera()
