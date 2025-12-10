@@ -10,10 +10,9 @@ from kexp.control.ethernet_relay import (EthernetRelay, ARTIQ_RELAY_IDX,
 
 class RelayWorker(QThread):
     """Worker thread to handle relay operations without blocking the GUI"""
-    finished = pyqtSignal(bool)  # Signal to emit when operation is complete
+    finished = pyqtSignal(list)  # Signal to emit when operation is complete
     error = pyqtSignal(str)  # Signal to emit on error
     
-    def __init__(self, relay, operation):
     def __init__(self, relay: EthernetRelay, operation):
         super().__init__()
         self.relay = relay
@@ -27,12 +26,16 @@ class RelayWorker(QThread):
                 self.relay.source_off()
             elif self.operation == 'toggle_artiq':
                 self.relay.toggle_artiq_power()
+            elif self.operation == 'magnet_off':
+                self.relay.kill_magnets()
+            elif self.operation == 'magnet_on':
+                self.relay.enable_magnets()
             elif self.operation == 'read_status':
-                status = self.relay.read_source_status()
+                status = self.relay.read_relay_status()
                 self.finished.emit(status)
                 return
             
-            self.finished.emit(True)
+            self.finished.emit([True])
         except Exception as e:
             self.error.emit(str(e))
 
@@ -41,6 +44,8 @@ class EthernetRelayGUI(QMainWindow):
         super().__init__()
         self.relay = EthernetRelay()
         self.source_status = False
+        self.magnet_status = False
+        self.operation_in_progress = False
         self.init_ui()
         
         # Timer for periodic status updates
@@ -53,7 +58,7 @@ class EthernetRelayGUI(QMainWindow):
         
     def init_ui(self):
         self.setWindowTitle("Ethernet Relay Control")
-        self.setGeometry(100, 100, 100, 250)
+        self.setGeometry(100, 100, 100, 300)
         
         # Create central widget and main layout
         central_widget = QWidget()
@@ -67,9 +72,9 @@ class EthernetRelayGUI(QMainWindow):
         # Status display
         status_layout = QHBoxLayout()
         status_label = QLabel("Source Status:")
-        status_label.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        status_label.setFont(QFont("Arial", 12))
         self.status_indicator = QLabel("UNKNOWN")
-        self.status_indicator.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        self.status_indicator.setFont(QFont("Arial", 12))
         self.status_indicator.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.status_indicator.setMinimumWidth(100)
         self.status_indicator.setFrameStyle(QFrame.Shape.Box)
@@ -92,6 +97,18 @@ class EthernetRelayGUI(QMainWindow):
         
         source_layout.addLayout(status_layout)
         source_layout.addLayout(button_layout)
+        
+        # Magnet Inhibit Control Group
+        magnet_group = QGroupBox("Magnet Enable Status")
+        magnet_layout = QVBoxLayout(magnet_group)
+        
+        # Combined status display and control button
+        self.magnet_status_btn = QPushButton("UNKNOWN")
+        self.magnet_status_btn.setFont(QFont("Arial", 11))
+        self.magnet_status_btn.clicked.connect(self.toggle_magnet)
+        self.update_magnet_status_button()
+        
+        magnet_layout.addWidget(self.magnet_status_btn)
         
         # ARTIQ Control Group
         artiq_group = QGroupBox("ARTIQ Control")
@@ -129,6 +146,8 @@ class EthernetRelayGUI(QMainWindow):
         
         # Add all groups to main layout
         main_layout.addWidget(source_group)
+        main_layout.addWidget(magnet_group)
+        main_layout.addWidget(artiq_group)
         main_layout.addWidget(artiq_group)
         main_layout.addWidget(self.refresh_btn)
         main_layout.addStretch()
@@ -182,6 +201,10 @@ class EthernetRelayGUI(QMainWindow):
         
     def update_status_indicator(self, is_on):
         """Update the visual status indicator"""
+        # Only update if status has changed
+        if is_on == self.source_status:
+            return
+            
         if is_on:
             self.status_indicator.setText("ON")
             self.status_indicator.setStyleSheet("""
@@ -209,22 +232,66 @@ class EthernetRelayGUI(QMainWindow):
         
         self.source_status = is_on
         self.update_toggle_button_style()
-        self.update_toggle_button_style()
+        
+    def update_magnet_status_button(self, is_on=None):
+        """Update the magnet status button display and style"""
+        # Only update if status has changed
+        if is_on is not None and is_on == self.magnet_status:
+            return
+            
+        if is_on is not None:
+            self.magnet_status = is_on
+            
+        if self.magnet_status:
+            # Magnet is ON - show gray
+            self.magnet_status_btn.setText("ON")
+            self.magnet_status_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #757575;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 5px;
+                }
+                QPushButton:hover {
+                    background-color: #616161;
+                }
+                QPushButton:pressed {
+                    background-color: #424242;
+                }
+                QPushButton:disabled {
+                    background-color: #cccccc;
+                    color: #666666;
+                }
+            """)
+        else:
+            # Magnet is OFF - show muted red with "INH - Reset?" text
+            self.magnet_status_btn.setText("INH - Reset?")
+            self.magnet_status_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #c62828;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 5px;
+                }
+                QPushButton:hover {
+                    background-color: #b71c1c;
+                }
+                QPushButton:pressed {
+                    background-color: #8e0000;
+                }
+                QPushButton:disabled {
+                    background-color: #cccccc;
+                    color: #666666;
+                }
+            """)
         
     def update_status(self):
-        """Update the source status"""
-        self.set_buttons_enabled(False)
-        self.status_indicator.setText("CHECKING...")
-        self.status_indicator.setStyleSheet("""
-            QLabel {
-                background-color: #FFC107;
-                color: black;
-                padding: 5px;
-                border: 2px solid #FFC107;
-                border-radius: 5px;
-                font-weight: bold;
-            }
-        """)
+        """Update the source and magnet status"""
+        # Don't check status if an operation is in progress
+        if self.operation_in_progress:
+            return
         
         # Use worker thread to check status
         self.status_worker = RelayWorker(self.relay, 'read_status')
@@ -234,11 +301,17 @@ class EthernetRelayGUI(QMainWindow):
         
     def on_status_updated(self, status):
         """Handle status update completion"""
-        self.update_status_indicator(status)
-        self.set_buttons_enabled(True)
+        # status is a list of 4 booleans for the 4 relays
+        # Extract source and magnet status using 1-indexed relay numbers
+        source_status = status[SOURCE_RELAY_IDX - 1]
+        magnet_status = status[MAGNET_INHIBIT_IDX - 1]
+        
+        self.update_status_indicator(source_status)
+        self.update_magnet_status_button(magnet_status)
         
     def toggle_source(self):
         """Toggle the source on or off based on current status"""
+        self.operation_in_progress = True
         self.set_buttons_enabled(False)
         
         # Determine operation based on current status
@@ -246,6 +319,22 @@ class EthernetRelayGUI(QMainWindow):
             operation = 'source_off'
         else:
             operation = 'source_on'
+            
+        self.worker = RelayWorker(self.relay, operation)
+        self.worker.finished.connect(self.on_operation_complete)
+        self.worker.error.connect(self.on_error)
+        self.worker.start()
+        
+    def toggle_magnet(self):
+        """Toggle the magnet inhibit on or off based on current status"""
+        self.operation_in_progress = True
+        self.set_buttons_enabled(False)
+        
+        # Determine operation based on current status
+        if self.magnet_status:
+            operation = 'magnet_off'
+        else:
+            operation = 'magnet_on'
             
         self.worker = RelayWorker(self.relay, operation)
         self.worker.finished.connect(self.on_operation_complete)
@@ -263,6 +352,7 @@ class EthernetRelayGUI(QMainWindow):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
+            self.operation_in_progress = True
             self.set_buttons_enabled(False)
             self.artiq_restart_btn.setText("Restarting ARTIQ...")
             
@@ -273,15 +363,18 @@ class EthernetRelayGUI(QMainWindow):
             
     def on_operation_complete(self, success):
         """Handle completion of source on/off operations"""
+        self.operation_in_progress = False
         if success:
             # Update status after a short delay to see the change
             QTimer.singleShot(1000, self.update_status)
+            self.set_buttons_enabled(True)
         else:
             self.set_buttons_enabled(True)
             QMessageBox.warning(self, "Operation Failed", "The relay operation failed.")
             
     def on_artiq_restart_complete(self, success):
         """Handle completion of ARTIQ restart"""
+        self.operation_in_progress = False
         self.artiq_restart_btn.setText("Restart ARTIQ")
         self.set_buttons_enabled(True)
         
@@ -292,6 +385,7 @@ class EthernetRelayGUI(QMainWindow):
             
     def on_error(self, error_message):
         """Handle errors from worker threads"""
+        self.operation_in_progress = False
         self.set_buttons_enabled(True)
         self.artiq_restart_btn.setText("Restart ARTIQ")
         self.status_indicator.setText("ERROR")
@@ -311,6 +405,7 @@ class EthernetRelayGUI(QMainWindow):
     def set_buttons_enabled(self, enabled):
         """Enable or disable all buttons"""
         self.toggle_btn.setEnabled(enabled)
+        self.magnet_status_btn.setEnabled(enabled)
         self.artiq_restart_btn.setEnabled(enabled)
         self.refresh_btn.setEnabled(enabled)
         
@@ -336,7 +431,7 @@ def main():
     app = QApplication(sys.argv)
     
     # Set application style
-    # app.setStyle('win')
+    app.setStyle('Windows')
     
     # Create and show the GUI
     gui = EthernetRelayGUI()
