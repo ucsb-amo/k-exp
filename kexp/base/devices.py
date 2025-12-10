@@ -24,11 +24,13 @@ from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
 from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.sampler_id import sampler_frame
+from kexp.config.siglent_id import siglent_frame
 
 from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
 from kexp.control.awg_tweezer import tweezer
 from kexp.control.doubled_rf import doubled_rf
+from kexp.control.rydberg_lasers import RydbergLasers
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
@@ -155,6 +157,9 @@ class Devices():
                                     params=self.params)
         
         # self.ry_980_eo = SSG3021X()
+
+        # self.siglent = siglent_frame()
+        # self.rydberg = RydbergLasers(siglent_405_cavity=self.siglent.siglent_405,
 
         # camera placeholder
         self.camera = DummyCamera()
