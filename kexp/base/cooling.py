@@ -114,20 +114,13 @@ class Cooling():
         self.outer_coil.ramp_supply(t=30.e-3,
                              i_end=self.p.i_non_inter)
 
-        self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
-                                               v_start=self.dac.tweezer_paint_amp.v,
-                                               v_end=self.p.v_hf_paint_amp_end,
-                                               n=1000)
-
         # delay(100.e-3)
 
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
         self.outer_coil.start_pid()
 
-        self.ttl.d2_mot_shutter.off()
-
-        delay(75.e-3)
+        delay(100.e-3)
 
     @kernel
     def prepare_lf_tweezers(self):

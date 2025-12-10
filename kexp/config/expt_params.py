@@ -54,8 +54,8 @@ class ExptParams():
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 100e-6
-        self.phase_slm_mask = 2.09 # 0.44 * np.pi
+        self.dimension_slm_mask = 300e-6 
+        self.phase_slm_mask = 0.35 * np.pi
         self.px_slm_phase_mask_position_x = 1034
         self.px_slm_phase_mask_position_y = 835
         
@@ -299,7 +299,7 @@ class ExptParams():
         self.v_hf_tweezer_paint_amp_max = -1.1
 
         self.v_paint_amp_end = -5.444444
-        self.v_hf_paint_amp_end = -5.25
+        self.v_hf_paint_amp_end = -5.4
 
         # tweezer movement params
         # self.n_steps_tweezer_move = 100
@@ -343,6 +343,15 @@ class ExptParams():
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
         self.frequency_raman_transition_nf_10_21 = 462.85e6 # 1.5 G 1,-1 to 2,0
+        self.frequency_raman_transition_nf_1m1_20 = 459.87e6 # 9 V X shim (v_x_shim_pol_contrast)
+
+        # earth shim values to cancel earths field
+        self.v_xcancel = 0.
+        self.v_ycancel = 2.
+        self.v_zcancel = .86
+
+        # X shim voltage to set quantization axis at no field (corresponds to 2.73 G)
+        self.v_x_shim_pol_contrast = 9.
 
         # low field evap old
         # self.i_evap1_current = 9.5
@@ -364,7 +373,7 @@ class ExptParams():
         self.i_hf_lightsheet_evap1_current = 192.1
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 192.9
+        self.i_hf_tweezer_load_current = 193.
         self.i_hf_tweezer_evap1_current = 192.7
         self.i_hf_tweezer_evap2_current = 193.
 

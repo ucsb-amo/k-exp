@@ -28,7 +28,7 @@ class turn_on_imaging(EnvExperiment, Base):
         
         self.set_imaging_shutters()
         
-        frequency_detuned = 0.e6
+        frequency_detuned = 380.e6
         v_pd = 6.
         # v_pd = self.camera_params.amp_imaging
 
@@ -39,6 +39,8 @@ class turn_on_imaging(EnvExperiment, Base):
         delay(1.e-3)
         self.imaging.set_power(v_pd)
         self.imaging.on()
+
+        self.imaging.ttl_pid_manual_override.off()
 
     def analyze(self):
         import os
