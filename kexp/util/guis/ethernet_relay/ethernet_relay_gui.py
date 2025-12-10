@@ -5,7 +5,8 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QMessageBox, QFrame)
 from PyQt6.QtCore import QTimer, Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QPalette, QColor
-from kexp import EthernetRelay
+from kexp.control.ethernet_relay import (EthernetRelay, ARTIQ_RELAY_IDX,
+                                          SOURCE_RELAY_IDX, MAGNET_INHIBIT_IDX)
 
 class RelayWorker(QThread):
     """Worker thread to handle relay operations without blocking the GUI"""
@@ -13,6 +14,7 @@ class RelayWorker(QThread):
     error = pyqtSignal(str)  # Signal to emit on error
     
     def __init__(self, relay, operation):
+    def __init__(self, relay: EthernetRelay, operation):
         super().__init__()
         self.relay = relay
         self.operation = operation
