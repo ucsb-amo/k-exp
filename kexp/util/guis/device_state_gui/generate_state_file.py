@@ -1,6 +1,6 @@
 from waxx.util.device_state.generate_state_file import Generator
 
-from kexp.config.monitor_config import MONITOR_STATE_FILEPATH
+from kexp.config.ip import MONITOR_STATE_FILEPATH
 
 from kexp.config.dds_id import dds_frame
 from kexp.config.dac_id import dac_frame

@@ -82,7 +82,7 @@ class current_supply_widget(QWidget):
             current = self.read_current()
             # set the value text of our box (see "init_UI") to the new current
             # the "1.4f" formats the number to a string as with 4 decimal places (f for "float")
-            self.value_label.setText(f"{current:1.4f}")
+            self.value_label.setText(f"{current:1.4f}  A")
         else:
             self.err_str = self.status_decoder.decode_status(self.status)
             self.value_label.setText(f"{self.err_str}")
@@ -96,7 +96,7 @@ class current_supply_widget(QWidget):
         # later when I check the current value
         self.value_label = QPushButton("")
         self.value_label.clicked.connect(self.clear_protect_status)
-        self.value_label.setStyleSheet("font-weight: bold; font-size: {FONTSIZE_PT}pt")
+        self.value_label.setStyleSheet("font-weight: bold; font-size: {FONTSIZE_PT}pt; text-align: right; padding-right: 10px;")
 
         # these ones will remain the same forever so I just name them here and
         # don't bother to save them as an attribute (since I don't need to
@@ -104,16 +104,16 @@ class current_supply_widget(QWidget):
         text_label = QLabel(f"{self.max_current} A supply current = ")
         text_label.setStyleSheet("font-size: {FONTSIZE_PT}pt") # formatting
 
-        unit_label = QLabel("A")
+        # unit_label = QLabel("A")
 
-        unit_label.setStyleSheet("font-weight: bold; font-size: {FONTSIZE_PT}pt") # formatting
+        # unit_label.setStyleSheet("font-weight: bold; font-size: {FONTSIZE_PT}pt") # formatting
 
         # the overall layout of this part will have widgets in a horizontal line
         self.layout = QHBoxLayout() 
         # now I just stack the parts of this part of the GUI into the layout in order
         self.layout.addWidget(text_label)
         self.layout.addWidget(self.value_label)
-        self.layout.addWidget(unit_label)
+        # self.layout.addWidget(unit_label)
 
 class Window(QWidget):
     def __init__(self):
@@ -158,7 +158,7 @@ def main():
     window.setLayout(window.layout)
     window.setWindowTitle("Keysight PSU Monitor")
     window.setWindowIcon(QIcon('banana-icon.png'))
-    window.setFixedSize(400, 100)
+    window.setBaseSize(250, 100)
 
     window.show()
     sys.exit(app.exec())
