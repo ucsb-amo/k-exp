@@ -1,8 +1,8 @@
 #include "qCommand.h"
 qCommand qC;
 
-float SETPOINT1 = 8.25;
-float SETPOINT2 = 1.5;
+float SETPOINT1 = 3; // atoms
+float SETPOINT2 = 1.5; // cavity
 float P1 = -.055;
 float I1 = -0.006;
 float P2 = -0.055;
