@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QApplication
 
 from waxx.util.guis.monitor_server_gui import MonitorServerGUI
 
-from kexp.config.monitor_config import MONITOR_SERVER_IP, MONITOR_SERVER_PORT, MONITOR_EXPT_PATH
+from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_SERVER_PORT, MONITOR_EXPT_PATH
 
 def main():
     app = QApplication(sys.argv)

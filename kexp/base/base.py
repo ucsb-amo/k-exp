@@ -9,7 +9,7 @@ from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control
 from kexp.config.camera_id import cameras
-from kexp.config.monitor_config import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH
+from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH
 
 from kexp.util.artiq.async_print import aprint
 
