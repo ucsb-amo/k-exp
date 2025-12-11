@@ -67,7 +67,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
                     init_shuttler = True, 
                     init_lightsheet = True,
                     setup_awg = True, 
-                    setup_slm = True):
+                    setup_slm = True,
+                    init_ry = True):
         
         self.core.reset()
 
@@ -104,6 +105,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
             self.dds.d1_beatlock_ref.on()
         if init_lightsheet:
             self.lightsheet.init()
+        if init_ry:
+            self.ry_405.init()
         
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):

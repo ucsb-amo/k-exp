@@ -62,8 +62,9 @@ class dds_frame(dds_frame_waxx):
                                     default_amp = self.p.amp_tweezer_pid2)
         self.ry_405_sw = self.dds_assign(1,1,
                                     default_freq = 80.e6,
-                                    default_amp = 0.188,
-                                    ao_order = 1)
+                                    default_amp = 0.100,
+                                    ao_order = -1)
+        
         self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2_c_mot,
                                     default_amp = self.p.amp_d2_c_mot)
