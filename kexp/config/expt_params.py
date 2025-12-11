@@ -181,7 +181,7 @@ class ExptParams():
 
         #D1 CMOT
         self.detune_d1_c_d1cmot = 7. # 12.1
-        self.pfrac_d1_c_d1cmot =  0.7 # .57
+        self.pfrac_d1_c_d1cmot =  0.99 # .57
 
         self.detune_d2_r_d1cmot = -2.86
         self.amp_d2_r_d1cmot =  0.07 # 0.047
