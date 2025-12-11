@@ -350,6 +350,8 @@ class ExptParams():
         self.v_ycancel = 2.
         self.v_zcancel = .86
 
+        self.t_xshim_rampdown = 10.e-3
+
         # X shim voltage to set quantization axis at no field (corresponds to 2.73 G)
         self.v_x_shim_pol_contrast = 9.
 

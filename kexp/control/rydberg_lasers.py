@@ -44,12 +44,15 @@ class SiglentDDSBeam(SiglentBeamBase):
         super().init()
         self.dds_sw.set_dds(init=True)
 
+    @kernel
     def on(self):
         self.dds_sw.on()
 
+    @kernel
     def off(self):
         self.dds_sw.off()
 
+    @kernel
     def set_power(self,amplitude):
         self.dds_sw.set_dds(amplitude=amplitude)
 
@@ -60,12 +63,15 @@ class SiglentTTLBeam(SiglentBeamBase):
         super().__init__(siglent_ch=siglent_ch)
         self.ttl_sw = ttl_sw
 
+    @kernel
     def on(self):
         self.ttl_sw.on()
 
+    @kernel
     def off(self):
         self.ttl_sw.off()
 
+    @kernel
     def set_power(self):
         raise ValueError('No power control configured!')
 

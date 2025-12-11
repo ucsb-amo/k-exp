@@ -12,16 +12,16 @@ class siglent_frame():
                                                    amplitude_vpp=0.885,
                                                    max_amplitude_vpp=1.)
         self.siglent_405 = self.assign_sdg6000x_ch(2,IP_RY_CAVITY_SIGLENT,
-                                                   frequency=310.e6,
-                                                   amplitude_vpp=1.,
-                                                   max_amplitude_vpp=1.05)
+                                                   frequency=209.65e6,
+                                                   amplitude_vpp=1.2,
+                                                   max_amplitude_vpp=1.5)
 
     def assign_sdg6000x_ch(self, ch, ip,
                            frequency,
                            amplitude_vpp,
                            max_amplitude_vpp,
                            default_state=1) -> SDG6000X_CH:
-        siglent_ch = SDG6000X_CH(ch=1,ip=ip,
+        siglent_ch = SDG6000X_CH(ch=ch,ip=ip,
                            frequency=frequency,
                            amplitude_vpp=amplitude_vpp,
                            max_amplitude_vpp=max_amplitude_vpp,

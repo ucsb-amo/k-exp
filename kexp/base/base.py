@@ -150,13 +150,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
-
-        # self.dds.raman_150_minus.on()
-        # self.dds.raman_150_plus.on()
-        # self.dds.raman_80_plus.on()
-        
-        # self.dds.ry_405_switch.on()
-        # self.dds.ry_980_switch.on()
         
         self.dds.d1_beatlock_ref.on()
 

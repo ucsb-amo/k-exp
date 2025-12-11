@@ -380,7 +380,7 @@ class Cooling():
 
         delay(1.e-3)
 
-        self.ttl.d2_mot_shutter.on()
+        # self.ttl.d2_mot_shutter.on()
 
         delay(1.e-3)
             

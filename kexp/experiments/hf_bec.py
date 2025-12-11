@@ -12,7 +12,7 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=True,
+                      save_data=False,
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
@@ -28,10 +28,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.12,.3,15))
         self.p.v_pd_lf_tweezer_1064_rampdown2_end = .21
 
-        self.xvar('i_non_inter',np.linspace(180.3,181.,20))
+        # self.xvar('i_non_inter',np.linspace(180.3,181.,20))
 
-        self.p.v_hf_paint_amp_end = -7.
-        self.p.t_ramp_down_painting_amp = 100.e-3
+        # self.p.v_hf_paint_amp_end = -7.
+        # self.p.t_ramp_down_painting_amp = 100.e-3
         
         # self.xvar('amp_imaging',np.linspace(0.08,.54,10))
         # self.p.amp_imaging = .28
@@ -47,7 +47,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.camera_params.exposure_time = 20.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 100
 
         self.finish_prepare(shuffle=True)
 

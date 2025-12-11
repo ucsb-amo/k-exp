@@ -15,41 +15,27 @@ class tweezer_load(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
+        # self.xvar('beans', [0,1]*2)
+        self.p.beans = 1
+        
         # self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-4.,.5,8))
         self.p.v_lf_tweezer_paint_amp_max = -2.71
         
         # self.xvar('v_pd_lf_tweezer_1064_rampdown2_end',np.linspace(.11,.23,8))
         self.p.v_pd_lf_tweezer_1064_rampdown2_end = .15
 
-        self.p.t_xshim_rampdown = 10.e-3
-
-        self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6)
-        self.p.t_tof = 1200.e-6
-
-        # self.xvar('v_x_shim_pol_contrast',np.linspace(0.0,3.,3))
-        self.p.v_x_shim_pol_contrast = 9. # .5 to 3. 
-
-        self.p.v_xcancel = 0.
-        self.p.v_ycancel = 2.
-        self.p.v_zcancel = .86
+        # self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6)
+        self.p.t_tof = 200.e-6
 
         # self.xvar('t_tweezer_hold',np.linspace(0.e-3,100.e-3,10))
-        
         self.p.t_tweezer_hold = 10.e-3
 
-        self.p.amp_imaging = .1
-        # self.xvar('amp_imaging',np.linspace(0.15,.5,15))
+        # self.xvar('t_ry_pulse',np.linspace(.1e-6,10.e-6,10))
+        self.p.t_ry_pulse = 7.e-6
 
-        # self.xvar('frequency_detuned_imaging',np.linspace(0.e6,440.e6,50))
-        # self.p.frequency_detuned_imaging = 36.e6
-        
-        # self.camera_params.exposure_time = 20.e-6
-        # self.p.t_imaging_pulse = self.camera_params.exposure_time
+        # self.xvar('frequency_ry_405_detuning',np.linspace(-3.e6,3.e6,9))
+        self.p.frequency_ry_405_detuning = 0.
 
-        # self.xvar('phase_slm_mask',np.linspace(0.,2*np.pi,15))
-        # self.xvar('dimension_slm_mask',np.linspace(10.e-6, 300.e-6,15))
-        self.p.dimension_slm_mask = 30.e-6
-        self.p.phase_slm_mask = 0.35*np.pi
         self.p.t_mot_load = 1.
 
         self.p.imaging_state = 2
@@ -60,6 +46,10 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        self.ry_405.set_detuning(self.p.frequency_ry_405_detuning)
+        
+        self.ttl.d2_mot_shutter.off()
 
         self.prepare_lf_tweezers()
 
@@ -77,8 +67,19 @@ class tweezer_load(EnvExperiment, Base):
                                                    v_start=9.99,
                                                    v_end=self.p.v_x_shim_pol_contrast,
                                                    n=90)
-        
-        # delay(10.e-3)
+
+        self.ttl.d2_mot_shutter.on()
+
+        delay(10.e-3)
+
+        if self.p.beans:
+            self.ry_405.on()
+            delay(self.p.t_ry_pulse)
+            self.ry_405.off()
+        else:
+            delay(self.p.t_ry_pulse)
+
+        self.ttl.d2_mot_shutter.off()
 
         delay(self.p.t_tweezer_hold)
 
