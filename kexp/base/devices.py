@@ -164,7 +164,7 @@ class Devices():
                             siglent_ch=self.siglent.siglent_405,
                             dds_sw=self.dds.ry_405_sw,
                             ao_order_cavity=1,
-                            ao_order_pid=-1,
+                            ao_order_pid=1,
                             frequency_pid_ao=80.e6)
         
         # self.ry_405.set_power()
