@@ -21,7 +21,7 @@ class SiglentBeamBase():
 
     @kernel
     def init(self):
-        self.siglent.init(init=True)
+        self.siglent.init()
 
     @kernel
     def set_siglent(self,
@@ -41,7 +41,8 @@ class SiglentDDSBeam(SiglentBeamBase):
     
     @kernel
     def init(self):
-        super().init()
+        SiglentBeamBase.init(self)
+        # self.siglent.init()
         self.dds_sw.set_dds(init=True)
 
     @kernel
