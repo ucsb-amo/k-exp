@@ -156,7 +156,7 @@ class ExptParams():
         self.detune_d2_c_mot = -3.86
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -5.
+        self.detune_d2_r_mot = -5.2
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -166,9 +166,9 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 19.5
-        self.v_zshim_current = .25
-        self.v_xshim_current = .7
-        self.v_yshim_current = .43
+        self.v_zshim_current = .214
+        self.v_xshim_current = 1.43
+        self.v_yshim_current = 1.71
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -196,16 +196,16 @@ class ExptParams():
         
         #GM
 
-        self.v_zshim_current_gm = 0.87
-        self.v_xshim_current_gm = 0.53
-        self.v_yshim_current_gm = 2.
+        self.v_zshim_current_gm = 0.74
+        self.v_xshim_current_gm = 0.36
+        self.v_yshim_current_gm = 2.1
 
         self.pfrac_d1_c_d1cmot = 1.0
 
         self.pfrac_d1_c_gm = .99
         self.pfrac_d1_r_gm = 0.99
 
-        self.pfrac_c_gmramp_end = 0.01
+        self.pfrac_c_gmramp_end = 0.05
         self.pfrac_r_gmramp_end = 0.7
 
         # self.v_zshim_current_gm = 0.7
