@@ -45,6 +45,8 @@ class ttl_frame(ttl_frame_waxx):
         self.imaging_pid_int_clear_hold = self.assign_ttl_out(49)
         self.b_field_stab_SRS_blanking_input = self.assign_ttl_out(50)
         self.imaging_pid_manual_override = self.assign_ttl_out(51)
+        self.ry_980_sw = self.assign_ttl_out(52)
+
         self.z_shim_pid_int_hold_zero = self.assign_ttl_out(56)
 
         self.line_trigger = self.assign_ttl_in(40)
