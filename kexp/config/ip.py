@@ -9,5 +9,5 @@ MONITOR_EXPT_PATH = str( Path(os.getenv('code')) / 'k-exp' / 'kexp' / \
       'experiments' / 'tools' / 'monitor.py' )
 
 ### ethernet relay
-ETHERNET_RELAY_IP = "192.168.1.88"
+ETHERNET_RELAY_IP = "192.168.1.109"
 ETHERNET_RELAY_PORT = 2101
