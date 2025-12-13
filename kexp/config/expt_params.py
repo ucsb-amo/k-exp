@@ -318,7 +318,7 @@ class ExptParams():
 
         # feshbach field rampup
         # self.i_feshbach_field_rampup_start = 0.
-        self.n_field_ramp_steps = 1000
+        self.n_field_ramp_steps = 100
         # self.n_feshbach_field_rampup_steps = 100
         # self.n_feshbach_field_ramp_steps = 100
         # self.n_feshbach_field_ramp2_steps = 100
