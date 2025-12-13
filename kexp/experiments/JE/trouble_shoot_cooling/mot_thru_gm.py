@@ -9,9 +9,9 @@ class gm_tof(EnvExperiment, Base):
         Base.__init__(self,
                       setup_camera=True,
                       camera_select='xy_basler',
-                      save_data=False)
+                      save_data=True)
 
-        # self.xvar('frequency_detuned_imaging',np.arange(-100.,100.,6)*1.e6)
+        self.xvar('frequency_detuned_imaging',np.arange(-20.,50.,3)*1.e6)
 
         # self.xvar('detune_push',np.linspace(-5.,2.,20))
         # self.xvar('amp_push',np.linspace(.05,.188,8))
@@ -100,15 +100,15 @@ class gm_tof(EnvExperiment, Base):
         self.p.imaging_state = 2.
         self.p.t_tof = 20.e-6
         # self.p.t_tof = 10.e-3
-        self.p.t_mot_load = .5
-        self.p.N_repeats = 1000
+        self.p.t_mot_load = .2
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
+        self.set_imaging_detuning(self.p.frequency_detuned_imaging)
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
