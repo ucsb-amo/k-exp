@@ -40,6 +40,6 @@ class dac_frame(dac_frame_waxx):
         self.z_shim_mosfet_gate = self.assign_dac_ch(25)
         self.vva_ry_980 = self.assign_dac_ch(26)
 
-        self.vva_ry_405 = self.assign_dac_ch(30)
+        self.vva_ry_405 = self.assign_dac_ch(31)
 
         self.cleanup()
