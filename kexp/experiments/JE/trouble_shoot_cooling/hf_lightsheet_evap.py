@@ -12,11 +12,11 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,camera_select='xy_basler',
+        Base.__init__(self,setup_camera=True,save_data=True,camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 2000.e-6
-        # self.xvar('t_tof',np.linspace(20,200.,10)*1.e-6)
+        self.p.t_tof = 20.e-6
+        # self.xvar('t_tof',np.linspace(20,2000.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0,1]*4)
 
@@ -61,8 +61,8 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_lightsheet_rampup = 4.
         # self.p.v_pd_lightsheet_rampup_end = 7.2
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(191.,194.,20))
-        # self.p.i_hf_lightsheet_evap1_current = 184.
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.5,195.,20))
+        self.p.i_hf_lightsheet_evap1_current = 194.6
         # self.p.i_hf_lightsheet_evap1_current = 18.
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.8,3.,8))
@@ -98,9 +98,9 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 25.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
-        # self.p.amp_imaging = .15
+        self.p.amp_imaging = .18
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=False)
@@ -122,7 +122,12 @@ class mag_trap(EnvExperiment, Base):
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False,do_magtrap_rampdown=True)
         # self.inner_coil.snap_off()
 
-        self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
+        self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
+                                                   self.p.v_yshim_current_magtrap,
+                                                   0.,n=50)
+        self.dac.xshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
+                                                   self.p.v_xshim_current_magtrap,
+                                                   0.,n=50)
 
         # feshbach field on, ramp up to field 1
         self.outer_coil.on()

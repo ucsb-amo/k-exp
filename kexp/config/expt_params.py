@@ -230,7 +230,7 @@ class ExptParams():
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
-        self.v_xshim_current_magtrap = 0.0
+        self.v_xshim_current_magtrap = 1.1
         self.v_yshim_current_magtrap = 9.9
 
         #Optical Pumping
