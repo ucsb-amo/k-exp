@@ -153,10 +153,10 @@ class ExptParams():
         self.v_2d_mot_current = 2.11
 
         #MOT
-        self.detune_d2_c_mot = -3.14
+        self.detune_d2_c_mot = -1.1
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -6.
+        self.detune_d2_r_mot = -3.43
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -166,9 +166,9 @@ class ExptParams():
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 19.4
-        self.v_zshim_current = .171
-        self.v_xshim_current = .71
-        self.v_yshim_current = 1.71
+        self.v_zshim_current = .271
+        self.v_xshim_current = .36
+        self.v_yshim_current = 2.2
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -180,8 +180,8 @@ class ExptParams():
         self.v_d2cmot_current = .98
 
         #D1 CMOT
-        self.detune_d1_c_d1cmot = 7. # 12.1
-        self.pfrac_d1_c_d1cmot =  0.99 # .57
+        self.detune_d1_c_d1cmot = 8. # 12.1
+        self.pfrac_d1_c_d1cmot =  0.79 # .57
 
         self.detune_d2_r_d1cmot = -2.86
         self.amp_d2_r_d1cmot =  0.043 # 0.047
@@ -195,23 +195,23 @@ class ExptParams():
         self.i_cmot = self.i_mot
         
         #GM
-        self.v_zshim_current_gm = 0.7
-        self.v_xshim_current_gm = 0.36
-        self.v_yshim_current_gm = 1.4
+        self.v_zshim_current_gm = 0.871
+        self.v_xshim_current_gm = 0.29
+        self.v_yshim_current_gm = 2.143
 
         self.pfrac_d1_c_gm = .9
-        self.pfrac_d1_r_gm = 0.9
+        self.pfrac_d1_r_gm = 0.86
 
         self.pfrac_c_gmramp_end = 0.05
-        self.pfrac_r_gmramp_end = 0.9
+        self.pfrac_r_gmramp_end = 0.05
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
         # self.v_yshim_current_gm = 2.
 
-        self.detune_d1_c_gm = 7. # 7.37
+        self.detune_d1_c_gm = 8. # 7.37
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
-        self.detune_d1_r_gm = 7.
+        self.detune_d1_r_gm = 8.
         # self.pfrac_d1_r_gm = .99
 
         # Discrete GM ramp

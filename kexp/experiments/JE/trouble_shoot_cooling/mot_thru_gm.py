@@ -25,10 +25,10 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('amp_d2_c_2dmot',np.linspace(-6.,0.,8))
         # self.xvar('amp_d2_r_2dmot',np.linspace(.1,.188,8))
 
-        # self.xvar('detune_d2_c_mot',np.linspace(-6.,-.5,8))
+        # self.xvar('detune_d2_c_mot',np.linspace(-4.,1.,15))
         # self.xvar('detune_d2_r_mot',np.linspace(-7.,-2.,8))
-        # self.p.detune_d2_r_mot = -4.2
-        # self.p.detune_d2_c_mot = -2.07
+        # self.p.detune_d2_r_mot = -3.43
+        # self.p.detune_d2_c_mot = -1.1
 
         # self.xvar('v_2d_mot_current',np.linspace(0.,5.,10))
         # self.p.v_2d_mot_current = 3.3
@@ -45,12 +45,13 @@ class gm_tof(EnvExperiment, Base):
         # self.p.v_xshim_current = 1.1
         # self.p.v_yshim_current = .5
 
-        # self.xvar('detune_d1_c_d1cmot',np.linspace(1.,13.,15))
-        # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,0.,8))
-        # self.p.detune_d1_c_d1cmot = 9.5
+        # self.xvar('detune_d1_c_d1cmot',np.linspace(3.,15.,8))
+        # self.xvar('detune_d2_r_d1cmot',np.linspace(-4.,0.,8))
+        # self.p.detune_d1_c_d1cmot = 8.
 
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(0.3,.99,8))
         # self.xvar('amp_d2_r_d1cmot',np.linspace(0.02,.08,8))
+        # self.p.pfrac_d1_c_d1cmot = .79
 
         # self.xvar('i_cmot',np.linspace(15.,35.,30))
         # self.p.i_cmot = 29.
@@ -58,29 +59,29 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('detune_d1_c_gm',np.linspace(2.,12.,8))
         # self.xvar('detune_d1_r_gm',np.linspace(2.,12.,8))
         # self.xvar('detune_d1_gm',np.linspace(2.,13.5,15))
-        self.p.detune_d1_gm = self.p.detune_d1_c_gm
+        # self.p.detune_d1_gm = 8.
 
         # self.p.detune_d1_c_gm = 13.
         # self.p.detune_d1_r_gm = 13.
 
-        # self.xvar('pfrac_d1_c_gm',np.linspace(.4,.99,8))
-        # self.xvar('pfrac_d1_r_gm',np.linspace(0.4,.99,8))
-        # self.p.pfrac_d1_c_gm = .73
-        # self.p.pfrac_d1_r_gm = .99
+        # self.xvar('pfrac_d1_c_gm',np.linspace(.1,.99,8))
+        # self.xvar('pfrac_d1_r_gm',np.linspace(0.1,.99,8))
+        # self.p.pfrac_d1_c_gm = .99
+        # self.p.pfrac_d1_r_gm = .86
 
         # self.xvar('v_zshim_current_gm',np.linspace(0.1,1.,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.,8))
         # self.xvar('v_yshim_current_gm',np.linspace(0.,5.,8))
 
         # self.p.v_zshim_current_gm = 0.871
-        # self.p.v_xshim_current_gm = 0.429
+        # self.p.v_xshim_current_gm = 0.29
         # self.p.v_yshim_current_gm = 2.143
 
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.5,8))
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.5,8))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.6,8))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.7,8))
 
-        # self.p.pfrac_c_gmramp_end = 0.37
-        # self.p.pfrac_r_gmramp_end = 0.18
+        # self.p.pfrac_c_gmramp_end = 0.05
+        # self.p.pfrac_r_gmramp_end = 0.05
 
         # self.xvar('dumdum',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
@@ -88,7 +89,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(.1,150.,20)*1.e-6)
         # self.p.t_pump_to_F1 = .01e-6
 
-        self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
 
         # self.camera_params.exposure_time = 50.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
@@ -98,9 +99,9 @@ class gm_tof(EnvExperiment, Base):
         self.p.amp_imaging = .18
         # self.p.imaging_state = 1.
         self.p.imaging_state = 2.
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 18000.e-6
         # self.p.t_tof = 10.e-3
-        self.p.t_mot_load = .5
+        self.p.t_mot_load = .2
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=False)
@@ -112,8 +113,8 @@ class gm_tof(EnvExperiment, Base):
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot)
         self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.cmot_d1(self.p.t_d1cmot)
         self.gm(self.p.t_gm,
                 detune_d1=self.p.detune_d1_gm)
         self.gm_ramp(self.p.t_gmramp,detune_d1=self.p.detune_d1_gm)
