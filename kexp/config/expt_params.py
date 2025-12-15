@@ -112,7 +112,7 @@ class ExptParams():
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.6
+        self.t_magtrap = 1.
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
@@ -221,7 +221,7 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 95.
+        self.i_magtrap_init = 97.
         self.i_magtrap_ramp_end = 169.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
@@ -230,8 +230,8 @@ class ExptParams():
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
-        self.v_xshim_current_magtrap = 1.1
-        self.v_yshim_current_magtrap = 9.9
+        self.v_xshim_current_magtrap = 2.3
+        self.v_yshim_current_magtrap = 5.
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -254,7 +254,7 @@ class ExptParams():
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 9.2
         self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .94 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .64 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -369,10 +369,10 @@ class ExptParams():
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 192.1
+        self.i_hf_lightsheet_evap1_current = 194.
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 193.
+        self.i_hf_tweezer_load_current = 193.5
         self.i_hf_tweezer_evap1_current = 192.7
         self.i_hf_tweezer_evap2_current = 193.
 

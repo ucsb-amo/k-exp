@@ -14,7 +14,7 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',save_data=True)
 
         self.p.t_tof = 9000.e-6
-        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
         # self.xvar('dumy',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
@@ -94,8 +94,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,8))
         # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,8))
         # self.p.v_zshim_current_magtrap = .0
-        self.p.v_xshim_current_magtrap = .0
-        self.p.v_yshim_current_magtrap = 0.
+        # self.p.v_xshim_current_magtrap = .0
+        # self.p.v_yshim_current_magtrap = 0.
         # self.xvar('t_magtrap_delay',np.linspace(.5,10.,15)*1.e-3)
         # self.p.t_magtrap_delay = 5.e-3
         # self.p.t_shim_delay = .5e-3
@@ -130,8 +130,6 @@ class mag_trap(EnvExperiment, Base):
 
         self.gm(self.p.t_gm *s)
         self.gm_ramp(self.p.t_gmramp)
-
-        # self.release()
 
         self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,
                                         do_magtrap_rampup=False,
