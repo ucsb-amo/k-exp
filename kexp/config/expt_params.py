@@ -112,7 +112,7 @@ class ExptParams():
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.6
+        self.t_magtrap = 1.
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
@@ -222,7 +222,7 @@ class ExptParams():
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 97.
+        self.i_magtrap_init = 90.
         self.i_magtrap_ramp_end = 169.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
@@ -231,7 +231,7 @@ class ExptParams():
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
-        self.v_xshim_current_magtrap = 0.
+        self.v_xshim_current_magtrap = 0.786
         self.v_yshim_current_magtrap = 0.
 
         #Optical Pumping
