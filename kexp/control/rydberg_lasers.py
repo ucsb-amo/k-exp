@@ -151,11 +151,11 @@ class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
 
     @kernel
     def set_detuning(self,frequency_detuned):
-        f_ao = self.compute_detuning(frequency_detuned)
+        f_ao = self.detuning_to_cavity_ao_frequency(frequency_detuned)
         self.siglent.set(frequency=f_ao)
 
     @portable(flags={"fast-math"})
-    def compute_detuning(self,frequency_detuned) -> TFloat:
+    def detuning_to_cavity_ao_frequency(self,frequency_detuned) -> TFloat:
         delta = frequency_detuned
         a_c = self._ao_order_cavity
         f_0 = self._f_siglent_detuning_reference
@@ -163,6 +163,5 @@ class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
         f_pid = self._frequency_pid_ao
         a_sw = self.dds_sw.aom_order
         f_sw = self.dds_sw.frequency
-        # print(delta,a_c,f_0,a_pid,f_pid,a_sw,f_sw)
         f_ao = f_0 + (delta-2*a_pid*f_pid-2*a_sw*f_sw)/(-2*a_c)
         return f_ao
