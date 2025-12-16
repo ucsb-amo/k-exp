@@ -29,7 +29,7 @@ class turn_on_imaging(EnvExperiment, Base):
         self.set_imaging_shutters()
         
         frequency_detuned = 0.e6
-        amp_imaging = 0.125
+        amp_imaging = 0.54
         # v_pd = self.camera_params.amp_imaging
 
         # after running experiment, control power with DDS amplitude

@@ -112,7 +112,7 @@ class ExptParams():
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.
+        self.t_magtrap = 1.6
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
@@ -153,10 +153,10 @@ class ExptParams():
         self.v_2d_mot_current = 2.11
 
         #MOT
-        self.detune_d2_c_mot = -1.1
+        self.detune_d2_c_mot = -1.71
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -3.43
+        self.detune_d2_r_mot = -5.9
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -178,6 +178,7 @@ class ExptParams():
         self.amp_d2_r_d2cmot = 0.188
 
         self.v_d2cmot_current = .98
+
 
         #D1 CMOT
         self.detune_d1_c_d1cmot = 8. # 12.1
@@ -230,8 +231,8 @@ class ExptParams():
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
-        self.v_xshim_current_magtrap = 1.4
-        self.v_yshim_current_magtrap = 2.83
+        self.v_xshim_current_magtrap = 0.
+        self.v_yshim_current_magtrap = 0.
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0

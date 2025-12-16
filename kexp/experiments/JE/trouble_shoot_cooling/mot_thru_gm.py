@@ -59,7 +59,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('detune_d1_c_gm',np.linspace(2.,12.,8))
         # self.xvar('detune_d1_r_gm',np.linspace(2.,12.,8))
         # self.xvar('detune_d1_gm',np.linspace(2.,13.5,15))
-        # self.p.detune_d1_gm = 8.
+        self.p.detune_d1_gm = self.p.detune_d1_c_gm
 
         # self.p.detune_d1_c_gm = 13.
         # self.p.detune_d1_r_gm = 13.
@@ -80,8 +80,8 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('pfrac_c_gmramp_end',np.linspace(.05,.6,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.05,.7,8))
 
-        # self.p.pfrac_c_gmramp_end = 0.05
-        # self.p.pfrac_r_gmramp_end = 0.05
+        self.p.pfrac_c_gmramp_end = 0.05
+        self.p.pfrac_r_gmramp_end = 0.05
 
         # self.xvar('dumdum',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
@@ -89,7 +89,7 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('t_pump_to_F1',np.linspace(.1,150.,20)*1.e-6)
         # self.p.t_pump_to_F1 = .01e-6
 
-        # self.xvar('t_tof',np.linspace(13.,20.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
 
         # self.camera_params.exposure_time = 50.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
@@ -109,7 +109,7 @@ class gm_tof(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        self.set_imaging_detuning(self.p.frequency_detuned_imaging)
+        # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
         
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
