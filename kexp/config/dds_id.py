@@ -4,7 +4,6 @@ from artiq.coredevice import ad53xx
 from artiq.experiment import kernel, portable
 from artiq.language.core import delay_mu
 
-from waxx.control.artiq.DDS import DDS
 from waxx.config.dds_id import dds_frame as dds_frame_waxx
 from waxx.control.artiq.dummy_core import DummyCore
 
@@ -54,11 +53,11 @@ class dds_frame(dds_frame_waxx):
                                     default_amp=self.p.amp_rf_source)
         self.tweezer_pid_1 = self.dds_assign(0,3, ao_order = 1,
                                     default_freq = 80.e6,
-                                    dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid1.ch,
+                                    dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid1,
                                     default_amp = self.p.amp_tweezer_pid1)
         self.tweezer_pid_2 = self.dds_assign(1,0, ao_order = 1,
                                     default_freq = 200.e6,
-                                    dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
+                                    dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2,
                                     default_amp = self.p.amp_tweezer_pid2)
         self.ry_405_sw = self.dds_assign(1,1,
                                     default_freq = 207.5e6,
@@ -95,18 +94,18 @@ class dds_frame(dds_frame_waxx):
                                     default_freq=42.26e6,
                                     default_amp=0.1)
         self.d1_3d_c = self.dds_assign(3,3, ao_order = -1, transition = 'D1',
-                                    dac_ch_vpd = self._dac_frame.vva_d1_3d_c.ch,
+                                    dac_ch_vpd = self._dac_frame.vva_d1_3d_c,
                                     default_detuning = self.p.detune_d1_c_gm,
                                     default_amp = self.p.amp_d1_3d_c)
         
         self.d1_3d_r = self.dds_assign(4,0, ao_order = 1, transition = 'D1',
-                                    dac_ch_vpd = self._dac_frame.vva_d1_3d_r.ch,
+                                    dac_ch_vpd = self._dac_frame.vva_d1_3d_r,
                                     default_detuning = self.p.detune_d1_r_gm,
                                     default_amp = self.p.amp_d1_3d_r)
         self.imaging = self.dds_assign(4,1, ao_order = 1,
                                     default_freq = 350.e6,
                                     default_amp = 0.5,
-                                    dac_ch_vpd=self._dac_frame.imaging_pid.ch)
+                                    dac_ch_vpd=self._dac_frame.imaging_pid)
         self.raman_80_plus = self.dds_assign(4,2, ao_order = 1,
                                     default_freq = 80.e6,
                                     default_amp = 0.277)
