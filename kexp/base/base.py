@@ -46,9 +46,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
 
-        # self.configure_imaging_system(polmod_ao_bool=self._polmod_config)
-        self.dds.stash_defaults()
-
         if self.tweezer.traps == []:
             self.tweezer.add_tweezer_list()
         self.tweezer.save_trap_list()
