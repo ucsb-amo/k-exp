@@ -24,20 +24,9 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.v_pd_hf_tweezer_1064_rampdown2_end = .125
 
-        self.p.t_tweezer_hold = 30.e-3
+        self.p.t_tweezer_hold = 10.e-3
 
-        self.p.frequency_tweezer_list = [75.4e6, 76.e6]
-
-        self.xvar('i_hf_tweezer_evap2_current',np.linspace(178.5,194.5,15))
-        self.p.i_hf_tweezer_evap2_current = 194.15
-
-        a_list = [.15,.16]
-        self.p.amp_tweezer_list = a_list      
-
-
-        self.xvar('hf_imaging_detuning', np.linspace(-645.,-617.,22)*1.e6)
-
-        # self.p.hf_imaging_detuning = -617.e6 # 193.2
+        self.p.hf_imaging_detuning = -617.5e6 # 193.2
         self.p.imaging_state = 2.
 
         self.p.N_repeats = 1
@@ -112,9 +101,6 @@ class mag_trap(EnvExperiment, Base):
                           paint=True,keep_trap_frequency_constant=True)
         
         self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-        #                      i_start=self.p.i_hf_tweezer_evap2_current,
-        #                      i_end=self.p.i_tunnel)
         
         delay(self.p.t_tweezer_hold)
         

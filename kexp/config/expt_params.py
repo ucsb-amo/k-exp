@@ -255,7 +255,7 @@ class ExptParams():
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 9.2
         self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .64 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .532 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -273,7 +273,7 @@ class ExptParams():
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
         self.v_pd_hf_tweezer_1064_rampdown_end = 1.13
-        self.v_pd_hf_tweezer_1064_rampdown2_end = .18
+        self.v_pd_hf_tweezer_1064_rampdown2_end = .21
         self.v_pd_hf_tweezer_1064_rampdown3_end = 2.
         self.n_tweezer_ramp_steps = 1000
 
@@ -294,7 +294,7 @@ class ExptParams():
         self.amp_tweezer_list = [.15]
 
         self.v_lf_tweezer_paint_amp_max = -.5
-        self.v_hf_tweezer_paint_amp_max = -1.1
+        self.v_hf_tweezer_paint_amp_max = -.71
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -373,8 +373,8 @@ class ExptParams():
         self.i_hf_lightsheet_evap1_current = 194.
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 193.5
-        self.i_hf_tweezer_evap1_current = 192.7
+        self.i_hf_tweezer_load_current = 193.3
+        self.i_hf_tweezer_evap1_current = 193.5
         self.i_hf_tweezer_evap2_current = 193.
 
         self.i_non_inter = 182.
