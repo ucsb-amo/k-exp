@@ -1,8 +1,10 @@
 import numpy as np
+from waxx.config.expt_params import ExptParams as ExptParamsWaxx
 from kexp.config.dds_calibration import DDS_VVA_Calibration
 
-class ExptParams():
+class ExptParams(ExptParamsWaxx):
     def __init__(self):
+        super().__init__()
 
         self.t_rtio = 8.e-9
 
@@ -441,10 +443,3 @@ class ExptParams():
                     phase_ij = phase_ij + 2*np.pi*(tweezer_idx - j)*self.amp_tweezer_list[tweezer_idx]
                 phase_i = (phase_ij % 2*np.pi) * 360
                 self.phase_tweezer_array[tweezer_idx] = phase_i
-
-    def compute_derived(self):
-        '''loop through methods (except built in ones) and compute all derived quantities'''
-        methods = [m for m in dir(self) if not m.startswith('__') and callable(getattr(self,m)) and not m == 'compute_derived']
-        for m in methods:
-            getattr(self,m)()
-        
