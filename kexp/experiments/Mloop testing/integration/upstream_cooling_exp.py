@@ -15,17 +15,16 @@ import matplotlib as mpl
 import os
 import textwrap
 
-from kexp.util.data.load_atomdata import load_atomdata
-from kexp.analysis.plotting_1d import *
+from waxa import atomdata
 
 #Cost Calculator!
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = load_atomdata(0,31450)
+        ad = atomdata(0,50897)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
-        return np.max(ad.atom_number)
+        return np.average(ad.atom_number)
 
 #Cost function is just the negative of the atom number
 def getCost():
@@ -110,13 +109,17 @@ class ExptBuilder():
 
                     self.p.imaging_state = 2.
 
-                    self.p.N_repeats = 1
+                    self.p.amp_imaging = .18
+
+                    self.p.N_repeats = 3
                     self.p.t_mot_load = 1.
 
                     self.finish_prepare(shuffle=True)
 
                 @kernel
                 def scan_kernel(self):
+                
+                    self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
                     self.mot(self.p.t_mot_load)
                     self.dds.push.off()

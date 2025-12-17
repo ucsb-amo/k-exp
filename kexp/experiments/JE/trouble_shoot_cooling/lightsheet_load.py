@@ -82,7 +82,7 @@ class mag_trap(EnvExperiment, Base):
         self.gm_ramp(self.p.t_gmramp)
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
-        self.set_shims(0.,0.,0.)
+        # self.set_shims(0.,0.,0.)
                                                    
         delay(self.p.t_lightsheet_hold)
 
