@@ -89,7 +89,6 @@ class ExptBuilder():
             import numpy as np
             from kexp.calibrations import high_field_imaging_detuning
             from kexp import Base, img_types, cameras
-            from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 
             from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
 
@@ -102,7 +101,7 @@ class ExptBuilder():
                                 camera_select=cameras.xy_basler,
                                 imaging_type=img_types.ABSORPTION)
                     
-                    self.p.t_tof = 9000.e-6
+                    self.p.t_tof = 1000.e-6
                     # self.xvar('t_tof',np.linspace(30.,800.,10)*1.e-6)
                                  
                     {assignment_lines}
@@ -111,8 +110,8 @@ class ExptBuilder():
 
                     self.p.imaging_state = 2.
 
-                    self.p.N_repeats = 3
-                    self.p.t_mot_load = .3
+                    self.p.N_repeats = 1
+                    self.p.t_mot_load = 1.
 
                     self.finish_prepare(shuffle=True)
 
@@ -126,13 +125,13 @@ class ExptBuilder():
                     self.gm(self.p.t_gm * s)
                     self.gm_ramp(self.p.t_gmramp)
 
-                    self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,
-                                        do_magtrap_rampup=False,
-                                        do_magtrap_hold=False,
-                                        do_magtrap_rampdown=False)
-                    delay(self.p.t_magtrap_hold)
-                    self.inner_coil.snap_off()
+                    self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
+                    self.set_shims(0.,0.,0.)
+                                                   
+                    delay(self.p.t_lightsheet_hold)
 
+                    self.lightsheet.off()
+                    
                     delay(self.p.t_tof)
                     self.flash_repump()
                     self.abs_image()

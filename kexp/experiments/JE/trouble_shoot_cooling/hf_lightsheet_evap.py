@@ -61,14 +61,14 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_lightsheet_rampup = 4.
         # self.p.v_pd_lightsheet_rampup_end = 7.2
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(191.,195.,20))
+        self.xvar('i_hf_lightsheet_evap1_current',np.linspace(191.,195.,8))
         # self.p.i_hf_lightsheet_evap1_current = 194.
         # self.p.i_hf_lightsheet_evap1_current = 18.
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,3.,20))
         # self.p.v_pd_hf_lightsheet_rampdown_end = .87
 
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1500.,8)*1.e-3)
+        self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1500.,8)*1.e-3)
         # self.p.t_hf_lightsheet_rampdown = .7
         # self.p.t_hf_lightsheet_rampdown = 0.4401463
 
@@ -121,9 +121,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False,do_magtrap_rampdown=True)
         # self.inner_coil.snap_off()
-        self.dac.xshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
-                                                   self.p.v_xshim_current_magtrap,
-                                                   0.,n=50)
+        self.set_shims(0.,0.,0.)
 
         # feshbach field on, ramp up to field 1
         self.outer_coil.on()

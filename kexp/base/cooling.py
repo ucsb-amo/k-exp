@@ -56,9 +56,7 @@ class Cooling():
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-        self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
-
-        
+        self.set_shims(0.,0.,0.) 
 
         self.outer_coil.on()
         self.outer_coil.set_voltage()
@@ -140,9 +138,7 @@ class Cooling():
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-        self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
-                                                   self.p.v_yshim_current_magtrap,
-                                                   0.,n=500)
+        self.set_shims(0.,0.,0.)
 
         # feshbach field on, ramp up to field 1  
         self.outer_coil.on()

@@ -15,14 +15,13 @@ import matplotlib as mpl
 import os
 import textwrap
 
-from kexp.util.data.load_atomdata import load_atomdata
-from kexp.analysis.plotting_1d import *
+from waxa import atomdata
 
 #Cost Calculator!
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = load_atomdata(0,42707)
+        ad = atomdata(0,42707)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.max(ad.atom_number)

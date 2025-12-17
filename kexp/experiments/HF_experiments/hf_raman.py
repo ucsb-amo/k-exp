@@ -15,27 +15,25 @@ class tweezer_load(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        # self.xvar('amp_raman',np.linspace(0.1,.35,15))
-        self.params.fraction_power_raman = 1.
-        # self.xvar('t_raman_stateprep_pulse',np.linspace(0.,29.e-6,10))
-        
         # self.xvar('beans',[0,1]*50)
-        self.p.t_raman_stateprep_pulse = 13.e-6
+
+        # self.p.t_raman_sweep = 1.e-3
+        # self.p.frequency_raman_sweep_center = 147.18e6
+        # self.p.frequency_raman_sweep_width = 10.e3
+        # self.xvar('frequency_raman_sweep_center', 147.18e6 + np.arange(-60.e3,60.e3,self.p.frequency_raman_sweep_width))
 
         self.p.frequency_raman_transition = 147.18e6 # 147.18e6
 
-        self.p.t_raman_stateprep_pulse = 0.
-        # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 300.e-6
+        # self.xvar('t_raman_pulse',np.linspace(0.,400.e-6,10))
+        self.p.t_raman_pulse = 50.e-6
+
+        self.params.fraction_power_raman = .1
         
         # self.xvar('amp_imaging',np.linspace(0.15,.4,10))
         # self.p.amp_imaging = .28
         self.p.amp_imaging = .18
 
         self.p.hf_imaging_detuning = -565.e6 # 182. -1
-
-        # self.xvar('hf_imaging_detuning_mid',np.arange(-690.,-590.,10)*1.e6)
-        self.p.hf_imaging_detuning_mid = -650.e6# -635.e6
         
         # self.xvar('dimension_slm_mask',np.linspace(10.e-6,200.e-6,10))
         # self.p.dimension_slm_mask = 50.e-6
@@ -43,19 +41,14 @@ class tweezer_load(EnvExperiment, Base):
         self.p.phase_slm_mask = .6 * np.pi
         self.p.dimension_slm_mask = 100.e-6
 
-        # self.xvar('t_raman_stateprep_pulse',[0.e-6,29.e-6]*50)
-
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 1.e-3
-        self.p.t_tof = 133.e-6
-        self.p.t_mot_load = 1.
 
-        self.camera_params.exposure_time = 20.e-6
-        self.params.t_imaging_pulse = self.camera_params.exposure_time
+        self.p.t_tof = 133.e-6
+
+        self.p.t_mot_load = 1.
         
         self.p.N_repeats = 20
-
-        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
         self.finish_prepare(shuffle=False)
 
@@ -63,28 +56,22 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
-        # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
 
-        # self.init_raman_beams()
+        self.init_raman_beams()
 
-        # self.ttl.line_trigger.wait_for_line_trigger()
-        # delay(5.7e-3)
+        self.ttl.line_trigger.wait_for_line_trigger()
+        delay(5.7e-3)
 
-        # self.raman.pulse(t=self.p.t_raman_stateprep_pulse)
+        # self.raman.sweep(t=self.p.t_raman_sweep,
+        #                  frequency_center=self.p.frequency_raman_sweep_center,
+        #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
+        #                  n_steps=50)
 
-        # self.dds.imaging.on()
-        # self.raman.on()
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # delay(self.p.t_continuous_rabi)
-        # self.raman.off()
-        # self.dds.imaging.off()
-        
-        # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
-        # self.dds.imaging.set_dds(amplitude=.35)
+        self.raman.pulse(self.p.t_raman_pulse)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -96,11 +83,6 @@ class tweezer_load(EnvExperiment, Base):
         self.outer_coil.stop_pid()
 
         self.outer_coil.off()
-
-        # self.core.wait_until_mu(now_mu())
-        # self.scope.read_sweep(0)
-        # self.core.break_realtime()
-        delay(20.e-3)
 
     @kernel
     def run(self):

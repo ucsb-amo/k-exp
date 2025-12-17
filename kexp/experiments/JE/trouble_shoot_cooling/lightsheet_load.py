@@ -16,8 +16,8 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 20.e-6
-        self.xvar('t_tof',np.linspace(100,1200.,10)*1.e-6)
+        self.p.t_tof = 1000.e-6
+        # self.xvar('t_tof',np.linspace(100,1200.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
         # self.xvar('dumy',[0]*20)
@@ -44,8 +44,8 @@ class mag_trap(EnvExperiment, Base):
         # self.p.pfrac_r_gmramp_end = 0.743
 
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,1.,8))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.5,8))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,8))
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,4.,8))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,5.5,8))
         # self.p.v_xshim_current_magtrap = .786
 
         # self.p.v_xshim_current_magtrap = 1.1
@@ -62,7 +62,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('amp_imaging',np.linspace(0.09,.2,10))
         # self.p.amp_imaging = .08
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 10
         self.p.t_mot_load = 1.
         self.p.amp_imaging = .18
         self.p.imaging_state = 2.
@@ -82,12 +82,7 @@ class mag_trap(EnvExperiment, Base):
         self.gm_ramp(self.p.t_gmramp)
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
-        self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
-                                                   self.p.v_yshim_current_magtrap,
-                                                   0.,n=50)
-        self.dac.xshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
-                                                   self.p.v_xshim_current_magtrap,
-                                                   0.,n=50)
+        self.set_shims(0.,0.,0.)
                                                    
         delay(self.p.t_lightsheet_hold)
 
