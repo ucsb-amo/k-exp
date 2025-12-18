@@ -138,7 +138,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         elif self.p.imaging_state == 2.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
         
-        self.imaging.set_power(self.camera_params.amp_imaging,reset_pid=False)
+        self.imaging.set_power(self.camera_params.amp_imaging, reset_pid=False)
         # self.imaging.set_power(0.5)
 
         if self._setup_awg:
