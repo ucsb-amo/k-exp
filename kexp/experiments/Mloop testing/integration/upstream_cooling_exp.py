@@ -21,7 +21,7 @@ from waxa import atomdata
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = atomdata(0,50897)
+        ad = atomdata(0,50926)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.average(ad.atom_number)

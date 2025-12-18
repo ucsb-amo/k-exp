@@ -14,7 +14,7 @@ class camera_frame(camera_frame_waxx):
                                 # t_dark_image_delay=50.e-3)
         
         # note -- for PID being on x (Andor), "amp" here refers to v_pd on the PID photodiode
-        self.andor = AndorParams(amp_absorption=0.321, exposure_time_abs=20.e-6, em_gain_abs=300.,
+        self.andor = AndorParams(amp_absorption=0.189, exposure_time_abs=20.e-6, em_gain_abs=300.,
                                 amp_fluorescence=0.6, exposure_time_fluor=25.e-6, em_gain_fluor=1.,
                                 amp_dispersive=0.6, exposure_time_dispersive=5.e-6, em_gain_dispersive=300.,
                                 magnification=16.4, # based on run 49189, updated 2025-11-20

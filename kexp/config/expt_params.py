@@ -257,7 +257,7 @@ class ExptParams(ExptParamsWaxx):
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 9.2
         self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .532 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .5 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -296,7 +296,7 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.15]
 
         self.v_lf_tweezer_paint_amp_max = -.5
-        self.v_hf_tweezer_paint_amp_max = -.71
+        self.v_hf_tweezer_paint_amp_max = -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -372,10 +372,10 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 193.86
+        self.i_hf_lightsheet_evap1_current = 193.7
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 193.3
+        self.i_hf_tweezer_load_current = 193.5
         self.i_hf_tweezer_evap1_current = 193.5
         self.i_hf_tweezer_evap2_current = 193.
 
