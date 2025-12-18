@@ -13,14 +13,16 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
         self.p.t_tof = 100.e-6
         # self.xvar('t_tof',np.linspace(1000.,4500.,10)*1.e-6)
 
-        self.xvar('t_pulse',2.e-3)
+        # self.xvar('t_pulse',np.linspace(0.,1.,5)*1.e-3)
+        self.p.t_pulse = 1.e-6
+        # self.p.t_pulse = 
 
         # self.xvar('dumy',[0]*3)
 
@@ -29,7 +31,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
 
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -85,10 +87,10 @@ class mag_trap(EnvExperiment, Base):
 
         # self.init_raman_beams_nf(frequency_transition=self.p.frequency_raman_transition_nf_1m1_20 - 10.e6,
         #                          fraction_power=1.0)
-        delay(1.e-3)
+        # delay(1.e-3)
         # self.raman_nf.pulse(self.p.t_raman_pulse)
-        self.ry_405.pulse(self.p.t_pulse)
-        delay(1.e-3)
+        # self.ry_405.pulse(self.p.t_pulse)
+        # delay(1.e-3)
         
         self.tweezer.off()
 
