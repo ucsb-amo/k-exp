@@ -54,6 +54,12 @@ class SiglentDDSBeam(SiglentBeamBase):
         self.dds_sw.off()
 
     @kernel
+    def pulse(self,t):
+        self.dds_sw.on()
+        delay(t)
+        self.dds_sw.off()
+
+    @kernel
     def set_power(self,amplitude):
         self.dds_sw.set_dds(amplitude=amplitude)
 
