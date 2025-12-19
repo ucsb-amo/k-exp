@@ -161,3 +161,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.cleanup_image_count()
         self.reset_coils()
         self.ttl.line_trigger.clear_input_events()
+
+        self.ry_405.siglent._restore_defaults()
+        self.ry_405.set_siglent(init=True)

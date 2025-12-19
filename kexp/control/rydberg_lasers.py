@@ -155,6 +155,8 @@ class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
         self._frequency_pid_ao = frequency_pid_ao
         self._f_siglent_detuning_reference = self.siglent._p.frequency
 
+        self.siglent._stash_defaults()
+
     @kernel
     def set_detuning(self,frequency_detuned):
         f_ao = self.detuning_to_cavity_ao_frequency(frequency_detuned)

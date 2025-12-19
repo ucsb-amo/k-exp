@@ -16,7 +16,7 @@ class siglent_frame(siglent_frame_waxx):
                                                    frequency=80.0e6,
                                                    amplitude_vpp=0.362,
                                                    max_amplitude_vpp=1.0,
-                                                   max_frequency=90.e6,
-                                                   min_frequency=70.e6)
+                                                   max_frequency=95.e6,
+                                                   min_frequency=65.e6)
         
         self.cleanup()

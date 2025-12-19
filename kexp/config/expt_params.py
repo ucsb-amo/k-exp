@@ -97,8 +97,8 @@ class ExptParams(ExptParamsWaxx):
         self.t_lf_tweezer_1064_rampdown = 140.e-3 
         self.t_lf_tweezer_1064_rampdown2 = 450.e-3   
         self.t_lf_tweezer_1064_rampdown3 = .47
-        self.t_hf_tweezer_1064_ramp = .285
-        self.t_hf_tweezer_1064_rampdown = 200.e-3 
+        self.t_hf_tweezer_1064_ramp = 0.128 # .285
+        self.t_hf_tweezer_1064_rampdown = 145.e-3 # 200.e-3 
         self.t_hf_tweezer_1064_rampdown2 = 700.e-3   
         self.t_hf_tweezer_1064_rampdown3 = 470.e-3 
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
@@ -274,8 +274,8 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
-        self.v_pd_hf_tweezer_1064_rampdown_end = 1.13
-        self.v_pd_hf_tweezer_1064_rampdown2_end = .21
+        self.v_pd_hf_tweezer_1064_rampdown_end = 2.0 # 1.13
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.15 # .21
         self.v_pd_hf_tweezer_1064_rampdown3_end = 2.
         self.n_tweezer_ramp_steps = 1000
 
@@ -293,10 +293,10 @@ class ExptParams(ExptParamsWaxx):
 
         # self.frequency_tweezer_auto_compute = False
         # self.amp_tweezer_auto_compute = True
-        self.amp_tweezer_list = [.15]
+        self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = -.5
-        self.v_hf_tweezer_paint_amp_max = -1.7
+        self.v_hf_tweezer_paint_amp_max = -2.7 # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -377,7 +377,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.i_hf_tweezer_load_current = 193.5
         self.i_hf_tweezer_evap1_current = 193.5
-        self.i_hf_tweezer_evap2_current = 193.
+        self.i_hf_tweezer_evap2_current = 193.3 # 193.
 
         self.i_non_inter = 182.
 

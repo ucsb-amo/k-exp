@@ -77,7 +77,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.i_hf_tweezer_evap2_current = 193.3
 
         # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.2,.5,8))
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .2
+        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .15
 
         # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(100.,1200.,15)*1.e-3) 
         # self.p.t_hf_tweezer_1064_rampdown2 = 700.e-3
@@ -97,13 +97,14 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.frequency_tweezer_list = [75.8e6]
         # self.p.frequency_tweezer_list = [76.e6, 76.5e6]
-        # self.p.frequency_tweezer_list = [75.8e6, 76.5e6]
+        # self.p.frequency_tweezer_list = [75.8e6, 75.3e6]
         # self.p.frequency_tweezer_list = [72.5e6]
 
         # a_list = [.18,.21]
-        a_list = [.15]
+        a_list = [0.18]
+       
         # a_list = [self.p.amp_tweezer_final,.15]
-        # a_list = [.15,.18]
+        # a_list = [.15,.21]
         self.p.amp_tweezer_list = a_list
 
         # self.xvar('t_tof',np.linspace(1000.,3000.,10)*1.e-6)
