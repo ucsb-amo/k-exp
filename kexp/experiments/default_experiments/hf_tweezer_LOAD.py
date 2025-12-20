@@ -31,7 +31,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 100
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
