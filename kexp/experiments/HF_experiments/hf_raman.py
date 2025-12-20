@@ -19,28 +19,28 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(100.,1500.,10)*1.e-6) 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 147.18e6
-        self.p.frequency_raman_sweep_width = 20.e3
-        self.xvar('frequency_raman_sweep_center', 147.04e6 + np.arange(-160.e3,160.e3,self.p.frequency_raman_sweep_width))
+        self.p.frequency_raman_sweep_width = 10.e3
+        # self.xvar('frequency_raman_sweep_center', 147.25e6 + np.arange(-50.e3,50.e3,self.p.frequency_raman_sweep_width))
 
-        self.p.frequency_raman_transition = 147.18e6 # 147.18e6
+        self.p.frequency_raman_transition = 147.25e6 # 147.18e6
 
-        # self.xvar('t_raman_pulse',np.linspace(0.,400.e-6,10))
-        self.p.t_raman_pulse = 50.e-6
+        self.xvar('t_raman_pulse',np.linspace(0.,100.e-6,20))
+        self.p.t_raman_pulse = 1.e-3
 
-        self.params.fraction_power_raman = .1
+        self.params.fraction_power_raman = 0.15
         
         # self.xvar('amp_imaging',np.linspace(0.15,.4,10))
         # self.p.amp_imaging = .28
         self.p.amp_imaging = .3
 
-        self.p.hf_imaging_detuning = -565.e6 # 182. -1
+        # self.xvar('hf_imaging_detuning',np.linspace(-630.5e6,-207.5e6,30))
+        self.p.hf_imaging_detuning = -572.e6 #-565.e6 # 182. -1
         
         # self.xvar('dimension_slm_mask',np.linspace(10.e-6,200.e-6,10))
         # self.p.dimension_slm_mask = 50.e-6
         # self.xvar('phase_slm_mask',znp.linspace(0.,2.7*np.pi,10))
         self.p.phase_slm_mask = .6 * np.pi
         self.p.dimension_slm_mask = 200.e-6
-
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 1.e-3
 
@@ -56,10 +56,12 @@ class tweezer_load(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
+
 
         self.init_raman_beams(frequency_transition = self.p.frequency_raman_transition, 
                               fraction_power = self.params.fraction_power_raman)
@@ -67,12 +69,12 @@ class tweezer_load(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(5.7e-3)
 
-        self.raman.sweep(t=self.p.t_raman_sweep,
-                         frequency_center=self.p.frequency_raman_sweep_center,
-                         frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
-                         n_steps=50)
+        # self.raman.sweep(t=self.p.t_raman_sweep,
+        #                  frequency_center=self.p.frequency_raman_sweep_center,
+        #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
+        #                  n_steps=100)
 
-        # self.raman.pulse(self.p.t_raman_pulse)
+        self.raman.pulse(self.p.t_raman_pulse)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
