@@ -58,8 +58,8 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 300e-6 
         self.phase_slm_mask = 0.35 * np.pi
-        self.px_slm_phase_mask_position_x = 1034
-        self.px_slm_phase_mask_position_y = 835
+        self.px_slm_phase_mask_position_x = 1060
+        self.px_slm_phase_mask_position_y = 815
         
         # Cooling timing
         self.t_tof = 20.e-6
@@ -275,7 +275,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_pd_hf_tweezer_1064_ramp_end = 9.2
         self.v_pd_hf_tweezer_1064_rampdown_end = 2.0 # 1.13
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.15 # .21
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.5 # 0.15 # .21
         self.v_pd_hf_tweezer_1064_rampdown3_end = 2.
         self.n_tweezer_ramp_steps = 1000
 

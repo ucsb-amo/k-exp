@@ -13,7 +13,7 @@ class tweezer_load(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.DISPERSIVE)
 
         # self.xvar('beans',[0,1]*50)
         # self.xvar('t_tof',np.linspace(100.,1500.,10)*1.e-6) 
@@ -24,23 +24,23 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.frequency_raman_transition = 147.25e6 # 147.18e6
 
-        self.xvar('t_raman_pulse',np.linspace(0.,100.e-6,20))
-        self.p.t_raman_pulse = 1.e-3
+        self.xvar('t_raman_pulse',np.linspace(0.,200.e-6,100))
+        self.p.t_raman_pulse = 7.707e-6/2
 
-        self.params.fraction_power_raman = 0.15
+        self.params.fraction_power_raman = 0.2
         
         # self.xvar('amp_imaging',np.linspace(0.15,.4,10))
         # self.p.amp_imaging = .28
-        self.p.amp_imaging = .3
+        self.p.amp_imaging = .2
 
-        # self.xvar('hf_imaging_detuning',np.linspace(-630.5e6,-207.5e6,30))
-        self.p.hf_imaging_detuning = -572.e6 #-565.e6 # 182. -1
+        # self.xvar('hf_imaging_detuning',np.linspace(-580.5e6,-300.5e6,50))
+        self.p.hf_imaging_detuning = -635.e6 # -572.e6 #-565.e6 # 182. -1
         
-        # self.xvar('dimension_slm_mask',np.linspace(10.e-6,200.e-6,10))
+        # self.xvar('dimension_slm_mask',np.linspace(10.e-6, 200.e-6, 8))
         # self.p.dimension_slm_mask = 50.e-6
-        # self.xvar('phase_slm_mask',znp.linspace(0.,2.7*np.pi,10))
-        self.p.phase_slm_mask = .6 * np.pi
-        self.p.dimension_slm_mask = 200.e-6
+        # self.xvar('phase_slm_mask',np.linspace(0., 1.7*np.pi, 8))
+        self.p.phase_slm_mask = .49 * np.pi
+        self.p.dimension_slm_mask = 10.e-6
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 1.e-3
 
@@ -48,7 +48,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=False)
 
@@ -57,7 +57,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
