@@ -114,7 +114,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_recover = 40.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.
+        self.t_magtrap = .8
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
@@ -169,8 +169,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.i_mot = 19.4
         self.v_zshim_current = .214
-        self.v_xshim_current = .36
-        self.v_yshim_current = 2.1
+        self.v_xshim_current = 0.
+        self.v_yshim_current = 0.
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -198,15 +198,15 @@ class ExptParams(ExptParamsWaxx):
         self.i_cmot = self.i_mot
         
         #GM
-        self.v_zshim_current_gm = 0.871
-        self.v_xshim_current_gm = 0.0
+        self.v_zshim_current_gm = 0.9
+        self.v_xshim_current_gm = 0.5
         self.v_yshim_current_gm = 2.143
 
         self.pfrac_d1_c_gm = .9
         self.pfrac_d1_r_gm = 0.86
 
         self.pfrac_c_gmramp_end = 0.01
-        self.pfrac_r_gmramp_end = 0.57
+        self.pfrac_r_gmramp_end = 0.63
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
@@ -234,7 +234,7 @@ class ExptParams(ExptParamsWaxx):
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
         self.v_xshim_current_magtrap = 0.57
-        self.v_yshim_current_magtrap = 1.57
+        self.v_yshim_current_magtrap = .79
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0

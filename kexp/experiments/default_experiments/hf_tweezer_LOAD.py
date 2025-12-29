@@ -39,7 +39,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
