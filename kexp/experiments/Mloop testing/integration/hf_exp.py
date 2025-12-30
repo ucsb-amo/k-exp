@@ -22,7 +22,7 @@ from waxa.plotting import *
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = atomdata(0,50939)
+        ad = atomdata(0,52853)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.average(ad.atom_number)
