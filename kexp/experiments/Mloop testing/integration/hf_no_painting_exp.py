@@ -108,14 +108,15 @@ class ExptBuilder():
 
                     self.p.t_tweezer_hold = 10.e-3
 
-                    self.p.frequency_tweezer_list = [75.8e6, 76.5e6]
+                    self.p.frequency_tweezer_list = [75.8e6]
 
-                    a_list = [.486,.513]
+                    # a_list = [.486,.513]
                     # a_list = [.4,.6]
-                    # a_list = [.5]
+                    a_list = [.1]
                     self.p.amp_tweezer_list = a_list
 
-                    self.p.hf_imaging_detuning = -617.5e6 # 193.2
+                    # self.p.hf_imaging_detuning = -617.5e6 # 193.2
+                    self.p.hf_imaging_detuning = -562.e6 # 182.
 
                     self.p.amp_imaging = .1
                     self.p.imaging_state = 2.
@@ -129,7 +130,9 @@ class ExptBuilder():
                 def scan_kernel(self):
 
                     self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+                    # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
                     self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+                    # self.imaging.set_power(self.p.img_power)
 
                     # self.switch_d2_2d(1)
                     self.mot(self.p.t_mot_load)
@@ -141,15 +144,13 @@ class ExptBuilder():
 
                     self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-                    self.dac.xshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
-                                                            self.p.v_xshim_current_magtrap,
-                                                            0.,n=50)
-
                     self.outer_coil.on()
                     self.outer_coil.set_voltage()
                     self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                                         i_start=0.,
                                         i_end=self.p.i_hf_lightsheet_evap1_current)
+                    
+                    self.set_shims(0.,0.,0.)
                     
                     # lightsheet evap 1
                     self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
@@ -164,7 +165,7 @@ class ExptBuilder():
                     self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_ramp,
                                     v_start=0.,
                                     v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
-                                    paint=True,keep_trap_frequency_constant=False)
+                                    paint=False,keep_trap_frequency_constant=False)
                                     
                     # lightsheet ramp down (to off)
                     self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
@@ -181,7 +182,7 @@ class ExptBuilder():
                     self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown,
                                     v_start=self.p.v_pd_hf_tweezer_1064_ramp_end,
                                     v_end=self.p.v_pd_hf_tweezer_1064_rampdown_end,
-                                    paint=True,keep_trap_frequency_constant=True)
+                                    paint=False,keep_trap_frequency_constant=False)
                     
                     self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                                         i_start=self.p.i_hf_tweezer_evap1_current,
@@ -190,16 +191,19 @@ class ExptBuilder():
                     self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
                                     v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
                                     v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
-                                    paint=True,keep_trap_frequency_constant=True)
+                                    paint=False,keep_trap_frequency_constant=False)
+                    
+                    # self.ttl.pd_scope_trig.pulse(1.e-6)
 
+                    # tweezer evap 3 with constant trap frequency
                     self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-                                      v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-                                      v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                                      paint=True,keep_trap_frequency_constant=True,low_power=True)
+                                    v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+                                    v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                                    paint=True,keep_trap_frequency_constant=True,low_power=True)
                     
                     self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                                         i_start=self.p.i_hf_tweezer_evap2_current,
-                                        i_end=193.2)
+                                        i_end=182.)
                     
                     delay(self.p.t_tweezer_hold)
                     

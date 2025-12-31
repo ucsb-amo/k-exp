@@ -12,11 +12,11 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,camera_select=cameras.andor,
+        Base.__init__(self,setup_camera=True,save_data=True,camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 20.e-6
-        # self.xvar('t_tof',np.linspace(200,2000.,10)*1.e-6)
+        self.p.t_tof = 1000.e-6
+        # self.xvar('t_tof',np.linspace(100,1200.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0,1]*2)
 
@@ -66,10 +66,10 @@ class mag_trap(EnvExperiment, Base):
         # self.p.i_hf_lightsheet_evap1_current = 18.
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,3.,20))
-        self.p.v_pd_hf_lightsheet_rampdown_end = 5.
+        self.p.v_pd_hf_lightsheet_rampdown_end = 2.
 
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,2500.,8)*1.e-3)
-        self.p.t_hf_lightsheet_rampdown = .2
+        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1500.,15)*1.e-3)
+        self.p.t_hf_lightsheet_rampdown = .45
         # self.p.t_hf_lightsheet_rampdown = 0.4401463
 
         # self.xvar('v_pd_hf_lightsheet_rampdown2_end',np.linspace(.1,.4,15))
@@ -98,12 +98,12 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 25.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
-        self.p.amp_imaging = .078
+        self.p.amp_imaging = .18
 
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -133,9 +133,9 @@ class mag_trap(EnvExperiment, Base):
         self.set_shims(0.,0.,0.)
 
         # lightsheet evap 1
-        # self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
-        #                      v_start=self.p.v_pd_lightsheet_rampup_end,
-        #                      v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
+        self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
+                             v_start=self.p.v_pd_lightsheet_rampup_end,
+                             v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
         
         # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
         #                      i_start=self.p.i_hf_lightsheet_evap1_current,
