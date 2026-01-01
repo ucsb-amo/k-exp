@@ -22,7 +22,7 @@ from waxa.plotting import *
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = atomdata(0,54510)
+        ad = atomdata(0,55799)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.average(ad.atom_number)
@@ -102,15 +102,15 @@ class ExptBuilder():
                                 camera_select=cameras.andor,
                                 imaging_type=img_types.ABSORPTION)
                     
-                    self.p.t_tof = 3500.e-6
+                    self.p.t_tof = 3000.e-6
                                  
                     {assignment_lines}
 
                     self.p.t_tweezer_hold = 10.e-3
 
-                    self.p.frequency_tweezer_list = [75.8e6, 76.5e6]
+                    # self.p.frequency_tweezer_list = [75.8e6, 76.5e6]
 
-                    a_list = [.486,.513]
+                    # a_list = [.486,.513]
                     # a_list = [.4,.6]
                     # a_list = [.5]
                     self.p.amp_tweezer_list = a_list
@@ -192,10 +192,10 @@ class ExptBuilder():
                                     v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                                     paint=True,keep_trap_frequency_constant=True)
 
-                    self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-                                      v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-                                      v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                                      paint=True,keep_trap_frequency_constant=True,low_power=True)
+                    # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+                    #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+                    #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                    #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
                     
                     self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                                         i_start=self.p.i_hf_tweezer_evap2_current,
