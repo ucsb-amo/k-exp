@@ -56,20 +56,20 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_feshbach_field_rampup',np.linspace(15.,250.,15)*1.e-3)
         # self.p.t_feshbach_field_rampup = 150.e-3
 
-        # self.xvar('t_lightsheet_rampup',np.linspace(20.,300.,15)*1.e-3)
+        self.xvar('t_lightsheet_rampup',np.linspace(20.,400.,15)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,8.,10))
         # self.p.t_lightsheet_rampup = 4.
         # self.p.v_pd_lightsheet_rampup_end = 7.2
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(190.,195.,8))
-        self.p.i_hf_lightsheet_evap1_current = 193.57
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(191.,195.,8))
+        # self.p.i_hf_lightsheet_evap1_current = 193.57
         # self.p.i_hf_lightsheet_evap1_current = 18.
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,3.,20))
-        self.p.v_pd_hf_lightsheet_rampdown_end = 2.
+        self.p.v_pd_hf_lightsheet_rampdown_end = 1.393
 
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1500.,15)*1.e-3)
-        self.p.t_hf_lightsheet_rampdown = .45
+        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1000.,8)*1.e-3)
+        # self.p.t_hf_lightsheet_rampdown = .45
         # self.p.t_hf_lightsheet_rampdown = 0.4401463
 
         # self.xvar('v_pd_hf_lightsheet_rampdown2_end',np.linspace(.1,.4,15))

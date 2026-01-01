@@ -18,13 +18,11 @@ class mag_trap(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.p.t_tof = 4250.e-6
-        self.p.t_tof = 2500.e-6
-        # self.xvar('t_tof',np.linspace(100.,2500.,10)*1.e-6) 
-        # self.xvar('dumy',[0.]*3)
+        self.p.t_tof = 20.e-6
+        # self.xvar('t_tof',np.linspace(400.,3000.,10)*1.e-6) 
+        self.xvar('dumy',[0.]*3)
     
         # self.xvar('hf_imaging_detuning', [-617.e6,-505.e6]*1)
-
-        # self.xvar('beans',[0]*10)
 
         self.p.t_lightsheet_hold = .1
 
@@ -39,8 +37,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(186.,194.,8))
         # self.p.i_hf_lightsheet_evap1_current = 195.
 
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.5,3.,15))
-        # self.p.v_pd_hf_lightsheet_rampdown_end = 1.2
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.4,1.5,15))
+        self.p.v_pd_hf_lightsheet_rampdown_end = .479
 
         # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1500.,20)*1.e-3)
         # self.p.t_hf_lightsheet_rampdown = .45
@@ -48,25 +46,25 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_hf_lightsheet_rampdown2',np.linspace(10.,60.,15)*1.e-3)
         # self.p.t_hf_lightsheet_rampdown2 = .02
 
-        # self.xvar('i_hf_tweezer_load_current',np.linspace(190.,195.,20))
-        self.p.i_hf_tweezer_load_current = 191.8
+        # self.xvar('i_hf_tweezer_load_current',np.linspace(191.,194.5,15))
+        self.p.i_hf_tweezer_load_current = 193.2
 
         # self.p.i_image_current = 190.
  
         # self.xvar('v_pd_hf_tweezer_1064_ramp_end',np.linspace(3.,9.5,10))
         self.p.v_pd_hf_tweezer_1064_ramp_end = 9.5
 
-        self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.,0.5,8))
-        self.p.v_hf_tweezer_paint_amp_max = -.5
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.,1.5,15))
+        self.p.v_hf_tweezer_paint_amp_max = .5
 # 
         # self.xvar('t_hf_tweezer_1064_ramp',np.linspace(.02,1.,15))
         self.p.t_hf_tweezer_1064_ramp = .23
 
         # self.xvar('i_hf_tweezer_evap1_current',np.linspace(192.5,194.5,20))
-        self.p.i_hf_tweezer_evap1_current = 192.88
+        self.p.i_hf_tweezer_evap1_current = 193.6
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown_end',np.linspace(.5,2.5,15))
-        self.p.v_pd_hf_tweezer_1064_rampdown_end = 1.75
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown_end',np.linspace(.5,2.,10))
+        self.p.v_pd_hf_tweezer_1064_rampdown_end = 1.16
 # 
         # self.xvar('t_hf_tweezer_1064_rampdown',np.linspace(50.,250.,10)*1.e-3) 
         self.p.t_hf_tweezer_1064_rampdown = 107.e-3        
@@ -74,13 +72,13 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_hf_tweezer_evap2_current',np.linspace(193.,195.,20))
         self.p.i_hf_tweezer_evap2_current = 193.846
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.05,.13,8))
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .124
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.09,.2,10))
+        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .2
 
-        # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(100.,800.,8)*1.e-3) 
-        self.p.t_hf_tweezer_1064_rampdown2 = 456.9e-3
+        # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(100.,800.,10)*1.e-3) 
+        self.p.t_hf_tweezer_1064_rampdown2 = 566.9e-3
 
-        self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(.1,1.,8))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(.5,2.,10))
         self.p.v_pd_hf_tweezer_1064_rampdown3_end = 1.
 
         # self.xvar('t_hf_tweezer_1064_rampdown3',np.linspace(100.,800.,8)*1.e-3) 
@@ -95,20 +93,22 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_lightsheet_squeeze = .01
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,10.,5)*1.e-3)
-        self.p.t_tweezer_hold = 10.0e-3
+        self.p.t_tweezer_hold = 1.0e-3
 
         # self.xvar('fringe_repeats',np.linspace(1.,300.,300))
 
         # self.p.frequency_tweezer_list = [75.8e6]
 
-        self.p.frequency_tweezer_list = [75.8e6]
+        # self.p.frequency_tweezer_list = [75.8e6]
         # self.p.frequency_tweezer_list = [75.8e6, 76.5e6]
         # self.p.frequency_tweezer_list = [72.5e6]
 
-        a_list = [.3]
+        # a_list = [.18]
         # a_list = [.4,.6]
         # a_list = [.5]
-        self.p.amp_tweezer_list = a_list
+        # self.p.amp_tweezer_list = a_list
+
+        # self.xvar('amp_tweezer',np.linspace(.2,.5,20))
 
         # self.xvar('hf_imaging_detuning', np.arange(-580.,-540.,3.)*1.e6)
         # self.p.hf_imaging_detuning = -604.e6
@@ -125,7 +125,7 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.em_gain = 1.
 
         # self.xvar('img_power', np.linspace(.05,2.,15))
-        self.p.amp_imaging = .1
+        self.p.amp_imaging = .078
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.
 
@@ -141,6 +141,8 @@ class mag_trap(EnvExperiment, Base):
         # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.imaging.set_power(self.p.img_power)
+
+        # self.tweezer.traps[0].set_amp(self.p.amp_tweezer)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -168,12 +170,12 @@ class mag_trap(EnvExperiment, Base):
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_hf_lightsheet_evap1_current,
                              i_end=self.p.i_hf_tweezer_load_current)
-    
+
         self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_ramp,
-                          v_start=0.,
-                          v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
-                          paint=True,keep_trap_frequency_constant=False)
+                        v_start=0.,
+                        v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
+                        paint=True,keep_trap_frequency_constant=False)
                           
         # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
@@ -201,13 +203,13 @@ class mag_trap(EnvExperiment, Base):
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        # tweezer evap 3 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                          paint=True,keep_trap_frequency_constant=True,low_power=True)
+        # # tweezer evap 3 with constant trap frequency
+        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+        #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+        #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
         
         # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
         #                      i_start=self.p.i_hf_tweezer_evap2_current,

@@ -84,7 +84,7 @@ class ExptParams(ExptParamsWaxx):
         
         self.t_lightsheet_rampup = .16
         self.t_lf_lightsheet_rampdown = 1.13
-        self.t_hf_lightsheet_rampdown = .45
+        self.t_hf_lightsheet_rampdown = .74
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = .01
@@ -372,7 +372,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 194.3
+        self.i_hf_lightsheet_evap1_current = 193.8
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 192.7

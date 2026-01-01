@@ -106,6 +106,11 @@ class Cooling():
                           v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
+        
+        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                          paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.dac.supply_current_2dmot.set(v=0.)
 
