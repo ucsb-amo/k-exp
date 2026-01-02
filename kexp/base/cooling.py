@@ -123,7 +123,7 @@ class Cooling():
 
         self.outer_coil.start_pid()
 
-        delay(100.e-3)
+        delay(80.e-3)
 
     @kernel
     def prepare_lf_tweezers(self):

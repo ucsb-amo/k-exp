@@ -26,9 +26,9 @@ class tweezer_load(EnvExperiment, Base):
 
         self.p.t_raman_stateprep_pulse = 0.
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 300.e-6
+        self.p.t_continuous_rabi = 200.e-6
         
-        # self.xvar('amp_imaging',np.linspace(0.15,.4,10))
+        self.xvar('amp_imaging',np.linspace(0.01,.25,15))
         # self.p.amp_imaging = .28
         self.p.amp_imaging = .18
 
@@ -46,14 +46,14 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_raman_stateprep_pulse',[0.e-6,29.e-6]*50)
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
-        self.p.t_tweezer_hold = 1.e-3
-        self.p.t_tof = 133.e-6
+        self.p.t_tweezer_hold = 50.e-3
+        self.p.t_tof = 100.e-6
         self.p.t_mot_load = 1.
 
-        self.camera_params.exposure_time = 20.e-6
-        self.params.t_imaging_pulse = self.camera_params.exposure_time
+        # self.camera_params.exposure_time = 20.e-6
+        # self.params.t_imaging_pulse = self.camera_params.exposure_time
         
-        self.p.N_repeats = 20
+        self.p.N_repeats = 3
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -62,10 +62,10 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
+        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning_mid)
         # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.imaging.set_power(self.p.amp_imaging,reset_pid=True)
 
         self.prepare_hf_tweezers()
 
@@ -76,15 +76,15 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.raman.pulse(t=self.p.t_raman_stateprep_pulse)
 
-        # self.dds.imaging.on()
+        self.imaging.on()
         # self.raman.on()
         # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # delay(self.p.t_continuous_rabi)
+        delay(self.p.t_continuous_rabi)
         # self.raman.off()
-        # self.dds.imaging.off()
+        self.imaging.off()
         
-        # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
-        # self.dds.imaging.set_dds(amplitude=.35)
+        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
+        self.imaging.set_power(.078,reset_pid=True)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
