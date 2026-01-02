@@ -113,7 +113,7 @@ class ExptBuilder():
                     # a_list = [.486,.513]
                     # a_list = [.4,.6]
                     # a_list = [.5]
-                    self.p.amp_tweezer_list = a_list
+                    # self.p.amp_tweezer_list = a_list
 
                     self.p.hf_imaging_detuning = -617.5e6 # 193.2
 

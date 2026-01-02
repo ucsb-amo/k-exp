@@ -20,7 +20,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_tof = 4250.e-6
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(400.,3000.,10)*1.e-6) 
-        self.xvar('dumy',[0.]*3)
+        self.xvar('dumy',[0.]*10)
     
         # self.xvar('hf_imaging_detuning', [-617.e6,-505.e6]*1)
 
@@ -84,11 +84,6 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('i_tunnel',np.linspace(180.,190.,20)) 
         self.p.i_tunnel = 182. 
-
-        # self.xvar('v_pd_lightsheet_squeeze',np.linspace(.2,.5,15))
-        self.p.v_pd_lightsheet_squeeze = .01
-
-        self.p.t_lightsheet_squeeze = .01
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,10.,5)*1.e-3)
         self.p.t_tweezer_hold = 10.0e-3
