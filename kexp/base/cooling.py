@@ -56,14 +56,14 @@ class Cooling():
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-        self.set_shims(0.,0.,0.) 
-
         self.outer_coil.on()
         self.outer_coil.set_voltage()
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                              i_start=0.,
                              i_end=self.p.i_hf_lightsheet_evap1_current)
         
+        self.set_shims(0.,0.,0.) 
+
         # lightsheet evap 1
         self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
