@@ -28,10 +28,12 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 10.e-3
 
+        self.p.amp_imaging = .2
+
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
 
-        self.p.N_repeats = 100
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -39,9 +41,9 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.imaging.set_power(self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)

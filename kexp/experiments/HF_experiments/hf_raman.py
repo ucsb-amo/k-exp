@@ -15,7 +15,7 @@ class tweezer_load(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('beans',[0,1]*2)
+        # self.xvar('beans',[0,1]*2)
 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 147.18e6
@@ -25,14 +25,14 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_raman_transition = 147.25e6
         # self.p.frequency_raman_transition = 145.25e6
 
-        # self.xvar('t_raman_pulse',np.linspace(0.,300.e-6,150))
+        self.xvar('t_raman_pulse',np.linspace(0.,500.e-6,150))
         self.p.t_raman_pulse = 7.707e-6/2
 
-        self.params.fraction_power_raman = 0.2
+        self.params.fraction_power_raman = 1.0
         
         # self.xvar('amp_imaging',np.linspace(0.15,.4,10))
         # self.p.amp_imaging = .28
-        self.p.amp_imaging = .078
+        self.p.amp_imaging = .2
 
         # self.xvar('hf_imaging_detuning',np.linspace(-575.e6,-550.e6,20))
         self.p.hf_imaging_detuning = -566.e6 # 182. -1
@@ -53,22 +53,22 @@ class tweezer_load(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
 
-        # self.init_raman_beams(frequency_transition = self.p.frequency_raman_transition, 
-        #                       fraction_power = self.params.fraction_power_raman)
+        self.init_raman_beams(frequency_transition = self.p.frequency_raman_transition, 
+                              fraction_power = self.params.fraction_power_raman)
 
-        # self.ttl.line_trigger.wait_for_line_trigger()
-        # delay(5.7e-3)
+        self.ttl.line_trigger.wait_for_line_trigger()
+        delay(5.7e-3)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,
@@ -79,11 +79,8 @@ class tweezer_load(EnvExperiment, Base):
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
-
-        if self.p.beans:
-            delay(self.p.t_tof)
-        else:
-            delay(10.e-3)
+        
+        delay(self.p.t_tof)
 
         self.abs_image()
 
