@@ -104,11 +104,13 @@ class mag_trap(EnvExperiment, Base):
             self.ttl.imaging_shutter_xy.on()
             delay(3.e-3)
             self.imaging.on()
+            delay(1.e-3)
+            self.imaging.off()
+            self.ttl.imaging_shutter_xy.off()
             delay(self.p.t_tweezer_hold)
         
         elif self.p.wee == 1:
             delay(self.p.t_tweezer_hold)
-        
         
 
         # self.init_raman_beams_nf(frequency_transition=self.p.frequency_raman_transition_nf_1m1_20 - 10.e6,
@@ -117,10 +119,7 @@ class mag_trap(EnvExperiment, Base):
         # self.raman_nf.pulse(self.p.t_raman_pulse)
         # self.ry_405.pulse(self.p.t_pulse)
         # delay(1.e-3)
-        
-        self.imaging.off()
-        self.ttl.imaging_shutter_xy.off()
-        delay(3.e-3)
+
 
         self.imaging.set_power(.1)
 
