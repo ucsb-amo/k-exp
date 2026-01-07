@@ -40,39 +40,54 @@ class mag_trap(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+        
+        
+
+  
+
 
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
+        # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.dds.mot_killer.set_dds_gamma(0.,.188)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
         self.cmot_d1(self.p.t_d1cmot * s)
         
+        
+
+        
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
+
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
+
+
+
 
         self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
 
-        self.outer_coil.on()
-        self.outer_coil.set_voltage()
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
-                             i_start=0.,
-                             i_end=self.p.i_hf_lightsheet_evap1_current)
-        
+        # self.outer_coil.on()
+        # self.outer_coil.set_voltage()
+        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
+        #                      i_start=0.,
+        #                      i_end=self.p.i_hf_lightsheet_evap1_current)
+
+
+
+
         # lightsheet evap 1
         self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
         
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_hf_lightsheet_evap1_current,
-                             i_end=self.p.i_hf_tweezer_load_current)
+        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+        #                      i_start=self.p.i_hf_lightsheet_evap1_current,
+        #                      i_end=self.p.i_hf_tweezer_load_current)
+        
     
         self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_ramp,
@@ -87,6 +102,9 @@ class mag_trap(EnvExperiment, Base):
 
         self.lightsheet.off()
         
+        self.dds.mot_killer.set_dds_gamma(0.,.188)
+        self.dds.mot_killer.on()
+        
         delay(self.p.t_tweezer_hold)
 
         # self.init_raman_beams_nf(frequency_transition=self.p.frequency_raman_transition_nf_1m1_20 - 10.e6,
@@ -98,9 +116,10 @@ class mag_trap(EnvExperiment, Base):
         
         self.tweezer.off()
 
-        self.dds.mot_killer.on()
-
         delay(self.p.t_tof)
+
+        self.flash_repump()
+
         self.abs_image()
 
         self.dds.mot_killer.off()

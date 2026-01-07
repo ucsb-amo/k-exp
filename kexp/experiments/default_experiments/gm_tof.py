@@ -17,7 +17,7 @@ class gm_tof(EnvExperiment, Base):
         
         self.p.amp_imaging = .18
         self.p.imaging_state = 2.
-        self.p.t_tof = 15.e-3
+        self.p.t_tof = 20.e-6
         self.p.t_mot_load = .2
         self.p.N_repeats = 100
 
@@ -33,16 +33,18 @@ class gm_tof(EnvExperiment, Base):
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
 
-        self.cmot_d1(self.p.t_d1cmot)
+        # self.cmot_d1(self.p.t_d1cmot)
 
-        self.ttl.pd_scope_trig.pulse(1.e-8)
-        self.gm(self.p.t_gm)
-        self.gm_ramp(self.p.t_gmramp)
+        # self.ttl.pd_scope_trig.pulse(1.e-8)
+        # self.gm(self.p.t_gm)
+        # self.gm_ramp(self.p.t_gmramp)
 
         self.release()
 
         self.dds.mot_killer.on()
-
+        
+        # delay(.5)
+        
         delay(self.p.t_tof)
 
         self.flash_repump()
