@@ -51,7 +51,7 @@ class mag_trap(EnvExperiment, Base):
         
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
-        self.imaging.set_power(self.p.amp_imaging)
+
 
 
         # self.switch_d2_2d(1)
@@ -97,7 +97,7 @@ class mag_trap(EnvExperiment, Base):
                                 v_end=self.p.v_pd_lightsheet_rampdown3_end)
 
         self.lightsheet.off()
-
+        self.imaging.set_power(.5)
         self.ttl.imaging_shutter_x.off()
         
         if self.p.wee == 0:
@@ -121,7 +121,10 @@ class mag_trap(EnvExperiment, Base):
         # self.ry_405.pulse(self.p.t_pulse)
         # delay(1.e-3)
         
+        self.imaging.set_power(.1)
+
         self.ttl.imaging_shutter_x.on()
+        
         delay(3.e-3)
 
         self.tweezer.off()
