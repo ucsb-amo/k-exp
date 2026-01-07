@@ -25,7 +25,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_raman_transition = 147.25e6
         # self.p.frequency_raman_transition = 145.25e6
 
-        self.xvar('t_raman_pulse',np.linspace(0.,50.e-6,20))
+        self.xvar('t_raman_pulse',np.linspace(0.,600.e-6,200))
         self.p.t_raman_pulse = 0.657e-5
 
         self.params.fraction_power_raman = 1.0

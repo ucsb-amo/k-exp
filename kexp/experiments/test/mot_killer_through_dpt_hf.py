@@ -104,7 +104,7 @@ class mag_trap(EnvExperiment, Base):
             self.ttl.imaging_shutter_xy.on()
             delay(3.e-3)
             self.imaging.on()
-            delay(2.e-3)
+            delay(.8e-3)
             self.imaging.off()
             self.ttl.imaging_shutter_xy.off()
             delay(self.p.t_tweezer_hold)
