@@ -214,8 +214,6 @@ class Cooling():
         
         # self.outer_coil.start_pid()
 
-        # self.ttl.d2_mot_shutter.off()
-
         # delay(80.e-3)
 
     ## cooling stages
@@ -380,8 +378,6 @@ class Cooling():
         ### End Defaults ###
 
         delay(1.e-3)
-
-        # self.ttl.d2_mot_shutter.on()
 
         delay(1.e-3)
             
@@ -831,7 +827,6 @@ class Cooling():
 
         self.power_down_cooling()
         # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.ttl.d2_mot_shutter.on()
 
         delay(t_delay)
              
@@ -1032,10 +1027,7 @@ class Cooling():
         #                         amplitude=amp_ry_405)
         # delay(self.params.t_rtio)
         # self.dds.ry_405_switch.set_dds(frequency=frequency_ry_980,
-        #                         amplitude=amp_ry_980)
-        
-        self.ttl.d2_mot_shutter.on()
-        
+        #                         amplitude=amp_ry_980)        
         
         self.set_shims(v_zshim_current=v_zshim_current)
 

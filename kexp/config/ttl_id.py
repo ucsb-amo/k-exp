@@ -38,7 +38,7 @@ class ttl_frame(ttl_frame_waxx):
         self.imaging_shutter_x = self.assign_ttl_out(19)
         self.basler_2dmot = self.assign_ttl_out(20)
         self.test_trig = self.assign_ttl_out(21)
-        self.d2_mot_shutter = self.assign_ttl_out(22)
+        self.raman_shutter = self.assign_ttl_out(22)
         self.pd_scope_trig3 = self.assign_ttl_out(24)
 
         self.keithley_trigger = self.assign_ttl_out(48)
