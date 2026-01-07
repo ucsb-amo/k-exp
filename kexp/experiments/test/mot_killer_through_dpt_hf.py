@@ -39,7 +39,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
 
-        self.p.N_repeats = 10
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=False)
@@ -104,7 +104,7 @@ class mag_trap(EnvExperiment, Base):
             self.ttl.imaging_shutter_xy.on()
             delay(3.e-3)
             self.imaging.on()
-            delay(1.e-3)
+            delay(5.e-3)
             self.imaging.off()
             self.ttl.imaging_shutter_xy.off()
             delay(self.p.t_tweezer_hold)
