@@ -6,6 +6,7 @@ from kexp.calibrations import high_field_imaging_detuning
 from kexp import Base, img_types, cameras
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from waxx.control.beat_lock import BeatLockImaging
+from kexp.base.cameras import img_config
 
 from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
 
@@ -17,7 +18,9 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
-        
+
+        self.configure_imaging_system(imaging_configuration=img_config.SWITCH)
+
         self.xvar('wee',[0,1]*1)
 
         self.p.t_tof = 100.e-6
@@ -44,9 +47,10 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
     
-
+        self.dds.imaging_x_switch.off()
+        
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
+        self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
         self.imaging.set_power(self.p.amp_imaging)
 
 
@@ -64,11 +68,11 @@ class mag_trap(EnvExperiment, Base):
 
         self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
 
-        # self.outer_coil.on()
-        # self.outer_coil.set_voltage()
-        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
-        #                      i_start=0.,
-        #                      i_end=self.p.i_hf_lightsheet_evap1_current)
+        self.outer_coil.on()
+        self.outer_coil.set_voltage()
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
+                             i_start=0.,
+                             i_end=self.p.i_hf_lightsheet_evap1_current)
 
 
         # lightsheet evap 1
@@ -76,9 +80,9 @@ class mag_trap(EnvExperiment, Base):
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
         
-        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-        #                      i_start=self.p.i_hf_lightsheet_evap1_current,
-        #                      i_end=self.p.i_hf_tweezer_load_current)
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                             i_start=self.p.i_hf_lightsheet_evap1_current,
+                             i_end=self.p.i_hf_tweezer_load_current)
         
     
         self.tweezer.on()
@@ -93,17 +97,16 @@ class mag_trap(EnvExperiment, Base):
                                 v_end=self.p.v_pd_lightsheet_rampdown3_end)
 
         self.lightsheet.off()
+
+        self.ttl.imaging_shutter_x.off()
         
-
-        self.ttl.imaging_shutter_xy.on()
-        self.imaging.dds_sw.on()
-        self.ttl.imaging_shutter_xy.off()
-        self.imaging.dds_sw.off()
-
-
         if self.p.wee == 0:
-            self.dds.mot_killer.set_dds_gamma(0.,.188)
-            self.dds.mot_killer.on()
+            self.ttl.imaging_shutter_xy.on()
+            delay(3.e-3)
+            self.imaging.on()
+            self.imaging.off()
+            self.ttl.imaging_shutter_xy.off()
+            delay(3.e-3)
             delay(self.p.t_tweezer_hold)
         
         elif self.p.wee == 1:
@@ -118,11 +121,13 @@ class mag_trap(EnvExperiment, Base):
         # self.ry_405.pulse(self.p.t_pulse)
         # delay(1.e-3)
         
+        self.ttl.imaging_shutter_x.on()
+        delay(3.e-3)
+
         self.tweezer.off()
 
         delay(self.p.t_tof)
 
-        self.flash_repump()
 
         self.abs_image()
 
