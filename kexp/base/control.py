@@ -91,5 +91,3 @@ class Control():
         self.inner_coil.stop_pid()
         self.inner_coil.off()
         self.inner_coil.discharge()
-
-        self.ttl.d2_mot_shutter.off()

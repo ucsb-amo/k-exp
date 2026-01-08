@@ -72,7 +72,7 @@ class Cooling():
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_hf_lightsheet_evap1_current,
                              i_end=self.p.i_hf_tweezer_load_current)
-    
+        
         self.tweezer.on()
         self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_ramp,
                           v_start=0.,
@@ -107,10 +107,10 @@ class Cooling():
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
         
-        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-        #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-        #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
+        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                          paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.dac.supply_current_2dmot.set(v=0.)
 

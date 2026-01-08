@@ -17,6 +17,8 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('beans',[0,1]*2)
 
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 5.5
+
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 147.18e6
         self.p.frequency_raman_sweep_width = 10.e3
@@ -25,7 +27,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_raman_transition = 147.25e6
         # self.p.frequency_raman_transition = 145.25e6
 
-        self.xvar('t_raman_pulse',np.linspace(0.,600.e-6,200))
+        # self.xvar('t_raman_pulse',np.linspace(0.,600.e-6,200))
         self.p.t_raman_pulse = 0.657e-5
 
         self.params.fraction_power_raman = 1.0
@@ -46,7 +48,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = .1e-3
 
-        # self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6) 
+        self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6) 
         self.p.t_tof = 20.e-6
 
         self.p.t_mot_load = 1.
@@ -64,18 +66,22 @@ class tweezer_load(EnvExperiment, Base):
 
         self.prepare_hf_tweezers()
 
-        self.init_raman_beams(frequency_transition = self.p.frequency_raman_transition, 
-                              fraction_power = self.params.fraction_power_raman)
+        # self.init_raman_beams(frequency_transition = self.p.frequency_raman_transition, 
+        #                       fraction_power = self.params.fraction_power_raman)
+        
+        # self.ttl.raman_shutter.on()
 
-        self.ttl.line_trigger.wait_for_line_trigger()
-        delay(5.7e-3)
+        # self.ttl.line_trigger.wait_for_line_trigger()
+        # delay(5.7e-3)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,
         #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
         #                  n_steps=100)
 
-        self.raman.pulse(self.p.t_raman_pulse)
+        # self.raman.pulse(self.p.t_raman_pulse)
+
+        # self.ttl.raman_shutter.off()
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()

@@ -273,10 +273,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lf_tweezer_1064_rampdown2_end = .18
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
-        self.v_pd_hf_tweezer_1064_ramp_end = 9.5
+        self.v_pd_hf_tweezer_1064_ramp_end = 8.8
         self.v_pd_hf_tweezer_1064_rampdown_end = 1.5 # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.143 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.
         self.n_tweezer_ramp_steps = 1000
 
         self.n_tweezers = 2
