@@ -296,7 +296,7 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = -.71
-        self.v_hf_tweezer_paint_amp_max = -2. # -1.7
+        self.v_hf_tweezer_paint_amp_max = -3. # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
