@@ -107,23 +107,21 @@ class Cooling():
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
         
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                          paint=True,keep_trap_frequency_constant=True,low_power=True)
+        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+        #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+        #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.dac.supply_current_2dmot.set(v=0.)
 
-        self.outer_coil.ramp_supply(t=30.e-3,
-                             i_end=self.p.i_non_inter)
+        self.outer_coil.ramp_supply(t=10.e-3,
+                             i_end=self.p.i_hf_raman)
 
         # delay(100.e-3)
-
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-
+        
         self.outer_coil.start_pid()
 
-        delay(80.e-3)
+        delay(15.e-3)
 
     @kernel
     def prepare_lf_tweezers(self):

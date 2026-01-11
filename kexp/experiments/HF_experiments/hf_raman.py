@@ -17,25 +17,28 @@ class tweezer_load(EnvExperiment, Base):
 
         # self.xvar('beans',[0,1]*2)
 
-        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 5.5
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.
+        self.p.v_pd_hf_tweezer_1064_rampdown2_end = 1.
+
+        # self.p.i_hf_raman = 182.
 
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_center = 147.18e6
-        self.p.frequency_raman_sweep_width = 30.e3
-        # self.xvar('frequency_raman_sweep_center', 147.25e6 + np.arange(-90.e3,90.e3,self.p.frequency_raman_sweep_width))
+        self.p.frequency_raman_sweep_width = 10.e3
+        # self.xvar('frequency_raman_sweep_center', 145.57e6 + np.arange(-40.e3,40.e3,self.p.frequency_raman_sweep_width))
 
-        self.p.frequency_raman_transition = 147.25e6
-        # self.p.frequency_raman_transition = 145.25e6
+        self.p.frequency_raman_transition = 145.57e6 # 191. A
+        # self.p.frequency_raman_transition = 147.24e6 # 182. A
 
-        self.xvar('t_raman_pulse',np.linspace(0.e-6,600.e-6,30))
-        self.p.t_raman_pulse = 1.157e-6
+        # self.xvar('t_raman_pulse',np.linspace(0.e-6,120.e-6,30))
+        self.p.t_raman_pulse = 82.7e-6
 
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
-        self.params.fraction_power_raman = .2
+        self.p.fraction_power_raman = .99
         
         # self.xvar('amp_imaging',np.linspace(0.15,.4,10))
         # self.p.amp_imaging = .28
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .25
 
         # self.xvar('hf_imaging_detuning',np.linspace(-575.e6,-550.e6,20))
         self.p.hf_imaging_detuning = -566.e6 # 182. -1
@@ -46,11 +49,11 @@ class tweezer_load(EnvExperiment, Base):
         self.p.phase_slm_mask = .49 * np.pi
         self.p.dimension_slm_mask = 10.e-6
 
-        # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
-        self.p.t_tweezer_hold = .1e-3
+        # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
+        self.p.t_tweezer_hold = .01e-3
 
         # self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6) 
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 50.e-6
 
         self.p.t_mot_load = 1.
         
@@ -61,7 +64,7 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
+        self.set_high_field_imaging(i_outer=self.p.i_hf_raman)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
@@ -70,17 +73,21 @@ class tweezer_load(EnvExperiment, Base):
         self.init_raman_beams(frequency_transition = self.p.frequency_raman_transition, 
                               fraction_power = self.params.fraction_power_raman)
         
+        self.raman.pulse(1.e-6)
+        
         self.ttl.raman_shutter.on()
         delay(10.e-3)
         self.ttl.line_trigger.wait_for_line_trigger()
-        delay(5.7e-3)
+        delay(4.7e-3)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,
         #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
         #                  n_steps=100)
 
+        
         self.raman.pulse(self.p.t_raman_pulse)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
         self.ttl.raman_shutter.off()
 
