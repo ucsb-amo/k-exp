@@ -20,8 +20,9 @@ class turn_on_imaging(EnvExperiment, Base):
         self.finish_prepare(shuffle=False)
        
     @kernel
-    def run(self):
-        self.init_kernel(setup_awg=False,
+    def run(self): 
+        self.init_kernel(dds_off=False,
+                         setup_awg=False,
                          setup_slm=False,
                          init_lightsheet=False,
                          init_shuttler=False)
