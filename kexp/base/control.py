@@ -84,6 +84,7 @@ class Control():
         """
     
         self.outer_coil.stop_pid()
+        delay(50.e-3)
         self.outer_coil.off()
         self.outer_coil.discharge()
         self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)

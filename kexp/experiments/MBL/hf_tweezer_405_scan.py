@@ -15,14 +15,17 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_tof = 100.e-6
         # self.xvar('t_tof',np.linspace(1000.,4500.,10)*1.e-6)
 
-        # self.xvar('t_pulse',np.linspace(0.,1.,5)*1.e-3)
-        self.p.t_pulse = 10.e-6
+        # self.xvar('t_pulse',np.linspace(0.,10.,5)*1.e-3)
+        self.p.t_pulse = 10.e-3
         # self.p.t_pulse = 
 
-        self.xvar('frequency_405_cavity_ao',np.linspace(69.,73.,7)*1.e6)
+        self.xvar('frequency_405_cavity_ao',np.linspace(77.,79.,7)*1.e6)
+
+        self.p.frequency_405_cavity_ao = 80.0*1.e6
 
         # self.xvar('dumy',[0]*3)
 
+        # self.xvar('t_tweezer_hold',np.linspace(1.,30.,5)*1e-3)
         self.p.t_tweezer_hold = 10.e-3
 
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
@@ -36,10 +39,14 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
+        # self.ttl.raman_shutter.on()
+        # self.dds.raman_80_plus.on()
+        # self.dds.raman_150_plus.on()
+
         self.ry_405.init()
         self.ry_405.set_siglent(frequency=self.p.frequency_405_cavity_ao)
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
+        self.set_high_field_imaging(i_outer=self.p.i_non_inter)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
@@ -82,6 +89,12 @@ class mag_trap(EnvExperiment, Base):
 
         self.lightsheet.off()
         
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                             i_end=self.p.i_non_inter)
+
+        self.ttl.pd_scope_trig.pulse(1.e-8)
+        self.outer_coil.start_pid()
+
         delay(self.p.t_tweezer_hold)
 
         # self.init_raman_beams_nf(frequency_transition=self.p.frequency_raman_transition_nf_1m1_20 - 10.e6,
@@ -104,6 +117,9 @@ class mag_trap(EnvExperiment, Base):
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()
+        # self.ttl.raman_shutter.on()
+        # self.dds.raman_80_plus.on()
+        # self.dds.raman_150_plus.on()
 
     def analyze(self):
         import os
