@@ -16,12 +16,14 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(1000.,4500.,10)*1.e-6)
 
         # self.xvar('t_pulse',np.linspace(0.,10.,5)*1.e-3)
-        self.p.t_pulse = 10.e-3
+        self.p.t_pulse = 15.e-3
         # self.p.t_pulse = 
 
-        self.xvar('frequency_405_cavity_ao',np.linspace(77.,79.,7)*1.e6)
+        self.xvar('woo',[0,1]*1)
 
-        self.p.frequency_405_cavity_ao = 80.0*1.e6
+        # self.xvar('frequency_405_cavity_ao',np.linspace(78.,84.,7)*1.e6)
+
+        # self.p.frequency_405_cavity_ao = 80.0*1.e6
 
         # self.xvar('dumy',[0]*3)
 
@@ -31,7 +33,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 100
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=False)
@@ -101,7 +103,11 @@ class mag_trap(EnvExperiment, Base):
         #                          fraction_power=1.0)
         # delay(1.e-3)
         # self.raman_nf.pulse(self.p.t_raman_pulse)
-        self.ry_405.pulse(self.p.t_pulse)
+        if self.p.woo == 0:
+            self.ry_405.pulse(self.p.t_pulse)
+        
+        elif self.p.woo == 1:
+            delay(self.p.t_pulse)
         # delay(1.e-3)
         
         self.tweezer.off()
