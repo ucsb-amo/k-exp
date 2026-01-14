@@ -116,8 +116,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.core.break_realtime()
         
         self.core.reset()
-        
+        delay(10.e-3)
         self.set_imaging_shutters()
+        delay(10.e-3)
         self.init_cooling()
         self.core.break_realtime()
 
