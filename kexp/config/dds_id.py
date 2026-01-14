@@ -61,7 +61,7 @@ class dds_frame(dds_frame_waxx):
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
                                     default_amp = self.p.amp_tweezer_pid2)
         self.ry_405_sw = self.dds_assign(1,1,
-                                    default_freq = 207.5e6,
+                                    default_freq = 286.2e6,
                                     default_amp = 0.6,
                                     ao_order = 1)
         
