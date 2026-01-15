@@ -102,7 +102,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
             self.set_imaging_detuning()
         if beat_ref_on:
             self.dds.beatlock_ref.on()
-            self.dds.d1_beatlock_ref.on()
+            # self.dds.d1_beatlock_ref.on()
         if init_lightsheet:
             self.lightsheet.init()
         # if init_ry:
@@ -132,15 +132,15 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.dds.d2_2dv_r.on()
         self.dds.push.on()
 
-        self.dds.d1_beatlock_ref.set_dds(frequency=42.e6)
+        # self.dds.d1_beatlock_ref.set_dds(frequency=42.e6)
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
         elif self.p.imaging_state == 2.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
         
-        # self.imaging.set_power(self.camera_params.amp_imaging, reset_pid=False)
-        self.imaging.set_power(0.5)
+        self.imaging.set_power(self.camera_params.amp_imaging,
+                                reset_pid=False)
 
         if self._setup_awg:
             if two_d_tweezers:
@@ -155,7 +155,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
         
-        self.dds.d1_beatlock_ref.on()
+        # self.dds.d1_beatlock_ref.on()
 
     @kernel
     def cleanup_scan_kernel(self):
@@ -163,5 +163,5 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.reset_coils()
         self.ttl.line_trigger.clear_input_events()
 
-        self.ry_405.siglent._restore_defaults()
-        self.ry_405.set_siglent(init=True)
+        # self.ry_405.siglent._restore_defaults()
+        # self.ry_405.set_siglent(init=True)

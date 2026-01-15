@@ -1094,6 +1094,7 @@ class Cooling():
         self.dds.raman_150_minus.set_dds(amplitude=0.)
         self.dds.raman_150_plus.set_dds(amplitude=0.)
         self.dds.raman_80_plus.set_dds(amplitude=0.)
+        self.dds.raman_switch.set_dds(amplitude=0.)
         # self.dds.imaging.set_dds(amplitude=0.)
         self.dds.antenna_rf.set_dds(amplitude=0.)
 
@@ -1113,6 +1114,7 @@ class Cooling():
         self.dds.raman_150_minus.off()
         self.dds.raman_150_plus.off()
         self.dds.raman_80_plus.off()
+        self.dds.raman_switch.off()
         # self.dds.imaging.off()
         self.dds.antenna_rf.off()
         delay_mu(8)
@@ -1131,3 +1133,4 @@ class Cooling():
         self.dds.d2_2dv_c.set_dds(init=True)
         self.dds.d2_2dv_r.set_dds(init=True)
         self.dds.push.set_dds(init=True)
+        self.dds.raman_switch.set_dds(init=True)
