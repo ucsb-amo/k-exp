@@ -140,6 +140,7 @@ class Devices():
         
         self.raman = RamanBeamPair(dds0=self.dds.raman_150_plus,
                                     dds1=self.dds.raman_80_plus,
+                                    dds_sw=self.dds.raman_switch,
                                     frequency_transition=self.params.frequency_raman_transition,
                                     fraction_power=self.params.fraction_power_raman,
                                     params=self.params)
@@ -152,6 +153,7 @@ class Devices():
         
         self.raman_nf = RamanBeamPair(dds0=self.dds.raman_150_minus,
                                     dds1=self.dds.raman_80_plus,
+                                    dds_sw=self.dds.raman_switch,
                                     frequency_transition=self.params.frequency_raman_transition,
                                     fraction_power=self.params.fraction_power_raman,
                                     params=self.params)
@@ -186,6 +188,7 @@ class Devices():
                                            dds_beatref=self.dds.beatlock_ref,
                                            pid_override_ttl=self.ttl.imaging_pid_manual_override,
                                            expt_params=self.params)
+        
         # elif imaging_configuration == img_config.POLMOD:
         #     self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
         #                             dds_polmod_v=self.dds.polmod_v,

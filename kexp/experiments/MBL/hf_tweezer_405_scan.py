@@ -8,23 +8,23 @@ from kexp import Base, img_types, cameras
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
         self.p.t_tof = 100.e-6
         # self.xvar('t_tof',np.linspace(1000.,4500.,10)*1.e-6)
 
-        # self.xvar('t_pulse',np.linspace(0.,10.,5)*1.e-3)
-        self.p.t_pulse = 30.e-3
+        # self.xvar('t_pulse',np.linspace(0.,15.,5)*1.e-3)
+        self.p.t_pulse = 1.e-3
         # self.p.t_pulse = 
 
         # self.xvar('woo',[0,1]*1)
         self.p.woo = 0
 
-        self.xvar('frequency_405_cavity_ao',np.linspace(78.,82.,7)*1.e6)
+        # self.xvar('frequency_405_cavity_ao',np.linspace(80.,88.,7)*1.e6)
 
-        # self.p.frequency_405_cavity_ao = 80.0*1.e6
+        self.p.frequency_405_cavity_ao = 80.0*1.e6
 
         # self.xvar('dumy',[0]*3)
 
@@ -34,8 +34,10 @@ class mag_trap(EnvExperiment, Base):
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
 
-        self.p.N_repeats = 10
+        self.p.N_repeats = 20
         self.p.t_mot_load = 1.
+
+        self.p.amp_imaging = .25
 
         self.finish_prepare(shuffle=False)
 
@@ -47,10 +49,11 @@ class mag_trap(EnvExperiment, Base):
         # self.dds.raman_150_plus.on()
 
         self.ry_405.init()
+        self.ry_405.dds_sw.set_dds(amplitude=.3)
         self.ry_405.set_siglent(frequency=self.p.frequency_405_cavity_ao)
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.set_high_field_imaging(i_outer=self.p.i_non_inter)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.imaging.set_power(self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -95,7 +98,7 @@ class mag_trap(EnvExperiment, Base):
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_end=self.p.i_non_inter)
 
-        self.ttl.pd_scope_trig.pulse(1.e-8)
+        
         self.outer_coil.start_pid()
 
         delay(self.p.t_tweezer_hold)
@@ -105,6 +108,7 @@ class mag_trap(EnvExperiment, Base):
         # delay(1.e-3)
         # self.raman_nf.pulse(self.p.t_raman_pulse)
         if self.p.woo == 0:
+            self.ttl.pd_scope_trig.pulse(1.e-8)
             self.ry_405.pulse(self.p.t_pulse)
         
         elif self.p.woo == 1:

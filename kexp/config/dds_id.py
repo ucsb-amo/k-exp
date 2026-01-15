@@ -62,7 +62,7 @@ class dds_frame(dds_frame_waxx):
                                     default_amp = self.p.amp_tweezer_pid2)
         self.ry_405_sw = self.dds_assign(1,1,
                                     default_freq = 286.2e6,
-                                    default_amp = 0.6,
+                                    default_amp = 0.08,
                                     ao_order = 1)
         
         self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
@@ -118,9 +118,9 @@ class dds_frame(dds_frame_waxx):
                                 ao_order=-1,
                                 default_freq=150.e6,
                                 default_amp=0.324)
-        self.d1_beatlock_ref = self.dds_assign(5,1,
-                                    default_freq=42.26e6,
-                                    default_amp=0.1)
+        self.raman_switch = self.dds_assign(5,1,
+                                    default_freq=150.0e6,
+                                    default_amp=0.3)
         self.imaging_x_switch = self.dds_assign(5,2,
                                         ao_order=1,
                                         default_freq=100.e6,
