@@ -205,9 +205,9 @@ class mag_trap(EnvExperiment, Base):
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
                           paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        self.outer_coil.ramp_supply(t=10.e-3,
-                             i_start=self.p.i_hf_tweezer_evap2_current,
-                             i_end=self.p.i_hf_raman)
+        # self.outer_coil.ramp_supply(t=10.e-3,
+        #                      i_start=self.p.i_hf_tweezer_evap2_current,
+        #                      i_end=self.p.i_hf_raman)
         
         delay(self.p.t_tweezer_hold)
         
