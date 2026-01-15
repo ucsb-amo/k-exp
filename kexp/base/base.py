@@ -160,8 +160,13 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
     @kernel
     def cleanup_scan_kernel(self):
         self.cleanup_image_count()
-        self.reset_coils()
-        self.ttl.line_trigger.clear_input_events()
 
+        self.core.break_realtime()
+        self.reset_coils()
+
+        self.core.break_realtime()
+        self.ttl.line_trigger.clear_input_events()
+        
+        self.core.break_realtime()
         self.ry_405.siglent._restore_defaults()
         self.ry_405.set_siglent(init=True)
