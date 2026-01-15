@@ -35,44 +35,6 @@ class Control():
         self.p = self.params
 
     @kernel
-    def init_raman_beams(self,
-                         frequency_transition,
-                         fraction_power,
-                         global_phase=0.,relative_phase=0.,
-                         t_phase_origin_mu=np.int64(-1),
-                         phase_mode=1):
-        if t_phase_origin_mu < 0:
-            t_phase_origin_mu = now_mu()
-        # if frequency_transition == dv:
-        #     frequency_transition = self.params.frequency_raman_transition
-        # if fraction_power == dv:
-        #     fraction_power = self.params.fraction_power_raman
-        self.raman.set(frequency_transition,fraction_power,
-                       global_phase,relative_phase,
-                       t_phase_origin_mu=t_phase_origin_mu,
-                       phase_mode=phase_mode,
-                       init=True)
-        
-    @kernel
-    def init_raman_beams_nf(self,
-                         frequency_transition,
-                         fraction_power,
-                         global_phase=0.,relative_phase=0.,
-                         t_phase_origin_mu=np.int64(-1),
-                         phase_mode=1):
-        if t_phase_origin_mu < 0:
-            t_phase_origin_mu = now_mu()
-        # if frequency_transition == dv:
-        #     frequency_transition = self.params.frequency_raman_transition_nf
-        # if fraction_power == dv:
-        #     fraction_power = self.params.fraction_power_raman_nf
-        self.raman_nf.set(frequency_transition,fraction_power,
-                       global_phase,relative_phase,
-                       t_phase_origin_mu=t_phase_origin_mu,
-                       phase_mode=phase_mode,
-                       init=True)
-
-    @kernel
     def reset_coils(self):
         """
         Reset the inner, outer, and 2D coils to their default state.
@@ -84,6 +46,7 @@ class Control():
         """
     
         self.outer_coil.stop_pid()
+        delay(50.e-3)
         self.outer_coil.off()
         self.outer_coil.discharge()
         self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)

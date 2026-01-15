@@ -102,7 +102,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
             self.set_imaging_detuning()
         if beat_ref_on:
             self.dds.beatlock_ref.on()
-            self.dds.d1_beatlock_ref.on()
+            # self.dds.d1_beatlock_ref.on()
         if init_lightsheet:
             self.lightsheet.init()
         # if init_ry:
@@ -116,8 +116,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.core.break_realtime()
         
         self.core.reset()
-        
+        delay(10.e-3)
         self.set_imaging_shutters()
+        delay(10.e-3)
         self.init_cooling()
         self.core.break_realtime()
 
@@ -131,15 +132,15 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.dds.d2_2dv_r.on()
         self.dds.push.on()
 
-        self.dds.d1_beatlock_ref.set_dds(frequency=42.e6)
+        # self.dds.d1_beatlock_ref.set_dds(frequency=42.e6)
 
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
         elif self.p.imaging_state == 2.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
         
-        # self.imaging.set_power(self.camera_params.amp_imaging, reset_pid=False)
-        self.imaging.set_power(0.5)
+        self.imaging.set_power(self.camera_params.amp_imaging,
+                                reset_pid=False)
 
         if self._setup_awg:
             if two_d_tweezers:
@@ -154,13 +155,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
         self.tweezer.pid1_int_hold_zero.on()
         
-        self.dds.d1_beatlock_ref.on()
+        # self.dds.d1_beatlock_ref.on()
 
     @kernel
     def cleanup_scan_kernel(self):
         self.cleanup_image_count()
-        self.reset_coils()
-        self.ttl.line_trigger.clear_input_events()
 
-        self.ry_405.siglent._restore_defaults()
-        self.ry_405.set_siglent(init=True)
+        self.core.break_realtime()
+        self.reset_coils()
+
+        self.core.break_realtime()
+        self.ttl.line_trigger.clear_input_events()
