@@ -9,8 +9,8 @@ class siglent_frame(siglent_frame_waxx):
 
         IP_RY_CAVITY_SIGLENT = "192.168.1.101"
         self.siglent_980 = self.assign_sdg6000x_ch(1,IP_RY_CAVITY_SIGLENT,
-                                                   frequency=51.e6,
-                                                   amplitude_vpp=0.885,
+                                                   frequency=371.8e6,
+                                                   amplitude_vpp=0.6,
                                                    max_amplitude_vpp=1.)
         self.siglent_405 = self.assign_sdg6000x_ch(2,IP_RY_CAVITY_SIGLENT,
                                                    frequency=80.0e6,
