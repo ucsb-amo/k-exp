@@ -173,3 +173,26 @@ class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
         f_sw = self.dds_sw.frequency
         f_ao = f_0 + (delta-2*a_pid*f_pid-2*a_sw*f_sw)/(-2*a_c)
         return f_ao
+    
+class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
+    def __init__(self,
+                siglent_ch:SDG6000X_CH,
+                eo_order_sideband=-1,
+                ttl_ao_sw=TTL_OUT,
+                ao_order_cavity=1,
+                frequency_cavity_ao=80.e6,
+                ao_order_sw=1,
+                frequency_sw_ao=80.e6,
+                ao_order_pid=1,
+                frequency_pid_ao=80.e6):
+        super().__init__(siglent_ch=siglent_ch,
+                         ttl_sw=ttl_ao_sw)
+        self._ao_order_cavity = ao_order_cavity
+        self._ao_order_pid = ao_order_pid
+        self._ao_order_sw = ao_order_sw
+        self._frequency_cavity_ao = frequency_cavity_ao
+        self._frequency_pid_ao = frequency_pid_ao
+        self._frequency_sw_ao = frequency_sw_ao
+        self._eo_order_sideband = eo_order_sideband
+
+        self.siglent._stash_defaults()
