@@ -18,6 +18,8 @@ class scope_data(EnvExperiment, Base):
 
         delay(0.1)
 
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+
         self.abs_image()
 
         delay(0.1)
