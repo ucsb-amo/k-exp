@@ -4,24 +4,19 @@ import os
 from artiq.experiment import *
 from artiq.language.core import kernel_from_string, now_mu, delay
 
-from waxa.data.data_vault import DataSaver
+from waxx.config.data_vault import DataSaver
 from waxx import Expt, img_types as img
 from waxx.base import Monitor
 from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control
 from kexp.config.camera_id import cameras
-from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH
+from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH, PATHS
 from kexp.config.data_vault import DataVault
 
 from kexp.util.artiq.async_print import aprint
 
-DATA_DIR = os.getenv("data")
-EXPT_PACKAGE_DIR = os.path.join(os.getenv("code"),"k-exp","kexp")
-EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
-COOLING_RELPATH = os.path.join("base","cooling.py")
-IMAGING_RELPATH = os.path.join("base","image.py")
-PATHS = (DATA_DIR, EXPT_PACKAGE_DIR, EXPT_PARAM_RELPATH, COOLING_RELPATH, IMAGING_RELPATH)
+
 
 class Base(Expt, Devices, Cooling, Image, Cameras, Control):
     def __init__(self,
