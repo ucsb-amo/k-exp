@@ -15,7 +15,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = 1.
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 1.
         
         # self.xvar('beans',[0,1]*50)
 
@@ -25,7 +25,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
         self.p.t_raman_stateprep_pulse = 13.e-6
 
         # self.p.frequency_raman_transition = 145.57e6 # 191. A
-        self.p.frequency_raman_transition = 147.24e6 # 182. A
+        self.p.frequency_raman_transition = 147.243e6 # 182. A
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.fraction_power_raman = .99
@@ -34,7 +34,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
         self.p.t_continuous_rabi = 200.e-6
         
-        self.xvar('amp_imaging',np.linspace(0.1,.6,25))
+        self.xvar('amp_imaging',np.linspace(0.1,.6,3))
         # self.p.amp_imaging = .28
         self.p.amp_imaging = .15
 
@@ -60,7 +60,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
         # self.camera_params.exposure_time = 20.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -71,13 +71,13 @@ class cont_mon_182_ref(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning_mid)
         # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
-        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
 
-        self.init_raman_beams(fraction_power=self.p.fraction_power_raman,
-                              frequency_transition=self.p.frequency_raman_transition)
+        self.raman.init(fraction_power=self.p.fraction_power_raman,
+                        frequency_transition=self.p.frequency_raman_transition)
 
         self.ttl.raman_shutter.on()
         delay(10.e-3)

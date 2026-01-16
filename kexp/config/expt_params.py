@@ -100,7 +100,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_hf_tweezer_1064_ramp = 0.16 # .285
         self.t_hf_tweezer_1064_rampdown = 121.e-3 # 200.e-3 
         self.t_hf_tweezer_1064_rampdown2 = 500.e-3   
-        self.t_hf_tweezer_1064_rampdown3 = 300.e-3 
+        self.t_hf_tweezer_1064_rampdown3 = 380.e-3 
         self.t_tweezer_1064_adiabatic_stretch_ramp = .322
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
@@ -296,7 +296,7 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = -.71
-        self.v_hf_tweezer_paint_amp_max = -1.5 # -1.7
+        self.v_hf_tweezer_paint_amp_max = -.785 # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4

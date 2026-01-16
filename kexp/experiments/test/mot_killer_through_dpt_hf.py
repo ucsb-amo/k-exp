@@ -34,7 +34,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 10.e-3
 
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .4
 
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
@@ -104,7 +104,7 @@ class mag_trap(EnvExperiment, Base):
             self.ttl.imaging_shutter_xy.on()
             delay(3.e-3)
             self.imaging.on()
-            delay(.8e-3)
+            delay(1.e-3)
             self.imaging.off()
             self.ttl.imaging_shutter_xy.off()
             delay(self.p.t_tweezer_hold)
@@ -121,7 +121,7 @@ class mag_trap(EnvExperiment, Base):
         # delay(1.e-3)
 
 
-        self.imaging.set_power(.1)
+        self.imaging.set_power(.3)
 
         self.ttl.imaging_shutter_x.on()
         

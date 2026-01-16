@@ -16,9 +16,10 @@ class tweezer_load(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         self.xvar('beans',[0,1]*100)
+        self.p.beans = 1.
 
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = 1.
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 5.6
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 1.
 
         self.p.i_hf_raman = 182.
 
@@ -52,7 +53,7 @@ class tweezer_load(EnvExperiment, Base):
         self.p.dimension_slm_mask = 10.e-6
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
-        self.p.t_tweezer_hold = 10.e-3
+        self.p.t_tweezer_hold = 20.e-3
 
         # self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6) 
         self.p.t_tof = 50.e-6
