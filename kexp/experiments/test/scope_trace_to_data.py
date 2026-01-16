@@ -1,26 +1,43 @@
 from artiq.experiment import *
-from artiq.experiment import delay
-from artiq.language.core import now_mu
-from kexp import Base
+from artiq.language.core import now_mu, delay
+from kexp import Base, cameras
 import numpy as np
 from kexp.util.artiq.async_print import aprint
-
-from waxx.control.misc.tektronix_tbs1104 import TektronixScope_TBS1104
 
 class scope_data(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False)
-        self.scope = TektronixScope_TBS1104(2)
+        Base.__init__(self,setup_camera=True,save_data=True,
+                      camera_select=cameras.andor)
+        self.xvar('test',range(2))
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
         self.finish_prepare(shuffle=True)
 
     @kernel
-    def run(self):
-        self.init_kernel(setup_awg=False)
+    def scan_kernel(self):
+
+        delay(0.1)
+
+        self.abs_image()
+
+        delay(0.1)
 
         self.core.wait_until_mu(now_mu())
         self.scope.read_sweep(0)
         self.core.break_realtime()
+        delay(30.e-3)
+
+    @kernel
+    def run(self):
+        self.init_kernel(setup_awg=False,
+                         init_dac=False,
+                         beat_ref_on=False,
+                         setup_slm=False,
+                         init_ry=False,
+                         init_lightsheet=False,
+                         init_shuttler=False)
+        
+        self.scan()
 
     def analyze(self):
         import os
