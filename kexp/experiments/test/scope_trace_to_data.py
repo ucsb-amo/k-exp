@@ -10,8 +10,9 @@ class scope_data(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor)
         self.xvar('test',range(2))
-        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
-        self.finish_prepare(shuffle=True)
+        self.xvar('test2',range(3))
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
