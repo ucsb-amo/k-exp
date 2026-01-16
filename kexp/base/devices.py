@@ -179,8 +179,6 @@ class Devices():
             frequency_sw_ao=80.e6,
             ao_order_pid=1,
             frequency_pid_ao=80.e6)
-        
-        # self.ry_405.set_power()
 
         # camera placeholder
         self.camera = DummyCamera()

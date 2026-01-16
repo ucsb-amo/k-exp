@@ -71,6 +71,10 @@ class SiglentTTLBeam(SiglentBeamBase):
         self.ttl_sw = ttl_sw
 
     @kernel
+    def init(self):
+        SiglentBeamBase.init(self)
+
+    @kernel
     def on(self):
         self.ttl_sw.on()
 
