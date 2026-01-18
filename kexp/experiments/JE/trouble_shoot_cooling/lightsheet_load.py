@@ -30,11 +30,13 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_magtrap_ramp_end', np.linspace(100.,160.,20))
         # self.p.i_magtrap_ramp_end = 169.
 
-        # self.xvar('t_magtrap',np.linspace(100.,2000.,15)*1.e-3)
-        # self.p.t_magtrap = 1.
+        # self.xvar('t_magtrap',np.linspace(100.,1500.,15)*1.e-3)
+        # self.p.t_magtrap = .3
 
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(3.,9.5,10))
-        # self.p.v_pd_lightsheet_rampup_end = 9.9
+        # self.xvar('t_lightsheet_rampup',np.linspace(20.,500.,15)*1.e-3)
+
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(3.,9.5,8))
+        # self.p.v_pd_lightsheet_rampup_end = 6.7
         # self.xvar('t_lightsheet_hold',np.linspace(0.,1.5,20))
         self.p.t_lightsheet_hold = .1
 

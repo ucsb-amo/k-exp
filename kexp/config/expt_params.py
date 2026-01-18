@@ -82,7 +82,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         
-        self.t_lightsheet_rampup = .16
+        self.t_lightsheet_rampup = .1
         self.t_lf_lightsheet_rampdown = 1.13
         self.t_hf_lightsheet_rampdown = .74
         self.t_hf_lightsheet_rampdown2 = .74
@@ -114,7 +114,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_recover = 100.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.3
+        self.t_magtrap = 1.1
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
@@ -233,8 +233,8 @@ class ExptParams(ExptParamsWaxx):
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
-        self.v_xshim_current_magtrap = 1.71
-        self.v_yshim_current_magtrap = 1.7
+        self.v_xshim_current_magtrap = .57
+        self.v_yshim_current_magtrap = 1.1
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -255,9 +255,9 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lightsheet = 7.5
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         # self.v_pd_lightsheet_rampup_end = 7.3
-        self.v_pd_lightsheet_rampup_end = 9.5
+        self.v_pd_lightsheet_rampup_end = 6.7
         self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .6 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .533 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -274,9 +274,9 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
         self.v_pd_hf_tweezer_1064_ramp_end = 8.8
-        self.v_pd_hf_tweezer_1064_rampdown_end = 1.5 # 1.13
+        self.v_pd_hf_tweezer_1064_rampdown_end = 1.1 # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.143 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.5
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.3
         self.n_tweezer_ramp_steps = 1000
 
         self.n_tweezers = 2
@@ -296,7 +296,7 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = -.71
-        self.v_hf_tweezer_paint_amp_max = -1. # -1.7
+        self.v_hf_tweezer_paint_amp_max = -1.5 # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -375,7 +375,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_hf_lightsheet_evap1_current = 193.8
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 193.5
+        self.i_hf_tweezer_load_current = 193.64
         self.i_hf_tweezer_evap1_current = 193.0
         self.i_hf_tweezer_evap2_current = 194.2 # 193.
 

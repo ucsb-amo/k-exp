@@ -45,7 +45,6 @@ class Cooling():
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
         """   
-        # self.ttl.b_field_stab_SRS_blanking_input.on()
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -102,14 +101,10 @@ class Cooling():
                              i_start=self.p.i_hf_tweezer_evap1_current,
                              i_end=self.p.i_hf_tweezer_evap2_current)
         
-        # self.ttl.b_field_stab_SRS_blanking_input.off()
-        
         self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
                           v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
-        
-        
         
         # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
         #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),

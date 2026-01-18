@@ -21,7 +21,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
 
         # self.xvar('frequency_raman_transition',147.355e6 + np.linspace(-50.e3,50.e3,9))
 
-        self.p.frequency_raman_transition = 147.2447e6 # 182. A
+        self.p.frequency_raman_transition = 147.245e6 # 182. A
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.fraction_power_raman = .99
