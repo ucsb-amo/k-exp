@@ -51,4 +51,6 @@ class ttl_frame(ttl_frame_waxx):
 
         self.line_trigger = self.assign_ttl_in(40)
 
+        self.test_2 = self.assign_ttl_out(55)
+
         self.cleanup()

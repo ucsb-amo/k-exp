@@ -16,13 +16,13 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(1000.,4500.,10)*1.e-6)
 
         # self.xvar('t_pulse',np.linspace(0.,15.,5)*1.e-3)
-        self.p.t_pulse = 1.e-3
+        self.p.t_pulse = 5.e-3
         # self.p.t_pulse = 
 
         # self.xvar('woo',[0,1]*1)
         self.p.woo = 0
 
-        # self.xvar('frequency_405_cavity_ao',np.linspace(80.,88.,7)*1.e6)
+        self.xvar('frequency_405_cavity_ao',np.linspace(80.,86.,7)*1.e6)
 
         self.p.frequency_405_cavity_ao = 80.0*1.e6
 
@@ -34,7 +34,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
 
-        self.p.N_repeats = 20
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
         self.p.amp_imaging = .25
@@ -49,7 +49,7 @@ class mag_trap(EnvExperiment, Base):
         # self.dds.raman_150_plus.on()
 
         self.ry_405.init()
-        self.ry_405.dds_sw.set_dds(amplitude=.3)
+        self.ry_405.dds_sw.set_dds(amplitude=.08)
         self.ry_405.set_siglent(frequency=self.p.frequency_405_cavity_ao)
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.set_high_field_imaging(i_outer=self.p.i_non_inter)

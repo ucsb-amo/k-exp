@@ -23,10 +23,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('i_hf_tweezer_load_current',np.linspace(191.,194.,10))
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,2.5,15))
-        self.p.v_lf_tweezer_paint_amp_max = -.286
+        # self.p.v_lf_tweezer_paint_amp_max = -.286
         
         # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.12,.3,15))
-        self.p.v_pd_lf_tweezer_1064_rampdown2_end = .21
+        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .21
 
         # self.xvar('i_non_inter',np.linspace(180.3,181.,20))
 

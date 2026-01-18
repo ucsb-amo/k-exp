@@ -15,7 +15,7 @@ class mag_trap(EnvExperiment, Base):
                       save_data=True)
 
         self.p.t_tof = 9000.e-6
-        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
         # self.xvar('dumy',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
@@ -33,7 +33,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('detune_d2v_c_2dmot',np.linspace(-4.,0.,8))
         # self.xvar('detune_d2h_c_2dmot',np.linspace(-4.,0.,8))
         # self.xvar('detune_d2v_r_2dmot',np.linspace(-7.,-2.,8))
-        # self.xvar('detune_d2h_r_2dmot',np.linspace(-8.,-3.,8))
+        # self.xvar('detune_d2h_r_2dmot',np.linspace(-7.,-3.,8))
         # self.p.detune_d2_r_2dmot = -4.4
         # self.p.detune_d2_c_2dmot = -1.6
 
@@ -60,21 +60,21 @@ class mag_trap(EnvExperiment, Base):
 
         # self.p.detune_d1_c_d1cmot = 4.
 
-        # self.xvar('detune_d1_c_d1cmot',np.linspace(0.,10.,8))
-        # self.p.detune_d1_c_d1cmot = 6.5
+        # self.xvar('detune_d1_c_d1cmot',np.linspace(0.,10.,15))
+        # self.p.detune_d1_c_d1cmot = 5.1
 
         # self.xvar('pfrac_d1_c_d1cmot',np.linspace(.1,.99,8))
         # self.p.pfrac_d1_c_d1cmot = .73
 
         # self.xvar('v_zshim_current_gm',np.linspace(0.4,1.,8))
-        # self.xvar('v_xshim_current_gm',np.linspace(0.,1.1,20))
+        # self.xvar('v_xshim_current_gm',np.linspace(0.,1.,8))
         # self.xvar('v_yshim_current_gm',np.linspace(.0,5.,8))
         # self.p.v_zshim_current_gm = .743
         # self.p.v_xshim_current_gm = .0
         # self.p.v_yshim_current_gm = 2.23
 
         # self.xvar('detune_gm', np.linspace(3.,13.,15))
-        # self.p.detune_gm = 7.
+        # self.p.detune_gm = 7.2
 
         # self.xvar('pfrac_d1_c_gm',np.linspace(.4,.99,8))
         # self.xvar('pfrac_d1_r_gm',np.linspace(0.4,.99,8))
@@ -93,7 +93,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,.7,15))
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,8))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,8))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,4.,8))
         # self.p.v_zshim_current_magtrap = .0
         # self.p.v_xshim_current_magtrap = .0
         # self.p.v_yshim_current_magtrap = 0.

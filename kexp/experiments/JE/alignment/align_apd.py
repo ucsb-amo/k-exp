@@ -97,9 +97,9 @@ class tweezer_load(EnvExperiment, Base):
 
         self.abs_image()
 
-        self.outer_coil.stop_pid()
+        # self.outer_coil.stop_pid()
 
-        self.outer_coil.off()
+        # self.outer_coil.off()
 
     @kernel
     def run(self):

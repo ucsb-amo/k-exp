@@ -17,8 +17,8 @@ class gm_tof(EnvExperiment, Base):
 
         N = 10
         R = 5.
-        self.xvar('px_slm_phase_mask_position_x',1056 + np.linspace(-R, R, N, dtype=int))
-        self.xvar('px_slm_phase_mask_position_y',809. + np.linspace(-R, R, N, dtype=int))
+        self.xvar('px_slm_phase_mask_position_x',1058 + np.linspace(-R, R, N, dtype=int))
+        self.xvar('px_slm_phase_mask_position_y',808. + np.linspace(-R, R, N, dtype=int))
         # self.xvar('dimension_slm_mask', np.arange(10.,200.,10,dtype=int)*1e-6)
         # self.xvar('dumdum',[0]*3)
         # self.p.slm_mask = 'spot'
