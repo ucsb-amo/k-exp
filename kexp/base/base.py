@@ -4,7 +4,7 @@ import os
 from artiq.experiment import *
 from artiq.language.core import kernel_from_string, now_mu, delay
 
-from waxx.config.data_vault import DataSaver
+from waxa.data import DataSaver
 from waxx import Expt, img_types as img
 from waxx.base import Monitor
 from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
@@ -44,7 +44,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         _img_config = self.choose_camera(setup_camera,imaging_type,camera_select)
         self.configure_imaging_system(imaging_configuration=_img_config)
 
-        self.data = DataVault()
+        self.data = DataVault(self)
         self.ds = DataSaver(*PATHS)
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
