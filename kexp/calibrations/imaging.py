@@ -66,3 +66,15 @@ def low_field_pid_imaging_detuning(i_pid) -> TFloat:
   detuning = slope_imaging_frequency_per_i_transducer_lf_pid * i_pid \
       + yintercept_imaging_frequency_per_i_transducer_lf_pid
   return detuning
+
+# 2026-01-19 imaging power measurement.
+# https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.2mlzqbhu1zh6#heading=h.xza8o2nc0hj
+slope_imaging_x_power_per_vpd = 5.55e-06 # W/V
+yintercept_imaging_x_power_vs_vpd = -2.12e-07 # W
+@portable
+def imaging_x_pid_vpd_to_power(v_pid) -> TFloat:
+   return slope_imaging_x_power_per_vpd * v_pid + yintercept_imaging_x_power_vs_vpd
+
+@portable
+def imaging_x_pid_power_to_vpd(power) -> TFloat:
+   return (power - yintercept_imaging_x_power_vs_vpd)/slope_imaging_x_power_per_vpd
