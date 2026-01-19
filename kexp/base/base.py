@@ -1,17 +1,22 @@
 import numpy as np
+import os
 
 from artiq.experiment import *
 from artiq.language.core import kernel_from_string, now_mu, delay
 
+from waxa.data import DataSaver
 from waxx import Expt, img_types as img
 from waxx.base import Monitor
 from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control
 from kexp.config.camera_id import cameras
-from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH
+from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH, PATHS
+from kexp.config.data_vault import DataVault
 
 from kexp.util.artiq.async_print import aprint
+
+
 
 class Base(Expt, Devices, Cooling, Image, Cameras, Control):
     def __init__(self,
@@ -39,6 +44,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         _img_config = self.choose_camera(setup_camera,imaging_type,camera_select)
         self.configure_imaging_system(imaging_configuration=_img_config)
 
+        self.data = DataVault(self)
+        self.ds = DataSaver(*PATHS)
+
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of prepare.
@@ -52,9 +60,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         if self.tweezer.traps == []:
             self.tweezer.add_tweezer_list()
         self.tweezer.save_trap_list()
-    
-    def compute_new_derived(self):
-        pass
 
     @kernel
     def init_kernel(self, run_id = True,
@@ -114,6 +119,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.core.wait_until_mu(now_mu())
         self.scope_data.arm()
         self.core.break_realtime()
+
+        self.slm.check_for_old_setting()
         
         self.core.reset()
         delay(10.e-3)
