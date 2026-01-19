@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.language.core import now_mu
+from artiq.language.core import delay
 from kexp import Base
 import numpy as np
 
@@ -40,3 +40,6 @@ class capture_data(EnvExperiment, Base):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
+
+
+        
