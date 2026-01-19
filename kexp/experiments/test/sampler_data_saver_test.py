@@ -11,9 +11,13 @@ class scope_data(EnvExperiment, Base):
         Base.__init__(self,
                       save_data=True,
                       setup_camera=True)
+        
         self.xvar('test0',[0,1])
         self.p.N_repeats = 1
-        # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
+
+        self.data.test = self.data.add_data_container(1,np.float64)
+        self.data.all = self.data.add_data_container(per_shot_data_shape=self.sampler.data.shape,
+                                                     dtype=self.sampler.data.dtype)
         self.finish_prepare(shuffle=True)
 
     @kernel
@@ -29,17 +33,16 @@ class scope_data(EnvExperiment, Base):
         delay(10.e-3)
         self.sampler.sample()
         delay(10.e-3)
-        
-
-        # self.core.wait_until_mu(now_mu())
-        # self.scope.read_sweep(0)
-        # self.core.break_realtime()
 
         self.abs_image()
 
-        self.core.wait_until_mu(now_mu())
+        # self.core.wait_until_mu(now_mu())
+
         self.data.apd.put_data(self.sampler.data[0])
-        self.core.break_realtime()
+        self.data.test.put_data(self.sampler.data[1])
+        self.data.all.put_data(self.sampler.data)
+
+        # self.core.break_realtime()
 
     def analyze(self):
         import os
