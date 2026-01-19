@@ -48,4 +48,4 @@ class sampler_test(EnvExperiment,Base):
             # print(self.data[0])
             # print(self.sampler.test.sample())
             self.sampler.sample()
-            print(self.sampler.samples)
+            print(self.sampler.data)
