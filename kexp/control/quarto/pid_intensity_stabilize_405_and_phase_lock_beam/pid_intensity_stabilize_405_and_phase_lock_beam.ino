@@ -1,7 +1,7 @@
 #include "qCommand.h"
 qCommand qC;
 
-float SETPOINT1 = 4.; // phase lock beam
+float SETPOINT1 = 0.8; // phase lock beam
 float SETPOINT2 = 4.; // 405 beam
 float P1 = -.055;
 float I1 = -0.006;
@@ -23,7 +23,7 @@ struct Cal
 };
 
 void setup() {
-  configureADC(1, 1, 0, BIPOLAR_10V, getMeas1);
+  configureADC(1, 1, 0, BIPOLAR_1250mV, getMeas1);
   // configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
   // configureADC(3, 1, 0, BIPOLAR_10V, getMeas2);
   // configureADC(4, 1, 0, BIPOLAR_10V, getSet2);
