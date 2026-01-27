@@ -1,7 +1,7 @@
 #include "qCommand.h"
 qCommand qC;
 
-float SETPOINT1 = 0.8; // phase lock beam
+float SETPOINT1 = 0.75; // phase lock beam
 float SETPOINT2 = 4.; // 405 beam
 float P1 = -.055;
 float I1 = -0.006;
