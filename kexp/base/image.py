@@ -358,7 +358,7 @@ class Image():
         the imaging type.
         """        
         if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
-            self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
+            self.imaging.set_power(self.camera_params.amp_imaging)
         elif self.run_info.imaging_type == img.FLUORESCENCE:
             if self.camera_params.key == cameras.basler_2dmot.key:
                 self.dds.d2_2dh_c.set_dds(amplitude=self.params.amp_d2_2d_c_imaging)
