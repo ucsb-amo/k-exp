@@ -120,7 +120,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.scope_data.arm()
         self.core.break_realtime()
 
-        self.slm.check_for_old_setting()
+        # self.slm.check_for_old_setting()
         
         self.core.reset()
         delay(10.e-3)
