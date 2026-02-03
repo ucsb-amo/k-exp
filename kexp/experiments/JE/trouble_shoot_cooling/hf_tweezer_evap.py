@@ -88,7 +88,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.i_hf_raman = 191. 
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,300.,10)*1.e-3)
-        self.p.t_tweezer_hold = 20.0e-3
+        self.p.t_tweezer_hold = 10.0e-3
 
         # self.xvar('fringe_repeats',np.linspace(1.,300.,300))
 
@@ -119,8 +119,8 @@ class mag_trap(EnvExperiment, Base):
 
         # self.camera_params.em_gain = 1.
 
-        self.xvar('amp_imaging', np.linspace(.05,.2,15))
-        self.p.amp_imaging = .2
+        # self.xvar('amp_imaging', np.linspace(.05,5.,15))
+        self.p.amp_imaging = 2.
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.
 
