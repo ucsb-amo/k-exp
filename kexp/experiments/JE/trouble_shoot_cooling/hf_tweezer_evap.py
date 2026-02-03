@@ -70,13 +70,13 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_hf_tweezer_evap2_current',np.linspace(192.5,195.,8))
         # self.p.i_hf_tweezer_evap2_current = 194.
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.08,.165,8))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.13,.8,5))
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .14
 
         # self.xvar('t_hf_tweezer_1064_rampdown2',np.linspace(100.,800.,8)*1.e-3) 
         # self.p.t_hf_tweezer_1064_rampdown2 = 500.e-3
 
-        self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(3.2,6.,5))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(3.2,6.,5))
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.2
 
         # self.xvar('t_hf_tweezer_1064_rampdown3',np.linspace(50.,800.,8)*1.e-3) 
