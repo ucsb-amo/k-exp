@@ -58,8 +58,8 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 300e-6 
         self.phase_slm_mask = 0.35 * np.pi
-        self.px_slm_phase_mask_position_x = 1057
-        self.px_slm_phase_mask_position_y = 808
+        self.px_slm_phase_mask_position_x = 1073
+        self.px_slm_phase_mask_position_y = 810
         
         # Cooling timing
         self.t_tof = 20.e-6

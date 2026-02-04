@@ -20,7 +20,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_tof = 4250.e-6
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(300.,2000.,15)*1.e-6) 
-        # self.xvar('dumy',[0.]*3)
+        self.xvar('dumy',[0.]*3)
     
         # self.xvar('hf_imaging_detuning', [-617.e6,-505.e6]*1)
 
@@ -85,7 +85,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_tunnel',np.linspace(180.,190.,20)) 
         self.p.i_tunnel = 182. 
 
-        self.p.i_hf_raman = 191. 
+        self.p.i_hf_raman = 182. 
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,300.,10)*1.e-3)
         self.p.t_tweezer_hold = 10.0e-3
@@ -94,7 +94,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.p.amp_tweezer_list = a_list
 
-        # self.xvar('amp_tweezer',np.linspace(.1,.3,20))
+        # self.xvar('amp_tweezer',np.linspace(.1,.3,10))
         # self.xvar('freq_tweezer',75.e6 + np.linspace(-2.e6,2.e6,15))
 
         # self.xvar('hf_imaging_detuning', np.arange(-580.,-540.,3.)*1.e6)
@@ -107,8 +107,8 @@ class mag_trap(EnvExperiment, Base):
 
         # self.camera_params.em_gain = 1.
 
-        # self.xvar('amp_imaging', np.linspace(.08,4.,15))
-        self.p.amp_imaging = 1.2
+        # self.xvar('amp_imaging', np.linspace(.08,7.,10))
+        self.p.amp_imaging = 2.
         # self.p.amp_imaging = .1
         self.p.imaging_state = 2.
 
@@ -121,7 +121,7 @@ class mag_trap(EnvExperiment, Base):
     def scan_kernel(self):
 
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
+        self.set_high_field_imaging(i_outer=self.p.i_hf_raman)
         self.imaging.set_power(self.p.amp_imaging)
 
         # self.tweezer.traps[0].set_amp(self.p.amp_tweezer)
@@ -195,9 +195,9 @@ class mag_trap(EnvExperiment, Base):
         
         self.ttl.pd_scope_trig.pulse(1.e-6)
         
-        # self.outer_coil.ramp_supply(t=10.e-3,
-        #                      i_start=self.p.i_hf_tweezer_evap2_current,
-        #                      i_end=self.p.i_hf_raman)
+        self.outer_coil.ramp_supply(t=10.e-3,
+                             i_start=self.p.i_hf_tweezer_evap2_current,
+                             i_end=self.p.i_hf_raman)
         
         delay(self.p.t_tweezer_hold)
         
