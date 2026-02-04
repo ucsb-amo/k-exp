@@ -1,7 +1,15 @@
 #include "qCommand.h"
 qCommand qC;
 
-volatile float set1 = 3.0f, kp1 = 0.10f, ki1 = 0.30f, g1 = 0.5f, dV = 5.0f;
+struct Cal 
+{
+    uint16_t cal_a;
+    double cal_b;
+    uint16_t cal_c;
+    char cal_d[16];
+};
+
+volatile float set1 = 1.5f, kp1 = 0.10f, ki1 = 0.30f, g1 = 0.5f, dV = 5.0f;
 // volatile float set1 = 3.0f, kp1 = 0.10f, ki1 = 0.10f, g1 = 0.5f, dV = 5.0f;
 volatile float tor = 0.5f;      
 volatile float st_thresh = 0.9f; 
@@ -32,6 +40,14 @@ void setup() {
   qC.assignVariable("i1",   (float*)&ki1);
   qC.assignVariable("g1",   (float*)&g1);
   qC.addCommand("m", toggleManual);
+  qC.addCommand("ping",ping);
+}
+
+void ping(qCommand& qC, Stream& S)
+{
+  struct Cal cal2;
+  readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
+  Serial.println(cal2.cal_d); 
 }
 
 void loop() {
@@ -59,10 +75,10 @@ void pid1() {
   const float y = (float)readADC1_from_ISR();
   
   if (rising_edge) {
-    u_last_hold = 5.0f;
-    integ1 = 10.0f; 
-    y_prev = y;
-    dy_filt = 0.0f;
+    // u_last_hold = 5.0f;
+    // integ1 = 10.0f; 
+    // y_prev = y;
+    // dy_filt = 0.0f;
     c = 0; N = 0;
     writeDAC(2, 0.0f);
   }

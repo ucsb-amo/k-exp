@@ -39,11 +39,11 @@ void setup() {
 void loop() {
   qC.readSerial(Serial);
   static uint32_t last_ms = 0;
-  if (millis() - last_ms >= 100) { 
-    last_ms = millis();
+  // if (millis() - last_ms >= 100) { 
+  //   last_ms = millis();
     
-    Serial.print("er:"); Serial.print(y_print, 3);
-    Serial.print(" out:"); Serial.println(u_print, 3);
+    // Serial.print("er:"); Serial.print(y_print, 3);
+    // Serial.print(" out:"); Serial.println(u_print, 3);
     // Serial.print(" c:");  Serial.print(c_print);
     // Serial.print(" N:");  Serial.print(n_print);
     
@@ -52,9 +52,9 @@ void loop() {
     //   Serial.print(" Score:"); Serial.print(ratio, 1);
     //   Serial.println("%");
     // } else {
-    //   Serial.println();
+      // Serial.println();
     // }
-  }
+  // }
 }
 
 void pid1() {
