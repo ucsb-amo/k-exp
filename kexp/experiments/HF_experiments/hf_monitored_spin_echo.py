@@ -21,25 +21,23 @@ class cont_mon_182_ref(EnvExperiment, Base):
 
         self.p.i_hf_raman = 182.
 
-        # self.xvar('frequency_raman_transition',147.355e6 + np.linspace(-40.e3,40.e3,11))
+        # self.xvar('frequency_raman_transition',147.35e6 + np.linspace(-30.e3,30.e3,9))
 
         # self.p.frequency_raman_transition = 145.57e6 # 191. A
         # self.p.frequency_raman_transition = 147.2447e6 # 182. A
-        self.p.frequency_raman_transition = 147.275e6 # .3 img amp
+        self.p.frequency_raman_transition = 147.245e6 # .3 img amp
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.fraction_power_raman = .99
 
         # self.xvar('t_raman_stateprep_pulse',[0.,9.9979e-06])
-        self.p.t_raman_stateprep_pulse = (1.0058e-05) / 2
+        self.p.t_raman_pi = (1.0058e-05)
+        self.p.t_raman_pi_over_two = (1.0058e-05) / 2
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 200.e-6
+        self.p.t_monitor = 20.e-6
         
-        # self.xvar('amp_imaging',np.linspace(0.1,.9,20))
-        self.xvar('amp_imaging',[0.47894737, 0.52105263, 0.56315789,
-                                0.60526316, 0.64736842, 0.68947368, 0.73157895, 0.77368421, 0.81578947,
-                                0.85789474, 0.9])
+        self.xvar('amp_imaging',[0.1, 0.14210526, 0.18421053])
         # self.p.amp_imaging = .28
         self.p.amp_imaging = .8
 
@@ -52,7 +50,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
         # self.xvar('dimension_slm_mask',np.linspace(10.e-6,100.e-6,10))
         # self.p.dimension_slm_mask = 60.e-6
         # self.xvar('phase_slm_mask',np.linspace(0.,2.7*np.pi,15))
-        self.p.phase_slm_mask = 1.54 * np.pi
+        self.p.phase_slm_mask = .39 * np.pi
         self.p.dimension_slm_mask = 20.e-6
 
         # self.xvar('t_raman_stateprep_pulse',[0.e-6,29.e-6]*50)
@@ -65,7 +63,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
         # self.camera_params.exposure_time = 20.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 5
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -84,21 +82,30 @@ class cont_mon_182_ref(EnvExperiment, Base):
         self.raman.init(fraction_power = self.p.fraction_power_raman,
                         frequency_transition = self.p.frequency_raman_transition)
 
-        self.ttl.raman_shutter.on()
+        # self.ttl.raman_shutter.on()
         delay(10.e-3)
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(5.7e-3)
 
-        # self.raman.pulse(t=self.p.t_raman_stateprep_pulse)
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        # self.raman.pulse(t=self.p.t_raman_pi_over_two)
+        delay(self.p.t_raman_pi_over_two)
 
         self.imaging.on()
-        self.ttl.pd_scope_trig3.pulse(1.e-6)
-        self.raman.on()
-        delay(self.p.t_continuous_rabi)
-        self.raman.off()
+        delay(self.p.t_monitor)
         self.imaging.off()
 
-        self.ttl.raman_shutter.off()
+        # self.raman.pulse(t=self.p.t_raman_pi)
+        delay(self.p.t_raman_pi)
+
+        self.imaging.on()
+        delay(self.p.t_monitor)
+        self.imaging.off()
+
+        # self.raman.pulse(t=self.p.t_raman_pi_over_two)
+        delay(self.p.t_raman_pi_over_two)
+
+        # self.ttl.raman_shutter.off()
         
         self.set_high_field_imaging(self.p.i_hf_raman)
         self.imaging.set_power(.25,reset_pid=True)

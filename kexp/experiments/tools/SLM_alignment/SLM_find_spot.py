@@ -15,15 +15,15 @@ class gm_tof(EnvExperiment, Base):
                       camera_select='andor',
                       imaging_type=img_types.ABSORPTION)
 
-        N = 10
-        R = 5.
-        self.xvar('px_slm_phase_mask_position_x',1058 + np.linspace(-R, R, N, dtype=int))
-        self.xvar('px_slm_phase_mask_position_y',808. + np.linspace(-R, R, N, dtype=int))
+        N = 21
+        R = 40.
+        self.xvar('px_slm_phase_mask_position_x',1073. + np.linspace(-R, R, N, dtype=int))
+        self.xvar('px_slm_phase_mask_position_y',810. + np.linspace(-R, R, N, dtype=int))
         # self.xvar('dimension_slm_mask', np.arange(10.,200.,10,dtype=int)*1e-6)
         # self.xvar('dumdum',[0]*3)
         # self.p.slm_mask = 'spot'
         self.p.phase_slm_mask = np.pi
-        self.p.dimension_slm_mask = 10e-6
+        self.p.dimension_slm_mask = 6e-6
         # self.p.px_slm_phase_mask_position_x = 1040
         # self.p.px_slm_phase_mask_position_y = 821
         # self.camera_params.exposure_time = 100.e-6
@@ -34,7 +34,7 @@ class gm_tof(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.imaging.set_power(self.p.amp_imaging)
+        # self.imaging.set_power(self.p.amp_imaging)
         self.slm.write_phase_mask_kernel()
 
         self.light_image()

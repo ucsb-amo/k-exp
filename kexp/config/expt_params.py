@@ -58,8 +58,8 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 300e-6 
         self.phase_slm_mask = 0.35 * np.pi
-        self.px_slm_phase_mask_position_x = 1057
-        self.px_slm_phase_mask_position_y = 808
+        self.px_slm_phase_mask_position_x = 1073
+        self.px_slm_phase_mask_position_y = 810
         
         # Cooling timing
         self.t_tof = 20.e-6
@@ -155,10 +155,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_2d_mot_current = 2.11
 
         #MOT
-        self.detune_d2_c_mot = -3.1429
+        self.detune_d2_c_mot = -3.1
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -6.4
+        self.detune_d2_r_mot = -4.7
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -167,10 +167,10 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 19.4
-        self.v_zshim_current = .3
-        self.v_xshim_current = 0.71
-        self.v_yshim_current = 2.14
+        self.i_mot = 18.4
+        self.v_zshim_current = .7
+        self.v_xshim_current = 2.8
+        self.v_yshim_current = .4
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -198,23 +198,23 @@ class ExptParams(ExptParamsWaxx):
         self.i_cmot = self.i_mot
         
         #GM
-        self.v_zshim_current_gm = 0.75
-        self.v_xshim_current_gm = 0.5
+        self.v_zshim_current_gm = 0.684
+        self.v_xshim_current_gm = 0.14
         self.v_yshim_current_gm = 2.143
 
         self.pfrac_d1_c_gm = .9
         self.pfrac_d1_r_gm = 0.86
 
-        self.pfrac_c_gmramp_end = 0.09
+        self.pfrac_c_gmramp_end = 0.05
         self.pfrac_r_gmramp_end = 0.6871
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
         # self.v_yshim_current_gm = 2.
 
-        self.detune_d1_c_gm = 7.1 # 7.37
+        self.detune_d1_c_gm = 6.4 # 7.37
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
-        self.detune_d1_r_gm = 7.1
+        self.detune_d1_r_gm = 6.4
         # self.pfrac_d1_r_gm = .99
 
         # Discrete GM ramp
@@ -257,7 +257,7 @@ class ExptParams(ExptParamsWaxx):
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 6.7
         self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .533 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .7 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -273,10 +273,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lf_tweezer_1064_rampdown2_end = .18
         self.v_pd_lf_tweezer_1064_rampdown3_end = 2.
 
-        self.v_pd_hf_tweezer_1064_ramp_end = 8.8
-        self.v_pd_hf_tweezer_1064_rampdown_end = 1.1 # 1.13
-        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.143 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.3
+        self.v_pd_hf_tweezer_1064_ramp_end = 8.5
+        self.v_pd_hf_tweezer_1064_rampdown_end = .9 # 1.13
+        self.v_pd_hf_tweezer_1064_rampdown2_end = 0.14 # 0.15 # .21
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.2
         self.n_tweezer_ramp_steps = 1000
 
         self.n_tweezers = 2
@@ -289,14 +289,14 @@ class ExptParams(ExptParamsWaxx):
 
         self.frequency_aod_center = 75.e6
 
-        self.frequency_tweezer_list = [75.8e6]
+        self.frequency_tweezer_list = [74.25e6]
 
         # self.frequency_tweezer_auto_compute = False
         # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = -.71
-        self.v_hf_tweezer_paint_amp_max = -1.5 # -1.7
+        self.v_hf_tweezer_paint_amp_max = -2.9 # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -375,9 +375,9 @@ class ExptParams(ExptParamsWaxx):
         self.i_hf_lightsheet_evap1_current = 193.8
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 193.64
-        self.i_hf_tweezer_evap1_current = 193.0
-        self.i_hf_tweezer_evap2_current = 194.2 # 193.
+        self.i_hf_tweezer_load_current = 193.68
+        self.i_hf_tweezer_evap1_current = 194.2
+        self.i_hf_tweezer_evap2_current = 193.7 # 193.
 
         self.i_non_inter = 182.
 
