@@ -11,6 +11,7 @@ struct Cal
 float SETPOINT1 = 1.;
 float P1 = -0.005;
 float I1 = -0.005;
+float MANUAL_OUTPUT_VOLTAGE = 8.;
 double integral1 = 0.;
 bool pid_enable1 = true;
 bool manual_override1 = false;
@@ -28,6 +29,7 @@ void setup() {
   qC.assignVariable("p1", &P1);
   qC.assignVariable("i1", &I1);
   qC.assignVariable("set1", &SETPOINT1);
+  qC.assignVariable("v", &MANUAL_OUTPUT_VOLTAGE);
 
   enableInterruptTrigger(1,BOTH_EDGES,&switch1);
   enableInterruptTrigger(2,BOTH_EDGES,&manualOverride);
@@ -80,7 +82,7 @@ void pid1() {
   newdac1 = handle_overflow(newdac1);
 
   if (manual_override1) {
-    newdac1 = 9.9;
+    newdac1 = MANUAL_OUTPUT_VOLTAGE;
   }
 
   writeDAC(1, newdac1);
@@ -117,7 +119,7 @@ float handle_overflow(float num) {
 
 void ping(qCommand& qC, Stream& S) {
   struct Cal cal2;
-  readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
+  readNVMblock(&cal2, sizeof(cal2), 0xFA00); 
   Serial.println(cal2.cal_d); 
 }
 
