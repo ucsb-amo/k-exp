@@ -20,8 +20,8 @@ static constexpr float OUT_MIN = 0.0f, OUT_MAX = 10.0f;
 
 volatile float u_last_hold = 0.0f, integ1 = 0.0f;
 
-void pid1();
 void phaseLock();
+void pid1();
 void triangleSweep();
 void ping(qCommand& qC, Stream& S);
 void toggleManual(qCommand& qC, Stream& S);
@@ -36,7 +36,7 @@ static inline float clampf(float x, float lo, float hi) {
 
 void setup() {
     Serial.begin(115200);
-    configureADC(1, 1, 0, BIPOLAR_10V, pid1);
+    configureADC(1, 1, 0, BIPOLAR_10V, phaseLock);
 
     qC.assignVariable("set1", (float*)&set1);
     qC.assignVariable("p1",   (float*)&kp1);
