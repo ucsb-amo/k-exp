@@ -129,8 +129,8 @@ class mag_trap(EnvExperiment, Base):
 
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        self.gm(self.p.t_gm *s,detune_d1=self.p.detune_gm)
-        self.gm_ramp(self.p.t_gmramp,detune_d1=self.p.detune_gm)
+        self.gm(self.p.t_gm *s)
+        self.gm_ramp(self.p.t_gmramp)
 
         self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,
                                         do_magtrap_rampup=False,
