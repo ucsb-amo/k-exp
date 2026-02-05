@@ -107,7 +107,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.N_repeats = 1
         self.p.t_mot_load = .5
 
-        # self.xvar('amp_imaging',np.linspace(.06,.1,15))
+        self.xvar('amp_imaging',np.linspace(.06,5.,15))
         self.p.amp_imaging = .09
         self.p.imaging_state = 2.
 
