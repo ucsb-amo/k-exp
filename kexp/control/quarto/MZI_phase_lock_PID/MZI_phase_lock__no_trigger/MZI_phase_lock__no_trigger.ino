@@ -140,14 +140,14 @@ void triangleSweep() {
     static float cur_max = -10.0f;
     static float cur_min = 10.0f;
 
-    v += dir * 0.05f * step;
+    v += dir * 0.01f * step;
     const float y = (float)readADC1_from_ISR();
 
     if (y > cur_max) cur_max = y;
     if (y < cur_min) cur_min = y;
 
-    if (v >= 10.0f) {
-        v = 10.0f;
+    if (v >= 5.0f) {
+        v = 5.0f;
         dir = -1.0f;
     } 
     else if (v <= 0.0f) {
