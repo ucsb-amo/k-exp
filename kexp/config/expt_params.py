@@ -233,8 +233,8 @@ class ExptParams(ExptParamsWaxx):
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
-        self.v_xshim_current_magtrap = .57
-        self.v_yshim_current_magtrap = 1.1
+        self.v_xshim_current_magtrap = 1.62
+        self.v_yshim_current_magtrap = 1.7
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
