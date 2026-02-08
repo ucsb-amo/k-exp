@@ -14,9 +14,10 @@ from kexp.config.camera_id import cameras
 from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH, PATHS
 from kexp.config.data_vault import DataVault
 
+from waxx.util.live_od.camera_client import CameraClient
+from kexp.config.ip import CAMERA_SERVER_IP, CAMERA_SERVER_PORT
+
 from kexp.util.artiq.async_print import aprint
-
-
 
 class Base(Expt, Devices, Cooling, Image, Cameras, Control):
     def __init__(self,
@@ -37,6 +38,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.monitor = Monitor(self,
                                monitor_server_ip=MONITOR_SERVER_IP,
                                device_state_json_path=MONITOR_STATE_FILEPATH)
+        
+        self.live_od_client = CameraClient(CAMERA_SERVER_IP,
+                                           CAMERA_SERVER_PORT)
 
         self.prepare_devices(expt_params=self.params)
 
@@ -76,10 +80,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
                     init_ry = True):
         
         self.core.reset()
-
         if self.setup_camera:
-            self.wait_for_camera_ready(timeout=INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT)
-            print("Camera is ready.")
+            if self.setup_camera:
+                self.ds.create_data_file(self)
+            self.send_new_run()
+            
+        # if self.setup_camera:
+        #     self.wait_for_camera_ready(timeout=INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT)
+        #     print("Camera is ready.")
         if setup_slm:
             self.setup_slm(self.run_info.imaging_type)
         if run_id:

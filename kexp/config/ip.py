@@ -16,6 +16,11 @@ MONITOR_SERVER_PORT = 6789
 MONITOR_STATE_FILEPATH = os.path.join(DATA_DIR,'device_state_config.json')
 MONITOR_EXPT_PATH = str( Path(EXPT_PACKAGE_DIR) / 'experiments' / 'tools' / 'monitor.py' )
 
+### camera server (LiveOD)
+CAMERA_SERVER_IP = "192.168.1.76"
+CAMERA_SERVER_PORT = 7890
+# viewer port is CAMERA_SERVER_PORT + 1 (7891)
+
 ### ethernet relay
 ETHERNET_RELAY_IP = "192.168.1.109"
 ETHERNET_RELAY_PORT = 2101
