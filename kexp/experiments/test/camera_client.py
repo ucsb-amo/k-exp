@@ -12,7 +12,7 @@ class camera_client_test(EnvExperiment, Base):
                       camera_select=cameras.xy_basler)
         
         self.xvar('xvar0',np.arange(9))
-        self.xvar('xvar1',np.arange(9))
+        # self.xvar('xvar1',np.arange(9))
 
         self.finish_prepare(shuffle=False)
 
