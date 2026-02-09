@@ -11,7 +11,8 @@ class camera_client_test(EnvExperiment, Base):
         Base.__init__(self,
                       camera_select=cameras.xy_basler)
         
-        self.xvar('dummy',[0,1,2,3])
+        self.xvar('xvar0',np.arange(9))
+        self.xvar('xvar1',np.arange(9))
 
         self.finish_prepare(shuffle=False)
 
@@ -21,8 +22,6 @@ class camera_client_test(EnvExperiment, Base):
         delay(100.e-3)
 
         self.abs_image()
-
-        aprint('hi')
 
 
     @kernel
@@ -36,4 +35,4 @@ class camera_client_test(EnvExperiment, Base):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
 
-        self.live_od_client.send_run_complete()
+        
