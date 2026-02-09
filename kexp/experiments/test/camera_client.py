@@ -9,9 +9,10 @@ class camera_client_test(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      camera_select=cameras.xy_basler)
+                      camera_select=cameras.xy_basler,
+                      save_data=False)
         
-        self.xvar('xvar0',np.arange(9))
+        self.xvar('xvar0',np.arange(500))
         # self.xvar('xvar1',np.arange(9))
 
         self.finish_prepare(shuffle=False)
