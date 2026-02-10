@@ -105,7 +105,7 @@ class dds_frame(dds_frame_waxx):
                                     default_amp = self.p.amp_d1_3d_r)
         self.imaging = self.dds_assign(4,1, ao_order = 1,
                                     default_freq = 350.e6,
-                                    default_amp = 0.5,
+                                    default_amp = 1.,
                                     dac_ch_vpd=self._dac_frame.imaging_pid.ch)
         self.raman_80_plus = self.dds_assign(4,2, ao_order = 1,
                                     default_freq = 80.e6,
