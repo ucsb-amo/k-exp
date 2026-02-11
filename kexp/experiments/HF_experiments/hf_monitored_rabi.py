@@ -25,7 +25,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
 
         # self.p.frequency_raman_transition = 145.57e6 # 191. A
         # self.p.frequency_raman_transition = 147.2447e6 # 182. A
-        self.p.frequency_raman_transition = 147.255e6 # .3 img amp
+        self.p.frequency_raman_transition = 147.2597e6 # .3 img amp
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.fraction_power_raman = .99
@@ -40,30 +40,32 @@ class cont_mon_182_ref(EnvExperiment, Base):
         # self.xvar('amp_imaging',[0.47894737, 0.52105263, 0.56315789,
         #                         0.60526316, 0.64736842, 0.68947368, 0.73157895, 0.77368421, 0.81578947,
         #                         0.85789474, 0.9])
-        self.p.amp_imaging = 3.
+        self.p.amp_imaging = .5
         # self.p.amp_imaging = .8
 
         self.p.hf_imaging_detuning = -565.e6 # 182.
 
         # self.xvar('hf_imaging_detuning_mid',np.arange(-710.,-570.,10)*1.e6)
         # self.p.hf_imaging_detuning_mid = -690.e6 # -635.e6
-        self.p.hf_imaging_detuning_mid = -650.e6 # -635.e6
+        self.p.hf_imaging_detuning_mid = -655.e6 # -635.e6
         
-        # self.xvar('dimension_slm_mask',np.linspace(10.e-6,100.e-6,10))
+        # self.xvar('dimension_slm_mask',np.linspace(10.e-6,100.e-6,5))
         # self.p.dimension_slm_mask = 60.e-6
         self.xvar('phase_slm_mask',np.linspace(0.,2.7*np.pi,10))
-        self.p.phase_slm_mask = 1.54 * np.pi
-        self.p.dimension_slm_mask = 80.e-6
+        self.p.phase_slm_mask = .5 * np.pi
+        self.p.dimension_slm_mask = 20.e-6
 
         # self.xvar('t_raman_stateprep_pulse',[0.e-6,29.e-6]*50)
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.t_mot_load = 1.15
+        self.p.t_mot_load = 1.0
 
         # self.camera_params.exposure_time = 20.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
+
+        self.camera_params.gain = 1.
         
         self.p.N_repeats = 10
 
@@ -101,7 +103,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
         self.ttl.raman_shutter.off()
         
         self.set_high_field_imaging(self.p.i_hf_raman)
-        self.imaging.set_power(2.,reset_pid=True)
+        self.imaging.set_power(.486,reset_pid=True)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
