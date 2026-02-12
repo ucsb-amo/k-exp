@@ -16,6 +16,6 @@ class ttl_frame(ttl_frame_waxx):
 
         self.setup(N_TTL)
         
-        self.test = self.assign_ttl_out(0)
+        self.test = self.assign_ttl_in(0)
 
         self.cleanup()

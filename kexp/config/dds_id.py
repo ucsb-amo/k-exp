@@ -43,6 +43,6 @@ class dds_frame(dds_frame_waxx):
 
         self.antenna_rf = self.dds_assign(0,0,
                                     default_freq=200.e6,
-                                    default_amp=self.p.amp_rf_source)
+                                    default_amp=0.1)
         
         self.cleanup()

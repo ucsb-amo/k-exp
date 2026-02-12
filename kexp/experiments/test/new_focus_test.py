@@ -11,11 +11,8 @@ class new_focus_test(EnvExperiment, Base):
        
     @kernel
     def run(self):
-        self.init_kernel(dds_off=False,dds_set=False,init_dds=False,
-                         init_shuttler=False,init_lightsheet=False,
-                         init_dac=False,setup_awg=False,
-                         setup_slm=False)
-        
+        self.init_kernel(dds_off=False,dds_set=False,init_dds=False,init_dac=False)
+        self.dac.test.set(v=1.)
         
     def analyze(self):
         import os

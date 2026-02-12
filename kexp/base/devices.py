@@ -22,15 +22,15 @@ from waxx.control.cameras.dummy_cam import DummyCamera
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
 from kexp.config.dac_id import dac_frame
-from kexp.config.shuttler_id import shuttler_frame
+# from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.sampler_id import sampler_frame
-from kexp.config.siglent_id import siglent_frame
+# from kexp.config.siglent_id import siglent_frame
 
-from kexp.control.big_coil import igbt_magnet, hbridge_magnet
-from kexp.control.painted_lightsheet import lightsheet
-from kexp.control.awg_tweezer import tweezer
-from kexp.control.doubled_rf import doubled_rf
-from kexp.control.rydberg_lasers import RydbergLasers, CavityAOControlledRyDDSBeam
+# from kexp.control.big_coil import igbt_magnet, hbridge_magnet
+# from kexp.control.painted_lightsheet import lightsheet
+# from kexp.control.awg_tweezer import tweezer
+# from kexp.control.doubled_rf import doubled_rf
+# from kexp.control.rydberg_lasers import RydbergLasers, CavityAOControlledRyDDSBeam
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
@@ -67,8 +67,8 @@ class Devices():
         # dac channels
         self.dac = dac_frame(expt_params=self.params, dac_device=zotino)
 
-        self.shuttler = shuttler_frame()
-        self.get_shuttler_devices()
+        # self.shuttler = shuttler_frame()
+        # self.get_shuttler_devices()
 
         # ttl channels
         self.ttl = ttl_frame()
@@ -92,16 +92,16 @@ class Devices():
             dds.dds_device = self.get_device(dds.name)
             dds.cpld_device = self.get_device(dds.cpld_name)
 
-    def get_shuttler_devices(self):
-        self.shuttler._config = self.get_device("shuttler0_config")
-        self.shuttler._relay = self.get_device("shuttler0_relay")
-        self.shuttler._trigger = self.get_device("shuttler0_trigger")
+    # def get_shuttler_devices(self):
+    #     self.shuttler._config = self.get_device("shuttler0_config")
+    #     self.shuttler._relay = self.get_device("shuttler0_relay")
+    #     self.shuttler._trigger = self.get_device("shuttler0_trigger")
 
-        for shuttler_ch in self.shuttler.shuttler_list:
-            shuttler_ch._dc = self.get_device(shuttler_ch._dc_name)
-            shuttler_ch._dds = self.get_device(shuttler_ch._dds_name)
-            shuttler_ch._relay = self.shuttler._relay
-            shuttler_ch._trigger = self.shuttler._trigger
+    #     for shuttler_ch in self.shuttler.shuttler_list:
+    #         shuttler_ch._dc = self.get_device(shuttler_ch._dc_name)
+    #         shuttler_ch._dds = self.get_device(shuttler_ch._dds_name)
+    #         shuttler_ch._relay = self.shuttler._relay
+    #         shuttler_ch._trigger = self.shuttler._trigger
 
     @kernel
     def set_all_dds(self):
