@@ -16,7 +16,7 @@ class ttl_frame(ttl_frame_waxx):
 
         self.setup(N_TTL)
         
-        self.img_beam_sw = self.assign_ttl_out(0)
+        self.outer_coil_discharge_igbt_ttl = self.assign_ttl_out(0)
         self.tweezer_pid2_enable = self.assign_ttl_out(1)
         self.inner_coil_pid_ttl = self.assign_ttl_out(2)
         self.outer_coil_pid_ttl = self.assign_ttl_out(3)
