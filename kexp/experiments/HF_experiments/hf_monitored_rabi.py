@@ -6,6 +6,7 @@ from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu
+from kexp.util.artiq.async_print import aprint
 
 class cont_mon_182_ref(EnvExperiment, Base):
 
@@ -21,11 +22,11 @@ class cont_mon_182_ref(EnvExperiment, Base):
 
         self.p.i_hf_raman = 182.
 
-        # self.xvar('frequency_raman_transition',147.355e6 + np.linspace(-40.e3,40.e3,11))
+        # self.xvar('frequency_raman_transition',147.28e6 + np.linspace(-30.e3,30.e3,15))
 
         # self.p.frequency_raman_transition = 145.57e6 # 191. A
-        # self.p.frequency_raman_transition = 147.2447e6 # 182. A
-        self.p.frequency_raman_transition = 147.2597e6 # .3 img amp
+        # self.p.frequency_raman_transition = 147.2526e6 # 182. A
+        self.p.frequency_raman_transition = 147.28e6 # .3 img amp
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.fraction_power_raman = .99
@@ -36,24 +37,24 @@ class cont_mon_182_ref(EnvExperiment, Base):
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
         self.p.t_continuous_rabi = 200.e-6
         
-        # self.xvar('amp_imaging',np.linspace(0.1,.9,20))
+        # self.xvar('amp_imaging',np.linspace(0.1,.3,10))
         # self.xvar('amp_imaging',[0.47894737, 0.52105263, 0.56315789,
         #                         0.60526316, 0.64736842, 0.68947368, 0.73157895, 0.77368421, 0.81578947,
         #                         0.85789474, 0.9])
-        self.p.amp_imaging = .5
+        self.p.amp_imaging = .075
         # self.p.amp_imaging = .8
 
-        self.p.hf_imaging_detuning = -565.e6 # 182.
+        self.p.hf_imaging_detuning = -577.e6 # 182.
 
-        # self.xvar('hf_imaging_detuning_mid',np.arange(-710.,-570.,10)*1.e6)
+        # self.xvar('hf_imaging_detuning_mid',np.arange(-700.,-580.,5)*1.e6)
         # self.p.hf_imaging_detuning_mid = -690.e6 # -635.e6
         self.p.hf_imaging_detuning_mid = -655.e6 # -635.e6
         
-        # self.xvar('dimension_slm_mask',np.linspace(10.e-6,100.e-6,5))
+        # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         # self.p.dimension_slm_mask = 60.e-6
-        self.xvar('phase_slm_mask',np.linspace(0.,2.7*np.pi,10))
-        self.p.phase_slm_mask = .5 * np.pi
-        self.p.dimension_slm_mask = 20.e-6
+        self.xvar('phase_slm_mask',np.linspace(0.,2.7*np.pi,15))
+        self.p.phase_slm_mask = .964 * np.pi
+        self.p.dimension_slm_mask = 30.e-6
 
         # self.xvar('t_raman_stateprep_pulse',[0.e-6,29.e-6]*50)
 
@@ -65,9 +66,9 @@ class cont_mon_182_ref(EnvExperiment, Base):
         # self.camera_params.exposure_time = 20.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.camera_params.gain = 1.
+        # self.camera_params.gain = 1.
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 3
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -78,7 +79,7 @@ class cont_mon_182_ref(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning_mid)
         # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
-        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
@@ -89,21 +90,19 @@ class cont_mon_182_ref(EnvExperiment, Base):
         self.ttl.raman_shutter.on()
         delay(10.e-3)
         self.ttl.line_trigger.wait_for_line_trigger()
-        delay(5.7e-3)
+        delay(4.7e-3)
 
         # self.raman.pulse(t=self.p.t_raman_stateprep_pulse)
-
-        self.imaging.on()
+        
         self.ttl.pd_scope_trig3.pulse(1.e-6)
-        self.raman.on()
-        delay(self.p.t_continuous_rabi)
-        self.raman.off()
+        self.imaging.on()
+        self.raman.pulse(t=self.p.t_continuous_rabi)
         self.imaging.off()
 
         self.ttl.raman_shutter.off()
         
         self.set_high_field_imaging(self.p.i_hf_raman)
-        self.imaging.set_power(.486,reset_pid=True)
+        self.imaging.set_power(.075,reset_pid=True)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -127,4 +126,5 @@ class cont_mon_182_ref(EnvExperiment, Base):
     def analyze(self):
         import os
         expt_filepath = os.path.abspath(__file__)
+        # aprint(self.scope._data)
         self.end(expt_filepath)

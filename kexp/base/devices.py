@@ -111,7 +111,7 @@ class Devices():
                                         pid_ttl=self.ttl.outer_coil_pid_ttl,
                                         igbt_ttl=self.ttl.outer_coil_igbt,
                                         #   discharge_igbt_ttl=self.ttl.coil_discharge_igbt,
-                                        discharge_igbt_ttl=self.ttl.test_trig,
+                                        discharge_igbt_ttl=self.ttl.outer_coil_discharge_igbt_ttl,
                                         expt_params=self.params,
                                         slope_current_per_vdac_supply=slope_i_transducer_per_v_setpoint_supply_outer,
                                         offset_current_per_vdac_supply=offset_i_transducer_per_v_setpoint_supply_outer,

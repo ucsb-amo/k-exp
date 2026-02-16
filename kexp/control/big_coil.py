@@ -318,7 +318,7 @@ class hbridge_magnet(igbt_magnet):
         self.v_control_dac = v_control_dac
         self.i_control_dac = i_control_dac
         self.igbt_ttl = igbt_ttl
-        self.discharge_igbt_ttl = discharge_igbt_ttl
+        # self.discharge_igbt_ttl = discharge_igbt_ttl
         self.h_bridge_ttl = hbridge_ttl
         self.params = expt_params
 

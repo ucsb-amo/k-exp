@@ -330,7 +330,7 @@ class Image():
         channels controlling light that would otherwise pollute the dark image.
         """        
         if self.run_info.imaging_type == img.ABSORPTION or self.run_info.imaging_type == img.DISPERSIVE:
-            self.ttl.img_beam_sw.off()
+            # self.ttl.img_beam_sw.off()
             self.dds.imaging.set_dds(amplitude=0.)
         elif self.run_info.imaging_type == img.FLUORESCENCE:
             # fully turn off the 3d MOT beams (incl. set amp=0.)

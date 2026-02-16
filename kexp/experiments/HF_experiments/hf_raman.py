@@ -27,14 +27,14 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_raman_sweep_width = 15.e3
         # self.xvar('frequency_raman_sweep_center', 147.265e6 + np.arange(-100.e3,100.e3,self.p.frequency_raman_sweep_width))
 
-        # self.xvar('frequency_raman_transition',147.2597e6 + np.linspace(-5.e3,5.e3,5))
+        # self.xvar('frequency_raman_transition',147.2526e6 + np.linspace(-5.e3,5.e3,8))
         # self.p.frequency_raman_transition = 145.57e6 # 191. A
-        self.p.frequency_raman_transition = 147.2597e6 # 182. A
+        self.p.frequency_raman_transition = 147.2526e6 # 182. A
 
-        # self.xvar('t_ramsey_delay', np.linspace(5.e-6, 200.e-6, 8))
+        # self.xvar('t_ramsey', np.linspace(5.e-6, 100.e-6, 5))
 
         # self.xvar('t_raman_pulse', np.linspace(0.e-6, 100.e-6, 30))
-        self.p.t_raman_pulse = 0. # 14.e-6 / 2 # (1.0222e-05) / 2
+        self.p.t_raman_pulse = 11.9e-6 / 2
         # self.p.t_raman_pulse = 200.e-6
 
         # self.xvar('t_raman_pulse', [0.e-6,12.e-6])
@@ -42,11 +42,11 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
         self.p.fraction_power_raman = .99
         
-        # self.xvar('amp_imaging',np.linspace(0.15,.4,10))
+        # self.xvar('amp_imaging',np.linspace(0.1,.4,10))
         # self.p.amp_imaging = .28
-        self.p.amp_imaging = .48
+        self.p.amp_imaging = .2
 
-        self.xvar('hf_imaging_detuning',np.linspace(-595.e6,-560.e6,20))
+        # self.xvar('hf_imaging_detuning',np.linspace(-595.e6,-560.e6,20))
         # self.p.hf_imaging_detuning = -566.e6 # 182. -1
         self.p.hf_imaging_detuning =  -577.e6 # 182. with PID
 
@@ -92,9 +92,9 @@ class tweezer_load(EnvExperiment, Base):
 
         self.raman.pulse(self.p.t_raman_pulse)
 
-        delay(self.p.t_raman_pulse)
+        delay(self.p.t_ramsey)
 
-        # self.raman.pulse(self.p.t_raman_pulse)
+        self.raman.pulse(self.p.t_raman_pulse)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,

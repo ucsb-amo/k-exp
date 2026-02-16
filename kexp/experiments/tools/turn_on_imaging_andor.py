@@ -28,8 +28,8 @@ class turn_on_imaging(EnvExperiment, Base):
         
         self.set_imaging_shutters()
         
-        frequency_detuned = 0.e6
-        v_pd = 0.6
+        frequency_detuned = -655.e6
+        v_pd = 0.075
         # v_pd = self.camera_params.amp_imaging
 
         # after running experiment, control power with DAC 'imaging_pid'

@@ -24,7 +24,9 @@ class mag_trap(EnvExperiment, Base):
         # self.p.dumy = 0
         # self.xvar('dumy0',np.linspace(0.,50.,50))
 
-        # self.xvar('i_magtrap_init',np.linspace(50.,150.,20))
+        self.p.i_mot = 33.
+
+        # self.xvar('i_magtrap_init',np.linspace(50.,150.,10))
         # self.i_magtrap_init = 71.
 
         # self.xvar('i_magtrap_ramp_end', np.linspace(100.,160.,20))

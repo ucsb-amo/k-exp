@@ -58,9 +58,8 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 300e-6 
         self.phase_slm_mask = 0.35 * np.pi
-        self.px_slm_phase_mask_position_x = 991
-        self.px_slm_phase_mask_position_y = 824
-        
+        self.px_slm_phase_mask_position_x = 990
+        self.px_slm_phase_mask_position_y = 826
         # Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
@@ -167,7 +166,7 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d1_r_mot = 0.
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 18.4
+        self.i_mot = 33.
         self.v_zshim_current = .7
         self.v_xshim_current = 2.8
         self.v_yshim_current = .4
@@ -295,8 +294,8 @@ class ExptParams(ExptParamsWaxx):
         # self.amp_tweezer_auto_compute = True
         self.amp_tweezer_list = [.18] # [.15]
 
-        self.v_lf_tweezer_paint_amp_max = -.5
-        self.v_hf_tweezer_paint_amp_max = -3.4 # -1.7
+        self.v_lf_tweezer_paint_amp_max = .5
+        self.v_hf_tweezer_paint_amp_max = .316 # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -372,10 +371,10 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 193.8
+        self.i_hf_lightsheet_evap1_current = 193.3
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 193.75
+        self.i_hf_tweezer_load_current = 193.4
         self.i_hf_tweezer_evap1_current = 194.1
         self.i_hf_tweezer_evap2_current = 194.4 # 193.
 
