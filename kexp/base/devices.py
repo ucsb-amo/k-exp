@@ -192,11 +192,13 @@ class Devices():
                                               pid_int_clear_ttl=self.ttl.imaging_pid_int_clear_hold,
                                               pid_override_ttl=self.ttl.imaging_pid_manual_override,
                                               expt_params=self.params)
-        elif imaging_configuration == img_config.SWITCH:
-            self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
-                                           dds_beatref=self.dds.beatlock_ref,
-                                           pid_override_ttl=self.ttl.imaging_pid_manual_override,
-                                           expt_params=self.params)
+        else:
+            raise ValueError('Both the xy and x imaging fibers are currently derived from the PID setup (as of 2026-02-17)')
+        # elif imaging_configuration == img_config.SWITCH:
+        #     self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
+        #                                    dds_beatref=self.dds.beatlock_ref,
+        #                                    pid_override_ttl=self.ttl.imaging_pid_manual_override,
+        #                                    expt_params=self.params)
         
         # elif imaging_configuration == img_config.POLMOD:
         #     self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
