@@ -21,18 +21,17 @@ class turn_on_imaging(EnvExperiment, Base):
        
     @kernel
     def run(self):
-        self.init_kernel(dds_off=False,
-                         dds_set=False,
-                         init_dds=False,
-                         setup_awg=False,
+        self.init_kernel(setup_awg=False,
                          setup_slm=False,
                          init_lightsheet=False,
                          init_shuttler=False)
         
         self.set_imaging_shutters()
+
+        self.mot_observe()
         
         frequency_detuned = -655.e6
-        v_pd = 0.3
+        v_pd = 0.5
         # v_pd = self.camera_params.amp_imaging
 
         # after running experiment, control power with DAC 'imaging_pid'

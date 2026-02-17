@@ -102,6 +102,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
             self.set_all_dds() # set DDS to default values
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
+        self.core.break_realtime()
         if init_imaging:
             self.imaging.init()
             self.set_imaging_detuning()
