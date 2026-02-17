@@ -18,6 +18,7 @@ from waxx.control.misc.ssg3021x import SSG3021X
 from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock, BeatLockImagingPID
 from waxx.control.raman_beams import RamanBeamPair
 from waxx.control.cameras.dummy_cam import DummyCamera
+from waxx.control.misc.thorlabs_kinesis import WaveplateRotatorPhotodiodePID
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
@@ -25,6 +26,7 @@ from kexp.config.dac_id import dac_frame
 from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.sampler_id import sampler_frame
 from kexp.config.siglent_id import siglent_frame
+from kexp.config.ip import DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR
 
 from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
@@ -179,6 +181,11 @@ class Devices():
             frequency_sw_ao=80.e6,
             ao_order_pid=1,
             frequency_pid_ao=80.e6)
+        
+        self.reference_arm_waveplate_pid = WaveplateRotatorPhotodiodePID(
+            kinesis_device_id = DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR,
+            sampler_ch = self.sampler.reference_beam_pd,
+            core = self.core)
 
         # camera placeholder
         self.camera = DummyCamera()

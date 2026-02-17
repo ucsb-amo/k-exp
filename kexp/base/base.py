@@ -67,6 +67,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
                     init_dac = True,
                     dds_set = True, 
                     dds_off = True, 
+                    init_sampler = True,
                     init_imaging = True,
                     beat_ref_on=True,
                     init_shuttler = True, 
@@ -106,6 +107,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         if init_imaging:
             self.imaging.init()
             self.set_imaging_detuning()
+        if init_sampler:
+            self.sampler.init()
         if beat_ref_on:
             self.dds.beatlock_ref.on()
             # self.dds.d1_beatlock_ref.on()
