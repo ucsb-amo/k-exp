@@ -12,7 +12,7 @@ class sampler_frame(sampler_frame_waxx):
         
         ### begin assignments
  
-        self.test = self.sampler_assign(0,gain=3)
+        self.reference_beam_pd = self.sampler_assign(0,gain=0)
 
         ### end assignments
 
