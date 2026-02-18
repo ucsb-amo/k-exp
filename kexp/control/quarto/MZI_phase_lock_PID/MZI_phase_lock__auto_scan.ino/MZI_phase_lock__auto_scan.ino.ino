@@ -10,7 +10,6 @@ struct Cal {
   char     cal_d[16];
 };
 
-// ===================== User variables =====================
 volatile float set1 = .15f, kp1 = 0.05f, ki1 = 10.0f, g1 = 0.5f, dV = 5.0f, m = 1.0f;
 volatile float tor = 0.5f, st_thresh = 0.9f;
 volatile bool  pid_enable1 = true, manual_override1 = false;
@@ -19,7 +18,6 @@ volatile bool  enable_print = true;
 volatile float y_print = 0.0f, y2_print = 0.0f, u_print = 0.0f, sp_print = 0.0f;
 volatile float contrast_print = 0.0f, max_print = 0.0f, min_print = 0.0f;
 
-// one-shot scan status/results
 volatile bool  scan_active = false;
 volatile bool  scan_done   = false;
 volatile float y2max_print = 0.0f;
@@ -31,13 +29,12 @@ static constexpr float OUT_MIN = 0.0f, OUT_MAX = 10.0f;
 
 volatile float u_last_hold = 0.0f, integ1 = 0.0f;
 
-// ===================== Forward decls =====================
-void phaseLock();        // ADC1 ISR callback (ONLY control loop)
-void adc2Capture();      // ADC2 ISR callback (capture only)
+void phaseLock();
+void adc2Capture();
 
 void pid1();
 void triangleSweep();
-void autoScan_oneShot(); // overlay scan
+void autoScan_oneShot();
 
 void ping(qCommand& qC, Stream& S);
 void toggleManual(qCommand& qC, Stream& S);
@@ -48,19 +45,14 @@ static inline float clampf(float x, float lo, float hi) {
   return (x < lo) ? lo : (x > hi) ? hi : x;
 }
 
-// ===================== Commands =====================
 void togglePrint(qCommand& qC, Stream& S) { enable_print = !enable_print; }
 void toggleManual(qCommand& qC, Stream& S) { manual_override1 = !manual_override1; }
 
 void startScan(qCommand& qC, Stream& S) {
   const int mode = (int)lroundf(m);
-  if (mode != 1 && mode != 2) {
-    Serial.println("scan ignored (mode must be 1 or 2)");
-    return;
-  }
+  if (mode != 1 && mode != 2) return;
   scan_active = true;
   scan_done   = false;
-  Serial.println("scan started (0 -> 5 one-shot)");
 }
 
 void ping(qCommand& qC, Stream& S) {
@@ -69,14 +61,10 @@ void ping(qCommand& qC, Stream& S) {
   Serial.println(cal2.cal_d);
 }
 
-// ===================== Setup / Loop =====================
 void setup() {
   Serial.begin(115200);
 
-  // ADC1 runs the control loop
   configureADC(1, 1, 0, BIPOLAR_10V, phaseLock);
-
-  // ADC2 ONLY captures y2_print and clears its interrupt
   configureADC(2, 1, 1, BIPOLAR_10V, adc2Capture);
 
   qC.assignVariable("set1", (float*)&set1);
@@ -115,47 +103,37 @@ void loop() {
     Serial.print("mode? ");
   }
 
-  // always show APD readout (since ADC2 is always sampling)
   Serial.print(" APD:"); Serial.print(y2_print, 3);
 
   if (scan_done) {
-    scan_done = false; // print once
+    scan_done = false;
     Serial.print(" | y2max:"); Serial.print(y2max_print, 3);
-    Serial.print(" y@max:");  Serial.print(y_at_y2max_print, 3);
-    Serial.print(" v@max:");  Serial.print(v_at_y2max_print, 3);
+    Serial.print(" y@max:");  Serial.print(y_at_y2max_print, 6);
   }
   Serial.println();
 }
 
-// ===================== ISR callbacks =====================
-
-// ADC2 callback: MUST call readADC2_from_ISR() to clear interrupt
 void adc2Capture() {
   y2_print = (float)readADC2_from_ISR();
 }
 
-// ADC1 callback: MUST always clear ADC1 interrupt by calling readADC1_from_ISR()
-// We do that inside pid1/triangle/scan; if mode is unknown we still clear it.
 void phaseLock() {
   const int mode = (int)lroundf(m);
 
-  // --- overlay scan takes priority in BOTH mode 1 and mode 2 ---
   if (scan_active) {
-    autoScan_oneShot();   // reads ADC1 and clears interrupt
+    autoScan_oneShot();    
     return;
   }
 
   if (mode == 1) {
-    pid1();               // reads ADC1 and clears interrupt
+    pid1();
   } else if (mode == 2) {
-    triangleSweep();      // reads ADC1 and clears interrupt
+    triangleSweep();
   } else {
-    // fail-safe: clear interrupt even in unknown mode
     y_print = (float)readADC1_from_ISR();
   }
 }
 
-// ===================== Mode 1: PID =====================
 void pid1() {
   static bool  last_trig = false;
   static float c = 0, N = 0;
@@ -164,7 +142,7 @@ void pid1() {
   const bool rising_edge = (current_trig && !last_trig);
   last_trig = current_trig;
 
-  const float y = (float)readADC1_from_ISR(); // clears ADC1 interrupt
+  const float y = (float)readADC1_from_ISR();
 
   if (rising_edge) {
     c = 0; N = 0;
@@ -204,7 +182,6 @@ void pid1() {
   sp_print = set1;
 }
 
-// ===================== Mode 2: Triangle sweep (continuous) =====================
 void triangleSweep() {
   static float v = 0.0f;
   static float dir = 1.0f;
@@ -213,7 +190,7 @@ void triangleSweep() {
   static float cur_min =  10.0f;
 
   v += dir * 0.01f * step;
-  const float y = (float)readADC1_from_ISR(); // clears ADC1 interrupt
+  const float y = (float)readADC1_from_ISR();
 
   if (y > cur_max) cur_max = y;
   if (y < cur_min) cur_min = y;
@@ -233,7 +210,6 @@ void triangleSweep() {
   min_print = cur_min;
 }
 
-// ===================== Overlay: One-shot scan (0 -> 5 once) =====================
 void autoScan_oneShot() {
   static float v = 0.0f;
   static float step = 0.01f;
@@ -247,7 +223,6 @@ void autoScan_oneShot() {
 
   static bool was_active = false;
 
-  // detect start edge to reset scan state
   if (scan_active && !was_active) {
     v = 0.0f;
     cur_max = -10.0f;
@@ -255,12 +230,17 @@ void autoScan_oneShot() {
     y2_max  = -1.0e30f;
     y_at_max = 0.0f;
     v_at_max = 0.0f;
+
+    y2max_print = 0.0f;
+    y_at_y2max_print = 0.0f;
+    v_at_y2max_print = 0.0f;
+
     writeDAC(1, v);
   }
   was_active = scan_active;
 
-  const float y  = (float)readADC1_from_ISR(); // clears ADC1 interrupt
-  const float y2 = y2_print;                   // captured by ADC2 ISR
+  const float y  = (float)readADC1_from_ISR();
+  const float y2 = y2_print;
 
   if (y > cur_max) cur_max = y;
   if (y < cur_min) cur_min = y;
@@ -269,11 +249,20 @@ void autoScan_oneShot() {
     y2_max  = y2;
     y_at_max = y;
     v_at_max = v;
-  }
 
-  // advance upward only
-  v += 0.01f * step;
-  if (v > 5.0f) v = 5.0f;
+    // live update while scanning (so you see it change)
+    y2max_print = y2_max;
+    y_at_y2max_print = y_at_max;
+    v_at_y2max_print = v_at_max;
+  }
+  static uint16_t slow_div = 0;
+  static const uint16_t slow_factor = 50;  
+
+  if (++slow_div >= slow_factor) {
+      slow_div = 0;
+      v += 0.01f * step;
+  }
+  if (v > 8.0f) v = 8.0f;
 
   writeDAC(1, v);
 
@@ -282,7 +271,7 @@ void autoScan_oneShot() {
   max_print = cur_max;
   min_print = cur_min;
 
-  if (v >= 5.0f) {
+  if (v >= 8.0f) {
     if (cur_max + cur_min != 0.0f) {
       contrast_print = (cur_max - cur_min) / (cur_max + cur_min);
     }
@@ -290,6 +279,7 @@ void autoScan_oneShot() {
     y2max_print = y2_max;
     y_at_y2max_print = y_at_max;
     v_at_y2max_print = v_at_max;
+
     set1 = y_at_max;
     scan_active = false;
     scan_done   = true;
