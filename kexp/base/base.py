@@ -16,8 +16,6 @@ from kexp.config.data_vault import DataVault
 
 from kexp.util.artiq.async_print import aprint
 
-
-
 class Base(Expt, Devices, Cooling, Image, Cameras, Control):
     def __init__(self,
                  setup_camera=True,
@@ -177,3 +175,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.core.break_realtime()
         self.ttl.line_trigger.clear_input_events()
+
+    @kernel
+    def end(self, expt_filepath):
+        
+        self.reference_arm_waveplate_pid.close()
+        
+        self.end_wax(expt_filepath=expt_filepath)
