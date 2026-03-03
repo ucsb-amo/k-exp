@@ -4,15 +4,18 @@ from PyQt6.QtCore import QTimer
 import os
 import pandas as pd
 
-from waxa.roi import ROI_CSV_PATH
+from waxa.data import server_talk as st
+
 from waxx.control.cameras import DummyCamera, CameraParams
 
 from kexp import cameras
 from kexp.util.live_od import CameraNanny
+from kexp.config.ip import server_talk
 
 class CamConnBar(QWidget):
     def __init__(self,camera_nanny,output_window):
         super().__init__()
+
         self.cn = camera_nanny
         self.output_window = output_window
         self.setup_camera_buttons()
@@ -114,8 +117,14 @@ class CameraButton(QPushButton):
         self.setStyleSheet("background-color: gray")
 
 class ROISelector(QWidget):
-    def __init__(self):
+    def __init__(self, server_talk=None):
         super().__init__()
+        
+        if server_talk == None:
+            self.server_talk = st()
+        else:
+            self.server_talk = server_talk
+            
         self.setup_widgets()
         self.setup_layout()
         self._last_roi_mtime = None
@@ -125,7 +134,7 @@ class ROISelector(QWidget):
 
     def check_roi_file_update(self):
         try:
-            mtime = os.path.getmtime(ROI_CSV_PATH)
+            mtime = os.path.getmtime(self.server_talk.roi_csv_path)
             if self._last_roi_mtime is None:
                 self._last_roi_mtime = mtime
             elif mtime != self._last_roi_mtime:
@@ -144,7 +153,7 @@ class ROISelector(QWidget):
         self.crop_dropdown.addItems(self.roi_keys)
         
     def load_roi_from_spreadsheet(self):
-        roicsv = pd.read_excel(ROI_CSV_PATH)
+        roicsv = pd.read_excel(self.server_talk.roi_csv_path)
         self.roi_keys = roicsv['key'].to_list()
 
     def set_dropdown_to_key(self,key):

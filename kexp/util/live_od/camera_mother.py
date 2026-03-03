@@ -8,13 +8,12 @@ from PyQt6.QtCore import QThread, pyqtSignal
 from waxa.atomdata import unpack_group
 
 from waxx.control.cameras import DummyCamera
-from waxa.data.server_talk import get_latest_data_file, run_id_from_filepath
-from waxa.data import update_run_id
 from waxa.base import Scribe
 
 from waxx.config.timeouts import (CAMERA_MOTHER_CHECK_DELAY as CHECK_DELAY,
                                    UPDATE_EVERY, DATA_SAVER_TIMEOUT)
 from kexp.util.live_od.camera_nanny import CameraNanny
+from waxa.data.server_talk import server_talk as st
 
 from queue import Queue, Empty
 
@@ -30,8 +29,14 @@ class CameraMother(QThread):
 
     def __init__(self,output_queue:Queue=None,start_watching=True,
                  manage_babies=True,N_runs:int=None,
-                 camera_nanny=CameraNanny()):
+                 camera_nanny=CameraNanny(),
+                 server_talk=None):
         super().__init__()
+
+        if server_talk == None:
+            self.server_talk = st()
+        else:
+            self.server_talk = server_talk
 
         self.latest_file = ""
 
@@ -92,13 +97,13 @@ class CameraMother(QThread):
             print("Mother is watching...")
 
     def check_files(self):
-        latest_file = get_latest_data_file()
+        latest_file = self.server_talk.get_latest_data_file()
         new_file_bool, run_id = self.check_if_file_new(latest_file)
         return new_file_bool, latest_file, run_id
     
     def check_if_file_new(self,latest_filepath):
         if latest_filepath != self.latest_file:
-            rid = run_id_from_filepath(latest_filepath)
+            rid = self.server_talk.run_id_from_filepath(latest_filepath)
             if rid == self.read_run_id():
                 new_file_bool = True
                 self.latest_file = latest_filepath

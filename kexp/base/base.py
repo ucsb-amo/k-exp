@@ -11,7 +11,7 @@ from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control
 from kexp.config.camera_id import cameras
-from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH, PATHS
+from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH, PATHS, server_talk
 from kexp.config.data_vault import DataVault
 
 from kexp.util.artiq.async_print import aprint
@@ -26,7 +26,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         super().__init__(setup_camera=setup_camera,
                          absorption_image=absorption_image,
-                         save_data=save_data)
+                         save_data=save_data,
+                         server_talk=server_talk)
 
         from kexp.config.expt_params import ExptParams
         self.params = ExptParams()
@@ -43,7 +44,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
         self.configure_imaging_system(imaging_configuration=_img_config)
 
         self.data = DataVault(self)
-        self.ds = DataSaver(*PATHS)
+        self.ds = DataSaver(*PATHS,server_talk=server_talk)
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
