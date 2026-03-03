@@ -78,7 +78,7 @@ class LiveODWindow(QWidget):
 
     def update_run_id_label(self):
         try:
-            rid = server_talk.get_run_id()
+            rid = self.server_talk.get_run_id()
             self.run_id_label.setText(f"Run ID: {rid}")
         except Exception as e:
             self.run_id_label.setText("Run ID: (unavailable)")
@@ -329,7 +329,7 @@ class LiveODWindow(QWidget):
             msg = 'No active run to abort. Incrementing Run ID.'
             print(msg)
             self.msg(msg)
-            server_talk.update_run_id()
+            self.server_talk.update_run_id()
             pass
 
         if self.the_baby is not None:
