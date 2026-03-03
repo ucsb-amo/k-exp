@@ -3,8 +3,8 @@ from datetime import datetime
 from waxa.data.server_talk import server_talk as st
 
 ### data, filepaths
-DATA_DIR = os.getenv("data")
-# DATA_DIR = 'C:/Users/jarjarbinks/'
+# DATA_DIR = os.getenv("data")
+DATA_DIR = 'C:\_K\PotassiumData'
 EXPT_PACKAGE_DIR = os.path.join(os.getenv("code"),"k-exp","kexp")
 EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
 COOLING_RELPATH = os.path.join("base","cooling.py")

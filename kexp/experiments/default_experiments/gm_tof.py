@@ -6,7 +6,7 @@ import numpy as np
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
@@ -19,7 +19,7 @@ class gm_tof(EnvExperiment, Base):
         self.p.imaging_state = 2.
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = .2
-        self.p.N_repeats = 100
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 
