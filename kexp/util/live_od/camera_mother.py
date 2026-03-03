@@ -37,6 +37,7 @@ class CameraMother(QThread):
             self.server_talk = st()
         else:
             self.server_talk = server_talk
+        self.server_talk: st
 
         self.latest_file = ""
 
@@ -59,11 +60,6 @@ class CameraMother(QThread):
 
     def run(self):
         self.watch_for_new_file()
-
-    def read_run_id(self):
-        with open(RUN_ID_PATH,'r') as f:
-            run_id = int(f.read())
-        return run_id
 
     def watch_for_new_file(self,manage_babies=False):
         new_file_bool = False
@@ -104,7 +100,7 @@ class CameraMother(QThread):
     def check_if_file_new(self,latest_filepath):
         if latest_filepath != self.latest_file:
             rid = self.server_talk.run_id_from_filepath(latest_filepath)
-            if rid == self.read_run_id():
+            if rid == self.server_talk.get_run_id():
                 new_file_bool = True
                 self.latest_file = latest_filepath
             else:
