@@ -84,6 +84,8 @@ class LiveODWindow(QWidget):
             self.run_id_label.setText("Run ID: (unavailable)")
 
     def setup_widgets(self):
+        self.server_talk.check_for_mapped_data_dir()
+
         self.viewer_window = LiveODViewer()
         self.setup_run_id_label()
         self.setup_output_window()
