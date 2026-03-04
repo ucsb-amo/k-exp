@@ -2,7 +2,7 @@
 qCommand qC;
 
 float SETPOINT1 = 3; // atoms
-float SETPOINT2 = 1.5; // cavity
+float SETPOINT2 = 1.9; // cavity
 float P1 = -.055;
 float I1 = -0.006;
 float P2 = -0.055;
@@ -26,6 +26,7 @@ void setup() {
   configureADC(1, 1, 0, BIPOLAR_10V, getMeas1);
   // configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
   configureADC(3, 1, 0, BIPOLAR_2500mV, getMeas2);
+  // configureADC(3, 1, 0, BIPOLAR_2500mV, getMeas2);
   // configureADC(4,1,0,BIPOLAR_10V,getSet2);
 
   qC.assignVariable("p1", &P1);
