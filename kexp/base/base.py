@@ -22,15 +22,20 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
                  save_data=True,
                  imaging_type=img.ABSORPTION,
                  absorption_image=None,
-                 camera_select=cameras.xy_basler):
+                 camera_select=cameras.xy_basler,
+                 expt_params=None):
 
         super().__init__(setup_camera=setup_camera,
                          absorption_image=absorption_image,
                          save_data=save_data,
                          server_talk=server_talk)
 
-        from kexp.config.expt_params import ExptParams
-        self.params = ExptParams()
+        if expt_params == None:
+            from kexp.config.expt_params import ExptParams
+            self.params = ExptParams()
+        else:
+            self.params = expt_params
+
         self.p = self.params
 
         self.monitor = Monitor(self,
@@ -39,7 +44,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.prepare_devices(expt_params=self.params)
 
-        # self._polmod_config = self.choose_camera(setup_camera,imaging_type,camera_select)
         _img_config = self.choose_camera(setup_camera,imaging_type,camera_select)
         self.configure_imaging_system(imaging_configuration=_img_config)
 
