@@ -1,28 +1,28 @@
 #include "qCommand.h"
 qCommand qC;
-struct Cal 
-{
-    uint16_t cal_a;
-    double cal_b;
-    uint16_t cal_c;
-    char cal_d[16];
+struct Cal {
+  uint16_t cal_a;
+  double cal_b;
+  uint16_t cal_c;
+  char cal_d[16];
 };
 
-float SETPOINT1 = 1.;
-float P1 = -0.005;
-float I1 = -0.005;
-float MANUAL_OUTPUT_VOLTAGE = 8.;
+float SETPOINT1 = 4.0;
+float P1 = -1.;
+float I1 = -0.01;
+float MANUAL_OUTPUT_VOLTAGE = 8.3;
 double integral1 = 0.;
 bool pid_enable1 = true;
 bool manual_override1 = false;
+double newadc1 = 0.;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  qC.addCommand("ping",ping);
+  qC.addCommand("ping", ping);
 
   configureADC(1, 1, 0, BIPOLAR_10V, pid1);
-  configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
+  // configureADC(2, 1, 0, BIPOLAR_2500mV, getSet1);
   // configureADC(1, 1, 0, BIPOLAR_1250mV, pid1);
   // configureADC(2, 1, 0, BIPOLAR_1250mV, getSet1);
 
@@ -31,8 +31,8 @@ void setup() {
   qC.assignVariable("set1", &SETPOINT1);
   qC.assignVariable("v", &MANUAL_OUTPUT_VOLTAGE);
 
-  enableInterruptTrigger(1,BOTH_EDGES,&switch1);
-  enableInterruptTrigger(2,BOTH_EDGES,&manualOverride);
+  enableInterruptTrigger(1, BOTH_EDGES, &switch1);
+  enableInterruptTrigger(2, BOTH_EDGES, &manualOverride);
 
   qC.addCommand("c", clear_integrator);
   qC.addCommand("m", toggleManual);
@@ -66,13 +66,13 @@ void pid1() {
     double prop1 = (newadc1 - SETPOINT1) * P1;
     integral1 += (newadc1 - SETPOINT1) * I1;
 
-    if (integral1 > 5.) {
-      integral1 = 5.;
+    if (integral1 > 9.99) {
+      integral1 = 9.99;
     } else if (integral1 < 0.) {
       integral1 = 0.;
     } else {
     }
-    
+
     newdac1 = prop1 + integral1;
   } else {
     newdac1 = 0.;
@@ -90,7 +90,7 @@ void pid1() {
 
 void getSet1() {
   SETPOINT1 = readADC2_from_ISR();
-  SETPOINT1 = handle_overflow(SETPOINT1);
+  // SETPOINT1 = handle_overflow(SETPOINT1);
 }
 
 //At TTL edges, check value of TTL, clear integrator, and then enable/disable PID depending on value
@@ -119,8 +119,8 @@ float handle_overflow(float num) {
 
 void ping(qCommand& qC, Stream& S) {
   struct Cal cal2;
-  readNVMblock(&cal2, sizeof(cal2), 0xFA00); 
-  Serial.println(cal2.cal_d); 
+  readNVMblock(&cal2, sizeof(cal2), 0xFA00);
+  Serial.println(cal2.cal_d);
 }
 
 void loop() {
