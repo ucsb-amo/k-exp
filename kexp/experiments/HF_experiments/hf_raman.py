@@ -34,12 +34,14 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('t_ramsey', np.linspace(5.e-6, 100.e-6, 5))
 
         # self.xvar('t_raman_pulse', np.linspace(0.e-6, 100.e-6, 30))
+        self.xvar('t_raman_pulse', np.linspace(0.e-6, 20.e-3, 5))
         self.p.t_raman_pulse = 11.9e-6 / 2
         # self.p.t_raman_pulse = 200.e-6
 
         # self.xvar('t_raman_pulse', [0.e-6,12.e-6])
 
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
+        # self.p.fraction_power_raman = .99
         self.p.fraction_power_raman = .99
         
         # self.xvar('amp_imaging',np.linspace(0.1,.4,10))
@@ -90,16 +92,16 @@ class tweezer_load(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
 
-        self.raman.pulse(self.p.t_raman_pulse)
+        # self.raman.pulse(self.p.t_raman_pulse)
 
-        delay(self.p.t_ramsey)
+        # delay(self.p.t_ramsey)
 
-        self.raman.pulse(self.p.t_raman_pulse)
+        # self.raman.pulse(self.p.t_raman_pulse)
 
-        # self.raman.sweep(t=self.p.t_raman_sweep,
-        #                  frequency_center=self.p.frequency_raman_sweep_center,
-        #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
-        #                  n_steps=100)
+        self.raman.sweep(t=self.p.t_raman_sweep,
+                         frequency_center=self.p.frequency_raman_sweep_center,
+                         frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
+                         n_steps=100)
         
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.raman.pulse(self.p.t_raman_pulse)
@@ -119,7 +121,7 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(setup_slm=False)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()
