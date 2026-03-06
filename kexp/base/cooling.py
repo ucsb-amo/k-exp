@@ -84,7 +84,7 @@ class Cooling():
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
                                 v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
                                 v_end=self.p.v_pd_lightsheet_rampdown3_end)
-
+        # self.lightsheet.pid_int_zero_ttl.on()
         self.lightsheet.off()
 
         self.outer_coil.ramp_supply(t=5.e-3,
@@ -106,10 +106,10 @@ class Cooling():
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
         
-        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-        #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-        #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
+        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                          paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.dac.supply_current_2dmot.set(v=0.)
 

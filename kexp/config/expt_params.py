@@ -58,8 +58,8 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 300e-6 
         self.phase_slm_mask = 0.35 * np.pi
-        self.px_slm_phase_mask_position_x = 986
-        self.px_slm_phase_mask_position_y = 819
+        self.px_slm_phase_mask_position_x = 993
+        self.px_slm_phase_mask_position_y = 820
         # Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
@@ -249,7 +249,7 @@ class ExptParams(ExptParamsWaxx):
         # ODT
         # self.amp_lightsheet = 0.6
         # self.frequency_ao_lightsheet = 80.e6
-        self.v_pd_lightsheet_pd_minimum = 0.046
+        self.v_pd_lightsheet_pd_minimum = 0.0
         self.v_lightsheet_paint_amp_max = 3.6
 
         self.v_pd_lightsheet = 7.5
