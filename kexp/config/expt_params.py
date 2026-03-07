@@ -276,7 +276,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.7
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.3
         self.n_tweezer_ramp_steps = 1000
 
         self.n_tweezers = 2
@@ -296,7 +296,7 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = .5
-        self.v_hf_tweezer_paint_amp_max = -2.4 # -1.7
+        self.v_hf_tweezer_paint_amp_max = -2.3571 # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
