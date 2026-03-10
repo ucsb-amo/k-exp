@@ -14,6 +14,12 @@ double integral2 = 0.;
 bool pid_enable1 = true;
 bool pid_enable2 = true;
 
+bool manual_override1 = true;
+float v_manual_1 = 8.0;
+
+bool manual_override2 = true;
+float v_manual_2 = 8.0;
+
 struct Cal 
 {
     uint16_t cal_a;
@@ -42,8 +48,19 @@ void setup() {
 
   qC.addCommand("c", clear_integrator);
 
+  qC.addCommand("m1", toggleManual1);
+  qC.addCommand("m2", toggleManual2);
+  qC.assignVariable("v1",v_manual_1);
+  qC.assignVariable("v2",v_manual_2);
+
   Serial.begin(115200);
   qC.addCommand("ping",ping);
+}
+void toggleManual1(qCommand& qC, Stream& S) {
+  manual_override1 = !manual_override1;
+}
+void toggleManual2(qCommand& qC, Stream& S) {
+  manual_override2 = !manual_override2;
 }
 //asks for quarto name
 void ping(qCommand& qC, Stream& S)
@@ -91,6 +108,10 @@ void getMeas1() {
     newdac1 = 0.;
   }
 
+  if (manual_override1) {
+    newdac1 = v_manual_1;
+  }
+
   ///Bit overflow check conditions
   if (newdac1 > 10) {
     newdac1 = 9.9;
@@ -117,6 +138,10 @@ void getMeas2() {
     newdac2 = prop2 + integral2;
   } else {
     newdac2 = 0.;
+  }
+
+  if (manual_override2) {
+    newdac2 = v_manual_2;
   }
 
   ///Bit overflow check conditions
