@@ -40,6 +40,11 @@ class ExptParams(ExptParamsWaxx):
         self.frequency_detuned_imaging_midpoint = 301.3e6
         # self.frequency_detuned_imaging_midpoint = 608.e6
 
+        # hf imaging settings with i_outer = 182
+        self.frequency_detuned_hf_f1m1 = -570.e6
+        self.frequency_detuned_hf_f2m2 = -710.e6
+        self.frequency_detuned_hf_midpoint = -640.e6
+
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
         self.detune_d2_r_imaging = 0.
@@ -56,8 +61,8 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 300e-6 
-        self.phase_slm_mask = 0.35 * np.pi
+        self.dimension_slm_mask = 100e-6 
+        self.phase_slm_mask = 2.7 * np.pi
         self.px_slm_phase_mask_position_x = 993
         self.px_slm_phase_mask_position_y = 820
         # Cooling timing
@@ -91,7 +96,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_lightsheet_hold = 40.e-3
         
         self.t_tweezer_ramp = .56
-        self.t_tweezer_hold = 5.e-3
+        self.t_tweezer_hold = 10.e-3
         self.t_lf_tweezer_1064_ramp = .18
         self.t_lf_tweezer_1064_rampdown = 140.e-3 
         self.t_lf_tweezer_1064_rampdown2 = 450.e-3   
@@ -128,7 +133,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 4.9070e-6 # 60842
+        self.t_raman_pi_pulse = 5.532e-6 # 60885
         
 
         # DAC controlled AO amplitudes
