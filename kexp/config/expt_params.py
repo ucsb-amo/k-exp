@@ -128,7 +128,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 1.2392e-05 #47488
+        self.t_raman_pi_pulse = 4.9070e-6 # 60842
+        
 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -276,7 +277,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.3
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.5
         self.n_tweezer_ramp_steps = 1000
 
         self.n_tweezers = 2
@@ -335,11 +336,12 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 1.
+        self.fraction_power_raman = 0.5
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 
-        self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
+        # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
+        self.frequency_raman_transition = 147.2489e6
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
         self.frequency_raman_transition_nf_10_21 = 462.85e6 # 1.5 G 1,-1 to 2,0
@@ -381,7 +383,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.i_non_inter = 182.
 
-        self.i_hf_raman = 191.
+        # self.i_hf_raman = 191.
+        self.i_hf_raman = 182.
 
         # self.i_evap2_current = 198.45
         # self.i_evap3_current = 198.7
