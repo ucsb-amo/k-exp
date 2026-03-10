@@ -1,8 +1,8 @@
 #include "qCommand.h"
 qCommand qC;
 
-float SETPOINT1 = 3; // atoms
-float SETPOINT2 = 1.9; // cavity
+float SETPOINT1 = 2.2; // 405
+float SETPOINT2 = 2.3; // 980
 float P1 = -.055;
 float I1 = -0.006;
 float P2 = -0.055;
@@ -14,6 +14,12 @@ double integral2 = 0.;
 bool pid_enable1 = true;
 bool pid_enable2 = true;
 
+bool manual_override1 = true;
+float v_manual_1 = 8.0;
+
+bool manual_override2 = true;
+float v_manual_2 = 8.0;
+
 struct Cal 
 {
     uint16_t cal_a;
@@ -23,7 +29,7 @@ struct Cal
 };
 
 void setup() {
-  configureADC(1, 1, 0, BIPOLAR_10V, getMeas1);
+  configureADC(1, 1, 0, BIPOLAR_2500mV, getMeas1);
   // configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
   configureADC(3, 1, 0, BIPOLAR_2500mV, getMeas2);
   // configureADC(3, 1, 0, BIPOLAR_2500mV, getMeas2);
@@ -42,8 +48,19 @@ void setup() {
 
   qC.addCommand("c", clear_integrator);
 
+  qC.addCommand("m1", toggleManual1);
+  qC.addCommand("m2", toggleManual2);
+  qC.assignVariable("v1",v_manual_1);
+  qC.assignVariable("v2",v_manual_2);
+
   Serial.begin(115200);
   qC.addCommand("ping",ping);
+}
+void toggleManual1(qCommand& qC, Stream& S) {
+  manual_override1 = !manual_override1;
+}
+void toggleManual2(qCommand& qC, Stream& S) {
+  manual_override2 = !manual_override2;
 }
 //asks for quarto name
 void ping(qCommand& qC, Stream& S)
@@ -80,8 +97,8 @@ void clear_integrator(qCommand& qC, Stream& S) {
 void getMeas1() {
   double newadc1 = readADC1_from_ISR();
   double newdac1 = 0.;
-  writeDAC(3, newadc1);
-  writeDAC(4, SETPOINT1);
+  // writeDAC(3, newadc1);
+  // writeDAC(4, SETPOINT1);
 
   if (pid_enable1) {
     double prop1 = (newadc1 - SETPOINT1) * P1;
@@ -89,6 +106,10 @@ void getMeas1() {
     newdac1 = prop1 + integral1;
   } else {
     newdac1 = 0.;
+  }
+
+  if (manual_override1) {
+    newdac1 = v_manual_1;
   }
 
   ///Bit overflow check conditions
@@ -108,8 +129,8 @@ void getSet1() {
 void getMeas2() {
   double newadc2 = readADC3_from_ISR();
   double newdac2 = 0.;
-  // writeDAC(3, newadc2);
-  // writeDAC(4, SETPOINT2);
+  writeDAC(3, newadc2);
+  writeDAC(4, SETPOINT2);
 
   if (pid_enable2) {
     double prop2 = (newadc2 - SETPOINT2) * P2;
@@ -117,6 +138,10 @@ void getMeas2() {
     newdac2 = prop2 + integral2;
   } else {
     newdac2 = 0.;
+  }
+
+  if (manual_override2) {
+    newdac2 = v_manual_2;
   }
 
   ///Bit overflow check conditions
