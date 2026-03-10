@@ -16,20 +16,16 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.8
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.8
         # self.t_hf_tweezer_1064_rampdown3 = 10.e-3
         
         # self.xvar('beans',[0,1]*50)
 
         self.p.i_hf_raman = 182.
 
-        # self.xvar('frequency_raman_transition',147.4e6 + np.linspace(-50.e3,50.e3,15))
-        # self.xvar('frequency_raman_transition',147333910.0 + np.linspace(-50.e3,50.e3,5))
+        # self.xvar('frequency_raman_transition',147310127.5964391 + np.linspace(-100.e3,150.e3,15))
 
-        # self.p.frequency_raman_transition = 145.57e6 # 191. A
-        # self.p.frequency_raman_transition = 147.2526e6 # 182. A
-        self.p.frequency_raman_transition = 1.47412450e+08 # .3 img amp
-        # self.p.frequency_raman_transition = 147269776.8361582 # .3 img amp
+        self.p.frequency_raman_transition = 147245308.6053412 
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.fraction_power_raman = .5
@@ -39,40 +35,30 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
         self.p.t_continuous_rabi = 150.e-6
+
+        # self.xvar('t_raman_pulse',[0.,5.2774e-06 / 2, 5.2774e-06])
+        self.p.t_raman_pulse = 5.2774e-06
         
-        # self.xvar('amp_imaging',np.linspace(0.1,.3,10))
-        # self.xvar('amp_imaging',[0.47894737, 0.52105263, 0.56315789,
-        #                         0.60526316, 0.64736842, 0.68947368, 0.73157895, 0.77368421, 0.81578947,
-        #                         0.85789474, 0.9])
-        self.p.amp_imaging = 1.
-        # self.p.amp_imaging = .8
+        self.xvar('amp_imaging',np.linspace(0.1,1.,10))
+        self.p.amp_imaging = .1
 
         self.p.hf_imaging_detuning = -570.e6 # 182.
 
-        # self.xvar('hf_imaging_detuning_mid',np.arange(-700.,-580.,6)*1.e6)
-        # self.p.hf_imaging_detuning_mid = -690.e6 # -635.e6
-        # self.p.hf_imaging_detuning_mid = -640.e6 # -635.e6
-        self.p.hf_imaging_detuning_mid = -626.e6 # -635.e6
+        # self.xvar('hf_imaging_detuning_mid',np.arange(-660.,-610.,5)*1.e6)
+        self.p.hf_imaging_detuning_mid = -640.e6 # -635.e6
         
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
-        # self.p.dimension_slm_mask = 60.e-6
-        # self.xvar('phase_slm_mask',np.linspace(0.*np.pi,1.*np.pi,15))
-        self.p.phase_slm_mask = 0.857 * np.pi
         self.p.dimension_slm_mask = 20.e-6
 
-        # self.xvar('t_raman_stateprep_pulse',[0.e-6,29.e-6]*50)
+        # self.xvar('phase_slm_mask',np.linspace(0.*np.pi,1.3*np.pi,15))
+        self.p.phase_slm_mask = 0.9 * np.pi
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
-
-        # self.camera_params.exposure_time = 20.e-6
-        # self.params.t_imaging_pulse = self.camera_params.exposure_time
-
-        # self.camera_params.gain = 1.
         
-        self.p.N_repeats = 15
+        self.p.N_repeats = 3
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -96,11 +82,13 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
 
-        # self.raman.pulse(t=self.p.t_raman_stateprep_pulse)
+        # self.raman.pulse(t=self.p.t_raman_pulse)
         
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         self.imaging.on()
+        delay(5.e-6)
         self.raman.pulse(t=self.p.t_continuous_rabi)
+        # delay(50.e-6)
         self.imaging.off()
 
         self.ttl.raman_shutter.off()
