@@ -54,3 +54,13 @@ class Control():
         self.inner_coil.stop_pid()
         self.inner_coil.off()
         self.inner_coil.discharge()
+
+    @kernel
+    def prep_raman(self):
+        self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
+                        fraction_power = self.params.fraction_power_raman)
+        
+        self.ttl.raman_shutter.on()
+        delay(10.e-3)
+        self.ttl.line_trigger.wait_for_line_trigger()
+        delay(4.7e-3)
