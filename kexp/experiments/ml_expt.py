@@ -1,88 +1,133 @@
 
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base
-import numpy as np
-from kexp.calibrations import high_field_imaging_detuning
 from kexp import Base, img_types, cameras
+import numpy as np
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.calibrations.imaging import high_field_imaging_detuning
+from artiq.coredevice.sampler import Sampler
+from artiq.language import now_mu
+from kexp.util.artiq.async_print import aprint
 
-from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
-
-T32 = 1<<32
-
-class mag_trap(EnvExperiment, Base):
+class cont_mon_182_ref(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
-                    camera_select=cameras.xy_basler,
-                    imaging_type=img_types.ABSORPTION)
+        Base.__init__(self,setup_camera=True,
+                    camera_select=cameras.andor,
+                    save_data=True,
+                    imaging_type=img_types.DISPERSIVE)
 
-        self.p.t_tof = 9000.e-6
-        # self.xvar('t_tof',np.linspace(30.,800.,10)*1.e-6)
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.8
+        # self.p.t_hf_tweezer_1064_rampdown3 = 
 
+        # self.xvar('beans',[0,1]*50)
 
-        self.p.detune_d2_c_mot = -0.3270312283086232
-        self.p.detune_d2_r_mot = -5.112520510695003
-        self.p.i_mot = 20.90449450427454
-        self.p.v_zshim_current = 0.460397405678056
-        self.p.v_xshim_current = 0.8386280869221068
-        self.p.v_yshim_current = 4.183319756464202
-        self.p.detune_d1_c_d1cmot = 7.1353078435120985
-        self.p.detune_d2_r_d1cmot = -2.768321992538147
-        self.p.pfrac_d1_c_d1cmot = 0.8744686279456564
-        self.p.amp_d2_r_d1cmot = 0.17067534203590845
-        self.p.v_zshim_current_gm = 0.2759460934295864
-        self.p.v_xshim_current_gm = 3.618017880735826
-        self.p.v_yshim_current_gm = 4.403907722480723
-        self.p.pfrac_d1_c_gm = 0.7626718160310394
-        self.p.pfrac_d1_r_gm = 0.4261476304668388
-        self.p.pfrac_c_gmramp_end = 0.7233073339087661
-        self.p.pfrac_r_gmramp_end = 0.7776491466362678
-        self.p.i_magtrap_init = 66.87512041698928
+        self.p.i_hf_raman = 182.
 
-        self.p.t_magtrap_hold = .15
+        # self.xvar('frequency_raman_transition',147.4e6 + np.linspace(-50.e3,50.e3,15))
 
-        self.p.imaging_state = 2.
+        # self.p.frequency_raman_transition = 145.57e6 # 191. A
+        # self.p.frequency_raman_transition = 147.2526e6 # 182. A
+        # self.p.frequency_raman_transition = 147.2505e6 # .3 img amp
+        self.p.frequency_raman_transition = 147271438.0
 
-        self.p.amp_imaging = .5
+        # self.xvar('amp_raman',np.linspace(0.1,.35,15))
+        self.p.fraction_power_raman = .5
 
-        self.p.N_repeats = 1
-        self.p.t_mot_load = .5
+        # self.xvar('t_raman_stateprep_pulse',[0.,9.9979e-06])
+        self.p.t_raman_stateprep_pulse = (1.0058e-05) / 2
+
+        # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
+        self.p.t_continuous_rabi = 150.e-6
+
+        # self.xvar('amp_imaging',np.linspace(0.1,.3,10))
+        # self.xvar('amp_imaging',[0.47894737, 0.52105263, 0.56315789,
+        #                         0.60526316, 0.64736842, 0.68947368, 0.73157895, 0.77368421, 0.81578947,
+        #                         0.85789474, 0.9])
+        self.p.amp_imaging = 0.1
+        # self.p.amp_imaging = .8
+
+        self.p.hf_imaging_detuning = -570.e6 # 182.
+
+        # self.xvar('hf_imaging_detuning_mid',np.arange(-700.,-580.,5)*1.e6)
+        # self.p.hf_imaging_detuning_mid = -690.e6 # -635.e6
+        self.p.hf_imaging_detuning_mid = -626.e6 # -635.e6
+
+        # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
+        # self.p.dimension_slm_mask = 60.e-6
+        # self.xvar('phase_slm_mask',np.linspace(0.,2.7*np.pi,15))
+        self.p.phase_slm_mask = 0.857 * np.pi
+        self.p.dimension_slm_mask = 20.e-6
+
+        # self.xvar('t_raman_stateprep_pulse',[0.e-6,29.e-6]*50)
+
+        # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
+        self.p.t_tweezer_hold = 20.e-3
+        self.p.t_tof = 20.e-6
+        self.p.t_mot_load = 1.0
+
+        # self.camera_params.exposure_time = 20.e-6
+        # self.params.t_imaging_pulse = self.camera_params.exposure_time
+
+        # self.camera_params.gain = 1.
+
+        self.p.N_repeats = 15
+
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        self.imaging.set_power(power_control_parameter=self.p.amp_imaging)
+        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning_mid)
+        # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
+        self.imaging.set_power(self.p.amp_imaging)
 
-        self.mot(self.p.t_mot_load)
-        self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot)
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
+        self.prepare_hf_tweezers()
 
-        self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,
-                            do_magtrap_rampup=False,
-                            do_magtrap_hold=False,
-                            do_magtrap_rampdown=False)
-        delay(self.p.t_magtrap_hold)
-        self.inner_coil.snap_off()
+        self.raman.init(fraction_power = self.p.fraction_power_raman,
+                        frequency_transition = self.p.frequency_raman_transition)
+
+        self.ttl.raman_shutter.on()
+        delay(10.e-3)
+        self.ttl.line_trigger.wait_for_line_trigger()
+        delay(4.7e-3)
+
+        # self.raman.pulse(t=self.p.t_raman_stateprep_pulse)
+
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        self.imaging.on()
+        self.raman.pulse(t=self.p.t_continuous_rabi)
+        self.imaging.off()
+
+        self.ttl.raman_shutter.off()
+
+        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
+        self.imaging.set_power(.2,reset_pid=True)
+
+        delay(self.p.t_tweezer_hold)
+        self.tweezer.off()
 
         delay(self.p.t_tof)
-        self.flash_repump()
+
         self.abs_image()
+
+        self.core.wait_until_mu(now_mu())
+        self.scope.read_sweep(0)
+        self.core.break_realtime()
+        delay(30.e-3)
 
     @kernel
     def run(self):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        # self.mot_observe()
+        self.mot_observe()
 
     def analyze(self):
         import os
         expt_filepath = os.path.abspath(__file__)
+        # aprint(self.scope._data)
         self.end(expt_filepath)
-

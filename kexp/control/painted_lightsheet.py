@@ -32,7 +32,7 @@ class lightsheet():
         """        
         self.pid_dac = pid_dac
         self.paint_amp_dac = paint_amp_dac
-        self.ttl = sw_ttl
+        self.ttl_sw = sw_ttl
         self.pid_int_zero_ttl = pid_int_hold_zero_ttl # integrator hold, not zero
         self.alignment_shim_dac = alignment_shim_dac
         self.params = expt_params
@@ -40,7 +40,7 @@ class lightsheet():
     @kernel
     def init(self):
         self.paint_amp_dac.set(v=-7.,load_dac=True)
-        self.ttl.off()
+        self.ttl_sw.off()
 
     # @kernel
     # def set_paint_amp(self,paint_fraction=dv,load_dac=True):
@@ -138,10 +138,10 @@ class lightsheet():
             self.paint_amp_dac.set(v=v_awg_am)
         else:
             self.paint_amp_dac.set(v=-7.)
-        self.ttl.on()
+        self.ttl_sw.on()
 
     @kernel
     def off(self):
-        self.ttl.off()
+        self.ttl_sw.off()
         self.pid_dac.set(v=self.params.v_pd_lightsheet_pd_minimum)
         self.zero_pid()

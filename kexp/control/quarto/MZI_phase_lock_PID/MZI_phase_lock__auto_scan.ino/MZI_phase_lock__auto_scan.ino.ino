@@ -24,6 +24,9 @@ volatile float y2max_print = 0.0f;
 volatile float y_at_y2max_print = 0.0f;
 volatile float v_at_y2max_print = 0.0f;
 
+volatile uint16_t pulse_time = 0;
+volatile bool Ifpulse = false;
+
 static constexpr float DT_SEC  = 1.0e-4f;
 static constexpr float OUT_MIN = 0.0f, OUT_MAX = 10.0f;
 
@@ -35,11 +38,13 @@ void adc2Capture();
 void pid1();
 void triangleSweep();
 void autoScan_oneShot();
+void ARTIQcall();
 
 void ping(qCommand& qC, Stream& S);
 void toggleManual(qCommand& qC, Stream& S);
 void togglePrint(qCommand& qC, Stream& S);
 void startScan(qCommand& qC, Stream& S);
+
 
 static inline float clampf(float x, float lo, float hi) {
   return (x < lo) ? lo : (x > hi) ? hi : x;
@@ -47,6 +52,8 @@ static inline float clampf(float x, float lo, float hi) {
 
 void togglePrint(qCommand& qC, Stream& S) { enable_print = !enable_print; }
 void toggleManual(qCommand& qC, Stream& S) { manual_override1 = !manual_override1; }
+
+
 
 void startScan(qCommand& qC, Stream& S) {
   const int mode = (int)lroundf(m);
@@ -59,6 +66,22 @@ void ping(qCommand& qC, Stream& S) {
   Cal cal2;
   readNVMblock(&cal2, sizeof(cal2), 0xFA00);
   Serial.println(cal2.cal_d);
+}
+void ARTIQcall() {
+  static bool  last_trig = false;
+  const bool current_trig = triggerRead(1);
+  const bool rising_edge = (current_trig && !last_trig);
+  last_trig = current_trig;
+  if (rising_edge) {
+    scan_active = true;
+    scan_done   = false;
+  }
+}
+
+void CallArtiq() {
+  writeDAC(4, 5.0f);
+  pulse_time = 1e3;
+  Ifpulse = true;
 }
 
 void setup() {
@@ -87,7 +110,7 @@ void loop() {
   last_ms = millis();
 
   const int mode = (int)lroundf(m);
-
+  
   if (mode == 1) {
     Serial.print("mode 1 ");
     Serial.print("sp:");  Serial.print(sp_print, 4);
@@ -108,7 +131,7 @@ void loop() {
   if (scan_done) {
     scan_done = false;
     Serial.print(" | y2max:"); Serial.print(y2max_print, 3);
-    Serial.print(" y@max:");  Serial.print(y_at_y2max_print, 6);
+    Serial.print(" y at max:");  Serial.print(y_at_y2max_print, 6);
   }
   Serial.println();
 }
@@ -119,7 +142,8 @@ void adc2Capture() {
 
 void phaseLock() {
   const int mode = (int)lroundf(m);
-
+  
+  ARTIQcall();
   if (scan_active) {
     autoScan_oneShot();    
     return;
@@ -132,6 +156,13 @@ void phaseLock() {
   } else {
     y_print = (float)readADC1_from_ISR();
   }
+  if (Ifpulse){
+    if (--pulse_time==0){
+      writeDAC(4, 0.0f);
+      Ifpulse = false;
+    }
+  }
+  writeDAC(3,y2_print);
 }
 
 void pid1() {
@@ -250,13 +281,12 @@ void autoScan_oneShot() {
     y_at_max = y;
     v_at_max = v;
 
-    // live update while scanning (so you see it change)
     y2max_print = y2_max;
     y_at_y2max_print = y_at_max;
     v_at_y2max_print = v_at_max;
   }
   static uint16_t slow_div = 0;
-  static const uint16_t slow_factor = 50;  
+  static const uint16_t slow_factor = 10;  
 
   if (++slow_div >= slow_factor) {
       slow_div = 0;
@@ -275,13 +305,13 @@ void autoScan_oneShot() {
     if (cur_max + cur_min != 0.0f) {
       contrast_print = (cur_max - cur_min) / (cur_max + cur_min);
     }
-
+    CallArtiq();
     y2max_print = y2_max;
     y_at_y2max_print = y_at_max;
     v_at_y2max_print = v_at_max;
-
     set1 = y_at_max;
     scan_active = false;
     scan_done   = true;
   }
+  
 }

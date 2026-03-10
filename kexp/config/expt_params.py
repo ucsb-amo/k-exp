@@ -58,8 +58,8 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 300e-6 
         self.phase_slm_mask = 0.35 * np.pi
-        self.px_slm_phase_mask_position_x = 990
-        self.px_slm_phase_mask_position_y = 826
+        self.px_slm_phase_mask_position_x = 993
+        self.px_slm_phase_mask_position_y = 820
         # Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
@@ -249,7 +249,7 @@ class ExptParams(ExptParamsWaxx):
         # ODT
         # self.amp_lightsheet = 0.6
         # self.frequency_ao_lightsheet = 80.e6
-        self.v_pd_lightsheet_pd_minimum = 0.046
+        self.v_pd_lightsheet_pd_minimum = 0.0
         self.v_lightsheet_paint_amp_max = 3.6
 
         self.v_pd_lightsheet = 7.5
@@ -257,7 +257,7 @@ class ExptParams(ExptParamsWaxx):
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 6.7
         self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .75 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .65 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -276,7 +276,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.5
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.3
         self.n_tweezer_ramp_steps = 1000
 
         self.n_tweezers = 2
@@ -296,7 +296,7 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = .5
-        self.v_hf_tweezer_paint_amp_max = .316 # -1.7
+        self.v_hf_tweezer_paint_amp_max = -2.3571 # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -375,7 +375,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_hf_lightsheet_evap1_current = 193.3
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 193.4
+        self.i_hf_tweezer_load_current = 192.2
         self.i_hf_tweezer_evap1_current = 194.1
         self.i_hf_tweezer_evap2_current = 194.4 # 193.
 

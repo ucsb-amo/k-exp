@@ -7,7 +7,7 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu
 
-class hf_raman(EnvExperiment, Base):
+class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
@@ -15,47 +15,26 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        # self.xvar('beans',[0,1]*50)
+        # self.xvar('beans',[0,1]*2)
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.5,.5,8))
-        # self.p.v_hf_tweezer_paint_amp_max = -2.3571
+        self.p.t_lightsheet_rampbackup = 20.e-3
 
-        self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.5,9.,15))
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.7
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.3
-        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 1.
+        self.xvar('v_lightsheet_rampbackup_end',np.linspace(.1,.5,20))
+        self.p.v_lightsheet_rampbackup_end = 1.
 
-        self.p.i_hf_raman = 182.
-
-        self.p.t_raman_sweep = 1.e-3
-        self.p.frequency_raman_sweep_center = 147.265e6
-        self.p.frequency_raman_sweep_width = 15.e3
-        # self.xvar('frequency_raman_sweep_center', 147.265e6 + np.arange(-100.e3,100.e3,self.p.frequency_raman_sweep_width))
-
-        # self.xvar('frequency_raman_transition',147.2484e6 + np.linspace(-5.e3,5.e3,8))
-        # self.p.frequency_raman_transition = 145.57e6 # 191. A
-        # self.p.frequency_raman_transition = 147.257e6 # 182. A
         self.p.frequency_raman_transition = 147.2505e6 # 182. A
 
-        # self.xvar('t_ramsey', np.linspace(5.e-6, 150.e-6, 8))
-
-        # self.xvar('t_raman_pulse', np.linspace(0., 100., 100)*1.e-6)
-        # self.xvar('t_raman_pulse', [0.,5.27e-6])
-        self.p.t_raman_pulse = 5.2774e-06 / 2
-        # self.p.t_raman_pulse = 200.e-6
-
-        # self.xvar('t_raman_pulse', [0.e-6,12.e-6])
+        # self.xvar('t_raman_pulse', np.linspace(0., 200., 80)*1.e-6)
+        self.p.t_raman_pulse = 1.4746e-05 / 2
 
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
-        # self.p.fraction_power_raman = .99
-        self.p.fraction_power_raman = .5
+        self.p.fraction_power_raman = .99
         
         # self.xvar('amp_imaging',np.linspace(0.1,.4,10))
         # self.p.amp_imaging = .28
         self.p.amp_imaging = .2
 
-        # self.xvar('hf_imaging_detuning',np.linspace(-760.e6,-590.e6,20))
-        # self.xvar('hf_imaging_detuning',np.concatenate((np.arange(-715.e6,-695.e6,2.e6),np.arange(-582.e6,-565.e6,2.e6))))
+        # self.xvar('hf_imaging_detuning',np.linspace(-595.e6,-560.e6,20))
         # self.p.hf_imaging_detuning = -566.e6 # 182. -1
         self.p.hf_imaging_detuning =  -570.e6 # 182. with PID
 
@@ -68,10 +47,10 @@ class hf_raman(EnvExperiment, Base):
         self.p.phase_slm_mask = 2.7 * np.pi
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
-        self.p.t_tweezer_hold = 10.e-3
+        self.p.t_tweezer_hold = 5.e-3
 
-        # self.xvar('t_tof',np.linspace(100.,2000.,30)*1.e-6) 
-        self.p.t_tof = 10.e-6
+        # self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6) 
+        self.p.t_tof = 20.e-6
 
         self.p.t_mot_load = 1.
         
@@ -90,6 +69,13 @@ class hf_raman(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
+
+        self.lightsheet.on()
+        self.lightsheet.pid_int_zero_ttl.off()
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampbackup,
+                             v_start=0.,
+                             v_end=self.p.v_lightsheet_rampbackup_end)
 
         # self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
         #                 fraction_power = self.params.fraction_power_raman)
@@ -113,10 +99,12 @@ class hf_raman(EnvExperiment, Base):
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.raman.pulse(self.p.t_raman_pulse)
 
-        # self.ttl.raman_shutter.off()
+        self.ttl.raman_shutter.off()
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
+
+        self.lightsheet.off()
 
         delay(self.p.t_tof)
 
@@ -128,7 +116,7 @@ class hf_raman(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(setup_slm=False)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         self.mot_observe()
