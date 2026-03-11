@@ -14,11 +14,11 @@ double integral2 = 0.;
 bool pid_enable1 = true;
 bool pid_enable2 = true;
 
-bool manual_override1 = true;
-float v_manual_1 = 8.0;
+bool manual_override1 = false;
+float v_manual_1 = 2.2;
 
-bool manual_override2 = true;
-float v_manual_2 = 8.0;
+bool manual_override2 = false;
+float v_manual_2 = 2.0;
 
 struct Cal 
 {
@@ -50,17 +50,28 @@ void setup() {
 
   qC.addCommand("m1", toggleManual1);
   qC.addCommand("m2", toggleManual2);
-  qC.assignVariable("v1",v_manual_1);
-  qC.assignVariable("v2",v_manual_2);
+  qC.assignVariable("v1", &v_manual_1);
+  qC.assignVariable("v2", &v_manual_2);
 
   Serial.begin(115200);
   qC.addCommand("ping",ping);
 }
 void toggleManual1(qCommand& qC, Stream& S) {
   manual_override1 = !manual_override1;
+  if (manual_override1) {
+    Serial.println("pid 1 in manual mode");
+  } else {
+    Serial.println("pid 1 in PID mode");
+  }
+  
 }
 void toggleManual2(qCommand& qC, Stream& S) {
   manual_override2 = !manual_override2;
+    if (manual_override2) {
+    Serial.println("pid 2 in manual mode");
+  } else {
+    Serial.println("pid 2 in PID mode");
+  }
 }
 //asks for quarto name
 void ping(qCommand& qC, Stream& S)
