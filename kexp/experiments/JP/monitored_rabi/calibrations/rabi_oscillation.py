@@ -15,7 +15,7 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        self.xvar('t_raman_pulse',np.linspace(0.,40.,10)*1.e-6)
+        self.xvar('t_raman_pulse',np.linspace(0.,40.,20)*1.e-6)
 
         self.p.t_tof = 100.e-6
         self.p.N_repeats = 1

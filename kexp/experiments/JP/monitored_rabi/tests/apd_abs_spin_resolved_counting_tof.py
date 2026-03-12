@@ -7,7 +7,7 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu, at_mu
 
-class spin_resolved_counting(EnvExperiment, Base):
+class spin_resolved_counting_tof(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
@@ -17,18 +17,20 @@ class spin_resolved_counting(EnvExperiment, Base):
 
         self.camera_params.amp_imaging = 0.5
 
-        self.p.t_scope_trig_to_pulse_offset = -30.e-6
+        self.p.t_scope_trig_to_pulse_offset = 0.e-6
 
-        self.p.t_reference_delay_from_first_pulse_mu = 300000
+        self.p.t_reference_delay_from_first_pulse_mu = 100000
 
         # self.xvar('t_inter_pulse_time',np.linspace(15.,200.,3)*1.e-6)
-        self.p.t_inter_pulse_time = 100.e-6
+        self.p.t_inter_pulse_time_mu = 10000
 
-        self.p.t_imaging_pulse = 5.e-6
+        self.p.t_imaging_pulse = 10.e-6
         self.p.t_cleanout_pulse = 80.e-6
 
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 200.e-6
         self.p.N_repeats = 1
+
+        self.p.t_tweezer_hold = 1.e-3
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -44,6 +46,10 @@ class spin_resolved_counting(EnvExperiment, Base):
         self.prep_raman()
 
         self.raman.pulse(self.p.t_raman_pi_pulse/2)
+        delay(self.p.t_tweezer_hold)
+
+        self.tweezer.off()
+        delay(self.p.t_tof)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         delay(self.p.t_scope_trig_to_pulse_offset)
@@ -51,38 +57,27 @@ class spin_resolved_counting(EnvExperiment, Base):
         ###
 
         t = now_mu()
-        self.img_pulse()
-        delay(self.p.t_inter_pulse_time)
+        self.imaging.pulse(self.p.t_imaging_pulse)
 
         self.raman.pulse(self.p.t_raman_pi_pulse)
-        delay(10.e-6)
 
-        self.img_pulse()
-        delay(self.p.t_inter_pulse_time)
+        at_mu(t + self.p.t_inter_pulse_time_mu)
+        self.imaging.pulse(self.p.t_imaging_pulse)
 
-        at_mu(t+self.p.t_reference_delay_from_first_pulse_mu)
-        self.img_pulse()
+        at_mu(t + self.p.t_reference_delay_from_first_pulse_mu)
+        self.imaging.pulse(self.p.t_imaging_pulse)
 
         ###
 
         self.ttl.raman_shutter.off()
-        delay(self.p.t_tweezer_hold)
-        self.tweezer.off()
-        delay(self.p.t_tof)
+
+        delay(10.e-3)
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
         self.scope.read_sweep(0)
         self.core.break_realtime()
         delay(30.e-3)
-
-    @kernel
-    def img_pulse(self):
-        self.imaging.pulse(self.p.t_imaging_pulse)
-
-    @kernel
-    def cleanout_pulse(self):
-        self.imaging.pulse(self.p.t_cleanout_pulse)
 
     @kernel
     def run(self):

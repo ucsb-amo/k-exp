@@ -59,7 +59,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_mot_load = 1.0
         
         self.p.N_repeats = 3
-
+        self.p.t_gate_time = 300.e-6
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
         self.finish_prepare(shuffle=True)
@@ -83,13 +83,14 @@ class hf_monitored_rabi(EnvExperiment, Base):
         delay(4.7e-3)
 
         # self.raman.pulse(t=self.p.t_raman_pulse)
-        
+        self.integrator.begin_integrate()
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         self.imaging.on()
-        delay(5.e-6)
+        delay(self.p.t_gate_time - 5.e-6)
         self.raman.pulse(t=self.p.t_continuous_rabi)
         # delay(50.e-6)
         self.imaging.off()
+        v = self.integrator.stop_and_sample()
 
         self.ttl.raman_shutter.off()
         

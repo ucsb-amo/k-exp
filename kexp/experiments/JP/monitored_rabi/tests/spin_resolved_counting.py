@@ -32,7 +32,7 @@ class spin_resolved_counting(EnvExperiment, Base):
         self.prepare_hf_tweezers()
         self.prep_raman()
 
-        self.raman.pulse(self.p.t_raman_pi_pulse/3)
+        self.raman.pulse(self.p.t_raman_pi_pulse/2)
 
         if self.p.do_a_pi_pulse_before_imaging:
             self.raman.pulse(self.p.t_raman_pi_pulse)
@@ -47,16 +47,6 @@ class spin_resolved_counting(EnvExperiment, Base):
 
         delay(self.p.t_tof)
         self.abs_image()
-
-    @kernel
-    def prep_raman(self):
-        self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
-                        fraction_power = self.params.fraction_power_raman)
-        
-        self.ttl.raman_shutter.on()
-        delay(10.e-3)
-        self.ttl.line_trigger.wait_for_line_trigger()
-        delay(4.7e-3)
 
     @kernel
     def run(self):
