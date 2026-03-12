@@ -19,6 +19,7 @@ from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock, BeatLockImag
 from waxx.control.raman_beams import RamanBeamPair
 from waxx.control.cameras.dummy_cam import DummyCamera
 from waxx.control.misc.thorlabs_kinesis import WaveplateRotatorPhotodiodePID
+from waxx.control.integrator import Integrator
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
@@ -186,6 +187,10 @@ class Devices():
             kinesis_device_id = DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR,
             sampler_ch = self.sampler.reference_beam_pd,
             core = self.core)
+        
+        self.integrator = Integrator(ttl_integrate=self.ttl.integrator_int_hold,
+                                     ttl_reset=self.ttl.integrator_reset,
+                                     sampler_ch=self.sampler.apd_integrator)
 
         # camera placeholder
         self.camera = DummyCamera()

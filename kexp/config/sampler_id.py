@@ -13,6 +13,7 @@ class sampler_frame(sampler_frame_waxx):
         ### begin assignments
  
         self.reference_beam_pd = self.sampler_assign(0,gain=0)
+        self.apd_integrator = self.sampler_assign(1,gain=0)
 
         ### end assignments
 
