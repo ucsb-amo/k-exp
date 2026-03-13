@@ -15,7 +15,7 @@ class ramsey(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('frequency_raman_transition', 147.2489e6 + np.linspace(-3.,3,5)*1.e3)
+        self.xvar('frequency_raman_transition', 147.2489e6 + np.linspace(-5.,5,5)*1.e3)
         self.xvar('t_ramsey',np.linspace(0.,300.,10)*1.e-6)
 
         self.p.t_tof = 100.e-6
