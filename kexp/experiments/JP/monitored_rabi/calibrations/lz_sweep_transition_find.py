@@ -15,13 +15,20 @@ class lz_sweep_transition_find(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
+        self.p.fraction_power_raman = 0.25
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_width = 10.e3
         self.xvar('frequency_raman_sweep_center',
-                   147.2489e6 + np.arange(-5.e3,5.e3,self.p.frequency_raman_sweep_width))
+                   147.2489e6 + np.arange(-75.e3,75.e3,self.p.frequency_raman_sweep_width))
+        
+        # self.p.amp_imaging = self.camera_params.amp_imaging
+        self.p.amp_imaging = 0.25
+        # self.xvar('amp_imaging',np.linspace(0.1,0.4,10))
 
         self.p.t_tof = 100.e-6
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
+
+        self.camera_params.gain = 300
 
         self.finish_prepare(shuffle=True)
 
@@ -30,7 +37,7 @@ class lz_sweep_transition_find(EnvExperiment, Base):
 
         # set up weak measurement
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.camera_params.amp_imaging)
+        self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
         self.prep_raman()
@@ -38,7 +45,7 @@ class lz_sweep_transition_find(EnvExperiment, Base):
         self.raman.sweep(t=self.p.t_raman_sweep,
                          frequency_center=self.p.frequency_raman_sweep_center,
                          frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
-                         n_steps=200)
+                         n_steps=100)
 
         self.ttl.raman_shutter.off()
 
