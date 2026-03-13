@@ -6,17 +6,16 @@ from artiq.language.core import kernel_from_string, now_mu, delay
 
 from waxa.data import DataSaver
 from waxx import Expt, img_types as img
-from waxx.base import Monitor
 from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
-from kexp.base import Devices, Cooling, Image, Cameras, Control
+from kexp.base import Devices, Cooling, Image, Cameras, Control, Clients
 from kexp.config.camera_id import cameras
-from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_STATE_FILEPATH, PATHS, server_talk
+from kexp.config.ip import PATHS, server_talk
 from kexp.config.data_vault import DataVault
 
 from kexp.util.artiq.async_print import aprint
 
-class Base(Expt, Devices, Cooling, Image, Cameras, Control):
+class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     def __init__(self,
                  setup_camera=True,
                  save_data=True,
@@ -38,10 +37,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.p = self.params
 
-        self.monitor = Monitor(self,
-                               monitor_server_ip=MONITOR_SERVER_IP,
-                               device_state_json_path=MONITOR_STATE_FILEPATH)
-
         self.prepare_devices(expt_params=self.params)
 
         _img_config = self.choose_camera(setup_camera,imaging_type,camera_select)
@@ -49,6 +44,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
         self.data = DataVault(self)
         self.ds = DataSaver(*PATHS,server_talk=server_talk)
+
+        Clients.__init__(self)
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
@@ -183,7 +180,5 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control):
 
     @kernel
     def end(self, expt_filepath):
-        
-        self.reference_arm_waveplate_pid.close()
         
         self.end_wax(expt_filepath=expt_filepath)
