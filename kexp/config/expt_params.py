@@ -398,6 +398,9 @@ class ExptParams(ExptParamsWaxx):
         # self.n_forced_evap_ramp_steps = 1000
         self.i_forced_evap_ramp_end = 40.
 
+        #
+        self.v_integrated_apd_adc_background = -2.1
+
         self.compute_derived()
 
     def compute_gmramp_params(self):
