@@ -183,10 +183,10 @@ class Devices():
             ao_order_pid=1,
             frequency_pid_ao=80.e6)
         
-        self.reference_arm_waveplate_pid = WaveplateRotatorPhotodiodePID(
-            kinesis_device_id = DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR,
-            sampler_ch = self.sampler.reference_beam_pd,
-            core = self.core)
+        # self.reference_arm_waveplate_pid = WaveplateRotatorPhotodiodePID(
+        #     kinesis_device_id = DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR,
+        #     sampler_ch = self.sampler.reference_beam_pd,
+        #     core = self.core)
         
         self.integrator = Integrator(ttl_integrate=self.ttl.integrator_int_hold,
                                      ttl_reset=self.ttl.integrator_reset,
