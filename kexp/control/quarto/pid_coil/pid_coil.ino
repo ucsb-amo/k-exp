@@ -1,6 +1,14 @@
 #include "qCommand.h"
 qCommand qC;
 
+struct Cal 
+{
+    uint16_t cal_a;
+    double cal_b;
+    uint16_t cal_c;
+    char cal_d[16];
+};
+
 IntervalTimer plot;
 double inputA = 0;
 double inputB = 0;
@@ -49,8 +57,6 @@ double integral2 = 0.;
 bool pid_enable1 = false;
 bool pid_enable2 = false;
 
-
-
 void setup() 
 {
   configureADC(1,1,0,BIPOLAR_10V,getMeas1);
@@ -73,34 +79,36 @@ void setup()
   enableInterruptTrigger(1,BOTH_EDGES,&switch1);
 
   qC.addCommand("c",clear_integrator);
-  qC.addCommand("on",switch_on);
-  qC.addCommand("off",switch_off);
-  qC.addCommand("name",tell_name);
+  // qC.addCommand("on",switch_on);
+  // qC.addCommand("off",switch_off);
+  qC.addCommand("ping",ping);
   P1 = P10;
   I1 = I10;
 }
 
-void get_gains()
+void ping(qCommand& qC, Stream& S)
 {
+  struct Cal cal2;
+  readNVMblock(&cal2, sizeof(cal2), 0xFA00);  
+  Serial.println(cal2.cal_d); 
+}
+
+// void get_gains()
+// {
   
-}
+// }
 
-void switch_on()
-{
-  pid_enable1 = true;
-  integral1 = 0.;
-}
+// void switch_on()
+// {
+//   pid_enable1 = true;
+//   integral1 = 0.;
+// }
 
-void switch_off()
-{
-  pid_enable1 = false;
-  integral1 = 0.;
-}
-
-void tell_name()
-{
-  Serial.println("Magnet Stabilization Quarto");
-}
+// void switch_off()
+// {
+//   pid_enable1 = false;
+//   integral1 = 0.;
+// }
 
 //At TTL edges, check value of TTL, clear integrator, and then enable/disable PID depending on value
 void switch1() 
