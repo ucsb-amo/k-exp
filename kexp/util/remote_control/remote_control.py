@@ -1,4 +1,6 @@
 from kexp.util.remote_control.command_handler import CommandHandler
+from waxx.util.guis.als.als_gui_client import ALSGuiClient
+from kexp.config.ip import ALS_SERVER_IP, ALS_SERVER_PORT
 import logging
 
 # Configure logging
@@ -8,6 +10,8 @@ logger = logging.getLogger(__name__)
 class RemoteControl(CommandHandler):
     def __init__(self):
         super().__init__()
+
+        self.als_client = ALSGuiClient(host=ALS_SERVER_IP, port=ALS_SERVER_PORT)
 
         # Whitelist of approved phone numbers (10 digits, no delimiters)
         self.add_to_whitelist("9165834119")
@@ -24,6 +28,7 @@ class RemoteControl(CommandHandler):
         
         # Command handlers - maps keywords to handler functions
         self.add_command_handler(["sources","source","atoms"], self.handle_sources_command)
+        self.add_command_handler(["als"], self.handle_als_command)
 
     def handle_sources_command(self, value):
         """
@@ -48,6 +53,34 @@ class RemoteControl(CommandHandler):
         except Exception as e:
             logger.error(f"Error controlling sources: {e}")
             return f"Error controlling sources: {e}"
+
+    def handle_als_command(self, value):
+        """Handle ALS startup/shutdown commands sent through remote control."""
+        try:
+            value_lower = value.strip().lower()
+
+            startup_values = {"on", "1", "start"}
+            shutdown_values = {"off", "0", "shutdown"}
+
+            if value_lower in startup_values:
+                ok = self.als_client.run_startup_sequence()
+                if ok:
+                    return "ALS startup sequence requested"
+                return "ALS server did not acknowledge startup request"
+
+            if value_lower in shutdown_values:
+                ok = self.als_client.run_shutdown_sequence()
+                if ok:
+                    return "ALS shutdown sequence requested"
+                return "ALS server did not acknowledge shutdown request"
+
+            return (
+                "Invalid ALS command value. Use one of: "
+                "on, 1, start, off, 0, shutdown"
+            )
+        except Exception as exc:
+            logger.error(f"Error sending ALS command: {exc}")
+            return f"Error sending ALS command: {exc}"
         
 def main():
     """Main function to run the command controller"""
