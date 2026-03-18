@@ -7,6 +7,8 @@ from waxx.control.artiq.TTL import TTL_OUT
 from kexp.config.expt_params import ExptParams
 from kexp.calibrations.magnets import compute_pid_overhead
 
+from kexp.util.artiq.async_print import aprint
+
 dv = -1.
 di = 0
 dv_list = np.linspace(0.,1.,5)

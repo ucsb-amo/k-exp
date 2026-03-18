@@ -15,14 +15,14 @@ class lz_sweep_transition_find(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.fraction_power_raman = 0.25
+        self.p.fraction_power_raman = 0.2
         self.p.t_raman_sweep = 1.e-3
         self.p.frequency_raman_sweep_width = 10.e3
         self.xvar('frequency_raman_sweep_center',
                    147.2489e6 + np.arange(-75.e3,75.e3,self.p.frequency_raman_sweep_width))
         
         # self.p.amp_imaging = self.camera_params.amp_imaging
-        self.p.amp_imaging = 0.25
+        # self.p.amp_imaging = 0.25
         # self.xvar('amp_imaging',np.linspace(0.1,0.4,10))
 
         self.p.t_tof = 100.e-6
@@ -42,10 +42,10 @@ class lz_sweep_transition_find(EnvExperiment, Base):
         self.prepare_hf_tweezers()
         self.prep_raman()
 
-        self.raman.sweep(t=self.p.t_raman_sweep,
-                         frequency_center=self.p.frequency_raman_sweep_center,
-                         frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
-                         n_steps=100)
+        # self.raman.sweep(t=self.p.t_raman_sweep,
+        #                  frequency_center=self.p.frequency_raman_sweep_center,
+        #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
+        #                  n_steps=100)
 
         self.ttl.raman_shutter.off()
 

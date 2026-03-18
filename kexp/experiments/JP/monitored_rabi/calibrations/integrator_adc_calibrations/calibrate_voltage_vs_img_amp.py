@@ -19,8 +19,8 @@ class integrator_test(EnvExperiment, Base):
         self.p.t_gate_time = self.p.t_img_pulse
         # self.xvar('t_gate_time',np.linspace(3.,15.,15)*1.e-6)
 
-        self.p.amplitude_imaging = 0.0
-        self.xvar('amplitude_imaging', np.linspace(0.0,1.3,10))
+        self.p.amplitude_imaging = 1.0
+        # self.xvar('amplitude_imaging', np.linspace(0.0,1.3,10))
         
         self.p.N_repeats = 1
 
@@ -28,6 +28,7 @@ class integrator_test(EnvExperiment, Base):
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+        
         self.finish_prepare(shuffle=True)
 
     @kernel

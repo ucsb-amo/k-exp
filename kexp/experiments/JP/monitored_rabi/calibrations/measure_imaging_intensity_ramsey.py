@@ -15,12 +15,20 @@ class ramsey(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        # self.xvar('frequency_raman_transition', 147.2521e6 + np.linspace(-2.,2,5)*1.e3)
-        self.xvar('frequency_raman_transition', self.p.frequency_raman_transition + np.arange(-5.,5,0.5)*1.e3)
-        self.xvar('t_ramsey',np.linspace(0.,60.,10)*1.e-6)
+        self.p.frequency_shift_per_imaging_amp_estimation = 161.e3 # Hz/V
+
+        self.p.amp_imaging = 0.5
+        self.p.frequency_raman_transition_detuning = 0.
+        self.p.t_ramsey = 0.
+
+        # self.xvar('amp_imaging',np.linspace(0.1,0.5,10))
+        self.xvar('frequency_raman_transition_detuning', np.linspace(-5.,5.,8)*1.e3)
+        self.xvar('t_ramsey',np.linspace(0.,100.,10)*1.e-6)
 
         self.p.t_tof = 100.e-6
         self.p.N_repeats = 1
+
+        self.data.frequency_raman_transition = self.data.add_data_container()
 
         self.finish_prepare(shuffle=True)
 
@@ -28,17 +36,29 @@ class ramsey(EnvExperiment, Base):
     def scan_kernel(self):
 
         # set up weak measurement
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.camera_params.amp_imaging)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_midpoint)
+        if self.p.amp_imaging != 0.:
+            self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
-        self.prep_raman()
 
+        f0 = self.p.frequency_raman_transition
+        df_per_img_v = self.p.frequency_shift_per_imaging_amp_estimation
+        f = f0 + df_per_img_v * self.p.amp_imaging + self.p.frequency_raman_transition_detuning
+        
+        self.prep_raman(frequency_raman=f)
+
+        if self.p.amp_imaging != 0.:
+            self.imaging.on()
         self.raman.pulse(self.p.t_raman_pi_pulse/2)
         delay(self.p.t_ramsey)
         self.raman.pulse(self.p.t_raman_pi_pulse/2)
+        self.imaging.off()
 
         self.ttl.raman_shutter.off()
+
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.imaging.set_power(self.camera_params.amp_imaging)
 
         delay(self.p.t_tweezer_hold)
 
@@ -46,6 +66,10 @@ class ramsey(EnvExperiment, Base):
 
         delay(self.p.t_tof)
         self.abs_image()
+
+        self.core.wait_until_mu(now_mu())
+        self.data.frequency_raman_transition.put_data(f)
+        self.core.break_realtime()
 
     @kernel
     def run(self):
