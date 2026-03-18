@@ -107,6 +107,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if init_imaging:
             self.imaging.init()
             self.set_imaging_detuning()
+            self.imaging.set_power(self.camera_params.amp_imaging)
         if init_sampler:
             self.sampler.init()
         if beat_ref_on:
