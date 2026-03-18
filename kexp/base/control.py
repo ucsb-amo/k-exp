@@ -56,8 +56,12 @@ class Control():
         self.inner_coil.discharge()
 
     @kernel
-    def prep_raman(self):
-        self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
+    def prep_raman(self, frequency_raman = dv):
+        
+        if frequency_raman == dv:
+            frequency_raman = self.p.frequency_raman_transition
+
+        self.raman.init(frequency_transition = frequency_raman, 
                         fraction_power = self.params.fraction_power_raman)
         
         self.ttl.raman_shutter.on()
