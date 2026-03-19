@@ -13,21 +13,24 @@ class rabi_oscillation(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.DISPERSIVE)
 
-        self.p.amp_imaging_pci = 1.
+        self.p.amp_imaging_pci = 0.3
+        # self.xvar('amp_imaging_pci',np.linspace(0.3,1.5,5))
 
-        self.p.t_imaging_pulse = 5.e-6
-        self.p.t_gate_time = self.p.t_imaging_pulse
+        # self.p.fraction_power_raman = 
 
-        self.p.phase_slm_mask = 0.9 * np.pi
-        # self.p.dimension_slm_mask = 20.e-6
+        self.p.t_imaging_pulse = 30.e-6
+
+        # self.p.t_raman_pi_pulse = 3.5635e-6
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse/2
+        # self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse + np.linspace(-0.1,0.1,10)*1.e-6)
 
         self.p.t_tof = 100.e-6
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
 
-        self.p.N_pulses = 6
-        self.data.apd = self.data.add_data_container(self.p.N_pulses)
+        self.p.N_pulses = 15
+        self.data.apd = self.data.add_data_container(self.p.N_pulses + 1)
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
         self.finish_prepare(shuffle=True)
@@ -49,6 +52,7 @@ class rabi_oscillation(EnvExperiment, Base):
 
         delay(10.e-6)
 
+        i = 0
         for i in range(self.p.N_pulses):
         
             self.integrator.begin_integrate()
@@ -58,25 +62,30 @@ class rabi_oscillation(EnvExperiment, Base):
 
             delay(3.e-6)
 
-            self.raman.pulse(self.p.t_raman_pi_pulse)
+            self.raman.pulse(self.p.t_raman_pulse)
 
             delay(3.e-6)
 
         self.ttl.raman_shutter.off()
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.camera_params.amp_imaging)
-
         delay(self.p.t_tweezer_hold)
 
         self.tweezer.off()
+
+        delay(10.e-3)
+
+        # reference pulse
+        self.integrator.begin_integrate()
+        self.imaging.pulse(self.p.t_imaging_pulse)
+        self.data.apd.temp_array[self.p.N_pulses] = self.integrator.stop_and_sample()
+        self.integrator.clear()
 
         delay(self.p.t_tof)
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
         self.data.apd.put_data(self.data.apd.temp_array)
-        self.scope.read_sweep([0,2,3])
+        self.scope.read_sweep([0])
         self.core.break_realtime()
         delay(150.e-3)
 

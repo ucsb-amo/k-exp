@@ -13,17 +13,12 @@ class hf_monitored_rabi(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=False,
+                      save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.t_imaging_pulse = 30.e-6
-        self.xvar('dummy',[0]*1000)
-        # self.xvar('t_raman_pulse',np.linspace(0.,25.,10)*1.e-6)
-        # self.xvar('phase_slm_mask',np.linspace(0.,3.,7)*np.pi)
-        # self.xvar('frequency_detuned_hf_midpoint',
-        #           self.p.frequency_detuned_hf_midpoint+np.arange(-30.e6,30.e6+6.e6,6.e6))
-        
-        # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
+        self.p.t_imaging_pulse = 10.e-6
+        self.p.N_pulses = 1000
+
         self.p.amp_imaging = 1.2
 
         self.p.t_tweezer_hold = 20.e-3
@@ -31,9 +26,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
-        self.camera_params.gain = 100
-
-        # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+        self.data.apd = self.data.add_data_container(self.p.N_pulses)
 
         self.finish_prepare(shuffle=False)
 
@@ -43,25 +36,24 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers()
-        self.prep_raman()
-
         delay(10.e-3)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
-        self.imaging.pulse(self.p.t_imaging_pulse)
-        delay(self.p.t_imaging_pulse)
-        self.raman.pulse(self.p.t_raman_pi_pulse)
-        self.imaging.pulse(self.p.t_imaging_pulse)
-        self.tweezer.off()
-        delay(600.e-6)
-        self.imaging.pulse(self.p.t_imaging_pulse)
+        for i in range(self.p.N_pulses):
+            self.integrator.begin_integrate()
+            self.imaging.pulse(self.p.t_imaging_pulse)
+            v = self.integrator.stop_and_sample()
+            self.integrator.clear()
+            self.data.apd.temp_array[i] = v
+            delay(15.e-6)
 
-        delay(self.p.t_tof)
-
-        delay(100.e-3)
+        delay(10.e-3)
 
         self.abs_image()
+
+        self.core.wait_until_mu(now_mu())
+        self.data.apd.put_data(self.data.apd.temp_array)
+        self.core.break_realtime()
 
     @kernel
     def run(self):

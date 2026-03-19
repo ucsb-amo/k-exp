@@ -8,15 +8,14 @@ class rabi_oscillation(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=True,
+                      save_data=False,
                       imaging_type=img_types.ABSORPTION)
         
-
-        self.p.fraction_power_raman = 1.
-        self.xvar('t_raman_pulse',np.linspace(0.,50.,30)*1.e-6)
+        self.p.fraction_power_raman = 0.5
+        # self.xvar('t_raman_pulse',np.linspace(0.,50.,30)*1.e-6)
 
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 5000
 
         self.finish_prepare(shuffle=True)
 
@@ -29,7 +28,7 @@ class rabi_oscillation(EnvExperiment, Base):
         self.prepare_hf_tweezers()
         self.prep_raman()
         
-        self.raman.pulse(self.p.t_raman_pulse)
+        self.raman.pulse(self.p.t_raman_pi_pulse * 8)
 
         self.ttl.raman_shutter.off()
 

@@ -18,30 +18,30 @@ class hf_monitored_rabi(EnvExperiment, Base):
         
         self.p.t_readout = 10.e-6
         self.p.t_raman_pulse = 0.
-        # self.xvar('t_raman_pulse',np.linspace(0., self.p.t_raman_pi_pulse, 4))
-        self.xvar('t_raman_pulse',np.linspace(0.,25.,30)*1.e-6)
+        self.xvar('t_raman_pulse',np.linspace(0., self.p.t_raman_pi_pulse, 7))
+        # self.xvar('t_raman_pulse',np.linspace(0.,25.,30)*1.e-6)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 1.2
+        self.p.amp_imaging = 1.5
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 10
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
         self.camera_params.gain = 300
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
         
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_midpoint)
-        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
+        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
@@ -70,9 +70,9 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.core.wait_until_mu(now_mu())
         self.data.apd.put_data(v)
-        self.scope.read_sweep([0,2,3])
+        self.scope.read_sweep([0,3])
         self.core.break_realtime()
-        delay(30.e-3)
+        delay(100.e-3)
 
     @kernel
     def run(self):

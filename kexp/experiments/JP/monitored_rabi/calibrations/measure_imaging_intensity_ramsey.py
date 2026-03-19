@@ -21,8 +21,8 @@ class ramsey(EnvExperiment, Base):
         self.p.frequency_raman_transition_detuning = 0.
         self.p.t_ramsey = 0.
 
-        # self.xvar('amp_imaging',np.linspace(0.1,0.5,10))
-        self.xvar('frequency_raman_transition_detuning', np.linspace(-5.,5.,8)*1.e3)
+        self.xvar('amp_imaging',np.linspace(0.05,0.1,4))
+        # self.xvar('frequency_raman_transition_detuning', np.linspace(-5.,5.,8)*1.e3)
         self.xvar('t_ramsey',np.linspace(0.,100.,10)*1.e-6)
 
         self.p.t_tof = 100.e-6
@@ -42,11 +42,11 @@ class ramsey(EnvExperiment, Base):
 
         self.prepare_hf_tweezers()
 
-        f0 = self.p.frequency_raman_transition
-        df_per_img_v = self.p.frequency_shift_per_imaging_amp_estimation
-        f = f0 + df_per_img_v * self.p.amp_imaging + self.p.frequency_raman_transition_detuning
+        # f0 = self.p.frequency_raman_transition
+        # df_per_img_v = self.p.frequency_shift_per_imaging_amp_estimation
+        # f = f0 + df_per_img_v * self.p.amp_imaging + self.p.frequency_raman_transition_detuning
         
-        self.prep_raman(frequency_raman=f)
+        self.prep_raman()
 
         if self.p.amp_imaging != 0.:
             self.imaging.on()
