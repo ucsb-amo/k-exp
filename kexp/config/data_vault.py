@@ -6,3 +6,5 @@ class DataVault(DataVaultWax):
         super().__init__(expt)
         
         self.apd = self.add_data_container(1, np.float64)
+
+        self.b = self.add_data_container(1)

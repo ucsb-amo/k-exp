@@ -74,6 +74,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     init_lightsheet = True,
                     setup_awg = True, 
                     setup_slm = True,
+                    init_magnets = True,
                     init_ry = True):
         
         self.core.reset()
@@ -115,6 +116,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             # self.dds.d1_beatlock_ref.on()
         if init_lightsheet:
             self.lightsheet.init()
+        if init_magnets:
+            self.outer_coil.off()
+            self.inner_coil.off()
         # if init_ry:
             # self.ry_405.init()
         
@@ -125,10 +129,18 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.scope_data.arm()
         self.core.break_realtime()
 
+        self.set_shims(0.,0.,0.)
+        self.dac.supply_current_2dmot.set(0.)
+        delay(10.e-3)
+        self.core.wait_until_mu(now_mu())
+        b_magnitude = self.magnetometer.get_field_magnitude()
+        self.data.b.put_data(b_magnitude)
+        self.core.break_realtime()
+
         # self.slm.check_for_old_setting()
         
         self.core.reset()
-        delay(10.e-3)
+        self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)
         self.set_imaging_shutters()
         delay(10.e-3)
         self.init_cooling()
