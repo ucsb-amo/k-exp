@@ -43,7 +43,8 @@ class ExptParams(ExptParamsWaxx):
         # hf imaging settings with i_outer = 182
         self.frequency_detuned_hf_f1m1 = -570.e6
         self.frequency_detuned_hf_f2m2 = -710.e6
-        self.frequency_detuned_hf_midpoint = -640.e6
+        # self.frequency_detuned_hf_midpoint = -640.e6
+        self.frequency_detuned_hf_midpoint = -670.e6
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
@@ -109,6 +110,11 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_single_move = 4.e-3
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
+
+        self.t_tweezer_squeezer_ramp_1 = 10.e-3
+        self.t_tweezer_squeezer_ramp_2 = 10.e-3
+        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9.
+        self.v_pd_hf_tweezer_squeeze_power = 0.5
 
         self.t_ramp_down_painting_amp = 15.e-3
         
