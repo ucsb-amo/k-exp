@@ -19,13 +19,12 @@ class ramsey(EnvExperiment, Base):
 
         self.p.frequency_shift_per_imaging_amp_estimation = 161.e3 # Hz/V
 
-        self.p.amp_imaging = 1.9
-        self.p.frequency_raman_transition_detuning = 0.
+        self.p.amp_imaging = 0.
         self.p.t_ramsey = 0.
 
         # self.xvar('amp_imaging',np.linspace(0.,1.,4))
         # self.xvar('frequency_raman_transition_detuning', np.linspace(-5.,5.,8)*1.e3)
-        # self.xvar('t_ramsey',np.linspace(0.,100.,20)*1.e-6)
+        self.xvar('t_ramsey',np.linspace(0.,150.,20)*1.e-6)
         self.p.t_ramsey = 100.e-6
 
         self.p.t_tof = 20.e-6
@@ -54,11 +53,10 @@ class ramsey(EnvExperiment, Base):
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         if self.p.amp_imaging != 0.:
-            aprint('hi')
             self.imaging.on()
-        # self.raman.pulse(self.p.t_raman_pi_pulse/2)
+        self.raman.pulse(self.p.t_raman_pi_pulse/2)
         delay(self.p.t_ramsey)
-        # self.raman.pulse(self.p.t_raman_pi_pulse/2)
+        self.raman.pulse(self.p.t_raman_pi_pulse/2)
         self.imaging.off()
 
         self.ttl.raman_shutter.off()

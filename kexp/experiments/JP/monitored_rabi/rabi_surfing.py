@@ -15,8 +15,8 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.amp_imaging_pci = 1.5
-        # self.xvar('amp_imaging_pci',np.linspace(0.3,1.5,5))
+        # self.p.amp_imaging_pci = 1.0
+        self.xvar('amp_imaging_pci',np.linspace(0.3,1.5,5))
 
         # self.p.fraction_power_raman = 
 
@@ -24,7 +24,7 @@ class rabi_oscillation(EnvExperiment, Base):
 
         # self.p.t_raman_pi_pulse = 3.5635e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
-        self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse + np.linspace(-1.,1.,10)*1.e-6)
+        # self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse + np.linspace(-1.,1.,10)*1.e-6)
 
         # self.xvar('phase_rabi_surf_train_radians',np.linspace(0.,np.pi,5))
         self.p.phase_rabi_surf_train_radians = 0.
@@ -34,7 +34,7 @@ class rabi_oscillation(EnvExperiment, Base):
         self.p.t_tof = 100.e-6
         self.p.N_repeats = 1
 
-        self.p.N_pulses = 30
+        self.p.N_pulses = 25
         self.data.apd = self.data.add_data_container(self.p.N_pulses + 1)
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
@@ -51,7 +51,6 @@ class rabi_oscillation(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging_pci)
 
         self.prepare_hf_tweezers()
-        self.tweezer_squeeze()
 
         self.prep_raman()
         
@@ -60,14 +59,14 @@ class rabi_oscillation(EnvExperiment, Base):
         t_offset = self.p.phase_rabi_surf_train_radians * (self.p.t_raman_pi_pulse / np.pi)
         self.raman.pulse(t_offset)
 
-        delay(10.e-6)
+        delay(5.e-6)
 
         i = 0
         for i in range(self.p.N_pulses):
         
             self.integrator.begin_integrate()
             self.imaging.pulse(self.p.t_imaging_pulse)
-            self.data.apd.temp_array[i] = self.integrator.stop_and_sample()
+            self.data.apd.shot_data[i] = self.integrator.stop_and_sample()
             self.integrator.clear()
 
             delay(3.e-6)
@@ -94,7 +93,6 @@ class rabi_oscillation(EnvExperiment, Base):
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        self.data.apd.put_data(self.data.apd.temp_array)
         self.scope.read_sweep([0])
         self.core.break_realtime()
         delay(150.e-3)

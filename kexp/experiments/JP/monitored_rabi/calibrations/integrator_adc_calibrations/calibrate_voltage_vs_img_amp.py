@@ -54,6 +54,7 @@ class integrator_test(EnvExperiment, Base):
             delay(self.p.t_gate_time - self.p.t_img_pulse)
             # delay(300.e-9)
             # self.data.apd.temp_array[i] = self.integrator.stop_and_sample()
+
             # self.data.apd.put_data(self.integrator.stop_and_sample(),idx=i)
 
             self.data.apd.shot_data[i] = self.integrator.stop_and_sample()

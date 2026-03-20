@@ -352,7 +352,7 @@ class ExptParams(ExptParamsWaxx):
 
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
         # self.frequency_raman_transition = 147.2492e6
-        self.frequency_raman_transition = 147.2586e6 #61715
+        self.frequency_raman_transition = 147.2583e6 #61766
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
         self.frequency_raman_transition_nf_10_21 = 462.85e6 # 1.5 G 1,-1 to 2,0

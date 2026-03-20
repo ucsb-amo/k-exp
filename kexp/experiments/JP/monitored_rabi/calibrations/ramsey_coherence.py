@@ -15,11 +15,7 @@ class ramsey(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        # self.xvar('frequency_raman_transition', 147.2521e6 + np.linspace(-2.,2,5)*1.e3)
-        # self.xvar('frequency_raman_transition', self.p.frequency_raman_transition + np.arange(-20.,20.,1.)*1.e3)
-        self.xvar('frequency_raman_transition', 147.26e6 + np.arange(-3.,3.,1.)*1.e3)
-        self.xvar('t_ramsey',np.linspace(0.,100.,5)*1.e-6)
-        # self.p.t_ramsey = 40.e-6
+        self.xvar('t_ramsey',np.linspace(0.,300.,30)*1.e-6)
 
         self.p.t_tof = 10.e-6
         self.p.N_repeats = 1
