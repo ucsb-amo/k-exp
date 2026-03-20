@@ -133,7 +133,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # self.slm.check_for_old_setting()
         
         self.core.reset()
-
+        
         self.reset_devices()
 
         self.reset_tweezers(two_d_tweezers)
@@ -178,6 +178,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.core.break_realtime()
         self.ttl.line_trigger.clear_input_events()
+
+        self.cleanup_scan_kernel_wax()
 
     @kernel
     def post_scan(self):

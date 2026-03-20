@@ -1,5 +1,5 @@
 import numpy as np
-from waxa.data import DataVault as DataVaultWax
+from waxx.config.data_vault import DataVault as DataVaultWax
 
 class DataVault(DataVaultWax):
     def __init__(self, expt):
