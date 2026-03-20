@@ -17,6 +17,7 @@ from kexp.control.awg_tweezer import tweezer
 from kexp.control.painted_lightsheet import lightsheet
 from waxx.control.integrator import Integrator
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient
+from waxx.control.misc.oscilloscopes import ScopeData
 
 dv = -0.1
 dvlist = np.linspace(1.,1.,5)
@@ -40,6 +41,7 @@ class Control():
         self.raman_nf = RamanBeamPair()
         self.magnetometer = HMRClient()
         self.integrator = Integrator()
+        self.scope_data = ScopeData()
         self.p = self.params
 
     @kernel
@@ -55,6 +57,21 @@ class Control():
                           v_start=tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
                           v_end=self.p.v_pd_hf_tweezer_squeeze_power,
                           paint=False,keep_trap_frequency_constant=False)
+        
+    @kernel
+    def reset_tweezers(self, two_d_tweezers):
+        if self._setup_awg:
+            if two_d_tweezers:
+                self.tweezer.set_static_2d_tweezers(freq_list1=self.params.frequency_tweezer_list1,
+                                                    freq_list2=self.params.frequency_tweezer_list2,
+                                                    amp_list1=self.params.amp_tweezer_list1,
+                                                    amp_list2=self.params.amp_tweezer_list2)
+            self.tweezer.reset_traps(self.xvarnames)
+            delay(100.e-3)
+            self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
+        
+        self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
+        self.tweezer.pid1_int_hold_zero.on()
 
     @kernel
     def reset_coils(self):
@@ -75,6 +92,12 @@ class Control():
         self.inner_coil.stop_pid()
         self.inner_coil.off()
         self.inner_coil.discharge()
+
+    @kernel
+    def arm_scopes(self):
+        self.core.wait_until_mu(now_mu())
+        self.scope_data.arm()
+        self.core.break_realtime()
 
     @kernel
     def background_field(self):

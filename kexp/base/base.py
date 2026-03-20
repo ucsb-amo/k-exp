@@ -125,9 +125,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):
 
-        self.core.wait_until_mu(now_mu())
-        self.scope_data.arm()
-        self.core.break_realtime()
+        self.arm_scopes()
 
         self.background_field()
         self.read_magnetometer()
@@ -135,9 +133,18 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # self.slm.check_for_old_setting()
         
         self.core.reset()
+
+        self.reset_devices()
+
+        self.reset_tweezers(two_d_tweezers)
+        
+        # self.dds.d1_beatlock_ref.on()
+
+    @kernel
+    def reset_devices(self):
+        # 2D MOT current back on
         self.dac.supply_current_2dmot.set(v=self.p.v_2d_mot_current)
-        self.set_imaging_shutters()
-        delay(10.e-3)
+        
         self.init_cooling()
         self.core.break_realtime()
 
@@ -145,36 +152,22 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.set_all_dds()
         self.core.break_realtime()
 
+        # turn on 2D MOT beams
         self.dds.d2_2dh_c.on()
         self.dds.d2_2dh_r.on()
         self.dds.d2_2dv_c.on()
         self.dds.d2_2dv_r.on()
         self.dds.push.on()
 
-        # self.dds.d1_beatlock_ref.set_dds(frequency=42.e6)
-
+        # reset imaging detuning, power
+        self.set_imaging_shutters()
+        delay(10.e-3)
         if self.p.imaging_state == 1.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_F1)
         elif self.p.imaging_state == 2.:
             self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
-        
         self.imaging.set_power(self.camera_params.amp_imaging,
                                 reset_pid=False)
-
-        if self._setup_awg:
-            if two_d_tweezers:
-                self.tweezer.set_static_2d_tweezers(freq_list1=self.params.frequency_tweezer_list1,
-                                                    freq_list2=self.params.frequency_tweezer_list2,
-                                                    amp_list1=self.params.amp_tweezer_list1,
-                                                    amp_list2=self.params.amp_tweezer_list2)
-            self.tweezer.reset_traps(self.xvarnames)
-            delay(100.e-3)
-            self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
-        
-        self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
-        self.tweezer.pid1_int_hold_zero.on()
-        
-        # self.dds.d1_beatlock_ref.on()
 
     @kernel
     def cleanup_scan_kernel(self):
