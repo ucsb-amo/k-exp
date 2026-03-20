@@ -129,13 +129,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.scope_data.arm()
         self.core.break_realtime()
 
-        self.set_shims(0.,0.,0.)
-        self.dac.supply_current_2dmot.set(0.)
-        delay(10.e-3)
-        self.core.wait_until_mu(now_mu())
-        b_magnitude = self.magnetometer.get_field_magnitude()
-        self.data.b.put_data(b_magnitude)
-        self.core.break_realtime()
+        self.background_field()
+        self.read_magnetometer()
 
         # self.slm.check_for_old_setting()
         
@@ -192,6 +187,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.ttl.line_trigger.clear_input_events()
 
     @kernel
+    def post_scan(self):
+        self.background_field()
+
+    @kernel
     def end(self, expt_filepath):
-        
         self.end_wax(expt_filepath=expt_filepath)
