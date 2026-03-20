@@ -17,7 +17,7 @@ from kexp.control.painted_lightsheet import lightsheet
 dv = -0.1
 dvlist = np.linspace(1.,1.,5)
 
-from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2, tweezer_vpd2_to_vpd1
 
 class Control():
     def __init__(self):
@@ -33,6 +33,20 @@ class Control():
         self.raman = RamanBeamPair()
         self.raman_nf = RamanBeamPair()
         self.p = self.params
+
+    @kernel
+    def tweezer_squeeze(self):
+        self.tweezer.paint_amp_dac.set(-7.)
+        
+        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
+                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                          v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
+                          low_power=True, paint=False, keep_trap_frequency_constant=False)
+
+        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
+                          v_start=tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
+                          v_end=self.p.v_pd_hf_tweezer_squeeze_power,
+                          paint=False,keep_trap_frequency_constant=False)
 
     @kernel
     def reset_coils(self):
