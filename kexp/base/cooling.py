@@ -41,7 +41,7 @@ class Cooling():
     #         self.tweezer.off()
 
     @kernel
-    def prepare_hf_tweezers(self):
+    def prepare_hf_tweezers(self, squeeze=True):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
         """   
@@ -124,6 +124,9 @@ class Cooling():
         
         delay(15.e-3)
         self.ttl.pd_scope_trig.pulse(1.e-6)
+
+        if squeeze:
+            self.tweezer_squeeze()
 
     @kernel
     def prepare_lf_tweezers(self):
