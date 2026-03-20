@@ -48,9 +48,9 @@ double v_manual = 6.;
 
 //updated 2026-03-17
 float P10 = 5.0;
-float I10 = 0.005000;
-float P11 = 20.;
-float I11 = 0.02;
+float I10 = 0.006;
+float P11 = 2.;
+float I11 = 0.5;
 float P1 = 0;
 float I1 = 0;
 float D1 = 0;
@@ -60,7 +60,7 @@ float D1 = 0;
 //float CH2F2 = 0.05;
 float CH2F = (2/3)*0.05;
 
-float gain_change_threshold = 0.0005;
+float gain_change_threshold = 0.002;
 //float Vgs_threshold1 = 5.7;
 
 double integral1 = 0.;
