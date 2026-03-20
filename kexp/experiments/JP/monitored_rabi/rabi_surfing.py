@@ -15,8 +15,8 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        # self.p.amp_imaging_pci = 1.5
-        self.xvar('amp_imaging_pci',np.linspace(0.3,1.5,5))
+        self.p.amp_imaging_pci = 1.5
+        # self.xvar('amp_imaging_pci',np.linspace(0.3,1.5,5))
 
         # self.p.fraction_power_raman = 
 
@@ -24,7 +24,7 @@ class rabi_oscillation(EnvExperiment, Base):
 
         # self.p.t_raman_pi_pulse = 3.5635e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
-        # self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse + np.linspace(-1.,1.,10)*1.e-6)
+        self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse + np.linspace(-1.,1.,10)*1.e-6)
 
         # self.xvar('phase_rabi_surf_train_radians',np.linspace(0.,np.pi,5))
         self.p.phase_rabi_surf_train_radians = 0.

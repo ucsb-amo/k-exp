@@ -7,6 +7,8 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu
 
+from kexp.util.artiq.async_print import aprint
+
 class ramsey(EnvExperiment, Base):
 
     def prepare(self):
@@ -17,18 +19,19 @@ class ramsey(EnvExperiment, Base):
 
         self.p.frequency_shift_per_imaging_amp_estimation = 161.e3 # Hz/V
 
-        self.p.amp_imaging = 0.5
+        self.p.amp_imaging = 1.9
         self.p.frequency_raman_transition_detuning = 0.
         self.p.t_ramsey = 0.
 
-        self.xvar('amp_imaging',np.linspace(0.05,0.1,4))
+        # self.xvar('amp_imaging',np.linspace(0.,1.,4))
         # self.xvar('frequency_raman_transition_detuning', np.linspace(-5.,5.,8)*1.e3)
-        self.xvar('t_ramsey',np.linspace(0.,100.,10)*1.e-6)
+        # self.xvar('t_ramsey',np.linspace(0.,100.,20)*1.e-6)
+        self.p.t_ramsey = 100.e-6
 
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 20.e-6
         self.p.N_repeats = 1
 
-        self.data.frequency_raman_transition = self.data.add_data_container()
+        # self.data.frequency_raman_transition = self.data.add_data_container()
 
         self.finish_prepare(shuffle=True)
 
@@ -41,6 +44,7 @@ class ramsey(EnvExperiment, Base):
             self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
+        self.tweezer_squeeze()
 
         # f0 = self.p.frequency_raman_transition
         # df_per_img_v = self.p.frequency_shift_per_imaging_amp_estimation
@@ -48,11 +52,13 @@ class ramsey(EnvExperiment, Base):
         
         self.prep_raman()
 
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
         if self.p.amp_imaging != 0.:
+            aprint('hi')
             self.imaging.on()
-        self.raman.pulse(self.p.t_raman_pi_pulse/2)
+        # self.raman.pulse(self.p.t_raman_pi_pulse/2)
         delay(self.p.t_ramsey)
-        self.raman.pulse(self.p.t_raman_pi_pulse/2)
+        # self.raman.pulse(self.p.t_raman_pi_pulse/2)
         self.imaging.off()
 
         self.ttl.raman_shutter.off()
@@ -67,9 +73,9 @@ class ramsey(EnvExperiment, Base):
         delay(self.p.t_tof)
         self.abs_image()
 
-        self.core.wait_until_mu(now_mu())
-        self.data.frequency_raman_transition.put_data(f)
-        self.core.break_realtime()
+        # self.core.wait_until_mu(now_mu())
+        # self.data.frequency_raman_transition.put_data(f)
+        # self.core.break_realtime()
 
     @kernel
     def run(self):

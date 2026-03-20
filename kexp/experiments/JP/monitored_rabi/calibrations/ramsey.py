@@ -17,11 +17,11 @@ class ramsey(EnvExperiment, Base):
 
         # self.xvar('frequency_raman_transition', 147.2521e6 + np.linspace(-2.,2,5)*1.e3)
         # self.xvar('frequency_raman_transition', self.p.frequency_raman_transition + np.arange(-20.,20.,1.)*1.e3)
-        self.xvar('frequency_raman_transition', 147.26e6 + np.arange(-4.,4.,1.)*1.e3)
-        self.xvar('t_ramsey',np.linspace(0.,60.,10)*1.e-6)
+        self.xvar('frequency_raman_transition', 147.26e6 + np.arange(-3.,3.,1.)*1.e3)
+        self.xvar('t_ramsey',np.linspace(0.,100.,15)*1.e-6)
         # self.p.t_ramsey = 40.e-6
 
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 10.e-6
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
@@ -34,6 +34,7 @@ class ramsey(EnvExperiment, Base):
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers()
+        self.tweezer_squeeze()
         self.prep_raman()
 
         self.raman.pulse(self.p.t_raman_pi_pulse/2)
@@ -54,7 +55,6 @@ class ramsey(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe()
 
     def analyze(self):
         import os

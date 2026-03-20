@@ -23,7 +23,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('frequency_detuned_hf_midpoint',
         #           self.p.frequency_detuned_hf_midpoint+np.linspace(-40.e6,40.e6,15))
 
-        self.p.frequency_detuned_hf_midpoint = -670.e6
+        # self.p.frequency_detuned_hf_midpoint = -670.e6
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
         self.p.amp_imaging = 1.2
