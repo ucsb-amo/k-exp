@@ -20,7 +20,7 @@ class integrator_test(EnvExperiment, Base):
         # self.xvar('t_gate_time',np.linspace(3.,15.,15)*1.e-6)
 
         # self.p.amplitude_imaging = 1.0
-        self.xvar('amplitude_imaging', np.linspace(0.0,1.9,15))
+        self.xvar('amplitude_imaging', np.linspace(0.0,1.9,3))
         
         self.p.N_repeats = 1
 
@@ -53,7 +53,10 @@ class integrator_test(EnvExperiment, Base):
                 delay(self.p.t_img_pulse)
             delay(self.p.t_gate_time - self.p.t_img_pulse)
             # delay(300.e-9)
-            self.data.apd.temp_array[i] = self.integrator.stop_and_sample()
+            # self.data.apd.temp_array[i] = self.integrator.stop_and_sample()
+            # self.data.apd.put_data(self.integrator.stop_and_sample(),idx=i)
+
+            self.data.apd.shot_data[i] = self.integrator.stop_and_sample()
             self.integrator.clear()
             delay(1.e-6)
 
@@ -62,7 +65,6 @@ class integrator_test(EnvExperiment, Base):
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        self.data.apd.put_data(self.data.apd.temp_array)
         self.scope.read_sweep([0,2,3])
         self.core.break_realtime()
         delay(30.e-3)
