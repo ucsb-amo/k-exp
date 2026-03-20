@@ -11,7 +11,6 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=False,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.fraction_power_raman = 0.5
         # self.xvar('t_raman_pulse',np.linspace(0.,50.,30)*1.e-6)
 
         self.p.t_tof = 20.e-6
@@ -26,6 +25,7 @@ class rabi_oscillation(EnvExperiment, Base):
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers()
+        self.tweezer_squeeze()
         self.prep_raman()
         
         self.raman.pulse(self.p.t_raman_pi_pulse * 8)
