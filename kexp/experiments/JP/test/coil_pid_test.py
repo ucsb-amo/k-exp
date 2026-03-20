@@ -33,9 +33,10 @@ class tweezer_load(EnvExperiment, Base):
         # self.outer_coil.ttl_blanking.on()
 
         self.outer_coil.start_pid(i)
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        
 
-        delay(500.e-3)
+        delay(1.)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
         self.outer_coil.stop_pid()
         self.outer_coil.off()

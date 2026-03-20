@@ -15,21 +15,26 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.amp_imaging_pci = 0.3
-        # self.xvar('amp_imaging_pci',np.linspace(0.3,1.5,5))
+        # self.p.amp_imaging_pci = 1.5
+        self.xvar('amp_imaging_pci',np.linspace(0.3,1.5,5))
 
         # self.p.fraction_power_raman = 
 
-        self.p.t_imaging_pulse = 30.e-6
+        self.p.t_imaging_pulse = 2.5e-6
 
         # self.p.t_raman_pi_pulse = 3.5635e-6
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse/2
-        # self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse + np.linspace(-0.1,0.1,10)*1.e-6)
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse
+        # self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse + np.linspace(-1.,1.,10)*1.e-6)
+
+        # self.xvar('phase_rabi_surf_train_radians',np.linspace(0.,np.pi,5))
+        self.p.phase_rabi_surf_train_radians = 0.
+
+        self.camera_params.gain = 0
 
         self.p.t_tof = 100.e-6
         self.p.N_repeats = 1
 
-        self.p.N_pulses = 15
+        self.p.N_pulses = 30
         self.data.apd = self.data.add_data_container(self.p.N_pulses + 1)
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
@@ -46,9 +51,14 @@ class rabi_oscillation(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging_pci)
 
         self.prepare_hf_tweezers()
+        self.tweezer_squeeze()
+
         self.prep_raman()
         
         self.ttl.pd_scope_trig3.pulse(1.e-6)
+
+        t_offset = self.p.phase_rabi_surf_train_radians * (self.p.t_raman_pi_pulse / np.pi)
+        self.raman.pulse(t_offset)
 
         delay(10.e-6)
 
@@ -62,7 +72,7 @@ class rabi_oscillation(EnvExperiment, Base):
 
             delay(3.e-6)
 
-            self.raman.pulse(self.p.t_raman_pulse)
+            self.raman.pulse(self.p.t_raman_pi_pulse)
 
             delay(3.e-6)
 
