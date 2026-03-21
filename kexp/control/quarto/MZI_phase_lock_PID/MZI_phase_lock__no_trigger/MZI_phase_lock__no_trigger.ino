@@ -9,7 +9,7 @@ struct Cal {
     char cal_d[16];
 };
 
-volatile float set1 = 3.0f, kp1 = 0.10f, ki1 = 0.30f, g1 = 0.5f, dV = 5.0f, m = 1.0f;
+volatile float set1 = .15f, kp1 = 0.10f, ki1 = 0.30f, g1 = 0.5f, dV = 5.0f, m = 1.0f;
 volatile float tor = 0.5f, st_thresh = 0.9f;
 volatile bool pid_enable1 = true, manual_override1 = false;
 volatile bool enable_print = true;

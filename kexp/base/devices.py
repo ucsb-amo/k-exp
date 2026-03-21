@@ -18,6 +18,8 @@ from waxx.control.misc.ssg3021x import SSG3021X
 from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock, BeatLockImagingPID
 from waxx.control.raman_beams import RamanBeamPair
 from waxx.control.cameras.dummy_cam import DummyCamera
+from waxx.control.misc.thorlabs_kinesis import WaveplateRotatorPhotodiodePID
+from waxx.control.integrator import Integrator
 
 from kexp.config.dds_id import dds_frame, N_uru
 from kexp.config.ttl_id import ttl_frame
@@ -25,6 +27,7 @@ from kexp.config.dac_id import dac_frame
 from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.sampler_id import sampler_frame
 from kexp.config.siglent_id import siglent_frame
+from kexp.config.ip import DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR
 
 from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
@@ -97,8 +100,8 @@ class Devices():
                                         pid_dac=self.dac.inner_coil_pid,
                                         pid_ttl=self.ttl.inner_coil_pid_ttl,
                                         igbt_ttl=self.ttl.inner_coil_igbt,
-                                        #  discharge_igbt_ttl=self.ttl.coil_discharge_igbt,
                                         discharge_igbt_ttl=self.ttl.test_trig,
+                                        blanking_ttl=self.ttl.b_field_stab_SRS_blanking_input,
                                         hbridge_ttl=self.ttl.hbridge_helmholtz,
                                         expt_params=self.params,
                                         slope_current_per_vdac_supply=17.)
@@ -110,8 +113,8 @@ class Devices():
                                         pid_dac=self.dac.outer_coil_pid,
                                         pid_ttl=self.ttl.outer_coil_pid_ttl,
                                         igbt_ttl=self.ttl.outer_coil_igbt,
-                                        #   discharge_igbt_ttl=self.ttl.coil_discharge_igbt,
-                                        discharge_igbt_ttl=self.ttl.test_trig,
+                                        discharge_igbt_ttl=self.ttl.outer_coil_discharge_igbt_ttl,
+                                        blanking_ttl=self.ttl.b_field_stab_SRS_blanking_input,
                                         expt_params=self.params,
                                         slope_current_per_vdac_supply=slope_i_transducer_per_v_setpoint_supply_outer,
                                         offset_current_per_vdac_supply=offset_i_transducer_per_v_setpoint_supply_outer,
@@ -179,6 +182,15 @@ class Devices():
             frequency_sw_ao=80.e6,
             ao_order_pid=1,
             frequency_pid_ao=80.e6)
+        
+        # self.reference_arm_waveplate_pid = WaveplateRotatorPhotodiodePID(
+        #     kinesis_device_id = DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR,
+        #     sampler_ch = self.sampler.reference_beam_pd,
+        #     core = self.core)
+        
+        self.integrator = Integrator(ttl_integrate=self.ttl.integrator_int_hold,
+                                     ttl_reset=self.ttl.integrator_reset,
+                                     sampler_ch=self.sampler.apd_integrator)
 
         # camera placeholder
         self.camera = DummyCamera()
@@ -192,11 +204,13 @@ class Devices():
                                               pid_int_clear_ttl=self.ttl.imaging_pid_int_clear_hold,
                                               pid_override_ttl=self.ttl.imaging_pid_manual_override,
                                               expt_params=self.params)
-        elif imaging_configuration == img_config.SWITCH:
-            self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
-                                           dds_beatref=self.dds.beatlock_ref,
-                                           pid_override_ttl=self.ttl.imaging_pid_manual_override,
-                                           expt_params=self.params)
+        else:
+            raise ValueError('Both the xy and x imaging fibers are currently derived from the PID setup (as of 2026-02-17)')
+        # elif imaging_configuration == img_config.SWITCH:
+        #     self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
+        #                                    dds_beatref=self.dds.beatlock_ref,
+        #                                    pid_override_ttl=self.ttl.imaging_pid_manual_override,
+        #                                    expt_params=self.params)
         
         # elif imaging_configuration == img_config.POLMOD:
         #     self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,

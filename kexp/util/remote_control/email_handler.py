@@ -80,27 +80,32 @@ class EmailHandler:
         else:
             return from_field.strip()
     
-    def send_slack_notification(self, message):
+    def send_slack_notification(self, message, subject='K-Exp Control Notification', recipient=None,
+                                sender_email=None, sender_password=None):
         """
         Send a notification message to the Slack channel
         """
-        if not self.slack_channel:
+        recipient = recipient or self.slack_channel
+        sender_email = sender_email or self.email_address
+        sender_password = sender_password or self.email_password
+
+        if not recipient:
             logger.warning("No Slack channel configured")
             return False
             
         try:
             msg = MIMEMultipart()
-            msg['From'] = self.email_address
-            msg['To'] = self.slack_channel
-            msg['Subject'] = 'K-Exp Control Notification'
+            msg['From'] = sender_email
+            msg['To'] = recipient
+            msg['Subject'] = subject
             
             msg.attach(MIMEText(message, 'plain'))
             
             server = smtplib.SMTP(self.smtp_server, self.smtp_port)
             server.starttls()
-            server.login(self.email_address, self.email_password)
+            server.login(sender_email, sender_password)
             
-            server.sendmail(self.email_address, self.slack_channel, msg.as_string())
+            server.sendmail(sender_email, recipient, msg.as_string())
             server.quit()
             
             logger.info("Slack notification sent successfully")

@@ -36,7 +36,7 @@ class dac_frame(dac_frame_waxx):
         self.v_pd_tweezer_pid2 = self.assign_dac_ch(17,v=6.,max_v=10.)
         self.inner_coil_pid = self.assign_dac_ch(18)
         self.outer_coil_pid = self.assign_dac_ch(19)
-        self.imaging_pid = self.assign_dac_ch(20, v=1.)
+        self.imaging_pid = self.assign_dac_ch(20, v=0.5)
         self.z_shim_mosfet_gate = self.assign_dac_ch(25)
         self.vva_ry_980 = self.assign_dac_ch(26)
 

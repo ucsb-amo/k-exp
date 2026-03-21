@@ -41,7 +41,7 @@ class Cooling():
     #         self.tweezer.off()
 
     @kernel
-    def prepare_hf_tweezers(self):
+    def prepare_hf_tweezers(self, squeeze=True):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
         """   
@@ -84,7 +84,7 @@ class Cooling():
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
                                 v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
                                 v_end=self.p.v_pd_lightsheet_rampdown3_end)
-
+        # self.lightsheet.pid_int_zero_ttl.on()
         self.lightsheet.off()
 
         self.outer_coil.ramp_supply(t=5.e-3,
@@ -105,22 +105,28 @@ class Cooling():
                           v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
-        
-        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-        #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-        #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
+       
+        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                          paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.dac.supply_current_2dmot.set(v=0.)
 
         self.outer_coil.ramp_supply(t=10.e-3,
                              i_end=self.p.i_hf_raman)
 
+        delay(100.e-3)
+        # self.outer_coil.ttl_blanking.off()
         # delay(100.e-3)
         
         self.outer_coil.start_pid()
-
+        
         delay(15.e-3)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
+
+        if squeeze:
+            self.tweezer_squeeze()
 
     @kernel
     def prepare_lf_tweezers(self):

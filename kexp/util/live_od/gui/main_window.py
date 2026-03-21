@@ -7,7 +7,6 @@ import numpy as np
 import time
 
 from waxa import ROI
-from waxa.data.increment_run_id import update_run_id, RUN_ID_PATH
 from waxa.image_processing import compute_OD, process_ODs
 
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
@@ -57,10 +56,16 @@ class StatusLightsWidget(QWidget):
 class LiveODWindow(QWidget):
     interrupt = pyqtSignal()
     def __init__(self):
+
         super().__init__()
+
+        from kexp.config.ip import server_talk
+        self.server_talk = server_talk
+
         self.queue = Queue()
         self.camera_nanny = CameraNanny()
-        self.camera_mother = CameraMother(start_watching=False, manage_babies=False, output_queue=self.queue, camera_nanny=self.camera_nanny, N_runs=1)
+        self.camera_mother = CameraMother(start_watching=False, manage_babies=False, output_queue=self.queue, camera_nanny=self.camera_nanny, N_runs=1,
+                                          server_talk = self.server_talk)
 
         self.the_baby = None
         self.last_camera = ""
@@ -73,13 +78,14 @@ class LiveODWindow(QWidget):
 
     def update_run_id_label(self):
         try:
-            with open(RUN_ID_PATH, 'r') as f:
-                rid = f.read().strip()
+            rid = self.server_talk.get_run_id()
             self.run_id_label.setText(f"Run ID: {rid}")
         except Exception as e:
             self.run_id_label.setText("Run ID: (unavailable)")
 
     def setup_widgets(self):
+        self.server_talk.check_for_mapped_data_dir()
+
         self.viewer_window = LiveODViewer()
         self.setup_run_id_label()
         self.setup_output_window()
@@ -87,7 +93,7 @@ class LiveODWindow(QWidget):
         self.camera_conn_bar = CamConnBar(self.camera_nanny, self.output_window)
 
         self.setup_screenshot_button()
-        self.roi_select = ROISelector()
+        self.roi_select = ROISelector(server_talk=self.server_talk)
         self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
         self.plotting_queue = Queue()
         self.analyzer = Analyzer(self.plotting_queue, self.viewer_window)
@@ -177,7 +183,7 @@ class LiveODWindow(QWidget):
         self.the_baby.dishonorable_death_signal.connect(lambda: self.msg(f'{name} has died dishonorably. Incomplete data deleted.'))
         
         self.the_baby.done_signal.connect(self.restart_mother)
-        self.the_baby.done_signal.connect(update_run_id)
+        self.the_baby.done_signal.connect(self.server_talk.update_run_id)
 
         self.the_baby.cam_status_signal.connect(self.status_lights.set_cam_status_lights)
         self.the_baby.start()
@@ -325,7 +331,7 @@ class LiveODWindow(QWidget):
             msg = 'No active run to abort. Incrementing Run ID.'
             print(msg)
             self.msg(msg)
-            update_run_id()
+            self.server_talk.update_run_id()
             pass
 
         if self.the_baby is not None:

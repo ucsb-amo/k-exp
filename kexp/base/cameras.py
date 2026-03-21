@@ -45,7 +45,8 @@ class Cameras():
             if not isinstance(camera,CameraParams):
                 raise ValueError(f'The requested camera with key {key} was not found.')
 
-        _img_config_bit = img_config.SWITCH
+        # _img_config_bit = img_config.SWITCH
+        _img_config_bit = img_config.PID
 
         if not setup_camera:
             self.camera = DummyCamera()
@@ -63,7 +64,7 @@ class Cameras():
                 case cameras.andor.key:
                     ttl = self.ttl.andor
                     # _img_config_bit = img_config.POLMOD
-                    _img_config_bit = img_config.PID
+                    # _img_config_bit = img_config.PID
                 case cameras.basler_2dmot.key:
                     ttl = self.ttl.basler_2dmot
                 case _:

@@ -7,6 +7,8 @@ from waxx.control.artiq.TTL import TTL_OUT
 from kexp.config.expt_params import ExptParams
 from kexp.calibrations.magnets import compute_pid_overhead
 
+from kexp.util.artiq.async_print import aprint
+
 dv = -1.
 di = 0
 dv_list = np.linspace(0.,1.,5)
@@ -27,6 +29,7 @@ class igbt_magnet():
                  v_control_dac = DAC_CH, i_control_dac = DAC_CH,
                  pid_dac = DAC_CH, pid_ttl = TTL_OUT,
                  igbt_ttl = TTL_OUT, discharge_igbt_ttl = TTL_OUT,
+                 blanking_ttl = TTL_OUT,
                  expt_params:ExptParams = ExptParams(),
                  max_current = 0., max_voltage = 0.,
                  slope_current_per_vdac_supply=1.,
@@ -42,6 +45,7 @@ class igbt_magnet():
         self.pid_ttl = pid_ttl
         self.igbt_ttl = igbt_ttl
         self.discharge_igbt_ttl = discharge_igbt_ttl
+        self.ttl_blanking = blanking_ttl
         self.params = expt_params
         self.i_supply = 0.
         self.i_pid = 0.
@@ -243,6 +247,7 @@ class igbt_magnet():
         self.set_supply(i_supply)
         delay(T_ANALOG_DELAY)
         self.pid_ttl.off()
+        # self.ttl_blanking.on()
 
     @kernel(flags={"fast-math"})
     def rampdown(self,t_rampdown=50.e-3):
@@ -297,7 +302,8 @@ class hbridge_magnet(igbt_magnet):
     def __init__(self,
                  v_control_dac = DAC_CH, i_control_dac = DAC_CH,
                  pid_dac = DAC_CH, pid_ttl = TTL_OUT,
-                 hbridge_ttl = TTL_OUT, igbt_ttl = TTL_OUT, discharge_igbt_ttl = TTL_OUT,
+                 hbridge_ttl = TTL_OUT, igbt_ttl = TTL_OUT,
+                 discharge_igbt_ttl = TTL_OUT, blanking_ttl = TTL_OUT,
                  expt_params = ExptParams, max_current = 0., max_voltage = 0.,
                  slope_current_per_vdac_supply=1.,
                  offset_current_per_vdac_supply=0.,
@@ -306,7 +312,9 @@ class hbridge_magnet(igbt_magnet):
         super().__init__(v_control_dac,
                          i_control_dac,
                          pid_dac,pid_ttl,
-                         igbt_ttl,discharge_igbt_ttl,
+                         igbt_ttl,
+                         discharge_igbt_ttl,
+                         blanking_ttl,
                          expt_params,
                          max_current,max_voltage,
                          slope_current_per_vdac_supply,
@@ -318,7 +326,7 @@ class hbridge_magnet(igbt_magnet):
         self.v_control_dac = v_control_dac
         self.i_control_dac = i_control_dac
         self.igbt_ttl = igbt_ttl
-        self.discharge_igbt_ttl = discharge_igbt_ttl
+        # self.discharge_igbt_ttl = discharge_igbt_ttl
         self.h_bridge_ttl = hbridge_ttl
         self.params = expt_params
 
