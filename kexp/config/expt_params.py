@@ -22,6 +22,7 @@ class ExptParams(ExptParamsWaxx):
 
         #Imaging
         self.t_imaging_pulse = 20.e-6
+        self.t_imaging_pulse_apd_abs = 5.e-6
 
         # img beam settings
         self.frequency_detuned_imaging = 24.e6

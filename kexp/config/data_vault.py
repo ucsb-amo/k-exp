@@ -7,4 +7,6 @@ class DataVault(DataVaultWax):
         
         self.apd = self.add_data_container(1, np.float64)
 
+        self.post_shot_absorption = self.add_data_container(4)
+
         self.b = self.add_data_container(1)
