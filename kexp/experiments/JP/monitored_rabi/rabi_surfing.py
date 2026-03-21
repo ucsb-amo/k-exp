@@ -15,12 +15,10 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        # self.p.amp_imaging_pci = 1.0
-        self.xvar('amp_imaging_pci',np.linspace(0.3,1.5,5))
+        # self.p.amp_imaging_pci = 0.1
+        self.xvar('amp_imaging_pci',np.linspace(0.1,0.5,30))
 
-        # self.p.fraction_power_raman = 
-
-        self.p.t_imaging_pulse = 2.5e-6
+        self.p.t_imaging_pulse = 10.e-6
 
         # self.p.t_raman_pi_pulse = 3.5635e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
@@ -34,7 +32,7 @@ class rabi_oscillation(EnvExperiment, Base):
         self.p.t_tof = 100.e-6
         self.p.N_repeats = 1
 
-        self.p.N_pulses = 25
+        self.p.N_pulses = 100
         self.data.apd = self.data.add_data_container(self.p.N_pulses + 1)
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
@@ -53,12 +51,11 @@ class rabi_oscillation(EnvExperiment, Base):
         self.prepare_hf_tweezers()
 
         self.prep_raman()
-        
-        self.ttl.pd_scope_trig3.pulse(1.e-6)
 
         t_offset = self.p.phase_rabi_surf_train_radians * (self.p.t_raman_pi_pulse / np.pi)
         self.raman.pulse(t_offset)
 
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
         delay(5.e-6)
 
         i = 0
@@ -83,10 +80,11 @@ class rabi_oscillation(EnvExperiment, Base):
 
         delay(10.e-3)
 
+        
         # reference pulse
         self.integrator.begin_integrate()
         self.imaging.pulse(self.p.t_imaging_pulse)
-        self.data.apd.temp_array[self.p.N_pulses] = self.integrator.stop_and_sample()
+        self.data.apd.shot_data[self.p.N_pulses] = self.integrator.stop_and_sample()
         self.integrator.clear()
 
         delay(self.p.t_tof)

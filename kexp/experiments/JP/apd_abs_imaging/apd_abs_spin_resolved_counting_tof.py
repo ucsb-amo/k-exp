@@ -15,24 +15,25 @@ class spin_resolved_counting_tof(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.camera_params.amp_imaging = 0.5
+        self.p.amp_imaging = 0.3
+        # self.xvar('amp_imaging',np.linspace(0.05,0.5,5))
 
-        self.p.t_scope_trig_to_pulse_offset = 0.e-6
+        self.p.t_tof_apd_abs = 250.e-6
 
-        self.p.t_reference_delay_from_first_pulse_mu = 100000
+        self.p.t_imaging_pulse = 5.e-6
+        # self.p.t_raman_pulse = self.p.t_raman_pi_pulse/2
+        self.xvar('t_raman_pulse',self.p.t_raman_pi_pulse*np.linspace(0.8,1.0,5))
 
-        # self.xvar('t_inter_pulse_time',np.linspace(15.,200.,3)*1.e-6)
-        self.p.t_inter_pulse_time_mu = 10000
-
-        self.p.t_imaging_pulse = 10.e-6
-        self.p.t_cleanout_pulse = 80.e-6
-
-        self.p.t_tof = 200.e-6
-        self.p.N_repeats = 1
+        # self.xvar('t_tof_apd_abs',np.linspace(0.,300.,5)*1.e-6)
+        self.p.N_repeats = 12
 
         self.p.t_tweezer_hold = 1.e-3
 
+        self.camera_params.gain = 0
+
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
+
+        self.data.apd = self.data.add_data_container(4)
 
         self.finish_prepare(shuffle=True)
 
@@ -40,32 +41,21 @@ class spin_resolved_counting_tof(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.camera_params.amp_imaging)
+        self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
         self.prep_raman()
 
-        self.raman.pulse(self.p.t_raman_pi_pulse/2)
+        self.raman.pulse(self.p.t_raman_pulse)
         delay(self.p.t_tweezer_hold)
 
-        self.tweezer.off()
-        delay(self.p.t_tof)
-
         self.ttl.pd_scope_trig3.pulse(1.e-6)
-        delay(self.p.t_scope_trig_to_pulse_offset)
+
+        delay(5.e-6)
 
         ###
 
-        t = now_mu()
-        self.imaging.pulse(self.p.t_imaging_pulse)
-
-        self.raman.pulse(self.p.t_raman_pi_pulse)
-
-        at_mu(t + self.p.t_inter_pulse_time_mu)
-        self.imaging.pulse(self.p.t_imaging_pulse)
-
-        at_mu(t + self.p.t_reference_delay_from_first_pulse_mu)
-        self.imaging.pulse(self.p.t_imaging_pulse)
+        self.tof_apd_abs_image()
 
         ###
 

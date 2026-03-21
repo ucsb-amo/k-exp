@@ -3,7 +3,7 @@ from artiq.experiment import delay
 from kexp import Base, img_types, cameras
 import numpy as np
 
-class rabi_oscillation(EnvExperiment, Base):
+class raman_loss(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
@@ -13,11 +13,11 @@ class rabi_oscillation(EnvExperiment, Base):
         
         self.p.frequency_raman_transition = 155.e6
 
-        self.xvar('t_raman_pulse',np.linspace(0.,2.,3)*1.e-3)
+        self.xvar('t_raman_pulse',np.linspace(0.,2.,10)*1.e-3)
         self.p.t_raman_pulse = 0.
 
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 5
 
         self.finish_prepare(shuffle=True)
 
