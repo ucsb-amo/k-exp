@@ -48,7 +48,7 @@ class Control():
     def tof_apd_abs_image(self):
 
         self.tweezer.off()
-        delay(self.p.t_tof)
+        delay(self.p.t_tof_apd_abs)
         
         t = self.p.t_imaging_pulse_apd_abs
         dc = self.data.post_shot_absorption

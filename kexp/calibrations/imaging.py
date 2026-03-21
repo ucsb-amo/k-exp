@@ -18,7 +18,6 @@ def high_field_imaging_detuning(i_transducer) -> TFloat:
       + yintercept_imaging_frequency_per_i_transducer_hf
     return detuning
 
-
 # @portable
 # def high_field_pid_imaging_detuning(i_transducer) -> TFloat:
 #     detuning = slope_imaging_frequency_per_i_transducer_hf * i_transducer \
@@ -78,3 +77,6 @@ def imaging_x_pid_vpd_to_power(v_pid) -> TFloat:
 @portable
 def imaging_x_pid_power_to_vpd(power) -> TFloat:
    return (power - yintercept_imaging_x_power_vs_vpd)/slope_imaging_x_power_per_vpd
+
+# @portable 
+# def apd_abs_image_vpd

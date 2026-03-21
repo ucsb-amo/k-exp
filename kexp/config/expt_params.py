@@ -23,6 +23,7 @@ class ExptParams(ExptParamsWaxx):
         #Imaging
         self.t_imaging_pulse = 20.e-6
         self.t_imaging_pulse_apd_abs = 5.e-6
+        self.t_tof_apd_abs = 250.e-6 # affects APD absorption calibration
 
         # img beam settings
         self.frequency_detuned_imaging = 24.e6

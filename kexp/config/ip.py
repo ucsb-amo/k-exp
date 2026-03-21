@@ -9,7 +9,8 @@ EXPT_PACKAGE_DIR = os.path.join(os.getenv("code"),"k-exp","kexp")
 EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
 COOLING_RELPATH = os.path.join("base","cooling.py")
 IMAGING_RELPATH = os.path.join("base","image.py")
-PATHS = (DATA_DIR, EXPT_PACKAGE_DIR, EXPT_PARAM_RELPATH, COOLING_RELPATH, IMAGING_RELPATH)
+CONTROL_RELPATH = os.path.join("base","control.py")
+PATHS = (DATA_DIR, EXPT_PACKAGE_DIR, EXPT_PARAM_RELPATH, COOLING_RELPATH, IMAGING_RELPATH, CONTROL_RELPATH)
 
 MAP_BAT_PATH = "\"G:\\Shared drives\\Weld Lab Shared Drive\\Infrastructure\\map_network_drives_PeterRecommended.bat\""
 # MAP_BAT_PATH = "\"G:\Shared drives\Tweezers\Software\map_fake_network_drive.bat\""
