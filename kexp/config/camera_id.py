@@ -12,6 +12,8 @@ class camera_frame(camera_frame_waxx):
         #                         magnification=16.4, # based on run 49189, updated 2025-11-20
         #                         t_light_only_image_delay=50.e-3,
                                 # t_dark_image_delay=50.e-3)
+
+        self.dummy = CameraParams()
         
         # note -- for PID being on x (Andor), "amp" here refers to v_pd on the PID photodiode
         self.andor = AndorParams(amp_absorption=0.15, exposure_time_abs=20.e-6, em_gain_abs=300.,

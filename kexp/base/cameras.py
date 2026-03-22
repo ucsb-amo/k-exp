@@ -48,28 +48,22 @@ class Cameras():
         # _img_config_bit = img_config.SWITCH
         _img_config_bit = img_config.PID
 
-        if not setup_camera:
-            self.camera = DummyCamera()
-            self.camera_params = CameraParams()
-            # self.start_triggered_grab = self.nothing
-            self.ttl.camera = DummyTTL()
-        else:
-            match camera.key:
-                case cameras.xy_basler.key:
-                    ttl = self.ttl.basler
-                case cameras.x_basler.key:
-                    ttl = self.ttl.z_basler
-                case cameras.z_basler.key:
-                    ttl = self.ttl.z_basler
-                case cameras.andor.key:
-                    ttl = self.ttl.andor
-                    # _img_config_bit = img_config.POLMOD
-                    # _img_config_bit = img_config.PID
-                case cameras.basler_2dmot.key:
-                    ttl = self.ttl.basler_2dmot
-                case _:
-                    raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
-            self.assign_camera_stuff(camera,camera_ttl=ttl,imaging_type=imaging_type)
+        match camera.key:
+            case cameras.dummy.key:
+                self.ttl.camera = DummyTTL()
+            case cameras.xy_basler.key:
+                ttl = self.ttl.basler
+            case cameras.x_basler.key:
+                ttl = self.ttl.z_basler
+            case cameras.z_basler.key:
+                ttl = self.ttl.z_basler
+            case cameras.andor.key:
+                ttl = self.ttl.andor
+            case cameras.basler_2dmot.key:
+                ttl = self.ttl.basler_2dmot
+            case _:
+                raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
+        self.assign_camera_stuff(camera,camera_ttl=ttl,imaging_type=imaging_type)
         self.run_info.imaging_type = imaging_type
         return _img_config_bit
 
