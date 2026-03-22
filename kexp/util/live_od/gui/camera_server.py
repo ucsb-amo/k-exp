@@ -13,15 +13,15 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
 
 from waxx.util.live_od.gui.server_window import CameraServerWindow
-from kexp.config.ip import CAMERA_SERVER_IP, CAMERA_SERVER_PORT
-
+from kexp.config.ip import CAMERA_SERVER_IP, CAMERA_SERVER_PORT, server_talk
 
 def main():
     app = QApplication(sys.argv)
 
     win = CameraServerWindow(
         host=CAMERA_SERVER_IP,
-        port=CAMERA_SERVER_PORT
+        port=CAMERA_SERVER_PORT,
+        server_talk=server_talk
     )
     win.show()
 

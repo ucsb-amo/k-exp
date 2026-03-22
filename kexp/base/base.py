@@ -81,14 +81,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     init_ry = True):
         
         self.core.reset()
-        if self.setup_camera:
-            if self.setup_camera:
-                self.ds.create_data_file(self)
-            self.send_new_run()
-            
-        # if self.setup_camera:
-        #     self.wait_for_camera_ready(timeout=INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT)
-        #     print("Camera is ready.")
+        self.init_kernel_wax()
+
+        self.core.wait_until_mu(now_mu())
         if setup_slm:
             self.setup_slm(self.run_info.imaging_type)
         if run_id:
@@ -134,7 +129,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.arm_scopes()
 
-        self.background_field()
+        # self.background_field()
         self.read_magnetometer()
 
         # self.slm.check_for_old_setting()

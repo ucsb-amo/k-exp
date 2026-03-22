@@ -72,7 +72,8 @@ class Control():
             delay(t)
         else:
             self.imaging.pulse(t)
-        data_container.shot_data[idx] = self.integrator.stop_and_sample()
+        data_container.put_data_idx( self.integrator.stop_and_sample(), idx )
+        # data_container.shot_data[idx] = 
         self.integrator.clear()
 
     @kernel
@@ -144,7 +145,7 @@ class Control():
     def read_magnetometer(self):
         self.core.wait_until_mu(now_mu())
         b_magnitude = self.magnetometer.get_field_magnitude()
-        self.data.b.put_data(b_magnitude)
+        self.data.b.put_data_idx(b_magnitude,0)
         self.core.break_realtime()
 
     @kernel

@@ -19,10 +19,9 @@ class capture_data(EnvExperiment, Base):
         # self.data.test2 = self.data.add_data_container((1,1),np.float64)
         self.data.all = self.data.add_data_container(per_shot_data_shape=self.sampler.data.shape,
                                                      dtype=self.sampler.data.dtype)
-        # self.data.image = self.data.add_data_container(per_shot_data_shape=self.camera_params.resolution,
-        #                                                dtype=np.uint16)
+        self.data.image2 = self.data.add_data_container(per_shot_data_shape=self.camera_params.resolution,
+                                                       dtype=np.uint16)
         self.finish_prepare(shuffle=True)
-        print(self.data.all.shot_data.shape, self.data.apd.shot_data.shape)
 
     @kernel
     def run(self):
@@ -38,8 +37,9 @@ class capture_data(EnvExperiment, Base):
 
         self.abs_image()
 
-        self.data.all.shot_data = self.sampler.data
-        self.data.apd.shot_data[0] = self.sampler.data[0]
+        # self.data.all.shot_data = self.sampler.data
+        self.data.all.put_data(self.sampler.data)
+        # self.data.apd.shot_data[0] = self.sampler.data[0]
 
     def analyze(self):
         import os

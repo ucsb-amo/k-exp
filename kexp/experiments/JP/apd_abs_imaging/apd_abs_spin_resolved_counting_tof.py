@@ -10,7 +10,7 @@ from artiq.language import now_mu, at_mu
 class spin_resolved_counting_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
@@ -21,11 +21,11 @@ class spin_resolved_counting_tof(EnvExperiment, Base):
         self.p.t_tof_apd_abs = 250.e-6
 
         self.p.t_imaging_pulse = 5.e-6
-        # self.p.t_raman_pulse = self.p.t_raman_pi_pulse/2
-        self.xvar('t_raman_pulse',self.p.t_raman_pi_pulse*np.linspace(0.8,1.0,5))
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse/2
+        # self.xvar('t_raman_pulse',self.p.t_raman_pi_pulse*np.linspace(0.8,1.0,5))
 
         # self.xvar('t_tof_apd_abs',np.linspace(0.,300.,5)*1.e-6)
-        self.p.N_repeats = 12
+        self.p.N_repeats = 1
 
         self.p.t_tweezer_hold = 1.e-3
 

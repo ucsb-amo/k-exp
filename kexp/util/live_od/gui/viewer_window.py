@@ -32,7 +32,7 @@ def main():
     app = QApplication(sys.argv)
     win = LiveODClientWindow()
     win.setWindowTitle("LiveOD Viewer (Client)")
-    win.resize(1400, 900)
+    win.resize(400, 600)
     try:
         win.setWindowIcon(QIcon("banana-icon.png"))
     except Exception:

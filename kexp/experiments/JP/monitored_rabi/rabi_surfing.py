@@ -15,8 +15,8 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        # self.p.amp_imaging_pci = 0.1
-        self.xvar('amp_imaging_pci',np.linspace(0.1,0.5,30))
+        self.p.amp_imaging_pci = 0.1
+        # self.xvar('amp_imaging_pci',np.linspace(0.1,0.5,30))
 
         self.p.t_imaging_pulse = 10.e-6
 
@@ -30,7 +30,7 @@ class rabi_oscillation(EnvExperiment, Base):
         self.camera_params.gain = 0
 
         self.p.t_tof = 100.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 5
 
         self.p.N_pulses = 100
         self.data.apd = self.data.add_data_container(self.p.N_pulses + 1)
