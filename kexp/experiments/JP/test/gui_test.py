@@ -13,16 +13,17 @@ from kexp.util.artiq.async_print import aprint
 class gui_test(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
+        Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        self.xvar('dummy',[0]*2)
+        self.xvar('amp_imaging',[0.1,0.2,0.3]*2)
 
         self.finish_prepare(shuffle=True)
     @kernel
     def scan_kernel(self):
+        self.imaging.set_power(self.p.amp_imaging)
         delay(200.e-3)
         self.abs_image()
 
