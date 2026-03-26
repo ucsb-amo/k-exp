@@ -1,3 +1,0 @@
-# Re-export from waxx — all implementation lives there now.
-from waxx.util.live_od.gui.analyzer import *       # noqa: F401,F403
-from waxx.util.live_od.gui.analyzer import Analyzer  # noqa: F401
