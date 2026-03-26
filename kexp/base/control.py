@@ -73,7 +73,6 @@ class Control():
         else:
             self.imaging.pulse(t)
         data_container.put_data_idx( self.integrator.stop_and_sample(), idx )
-        # data_container.shot_data[idx] = 
         self.integrator.clear()
 
     @kernel

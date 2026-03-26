@@ -15,12 +15,11 @@ class capture_data(EnvExperiment, Base):
         # self.xvar('test1',[0,1,2])
         self.p.N_repeats = 1
 
-        self.data.test = self.data.add_data_container(1,np.float64)
+        self.data.test = self.data.add_data_container(1)
         # self.data.test2 = self.data.add_data_container((1,1),np.float64)
-        self.data.all = self.data.add_data_container(per_shot_data_shape=self.sampler.data.shape,
-                                                     dtype=self.sampler.data.dtype)
-        self.data.image2 = self.data.add_data_container(per_shot_data_shape=self.camera_params.resolution,
-                                                       dtype=np.uint16)
+        self.data.all = self.data.add_data_container(per_shot_data_shape=self.sampler.data.shape)
+        # self.data.image2 = self.data.add_data_container(per_shot_data_shape=self.camera_params.resolution,
+        #                                                dtype=np.uint16)
         self.finish_prepare(shuffle=False)
 
     @kernel
@@ -33,12 +32,12 @@ class capture_data(EnvExperiment, Base):
 
         delay(10.e-3)
         self.sampler.sample()
-        delay(10.e-3)
+        delay(10.e-3)   
 
         self.abs_image()
-        self.data.test.put_data(self.sampler.data[0])
+        self.data.test.put_data_idx(self.sampler.data[0])
         # self.data.all.shot_data = self.sampler.data
-        self.data.all.put_data(self.sampler.data)
+        self.data.all.shot_data = self.sampler.data
         # self.data.apd.shot_data[0] = self.sampler.data[0]
 
     def analyze(self):
