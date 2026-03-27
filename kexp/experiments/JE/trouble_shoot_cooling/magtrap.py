@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
                       save_data=True)
 
         self.p.t_tof = 9000.e-6
-        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
         # self.xvar('dumy',[0]*500)
         # self.xvar('dumy',np.linspace(1.,800.,800))
@@ -51,11 +51,11 @@ class mag_trap(EnvExperiment, Base):
         # self.p.i_mot = 20.
 
         # self.xvar('v_zshim_current',np.linspace(0.0,1.,15))
-        self.xvar('v_xshim_current',np.linspace(0.,5.,8))
-        self.xvar('v_yshim_current',np.linspace(0.0,3.,8))
-        # self.p.v_zshim_current = .65
-        # self.p.v_xshim_current = 2.8
-        # self.p.v_yshim_current = 1.
+        # self.xvar('v_xshim_current',np.linspace(0.,5.,8))
+        # self.xvar('v_yshim_current',np.linspace(0.0,3.,8))
+        self.p.v_zshim_current = .429
+        self.p.v_xshim_current = 0.
+        self.p.v_yshim_current = 0.
 
         # self.xvar('detune_d2_r_d1cmot',np.linspace(-5.,-1.,8))
         # self.xvar('amp_d2_r_d1cmot',np.linspace(.02,.1,8))
@@ -88,7 +88,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('pfrac_c_gmramp_end',np.linspace(0.01,.3,8))
         # self.xvar('pfrac_r_gmramp_end',np.linspace(0.01,.8,8))
         # self.p.pfrac_c_gmramp_end = 0.05
-        # self.p.pfrac_r_gmramp_end = 0.57
+        self.p.pfrac_r_gmramp_end = 0.69
         
         # self.xvar('i_magtrap_init',np.linspace(70.,150.,20))
         # self.i_magtrap_init = 103.
