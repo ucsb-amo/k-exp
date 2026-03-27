@@ -7,7 +7,7 @@ from waxx.util.artiq.async_print import aprint
 
 # maybe liveOD runs this when an experiment is not running? It knows when experiments are running...
 
-class testcrate_base(EnvExperiment, Base):
+class monitor_expt(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False)
@@ -15,7 +15,9 @@ class testcrate_base(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel(run_id=False,
+        self.init_kernel(
+                            notify_server=False,
+                            run_id=False,
                          init_lightsheet=False,
                          setup_awg=False,
                          setup_slm=False,

@@ -1,4 +1,4 @@
 call %kpy%
-cd %code%\k-exp\kexp\util\live_od\gui
+cd /d "%~dp0..\util\live_od\gui"
 python viewer_window.py
 pause

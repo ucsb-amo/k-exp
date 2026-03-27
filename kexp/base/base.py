@@ -65,7 +65,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.tweezer.save_trap_list()
 
     @kernel
-    def init_kernel(self, run_id = True,
+    def init_kernel(self, 
+                    notify_server=True,
+                    run_id = True,
                     init_dds =  True, 
                     init_dac = True,
                     dds_set = True, 
@@ -81,7 +83,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     init_ry = True):
         
         self.core.reset()
-        self.init_kernel_wax()
+        self.init_kernel_wax(notify_server=notify_server)
 
         self.core.wait_until_mu(now_mu())
         if setup_slm:
@@ -128,19 +130,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     def init_scan_kernel(self,two_d_tweezers = False):
 
         self.arm_scopes()
-
-        # self.background_field()
         self.read_magnetometer()
-
-        # self.slm.check_for_old_setting()
         
         self.core.reset()
-        
         self.reset_devices()
-
         self.reset_tweezers(two_d_tweezers)
-        
-        # self.dds.d1_beatlock_ref.on()
 
     @kernel
     def reset_devices(self):

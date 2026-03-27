@@ -16,11 +16,11 @@ class rabi_oscillation(EnvExperiment, Base):
 
         # self.xvar('amp_imaging',np.linspace(0.1,1.,8))
 
-        self.xvar('t_raman_pulse',np.linspace(0.,150.,100)*1.e-6)
+        self.xvar('t_raman_pulse',np.linspace(0.,30.,20)*1.e-6)
         self.p.t_raman_pulse = 0.
 
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
 
@@ -52,7 +52,7 @@ class rabi_oscillation(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe()
+        # self.mot_observe()
 
     def analyze(self):
         import os

@@ -22,7 +22,7 @@ class spin_resolved_counting_tof(EnvExperiment, Base):
 
         self.p.t_imaging_pulse = 5.e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse/2
-        # self.xvar('t_raman_pulse',self.p.t_raman_pi_pulse*np.linspace(0.8,1.0,5))
+        self.xvar('t_raman_pulse',self.p.t_raman_pi_pulse*np.linspace(0.,1.0,10))
 
         # self.xvar('t_tof_apd_abs',np.linspace(0.,300.,5)*1.e-6)
         self.p.N_repeats = 1
