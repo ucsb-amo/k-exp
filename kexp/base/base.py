@@ -127,8 +127,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.arm_scopes()
 
-        self.background_field()
-        self.read_magnetometer()
+        # self.background_field()
+        # self.read_magnetometer()
 
         # self.slm.check_for_old_setting()
         

@@ -167,7 +167,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_2d_mot_current = 2.11
 
         #MOT
-        self.detune_d2_c_mot = -2.5
+        self.detune_d2_c_mot = -2.1
         self.amp_d2_c_mot = 0.188
 
         self.detune_d2_r_mot = -4.2
@@ -181,9 +181,9 @@ class ExptParams(ExptParamsWaxx):
 
         self.i_mot = 20.
 
-        self.v_zshim_current = .65
-        self.v_xshim_current = 2.8
-        self.v_yshim_current = 1.
+        self.v_zshim_current = .5
+        self.v_xshim_current = 1.4
+        self.v_yshim_current = 2.1
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -212,14 +212,14 @@ class ExptParams(ExptParamsWaxx):
         
         #GM
         self.v_zshim_current_gm = 0.684
-        self.v_xshim_current_gm = 0.29
-        self.v_yshim_current_gm = 2.143
+        self.v_xshim_current_gm = 0.2
+        self.v_yshim_current_gm = 2.86
 
         self.pfrac_d1_c_gm = .9
         self.pfrac_d1_r_gm = 0.86
 
         self.pfrac_c_gmramp_end = 0.05
-        self.pfrac_r_gmramp_end = 0.57
+        self.pfrac_r_gmramp_end = 0.69
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
