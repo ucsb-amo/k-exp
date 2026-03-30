@@ -116,13 +116,13 @@ class Cooling():
         self.outer_coil.ramp_supply(t=10.e-3,
                              i_end=self.p.i_hf_raman)
 
-        delay(100.e-3)
+        # delay(100.e-3)
         # self.outer_coil.ttl_blanking.off()
         # delay(100.e-3)
         
         self.outer_coil.start_pid()
         
-        delay(15.e-3)
+        delay(30.e-3)
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
         if squeeze:

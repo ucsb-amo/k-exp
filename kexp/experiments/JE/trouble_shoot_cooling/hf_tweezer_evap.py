@@ -17,9 +17,9 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.t_tof = 2050.e-6
+        self.p.t_tof = 2500.e-6
         # self.p.t_tof = 10.e-6
-        # self.xvar('t_tof',np.linspace(600.,2500.,15)*1.e-6) 
+        # self.xvar('t_tof',np.linspace(800.,3000.,15)*1.e-6) 
         # self.xvar('beans',[1]*3)
     
         # self.xvar('hf_imaging_detuning', [-617.e6,-505.e6]*1)
@@ -53,13 +53,13 @@ class mag_trap(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_1064_ramp_end = 8.4
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.5,0.,8))
-        self.p.v_hf_tweezer_paint_amp_max = -1.
+        # self.p.v_hf_tweezer_paint_amp_max = -2.
  
         # self.xvar('t_hf_tweezer_1064_ramp',np.linspace(.015,.5,20))
         # self.p.t_hf_tweezer_1064_ramp = .168
 
         # self.xvar('i_hf_tweezer_evap1_current',np.linspace(192.,195.5,20))
-        self.p.i_hf_tweezer_evap1_current = 192.18
+        # self.p.i_hf_tweezer_evap1_current = 192.18
 
         # self.xvar('v_pd_hf_tweezer_1064_rampdown_end',np.linspace(.5,2.,8))
         # self.p.v_pd_hf_tweezer_1064_rampdown_end = 1.
@@ -97,7 +97,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('amp_tweezer',np.linspace(.13,.25,15))
         # self.xvar('freq_tweezer',75.e6 + np.linspace(-3.e6,0.e6,15))
 
-        # self.xvar('hf_imaging_detuning', np.arange(-635.,-610.,2.)*1.e6)
+        self.xvar('hf_imaging_detuning', np.arange(-580.,-550.,3.)*1.e6)
         # self.p.hf_imaging_detuning = -627.e6 # load
         # self.p.hf_imaging_detuning = -629.e6 # evap 1
         self.p.hf_imaging_detuning = -624.e6 # evap 2
@@ -198,9 +198,8 @@ class mag_trap(EnvExperiment, Base):
         
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         
-        # self.outer_coil.ramp_supply(t=10.e-3,
-        #                      i_start=self.p.i_hf_tweezer_load_current,
-        #                      i_end=self.p.i_tunnel)
+        self.outer_coil.ramp_supply(t=10.e-3,
+                             i_end=self.p.i_tunnel)
         
         delay(self.p.t_tweezer_hold)
         

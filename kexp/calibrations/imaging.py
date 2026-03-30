@@ -9,8 +9,12 @@ I_LF_HF_THRESHOLD = 45.
 
 # run 22849
 # all shims set to zero during feshbach field
-slope_imaging_frequency_per_i_transducer_hf = -4955357.14
-yintercept_imaging_frequency_per_i_transducer_hf = 339875000.026
+# slope_imaging_frequency_per_i_transducer_hf = -4955357.14
+# yintercept_imaging_frequency_per_i_transducer_hf = 339875000.026
+
+# with PID, valid for 175-182 A
+slope_imaging_frequency_per_i_transducer_hf = -4.229e6
+yintercept_imaging_frequency_per_i_transducer_hf = 2.018e8
 
 @portable
 def high_field_imaging_detuning(i_transducer) -> TFloat:
