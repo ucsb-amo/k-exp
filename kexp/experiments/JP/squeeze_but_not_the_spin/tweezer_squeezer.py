@@ -13,27 +13,31 @@ class squeezeme(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.squeeze = 1
+        self.p.squeeze = 0.
         # self.xvar('squeeze',[0,1])
-        
-        self.p.t_tweezer_squeezer_ramp_1 = 10.e-3
-        self.p.t_tweezer_squeezer_ramp_2 = 10.e-3
+
+        self.p.cubic_squeeze_ramp = 1.
+        # self.xvar('cubic_squeeze_ramp',[0,1])
+
+        self.p.t_tweezer_squeezer_ramp_1 = 15.e-3
+        # self.xvar('t_tweezer_squeezer_ramp_1', np.linspace(3.,30.,4)*1.e-3)
+        self.p.t_tweezer_squeezer_ramp_2 = 45.e-3
+        # self.xvar('t_tweezer_squeezer_ramp_2', np.linspace(10.,100.,4)*1.e-3)
 
         self.p.v_pd_tweezer_squeeze_rampup_handoff_lp = 9.
 
-        # self.p.v_pd_hf_tweezer_squeeze_power = 0.5
-        self.xvar('v_pd_hf_tweezer_squeeze_power', np.linspace(
-            tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),0.5,3))
+        self.p.v_pd_hf_tweezer_squeeze_power = 2.
+        # self.xvar('v_pd_hf_tweezer_squeeze_power', np.linspace(0.,6.,5))
 
         # self.p.t_tweezer_hold = 10.e-3
         # self.xvar('t_tweezer_hold', np.linspace(1.,100.,5)*1.e-3)
 
         self.p.amp_imaging = self.camera_params.amp_imaging
-        self.camera_params.gain = 600
+        # self.camera_params.gain = 600
 
-        self.p.t_tof = 5.e-6
-        self.xvar('t_tof',np.linspace(5.,150.,5)*1.e-6)
-        self.p.N_repeats = 1
+        self.p.t_tof = 200.e-6
+        # self.xvar('t_tof',np.linspace(5.,80.,5)*1.e-6)
+        self.p.N_repeats = 10
 
         # self.p.t_ramp_down_painting_amp = 15.e-3
         # self.xvar('t_ramp_down_painting_amp',np.linspace(1.,100.,4)*1.e-3)
@@ -46,11 +50,14 @@ class squeezeme(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers()
-        if self.p.squeeze:
-            self.tweezer_squeeze()
+        self.prepare_hf_tweezers(squeeze=False)
 
         self.ttl.pd_scope_trig.pulse(1.e-6)
+        if self.p.squeeze:
+            if self.p.cubic_squeeze_ramp:
+                self.tweezer_squeeze(cubic_ramp=True)
+            else:
+                self.tweezer_squeeze(cubic_ramp=False)
 
         delay(self.p.t_tweezer_hold)
 

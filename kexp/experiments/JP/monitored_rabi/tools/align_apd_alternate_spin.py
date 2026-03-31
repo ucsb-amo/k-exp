@@ -13,27 +13,29 @@ class hf_monitored_rabi(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=True,
+                      save_data=False,
                       imaging_type=img_types.DISPERSIVE)
         
         self.p.t_imaging_pulse = 20.e-6
-        # self.xvar('dummy',[0]*1000)
+        self.xvar('dummy',[0]*1000)
         # self.xvar('t_raman_pulse',np.linspace(0.,25.,10)*1.e-6)
-        # self.xvar('phase_slm_mask',np.linspace(2.5,3.5,7)*np.pi)
+        # self.xvar('phase_slm_mask',np.linspace(0.3,1.,15)*np.pi)
         # self.xvar('frequency_detuned_hf_midpoint',
         #           self.p.frequency_detuned_hf_midpoint+np.linspace(-40.e6,40.e6,15))
 
-        # self.p.frequency_detuned_hf_midpoint = -670.e6
+        self.p.v_pd_hf_tweezer_squeeze_power = 6.
+        # self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(1.,6.,5))
+
+        self.p.frequency_detuned_hf_midpoint = -640.e6
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 1.2
+        self.p.amp_imaging = 0.5
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 5
-
-        self.p.phase_slm_mask = 2.9
+        self.p.N_repeats = 1
+        self.p.phase_slm_mask = 0.4*np.pi
 
         self.camera_params.gain = 100
 
@@ -51,7 +53,6 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
-        self.tweezer_squeeze()
         self.prep_raman()
 
         delay(10.e-3)
@@ -60,7 +61,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.integrator.begin_integrate()
         self.imaging.pulse(self.p.t_imaging_pulse)
-        self.data.apd.temp_array[0] = self.integrator.stop_and_sample()
+        self.data.apd.put_data(self.integrator.stop_and_sample(), 0)
         self.integrator.clear()
 
         delay(self.p.t_imaging_pulse)
@@ -69,7 +70,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.integrator.begin_integrate()
         self.imaging.pulse(self.p.t_imaging_pulse)
-        self.data.apd.temp_array[1] = self.integrator.stop_and_sample()
+        self.data.apd.put_data(self.integrator.stop_and_sample(), 1)
         self.integrator.clear()
         delay(5.e-6)
 
@@ -78,7 +79,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.integrator.begin_integrate()
         self.imaging.pulse(self.p.t_imaging_pulse)
-        self.data.apd.temp_array[2] = self.integrator.stop_and_sample()
+        self.data.apd.put_data(self.integrator.stop_and_sample(), 2)
         self.integrator.clear()
 
         delay(self.p.t_tof)
@@ -88,8 +89,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        self.data.apd.put_data(self.data.apd.temp_array)
-        self.scope.read_sweep([0])
+        # self.scope.read_sweep([0])
         self.core.break_realtime()
         delay(100.e-3)
 
@@ -98,7 +98,6 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe()
 
     def analyze(self):
         import os

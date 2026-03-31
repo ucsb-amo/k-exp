@@ -9,6 +9,7 @@ from artiq.experiment import rpc, kernel, delay, parallel, TFloat, portable, TAr
 
 from kexp.config.expt_params import ExptParams
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.util.artiq.async_print import aprint
 
 import numpy as np
 
@@ -137,7 +138,8 @@ class tweezer(wax_tweezer.TweezerController):
              v_awg_am_max=dv,
              v_pd_max=dv,
              keep_trap_frequency_constant=True,
-             low_power=False):
+             low_power=False,
+             cubic_ramp=False):
         """Ramps the voltage that controls the tweezer power according to v_ramp_list.
         
         If painting is enabled, paints the tweezer by controlling the amplitude
@@ -183,9 +185,6 @@ class tweezer(wax_tweezer.TweezerController):
         if v_pd_max == dv:
             v_pd_max = self.params.v_pd_hf_tweezer_1064_ramp_end
 
-        dt_ramp = t / n_steps
-        delta_v = (v_end - v_start)/(n_steps - 1)
-
         if low_power:
             pid_dac = self.pid2_dac
             v_pd_max = tweezer_vpd1_to_vpd2(v_pd_max)
@@ -195,13 +194,26 @@ class tweezer(wax_tweezer.TweezerController):
         if not paint:
             self.painting_off()
 
+        dt_ramp = t / n_steps
+        if cubic_ramp:
+            Adt3 = -2*(v_end-v_start)/t**3 * dt_ramp**3
+            Bdt2 = 3*(v_end-v_start)/t**2 * dt_ramp**2
+            delta_v = 1.
+        else:
+            Adt3 = 1.
+            Bdt2 = 1.
+            delta_v = (v_end - v_start)/(n_steps - 1)
+
         pid_dac.set(v=v_start)
         if low_power:
             self.pid2_enable_ttl.on()
         else:
             self.pid2_enable_ttl.off()
         for i in range(n_steps):
-            v = v_start + i * delta_v
+            if cubic_ramp:
+                v = Adt3 * i**3 + Bdt2 * i**2 + v_start
+            else:
+                v = v_start + i * delta_v
             if paint:
                 if keep_trap_frequency_constant:
                     v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v,

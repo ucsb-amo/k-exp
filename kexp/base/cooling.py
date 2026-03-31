@@ -41,7 +41,7 @@ class Cooling():
     #         self.tweezer.off()
 
     @kernel
-    def prepare_hf_tweezers(self, squeeze=True):
+    def prepare_hf_tweezers(self, squeeze=True, cubic_ramp_squeeze=True):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
         """   
@@ -106,10 +106,10 @@ class Cooling():
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                           paint=True,keep_trap_frequency_constant=True)
        
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                          paint=True,keep_trap_frequency_constant=True,low_power=True)
+        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+        #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+        #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.dac.supply_current_2dmot.set(v=0.)
 

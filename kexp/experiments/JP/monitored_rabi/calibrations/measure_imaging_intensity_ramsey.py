@@ -17,17 +17,19 @@ class ramsey(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.frequency_shift_per_imaging_amp_estimation = 161.e3 # Hz/V
+        self.p.frequency_shift_per_imaging_amp_estimation = 51.96e3 / 1.8 # Hz/V
 
-        self.p.amp_imaging = 1.
+        self.p.amp_imaging = 0.1
 
-        # self.xvar('amp_imaging',np.linspace(0.,1.,4))
+        # self.xvar('amp_imaging',np.linspace(0.,0.25,4))
         # self.xvar('frequency_raman_transition_detuning', np.linspace(-5.,5.,8)*1.e3)
-        self.xvar('t_ramsey',np.linspace(0.,300.,10)*1.e-6)
+        # self.xvar('t_ramsey',np.linspace(0.,60.,20)*1.e-6)
         # self.p.t_ramsey = 300.e-6
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 10.e-6
         self.p.N_repeats = 1
+
+        self.p.t_tweezer_hold = 100.e-3
 
         # self.data.frequency_raman_transition = self.data.add_data_container()
 
@@ -37,7 +39,7 @@ class ramsey(EnvExperiment, Base):
     def scan_kernel(self):
 
         # set up weak measurement
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging_midpoint)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         if self.p.amp_imaging != 0.:
             self.imaging.set_power(self.p.amp_imaging)
 
@@ -50,13 +52,14 @@ class ramsey(EnvExperiment, Base):
         self.prep_raman()
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
+        self.raman.pulse(self.p.t_raman_pi_pulse/2)
+
         if self.p.amp_imaging != 0.:
             self.imaging.on()
-        self.raman.pulse(self.p.t_raman_pi_pulse/2)
         delay(self.p.t_ramsey)
-        self.raman.pulse(self.p.t_raman_pi_pulse/2)
         self.imaging.off()
 
+        self.raman.pulse(self.p.t_raman_pi_pulse/2)
         self.ttl.raman_shutter.off()
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
@@ -78,7 +81,6 @@ class ramsey(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe()
 
     def analyze(self):
         import os

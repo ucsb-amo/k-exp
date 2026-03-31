@@ -76,18 +76,20 @@ class Control():
         self.integrator.clear()
 
     @kernel
-    def tweezer_squeeze(self):
+    def tweezer_squeeze(self, cubic_ramp=True):
         self.tweezer.paint_amp_dac.set(-7.)
         
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
                           v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
                           v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
-                          low_power=True, paint=False, keep_trap_frequency_constant=False)
+                          low_power=True, paint=False, keep_trap_frequency_constant=False,
+                          cubic_ramp=cubic_ramp)
 
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
                           v_start=tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
                           v_end=self.p.v_pd_hf_tweezer_squeeze_power,
-                          paint=False,keep_trap_frequency_constant=False)
+                          paint=False,keep_trap_frequency_constant=False,
+                          cubic_ramp=cubic_ramp)
         
     @kernel
     def reset_tweezers(self, two_d_tweezers):

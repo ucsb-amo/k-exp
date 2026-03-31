@@ -25,7 +25,7 @@ class CameraNanny():
             if self.break_check():
                 break
             camera = self.get_camera(camera_params)
-            if type(camera) == DummyCamera:
+            if type(camera) == DummyCamera or type(camera) == None:
                 count += 1
                 time.sleep(CHECK_PERIOD)
                 if np.mod(count,N_NOTIFY) == 0:

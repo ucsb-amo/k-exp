@@ -9,27 +9,27 @@ class rabi_oscillation(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.DISPERSIVE)
         
         self.p.squeeze = 1
-        
-        # self.p.v_pd_hf_tweezer_squeeze_power = 0.5
-        # self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(0.16,0.5,3))
 
-        # self.xvar('amp_imaging',np.linspace(0.1,1.,8))
-
-        self.xvar('t_raman_pulse',np.linspace(0.,60.,30)*1.e-6)
+        self.xvar('t_raman_pulse',np.linspace(0.,30.,15)*1.e-6)
         self.p.t_raman_pulse = 0.
 
         self.p.t_tof = 20.e-6
         self.p.N_repeats = 1
+
+        self.data.apd = self.data.add_data_container(1)
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+
+        self.camera_params.gain = 1
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         if self.p.squeeze == 0.:
@@ -46,6 +46,11 @@ class rabi_oscillation(EnvExperiment, Base):
         self.ttl.raman_shutter.off()
 
         delay(self.p.t_tweezer_hold)
+
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse)
+
+        delay(10.e-6)
 
         self.tweezer.off()
 
