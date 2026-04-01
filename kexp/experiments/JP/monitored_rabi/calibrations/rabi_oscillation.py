@@ -11,17 +11,17 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.squeeze = 1
+        self.p.squeeze = 0.
         
         # self.p.v_pd_hf_tweezer_squeeze_power = 0.5
         # self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(0.16,0.5,3))
 
         # self.xvar('amp_imaging',np.linspace(0.1,1.,8))
 
-        self.xvar('t_raman_pulse',np.linspace(0.,60.,30)*1.e-6)
+        self.xvar('t_raman_pulse',np.linspace(0.,200.,100)*1.e-6)
         self.p.t_raman_pulse = 0.
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 100.e-6
         self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
@@ -36,7 +36,7 @@ class rabi_oscillation(EnvExperiment, Base):
             squeeze = True
         else:
             squeeze = False
-        self.prepare_hf_tweezers(squeeze=squeeze)
+        self.prepare_hf_tweezers(squeeze=False)
         self.prep_raman()
 
         # self.tweezer_squeeze()
