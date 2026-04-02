@@ -18,7 +18,7 @@ if %errorlevel% neq 0 (
 )
 
 REM Define the EthernetConfig directory
-set "configDir=C:\ProgramData\EthernetConfig"
+set "configDir=%code%\k-exp\kexp\util\network"
 
 REM Check if the PowerShell script exists
 if not exist "%configDir%\set_adapter_ip.ps1" (
