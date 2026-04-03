@@ -1,27 +1,24 @@
 from artiq.experiment import *
-from artiq.experiment import delay
-from kexp import Base, img_types, cameras
+from artiq.language import now_mu, at_mu
 import numpy as np
 
-class rabi_oscillation(EnvExperiment, Base):
+class timing_test(EnvExperiment):
     kernel_invariants = {
                         "m",
                         "Omega",
                         "dt",
-                        "N_pulses",
-                        "N_photons_per_shot",
-                        "v_apd_all_up",
-                        "v_apd_all_down",
-                        "v_range"}
+                        "N_photons_per_shot"}
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
-                      camera_select=cameras.andor,
-                      save_data=False,
-                      imaging_type=img_types.DISPERSIVE)
+        self.core = self.get_device('core')
+        self.ttl = self.get_device('ttl21')
 
-        self.xvar('dummy',[0])
-        
+        self.m = 21
+        self.P0 = np.ones(self.m)
+        self.P0 = self.P0 / np.sum(self.P0)
+        self.state_list = np.zeros((self.m,3))
+        self.state_list[:,2] = 1.
+
         self.Omega = 2*np.pi*80.e3 # rabi frequency guess
 
         omega_guess = 2*np.pi*147.e6 # state splitting guess
@@ -31,41 +28,30 @@ class rabi_oscillation(EnvExperiment, Base):
         self.omega_raman = omega_guess # omega_ctrl
         
         self.dt = 2.e-6 # drive pulse length per step
-        self.N_pulses = 8 # number of steps of evolution
 
         self.N_photons_per_shot = 10
-
-        self.v_apd_all_up = -1.5
-        self.v_apd_all_down = -1.0
-        self.v_range = self.v_apd_all_up - self.v_apd_all_down
         
-        self.m = 21
-        self.P0 = np.ones(self.m)
-        self.P0 = self.P0 / np.sum(self.P0)
-        self.state_list = np.zeros((self.m,3))
-        self.state_list[:,2] = 1.
-        
-        self.finish_prepare()
-
     @kernel
-    def scan_kernel(self):
-        # self.integrator.init()
+    def run(self):
+        v = 0.1
+        v = v * self.N_photons_per_shot
+        t = 100.e-6
+
+        slack0 = 0
+        slack1 = 1
+
+        self.core.reset()
         
-        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
-        # self.imaging.set_power(self.camera_params.amp_imaging)
-
-        # self.prepare_hf_tweezers()
-        # self.prep_raman()
-
-        # self.feedback_experiment()
-
-        # delay(self.p.t_tweezer_hold)
-        # self.tweezer.off()
-
-        # delay(self.p.t_tof)
-        # self.abs_image()
+        self.ttl.on()
+        t0 = now_mu()
+        self.core.wait_until_mu(t0)
+        # slack0 = t0 - self.core.get_rtio_counter_mu()
+        (mn, std) = self.generate_posterior(v, 100.e-6)
+        slack1 = t0 - self.core.get_rtio_counter_mu()
+        # self.ttl.off()
         
-        (mn, std) = self.generate_posterior(0.1, 100.e-6)
+        delay(10.e-3)
+        print(slack0, slack1)
 
     @kernel
     def generate_posterior(self, k, t):
@@ -84,7 +70,7 @@ class rabi_oscillation(EnvExperiment, Base):
         R = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
 
         for j in range(self.m):
-            omega = self.Omega_guess_list[j]
+            omega = self.omega_guess_list[j]
             delta_omega = self.omega_raman - omega
 
             phase = self.dt * delta_omega
@@ -134,29 +120,3 @@ class rabi_oscillation(EnvExperiment, Base):
         std = np.sqrt(moment_2 - mn**2)
 
         return mn, std
-
-    @kernel
-    def update_state(self, val, state_idx, idx):
-        self.state_list[state_idx][idx] = val
-
-    @kernel
-    def convert_measurement(self, v_apd):
-        return self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range
-    
-    @kernel
-    def measurement(self):
-        idx = self.idx
-        self.integrated_imaging_pulse(self.data.apd, t=self.dt, idx=self.idx)
-        self.idx = self.idx + 1
-        return self.convert_measurement(self.data.apd[idx])
-
-    @kernel
-    def run(self):
-        self.init_kernel()
-        self.load_2D_mot(self.p.t_2D_mot_load_delay)
-        self.scan()
-
-    def analyze(self):
-        import os
-        expt_filepath = os.path.abspath(__file__)
-        self.end(expt_filepath)

@@ -43,8 +43,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
         self.p.t_continuous_rabi = 600.e-6
 
-        # self.xvar('t_raman_pulse',[0.,(7.8717e-06) / 2, (7.8717e-06)])
-        self.p.t_raman_pulse = (7.8717e-06) / 2
+        # self.xvar('t_raman_pulse',[0.,(7.8717e-06)])
+        self.p.t_raman_pulse = 7.8717e-06
         
         # self.xvar('amp_imaging',np.linspace(0.5,1.9,30))
         self.p.amp_imaging = .1
@@ -67,7 +67,12 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 30
+        self.p.N_repeats = 1
+
+        self.xvar('N_pulses',np.arange(1,30,1))
+        self.p.N_pulses = 2
+        self.p.t_img_pulse = 15.e-6
+        self.data.apd = self.data.add_data_container(1)
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -75,6 +80,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+
+        self.integrator.init() # init the integrator
         
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning_mid)
         # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
@@ -91,15 +98,32 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
 
-        # self.raman.pulse(t=self.p.t_raman_pulse)
-        
-        self.ttl.pd_scope_trig3.pulse(1.e-6)
-        self.imaging.on()
-        # delay(5.e-6)
-        self.raman.pulse(t=self.p.t_continuous_rabi)
-        # delay(self.p.t_continuous_rabi)
-        self.imaging.off()
+        # self.raman.pulse(t=1*self.p.t_raman_pi_pulse)
 
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        delay(3.e-6)
+        # for i in range(self.p.N_pulses):
+        #     # take an imaging pulse and store it in the data container at index i for this shot
+        #     self.integrated_imaging_pulse(
+        #                             self.data.apd,
+        #                             t = self.p.t_img_pulse,
+        #                             dark = False,
+        #                             idx = i)
+        for i in range(self.p.N_pulses):    
+            # delay(15.e-6)
+            self.raman.pulse(t=self.p.t_raman_pi_pulse)
+            # self.raman.on()
+            # delay(self.p.t_raman_pi_pulse)
+            # self.raman.off()
+            delay(1.e-6)
+        
+        delay(15.e-6)
+        self.integrated_imaging_pulse(
+                                    self.data.apd,
+                                    t = self.p.t_img_pulse,
+                                    dark = False,
+                                    idx = 0)
+        delay(15.e-6)
         self.ttl.raman_shutter.off()
         
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
@@ -112,10 +136,10 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.abs_image()
 
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
-        self.core.break_realtime()
-        delay(30.e-3)
+        # self.core.wait_until_mu(now_mu())
+        # self.scope.read_sweep(0)
+        # self.core.break_realtime()
+        # delay(30.e-3)
 
     @kernel
     def run(self):
