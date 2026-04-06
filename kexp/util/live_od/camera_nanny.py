@@ -52,14 +52,38 @@ class CameraNanny():
         camera_type = camera_params.camera_type
         if type(camera_type) == bytes: 
             camera_type = camera_type.decode()
-        if camera_type == "basler":
-            camera.set_exposure(camera_params.exposure_time)
-            camera.set_gain(camera_params.gain)
-        elif camera_type == "andor":
-            camera.set_EMCCD_gain(camera_params.gain)
-            camera.set_exposure(camera_params.exposure_time)
-            camera.set_amp_mode(preamp=camera_params.preamp)
-            camera.set_hsspeed(camera_params.hs_speed)
+            try:
+                if camera_type == "basler":
+                    camera.set_exposure(camera_params.exposure_time)
+                    camera.set_gain(camera_params.gain)
+                elif camera_type == "andor":
+                    camera.set_EMCCD_gain(camera_params.gain)
+                    camera.set_exposure(camera_params.exposure_time)
+                    camera.set_amp_mode(preamp=camera_params.preamp)
+                    camera.set_hsspeed(camera_params.hs_speed)
+            except Exception as e:
+                camera = DummyCamera()
+                print(e)
+                print(f"There was an issue opening the requested camera (key: {camera_params.key}).")
+        else:
+            try:
+                if camera_type == "basler":
+                    camera = BaslerUSB(BaslerSerialNumber=camera_params.serial_no,
+                                    ExposureTime=camera_params.exposure_time,
+                                    TriggerSource=camera_params.trigger_source,
+                                    Gain=camera_params.gain)
+                elif camera_type == "andor":
+                    camera = AndorEMCCD(ExposureTime=camera_params.exposure_time,
+                                    gain = camera_params.gain,
+                                    hs_speed=camera_params.hs_speed,
+                                    vs_speed=camera_params.vs_speed,
+                                    vs_amp=camera_params.vs_amp,
+                                    preamp=camera_params.preamp)
+            except Exception as e:
+                camera = DummyCamera()
+                print(e)
+                print(f"There was an issue opening the requested camera (key: {camera_params.key}).")
+        return camera
 
     def open(self,camera_params:CameraParams):
         camera_type = camera_params.camera_type
