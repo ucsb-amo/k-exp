@@ -66,17 +66,11 @@ class Devices():
         # self.grabber = self.get_device("grabber0")
         # self.grabber: Grabber
 
-        # slm
-        self.slm = SLM(expt_params=self.params, core=self.core)
-
         # sampler channels
         self.sampler = sampler_frame(sampler_device=sampler)
 
         # dac channels
         self.dac = dac_frame(expt_params=self.params, dac_device=zotino)
-
-        self.shuttler = shuttler_frame()
-        self.get_shuttler_devices()
 
         # ttl channels
         self.ttl = ttl_frame()
@@ -84,143 +78,13 @@ class Devices():
 
         # set up dds_frame
         self.dds = dds_frame(dac_frame_obj=self.dac,
-                             shuttler_frame_obj=self.shuttler,
                               core=self.core, expt_params=self.params)
         # self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
 
-        self.rf = doubled_rf(dds_ch=self.dds.antenna_rf, expt_params=self.params)
-
-        # magnet coils
-        self.inner_coil = hbridge_magnet(max_current=170.,
-                                        max_voltage=80.,
-                                        v_control_dac=self.dac.inner_coil_supply_voltage,
-                                        i_control_dac=self.dac.inner_coil_supply_current,
-                                        pid_dac=self.dac.inner_coil_pid,
-                                        pid_ttl=self.ttl.inner_coil_pid_ttl,
-                                        igbt_ttl=self.ttl.inner_coil_igbt,
-                                        discharge_igbt_ttl=self.ttl.test_trig,
-                                        blanking_ttl=self.ttl.b_field_stab_SRS_blanking_input,
-                                        hbridge_ttl=self.ttl.hbridge_helmholtz,
-                                        expt_params=self.params,
-                                        slope_current_per_vdac_supply=17.)
-                                      
-        self.outer_coil = igbt_magnet(max_current=500.,
-                                        max_voltage=80.,
-                                        v_control_dac=self.dac.outer_coil_supply_voltage,
-                                        i_control_dac=self.dac.outer_coil_supply_current,
-                                        pid_dac=self.dac.outer_coil_pid,
-                                        pid_ttl=self.ttl.outer_coil_pid_ttl,
-                                        igbt_ttl=self.ttl.outer_coil_igbt,
-                                        discharge_igbt_ttl=self.ttl.outer_coil_discharge_igbt_ttl,
-                                        blanking_ttl=self.ttl.b_field_stab_SRS_blanking_input,
-                                        expt_params=self.params,
-                                        slope_current_per_vdac_supply=slope_i_transducer_per_v_setpoint_supply_outer,
-                                        offset_current_per_vdac_supply=offset_i_transducer_per_v_setpoint_supply_outer,
-                                        slope_current_per_vdac_pid=slope_i_transducer_per_v_setpoint_pid_outer,
-                                        offset_current_per_vdac_pid=offset_i_transducer_per_v_setpoint_pid_outer)
-        
-        # painted ligthsheet
-        self.lightsheet = lightsheet(pid_dac=self.dac.vva_lightsheet,
-                                     paint_amp_dac=self.dac.lightsheet_paint_amp,
-                                     alignment_shim_dac=self.dac.zshim_current_control,
-                                     sw_ttl=self.ttl.lightsheet_sw,
-                                     pid_int_hold_zero_ttl = self.ttl.lightsheet_pid_int_hold_zero,
-                                     expt_params=self.params)
-        
-        self.tweezer = tweezer(ao1_dds=self.dds.tweezer_pid_1,
-                               pid1_dac=self.dac.v_pd_tweezer_pid1,
-                               ao2_dds=self.dds.tweezer_pid_2,
-                               pid2_dac=self.dac.v_pd_tweezer_pid2,
-                               sw_ttl=self.ttl.aod_rf_sw,
-                               awg_trg_ttl = self.ttl.awg_trigger,
-                               pid1_int_hold_zero_ttl = self.ttl.tweezer_pid1_int_hold_zero,
-                               pid2_enable_ttl=self.ttl.tweezer_pid2_enable,
-                               painting_dac = self.dac.tweezer_paint_amp,
-                               expt_params = self.params,
-                               core=self.core)
-        
-        self.raman = RamanBeamPair(dds0=self.dds.raman_150_plus,
-                                    dds1=self.dds.raman_80_plus,
-                                    dds_sw=self.dds.raman_switch,
-                                    frequency_transition=self.params.frequency_raman_transition,
-                                    fraction_power=self.params.fraction_power_raman,
-                                    params=self.params)
-        
-        # self.raman_lf_hf = RamanBeamPair(dds0=self.dds.raman_150_minus,
-        #                                 dds1=self.dds.raman_80_plus,
-        #                                 frequency_transition=self.params.frequency_raman_transition,
-        #                                 fraction_power=self.params.fraction_power_raman,
-        #                                 params=self.params)
-        
-        self.raman_nf = RamanBeamPair(dds0=self.dds.raman_150_minus,
-                                    dds1=self.dds.raman_80_plus,
-                                    dds_sw=self.dds.raman_switch,
-                                    frequency_transition=self.params.frequency_raman_transition,
-                                    fraction_power=self.params.fraction_power_raman,
-                                    params=self.params)
-        
-        # self.ry_980_eo = SSG3021X()
-
-        self.siglent = siglent_frame(self.core)
-
-        self.ry_405 = CavityAOControlledRyDDSBeam(
-                            siglent_ch=self.siglent.siglent_405,
-                            dds_sw=self.dds.ry_405_sw,
-                            ao_order_cavity=1,
-                            ao_order_pid=-1,
-                            frequency_pid_ao=80.e6)
-        
-        self.ry_980 = FiberEOControlledRyDDSBeam(
-            siglent_ch=self.siglent.siglent_980,
-            eo_order_sideband=-1,
-            ttl_ao_sw=self.ttl.ry_980_sw,
-            ao_order_cavity=1,
-            frequency_cavity_ao=80.e6,
-            ao_order_sw=-1,
-            frequency_sw_ao=80.e6,
-            ao_order_pid=1,
-            frequency_pid_ao=80.e6)
-        
-        # self.reference_arm_waveplate_pid = WaveplateRotatorPhotodiodePID(
-        #     kinesis_device_id = DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR,
-        #     sampler_ch = self.sampler.reference_beam_pd,
-        #     core = self.core)
-        
-        self.integrator = Integrator(ttl_integrate=self.ttl.integrator_int_hold,
-                                     ttl_reset=self.ttl.integrator_reset,
-                                     sampler_ch=self.sampler.apd_integrator)
-
         # camera placeholder
         self.camera = DummyCamera()
-
-    def configure_imaging_system(self, imaging_configuration):
-        
-        if imaging_configuration == img_config.PID:
-            self.imaging = BeatLockImagingPID(dds_sw=self.dds.imaging_x_switch,
-                                              dds_beatref=self.dds.beatlock_ref,
-                                              dds_pid=self.dds.imaging,
-                                              pid_int_clear_ttl=self.ttl.imaging_pid_int_clear_hold,
-                                              pid_override_ttl=self.ttl.imaging_pid_manual_override,
-                                              expt_params=self.params)
-        else:
-            raise ValueError('Both the xy and x imaging fibers are currently derived from the PID setup (as of 2026-02-17)')
-        # elif imaging_configuration == img_config.SWITCH:
-        #     self.imaging = BeatLockImaging(dds_sw=self.dds.imaging,
-        #                                    dds_beatref=self.dds.beatlock_ref,
-        #                                    pid_override_ttl=self.ttl.imaging_pid_manual_override,
-        #                                    expt_params=self.params)
-        
-        # elif imaging_configuration == img_config.POLMOD:
-        #     self.imaging = PolModBeatLock(dds_sw=self.dds.imaging,
-        #                             dds_polmod_v=self.dds.polmod_v,
-        #                             dds_polmod_h=self.dds.polmod_h,
-        #                             dds_beatref=self.dds.beatlock_ref,
-        #                             pid_override_ttl=self.ttl.imaging_pid_manual_override,
-        #                             N_beatref_mult=N, beatref_sign=beatref_sign,
-        #                             frequency_minimum_beat=f_min_beat,
-        #                             expt_params=self.params)
 
     def get_ttl_devices(self):
         for ttl in self.ttl.ttl_list:
@@ -230,17 +94,6 @@ class Devices():
         for dds in self.dds.dds_list:
             dds.dds_device = self.get_device(dds.name)
             dds.cpld_device = self.get_device(dds.cpld_name)
-
-    def get_shuttler_devices(self):
-        self.shuttler._config = self.get_device("shuttler0_config")
-        self.shuttler._relay = self.get_device("shuttler0_relay")
-        self.shuttler._trigger = self.get_device("shuttler0_trigger")
-
-        for shuttler_ch in self.shuttler.shuttler_list:
-            shuttler_ch._dc = self.get_device(shuttler_ch._dc_name)
-            shuttler_ch._dds = self.get_device(shuttler_ch._dds_name)
-            shuttler_ch._relay = self.shuttler._relay
-            shuttler_ch._trigger = self.shuttler._trigger
 
     @kernel
     def set_all_dds(self):
@@ -269,8 +122,3 @@ class Devices():
         for ddss in self.dds.dds_array:
             ddss[0].cpld_device.init()
             delay(10*us)
-
-    def shutdown_sources(self):
-        from kexp import EthernetRelay
-        relay = EthernetRelay()
-        relay.source_off()
