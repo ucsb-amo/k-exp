@@ -7,11 +7,20 @@ class timing_test(EnvExperiment):
                         "m",
                         "Omega",
                         "dt",
-                        "N_photons_per_shot"}
+                        "N_photons_per_shot",
+                        "omega_guess_list",
+                        "omega_sq_list",
+                        "cos_z_list",
+                        "sin_z_list",
+                        "cos_H_list",
+                        "sin_H_list",
+                        "Omega_over_H_list",
+                        "u_z_list",
+                        "omega_step"}
 
     def prepare(self):
         self.core = self.get_device('core')
-        self.ttl = self.get_device('ttl21')
+        self.ttl = self.get_device('ttl4')
 
         self.m = 21
         self.P0 = np.ones(self.m)
@@ -24,10 +33,25 @@ class timing_test(EnvExperiment):
         omega_guess = 2*np.pi*147.e6 # state splitting guess
         offset = 5 # how many rabi frequencies away from the guess to "search"
         self.omega_guess_list = omega_guess + 2*offset*self.Omega*np.linspace(-1,1,self.m)
+        self.omega_step = self.omega_guess_list[1] - self.omega_guess_list[0]
+        self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
 
         self.omega_raman = omega_guess # omega_ctrl
         
         self.dt = 2.e-6 # drive pulse length per step
+
+        delta_omega_list = self.omega_raman - self.omega_guess_list
+        alpha_z_list = 2.0 * self.dt * delta_omega_list
+        self.cos_z_list = np.cos(alpha_z_list)
+        self.sin_z_list = np.sin(alpha_z_list)
+
+        norm_H_list = np.sqrt(self.Omega*self.Omega + delta_omega_list*delta_omega_list)
+        self.Omega_over_H_list = self.Omega / norm_H_list
+        self.u_z_list = delta_omega_list / norm_H_list
+
+        alpha_H_list = 2.0 * norm_H_list * self.dt
+        self.cos_H_list = np.cos(alpha_H_list)
+        self.sin_H_list = np.sin(alpha_H_list)
 
         self.N_photons_per_shot = 10
         
@@ -51,72 +75,114 @@ class timing_test(EnvExperiment):
         # self.ttl.off()
         
         delay(10.e-3)
-        print(slack0, slack1)
+        print(abs(slack1))
 
-    @kernel
+    @kernel(flags={"fast-math"})
     def generate_posterior(self, k, t):
         P0_total = 0.
-        p1 = 0.
         moment_2 = 0.
         mn = 0.
-        std = 0.
-        sin_H = 0.
-        cos_H = 0.
+        omega_guess_list = self.omega_guess_list
+        omega_sq_list = self.omega_sq_list
+        state_list = self.state_list
+        P0 = self.P0
+        cos_z_list = self.cos_z_list
+        sin_z_list = self.sin_z_list
+        cos_H_list = self.cos_H_list
+        sin_H_list = self.sin_H_list
+        Omega_over_H_list = self.Omega_over_H_list
+        u_z_list = self.u_z_list
+        m = self.m
+        n_photons = self.N_photons_per_shot
 
-        I = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
-        R_z = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
-        K = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
-        R_H = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
-        R = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
+        k_int = int(k)
+        # int_k_mode = (k == k_int)
+        nk_int = n_photons - k_int
+        # int_nk_mode = (nk_int >= 0)
 
-        for j in range(self.m):
-            omega = self.omega_guess_list[j]
-            delta_omega = self.omega_raman - omega
+        wt = omega_guess_list[0] * t
+        cos_wt = np.cos(wt)
+        sin_wt = np.sin(wt)
 
-            phase = self.dt * delta_omega
-            alpha_Z = 2.0 * phase
-            cos_z = np.sin(np.pi/2 - alpha_Z)
-            sin_z = np.sin(alpha_Z)
+        dwt = self.omega_step * t
+        cos_dwt = np.cos(dwt)
+        sin_dwt = np.sin(dwt)
 
-            R_z = np.array([[cos_z,sin_z, 0.],
-                            [-sin_z, cos_z, 0.],
-                            [0., 0., 1.]])
+        for j in range(m):
+            omega = omega_guess_list[j]
+            cos_z = cos_z_list[j]
+            sin_z = sin_z_list[j]
 
-            norm_H = np.sqrt(self.Omega**2 + delta_omega**2)
-            if norm_H != 0.:
-                alpha_H = 2.0 * norm_H * self.dt
-                cos_H = np.sin(np.pi/2 - alpha_H)
-                sin_H = np.sin(alpha_H)
+            sx = state_list[j][0]
+            sy = state_list[j][1]
+            sz = state_list[j][2]
 
-                Omega_over_H = self.Omega / norm_H
+            cos_H = cos_H_list[j]
+            sin_H = sin_H_list[j]
+            Omega_over_H = Omega_over_H_list[j]
+            u_z = u_z_list[j]
 
-                u_x = Omega_over_H * np.sin(np.pi/2 - omega * t) 
-                u_y = Omega_over_H * np.sin(omega * t)
-                u_z = delta_omega / norm_H
+            u_x = Omega_over_H * cos_wt
+            u_y = Omega_over_H * sin_wt
 
-                K = np.array([[0.0,-u_z, u_y],
-                            [u_z, 0.0, -u_x],
-                            [-u_y, u_x, 0.0]])
+            one_minus_cos = 1.0 - cos_H
 
-                R_H = I + sin_H * K + (1.0 - cos_H) * (K @ K)
+            uxux = u_x * u_x
+            uyuy = u_y * u_y
+            uzuz = u_z * u_z
+            uxuy = u_x * u_y
+            uxuz = u_x * u_z
+            uyuz = u_y * u_z
 
-            R = R_z @ R_H 
+            hx = (cos_H + one_minus_cos * uxux) * sx
+            hx += (one_minus_cos * uxuy - sin_H * u_z) * sy
+            hx += (one_minus_cos * uxuz + sin_H * u_y) * sz
 
-            for i in range(3):
-                self.state_list[j][i] = R[i] @ self.state_list[j]
+            hy = (one_minus_cos * uxuy + sin_H * u_z) * sx
+            hy += (cos_H + one_minus_cos * uyuy) * sy
+            hy += (one_minus_cos * uyuz - sin_H * u_x) * sz
+
+            hz = (one_minus_cos * uxuz - sin_H * u_y) * sx
+            hz += (one_minus_cos * uyuz + sin_H * u_x) * sy
+            hz += (cos_H + one_minus_cos * uzuz) * sz
+
+            nx = cos_z * hx + sin_z * hy
+            ny = -sin_z * hx + cos_z * hy
+
+            state_list[j][0] = nx
+            state_list[j][1] = ny
+            state_list[j][2] = hz
+
+            p1 = hz
+            # if int_k_mode and int_nk_mode:
+            p1_pow = 1.0
+            i = 0
+            while i < k_int:
+                p1_pow *= p1
+                i += 1
+
+            q = 1.0 - p1
+            q_pow = 1.0
+            i = 0
+            while i < nk_int:
+                q_pow *= q
+                i += 1
+
+            pj = P0[j] * p1_pow * q_pow
             
-            p1 = self.state_list[j][2]
-            pj = self.P0[j] * (p1**k) * ((1.0 - p1)**(self.N_photons_per_shot-k))
-
             P0_total += pj
             mn += pj * omega
-            moment_2 += pj * omega**2
+            moment_2 += pj * omega_sq_list[j]
 
-            self.P0[j] = pj
+            P0[j] = pj
+
+            next_cos_wt = cos_wt * cos_dwt - sin_wt * sin_dwt
+            sin_wt = sin_wt * cos_dwt + cos_wt * sin_dwt
+            cos_wt = next_cos_wt
 
         mn = mn / P0_total
         moment_2 = moment_2 / P0_total
 
-        std = np.sqrt(moment_2 - mn**2)
+        std = np.sqrt(moment_2 - mn * mn)
 
         return mn, std
