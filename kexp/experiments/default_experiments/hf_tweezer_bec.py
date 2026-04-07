@@ -28,7 +28,7 @@ class hf_bec(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
 
-        self.prepare_hf_tweezers()
+        self.prepare_hf_tweezers(squeeze=False)
         
         delay(self.p.t_tweezer_hold)
         
