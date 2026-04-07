@@ -103,6 +103,7 @@ class timing_test(EnvExperiment):
 
         j = 0
         while j < m:
+            print('hi')
             delta_omega = omega_raman - omega_guess_list[j]
 
             alpha_z = 2.0 * dt * delta_omega
