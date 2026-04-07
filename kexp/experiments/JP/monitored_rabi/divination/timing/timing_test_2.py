@@ -123,16 +123,17 @@ class timing_test(EnvExperiment):
         slack1 = 1
 
         self.core.reset()
-        
-        t0 = now_mu()
-        self.core.wait_until_mu(t0)
 
-        k = int(v)
-        (mn, std) = self.generate_posterior(k, t)
-        slack1 = t0 - self.core.get_rtio_counter_mu()
-        
-        delay(10.e-3)
-        print(abs(slack1))
+        for i in range(10):        
+            t0 = now_mu()
+            self.core.wait_until_mu(t0)
+
+            k = int(v)
+            (mn, std) = self.generate_posterior(k, t)
+            slack1 = t0 - self.core.get_rtio_counter_mu()
+            
+            delay(10.e-3)
+            print(abs(slack1))
 
     @kernel(flags={"fast-math"})
     def generate_posterior(self, k, t):
