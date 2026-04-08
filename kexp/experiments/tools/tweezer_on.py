@@ -12,17 +12,17 @@ class TweezerOn(EnvExperiment, Base):
         Base.__init__(self,setup_camera=False)
         self.finish_prepare()
     
-    # add tweezers by adding frequencies within 75.e6 +/- 4.e6
-    self.p.frequency_tweezer_list = [75.e6]
-    
-    # make sure number of amps match number of tweezers, amps should sum to </= 1.
-    self.p.amp_tweezer_list = [.18]
+        # add tweezers by adding frequencies within 75.e6 +/- 4.e6
+        self.p.frequency_tweezer_list = [75.e6]
+        
+        # make sure number of amps match number of tweezers, amps should sum to </= 1.
+        self.p.amp_tweezer_list = [.18]
 
-    # painting amplitude runs from -7. to 6 V
-    self.p.v_hf_tweezer_paint_amp_max = -2.
+        # painting amplitude runs from -7. to 6 V
+        self.p.v_hf_tweezer_paint_amp_max = -2.
 
-    # tweezer rampup endpoint (0 - 9. V)
-    self.p.v_pd_hf_tweezer_1064_ramp_end = 8.4
+        # tweezer rampup endpoint (0 - 9. V)
+        self.p.v_pd_hf_tweezer_1064_ramp_end = 1.
 
     @kernel
     def scan_kernel(self):
