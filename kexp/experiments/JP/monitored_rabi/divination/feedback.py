@@ -27,7 +27,7 @@ class feedback(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=False,
+                      save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
         ### parameters
@@ -67,7 +67,7 @@ class feedback(EnvExperiment, Base):
 
         omega_guess = 2*np.pi*self.p.frequency_raman_transition # state splitting guess
         omega_guess_offset = self.Omega
-        omega_guess = omega_guess_offset
+        omega_guess = omega_guess + omega_guess_offset
 
         offset = 5 # how many rabi frequencies away from the guess to "search"
         self.omega_guess_list = omega_guess + 2*offset*self.Omega*np.linspace(-1,1,self.m)
@@ -104,7 +104,7 @@ class feedback(EnvExperiment, Base):
 
         ###
         
-        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+        # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
         
         self.finish_prepare()
 
@@ -112,7 +112,7 @@ class feedback(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.initialize_feedback()
-        print(self.t_posterior_mu)
+        delay(10.e-3)
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
@@ -132,19 +132,20 @@ class feedback(EnvExperiment, Base):
             self.omega_raman, _ = self.generate_posterior(k, t)
             self.data.omega_raman.shot_data[i] = self.omega_raman
             delay_mu(self.t_posterior_mu)
-            delay_mu(1000)
+            delay_mu(20000)
             self.raman.set(self.omega_raman/(2*np.pi))
             self.raman.pulse(self.p.t_raman_pulse)
-
+            delay_mu(20000)
+            
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
         delay(self.p.t_tof)
         self.abs_image()
 
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
-        self.core.break_realtime()
-        delay(30.e-3)
+        # self.core.wait_until_mu(now_mu())
+        # self.scope.read_sweep(0)
+        # self.core.break_realtime()
+        # delay(30.e-3)
 
     @kernel
     def convert_measurement(self, v_apd):
