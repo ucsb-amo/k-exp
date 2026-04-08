@@ -18,33 +18,17 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tof = 800.e-6
         # self.xvar('t_tof',np.linspace(100,1200.,10)*1.e-6)
-        # self.xvar('t_tof',np.linspace(20.,600.,6)*1.e-6)
+        self.xvar('t_tof',np.linspace(20.,1200.,16)*1.e-6)
         # self.xvar('dumy',[0]*100)
 
-        self.xvar('i_magtrap_init',np.linspace(65.,120.,20))
+        #self.xvar('i_magtrap_init',np.linspace(65.,120.,20))
+        self.p.i_magtrap_init = 100.0
 
         # self.xvar('t_magtrap',np.linspace(.1,3.,15))
         # self.p.t_magtrap = 1.
         
         # self.xvar('t_lightsheet_hold',np.linspace(0.05,1.,5))
         self.p.t_lightsheet_hold = .1
-
-        # self.xvar('t_imaging_pulse',np.linspace(1.,20.,20)*1.e-6)
-        # self.p.t_imaging_pulse = 2.e-5
-
-        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,1.,15))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,2.,8))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,9.9,15))
-
-        # self.p.v_zshim_current_magtrap = 0.11
-        # self.p.v_xshim_current_magtrap = 0.0
-        # self.p.v_yshim_current_magtrap = 3.
-        # self.xvar('t_magtrap',np.linspace(.1,2.,15))
-        # self.p.t_magtrap = 0.
-        # self.p.v_zshim_current_magtrap = 0
-        # self.camera_params.exposure_time = 50.e-6
-        # self.params.t_imaging_pulse = self.camera_params.exposure_time
-        # self.camera_params.em_gain = 1.
 
         # self.xvar('amp_imaging',np.linspace(0.08,0.12,5))
 
