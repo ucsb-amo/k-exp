@@ -85,6 +85,7 @@ class feedback(EnvExperiment, Base):
 
         self.P0 = np.ones(self.m)
         self.P0 = self.P0 / np.sum(self.P0)
+        self.P0_total = 1.
 
         self.state_x = np.zeros(self.m)
         self.state_y = np.zeros(self.m)
@@ -156,9 +157,9 @@ class feedback(EnvExperiment, Base):
         # self.core.break_realtime()
         delay(30.e-3)
 
-    @kernel
+    @portable
     def convert_measurement(self, v_apd):
-        return int(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
+        return round(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
     
     @kernel
     def measurement(self):
@@ -179,7 +180,7 @@ class feedback(EnvExperiment, Base):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
 
-    @kernel(flags={"fast-math"})
+        @kernel(flags={"fast-math"})
     def generate_posterior(self, k, t, do_it=True):
         # Running sums for posterior normalization and moments:
         #   P0_total = sum_j p_j
@@ -196,9 +197,9 @@ class feedback(EnvExperiment, Base):
         state_y = self.state_y
         state_z = self.state_z
         P0 = self.P0
-
+        
         m = self.m
-        n_photons = int(self.N_photons_per_shot)
+        n_photons = self.N_photons_per_shot
 
         omega_raman = self.omega_raman
         Omega = self.Omega
@@ -319,12 +320,14 @@ class feedback(EnvExperiment, Base):
             # Posterior weight uses binomial-like factor:
             #   p_j <- p_j * p1^k * (1-p1)^(N-k)
             # same explicit formula used in timing_test_0.py.
-            p1 = hz
+            p1 = (hz + 1)/2
             q = 1.0 - p1
             p1_pow = self.powi(p1, k_int)
             q_pow = self.powi(q, nk_int)
 
             pj = P0[j] * p1_pow * q_pow
+
+            #print('step', j, p1,q,p1_pow,q_pow, P0[j], 'probability', pj)
 
             P0_total += pj
             mn += pj * omega
@@ -356,6 +359,12 @@ class feedback(EnvExperiment, Base):
         # Normalize moments to obtain posterior mean and variance.
         mn = mn / P0_total
         moment_2 = moment_2 / P0_total
+        
+        if do_it:
+            for i in range(len(P0)):
+                P0[i] = P0[i] / P0_total
+    
+        self.P0_total = P0_total
 
         var = moment_2 - mn * mn
         if var < 0.0:
