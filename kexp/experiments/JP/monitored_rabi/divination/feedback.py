@@ -37,7 +37,7 @@ class feedback(EnvExperiment, Base):
         self.p.amp_imaging = 0.3
         self.p.t_img_pulse = 5.e-6
 
-        self.p.t_raman_pulse = 2.e-6
+        self.p.t_raman_pulse = 3.5e-6
 
         self.N_pulses = 5 # number of steps of evolution
         self.m = 21 # feedback grid size
@@ -57,6 +57,8 @@ class feedback(EnvExperiment, Base):
         self.idx = 0
         self.data.omega_raman = self.data.add_data_container(self.N_pulses)
         self.data.apd = self.data.add_data_container(self.N_pulses)
+        self.data.counts = self.data.add_data_container(self.N_pulses)
+        self.data.ts = self.data.add_data_container(self.N_pulses)
 
         ### feedback setup
 
@@ -77,7 +79,7 @@ class feedback(EnvExperiment, Base):
         
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
-        self.N_photons_per_shot = int(n_photons_per_us * self.p.t_img_pulse)
+        self.N_photons_per_shot = n_photons_per_us * self.p.t_img_pulse * 1.e6
         
         ### constants and array setup
 
@@ -111,6 +113,8 @@ class feedback(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
+        self.integrator.init()
+
         self.initialize_feedback()
         delay(10.e-3)
         
@@ -130,22 +134,27 @@ class feedback(EnvExperiment, Base):
             t_mu = now_mu()
             t = (t_mu - t0)*1.e-9
             self.omega_raman, _ = self.generate_posterior(k, t)
+
+            self.data.ts.shot_data[i] = t
+            self.data.counts.shot_data[i] = float(k)
             self.data.omega_raman.shot_data[i] = self.omega_raman
+
             delay_mu(self.t_posterior_mu)
             delay_mu(20000)
             self.raman.set(self.omega_raman/(2*np.pi))
             self.raman.pulse(self.p.t_raman_pulse)
             delay_mu(20000)
-            
+
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
         delay(self.p.t_tof)
         self.abs_image()
 
-        # self.core.wait_until_mu(now_mu())
+        self.core.wait_until_mu(now_mu())
+        print(self.data.omega_raman.shot_data)
         # self.scope.read_sweep(0)
         # self.core.break_realtime()
-        # delay(30.e-3)
+        delay(30.e-3)
 
     @kernel
     def convert_measurement(self, v_apd):
@@ -154,9 +163,10 @@ class feedback(EnvExperiment, Base):
     @kernel
     def measurement(self):
         idx = self.idx
-        self.integrated_imaging_pulse(self.data.apd, t=self.dt, idx=self.idx)
+        self.integrated_imaging_pulse(self.data.apd, t=self.p.t_img_pulse, idx=self.idx)
+        v = self.convert_measurement(self.data.apd.shot_data[idx])
         self.idx = self.idx + 1
-        return self.convert_measurement(self.data.apd.shot_data[idx])
+        return v
 
     @kernel
     def run(self):
@@ -188,7 +198,7 @@ class feedback(EnvExperiment, Base):
         P0 = self.P0
 
         m = self.m
-        n_photons = self.N_photons_per_shot
+        n_photons = int(self.N_photons_per_shot)
 
         omega_raman = self.omega_raman
         Omega = self.Omega
@@ -359,6 +369,7 @@ class feedback(EnvExperiment, Base):
         """Makes feedback go faster to run it once. Does not modify state or P0
         arrays.
         """    
+
         self.core.wait_until_mu(now_mu())
         (mn, std) = self.generate_posterior(10, 1.e-6, do_it=False)
         self.core.break_realtime()

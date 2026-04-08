@@ -10,8 +10,7 @@ class params():
         self.amp_imaging = 0.3
 
 class timing_test(EnvExperiment):
-    kernel_invariants = {
-                        "m",
+    kernel_invariants = {"m",
                         "dt",
                         "N_photons_per_shot",
                         "omega_guess_list",
@@ -44,7 +43,8 @@ class timing_test(EnvExperiment):
         self.v_apd_all_up = -0.191
         self.v_apd_all_down = -0.226
 
-        n_photons_per_us_per_imgamp = 431.77 # 63017
+        # n_photons_per_us_per_imgamp = 431.77 # 63017
+        n_photons_per_us_per_imgamp = 50
 
         # for vpd = 0.3, lightshift 18.74kHz (#63034)
         self.omega_z_lightshift = 2*np.pi*18.74e3
@@ -72,7 +72,7 @@ class timing_test(EnvExperiment):
         
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
-        self.N_photons_per_shot = int(n_photons_per_us * self.p.t_img_pulse)
+        self.N_photons_per_shot = int(n_photons_per_us * self.p.t_img_pulse * 1.e6)
         
         ### constants and array setup
 
@@ -104,6 +104,7 @@ class timing_test(EnvExperiment):
         """Makes feedback go faster to run it once. Does not modify state or P0
         arrays.
         """    
+
         self.core.wait_until_mu(now_mu())
         (mn, std) = self.generate_posterior(10, 1.e-6, do_it=False)
         self.core.break_realtime()
@@ -168,6 +169,12 @@ class timing_test(EnvExperiment):
             b *= b
             e = e // 2
         return result
+    
+    @kernel
+    def convert_measurement(self, v_apd):
+        print((v_apd - self.v_apd_all_down) / self.v_range)
+        print(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
+        return int(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
 
     @kernel
     def run(self):
@@ -193,6 +200,8 @@ class timing_test(EnvExperiment):
             
             delay(10.e-3)
             print(abs(slack1))
+
+        print(self.convert_measurement(self.v_apd_all_up))
 
     @kernel(flags={"fast-math"})
     def generate_posterior(self, k, t, do_it=True):
@@ -338,6 +347,7 @@ class timing_test(EnvExperiment):
             q = 1.0 - p1
             p1_pow = self.powi(p1, k_int)
             q_pow = self.powi(q, nk_int)
+            print(p1,q,p1_pow,q_pow)
 
             pj = P0[j] * p1_pow * q_pow
 
