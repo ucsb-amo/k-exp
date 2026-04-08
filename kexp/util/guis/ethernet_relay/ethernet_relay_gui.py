@@ -378,10 +378,10 @@ class EthernetRelayGUI(QMainWindow):
         self.artiq_restart_btn.setText("Restart ARTIQ")
         self.set_buttons_enabled(True)
         
-        if success:
-            QMessageBox.information(self, "ARTIQ Restart", "ARTIQ restart command completed successfully.")
-        else:
-            QMessageBox.warning(self, "ARTIQ Restart Failed", "The ARTIQ restart operation failed.")
+        # if success:
+        #     QMessageBox.information(self, "ARTIQ Restart", "ARTIQ restart command completed successfully.")
+        # else:
+        #     QMessageBox.warning(self, "ARTIQ Restart Failed", "The ARTIQ restart operation failed.")
             
     def on_error(self, error_message):
         """Handle errors from worker threads"""

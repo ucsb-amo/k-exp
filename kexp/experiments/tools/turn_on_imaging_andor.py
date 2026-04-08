@@ -31,7 +31,7 @@ class turn_on_imaging(EnvExperiment, Base):
         
         self.set_imaging_shutters()
         
-        frequency_detuned = -568.e6
+        frequency_detuned = -514.e6
         v_pd = 1.9
         # v_pd = self.camera_params.amp_imaging
 

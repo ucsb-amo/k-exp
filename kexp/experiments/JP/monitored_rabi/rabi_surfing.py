@@ -49,7 +49,6 @@ class rabi_oscillation(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging_pci)
 
         self.prepare_hf_tweezers()
-
         self.prep_raman()
 
         t_offset = self.p.phase_rabi_surf_train_radians * (self.p.t_raman_pi_pulse / np.pi)
@@ -100,7 +99,6 @@ class rabi_oscillation(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe()
 
     def analyze(self):
         import os

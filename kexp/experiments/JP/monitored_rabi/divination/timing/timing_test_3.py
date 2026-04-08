@@ -2,9 +2,15 @@ from artiq.experiment import *
 from artiq.language import now_mu, delay
 import numpy as np
 
+class params():
+    def __init__(self):
+        self.t_img_pulse = 5.e-6
+        self.t_raman_pulse = 2.e-6
+        self.frequency_raman_transition = 119.e6
+        self.amp_imaging = 0.3
+
 class timing_test(EnvExperiment):
-    kernel_invariants = {
-                        "m",
+    kernel_invariants = {"m",
                         "dt",
                         "N_photons_per_shot",
                         "omega_guess_list",
@@ -22,35 +28,68 @@ class timing_test(EnvExperiment):
         self.core = self.get_device('core')
         self.ttl = self.get_device('ttl4')
 
-        # Number of frequency hypotheses in the posterior grid.
-        self.m = 21
-        # Prior over hypotheses (uniform here), same role as self.P0 in timing_test_0.py.
-        self.P0 = np.ones(self.m)
-        self.P0 = self.P0 / np.sum(self.P0)
+        self.p = params()
 
-        # Bloch state components for each hypothesis j.
-        # These replace timing_test_0.py's state_list[j, :] storage.
-        self.state_x = np.zeros(self.m)
-        self.state_y = np.zeros(self.m)
-        self.state_z = np.ones(self.m)
+        self.p.amp_imaging = 0.3
+        self.p.t_img_pulse = 5.e-6
 
-        self.Omega = 2*np.pi*80.e3 # rabi frequency guess
-        self.two_pi = 2*np.pi
-        self.pi_half = 0.5*np.pi
+        self.p.t_raman_pulse = 2.e-6
 
-        omega_guess = 2*np.pi*147.e6 # state splitting guess
+        self.N_pulses = 5 # number of steps of evolution
+        self.m = 21 # feedback grid size
+        
+        ### calibrations
+
+        self.v_apd_all_up = -0.191
+        self.v_apd_all_down = -0.226
+
+        # n_photons_per_us_per_imgamp = 431.77 # 63017
+        n_photons_per_us_per_imgamp = 50
+
+        # for vpd = 0.3, lightshift 18.74kHz (#63034)
+        self.omega_z_lightshift = 2*np.pi*18.74e3
+
+        ### setup data containers
+
+        self.idx = 0
+
+        ### feedback setup
+
+        self.dt_z = self.p.t_img_pulse # z rotation due to measurement pulse
+        self.dt = self.p.t_raman_pulse # drive pulse length per step
+
+        self.Omega = 2*np.pi*60.e3 # rabi frequency guess
+
+        omega_guess = 2*np.pi*self.p.frequency_raman_transition # state splitting guess
+        omega_guess_offset = self.Omega
+        omega_guess = omega_guess_offset
+
         offset = 5 # how many rabi frequencies away from the guess to "search"
         self.omega_guess_list = omega_guess + 2*offset*self.Omega*np.linspace(-1,1,self.m)
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
 
         self.omega_raman = omega_guess # omega_ctrl
         
-        self.dt = 2.e-6 # drive pulse length per step
+        self.v_range = self.v_apd_all_up - self.v_apd_all_down
+        n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
+        self.N_photons_per_shot = int(n_photons_per_us * self.p.t_img_pulse * 1.e6)
+        
+        ### constants and array setup
 
-        self.N_photons_per_shot = 1000
+        self.P0 = np.ones(self.m)
+        self.P0 = self.P0 / np.sum(self.P0)
 
-        # Lookup table used to avoid runtime sin/cos calls inside the kernel hot loop.
-        # A quarter-wave shift in the same sine LUT gives cosine values.
+        self.state_x = np.zeros(self.m)
+        self.state_y = np.zeros(self.m)
+        self.state_z = np.ones(self.m)
+
+        self.t_posterior_mu = np.int64(0) # updated in initialize_feedback
+
+        self.two_pi = 2*np.pi
+        self.pi_half = 0.5*np.pi
+
+        ### lookup table setup
+
         self.lut_size = 4096
         self.lut_scale = self.lut_size / self.two_pi
         self.lut_mask = self.lut_size - 1
@@ -58,13 +97,14 @@ class timing_test(EnvExperiment):
         self.inv_two_pi = 1.0 / self.two_pi
         self.sin_lut = np.sin(self.two_pi * np.arange(self.lut_size) / self.lut_size)
 
-        self.t_posterior_mu = np.int64(0)
+        ###
 
     @kernel
     def initialize_feedback(self):
         """Makes feedback go faster to run it once. Does not modify state or P0
         arrays.
         """    
+
         self.core.wait_until_mu(now_mu())
         (mn, std) = self.generate_posterior(10, 1.e-6, do_it=False)
         self.core.break_realtime()
@@ -129,6 +169,12 @@ class timing_test(EnvExperiment):
             b *= b
             e = e // 2
         return result
+    
+    @kernel
+    def convert_measurement(self, v_apd):
+        print((v_apd - self.v_apd_all_down) / self.v_range)
+        print(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
+        return int(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
 
     @kernel
     def run(self):
@@ -155,6 +201,8 @@ class timing_test(EnvExperiment):
             delay(10.e-3)
             print(abs(slack1))
 
+        print(self.convert_measurement(self.v_apd_all_up))
+
     @kernel(flags={"fast-math"})
     def generate_posterior(self, k, t, do_it=True):
         # Running sums for posterior normalization and moments:
@@ -180,6 +228,7 @@ class timing_test(EnvExperiment):
         Omega = self.Omega
         Omega_sq = Omega * Omega
         two_dt = 2.0 * self.dt
+        alpha_z_lightshift = 2.0 * self.omega_z_lightshift * self.dt_z
 
         # In this experiment omega_guess_list is uniformly spaced (linspace in prepare).
         # That lets us update trigonometric phases recursively across j.
@@ -197,12 +246,15 @@ class timing_test(EnvExperiment):
         (sin_wt, cos_wt) = self.sincos_lut_interp(omega0 * t)
         (sin_wt_step, cos_wt_step) = self.sincos_lut_interp(domega * t)
 
-        # alpha_z = 2*dt*(omega_raman - omega) is also uniformly spaced.
+        # alpha_z = 2*dt*(omega_raman - omega) is uniformly spaced.
+        # Add the extra z-rotation from light shift once as a constant offset:
+        #   alpha_z_total = 2*dt*(omega_raman - omega) + omega_z_lightshift*dt_z
+        # Folding this into initialization keeps loop cost unchanged.
         #   alpha_Z = 2 * dt * delta_omega
         #   R_z = [[cos(alpha_Z), sin(alpha_Z), 0],
         #          [-sin(alpha_Z), cos(alpha_Z), 0],
         #          [0,            0,            1]]
-        (sin_z, cos_z) = self.sincos_lut_interp(two_dt * (omega_raman - omega0))
+        (sin_z, cos_z) = self.sincos_lut_interp(two_dt * (omega_raman - omega0) - alpha_z_lightshift)
         (sin_z_step, cos_z_step) = self.sincos_lut_interp(-two_dt * domega)
 
         # Clamp observed photon count to valid [0, N] range.
@@ -295,6 +347,7 @@ class timing_test(EnvExperiment):
             q = 1.0 - p1
             p1_pow = self.powi(p1, k_int)
             q_pow = self.powi(q, nk_int)
+            print(p1,q,p1_pow,q_pow)
 
             pj = P0[j] * p1_pow * q_pow
 

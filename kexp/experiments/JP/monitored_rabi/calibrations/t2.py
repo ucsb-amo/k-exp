@@ -2,46 +2,59 @@ from artiq.experiment import *
 from artiq.experiment import delay
 from kexp import Base, img_types, cameras
 import numpy as np
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.calibrations.imaging import high_field_imaging_detuning
+from artiq.coredevice.sampler import Sampler
+from artiq.language import now_mu
 
-class rabi_oscillation(EnvExperiment, Base):
+class hf_raman(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
-        
+
         self.p.frequency_raman_transition = 119.4636e6 # 182 A -1 0
 
-        self.xvar('t_raman_pulse',np.linspace(0.,50.,20)*1.e-6)
-        self.p.t_raman_pulse = 0.
+        self.xvar('t_ramsey', np.linspace(0., 6.e-3, 20))
+ 
+        self.p.t_raman_pulse = 9.5896e-06 / 2 # -1 --> 0
 
+        self.p.hf_imaging_detuning =  -568.e6 # 182. with PID
+        self.p.amp_imaging = self.camera_params.amp_imaging
+
+        self.p.t_tweezer_hold = .01e-3
         self.p.t_tof = 10.e-6
-        self.p.N_repeats = 1
+        self.p.t_mot_load = 1.
+
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.camera_params.amp_imaging)
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
         self.prep_raman()
 
+        self.raman.pulse(self.p.t_raman_pulse)
+        delay(self.p.t_ramsey)
         self.raman.pulse(self.p.t_raman_pulse)
 
         self.ttl.raman_shutter.off()
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
         delay(self.p.t_tof)
-        self.ttl.pd_scope_trig3.pulse(1.e-6)
+
         self.abs_image()
 
     @kernel
     def run(self):
-        self.init_kernel()
+        self.init_kernel(setup_slm=True)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
         
