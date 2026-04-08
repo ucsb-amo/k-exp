@@ -47,7 +47,7 @@ class timing_test(EnvExperiment):
         
         self.dt = 2.e-6 # drive pulse length per step
 
-        self.N_photons_per_shot = 10
+        self.N_photons_per_shot = 1000
 
         # Lookup table used to avoid runtime sin/cos calls inside the kernel hot loop.
         # A quarter-wave shift in the same sine LUT gives cosine values.
@@ -57,6 +57,23 @@ class timing_test(EnvExperiment):
         self.lut_quarter = self.lut_size // 4
         self.inv_two_pi = 1.0 / self.two_pi
         self.sin_lut = np.sin(self.two_pi * np.arange(self.lut_size) / self.lut_size)
+
+        self.t_posterior_mu = np.int64(0)
+
+    @kernel
+    def initialize_feedback(self):
+        """Makes feedback go faster to run it once. Does not modify state or P0
+        arrays.
+        """    
+        self.core.wait_until_mu(now_mu())
+        (mn, std) = self.generate_posterior(10, 1.e-6, do_it=False)
+        self.core.break_realtime()
+
+        t0 = now_mu()
+        self.core.wait_until_mu(t0)
+        (mn, std) = self.generate_posterior(10, 1.e-6, do_it=False)
+        self.t_posterior_mu = abs(t0 - self.core.get_rtio_counter_mu())
+        self.core.break_realtime()
 
     @kernel(flags={"fast-math"})
     def sincos_lut_interp(self, x):
@@ -115,27 +132,31 @@ class timing_test(EnvExperiment):
 
     @kernel
     def run(self):
+
+        self.core.reset()
+
         v = 0.1
         v = v * self.N_photons_per_shot
+        k = int(v)
         t = 100.e-6
+
+        self.initialize_feedback()
 
         slack0 = 0
         slack1 = 1
 
-        self.core.reset()
-        
-        t0 = now_mu()
-        self.core.wait_until_mu(t0)
+        for i in range(10):        
+            t0 = now_mu()
+            self.core.wait_until_mu(t0)
 
-        k = int(v)
-        (mn, std) = self.generate_posterior(k, t)
-        slack1 = t0 - self.core.get_rtio_counter_mu()
-        
-        delay(10.e-3)
-        print(abs(slack1))
+            (mn, std) = self.generate_posterior(k, t)
+            slack1 = t0 - self.core.get_rtio_counter_mu()
+            
+            delay(10.e-3)
+            print(abs(slack1))
 
     @kernel(flags={"fast-math"})
-    def generate_posterior(self, k, t):
+    def generate_posterior(self, k, t, do_it=True):
         # Running sums for posterior normalization and moments:
         #   P0_total = sum_j p_j
         #   mn       = sum_j p_j * omega_j
@@ -177,7 +198,6 @@ class timing_test(EnvExperiment):
         (sin_wt_step, cos_wt_step) = self.sincos_lut_interp(domega * t)
 
         # alpha_z = 2*dt*(omega_raman - omega) is also uniformly spaced.
-        # This maps directly to timing_test_0.py:
         #   alpha_Z = 2 * dt * delta_omega
         #   R_z = [[cos(alpha_Z), sin(alpha_Z), 0],
         #          [-sin(alpha_Z), cos(alpha_Z), 0],
@@ -261,10 +281,10 @@ class timing_test(EnvExperiment):
             # This matches timing_test_0.py's R = R_z @ R_H and state update.
             nx = cos_z * hx + sin_z * hy
             ny = -sin_z * hx + cos_z * hy
-
-            state_x[j] = nx
-            state_y[j] = ny
-            state_z[j] = hz
+            if do_it:
+                state_x[j] = nx
+                state_y[j] = ny
+                state_z[j] = hz
 
             # Measurement model:
             # p1 is the excited-state probability after evolution.
@@ -283,7 +303,8 @@ class timing_test(EnvExperiment):
             moment_2 += pj * omega_sq_list[j]
 
             # Store unnormalized posterior for next update cycle.
-            P0[j] = pj
+            if do_it:
+                P0[j] = pj
 
             # Advance sin/cos states to next grid point with angle-addition.
             #   sin(a+b)=sin(a)cos(b)+cos(a)sin(b)
