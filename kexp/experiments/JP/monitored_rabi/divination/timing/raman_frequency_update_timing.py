@@ -8,6 +8,8 @@ class timing_test(EnvExperiment):
         self.core = self.get_device('core')
         self.ttl = self.get_device('ttl4')
 
+        self.idx_t = 0
+
         ###
 
     @kernel
