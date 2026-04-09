@@ -37,10 +37,10 @@ class feedback(EnvExperiment, Base):
         self.p.amp_imaging = 0.3
         self.p.t_img_pulse = 5.e-6
 
-        self.p.t_raman_pulse = 7.0e-6
+        self.p.t_raman_pulse = 4.5e-6
 
-        self.N_pulses = 5 # number of steps of evolution
-        self.m = 71 # feedback grid size
+        self.N_pulses = 6 # number of steps of evolution
+        self.m = 21 # feedback grid size
         
         ### calibrations
 
@@ -53,7 +53,7 @@ class feedback(EnvExperiment, Base):
         self.omega_z_lightshift = 2*np.pi*19.e3
 
         self.Omega = 2*np.pi*56.e3 # rabi frequency guess
-        fractional_inital_offset = -2.00
+        fractional_inital_offset = 4.
 
         ### setup data containers
 
@@ -86,7 +86,7 @@ class feedback(EnvExperiment, Base):
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
         # self.N_photons_per_shot = n_photons_per_us * self.p.t_img_pulse * 1.e6
-        self.N_photons_per_shot = 113.
+        self.N_photons_per_shot = 71.
 
         # self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down)/2)
         self.n_photons_halfway = int(self.N_photons_per_shot / 2)
@@ -134,7 +134,7 @@ class feedback(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-        self.prep_raman(frequency_raman=self.omega_raman)
+        self.prep_raman(frequency_transition=self.omega_raman, phase_mode=0)
 
         delay(10.e-3)
 
@@ -154,8 +154,8 @@ class feedback(EnvExperiment, Base):
             self.data.Omega.shot_data[i] = var
 
             delay_mu(self.t_posterior_mu)
-            delay_mu(30000)
-            self.raman.set(self.omega_raman/(2*np.pi))
+            delay_mu(20000)
+            self.raman.set(frequency_transition=self.omega_raman/(2*np.pi))
             self.raman.pulse(self.p.t_raman_pulse)
             delay_mu(2000)
 
@@ -233,7 +233,7 @@ class feedback(EnvExperiment, Base):
         #   u_x ~ cos(omega * t), u_y ~ sin(omega * t)
         # from timing_test_0.py.
         (sin_wt, cos_wt) = self.sincos_lut_interp(omega0 * t)
-        (sin_wt_step, cos_wt_step) = self.sincos_lut_interp(domega * t)
+        (sin_wt_step, cos_wt_step) = self.sincos_lut_interp(domega * 00)
 
         # alpha_z = 2*dt*(omega_raman - omega) is uniformly spaced.
         # Add the extra z-rotation from light shift once as a constant offset:
@@ -336,7 +336,7 @@ class feedback(EnvExperiment, Base):
             # Posterior weight uses binomial-like factor:
             #   p_j <- p_j * p1^k * (1-p1)^(N-k)
             # same explicit formula used in timing_test_0.py.
-            p1 = (hz + 1)/2
+            p1 = (1-hz)/2
             q = 1.0 - p1
             p1_pow = self.powi(p1, k_int)
             q_pow = self.powi(q, nk_int)

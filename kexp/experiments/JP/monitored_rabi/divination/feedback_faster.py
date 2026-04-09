@@ -39,8 +39,8 @@ class feedback(EnvExperiment, Base):
 
         self.p.t_raman_pulse = 7.0e-6
 
-        self.N_pulses = 5 # number of steps of evolution
-        self.m = 71 # feedback grid size
+        self.N_pulses = 11 # number of steps of evolution
+        self.m = 3 # feedback grid size
         
         ### calibrations
 
@@ -53,7 +53,7 @@ class feedback(EnvExperiment, Base):
         self.omega_z_lightshift = 2*np.pi*19.e3
 
         self.Omega = 2*np.pi*56.e3 # rabi frequency guess
-        fractional_inital_offset = -2.00
+        fractional_inital_offset = 10.
 
         ### setup data containers
 
@@ -62,7 +62,7 @@ class feedback(EnvExperiment, Base):
         self.data.Omega = self.data.add_data_container(self.N_pulses)
         self.data.apd = self.data.add_data_container(self.N_pulses)
         self.data.counts = self.data.add_data_container(self.N_pulses)
-        self.data.ts = self.data.add_data_container(self.N_pulses)
+        self.data.ts = self.data.add_data_container(100)
     
         self.z = 0.
 
@@ -115,11 +115,18 @@ class feedback(EnvExperiment, Base):
         self.inv_two_pi = 1.0 / self.two_pi
         self.sin_lut = np.sin(self.two_pi * np.arange(self.lut_size) / self.lut_size)
 
+        self.idx_t = 0
+
         ###
         
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
         
         self.finish_prepare()
+
+    @kernel
+    def get_slack(self,flag):
+        self.data.ts.put_data((now_mu() - self.core.get_rtio_counter_mu())*1.e-9,self.idx_t)
+        self.idx_t += 1
 
     @kernel
     def scan_kernel(self):
@@ -134,7 +141,7 @@ class feedback(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-        self.prep_raman(frequency_raman=self.omega_raman)
+        self.prep_raman(self.omega_raman, phase_mode=0)
 
         delay(10.e-3)
 
@@ -143,21 +150,29 @@ class feedback(EnvExperiment, Base):
 
         t0 = now_mu() # beginning of time
         for i in range(self.N_pulses):
+
             k = self.measurement()
             t_mu = now_mu() # time right now
             t = (t_mu - t0)*1.e-9
             self.omega_raman, var = self.generate_posterior(k, t)
+            f = self.omega_raman / (2*np.pi)
 
-            # self.data.ts.shot_data[i] = t
+            slack_compensate = -(now_mu() - self.core.get_rtio_counter_mu())
+            if slack_compensate < 0:
+                slack_compensate = 0
+            overhead = 5000
+            t_set_mu = 12600
+
+            # have to schedule set once we actually have the new value
+            delay_mu(slack_compensate + overhead + t_set_mu)
+            self.raman.set(f)
+            self.raman.pulse(self.p.t_raman_pulse)
+
             self.data.counts.shot_data[i] = float(k)
             self.data.omega_raman.shot_data[i] = self.omega_raman
             self.data.Omega.shot_data[i] = var
 
-            delay_mu(self.t_posterior_mu)
-            delay_mu(30000)
-            self.raman.set(self.omega_raman/(2*np.pi))
-            self.raman.pulse(self.p.t_raman_pulse)
-            delay_mu(2000)
+            delay_mu(10000)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -177,7 +192,21 @@ class feedback(EnvExperiment, Base):
     @kernel
     def measurement(self):
         idx = self.idx
-        self.integrated_imaging_pulse(self.data.apd, t=self.p.t_img_pulse, idx=self.idx)
+        t_img_mu = np.int64(self.p.t_img_pulse*1.e9)
+        t_settle_mu = 1000
+        # self.integrated_imaging_pulse(self.data.apd, t=self.p.t_img_pulse, idx=self.idx)
+        t0 = now_mu()
+        self.integrator.begin_integrate(reset=False)
+        self.imaging.pulse(self.p.t_img_pulse)
+        # the integrator reset has to happen once the ADC acquisition is already underway (once ADC capactitor is disconnected from integrator)
+        # that said, we know when that will happen, so schedule the integrator reset to happen at that time
+        # needs to be scheduled ahead of time, since sampling blocks until negative slack
+        at_mu(t0 + t_img_mu + t_settle_mu + 300) 
+        self.integrator.clear(0)
+
+        # now step back to the end of the imaging pulse and schedule the sample there
+        at_mu(t0 + t_img_mu)
+        self.data.apd.shot_data[idx] = self.integrator.stop_and_sample()
         v = self.convert_measurement(self.data.apd.shot_data[idx])
         self.idx = self.idx + 1
         return v
