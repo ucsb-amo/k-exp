@@ -39,7 +39,7 @@ class feedback(EnvExperiment, Base):
 
         self.p.t_raman_pulse = 3.5e-6
 
-        self.N_pulses = 5 # number of steps of evolution
+        self.N_pulses = 20 # number of steps of evolution
         self.m = 21 # feedback grid size
         
         ### calibrations
@@ -47,10 +47,10 @@ class feedback(EnvExperiment, Base):
         self.v_apd_all_up = -0.191
         self.v_apd_all_down = -0.226
 
-        n_photons_per_us_per_imgamp = 431.77 # 63017
+        n_photons_per_us_per_imgamp = 431.77 / 10 # 63017
 
         # for vpd = 0.3, lightshift 18.74kHz (#63034)
-        self.omega_z_lightshift = 2*np.pi*18.74e3
+        self.omega_z_lightshift = 2*np.pi*19.e3
 
         ### setup data containers
 
@@ -60,15 +60,17 @@ class feedback(EnvExperiment, Base):
         self.data.counts = self.data.add_data_container(self.N_pulses)
         self.data.ts = self.data.add_data_container(self.N_pulses)
 
+        self.z = 0.
+
         ### feedback setup
 
         self.dt_z = self.p.t_img_pulse # z rotation due to measurement pulse
         self.dt = self.p.t_raman_pulse # drive pulse length per step
 
-        self.Omega = 2*np.pi*60.e3 # rabi frequency guess
+        self.Omega = 2*np.pi*56.e3 # rabi frequency guess
 
         omega_guess = 2*np.pi*self.p.frequency_raman_transition # state splitting guess
-        omega_guess_offset = self.Omega
+        omega_guess_offset = self.Omega * 0.01
         omega_guess = omega_guess + omega_guess_offset
 
         offset = 5 # how many rabi frequencies away from the guess to "search"
@@ -80,6 +82,8 @@ class feedback(EnvExperiment, Base):
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
         self.N_photons_per_shot = n_photons_per_us * self.p.t_img_pulse * 1.e6
+
+        self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down)/2)
         
         ### constants and array setup
 
@@ -126,6 +130,8 @@ class feedback(EnvExperiment, Base):
         self.prepare_hf_tweezers(squeeze=True)
         self.prep_raman(frequency_raman=self.omega_raman)
 
+        delay(10.e-3)
+
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         delay(10.e-6)
 
@@ -136,15 +142,15 @@ class feedback(EnvExperiment, Base):
             t = (t_mu - t0)*1.e-9
             self.omega_raman, _ = self.generate_posterior(k, t)
 
-            self.data.ts.shot_data[i] = t
+            # self.data.ts.shot_data[i] = t
             self.data.counts.shot_data[i] = float(k)
             self.data.omega_raman.shot_data[i] = self.omega_raman
 
             delay_mu(self.t_posterior_mu)
-            delay_mu(20000)
+            delay_mu(14000)
             self.raman.set(self.omega_raman/(2*np.pi))
             self.raman.pulse(self.p.t_raman_pulse)
-            delay_mu(20000)
+            delay_mu(2000)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -152,12 +158,14 @@ class feedback(EnvExperiment, Base):
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        print(self.data.omega_raman.shot_data)
+        print((self.data.omega_raman.shot_data/(2*np.pi) - self.p.frequency_raman_transition)/1.e6)
         # self.scope.read_sweep(0)
         # self.core.break_realtime()
         delay(30.e-3)
 
-    @portable
+        print(self.z)
+
+    @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
         return round(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
     
@@ -180,7 +188,7 @@ class feedback(EnvExperiment, Base):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
 
-        @kernel(flags={"fast-math"})
+    @kernel(flags={"fast-math"})
     def generate_posterior(self, k, t, do_it=True):
         # Running sums for posterior normalization and moments:
         #   P0_total = sum_j p_j
@@ -199,7 +207,7 @@ class feedback(EnvExperiment, Base):
         P0 = self.P0
         
         m = self.m
-        n_photons = self.N_photons_per_shot
+        n_photons = int(self.N_photons_per_shot)
 
         omega_raman = self.omega_raman
         Omega = self.Omega
@@ -231,8 +239,11 @@ class feedback(EnvExperiment, Base):
         #   R_z = [[cos(alpha_Z), sin(alpha_Z), 0],
         #          [-sin(alpha_Z), cos(alpha_Z), 0],
         #          [0,            0,            1]]
-        (sin_z, cos_z) = self.sincos_lut_interp(two_dt * (omega_raman - omega0) - alpha_z_lightshift)
-        (sin_z_step, cos_z_step) = self.sincos_lut_interp(-two_dt * domega)
+        alpha_z = two_dt * (omega_raman - omega0) + alpha_z_lightshift
+        self.z = alpha_z
+        (sin_z, cos_z) = self.sincos_lut_interp(alpha_z)
+        alpha_z_step = -two_dt * domega
+        (sin_z_step, cos_z_step) = self.sincos_lut_interp(alpha_z_step)
 
         # Clamp observed photon count to valid [0, N] range.
         k_int = int(k)
@@ -380,12 +391,12 @@ class feedback(EnvExperiment, Base):
         """    
 
         self.core.wait_until_mu(now_mu())
-        (mn, std) = self.generate_posterior(10, 1.e-6, do_it=False)
+        (mn, std) = self.generate_posterior(self.n_photons_halfway, 1.e-6, do_it=False)
         self.core.break_realtime()
 
         t0 = now_mu()
         self.core.wait_until_mu(t0)
-        (mn, std) = self.generate_posterior(10, 1.e-6, do_it=False)
+        (mn, std) = self.generate_posterior(self.n_photons_halfway, 1.e-6, do_it=False)
         self.t_posterior_mu = abs(t0 - self.core.get_rtio_counter_mu())
         self.core.break_realtime()
 
