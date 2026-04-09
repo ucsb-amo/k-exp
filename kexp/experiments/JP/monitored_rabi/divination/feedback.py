@@ -37,29 +37,33 @@ class feedback(EnvExperiment, Base):
         self.p.amp_imaging = 0.3
         self.p.t_img_pulse = 5.e-6
 
-        self.p.t_raman_pulse = 3.5e-6
+        self.p.t_raman_pulse = 7.0e-6
 
-        self.N_pulses = 20 # number of steps of evolution
-        self.m = 21 # feedback grid size
+        self.N_pulses = 5 # number of steps of evolution
+        self.m = 71 # feedback grid size
         
         ### calibrations
 
         self.v_apd_all_up = -0.191
         self.v_apd_all_down = -0.226
 
-        n_photons_per_us_per_imgamp = 431.77 / 10 # 63017
+        n_photons_per_us_per_imgamp = 431.77 # 63017
 
         # for vpd = 0.3, lightshift 18.74kHz (#63034)
         self.omega_z_lightshift = 2*np.pi*19.e3
+
+        self.Omega = 2*np.pi*56.e3 # rabi frequency guess
+        fractional_inital_offset = -2.00
 
         ### setup data containers
 
         self.idx = 0
         self.data.omega_raman = self.data.add_data_container(self.N_pulses)
+        self.data.Omega = self.data.add_data_container(self.N_pulses)
         self.data.apd = self.data.add_data_container(self.N_pulses)
         self.data.counts = self.data.add_data_container(self.N_pulses)
         self.data.ts = self.data.add_data_container(self.N_pulses)
-
+    
         self.z = 0.
 
         ### feedback setup
@@ -67,23 +71,25 @@ class feedback(EnvExperiment, Base):
         self.dt_z = self.p.t_img_pulse # z rotation due to measurement pulse
         self.dt = self.p.t_raman_pulse # drive pulse length per step
 
-        self.Omega = 2*np.pi*56.e3 # rabi frequency guess
-
         omega_guess = 2*np.pi*self.p.frequency_raman_transition # state splitting guess
-        omega_guess_offset = self.Omega * 0.01
+        omega_guess_offset = self.Omega * fractional_inital_offset
         omega_guess = omega_guess + omega_guess_offset
 
         offset = 5 # how many rabi frequencies away from the guess to "search"
         self.omega_guess_list = omega_guess + 2*offset*self.Omega*np.linspace(-1,1,self.m)
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
 
+        self.p.omega_guess_list = self.omega_guess_list
+
         self.omega_raman = omega_guess # omega_ctrl
         
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
-        self.N_photons_per_shot = n_photons_per_us * self.p.t_img_pulse * 1.e6
+        # self.N_photons_per_shot = n_photons_per_us * self.p.t_img_pulse * 1.e6
+        self.N_photons_per_shot = 113.
 
-        self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down)/2)
+        # self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down)/2)
+        self.n_photons_halfway = int(self.N_photons_per_shot / 2)
         
         ### constants and array setup
 
@@ -138,16 +144,17 @@ class feedback(EnvExperiment, Base):
         t0 = now_mu() # beginning of time
         for i in range(self.N_pulses):
             k = self.measurement()
-            t_mu = now_mu()
+            t_mu = now_mu() # time right now
             t = (t_mu - t0)*1.e-9
-            self.omega_raman, _ = self.generate_posterior(k, t)
+            self.omega_raman, var = self.generate_posterior(k, t)
 
             # self.data.ts.shot_data[i] = t
             self.data.counts.shot_data[i] = float(k)
             self.data.omega_raman.shot_data[i] = self.omega_raman
+            self.data.Omega.shot_data[i] = var
 
             delay_mu(self.t_posterior_mu)
-            delay_mu(14000)
+            delay_mu(30000)
             self.raman.set(self.omega_raman/(2*np.pi))
             self.raman.pulse(self.p.t_raman_pulse)
             delay_mu(2000)
@@ -158,12 +165,10 @@ class feedback(EnvExperiment, Base):
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        print((self.data.omega_raman.shot_data/(2*np.pi) - self.p.frequency_raman_transition)/1.e6)
+        print((self.data.omega_raman.shot_data/(2*np.pi) - self.p.frequency_raman_transition)/1.e3)
         # self.scope.read_sweep(0)
         # self.core.break_realtime()
         delay(30.e-3)
-
-        print(self.z)
 
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
@@ -213,7 +218,6 @@ class feedback(EnvExperiment, Base):
         Omega = self.Omega
         Omega_sq = Omega * Omega
         two_dt = 2.0 * self.dt
-        alpha_z_lightshift = 2.0 * self.omega_z_lightshift * self.dt_z
 
         # In this experiment omega_guess_list is uniformly spaced (linspace in prepare).
         # That lets us update trigonometric phases recursively across j.
@@ -239,7 +243,8 @@ class feedback(EnvExperiment, Base):
         #   R_z = [[cos(alpha_Z), sin(alpha_Z), 0],
         #          [-sin(alpha_Z), cos(alpha_Z), 0],
         #          [0,            0,            1]]
-        alpha_z = two_dt * (omega_raman - omega0) + alpha_z_lightshift
+        alpha_z_lightshift = 2.0 * self.omega_z_lightshift * self.dt_z
+        alpha_z = two_dt * (omega_raman - omega0) - alpha_z_lightshift
         self.z = alpha_z
         (sin_z, cos_z) = self.sincos_lut_interp(alpha_z)
         alpha_z_step = -two_dt * domega
@@ -398,6 +403,7 @@ class feedback(EnvExperiment, Base):
         self.core.wait_until_mu(t0)
         (mn, std) = self.generate_posterior(self.n_photons_halfway, 1.e-6, do_it=False)
         self.t_posterior_mu = abs(t0 - self.core.get_rtio_counter_mu())
+        print(self.t_posterior_mu)
         self.core.break_realtime()
 
     @kernel(flags={"fast-math"})

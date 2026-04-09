@@ -13,7 +13,7 @@ class hf_raman(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.DISPERSIVE)
 
         # self.xvar('beans',[0]*50)
 
@@ -24,13 +24,13 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('frequency_raman_transition',119.4637e6 + np.linspace(-2.e3,2.e3,10))
         # self.p.frequency_raman_transition = 147.2592e6 # 182. A -1 -2
-        # self.p.frequency_raman_transition = 119.4637e6 # 182 A -1 0
+        self.p.frequency_raman_transition = 119.4637e6 # 182 A -1 0
 
         # self.xvar('t_ramsey', np.linspace(0.e-6, 500.e-6, 5))
  
-        self.xvar('t_raman_pulse', np.linspace(0., 300., 110)*1.e-6)
+        # self.xvar('t_raman_pulse', np.linspace(0., 300., 110)*1.e-6)
         # self.p.t_raman_pulse = 7.69e-06 / 2 # -1 --> -2
-        # self.p.t_raman_pulse = 9.0352e-06 / 2 # -1 --> 0
+        self.p.t_raman_pulse = 9.0352e-06 / 2 # -1 --> 0
         # self.p.t_raman_pulse = 200.e-6
 
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
@@ -43,6 +43,21 @@ class hf_raman(EnvExperiment, Base):
         self.p.hf_imaging_detuning =  -568.e6 # 182. with PID
         # self.p.hf_imaging_detuning =  -538.e6 # 175. with PID
 
+        self.xvar('switch_axis',[0,1])
+
+        self.p.t_img_pulse = 50.e-6
+
+        # self.xvar('relative_phase',np.linspace(0.,np.pi / 2, 5))
+        self.p.relative_phase = 0.
+
+        self.p.hf_imaging_detuning_mid = -514.e6 # -1 --> 0
+
+        # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
+        self.p.dimension_slm_mask = 20.e-6
+
+        # self.p.phase_slm_mask = 0.371 * np.pi
+        self.p.phase_slm_mask = 0.186 * np.pi
+
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
         self.p.t_tweezer_hold = .01e-3
 
@@ -51,9 +66,12 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 100
 
         # self.camera_params.gain = 75.
+
+        self.data.apd = self.data.add_data_container(1)
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
         self.finish_prepare(shuffle=True)
 
@@ -61,8 +79,8 @@ class hf_raman(EnvExperiment, Base):
     def scan_kernel(self):
 
         # self.set_high_field_imaging(i_outer=self.p.i_hf_raman)
-        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning_mid)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
@@ -76,16 +94,19 @@ class hf_raman(EnvExperiment, Base):
         delay(4.7e-3)
 
         self.raman.pulse(self.p.t_raman_pulse)
-        # delay(self.p.t_raman_pulse)
 
-        # delay(self.p.t_ramsey)
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        self.imaging.on()
+        delay(10.e-6)
+        self.imaging.off()
+        
+        # self.raman.set_phase(relative_phase=self.p.relative_phase)
+        delay(10.e-6)
 
-        # self.raman.pulse(self.p.t_raman_pulse)
+        if self.p.switch_axis:
+            self.raman.pulse(self.p.t_raman_pulse)
 
-        # self.raman.sweep(t=self.p.t_raman_sweep,
-        #                  frequency_center=self.p.frequency_raman_sweep_center,
-        #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
-        #                  n_steps=100)
+        self.integrated_imaging_pulse(self.data.apd, t=self.p.t_img_pulse)
 
         self.ttl.raman_shutter.off()
 
@@ -95,10 +116,6 @@ class hf_raman(EnvExperiment, Base):
         delay(self.p.t_tof)
 
         self.abs_image()
-
-        # self.outer_coil.stop_pid()
-
-        # self.outer_coil.off()
 
     @kernel
     def run(self):
