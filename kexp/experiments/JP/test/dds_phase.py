@@ -4,6 +4,8 @@ from artiq.coredevice.ad9910 import AD9910
 from artiq.coredevice.ttl import TTLOut
 import numpy as np
 
+from waxx.control.artiq.DDS import DDS
+
 class dds(EnvExperiment):
     def prepare(self):
         self.core = self.get_device('core')
@@ -15,6 +17,8 @@ class dds(EnvExperiment):
         self.dds = [self.dds0, self.dds1]
 
         self.cpld = self.get_device('urukul0_cpld')
+
+        self.dds0_waxx = DDS(0,0,1.e6,0.5)
 
         self.f = 1.e6 + np.array([0., 0.])
 
@@ -41,7 +45,7 @@ class dds(EnvExperiment):
         for i in range(len(self.dds)):
             dds = self.dds[i]
             # dds: AD9910
-            self.p[i] = dds.set(frequency=self.f[i],amplitude=0.5,phase_mode=2)
+            self.p[i] = dds.set(frequency=self.f[i],amplitude=0.5,phase_mode=2,ref_time_mu=t)
 
         print(self.p[0])
             
@@ -50,19 +54,24 @@ class dds(EnvExperiment):
 
         delay(1.e-3)
 
-        df = 1.e6
+        df = 0.
 
-        with parallel:
-            self.ttl.pulse(8.e-9)
-            self.ttl1.on()
-            p = self.dds[0].set(frequency=self.f[0] + df,
-                            amplitude=0.5,phase_mode=2,
-                            phase=self.p[0] + np.pi/2)
+        # with parallel:
+            # self.ttl.pulse(8.e-9)
+        self.ttl1.on()
         
-        print(p)
-        
-        delay_mu(-624)
+        p = self.dds[0].set(frequency=self.f[0] + df,
+                        amplitude=0.5,phase_mode=2,ref_time_mu=t,
+                        phase=1/2)
+        delay_mu(-620)
         self.ttl1.off()
+        delay_mu(620)
+        p1 = self.dds[1].set(frequency=self.f[1],
+                        amplitude=0.5,phase_mode=2,ref_time_mu=t,
+                        phase=1/2)
+        
+        
+        
         # delay_mu(100)
         # self.cpld.io_update.pulse_mu(8)
         # delay_mu(100)
