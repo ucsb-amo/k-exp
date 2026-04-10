@@ -35,26 +35,36 @@ class dds(EnvExperiment):
 
         delay(10.e-3)
 
+        t0 = np.int64(0)
+
         t = now_mu()
         for i in range(len(self.dds)):
             dds = self.dds[i]
             # dds: AD9910
-            self.p[i] = dds.set(frequency=self.f[i],amplitude=0.5)
+            self.p[i] = dds.set(frequency=self.f[i],amplitude=0.5,phase_mode=2)
+
+        print(self.p[0])
             
         for dds in self.dds:
             dds.sw.on()
 
         delay(1.e-3)
 
-        df = 100.e6
+        df = 1.e6
 
         with parallel:
             self.ttl.pulse(8.e-9)
             self.ttl1.on()
-            self.dds[0].set(frequency=self.f[1] + df,
-                            amplitude=0.5)
+            p = self.dds[0].set(frequency=self.f[0] + df,
+                            amplitude=0.5,phase_mode=2,
+                            phase=self.p[0] + np.pi/2)
         
-        delay_mu(80)
+        print(p)
+        
+        delay_mu(-624)
         self.ttl1.off()
+        # delay_mu(100)
+        # self.cpld.io_update.pulse_mu(8)
+        # delay_mu(100)
         delay(10.e-3)
         
