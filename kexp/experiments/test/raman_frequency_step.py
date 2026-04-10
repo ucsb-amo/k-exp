@@ -19,18 +19,18 @@ class hf_raman(EnvExperiment, Base):
         # self.p.frequency_raman_transition = 147.2592e6 # 182. A -1 -2
         # self.p.frequency_raman_transition = 119.4637e6 # 182 A -1 0
 
-        self.p.frequency_raman_offset = 10.e3
+        self.p.frequency_raman_offset = 54.e3
 
-        self.xvar('t_ramsey', np.linspace(0.e-6, 100.e-6, 10))
+        # self.xvar('t_ramsey', np.linspace(0.e-6, 100.e-6, 10))
         self.p.t_ramsey = 10.e-6
 
-        # self.xvar('relative_phase',np.linspace(0.,np.pi, 11))
+        self.xvar('relative_phase',np.linspace(0.,np.pi / 4, 3))
  
-        # self.xvar('t_raman_pulse', np.linspace(0., 300., 110)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0., self.p.t_raman_pi_pulse, 13))
         # self.p.t_raman_pulse = 9.0352e-06 / 2 # -1 --> 0
         
         # self.xvar('amp_imaging',np.linspace(0.1,.8,10))
-        self.p.amp_imaging = .5
+        self.p.amp_imaging = 1.
 
         # self.xvar('hf_imaging_detuning',np.concatenate((np.arange(-578.e6,-564.e6,1.e6),np.arange(-467.e6,-453.e6,1.e6))))
         # self.p.hf_imaging_detuning =  -568.e6 # 182. with PID
@@ -62,7 +62,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
                         fraction_power = self.params.fraction_power_raman,
-                        phase_mode = 0)
+                        phase_mode = 1)
         
         self.ttl.raman_shutter.on()
         delay(10.e-3)
@@ -70,18 +70,14 @@ class hf_raman(EnvExperiment, Base):
         delay(4.7e-3)
 
         self.raman.pulse(self.p.t_raman_pi_pulse / 2)
-        # delay(self.p.t_raman_pulse)
 
-        # t = now_mu()
-        self.raman.set(frequency_transition=self.p.frequency_raman_transition + self.p.frequency_raman_offset)
-        # tf = now_mu() - t
-        delay(self.p.t_ramsey)
+        delay(10.e-6)
+        self.raman.set(frequency_transition = self.p.frequency_raman_transition + self.p.frequency_raman_offset, 
+                       relative_phase = self.p.relative_phase)
 
-        # self.raman.set(relative_phase=self.p.relative_phase,phase_mode = 1)
+        
 
-        self.raman.set(frequency_transition=self.p.frequency_raman_transition)
-
-        self.raman.pulse(self.p.t_raman_pi_pulse / 2)
+        self.raman.pulse(self.p.t_raman_pulse)
 
         self.ttl.raman_shutter.off()
 

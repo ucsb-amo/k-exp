@@ -28,13 +28,13 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('t_ramsey', np.linspace(0.e-6, 500.e-6, 5))
  
-        self.xvar('t_raman_pulse', np.linspace(0., 300., 110)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0., 400., 200)*1.e-6)
         # self.p.t_raman_pulse = 9.0352e-06 / 2 # -1 --> 0
 
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
         
         # self.xvar('amp_imaging',np.linspace(0.1,.8,10))
-        self.p.amp_imaging = .5
+        self.p.amp_imaging = 1.
 
         # self.xvar('hf_imaging_detuning',np.concatenate((np.arange(-578.e6,-564.e6,1.e6),np.arange(-467.e6,-453.e6,1.e6))))
         self.p.hf_imaging_detuning =  -568.e6 # 182. with PID
@@ -75,9 +75,9 @@ class hf_raman(EnvExperiment, Base):
         self.raman.pulse(self.p.t_raman_pulse)
         # delay(self.p.t_raman_pulse)
 
-        delay(self.p.t_ramsey)
+        # delay(self.p.t_ramsey)
 
-        self.raman.pulse(self.p.t_raman_pulse)
+        # self.raman.pulse(self.p.t_raman_pulse)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,

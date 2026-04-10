@@ -34,7 +34,7 @@ class feedback(EnvExperiment, Base):
 
         self.xvar('dummy',[0])
 
-        self.p.amp_imaging = 0.3
+        self.p.amp_imaging = 0.61
         self.p.t_img_pulse = 5.e-6
 
         self.p.t_raman_pulse = 4.5e-6
