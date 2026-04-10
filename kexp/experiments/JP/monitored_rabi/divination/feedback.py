@@ -155,7 +155,8 @@ class feedback(EnvExperiment, Base):
 
             delay_mu(self.t_posterior_mu)
             delay_mu(20000)
-            self.raman.set(frequency_transition=self.omega_raman/(2*np.pi))
+            phase0, phase1 = self.raman.set(frequency_transition=self.omega_raman/(2*np.pi))
+            relphase = 2 * (phase0 - phase1)
             self.raman.pulse(self.p.t_raman_pulse)
             delay_mu(2000)
 
