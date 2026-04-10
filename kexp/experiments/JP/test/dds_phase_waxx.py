@@ -35,22 +35,32 @@ class dds(EnvExperiment):
         self.dds0.init()
         delay(1.e-6)
         self.dds1.init()
-        self.dds0.off()
-        self.dds1.off()
+        for _ in range(1):
+            self.dds0.set_dds(init=True)
+            self.dds1.set_dds(init=True)
+        delay(1.e-6)
+
+        # self.dds0.off()
+        # self.dds1.off()
         self.dds0.set_phase_mode(1)
+        self.dds1.set_phase_mode(1)
 
-        self.get_slack()
-        self.dds0.set_dds(init=True)
-        self.get_slack()
-        # self.dds1.set_phase_mode(1)
-        # self.dds1.set_dds(init=True)
-        # self.get_slack()
+        t = now_mu()
+        t0 = now_mu() + 500500
 
-        self.dds0.on()
+        self.dds0.set_dds(frequency=1.e6, t_phase_origin_mu=t, phase=0., init=True)
+        delay(5.e-6)
+        self.dds1.set_dds(t_phase_origin_mu=t, phase=0., init=True)
+
+        at_mu(t0)
+        p00 = self.dds0.update_phase()/(np.pi)
+        p11 = self.dds1.update_phase()/(np.pi)
         self.ttl1.pulse(1.e-6)
 
-    def analyze(self):
-        print(self.t)
-        t = np.zeros_like(self.t)
-        t[1:] = np.diff(self.t)
-        print(t)
+        print((p11 - p00))
+
+    # def analyze(self):
+        # print(self.t)
+        # t = np.zeros_like(self.t)
+        # t[1:] = np.diff(self.t)
+        # print(t)
