@@ -143,6 +143,13 @@ class feedback(EnvExperiment, Base):
 
         t0 = now_mu() # beginning of time
         for i in range(self.N_pulses):
+
+            phase0, phase1 = self.raman.set(frequency_transition=f)
+            relphase = 2 * (phase0 - phase1)
+
+            self.raman.pulse(self.p.t_raman_pulse)
+            delay_mu(2000)
+
             k = self.measurement()
             t_mu = now_mu() # time right now
             t = (t_mu - t0)*1.e-9
@@ -153,11 +160,10 @@ class feedback(EnvExperiment, Base):
             self.data.omega_raman.shot_data[i] = self.omega_raman
             self.data.Omega.shot_data[i] = var
 
+            f = self.omega_raman/(2*np.pi)
+
             delay_mu(self.t_posterior_mu)
             delay_mu(20000)
-            self.raman.set(frequency_transition=self.omega_raman/(2*np.pi))
-            self.raman.pulse(self.p.t_raman_pulse)
-            delay_mu(2000)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
