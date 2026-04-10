@@ -30,6 +30,12 @@ class timing_test(EnvExperiment):
         self.dt = 2.e-6 # drive pulse length per step
 
         self.N_photons_per_shot = 10
+
+        self.I = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
+        self.R_z = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
+        self.K = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
+        self.R_H = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
+        self.R = np.array([[1.,0.,0.],[0.,1.,0.],[0.,0.,1.]])
         
     @kernel
     def run(self):
