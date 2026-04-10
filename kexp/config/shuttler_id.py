@@ -16,6 +16,8 @@ class shuttler_frame(shuttler_frame_waxx):
 
         ### Channel assignment
 
+        self.tweezer_mod = self._assign_ch(1)
+
         ###
 
         self.cleanup()
