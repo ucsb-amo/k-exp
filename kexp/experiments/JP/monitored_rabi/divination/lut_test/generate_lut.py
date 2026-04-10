@@ -23,7 +23,7 @@ omega_0_list=np.linspace(omega_0-2*offset*Omega, omega_0+2*offset*Omega, m)
 
 omega_ctrl=omega_ctrl0  #drive frequency
 dt=2*us                  # pulse length
-nu=4                       # number of weak measurement pulses per shot
+nu=4                        # number of weak measurement pulses per shot
 
 P0=np.ones(m)     #Initial "null" hypothesis
 P0=P0/np.sum(P0)
@@ -35,7 +35,7 @@ k_lut=2
 ###
 
 # 3. Helper for safe 1D interpolation
-@kernel(flags={"fast-math"})
+@kernel
 def interp(val, v_min, v_max, y1, y2):
     if v_min == v_max:
         return y1
@@ -161,35 +161,47 @@ for i_lut in range(k_lut+1):
 
 
 
-@kernel(flags={"fast-math"})
+@kernel
 def f_lut_interpol(x_vec: TArray(TFloat, num_dims=1))-> float:
-    x = x_vec[0]
-    u = x * k_lut
-    i0 = int(u)
-    if i0 >= k_lut:
-        i0 = k_lut - 1
-        t = 1.0
-    else:
-        t = u - i0
-    y0 = lut_f1[i0]
-    y1 = lut_f1[i0 + 1]
-    return y0 + t * (y1 - y0)
+    #x=0.0
+    x=x_vec[0]
+    
+    
+    imin = int(np.floor(k_lut * x))
+    imax = int(np.ceil(k_lut * x))
+    
+    # Prevent division by zero: if x is exactly on a grid point, 
+    # just return the known value.
+    if imin == imax:
+        return lut_f1[imin]
+        
+    y1 = lut_f1[imin]
+    y2 = lut_f1[imax]
+    ym = ((x - lut_x0[imin]) * y2 + (lut_x0[imax] - x) * y1) / (lut_x0[imax] - lut_x0[imin])
+    
+    return ym
 
 
 
-@kernel(flags={"fast-math"})
+@kernel
 def g_lut_interpol(x_vec: TArray(TFloat, num_dims=1)):
-    x = x_vec[0]
-    u = x * k_lut
-    i0 = int(u)
-    if i0 >= k_lut:
-        i0 = k_lut - 1
-        t = 1.0
-    else:
-        t = u - i0
-    y0 = lut_g1[i0]
-    y1 = lut_g1[i0 + 1]
-    return y0 + t * (y1 - y0)
+
+    x=x_vec[0]
+
+    ym=0.0
+    imin = int(np.floor(k_lut * x))
+    imax = int(np.ceil(k_lut * x))
+    
+    # Prevent division by zero: if x is exactly on a grid point, 
+    # just return the known value.
+    if imin == imax:
+        return lut_g1[imin]
+        
+    y1 = lut_g1[imin]
+    y2 = lut_g1[imax]
+    ym = ((x - lut_x0[imin]) * y2 + (lut_x0[imax] - x) * y1) / (lut_x0[imax] - lut_x0[imin])
+    
+    return ym
 
 ###
 
@@ -204,69 +216,97 @@ for i_lut in range(k_lut+1):
     for j_lut in range(k_lut+1):
         lut_f2[i_lut, j_lut], lut_g2[i_lut, j_lut]=f_nu_layers2([lut_x0[i_lut], lut_x1[j_lut]], 1)
 
-@kernel(flags={"fast-math"})
+@kernel
 def f_lut_interpol_2d(x_vec: TArray(TFloat, num_dims=1)) -> float:
+
+    
+    # x is now a 2-element array/list: [x0, x1]
     x0, x1 = x_vec[0], x_vec[1]
 
-    u0 = x0 * k_lut
-    i0 = int(u0)
-    if i0 >= k_lut:
-        i0 = k_lut - 1
-        t0 = 1.0
+    
+    # 1. Find bounding indices for the first dimension (x0)
+    i0_min = int(np.floor(k_lut * x0))
+    i0_max = int(np.ceil(k_lut * x0))
+    
+    # 2. Find bounding indices for the second dimension (x1)
+    i1_min = int(np.floor(k_lut * x1))
+    i1_max = int(np.ceil(k_lut * x1))
+    
+    # Retrieve grid coordinate values (assuming 1D arrays lut_x0 and lut_x1 exist)
+    x0_min, x0_max = lut_x0[i0_min], lut_x0[i0_max]
+    x1_min, x1_max = lut_x1[i1_min], lut_x1[i1_max]
+    
+    # 3. Retrieve the 4 corner values from the 2D LUT
+    # Q11 (bottom-left), Q21 (bottom-right), Q12 (top-left), Q22 (top-right)
+    Q11 = lut_f2[i0_min, i1_min]
+    Q21 = lut_f2[i0_max, i1_min]
+    Q12 = lut_f2[i0_min, i1_max]
+    Q22 = lut_f2[i0_max, i1_max]
+    
+    # Distances for denominators (with guards against division by zero)
+    dx0 = (x0_max - x0_min) if x0_max != x0_min else 1.0
+    dx1 = (x1_max - x1_min) if x1_max != x1_min else 1.0
+    
+    # 4. Interpolate along x0 at the bottom edge (i1_min) and top edge (i1_max)
+    if x0_max == x0_min:
+        f_bottom = Q11
+        f_top = Q12
     else:
-        t0 = u0 - i0
-
-    u1 = x1 * k_lut
-    i1 = int(u1)
-    if i1 >= k_lut:
-        i1 = k_lut - 1
-        t1 = 1.0
+        f_bottom = ((x0 - x0_min) * Q21 + (x0_max - x0) * Q11) / dx0
+        f_top    = ((x0 - x0_min) * Q22 + (x0_max - x0) * Q12) / dx0
+        
+    # 5. Interpolate along x1 using the two intermediate results
+    if x1_max == x1_min:
+        ym = f_bottom
     else:
-        t1 = u1 - i1
+        ym = ((x1 - x1_min) * f_top + (x1_max - x1) * f_bottom) / dx1
+        
+    return ym
 
-    i0p = i0 + 1
-    i1p = i1 + 1
-
-    c00 = lut_f2[i0, i1]
-    c10 = lut_f2[i0p, i1]
-    c01 = lut_f2[i0, i1p]
-    c11 = lut_f2[i0p, i1p]
-
-    a0 = c00 + t0 * (c10 - c00)
-    a1 = c01 + t0 * (c11 - c01)
-    return a0 + t1 * (a1 - a0)
-
-@kernel(flags={"fast-math"})
+@kernel
 def g_lut_interpol_2d(x_vec: TArray(TFloat, num_dims=1)):
+    # x is now a 2-element array/list: [x0, x1]
     x0, x1 = x_vec[0], x_vec[1]
 
-    u0 = x0 * k_lut
-    i0 = int(u0)
-    if i0 >= k_lut:
-        i0 = k_lut - 1
-        t0 = 1.0
+    
+    # 1. Find bounding indices for the first dimension (x0)
+    i0_min = int(np.floor(k_lut * x0))
+    i0_max = int(np.ceil(k_lut * x0))
+    
+    # 2. Find bounding indices for the second dimension (x1)
+    i1_min = int(np.floor(k_lut * x1))
+    i1_max = int(np.ceil(k_lut * x1))
+    
+    # Retrieve grid coordinate values (assuming 1D arrays lut_x0 and lut_x1 exist)
+    x0_min, x0_max = lut_x0[i0_min], lut_x0[i0_max]
+    x1_min, x1_max = lut_x1[i1_min], lut_x1[i1_max]
+    
+    # 3. Retrieve the 4 corner values from the 2D LUT
+    # Q11 (bottom-left), Q21 (bottom-right), Q12 (top-left), Q22 (top-right)
+    Q11 = lut_g2[i0_min, i1_min]
+    Q21 = lut_g2[i0_max, i1_min]
+    Q12 = lut_g2[i0_min, i1_max]
+    Q22 = lut_g2[i0_max, i1_max]
+    
+    # Distances for denominators (with guards against division by zero)
+    dx0 = (x0_max - x0_min) if x0_max != x0_min else 1.0
+    dx1 = (x1_max - x1_min) if x1_max != x1_min else 1.0
+    
+    # 4. Interpolate along x0 at the bottom edge (i1_min) and top edge (i1_max)
+    if x0_max == x0_min:
+        f_bottom = Q11
+        f_top = Q12
     else:
-        t0 = u0 - i0
-
-    u1 = x1 * k_lut
-    i1 = int(u1)
-    if i1 >= k_lut:
-        i1 = k_lut - 1
-        t1 = 1.0
+        f_bottom = ((x0 - x0_min) * Q21 + (x0_max - x0) * Q11) / dx0
+        f_top    = ((x0 - x0_min) * Q22 + (x0_max - x0) * Q12) / dx0
+        
+    # 5. Interpolate along x1 using the two intermediate results
+    if x1_max == x1_min:
+        ym = f_bottom
     else:
-        t1 = u1 - i1
-
-    i0p = i0 + 1
-    i1p = i1 + 1
-
-    c00 = lut_g2[i0, i1]
-    c10 = lut_g2[i0p, i1]
-    c01 = lut_g2[i0, i1p]
-    c11 = lut_g2[i0p, i1p]
-
-    a0 = c00 + t0 * (c10 - c00)
-    a1 = c01 + t0 * (c11 - c01)
-    return a0 + t1 * (a1 - a0)
+        ym = ((x1 - x1_min) * f_top + (x1_max - x1) * f_bottom) / dx1
+        
+    return ym
 
 ###
 
@@ -281,105 +321,96 @@ for i_lut in range(k_lut+1):
         for l_lut in range(k_lut+1):
             lut_f3[i_lut, j_lut, l_lut], lut_g3[i_lut, j_lut, l_lut]=f_nu_layers2([lut_x0[i_lut], lut_x1[j_lut], lut_x2[l_lut]], 1)
 
-@kernel(flags={"fast-math"})
+@kernel
 def f_lut_interpol_3d(x_vec: TArray(TFloat, num_dims=1)):
+    # x is a 3-element array/list: [x0, x1, x2]
     x0, x1, x2 = x_vec[0], x_vec[1], x_vec[2]
+    
+    # 1. Bounding indices for each dimension
+    i0_min = int(np.floor(k_lut * x0))
+    i0_max = int(np.ceil(k_lut * x0))
+    
+    i1_min = int(np.floor(k_lut * x1))
+    i1_max = int(np.ceil(k_lut * x1))
+    
+    i2_min = int(np.floor(k_lut * x2))
+    i2_max = int(np.ceil(k_lut * x2))
+    
+    # Grid coordinates
+    x0_min, x0_max = lut_x0[i0_min], lut_x0[i0_max]
+    x1_min, x1_max = lut_x1[i1_min], lut_x1[i1_max]
+    x2_min, x2_max = lut_x2[i2_min], lut_x2[i2_max]
+    
+    # 2. Fetch the 8 corners of the 3D cube from the LUT
+    c000 = lut_f3[i0_min, i1_min, i2_min]
+    c100 = lut_f3[i0_max, i1_min, i2_min]
+    c010 = lut_f3[i0_min, i1_max, i2_min]
+    c110 = lut_f3[i0_max, i1_max, i2_min]
+    c001 = lut_f3[i0_min, i1_min, i2_max]
+    c101 = lut_f3[i0_max, i1_min, i2_max]
+    c011 = lut_f3[i0_min, i1_max, i2_max]
+    c111 = lut_f3[i0_max, i1_max, i2_max]
+        
+    # 4. Interpolate along x0 (reduces 8 points to 4)
+    c00 = interp(x0, x0_min, x0_max, c000, c100)
+    c10 = interp(x0, x0_min, x0_max, c010, c110)
+    c01 = interp(x0, x0_min, x0_max, c001, c101)
+    c11 = interp(x0, x0_min, x0_max, c011, c111)
+    
+    # 5. Interpolate along x1 (reduces 4 points to 2)
+    c0 = interp(x1, x1_min, x1_max, c00, c10)
+    c1 = interp(x1, x1_min, x1_max, c01, c11)
+    
+    # 6. Interpolate along x2 (reduces 2 points to 1 final value)
+    ym = interp(x2, x2_min, x2_max, c0, c1)
+    
+    return ym
 
-    u0 = x0 * k_lut
-    i0 = int(u0)
-    if i0 >= k_lut:
-        i0 = k_lut - 1
-        t0 = 1.0
-    else:
-        t0 = u0 - i0
-
-    u1 = x1 * k_lut
-    i1 = int(u1)
-    if i1 >= k_lut:
-        i1 = k_lut - 1
-        t1 = 1.0
-    else:
-        t1 = u1 - i1
-
-    u2 = x2 * k_lut
-    i2 = int(u2)
-    if i2 >= k_lut:
-        i2 = k_lut - 1
-        t2 = 1.0
-    else:
-        t2 = u2 - i2
-
-    i0p = i0 + 1
-    i1p = i1 + 1
-    i2p = i2 + 1
-
-    c000 = lut_f3[i0, i1, i2]
-    c100 = lut_f3[i0p, i1, i2]
-    c010 = lut_f3[i0, i1p, i2]
-    c110 = lut_f3[i0p, i1p, i2]
-    c001 = lut_f3[i0, i1, i2p]
-    c101 = lut_f3[i0p, i1, i2p]
-    c011 = lut_f3[i0, i1p, i2p]
-    c111 = lut_f3[i0p, i1p, i2p]
-
-    c00 = c000 + t0 * (c100 - c000)
-    c10 = c010 + t0 * (c110 - c010)
-    c01 = c001 + t0 * (c101 - c001)
-    c11 = c011 + t0 * (c111 - c011)
-
-    c0 = c00 + t1 * (c10 - c00)
-    c1 = c01 + t1 * (c11 - c01)
-    return c0 + t2 * (c1 - c0)
-
-@kernel(flags={"fast-math"})
+@kernel
 def g_lut_interpol_3d(x_vec: TArray(TFloat, num_dims=1)):
+    # x is a 3-element array/list: [x0, x1, x2]
+    ym=0.0
     x0, x1, x2 = x_vec[0], x_vec[1], x_vec[2]
-
-    u0 = x0 * k_lut
-    i0 = int(u0)
-    if i0 >= k_lut:
-        i0 = k_lut - 1
-        t0 = 1.0
-    else:
-        t0 = u0 - i0
-
-    u1 = x1 * k_lut
-    i1 = int(u1)
-    if i1 >= k_lut:
-        i1 = k_lut - 1
-        t1 = 1.0
-    else:
-        t1 = u1 - i1
-
-    u2 = x2 * k_lut
-    i2 = int(u2)
-    if i2 >= k_lut:
-        i2 = k_lut - 1
-        t2 = 1.0
-    else:
-        t2 = u2 - i2
-
-    i0p = i0 + 1
-    i1p = i1 + 1
-    i2p = i2 + 1
-
-    c000 = lut_g3[i0, i1, i2]
-    c100 = lut_g3[i0p, i1, i2]
-    c010 = lut_g3[i0, i1p, i2]
-    c110 = lut_g3[i0p, i1p, i2]
-    c001 = lut_g3[i0, i1, i2p]
-    c101 = lut_g3[i0p, i1, i2p]
-    c011 = lut_g3[i0, i1p, i2p]
-    c111 = lut_g3[i0p, i1p, i2p]
-
-    c00 = c000 + t0 * (c100 - c000)
-    c10 = c010 + t0 * (c110 - c010)
-    c01 = c001 + t0 * (c101 - c001)
-    c11 = c011 + t0 * (c111 - c011)
-
-    c0 = c00 + t1 * (c10 - c00)
-    c1 = c01 + t1 * (c11 - c01)
-    return c0 + t2 * (c1 - c0)
+    
+    # 1. Bounding indices for each dimension
+    i0_min = int(np.floor(k_lut * x0))
+    i0_max = int(np.ceil(k_lut * x0))
+    
+    i1_min = int(np.floor(k_lut * x1))
+    i1_max = int(np.ceil(k_lut * x1))
+    
+    i2_min = int(np.floor(k_lut * x2))
+    i2_max = int(np.ceil(k_lut * x2))
+    
+    # Grid coordinates
+    x0_min, x0_max = lut_x0[i0_min], lut_x0[i0_max]
+    x1_min, x1_max = lut_x1[i1_min], lut_x1[i1_max]
+    x2_min, x2_max = lut_x2[i2_min], lut_x2[i2_max]
+    
+    # 2. Fetch the 8 corners of the 3D cube from the LUT
+    c000 = lut_g3[i0_min, i1_min, i2_min]
+    c100 = lut_g3[i0_max, i1_min, i2_min]
+    c010 = lut_g3[i0_min, i1_max, i2_min]
+    c110 = lut_g3[i0_max, i1_max, i2_min]
+    c001 = lut_g3[i0_min, i1_min, i2_max]
+    c101 = lut_g3[i0_max, i1_min, i2_max]
+    c011 = lut_g3[i0_min, i1_max, i2_max]
+    c111 = lut_g3[i0_max, i1_max, i2_max]
+        
+    # 4. Interpolate along x0 (reduces 8 points to 4)
+    c00 = interp(x0, x0_min, x0_max, c000, c100)
+    c10 = interp(x0, x0_min, x0_max, c010, c110)
+    c01 = interp(x0, x0_min, x0_max, c001, c101)
+    c11 = interp(x0, x0_min, x0_max, c011, c111)
+    
+    # 5. Interpolate along x1 (reduces 4 points to 2)
+    c0 = interp(x1, x1_min, x1_max, c00, c10)
+    c1 = interp(x1, x1_min, x1_max, c01, c11)
+    
+    # 6. Interpolate along x2 (reduces 2 points to 1 final value)
+    ym = interp(x2, x2_min, x2_max, c0, c1)
+    
+    return ym
 
 ###
 
@@ -399,157 +430,135 @@ for i_lut in range(k_lut+1):
                     [lut_x0[i_lut], lut_x1[j_lut], lut_x2[l_lut], lut_x3[m_lut]], 1
                 )
 
-@kernel(flags={"fast-math"})
+@kernel
 def f_lut_interpol_4d(x_vec: TArray(TFloat, num_dims=1)):
+    # x is a 4-element array/list: [x0, x1, x2, x3]
     x0, x1, x2, x3 = x_vec[0], x_vec[1], x_vec[2], x_vec[3]
+    
+    # # 1. Bounding indices for each dimension using k_lut
+    i0_min = int(np.floor(k_lut * x0))
+    i0_max = int(np.ceil(k_lut * x0))
+    
+    i1_min = int(np.floor(k_lut * x1))
+    i1_max = int(np.ceil(k_lut * x1))
+    
+    i2_min = int(np.floor(k_lut * x2))
+    i2_max = int(np.ceil(k_lut * x2))
+    
+    i3_min = int(np.floor(k_lut * x3))
+    i3_max = int(np.ceil(k_lut * x3))
+    
+    # # Grid coordinates
+    x0_min, x0_max = lut_x0[i0_min], lut_x0[i0_max]
+    x1_min, x1_max = lut_x1[i1_min], lut_x1[i1_max]
+    x2_min, x2_max = lut_x2[i2_min], lut_x2[i2_max]
+    x3_min, x3_max = lut_x3[i3_min], lut_x3[i3_max]
+    
+    # 2. 4D multilinear interpolation using nested loops over corner bits.
+    idx0 = [i0_min, i0_max]
+    idx1 = [i1_min, i1_max]
+    idx2 = [i2_min, i2_max]
+    idx3 = [i3_min, i3_max]
 
-    u0 = x0 * k_lut
-    i0 = int(u0)
-    if i0 >= k_lut:
-        i0 = k_lut - 1
-        t0 = 1.0
+    if x0_max == x0_min:
+        w0 = [1.0, 0.0]
     else:
-        t0 = u0 - i0
+        w0 = [(x0_max - x0) / (x0_max - x0_min), (x0 - x0_min) / (x0_max - x0_min)]
 
-    u1 = x1 * k_lut
-    i1 = int(u1)
-    if i1 >= k_lut:
-        i1 = k_lut - 1
-        t1 = 1.0
+    if x1_max == x1_min:
+        w1 = [1.0, 0.0]
     else:
-        t1 = u1 - i1
+        w1 = [(x1_max - x1) / (x1_max - x1_min), (x1 - x1_min) / (x1_max - x1_min)]
 
-    u2 = x2 * k_lut
-    i2 = int(u2)
-    if i2 >= k_lut:
-        i2 = k_lut - 1
-        t2 = 1.0
+    if x2_max == x2_min:
+        w2 = [1.0, 0.0]
     else:
-        t2 = u2 - i2
+        w2 = [(x2_max - x2) / (x2_max - x2_min), (x2 - x2_min) / (x2_max - x2_min)]
 
-    u3 = x3 * k_lut
-    i3 = int(u3)
-    if i3 >= k_lut:
-        i3 = k_lut - 1
-        t3 = 1.0
+    if x3_max == x3_min:
+        w3 = [1.0, 0.0]
     else:
-        t3 = u3 - i3
+        w3 = [(x3_max - x3) / (x3_max - x3_min), (x3 - x3_min) / (x3_max - x3_min)]
 
-    i0p = i0 + 1
-    i1p = i1 + 1
-    i2p = i2 + 1
-    i3p = i3 + 1
+    ym = 0.0
+    for b0 in range(2):
+        for b1 in range(2):
+            for b2 in range(2):
+                for b3 in range(2):
+                    ym += (
+                        w0[b0]
+                        * w1[b1]
+                        * w2[b2]
+                        * w3[b3]
+                        * lut_f4[idx0[b0], idx1[b1], idx2[b2], idx3[b3]]
+                    )
 
-    c0000 = lut_f4[i0, i1, i2, i3]
-    c1000 = lut_f4[i0p, i1, i2, i3]
-    c0100 = lut_f4[i0, i1p, i2, i3]
-    c1100 = lut_f4[i0p, i1p, i2, i3]
-    c0010 = lut_f4[i0, i1, i2p, i3]
-    c1010 = lut_f4[i0p, i1, i2p, i3]
-    c0110 = lut_f4[i0, i1p, i2p, i3]
-    c1110 = lut_f4[i0p, i1p, i2p, i3]
-    c0001 = lut_f4[i0, i1, i2, i3p]
-    c1001 = lut_f4[i0p, i1, i2, i3p]
-    c0101 = lut_f4[i0, i1p, i2, i3p]
-    c1101 = lut_f4[i0p, i1p, i2, i3p]
-    c0011 = lut_f4[i0, i1, i2p, i3p]
-    c1011 = lut_f4[i0p, i1, i2p, i3p]
-    c0111 = lut_f4[i0, i1p, i2p, i3p]
-    c1111 = lut_f4[i0p, i1p, i2p, i3p]
+    return ym
 
-    d000 = c0000 + t0 * (c1000 - c0000)
-    d100 = c0100 + t0 * (c1100 - c0100)
-    d010 = c0010 + t0 * (c1010 - c0010)
-    d110 = c0110 + t0 * (c1110 - c0110)
-    d001 = c0001 + t0 * (c1001 - c0001)
-    d101 = c0101 + t0 * (c1101 - c0101)
-    d011 = c0011 + t0 * (c1011 - c0011)
-    d111 = c0111 + t0 * (c1111 - c0111)
-
-    e00 = d000 + t1 * (d100 - d000)
-    e10 = d010 + t1 * (d110 - d010)
-    e01 = d001 + t1 * (d101 - d001)
-    e11 = d011 + t1 * (d111 - d011)
-
-    f0 = e00 + t2 * (e10 - e00)
-    f1 = e01 + t2 * (e11 - e01)
-    return f0 + t3 * (f1 - f0)
-
-@kernel(flags={"fast-math"})
+@kernel
 def g_lut_interpol_4d(x_vec: TArray(TFloat, num_dims=1)):
+    # x is a 4-element array/list: [x0, x1, x2, x3]
     x0, x1, x2, x3 = x_vec[0], x_vec[1], x_vec[2], x_vec[3]
+    
+    # 1. Bounding indices for each dimension using k_lut
+    i0_min = int(np.floor(k_lut * x0))
+    i0_max = int(np.ceil(k_lut * x0))
+    
+    i1_min = int(np.floor(k_lut * x1))
+    i1_max = int(np.ceil(k_lut * x1))
+    
+    i2_min = int(np.floor(k_lut * x2))
+    i2_max = int(np.ceil(k_lut * x2))
+    
+    i3_min = int(np.floor(k_lut * x3))
+    i3_max = int(np.ceil(k_lut * x3))
+    
+    # Grid coordinates
+    x0_min, x0_max = lut_x0[i0_min], lut_x0[i0_max]
+    x1_min, x1_max = lut_x1[i1_min], lut_x1[i1_max]
+    x2_min, x2_max = lut_x2[i2_min], lut_x2[i2_max]
+    x3_min, x3_max = lut_x3[i3_min], lut_x3[i3_max]
+    
+    # 2. 4D multilinear interpolation using nested loops over corner bits.
+    idx0 = [i0_min, i0_max]
+    idx1 = [i1_min, i1_max]
+    idx2 = [i2_min, i2_max]
+    idx3 = [i3_min, i3_max]
 
-    u0 = x0 * k_lut
-    i0 = int(u0)
-    if i0 >= k_lut:
-        i0 = k_lut - 1
-        t0 = 1.0
+    if x0_max == x0_min:
+        w0 = [1.0, 0.0]
     else:
-        t0 = u0 - i0
+        w0 = [(x0_max - x0) / (x0_max - x0_min), (x0 - x0_min) / (x0_max - x0_min)]
 
-    u1 = x1 * k_lut
-    i1 = int(u1)
-    if i1 >= k_lut:
-        i1 = k_lut - 1
-        t1 = 1.0
+    if x1_max == x1_min:
+        w1 = [1.0, 0.0]
     else:
-        t1 = u1 - i1
+        w1 = [(x1_max - x1) / (x1_max - x1_min), (x1 - x1_min) / (x1_max - x1_min)]
 
-    u2 = x2 * k_lut
-    i2 = int(u2)
-    if i2 >= k_lut:
-        i2 = k_lut - 1
-        t2 = 1.0
+    if x2_max == x2_min:
+        w2 = [1.0, 0.0]
     else:
-        t2 = u2 - i2
+        w2 = [(x2_max - x2) / (x2_max - x2_min), (x2 - x2_min) / (x2_max - x2_min)]
 
-    u3 = x3 * k_lut
-    i3 = int(u3)
-    if i3 >= k_lut:
-        i3 = k_lut - 1
-        t3 = 1.0
+    if x3_max == x3_min:
+        w3 = [1.0, 0.0]
     else:
-        t3 = u3 - i3
+        w3 = [(x3_max - x3) / (x3_max - x3_min), (x3 - x3_min) / (x3_max - x3_min)]
 
-    i0p = i0 + 1
-    i1p = i1 + 1
-    i2p = i2 + 1
-    i3p = i3 + 1
+    ym = 0.0
+    for b0 in range(2):
+        for b1 in range(2):
+            for b2 in range(2):
+                for b3 in range(2):
+                    ym += (
+                        w0[b0]
+                        * w1[b1]
+                        * w2[b2]
+                        * w3[b3]
+                        * lut_g4[idx0[b0], idx1[b1], idx2[b2], idx3[b3]]
+                    )
+    
+    return ym
 
-    c0000 = lut_g4[i0, i1, i2, i3]
-    c1000 = lut_g4[i0p, i1, i2, i3]
-    c0100 = lut_g4[i0, i1p, i2, i3]
-    c1100 = lut_g4[i0p, i1p, i2, i3]
-    c0010 = lut_g4[i0, i1, i2p, i3]
-    c1010 = lut_g4[i0p, i1, i2p, i3]
-    c0110 = lut_g4[i0, i1p, i2p, i3]
-    c1110 = lut_g4[i0p, i1p, i2p, i3]
-    c0001 = lut_g4[i0, i1, i2, i3p]
-    c1001 = lut_g4[i0p, i1, i2, i3p]
-    c0101 = lut_g4[i0, i1p, i2, i3p]
-    c1101 = lut_g4[i0p, i1p, i2, i3p]
-    c0011 = lut_g4[i0, i1, i2p, i3p]
-    c1011 = lut_g4[i0p, i1, i2p, i3p]
-    c0111 = lut_g4[i0, i1p, i2p, i3p]
-    c1111 = lut_g4[i0p, i1p, i2p, i3p]
-
-    d000 = c0000 + t0 * (c1000 - c0000)
-    d100 = c0100 + t0 * (c1100 - c0100)
-    d010 = c0010 + t0 * (c1010 - c0010)
-    d110 = c0110 + t0 * (c1110 - c0110)
-    d001 = c0001 + t0 * (c1001 - c0001)
-    d101 = c0101 + t0 * (c1101 - c0101)
-    d011 = c0011 + t0 * (c1011 - c0011)
-    d111 = c0111 + t0 * (c1111 - c0111)
-
-    e00 = d000 + t1 * (d100 - d000)
-    e10 = d010 + t1 * (d110 - d010)
-    e01 = d001 + t1 * (d101 - d001)
-    e11 = d011 + t1 * (d111 - d011)
-
-    f0 = e00 + t2 * (e10 - e00)
-    f1 = e01 + t2 * (e11 - e01)
-    return f0 + t3 * (f1 - f0)
-
-mean_func_list = [f_lut_interpol, f_lut_interpol_2d, f_lut_interpol_3d]
-std_func_list = [g_lut_interpol, g_lut_interpol_2d, g_lut_interpol_3d]  
+mean_func_list=[f_lut_interpol, f_lut_interpol_2d, f_lut_interpol_3d, f_lut_interpol_4d]
+std_func_list=[g_lut_interpol, g_lut_interpol_2d, g_lut_interpol_3d, g_lut_interpol_4d]
