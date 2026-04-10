@@ -15,14 +15,19 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('t_ramsey', np.linspace(0.e-6, 50.e-6, 15))
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
+        self.p.frequency_raman_transition = 119.4636e6 # 182 A -1 0
 
-        # self.xvar('amp_imaging',np.linspace(0.1,.4,10))
-        self.p.amp_imaging = 0.61
-        self.p.t_tweezer_hold = 20.e-3
-        self.p.t_tof = 500.e-6
+        self.xvar('t_ramsey', np.linspace(0., 6.e-3, 20))
+ 
+        self.p.t_raman_pulse = 9.5896e-06 / 2 # -1 --> 0
+
+        self.p.hf_imaging_detuning =  -568.e6 # 182. with PID
+        self.p.amp_imaging = self.camera_params.amp_imaging
+
+        self.p.t_tweezer_hold = .01e-3
+        self.p.t_tof = 10.e-6
         self.p.t_mot_load = 1.
+
         self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
@@ -30,29 +35,19 @@ class hf_raman(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
-        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers()
         self.prep_raman()
 
         self.raman.pulse(self.p.t_raman_pulse)
-
-        self.imaging.on()
         delay(self.p.t_ramsey)
-        self.imaging.off()
-
         self.raman.pulse(self.p.t_raman_pulse)
 
         self.ttl.raman_shutter.off()
-
-        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(1.)
-
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
-
         delay(self.p.t_tof)
 
         self.abs_image()

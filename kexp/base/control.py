@@ -73,6 +73,7 @@ class Control():
         else:
             self.imaging.pulse(t)
         data_container.shot_data[idx] = self.integrator.stop_and_sample()
+        delay(3.e-6)
         self.integrator.clear()
 
     @kernel
@@ -150,13 +151,24 @@ class Control():
         self.core.break_realtime()
 
     @kernel
-    def prep_raman(self, frequency_raman = dv):
+    def prep_raman(self,
+            frequency_transition=dv,
+            fraction_power=dv,
+            global_phase=0.,relative_phase=0.,
+            t_phase_origin_mu=np.int64(-1),
+            phase_mode=1):
         
-        if frequency_raman == dv:
-            frequency_raman = self.p.frequency_raman_transition
-
-        self.raman.init(frequency_transition = frequency_raman, 
-                        fraction_power = self.params.fraction_power_raman)
+        if frequency_transition == dv:
+            frequency_transition = self.p.frequency_raman_transition
+        if fraction_power == dv:
+            fraction_power = self.p.fraction_power_raman
+            
+        self.raman.init(frequency_transition,
+                        fraction_power,
+                        global_phase,
+                        relative_phase,
+                        t_phase_origin_mu,
+                        phase_mode)
         
         self.ttl.raman_shutter.on()
         delay(10.e-3)

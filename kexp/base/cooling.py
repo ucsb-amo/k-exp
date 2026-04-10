@@ -53,7 +53,7 @@ class Cooling():
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
-        # delay(100.e-3)
+        # delay(200.e-3)
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 

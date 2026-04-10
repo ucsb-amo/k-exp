@@ -43,10 +43,14 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_detuned_imaging_midpoint = 608.e6
 
         # hf imaging settings with i_outer = 182
-        self.frequency_detuned_hf_f1m1 = -570.e6
+        # 1,-1 to 2,-2
+        self.frequency_detuned_hf_f1m1 = -568.e6
         self.frequency_detuned_hf_f2m2 = -710.e6
-        self.frequency_detuned_hf_midpoint = -640.e6
-        # self.frequency_detuned_hf_midpoint = -670.e6
+        # self.frequency_detuned_hf_midpoint = -640.e6
+
+        # 1,-1 to 1,0
+        # self.frequency_detuned_hf_f10 = 
+        self.frequency_detuned_hf_midpoint = -514.e6
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
@@ -65,7 +69,8 @@ class ExptParams(ExptParamsWaxx):
 
         # SLM settings
         self.dimension_slm_mask = 20.e-6 
-        self.phase_slm_mask = 0.32 * np.pi
+        # self.phase_slm_mask = 0.32 * np.pi
+        self.phase_slm_mask = 0.186 * np.pi # for 1,-1 to 1,0
         self.px_slm_phase_mask_position_x = 993
         self.px_slm_phase_mask_position_y = 820
         # Cooling timing
@@ -141,7 +146,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 7.8717e-06 # 62354
+        self.t_raman_pi_pulse = 9.2036e-06 # 63027
         
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -289,7 +294,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.7
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.3
         self.n_tweezer_ramp_steps = 1000
 
         self.n_tweezers = 2
@@ -348,13 +353,14 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.5
+        self.fraction_power_raman = 0.99
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
 
-        self.frequency_raman_transition = 147.2945e6 # 62500, 520 G 1-1 to 2-2
+        # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
+        self.frequency_raman_transition = 119.4637e6 # , 520 G 1,-1 to 1,0
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2

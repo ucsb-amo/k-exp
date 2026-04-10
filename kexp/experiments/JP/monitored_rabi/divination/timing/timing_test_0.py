@@ -11,7 +11,7 @@ class timing_test(EnvExperiment):
 
     def prepare(self):
         self.core = self.get_device('core')
-        self.ttl = self.get_device('ttl21')
+        self.ttl = self.get_device('ttl4')
 
         self.m = 21
         self.P0 = np.ones(self.m)
@@ -50,10 +50,11 @@ class timing_test(EnvExperiment):
         slack1 = t0 - self.core.get_rtio_counter_mu()
         # self.ttl.off()
         
-        delay(10.e-3)
-        print(slack0, slack1)
+        delay(500.e-3)
+        # print(slack0, slack1)
+        print(slack1)
 
-    @kernel
+    @kernel(flags={"fast-math"})
     def generate_posterior(self, k, t):
         P0_total = 0.
         p1 = 0.
@@ -82,7 +83,7 @@ class timing_test(EnvExperiment):
                             [-sin_z, cos_z, 0.],
                             [0., 0., 1.]])
 
-            norm_H = np.sqrt(self.Omega**2 + delta_omega**2)
+            norm_H = np.sqrt(self.Omega*self.Omega + delta_omega*delta_omega)
             if norm_H != 0.:
                 alpha_H = 2.0 * norm_H * self.dt
                 cos_H = np.sin(np.pi/2 - alpha_H)
@@ -117,6 +118,6 @@ class timing_test(EnvExperiment):
         mn = mn / P0_total
         moment_2 = moment_2 / P0_total
 
-        std = np.sqrt(moment_2 - mn**2)
+        std = np.sqrt(moment_2 - mn*mn)
 
         return mn, std

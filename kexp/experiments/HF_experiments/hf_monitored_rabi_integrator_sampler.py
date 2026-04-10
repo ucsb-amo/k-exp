@@ -32,7 +32,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('frequency_raman_transition', 147.27e6 + np.linspace(-25.e3,25.e3,11))
 
         # self.p.frequency_raman_transition = 147.2599e6
-        self.p.frequency_raman_transition = 147.2772e6 # .1 img amp
+        self.p.frequency_raman_transition = 147.2593e6 # .1 img amp
 
         # self.xvar('amp_raman',np.linspace(0.1,.35,15))
         self.p.fraction_power_raman = .99
@@ -44,10 +44,10 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_continuous_rabi = 600.e-6
 
         # self.xvar('t_raman_pulse',[0.,(7.8717e-06)])
-        self.p.t_raman_pulse = 7.8717e-06
+        self.p.t_raman_pulse = 7.894e-06
         
         # self.xvar('amp_imaging',np.linspace(0.5,1.9,30))
-        self.p.amp_imaging = .1
+        self.p.amp_imaging = 1.
 
         self.p.hf_imaging_detuning = -568.e6 # 182.
 
@@ -67,12 +67,13 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 100
 
-        self.xvar('N_pulses',np.arange(1,30,1))
-        self.p.N_pulses = 2
-        self.p.t_img_pulse = 15.e-6
-        self.data.apd = self.data.add_data_container(1)
+        # self.xvar('N_pulses',np.arange(1,11,1))
+        self.p.N_pulses = 5
+        self.p.t_pulse_delay = 5.e-6
+        self.p.t_img_pulse = 5.e-6
+        self.data.apd = self.data.add_data_container(self.p.N_pulses)
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -98,31 +99,35 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
 
-        # self.raman.pulse(t=1*self.p.t_raman_pi_pulse)
+        # self.raman.pulse(t=1*self.p.t_raman_pulse)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         delay(3.e-6)
-        # for i in range(self.p.N_pulses):
-        #     # take an imaging pulse and store it in the data container at index i for this shot
-        #     self.integrated_imaging_pulse(
-        #                             self.data.apd,
-        #                             t = self.p.t_img_pulse,
-        #                             dark = False,
-        #                             idx = i)
-        for i in range(self.p.N_pulses):    
-            # delay(15.e-6)
-            self.raman.pulse(t=self.p.t_raman_pi_pulse)
-            # self.raman.on()
-            # delay(self.p.t_raman_pi_pulse)
-            # self.raman.off()
-            delay(1.e-6)
-        
-        delay(15.e-6)
-        self.integrated_imaging_pulse(
+        for i in range(self.p.N_pulses):
+            # take an imaging pulse and store it in the data container at index i for this shot
+            self.integrated_imaging_pulse(
                                     self.data.apd,
                                     t = self.p.t_img_pulse,
                                     dark = False,
-                                    idx = 0)
+                                    idx = i)
+            delay(3.e-6)
+            self.raman.pulse(t=self.p.t_raman_pulse)
+            delay(3.e-6)
+
+        # for i in range(self.p.N_pulses):    
+        #     # delay(15.e-6)
+        #     self.raman.pulse(t=self.p.t_raman_pulse / 2)
+        #     # self.raman.on()
+        #     # delay(self.p.t_raman_pi_pulse)
+        #     # self.raman.off()
+        #     delay(self.p.t_pulse_delay)
+        
+        # delay(15.e-6)
+        # self.integrated_imaging_pulse(
+        #                             self.data.apd,
+        #                             t = self.p.t_img_pulse,
+        #                             dark = False,
+        #                             idx = 0)
         delay(15.e-6)
         self.ttl.raman_shutter.off()
         
