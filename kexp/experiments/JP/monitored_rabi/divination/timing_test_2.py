@@ -125,12 +125,14 @@ class timing_test(EnvExperiment):
 
         self.core.reset()
         
+        self.ttl.on()
         t0 = now_mu()
         self.core.wait_until_mu(t0)
 
         k = int(v)
         (mn, std) = self.generate_posterior(k, t)
         slack1 = t0 - self.core.get_rtio_counter_mu()
+        self.ttl.off()
         
         delay(10.e-3)
         print(abs(slack1))
