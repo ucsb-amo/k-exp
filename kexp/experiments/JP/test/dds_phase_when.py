@@ -17,13 +17,13 @@ class dds(EnvExperiment):
         self.ttl1 = self.get_device('ttl5')
         self.zotino0 = self.get_device('zotino0')
 
-        self.dds0 = DDS(0,1,1.e6,0.5,device_db=device_db,dac_device=self.zotino0)
+        self.dds0 = DDS(0,1,3.e6,0.5,device_db=device_db,dac_device=self.zotino0)
         self.dds0.get_devices(self)
 
         self.dds1 = DDS(0,2,0.71e6,0.5,device_db=device_db,dac_device=self.zotino0)
         self.dds1.get_devices(self)
 
-        self.f = [10.e6, 11.e6]
+        self.f = [0.e6, 90.e6]
 
         self.t_idx = 0
         self.t = np.zeros(2).astype(np.int64)
@@ -32,6 +32,10 @@ class dds(EnvExperiment):
     def get_slack(self):
         self.t[self.t_idx] = now_mu() - self.core.get_rtio_counter_mu()
         self.t_idx += 1
+
+    def wait(self) -> TBool:
+        input('press enter to continue')
+        return True
 
     @kernel
     def run(self):
@@ -53,6 +57,8 @@ class dds(EnvExperiment):
         self.dds0.on()
         self.dds1.on()
 
+        t_change_mu = np.int64(0)
+
         # self.dds0.off()
         # self.dds1.off()
         PHASE_MODE_CONTINUOUS = 0
@@ -61,15 +67,29 @@ class dds(EnvExperiment):
         self.dds0.dds_device.set_phase_mode(PHASE_MODE_TRACKING)
         self.dds1.dds_device.set_phase_mode(PHASE_MODE_TRACKING)
 
-        self.dds0.set_phase_mode(1)
-        self.dds1.set_phase_mode(1)
-        
-        t_pulse_start = now_mu() + 50000
-        self.dds0.set_dds(frequency=self.f[0], t_phase_origin_mu=t_pulse_start, phase=0., init=True)
-        self.dds1.set_dds(frequency=self.f[1], t_phase_origin_mu=t_pulse_start, phase=0., init=True)
+        p = 0.
+        b = True
+        for _ in range(1000):
+            self.core.break_realtime()
+            at_mu(now_mu())
+            t = now_mu() + 10000
+            self.dds0.set_dds(frequency=self.f[1], amplitude=0.5, t_phase_origin_mu=t)
+            self.dds1.set_dds(frequency=self.f[1], amplitude=0.5, t_phase_origin_mu=t)
+            # self.dds1.dds_device.set_phase_mode(PHASE_MODE_TRACKING)
 
-        at_mu(t_pulse_start)
-        self.ttl1.pulse(1.e-6)
+            # self.dds1.set_phase_mode(1)
+            delay(10.e-3)
+            # p, t_change_mu = self.dds0.set_dds(frequency=self.f[1], amplitude=0.)
+            p, t_change_mu = self.dds0.set_dds(frequency=self.f[0])
+            self.dds1.set_dds(frequency=self.f[0])
+            # self.dds1.set_dds(frequency=self.f[1], t_phase_origin_mu=t_pulse_start, phase=0., init=True)
+            # print(t_change_mu)
+            at_mu(t_change_mu)
+            self.ttl1.pulse(1.e-6)
+
+            self.core.wait_until_mu(now_mu())
+            b = self.wait()
+            
 
         # delay(10.e-6)
         
