@@ -35,31 +35,32 @@ class feedback(EnvExperiment, Base):
         self.xvar('dummy',[0])
 
         self.p.amp_imaging = 0.23
-        self.p.t_img_pulse = 5.e-6
+        self.p.t_img_pulse = 10.e-6
 
-        self.p.t_raman_pulse = 3.5e-6
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse
 
-        self.N_pulses = 12 # number of steps of evolution
-        self.m = 31 # feedback grid size
+        self.N_pulses = 100 # number of steps of evolution
+        self.m = 3 # feedback grid size
         
         ### calibrations
 
         # 5 us img pulse
-        self.v_apd_all_up = -0.191
-        self.v_apd_all_down = -0.226
+        # self.v_apd_all_up = -0.191
+        # self.v_apd_all_down = -0.226
 
         # 10 us img pulse
-        # self.v_apd_all_up = -0.14
-        # self.v_apd_all_down = -0.23
+        self.v_apd_all_up = -0.14
+        self.v_apd_all_down = -0.23
 
         n_photons_per_us_per_imgamp = 431.77 / 1 # 63017
 
         # for vpd = 0.3, lightshift 18.74kHz (#63034)
-        self.omega_z_lightshift = 2*np.pi*19.7e3
-    
+        self.omega_z_lightshift = 2*np.pi*0.e3
 
-        self.Omega = 2*np.pi*57.242e3 # rabi frequency guess
-        fractional_inital_offset = 4.
+        self.Omega = 2*np.pi*57.e3 # rabi frequency guess
+        # self.p.t_raman_pulse = np.pi / self.Omega
+        # self.Omega = np.pi / (self.p.t_raman_pi_pulse)
+        fractional_inital_offset = 1.
 
         ### setup data containers
 
@@ -69,6 +70,9 @@ class feedback(EnvExperiment, Base):
         self.data.apd = self.data.add_data_container(self.N_pulses)
         self.data.counts = self.data.add_data_container(self.N_pulses)
         self.data.ts = self.data.add_data_container(self.N_pulses)
+
+        self.data.s_z = self.data.add_data_container(self.N_pulses)
+        self.data.t_s_z = self.data.add_data_container(self.N_pulses)
 
         ### feedback setup
 
@@ -85,7 +89,8 @@ class feedback(EnvExperiment, Base):
 
         self.p.omega_guess_list = self.omega_guess_list
 
-        self.omega_raman = omega_guess # omega_ctrl
+        # self.omega_raman = omega_guess # omega_ctrl
+        self.omega_raman = 2*np.pi*self.p.frequency_raman_transition
         
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
@@ -128,6 +133,8 @@ class feedback(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
+        zidx = self.m//2
+
         self.integrator.init()
 
         self.initialize_feedback()
@@ -147,6 +154,8 @@ class feedback(EnvExperiment, Base):
         at_mu(t_pulse_start_mu) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
+        x = 0.
+
         at_mu(t_pulse_start_mu) # beginning of time
         for i in range(self.N_pulses):
 
@@ -158,14 +167,17 @@ class feedback(EnvExperiment, Base):
             k = self.measurement()
             t_mu = now_mu() # time right now
             t = (t_mu - t_pulse_start_mu)*1.e-9
-            self.omega_raman, var = self.generate_posterior(k, t)
+            # self.omega_raman, var = self.generate_posterior(k, t)
+            _, var = self.generate_posterior(k, t)
 
             # self.data.ts.shot_data[i] = t
+            self.data.t_s_z.shot_data[i] = t
+            self.data.s_z.shot_data[i] = self.state_z[zidx]
             self.data.counts.shot_data[i] = float(k)
             self.data.omega_raman.shot_data[i] = self.omega_raman
             self.data.Omega.shot_data[i] = var
 
-            f = self.omega_raman/(2*np.pi)
+            f = self.omega_raman /(2*np.pi)
 
             delay_mu(self.t_posterior_mu)
             delay_mu(30000)
@@ -285,9 +297,9 @@ class feedback(EnvExperiment, Base):
                 Omega_over_H = Omega * inv_norm_H
                 u_z = delta_omega * inv_norm_H
 
-                # alpha_H = 2 * dt * norm_H in timing_test_0.py.
+                # alpha_H = fdt * norm_H in timing_test_0.py.
                 # sin_H/cos_H drive Rodrigues rotation around axis u.
-                (sin_H, cos_H) = self.sincos_lut_interp(self.dt * norm_H)
+                (sin_H, cos_H) = self.sincos_lut_interp(dt * norm_H)
             else:
                 Omega_over_H = 0.0
                 u_z = 0.0
