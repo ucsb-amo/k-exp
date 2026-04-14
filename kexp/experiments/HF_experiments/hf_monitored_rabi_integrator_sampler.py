@@ -46,7 +46,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_raman_pulse',[0.,(7.8717e-06)])
         self.p.t_raman_pulse = 7.894e-06
         
-        # self.xvar('amp_imaging',np.linspace(0.5,1.9,30))
+        self.xvar('amp_imaging',np.linspace(0.2,3.55,20))
         self.p.amp_imaging = 1.
 
         self.p.hf_imaging_detuning = -568.e6 # 182.
@@ -67,12 +67,12 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 100
+        self.p.N_repeats = 1
 
         # self.xvar('N_pulses',np.arange(1,11,1))
-        self.p.N_pulses = 5
+        self.p.N_pulses = 1
         self.p.t_pulse_delay = 5.e-6
-        self.p.t_img_pulse = 5.e-6
+        self.p.t_img_pulse = 50.e-6
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)

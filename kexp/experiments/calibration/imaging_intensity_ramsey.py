@@ -15,11 +15,11 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('t_ramsey', np.linspace(0.e-6, 50.e-6, 15))
+        self.xvar('t_ramsey', np.linspace(0.e-6, 15.e-6, 15))
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
         # self.xvar('amp_imaging',np.linspace(0.1,.4,10))
-        self.p.amp_imaging = 0.61
+        self.p.amp_imaging = 0.8
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 500.e-6
         self.p.t_mot_load = 1.
@@ -48,7 +48,7 @@ class hf_raman(EnvExperiment, Base):
         self.ttl.raman_shutter.off()
 
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(1.)
+        self.imaging.set_power(.5)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()

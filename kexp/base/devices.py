@@ -270,7 +270,7 @@ class Devices():
             ddss[0].cpld_device.init()
             delay(10*us)
 
-    def shutdown_sources(self):
-        from kexp import EthernetRelay
-        relay = EthernetRelay()
-        relay.source_off()
+    # def shutdown_sources(self):
+    #     from kexp import EthernetRelay
+    #     relay = EthernetRelay()
+    #     relay.source_off()

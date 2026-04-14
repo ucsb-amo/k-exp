@@ -1,5 +1,5 @@
 from artiq.experiment import *
-from artiq.experiment import delay
+from artiq.language import now_mu, at_mu, delay, delay_mu
 from kexp import Base, img_types, cameras
 import numpy as np
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
@@ -15,40 +15,31 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        # self.xvar('frequency_raman_transition',119.4637e6 + np.linspace(-2.e3,2.e3,10))
-        # self.p.frequency_raman_transition = 147.2592e6 # 182. A -1 -2
-        # self.p.frequency_raman_transition = 119.4637e6 # 182 A -1 0
+        # self.xvar('frequency_raman_offset',[0,2*54.33e3])
+        self.p.frequency_raman_offset = 1*54.33e3 
+        # self.p.frequency_raman_offset = 1.e6
 
-        self.p.frequency_raman_offset = 54.e3
+        # self.xvar('relative_phase',np.linspace(0., 2*np.pi, 7))
+        self.p.relative_phase = 0.
 
-        # self.xvar('t_ramsey', np.linspace(0.e-6, 100.e-6, 10))
-        self.p.t_ramsey = 10.e-6
-
-        self.xvar('relative_phase',np.linspace(0.,np.pi / 4, 3))
- 
-        self.xvar('t_raman_pulse', np.linspace(0., self.p.t_raman_pi_pulse, 13))
-        # self.p.t_raman_pulse = 9.0352e-06 / 2 # -1 --> 0
+        self.xvar('t',np.linspace(0.,30.,10)*1.e-6)
+        self.p.t = 15.e-6
         
-        # self.xvar('amp_imaging',np.linspace(0.1,.8,10))
-        self.p.amp_imaging = 1.
+        self.xvar('t_raman_pulse', np.linspace(0., 1.*self.p.t_raman_pi_pulse, 11))
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse # -1 --> 0
+        
+        self.p.amp_imaging = .5
 
-        # self.xvar('hf_imaging_detuning',np.concatenate((np.arange(-578.e6,-564.e6,1.e6),np.arange(-467.e6,-453.e6,1.e6))))
-        # self.p.hf_imaging_detuning =  -568.e6 # 182. with PID
-        # self.p.hf_imaging_detuning =  -538.e6 # 175. with PID
-
-        # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
         self.p.t_tweezer_hold = .01e-3
-
-        # self.xvar('t_tof',np.linspace(10.,250.,15)*1.e-6) 
         self.p.t_tof = 90.e-6
-
         self.p.t_mot_load = 1.
-        
         self.p.N_repeats = 1
+        # self.data.phases = self.data.add_data_container(2)
+        self.data.t = self.data.add_data_container(1)
 
         # self.camera_params.gain = 75.
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -69,15 +60,33 @@ class hf_raman(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
 
+        T_DELAY_TIL_PULSE_MU = 30000
+        t_pulse_start = now_mu() + T_DELAY_TIL_PULSE_MU
+        self.raman.set(t_phase_origin_mu = t_pulse_start,
+                       relative_phase = 0.)
+        
+        at_mu(t_pulse_start)
+
         self.raman.pulse(self.p.t_raman_pi_pulse / 2)
-
-        delay(10.e-6)
-        self.raman.set(frequency_transition = self.p.frequency_raman_transition + self.p.frequency_raman_offset, 
-                       relative_phase = self.p.relative_phase)
-
+        t=now_mu()
+        
+        # delay(10.e-6)
+        delay(self.p.t)
+        
+        self.raman.set(frequency_transition = self.p.frequency_raman_transition + (self.p.frequency_raman_offset))
         
 
+        p0 = self.raman.get_phase()
+        p1 = self.raman.get_phase(frequency_transition = self.p.frequency_raman_transition + self.p.frequency_raman_offset)  
+
+        t2=now_mu()
+
         self.raman.pulse(self.p.t_raman_pulse)
+        
+
+        # delay(self.p.t)
+        # self.raman.set(frequency_transition = self.p.frequency_raman_transition - self.p.frequency_raman_offset)
+        # self.raman.pulse(self.p.t_raman_pulse)
 
         self.ttl.raman_shutter.off()
 
@@ -88,11 +97,15 @@ class hf_raman(EnvExperiment, Base):
 
         self.abs_image()
 
-        # self.outer_coil.stop_pid()
 
-        # self.outer_coil.off()
-
-        # print(tf)
+        self.core.wait_until_mu(now_mu())
+        delay(10.e-3)
+        # print(p0,p1)
+        print(t2-t)
+        # self.data.phases.put_data( p0, idx = 0 )
+        # self.data.phases.put_data( p1, idx = 1 )
+        self.data.t.put_data((t2-t)*1e-9)
+        delay(10.e-3)
 
     @kernel
     def run(self):
