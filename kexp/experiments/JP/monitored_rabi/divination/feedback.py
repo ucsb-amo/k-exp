@@ -37,22 +37,28 @@ class feedback(EnvExperiment, Base):
         self.p.amp_imaging = 0.23
         self.p.t_img_pulse = 5.e-6
 
-        self.p.t_raman_pulse = 4.5e-6
+        self.p.t_raman_pulse = 3.5e-6
 
-        self.N_pulses = 6 # number of steps of evolution
-        self.m = 21 # feedback grid size
+        self.N_pulses = 12 # number of steps of evolution
+        self.m = 31 # feedback grid size
         
         ### calibrations
 
+        # 5 us img pulse
         self.v_apd_all_up = -0.191
         self.v_apd_all_down = -0.226
 
-        n_photons_per_us_per_imgamp = 431.77 # 63017
+        # 10 us img pulse
+        # self.v_apd_all_up = -0.14
+        # self.v_apd_all_down = -0.23
+
+        n_photons_per_us_per_imgamp = 431.77 / 1 # 63017
 
         # for vpd = 0.3, lightshift 18.74kHz (#63034)
-        self.omega_z_lightshift = 2*np.pi*19.e3
+        self.omega_z_lightshift = 2*np.pi*19.7e3
+    
 
-        self.Omega = 2*np.pi*56.e3 # rabi frequency guess
+        self.Omega = 2*np.pi*57.242e3 # rabi frequency guess
         fractional_inital_offset = 4.
 
         ### setup data containers
@@ -63,8 +69,6 @@ class feedback(EnvExperiment, Base):
         self.data.apd = self.data.add_data_container(self.N_pulses)
         self.data.counts = self.data.add_data_container(self.N_pulses)
         self.data.ts = self.data.add_data_container(self.N_pulses)
-    
-        self.z = 0.
 
         ### feedback setup
 
@@ -85,11 +89,11 @@ class feedback(EnvExperiment, Base):
         
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
-        # self.N_photons_per_shot = n_photons_per_us * self.p.t_img_pulse * 1.e6
-        self.N_photons_per_shot = 71.
+        self.N_photons_per_shot = n_photons_per_us * self.p.t_img_pulse * 1.e6
+        # self.N_photons_per_shot = 30.
 
-        # self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down)/2)
-        self.n_photons_halfway = int(self.N_photons_per_shot / 2)
+        self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down)/2)
+        # self.n_photons_halfway = int(self.N_photons_per_shot / 2)
         
         ### constants and array setup
 
@@ -134,25 +138,26 @@ class feedback(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-        self.prep_raman(frequency_transition=self.omega_raman, phase_mode=0)
+        self.prep_raman(frequency_transition=self.omega_raman, phase_mode=1)
 
-        delay(10.e-3)
+        t_pulse_start_mu = now_mu() + 10000000
+        f = self.omega_raman/(2*np.pi)
+        self.raman.set(frequency_transition=f, t_phase_origin_mu=t_pulse_start_mu)
 
+        at_mu(t_pulse_start_mu) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)
-        delay(10.e-6)
 
-        t0 = now_mu() # beginning of time
+        at_mu(t_pulse_start_mu) # beginning of time
         for i in range(self.N_pulses):
 
-            phase0, phase1 = self.raman.set(frequency_transition=f)
-            relphase = 2 * (phase0 - phase1)
+            self.raman.set(frequency_transition=f)
 
             self.raman.pulse(self.p.t_raman_pulse)
             delay_mu(2000)
 
             k = self.measurement()
             t_mu = now_mu() # time right now
-            t = (t_mu - t0)*1.e-9
+            t = (t_mu - t_pulse_start_mu)*1.e-9
             self.omega_raman, var = self.generate_posterior(k, t)
 
             # self.data.ts.shot_data[i] = t
@@ -163,7 +168,7 @@ class feedback(EnvExperiment, Base):
             f = self.omega_raman/(2*np.pi)
 
             delay_mu(self.t_posterior_mu)
-            delay_mu(20000)
+            delay_mu(30000)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -223,7 +228,9 @@ class feedback(EnvExperiment, Base):
         omega_raman = self.omega_raman
         Omega = self.Omega
         Omega_sq = Omega * Omega
-        two_dt = 2.0 * self.dt
+        # two_dt = 2.0 * self.dt
+        dt = self.dt
+        dt_z = self.dt_z
 
         # In this experiment omega_guess_list is uniformly spaced (linspace in prepare).
         # That lets us update trigonometric phases recursively across j.
@@ -238,8 +245,8 @@ class feedback(EnvExperiment, Base):
         # This is the optimized equivalent of repeatedly evaluating:
         #   u_x ~ cos(omega * t), u_y ~ sin(omega * t)
         # from timing_test_0.py.
-        (sin_wt, cos_wt) = self.sincos_lut_interp(omega0 * t)
-        (sin_wt_step, cos_wt_step) = self.sincos_lut_interp(domega * 00)
+        (sin_wt, cos_wt) = self.sincos_lut_interp((-omega0 + omega_raman) * t)
+        (sin_wt_step, cos_wt_step) = self.sincos_lut_interp(-domega * t)
 
         # alpha_z = 2*dt*(omega_raman - omega) is uniformly spaced.
         # Add the extra z-rotation from light shift once as a constant offset:
@@ -249,11 +256,10 @@ class feedback(EnvExperiment, Base):
         #   R_z = [[cos(alpha_Z), sin(alpha_Z), 0],
         #          [-sin(alpha_Z), cos(alpha_Z), 0],
         #          [0,            0,            1]]
-        alpha_z_lightshift = 2.0 * self.omega_z_lightshift * self.dt_z
-        alpha_z = two_dt * (omega_raman - omega0) - alpha_z_lightshift
-        self.z = alpha_z
+        alpha_z_lightshift = self.omega_z_lightshift * dt_z
+        alpha_z = dt * (omega_raman - omega0) - alpha_z_lightshift
         (sin_z, cos_z) = self.sincos_lut_interp(alpha_z)
-        alpha_z_step = -two_dt * domega
+        alpha_z_step = -dt * domega
         (sin_z_step, cos_z_step) = self.sincos_lut_interp(alpha_z_step)
 
         # Clamp observed photon count to valid [0, N] range.
@@ -281,7 +287,7 @@ class feedback(EnvExperiment, Base):
 
                 # alpha_H = 2 * dt * norm_H in timing_test_0.py.
                 # sin_H/cos_H drive Rodrigues rotation around axis u.
-                (sin_H, cos_H) = self.sincos_lut_interp(two_dt * norm_H)
+                (sin_H, cos_H) = self.sincos_lut_interp(self.dt * norm_H)
             else:
                 Omega_over_H = 0.0
                 u_z = 0.0

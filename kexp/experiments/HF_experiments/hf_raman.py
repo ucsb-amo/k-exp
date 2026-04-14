@@ -34,9 +34,9 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('t_ramsey', np.linspace(0.e-6, 750.e-6, 5))
  
-        self.xvar('t_raman_pulse', [0.,self.p.t_raman_pi_pulse])
-        # self.xvar('t_raman_pulse', np.linspace(0., 60., 30)*1.e-6)
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse # -1 --> 0
+        # self.xvar('t_raman_pulse', [0.,self.p.t_raman_pi_pulse])
+        self.xvar('t_raman_pulse', np.linspace(0., 60., 30)*1.e-6)
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
 
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
         
@@ -55,7 +55,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 1
 
         # self.camera_params.gain = 75.
 
