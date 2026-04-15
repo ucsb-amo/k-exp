@@ -1,7 +1,7 @@
 from kexp.util.remote_control.command_handler import CommandHandler
 from waxx.util.guis.als.als_gui_client import ALSGuiClient
 from waxx.util.guis.precilaser.precilaser_gui_client import PrecilaserGuiClient
-from kexp.config.ip import ALS_SERVER_IP, ALS_SERVER_PORT
+from kexp.config.ip import ALS_SERVER_IP, ALS_SERVER_PORT, PRECILASER_SERVER_IP, PRECILASER_SERVER_PORT
 import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -11,9 +11,6 @@ ALS_STARTUP_SLACK_SENDER = "harry.who.is.ultra.cold@gmail.com"
 ALS_STARTUP_SLACK_PASSWORD = "dvlw elsd mhqb mzfo"
 ALS_STARTUP_SLACK_RECIPIENT = "general-aaaaahzr4dmblwquygpk47q6le@weldlab.slack.com"
 ALS_STARTUP_SLACK_SUBJECT = "1064nm laser on in 3418"
-
-PRECILASER_SERVER_IP = "127.0.0.1"
-PRECILASER_SERVER_PORT = 5560
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

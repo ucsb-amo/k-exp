@@ -3,6 +3,8 @@ from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_m
 from kexp import Base, img_types, cameras
 import numpy as np
 
+from kexp.util.artiq.async_print import aprint
+
 class feedback(EnvExperiment, Base):
     kernel_invariants = {
                         "m",
@@ -35,32 +37,45 @@ class feedback(EnvExperiment, Base):
         self.xvar('dummy',[0])
 
         self.p.amp_imaging = 0.23
-        self.p.t_img_pulse = 10.e-6
-
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse
-
-        self.N_pulses = 100 # number of steps of evolution
-        self.m = 3 # feedback grid size
         
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / np.sqrt(2)
+
+        self.N_pulses = 8 # number of steps of evolution
+        self.m = 31 # feedback grid size
+        
+        self.p.N_repeats = 5
+
+        self.p.t_between_pulses_mu = 80000
+
         ### calibrations
 
         # 5 us img pulse
+        # self.p.t_img_pulse = 5.e-6
         # self.v_apd_all_up = -0.191
         # self.v_apd_all_down = -0.226
 
         # 10 us img pulse
+        self.p.t_img_pulse = 10.e-6
         self.v_apd_all_up = -0.14
         self.v_apd_all_down = -0.23
+
+        # arb pulse length
+        # self.p.t_img_pulse = 15.e-6
+        # self.v_apd_all_up = 10200. * self.p.t_img_pulse - 0.242
+        # self.v_apd_all_down = -0.23
 
         n_photons_per_us_per_imgamp = 431.77 / 1 # 63017
 
         # for vpd = 0.3, lightshift 18.74kHz (#63034)
-        self.omega_z_lightshift = 2*np.pi*0.e3
+        self.omega_z_lightshift = 2*np.pi*19.7e3
 
-        self.Omega = 2*np.pi*57.e3 # rabi frequency guess
-        # self.p.t_raman_pulse = np.pi / self.Omega
-        # self.Omega = np.pi / (self.p.t_raman_pi_pulse)
-        fractional_inital_offset = 1.
+        self.Omega = np.pi / (self.p.t_raman_pi_pulse)
+        self.fractional_inital_offset = 5.
+
+        ###
+
+        self.p.v_apd_all_down = self.v_apd_all_down
+        self.p.v_apd_all_up = self.v_apd_all_up
 
         ### setup data containers
 
@@ -72,30 +87,30 @@ class feedback(EnvExperiment, Base):
         self.data.ts = self.data.add_data_container(self.N_pulses)
 
         self.data.s_z = self.data.add_data_container(self.N_pulses)
-        self.data.t_s_z = self.data.add_data_container(self.N_pulses)
+        self.data.t = self.data.add_data_container(self.N_pulses)
 
         ### feedback setup
 
         self.dt_z = self.p.t_img_pulse # z rotation due to measurement pulse
         self.dt = self.p.t_raman_pulse # drive pulse length per step
 
-        omega_guess = 2*np.pi*self.p.frequency_raman_transition # state splitting guess
-        omega_guess_offset = self.Omega * fractional_inital_offset
-        omega_guess = omega_guess + omega_guess_offset
+        omega_resonance = 2*np.pi*self.p.frequency_raman_transition
+        self.omega_guess_start = omega_resonance + self.Omega * self.fractional_inital_offset
 
         offset = 5 # how many rabi frequencies away from the guess to "search"
-        self.omega_guess_list = omega_guess + 2*offset*self.Omega*np.linspace(-1,1,self.m)
+        self.omega_guess_list = omega_resonance + 2*offset*self.Omega*np.linspace(-1,1,self.m)
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
 
         self.p.omega_guess_list = self.omega_guess_list
 
-        # self.omega_raman = omega_guess # omega_ctrl
-        self.omega_raman = 2*np.pi*self.p.frequency_raman_transition
+        self.omega_raman = self.omega_guess_start # omega_ctrl
+        # self.omega_raman = 2*np.pi*self.p.frequency_raman_transition
         
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
         self.N_photons_per_shot = n_photons_per_us * self.p.t_img_pulse * 1.e6
         # self.N_photons_per_shot = 30.
+        self.N_photons_per_shot /= 10
 
         self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down)/2)
         # self.n_photons_halfway = int(self.N_photons_per_shot / 2)
@@ -132,6 +147,10 @@ class feedback(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
+        self.idx = 0
+        self.omega_raman = self.omega_guess_start
+
+        self.core.break_realtime()
 
         zidx = self.m//2
 
@@ -148,39 +167,38 @@ class feedback(EnvExperiment, Base):
         self.prep_raman(frequency_transition=self.omega_raman, phase_mode=1)
 
         t_pulse_start_mu = now_mu() + 10000000
+
         f = self.omega_raman/(2*np.pi)
         self.raman.set(frequency_transition=f, t_phase_origin_mu=t_pulse_start_mu)
 
-        at_mu(t_pulse_start_mu) # beginning of time
+        at_mu(t_pulse_start_mu - 20000) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
         x = 0.
-
-        at_mu(t_pulse_start_mu) # beginning of time
+        t_step = t_pulse_start_mu
+        
+        at_mu(t_step)
         for i in range(self.N_pulses):
 
-            self.raman.set(frequency_transition=f)
-
-            self.raman.pulse(self.p.t_raman_pulse)
-            delay_mu(2000)
-
-            k = self.measurement()
-            t_mu = now_mu() # time right now
-            t = (t_mu - t_pulse_start_mu)*1.e-9
-            # self.omega_raman, var = self.generate_posterior(k, t)
-            _, var = self.generate_posterior(k, t)
-
-            # self.data.ts.shot_data[i] = t
-            self.data.t_s_z.shot_data[i] = t
             self.data.s_z.shot_data[i] = self.state_z[zidx]
-            self.data.counts.shot_data[i] = float(k)
             self.data.omega_raman.shot_data[i] = self.omega_raman
             self.data.Omega.shot_data[i] = var
 
-            f = self.omega_raman /(2*np.pi)
+            at_mu(t_step - 15000)
+            self.raman.set(frequency_transition=f)
 
-            delay_mu(self.t_posterior_mu)
-            delay_mu(30000)
+            at_mu(t_step)
+            t_mu = now_mu()
+            t = (t_mu - t_pulse_start_mu)*1.e-9
+            self.data.t.shot_data[i] = t
+
+            self.raman.pulse(self.p.t_raman_pulse)
+            k = self.measurement()
+            self.omega_raman, var = self.generate_posterior(k, t)
+
+            f = self.omega_raman / (2*np.pi)
+
+            t_step += self.p.t_between_pulses_mu
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -243,6 +261,7 @@ class feedback(EnvExperiment, Base):
         # two_dt = 2.0 * self.dt
         dt = self.dt
         dt_z = self.dt_z
+        t = t
 
         # In this experiment omega_guess_list is uniformly spaced (linspace in prepare).
         # That lets us update trigonometric phases recursively across j.
@@ -257,7 +276,7 @@ class feedback(EnvExperiment, Base):
         # This is the optimized equivalent of repeatedly evaluating:
         #   u_x ~ cos(omega * t), u_y ~ sin(omega * t)
         # from timing_test_0.py.
-        (sin_wt, cos_wt) = self.sincos_lut_interp((-omega0 + omega_raman) * t)
+        (sin_wt, cos_wt) = self.sincos_lut_interp(-(omega0-omega_raman) * t)
         (sin_wt_step, cos_wt_step) = self.sincos_lut_interp(-domega * t)
 
         # alpha_z = 2*dt*(omega_raman - omega) is uniformly spaced.
@@ -269,9 +288,9 @@ class feedback(EnvExperiment, Base):
         #          [-sin(alpha_Z), cos(alpha_Z), 0],
         #          [0,            0,            1]]
         alpha_z_lightshift = self.omega_z_lightshift * dt_z
-        alpha_z = dt * (omega_raman - omega0) - alpha_z_lightshift
+        alpha_z = - dt * (omega_raman - omega0) - alpha_z_lightshift
         (sin_z, cos_z) = self.sincos_lut_interp(alpha_z)
-        alpha_z_step = -dt * domega
+        alpha_z_step = dt * domega
         (sin_z_step, cos_z_step) = self.sincos_lut_interp(alpha_z_step)
 
         # Clamp observed photon count to valid [0, N] range.
@@ -360,7 +379,7 @@ class feedback(EnvExperiment, Base):
             # Posterior weight uses binomial-like factor:
             #   p_j <- p_j * p1^k * (1-p1)^(N-k)
             # same explicit formula used in timing_test_0.py.
-            p1 = (1-hz)/2
+            p1 = (1+hz)/2
             q = 1.0 - p1
             p1_pow = self.powi(p1, k_int)
             q_pow = self.powi(q, nk_int)
@@ -429,6 +448,14 @@ class feedback(EnvExperiment, Base):
         self.t_posterior_mu = abs(t0 - self.core.get_rtio_counter_mu())
         print(self.t_posterior_mu)
         self.core.break_realtime()
+
+        for i in range(self.m):
+            self.state_x[i] = 0.
+            self.state_y[i] = 0.
+            self.state_z[i] = 1.
+
+            self.P0[i] = 1./self.m
+            self.P0_total = 1.
 
     @kernel(flags={"fast-math"})
     def sincos_lut_interp(self, x):
