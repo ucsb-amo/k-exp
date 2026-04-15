@@ -1,7 +1,7 @@
 import numpy as np
 
 from artiq.experiment import *
-from artiq.experiment import delay, delay_mu, parallel, sequential
+from artiq.experiment import delay, delay_mu, parallel, sequential, at_mu
 from artiq.language.core import now_mu
 from waxx.control.artiq.dummy_core import DummyCore
 
@@ -171,6 +171,11 @@ class Control():
                         phase_mode)
         
         self.ttl.raman_shutter.on()
-        delay(10.e-3)
+        delay(2.e-3)
         self.ttl.line_trigger.wait_for_line_trigger()
-        delay(4.7e-3)
+        t = now_mu() + 4700000
+        if phase_mode == 1:
+            self.raman.set_phase(t_phase_origin_mu=now_mu())
+        at_mu(t)
+
+        
