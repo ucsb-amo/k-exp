@@ -55,7 +55,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         # self.camera_params.gain = 75.
 
