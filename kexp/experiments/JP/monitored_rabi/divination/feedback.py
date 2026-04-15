@@ -51,13 +51,13 @@ class feedback(EnvExperiment, Base):
 
         # 5 us img pulse
         # self.p.t_img_pulse = 5.e-6
-        # self.v_apd_all_up = -0.191
-        # self.v_apd_all_down = -0.226
+        # self.v_apd_all_up = -0.192
+        # self.v_apd_all_down = -0.219
 
         # 10 us img pulse
         self.p.t_img_pulse = 10.e-6
-        self.v_apd_all_up = -0.14
-        self.v_apd_all_down = -0.23
+        self.v_apd_all_up = -0.15
+        self.v_apd_all_down = -0.22
 
         # arb pulse length
         # self.p.t_img_pulse = 15.e-6
@@ -67,10 +67,10 @@ class feedback(EnvExperiment, Base):
         n_photons_per_us_per_imgamp = 431.77 / 1 # 63017
 
         # for vpd = 0.3, lightshift 18.74kHz (#63034)
-        self.omega_z_lightshift = 2*np.pi*19.7e3
+        self.omega_z_lightshift = 2*np.pi*21.03e3
 
         self.Omega = np.pi / (self.p.t_raman_pi_pulse)
-        self.fractional_inital_offset = 5.
+        self.fractional_inital_offset = 10.
 
         ###
 
@@ -176,7 +176,7 @@ class feedback(EnvExperiment, Base):
 
         x = 0.
         t_step = t_pulse_start_mu
-        
+
         at_mu(t_step)
         for i in range(self.N_pulses):
 
