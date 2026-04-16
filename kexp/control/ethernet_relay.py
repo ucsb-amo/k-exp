@@ -41,6 +41,16 @@ class EthernetRelay(EthernetRelayWaxx):
 		_ = self.__board.turn_off_relay_by_index(ARTIQ_RELAY_IDX)
 		self.close()
 
+	def artiq_on(self):
+		self.connect()
+		_ = self.__board.turn_off_relay_by_index(ARTIQ_RELAY_IDX)
+		self.close()
+
+	def artiq_off(self):
+		self.connect()
+		_ = self.__board.turn_on_relay_by_index(ARTIQ_RELAY_IDX)
+		self.close()
+
 	def enable_magnets(self):
 		self.connect()
 		_ = self.__board.turn_on_relay_by_index(MAGNET_INHIBIT_IDX)
