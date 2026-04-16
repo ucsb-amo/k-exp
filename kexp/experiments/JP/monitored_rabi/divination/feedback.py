@@ -38,14 +38,14 @@ class feedback(EnvExperiment, Base):
 
         self.p.amp_imaging = 0.23
         
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / np.sqrt(2)
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 3
 
         self.N_pulses = 8 # number of steps of evolution
-        self.m = 31 # feedback grid size
+        self.m = 21 # feedback grid size
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
 
-        self.p.t_between_pulses_mu = 80000
+        self.p.t_between_pulses_mu = 75000
 
         ### calibrations
 
@@ -143,6 +143,7 @@ class feedback(EnvExperiment, Base):
         
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
         
+        self.tR = np.zeros(self.N_pulses,dtype=np.int64)
         self.finish_prepare()
 
     @kernel
@@ -174,8 +175,9 @@ class feedback(EnvExperiment, Base):
         at_mu(t_pulse_start_mu - 20000) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
-        x = 0.
+        var = self.Omega
         t_step = t_pulse_start_mu
+        
 
         at_mu(t_step)
         for i in range(self.N_pulses):
@@ -184,8 +186,10 @@ class feedback(EnvExperiment, Base):
             self.data.omega_raman.shot_data[i] = self.omega_raman
             self.data.Omega.shot_data[i] = var
 
-            at_mu(t_step - 15000)
+            at_mu(t_step - (5327))
+            ti = now_mu()
             self.raman.set(frequency_transition=f)
+            self.tR[i] = now_mu() - ti
 
             at_mu(t_step)
             t_mu = now_mu()
@@ -210,6 +214,8 @@ class feedback(EnvExperiment, Base):
         # self.scope.read_sweep(0)
         # self.core.break_realtime()
         delay(30.e-3)
+
+        print(self.tR)
 
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
@@ -439,12 +445,12 @@ class feedback(EnvExperiment, Base):
         """    
 
         self.core.wait_until_mu(now_mu())
-        (mn, std) = self.generate_posterior(self.n_photons_halfway, 1.e-6, do_it=False)
+        (mn, std) = self.generate_posterior(self.n_photons_halfway, 1.e-6, do_it=True)
         self.core.break_realtime()
 
         t0 = now_mu()
         self.core.wait_until_mu(t0)
-        (mn, std) = self.generate_posterior(self.n_photons_halfway, 1.e-6, do_it=False)
+        (mn, std) = self.generate_posterior(self.n_photons_halfway, 1.e-6, do_it=True)
         self.t_posterior_mu = abs(t0 - self.core.get_rtio_counter_mu())
         print(self.t_posterior_mu)
         self.core.break_realtime()
