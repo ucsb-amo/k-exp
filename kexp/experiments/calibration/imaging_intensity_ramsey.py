@@ -15,11 +15,11 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('t_ramsey', np.linspace(0.e-6, 50.e-6, 15))
+        self.xvar('t_ramsey', np.linspace(0.e-6, 60.e-6, 15))
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
         # self.xvar('amp_imaging',np.linspace(0.1,.4,10))
-        self.p.amp_imaging = 0.335
+        self.p.amp_imaging = 0.23
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 500.e-6
         self.p.t_mot_load = 1.
@@ -36,6 +36,8 @@ class hf_raman(EnvExperiment, Base):
 
         self.prepare_hf_tweezers(squeeze=False)
         self.prep_raman()
+
+        # self.raman.set(t_phase_origin_mu=now_mu())
 
         self.raman.pulse(self.p.t_raman_pulse)
 

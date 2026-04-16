@@ -23,7 +23,7 @@ server_talk = st(data_dir=DATA_DIR,
                  on_data_dir_disconnected_bat_path=MAP_BAT_PATH)
 
 ### monitor
-MONITOR_SERVER_IP = "192.168.1.86"
+MONITOR_SERVER_IP = "192.168.1.76"
 # MONITOR_SERVER_IP = "192.168.1.79"
 MONITOR_SERVER_PORT = 6789
 MONITOR_STATE_FILEPATH = os.path.join(DATA_DIR,'device_state_config.json')
@@ -31,7 +31,7 @@ MONITOR_STATE_FILEPATH = os.path.join(DATA_DIR,'device_state_config.json')
 MONITOR_EXPT_PATH = os.path.join(EXPT_PACKAGE_DIR,'experiments','tools','monitor.py')
 
 ### SRS control servers
-SRS_CONTROL_IP = "192.168.1.8676"
+SRS_CONTROL_IP = "192.168.1.76"
 SRS_DC205_SERVER_PORT = 5555
 SRS_DC205_COM = 'COM10'
 SRS_SR560_SERVER_PORT = 5556

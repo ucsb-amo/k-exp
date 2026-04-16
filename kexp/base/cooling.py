@@ -24,5 +24,9 @@ class Cooling():
         self.dds = dds_frame()
         self.ttl = ttl_frame()
         self.dac = dac_frame()
+        self.inner_coil = hbridge_magnet()
+        self.outer_coil = igbt_magnet()
+        self.tweezer = tweezer()
+        self.lightsheet = lightsheet()
         self.params = ExptParams()
         self.p = self.params
