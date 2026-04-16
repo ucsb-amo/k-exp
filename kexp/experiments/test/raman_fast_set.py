@@ -5,9 +5,9 @@ import numpy as np
 
 class feedback(EnvExperiment, Base):
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
-                      save_data=True,
+                      save_data=False,
                       imaging_type=img_types.DISPERSIVE)
         
         self.finish_prepare()
@@ -15,6 +15,7 @@ class feedback(EnvExperiment, Base):
     @kernel
     def run(self):
         self.init_kernel()
+        self.scan()
 
     @kernel
     def scan_kernel(self):
@@ -25,4 +26,9 @@ class feedback(EnvExperiment, Base):
 
         delay(10.e-3)
 
+        t = now_mu()
         self.raman.set_frequency_fast(120.e6)
+        tf = now_mu() - t
+        
+        self.core.break_realtime()
+        print(tf)
