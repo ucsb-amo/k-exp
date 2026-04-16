@@ -32,7 +32,7 @@ class hf_raman(EnvExperiment, Base):
         # self.p.frequency_raman_transition = 147.2592e6 # 182. A -1 -2
         # self.p.frequency_raman_transition = 119.4637e6 # 182 A -1 0
 
-        # self.xvar('t_ramsey', np.linspace(0.e-6, 750.e-6, 5))
+        # self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 5))
  
         # self.xvar('t_raman_pulse', [0.,self.p.t_raman_pi_pulse])
         self.xvar('t_raman_pulse', np.linspace(0., 60., 30)*1.e-6)

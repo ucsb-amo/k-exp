@@ -16,17 +16,17 @@ class hf_raman(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         self.xvar('with_imaging', [0,1])
-        self.xvar('relative_phase', np.linspace(0., 2*np.pi, 11))
+        self.xvar('relative_phase', np.linspace(0., 2*np.pi, 15))
 
         self.p.t_ramsey = 10.e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
         # self.xvar('amp_imaging',np.linspace(0.1,.4,10))
-        self.p.amp_imaging = 0.46
+        self.p.amp_imaging = 0.74
         self.p.t_tweezer_hold = 20.e-3
-        self.p.t_tof = 500.e-6
+        self.p.t_tof = 100.e-6
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 2
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 
@@ -37,7 +37,7 @@ class hf_raman(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers(squeeze=True)
         self.prep_raman()
 
         self.raman.set(t_phase_origin_mu=now_mu())

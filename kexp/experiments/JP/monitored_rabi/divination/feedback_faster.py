@@ -37,61 +37,64 @@ class feedback(EnvExperiment, Base):
         ### parameters
 
         self.xvar('dummy',[0])
-
-        self.p.amp_imaging = 0.23
         
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 3
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse/3
 
-        self.N_pulses = 10 # number of steps of evolution
+        self.N_pulses = 8 # number of steps of evolution
         self.m = 21 # feedback grid size
         
-        self.p.N_repeats = 50
-        
-        self.p.t_between_pulses_mu = 70000
+        self.p.N_repeats = 5
+
+        self.p.t_calculation_slack_compensation_mu = 32000
 
         self.p.t_tweezer_hold = 30.e-3
 
         ### calibrations
 
-        # 5 us img pulse
+        # # 5 us img pulse .41 img amp
+        # self.p.amp_imaging = 0.41
         # self.p.t_img_pulse = 5.e-6
-        # self.v_apd_all_up = -0.192
-        # self.v_apd_all_down = -0.219
+        # self.v_apd_all_up = -0.175806249
+        # self.v_apd_all_down = -0.220309375
+        # self.omega_z_lightshift = 2*np.pi*19136.37136929461
 
-        # 10 us img pulse
+        # 5 us img pulse .41 img amp
+        self.p.amp_imaging = 0.41
         self.p.t_img_pulse = 10.e-6
-        self.v_apd_all_up = -0.132
-        self.v_apd_all_down = -0.2358
+        self.v_apd_all_up = -0.133184375 
+        self.v_apd_all_down = -0.23287499999999997
+        self.omega_z_lightshift = 2*np.pi*19136.37136929461
 
-        # arb pulse length
-        # self.p.t_img_pulse = 15.e-6
-        # self.v_apd_all_up = 10200. * self.p.t_img_pulse - 0.242
-        # self.v_apd_all_down = -0.23
-
+        
+        
         n_photons_per_us_per_imgamp = 431.77 / 1 # 63017
 
-        # for vpd = 0.3, lightshift 18.74kHz (#63034)
-        self.omega_z_lightshift = 2*np.pi*21.03e3
-
         self.Omega = np.pi / (self.p.t_raman_pi_pulse)
-        self.fractional_inital_offset = 5.
+        self.fractional_inital_offset = -5.0
 
         ###
 
+        T_INTEGRATOR_STOP_SETTLE_SAMPLE = 3600
+        T_SET_RAMAN = 1256
+        T_RAMAN_PULSE = np.int64(self.p.t_raman_pulse*1.e9)
+        T_IMG_PULSE = np.int64(self.p.t_img_pulse*1.e9)
+        self.p.t_between_pulses_mu = self.p.t_calculation_slack_compensation_mu + T_INTEGRATOR_STOP_SETTLE_SAMPLE + T_SET_RAMAN + T_RAMAN_PULSE + T_IMG_PULSE
+        print(f'time between pulses: {self.p.t_between_pulses_mu / 1.e3:1.2f} (us)')
+        print(f'calculation slack compensation: {self.p.t_calculation_slack_compensation_mu / 1.e3:1.2f} (us)')
+
         self.p.v_apd_all_down = self.v_apd_all_down
         self.p.v_apd_all_up = self.v_apd_all_up
+        self.p.frequency_lightshift = self.omega_z_lightshift / (2 * np.pi)
 
         ### setup data containers
 
         self.idx = 0
-        self.data.omega_raman = self.data.add_data_container(self.N_pulses)
-        self.data.Omega = self.data.add_data_container(self.N_pulses)
-        self.data.apd = self.data.add_data_container(self.N_pulses)
-        self.data.counts = self.data.add_data_container(self.N_pulses)
-        self.data.ts = self.data.add_data_container(self.N_pulses)
+        self.data.omega_raman = self.data.add_data_container(self.N_pulses+1)
+        self.data.Omega = self.data.add_data_container(self.N_pulses+1)
+        self.data.apd = self.data.add_data_container(self.N_pulses+1)
 
-        self.data.s_z = self.data.add_data_container(self.N_pulses)
-        self.data.t = self.data.add_data_container(self.N_pulses)
+        self.data.s_z = self.data.add_data_container(self.N_pulses+1)
+        self.data.t = self.data.add_data_container(self.N_pulses+1)
 
         ### feedback setup
 
@@ -152,7 +155,7 @@ class feedback(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.idx = 0
+        self.idx = 1
         self.omega_raman = self.omega_guess_start
 
         self.core.break_realtime()
@@ -176,6 +179,8 @@ class feedback(EnvExperiment, Base):
         f = self.omega_raman/(2*np.pi)
         self.raman.set(frequency_transition=f, t_phase_origin_mu=t_pulse_start_mu)
 
+        self.raman.set_up_fast_frequency_update()
+
         at_mu(t_pulse_start_mu - 20000) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
@@ -184,30 +189,40 @@ class feedback(EnvExperiment, Base):
         var = self.Omega
         t_step = t_pulse_start_mu
         
-
         at_mu(t_step)
+
+        self.data.apd.shot_data[0] = self.v_apd_all_up
+        self.data.s_z.shot_data[0] = self.state_z[zidx]
+        self.data.omega_raman.shot_data[0] = self.omega_raman
+        self.data.Omega.shot_data[0] = var
+
         for i in range(self.N_pulses):
 
-            self.data.s_z.shot_data[i] = self.state_z[zidx]
-            self.data.omega_raman.shot_data[i] = self.omega_raman
-            self.data.Omega.shot_data[i] = var
+            self.data.omega_raman.shot_data[i+1] = self.omega_raman
+            self.data.Omega.shot_data[i+1] = var
 
-            at_mu(t_step - (5327))
-            self.raman.set(frequency_transition=f)
+            at_mu(t_step - (1300))
+            self.raman.set_frequency_fast(frequency_transition=f)
 
             t = (t_step - t_pulse_start_mu)*1.e-9
-            self.data.t.shot_data[i] = t
-
             at_mu(t_step)
             self.raman.pulse(self.p.t_raman_pulse)
             k = self.measurement()
+                
             self.omega_raman, var = self.generate_posterior(k, t)
+            # _, var = self.generate_posterior(k, t)
 
             f = self.omega_raman / (2*np.pi)
 
             t_step += self.p.t_between_pulses_mu
 
+            self.data.t.shot_data[i+1] = t + self.p.t_img_pulse
+            self.data.s_z.shot_data[i+1] = self.state_z[zidx]
+            
+        
         delay(self.p.t_tweezer_hold)
+        self.raman.clean_up_fast_frequency_update()
+
         self.tweezer.off()
         delay(self.p.t_tof)
         self.abs_image()
@@ -218,15 +233,13 @@ class feedback(EnvExperiment, Base):
         # self.core.break_realtime()
         delay(30.e-3)
 
-        print(self.tR)
-
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
         return round(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
     
     @kernel
     def measurement(self):
-        T_CONV_MU = 52
+        T_CONV_MU = 80
         idx = self.idx
         self.integrator.begin_integrate(reset=False)
         self.imaging.pulse(self.p.t_img_pulse)
