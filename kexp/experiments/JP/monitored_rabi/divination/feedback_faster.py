@@ -20,19 +20,19 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.xvar('dummy',[0])
         
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse/3
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse
 
-        self.N_pulses = 14 # number of steps of evolution
-        self.m = 21 # feedback grid size
+        self.N_pulses = 10 # number of steps of evolution
+        self.m = 3 # feedback grid size
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 5
 
-        self.p.t_calculation_slack_compensation_mu = 33000
+        self.p.t_calculation_slack_compensation_mu = 34000
         self.p.feedback_guess_span_Omega = 5.0
-        self.p.feedback_fractional_initial_offset = -5.0
-        self.p.n_photons_per_us_per_imgamp = 431.77
+        self.p.feedback_fractional_initial_offset = 3.0
+        self.p.n_photons_per_us_per_imgamp = 215.885
         self.p.feedback_photon_count_scale = 0.1
-
+        
         self.p.t_tweezer_hold = 30.e-3
 
         ### calibrations
@@ -40,11 +40,23 @@ class feedback(EnvExperiment, Base, Feedback):
         # # 5 us img pulse .41 img amp
         self.p.amp_imaging = 0.41
         self.p.t_img_pulse = 5.e-6
-        self.p.v_apd_all_up = -0.17809999999999998
-        self.p.v_apd_all_down = -0.222575
-        self.p.frequency_lightshift = 19136.37136929461 + 12.e3
-        
-        self.Omega = np.pi / (self.p.t_raman_pi_pulse)
+        self.p.v_apd_all_up = -0.175546875
+        self.p.v_apd_all_down = -0.22287500000000002
+        self.p.frequency_lightshift = 2*np.pi*(19136.37136929461) # 19136.37136929461 + 12.e3
+
+        # 10 us img pulse .41 img amp
+        # self.p.amp_imaging = 0.41
+        # self.p.t_img_pulse = 10.e-6
+        # self.p.v_apd_all_up = -0.127984375 
+        # self.p.v_apd_all_down = -0.23432187500000004
+        # self.frequency_lightshift = 19136.37136929461 + 12.e3
+
+        # # 5 us img pulse .82 img amp
+        # self.p.amp_imaging = 0.82
+        # self.p.t_img_pulse = 5.e-6
+        # self.p.v_apd_all_up = -0.10875625
+        # self.p.v_apd_all_down = -0.21389687500000001
+        # self.frequency_lightshift = 37624.39419087137 + 12.e3
 
         ###
 
@@ -85,15 +97,23 @@ class feedback(EnvExperiment, Base, Feedback):
             v_apd_all_down=self.p.v_apd_all_down,
         )
 
-        self.p.omega_guess_list = self.omega_guess_list
-        self.p.N_photons_per_shot = self.N_photons_per_shot
+        Feedback.__init__(t_raman_pulse = self.p.t_raman_pulse,
+                          t_img_pulse = self.p.t_img_pulse,
+                        amp_imaging = self.p.amp_imaging,
+                        t_raman_pi_pulse = self.p.t_raman_pi_pulse,
+                        frequency_resonance = self.p.frequency_raman_transition,
+                        frequency_z_lightshift = self.p.frequency_lightshift,
+                        v_apd_all_up = self.p.v_apd_all_up,
+                        v_apd_all_down = self.p.v_apd_all_down,
+                        n_photons_per_us_per_imgamp = self.p.n_photons_per_us_per_imgamp,
+                        photon_count_scale = self.p.feedback_photon_count_scale,
+                        m = self.m,
+                        fractional_initial_offset = self.p.feedback_fractional_initial_offset,
+                        guess_span_Omega = self.p.feedback_guess_span_Omega,
+                        lut_size = 4096)
 
-        self.omega_raman = self.omega_guess_start # omega_ctrl
         ###
         
-        # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
-        
-        self.tR = np.zeros(self.N_pulses,dtype=np.int64)
         self.finish_prepare()
 
     @kernel
@@ -115,7 +135,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-        self.prep_raman(frequency_transition=self.omega_raman, phase_mode=1)
+        self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi), phase_mode=1)
 
         t_pulse_start_mu = now_mu() + 10000000
 
@@ -137,12 +157,12 @@ class feedback(EnvExperiment, Base, Feedback):
         self.data.apd.shot_data[0] = self.v_apd_all_up
         self.data.s_z.shot_data[0] = self.state_z[zidx]
         self.data.omega_raman.shot_data[0] = self.omega_raman
-        self.data.Omega.shot_data[0] = var
+        # self.data.Omega.shot_data[0] = var
 
         for i in range(self.N_pulses):
 
             self.data.omega_raman.shot_data[i+1] = self.omega_raman
-            self.data.Omega.shot_data[i+1] = var
+            # self.data.Omega.shot_data[i+1] = var
 
             at_mu(t_step - (1300))
             self.raman.set_frequency_fast(frequency_transition=f)
@@ -152,8 +172,8 @@ class feedback(EnvExperiment, Base, Feedback):
             self.raman.pulse(self.p.t_raman_pulse)
             k = self.measurement()
                 
-            self.omega_raman, var = self.generate_posterior(k, t)
-            # _, var = self.generate_posterior(k, t)
+            # self.omega_raman, var = self.generate_posterior(k, t)
+            _, var = self.generate_posterior(k, t)
 
             f = self.omega_raman / (2*np.pi)
 
