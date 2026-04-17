@@ -391,6 +391,55 @@ class Feedback:
         ny = -sin_z * hx + cos_z * hy
         return np.array([nx, ny, hz], dtype=np.float64)
 
+    def rotation_axis_rotating_frame(
+        self,
+        omega_0,
+        omega,
+        t,
+        phase_zero_time=None,
+        Omega=None,
+    ):
+        """
+        Return the unit rotation axis in the frame rotating at omega_0.
+
+        Parameters
+        ----------
+        omega_0 : float
+            Atom transition frequency (rad/s).
+        omega : float
+            Drive frequency (rad/s).
+        t : float
+            Evaluation time (s).
+        phase_zero_time : float or None
+            Time where the drive phase is defined to be zero. If None,
+            it defaults to t, so the returned axis uses phase=0 at time t.
+        Omega : float or None
+            Rabi rate (rad/s). If None, uses self.Omega.
+
+        Returns
+        -------
+        np.ndarray
+            Unit axis [ux, uy, uz] as float64.
+        """
+        if phase_zero_time is None:
+            phase_zero_time = t
+        if Omega is None:
+            Omega = self.Omega
+
+        delta_omega = float(omega) - float(omega_0)
+        phase = delta_omega * (float(t) - float(phase_zero_time))
+
+        Omega = float(Omega)
+        norm_H = np.sqrt(Omega * Omega + delta_omega * delta_omega)
+        if norm_H <= 0.0:
+            return np.array([0.0, 0.0, 0.0], dtype=np.float64)
+
+        inv_norm_H = 1.0 / norm_H
+        ux = (Omega * inv_norm_H) * np.cos(phase)
+        uy = (Omega * inv_norm_H) * np.sin(phase)
+        uz = delta_omega * inv_norm_H
+        return np.array([ux, uy, uz], dtype=np.float64)
+
     def simulate_from_atomdata(
         self,
         ad,
