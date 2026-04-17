@@ -40,37 +40,36 @@ class feedback(EnvExperiment, Base):
         
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse/3
 
-        self.N_pulses = 8 # number of steps of evolution
+        self.N_pulses = 14 # number of steps of evolution
         self.m = 21 # feedback grid size
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 10
 
-        self.p.t_calculation_slack_compensation_mu = 32000
+        self.p.t_calculation_slack_compensation_mu = 33000
 
         self.p.t_tweezer_hold = 30.e-3
 
         ### calibrations
 
         # # 5 us img pulse .41 img amp
-        # self.p.amp_imaging = 0.41
-        # self.p.t_img_pulse = 5.e-6
-        # self.v_apd_all_up = -0.175806249
-        # self.v_apd_all_down = -0.220309375
-        # self.omega_z_lightshift = 2*np.pi*19136.37136929461
-
-        # 5 us img pulse .41 img amp
         self.p.amp_imaging = 0.41
-        self.p.t_img_pulse = 10.e-6
-        self.v_apd_all_up = -0.133184375 
-        self.v_apd_all_down = -0.23287499999999997
-        self.omega_z_lightshift = 2*np.pi*19136.37136929461
+        self.p.t_img_pulse = 5.e-6
+        self.v_apd_all_up = -0.17809999999999998
+        self.v_apd_all_down = -0.222575
+        self.omega_z_lightshift = 2*np.pi*(19136.37136929461 + 12.e3)
+         
 
-        
-        
-        n_photons_per_us_per_imgamp = 431.77 / 1 # 63017
+        # 10 us img pulse .41 img amp
+        # self.p.amp_imaging = 0.41
+        # self.p.t_img_pulse = 10.e-6
+        # self.v_apd_all_up = -0.12628124999999998
+        # self.v_apd_all_down = -0.23577499999999996
+        # self.omega_z_lightshift = 2*np.pi*(19136.37136929461 + 12.e3)
+
+        n_photons_per_us_per_imgamp = 215.885 / 10 # 63017
 
         self.Omega = np.pi / (self.p.t_raman_pi_pulse)
-        self.fractional_inital_offset = -5.0
+        self.fractional_inital_offset = 3.0
 
         ###
 
@@ -117,7 +116,7 @@ class feedback(EnvExperiment, Base):
         n_photons_per_us = n_photons_per_us_per_imgamp * self.p.amp_imaging
         self.N_photons_per_shot = n_photons_per_us * self.p.t_img_pulse * 1.e6
         # self.N_photons_per_shot = 30.
-        self.N_photons_per_shot /= 10
+        self.N_photons_per_shot /= 1
 
         self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down)/2)
         # self.n_photons_halfway = int(self.N_photons_per_shot / 2)
@@ -168,7 +167,7 @@ class feedback(EnvExperiment, Base):
         delay(10.e-3)
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
-        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
