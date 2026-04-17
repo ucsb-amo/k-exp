@@ -29,65 +29,23 @@ class Feedback:
 
     def __init__(
         self,
-        ad=None,
-        m=21,
-        omega_guess_list=None,
-        frequency_z_lightshift=None,
-        N_photons_per_shot=None,
-        v_apd_all_up=None,
-        v_apd_all_down=None,
-        frequency_resonance=None,
-        Omega=None,
-        fractional_initial_offset=-5.0,
-        guess_span_Omega=5.0,
         t_raman_pulse=None,
         t_img_pulse=None,
         amp_imaging=None,
+        t_raman_pi_pulse=None,
+        frequency_resonance=None,
+        frequency_z_lightshift=None,
+        v_apd_all_up=None,
+        v_apd_all_down=None,
         n_photons_per_us_per_imgamp=431.77,
         photon_count_scale=0.1,
-        lut_size=4096,
-    ):
-        # Pull defaults from atomdata params when ad is provided
-        if ad is not None:
-            p = ad.p
-            if t_raman_pulse is None and hasattr(p, 't_raman_pulse'):
-                t_raman_pulse = p.t_raman_pulse
-            if t_img_pulse is None and hasattr(p, 't_img_pulse'):
-                t_img_pulse = p.t_img_pulse
-            if frequency_resonance is None and hasattr(p, 'frequency_raman_transition'):
-                frequency_resonance = p.frequency_raman_transition
-            if Omega is None and hasattr(p, 't_raman_pi_pulse'):
-                Omega = np.pi / p.t_raman_pi_pulse
-            if frequency_z_lightshift is None and hasattr(p, 'frequency_lightshift'):
-                frequency_z_lightshift = p.frequency_lightshift
-            if v_apd_all_up is None and hasattr(p, 'v_apd_all_up'):
-                v_apd_all_up = p.v_apd_all_up
-            if v_apd_all_down is None and hasattr(p, 'v_apd_all_down'):
-                v_apd_all_down = p.v_apd_all_down
-            if amp_imaging is None and hasattr(p, 'amp_imaging'):
-                amp_imaging = p.amp_imaging
-            if hasattr(p, 'n_photons_per_us_per_imgamp'):
-                n_photons_per_us_per_imgamp = p.n_photons_per_us_per_imgamp
-            if hasattr(p, 'feedback_photon_count_scale'):
-                photon_count_scale = p.feedback_photon_count_scale
-            if hasattr(p, 'feedback_fractional_initial_offset'):
-                fractional_initial_offset = p.feedback_fractional_initial_offset
-            if hasattr(p, 'feedback_guess_span_Omega'):
-                guess_span_Omega = p.feedback_guess_span_Omega
-            if N_photons_per_shot is None and hasattr(p, 'N_photons_per_shot'):
-                N_photons_per_shot = p.N_photons_per_shot
-
-        if t_raman_pulse is None or t_img_pulse is None:
-            raise ValueError("t_raman_pulse and t_img_pulse are required (or provide ad with ad.p.t_raman_pulse / ad.p.t_img_pulse).")
-        if v_apd_all_up is None or v_apd_all_down is None:
-            raise ValueError("v_apd_all_up and v_apd_all_down are required (or provide ad with ad.p.v_apd_all_up / ad.p.v_apd_all_down).")
-        if frequency_z_lightshift is None:
-            raise ValueError("frequency_z_lightshift is required (or provide ad with ad.p.frequency_lightshift).")
-
+        m=21,
+        fractional_initial_offset=-5.0,
+        guess_span_Omega=5.0,
+        lut_size=4096):
+        
         self.m = int(m)
-
-        if Omega is not None:
-            self.Omega = float(Omega)
+        self.Omega = np.pi/t_raman_pi_pulse
 
         # dt and dt_z are always the Raman pulse and imaging pulse lengths
         self.dt = float(t_raman_pulse)
@@ -96,34 +54,15 @@ class Feedback:
         # Convert Hz → rad/s
         self.omega_z_lightshift = 2.0 * np.pi * float(frequency_z_lightshift)
 
-        if omega_guess_list is None:
-            if frequency_resonance is None:
-                raise ValueError("frequency_resonance is required when omega_guess_list is not provided (or provide ad with ad.p.frequency_raman_transition).")
-            if not hasattr(self, "Omega"):
-                raise ValueError("Omega is required when omega_guess_list is not provided (or provide ad with ad.p.t_raman_pi_pulse).")
-            omega_resonance = 2.0 * np.pi * float(frequency_resonance)
-            self.omega_guess_start = omega_resonance + self.Omega * float(fractional_initial_offset)
-            self.omega_guess_list = omega_resonance + 2.0 * float(guess_span_Omega) * self.Omega * np.linspace(-1.0, 1.0, self.m)
-        else:
-            self.omega_guess_list = np.array(omega_guess_list, dtype=np.float64)
-            if frequency_resonance is not None and hasattr(self, "Omega"):
-                omega_resonance = 2.0 * np.pi * float(frequency_resonance)
-                self.omega_guess_start = omega_resonance + self.Omega * float(fractional_initial_offset)
+        omega_resonance = 2.0 * np.pi * float(frequency_resonance)
+        self.omega_guess_start = omega_resonance + self.Omega * float(fractional_initial_offset)
+        self.omega_guess_list = omega_resonance + 2.0 * float(guess_span_Omega) * self.Omega * np.linspace(-1.0, 1.0, self.m)
+        self.p.omega_guess_list = self.omega_guess_list
 
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
 
-        if N_photons_per_shot is None:
-            if amp_imaging is None:
-                raise ValueError(
-                    "N_photons_per_shot is required unless amp_imaging is provided."
-                )
-            N_photons_per_shot = (
-                float(n_photons_per_us_per_imgamp)
-                * float(amp_imaging)
-                * float(t_img_pulse)
-                * 1.0e6
-                * float(photon_count_scale)
-            )
+        N_photons_per_shot = n_photons_per_us_per_imgamp * amp_imaging * t_img_pulse * 1.0e6
+        N_photons_per_shot *= photon_count_scale
         self.N_photons_per_shot = float(N_photons_per_shot)
 
         self.v_apd_all_up = float(v_apd_all_up)
