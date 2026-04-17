@@ -11,8 +11,8 @@ class sigma_z(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.amp_imaging = 0.41
-        self.p.t_pci_pulse = 10.e-6
+        self.p.amp_imaging = 0.82
+        self.p.t_pci_pulse = 5.e-6
         
         self.p.t_raman_pulse = 0.
         self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,2))
