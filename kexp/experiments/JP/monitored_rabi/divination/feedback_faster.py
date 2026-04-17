@@ -18,23 +18,23 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        self.p.do_feedback = 1
+        self.p.do_feedback = 0
 
         self.xvar('dummy',[0])
+        self.p.N_repeats = 30
         
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse
+        self.p.t_calculation_slack_compensation_mu = 34000
 
         self.N_pulses = 10 # number of steps of evolution
-        self.m = 3 # feedback grid size
-        
-        self.p.N_repeats = 5
-
-        self.p.t_calculation_slack_compensation_mu = 34000
+        self.m = 21 # feedback grid size
         self.p.feedback_guess_span_Omega = 5.0
-        self.p.feedback_fractional_initial_offset = 3.0
+        
+        self.p.feedback_fractional_initial_offset = 0.
+        
         self.p.n_photons_per_us_per_imgamp = 215.885
         self.p.feedback_photon_count_scale = 0.1
-        
+    
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse/2
         self.p.t_tweezer_hold = 30.e-3
 
         ### calibrations
@@ -44,21 +44,22 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.t_img_pulse = 5.e-6
         self.p.v_apd_all_up = -0.175546875
         self.p.v_apd_all_down = -0.22287500000000002
-        self.p.frequency_lightshift = 2*np.pi*(19136.37136929461) # 19136.37136929461 + 12.e3
+        self.p.frequency_lightshift = 19136.37136929461
+        self.p.frequency_lightshift += 12.e3 # magic number
 
         # 10 us img pulse .41 img amp
         # self.p.amp_imaging = 0.41
         # self.p.t_img_pulse = 10.e-6
         # self.p.v_apd_all_up = -0.127984375 
         # self.p.v_apd_all_down = -0.23432187500000004
-        # self.frequency_lightshift = 19136.37136929461 + 12.e3
+        # self.p.frequency_lightshift = 19136.37136929461 + 12.e3
 
         # # 5 us img pulse .82 img amp
         # self.p.amp_imaging = 0.82
         # self.p.t_img_pulse = 5.e-6
         # self.p.v_apd_all_up = -0.10875625
         # self.p.v_apd_all_down = -0.21389687500000001
-        # self.frequency_lightshift = 37624.39419087137 + 12.e3
+        # self.p.frequency_lightshift = 37624.39419087137 + 12.e3
 
         ###
 
@@ -105,7 +106,7 @@ class feedback(EnvExperiment, Base, Feedback):
     @kernel
     def feedback_loop(self, t_start_mu, feedback=1):
 
-        zidx = self.m//2
+        zidx = len(self.omega_guess_list)//2
         k = 0
         f = 0.
         var = self.Omega
