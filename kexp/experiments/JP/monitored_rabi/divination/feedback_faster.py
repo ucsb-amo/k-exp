@@ -22,12 +22,12 @@ class feedback(EnvExperiment, Base, Feedback):
         
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse/3
 
-        self.N_pulses = 8 # number of steps of evolution
+        self.N_pulses = 14 # number of steps of evolution
         self.m = 21 # feedback grid size
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 10
 
-        self.p.t_calculation_slack_compensation_mu = 32000
+        self.p.t_calculation_slack_compensation_mu = 33000
         self.p.feedback_guess_span_Omega = 5.0
         self.p.feedback_fractional_initial_offset = -5.0
         self.p.n_photons_per_us_per_imgamp = 431.77
@@ -38,20 +38,11 @@ class feedback(EnvExperiment, Base, Feedback):
         ### calibrations
 
         # # 5 us img pulse .41 img amp
-        # self.p.amp_imaging = 0.41
-        # self.p.t_img_pulse = 5.e-6
-        # self.v_apd_all_up = -0.175806249
-        # self.v_apd_all_down = -0.220309375
-        # self.omega_z_lightshift = 2*np.pi*19136.37136929461
-
-        # 5 us img pulse .41 img amp
         self.p.amp_imaging = 0.41
-        self.p.t_img_pulse = 10.e-6
-        self.v_apd_all_up = -0.133184375 
-        self.v_apd_all_down = -0.23287499999999997
-        self.omega_z_lightshift = 2*np.pi*19136.37136929461
-
-        
+        self.p.t_img_pulse = 5.e-6
+        self.p.v_apd_all_up = -0.17809999999999998
+        self.p.v_apd_all_down = -0.222575
+        self.p.frequency_lightshift = 19136.37136929461 + 12.e3
         
         self.Omega = np.pi / (self.p.t_raman_pi_pulse)
 
@@ -64,10 +55,6 @@ class feedback(EnvExperiment, Base, Feedback):
         )
         print(f'time between pulses: {self.p.t_between_pulses_mu / 1.e3:1.2f} (us)')
         print(f'calculation slack compensation: {self.p.t_calculation_slack_compensation_mu / 1.e3:1.2f} (us)')
-
-        self.p.v_apd_all_down = self.v_apd_all_down
-        self.p.v_apd_all_up = self.v_apd_all_up
-        self.p.frequency_lightshift = self.omega_z_lightshift / (2 * np.pi)
 
         ### setup data containers
 
@@ -102,7 +89,6 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.N_photons_per_shot = self.N_photons_per_shot
 
         self.omega_raman = self.omega_guess_start # omega_ctrl
-
         ###
         
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
@@ -125,7 +111,7 @@ class feedback(EnvExperiment, Base, Feedback):
         delay(10.e-3)
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
-        # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
