@@ -18,6 +18,8 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
+        self.p.do_feedback = 1
+
         self.xvar('dummy',[0])
         
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
@@ -80,41 +82,65 @@ class feedback(EnvExperiment, Base, Feedback):
 
         ### feedback setup
 
-        Feedback.__init__(
-            self,
-            m=self.m,
-            frequency_resonance=self.p.frequency_raman_transition,
-            Omega=self.Omega,
-            fractional_initial_offset=self.p.feedback_fractional_initial_offset,
-            guess_span_Omega=self.p.feedback_guess_span_Omega,
-            t_raman_pulse=self.p.t_raman_pulse,
-            t_img_pulse=self.p.t_img_pulse,
-            frequency_z_lightshift=self.p.frequency_lightshift,
-            amp_imaging=self.p.amp_imaging,
-            n_photons_per_us_per_imgamp=self.p.n_photons_per_us_per_imgamp,
-            photon_count_scale=self.p.feedback_photon_count_scale,
-            v_apd_all_up=self.p.v_apd_all_up,
-            v_apd_all_down=self.p.v_apd_all_down,
-        )
-
-        Feedback.__init__(t_raman_pulse = self.p.t_raman_pulse,
+        Feedback.__init__(self,
+                          t_raman_pulse = self.p.t_raman_pulse,
                           t_img_pulse = self.p.t_img_pulse,
-                        amp_imaging = self.p.amp_imaging,
-                        t_raman_pi_pulse = self.p.t_raman_pi_pulse,
-                        frequency_resonance = self.p.frequency_raman_transition,
-                        frequency_z_lightshift = self.p.frequency_lightshift,
-                        v_apd_all_up = self.p.v_apd_all_up,
-                        v_apd_all_down = self.p.v_apd_all_down,
-                        n_photons_per_us_per_imgamp = self.p.n_photons_per_us_per_imgamp,
-                        photon_count_scale = self.p.feedback_photon_count_scale,
-                        m = self.m,
-                        fractional_initial_offset = self.p.feedback_fractional_initial_offset,
-                        guess_span_Omega = self.p.feedback_guess_span_Omega,
-                        lut_size = 4096)
+                          amp_imaging = self.p.amp_imaging,
+                          t_raman_pi_pulse = self.p.t_raman_pi_pulse,
+                          frequency_resonance = self.p.frequency_raman_transition,
+                          frequency_z_lightshift = self.p.frequency_lightshift,
+                          v_apd_all_up = self.p.v_apd_all_up,
+                          v_apd_all_down = self.p.v_apd_all_down,
+                          n_photons_per_us_per_imgamp = self.p.n_photons_per_us_per_imgamp,
+                          photon_count_scale = self.p.feedback_photon_count_scale,
+                          m = self.m,
+                          fractional_initial_offset = self.p.feedback_fractional_initial_offset,
+                          guess_span_Omega = self.p.feedback_guess_span_Omega,
+                          lut_size = 4096)
 
         ###
         
         self.finish_prepare()
+
+    @kernel
+    def feedback_loop(self, t_start_mu, feedback=1):
+
+        zidx = self.m//2
+        k = 0
+        f = 0.
+        var = self.Omega
+
+        self.data.apd.shot_data[0] = self.v_apd_all_up
+        self.data.s_z.shot_data[0] = self.state_z[zidx]
+        self.data.omega_raman.shot_data[0] = self.omega_raman
+        # self.data.Omega.shot_data[0] = var
+
+        t_step = t_start_mu
+        at_mu(t_start_mu)
+        for i in range(self.N_pulses):
+
+            self.data.omega_raman.shot_data[i+1] = self.omega_raman
+            # self.data.Omega.shot_data[i+1] = var
+
+            at_mu(t_step - (1300))
+            self.raman.set_frequency_fast(frequency_transition=f)
+
+            t = (t_step - t_start_mu)*1.e-9
+            at_mu(t_step)
+            self.raman.pulse(self.p.t_raman_pulse)
+            k = self.measurement()
+                
+            if feedback:
+                self.omega_raman, var = self.generate_posterior(k, t)
+            else:
+                _, var = self.generate_posterior(k, t)
+
+            f = self.omega_raman / (2*np.pi)
+
+            t_step += self.p.t_between_pulses_mu
+
+            self.data.t.shot_data[i+1] = t + self.p.t_raman_pulse + self.p.t_img_pulse
+            self.data.s_z.shot_data[i+1] = self.state_z[zidx]
 
     @kernel
     def scan_kernel(self):
@@ -123,15 +149,13 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.core.break_realtime()
 
-        zidx = self.m//2
-
         self.integrator.init()
 
         self.initialize_feedback()
         delay(10.e-3)
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
-        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, verbose=False)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
@@ -147,42 +171,8 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(t_pulse_start_mu - 20000) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
-        k = 0
-        f = 0.
-        var = self.Omega
-        t_step = t_pulse_start_mu
-        
-        at_mu(t_step)
-
-        self.data.apd.shot_data[0] = self.v_apd_all_up
-        self.data.s_z.shot_data[0] = self.state_z[zidx]
-        self.data.omega_raman.shot_data[0] = self.omega_raman
-        # self.data.Omega.shot_data[0] = var
-
-        for i in range(self.N_pulses):
-
-            self.data.omega_raman.shot_data[i+1] = self.omega_raman
-            # self.data.Omega.shot_data[i+1] = var
-
-            at_mu(t_step - (1300))
-            self.raman.set_frequency_fast(frequency_transition=f)
-
-            t = (t_step - t_pulse_start_mu)*1.e-9
-            at_mu(t_step)
-            self.raman.pulse(self.p.t_raman_pulse)
-            k = self.measurement()
-                
-            # self.omega_raman, var = self.generate_posterior(k, t)
-            _, var = self.generate_posterior(k, t)
-
-            f = self.omega_raman / (2*np.pi)
-
-            t_step += self.p.t_between_pulses_mu
-
-            self.data.t.shot_data[i+1] = t + self.p.t_img_pulse
-            self.data.s_z.shot_data[i+1] = self.state_z[zidx]
+        self.feedback_loop(t_start_mu=t_pulse_start_mu, feedback=self.p.do_feedback)
             
-        
         delay(self.p.t_tweezer_hold)
         self.raman.clean_up_fast_frequency_update()
 

@@ -59,6 +59,8 @@ class Feedback:
         self.omega_guess_list = omega_resonance + 2.0 * float(guess_span_Omega) * self.Omega * np.linspace(-1.0, 1.0, self.m)
         self.p.omega_guess_list = self.omega_guess_list
 
+        self.omega_raman = self.omega_guess_start
+
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
 
         N_photons_per_shot = n_photons_per_us_per_imgamp * amp_imaging * t_img_pulse * 1.0e6
