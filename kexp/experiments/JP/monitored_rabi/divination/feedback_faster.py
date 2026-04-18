@@ -51,7 +51,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.n_photons_per_us_per_img_amp = 421 
         self.p.n_photons_per_shot = self.p.n_photons_per_us_per_img_amp * self.p.amp_imaging * self.p.t_img_pulse
 
-        self.p.frequency_lightshift = 19136.37136929461
+        # self.p.frequency_lightshift = 19136.37136929461
 
         # # 5 us img pulse .41 img amp
         # self.p.amp_imaging = 0.41
@@ -108,7 +108,7 @@ class feedback(EnvExperiment, Base, Feedback):
                           amp_imaging = self.p.amp_imaging,
                           t_raman_pi_pulse = self.p.t_raman_pi_pulse,
                           frequency_resonance = self.p.frequency_raman_transition,
-                          frequency_z_lightshift = self.p.frequency_lightshift,
+                        #   frequency_z_lightshift = self.p.frequency_lightshift,
                           photon_count_scale = self.p.feedback_photon_count_scale,
                           m = self.m,
                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
