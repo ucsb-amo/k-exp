@@ -15,6 +15,7 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
+        self.xvar('amp_imaging', np.linspace(0.1, 0.4, 4))
         self.xvar('with_imaging', [0,1])
         self.xvar('relative_phase', np.linspace(0., 2*np.pi, 15))
 
