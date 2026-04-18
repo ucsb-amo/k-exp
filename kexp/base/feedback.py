@@ -1,6 +1,6 @@
 from artiq.experiment import kernel, portable
 import numpy as np
-from kexp.calibrations.imaging import integrator_calibration
+from kexp.calibrations.imaging import integrator_calibration, imaging_lightshift
 
 
 class Feedback:
@@ -44,30 +44,85 @@ class Feedback:
         fractional_initial_offset=-5.0,
         guess_span_Omega=5.0,
         lut_size=4096):
-        
+        self._initialize_timing(
+            m=m,
+            t_raman_pulse=t_raman_pulse,
+            t_img_pulse=t_img_pulse,
+            t_raman_pi_pulse=t_raman_pi_pulse,
+        )
+        self._initialize_lightshift(
+            amp_imaging=amp_imaging,
+            frequency_z_lightshift=frequency_z_lightshift,
+        )
+        self._initialize_frequency_grid(
+            frequency_resonance=frequency_resonance,
+            fractional_initial_offset=fractional_initial_offset,
+            guess_span_Omega=guess_span_Omega,
+        )
+        self._initialize_measurement_state(
+            amp_imaging=amp_imaging,
+            t_img_pulse=t_img_pulse,
+            n_photons_per_shot=n_photons_per_shot,
+            v_apd_all_up=v_apd_all_up,
+            v_apd_all_down=v_apd_all_down,
+            photon_count_scale=photon_count_scale,
+        )
+        self._initialize_posterior_state()
+        self._initialize_trig_lut(lut_size=lut_size)
+        self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down) / 2.0)
+
+    def _initialize_timing(
+        self,
+        m,
+        t_raman_pulse,
+        t_img_pulse,
+        t_raman_pi_pulse,
+    ):
         self.m = int(m)
-        self.Omega = np.pi/t_raman_pi_pulse
+        self.Omega = np.pi / t_raman_pi_pulse
 
         # dt and dt_z are always the Raman pulse and imaging pulse lengths
         self.dt = float(t_raman_pulse)
         self.dt_z = float(t_img_pulse)
 
-        # Convert Hz → rad/s
-        self.omega_z_lightshift = 2.0 * np.pi * float(frequency_z_lightshift)
+    def _initialize_lightshift(
+        self,
+        amp_imaging,
+        frequency_z_lightshift,
+    ):
+        self.p.frequency_lightshift = self._resolve_lightshift_calibration(
+            amp_imaging=amp_imaging,
+            frequency_z_lightshift=frequency_z_lightshift,
+        )
+        self.frequency_z_lightshift = self.p.frequency_lightshift
+        self.omega_z_lightshift = 2.0 * np.pi * self.frequency_z_lightshift
 
+    def _initialize_frequency_grid(
+        self,
+        frequency_resonance,
+        fractional_initial_offset,
+        guess_span_Omega,
+    ):
         omega_resonance = 2.0 * np.pi * float(frequency_resonance)
         self.omega_guess_start = omega_resonance + self.Omega * float(fractional_initial_offset)
         self.omega_guess_list = omega_resonance + 2.0 * float(guess_span_Omega) * self.Omega * np.linspace(-1.0, 1.0, self.m)
         self.p.omega_guess_list = self.omega_guess_list
-
         self.omega_raman = self.omega_guess_start
-
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
 
+    def _initialize_measurement_state(
+        self,
+        amp_imaging,
+        t_img_pulse,
+        n_photons_per_shot,
+        v_apd_all_up,
+        v_apd_all_down,
+        photon_count_scale,
+    ):
         (
-            self.N_photons_per_shot,
-            self.v_apd_all_up,
-            self.v_apd_all_down,
+            self.p.N_photons_per_shot,
+            self.p.v_apd_all_up,
+            self.p.v_apd_all_down,
         ) = self._resolve_measurement_calibration(
             amp_imaging=amp_imaging,
             t_img_pulse=t_img_pulse,
@@ -76,8 +131,12 @@ class Feedback:
             v_apd_all_down=v_apd_all_down,
             photon_count_scale=photon_count_scale,
         )
+        self.v_apd_all_up = self.p.v_apd_all_up
+        self.v_apd_all_down = self.p.v_apd_all_down
+        self.N_photons_per_shot = self.p.N_photons_per_shot
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
 
+    def _initialize_posterior_state(self):
         self.P0 = np.ones(self.m, dtype=np.float64)
         self.P0 = self.P0 / np.sum(self.P0)
         self.P0_total = 1.0
@@ -87,6 +146,7 @@ class Feedback:
         self.state_z = np.ones(self.m, dtype=np.float64)
         self.t_posterior_mu = np.int64(0)
 
+    def _initialize_trig_lut(self, lut_size):
         self.two_pi = 2.0 * np.pi
         self.pi_half = 0.5 * np.pi
 
@@ -96,8 +156,6 @@ class Feedback:
         self.lut_quarter = self.lut_size // 4
         self.inv_two_pi = 1.0 / self.two_pi
         self.sin_lut = np.sin(self.two_pi * np.arange(self.lut_size) / self.lut_size)
-
-        self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down) / 2.0)
 
     def _resolve_measurement_calibration(
         self,
@@ -146,6 +204,28 @@ class Feedback:
         )
 
         return float(n_photons_per_shot), float(v_apd_all_up), float(v_apd_all_down)
+
+    def _resolve_lightshift_calibration(
+        self,
+        amp_imaging,
+        frequency_z_lightshift,
+    ):
+        if frequency_z_lightshift is not None:
+            return float(frequency_z_lightshift)
+
+        if amp_imaging is None:
+            raise ValueError(
+                "Missing frequency_z_lightshift requires amp_imaging for imaging_lightshift fallback."
+            )
+
+        frequency_z_lightshift = imaging_lightshift(float(amp_imaging))
+
+        print(
+            "Feedback: using imaging_lightshift fallback "
+            f"(amp_imaging={float(amp_imaging)}) for missing field: frequency_z_lightshift"
+        )
+
+        return float(frequency_z_lightshift)
 
     @staticmethod
     def compute_t_between_pulses_mu(
