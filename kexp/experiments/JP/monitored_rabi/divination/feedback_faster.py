@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_mu
 from kexp import Base, img_types, cameras
 from kexp.base import Feedback
+from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
 
 from kexp.util.artiq.async_print import aprint
@@ -34,32 +35,48 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.n_photons_per_us_per_imgamp = 215.885
         self.p.feedback_photon_count_scale = 0.1
     
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse/2
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse/3
         self.p.t_tweezer_hold = 30.e-3
 
         ### calibrations
 
-        # # 5 us img pulse .41 img amp
         self.p.amp_imaging = 0.41
         self.p.t_img_pulse = 5.e-6
-        self.p.v_apd_all_up = -0.175546875
-        self.p.v_apd_all_down = -0.22287500000000002
+        (n_photons, v_up, v_down) = integrator_calibration(amp_imaging=0.41, t_imaging=5e-6)
+
+        self.p.v_apd_all_up = v_up
+        self.p.v_apd_all_down = v_down
+        # self.p.n_photons_per_shot = n_photons
+
+        self.p.n_photons_per_us_per_img_amp = 421 
+        self.p.n_photons_per_shot = self.p.n_photons_per_us_per_img_amp * self.p.amp_imaging * self.p.t_img_pulse
+
         self.p.frequency_lightshift = 19136.37136929461
-        self.p.frequency_lightshift += 12.e3 # magic number
+
+        # # 5 us img pulse .41 img amp
+        # self.p.amp_imaging = 0.41
+        # self.p.t_img_pulse = 5.e-6
+        # self.p.v_apd_all_up = -0.175546875
+        # self.p.v_apd_all_down = -0.22287500000000002
+        # self.p.frequency_lightshift = 19136.37136929461
+        # self.p.frequency_lightshift += 12.e3 # magic number
 
         # 10 us img pulse .41 img amp
         # self.p.amp_imaging = 0.41
         # self.p.t_img_pulse = 10.e-6
         # self.p.v_apd_all_up = -0.127984375 
         # self.p.v_apd_all_down = -0.23432187500000004
-        # self.p.frequency_lightshift = 19136.37136929461 + 12.e3
+        # self.p.frequency_lightshift = 19136.37136929461
+        # self.p.frequency_lightshift += 12.e3 # magic number
 
         # # 5 us img pulse .82 img amp
         # self.p.amp_imaging = 0.82
         # self.p.t_img_pulse = 5.e-6
         # self.p.v_apd_all_up = -0.10875625
         # self.p.v_apd_all_down = -0.21389687500000001
-        # self.p.frequency_lightshift = 37624.39419087137 + 12.e3
+        # self.p.frequency_lightshift = 37624.39419087137
+        # self.p.frequency_lightshift += 12.e3 # magic number
+        
 
         ###
 
@@ -82,6 +99,8 @@ class feedback(EnvExperiment, Base, Feedback):
         self.data.t = self.data.add_data_container(self.N_pulses+1)
 
         ### feedback setup
+        # uses calibration for v_apd and n_photons from integrator_calibration
+        # unless those values are explicitly passed below (commented out)
 
         Feedback.__init__(self,
                           t_raman_pulse = self.p.t_raman_pulse,
@@ -90,14 +109,15 @@ class feedback(EnvExperiment, Base, Feedback):
                           t_raman_pi_pulse = self.p.t_raman_pi_pulse,
                           frequency_resonance = self.p.frequency_raman_transition,
                           frequency_z_lightshift = self.p.frequency_lightshift,
-                          v_apd_all_up = self.p.v_apd_all_up,
-                          v_apd_all_down = self.p.v_apd_all_down,
-                          n_photons_per_us_per_imgamp = self.p.n_photons_per_us_per_imgamp,
                           photon_count_scale = self.p.feedback_photon_count_scale,
                           m = self.m,
                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
                           guess_span_Omega = self.p.feedback_guess_span_Omega,
-                          lut_size = 4096)
+                          n_photons_per_shot = self.p.n_photons_per_shot
+                        #   v_apd_all_up = self.p.v_apd_all_up,
+                        #   v_apd_all_down = self.p.v_apd_all_down,
+                        #   n_photons_per_shot=self.p.n_photons_per_shot
+                          )
 
         ###
         
