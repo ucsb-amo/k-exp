@@ -7,6 +7,21 @@ from artiq.experiment import portable, TFloat
 
 I_LF_HF_THRESHOLD = 45.
 
+######
+
+# 2026-04-18 Ramsey phase-jump light-shift calibration.
+# Source notebook: k-jam/analysis/artisinal/lightshift_via_ramsey_phase_jump_vs_img_amp.ipynb
+# Source run_id: 64193
+# Model: frequency_lightshift(amp_imaging) = m * amp_imaging + b
+slope_Hz_per_amp = 58155.28606244666
+intercept_Hz = -1972.044341026686
+
+@portable
+def imaging_lightshift(amp_imaging) -> TFloat:
+   return slope_Hz_per_amp * amp_imaging + intercept_Hz
+
+######
+
 def integrator_calibration(amp_imaging, t_imaging):
 
    # notes: https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.cvj0bnjp2og4#heading=h.9wxppk5x5p7x
@@ -47,6 +62,8 @@ def integrator_calibration(amp_imaging, t_imaging):
    delta_photons = photons_up - photons_down
 
    return delta_photons, v_all_up, v_all_down
+
+######
 
 # run 22849
 # all shims set to zero during feshbach field
