@@ -42,10 +42,10 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.p.amp_imaging = 0.41
         self.p.t_img_pulse = 5.e-6
-        (n_photons, v_up, v_down) = integrator_calibration(amp_imaging=0.41, t_imaging=5e-6)
+        # (n_photons, v_up, v_down) = integrator_calibration(amp_imaging=0.41, t_imaging=5e-6)
 
-        self.p.v_apd_all_up = v_up
-        self.p.v_apd_all_down = v_down
+        # self.p.v_apd_all_up = v_up
+        # self.p.v_apd_all_down = v_down
         # self.p.n_photons_per_shot = n_photons
 
         self.p.n_photons_per_us_per_img_amp = 421 
