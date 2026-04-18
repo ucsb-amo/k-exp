@@ -1,5 +1,6 @@
 from artiq.experiment import kernel, portable
 import numpy as np
+from kexp.calibrations.imaging import integrator_calibration
 
 
 class Feedback:
@@ -37,7 +38,7 @@ class Feedback:
         frequency_z_lightshift=None,
         v_apd_all_up=None,
         v_apd_all_down=None,
-        n_photons_per_us_per_imgamp=431.77,
+        n_photons_per_shot=None,
         photon_count_scale=0.1,
         m=21,
         fractional_initial_offset=-5.0,
@@ -63,12 +64,18 @@ class Feedback:
 
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
 
-        N_photons_per_shot = n_photons_per_us_per_imgamp * amp_imaging * t_img_pulse * 1.0e6
-        N_photons_per_shot *= photon_count_scale
-        self.N_photons_per_shot = float(N_photons_per_shot)
-
-        self.v_apd_all_up = float(v_apd_all_up)
-        self.v_apd_all_down = float(v_apd_all_down)
+        (
+            self.N_photons_per_shot,
+            self.v_apd_all_up,
+            self.v_apd_all_down,
+        ) = self._resolve_measurement_calibration(
+            amp_imaging=amp_imaging,
+            t_img_pulse=t_img_pulse,
+            n_photons_per_shot=n_photons_per_shot,
+            v_apd_all_up=v_apd_all_up,
+            v_apd_all_down=v_apd_all_down,
+            photon_count_scale=photon_count_scale,
+        )
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
 
         self.P0 = np.ones(self.m, dtype=np.float64)
@@ -91,6 +98,54 @@ class Feedback:
         self.sin_lut = np.sin(self.two_pi * np.arange(self.lut_size) / self.lut_size)
 
         self.n_photons_halfway = self.convert_measurement((self.v_apd_all_up + self.v_apd_all_down) / 2.0)
+
+    def _resolve_measurement_calibration(
+        self,
+        amp_imaging,
+        t_img_pulse,
+        n_photons_per_shot,
+        v_apd_all_up,
+        v_apd_all_down,
+        photon_count_scale,
+    ):
+        missing_fields = []
+        if n_photons_per_shot is None:
+            missing_fields.append("n_photons_per_shot")
+        if v_apd_all_up is None:
+            missing_fields.append("v_apd_all_up")
+        if v_apd_all_down is None:
+            missing_fields.append("v_apd_all_down")
+
+        if len(missing_fields) == 0:
+            return float(n_photons_per_shot), float(v_apd_all_up), float(v_apd_all_down)
+
+        if amp_imaging is None or t_img_pulse is None:
+            raise ValueError(
+                "Missing calibration fields require amp_imaging and t_img_pulse for integrator_calibration fallback."
+            )
+
+        (n_cal, v_up_cal, v_down_cal) = integrator_calibration(
+            amp_imaging=float(amp_imaging),
+            t_imaging=float(t_img_pulse),
+        )
+
+        # Keep historical behavior for calibration-derived photon counts.
+        n_cal = float(n_cal) * float(photon_count_scale)
+
+        if n_photons_per_shot is None:
+            n_photons_per_shot = n_cal
+        if v_apd_all_up is None:
+            v_apd_all_up = v_up_cal
+        if v_apd_all_down is None:
+            v_apd_all_down = v_down_cal
+
+        print(
+            "Feedback: using integrator_calibration fallback "
+            f"(amp_imaging={float(amp_imaging)}, t_img_pulse={float(t_img_pulse)} s) "
+            f"for missing fields: {', '.join(missing_fields)}"
+        )
+
+        return float(n_photons_per_shot), float(v_apd_all_up), float(v_apd_all_down)
 
     @staticmethod
     def compute_t_between_pulses_mu(
