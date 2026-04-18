@@ -7,6 +7,47 @@ from artiq.experiment import portable, TFloat
 
 I_LF_HF_THRESHOLD = 45.
 
+def integrator_calibration(amp_imaging, t_imaging):
+
+   # notes: https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.cvj0bnjp2og4#heading=h.9wxppk5x5p7x
+   # Voltage model (state-index keyed)
+   _VOLTAGE_MODEL_BY_STATE = {
+      0: {'b': -0.227341450893, 'k_t': -2194.64285714, 'k_a': 0.0349390625},
+      1: {'b': -0.30664390625, 'k_t': 10611.25, 'k_a': 0.1901546875},
+   }
+
+   # Photon-rate model (state-index keyed)
+   _PHOTON_RATE_MODEL_BY_STATE = {
+      0: {'b': -20.9646655869, 'k_t': 2468721.66829, 'k_a': 505.559771246},
+      1: {'b': -17.8591681599, 'k_t': 1176537.91804, 'k_a': 98.030297008},
+   }
+
+   def integrated_imaging_voltage(amp_imaging, t_imaging, state):
+      st = int(state)
+      p = _VOLTAGE_MODEL_BY_STATE[st]
+      return p["b"] + p["k_t"] * t_imaging + p["k_a"] * amp_imaging
+
+
+   def integrated_imaging_photon_rate_us(amp_imaging, t_imaging, state):
+      st = int(state)
+      p = _PHOTON_RATE_MODEL_BY_STATE[st]
+      return p["b"] + p["k_t"] * t_imaging + p["k_a"] * amp_imaging
+
+
+   def integrated_imaging_photon_number(amp_imaging, t_imaging, state):
+      return integrated_imaging_photon_rate_us(amp_imaging, t_imaging, state) * (t_imaging * 1e6)
+
+   # Requested convention: up = state 1, down = state 0
+   v_all_up = integrated_imaging_voltage(amp_imaging, t_imaging, 1)
+   v_all_down = integrated_imaging_voltage(amp_imaging, t_imaging, 0)
+
+   photons_up = integrated_imaging_photon_number(amp_imaging, t_imaging, 1)
+   photons_down = integrated_imaging_photon_number(amp_imaging, t_imaging, 0)
+   delta_photons = photons_up - photons_down
+
+   return delta_photons, v_all_up, v_all_down
+
+
 # run 22849
 # all shims set to zero during feshbach field
 # slope_imaging_frequency_per_i_transducer_hf = -4955357.14
