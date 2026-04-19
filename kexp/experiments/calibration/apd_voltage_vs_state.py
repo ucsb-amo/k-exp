@@ -11,7 +11,7 @@ class sigma_z(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.amp_imaging = 0.82
+        self.p.amp_imaging = 0.41
         self.p.t_pci_pulse = 5.e-6
         
         self.p.t_raman_pulse = 0.
