@@ -5,7 +5,7 @@ import numpy as np
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
-from artiq.language import now_mu
+from artiq.language import now_mu, at_mu
 
 class rabi_oscillation(EnvExperiment, Base):
 
@@ -15,8 +15,8 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        # self.p.amp_imaging_pci = 0.1
-        self.xvar('amp_imaging_pci',np.linspace(0.1,0.5,30))
+        self.p.amp_imaging_pci = 0.3
+        # self.xvar('amp_imaging_pci',np.linspace(0.1,0.5,30))
 
         self.p.t_imaging_pulse = 10.e-6
 
@@ -37,6 +37,19 @@ class rabi_oscillation(EnvExperiment, Base):
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
         self.finish_prepare(shuffle=True)
+
+    @kernel
+    def measurement(self, idx=0):
+        T_CONV_MU = 80
+        self.integrator.begin_integrate(reset=False)
+        self.imaging.pulse(self.p.t_imaging_pulse)
+        self.integrator.stop_and_settle()
+        t = now_mu()
+        # start the clear after the integrator voltage is already in the sampler
+        at_mu(t + T_CONV_MU)
+        self.integrator.clear(t=0)
+        at_mu(t)
+        self.data.apd.put_data(self.integrator.sample(), idx)
 
     @kernel
     def scan_kernel(self):
@@ -60,12 +73,9 @@ class rabi_oscillation(EnvExperiment, Base):
         i = 0
         for i in range(self.p.N_pulses):
         
-            self.integrator.begin_integrate()
-            self.imaging.pulse(self.p.t_imaging_pulse)
-            self.data.apd.shot_data[i] = self.integrator.stop_and_sample()
-            self.integrator.clear()
+            self.measurement(i)
 
-            delay(3.e-6)
+            delay(20.e-6)
 
             self.raman.pulse(self.p.t_raman_pi_pulse)
 

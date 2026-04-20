@@ -10,14 +10,12 @@ class rabi_oscillation(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
-        
-        self.p.frequency_raman_transition = 119.4636e6 # 182 A -1 0
 
         self.xvar('t_raman_pulse',np.linspace(0.,50.,20)*1.e-6)
         self.p.t_raman_pulse = 0.
 
         self.p.t_tof = 10.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 
