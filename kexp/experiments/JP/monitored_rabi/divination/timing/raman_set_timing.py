@@ -7,6 +7,8 @@ import numpy as np
 
 from kexp.util.artiq.async_print import aprint
 
+from numpy import int64
+
 T_CONV_MU = 30
 
 # self.p.frequency_lightshift = 19136.37136929461
@@ -52,12 +54,12 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 0
 
-        self.xvar('dummy',[0])
+        # self.xvar('dummy',[0])
         self.p.N_repeats = 1
         
         self.p.t_calculation_slack_compensation_mu = 0
         self.N_pulses = 10 # number of steps of evolution
-        self.m = 3 # feedback grid size
+        self.m = 21 # feedback grid size
         self.p.feedback_guess_span_Omega = 5.0
         self.p.feedback_fractional_initial_offset = 0.
 
@@ -74,15 +76,15 @@ class feedback(EnvExperiment, Base, Feedback):
 
         ###
 
-        self.p.t_fifo_mu = 3000
-        self.p.t_raman_set_cpu_mu = 4000
-        self.p.t_raman_set_pretrigger_mu = 1300
+        self.xvar('t_fifo_mu',np.linspace(30000, 38000, 15))
+        self.p.t_required_fifo_mu = int64(0)
+
+        self.p.t_fifo_mu = int64(0)
+        self.p.t_raman_set_pretrigger_mu = int64(1260)
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
             t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
-            t_raman_set_mu = self.p.t_raman_set_pretrigger_mu,
             t_raman_pulse=self.p.t_raman_pulse,
             t_img_pulse=self.p.t_img_pulse,
-            t_raman_set_cpu_mu=self.p.t_raman_set_cpu_mu,
             t_fifo_mu=self.p.t_fifo_mu
         )
         print(f'time between pulses: {self.p.t_between_pulses_mu / 1.e3:1.2f} (us)')
@@ -121,7 +123,7 @@ class feedback(EnvExperiment, Base, Feedback):
                           )
         ###
         
-        self.finish_prepare()
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def feedback_loop(self, t_start_mu,
@@ -140,34 +142,48 @@ class feedback(EnvExperiment, Base, Feedback):
 
         t_step = t_start_mu
         at_mu(t_start_mu)
-        for i in range(self.N_pulses):
+        try:
+            for i in range(self.N_pulses):
 
-            self.data.omega_raman.shot_data[i+1] = self.omega_raman
-            # self.data.Omega.shot_data[i+1] = var
+                self.data.omega_raman.shot_data[i+1] = self.omega_raman
+                # self.data.Omega.shot_data[i+1] = var
 
-            at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
-            self.raman.set_frequency_fast(frequency_transition=f)
+                at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
+                self.raman.set_frequency_fast(frequency_transition=f)
 
-            t = (t_step - t_start_mu)*1.e-9
-            at_mu(t_step)
-            self.raman.pulse(self.p.t_raman_pulse)
-            k = self.measurement()
-            # self.fake_calc(10000)
-            # self.omega_raman, self.Omega = self.generate_posterior(k, t,
-                                                                #    update_raman_frequency=update_raman_frequency,
-                                                                #    update_rabi_frequency=update_rabi_frequency,
-                                                                #    include_photon_noise=include_photon_noise)
+                t = (t_step - t_start_mu)*1.e-9
+                at_mu(t_step)
+                self.raman.pulse(self.p.t_raman_pulse)
+                k = self.measurement(i)
+                self.omega_raman, self.Omega = self.generate_posterior(k, t,
+                                                                       update_raman_frequency=update_raman_frequency,
+                                                                       update_rabi_frequency=update_rabi_frequency,
+                                                                       include_photon_noise=include_photon_noise)
 
-            f = self.omega_raman / (2*np.pi)
+                f = self.omega_raman / (2*np.pi)
 
-            t_step += self.p.t_between_pulses_mu
+                t_step += self.p.t_between_pulses_mu
 
-            self.data.t.shot_data[i+1] = t + self.p.t_raman_pulse + self.p.t_img_pulse
-            self.data.s_z.shot_data[i+1] = self.state_z[zidx]
+                self.data.t.shot_data[i+1] = t + self.p.t_raman_pulse + self.p.t_img_pulse
+                self.data.s_z.shot_data[i+1] = self.state_z[zidx]
+
+            if self.p.t_required_fifo_mu == 0:
+                self.p.t_required_fifo_mu = int64(self.p.t_fifo_mu)
+        except RTIOUnderflow:
+            self.core.break_realtime()
+            aprint("underflow in feedback loop at =", self.p.t_fifo_mu)
 
     @kernel
     def scan_kernel(self):
-        self.idx = 1
+
+        self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
+            t_calculation_slack_compensation_mu=0, #int64(self.p.t_calculation_slack_compensation_mu),
+            t_raman_pulse=self.p.t_raman_pulse,
+            t_img_pulse=self.p.t_img_pulse,
+            t_fifo_mu=int64(self.p.t_fifo_mu)
+        )
+        aprint(self.p.t_between_pulses_mu)
+
         self.omega_raman = self.omega_guess_start
 
         self.core.break_realtime()
@@ -181,8 +197,10 @@ class feedback(EnvExperiment, Base, Feedback):
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask, verbose=False)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=True)
-        self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi), phase_mode=1)
+        # self.prepare_hf_tweezers(squeeze=True)
+        # self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi), phase_mode=1)
+
+        delay(10.e-3)
 
         t_pulse_start_mu = now_mu() + 10000000
 
@@ -212,9 +230,8 @@ class feedback(EnvExperiment, Base, Feedback):
         delay(30.e-3)
 
     @kernel
-    def measurement(self):
+    def measurement(self, idx=0):
         T_CONV_MU = 80
-        idx = self.idx
         self.integrator.begin_integrate(reset=False)
         self.imaging.pulse(self.p.t_img_pulse)
         self.integrator.stop_and_settle()
@@ -224,8 +241,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.integrator.clear(t=0)
         at_mu(t)
         self.data.apd.shot_data[idx] = self.integrator.sample()
-        v = self.convert_measurement(self.data.apd.shot_data[idx])
-        self.idx = self.idx + 1
+        v = self.convert_measurement(self.data.apd.shot_data[idx+1])
         return v
 
     @kernel
@@ -233,6 +249,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
+
 
     def analyze(self):
         import os

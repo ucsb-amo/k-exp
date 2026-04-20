@@ -171,11 +171,11 @@ class Control():
                         phase_mode)
         
         self.ttl.raman_shutter.on()
-        delay(2.e-3)
+        delay(3.e-3)
         self.ttl.line_trigger.wait_for_line_trigger()
-        t = now_mu() + 4700000
+        delay(4.7e-3)
         if phase_mode == 1:
             self.raman.set_phase(t_phase_origin_mu=now_mu())
-        at_mu(t)
+        
 
         

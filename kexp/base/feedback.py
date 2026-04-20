@@ -1,5 +1,6 @@
-from artiq.experiment import kernel, portable
+from artiq.experiment import kernel, portable, TInt64
 import numpy as np
+from numpy import int64
 from kexp.calibrations.imaging import integrator_calibration, imaging_lightshift
 from kexp.util.artiq.async_print import aprint
 
@@ -249,22 +250,23 @@ class Feedback:
 
         return mn, std
     
-    @staticmethod
+    @portable(flags={"fast-math"})
     def compute_t_between_pulses_mu(
+        self,
         t_calculation_slack_compensation_mu,
         t_raman_pulse,
         t_img_pulse,
-        t_integrator_stop_settle_sample_mu=3600,
-        t_set_raman_mu=1256,
-    ):
+        t_fifo_mu = int64(1000)
+
+    ) -> TInt64:
+        T_MIN_FIFO_MU = t_fifo_mu
         t_raman_pulse_mu = np.int64(t_raman_pulse * 1.0e9)
         t_img_pulse_mu = np.int64(t_img_pulse * 1.0e9)
-        return int(
-            int(t_calculation_slack_compensation_mu)
-            + int(t_integrator_stop_settle_sample_mu)
-            + int(t_set_raman_mu)
-            + int(t_raman_pulse_mu)
-            + int(t_img_pulse_mu)
+        return (
+            t_calculation_slack_compensation_mu
+            + t_raman_pulse_mu
+            + t_img_pulse_mu
+            + T_MIN_FIFO_MU
         )
 
     @kernel

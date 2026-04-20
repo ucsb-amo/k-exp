@@ -7,6 +7,8 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu, at_mu
 
+from kexp.util.artiq.async_print import aprint
+
 class rabi_oscillation(EnvExperiment, Base):
 
     def prepare(self):
@@ -15,10 +17,10 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.amp_imaging_pci = 0.3
+        self.p.amp_imaging_pci = 0.41
         # self.xvar('amp_imaging_pci',np.linspace(0.1,0.5,30))
 
-        self.p.t_imaging_pulse = 10.e-6
+        self.p.t_imaging_pulse = 5.e-6
 
         # self.p.t_raman_pi_pulse = 3.5635e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
@@ -45,11 +47,15 @@ class rabi_oscillation(EnvExperiment, Base):
         self.imaging.pulse(self.p.t_imaging_pulse)
         self.integrator.stop_and_settle()
         t = now_mu()
+        
         # start the clear after the integrator voltage is already in the sampler
         at_mu(t + T_CONV_MU)
         self.integrator.clear(t=0)
         at_mu(t)
+        # slack0 = t - self.core.get_rtio_counter_mu()
         self.data.apd.put_data(self.integrator.sample(), idx)
+        # slack1 = now_mu() - self.core.get_rtio_counter_mu()
+        # aprint(slack0, slack1, slack1 - slack0)
 
     @kernel
     def scan_kernel(self):
@@ -72,14 +78,17 @@ class rabi_oscillation(EnvExperiment, Base):
 
         i = 0
         for i in range(self.p.N_pulses):
-        
+
             self.measurement(i)
 
-            delay(20.e-6)
+            delay(2.e-6)
 
             self.raman.pulse(self.p.t_raman_pi_pulse)
+            # self.ttl.pd_scope_trig.on()
+            # delay(2.e-6)
+            # self.ttl.pd_scope_trig.off()
 
-            delay(3.e-6)
+            delay(800.e-9)
 
         self.ttl.raman_shutter.off()
 
@@ -91,10 +100,11 @@ class rabi_oscillation(EnvExperiment, Base):
 
         
         # reference pulse
-        self.integrator.begin_integrate()
-        self.imaging.pulse(self.p.t_imaging_pulse)
-        self.data.apd.shot_data[self.p.N_pulses] = self.integrator.stop_and_sample()
-        self.integrator.clear()
+        # self.integrator.begin_integrate()
+        # self.imaging.pulse(self.p.t_imaging_pulse)
+        # self.data.apd.shot_data[self.p.N_pulses] = self.integrator.stop_and_sample()
+        # self.integrator.clear()
+        self.measurement(i+1)
 
         delay(self.p.t_tof)
         self.abs_image()
