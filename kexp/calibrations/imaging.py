@@ -15,8 +15,11 @@ I_LF_HF_THRESHOLD = 45.
 @portable
 def imaging_lightshift(amp_imaging) -> TFloat:
    # source run id: 64264
-   lightshift_slope_Hz_per_amp = 60236.37824283179
-   lightshift_intercept_Hz = -3369.647852307185
+   # lightshift_slope_Hz_per_amp = 60236.37824283179
+   # lightshift_intercept_Hz = -3369.647852307185
+   # source run id: 64467
+   lightshift_slope_Hz_per_amp = 54079.54114287742
+   lightshift_intercept_Hz = -2294.634001231111
    return lightshift_slope_Hz_per_amp * amp_imaging + lightshift_intercept_Hz
 
 ######
@@ -26,21 +29,21 @@ def integrator_calibration(amp_imaging, t_imaging):
 
    # notes: https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.cvj0bnjp2og4#heading=h.9wxppk5x5p7x
 
-   # source atomdata run_ids: ad_time=64263, ad_amp=64262
+   # source atomdata run_ids: ad_time=64477, ad_amp=64478
    # Voltage model (state-index keyed)
    _VOLTAGE_MODEL_BY_STATE = {
-      0: {'b': -0.21729765625, 'k_t': -3208.33333333, 'k_a': 0.0221800595238},
-      1: {'b': -0.27353125, 'k_t': 6870.03968254, 'k_a': 0.131696428571},
+      0: {'b': -0.217435329861, 'k_t': -2873.67724868, 'k_a': 0.0175223214286},
+      1: {'b': -0.283308060516, 'k_t': 9161.04497354, 'k_a': 0.147723214286},
    }
    # Photon-rate model (state-index keyed)
    _PHOTON_RATE_MODEL_BY_STATE = {
-      0: {'b': -12.5683566418, 'k_t': 474798.248551, 'k_a': 53.316723475},
-      1: {'b': -25.7080218505, 'k_t': 1653122.17917, 'k_a': 244.219474551},
+      0: {'b': -7.083754699, 'k_t': 1784743.18252, 'k_a': 50.16702638},
+      1: {'b': -61.1782628347, 'k_t': 10805536.7256, 'k_a': 443.85915639},
    }
    # Photon-number STD model (state-index keyed)
    _PHOTON_NUMBER_STD_MODEL_BY_STATE = {
-      0: {'b': 10.566118639, 'k_t': 2774226.53904, 'k_a': -12.7258033633},
-      1: {'b': 3.38301618956, 'k_t': 10441637.8607, 'k_a': -1.52497818869},
+      0: {'b': -17.6948995401, 'k_t': 10720699.4008, 'k_a': 27.9319571481},
+      1: {'b': -3.60664397109, 'k_t': 14649434.1488, 'k_a': 5.2848037042},
    }
 
    def integrated_imaging_voltage(amp_imaging, t_imaging, state):
@@ -70,7 +73,6 @@ def integrator_calibration(amp_imaging, t_imaging):
 
    photons_up = integrated_imaging_photon_number(amp_imaging, t_imaging, 1)
    photons_down = integrated_imaging_photon_number(amp_imaging, t_imaging, 0)
-   print(photons_up, photons_down, np.sqrt(photons_up), np.sqrt(photons_down ))
    delta_photons = photons_up - photons_down
 
    std_photons_up = integrated_imaging_photon_number_std(amp_imaging, t_imaging, 1)
