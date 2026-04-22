@@ -15,19 +15,20 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('amp_imaging', np.linspace(0.1, 0.4, 4))
+        # self.xvar('amp_imaging', np.linspace(0.2, 1.5, 6))
         self.xvar('with_imaging', [0,1])
         self.xvar('relative_phase', np.linspace(0., 2*np.pi, 15))
 
-        self.p.t_ramsey = 10.e-6
+        self.p.t_ramsey = 15.e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
         # self.xvar('amp_imaging',np.linspace(0.1,.4,10))
-        self.p.amp_imaging = 0.41
+        self.p.amp_imaging = .41
+        
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 100.e-6
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 
@@ -36,7 +37,10 @@ class hf_raman(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        self.imaging.set_power(self.p.amp_imaging)
+        if self.p.amp_imaging == 0:
+            self.image = False
+        else:
+            self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
         self.prep_raman()
@@ -78,13 +82,11 @@ class hf_raman(EnvExperiment, Base):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
 
-        from waxa import atomdata
-
-        import time
-        time.sleep(0.25)
-        ad = atomdata(0)
-
-        self.extract_light_shift(ad)
+        # from waxa import atomdata
+        # import time
+        # time.sleep(0.25)
+        # ad = atomdata(0)
+        # self.extract_light_shift(ad)
 
     def extract_light_shift(self, ad):
         from scipy.optimize import curve_fit
@@ -252,4 +254,3 @@ class hf_raman(EnvExperiment, Base):
         plt.show()
 
         print(f'self.p.omega_lightshift = 2 * np.pi * {f_lightshift:.3g}  # rad/s, for imaging amp {ad.p.amp_imaging}')
-

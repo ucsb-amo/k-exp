@@ -18,29 +18,18 @@ class hf_monitored_rabi(EnvExperiment, Base):
         
         self.p.t_imaging_pulse = 20.e-6
         self.xvar('dummy',[0]*1000)
-        # self.xvar('t_raman_pulse',np.linspace(0.,25.,10)*1.e-6)
-        # self.xvar('phase_slm_mask',np.linspace(0.3,1.,15)*np.pi)
-        # self.xvar('frequency_detuned_hf_midpoint',
-        #           self.p.frequency_detuned_hf_midpoint+np.linspace(-40.e6,40.e6,15))
-
-        self.p.v_pd_hf_tweezer_squeeze_power = 6.
-        # self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(1.,6.,5))
-
-        self.p.frequency_detuned_hf_midpoint = -640.e6
         
-        # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
         self.p.amp_imaging = 0.5
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_mot_load = 1.0
         
         self.p.N_repeats = 1
-        self.p.phase_slm_mask = 0.4*np.pi
 
         self.camera_params.gain = 100
 
         self.data.apd = self.data.add_data_container(3)
-        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+        # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
         self.finish_prepare(shuffle=True)
 
@@ -59,28 +48,20 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
-        self.integrator.begin_integrate()
-        self.imaging.pulse(self.p.t_imaging_pulse)
-        self.data.apd.put_data(self.integrator.stop_and_sample(), 0)
-        self.integrator.clear()
+        self.integrated_imaging_pulse(self.data.apd, self.p.t_imaging_pulse, 0)
 
-        delay(self.p.t_imaging_pulse)
+        delay(10.e-6)
 
         self.raman.pulse(self.p.t_raman_pi_pulse)
 
-        self.integrator.begin_integrate()
-        self.imaging.pulse(self.p.t_imaging_pulse)
-        self.data.apd.put_data(self.integrator.stop_and_sample(), 1)
-        self.integrator.clear()
-        delay(5.e-6)
+        self.integrated_imaging_pulse(self.data.apd, self.p.t_imaging_pulse, 1)
+
+        delay(10.e-6)
 
         self.tweezer.off()
         delay(600.e-6)
 
-        self.integrator.begin_integrate()
-        self.imaging.pulse(self.p.t_imaging_pulse)
-        self.data.apd.put_data(self.integrator.stop_and_sample(), 2)
-        self.integrator.clear()
+        self.integrated_imaging_pulse(self.data.apd, self.p.t_imaging_pulse, 2)
 
         delay(self.p.t_tof)
 

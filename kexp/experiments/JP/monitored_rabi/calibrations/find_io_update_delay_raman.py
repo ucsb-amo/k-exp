@@ -14,11 +14,12 @@ class dds(EnvExperiment):
         self.ttl1 = self.get_device('ttl32')
         self.zotino0 = self.get_device('zotino0')
 
-        self.dds0 = DDS(5,3,1.e6,1.,device_db=device_db,dac_device=self.zotino0)
+        # raman 150+
+        self.dds0 = DDS(5,3,10.e6,0.5,device_db=device_db,dac_device=self.zotino0)
         self.dds0.get_devices(self)
 
-
-        self.dds1 = DDS(4,2,1.e6,1.,device_db=device_db,dac_device=self.zotino0)
+        # raman 80-
+        self.dds1 = DDS(4,2,10.e6,0.5,device_db=device_db,dac_device=self.zotino0)
         self.dds1.get_devices(self)
 
         self.t_idx = 0
@@ -31,9 +32,14 @@ class dds(EnvExperiment):
 
     @kernel
     def run(self):
+
         self.core.reset()
 
-        # with parallel:
+        self.dds0.dds_device.sync_data.io_update_delay = np.int32(-2)
+        self.dds1.dds_device.sync_data.io_update_delay = np.int32(0)
+
+        self.core.reset()
+
         self.dds0.init()
         delay(1.e-3)
         self.dds1.init()
@@ -47,54 +53,61 @@ class dds(EnvExperiment):
             self.dds1.set_dds(init=True)
         delay(1.e-6)
 
-        # self.dds0.off()
-        # self.dds1.off()
         self.dds0.set_phase_mode(0)
-        # self.dds1.set_phase_mode(1)
+        self.dds1.set_phase_mode(0)
 
         t = now_mu()
         
         t0 = now_mu() + 500500
 
-        # dt = T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU + int64(20)
-
-        # with parallel:
-        self.dds0.set_dds(frequency=88e6,
-                        t_phase_origin_mu=t0,
-                        phase=0.,
-                        init=True)
-        self.dds1.set_dds(frequency=88e6,
+        with parallel:
+            self.dds0.set_dds(frequency=10e6,
                             t_phase_origin_mu=t0,
                             phase=0.,
                             init=True)
+            self.dds1.set_dds(frequency=10e6,
+                                t_phase_origin_mu=t0,
+                                phase=0.,
+                                init=True)
         
-        self.dds1.dds_device.sync_data.io_update_delay = np.int32(2)
-
-        # at_mu(t0)
-        # p00 = self.dds0.set_dds(frequency=1.e6)
-        # at_mu(t0)
-        # p11 = self.dds1.set_dds(frequency=1.e6)
+        delay(10.e-3)
 
         self.fast_set()
+        self.dds0.reset_phase()
+        self.dds1.reset_phase()
+        p02 = self.dds0.get_phase()
+        p12 = self.dds1.get_phase()
 
-        delay_mu(110)
-        # p11 = self.dds1.update_phase()/(np.pi)
-        self.ttl1.pulse(1.e-6)
+        delay_mu(104)
+        t_update = now_mu()
+        p0 = self.dds0.get_phase()
+        p1 = self.dds1.get_phase()
+        self.ttl1.pulse(100.e-9)
+        
+        at_mu(t_update + 100)
+        p01 = self.dds0.get_phase()
+        p11 = self.dds1.get_phase()
 
         # print(p00)
-        # print((p11 - p00))
+        print(np.array([p02,p0,p01,p12,p1,p11])/(2*np.pi))
 
     @kernel
     def fast_set(self):
 
-        asf0 = self.dds0.dds_device.amplitude_to_asf(1.0)
-        asf1 = self.dds1.dds_device.amplitude_to_asf(1.0)
+        asf0 = self.dds0.dds_device.amplitude_to_asf(self.dds0.amplitude)
+        asf1 = self.dds1.dds_device.amplitude_to_asf(self.dds1.amplitude)
 
         pow0 = 0
         pow1 = 0
 
-        ftw0 = self.dds0.dds_device.frequency_to_ftw(1.e6)
-        ftw1 = self.dds1.dds_device.frequency_to_ftw(1.e6)
+        self.dds0._last_frequency = self.dds0.frequency
+        self.dds1._last_frequency = self.dds1.frequency
+
+        f0 = 5.e6
+        f1 = 2.5e6
+
+        ftw0 = self.dds0.dds_device.frequency_to_ftw(f0)
+        ftw1 = self.dds1.dds_device.frequency_to_ftw(f1)
         
         at_mu(now_mu() & ~7)
         with parallel:

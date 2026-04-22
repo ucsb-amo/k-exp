@@ -59,7 +59,7 @@ class feedback(EnvExperiment, Base, Feedback):
         
         self.p.t_calculation_slack_compensation_mu = 0
         self.N_pulses = 10 # number of steps of evolution
-        self.m = 21 # feedback grid size
+        self.m = 3 # feedback grid size
         self.p.feedback_guess_span_Omega = 5.0
         self.p.feedback_fractional_initial_offset = 0.
 
@@ -76,10 +76,9 @@ class feedback(EnvExperiment, Base, Feedback):
 
         ###
 
-        self.xvar('t_fifo_mu',np.linspace(30000, 38000, 15))
-        self.p.t_required_fifo_mu = int64(0)
+        self.xvar('t_calculation_slack_compensation_mu',np.linspace(27000, 50000, 100))
 
-        self.p.t_fifo_mu = int64(0)
+        self.p.t_fifo_mu = int64(18416)
         self.p.t_raman_set_pretrigger_mu = int64(1260)
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
             t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
@@ -167,20 +166,21 @@ class feedback(EnvExperiment, Base, Feedback):
                 self.data.t.shot_data[i+1] = t + self.p.t_raman_pulse + self.p.t_img_pulse
                 self.data.s_z.shot_data[i+1] = self.state_z[zidx]
 
-            if self.p.t_required_fifo_mu == 0:
-                self.p.t_required_fifo_mu = int64(self.p.t_fifo_mu)
+            aprint("NO underflow in feedback loop at =", self.p.t_calculation_slack_compensation_mu)
         except RTIOUnderflow:
             self.core.break_realtime()
-            aprint("underflow in feedback loop at =", self.p.t_fifo_mu)
+            aprint("underflow in feedback loop at =", self.p.t_calculation_slack_compensation_mu)
 
     @kernel
     def scan_kernel(self):
 
+        aprint('\n')
+
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
-            t_calculation_slack_compensation_mu=0, #int64(self.p.t_calculation_slack_compensation_mu),
+            t_calculation_slack_compensation_mu=int64(self.p.t_calculation_slack_compensation_mu),
             t_raman_pulse=self.p.t_raman_pulse,
             t_img_pulse=self.p.t_img_pulse,
-            t_fifo_mu=int64(self.p.t_fifo_mu)
+            t_fifo_mu=self.p.t_fifo_mu
         )
         aprint(self.p.t_between_pulses_mu)
 

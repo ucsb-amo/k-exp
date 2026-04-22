@@ -17,8 +17,8 @@ class ramsey(EnvExperiment, Base):
 
         # self.xvar('frequency_raman_transition', 147.2521e6 + np.linspace(-2.,2,5)*1.e3)
         # self.xvar('frequency_raman_transition', self.p.frequency_raman_transition + np.arange(-20.,20.,1.)*1.e3)
-        self.xvar('frequency_raman_transition', self.p.frequency_raman_transition + np.linspace(-3.,3.,7)*1.e3)
-        self.xvar('t_ramsey',np.linspace(0.,100.,5)*1.e-6)
+        self.xvar('frequency_raman_transition', self.p.frequency_raman_transition + np.linspace(-5.,5.,11)*1.e3)
+        self.xvar('t_ramsey',np.linspace(0.,150.,10)*1.e-6)
         # self.p.t_ramsey = 40.e-6
 
         self.p.t_tof = 10.e-6
@@ -132,4 +132,4 @@ class ramsey(EnvExperiment, Base):
         plt.title(f"Run {ad.run_info.run_id}: darkest-frequency fit")
         plt.legend()
         plt.tight_layout()
-        plt.show(block=False)
+        plt.show()
