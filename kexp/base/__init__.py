@@ -4,4 +4,4 @@ from .image import Image
 from .cameras import Cameras
 from .control import Control
 from .clients import Clients
-from .feedback import Feedback, FeedbackReplay
+from .feedback import Feedback
