@@ -17,7 +17,7 @@ class hf_raman(EnvExperiment, Base):
  
         self.xvar('t_raman_pulse', np.linspace(0., 60., 30)*1.e-6)
         
-        self.p.amp_imaging = .5
+        self.p.amp_imaging = .2
 
         self.p.hf_imaging_detuning =  -568.e6 # 182. with PID
 

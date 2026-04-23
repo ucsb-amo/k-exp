@@ -13,7 +13,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=True,
+                      save_data=False,
                       imaging_type=img_types.DISPERSIVE)
 
         self.p.frequency_raman_transition = 119.4639e6 + 30.57e3 # 182 A -1 --> 0 + .2 img amp lightshift
@@ -39,7 +39,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 100
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -83,10 +83,10 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.abs_image()
 
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
-        self.core.break_realtime()
-        delay(30.e-3)
+        # self.core.wait_until_mu(now_mu())
+        # self.scope.read_sweep(0)
+        # self.core.break_realtime()
+        # delay(30.e-3)
 
     @kernel
     def run(self):

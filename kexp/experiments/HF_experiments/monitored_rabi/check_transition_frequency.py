@@ -16,7 +16,7 @@ class hf_raman(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
 
-        self.xvar('frequency_raman_transition',119.4636e6 + np.linspace(-1.e3,1.e3,10))
+        self.xvar('frequency_raman_transition',119.4639e6 + np.linspace(-1.e3,1.e3,10))
 
         self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 5))
  
@@ -24,7 +24,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
         
         # self.xvar('amp_imaging',np.linspace(0.1,.8,10))
-        self.p.amp_imaging = .5
+        self.p.amp_imaging = .2
 
         self.p.hf_imaging_detuning =  -568.e6 # 182. with PID
 
