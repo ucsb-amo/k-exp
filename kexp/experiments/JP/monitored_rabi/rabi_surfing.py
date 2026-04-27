@@ -27,7 +27,7 @@ class rabi_oscillation(EnvExperiment, Base):
         # self.p.N_pulse_divisor = 3
         # self.xvar('t_raman_pulse', self.p.t_raman_pulse * np.linspace(0.97,1.3,7))
         self.p.t_effective_pulse_time = 3.14e-6
-        self.xvar('t_raman_pulse', self.p.t_effective_pulse_time * np.linspace(0.95,1.05,7))
+        self.xvar('t_raman_pulse', self.p.t_effective_pulse_time * np.linspace(0.9,1.5,7))
 
         # self.xvar('phase_rabi_surf_train_radians',np.linspace(0.,np.pi,5))
         self.p.phase_rabi_surf_train_radians = 0
