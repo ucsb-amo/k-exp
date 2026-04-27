@@ -16,16 +16,16 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.frequency_raman_transition = 119.4639e6 + 30.57e3 # 182 A -1 --> 0 + .2 img amp lightshift
+        self.p.frequency_raman_transition = 1.19740406e+08
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 300.e-6
+        self.p.t_continuous_rabi = 450.e-6
 
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
         self.p.t_raman_pulse = 8.8699e-6
         
         # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = 1.7
 
         self.p.hf_imaging_detuning = -568.e6 # 182.
 
@@ -49,7 +49,6 @@ class hf_monitored_rabi(EnvExperiment, Base):
     def scan_kernel(self):
         
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning_mid)
-        # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
@@ -74,7 +73,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.ttl.raman_shutter.off()
         
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
-        self.imaging.set_power(.5,reset_pid=True)
+        self.imaging.set_power(.2,reset_pid=True)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -93,7 +92,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe()
+        # self.mot_observe()
 
     def analyze(self):
         import os
