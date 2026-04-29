@@ -19,7 +19,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_imaging_pulse = 20.e-6
         self.xvar('dummy',[0]*1000)
         
-        self.p.amp_imaging = 0.5
+        self.p.amp_imaging = 0.2
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_mot_load = 1.0

@@ -86,9 +86,9 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.p.amp_imaging = 0.2
         self.p.t_img_pulse = 5.e-6
-        self.p.frequency_lightshift = .8*33.34e3
-        # self.p.frequency_lightshift = 3b uh
-        # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
+        self.p.frequency_lightshift = .35*33.34e3
+        # self.p.frequency_lightshift = 3
+        # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.5,1.5,5))
         self.p.v_apd_all_up = -0.161075
         self.p.v_apd_all_down = -0.22249687499999998
         
@@ -100,10 +100,10 @@ class feedback(EnvExperiment, Base, Feedback):
         # self.xvar('t_synchro_compensation_mu', T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU*np.linspace(-2.,2.,9))
 
         Omega = np.pi / self.p.t_raman_pi_pulse
-    #     rand_list = np.array([-0.21865862,  0.43469858,  0.1213626,  0.41688688,  0.29501175,
-    #    -0.31005943,  0.38354877,  0.30609096,  0.11595314,  0.18202263,
-    #     0.35998194, -0.26850061, -0.0969936 ,  0.3203508 , -0.00077061])
-        # # rand_list = np.zeros(15)
+        # rand_list = np.array([ 0.87806559,  0.29882322,  0.44058422, -0.64190764,  0.38040383,
+        #                         0.74830151,  0.43857715, -0.06826367,  0.91981918,  0.72435788,
+        #                     -0.68278731,  0.56500965, -0.6119466 ,  0.0901727 ,  0.25799449])
+        # rand_list = np.zeros(15)
         # self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + 2. * Omega * rand_list
 
         # self.p.amp_imaging = 0.82
@@ -114,15 +114,15 @@ class feedback(EnvExperiment, Base, Feedback):
         # self.p.v_apd_all_up = -0.12634375
         # self.p.v_apd_all_down = -0.22252083333333336
 
-        self.p.feedback_fractional_initial_offset = 3.
+        self.p.feedback_fractional_initial_offset = 0.
 
-        self.p.update_raman_frequency_bool = 1
+        self.p.update_raman_frequency_bool = 0
     
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 100
+        self.p.N_repeats = 10
         
-        self.m = 21 # feedback grid size
+        self.m = 3 # feedback grid size
         # self.N_pulses = 15 # number of steps of evolution
         self.N_pulses = 15 # number of steps of evolution
 

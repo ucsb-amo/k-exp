@@ -10,59 +10,6 @@ from kexp.util.artiq.async_print import aprint
 
 T_CONV_MU = 30
 
-# self.p.frequency_lightshift = 19136.37136929461
-
-# # 5 us img pulse .41 img amp
-# self.p.amp_imaging = 0.41
-# self.p.t_img_pulse = 5.e-6
-# self.p.v_apd_all_up = -0.175546875
-# self.p.v_apd_all_down = -0.22287500000000002
-# self.p.frequency_lightshift = 19136.37136929461
-# self.p.frequency_lightshift += 12.e3 # magic number
-
-# 10 us img pulse .41 img amp
-# self.p.amp_imaging = 0.41
-# self.p.t_img_pulse = 10.e-6
-# self.p.v_apd_all_up = -0.127984375 
-# self.p.v_apd_all_down = -0.23432187500000004
-# self.p.frequency_lightshift = 19136.37136929461
-# self.p.frequency_lightshift += 12.e3 # magic number
-
-# # 5 us img pulse .82 img amp
-# self.p.amp_imaging = 0.82
-# self.p.t_img_pulse = 5.e-6
-# self.p.v_apd_all_up = -0.10875625
-# self.p.v_apd_all_down = -0.21389687500000001
-# self.p.frequency_lightshift = 37624.39419087137
-# self.p.frequency_lightshift += 12.e3 # magic number
-
-### calibrations
-
-# self.p.n_photons_per_us_per_img_amp = 231 
-# self.p.n_photons_per_shot = self.p.n_photons_per_us_per_img_amp * self.p.amp_imaging * self.p.t_img_pulse * 1.e6
-# self.p.n_photons_per_us_per_imgamp = 215.885
-# self.p.feedback_photon_count_scale = 0.1
-# self.p.std_n_photons_per_shot = 0.1 * self.p.n_photons_per_shot * self.p.feedback_photon_count_scale
-# self.p.frequency_lightshift = 19136.37136929461
-
-# Feedback.__init__(self,
-#                           t_raman_pulse = self.p.t_raman_pulse,
-#                           t_img_pulse = self.p.t_img_pulse,
-#                           amp_imaging = self.p.amp_imaging,
-#                           t_raman_pi_pulse = self.p.t_raman_pi_pulse,
-#                           frequency_resonance = self.p.frequency_raman_transition,
-#                         #   frequency_z_lightshift = self.p.frequency_lightshift,
-#                         #   photon_count_scale = self.p.feedback_photon_count_scale,
-#                           m = self.m,
-#                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
-#                           guess_span_Omega = self.p.feedback_guess_span_Omega,
-#                         #   n_photons_per_shot = self.p.n_photons_per_shot,
-#                         #   std_n_photons_per_shot = self.p.std_n_photons_per_shot
-#                         #   v_apd_all_up = self.p.v_apd_all_up,
-#                         #   v_apd_all_down = self.p.v_apd_all_down,
-#                         #   n_photons_per_shot=self.p.n_photons_per_shot
-#                           )
-
 from waxx.control.artiq.DDS import T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU
 
 class feedback(EnvExperiment, Base, Feedback):
@@ -75,56 +22,49 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        # self.p.t_raman_pulse = 3.14e-6 # 64602
-        # self.p.t_raman_pulse_ideal = self.p.t_raman_pi_pulse / 3
-
-        # n_repeats = 3
-        # self.xvar('dummy', np.linspace(0.,1.,n_repeats))
-
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
-        self.p.t_raman_pulse_ideal = self.p.t_raman_pulse
+        self.p.t_raman_pulse_ideal = self.p.t_raman_pulse - 600.e-9
 
         self.p.amp_imaging = 0.2
         self.p.t_img_pulse = 5.e-6
-        self.p.frequency_lightshift = .8*33.34e3
-        # self.p.frequency_lightshift = 3b uh
-        # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
+        self.p.frequency_lightshift = 1.*33.34e3
+        self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.5,1.5,7))
         self.p.v_apd_all_up = -0.161075
-        self.p.v_apd_all_down = -0.22249687499999998
+        self.p.v_apd_all_down = -0.2224968749
+
+        # self.p.amp_imaging = 0.2
+        # self.p.t_img_pulse = 10.e-6
+        # self.p.frequency_lightshift = 1.2*33.34e3
+        # # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
+        # self.p.v_apd_all_up = -0.076790625
+        # self.p.v_apd_all_down = -0.22614375
         
         self.p.n_photons_per_shot = 800
         self.p.n_std_photons_per_shot = 50
 
-        # self.p.t_synchro_compensation_mu = T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU
-        # self.p.t_synchro_compensation_mu = 1256
-        # self.xvar('t_synchro_compensation_mu', T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU*np.linspace(-2.,2.,9))
-
         Omega = np.pi / self.p.t_raman_pi_pulse
-    #     rand_list = np.array([-0.21865862,  0.43469858,  0.1213626,  0.41688688,  0.29501175,
+
+    #     rand_list = np.array([-0.,  0.,  0.,  0.,  0.29501175,
     #    -0.31005943,  0.38354877,  0.30609096,  0.11595314,  0.18202263,
     #     0.35998194, -0.26850061, -0.0969936 ,  0.3203508 , -0.00077061])
-        # # rand_list = np.zeros(15)
-        # self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + 2. * Omega * rand_list
 
-        # self.p.amp_imaging = 0.82
-        # self.p.t_img_pulse = 5.e-6
-        # # self.p.frequency_lightshift = 42.62e3
-        # self.p.frequency_lightshift = 24.e3
-        # # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(0.1,1.5,7))
-        # self.p.v_apd_all_up = -0.12634375
-        # self.p.v_apd_all_down = -0.22252083333333336
+        rand_list = np.array([0.,  4.,  4.,  0.,  0.,
+       -0.,  0.,  0.,  0.,  0.,
+        0., -0., -0. ,  0. , -0.])
 
-        self.p.feedback_fractional_initial_offset = 3.
+        self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + (2*Omega * rand_list)
 
-        self.p.update_raman_frequency_bool = 1
+        self.p.feedback_fractional_initial_offset = 0.
+
+        self.p.update_raman_frequency_bool = 0
     
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 100
+        self.p.N_repeats = 3
         
-        self.m = 21 # feedback grid size
+        self.m = 3 # feedback grid size
         # self.N_pulses = 15 # number of steps of evolution
-        self.N_pulses = 15 # number of steps of evolution
+        self.N_pulses = 8 # number of steps of evolution
 
         self.p.t_tweezer_hold = 30.e-3
 
@@ -191,10 +131,10 @@ class feedback(EnvExperiment, Base, Feedback):
 
     @kernel
     def feedback_loop(self, t_start_mu,
-                       update_raman_frequency=1,
+                       update_raman_frequency=0,
                        update_rabi_frequency=0,
-                       include_photon_noise=0):
-        
+                       include_photon_noise=1):
+
         self.omega_z_lightshift = 2*np.pi * self.p.frequency_lightshift
 
         k = 0
@@ -205,7 +145,7 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(now_mu() & ~7)
 
         at_mu(t_start_mu - 10000)
-        self.raman.set_frequency_fast(f)
+        self.raman.set_frequency_fast(self.p.omega_pulse_list[0] / (2*np.pi))
         self.raman.reset_phase()
         # aprint(self.raman.get_phase())
         # self._phase = 0
@@ -214,14 +154,15 @@ class feedback(EnvExperiment, Base, Feedback):
         
         for i in range(self.N_pulses):
             
-            # self.omega_raman = self.p.omega_pulse_list[i] # comment out to use feedback, uncomment to use open loop with randomized pulse-to-pulse variations in Omega
+            self.omega_raman = self.p.omega_pulse_list[i] # comment out to use feedback, uncomment to use open loop with randomized pulse-to-pulse variations in Omega
 
             f = self.omega_raman / (2*np.pi)
             self.data.omega_raman.shot_data[i] = self.omega_raman
             # self.data.Omega.shot_data[i+1] = var
 
-            at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
-            self.raman.set_frequency_fast(f)
+            if i > 0:
+                at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
+                self.raman.set_frequency_fast(f)
 
             t = (t_step - t_start_mu)*1.e-9
             at_mu(t_step)
@@ -238,7 +179,7 @@ class feedback(EnvExperiment, Base, Feedback):
                                                     update_rabi_frequency=update_rabi_frequency,
                                                     include_photon_noise=include_photon_noise)
 
-            # aprint( (phi_pow - self._phase ) & int32(0xffff) )
+            # aprint( (phi_pow - self._phase ) & int32(0xffff))
             # self._phase = phi_pow
 
             t_step += self.p.t_between_pulses_mu
