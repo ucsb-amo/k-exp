@@ -109,6 +109,8 @@ class Feedback:
         state_z = self.state_z
         P0 = self.P0
 
+        
+
         m = self.m
         n_photons = int(self.N_photons_per_shot)
 
@@ -203,8 +205,8 @@ class Feedback:
             nx = cos_z * hx + sin_z * hy
             ny = -sin_z * hx + cos_z * hy
 
-            state_x[j] = nx
-            state_y[j] = ny
+            state_x[j] = nx * self.back_action_coherence
+            state_y[j] = ny * self.back_action_coherence
             state_z[j] = hz
 
             p1 = (1.0 + hz) / 2.0
