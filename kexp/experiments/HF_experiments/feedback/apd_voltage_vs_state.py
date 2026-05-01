@@ -14,7 +14,7 @@ class sigma_z(EnvExperiment, Base):
         
         self.p.amp_imaging = 0.2
         # self.xvar('amp_imaging', np.linspace(0.4, 0.7, 5))
-        self.p.t_pci_pulse = 10.e-6
+        self.p.t_pci_pulse = 5.e-6
         # self.xvar('t_pci_pulse', np.linspace(3.e-6, 10.e-6, 5))
         
         self.p.t_between_pulses_mu = 20000  # from pulse start to next pulse start, in mu

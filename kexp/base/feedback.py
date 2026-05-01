@@ -48,6 +48,7 @@ class Feedback:
         v_apd_all_down=None,
         n_photons_per_shot=None,
         std_n_photons_per_shot=None,
+        back_action_coherence=None,
         photon_count_scale=1.0,
         m=21,
         fractional_initial_offset=-5.0,
@@ -349,6 +350,7 @@ class Feedback:
         self,
         amp_imaging,
         frequency_z_lightshift,
+        back_action_coherence=None
     ):
         self.p.frequency_lightshift = self._resolve_lightshift_calibration(
             amp_imaging=amp_imaging,
@@ -356,6 +358,7 @@ class Feedback:
         )
         self.frequency_z_lightshift = self.p.frequency_lightshift
         self.omega_z_lightshift = 2.0 * np.pi * self.frequency_z_lightshift
+        self.back_action_coherence = self.p.back_action_coherence
 
     def _initialize_frequency_grid(
         self,

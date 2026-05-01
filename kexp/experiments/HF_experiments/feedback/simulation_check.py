@@ -25,23 +25,41 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
         self.p.t_raman_pulse_ideal = self.p.t_raman_pulse - 300.e-9
 
-        # self.p.amp_imaging = 0.2
-        # self.p.t_img_pulse = 5.e-6
-        # self.p.frequency_lightshift = 2*33.34e3
-    
-        # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(1.5,2.5,5))
-        # self.p.v_apd_all_up = -0.161075
-        # self.p.v_apd_all_down = -0.22249687499999998
+        self.p.back_action_coherence = .99
+        #self.xvar('back_action_coherence', np.linspace(.5,1.,7))
 
         self.p.amp_imaging = 0.2
-        self.p.t_img_pulse = 10.e-6
-        self.p.frequency_lightshift = 1.4*33.34e3
-        # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
-        self.p.v_apd_all_up = -0.076790625
-        self.p.v_apd_all_down = -0.22614375
+        self.p.t_img_pulse = 5.e-6
+        self.p.frequency_lightshift = 1.*33.34e3  ## 2.75 * 22.34e3 for 0 detuning
+    
+        # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.8,1.2,7))
+        self.p.v_apd_all_up = -0.157271875
+        self.p.v_apd_all_down = -0.224303125
+
+        # self.p.amp_imaging = 0.2
+        # self.p.t_img_pulse = 10.e-6
+        # self.p.frequency_lightshift = 1.2*33.34e3
+        # # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
+        # self.p.v_apd_all_up = -0.076790625
+        # self.p.v_apd_all_down = -0.22614375
         
         self.p.n_photons_per_shot = 800
         self.p.n_std_photons_per_shot = 50
+
+        Omega = np.pi / self.p.t_raman_pi_pulse
+
+    #     rand_list = np.array([-0.,  0.,  0.,  0.,  0.29501175,
+    #    -0.31005943,  0.38354877,  0.30609096,  0.11595314,  0.18202263,
+    #     0.35998194, -0.26850061, -0.0969936 ,  0.3203508 , -0.00077061])
+        self.p.intermediate_detuning = 2*np.pi*self.p.frequency_raman_transition + 2*Omega*0
+        # self.xvar('intermediate_detuning',  2*np.pi*self.p.frequency_raman_transition + 2*Omega*np.linspace(5, 5.5, 11))
+
+        rand_list = np.array([.0, .0, .0, .0, .0,
+       -0.,  0.,  0.,  0.,  0.,
+        0., -0., -0. ,  0. , -0.])
+
+        self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + (2*Omega * rand_list)
+        #self.xvar('omega_pulse_list', 5+np.linspace(0, 2, 10))
 
         self.p.feedback_fractional_initial_offset = 0.
 
@@ -60,6 +78,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.feedback_guess_span_Omega = 5.0
 
         ###
+
         # timing docs: https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.cvj0bnjp2og4#heading=h.pimm1a640bup
         self.p.t_calculation_slack_compensation_mu = int64(0.61 * self.m * 1.e3) + 15000 if self.m > 10 else int64(10000)
         self.p.t_fifo_mu = int64(18416)
@@ -103,6 +122,7 @@ class feedback(EnvExperiment, Base, Feedback):
                           m = self.m,
                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
                           guess_span_Omega = self.p.feedback_guess_span_Omega,
+                          back_action_coherence = self.p.back_action_coherence
                           )
         
         self.zidx = np.argmin(abs(self.omega_guess_list - self.p.frequency_raman_transition * 2*np.pi))
@@ -117,10 +137,10 @@ class feedback(EnvExperiment, Base, Feedback):
 
     @kernel
     def feedback_loop(self, t_start_mu,
-                       update_raman_frequency=1,
+                       update_raman_frequency=0,
                        update_rabi_frequency=0,
-                       include_photon_noise=0):
-        
+                       include_photon_noise=1):
+
         self.omega_z_lightshift = 2*np.pi * self.p.frequency_lightshift
 
         k = 0
@@ -131,7 +151,7 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(now_mu() & ~7)
 
         at_mu(t_start_mu - 10000)
-        self.raman.set_frequency_fast(f)
+        self.raman.set_frequency_fast(self.p.omega_pulse_list[0] / (2*np.pi))
         self.raman.reset_phase()
         # aprint(self.raman.get_phase())
         # self._phase = 0
@@ -139,11 +159,18 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(t_start_mu)
         
         for i in range(self.N_pulses):
+            self.omega_raman = self.p.omega_pulse_list[i] 
 
+            # if i == 2:
+            #     self.omega_raman = self.p.intermediate_detuning
+            # else:
+            #     self.omega_raman = self.p.omega_pulse_list[i] 
+            #     #pass
+            
             f = self.omega_raman / (2*np.pi)
             self.data.omega_raman.shot_data[i] = self.omega_raman
             # self.data.Omega.shot_data[i+1] = var
-            
+
             if i > 0:
                 at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
                 self.raman.set_frequency_fast(f)
@@ -162,6 +189,9 @@ class feedback(EnvExperiment, Base, Feedback):
                                                     update_raman_frequency=update_raman_frequency,
                                                     update_rabi_frequency=update_rabi_frequency,
                                                     include_photon_noise=include_photon_noise)
+
+            # aprint( (phi_pow - self._phase ) & int32(0xffff))
+            # self._phase = phi_pow
 
             t_step += self.p.t_between_pulses_mu
 

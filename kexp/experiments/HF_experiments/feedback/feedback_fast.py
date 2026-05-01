@@ -23,26 +23,28 @@ class feedback(EnvExperiment, Base, Feedback):
         ### parameters
 
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
-        self.p.t_raman_pulse_ideal = self.p.t_raman_pulse - 400.e-9
+        self.p.t_raman_pulse_ideal = self.p.t_raman_pulse - 300.e-9
 
-        # self.p.amp_imaging = 0.2
-        # self.p.t_img_pulse = 5.e-6
-        # self.p.frequency_lightshift = 2.*33.34e3
-        # # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
-        # self.p.v_apd_all_up = -0.162490625
-        # self.p.v_apd_all_down = -0.224203125
+        self.p.back_action_coherence = .99
 
         self.p.amp_imaging = 0.2
-        self.p.t_img_pulse = 10.e-6
-        self.p.frequency_lightshift = 2.*33.34e3
+        self.p.t_img_pulse = 5.e-6
+        self.p.frequency_lightshift = 2.85*33.34e3
         # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
-        self.p.v_apd_all_up = -0.076790625
-        self.p.v_apd_all_down = -0.22614375
+        self.p.v_apd_all_up = -0.157271875
+        self.p.v_apd_all_down = -0.224303125
+
+        # self.p.amp_imaging = 0.2
+        # self.p.t_img_pulse = 10.e-6
+        # self.p.frequency_lightshift = 2.*33.34e3
+        # # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
+        # self.p.v_apd_all_up = -0.076790625
+        # self.p.v_apd_all_down = -0.22614375
         
         self.p.n_photons_per_shot = 800
         self.p.n_std_photons_per_shot = 50
 
-        self.p.feedback_fractional_initial_offset = 3.
+        self.p.feedback_fractional_initial_offset = 1.
 
         self.p.update_raman_frequency_bool = 1
     
@@ -56,7 +58,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.p.t_tweezer_hold = 30.e-3
 
-        self.p.feedback_guess_span_Omega = 5.0
+        self.p.feedback_guess_span_Omega = 1.0
 
         ###
 
