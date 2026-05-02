@@ -18,7 +18,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         # self.p.frequency_raman_transition = 147.2778e6 # .1 img amp
         # self.p.frequency_raman_transition = 119.48395e6 # 182 A -1 --> 0\
-        self.p.frequency_raman_transition = 119.4980e6 # 182 A -1 --> 0
+        self.p.frequency_raman_transition = 119.4636e6 # 182 A -1 --> 0
         # self.xvar('frequency_raman_transition', 119544805.0 + np.linspace(-75.e3,75.e3,10))
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
@@ -27,7 +27,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_raman_pulse',[0, 8.7e-06 / 2, 8.7e-06])
 
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
-        # self.p.t_raman_pulse = 8.8699e-6
+        self.p.t_raman_pulse = 8.8699e-6
         
         # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
         self.p.amp_imaging = .2
@@ -50,7 +50,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 100
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 

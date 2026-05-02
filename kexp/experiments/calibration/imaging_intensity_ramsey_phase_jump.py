@@ -19,7 +19,7 @@ class hf_raman(EnvExperiment, Base):
         self.xvar('with_imaging', [0,1])
         self.xvar('relative_phase', np.linspace(0., 2*np.pi, 15))
 
-        self.p.t_ramsey = 15.e-6
+        self.p.t_ramsey = 10.e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
         # self.xvar('amp_imaging',np.linspace(0.1,.4,10))
@@ -37,10 +37,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
-        if self.p.amp_imaging == 0:
-            self.image = False
-        else:
-            self.imaging.set_power(self.p.amp_imaging)
+        self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
         self.prep_raman()

@@ -23,16 +23,16 @@ class feedback(EnvExperiment, Base, Feedback):
         ### parameters
 
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
-        self.p.t_raman_pulse_ideal = self.p.t_raman_pulse - 300.e-9
+        self.p.t_raman_pulse_ideal = self.p.t_raman_pulse + 200.e-9
 
         self.p.back_action_coherence = .99
 
         self.p.amp_imaging = 0.2
         self.p.t_img_pulse = 5.e-6
-        self.p.frequency_lightshift = 2.85*33.34e3
+        self.p.frequency_lightshift = 33.34e3
         # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
-        self.p.v_apd_all_up = -0.157271875
-        self.p.v_apd_all_down = -0.224303125
+        self.p.v_apd_all_up = -0.161046875
+        self.p.v_apd_all_down = -0.222725
 
         # self.p.amp_imaging = 0.2
         # self.p.t_img_pulse = 10.e-6
@@ -44,21 +44,21 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.n_photons_per_shot = 800
         self.p.n_std_photons_per_shot = 50
 
-        self.p.feedback_fractional_initial_offset = 1.
+        self.p.feedback_fractional_initial_offset = 5.
 
         self.p.update_raman_frequency_bool = 1
     
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 10
+        self.p.N_repeats = 500
         
         self.m = 21 # feedback grid size
         # self.N_pulses = 15 # number of steps of evolution
-        self.N_pulses = 10 # number of steps of evolution
+        self.N_pulses = 20 # number of steps of evolution
 
         self.p.t_tweezer_hold = 30.e-3
 
-        self.p.feedback_guess_span_Omega = 1.0
+        self.p.feedback_guess_span_Omega = 5.0
 
         ###
 
@@ -137,6 +137,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.raman.reset_phase()
         # aprint(self.raman.get_phase())
         # self._phase = 0
+        phase_tracker = 0.
 
         at_mu(t_start_mu)
         
@@ -153,9 +154,12 @@ class feedback(EnvExperiment, Base, Feedback):
             t = (t_step - t_start_mu)*1.e-9
             at_mu(t_step)
 
-            phi_pow = self.raman.get_phase()
+            # phi_pow = self.raman.get_phase()
             
-            phi = self.raman.pow_to_phase(phi_pow)
+            # phi = self.raman.pow_to_phase(phi_pow)
+            phi = phase_tracker
+
+            phase_tracker = phase_tracker + (1.e-9*self.p.t_between_pulses_mu) * self.omega_raman + np.pi/4
 
             self.raman.pulse(self.p.t_raman_pulse)
             k = self.measurement(i)
