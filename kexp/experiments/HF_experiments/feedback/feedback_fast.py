@@ -31,15 +31,10 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.t_img_pulse = 5.e-6
         self.p.frequency_lightshift = 33.34e3
         # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
-        self.p.v_apd_all_up = -0.161046875
-        self.p.v_apd_all_down = -0.222725
+        self.p.v_apd_all_up = -0.15053437500000003
+        self.p.v_apd_all_down = -0.21369375000000002
 
-        # self.p.amp_imaging = 0.2
-        # self.p.t_img_pulse = 10.e-6
-        # self.p.frequency_lightshift = 2.*33.34e3
-        # # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
-        # self.p.v_apd_all_up = -0.076790625
-        # self.p.v_apd_all_down = -0.22614375
+        self.p.phase_offset = .55
         
         self.p.n_photons_per_shot = 800
         self.p.n_std_photons_per_shot = 50
@@ -159,7 +154,7 @@ class feedback(EnvExperiment, Base, Feedback):
             # phi = self.raman.pow_to_phase(phi_pow)
             phi = phase_tracker
 
-            phase_tracker = phase_tracker + (1.e-9*self.p.t_between_pulses_mu) * self.omega_raman + np.pi/4
+            phase_tracker = phase_tracker + (1.e-9*self.p.t_between_pulses_mu) * self.omega_raman + self.p.phase_offset
 
             self.raman.pulse(self.p.t_raman_pulse)
             k = self.measurement(i)
