@@ -18,19 +18,19 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         # self.p.frequency_raman_transition = 147.2778e6 # .1 img amp
         # self.p.frequency_raman_transition = 119.48395e6 # 182 A -1 --> 0\
-        self.p.frequency_raman_transition = 119.4636e6 # 182 A -1 --> 0
+        self.p.frequency_raman_transition = 119570351.42857143 # 182 A -1 --> 0
         # self.xvar('frequency_raman_transition', 119544805.0 + np.linspace(-75.e3,75.e3,10))
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 300.e-6
+        self.p.t_continuous_rabi = 400.e-6
 
         # self.xvar('t_raman_pulse',[0, 8.7e-06 / 2, 8.7e-06])
 
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
-        self.p.t_raman_pulse = 8.8699e-6
+        # self.p.t_raman_pulse = 8.8699e-6
         
-        self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
-        self.p.amp_imaging = 1.5
+        # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
+        self.p.amp_imaging = .6
 
         self.p.hf_imaging_detuning = -568.e6 # 182.
 
@@ -50,7 +50,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 100
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -74,11 +74,11 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
 
-        # self.raman.pulse(t=self.p.t_raman_pi_pulse)
+        # self.raman.pulse(t=24*self.p.t_raman_pi_pulse)
         
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         self.imaging.on()
-        # delay(3.e-6)
+        delay(1.e-6)
         self.raman.pulse(t=self.p.t_continuous_rabi)
         # delay(self.p.t_continuous_rabi)
         self.imaging.off()
@@ -86,7 +86,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.ttl.raman_shutter.off()
         
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
-        self.imaging.set_power(.5,reset_pid=True)
+        self.imaging.set_power(.2,reset_pid=True)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()

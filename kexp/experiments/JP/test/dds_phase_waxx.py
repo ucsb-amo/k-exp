@@ -1,23 +1,24 @@
 from artiq.experiment import *
-from artiq.language import now_mu, delay, at_mu, kernel
-from artiq.coredevice.ad9910 import AD9910
+from artiq.language import now_mu, delay, delay_mu, at_mu, kernel, parallel, sequential
+from artiq.coredevice.ad9910 import AD9910, _AD9910_REG_PROFILE0
 from artiq.coredevice.ttl import TTLOut
 import numpy as np
+from numpy import int64
 
-from waxx.control.artiq.DDS import DDS
+from waxx.control.artiq.DDS import DDS, T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU
 from kexp.util.db.device_db import device_db
 
 class dds(EnvExperiment):
     def prepare(self):
         self.core = self.get_device('core')
-        self.ttl1 = self.get_device('ttl5')
+        self.ttl1 = self.get_device('ttl32')
         self.zotino0 = self.get_device('zotino0')
 
-        self.dds0 = DDS(0,0,1.e6,0.5,device_db=device_db,dac_device=self.zotino0)
+        self.dds0 = DDS(5,3,1.e6,1.,device_db=device_db,dac_device=self.zotino0)
         self.dds0.get_devices(self)
 
 
-        self.dds1 = DDS(0,1,1.e6,0.5,device_db=device_db,dac_device=self.zotino0)
+        self.dds1 = DDS(4,2,1.e6,1.,device_db=device_db,dac_device=self.zotino0)
         self.dds1.get_devices(self)
 
         self.t_idx = 0
@@ -32,35 +33,80 @@ class dds(EnvExperiment):
     def run(self):
         self.core.reset()
 
+        # with parallel:
         self.dds0.init()
-        delay(1.e-6)
+        delay(1.e-3)
         self.dds1.init()
-        for _ in range(1):
+        delay(10.e-3)
+
+        self.dds0.on()
+        self.dds1.on()
+
+        with parallel:
             self.dds0.set_dds(init=True)
             self.dds1.set_dds(init=True)
         delay(1.e-6)
 
         # self.dds0.off()
         # self.dds1.off()
-        self.dds0.set_phase_mode(1)
-        self.dds1.set_phase_mode(1)
+        self.dds0.set_phase_mode(0)
+        # self.dds1.set_phase_mode(1)
 
         t = now_mu()
+        
         t0 = now_mu() + 500500
 
-        self.dds0.set_dds(frequency=1.e6, t_phase_origin_mu=t, phase=0., init=True)
-        delay(5.e-6)
-        self.dds1.set_dds(t_phase_origin_mu=t, phase=0., init=True)
+        # dt = T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU + int64(20)
 
-        at_mu(t0)
-        p00 = self.dds0.update_phase()/(np.pi)
-        p11 = self.dds1.update_phase()/(np.pi)
+        # with parallel:
+        self.dds0.set_dds(frequency=88e6,
+                        t_phase_origin_mu=t0,
+                        phase=0.,
+                        init=True)
+        self.dds1.set_dds(frequency=88e6,
+                            t_phase_origin_mu=t0,
+                            phase=0.,
+                            init=True)
+        
+        self.dds1.dds_device.sync_data.io_update_delay = np.int32(2)
+
+        # at_mu(t0)
+        # p00 = self.dds0.set_dds(frequency=1.e6)
+        # at_mu(t0)
+        # p11 = self.dds1.set_dds(frequency=1.e6)
+
+        self.fast_set()
+
+        delay_mu(110)
+        # p11 = self.dds1.update_phase()/(np.pi)
         self.ttl1.pulse(1.e-6)
 
-        print((p11 - p00))
+        # print(p00)
+        # print((p11 - p00))
 
-    # def analyze(self):
-        # print(self.t)
-        # t = np.zeros_like(self.t)
-        # t[1:] = np.diff(self.t)
-        # print(t)
+    @kernel
+    def fast_set(self):
+
+        asf0 = self.dds0.dds_device.amplitude_to_asf(1.0)
+        asf1 = self.dds1.dds_device.amplitude_to_asf(1.0)
+
+        pow0 = 0
+        pow1 = 0
+
+        ftw0 = self.dds0.dds_device.frequency_to_ftw(1.e6)
+        ftw1 = self.dds1.dds_device.frequency_to_ftw(1.e6)
+        
+        at_mu(now_mu() & ~7)
+        with parallel:
+                self.dds0.dds_device.write64(_AD9910_REG_PROFILE0 + 7,
+                                (asf0 << 16) | (pow0 & 0xffff), ftw0)
+                self.dds1.dds_device.write64(_AD9910_REG_PROFILE0 + 7,
+                                (asf1 << 16) | (pow1 & 0xffff), ftw1)
+        with parallel:
+            with sequential:
+                delay_mu(int64(self.dds0.dds_device.sync_data.io_update_delay))
+                self.dds0.dds_device.cpld.io_update.pulse_mu(8)
+            with sequential:
+                delay_mu(int64(self.dds1.dds_device.sync_data.io_update_delay))
+                self.dds1.dds_device.cpld.io_update.pulse_mu(8)
+        at_mu(now_mu() & ~7)
