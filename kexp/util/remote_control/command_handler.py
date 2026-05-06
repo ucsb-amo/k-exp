@@ -3,17 +3,17 @@ import re
 import logging
 from kexp.control.ethernet_relay import EthernetRelay
 from kexp.util.remote_control.email_handler import EmailHandler
-from win10toast import ToastNotifier
+# from win10toast import ToastNotifier
 
 logger = logging.getLogger(__name__)
 
-class MyToastNotifier(ToastNotifier):
-    def __init__(self):
-        super().__init__()
+# class MyToastNotifier(ToastNotifier):
+#     def __init__(self):
+#         super().__init__()
 
-    def on_destroy(self, hwnd, msg, wparam, lparam):
-        super().on_destroy(hwnd, msg, wparam, lparam)
-        return 0
+#     def on_destroy(self, hwnd, msg, wparam, lparam):
+#         super().on_destroy(hwnd, msg, wparam, lparam)
+#         return 0
 
 class CommandHandler:
     """
@@ -86,8 +86,8 @@ class CommandHandler:
                 logger.warning(f"Unknown command: {keyword}")
                 results.append(f"{keyword}: Unknown command")
         commands_processed_str = f"Processed commands:\n" + "\n     ".join(results)
-        MyToastNotifier().show_toast(f"New commands received from {sender}",
-                                   commands_processed_str)
+        # MyToastNotifier().show_toast(f"New commands received from {sender}",
+        #                            commands_processed_str)
         logger.info(commands_processed_str)
     
     def add_command_handler(self, keywords, handler_function):
