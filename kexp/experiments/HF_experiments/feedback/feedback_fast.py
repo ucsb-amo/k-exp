@@ -25,16 +25,19 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
         self.p.t_raman_pulse_ideal = self.p.t_raman_pulse + 200.e-9
 
-        self.p.back_action_coherence = .99
+        self.p.back_action_coherence = .86
 
         self.p.amp_imaging = 0.2
         self.p.t_img_pulse = 5.e-6
         self.p.frequency_lightshift = 33.34e3
         # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
-        self.p.v_apd_all_up = -0.15053437500000003
-        self.p.v_apd_all_down = -0.21369375000000002
+        self.p.v_apd_all_up = -0.151840625
+        self.p.v_apd_all_down = -0.2231875
 
-        self.p.phase_offset = .55
+        self.p.phase_offset = 0.0#0.55 #- 0.7/Omega
+        # self.xvar('phase_offset', np.linspace(-0.9, -0.5, 10)/Omega)
+
+        self.p.delta_t = 0.
         
         self.p.n_photons_per_shot = 800
         self.p.n_std_photons_per_shot = 50
@@ -122,6 +125,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         k = 0
         f = self.omega_guess_start / (2*np.pi)
+        omega_prev = 0.
 
         t_step = t_start_mu
 
@@ -152,12 +156,13 @@ class feedback(EnvExperiment, Base, Feedback):
             # phi_pow = self.raman.get_phase()
             
             # phi = self.raman.pow_to_phase(phi_pow)
+            
+            phase_tracker = phase_tracker + (1.e-9*self.p.t_between_pulses_mu - self.p.delta_t) * omega_prev + self.p.delta_t * omega_raman + # self.p.phase_offset
             phi = phase_tracker
-
-            phase_tracker = phase_tracker + (1.e-9*self.p.t_between_pulses_mu) * self.omega_raman + self.p.phase_offset
 
             self.raman.pulse(self.p.t_raman_pulse)
             k = self.measurement(i)
+            omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
                                                     phase_raman_pulse_start=phi,
                                                     update_raman_frequency=update_raman_frequency,
