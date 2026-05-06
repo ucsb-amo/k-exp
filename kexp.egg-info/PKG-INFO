@@ -1,9 +1,18 @@
 Metadata-Version: 2.4
 Name: kexp
 Version: 0.0.1
+Summary: Weld Lab K Experiment Repo
 Home-page: https://github.com/ucsb-amo/k-exp
 Author: Jared Pagett
-Author-email: pagett.jared@gmail.com
+Author-email: jpagett <pagett.jared@gmail.com>, Jared Pagett <pagett.jared@gmail.com>
+License: MIT
+Project-URL: Homepage, https://github.com/ucsb-amo/k-exp
+Requires-Python: ==3.13.*
+Description-Content-Type: text/markdown
 Dynamic: author
-Dynamic: author-email
 Dynamic: home-page
+
+# k-exp
+Experiments and supporting code for the K machine ARTIQ control.
+
+See [the wiki](https://github.com/ucsb-amo/k-exp/wiki) for reference.

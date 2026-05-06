@@ -45,6 +45,23 @@ class Control():
         self.p = self.params
 
     @kernel
+    def integrated_imaging_pulse(self, data_container, t, idx=0,
+                                dark=False):
+        T_CONV_MU = 80
+        self.integrator.begin_integrate(reset=False)
+        if dark:
+            delay(t)
+        else:
+            self.imaging.pulse(t)
+        self.integrator.stop_and_settle()
+        t0 = now_mu()
+        # start the clear after the integrator voltage will already be in the sampler
+        at_mu(t0 + T_CONV_MU)
+        self.integrator.clear(t=0)
+        at_mu(t0)
+        data_container.put_data(self.integrator.sample(), idx)
+
+    @kernel
     def tof_apd_abs_image(self):
 
         self.tweezer.off()
@@ -54,7 +71,7 @@ class Control():
         dc = self.data.post_shot_absorption
 
         self.integrated_imaging_pulse(dc,t,0)
-        delay(1.e-6)
+        delay(3.e-6)
         self.raman.pulse(self.p.t_raman_pi_pulse)
         delay(2.e-6)
         self.integrated_imaging_pulse(dc,t,1)
@@ -62,19 +79,6 @@ class Control():
         self.integrated_imaging_pulse(dc,t,2)
         delay(10.e-6)
         self.integrated_imaging_pulse(dc,t,3,dark=True)
-
-    @kernel
-    def integrated_imaging_pulse(self,data_container,t=dv,idx=0,dark=False):
-        if t == dv:
-            t = self.p.t_imaging_pulse_apd_abs
-        self.integrator.begin_integrate()
-        if dark:
-            delay(t)
-        else:
-            self.imaging.pulse(t)
-        data_container.shot_data[idx] = self.integrator.stop_and_sample()
-        delay(3.e-6)
-        self.integrator.clear()
 
     @kernel
     def tweezer_squeeze(self, cubic_ramp=True):
@@ -171,11 +175,11 @@ class Control():
                         phase_mode)
         
         self.ttl.raman_shutter.on()
-        delay(2.e-3)
+        delay(3.e-3)
         self.ttl.line_trigger.wait_for_line_trigger()
-        t = now_mu() + 4700000
+        delay(4.7e-3)
         if phase_mode == 1:
             self.raman.set_phase(t_phase_origin_mu=now_mu())
-        at_mu(t)
+        
 
         

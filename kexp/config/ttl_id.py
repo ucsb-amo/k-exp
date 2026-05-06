@@ -41,6 +41,7 @@ class ttl_frame(ttl_frame_waxx):
         self.raman_shutter = self.assign_ttl_out(22)
         self.pd_scope_trig3 = self.assign_ttl_out(24)
 
+        self.trigger = self.assign_ttl_out(32)
         self.integrator_int_hold = self.assign_ttl_out(36)
         self.integrator_reset = self.assign_ttl_out(38)
 

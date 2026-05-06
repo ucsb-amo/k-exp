@@ -3,9 +3,11 @@ import email
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import parsedate_to_datetime
 import logging
 import re
 import time
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +16,7 @@ GVOICE_NUMBER = "8053642409"
 EMAIL_PASSWORD = "riqs amym ocpe mize"
 SLACK_EMAIL = "general-aaaaahzr4dmblwquygpk47q6le@weldlab.slack.com"
 CHECK_EMAIL_INTERVAL = 10
+MAX_MESSAGE_AGE_SECONDS = 120
 
 class EmailHandler:
     """
@@ -158,6 +161,10 @@ class EmailHandler:
             command_processor: Function that takes (commands, sender_email) and returns results
         """
         try:
+            if self.is_message_stale(msg):
+                logger.info("Ignoring stale message older than %ss", MAX_MESSAGE_AGE_SECONDS)
+                return
+
             # Extract sender information
             from_field = msg.get('From', '')
             sender_email = self.extract_sender_email(from_field)
@@ -182,6 +189,25 @@ class EmailHandler:
             
         except Exception as e:
             logger.error(f"Error processing email: {e}")
+
+    def is_message_stale(self, msg, max_age_seconds=MAX_MESSAGE_AGE_SECONDS):
+        """Return True if message Date header is older than max_age_seconds."""
+        date_header = msg.get('Date')
+        if not date_header:
+            logger.warning("Message missing Date header; ignoring for safety")
+            return True
+
+        try:
+            message_time = parsedate_to_datetime(date_header)
+            if message_time.tzinfo is None:
+                # Date without timezone is treated as UTC to keep behavior deterministic.
+                message_time = message_time.replace(tzinfo=timezone.utc)
+
+            age_seconds = (datetime.now(timezone.utc) - message_time.astimezone(timezone.utc)).total_seconds()
+            return age_seconds > max_age_seconds
+        except Exception as e:
+            logger.warning(f"Failed to parse message Date header '{date_header}': {e}; ignoring message")
+            return True
         
     def log_whitelisted_sender(self,sender_email):
         if sender_email.endswith("@txt.voice.google.com"):

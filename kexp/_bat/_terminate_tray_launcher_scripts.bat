@@ -1,4 +1,6 @@
 @echo off
+call %kpy%
+
 setlocal
 
 set "scriptsDir=%USERPROFILE%\.tray_launcher\scripts"

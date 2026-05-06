@@ -2,6 +2,7 @@ from artiq.experiment import *
 from artiq.language import now_mu, at_mu, delay
 from kexp import Base, img_types, cameras
 import numpy as np
+from numpy import int64
 
 class sigma_z(EnvExperiment, Base):
 
@@ -11,9 +12,14 @@ class sigma_z(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.amp_imaging = 0.41
+        self.p.amp_imaging = 0.2
+        # self.xvar('amp_imaging', np.linspace(0.4, 0.7, 5))
         self.p.t_pci_pulse = 5.e-6
+        # self.xvar('t_pci_pulse', np.linspace(3.e-6, 10.e-6, 5))
         
+        self.p.t_between_pulses_mu = 20000  # from pulse start to next pulse start, in mu
+        print(self.p.t_between_pulses_mu)
+
         self.p.t_raman_pulse = 0.
         self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,2))
 
@@ -39,15 +45,18 @@ class sigma_z(EnvExperiment, Base):
         self.prepare_hf_tweezers()
         self.prep_raman()
 
+        self.raman.pulse(self.p.t_raman_pulse)
+        
+        delay(10.e-6)
+
+        t = now_mu()
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
-        self.raman.pulse(self.p.t_raman_pulse)
-
-        delay(2.e-6)
-
+        at_mu(t)
         for i in range(self.p.N_pulses):
             self.integrated_imaging_pulse(self.data.apd, t=self.p.t_pci_pulse, idx=i)
-            delay(self.p.t_pci_pulse)
+            t += self.p.t_between_pulses_mu
+            at_mu(t)
 
         delay(self.p.t_tweezer_hold)
 
@@ -71,54 +80,54 @@ class sigma_z(EnvExperiment, Base):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
 
-        from waxa import atomdata
-        ad = atomdata(0,'tweezy')
+        # from waxa import atomdata
+        # ad = atomdata(0,'tweezy')
 
-        # Mean APD over all pulses, grouped by xvar value (mean ± SEM)
+        # # Mean APD over all pulses, grouped by xvar value (mean ± SEM)
 
-        apd_2d = np.asarray(ad.data.apd)           # shape: (n_repeats, n_pulses)
-        xvals = np.asarray(ad.xvars[0]).ravel()    # shape: (n_repeats,)
+        # apd_2d = np.asarray(ad.data.apd)           # shape: (n_repeats, n_pulses)
+        # xvals = np.asarray(ad.xvars[0]).ravel()    # shape: (n_repeats,)
 
-        if apd_2d.ndim != 2:
-            raise ValueError(f"Expected ad.data.apd to be 2D, got shape {apd_2d.shape}")
-        if xvals.shape[0] != apd_2d.shape[0]:
-            raise ValueError(f"len(xvals)={xvals.shape[0]} does not match repeats={apd_2d.shape[0]}")
+        # if apd_2d.ndim != 2:
+        #     raise ValueError(f"Expected ad.data.apd to be 2D, got shape {apd_2d.shape}")
+        # if xvals.shape[0] != apd_2d.shape[0]:
+        #     raise ValueError(f"len(xvals)={xvals.shape[0]} does not match repeats={apd_2d.shape[0]}")
 
-        # Flatten APD so each pulse contributes; repeat xvar for each pulse
-        apd_all = apd_2d.reshape(-1)
-        x_all = np.repeat(xvals, apd_2d.shape[1])
+        # # Flatten APD so each pulse contributes; repeat xvar for each pulse
+        # apd_all = apd_2d.reshape(-1)
+        # x_all = np.repeat(xvals, apd_2d.shape[1])
 
-        # Keep first-appearance order of xvar values
-        x_unique, first_idx = np.unique(x_all, return_index=True)
-        x_unique = x_unique[np.argsort(first_idx)]
+        # # Keep first-appearance order of xvar values
+        # x_unique, first_idx = np.unique(x_all, return_index=True)
+        # x_unique = x_unique[np.argsort(first_idx)]
 
-        mean_apd = np.zeros_like(x_unique, dtype=float)
-        sem_apd = np.zeros_like(x_unique, dtype=float)
+        # mean_apd = np.zeros_like(x_unique, dtype=float)
+        # sem_apd = np.zeros_like(x_unique, dtype=float)
 
-        for i, xv in enumerate(x_unique):
-            m = np.isclose(x_all, xv, rtol=0, atol=1e-15)
-            vals = apd_all[m]
-            mean_apd[i] = np.mean(vals)
-            sem_apd[i] = np.std(vals, ddof=1) / np.sqrt(vals.size) if vals.size > 1 else 0.0
+        # for i, xv in enumerate(x_unique):
+        #     m = np.isclose(x_all, xv, rtol=0, atol=1e-15)
+        #     vals = apd_all[m]
+        #     mean_apd[i] = np.mean(vals)
+        #     sem_apd[i] = np.std(vals, ddof=1) / np.sqrt(vals.size) if vals.size > 1 else 0.0
 
-        from waxa.plotting import detect_unit
-        xvarunit, xvarmult, xvarname = detect_unit(ad, 0)
+        # from waxa.plotting import detect_unit
+        # xvarunit, xvarmult, xvarname = detect_unit(ad, 0)
 
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(figsize=(4, 3))
-        ax.errorbar(
-            x_unique * xvarmult / (ad.p.t_raman_pi_pulse * 1.e6),
-            mean_apd,
-            yerr=sem_apd,
-            fmt="o-",
-            capsize=4,
-            lw=1.2
-        )
-        ax.set_xlabel(f"{xvarname} ($\pi$)")
-        ax.set_ylabel("Mean APD voltage (V)")
-        ax.set_title(f"Run {ad.run_info.run_id}: mean APD (all pulses) vs {xvarname}")
-        ax.grid(alpha=0.3)
-        plt.tight_layout()
-        plt.show()
+        # import matplotlib.pyplot as plt
+        # fig, ax = plt.subplots(figsize=(4, 3))
+        # ax.errorbar(
+        #     x_unique * xvarmult / (ad.p.t_raman_pi_pulse * 1.e6),
+        #     mean_apd,
+        #     yerr=sem_apd,
+        #     fmt="o-",
+        #     capsize=4,
+        #     lw=1.2
+        # )
+        # ax.set_xlabel(f"{xvarname} ($\pi$)")
+        # ax.set_ylabel("Mean APD voltage (V)")
+        # ax.set_title(f"Run {ad.run_info.run_id}: mean APD (all pulses) vs {xvarname}")
+        # ax.grid(alpha=0.3)
+        # plt.tight_layout()
+        # plt.show()
 
-        print(mean_apd[0], mean_apd[-1])
+        # print(mean_apd[0], mean_apd[-1])

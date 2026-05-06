@@ -47,6 +47,18 @@ from waxx.util.artiq.async_print import aprint
 from kexp.base.cameras import img_config
 
 class Devices():
+    def __init__(self):
+        # just to get syntax highlighting
+        self.dds = dds_frame()
+        self.ttl = ttl_frame()
+        self.dac = dac_frame()
+        self.inner_coil = hbridge_magnet()
+        self.outer_coil = igbt_magnet()
+        self.tweezer = tweezer()
+        self.lightsheet = lightsheet()
+        self.params = ExptParams()
+        self.raman = RamanBeamPair()
+        self.p = self.params
 
     def prepare_devices(self,expt_params:ExptParams=d_exptparams):
         # for syntax highlighting

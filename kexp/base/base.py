@@ -5,7 +5,9 @@ from artiq.experiment import *
 from artiq.language.core import kernel_from_string, now_mu, delay
 
 from waxa.data import DataSaver
-from waxx import Expt, img_types as img
+from waxa.config.img_types import img_types as img
+# from waxx import Expt, img_types as img
+from waxx.base.expt import Expt
 from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control, Clients
