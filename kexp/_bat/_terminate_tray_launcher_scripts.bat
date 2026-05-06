@@ -1,5 +1,5 @@
 @echo off
-%kpy%
+call %kpy%
 
 setlocal
 
