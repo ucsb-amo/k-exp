@@ -29,7 +29,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.p.amp_imaging = 0.2
         self.p.t_img_pulse = 5.e-6
-        self.p.frequency_lightshift = 33.34e3
+        self.p.frequency_lightshift = 3.48e+04  # Hz, for imaging amp 0.2
         # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
         self.p.v_apd_all_up = -0.151840625
         self.p.v_apd_all_down = -0.2231875

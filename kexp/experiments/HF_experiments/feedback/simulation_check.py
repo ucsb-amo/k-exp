@@ -23,16 +23,20 @@ class feedback(EnvExperiment, Base, Feedback):
         ### parameters
 
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
-        self.p.t_raman_pulse_ideal = self.p.t_raman_pulse + 200.e-9
+        # self.p.t_raman_pulse_ideal = self.p.t_raman_pulse + 200.e-9
+        self.p.t_raman_pulse_ideal = self.p.t_raman_pulse + 300.e-9
 
-        self.p.back_action_coherence = .99
+        self.p.back_action_coherence = 1.0
         #self.xvar('back_action_coherence', np.linspace(.5,1.,7))
 
         self.p.amp_imaging = 0.2
         self.p.t_img_pulse = 5.e-6
-        self.p.frequency_lightshift = 1.*33.34e3  ## 2.75 * 22.34e3 for 0 detuning
+        self.p.frequency_lightshift = 3.48e+04  # Hz, for imaging amp 0.2
+        # self.p.frequency_lightshift = 0.  # Hz, for imaging amp 0.2
     
         # self.xvar('frequency_lightshift', self.p.frequency_lightshift + self.p.frequency_lightshift*np.linspace(-3.,3,7))
+
+        # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
         self.p.v_apd_all_up = -0.151840625
         self.p.v_apd_all_down = -0.2231875
 
@@ -51,18 +55,20 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.phase_offset = 0.0#0.55 #- 0.7/Omega
         # self.xvar('phase_offset', np.linspace(-0.9, -0.5, 10)/Omega)
 
-        self.p.delta_t = 0.
+        self.p.delta_t_mu = int64(16000)
+        self.xvar('delta_t_mu', np.linspace(13000,19000,7).astype(int64))
 
-    #     rand_list = np.array([-0.,  0.,  0.,  0.,  0.29501175,
+    #     rand_list = np.array([-0.654877,   0.30609096,  0.38354877,  0.18202263,  0.29501175,
     #    -0.31005943,  0.38354877,  0.30609096,  0.11595314,  0.18202263,
-    #     0.35998194, -0.26850061, -0.0969936 ,  0.3203508 , -0.00077061])
-        self.p.intermediate_detuning = 2*np.pi*self.p.frequency_raman_transition + 2*Omega*0
-        self.xvar('intermediate_detuning',  2*np.pi*self.p.frequency_raman_transition + Omega*np.concatenate((np.linspace(4, 4.5, 10), np.linspace(6, 6.5, 10))))
+    #     0.35998194, -0.26850061, -0.0969936 ,  0.3203508 , -0.00077061]) * 2
+        # self.p.intermediate_detuning = 2*np.pi*self.p.frequency_raman_transition + 2*Omega*0
+        # self.xvar('intermediate_detuning',  2*np.pi*self.p.frequency_raman_transition + Omega*np.concatenate((np.linspace(4, 4.5, 10), np.linspace(6, 6.5, 10))))
 
-        detuning_list = np.array([5, 0., 0, 0, 0,
-       -0.,  0.,  0.,  0.,  0.,
+        detuning_list = np.array([0., 10, 0., 12, 0,
+       14.,  0.,  0.,  0.,  0.,
         0., -0., -0. ,  0. , -0.])
         # detuning_list = 3*(np.random.random(15) -0.5)
+        # detuning_list = rand_list
 
         self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + (Omega * detuning_list)
         #self.xvar('omega_pulse_list', 5+np.linspace(0, 2, 10))
@@ -73,11 +79,11 @@ class feedback(EnvExperiment, Base, Feedback):
     
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         
         self.m = 3 # feedback grid size
         # self.N_pulses = 15 # number of steps of evolution
-        self.N_pulses = 8 # number of steps of evolution
+        self.N_pulses = 11 # number of steps of evolution
 
         self.p.t_tweezer_hold = 30.e-3
 
@@ -86,7 +92,7 @@ class feedback(EnvExperiment, Base, Feedback):
         ###
 
         # timing docs: https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.cvj0bnjp2og4#heading=h.pimm1a640bup
-        self.p.t_calculation_slack_compensation_mu = int64(0.61 * self.m * 1.e3) + 15000 if self.m > 10 else int64(10000)
+        self.p.t_calculation_slack_compensation_mu = int64(0.61 * self.m * 1.e3) + 10000 if self.m > 10 else int64(10000)
         self.p.t_fifo_mu = int64(18416)
         self.p.t_raman_set_pretrigger_mu = int64(4000) & ~7 # int64(1260)
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
@@ -139,6 +145,9 @@ class feedback(EnvExperiment, Base, Feedback):
         
         self._phase = 0
 
+        self.phi = np.zeros(self.N_pulses)
+        self.phi_pow = np.zeros(self.N_pulses)
+
         self.finish_prepare()
 
     @kernel
@@ -153,11 +162,11 @@ class feedback(EnvExperiment, Base, Feedback):
         f = self.omega_guess_start / (2*np.pi)
         omega_prev = 0.
 
+        t_start_mu = t_start_mu & ~7
         t_step = t_start_mu
 
-        at_mu(now_mu() & ~7)
+        at_mu(t_start_mu - (10000 & ~7))
 
-        at_mu(t_start_mu - 10000)
         self.raman.set_frequency_fast(self.p.omega_pulse_list[0] / (2*np.pi))
         self.raman.reset_phase()
         # aprint(self.raman.get_phase())
@@ -165,16 +174,20 @@ class feedback(EnvExperiment, Base, Feedback):
         phase_tracker = 0.
 
         at_mu(t_start_mu)
+
+        tP = self.p.t_between_pulses_mu
+        dt = self.p.delta_t_mu
+        tR = self.p.t_raman_set_pretrigger_mu
         
         for i in range(self.N_pulses):
             # self.omega_raman = self.p.intermediate_detuning
 
-            # self.omega_raman = self.p.omega_pulse_list[i] 
+            self.omega_raman = self.p.omega_pulse_list[i] 
 
-            if i == 2:
-                self.omega_raman = self.p.intermediate_detuning
-            else:
-                self.omega_raman = self.p.omega_pulse_list[i] 
+            # if i == 2:
+            #     self.omega_raman = self.p.intermediate_detuning
+            # else:
+            #     self.omega_raman = self.p.omega_pulse_list[i] 
             #     #pass
             
             f = self.omega_raman / (2*np.pi)
@@ -189,15 +202,19 @@ class feedback(EnvExperiment, Base, Feedback):
             at_mu(t_step)                                                                                                                                                         
 
             # phi_pow = self.raman.get_phase()
-            
-            #phi = self.raman.pow_to_phase(phi_pow)
 
-            phase_tracker = phase_tracker + (1.e-9*self.p.t_between_pulses_mu - self.p.delta_t) * omega_prev + self.p.delta_t * omega_raman # + self.p.phase_offset
+            phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
+
+            # phase_tracker += ( (self.p.t_between_pulses_mu - self.p.delta_t_mu) * omega_prev \
+            #                     + self.p.delta_t_mu * self.omega_raman ) * 1.e-9 # + self.p.phase_offset
             phi = phase_tracker
 
             self.raman.pulse(self.p.t_raman_pulse)
 
             k = self.measurement(i)
+
+            # self.phi[i] = phi
+            # self.phi_pow[i] = self.raman.pow_to_phase(phi_pow)
 
             omega_prev = self.omega_raman
 
@@ -284,3 +301,6 @@ class feedback(EnvExperiment, Base, Feedback):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
+
+        # print((self.phi  - self.phi[0]) % (2*np.pi))
+        # print((self.phi_pow - self.phi_pow[0]) % (2*np.pi))

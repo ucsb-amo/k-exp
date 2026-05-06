@@ -70,6 +70,7 @@ class Feedback:
         self._initialize_lightshift(
             amp_imaging=amp_imaging,
             frequency_z_lightshift=frequency_z_lightshift,
+            back_action_coherence=back_action_coherence
         )
         self._initialize_frequency_grid(
             frequency_resonance=frequency_resonance,
@@ -340,8 +341,6 @@ class Feedback:
             # Backward compatibility: if ideal timing is not provided, use effective timing.
             resolved_dt_ideal = resolved_dt_eff
 
-        print(t_raman_pulse, t_raman_pulse_ideal, resolved_dt_eff, resolved_dt_ideal)
-
         self.dt_eff = float(resolved_dt_eff)
         self.dt_ideal = float(resolved_dt_ideal)
         self.dt_z = float(t_img_pulse)
@@ -358,6 +357,9 @@ class Feedback:
         )
         self.frequency_z_lightshift = self.p.frequency_lightshift
         self.omega_z_lightshift = 2.0 * np.pi * self.frequency_z_lightshift
+
+        if back_action_coherence is not None:
+            self.p.back_action_coherence = back_action_coherence
         self.back_action_coherence = self.p.back_action_coherence
 
     def _initialize_frequency_grid(
