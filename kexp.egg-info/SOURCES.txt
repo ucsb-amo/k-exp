@@ -66,6 +66,11 @@ kexp/experiments/HF_experiments/feedback/check_transition_frequency.py
 kexp/experiments/HF_experiments/feedback/feedback_fast.py
 kexp/experiments/HF_experiments/feedback/rabi_surfing.py
 kexp/experiments/HF_experiments/feedback/simulation_check.py
+kexp/experiments/HF_experiments/monitored_rabi/apd_alignment.py
+kexp/experiments/HF_experiments/monitored_rabi/check_Rabi_frequency.py
+kexp/experiments/HF_experiments/monitored_rabi/check_continuously_monitored_rabi.py
+kexp/experiments/HF_experiments/monitored_rabi/check_lightshift.py
+kexp/experiments/HF_experiments/monitored_rabi/check_transition_frequency.py
 kexp/experiments/JE/LZ_tunneling.py
 kexp/experiments/JE/multi_BEC_raman.py
 kexp/experiments/JE/M_LOOP/hf_tweezer_evap.py
