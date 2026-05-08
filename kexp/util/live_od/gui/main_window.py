@@ -1,6 +1,6 @@
 import sys
 from queue import Queue
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QStyle
 from PyQt6.QtGui import QFont, QIcon, QGuiApplication
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
 import numpy as np
@@ -349,6 +349,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     win = LiveODWindow()
     win.setWindowTitle("LiveOD")
-    win.setWindowIcon(QIcon('banana-icon.png'))
+    win.setWindowIcon(win.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogListView))
     win.show()
     sys.exit(app.exec())

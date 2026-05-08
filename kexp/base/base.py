@@ -161,6 +161,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.dds.d2_2dv_r.on()
         self.dds.push.on()
 
+        self.dds.ry_405_sw.on()
+
         # reset imaging detuning, power
         self.set_imaging_shutters()
         delay(10.e-3)

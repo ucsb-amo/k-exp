@@ -169,7 +169,7 @@ class Feedback:
                 inv_norm_H = 1.0 / norm_H
                 Omega_over_H = Omega * inv_norm_H
                 u_z = delta_omega * inv_norm_H
-                (sin_H, cos_H) = self.sincos_lut_interp(dt_ideal * norm_H) # dt ideal pulse time
+                (sin_H, cos_H) = self.sincos_lut_interp(-dt_ideal * norm_H) # dt ideal pulse time
             else:
                 Omega_over_H = 0.0
                 u_z = 0.0
