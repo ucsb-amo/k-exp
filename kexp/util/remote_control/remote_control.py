@@ -2,13 +2,9 @@ from kexp.util.remote_control.command_handler import CommandHandler
 from waxx.util.guis.als.als_gui_client import ALSGuiClient
 from waxx.util.guis.precilaser.precilaser_gui_client import PrecilaserGuiClient
 from kexp.config.ip import ALS_SERVER_IP, ALS_SERVER_PORT, PRECILASER_SERVER_IP, PRECILASER_SERVER_PORT
+from waxx.util.notifications import send_email
 import logging
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 
-ALS_STARTUP_SLACK_SENDER = "harry.who.is.ultra.cold@gmail.com"
-ALS_STARTUP_SLACK_PASSWORD = "dvlw elsd mhqb mzfo"
 ALS_STARTUP_SLACK_RECIPIENT = "general-aaaaahzr4dmblwquygpk47q6le@weldlab.slack.com"
 ALS_STARTUP_SLACK_SUBJECT = "1064nm laser on in 3418"
 
@@ -43,18 +39,8 @@ class RemoteControl(CommandHandler):
         self.add_command_handler(["all"], self.handle_all_command)
 
     def send_als_startup_notification(self):
-        """Send ALS startup notification via Slack email using interlock_gui-style SMTP flow."""
-        msg = MIMEMultipart()
-        msg['From'] = ALS_STARTUP_SLACK_SENDER
-        msg['To'] = ALS_STARTUP_SLACK_RECIPIENT
-        msg['Subject'] = ALS_STARTUP_SLACK_SUBJECT
-        msg.attach(MIMEText(ALS_STARTUP_SLACK_SUBJECT, 'plain'))
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(ALS_STARTUP_SLACK_SENDER, ALS_STARTUP_SLACK_PASSWORD)
-        server.sendmail(ALS_STARTUP_SLACK_SENDER, ALS_STARTUP_SLACK_RECIPIENT, msg.as_string())
-        server.quit()
+        """Send ALS startup notification via Slack email."""
+        send_email(ALS_STARTUP_SLACK_RECIPIENT, ALS_STARTUP_SLACK_SUBJECT, ALS_STARTUP_SLACK_SUBJECT)
 
     def handle_sources_command(self, value):
         """

@@ -113,15 +113,12 @@ class CommandHandler:
         
         logger.info(f"Added command handler for keyword(s): {keywords} (canonical: {canonical_keyword})")
     
-    def send_slack_notification(self, message, subject='K-Exp Control Notification', recipient=None,
-                                sender_email=None, sender_password=None):
-        """Send a notification message to the Slack channel"""
+    def send_slack_notification(self, message, subject='K-Exp Control Notification', recipient=None):
+        """Send a notification message to the Slack channel."""
         return self.email_handler.send_slack_notification(
             message,
             subject=subject,
             recipient=recipient,
-            sender_email=sender_email,
-            sender_password=sender_password,
         )
     
     def add_to_whitelist(self, email_or_phone):
