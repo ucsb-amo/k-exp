@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from waxa.data.server_talk import server_talk as st
+from waxx.config.ip import EMAIL_CREDENTIALS_FILEPATH  # noqa: F401  (re-exported for kexp consumers)
 
 ### data, filepaths
 DATA_DIR = os.getenv("data")

@@ -115,6 +115,7 @@ class feedback(EnvExperiment, Base, Feedback):
         # self.p.v_apd_all_down = -0.22252083333333336
 
         self.p.feedback_fractional_initial_offset = 3.
+        self.p.feedback_fractional_grid_center_offset = 2.0
 
         self.p.update_raman_frequency_bool = 1
     
@@ -175,6 +176,7 @@ class feedback(EnvExperiment, Base, Feedback):
                           std_n_photons_per_shot=self.p.n_std_photons_per_shot,
                           frequency_resonance = self.p.frequency_raman_transition,
                           m = self.m,
+                          fractional_grid_center_offset = self.p.feedback_fractional_grid_center_offset,
                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
                           guess_span_Omega = self.p.feedback_guess_span_Omega,
                           )

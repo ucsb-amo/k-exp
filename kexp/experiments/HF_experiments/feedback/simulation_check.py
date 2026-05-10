@@ -8,11 +8,11 @@ from numpy import int64
 
 from kexp.util.artiq.async_print import aprint
 
-from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams as ExptParamsFeedback
-
 T_CONV_MU = 30
 
 from waxx.control.artiq.DDS import T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU
+
+from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams as ExptParamsFeedback
 
 class feedback(EnvExperiment, Base, Feedback):
 
@@ -28,11 +28,8 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 50
+        self.p.N_repeats = 25
         self.p.N_pulses = 11 # number of steps of evolution
-
-        self.p.feedback_guess_span_Omega = 5.0
-        self.p.feedback_fractional_initial_offset = 0.
         
         ### parameters
         
@@ -92,12 +89,16 @@ class feedback(EnvExperiment, Base, Feedback):
                           std_n_photons_per_shot=self.p.n_std_photons_per_shot,
                           frequency_resonance = self.p.frequency_raman_transition,
                           feedback_grid_size = self.p.feedback_grid_size,
+                          fractional_grid_center_offset = self.p.feedback_fractional_grid_center_offset,
                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
                           guess_span_Omega = self.p.feedback_guess_span_Omega,
+                          feedback_apd_map_enabled=self.p.feedback_apd_map_enabled,
+                          feedback_apd_map_a=self.p.feedback_apd_map_a,
+                          feedback_apd_map_b=self.p.feedback_apd_map_b,
                           back_action_coherence = self.p.back_action_coherence
                           )
         
-        self.zidx = np.argmin(abs(self.omega_guess_list - self.p.frequency_raman_transition * 2*np.pi))
+        self.zidx = self.p.feedback_resonance_grid_index
 
         ###
 
@@ -119,7 +120,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.omega_z_lightshift = 2*np.pi * self.p.frequency_lightshift
 
         k = 0
-        f = self.omega_guess_start / (2*np.pi)
+        f = self.omega_raman / (2*np.pi)
         omega_prev = 0.
 
         t_start_mu = t_start_mu & ~7
@@ -197,6 +198,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.integrator.init()
 
         self.initialize_feedback()
+        self.reset_initial_omega_from_params()
         delay(10.e-3)
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
@@ -204,7 +206,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-        self.prep_raman(frequency_transition=self.omega_guess_start/(2*np.pi),
+        self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi),
                         phase_mode=0)
 
         t_pulse_start_mu = now_mu() + 5000000
@@ -226,7 +228,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        self.omega_raman = self.omega_guess_start
+        self.reset_initial_omega_from_params()
         # print((self.data.omega_raman.shot_data/(2*np.pi) - self.p.frequency_raman_transition)/1.e3)
         # self.scope.read_sweep(0)
         # self.core.break_realtime()

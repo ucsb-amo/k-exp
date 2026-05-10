@@ -1,19 +1,16 @@
 import imaplib
 import email
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from email.utils import parsedate_to_datetime
 import logging
 import re
 import time
 from datetime import datetime, timezone
 
+from waxx.util.notifications import send_email, _load_credentials
+
 logger = logging.getLogger(__name__)
 
-EMAIL_ADDRESS = "kcontrol.ucsb@gmail.com"
 GVOICE_NUMBER = "8053642409"
-EMAIL_PASSWORD = "riqs amym ocpe mize"
 SLACK_EMAIL = "general-aaaaahzr4dmblwquygpk47q6le@weldlab.slack.com"
 CHECK_EMAIL_INTERVAL = 10
 MAX_MESSAGE_AGE_SECONDS = 120
@@ -29,20 +26,17 @@ class EmailHandler:
         self.process_commands = process_commands_method
         self.parse_commands = parse_commands_method
         
-        self.email_address = EMAIL_ADDRESS
-        self.email_password = EMAIL_PASSWORD
+        self.email_address, self.email_password = _load_credentials()
         self.whitelist = email_whitelist
         self.phone_whitelist = phone_whitelist
         self.slack_channel = SLACK_EMAIL
-        
+
         # Email server configuration
         self.imap_server = "imap.gmail.com"
-        self.smtp_server = "smtp.gmail.com"
-        self.smtp_port = 587
 
     def print_instructions(self):
         gvnumber = f"{GVOICE_NUMBER[:3]}-{GVOICE_NUMBER[3:6]}-{GVOICE_NUMBER[6:]}"
-        logger.info(f"Email check success. Send commands to {gvnumber} or to {EMAIL_ADDRESS}.")
+        logger.info(f"Email check success. Send commands to {gvnumber} or to {self.email_address}.")
     
     def connect_to_email(self):
         """Connect to Gmail IMAP server"""
@@ -83,34 +77,19 @@ class EmailHandler:
         else:
             return from_field.strip()
     
-    def send_slack_notification(self, message, subject='K-Exp Control Notification', recipient=None,
-                                sender_email=None, sender_password=None):
+    def send_slack_notification(self, message, subject='K-Exp Control Notification', recipient=None):
         """
-        Send a notification message to the Slack channel
+        Send a notification message to the Slack channel.
+        Credentials are loaded from the shared Google Drive credential file.
         """
         recipient = recipient or self.slack_channel
-        sender_email = sender_email or self.email_address
-        sender_password = sender_password or self.email_password
 
         if not recipient:
             logger.warning("No Slack channel configured")
             return False
-            
+
         try:
-            msg = MIMEMultipart()
-            msg['From'] = sender_email
-            msg['To'] = recipient
-            msg['Subject'] = subject
-            
-            msg.attach(MIMEText(message, 'plain'))
-            
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.starttls()
-            server.login(sender_email, sender_password)
-            
-            server.sendmail(sender_email, recipient, msg.as_string())
-            server.quit()
-            
+            send_email(recipient, subject, message)
             logger.info("Slack notification sent successfully")
             return True
         except Exception as e:
@@ -118,22 +97,9 @@ class EmailHandler:
             return False
     
     def send_response_email(self, recipient, subject, body):
-        """Send a response email to the sender"""
+        """Send a response email to the sender."""
         try:
-            msg = MIMEMultipart()
-            msg['From'] = self.email_address
-            msg['To'] = recipient
-            msg['Subject'] = subject
-            
-            msg.attach(MIMEText(body, 'plain'))
-            
-            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            server.starttls()
-            server.login(self.email_address, self.email_password)
-            
-            server.sendmail(self.email_address, recipient, msg.as_string())
-            server.quit()
-            
+            send_email(recipient, subject, body)
             logger.info(f"Response email sent to {recipient}")
             return True
         except Exception as e:

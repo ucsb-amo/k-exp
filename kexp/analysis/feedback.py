@@ -102,6 +102,7 @@ class FeedbackReplayCore(Feedback):
     ):
         self.ad = ad
         self._base_kwargs = self._build_base_feedback_kwargs(ad)
+        self._omega_resonance_rad_s = 2.0 * np.pi * float(self._base_kwargs["frequency_resonance"])
         self.omega_group_tolerance_rad_s = float(omega_group_tolerance_rad_s)
         self._default_timing = self._get_default_timing_params()
         Feedback.__init__(self, **self._base_kwargs)
@@ -134,7 +135,59 @@ class FeedbackReplayCore(Feedback):
             if omega_guess.ndim == 1 and omega_guess.size > 0:
                 kwargs["feedback_grid_size"] = int(omega_guess.size)
 
+        # Keep the raw value for per-repeat replay support when scanned in xvar.
+        self._fractional_initial_offset_source = getattr(
+            p,
+            "feedback_fractional_initial_offset",
+            kwargs.get("fractional_initial_offset", -5.0),
+        )
+        kwargs["fractional_initial_offset"] = self._scalar_from_maybe_array(
+            self._fractional_initial_offset_source,
+            name="feedback_fractional_initial_offset",
+            fallback=-5.0,
+        )
+
         return kwargs
+
+    def _scalar_from_maybe_array(self, value, *, name: str, fallback: float) -> float:
+        if value is None:
+            return float(fallback)
+
+        arr = np.asarray(value, dtype=float).ravel()
+        if arr.size == 0:
+            return float(fallback)
+        if not np.isfinite(arr[0]):
+            raise ValueError(f"{name} must contain finite values.")
+        return float(arr[0])
+
+    def _resolve_fractional_initial_offset_r(
+        self,
+        n_repeat: int,
+        *,
+        fractional_initial_offset_override: Optional[Sequence[float]],
+    ) -> np.ndarray:
+        source = (
+            self._fractional_initial_offset_source
+            if fractional_initial_offset_override is None
+            else fractional_initial_offset_override
+        )
+
+        values = np.asarray(source, dtype=float).ravel()
+        if values.size == 0:
+            raise ValueError("feedback_fractional_initial_offset cannot be empty.")
+        if not np.all(np.isfinite(values)):
+            raise ValueError("feedback_fractional_initial_offset must be finite.")
+
+        if values.size == 1:
+            return np.full((n_repeat,), float(values[0]), dtype=float)
+
+        if values.size != int(n_repeat):
+            raise ValueError(
+                "feedback_fractional_initial_offset must be scalar or length N_repeat. "
+                f"Got length {values.size} for N_repeat={n_repeat}."
+            )
+
+        return np.asarray(values, dtype=float)
 
     def _get_default_timing_params(self) -> Dict[str, float]:
         p = self.ad.p
@@ -241,8 +294,12 @@ class FeedbackReplayCore(Feedback):
         t_raman_pulse: Optional[float],
         t_raman_pulse_ideal: Optional[float],
         t_img_pulse: Optional[float],
+        frequency_z_lightshift: Optional[float],
         feedback_grid_size_override: Optional[int],
         omega_guess_list_override: Optional[Sequence[float]],
+        feedback_apd_map_enabled: Optional[bool],
+        feedback_apd_map_verbose: Optional[bool],
+        fractional_initial_offset: Optional[float],
     ) -> Tuple[np.ndarray, int]:
         kwargs = dict(self._base_kwargs)
 
@@ -260,6 +317,18 @@ class FeedbackReplayCore(Feedback):
         if t_img_pulse is not None:
             kwargs["t_img_pulse"] = float(t_img_pulse)
 
+        if frequency_z_lightshift is not None:
+            kwargs["frequency_z_lightshift"] = float(frequency_z_lightshift)
+
+        if feedback_apd_map_enabled is not None:
+            kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
+
+        if feedback_apd_map_verbose is not None:
+            kwargs["feedback_apd_map_verbose"] = bool(feedback_apd_map_verbose)
+
+        if fractional_initial_offset is not None:
+            kwargs["fractional_initial_offset"] = float(fractional_initial_offset)
+
         omega_guess, zidx = self._resolve_grid(
             feedback_grid_size_override=feedback_grid_size_override,
             omega_guess_list_override=omega_guess_list_override,
@@ -270,8 +339,9 @@ class FeedbackReplayCore(Feedback):
         Feedback.__init__(self, **kwargs)
 
         self.omega_guess_list = np.asarray(omega_guess, dtype=float)
+        self.p.omega_guess_list = self.omega_guess_list
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
-        self.omega_guess_start = float(self.omega_guess_list[0])
+        self._validate_initial_guess_in_grid()
 
         return self.omega_guess_list.copy(), int(zidx)
 
@@ -422,12 +492,16 @@ class FeedbackReplayCore(Feedback):
         t_raman_pulse: Optional[float] = None,
         t_raman_pulse_ideal: Optional[float] = None,
         t_img_pulse: Optional[float] = None,
+        frequency_z_lightshift: Optional[float] = None,
         delta_t_mu: Optional[int] = None,
         t_between_pulses_mu: Optional[int] = None,
         feedback_grid_size_override: Optional[int] = None,
         omega_guess_list_override: Optional[Sequence[float]] = None,
         apd_override_rr: Optional[Sequence[float]] = None,
         omega_override_rr: Optional[Sequence[float]] = None,
+        fractional_initial_offset_override: Optional[Sequence[float]] = None,
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = None,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
     ) -> FeedbackReplayResult:
@@ -451,12 +525,16 @@ class FeedbackReplayCore(Feedback):
             t_raman_pulse=t_raman_pulse,
             t_raman_pulse_ideal=t_raman_pulse_ideal,
             t_img_pulse=t_img_pulse,
+            frequency_z_lightshift=frequency_z_lightshift,
             delta_t_mu=delta_t_mu,
             t_between_pulses_mu=t_between_pulses_mu,
             feedback_grid_size_override=feedback_grid_size_override,
             omega_guess_list_override=omega_guess_list_override,
             apd_override_rr=apd_override_rr,
             omega_override_rr=omega_override_rr,
+            fractional_initial_offset_override=fractional_initial_offset_override,
+            feedback_apd_map_enabled=feedback_apd_map_enabled,
+            feedback_apd_map_verbose=feedback_apd_map_verbose,
             default_use_measured_apd=True,
             n_jobs=int(n_jobs),
             parallel_verbose=int(parallel_verbose),
@@ -476,10 +554,14 @@ class FeedbackReplayCore(Feedback):
         t_raman_pulse: Optional[float] = None,
         t_raman_pulse_ideal: Optional[float] = None,
         t_img_pulse: Optional[float] = None,
+        frequency_z_lightshift: Optional[float] = None,
         delta_t_mu: Optional[int] = None,
         t_between_pulses_mu: Optional[int] = None,
         feedback_grid_size_override: Optional[int] = None,
         omega_guess_list_override: Optional[Sequence[float]] = None,
+        fractional_initial_offset_override: Optional[Sequence[float]] = None,
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = None,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
     ) -> FeedbackReplayResult:
@@ -503,12 +585,16 @@ class FeedbackReplayCore(Feedback):
             t_raman_pulse=t_raman_pulse,
             t_raman_pulse_ideal=t_raman_pulse_ideal,
             t_img_pulse=t_img_pulse,
+            frequency_z_lightshift=frequency_z_lightshift,
             delta_t_mu=delta_t_mu,
             t_between_pulses_mu=t_between_pulses_mu,
             feedback_grid_size_override=feedback_grid_size_override,
             omega_guess_list_override=omega_guess_list_override,
             apd_override_rr=apd_input_rr,
             omega_override_rr=omega_control_rr,
+            fractional_initial_offset_override=fractional_initial_offset_override,
+            feedback_apd_map_enabled=feedback_apd_map_enabled,
+            feedback_apd_map_verbose=feedback_apd_map_verbose,
             default_use_measured_apd=False,
             n_jobs=int(n_jobs),
             parallel_verbose=int(parallel_verbose),
@@ -519,6 +605,7 @@ class FeedbackReplayCore(Feedback):
         r: int,
         n_step: int,
         apd_rr: np.ndarray,
+        fractional_initial_offset_r: np.ndarray,
         omega_measured_rr: Optional[np.ndarray],
         control_omega_source: str,
         timing: Dict[str, float],
@@ -550,10 +637,14 @@ class FeedbackReplayCore(Feedback):
         dt_mu = int(timing["delta_t_mu"])
         tR_mu = int(timing["t_raman_set_pretrigger_mu"])
 
+        omega_guess_start_r = float(
+            self._omega_resonance_rad_s + self.Omega * float(fractional_initial_offset_r[r])
+        )
+
         if control_omega_source in {"measured", "override"}:
             self.omega_raman = float(omega_measured_rr[r, 0])
         else:
-            self.omega_raman = float(self.omega_guess_start)
+            self.omega_raman = omega_guess_start_r
 
         for i in range(n_step):
             if control_omega_source in {"measured", "override"}:
@@ -611,12 +702,16 @@ class FeedbackReplayCore(Feedback):
         t_raman_pulse: Optional[float],
         t_raman_pulse_ideal: Optional[float],
         t_img_pulse: Optional[float],
+        frequency_z_lightshift: Optional[float],
         delta_t_mu: Optional[int],
         t_between_pulses_mu: Optional[int],
         feedback_grid_size_override: Optional[int],
         omega_guess_list_override: Optional[Sequence[float]],
         apd_override_rr: Optional[Sequence[float]],
         omega_override_rr: Optional[Sequence[float]],
+        fractional_initial_offset_override: Optional[Sequence[float]],
+        feedback_apd_map_enabled: Optional[bool],
+        feedback_apd_map_verbose: Optional[bool],
         default_use_measured_apd: bool,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
@@ -636,13 +731,24 @@ class FeedbackReplayCore(Feedback):
         if (apd_override_rr is None) and (not default_use_measured_apd):
             raise ValueError("simulate_counterfactual requires apd_input_rr when not using measured APD.")
 
+        apd_rr = self._resolve_apd_rr(apd_override_rr=apd_override_rr)
+        n_repeat, n_step = apd_rr.shape
+        fractional_initial_offset_r = self._resolve_fractional_initial_offset_r(
+            n_repeat=n_repeat,
+            fractional_initial_offset_override=fractional_initial_offset_override,
+        )
+
         omega_guess_list, zidx = self._reinitialize_feedback(
             back_action_coherence=back_action_coherence,
             t_raman_pulse=t_raman_pulse,
             t_raman_pulse_ideal=t_raman_pulse_ideal,
             t_img_pulse=t_img_pulse,
+            frequency_z_lightshift=frequency_z_lightshift,
             feedback_grid_size_override=feedback_grid_size_override,
             omega_guess_list_override=omega_guess_list_override,
+            feedback_apd_map_enabled=feedback_apd_map_enabled,
+            feedback_apd_map_verbose=feedback_apd_map_verbose,
+            fractional_initial_offset=float(fractional_initial_offset_r[0]),
         )
 
         timing = self._resolve_timing(
@@ -652,9 +758,6 @@ class FeedbackReplayCore(Feedback):
             delta_t_mu=delta_t_mu,
             t_between_pulses_mu=t_between_pulses_mu,
         )
-
-        apd_rr = self._resolve_apd_rr(apd_override_rr=apd_override_rr)
-        n_repeat, n_step = apd_rr.shape
 
         omega_measured_rr = self._resolve_omega_rr(n_repeat=n_repeat, n_step=n_step, omega_override_rr=omega_override_rr)
         if control_omega_source in {"measured", "override"} and omega_measured_rr is None:
@@ -676,6 +779,7 @@ class FeedbackReplayCore(Feedback):
                     r,
                     n_step,
                     apd_rr,
+                    fractional_initial_offset_r,
                     omega_measured_rr,
                     control_omega_source,
                     timing,
@@ -720,7 +824,7 @@ class FeedbackReplayCore(Feedback):
 
             for r in range(n_repeat):
                 s_z, P0, omega_ctrl, omega_recomp, t_in, t_s, k, state = self._run_shot_parallel(
-                    r, n_step, apd_rr, omega_measured_rr, control_omega_source, timing,
+                    r, n_step, apd_rr, fractional_initial_offset_r, omega_measured_rr, control_omega_source, timing,
                     include_photon_noise, update_raman_frequency, update_rabi_frequency,
                     return_full_state, zidx,
                 )
@@ -1122,9 +1226,12 @@ class FeedbackReplay(FeedbackReplayCore):
         apd_noise_override_fraction: Optional[float] = None,
         apd_noise_min_std: float = 0.03,
         aggregate_mode: str = "point_weighted",
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = False,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
+        mse_smoothing_points: float = 0.0,
     ) -> Dict[str, object]:
         """Sweep one replay parameter and rank fits against APD data via per-omega-group metrics.
 
@@ -1177,6 +1284,9 @@ class FeedbackReplay(FeedbackReplayCore):
             Verbosity level for joblib parallel execution (0-10).
         eps
             Small positive number for numerical stability.
+        mse_smoothing_points
+            Gaussian smoothing width (sigma) in grid points for 1-D MSE
+            traces. If > 0, best-index selection uses smoothed MSE.
 
         Returns
         -------
@@ -1192,50 +1302,48 @@ class FeedbackReplay(FeedbackReplayCore):
         if len(value_list) == 0:
             raise ValueError("values must contain at least one entry.")
 
+        optimizer = FeedbackReplayOptimizer(self, replay_defaults=replay_kwargs)
+        optimizer.add_parameter(parameter_name, value_list)
+        fit_payload = optimizer.fit(
+            method="grid",
+            tolerance_rad_s=tolerance_rad_s,
+            include_apd_noise=include_apd_noise,
+            apd_noise_override_fraction=apd_noise_override_fraction,
+            apd_noise_min_std=apd_noise_min_std,
+            aggregate_mode=aggregate_mode,
+            feedback_apd_map_enabled=feedback_apd_map_enabled,
+            feedback_apd_map_verbose=feedback_apd_map_verbose,
+            n_jobs=int(n_jobs),
+            parallel_verbose=int(parallel_verbose),
+            eps=eps,
+            mse_smoothing_points=float(mse_smoothing_points),
+        )
+
         records: List[Dict[str, object]] = []
-
-        for value in value_list:
-            kwargs = dict(replay_kwargs)
-            kwargs[parameter_name] = float(value)
-            kwargs["n_jobs"] = int(n_jobs)
-            kwargs["parallel_verbose"] = int(parallel_verbose)
-
-            result = self.replay_measured(**kwargs)
-
-            # Per-omega-group fitting: naturally handles validation (1 group) and feedback (N groups)
-            fit_metrics = self.compute_group_fit_metrics_with_noise(
-                result,
-                include_apd_noise=include_apd_noise,
-                apd_noise_override_fraction=apd_noise_override_fraction,
-                apd_noise_min_std=apd_noise_min_std,
-                aggregate_mode=aggregate_mode,
-                tolerance_rad_s=tolerance_rad_s,
-                eps=eps,
-            )
-            groups = self.average_by_omega_group(
-                result, use_stderr=True, tolerance_rad_s=tolerance_rad_s
-            )
-
+        for record in fit_payload["records"]:
+            value = float(record["params"][parameter_name])
             records.append(
                 {
-                    parameter_name: float(value),
-                    "result": result,
-                    "groups": groups,
-                    "fit": fit_metrics,
+                    parameter_name: value,
+                    "result": record["result"],
+                    "groups": record["groups"],
+                    "fit": record["fit"],
                 }
             )
 
         losses = np.asarray([record["fit"]["overall_mse"] for record in records], dtype=float)
+        smoothed_losses = np.asarray(fit_payload.get("smoothed_losses", losses), dtype=float)
         if not np.isfinite(losses).any():
             raise RuntimeError(f"All sweep losses are non-finite for parameter {parameter_name!r}.")
 
-        best_idx = int(np.nanargmin(losses))
+        best_idx = int(fit_payload["best_index"])
         best_record = records[best_idx]
 
         return {
             "parameter_name": str(parameter_name),
             "values": np.asarray(value_list, dtype=float),
             "losses": losses,
+            "smoothed_losses": smoothed_losses,
             "records": records,
             "best_index": int(best_idx),
             "best_value": float(best_record[parameter_name]),
@@ -1243,7 +1351,9 @@ class FeedbackReplay(FeedbackReplayCore):
             "best_groups": best_record["groups"],
             "best_fit": best_record["fit"],
             "replay_kwargs": dict(replay_kwargs),
-            "fit_mode": "omega_group",
+            "fit_mode": str(fit_payload.get("fit_mode", "omega_group")),
+            "selection_metric": str(fit_payload.get("selection_metric", "raw_mse")),
+            "mse_smoothing_points": float(fit_payload.get("mse_smoothing_points", 0.0)),
             "include_apd_noise": include_apd_noise,
             "apd_noise_min_std": float(apd_noise_min_std),
             "aggregate_mode": str(aggregate_mode),
@@ -1271,14 +1381,32 @@ class FeedbackReplay(FeedbackReplayCore):
             for gidx, group in enumerate(groups):
                 t = group["t_s_z"]
                 color = color_cycle[gidx % len(color_cycle)]
-                ax.scatter(
-                    t,
-                    group["apd_norm_mean"],
-                    s=18,
-                    alpha=0.85,
-                    color=color,
-                    label=f"group {gidx} APD",
-                )
+                apd_mean = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
+                apd_err = np.asarray(group["apd_norm_err"], dtype=float).ravel()
+                n_members = int(np.asarray(group.get("members", []), dtype=int).size)
+
+                if n_members > 1:
+                    ax.errorbar(
+                        t,
+                        apd_mean,
+                        yerr=apd_err,
+                        fmt="o",
+                        markersize=4,
+                        capsize=2,
+                        elinewidth=1.0,
+                        alpha=0.85,
+                        color=color,
+                        label=f"group {gidx} APD",
+                    )
+                else:
+                    ax.scatter(
+                        t,
+                        apd_mean,
+                        s=18,
+                        alpha=0.85,
+                        color=color,
+                        label=f"group {gidx} APD",
+                    )
                 ax.plot(
                     t,
                     group["s_z_mean"],
@@ -1303,6 +1431,7 @@ class FeedbackReplay(FeedbackReplayCore):
         ax.set_title(f"run {run_id}: normalized APD vs simulated s_z")
         ax.set_xlabel("time (s)")
         ax.set_ylabel("spin-like value")
+        ax.set_ylim(-1.05, 1.05)
         ax.grid(alpha=0.25)
         return fig, ax
 
@@ -1499,3 +1628,946 @@ class FeedbackReplay(FeedbackReplayCore):
         cbar.set_label(cb_label)
 
         return fig, axs
+
+
+class FeedbackReplayOptimizer:
+    """Discrete optimizer for one or more replay parameters.
+
+    This helper wraps replay simulation and per-omega-group fitting in a
+    notebook-friendly API:
+
+    1. ``add_parameter(name, values=None)`` for each parameter to tune.
+    2. ``fit(...)`` to run simulations and rank candidates by overall MSE.
+
+    If ``values`` is omitted, the default sweep is centered on the current
+    parameter value and spans:
+
+    ``value * (1 + np.linspace(-0.2, 0.2, 51))``
+
+    Notes
+    -----
+    - ``method='adaptive'`` evaluates a DOE-style subset of combinations and
+      refines near current best candidates under ``max_evals`` budget.
+        - ``method='grid'`` evaluates the full Cartesian grid.
+    """
+
+    PARAMETER_ALIASES = {
+        "feedback_grid_size": "feedback_grid_size_override",
+        "frequency_lightshift": "frequency_z_lightshift",
+        "feedback_fractional_initial_offset": "fractional_initial_offset_override",
+        "fractional_initial_offset": "fractional_initial_offset_override",
+    }
+
+    def __init__(
+        self,
+        replay_or_ad,
+        *,
+        replay_defaults: Optional[Dict[str, object]] = None,
+    ):
+        if isinstance(replay_or_ad, FeedbackReplay):
+            self.replay = replay_or_ad
+        else:
+            self.replay = FeedbackReplay(replay_or_ad)
+
+        self.replay_defaults = {} if replay_defaults is None else dict(replay_defaults)
+        self._parameters: List[Tuple[str, np.ndarray]] = []
+
+    def _resolve_parameter_name(self, parameter_name: str) -> str:
+        return str(self.PARAMETER_ALIASES.get(parameter_name, parameter_name))
+
+    def _resolve_default_center_value(self, parameter_name: str) -> float:
+        resolved_name = self._resolve_parameter_name(parameter_name)
+
+        # Prefer experiment-side parameter object first.
+        if hasattr(self.replay.ad, "p"):
+            if hasattr(self.replay.ad.p, parameter_name):
+                base_value_raw = getattr(self.replay.ad.p, parameter_name)
+            elif resolved_name != parameter_name and hasattr(self.replay.ad.p, resolved_name):
+                base_value_raw = getattr(self.replay.ad.p, resolved_name)
+            else:
+                base_value_raw = None
+        else:
+            base_value_raw = None
+
+        # Fall back to replay defaults when ad.p does not provide the key.
+        if base_value_raw is None:
+            if parameter_name in self.replay_defaults:
+                base_value_raw = self.replay_defaults[parameter_name]
+            elif resolved_name in self.replay_defaults:
+                base_value_raw = self.replay_defaults[resolved_name]
+
+        if base_value_raw is None:
+            raise ValueError(
+                f"Cannot infer default sweep center for {parameter_name!r}. "
+                "Pass values explicitly or provide this key in replay_defaults."
+            )
+
+        base_value_array = np.asarray(base_value_raw, dtype=float).ravel()
+        if base_value_array.size != 1:
+            raise ValueError(
+                f"Default center for {parameter_name!r} must be scalar, got shape {base_value_array.shape}."
+            )
+
+        base_value = float(base_value_array[0])
+        if not np.isfinite(base_value):
+            raise ValueError(f"Default center for {parameter_name!r} must be finite, got {base_value!r}.")
+
+        return base_value
+
+    def add_parameter(
+        self,
+        parameter_name: str,
+        values: Optional[Sequence[float]] = None,
+        *,
+        fractional_span: float = 0.2,
+        n_points: int = 51,
+    ) -> "FeedbackReplayOptimizer":
+        """Register or replace a parameter search axis.
+
+        Parameters
+        ----------
+        parameter_name
+            Name of a replay parameter accepted by ``replay_measured``.
+        values
+            Explicit values to evaluate. If omitted, values are generated from
+            the current scalar parameter value as:
+            ``value * (1 + np.linspace(-fractional_span, fractional_span, n_points))``.
+        fractional_span
+            Relative half-span for the default generated grid.
+        n_points
+            Number of points for the default generated grid.
+        """
+        name = str(parameter_name).strip()
+        if len(name) == 0:
+            raise ValueError("parameter_name must be a non-empty string.")
+
+        resolved_name = self._resolve_parameter_name(name)
+
+        if values is None:
+            span = float(fractional_span)
+            if span < 0.0:
+                raise ValueError("fractional_span must be non-negative.")
+
+            points = int(n_points)
+            if points < 2:
+                raise ValueError("n_points must be at least 2.")
+
+            base_value = self._resolve_default_center_value(name)
+
+            value_array = base_value * (1.0 + np.linspace(-span, span, points))
+        else:
+            value_array = np.asarray(values, dtype=float).ravel()
+
+        if value_array.size == 0:
+            raise ValueError(f"{name} values must contain at least one entry.")
+        if not np.all(np.isfinite(value_array)):
+            raise ValueError(f"{name} values must all be finite numbers.")
+
+        cleaned = np.asarray(value_array, dtype=float)
+
+        for existing_name, _ in self._parameters:
+            if existing_name == name:
+                continue
+            if self._resolve_parameter_name(existing_name) == resolved_name:
+                raise ValueError(
+                    f"Parameter {name!r} maps to replay kwarg {resolved_name!r}, which is already "
+                    f"configured by {existing_name!r}. Remove one of them."
+                )
+
+        for idx, (existing_name, _) in enumerate(self._parameters):
+            if existing_name == name:
+                self._parameters[idx] = (name, cleaned)
+                break
+        else:
+            self._parameters.append((name, cleaned))
+
+        return self
+
+    def add_parameters(
+        self,
+        *parameter_names: str,
+        fractional_span: float = 0.2,
+        n_points: int = 51,
+    ) -> "FeedbackReplayOptimizer":
+        """Convenience method to add multiple default relative sweeps."""
+        for parameter_name in parameter_names:
+            self.add_parameter(
+                parameter_name,
+                values=None,
+                fractional_span=fractional_span,
+                n_points=n_points,
+            )
+        return self
+
+    def clear_parameters(self) -> "FeedbackReplayOptimizer":
+        """Clear all registered parameter axes."""
+        self._parameters = []
+        return self
+
+    def _shape(self) -> Tuple[int, ...]:
+        return tuple(int(values.size) for _, values in self._parameters)
+
+    def _index_to_params(self, index_tuple: Tuple[int, ...]) -> Dict[str, float]:
+        params: Dict[str, float] = {}
+        for (name, values), idx in zip(self._parameters, index_tuple):
+            params[name] = float(values[int(idx)])
+        return params
+
+    def _neighbor_indices(
+        self,
+        index_tuple: Tuple[int, ...],
+        shape: Tuple[int, ...],
+    ) -> List[Tuple[int, ...]]:
+        neighbors: List[Tuple[int, ...]] = []
+        for dim in range(len(shape)):
+            for step in (-1, 1):
+                idx = int(index_tuple[dim]) + int(step)
+                if idx < 0 or idx >= int(shape[dim]):
+                    continue
+                candidate = list(index_tuple)
+                candidate[dim] = idx
+                neighbors.append(tuple(candidate))
+        return neighbors
+
+    def _random_unseen_index(
+        self,
+        shape: Tuple[int, ...],
+        seen: set,
+        rng: np.random.Generator,
+    ) -> Optional[Tuple[int, ...]]:
+        total = int(np.prod(np.asarray(shape, dtype=np.int64)))
+        if len(seen) >= total:
+            return None
+
+        max_attempts = max(256, 32 * len(shape))
+        for _ in range(max_attempts):
+            candidate = tuple(int(rng.integers(0, int(size))) for size in shape)
+            if candidate not in seen:
+                return candidate
+
+        for candidate in np.ndindex(shape):
+            packed = tuple(int(i) for i in candidate)
+            if packed not in seen:
+                return packed
+        return None
+
+    def _sample_initial_indices(
+        self,
+        shape: Tuple[int, ...],
+        sample_count: int,
+        rng: np.random.Generator,
+    ) -> List[Tuple[int, ...]]:
+        if sample_count <= 0:
+            return []
+
+        samples: List[Tuple[int, ...]] = []
+        seen = set()
+
+        center = tuple((int(size) - 1) // 2 for size in shape)
+        samples.append(center)
+        seen.add(center)
+
+        if sample_count > 1:
+            low_corner = tuple(0 for _ in shape)
+            if low_corner not in seen:
+                samples.append(low_corner)
+                seen.add(low_corner)
+
+        if sample_count > 2:
+            high_corner = tuple(int(size) - 1 for size in shape)
+            if high_corner not in seen:
+                samples.append(high_corner)
+                seen.add(high_corner)
+
+        max_attempts = max(1024, sample_count * 32)
+        attempts = 0
+        while len(samples) < sample_count and attempts < max_attempts:
+            candidate = tuple(int(rng.integers(0, int(size))) for size in shape)
+            if candidate not in seen:
+                samples.append(candidate)
+                seen.add(candidate)
+            attempts += 1
+
+        if len(samples) < sample_count:
+            for candidate in np.ndindex(shape):
+                packed = tuple(int(i) for i in candidate)
+                if packed in seen:
+                    continue
+                samples.append(packed)
+                seen.add(packed)
+                if len(samples) >= sample_count:
+                    break
+
+        return samples
+
+    def _sample_grid_indices(
+        self,
+        shape: Tuple[int, ...],
+        sample_count: int,
+    ) -> List[Tuple[int, ...]]:
+        """Sample grid points that span the full Cartesian index range.
+
+        For full evaluation this returns all points. If ``sample_count`` is
+        smaller than the full grid size, it returns approximately evenly spaced
+        points over the flattened grid index and then maps them back to
+        multi-dimensional indices.
+        """
+        total = int(np.prod(np.asarray(shape, dtype=np.int64)))
+        if total <= 0 or sample_count <= 0:
+            return []
+
+        if sample_count >= total:
+            return [tuple(int(i) for i in idx) for idx in np.ndindex(shape)]
+
+        flat_positions = np.linspace(0, total - 1, sample_count)
+        candidate_flat = np.rint(flat_positions).astype(np.int64)
+
+        chosen_flat: List[int] = []
+        seen_flat = set()
+        for flat in candidate_flat:
+            flat_int = int(flat)
+            if flat_int in seen_flat:
+                continue
+            seen_flat.add(flat_int)
+            chosen_flat.append(flat_int)
+
+        # Fill any missing samples (possible with rounding collisions).
+        if len(chosen_flat) < sample_count:
+            step = max(1, total // sample_count)
+            probe = 0
+            while len(chosen_flat) < sample_count and probe < total * 2:
+                flat_int = int((probe * step) % total)
+                if flat_int not in seen_flat:
+                    seen_flat.add(flat_int)
+                    chosen_flat.append(flat_int)
+                probe += 1
+
+        indices: List[Tuple[int, ...]] = []
+        for flat_int in chosen_flat[:sample_count]:
+            idx = np.unravel_index(int(flat_int), shape)
+            indices.append(tuple(int(i) for i in idx))
+        return indices
+
+    def _evaluate_candidate(
+        self,
+        index_tuple: Tuple[int, ...],
+        *,
+        replay_kwargs: Dict[str, object],
+        tolerance_rad_s: Optional[float],
+        include_apd_noise: Optional[bool],
+        apd_noise_override_fraction: Optional[float],
+        apd_noise_min_std: float,
+        aggregate_mode: str,
+        n_jobs: int,
+        parallel_verbose: int,
+        eps: float,
+    ) -> Dict[str, object]:
+        params = self._index_to_params(index_tuple)
+        resolved_params: Dict[str, float] = {}
+        for key, value in params.items():
+            resolved_params[self._resolve_parameter_name(key)] = float(value)
+
+        resolved_replay_kwargs = dict(self.replay_defaults)
+        resolved_replay_kwargs.update(replay_kwargs)
+        resolved_replay_kwargs.update(resolved_params)
+        resolved_replay_kwargs["n_jobs"] = int(n_jobs)
+        resolved_replay_kwargs["parallel_verbose"] = int(parallel_verbose)
+
+        result = self.replay.replay_measured(**resolved_replay_kwargs)
+        fit_metrics = self.replay.compute_group_fit_metrics_with_noise(
+            result,
+            include_apd_noise=include_apd_noise,
+            apd_noise_override_fraction=apd_noise_override_fraction,
+            apd_noise_min_std=apd_noise_min_std,
+            aggregate_mode=aggregate_mode,
+            tolerance_rad_s=tolerance_rad_s,
+            eps=eps,
+        )
+        groups = self.replay.average_by_omega_group(
+            result,
+            use_stderr=True,
+            tolerance_rad_s=tolerance_rad_s,
+        )
+
+        return {
+            "indices": tuple(int(i) for i in index_tuple),
+            "params": params,
+            "result": result,
+            "groups": groups,
+            "fit": fit_metrics,
+            "loss": float(fit_metrics["overall_mse"]),
+        }
+
+    @staticmethod
+    def _gaussian_kernel_1d(sigma_points: float) -> np.ndarray:
+        sigma = float(sigma_points)
+        if sigma <= 0.0:
+            return np.asarray([1.0], dtype=float)
+
+        radius = max(1, int(np.ceil(4.0 * sigma)))
+        x = np.arange(-radius, radius + 1, dtype=float)
+        kernel = np.exp(-0.5 * (x / sigma) ** 2)
+        kernel_sum = float(np.sum(kernel))
+        if kernel_sum <= 0.0:
+            return np.asarray([1.0], dtype=float)
+        return kernel / kernel_sum
+
+    @classmethod
+    def _smooth_1d_nanaware(cls, values: np.ndarray, sigma_points: float) -> np.ndarray:
+        arr = np.asarray(values, dtype=float)
+        if arr.size == 0:
+            return arr.copy()
+
+        sigma = float(sigma_points)
+        if sigma <= 0.0:
+            return arr.copy()
+
+        kernel = cls._gaussian_kernel_1d(sigma)
+        finite = np.isfinite(arr).astype(float)
+        arr0 = np.where(np.isfinite(arr), arr, 0.0)
+
+        num = np.convolve(arr0, kernel, mode="same")
+        den = np.convolve(finite, kernel, mode="same")
+
+        out = np.full(arr.shape, np.nan, dtype=float)
+        mask = den > 0.0
+        out[mask] = num[mask] / den[mask]
+        return out
+
+    def fit(
+        self,
+        *,
+        method: str = "adaptive",
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        tolerance_rad_s: Optional[float] = None,
+        include_apd_noise: Optional[bool] = None,
+        apd_noise_override_fraction: Optional[float] = None,
+        apd_noise_min_std: float = 0.03,
+        aggregate_mode: str = "point_weighted",
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = False,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        eps: float = 1.0e-12,
+        mse_smoothing_points: float = 0.0,
+        max_evals: Optional[int] = None,
+        n_initial: Optional[int] = None,
+        refine_top_k: int = 4,
+        random_state: int = 0,
+    ) -> Dict[str, object]:
+        """Fit one or more replay parameters against APD data.
+
+        Parameters
+        ----------
+        method
+            Search strategy:
+            - ``'adaptive'``: DOE-style subset + local neighbor refinement.
+            - ``'grid'``: evaluate full Cartesian grid.
+        replay_kwargs
+            Extra keyword arguments passed to ``replay_measured`` for all runs.
+        max_evals
+            Maximum number of candidates to evaluate in adaptive mode. Grid mode
+            always evaluates the full Cartesian grid and ignores this argument.
+        n_initial
+            Initial DOE sample size for adaptive mode. If ``None``, chosen from
+            parameter dimensionality and ``max_evals``.
+        refine_top_k
+            Number of best current candidates used as local-neighbor seeds in
+            adaptive mode.
+        random_state
+            Seed for adaptive random sampling.
+        mse_smoothing_points
+            Gaussian smoothing width (sigma) in points for 1-D loss traces.
+            Applied only when fitting exactly one parameter. If > 0, the best
+            index is selected from smoothed losses.
+
+        Returns
+        -------
+        dict
+            Best-fit-first payload with records and search metadata.
+        """
+        if len(self._parameters) == 0:
+            raise ValueError("No parameters registered. Call add_parameter(...) before fit().")
+
+        method_norm = str(method).strip().lower()
+        if method_norm not in {"adaptive", "grid"}:
+            raise ValueError("method must be 'adaptive' or 'grid'.")
+
+        if replay_kwargs is None:
+            replay_kwargs = {}
+        else:
+            replay_kwargs = dict(replay_kwargs)
+
+        if feedback_apd_map_enabled is not None:
+            replay_kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
+
+        if feedback_apd_map_verbose is not None:
+            replay_kwargs["feedback_apd_map_verbose"] = bool(feedback_apd_map_verbose)
+
+        shape = self._shape()
+        total_possible = int(np.prod(np.asarray(shape, dtype=np.int64)))
+        if total_possible <= 0:
+            raise ValueError("Parameter grid is empty; check add_parameter inputs.")
+
+        if method_norm == "grid":
+            max_evals_resolved = total_possible
+        elif max_evals is None:
+            max_evals_resolved = min(total_possible, max(24, 8 * len(shape)))
+        else:
+            max_evals_resolved = int(max_evals)
+
+        if max_evals_resolved <= 0:
+            raise ValueError("max_evals must be positive.")
+
+        budget = min(total_possible, int(max_evals_resolved))
+
+        if n_initial is None:
+            n_initial_resolved = min(budget, max(8, 3 * len(shape)))
+        else:
+            n_initial_resolved = int(n_initial)
+            if n_initial_resolved <= 0:
+                raise ValueError("n_initial must be positive when provided.")
+            n_initial_resolved = min(n_initial_resolved, budget)
+
+        refine_top_k_resolved = max(1, int(refine_top_k))
+        rng = np.random.default_rng(int(random_state))
+
+        records: List[Dict[str, object]] = []
+        evaluated = set()
+
+        def evaluate(index_tuple: Tuple[int, ...]) -> None:
+            packed = tuple(int(i) for i in index_tuple)
+            if packed in evaluated:
+                return
+
+            record = self._evaluate_candidate(
+                packed,
+                replay_kwargs=replay_kwargs,
+                tolerance_rad_s=tolerance_rad_s,
+                include_apd_noise=include_apd_noise,
+                apd_noise_override_fraction=apd_noise_override_fraction,
+                apd_noise_min_std=apd_noise_min_std,
+                aggregate_mode=aggregate_mode,
+                n_jobs=int(n_jobs),
+                parallel_verbose=int(parallel_verbose),
+                eps=eps,
+            )
+            record["eval_index"] = int(len(records))
+            records.append(record)
+            evaluated.add(packed)
+
+        if method_norm == "grid":
+            for candidate in self._sample_grid_indices(shape, budget):
+                evaluate(candidate)
+        else:
+            initial_candidates = self._sample_initial_indices(
+                shape,
+                sample_count=n_initial_resolved,
+                rng=rng,
+            )
+            for candidate in initial_candidates:
+                if len(evaluated) >= budget:
+                    break
+                evaluate(candidate)
+
+            while len(evaluated) < budget:
+                finite_records = [
+                    record
+                    for record in records
+                    if np.isfinite(float(record["loss"]))
+                ]
+
+                if len(finite_records) == 0:
+                    fallback = self._random_unseen_index(shape, evaluated, rng)
+                    if fallback is None:
+                        break
+                    evaluate(fallback)
+                    continue
+
+                finite_records_sorted = sorted(
+                    finite_records,
+                    key=lambda record: float(record["loss"]),
+                )
+                candidate_queue: List[Tuple[int, ...]] = []
+                for seed in finite_records_sorted[:refine_top_k_resolved]:
+                    for neighbor in self._neighbor_indices(seed["indices"], shape):
+                        if neighbor in evaluated or neighbor in candidate_queue:
+                            continue
+                        candidate_queue.append(neighbor)
+
+                if len(candidate_queue) == 0:
+                    fallback = self._random_unseen_index(shape, evaluated, rng)
+                    if fallback is None:
+                        break
+                    evaluate(fallback)
+                    continue
+
+                for candidate in candidate_queue:
+                    if len(evaluated) >= budget:
+                        break
+                    evaluate(candidate)
+
+        if len(records) == 0:
+            raise RuntimeError("No optimizer candidates were evaluated.")
+
+        losses = np.asarray([float(record["loss"]) for record in records], dtype=float)
+        if not np.isfinite(losses).any():
+            raise RuntimeError("All optimizer losses are non-finite.")
+
+        smoothing_points = float(mse_smoothing_points)
+        if smoothing_points < 0.0:
+            raise ValueError("mse_smoothing_points must be >= 0.")
+
+        smoothed_losses = losses.copy()
+        selection_losses = losses
+        selection_metric = "raw_mse"
+
+        if smoothing_points > 0.0:
+            if len(self._parameters) == 1:
+                pname = self._parameters[0][0]
+                xvals = np.asarray([float(record["params"][pname]) for record in records], dtype=float)
+                order = np.argsort(xvals)
+                losses_sorted = losses[order]
+                smoothed_sorted = self._smooth_1d_nanaware(losses_sorted, smoothing_points)
+
+                smoothed_losses = np.full(losses.shape, np.nan, dtype=float)
+                smoothed_losses[order] = smoothed_sorted
+
+                if np.isfinite(smoothed_losses).any():
+                    selection_losses = smoothed_losses
+                    selection_metric = "smoothed_mse"
+            else:
+                import warnings
+                warnings.warn(
+                    "mse_smoothing_points is only applied for single-parameter fits; "
+                    "using raw losses for best-index selection.",
+                    UserWarning,
+                )
+
+        best_idx = int(np.nanargmin(selection_losses))
+        best_record = records[best_idx]
+        parameter_names = [name for name, _ in self._parameters]
+
+        return {
+            "method": method_norm,
+            "fit_mode": "omega_group",
+            "parameter_names": parameter_names,
+            "parameter_values": {
+                name: values.copy() for name, values in self._parameters
+            },
+            "records": records,
+            "losses": losses,
+            "smoothed_losses": smoothed_losses,
+            "selection_losses": selection_losses,
+            "selection_metric": str(selection_metric),
+            "mse_smoothing_points": float(smoothing_points),
+            "best_index": int(best_idx),
+            "best_params": dict(best_record["params"]),
+            "best_value": float(next(iter(best_record["params"].values())))
+            if len(best_record["params"]) == 1
+            else None,
+            "best_result": best_record["result"],
+            "best_groups": best_record["groups"],
+            "best_fit": best_record["fit"],
+            "search_metadata": {
+                "n_total_possible": int(total_possible),
+                "n_evaluated": int(len(records)),
+                "evaluation_fraction": float(len(records)) / float(total_possible),
+                "max_evals": int(max_evals_resolved),
+                "n_initial": int(n_initial_resolved),
+                "refine_top_k": int(refine_top_k_resolved),
+                "random_state": int(random_state),
+            },
+            "replay_kwargs": dict(replay_kwargs),
+            "include_apd_noise": include_apd_noise,
+            "apd_noise_min_std": float(apd_noise_min_std),
+            "aggregate_mode": str(aggregate_mode),
+            "tolerance_rad_s": tolerance_rad_s,
+            "apd_noise_override_fraction": apd_noise_override_fraction,
+        }
+
+    def fit_report(
+        self,
+        *,
+        method: str = "adaptive",
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        tolerance_rad_s: Optional[float] = None,
+        include_apd_noise: Optional[bool] = None,
+        apd_noise_override_fraction: Optional[float] = None,
+        apd_noise_min_std: float = 0.03,
+        aggregate_mode: str = "point_weighted",
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = False,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        eps: float = 1.0e-12,
+        mse_smoothing_points: float = 0.0,
+        max_evals: Optional[int] = None,
+        n_initial: Optional[int] = None,
+        refine_top_k: int = 4,
+        random_state: int = 0,
+        max_groups_to_plot: int = 7,
+        show_posterior: bool = True,
+        posterior_repeat_idx: int = 0,
+        posterior_log_scale: bool = True,
+        posterior_normalize_after: int = 0,
+        posterior_cmap: str = "viridis",
+        verbose: bool = True,
+    ) -> Dict[str, object]:
+        """Run fit and generate standard diagnostics plots and summary output.
+
+        This method keeps the notebook surface minimal by combining:
+        - optimizer fitting,
+        - objective and overlay plotting,
+        - optional posterior diagnostic,
+        - optional printed summary.
+        """
+        fit_payload = self.fit(
+            method=method,
+            replay_kwargs=replay_kwargs,
+            tolerance_rad_s=tolerance_rad_s,
+            include_apd_noise=include_apd_noise,
+            apd_noise_override_fraction=apd_noise_override_fraction,
+            apd_noise_min_std=apd_noise_min_std,
+            aggregate_mode=aggregate_mode,
+            feedback_apd_map_enabled=feedback_apd_map_enabled,
+            feedback_apd_map_verbose=feedback_apd_map_verbose,
+            n_jobs=n_jobs,
+            parallel_verbose=parallel_verbose,
+            eps=eps,
+            mse_smoothing_points=float(mse_smoothing_points),
+            max_evals=max_evals,
+            n_initial=n_initial,
+            refine_top_k=refine_top_k,
+            random_state=random_state,
+        )
+
+        losses = np.asarray(fit_payload["losses"], dtype=float)
+        smoothed_losses = np.asarray(fit_payload.get("smoothed_losses", losses), dtype=float)
+        selection_losses = np.asarray(fit_payload.get("selection_losses", losses), dtype=float)
+        selection_metric = str(fit_payload.get("selection_metric", "raw_mse"))
+        best_idx = int(fit_payload["best_index"])
+        best_result = fit_payload["best_result"]
+        best_groups = fit_payload["best_groups"]
+        best_fit = fit_payload["best_fit"]
+        best_params = dict(fit_payload["best_params"])
+        param_names = list(fit_payload["parameter_names"])
+        run_id = int(best_result.metadata.get("run_id", -1))
+        search_meta = dict(fit_payload.get("search_metadata", {}))
+
+        ad = self.replay.ad
+        N_exp = float(getattr(ad.p, "n_photons_per_shot", getattr(ad.p, "N_photons_per_shot", np.nan)))
+        std_exp = getattr(ad.p, "std_n_photons_per_shot", None)
+        if std_exp is None:
+            std_exp = getattr(ad.p, "n_std_photons_per_shot", np.nan)
+        std_exp = float(std_exp)
+        exp_noise_fraction = std_exp / N_exp if np.isfinite(std_exp) and np.isfinite(N_exp) and N_exp > 0 else np.nan
+        sim_noise_fraction = float(best_fit.get("apd_noise_fraction", np.nan))
+
+        overlay_kwargs = dict(self.replay_defaults)
+        if replay_kwargs is not None:
+            overlay_kwargs.update(dict(replay_kwargs))
+        if feedback_apd_map_enabled is not None:
+            overlay_kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
+        if feedback_apd_map_verbose is not None:
+            overlay_kwargs["feedback_apd_map_verbose"] = bool(feedback_apd_map_verbose)
+
+        expt_param_pairs: List[Tuple[str, float]] = []
+        for pname in param_names:
+            resolved_name = self._resolve_parameter_name(pname)
+            raw_value = None
+            if hasattr(ad.p, pname):
+                raw_value = getattr(ad.p, pname)
+            elif resolved_name != pname and hasattr(ad.p, resolved_name):
+                raw_value = getattr(ad.p, resolved_name)
+
+            try:
+                value = np.nan if raw_value is None else float(raw_value)
+            except (TypeError, ValueError):
+                value = np.nan
+
+            if np.isfinite(value):
+                overlay_kwargs[resolved_name] = value
+                expt_param_pairs.append((pname, value))
+
+        expt_result = None
+        expt_groups: List[Dict[str, np.ndarray]] = []
+        if len(expt_param_pairs) > 0:
+            overlay_kwargs["n_jobs"] = int(n_jobs)
+            overlay_kwargs["parallel_verbose"] = int(parallel_verbose)
+            expt_result = self.replay.replay_measured(**overlay_kwargs)
+            expt_groups = self.replay.average_by_omega_group(
+                expt_result,
+                use_stderr=True,
+                tolerance_rad_s=tolerance_rad_s,
+            )
+
+        fig, axs = plt.subplots(1, 2, figsize=(13, 4.8), layout="constrained")
+
+        # Panel 1: objective view
+        if len(param_names) == 1:
+            pname = param_names[0]
+            xvals = np.asarray([float(record["params"][pname]) for record in fit_payload["records"]], dtype=float)
+            order = np.argsort(xvals)
+            axs[0].plot(xvals[order], losses[order], "o-", lw=1.3, ms=4.5, alpha=0.8, label="MSE")
+
+            if selection_metric == "smoothed_mse":
+                sigma_points = float(fit_payload.get("mse_smoothing_points", mse_smoothing_points))
+                axs[0].plot(
+                    xvals[order],
+                    smoothed_losses[order],
+                    "s-",
+                    lw=2.0,
+                    ms=4.2,
+                    alpha=0.85,
+                    label=f"smoothed MSE (sigma={sigma_points:g} pts)",
+                )
+
+            axs[0].axvline(float(best_params[pname]), color="red", linestyle="--", lw=1.2, alpha=0.8, label="best")
+            axs[0].scatter([float(best_params[pname])], [selection_losses[best_idx]], color="red", s=55, marker="*", zorder=3)
+            axs[0].set_xlabel(pname)
+        else:
+            eval_idx = np.arange(len(losses), dtype=int)
+            axs[0].plot(eval_idx, losses, "o-", lw=1.1, ms=3.8, alpha=0.7, label="MSE per evaluated candidate")
+            axs[0].axvline(best_idx, color="red", linestyle="--", lw=1.2, alpha=0.8, label="best index")
+            axs[0].scatter([best_idx], [selection_losses[best_idx]], color="red", s=55, marker="*", zorder=3)
+            axs[0].set_xlabel("evaluation index")
+
+        axs[0].set_ylabel("MSE objective (mean over omega-group MSEs)")
+        axs[0].set_title(f"Multi-parameter fit ({method}; {len(param_names)} params)")
+        axs[0].legend(loc="best")
+        axs[0].grid(alpha=0.25)
+
+        # Panel 2: best-fit APD vs simulation overlay
+        n_groups = int(best_fit["n_groups"])
+        if n_groups > int(max_groups_to_plot):
+            target = max(1, int(max_groups_to_plot))
+            plotted_group_indices = np.unique(np.linspace(0, n_groups - 1, target, dtype=int)).tolist()
+            overlay_title = f"Best fit overlay (shown groups: {len(plotted_group_indices)}/{n_groups})"
+        else:
+            plotted_group_indices = list(range(n_groups))
+            overlay_title = f"Best fit grouped overlay ({n_groups} groups)"
+
+        cmap = plt.get_cmap("tab20", max(1, len(plotted_group_indices)))
+        for cidx, gidx in enumerate(plotted_group_indices):
+            group = best_groups[int(gidx)]
+            group_color = cmap(cidx)
+            t = np.asarray(group["t_s_z"], dtype=float).ravel()
+            apd_mean = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
+            apd_err = np.asarray(group["apd_norm_err"], dtype=float).ravel()
+            sim_best_mean = np.asarray(group["s_z_mean"], dtype=float).ravel()
+            n_members = int(np.asarray(group.get("members", []), dtype=int).size)
+
+            if n_members > 1:
+                axs[1].errorbar(
+                    t,
+                    apd_mean,
+                    yerr=apd_err,
+                    fmt="o",
+                    markersize=4,
+                    capsize=2,
+                    elinewidth=1.0,
+                    alpha=0.8,
+                    color=group_color,
+                )
+            else:
+                axs[1].scatter(t, apd_mean, s=16, alpha=0.8, color=group_color)
+
+            axs[1].plot(t, sim_best_mean, "-", lw=1.5, alpha=0.95, color=group_color)
+
+            if int(gidx) < len(expt_groups):
+                sim_expt_mean = np.asarray(expt_groups[int(gidx)]["s_z_mean"], dtype=float).ravel()
+                axs[1].plot(t, sim_expt_mean, ":", lw=1.8, alpha=0.95, color=group_color)
+
+        axs[1].set_title(overlay_title)
+        axs[1].set_ylim(-1.05, 1.05)
+
+        best_lines = [f"{name}={float(best_params[name]):.4g}" for name in param_names]
+        if len(expt_param_pairs) == 0:
+            expt_lines = ["experiment: n/a"]
+        else:
+            expt_lines = [f"exp {name}={value:.4g}" for name, value in expt_param_pairs]
+        value_text = "best:\n" + "\n".join(best_lines[:6])
+        if len(best_lines) > 6:
+            value_text += "\n..."
+        value_text += "\n" + "\n".join(expt_lines[:3])
+        if len(expt_lines) > 3:
+            value_text += "\n..."
+
+        axs[1].text(
+            0.02,
+            0.98,
+            value_text,
+            transform=axs[1].transAxes,
+            ha="left",
+            va="top",
+            fontsize="small",
+            bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="0.7", alpha=0.85),
+        )
+
+        legend_handles = [
+            plt.Line2D([], [], color="0.15", linestyle="-", lw=1.8, label="Best-fit sim"),
+            plt.Line2D([], [], color="0.35", linestyle=":", lw=2.0, label="In-experiment sim"),
+            plt.Line2D([], [], color="0.55", marker="o", linestyle="None", markersize=5, label="Experiment APD"),
+        ]
+        axs[1].legend(handles=legend_handles, loc="best")
+        axs[1].set_xlabel("time (s)")
+        axs[1].set_ylabel("spin-like value")
+        axs[1].grid(alpha=0.25)
+        fig.suptitle(f"run {run_id}: multi-parameter feedback fit overlay")
+
+        if verbose:
+            print(f"fit mode: {fit_payload.get('fit_mode', 'omega_group')}")
+            print(f"method: {method}")
+            print(f"parameters: {param_names}")
+            for pname in param_names:
+                print(f"best {pname}: {float(best_params[pname]):.6g}")
+            print(f"best overall MSE: {best_fit['overall_mse']:.6e}")
+            print(f"omega groups: {best_fit['n_groups']} | measurement points: {best_fit['n_points']}")
+            print(f"APD noise fraction (simulation): {sim_noise_fraction:.6g}")
+            print(f"APD noise fraction (experiment): {exp_noise_fraction:.6g}")
+            print(f"APD noise min std: {best_fit.get('apd_noise_min_std', np.nan):.6g}")
+            print(f"aggregation mode: {best_fit.get('aggregate_mode', 'mean_over_groups')}")
+            print(f"APD noise applied to any group: {best_fit.get('apd_noise_applied_any', False)}")
+            print(f"max groups shown before representative-run mode: {int(max_groups_to_plot)}")
+            print(f"parallelization: n_jobs={n_jobs} (1=sequential, -1=all cores)")
+            print(f"selection metric: {selection_metric}")
+            if selection_metric == "smoothed_mse":
+                print(f"MSE smoothing sigma (points): {float(fit_payload.get('mse_smoothing_points', mse_smoothing_points)):.6g}")
+            print(
+                "evaluated candidates: "
+                f"{int(search_meta.get('n_evaluated', len(fit_payload['records'])))} / "
+                f"{int(search_meta.get('n_total_possible', len(fit_payload['records'])))}"
+            )
+
+        posterior_figure = None
+        posterior_axes = None
+        if show_posterior:
+            posterior_figure, posterior_axes = self.replay.plot_probability_comparison(
+                best_result,
+                repeat_idx=int(posterior_repeat_idx),
+                log_scale=bool(posterior_log_scale),
+                normalize_after=int(posterior_normalize_after),
+                cmap=str(posterior_cmap),
+            )
+            posterior_figure.suptitle(
+                f"run {run_id}: posterior reconstruction at best multi-parameter fit"
+            )
+
+        return {
+            "fit": fit_payload,
+            "figure": fig,
+            "axes": axs,
+            "posterior_figure": posterior_figure,
+            "posterior_axes": posterior_axes,
+            "best_result": best_result,
+            "best_groups": best_groups,
+            "best_fit": best_fit,
+            "best_params": best_params,
+            "run_id": run_id,
+            "experiment_overlay": {
+                "result": expt_result,
+                "groups": expt_groups,
+                "params": expt_param_pairs,
+            },
+        }
