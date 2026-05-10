@@ -50,7 +50,8 @@ class Feedback:
         std_n_photons_per_shot=None,
         back_action_coherence=None,
         photon_count_scale=1.0,
-        m=21,
+        feedback_grid_size=21,
+        m=None,
         fractional_initial_offset=-5.0,
         guess_span_Omega=5.0,
         lut_size=4096):
@@ -58,8 +59,10 @@ class Feedback:
         if not hasattr(self, "p"):
             self.p = _FeedbackParamStore()
 
+        resolved_feedback_grid_size = feedback_grid_size if m is None else m
+
         self._initialize_timing(
-            m=m,
+            feedback_grid_size=resolved_feedback_grid_size,
             t_raman_pulse=t_raman_pulse,
             t_raman_pulse_ideal=t_raman_pulse_ideal,
             dt_eff=dt_eff,
@@ -320,7 +323,7 @@ class Feedback:
 
     def _initialize_timing(
         self,
-        m,
+        feedback_grid_size,
         t_raman_pulse,
         t_raman_pulse_ideal,
         dt_eff,
@@ -328,7 +331,8 @@ class Feedback:
         t_img_pulse,
         t_raman_pi_pulse,
     ):
-        self.m = int(m)
+        self.p.feedback_grid_size = int(feedback_grid_size)
+        self.m = self.p.feedback_grid_size
         self.Omega = np.pi / t_raman_pi_pulse
 
         # Accept either legacy t_raman_* names or explicit dt_* names.
@@ -681,7 +685,7 @@ def _feedback_kwargs_from_atomdata(ad):
         "n_photons_per_shot": getattr(p, "n_photons_per_shot", getattr(p, "N_photons_per_shot", None)),
         "std_n_photons_per_shot": getattr(p, "std_n_photons_per_shot", None),
         "photon_count_scale": getattr(p, "feedback_photon_count_scale", 1.0),
-        "m": int(getattr(p, "feedback_grid_size", 21)),
+        "feedback_grid_size": int(getattr(p, "feedback_grid_size", 21)),
         "fractional_initial_offset": float(getattr(p, "feedback_fractional_initial_offset", -5.0)),
         "guess_span_Omega": float(getattr(p, "feedback_guess_span_Omega", 5.0)),
     }

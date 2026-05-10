@@ -84,9 +84,9 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.p.N_repeats = 1
         
-        self.m = 3 # feedback grid size
-        # self.N_pulses = 15 # number of steps of evolution
-        self.N_pulses = 11 # number of steps of evolution
+        self.p.feedback_grid_size = 3 # feedback grid size
+        # self.p.N_pulses = 15 # number of steps of evolution
+        self.p.N_pulses = 11 # number of steps of evolution
 
         self.p.t_tweezer_hold = 30.e-3
 
@@ -95,7 +95,7 @@ class feedback(EnvExperiment, Base, Feedback):
         ###
 
         # timing docs: https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.cvj0bnjp2og4#heading=h.pimm1a640bup
-        self.p.t_calculation_slack_compensation_mu = int64(0.61 * self.m * 1.e3) + 30000 if self.m > 10 else int64(10000)
+        self.p.t_calculation_slack_compensation_mu = int64(0.61 * self.p.feedback_grid_size * 1.e3) + 30000 if self.p.feedback_grid_size > 10 else int64(10000)
         self.p.t_fifo_mu = int64(18416)
         self.p.t_raman_set_pretrigger_mu = int64(4000) & ~7 # int64(1260)
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
@@ -111,12 +111,12 @@ class feedback(EnvExperiment, Base, Feedback):
         ### setup data containers
 
         self.idx = 0
-        self.data.omega_raman = self.data.add_data_container(self.N_pulses)
-        self.data.Omega = self.data.add_data_container(self.N_pulses)
-        self.data.apd = self.data.add_data_container(self.N_pulses)
+        self.data.omega_raman = self.data.add_data_container(self.p.N_pulses)
+        self.data.Omega = self.data.add_data_container(self.p.N_pulses)
+        self.data.apd = self.data.add_data_container(self.p.N_pulses)
 
-        self.data.s_z = self.data.add_data_container(self.N_pulses)
-        self.data.t = self.data.add_data_container(self.N_pulses)
+        self.data.s_z = self.data.add_data_container(self.p.N_pulses)
+        self.data.t = self.data.add_data_container(self.p.N_pulses)
 
         ### feedback setup
         # uses calibration for v_apd and n_photons from integrator_calibration
@@ -134,7 +134,7 @@ class feedback(EnvExperiment, Base, Feedback):
                           n_photons_per_shot=self.p.n_photons_per_shot,
                           std_n_photons_per_shot=self.p.n_std_photons_per_shot,
                           frequency_resonance = self.p.frequency_raman_transition,
-                          m = self.m,
+                          feedback_grid_size = self.p.feedback_grid_size,
                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
                           guess_span_Omega = self.p.feedback_guess_span_Omega,
                           back_action_coherence = self.p.back_action_coherence
@@ -148,8 +148,8 @@ class feedback(EnvExperiment, Base, Feedback):
         
         self._phase = 0
 
-        self.data.phi = self.data.add_data_container(self.N_pulses)
-        self.data.ts = self.data.add_data_container(self.N_pulses)
+        self.data.phi = self.data.add_data_container(self.p.N_pulses)
+        self.data.ts = self.data.add_data_container(self.p.N_pulses)
 
         self.finish_prepare()
 
@@ -182,7 +182,7 @@ class feedback(EnvExperiment, Base, Feedback):
         dt = self.p.delta_t_mu
         tR = self.p.t_raman_set_pretrigger_mu
         
-        for i in range(self.N_pulses):
+        for i in range(self.p.N_pulses):
             # self.omega_raman = self.p.intermediate_detuning
 
             # self.omega_raman = self.p.omega_pulse_list[i] 

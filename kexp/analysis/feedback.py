@@ -127,10 +127,12 @@ class FeedbackReplayCore(Feedback):
         if not hasattr(ad, "data") or not hasattr(ad.data, "apd"):
             raise ValueError("atomdata must provide ad.data.apd for replay.")
 
-        if hasattr(p, "omega_guess_list"):
+        if hasattr(p, "feedback_grid_size"):
+            kwargs["feedback_grid_size"] = int(getattr(p, "feedback_grid_size"))
+        elif hasattr(p, "omega_guess_list"):
             omega_guess = np.asarray(p.omega_guess_list, dtype=float)
             if omega_guess.ndim == 1 and omega_guess.size > 0:
-                kwargs["m"] = int(omega_guess.size)
+                kwargs["feedback_grid_size"] = int(omega_guess.size)
 
         return kwargs
 
@@ -203,7 +205,7 @@ class FeedbackReplayCore(Feedback):
 
     def _resolve_grid(
         self,
-        m_override: Optional[int],
+        feedback_grid_size_override: Optional[int],
         omega_guess_list_override: Optional[Sequence[float]],
     ) -> Tuple[np.ndarray, int]:
         freq_res = float(self._base_kwargs["frequency_resonance"])
@@ -220,10 +222,14 @@ class FeedbackReplayCore(Feedback):
         else:
             omega_saved = np.asarray(self.omega_guess_list, dtype=float).ravel()
 
-        if m_override is None or int(m_override) == omega_saved.size:
+        if feedback_grid_size_override is None or int(feedback_grid_size_override) == omega_saved.size:
             omega_guess = omega_saved
         else:
-            omega_guess = np.linspace(float(np.min(omega_saved)), float(np.max(omega_saved)), int(m_override))
+            omega_guess = np.linspace(
+                float(np.min(omega_saved)),
+                float(np.max(omega_saved)),
+                int(feedback_grid_size_override),
+            )
 
         zidx = int(np.argmin(np.abs(omega_guess - omega_res)))
         return omega_guess, zidx
@@ -235,7 +241,7 @@ class FeedbackReplayCore(Feedback):
         t_raman_pulse: Optional[float],
         t_raman_pulse_ideal: Optional[float],
         t_img_pulse: Optional[float],
-        m_override: Optional[int],
+        feedback_grid_size_override: Optional[int],
         omega_guess_list_override: Optional[Sequence[float]],
     ) -> Tuple[np.ndarray, int]:
         kwargs = dict(self._base_kwargs)
@@ -254,9 +260,12 @@ class FeedbackReplayCore(Feedback):
         if t_img_pulse is not None:
             kwargs["t_img_pulse"] = float(t_img_pulse)
 
-        omega_guess, zidx = self._resolve_grid(m_override=m_override, omega_guess_list_override=omega_guess_list_override)
+        omega_guess, zidx = self._resolve_grid(
+            feedback_grid_size_override=feedback_grid_size_override,
+            omega_guess_list_override=omega_guess_list_override,
+        )
 
-        kwargs["m"] = int(omega_guess.size)
+        kwargs["feedback_grid_size"] = int(omega_guess.size)
 
         Feedback.__init__(self, **kwargs)
 
@@ -415,7 +424,7 @@ class FeedbackReplayCore(Feedback):
         t_img_pulse: Optional[float] = None,
         delta_t_mu: Optional[int] = None,
         t_between_pulses_mu: Optional[int] = None,
-        m_override: Optional[int] = None,
+        feedback_grid_size_override: Optional[int] = None,
         omega_guess_list_override: Optional[Sequence[float]] = None,
         apd_override_rr: Optional[Sequence[float]] = None,
         omega_override_rr: Optional[Sequence[float]] = None,
@@ -444,7 +453,7 @@ class FeedbackReplayCore(Feedback):
             t_img_pulse=t_img_pulse,
             delta_t_mu=delta_t_mu,
             t_between_pulses_mu=t_between_pulses_mu,
-            m_override=m_override,
+            feedback_grid_size_override=feedback_grid_size_override,
             omega_guess_list_override=omega_guess_list_override,
             apd_override_rr=apd_override_rr,
             omega_override_rr=omega_override_rr,
@@ -469,7 +478,7 @@ class FeedbackReplayCore(Feedback):
         t_img_pulse: Optional[float] = None,
         delta_t_mu: Optional[int] = None,
         t_between_pulses_mu: Optional[int] = None,
-        m_override: Optional[int] = None,
+        feedback_grid_size_override: Optional[int] = None,
         omega_guess_list_override: Optional[Sequence[float]] = None,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
@@ -496,7 +505,7 @@ class FeedbackReplayCore(Feedback):
             t_img_pulse=t_img_pulse,
             delta_t_mu=delta_t_mu,
             t_between_pulses_mu=t_between_pulses_mu,
-            m_override=m_override,
+            feedback_grid_size_override=feedback_grid_size_override,
             omega_guess_list_override=omega_guess_list_override,
             apd_override_rr=apd_input_rr,
             omega_override_rr=omega_control_rr,
@@ -604,7 +613,7 @@ class FeedbackReplayCore(Feedback):
         t_img_pulse: Optional[float],
         delta_t_mu: Optional[int],
         t_between_pulses_mu: Optional[int],
-        m_override: Optional[int],
+        feedback_grid_size_override: Optional[int],
         omega_guess_list_override: Optional[Sequence[float]],
         apd_override_rr: Optional[Sequence[float]],
         omega_override_rr: Optional[Sequence[float]],
@@ -632,7 +641,7 @@ class FeedbackReplayCore(Feedback):
             t_raman_pulse=t_raman_pulse,
             t_raman_pulse_ideal=t_raman_pulse_ideal,
             t_img_pulse=t_img_pulse,
-            m_override=m_override,
+            feedback_grid_size_override=feedback_grid_size_override,
             omega_guess_list_override=omega_guess_list_override,
         )
 
@@ -743,8 +752,8 @@ class FeedbackReplayCore(Feedback):
             metadata={
                 "run_id": int(getattr(self.ad.run_info, "run_id", -1)),
                 "N_repeat": int(n_repeat),
-                "N_step": int(n_step),
-                "m": int(self.m),
+                "N_step": int(getattr(self.ad.p, "N_pulses", n_step)),
+                "feedback_grid_size": int(getattr(self.ad.p, "feedback_grid_size", self.m)),
                 "control_omega_source": str(control_omega_source),
                 "include_photon_noise": bool(include_photon_noise),
                 "update_raman_frequency": bool(update_raman_frequency),
