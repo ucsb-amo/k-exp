@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 from queue import Queue
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QStyle
 from PyQt6.QtGui import QFont, QIcon, QGuiApplication
@@ -207,7 +207,7 @@ class LiveODWindow(QWidget):
                         self.camera_conn_bar.andor]:
                 if hasattr(btn, 'camera_name') and btn.camera_name == camera_select:
                     btn._set_color_success()
-                elif hasattr(btn, 'camera') and not btn.camera.is_opened():
+                elif hasattr(btn, 'camera') and btn.camera is not None and not btn.camera.is_opened():
                     btn._set_color_closed()
         if self.last_camera != camera_select:
             self.clear_plots()
@@ -352,3 +352,4 @@ if __name__ == '__main__':
     win.setWindowIcon(win.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogListView))
     win.show()
     sys.exit(app.exec())
+

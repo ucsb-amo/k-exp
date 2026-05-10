@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 import time
 
 from waxx.control import AndorEMCCD, BaslerUSB, DummyCamera
@@ -10,13 +10,24 @@ N_NOTIFY = CHECK_PERIOD // CHECK_EVERY
 
 def nothing():
     pass
-    
+
 class CameraNanny():
     def __init__(self):
         self.interrupted = False
 
     def break_check(self):
         return self.interrupted
+
+    def _is_dummy_or_none(self, camera):
+        return camera is None or isinstance(camera, DummyCamera)
+
+    def _camera_is_opened(self, camera):
+        if self._is_dummy_or_none(camera):
+            return False
+        try:
+            return camera.is_opened()
+        except Exception:
+            return False
 
     def persistent_get_camera(self,camera_params) -> DummyCamera:
         got_camera = False
@@ -25,7 +36,7 @@ class CameraNanny():
             if self.break_check():
                 break
             camera = self.get_camera(camera_params)
-            if type(camera) == DummyCamera or type(camera) == None:
+            if self._is_dummy_or_none(camera):
                 count += 1
                 time.sleep(CHECK_PERIOD)
                 if np.mod(count,N_NOTIFY) == 0:
@@ -34,60 +45,51 @@ class CameraNanny():
             else:
                 return camera
 
+        return DummyCamera()
+
     def get_camera(self,camera_params:CameraParams) -> DummyCamera:
         camera_key = camera_params.key
         need_to_open = True
-        if type(camera_key) == bytes: 
+        camera = DummyCamera()
+        if isinstance(camera_key, bytes):
             camera_key = camera_key.decode()
         if camera_key in self.__dict__.keys():
             camera = vars(self)[camera_key]
-            need_to_open = not camera.is_opened()
+            need_to_open = not self._camera_is_opened(camera)
         if need_to_open:
             camera = self.open(camera_params)
-            if type(camera) != DummyCamera:
+            if not self._is_dummy_or_none(camera):
                 vars(self)[camera_key] = camera
+            else:
+                camera = DummyCamera()
         return camera
-    
+
     def update_params(self,camera,camera_params:CameraParams):
         camera_type = camera_params.camera_type
-        if type(camera_type) == bytes: 
+        if isinstance(camera_type, bytes):
             camera_type = camera_type.decode()
-            try:
-                if camera_type == "basler":
-                    camera.set_exposure(camera_params.exposure_time)
-                    camera.set_gain(camera_params.gain)
-                elif camera_type == "andor":
-                    camera.set_EMCCD_gain(camera_params.gain)
-                    camera.set_exposure(camera_params.exposure_time)
-                    camera.set_amp_mode(preamp=camera_params.preamp)
-                    camera.set_hsspeed(camera_params.hs_speed)
-            except Exception as e:
-                camera = DummyCamera()
-                print(e)
-                print(f"There was an issue opening the requested camera (key: {camera_params.key}).")
-        else:
-            try:
-                if camera_type == "basler":
-                    camera = BaslerUSB(BaslerSerialNumber=camera_params.serial_no,
-                                    ExposureTime=camera_params.exposure_time,
-                                    TriggerSource=camera_params.trigger_source,
-                                    Gain=camera_params.gain)
-                elif camera_type == "andor":
-                    camera = AndorEMCCD(ExposureTime=camera_params.exposure_time,
-                                    gain = camera_params.gain,
-                                    hs_speed=camera_params.hs_speed,
-                                    vs_speed=camera_params.vs_speed,
-                                    vs_amp=camera_params.vs_amp,
-                                    preamp=camera_params.preamp)
-            except Exception as e:
-                camera = DummyCamera()
-                print(e)
-                print(f"There was an issue opening the requested camera (key: {camera_params.key}).")
+
+        if self._is_dummy_or_none(camera):
+            return DummyCamera()
+
+        try:
+            if camera_type == "basler":
+                camera.set_exposure(camera_params.exposure_time)
+                camera.set_gain(camera_params.gain)
+            elif camera_type == "andor":
+                camera.set_EMCCD_gain(camera_params.gain)
+                camera.set_exposure(camera_params.exposure_time)
+                camera.set_amp_mode(preamp=camera_params.preamp)
+                camera.set_hsspeed(camera_params.hs_speed)
+        except Exception as e:
+            print(e)
+            print(f"There was an issue opening the requested camera (key: {camera_params.key}).")
+            return DummyCamera()
         return camera
 
     def open(self,camera_params:CameraParams):
         camera_type = camera_params.camera_type
-        if type(camera_type) == bytes:
+        if isinstance(camera_type, bytes):
             camera_type = camera_type.decode()
         try:
             if camera_type == "basler":
@@ -102,23 +104,24 @@ class CameraNanny():
                                     vs_speed=camera_params.vs_speed,
                                     vs_amp=camera_params.vs_amp,
                                     preamp=camera_params.preamp)
-                
+            else:
+                camera = DummyCamera()
+
+            if camera is None:
+                camera = DummyCamera()
+
         except Exception as e:
-            # raise(e)
             camera = DummyCamera()
             print(e)
             print(f"There was an issue opening the requested camera (key: {camera_params.key}).")
         return camera
-    
+
     def close_all(self):
         for k in vars(self).keys():
             obj = vars(self)[k]
-            if type(obj) == BaslerUSB or type(obj) == AndorEMCCD:
+            if isinstance(obj, (BaslerUSB, AndorEMCCD)):
                 try:
                     obj.close()
                 except Exception as e:
                     print(e)
                     print(f"An error occurred closing camera {k}.")
-
-
-    

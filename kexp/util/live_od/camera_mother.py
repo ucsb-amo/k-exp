@@ -1,4 +1,4 @@
-import time
+﻿import time
 import numpy as np
 import os
 import names
@@ -230,7 +230,7 @@ class CameraBaby(QThread):
     def handshake(self):
         self.create_camera() # checks for camera
         self.cam_status_signal.emit(1)
-        if self.camera.is_opened():
+        if self.camera is not None and self.camera.is_opened():
             self.data_handler.mark_camera_ready(self.break_check)
         else:
             raise ValueError("Camera not ready")
@@ -240,7 +240,7 @@ class CameraBaby(QThread):
 
     def create_camera(self):
         self.camera = self.camera_nanny.persistent_get_camera(self.data_handler.camera_params)
-        self.camera_nanny.update_params(self.camera,self.data_handler.camera_params)
+        self.camera = self.camera_nanny.update_params(self.camera,self.data_handler.camera_params)
         camera_select = self.data_handler.camera_params.key
         if type(camera_select) == bytes: 
             camera_select = camera_select.decode()
