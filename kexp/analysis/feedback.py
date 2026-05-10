@@ -1376,6 +1376,11 @@ class FeedbackReplay(FeedbackReplayCore):
         if repeat_idx < 0 or repeat_idx >= result.P0_rr.shape[0]:
             raise ValueError(f"repeat_idx {repeat_idx} out of range for N_repeat={result.P0_rr.shape[0]}.")
 
+        def _has_probability_signal(prob_map: np.ndarray) -> bool:
+            vals = np.asarray(prob_map, dtype=float)
+            finite = vals[np.isfinite(vals)]
+            return bool(finite.size > 0 and np.any(finite > 0.0))
+
         exp_probs = None
         exp_probs_label = "experiment probabilities reconstructed from measured APD"
         if hasattr(self.ad.p, "probabilities"):
@@ -1386,6 +1391,27 @@ class FeedbackReplay(FeedbackReplayCore):
             elif probs.ndim == 2:
                 exp_probs = np.asarray(probs, dtype=float).T
                 exp_probs_label = "experiment ad.p.probabilities"
+
+        # Some runs save all-zero probability maps; when that happens, rebuild
+        # experiment probabilities from measured APD/omega and experiment params.
+        if exp_probs is not None and not _has_probability_signal(exp_probs):
+            exp_probs = None
+
+        if exp_probs is None:
+            try:
+                expt_result = self.replay_measured(
+                    control_omega_source="measured",
+                    include_photon_noise=None,
+                    update_raman_frequency=None,
+                    update_rabi_frequency=False,
+                    return_full_state=False,
+                )
+                if repeat_idx < expt_result.P0_rr.shape[0]:
+                    exp_probs = np.asarray(expt_result.P0_rr[repeat_idx], dtype=float).T
+                    exp_probs_label = "experiment probabilities recomputed from measured APD + measured omega"
+            except Exception:
+                exp_probs = None
+
         if exp_probs is None:
             exp_probs = np.asarray(result.P0_rr[repeat_idx], dtype=float).T
 
