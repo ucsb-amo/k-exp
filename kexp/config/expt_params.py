@@ -146,7 +146,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 9.3924e-06 #66133, 2026-05-08
+        self.t_raman_pi_pulse = 9.0787e-06 #66211, 2026-05-09
         
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
