@@ -30,11 +30,9 @@ class feedback(EnvExperiment, Base, Feedback):
         ### parameters
 
         self.p.feedback_fractional_initial_offset = 3.0
+        self.xvar('feedback_fractional_initial_offset', np.linspace(-3.0,3.0,25))
         
-        self.p.N_repeats = 20
-        self.p.t_calculation_slack_compensation_mu = int64(0.61 * self.p.feedback_grid_size * 1.e3) + 15000 if self.p.feedback_grid_size > 10 else int64(10000)
-
-        self.p.t_tweezer_hold = 30.e-3
+        self.p.N_repeats = 50
 
         self.p.feedback_guess_span_Omega = 5.0
 
@@ -78,12 +76,13 @@ class feedback(EnvExperiment, Base, Feedback):
                           std_n_photons_per_shot=self.p.n_std_photons_per_shot,
                           frequency_resonance = self.p.frequency_raman_transition,
                           feedback_grid_size = self.p.feedback_grid_size,
+                          fractional_grid_center_offset = self.p.feedback_fractional_grid_center_offset,
                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
                           guess_span_Omega = self.p.feedback_guess_span_Omega,
                           back_action_coherence = self.p.back_action_coherence
                           )
         
-        self.zidx = np.argmin(abs(self.omega_guess_list - self.p.frequency_raman_transition * 2*np.pi))
+        self.zidx = self.p.feedback_resonance_grid_index
 
         ###
 
@@ -108,7 +107,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.omega_z_lightshift = 2*np.pi * self.p.frequency_lightshift
 
         k = 0
-        f = self.omega_guess_start / (2*np.pi)
+        f = self.omega_raman / (2*np.pi)
         omega_prev = 0.
 
         t_start_mu = t_start_mu & ~7
@@ -173,6 +172,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.integrator.init()
 
         self.initialize_feedback()
+        self.reset_initial_omega_from_params()
         delay(10.e-3)
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
@@ -180,7 +180,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-        self.prep_raman(frequency_transition=self.omega_guess_start/(2*np.pi),
+        self.prep_raman(frequency_transition=self.omega_raman/(2*np.pi),
                         phase_mode=0)
 
         t_pulse_start_mu = now_mu() + 500000
@@ -202,7 +202,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        self.omega_raman = self.omega_guess_start
+        self.reset_initial_omega_from_params()
         # print((self.data.omega_raman.shot_data/(2*np.pi) - self.p.frequency_raman_transition)/1.e3)
         # self.scope.read_sweep(0)
         # self.core.break_realtime()
@@ -234,3 +234,6 @@ class feedback(EnvExperiment, Base, Feedback):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
+
+        from waxx.util.notifications import send_run_done_email
+        send_run_done_email(self.run_info.run_id, expt_filepath)

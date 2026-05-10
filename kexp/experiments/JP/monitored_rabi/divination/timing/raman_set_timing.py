@@ -61,6 +61,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.N_pulses = 10 # number of steps of evolution
         self.m = 3 # feedback grid size
         self.p.feedback_guess_span_Omega = 5.0
+        self.p.feedback_fractional_grid_center_offset = 2.0
         self.p.feedback_fractional_initial_offset = 0.
 
         self.p.t_tweezer_hold = 30.e-3
@@ -112,6 +113,7 @@ class feedback(EnvExperiment, Base, Feedback):
                         #   frequency_z_lightshift = self.p.frequency_lightshift,
                         #   photon_count_scale = self.p.feedback_photon_count_scale,
                           m = self.m,
+                                                    fractional_grid_center_offset = self.p.feedback_fractional_grid_center_offset,
                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
                           guess_span_Omega = self.p.feedback_guess_span_Omega,
                         #   n_photons_per_shot = self.p.n_photons_per_shot,

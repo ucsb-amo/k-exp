@@ -1,1 +1,6 @@
-from .feedback import FeedbackReplay, FeedbackReplayCore, FeedbackReplayResult
+from .feedback import (
+	FeedbackReplay,
+	FeedbackReplayCore,
+	FeedbackReplayOptimizer,
+	FeedbackReplayResult,
+)
