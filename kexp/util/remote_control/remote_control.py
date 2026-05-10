@@ -2,7 +2,7 @@ from kexp.util.remote_control.command_handler import CommandHandler
 from waxx.util.guis.als.als_gui_client import ALSGuiClient
 from waxx.util.guis.precilaser.precilaser_gui_client import PrecilaserGuiClient
 from kexp.config.ip import ALS_SERVER_IP, ALS_SERVER_PORT, PRECILASER_SERVER_IP, PRECILASER_SERVER_PORT
-from waxx.util.notifications import send_email
+from waxx.util.notifications import send_email, _load_credentials
 import logging
 
 ALS_STARTUP_SLACK_RECIPIENT = "general-aaaaahzr4dmblwquygpk47q6le@weldlab.slack.com"
@@ -11,6 +11,10 @@ ALS_STARTUP_SLACK_SUBJECT = "1064nm laser on in 3418"
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+def send_all_off_command():
+    email, _ = _load_credentials()
+    send_email(email, "all off", "all off")
 
 class RemoteControl(CommandHandler):
     def __init__(self):
@@ -31,6 +35,7 @@ class RemoteControl(CommandHandler):
         self.add_to_whitelist("jestes@ucsb.edu")
         self.add_to_whitelist("jpagett@ucsb.edu")
         self.add_to_whitelist("mbl@ucsb.edu")
+        self.add_to_whitelist(self.email_handler.email_address)
         
         # Command handlers - maps keywords to handler functions
         self.add_command_handler(["sources","source","atoms"], self.handle_sources_command)
