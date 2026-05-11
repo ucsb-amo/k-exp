@@ -28,8 +28,8 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 25
-        self.p.N_pulses = 11 # number of steps of evolution
+        self.p.N_repeats = 21
+        self.p.N_pulses = 20 # number of steps of evolution
         
         ### parameters
         
@@ -38,14 +38,14 @@ class feedback(EnvExperiment, Base, Feedback):
         # self.p.intermediate_detuning = 2*np.pi*self.p.frequency_raman_transition + 2*Omega*0
         # self.xvar('intermediate_detuning',  2*np.pi*self.p.frequency_raman_transition + Omega*(np.linspace(10, 11, 20)))
 
-        # detuning_list = np.array([0., 1., 0., 1., 2.,
-        #    0.,  0.,  0.,  0.,  0.,
-        #     0., -0., -0. ,  0. , -0.])
+        detuning_list = np.array([0., 1., 0., 1., 2.,
+           0.,  5.,  0.,  0.,  0.,
+            0., -0., -0. ,  0. , -0., 0., 0., 0., 0., 0., 0., 0.])
             # detuning_list = 3*(np.random.random(15) -0.5)
 
-        detuning_list = np.array([0.,   0.30609096,  0.38354877,  0.18202263,  0.29501175,
-            -0.31005943,  0.38354877,  0.30609096,  0.11595314,  0.18202263,
-                0.35998194, -0.26850061, -0.0969936 ,  0.3203508 , -0.00077061]) / 2
+        # detuning_list = np.array([0.,   0.30609096,  0.38354877,  0.18202263,  0.29501175,
+        #     -0.31005943,  0.38354877,  0.30609096,  0.11595314,  0.18202263,
+        #         0.35998194, -0.26850061, -0.0969936 ,  0.3203508 , -0.00077061]) / 2
 
         self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + (Omega * detuning_list)
         

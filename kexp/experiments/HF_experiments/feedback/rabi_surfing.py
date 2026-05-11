@@ -22,7 +22,7 @@ class rabi_oscillation(EnvExperiment, Base):
 
         self.p.t_imaging_pulse = 5.e-6
 
-        self.p.N_divider = 3
+        self.p.N_divider = 2
         self.p.N_divider = int(self.p.N_divider)
         if self.p.N_divider <= 0:
             raise ValueError("N_divider must be a positive integer.")

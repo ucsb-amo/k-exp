@@ -2292,6 +2292,7 @@ class FeedbackReplayOptimizer:
         method: str = "adaptive",
         replay_kwargs: Optional[Dict[str, object]] = None,
         tolerance_rad_s: Optional[float] = None,
+        use_stderr: bool = True,
         include_apd_noise: Optional[bool] = None,
         apd_noise_override_fraction: Optional[float] = None,
         apd_noise_min_std: float = 0.03,
@@ -2348,7 +2349,11 @@ class FeedbackReplayOptimizer:
         selection_metric = str(fit_payload.get("selection_metric", "raw_mse"))
         best_idx = int(fit_payload["best_index"])
         best_result = fit_payload["best_result"]
-        best_groups = fit_payload["best_groups"]
+        best_groups = self.replay.average_by_omega_group(
+            best_result,
+            use_stderr=bool(use_stderr),
+            tolerance_rad_s=tolerance_rad_s,
+        )
         best_fit = fit_payload["best_fit"]
         best_params = dict(fit_payload["best_params"])
         param_names = list(fit_payload["parameter_names"])
@@ -2398,7 +2403,7 @@ class FeedbackReplayOptimizer:
             expt_result = self.replay.replay_measured(**overlay_kwargs)
             expt_groups = self.replay.average_by_omega_group(
                 expt_result,
-                use_stderr=True,
+                use_stderr=bool(use_stderr),
                 tolerance_rad_s=tolerance_rad_s,
             )
 

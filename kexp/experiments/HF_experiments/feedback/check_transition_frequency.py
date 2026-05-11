@@ -15,9 +15,9 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('frequency_raman_transition',119.4639e6 + np.linspace(-1.e3,1.e3,10))
+        self.xvar('frequency_raman_transition',119.4639e6 + np.linspace(-1.e3,1.e3,15))
 
-        self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 5))
+        self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 7))
  
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
 

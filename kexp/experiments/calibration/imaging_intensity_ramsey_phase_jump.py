@@ -31,7 +31,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
-
+        
     @kernel
     def scan_kernel(self):
 

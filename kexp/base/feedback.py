@@ -294,7 +294,6 @@ class Feedback:
         t_raman_pulse,
         t_img_pulse,
         t_fifo_mu = int64(1000)
-
     ) -> TInt64:
         T_MIN_FIFO_MU = t_fifo_mu
         t_raman_pulse_mu = np.int64(t_raman_pulse * 1.0e9)
@@ -514,21 +513,6 @@ class Feedback:
                 "to include the fixed initial offset."
             )
         return omega_guess, int(resonance_idx), float(span_effective)
-
-        j_res_float = 0.5 * (self.m - 1) * (1.0 - float(fractional_grid_center_offset_requested) / (2.0 * span))
-        resonance_idx = int(np.rint(j_res_float))
-        if resonance_idx < 0:
-            resonance_idx = 0
-        elif resonance_idx >= self.m:
-            resonance_idx = self.m - 1
-
-        domega = 4.0 * span * self.Omega / (self.m - 1)
-        offsets = np.arange(self.m, dtype=np.float64) - float(resonance_idx)
-        omega_guess = float(omega_resonance) + domega * offsets
-
-        # Force exact resonance representation at the chosen hypothesis index.
-        omega_guess[resonance_idx] = float(omega_resonance)
-        return omega_guess, int(resonance_idx)
 
     def _validate_resonance_in_grid(self, omega_resonance):
         idx = int(np.argmin(np.abs(self.omega_guess_list - omega_resonance)))

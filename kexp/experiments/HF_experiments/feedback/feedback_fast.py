@@ -29,10 +29,10 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 3.0
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-3.0,3.0,25))
+        # self.p.feedback_fractional_initial_offset = 3.
+        self.xvar('feedback_fractional_initial_offset', np.linspace(-7.,7.,31))
         
-        self.p.N_repeats = 50
+        self.p.N_repeats = 65
 
         self.p.feedback_guess_span_Omega = 5.0
 
@@ -235,5 +235,5 @@ class feedback(EnvExperiment, Base, Feedback):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
 
-        from waxx.util.notifications import send_run_done_email
-        send_run_done_email(self.run_info.run_id, expt_filepath)
+        from kexp.util.remote_control.remote_control import send_all_off_command
+        send_all_off_command()
