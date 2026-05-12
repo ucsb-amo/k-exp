@@ -23,6 +23,8 @@ class Feedback:
         "v_range",
         "omega_guess_list",
         "omega_sq_list",
+        "feedback_measurement_midpoint_fraction",
+        "feedback_measurement_midpoint_remap_enabled",
         "sin_lut",
         "lut_size",
         "lut_scale",
@@ -55,6 +57,8 @@ class Feedback:
         fractional_grid_center_offset=2.0,
         fractional_initial_offset=-5.0,
         guess_span_Omega=5.0,
+        feedback_measurement_midpoint_fraction=None,
+        feedback_measurement_midpoint_remap_enabled=None,
         feedback_apd_map_enabled=None,
         feedback_apd_map_a=None,
         feedback_apd_map_b=None,
@@ -94,6 +98,8 @@ class Feedback:
             v_apd_all_up=v_apd_all_up,
             v_apd_all_down=v_apd_all_down,
             photon_count_scale=photon_count_scale,
+            feedback_measurement_midpoint_fraction=feedback_measurement_midpoint_fraction,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
             feedback_apd_map_enabled=feedback_apd_map_enabled,
             feedback_apd_map_a=feedback_apd_map_a,
             feedback_apd_map_b=feedback_apd_map_b,
@@ -105,6 +111,73 @@ class Feedback:
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
         return round(self.N_photons_per_shot * (v_apd - self.v_apd_all_down) / self.v_range)
+
+    @portable(flags={"fast-math"})
+    def expected_photon_fraction(self, hz):
+        if not self.feedback_measurement_midpoint_remap_enabled:
+            p1 = 0.5 * (1.0 + hz)
+            if p1 < 0.0:
+                return 0.0
+            if p1 > 1.0:
+                return 1.0
+            return p1
+
+        midpoint = self.feedback_measurement_midpoint_fraction
+        p1 = 0.5 * (1.0 + hz) + (midpoint - 0.5) * (1.0 - hz * hz)
+        if p1 < 0.0:
+            return 0.0
+        if p1 > 1.0:
+            return 1.0
+        return p1
+
+    @portable(flags={"fast-math"})
+    def measurement_photon_fraction_from_apd(self, v_apd):
+        photon_fraction = (v_apd - self.v_apd_all_down) / self.v_range
+        if photon_fraction < 0.0:
+            return 0.0
+        if photon_fraction > 1.0:
+            return 1.0
+        return photon_fraction
+
+    @portable(flags={"fast-math"})
+    def spin_value_from_photon_fraction(self, photon_fraction, feedback_measurement_midpoint_remap_enabled=None):
+        if feedback_measurement_midpoint_remap_enabled is None:
+            use_midpoint_remap = self.feedback_measurement_midpoint_remap_enabled
+        else:
+            use_midpoint_remap = bool(feedback_measurement_midpoint_remap_enabled)
+
+        p1 = photon_fraction
+        if p1 < 0.0:
+            p1 = 0.0
+        elif p1 > 1.0:
+            p1 = 1.0
+
+        if not use_midpoint_remap:
+            return 2.0 * p1 - 1.0
+
+        midpoint = self.feedback_measurement_midpoint_fraction
+        delta = midpoint - 0.5
+        if abs(delta) < 1.0e-15:
+            return 2.0 * p1 - 1.0
+
+        discriminant = 0.25 - 4.0 * delta * (p1 - midpoint)
+        if discriminant < 0.0:
+            discriminant = 0.0
+
+        hz = (0.5 - np.sqrt(discriminant)) / (2.0 * delta)
+        if hz < -1.0:
+            return -1.0
+        if hz > 1.0:
+            return 1.0
+        return hz
+
+    @portable(flags={"fast-math"})
+    def spin_value_from_apd(self, v_apd, feedback_measurement_midpoint_remap_enabled=None):
+        photon_fraction = self.measurement_photon_fraction_from_apd(v_apd)
+        return self.spin_value_from_photon_fraction(
+            photon_fraction,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
 
     @portable(flags={"fast-math"})
     def generate_posterior(self,
@@ -224,12 +297,7 @@ class Feedback:
             state_y[j] = ny * self.back_action_coherence
             state_z[j] = hz
 
-            p1 = (1.0 + hz) / 2.0
-            # Guard floating-point drift in Bloch dynamics so probabilities remain physical.
-            if p1 < 0.0:
-                p1 = 0.0
-            elif p1 > 1.0:
-                p1 = 1.0
+            p1 = self.expected_photon_fraction(hz)
             q = 1.0 - p1
             npq = n_photons * p1 * q + sigma_sq
             num = k - n_photons * p1
@@ -309,7 +377,7 @@ class Feedback:
     def initialize_feedback(self):
         """Warm up posterior runtime once, then reset state/P0 arrays."""
 
-        n_test = int(self.N_photons_per_shot / 2)
+        n_test = int(round(self.N_photons_per_shot * self.expected_photon_fraction(0.0)))
 
         self.core.wait_until_mu(self.core.get_rtio_counter_mu())
         self.generate_posterior(n_test, 1.0e-6)
@@ -557,6 +625,8 @@ class Feedback:
         v_apd_all_up,
         v_apd_all_down,
         photon_count_scale,
+        feedback_measurement_midpoint_fraction,
+        feedback_measurement_midpoint_remap_enabled,
         feedback_apd_map_enabled,
         feedback_apd_map_a,
         feedback_apd_map_b,
@@ -583,10 +653,18 @@ class Feedback:
             feedback_apd_map_b=feedback_apd_map_b,
             feedback_apd_map_verbose=feedback_apd_map_verbose,
         )
+        midpoint_remap_enabled = self._resolve_measurement_midpoint_remap_enabled(
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
+        midpoint_fraction = self._resolve_measurement_midpoint_fraction(
+            feedback_measurement_midpoint_fraction=feedback_measurement_midpoint_fraction,
+        )
 
         v_apd_all_up_ref = float(v_apd_all_up)
         v_apd_all_down_ref = float(v_apd_all_down)
 
+        self.p.feedback_measurement_midpoint_remap_enabled = midpoint_remap_enabled
+        self.p.feedback_measurement_midpoint_fraction = midpoint_fraction
         self.p.feedback_apd_map_enabled = map_enabled
         self.p.feedback_apd_map_a = map_a
         self.p.feedback_apd_map_b = map_b
@@ -614,9 +692,40 @@ class Feedback:
         self.v_apd_all_down = self.p.v_apd_all_down
         self.N_photons_per_shot = self.p.N_photons_per_shot
         self.std_n_photons_per_shot = self.p.std_n_photons_per_shot
+        self.feedback_measurement_midpoint_remap_enabled = self.p.feedback_measurement_midpoint_remap_enabled
+        self.feedback_measurement_midpoint_fraction = self.p.feedback_measurement_midpoint_fraction
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         if abs(self.v_range) < 1.0e-15:
             raise ValueError("APD calibration range is zero; cannot normalize APD.")
+
+    def _resolve_measurement_midpoint_remap_enabled(
+        self,
+        feedback_measurement_midpoint_remap_enabled,
+    ):
+        midpoint_remap_enabled = (
+            getattr(self.p, "feedback_measurement_midpoint_remap_enabled", True)
+            if feedback_measurement_midpoint_remap_enabled is None
+            else feedback_measurement_midpoint_remap_enabled
+        )
+        return bool(midpoint_remap_enabled)
+
+    def _resolve_measurement_midpoint_fraction(
+        self,
+        feedback_measurement_midpoint_fraction,
+    ):
+        midpoint_fraction = (
+            getattr(self.p, "feedback_measurement_midpoint_fraction", 0.5)
+            if feedback_measurement_midpoint_fraction is None
+            else feedback_measurement_midpoint_fraction
+        )
+        midpoint_fraction = float(midpoint_fraction)
+        if not np.isfinite(midpoint_fraction):
+            raise ValueError("feedback_measurement_midpoint_fraction must be finite.")
+        if midpoint_fraction < 0.0 or midpoint_fraction > 1.0:
+            raise ValueError(
+                "feedback_measurement_midpoint_fraction must be between 0 and 1 inclusive."
+            )
+        return midpoint_fraction
 
     def _initialize_posterior_state(self):
         self.P0 = np.ones(self.m, dtype=np.float64)
@@ -968,6 +1077,8 @@ def _feedback_kwargs_from_atomdata(ad):
         "n_photons_per_shot": getattr(p, "n_photons_per_shot", getattr(p, "N_photons_per_shot", None)),
         "std_n_photons_per_shot": getattr(p, "std_n_photons_per_shot", None),
         "photon_count_scale": getattr(p, "feedback_photon_count_scale", 1.0),
+        "feedback_measurement_midpoint_fraction": getattr(p, "feedback_measurement_midpoint_fraction", None),
+        "feedback_measurement_midpoint_remap_enabled": getattr(p, "feedback_measurement_midpoint_remap_enabled", None),
         "feedback_grid_size": int(getattr(p, "feedback_grid_size", 21)),
         "fractional_grid_center_offset": float(getattr(p, "feedback_fractional_grid_center_offset", 2.0)),
         "fractional_initial_offset": getattr(p, "feedback_fractional_initial_offset", -5.0),

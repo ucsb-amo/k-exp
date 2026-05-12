@@ -46,7 +46,7 @@ class FeedbackReplayResult:
     apd_rr
         APD voltages used by replay/simulation (V).
     apd_norm_rr
-        APD mapped to spin-like scale in [-1, 1] via calibration range.
+        APD mapped to spin-like scale in [-1, 1] using the selected measurement model.
     omega_guess_list
         Frequency hypothesis grid used in this run (rad/s).
     zidx
@@ -106,6 +106,19 @@ class FeedbackReplayCore(Feedback):
         self.omega_group_tolerance_rad_s = float(omega_group_tolerance_rad_s)
         self._default_timing = self._get_default_timing_params()
         Feedback.__init__(self, **self._base_kwargs)
+
+    def _effective_feedback_grid_size(self) -> int:
+        p = getattr(self.ad, "p", None)
+        if p is not None and hasattr(p, "feedback_grid_size"):
+            return int(getattr(p, "feedback_grid_size"))
+
+        if p is not None and hasattr(p, "omega_guess_list"):
+            omega_guess = np.asarray(getattr(p, "omega_guess_list"), dtype=float).ravel()
+            omega_guess = omega_guess[np.isfinite(omega_guess)]
+            if omega_guess.size > 0:
+                return int(omega_guess.size)
+
+        return int(self.m)
 
     def _build_base_feedback_kwargs(self, ad) -> Dict[str, object]:
         kwargs = _feedback_kwargs_from_atomdata(ad)
@@ -297,6 +310,7 @@ class FeedbackReplayCore(Feedback):
         frequency_z_lightshift: Optional[float],
         feedback_grid_size_override: Optional[int],
         omega_guess_list_override: Optional[Sequence[float]],
+        feedback_measurement_midpoint_remap_enabled: Optional[bool],
         feedback_apd_map_enabled: Optional[bool],
         feedback_apd_map_verbose: Optional[bool],
         fractional_initial_offset: Optional[float],
@@ -319,6 +333,11 @@ class FeedbackReplayCore(Feedback):
 
         if frequency_z_lightshift is not None:
             kwargs["frequency_z_lightshift"] = float(frequency_z_lightshift)
+
+        if feedback_measurement_midpoint_remap_enabled is not None:
+            kwargs["feedback_measurement_midpoint_remap_enabled"] = bool(
+                feedback_measurement_midpoint_remap_enabled
+            )
 
         if feedback_apd_map_enabled is not None:
             kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
@@ -411,11 +430,21 @@ class FeedbackReplayCore(Feedback):
 
         return None
 
-    def _normalize_apd(self, apd_rr: np.ndarray) -> np.ndarray:
-        v_range = float(self.v_apd_all_up - self.v_apd_all_down)
-        if abs(v_range) < 1.0e-15:
-            raise ValueError("APD calibration range is zero; cannot normalize APD.")
-        return 2.0 * (apd_rr - float(self.v_apd_all_down)) / v_range - 1.0
+    def _normalize_apd(
+        self,
+        apd_rr: np.ndarray,
+        *,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+    ) -> np.ndarray:
+        apd_arr = np.asarray(apd_rr, dtype=float)
+        map_spin = np.vectorize(
+            lambda value: self.spin_value_from_apd(
+                float(value),
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            ),
+            otypes=[float],
+        )
+        return map_spin(apd_arr)
 
     def _group_repeats_by_omega(
         self,
@@ -445,9 +474,18 @@ class FeedbackReplayCore(Feedback):
         *,
         use_stderr: bool = True,
         tolerance_rad_s: Optional[float] = None,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
     ) -> List[Dict[str, np.ndarray]]:
         """Compute grouped averages for repeats sharing the same omega sequence."""
         groups = self._group_repeats_by_omega(result.omega_control_rr, tolerance_rad_s=tolerance_rad_s)
+        apd_norm_rr = (
+            np.asarray(result.apd_norm_rr, dtype=float)
+            if feedback_measurement_midpoint_remap_enabled is None
+            else self._normalize_apd(
+                result.apd_rr,
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            )
+        )
 
         summaries: List[Dict[str, np.ndarray]] = []
         for members in groups:
@@ -455,8 +493,8 @@ class FeedbackReplayCore(Feedback):
             n = max(1, len(members))
             denom = np.sqrt(float(n)) if use_stderr and n > 1 else 1.0
 
-            apd_mean = np.mean(result.apd_norm_rr[idx], axis=0)
-            apd_std = np.std(result.apd_norm_rr[idx], axis=0, ddof=1) if n > 1 else np.zeros(result.apd_norm_rr.shape[1])
+            apd_mean = np.mean(apd_norm_rr[idx], axis=0)
+            apd_std = np.std(apd_norm_rr[idx], axis=0, ddof=1) if n > 1 else np.zeros(apd_norm_rr.shape[1])
 
             sz_mean = np.mean(result.s_z_rr[idx], axis=0)
             sz_std = np.std(result.s_z_rr[idx], axis=0, ddof=1) if n > 1 else np.zeros(result.s_z_rr.shape[1])
@@ -475,6 +513,60 @@ class FeedbackReplayCore(Feedback):
                     "s_z_err": sz_std / denom,
                     "omega_control_mean": omega_mean,
                     "omega_recomputed_mean": omega_comp_mean,
+                }
+            )
+
+        return summaries
+
+    def summarize_result_groups(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        group_shots: bool = True,
+        use_stderr: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+    ) -> List[Dict[str, np.ndarray]]:
+        """Return either omega-group summaries or one summary per shot.
+
+        Parameters
+        ----------
+        group_shots
+            If True, group repeats by shared omega-control sequence.
+            If False, treat each repeat as its own fit group.
+        """
+        if group_shots:
+            return self.average_by_omega_group(
+                result,
+                use_stderr=use_stderr,
+                tolerance_rad_s=tolerance_rad_s,
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            )
+
+        apd_norm_rr = (
+            np.asarray(result.apd_norm_rr, dtype=float)
+            if feedback_measurement_midpoint_remap_enabled is None
+            else self._normalize_apd(
+                result.apd_rr,
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            )
+        )
+
+        summaries: List[Dict[str, np.ndarray]] = []
+        n_repeat = int(result.s_z_rr.shape[0])
+        for repeat_idx in range(n_repeat):
+            idx = np.asarray([repeat_idx], dtype=int)
+            summaries.append(
+                {
+                    "members": idx,
+                    "t_input": np.asarray(result.t_input_rr[repeat_idx], dtype=float),
+                    "t_s_z": np.asarray(result.t_s_z_rr[repeat_idx], dtype=float),
+                    "apd_norm_mean": np.asarray(apd_norm_rr[repeat_idx], dtype=float),
+                    "apd_norm_err": np.zeros(apd_norm_rr.shape[1], dtype=float),
+                    "s_z_mean": np.asarray(result.s_z_rr[repeat_idx], dtype=float),
+                    "s_z_err": np.zeros(result.s_z_rr.shape[1], dtype=float),
+                    "omega_control_mean": np.asarray(result.omega_control_rr[repeat_idx], dtype=float),
+                    "omega_recomputed_mean": np.asarray(result.omega_recomputed_rr[repeat_idx], dtype=float),
                 }
             )
 
@@ -500,6 +592,7 @@ class FeedbackReplayCore(Feedback):
         apd_override_rr: Optional[Sequence[float]] = None,
         omega_override_rr: Optional[Sequence[float]] = None,
         fractional_initial_offset_override: Optional[Sequence[float]] = None,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         feedback_apd_map_enabled: Optional[bool] = None,
         feedback_apd_map_verbose: Optional[bool] = None,
         n_jobs: int = 1,
@@ -533,6 +626,7 @@ class FeedbackReplayCore(Feedback):
             apd_override_rr=apd_override_rr,
             omega_override_rr=omega_override_rr,
             fractional_initial_offset_override=fractional_initial_offset_override,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
             feedback_apd_map_enabled=feedback_apd_map_enabled,
             feedback_apd_map_verbose=feedback_apd_map_verbose,
             default_use_measured_apd=True,
@@ -560,6 +654,7 @@ class FeedbackReplayCore(Feedback):
         feedback_grid_size_override: Optional[int] = None,
         omega_guess_list_override: Optional[Sequence[float]] = None,
         fractional_initial_offset_override: Optional[Sequence[float]] = None,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         feedback_apd_map_enabled: Optional[bool] = None,
         feedback_apd_map_verbose: Optional[bool] = None,
         n_jobs: int = 1,
@@ -593,6 +688,7 @@ class FeedbackReplayCore(Feedback):
             apd_override_rr=apd_input_rr,
             omega_override_rr=omega_control_rr,
             fractional_initial_offset_override=fractional_initial_offset_override,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
             feedback_apd_map_enabled=feedback_apd_map_enabled,
             feedback_apd_map_verbose=feedback_apd_map_verbose,
             default_use_measured_apd=False,
@@ -710,6 +806,7 @@ class FeedbackReplayCore(Feedback):
         apd_override_rr: Optional[Sequence[float]],
         omega_override_rr: Optional[Sequence[float]],
         fractional_initial_offset_override: Optional[Sequence[float]],
+        feedback_measurement_midpoint_remap_enabled: Optional[bool],
         feedback_apd_map_enabled: Optional[bool],
         feedback_apd_map_verbose: Optional[bool],
         default_use_measured_apd: bool,
@@ -746,6 +843,7 @@ class FeedbackReplayCore(Feedback):
             frequency_z_lightshift=frequency_z_lightshift,
             feedback_grid_size_override=feedback_grid_size_override,
             omega_guess_list_override=omega_guess_list_override,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
             feedback_apd_map_enabled=feedback_apd_map_enabled,
             feedback_apd_map_verbose=feedback_apd_map_verbose,
             fractional_initial_offset=float(fractional_initial_offset_r[0]),
@@ -838,7 +936,10 @@ class FeedbackReplayCore(Feedback):
                 if state_rr is not None and state is not None:
                     state_rr[r, :, :] = state
 
-        apd_norm_rr = self._normalize_apd(apd_rr)
+        apd_norm_rr = self._normalize_apd(
+            apd_rr,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
 
         return FeedbackReplayResult(
             s_z_rr=s_z_rr,
@@ -857,11 +958,14 @@ class FeedbackReplayCore(Feedback):
                 "run_id": int(getattr(self.ad.run_info, "run_id", -1)),
                 "N_repeat": int(n_repeat),
                 "N_step": int(getattr(self.ad.p, "N_pulses", n_step)),
-                "feedback_grid_size": int(getattr(self.ad.p, "feedback_grid_size", self.m)),
+                "feedback_grid_size": self._effective_feedback_grid_size(),
                 "control_omega_source": str(control_omega_source),
                 "include_photon_noise": bool(include_photon_noise),
                 "update_raman_frequency": bool(update_raman_frequency),
                 "update_rabi_frequency": bool(update_rabi_frequency),
+                "feedback_measurement_midpoint_remap_enabled": bool(
+                    self.feedback_measurement_midpoint_remap_enabled
+                ),
                 "timing": timing,
             },
         )
@@ -907,6 +1011,7 @@ class FeedbackReplay(FeedbackReplayCore):
         groups: List[Dict[str, np.ndarray]],
         *,
         use_weighted_loss: bool = False,
+        pulse_weight_power: float = 0.0,
         eps: float = 1.0e-12,
     ) -> Dict[str, object]:
         """Compute aggregate fit metrics between grouped APD and grouped resonant s_z.
@@ -917,6 +1022,10 @@ class FeedbackReplay(FeedbackReplayCore):
             Output of `grouped_average(...)` or `average_by_omega_group(...)`.
         use_weighted_loss
             If True, use weights 1/(apd_norm_err^2 + eps).
+        pulse_weight_power
+            Exponent applied to pulse index in the coherence-derived weight
+            profile: ``weight_i = back_action_coherence ** (pulse_weight_power * i)``.
+            Default 0 gives uniform weighting.
         eps
             Small positive number for weighted-loss stability.
         """
@@ -925,6 +1034,8 @@ class FeedbackReplay(FeedbackReplayCore):
         weighted_sq_sum = 0.0
         weight_sum = 0.0
         total_points = 0
+
+        pulse_weight_profile: Optional[np.ndarray] = None
 
         for gidx, group in enumerate(groups):
             sim = np.asarray(group["s_z_mean"], dtype=float).ravel()
@@ -943,6 +1054,12 @@ class FeedbackReplay(FeedbackReplayCore):
             residual = sim - apd
             sq = residual * residual
 
+            if pulse_weight_profile is None or pulse_weight_profile.size != residual.size:
+                pulse_weight_profile = self._compute_pulse_weight_profile(
+                    residual.size,
+                    pulse_weight_power=pulse_weight_power,
+                )
+
             if use_weighted_loss:
                 sigma = np.asarray(group.get("apd_norm_err", np.zeros_like(residual)), dtype=float).ravel()
                 if sigma.shape != residual.shape:
@@ -950,6 +1067,8 @@ class FeedbackReplay(FeedbackReplayCore):
                 w = 1.0 / (sigma * sigma + float(eps))
             else:
                 w = np.ones_like(residual)
+
+            w = w * pulse_weight_profile
 
             group_weight_sum = float(np.sum(w))
             group_sq_sum = float(np.sum(w * sq))
@@ -973,8 +1092,39 @@ class FeedbackReplay(FeedbackReplayCore):
             "n_groups": int(len(groups)),
             "n_points": int(total_points),
             "use_weighted_loss": bool(use_weighted_loss),
+            "back_action_coherence": float(np.clip(self.back_action_coherence, 0.0, 1.0)),
+            "pulse_weight_power": float(pulse_weight_power),
             "group_metrics": group_rows,
         }
+
+    def _compute_pulse_weight_profile(
+        self,
+        n_points: int,
+        *,
+        pulse_weight_power: float = 0.0,
+    ) -> np.ndarray:
+        """Return per-pulse fit weights implied by back-action coherence.
+
+        The feedback model multiplies transverse coherence by
+        ``back_action_coherence`` after each pulse. Reuse that same geometric
+        decay in the fit objective so later, more-dephased points count less.
+        """
+        n_points = int(n_points)
+        if n_points < 0:
+            raise ValueError("n_points must be non-negative.")
+        if n_points == 0:
+            return np.zeros(0, dtype=float)
+
+        coherence = float(np.clip(self.back_action_coherence, 0.0, 1.0))
+        power = float(pulse_weight_power)
+        if power < 0.0:
+            raise ValueError("pulse_weight_power must be non-negative.")
+
+        if coherence == 1.0 or power == 0.0:
+            return np.ones(n_points, dtype=float)
+
+        step_index = np.arange(n_points, dtype=float) * power
+        return np.power(coherence, step_index, dtype=float)
 
     def _extract_apd_noise_fraction(self) -> float:
         """Extract APD measurement noise as a fraction of expected photon count.
@@ -991,15 +1141,29 @@ class FeedbackReplay(FeedbackReplayCore):
             pass
         return 0.0
 
+    @staticmethod
+    def _resolve_aggregate_mode(aggregate_mode: str, *, group_shots: bool) -> str:
+        mode = str(aggregate_mode).strip().lower()
+        if mode == "auto":
+            return "point_weighted" if group_shots else "mean_over_groups"
+        if mode not in ("point_weighted", "mean_over_groups"):
+            raise ValueError(
+                f"Unsupported aggregate_mode={aggregate_mode!r}. "
+                "Use 'auto', 'point_weighted' or 'mean_over_groups'."
+            )
+        return mode
+
     def compute_group_fit_metrics_with_noise(
         self,
         result: FeedbackReplayResult,
         *,
+        group_shots: bool = True,
         include_apd_noise: Optional[bool] = None,
         apd_noise_override_fraction: Optional[float] = None,
         apd_noise_min_std: float = 0.03,
-        aggregate_mode: str = "point_weighted",
+        aggregate_mode: str = "auto",
         tolerance_rad_s: Optional[float] = None,
+        pulse_weight_power: float = 0.0,
         eps: float = 1.0e-12,
     ) -> Dict[str, object]:
         """Compute per-omega-group fit metrics (naturally per-shot for feedback runs).
@@ -1013,6 +1177,9 @@ class FeedbackReplay(FeedbackReplayCore):
         ----------
         result
             Replay result from replay_measured(...) or similar.
+        group_shots
+            If True, group repeats by shared omega-control sequence before
+            scoring. If False, score each repeat independently (per-shot fit).
         include_apd_noise
             Global APD-noise enable flag.
             If None (default), APD noise is enabled in principle and then filtered
@@ -1030,11 +1197,16 @@ class FeedbackReplay(FeedbackReplayCore):
             near-zero APD points from receiving extremely large weights.
         aggregate_mode
             Group-loss aggregation mode:
+            - 'auto': point-weighted for grouped fits, mean-over-groups for per-shot fits
             - 'point_weighted': aggregate by total weighted residual across points
             - 'mean_over_groups': arithmetic mean of per-group MSE values
         tolerance_rad_s
             Omega grouping tolerance. If None, uses self.omega_group_tolerance_rad_s.
             Tighter tolerance → more groups (for feedback: closer to 1 group per shot).
+        pulse_weight_power
+            Exponent applied to pulse index in the coherence-derived weight
+            profile: ``weight_i = back_action_coherence ** (pulse_weight_power * i)``.
+            Default 0 gives uniform weighting.
         eps
             Small positive number for numerical stability.
 
@@ -1044,15 +1216,19 @@ class FeedbackReplay(FeedbackReplayCore):
             Keys: overall_mse, n_groups, n_points, apd_noise_fraction,
             apd_noise_applied_any, group_metrics.
         """
-        groups = self.average_by_omega_group(result, use_stderr=True, tolerance_rad_s=tolerance_rad_s)
+        groups = self.summarize_result_groups(
+            result,
+            group_shots=group_shots,
+            use_stderr=True,
+            tolerance_rad_s=tolerance_rad_s,
+        )
 
         if float(apd_noise_min_std) < 0.0:
             raise ValueError("apd_noise_min_std must be non-negative.")
-        if aggregate_mode not in ("point_weighted", "mean_over_groups"):
-            raise ValueError(
-                f"Unsupported aggregate_mode={aggregate_mode!r}. "
-                "Use 'point_weighted' or 'mean_over_groups'."
-            )
+        aggregate_mode_resolved = self._resolve_aggregate_mode(
+            aggregate_mode,
+            group_shots=bool(group_shots),
+        )
 
         # Auto: enable APD noise globally, but still filter per-group by member count.
         global_include_apd_noise = True if include_apd_noise is None else bool(include_apd_noise)
@@ -1076,6 +1252,8 @@ class FeedbackReplay(FeedbackReplayCore):
         weighted_sq_sum = 0.0
         weight_sum = 0.0
 
+        pulse_weight_profile: Optional[np.ndarray] = None
+
         for gidx, group in enumerate(groups):
             sim = np.asarray(group["s_z_mean"], dtype=float).ravel()
             apd = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
@@ -1097,6 +1275,12 @@ class FeedbackReplay(FeedbackReplayCore):
             residual = sim - apd
             sq = residual * residual
 
+            if pulse_weight_profile is None or pulse_weight_profile.size != residual.size:
+                pulse_weight_profile = self._compute_pulse_weight_profile(
+                    residual.size,
+                    pulse_weight_power=pulse_weight_power,
+                )
+
             if use_group_apd_noise:
                 # Weight by inverse measurement uncertainty with a floor to avoid
                 # pathological overweighting at near-zero APD.
@@ -1105,6 +1289,8 @@ class FeedbackReplay(FeedbackReplayCore):
                 apd_noise_applied_any = True
             else:
                 w = np.ones_like(residual)
+
+            w = w * pulse_weight_profile
 
             group_weight_sum = float(np.sum(w))
             group_sq_sum = float(np.sum(w * sq))
@@ -1126,7 +1312,7 @@ class FeedbackReplay(FeedbackReplayCore):
                 "weight_sum": float(group_weight_sum),
             })
 
-        if aggregate_mode == "point_weighted":
+        if aggregate_mode_resolved == "point_weighted":
             overall_mse = np.nan if weight_sum <= 0.0 else float(weighted_sq_sum / weight_sum)
         else:
             overall_mse = np.nan if len(group_mse_values) == 0 else float(np.mean(group_mse_values))
@@ -1137,7 +1323,11 @@ class FeedbackReplay(FeedbackReplayCore):
             "n_points": int(total_points),
             "apd_noise_fraction": float(apd_noise_frac),
             "apd_noise_min_std": float(apd_noise_min_std),
-            "aggregate_mode": str(aggregate_mode),
+            "aggregate_mode": str(aggregate_mode_resolved),
+            "aggregate_mode_requested": str(aggregate_mode),
+            "back_action_coherence": float(np.clip(self.back_action_coherence, 0.0, 1.0)),
+            "pulse_weight_power": float(pulse_weight_power),
+            "group_shots": bool(group_shots),
             "apd_noise_applied_any": bool(apd_noise_applied_any),
             "group_metrics": group_rows,
         }
@@ -1153,6 +1343,7 @@ class FeedbackReplay(FeedbackReplayCore):
         use_stderr: bool = True,
         tolerance_rad_s: Optional[float] = None,
         use_weighted_loss: bool = False,
+        pulse_weight_power: float = 0.0,
         eps: float = 1.0e-12,
     ) -> Dict[str, object]:
         """Run fixed-omega validation-style replay and return grouped fit summary."""
@@ -1170,7 +1361,12 @@ class FeedbackReplay(FeedbackReplayCore):
         else:
             groups = self.average_by_omega_group(result, use_stderr=use_stderr, tolerance_rad_s=tolerance_rad_s)
 
-        fit_metrics = self.compute_group_fit_metrics(groups, use_weighted_loss=use_weighted_loss, eps=eps)
+        fit_metrics = self.compute_group_fit_metrics(
+            groups,
+            use_weighted_loss=use_weighted_loss,
+            pulse_weight_power=pulse_weight_power,
+            eps=eps,
+        )
         return {
             "result": result,
             "groups": groups,
@@ -1221,17 +1417,20 @@ class FeedbackReplay(FeedbackReplayCore):
         values: Sequence[float],
         *,
         replay_kwargs: Optional[Dict[str, object]] = None,
+        group_shots: bool = True,
         tolerance_rad_s: Optional[float] = None,
         include_apd_noise: Optional[bool] = None,
         apd_noise_override_fraction: Optional[float] = None,
         apd_noise_min_std: float = 0.03,
-        aggregate_mode: str = "point_weighted",
+        aggregate_mode: str = "auto",
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         feedback_apd_map_enabled: Optional[bool] = None,
         feedback_apd_map_verbose: Optional[bool] = False,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
         mse_smoothing_points: float = 0.0,
+        pulse_weight_power: float = 0.0,
     ) -> Dict[str, object]:
         """Sweep one replay parameter and rank fits against APD data via per-omega-group metrics.
 
@@ -1256,6 +1455,9 @@ class FeedbackReplay(FeedbackReplayCore):
             Sequence of parameter values to evaluate.
         replay_kwargs
             Additional keyword arguments passed to replay_measured(...).
+        group_shots
+            If True, score grouped repeats. If False, score each repeat as an
+            independent fit trace.
         tolerance_rad_s
             Omega grouping tolerance (rad/s). Controls how similar two omega sequences
             must be to be considered the same group. If None, uses class default.
@@ -1276,7 +1478,9 @@ class FeedbackReplay(FeedbackReplayCore):
             APD-noise weighting.
         aggregate_mode
             Group-loss aggregation mode passed to
-            compute_group_fit_metrics_with_noise(...).
+            compute_group_fit_metrics_with_noise(...). 'auto' uses pooled
+            point weighting for grouped fits and equal-shot averaging for
+            per-shot fits.
         n_jobs
             Number of cores for parallel shot simulation within each replay.
             Default 1 (sequential). Use -1 for all cores.
@@ -1287,6 +1491,9 @@ class FeedbackReplay(FeedbackReplayCore):
         mse_smoothing_points
             Gaussian smoothing width (sigma) in grid points for 1-D MSE
             traces. If > 0, best-index selection uses smoothed MSE.
+        pulse_weight_power
+            Exponent applied to pulse index in the coherence-derived fit weight
+            profile. Default 0 gives uniform weighting.
 
         Returns
         -------
@@ -1306,17 +1513,20 @@ class FeedbackReplay(FeedbackReplayCore):
         optimizer.add_parameter(parameter_name, value_list)
         fit_payload = optimizer.fit(
             method="grid",
+            group_shots=bool(group_shots),
             tolerance_rad_s=tolerance_rad_s,
             include_apd_noise=include_apd_noise,
             apd_noise_override_fraction=apd_noise_override_fraction,
             apd_noise_min_std=apd_noise_min_std,
             aggregate_mode=aggregate_mode,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
             feedback_apd_map_enabled=feedback_apd_map_enabled,
             feedback_apd_map_verbose=feedback_apd_map_verbose,
             n_jobs=int(n_jobs),
             parallel_verbose=int(parallel_verbose),
             eps=eps,
             mse_smoothing_points=float(mse_smoothing_points),
+            pulse_weight_power=float(pulse_weight_power),
         )
 
         records: List[Dict[str, object]] = []
@@ -1366,9 +1576,10 @@ class FeedbackReplay(FeedbackReplayCore):
         *,
         grouped_average: bool = True,
         use_stderr: bool = True,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         ax=None,
     ) -> Tuple[plt.Figure, plt.Axes]:
-        """Plot simulation s_z against normalized APD, grouped when appropriate."""
+        """Plot simulation s_z against APD-derived spin values, grouped when appropriate."""
         if ax is None:
             fig, ax = plt.subplots(figsize=(7, 4))
         else:
@@ -1377,7 +1588,11 @@ class FeedbackReplay(FeedbackReplayCore):
         color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
 
         if grouped_average:
-            groups = self.average_by_omega_group(result, use_stderr=use_stderr)
+            groups = self.average_by_omega_group(
+                result,
+                use_stderr=use_stderr,
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            )
             for gidx, group in enumerate(groups):
                 t = group["t_s_z"]
                 color = color_cycle[gidx % len(color_cycle)]
@@ -1418,17 +1633,21 @@ class FeedbackReplay(FeedbackReplayCore):
                 )
         else:
             n_repeat = result.s_z_rr.shape[0]
+            apd_norm_rr = self._normalize_apd(
+                result.apd_rr,
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            )
             for r in range(n_repeat):
                 t = result.t_s_z_rr[r]
                 color = color_cycle[r % len(color_cycle)]
-                ax.scatter(t, result.apd_norm_rr[r], s=12, alpha=0.55, color=color)
+                ax.scatter(t, apd_norm_rr[r], s=12, alpha=0.55, color=color)
                 ax.plot(t, result.s_z_rr[r], "-", lw=1.3, alpha=0.8, color=color)
 
-            ax.scatter([], [], s=18, label="normalized APD")
+            ax.scatter([], [], s=18, label="APD-derived spin")
             ax.plot([], [], "-", label="simulated s_z")
 
         run_id = int(result.metadata.get("run_id", -1))
-        ax.set_title(f"run {run_id}: normalized APD vs simulated s_z")
+        ax.set_title(f"run {run_id}: APD-derived spin vs simulated s_z")
         ax.set_xlabel("time (s)")
         ax.set_ylabel("spin-like value")
         ax.set_ylim(-1.05, 1.05)
@@ -1953,6 +2172,7 @@ class FeedbackReplayOptimizer:
         index_tuple: Tuple[int, ...],
         *,
         replay_kwargs: Dict[str, object],
+        group_shots: bool,
         tolerance_rad_s: Optional[float],
         include_apd_noise: Optional[bool],
         apd_noise_override_fraction: Optional[float],
@@ -1960,6 +2180,7 @@ class FeedbackReplayOptimizer:
         aggregate_mode: str,
         n_jobs: int,
         parallel_verbose: int,
+        pulse_weight_power: float,
         eps: float,
     ) -> Dict[str, object]:
         params = self._index_to_params(index_tuple)
@@ -1976,15 +2197,18 @@ class FeedbackReplayOptimizer:
         result = self.replay.replay_measured(**resolved_replay_kwargs)
         fit_metrics = self.replay.compute_group_fit_metrics_with_noise(
             result,
+            group_shots=bool(group_shots),
             include_apd_noise=include_apd_noise,
             apd_noise_override_fraction=apd_noise_override_fraction,
             apd_noise_min_std=apd_noise_min_std,
             aggregate_mode=aggregate_mode,
             tolerance_rad_s=tolerance_rad_s,
+            pulse_weight_power=float(pulse_weight_power),
             eps=eps,
         )
-        groups = self.replay.average_by_omega_group(
+        groups = self.replay.summarize_result_groups(
             result,
+            group_shots=bool(group_shots),
             use_stderr=True,
             tolerance_rad_s=tolerance_rad_s,
         )
@@ -2039,17 +2263,20 @@ class FeedbackReplayOptimizer:
         *,
         method: str = "adaptive",
         replay_kwargs: Optional[Dict[str, object]] = None,
+        group_shots: bool = True,
         tolerance_rad_s: Optional[float] = None,
         include_apd_noise: Optional[bool] = None,
         apd_noise_override_fraction: Optional[float] = None,
         apd_noise_min_std: float = 0.03,
-        aggregate_mode: str = "point_weighted",
+        aggregate_mode: str = "auto",
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         feedback_apd_map_enabled: Optional[bool] = None,
         feedback_apd_map_verbose: Optional[bool] = False,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
         mse_smoothing_points: float = 0.0,
+        pulse_weight_power: float = 0.0,
         max_evals: Optional[int] = None,
         n_initial: Optional[int] = None,
         refine_top_k: int = 4,
@@ -2065,12 +2292,19 @@ class FeedbackReplayOptimizer:
             - ``'grid'``: evaluate full Cartesian grid.
         replay_kwargs
             Extra keyword arguments passed to ``replay_measured`` for all runs.
+        group_shots
+            If True, group repeats by omega-control sequence before scoring.
+            If False, score each repeat independently (per-shot fitting).
         max_evals
             Maximum number of candidates to evaluate in adaptive mode. Grid mode
             always evaluates the full Cartesian grid and ignores this argument.
         n_initial
             Initial DOE sample size for adaptive mode. If ``None``, chosen from
             parameter dimensionality and ``max_evals``.
+        aggregate_mode
+            Method to aggregate APD data for loss computation. Passed to
+            ``compute_group_fit_metrics_with_noise``. Default 'auto' chooses
+            'mean' for group_shots=True and 'repeat' for group_shots=False.
         refine_top_k
             Number of best current candidates used as local-neighbor seeds in
             adaptive mode.
@@ -2080,6 +2314,9 @@ class FeedbackReplayOptimizer:
             Gaussian smoothing width (sigma) in points for 1-D loss traces.
             Applied only when fitting exactly one parameter. If > 0, the best
             index is selected from smoothed losses.
+        pulse_weight_power
+            Exponent applied to pulse index in the coherence-derived fit weight
+            profile. Default 0 gives uniform weighting.
 
         Returns
         -------
@@ -2100,6 +2337,11 @@ class FeedbackReplayOptimizer:
 
         if feedback_apd_map_enabled is not None:
             replay_kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
+
+        if feedback_measurement_midpoint_remap_enabled is not None:
+            replay_kwargs["feedback_measurement_midpoint_remap_enabled"] = bool(
+                feedback_measurement_midpoint_remap_enabled
+            )
 
         if feedback_apd_map_verbose is not None:
             replay_kwargs["feedback_apd_map_verbose"] = bool(feedback_apd_map_verbose)
@@ -2143,6 +2385,7 @@ class FeedbackReplayOptimizer:
             record = self._evaluate_candidate(
                 packed,
                 replay_kwargs=replay_kwargs,
+                group_shots=bool(group_shots),
                 tolerance_rad_s=tolerance_rad_s,
                 include_apd_noise=include_apd_noise,
                 apd_noise_override_fraction=apd_noise_override_fraction,
@@ -2150,6 +2393,7 @@ class FeedbackReplayOptimizer:
                 aggregate_mode=aggregate_mode,
                 n_jobs=int(n_jobs),
                 parallel_verbose=int(parallel_verbose),
+                pulse_weight_power=float(pulse_weight_power),
                 eps=eps,
             )
             record["eval_index"] = int(len(records))
@@ -2250,7 +2494,7 @@ class FeedbackReplayOptimizer:
 
         return {
             "method": method_norm,
-            "fit_mode": "omega_group",
+            "fit_mode": "omega_group" if group_shots else "per_shot",
             "parameter_names": parameter_names,
             "parameter_values": {
                 name: values.copy() for name, values in self._parameters
@@ -2261,6 +2505,8 @@ class FeedbackReplayOptimizer:
             "selection_losses": selection_losses,
             "selection_metric": str(selection_metric),
             "mse_smoothing_points": float(smoothing_points),
+            "pulse_weight_power": float(pulse_weight_power),
+            "group_shots": bool(group_shots),
             "best_index": int(best_idx),
             "best_params": dict(best_record["params"]),
             "best_value": float(next(iter(best_record["params"].values())))
@@ -2291,18 +2537,21 @@ class FeedbackReplayOptimizer:
         *,
         method: str = "adaptive",
         replay_kwargs: Optional[Dict[str, object]] = None,
+        group_shots: bool = True,
         tolerance_rad_s: Optional[float] = None,
         use_stderr: bool = True,
         include_apd_noise: Optional[bool] = None,
         apd_noise_override_fraction: Optional[float] = None,
         apd_noise_min_std: float = 0.03,
-        aggregate_mode: str = "point_weighted",
+        aggregate_mode: str = "auto",
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         feedback_apd_map_enabled: Optional[bool] = None,
         feedback_apd_map_verbose: Optional[bool] = False,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
         mse_smoothing_points: float = 0.0,
+        pulse_weight_power: float = 0.0,
         max_evals: Optional[int] = None,
         n_initial: Optional[int] = None,
         refine_top_k: int = 4,
@@ -2326,17 +2575,20 @@ class FeedbackReplayOptimizer:
         fit_payload = self.fit(
             method=method,
             replay_kwargs=replay_kwargs,
+            group_shots=bool(group_shots),
             tolerance_rad_s=tolerance_rad_s,
             include_apd_noise=include_apd_noise,
             apd_noise_override_fraction=apd_noise_override_fraction,
             apd_noise_min_std=apd_noise_min_std,
             aggregate_mode=aggregate_mode,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
             feedback_apd_map_enabled=feedback_apd_map_enabled,
             feedback_apd_map_verbose=feedback_apd_map_verbose,
             n_jobs=n_jobs,
             parallel_verbose=parallel_verbose,
             eps=eps,
             mse_smoothing_points=float(mse_smoothing_points),
+            pulse_weight_power=float(pulse_weight_power),
             max_evals=max_evals,
             n_initial=n_initial,
             refine_top_k=refine_top_k,
@@ -2349,16 +2601,13 @@ class FeedbackReplayOptimizer:
         selection_metric = str(fit_payload.get("selection_metric", "raw_mse"))
         best_idx = int(fit_payload["best_index"])
         best_result = fit_payload["best_result"]
-        best_groups = self.replay.average_by_omega_group(
-            best_result,
-            use_stderr=bool(use_stderr),
-            tolerance_rad_s=tolerance_rad_s,
-        )
+        best_groups = list(fit_payload["best_groups"])
         best_fit = fit_payload["best_fit"]
         best_params = dict(fit_payload["best_params"])
         param_names = list(fit_payload["parameter_names"])
         run_id = int(best_result.metadata.get("run_id", -1))
         search_meta = dict(fit_payload.get("search_metadata", {}))
+        fit_mode = str(fit_payload.get("fit_mode", "omega_group"))
 
         ad = self.replay.ad
         N_exp = float(getattr(ad.p, "n_photons_per_shot", getattr(ad.p, "N_photons_per_shot", np.nan)))
@@ -2372,6 +2621,10 @@ class FeedbackReplayOptimizer:
         overlay_kwargs = dict(self.replay_defaults)
         if replay_kwargs is not None:
             overlay_kwargs.update(dict(replay_kwargs))
+        if feedback_measurement_midpoint_remap_enabled is not None:
+            overlay_kwargs["feedback_measurement_midpoint_remap_enabled"] = bool(
+                feedback_measurement_midpoint_remap_enabled
+            )
         if feedback_apd_map_enabled is not None:
             overlay_kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
         if feedback_apd_map_verbose is not None:
@@ -2401,8 +2654,9 @@ class FeedbackReplayOptimizer:
             overlay_kwargs["n_jobs"] = int(n_jobs)
             overlay_kwargs["parallel_verbose"] = int(parallel_verbose)
             expt_result = self.replay.replay_measured(**overlay_kwargs)
-            expt_groups = self.replay.average_by_omega_group(
+            expt_groups = self.replay.summarize_result_groups(
                 expt_result,
+                group_shots=bool(group_shots),
                 use_stderr=bool(use_stderr),
                 tolerance_rad_s=tolerance_rad_s,
             )
@@ -2438,7 +2692,7 @@ class FeedbackReplayOptimizer:
             axs[0].scatter([best_idx], [selection_losses[best_idx]], color="red", s=55, marker="*", zorder=3)
             axs[0].set_xlabel("evaluation index")
 
-        axs[0].set_ylabel("MSE objective (mean over omega-group MSEs)")
+        axs[0].set_ylabel("MSE objective")
         axs[0].set_title(f"Multi-parameter fit ({method}; {len(param_names)} params)")
         axs[0].legend(loc="best")
         axs[0].grid(alpha=0.25)
@@ -2451,7 +2705,11 @@ class FeedbackReplayOptimizer:
             overlay_title = f"Best fit overlay (shown groups: {len(plotted_group_indices)}/{n_groups})"
         else:
             plotted_group_indices = list(range(n_groups))
-            overlay_title = f"Best fit grouped overlay ({n_groups} groups)"
+            overlay_title = (
+                f"Best fit grouped overlay ({n_groups} groups)"
+                if group_shots
+                else f"Best fit per-shot overlay ({n_groups} shots)"
+            )
 
         cmap = plt.get_cmap("tab20", max(1, len(plotted_group_indices)))
         for cidx, gidx in enumerate(plotted_group_indices):
@@ -2522,7 +2780,7 @@ class FeedbackReplayOptimizer:
         fig.suptitle(f"run {run_id}: multi-parameter feedback fit overlay")
 
         if verbose:
-            print(f"fit mode: {fit_payload.get('fit_mode', 'omega_group')}")
+            print(f"fit mode: {fit_mode}")
             print(f"method: {method}")
             print(f"parameters: {param_names}")
             for pname in param_names:

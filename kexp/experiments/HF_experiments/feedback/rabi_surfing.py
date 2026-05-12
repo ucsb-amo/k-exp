@@ -20,7 +20,7 @@ class rabi_oscillation(EnvExperiment, Base):
         self.p.amp_imaging_pci = 0.2
         # self.xvar('amp_imaging_pci',np.linspace(0.1,0.5,30))
 
-        self.p.t_imaging_pulse = 5.e-6
+        self.p.t_imaging_pulse = 10.e-6
 
         self.p.N_divider = 2
         self.p.N_divider = int(self.p.N_divider)
@@ -31,7 +31,8 @@ class rabi_oscillation(EnvExperiment, Base):
         # Minimal pulse count that gives a 2*pi total pulse area per train.
         self.p.N_raman_pulses_between_measurements = 2 * self.p.N_divider
 
-        self.xvar('t_raman_pulse', self.p.t_raman_pulse * np.linspace(.9,1.1,7))
+        fraction_range = 0.1
+        # self.xvar('t_raman_pulse', self.p.t_raman_pulse * (1 + fraction_range * np.linspace(-1,1,13)))
 
         self.p.phase_rabi_surf_train_radians = 0
 
@@ -40,9 +41,9 @@ class rabi_oscillation(EnvExperiment, Base):
         self.camera_params.gain = 0
 
         self.p.t_tof = 100.e-6
-        self.p.N_repeats = 3
+        self.p.N_repeats = 5
 
-        self.p.N_pulses = 20
+        self.p.N_pulses = 30
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 

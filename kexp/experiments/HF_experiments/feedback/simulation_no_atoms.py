@@ -135,6 +135,8 @@ class feedback(EnvExperiment, Base, Feedback):
                           v_apd_all_down = self.p.v_apd_all_down,
                           n_photons_per_shot=self.p.n_photons_per_shot,
                           std_n_photons_per_shot=self.p.n_std_photons_per_shot,
+                          feedback_measurement_midpoint_remap_enabled=self.p.feedback_measurement_midpoint_remap_enabled,
+                          feedback_measurement_midpoint_fraction=self.p.feedback_measurement_midpoint_fraction,
                           frequency_resonance = self.p.frequency_raman_transition,
                           feedback_grid_size = self.p.feedback_grid_size,
                           fractional_grid_center_offset = self.p.feedback_fractional_grid_center_offset,

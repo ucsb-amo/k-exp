@@ -29,10 +29,10 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        # self.p.feedback_fractional_initial_offset = 3.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-7.,7.,31))
+        self.p.feedback_fractional_initial_offset = 2.
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(-3.,3.,11))
         
-        self.p.N_repeats = 65
+        self.p.N_repeats = 20
 
         self.p.feedback_guess_span_Omega = 5.0
 
@@ -74,11 +74,17 @@ class feedback(EnvExperiment, Base, Feedback):
                           v_apd_all_down = self.p.v_apd_all_down,
                           n_photons_per_shot=self.p.n_photons_per_shot,
                           std_n_photons_per_shot=self.p.n_std_photons_per_shot,
+                          feedback_measurement_midpoint_remap_enabled=self.p.feedback_measurement_midpoint_remap_enabled,
+                          feedback_measurement_midpoint_fraction=self.p.feedback_measurement_midpoint_fraction,
                           frequency_resonance = self.p.frequency_raman_transition,
                           feedback_grid_size = self.p.feedback_grid_size,
                           fractional_grid_center_offset = self.p.feedback_fractional_grid_center_offset,
                           fractional_initial_offset = self.p.feedback_fractional_initial_offset,
                           guess_span_Omega = self.p.feedback_guess_span_Omega,
+                          feedback_apd_map_enabled = self.p.feedback_apd_map_enabled,
+                          feedback_apd_map_a = self.p.feedback_apd_map_a,
+                          feedback_apd_map_b = self.p.feedback_apd_map_b,
+                          feedback_apd_map_verbose = self.p.feedback_apd_map_verbose,
                           back_action_coherence = self.p.back_action_coherence
                           )
         
@@ -133,26 +139,20 @@ class feedback(EnvExperiment, Base, Feedback):
             self.data.omega_raman.shot_data[i] = self.omega_raman
             # self.data.Omega.shot_data[i+1] = var
 
-            # self.omega_raman = self.p.omega_pulse_list[i]
-
-            if i > 0:
-                at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
-                self.raman.set_frequency_fast(f)
+            # if i > 0:
+            at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
+            self.raman.set_frequency_fast(f)
 
             t = (t_step - t_start_mu)*1.e-9
             at_mu(t_step)
 
-            # phi_pow = self.raman.get_phase()
-            # phi = self.raman.pow_to_phase(phi_pow)
-
             phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
-            phi = phase_tracker
 
             self.raman.pulse(self.p.t_raman_pulse)
             k = self.measurement(i)
             omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
-                                                    phase_raman_pulse_start=phi,
+                                                    phase_raman_pulse_start=phase_tracker,
                                                     update_raman_frequency=update_raman_frequency,
                                                     update_rabi_frequency=update_rabi_frequency,
                                                     include_photon_noise=include_photon_noise)
@@ -234,6 +234,3 @@ class feedback(EnvExperiment, Base, Feedback):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
-
-        from kexp.util.remote_control.remote_control import send_all_off_command
-        send_all_off_command()

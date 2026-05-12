@@ -29,7 +29,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.include_photon_noise = 1
 
         self.p.N_repeats = 21
-        self.p.N_pulses = 20 # number of steps of evolution
+        self.p.N_pulses = 35 # number of steps of evolution
         
         ### parameters
         
@@ -38,19 +38,14 @@ class feedback(EnvExperiment, Base, Feedback):
         # self.p.intermediate_detuning = 2*np.pi*self.p.frequency_raman_transition + 2*Omega*0
         # self.xvar('intermediate_detuning',  2*np.pi*self.p.frequency_raman_transition + Omega*(np.linspace(10, 11, 20)))
 
-        detuning_list = np.array([0., 1., 0., 1., 2.,
-           0.,  5.,  0.,  0.,  0.,
-            0., -0., -0. ,  0. , -0., 0., 0., 0., 0., 0., 0., 0.])
-            # detuning_list = 3*(np.random.random(15) -0.5)
-
-        # detuning_list = np.array([0.,   0.30609096,  0.38354877,  0.18202263,  0.29501175,
-        #     -0.31005943,  0.38354877,  0.30609096,  0.11595314,  0.18202263,
-        #         0.35998194, -0.26850061, -0.0969936 ,  0.3203508 , -0.00077061]) / 2
-
-        self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + (Omega * detuning_list)
+        np.random.seed(0) # deterministic seed
+        detuning_list = ((np.random.rand(self.p.N_pulses) - 0.5) * 2) # from -1 to 1
+        detuning_list = detuning_list * Omega * 1
+        self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + detuning_list
         
         ###
 
+        # self.p.t_calculation_slack_compensation_mu += 5000
         # timing docs: https://docs.google.com/document/d/11tzbmMhPQ-lycEPc1OWHo9MnWyrR9bsQly9bz8DF_WQ/edit?tab=t.cvj0bnjp2og4#heading=h.pimm1a640bup
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
             t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
@@ -87,6 +82,8 @@ class feedback(EnvExperiment, Base, Feedback):
                           v_apd_all_down = self.p.v_apd_all_down,
                           n_photons_per_shot=self.p.n_photons_per_shot,
                           std_n_photons_per_shot=self.p.n_std_photons_per_shot,
+                          feedback_measurement_midpoint_remap_enabled=self.p.feedback_measurement_midpoint_remap_enabled,
+                          feedback_measurement_midpoint_fraction=self.p.feedback_measurement_midpoint_fraction,
                           frequency_resonance = self.p.frequency_raman_transition,
                           feedback_grid_size = self.p.feedback_grid_size,
                           fractional_grid_center_offset = self.p.feedback_fractional_grid_center_offset,
@@ -110,6 +107,8 @@ class feedback(EnvExperiment, Base, Feedback):
         self.data.ts = self.data.add_data_container(self.p.N_pulses)
 
         self.finish_prepare()
+
+        self.p.probabilities = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
 
     @kernel
     def feedback_loop(self, t_start_mu,
@@ -144,23 +143,11 @@ class feedback(EnvExperiment, Base, Feedback):
             # self.omega_raman = self.p.intermediate_detuning
 
             self.omega_raman = self.p.omega_pulse_list[i] 
-
-            # if i == 2:
-            #     self.omega_raman = self.p.intermediate_detuning
-            #     omega_prev = self.p.omega_pulse_list[1]
-            # elif i == 3:
-            #     self.omega_raman = self.p.omega_pulse_list[3] 
-            #     omega_prev = self.p.intermediate_detuning
-            # else:
-            #     self.omega_raman = self.p.omega_pulse_list[i] 
-            #     omega_prev = self.p.omega_pulse_list[i-1] if i > 0 else 0.
-            #     #pass
             
             f = self.omega_raman / (2*np.pi)
             self.data.omega_raman.shot_data[i] = self.omega_raman
             # self.data.Omega.shot_data[i+1] = var
 
-            #if i > 0:
             at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
             self.raman.set_frequency_fast(f)
 
@@ -168,8 +155,7 @@ class feedback(EnvExperiment, Base, Feedback):
             at_mu(t_step)                                                                                                                           
 
             phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
-
-            phi = phase_tracker
+            # phi = phase_tracker
 
             self.raman.pulse(self.p.t_raman_pulse)
 
@@ -178,7 +164,7 @@ class feedback(EnvExperiment, Base, Feedback):
             omega_prev = self.omega_raman
 
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
-                                                    phase_raman_pulse_start=phi,
+                                                    phase_raman_pulse_start=phase_tracker,
                                                     update_raman_frequency=update_raman_frequency,
                                                     update_rabi_frequency=update_rabi_frequency,
                                                     include_photon_noise=include_photon_noise)
@@ -188,8 +174,12 @@ class feedback(EnvExperiment, Base, Feedback):
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
 
-            self.data.phi.put_data(phi,i)
-            self.data.ts.put_data(t,i)
+            # self.store_probabilities_to_host(self.P0, self.scan_xvars[0].counter, i)
+
+        
+    @rpc(flags={"async"})
+    def store_probabilities_to_host(self, pulse_probabilities, shot_idx, pulse_idx):
+        self.p.probabilities[shot_idx, pulse_idx] = pulse_probabilities
 
     @kernel
     def scan_kernel(self):
