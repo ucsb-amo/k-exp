@@ -9,13 +9,13 @@ from PyQt6.QtWidgets import (
     QSizePolicy, QMessageBox, QComboBox, QDoubleSpinBox
 )
 from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QIcon
+from PyQt6.QtGui import QColor, QIcon, QFont, QFontMetrics
 
 import vxi11
 import time
 
 T_UPDATE_MS = 500
-FONTSIZE_PT = 18
+FONTSIZE_PT = 14
 
 class status_decoder():
     def __init__(self):
@@ -46,11 +46,14 @@ class status_decoder():
         return err_str
 
 # one of these per current supply
+ALERT_THRESHOLDS = {500: 100, 170: 50}
+
 class current_supply_widget(QWidget):
     def __init__(self,ip:str,max_current:int):
         super().__init__()
         self.ip = ip
         self.max_current = max_current
+        self.alert_threshold = ALERT_THRESHOLDS.get(max_current, None)
         self.supply = vxi11.Instrument(ip)
         self.status = 0
         self.err_str = ""
@@ -77,15 +80,23 @@ class current_supply_widget(QWidget):
         self.status = 0
     
     def update_UI(self):
+        alert = False
         if not self.status:
             self.read_status()
             current = self.read_current()
             # set the value text of our box (see "init_UI") to the new current
-            # the "1.4f" formats the number to a string as with 4 decimal places (f for "float")
-            self.value_label.setText(f"{current:1.4f}  A")
+            # the "1.2f" formats the number to a string with 2 decimal places (f for "float")
+            self.value_label.setText(f"{current:1.2f} A")
+            if self.alert_threshold is not None and current > self.alert_threshold:
+                alert = True
         else:
             self.err_str = self.status_decoder.decode_status(self.status)
             self.value_label.setText(f"{self.err_str}")
+
+        bg_color = "red" if alert else ""
+        self.value_label.setStyleSheet(
+            f"font-weight: bold; font-size: {FONTSIZE_PT}pt; text-align: right; padding-right: 10px; background-color: {bg_color};"
+        )
 
         if 'UNR' in self.err_str:
             self.clear_protect_status()
@@ -97,6 +108,12 @@ class current_supply_widget(QWidget):
         self.value_label = QPushButton("")
         self.value_label.clicked.connect(self.clear_protect_status)
         self.value_label.setStyleSheet("font-weight: bold; font-size: {FONTSIZE_PT}pt; text-align: right; padding-right: 10px;")
+        _font = QFont()
+        _font.setPointSize(FONTSIZE_PT)
+        _font.setBold(True)
+        _fm = QFontMetrics(_font)
+        _fixed_width = _fm.horizontalAdvance("000.00 A") + 20  # +20 for button padding
+        self.value_label.setFixedWidth(_fixed_width)
 
         # these ones will remain the same forever so I just name them here and
         # don't bother to save them as an attribute (since I don't need to
