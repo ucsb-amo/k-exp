@@ -1,10 +1,11 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base, cameras, img_types
+from kexp import Base, img_types, cameras
 import numpy as np
-from kexp.util.artiq.async_print import aprint
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
+from artiq.coredevice.sampler import Sampler
+from artiq.language import now_mu
 
 class trap_frequency(EnvExperiment, Base):
 
@@ -19,11 +20,16 @@ class trap_frequency(EnvExperiment, Base):
         self.p.t_tweezer_mod = 15.e-3
 
         # self.p.v_pd_tweezer_1064_ramp_end = 4.
-        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,8.7,8))
 
-        self.xvar('f_tweezer_mod',np.linspace(.5e3,10.e3,20))
-        self.p.f_tweezer_mod = 500.
+        # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,8.7,8))
+        # self.p.v_pd_hf_tweezer_squeeze_power = 0.444
+        self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(0.22,0.45,5))
+        self.xvar('f_tweezer_mod',np.linspace(2.4e3,4.5e3,20))
+        # self.p.f_tweezer_mod = 500.
+        # self.p.f_tweezer_mod = 3.6e3
+
         self.p.x_tweezer_mod_amp = .125e-6 # ~51kHz mod depth on AOD tone (2025-05-15)
+        # self.trap = self.tweezer.add_tweezer(frequency=75.e6, amplitude=0.18)
 
         self.p.N_repeats = 2
         self.p.t_mot_load = 1.
@@ -33,14 +39,15 @@ class trap_frequency(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.trap.sine_move(t_mod=self.p.t_tweezer_mod,
+        self.tweezer.sine_move(t_mod=self.p.t_tweezer_mod,
                             x_mod=self.p.x_tweezer_mod_amp,
                             f_mod=self.p.f_tweezer_mod,
+                            tweezer_idx=0,
                             trigger=False)
         delay(100.e-3)
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.p.amp_imaging)
+        self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
 

@@ -81,7 +81,7 @@ class Feedback:
         self._initialize_posterior_state()
         self._initialize_trig_lut(lut_size=lut_size)
         
-        self.__print_estimated_time = True
+        self._print_estimated_time = True
 
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
@@ -364,9 +364,9 @@ class Feedback:
         self.t_posterior_mu = abs(t0 - self.core.get_rtio_counter_mu())
         self.core.break_realtime()
         
-        if self.__print_estimated_time:
+        if self._print_estimated_time:
             aprint('calculation esimated slack consumption:', self.t_posterior_mu)
-            self.__print_estimated_time = False
+            self._print_estimated_time = False
         
         self.reset_feedback_state()
 

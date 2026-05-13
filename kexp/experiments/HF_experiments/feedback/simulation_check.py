@@ -35,12 +35,14 @@ class feedback(EnvExperiment, Base, Feedback):
         
         Omega = np.pi / self.p.t_raman_pi_pulse
 
+        self.p.delta_t_mu = int64(624)
+
         # self.p.intermediate_detuning = 2*np.pi*self.p.frequency_raman_transition + 2*Omega*0
         # self.xvar('intermediate_detuning',  2*np.pi*self.p.frequency_raman_transition + Omega*(np.linspace(10, 11, 20)))
 
         np.random.seed(5342) # deterministic seed
         detuning_list = ((np.random.rand(self.p.N_pulses) - 0.5) * 2) # from -1 to 1
-        detuning_list = detuning_list * Omega * 2.
+        detuning_list = detuning_list * Omega * 10.
         detuning_list[0] = 0.
         self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + detuning_list
         
@@ -148,6 +150,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
+            self.data.phi.put_data(phase_tracker, i)
 
             # self.store_probabilities_to_host(self.P0, self.scan_xvars[0].counter, i)
 
