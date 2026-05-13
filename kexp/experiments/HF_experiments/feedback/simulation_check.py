@@ -28,8 +28,8 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 21
-        self.p.N_pulses = 35 # number of steps of evolution
+        self.p.N_repeats = 11
+        self.p.N_pulses = 12 # number of steps of evolution
         
         ### parameters
         
@@ -38,9 +38,10 @@ class feedback(EnvExperiment, Base, Feedback):
         # self.p.intermediate_detuning = 2*np.pi*self.p.frequency_raman_transition + 2*Omega*0
         # self.xvar('intermediate_detuning',  2*np.pi*self.p.frequency_raman_transition + Omega*(np.linspace(10, 11, 20)))
 
-        np.random.seed(0) # deterministic seed
+        np.random.seed(5342) # deterministic seed
         detuning_list = ((np.random.rand(self.p.N_pulses) - 0.5) * 2) # from -1 to 1
-        detuning_list = detuning_list * Omega * 1
+        detuning_list = detuning_list * Omega * 2.
+        detuning_list[0] = 0.
         self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + detuning_list
         
         ###
@@ -67,33 +68,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.data.s_z = self.data.add_data_container(self.p.N_pulses)
         self.data.t = self.data.add_data_container(self.p.N_pulses)
 
-        ### feedback setup
-        # uses calibration for v_apd and n_photons from integrator_calibration
-        # unless those values are explicitly passed below (commented out)
-
-        Feedback.__init__(self,
-                          t_raman_pulse = self.p.t_raman_pulse,
-                          t_raman_pulse_ideal = self.p.t_raman_pulse_ideal,
-                          t_img_pulse = self.p.t_img_pulse,
-                          amp_imaging = self.p.amp_imaging,
-                          t_raman_pi_pulse = self.p.t_raman_pi_pulse,
-                          frequency_z_lightshift = self.p.frequency_lightshift,
-                          v_apd_all_up= self.p.v_apd_all_up,
-                          v_apd_all_down = self.p.v_apd_all_down,
-                          n_photons_per_shot=self.p.n_photons_per_shot,
-                          std_n_photons_per_shot=self.p.n_std_photons_per_shot,
-                          feedback_measurement_midpoint_remap_enabled=self.p.feedback_measurement_midpoint_remap_enabled,
-                          feedback_measurement_midpoint_fraction=self.p.feedback_measurement_midpoint_fraction,
-                          frequency_resonance = self.p.frequency_raman_transition,
-                          feedback_grid_size = self.p.feedback_grid_size,
-                          fractional_grid_center_offset = self.p.feedback_fractional_grid_center_offset,
-                          fractional_initial_offset = self.p.feedback_fractional_initial_offset,
-                          guess_span_Omega = self.p.feedback_guess_span_Omega,
-                          feedback_apd_map_enabled=self.p.feedback_apd_map_enabled,
-                          feedback_apd_map_a=self.p.feedback_apd_map_a,
-                          feedback_apd_map_b=self.p.feedback_apd_map_b,
-                          back_action_coherence = self.p.back_action_coherence
-                          )
+        Feedback.__init__(self)
         
         self.zidx = self.p.feedback_resonance_grid_index
 

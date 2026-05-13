@@ -22,17 +22,19 @@ class rabi_oscillation(EnvExperiment, Base):
 
         self.p.t_imaging_pulse = 10.e-6
 
-        self.p.N_divider = 2
+        self.p.N_divider = 1
         self.p.N_divider = int(self.p.N_divider)
         if self.p.N_divider <= 0:
             raise ValueError("N_divider must be a positive integer.")
+        
+        
 
-        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / self.p.N_divider
+        self.p.t_raman_pulse = 2 * self.p.t_raman_pi_pulse / self.p.N_divider
         # Minimal pulse count that gives a 2*pi total pulse area per train.
-        self.p.N_raman_pulses_between_measurements = 2 * self.p.N_divider
+        self.p.N_raman_pulses_between_measurements = self.p.N_divider
 
         fraction_range = 0.1
-        # self.xvar('t_raman_pulse', self.p.t_raman_pulse * (1 + fraction_range * np.linspace(-1,1,13)))
+        self.xvar('t_raman_pulse', self.p.t_raman_pulse * (1 + fraction_range * np.linspace(-1,1,11)))
 
         self.p.phase_rabi_surf_train_radians = 0
 

@@ -30,9 +30,9 @@ class feedback(EnvExperiment, Base, Feedback):
         ### parameters
 
         self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(-3.,3.,11))
+        self.xvar('feedback_fractional_initial_offset', np.linspace(-5.,5.,21))
         
-        self.p.N_repeats = 20
+        self.p.N_repeats = 125
 
         self.p.feedback_guess_span_Omega = 5.0
 
@@ -59,34 +59,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.data.s_z = self.data.add_data_container(self.p.N_pulses)
         self.data.t = self.data.add_data_container(self.p.N_pulses)
 
-        ### feedback setup
-        # uses calibration for v_apd and n_photons from integrator_calibration
-        # unless those values are explicitly passed below (commented out)
-
-        Feedback.__init__(self,
-                          t_raman_pulse = self.p.t_raman_pulse,
-                          t_raman_pulse_ideal = self.p.t_raman_pulse_ideal,
-                          t_img_pulse = self.p.t_img_pulse,
-                          amp_imaging = self.p.amp_imaging,
-                          t_raman_pi_pulse = self.p.t_raman_pi_pulse,
-                          frequency_z_lightshift = self.p.frequency_lightshift,
-                          v_apd_all_up= self.p.v_apd_all_up,
-                          v_apd_all_down = self.p.v_apd_all_down,
-                          n_photons_per_shot=self.p.n_photons_per_shot,
-                          std_n_photons_per_shot=self.p.n_std_photons_per_shot,
-                          feedback_measurement_midpoint_remap_enabled=self.p.feedback_measurement_midpoint_remap_enabled,
-                          feedback_measurement_midpoint_fraction=self.p.feedback_measurement_midpoint_fraction,
-                          frequency_resonance = self.p.frequency_raman_transition,
-                          feedback_grid_size = self.p.feedback_grid_size,
-                          fractional_grid_center_offset = self.p.feedback_fractional_grid_center_offset,
-                          fractional_initial_offset = self.p.feedback_fractional_initial_offset,
-                          guess_span_Omega = self.p.feedback_guess_span_Omega,
-                          feedback_apd_map_enabled = self.p.feedback_apd_map_enabled,
-                          feedback_apd_map_a = self.p.feedback_apd_map_a,
-                          feedback_apd_map_b = self.p.feedback_apd_map_b,
-                          feedback_apd_map_verbose = self.p.feedback_apd_map_verbose,
-                          back_action_coherence = self.p.back_action_coherence
-                          )
+        Feedback.__init__(self)
         
         self.zidx = self.p.feedback_resonance_grid_index
 

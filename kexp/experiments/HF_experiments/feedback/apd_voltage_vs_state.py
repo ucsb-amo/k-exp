@@ -14,20 +14,20 @@ class sigma_z(EnvExperiment, Base):
         
         self.p.amp_imaging = 0.2
         # self.xvar('amp_imaging', np.linspace(0.4, 0.7, 5))
-        self.p.t_pci_pulse = 10.e-6
+        self.p.t_pci_pulse = 5.e-6
         # self.xvar('t_pci_pulse', np.linspace(3.e-6, 10.e-6, 5))
         
         self.p.t_between_pulses_mu = 20000  # from pulse start to next pulse start, in mu
 
         self.p.t_raman_pulse = 0.
         self.p.t_raman_pulse_offset = 220.e-9
-        self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,11) + self.p.t_raman_pulse_offset)
+        self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,5) + self.p.t_raman_pulse_offset)
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
         self.p.N_repeats = 8
 
-        self.p.N_pulses = 6
+        self.p.N_pulses = 7
 
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
 
