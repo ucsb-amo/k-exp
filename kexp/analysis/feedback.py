@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -101,14 +102,30 @@ class FeedbackReplayCore(Feedback):
         omega_group_tolerance_rad_s: float = DEFAULT_OMEGA_GROUP_TOLERANCE_RAD_S,
     ):
         self.ad = ad
+        # Create independent copy of parameters so modifications don't affect shared atomdata
+        self.p = copy.copy(ad.p)
         self._base_kwargs = self._build_base_feedback_kwargs(ad)
         self._omega_resonance_rad_s = 2.0 * np.pi * float(self._base_kwargs["frequency_resonance"])
         self.omega_group_tolerance_rad_s = float(omega_group_tolerance_rad_s)
         self._default_timing = self._get_default_timing_params()
+        
+        # Freeze t_between_pulses_mu so scanning t_raman_pulse, t_img_pulse, delta_t_mu
+        # doesn't change it. Phase is recomputed with frozen t_between and new pulse timings.
+        self._frozen_t_between_pulses_mu = int(self._default_timing.get("t_between_pulses_mu", 0))
+        
         Feedback.__init__(self, **self._base_kwargs)
 
+    def get_t_between_pulses_mu_frozen(self) -> int:
+        """Get the frozen t_between_pulses_mu from when replay was created.
+        
+        This value is NOT recalculated when timing parameters (t_raman_pulse, t_img_pulse, delta_t_mu)
+        are modified for scanning. Phase calculations in replay use this frozen value plus the scanned
+        timing parameters to recompute the phase with ideal pulse area accounting.
+        """
+        return self._frozen_t_between_pulses_mu
+
     def _effective_feedback_grid_size(self) -> int:
-        p = getattr(self.ad, "p", None)
+        p = self.p
         if p is not None and hasattr(p, "feedback_grid_size"):
             return int(getattr(p, "feedback_grid_size"))
 
@@ -203,7 +220,7 @@ class FeedbackReplayCore(Feedback):
         return np.asarray(values, dtype=float)
 
     def _get_default_timing_params(self) -> Dict[str, float]:
-        p = self.ad.p
+        p = self.p
 
         t_between = getattr(p, "t_between_pulses_mu", None)
         if t_between is None:
@@ -283,8 +300,8 @@ class FeedbackReplayCore(Feedback):
                 raise ValueError("omega_guess_list_override must contain at least two points.")
             return omega_guess, int(np.argmin(np.abs(omega_guess - omega_res)))
 
-        if hasattr(self.ad.p, "omega_guess_list"):
-            omega_saved = np.asarray(self.ad.p.omega_guess_list, dtype=float).ravel()
+        if hasattr(self.p, "omega_guess_list"):
+            omega_saved = np.asarray(self.p.omega_guess_list, dtype=float).ravel()
         else:
             omega_saved = np.asarray(self.omega_guess_list, dtype=float).ravel()
 
@@ -389,14 +406,9 @@ class FeedbackReplayCore(Feedback):
         if t_between_pulses_mu is not None:
             timing["t_between_pulses_mu"] = int(t_between_pulses_mu)
         elif (t_raman_pulse is not None) or (t_img_pulse is not None):
-            timing["t_between_pulses_mu"] = int(
-                self.compute_t_between_pulses_mu(
-                    t_calculation_slack_compensation_mu=int(timing["t_calculation_slack_compensation_mu"]),
-                    t_raman_pulse=dt_eff,
-                    t_img_pulse=dt_img,
-                    t_fifo_mu=np.int64(int(timing["t_fifo_mu"])),
-                )
-            )
+            # When scanning timing parameters, use frozen t_between_pulses_mu instead of recalculating.
+            # This preserves the original timing relationship while accounting for new pulse areas via delta_t_mu.
+            timing["t_between_pulses_mu"] = self._frozen_t_between_pulses_mu
 
         return timing
 
@@ -814,10 +826,10 @@ class FeedbackReplayCore(Feedback):
         parallel_verbose: int = 0,
     ) -> FeedbackReplayResult:
         if include_photon_noise is None:
-            include_photon_noise = bool(getattr(self.ad.p, "include_photon_noise", 1))
+            include_photon_noise = bool(getattr(self.p, "include_photon_noise", 1))
 
         if update_raman_frequency is None:
-            update_raman_frequency = bool(getattr(self.ad.p, "update_raman_frequency_bool", 1))
+            update_raman_frequency = bool(getattr(self.p, "update_raman_frequency_bool", 1))
 
         if control_omega_source not in {"measured", "recomputed", "override"}:
             raise ValueError("control_omega_source must be one of: measured, recomputed, override.")
@@ -957,7 +969,7 @@ class FeedbackReplayCore(Feedback):
             metadata={
                 "run_id": int(getattr(self.ad.run_info, "run_id", -1)),
                 "N_repeat": int(n_repeat),
-                "N_step": int(getattr(self.ad.p, "N_pulses", n_step)),
+                "N_step": int(getattr(self.p, "N_pulses", n_step)),
                 "feedback_grid_size": self._effective_feedback_grid_size(),
                 "control_omega_source": str(control_omega_source),
                 "include_photon_noise": bool(include_photon_noise),
@@ -1133,8 +1145,8 @@ class FeedbackReplay(FeedbackReplayCore):
         else returns 0.0 (noiseless assumption).
         """
         try:
-            N_photons = float(getattr(self.ad.p, "N_photons_per_shot", 1.0))
-            std_photons = float(getattr(self.ad.p, "std_n_photons_per_shot", 0.0))
+            N_photons = float(getattr(self.p, "N_photons_per_shot", 1.0))
+            std_photons = float(getattr(self.p, "std_n_photons_per_shot", 0.0))
             if N_photons > 0.0:
                 return std_photons / N_photons
         except (AttributeError, TypeError, ValueError):
@@ -1671,8 +1683,8 @@ class FeedbackReplay(FeedbackReplayCore):
 
         color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
 
-        f0 = float(getattr(self.ad.p, "frequency_raman_transition", 0.0))
-        f_rabi = 1.0 / (2.0 * float(self.ad.p.t_raman_pi_pulse))
+        f0 = float(getattr(self.p, "frequency_raman_transition", 0.0))
+        f_rabi = 1.0 / (2.0 * float(self.p.t_raman_pi_pulse))
 
         def _lag_xy(x: np.ndarray, y: np.ndarray, lag_steps: int) -> Tuple[np.ndarray, np.ndarray]:
             lag = int(lag_steps)
@@ -1740,8 +1752,8 @@ class FeedbackReplay(FeedbackReplayCore):
 
         exp_probs = None
         exp_probs_label = "experiment probabilities reconstructed from measured APD"
-        if hasattr(self.ad.p, "probabilities"):
-            probs = np.asarray(self.ad.p.probabilities)
+        if hasattr(self.p, "probabilities"):
+            probs = np.asarray(self.p.probabilities)
             if probs.ndim == 3:
                 exp_probs = np.asarray(probs[repeat_idx], dtype=float).T
                 exp_probs_label = "experiment ad.p.probabilities"
@@ -1778,8 +1790,8 @@ class FeedbackReplay(FeedbackReplayCore):
         n_pulses = sim_probs.shape[1]
 
         omega_guess_hz = np.asarray(result.omega_guess_list, dtype=float) / (2.0 * np.pi)
-        detuning_hz = omega_guess_hz - float(self.ad.p.frequency_raman_transition)
-        f_rabi = 1.0 / (2.0 * float(self.ad.p.t_raman_pi_pulse))
+        detuning_hz = omega_guess_hz - float(self.p.frequency_raman_transition)
+        f_rabi = 1.0 / (2.0 * float(self.p.t_raman_pi_pulse))
         detuning_over_omega = detuning_hz / f_rabi
 
         if len(detuning_over_omega) != n_omega_bins:
@@ -1891,24 +1903,29 @@ class FeedbackReplayOptimizer:
         self.replay_defaults = {} if replay_defaults is None else dict(replay_defaults)
         self._parameters: List[Tuple[str, np.ndarray]] = []
 
+    @property
+    def p(self) -> "ExptParams":
+        """Alias to self.replay.p (replay's independent parameter copy)."""
+        return self.replay.p
+
     def _resolve_parameter_name(self, parameter_name: str) -> str:
         return str(self.PARAMETER_ALIASES.get(parameter_name, parameter_name))
 
     def _resolve_default_center_value(self, parameter_name: str) -> float:
         resolved_name = self._resolve_parameter_name(parameter_name)
 
-        # Prefer experiment-side parameter object first.
-        if hasattr(self.replay.ad, "p"):
-            if hasattr(self.replay.ad.p, parameter_name):
-                base_value_raw = getattr(self.replay.ad.p, parameter_name)
-            elif resolved_name != parameter_name and hasattr(self.replay.ad.p, resolved_name):
-                base_value_raw = getattr(self.replay.ad.p, resolved_name)
+        # Prefer replay's independent parameter copy first.
+        if hasattr(self.replay, "p"):
+            if hasattr(self.replay.p, parameter_name):
+                base_value_raw = getattr(self.replay.p, parameter_name)
+            elif resolved_name != parameter_name and hasattr(self.replay.p, resolved_name):
+                base_value_raw = getattr(self.replay.p, resolved_name)
             else:
                 base_value_raw = None
         else:
             base_value_raw = None
 
-        # Fall back to replay defaults when ad.p does not provide the key.
+        # Fall back to replay defaults when replay.p does not provide the key.
         if base_value_raw is None:
             if parameter_name in self.replay_defaults:
                 base_value_raw = self.replay_defaults[parameter_name]
@@ -1939,7 +1956,7 @@ class FeedbackReplayOptimizer:
         values: Optional[Sequence[float]] = None,
         *,
         fractional_span: float = 0.2,
-        n_points: int = 51,
+        n_points: int = 120,
     ) -> "FeedbackReplayOptimizer":
         """Register or replace a parameter search axis.
 
@@ -2188,8 +2205,11 @@ class FeedbackReplayOptimizer:
         for key, value in params.items():
             resolved_params[self._resolve_parameter_name(key)] = float(value)
 
-        resolved_replay_kwargs = dict(self.replay_defaults)
-        resolved_replay_kwargs.update(replay_kwargs)
+        # Build kwargs: scanned parameters + user overrides
+        # Replay uses self.p for any parameters not explicitly provided
+        resolved_replay_kwargs = {}
+        if replay_kwargs:
+            resolved_replay_kwargs.update(replay_kwargs)
         resolved_replay_kwargs.update(resolved_params)
         resolved_replay_kwargs["n_jobs"] = int(n_jobs)
         resolved_replay_kwargs["parallel_verbose"] = int(parallel_verbose)
@@ -2209,7 +2229,7 @@ class FeedbackReplayOptimizer:
         groups = self.replay.summarize_result_groups(
             result,
             group_shots=bool(group_shots),
-            use_stderr=True,
+            use_stderr=False,
             tolerance_rad_s=tolerance_rad_s,
         )
 
@@ -2532,6 +2552,185 @@ class FeedbackReplayOptimizer:
             "apd_noise_override_fraction": apd_noise_override_fraction,
         }
 
+    def _validate_minimum_with_smoothing(
+        self,
+        best_params: Dict[str, float],
+        fit_payload: Dict[str, object],
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        group_shots: bool = True,
+        local_span: float = 0.15,
+        n_local_points: int = 11,
+        smoothing_sigma: float = 1.5,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        include_apd_noise: Optional[bool] = None,
+        apd_noise_override_fraction: Optional[float] = None,
+        apd_noise_min_std: float = 0.03,
+        aggregate_mode: str = "auto",
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = False,
+        tolerance_rad_s: Optional[float] = None,
+        pulse_weight_power: float = 0.0,
+        verbose: bool = True,
+    ) -> Dict[str, object]:
+        """Validate that a multi-parameter minimum is robust, not noise.
+        
+        Strategy:
+        1. Build a finer local grid around best_params (±local_span in fractional space)
+        2. Evaluate MSE at all local points
+        3. Apply Gaussian smoothing to the local landscape
+        4. Check that smoothed minimum is stable (close to original)
+        5. Return validation report with landscape statistics
+        """
+        try:
+            import scipy.ndimage as ndimage
+        except ImportError:
+            return {"validated": False, "error": "scipy.ndimage not available"}
+
+        if len(best_params) == 0:
+            return {"validated": False, "error": "No parameters to validate"}
+
+        param_names = list(best_params.keys())
+        n_params = len(param_names)
+
+        # Build local grid axes around best_params
+        local_grids = {}
+        for pname in param_names:
+            center = float(best_params[pname])
+            ref_val = getattr(self.replay.p, pname, center)
+            
+            # Fractional span relative to reference value
+            if abs(float(ref_val)) > 1e-12:
+                span = abs(float(ref_val)) * float(local_span)
+            else:
+                span = abs(center) * float(local_span) if abs(center) > 1e-12 else 0.1
+            
+            local_grids[pname] = np.linspace(center - span, center + span, int(n_local_points))
+
+        # Generate all local candidate indices
+        local_shape = tuple(int(values.size) for values in local_grids.values())
+        local_indices = np.ndindex(local_shape)
+
+        # Evaluate local landscape
+        local_losses = {}
+        local_records = []
+        
+        if verbose:
+            print(f"  Validating minimum with local re-sampling ({np.prod(local_shape)} points)...")
+
+        for idx_tuple in local_indices:
+            local_candidate = {}
+            for param_name, idx in zip(param_names, idx_tuple):
+                local_candidate[param_name] = float(local_grids[param_name][int(idx)])
+
+            try:
+                # Resolve parameter names and build replay kwargs
+                resolved_replay_kwargs = {}
+                if replay_kwargs:
+                    resolved_replay_kwargs.update(replay_kwargs)
+                
+                for param_name, value in local_candidate.items():
+                    resolved_name = self._resolve_parameter_name(param_name)
+                    resolved_replay_kwargs[resolved_name] = float(value)
+                
+                resolved_replay_kwargs["n_jobs"] = int(n_jobs)
+                resolved_replay_kwargs["parallel_verbose"] = int(parallel_verbose)
+                
+                # Run replay with these parameters
+                result = self.replay.replay_measured(**resolved_replay_kwargs)
+                
+                # Compute fit metrics
+                fit_metrics = self.replay.compute_group_fit_metrics_with_noise(
+                    result,
+                    group_shots=bool(group_shots),
+                    include_apd_noise=include_apd_noise,
+                    apd_noise_override_fraction=apd_noise_override_fraction,
+                    apd_noise_min_std=apd_noise_min_std,
+                    aggregate_mode=aggregate_mode,
+                    tolerance_rad_s=tolerance_rad_s,
+                    pulse_weight_power=pulse_weight_power,
+                    eps=1.0e-12,
+                )
+                
+                loss = float(fit_metrics["overall_mse"])
+                local_losses[idx_tuple] = loss
+                local_records.append({
+                    "idx": idx_tuple,
+                    "params": dict(local_candidate),
+                    "loss": loss,
+                    "fit": fit_metrics,
+                })
+            except Exception as e:
+                if verbose:
+                    print(f"    Warning: evaluation failed at {local_candidate}: {e}")
+                local_losses[idx_tuple] = np.inf
+
+        if len(local_records) == 0:
+            return {"validated": False, "error": "No local evaluations succeeded"}
+
+        # Reshape losses to grid
+        loss_grid = np.full(local_shape, np.inf, dtype=float)
+        for idx_tuple, loss in local_losses.items():
+            loss_grid[idx_tuple] = loss
+
+        original_min_loss = loss_grid[tuple(int(n_local_points // 2) for _ in range(n_params))]
+        
+        # Apply Gaussian smoothing
+        smoothed_grid = ndimage.gaussian_filter(
+            np.where(np.isfinite(loss_grid), loss_grid, np.nanmax(loss_grid[np.isfinite(loss_grid)])),
+            sigma=float(smoothing_sigma),
+            mode="nearest",
+        )
+
+        # Find minimum in original and smoothed grids
+        orig_min_idx = np.unravel_index(np.nanargmin(loss_grid), local_shape)
+        smooth_min_idx = np.unravel_index(np.nanargmin(smoothed_grid), local_shape)
+        
+        orig_min_loss = float(loss_grid[orig_min_idx])
+        smooth_min_loss = float(smoothed_grid[smooth_min_idx])
+        center_idx = tuple(int(n_local_points // 2) for _ in range(n_params))
+        center_loss_smooth = float(smoothed_grid[center_idx])
+
+        # Extract the smoothed-minimum candidate
+        smooth_min_params = {}
+        for param_name, idx in zip(param_names, smooth_min_idx):
+            smooth_min_params[param_name] = float(local_grids[param_name][int(idx)])
+
+        # Compute distance between original and smoothed minimum
+        param_distance = np.sqrt(sum(
+            ((float(orig_min_idx[i]) - float(smooth_min_idx[i])) / float(n_local_points)) ** 2
+            for i in range(n_params)
+        ))
+
+        # Robustness: if smoothed minimum is close to center, the original min is likely robust
+        stability_score = 1.0 - min(1.0, param_distance / np.sqrt(n_params))
+        validated = bool(stability_score > 0.7)  # Threshold for "good" stability
+
+        if verbose:
+            print(f"  Original grid minimum loss: {orig_min_loss:.6e}")
+            print(f"  Smoothed grid minimum loss: {smooth_min_loss:.6e}")
+            print(f"  Center (best_params) smoothed loss: {center_loss_smooth:.6e}")
+            print(f"  Parameter distance (normalized): {param_distance:.4f}")
+            print(f"  Stability score: {stability_score:.4f}")
+            print(f"  Validated: {validated}")
+
+        return {
+            "validated": validated,
+            "stability_score": float(stability_score),
+            "original_min_loss": orig_min_loss,
+            "original_min_idx": tuple(int(i) for i in orig_min_idx),
+            "smoothed_min_loss": smooth_min_loss,
+            "smoothed_min_idx": tuple(int(i) for i in smooth_min_idx),
+            "smoothed_min_params": smooth_min_params,
+            "center_smoothed_loss": center_loss_smooth,
+            "parameter_distance": float(param_distance),
+            "local_grid_shape": tuple(int(s) for s in local_shape),
+            "local_records": local_records,
+            "grid_losses": loss_grid.copy(),
+            "grid_smoothed": smoothed_grid.copy(),
+        }
+
     def fit_report(
         self,
         *,
@@ -2547,7 +2746,7 @@ class FeedbackReplayOptimizer:
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         feedback_apd_map_enabled: Optional[bool] = None,
         feedback_apd_map_verbose: Optional[bool] = False,
-        n_jobs: int = 1,
+        n_jobs: int = -1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
         mse_smoothing_points: float = 0.0,
@@ -2557,12 +2756,15 @@ class FeedbackReplayOptimizer:
         refine_top_k: int = 4,
         random_state: int = 0,
         max_groups_to_plot: int = 7,
-        show_posterior: bool = True,
+        show_posterior: bool = False,
         posterior_repeat_idx: int = 0,
         posterior_log_scale: bool = True,
         posterior_normalize_after: int = 0,
         posterior_cmap: str = "viridis",
         verbose: bool = True,
+        validate_minimum: bool = False,
+        validation_local_span: float = 0.15,
+        validation_n_points: int = 11,
     ) -> Dict[str, object]:
         """Run fit and generate standard diagnostics plots and summary output.
 
@@ -2570,7 +2772,24 @@ class FeedbackReplayOptimizer:
         - optimizer fitting,
         - objective and overlay plotting,
         - optional posterior diagnostic,
-        - optional printed summary.
+        - optional printed summary,
+        - optional minimum validation via local re-sampling and smoothing.
+
+        Parameters
+        ----------
+        validate_minimum : bool, optional
+            If True, after finding the best parameters, re-sample a finer grid
+            around the minimum and apply Gaussian smoothing to validate that
+            the minimum is robust (not just noise). Adds ~10-100 extra evaluations.
+            Default: False.
+        validation_local_span : float, optional
+            Fractional span around best_params for local re-sampling grid.
+            E.g., 0.15 means ±15% of the reference parameter value.
+            Default: 0.15.
+        validation_n_points : int, optional
+            Number of points per dimension in the local validation grid.
+            Total evaluations: validation_n_points^n_parameters.
+            Default: 11.
         """
         fit_payload = self.fit(
             method=method,
@@ -2657,7 +2876,7 @@ class FeedbackReplayOptimizer:
             expt_groups = self.replay.summarize_result_groups(
                 expt_result,
                 group_shots=bool(group_shots),
-                use_stderr=bool(use_stderr),
+                use_stderr=False,
                 tolerance_rad_s=tolerance_rad_s,
             )
 
@@ -2771,7 +2990,7 @@ class FeedbackReplayOptimizer:
         legend_handles = [
             plt.Line2D([], [], color="0.15", linestyle="-", lw=1.8, label="Best-fit sim"),
             plt.Line2D([], [], color="0.35", linestyle=":", lw=2.0, label="In-experiment sim"),
-            plt.Line2D([], [], color="0.55", marker="o", linestyle="None", markersize=5, label="Experiment APD"),
+            plt.Line2D([], [], color="0.55", marker="o", linestyle="None", markersize=5, label="Experiment APD (std dev)"),
         ]
         axs[1].legend(handles=legend_handles, loc="best")
         axs[1].set_xlabel("time (s)")
@@ -2817,6 +3036,38 @@ class FeedbackReplayOptimizer:
                 f"run {run_id}: posterior reconstruction at best multi-parameter fit"
             )
 
+        # Optional: validate that the minimum is robust, not noise
+        validation_report = None
+        if validate_minimum and len(param_names) > 0:
+            if verbose:
+                print("\nValidating minimum robustness...")
+            try:
+                validation_report = self._validate_minimum_with_smoothing(
+                    best_params=best_params,
+                    fit_payload=fit_payload,
+                    replay_kwargs=replay_kwargs,
+                    group_shots=bool(group_shots),
+                    local_span=float(validation_local_span),
+                    n_local_points=int(validation_n_points),
+                    smoothing_sigma=1.5,
+                    n_jobs=n_jobs,
+                    parallel_verbose=parallel_verbose,
+                    include_apd_noise=include_apd_noise,
+                    apd_noise_override_fraction=apd_noise_override_fraction,
+                    apd_noise_min_std=apd_noise_min_std,
+                    aggregate_mode=aggregate_mode,
+                    feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+                    feedback_apd_map_enabled=feedback_apd_map_enabled,
+                    feedback_apd_map_verbose=feedback_apd_map_verbose,
+                    tolerance_rad_s=tolerance_rad_s,
+                    pulse_weight_power=pulse_weight_power,
+                    verbose=verbose,
+                )
+            except Exception as e:
+                if verbose:
+                    print(f"Validation failed: {e}")
+                validation_report = {"validated": False, "error": str(e)}
+
         return {
             "fit": fit_payload,
             "figure": fig,
@@ -2828,6 +3079,7 @@ class FeedbackReplayOptimizer:
             "best_fit": best_fit,
             "best_params": best_params,
             "run_id": run_id,
+            "validation": validation_report,
             "experiment_overlay": {
                 "result": expt_result,
                 "groups": expt_groups,
