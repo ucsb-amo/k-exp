@@ -106,6 +106,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.set_all_dds() # set DDS to default values
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
+
+        self.dds.ry_405_sw.on()
+        self.dds.ry_405_sw.set_dds(init=True)
+
         self.core.break_realtime()
         if init_imaging:
             self.imaging.init()
@@ -122,7 +126,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.outer_coil.off()
             self.inner_coil.off()
         # if init_ry:
-            # self.ry_405.init()
+        #     self.ry_405.init()
         
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):
@@ -139,6 +143,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.reset_devices()
 
         self.reset_tweezers(two_d_tweezers)
+
+        self.core.break_realtime()
+
+        self.dds.ry_405_sw.on()
+        self.dds.ry_405_sw.set_dds(init=True)
         
         # self.dds.d1_beatlock_ref.on()
 
