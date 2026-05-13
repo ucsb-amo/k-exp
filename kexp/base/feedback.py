@@ -35,78 +35,53 @@ class Feedback:
         "inv_two_pi",
     }
 
-    def __init__(
-        self,
-        t_raman_pulse=None,
-        t_raman_pulse_ideal=None,
-        dt_eff=None,
-        dt_ideal=None,
-        t_img_pulse=None,
-        amp_imaging=None,
-        t_raman_pi_pulse=None,
-        frequency_resonance=None,
-        frequency_z_lightshift=None,
-        v_apd_all_up=None,
-        v_apd_all_down=None,
-        n_photons_per_shot=None,
-        std_n_photons_per_shot=None,
-        back_action_coherence=None,
-        photon_count_scale=1.0,
-        feedback_grid_size=21,
-        m=None,
-        fractional_grid_center_offset=2.0,
-        fractional_initial_offset=-5.0,
-        guess_span_Omega=5.0,
-        feedback_measurement_midpoint_fraction=None,
-        feedback_measurement_midpoint_remap_enabled=None,
-        feedback_apd_map_enabled=None,
-        feedback_apd_map_a=None,
-        feedback_apd_map_b=None,
-        feedback_apd_map_verbose=None,
-        lut_size=4096):
-
+    def __init__(self, lut_size=4096):
         if not hasattr(self, "p"):
             self.p = _FeedbackParamStore()
 
-        resolved_feedback_grid_size = feedback_grid_size if m is None else m
-
+        p = self.p
+        feedback_grid_size_param = getattr(p, "feedback_grid_size", None)
+        if feedback_grid_size_param is None:
+            feedback_grid_size_param = getattr(self, "m", 21)
         self._initialize_timing(
-            feedback_grid_size=resolved_feedback_grid_size,
-            t_raman_pulse=t_raman_pulse,
-            t_raman_pulse_ideal=t_raman_pulse_ideal,
-            dt_eff=dt_eff,
-            dt_ideal=dt_ideal,
-            t_img_pulse=t_img_pulse,
-            t_raman_pi_pulse=t_raman_pi_pulse,
+            feedback_grid_size=feedback_grid_size_param,
+            t_raman_pulse=getattr(p, "t_raman_pulse", None),
+            t_raman_pulse_ideal=getattr(p, "t_raman_pulse_ideal", None),
+            dt_eff=None,
+            dt_ideal=None,
+            t_img_pulse=getattr(p, "t_img_pulse", None),
+            t_raman_pi_pulse=getattr(p, "t_raman_pi_pulse", None),
         )
         self._initialize_lightshift(
-            amp_imaging=amp_imaging,
-            frequency_z_lightshift=frequency_z_lightshift,
-            back_action_coherence=back_action_coherence
+            amp_imaging=getattr(p, "amp_imaging", None),
+            frequency_z_lightshift=getattr(p, "frequency_lightshift", None),
+            back_action_coherence=getattr(p, "back_action_coherence", None),
         )
         self._initialize_frequency_grid(
-            frequency_resonance=frequency_resonance,
-            fractional_grid_center_offset=fractional_grid_center_offset,
-            fractional_initial_offset=fractional_initial_offset,
-            guess_span_Omega=guess_span_Omega,
+            frequency_resonance=getattr(p, "frequency_raman_transition", None),
+            fractional_grid_center_offset=getattr(p, "feedback_fractional_grid_center_offset", 2.0),
+            fractional_initial_offset=getattr(p, "feedback_fractional_initial_offset", -5.0),
+            guess_span_Omega=getattr(p, "feedback_guess_span_Omega", 5.0),
         )
         self._initialize_measurement_calibrations(
-            amp_imaging=amp_imaging,
-            t_img_pulse=t_img_pulse,
-            n_photons_per_shot=n_photons_per_shot,
-            std_n_photons_per_shot=std_n_photons_per_shot,
-            v_apd_all_up=v_apd_all_up,
-            v_apd_all_down=v_apd_all_down,
-            photon_count_scale=photon_count_scale,
-            feedback_measurement_midpoint_fraction=feedback_measurement_midpoint_fraction,
-            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            feedback_apd_map_enabled=feedback_apd_map_enabled,
-            feedback_apd_map_a=feedback_apd_map_a,
-            feedback_apd_map_b=feedback_apd_map_b,
-            feedback_apd_map_verbose=feedback_apd_map_verbose,
+            amp_imaging=getattr(p, "amp_imaging", None),
+            t_img_pulse=getattr(p, "t_img_pulse", None),
+            n_photons_per_shot=getattr(p, "n_photons_per_shot", getattr(p, "N_photons_per_shot", None)),
+            std_n_photons_per_shot=getattr(p, "n_std_photons_per_shot", getattr(p, "std_n_photons_per_shot", None)),
+            v_apd_all_up=getattr(p, "v_apd_all_up", None),
+            v_apd_all_down=getattr(p, "v_apd_all_down", None),
+            photon_count_scale=getattr(p, "feedback_photon_count_scale", 1.0),
+            feedback_measurement_midpoint_fraction=getattr(p, "feedback_measurement_midpoint_fraction", None),
+            feedback_measurement_midpoint_remap_enabled=getattr(p, "feedback_measurement_midpoint_remap_enabled", None),
+            feedback_apd_map_enabled=getattr(p, "feedback_apd_map_enabled", None),
+            feedback_apd_map_a=getattr(p, "feedback_apd_map_a", None),
+            feedback_apd_map_b=getattr(p, "feedback_apd_map_b", None),
+            feedback_apd_map_verbose=getattr(p, "feedback_apd_map_verbose", None),
         )
         self._initialize_posterior_state()
         self._initialize_trig_lut(lut_size=lut_size)
+        
+        self.__print_estimated_time = True
 
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
@@ -388,7 +363,10 @@ class Feedback:
         self.generate_posterior(n_test, 1.0e-6)
         self.t_posterior_mu = abs(t0 - self.core.get_rtio_counter_mu())
         self.core.break_realtime()
-        aprint('calculation esimated slack consumption:', self.t_posterior_mu)
+        
+        if self.__print_estimated_time:
+            aprint('calculation esimated slack consumption:', self.t_posterior_mu)
+            self.__print_estimated_time = False
         
         self.reset_feedback_state()
 
