@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPushButton, QLabel, QGroupBox, 
                              QMessageBox, QFrame)
 from PyQt6.QtCore import QTimer, Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QFont, QPalette, QColor
+from PyQt6.QtGui import QFont, QPalette, QColor, QIcon, QPixmap, QPainter, QBrush, QPen
 from kexp.control.ethernet_relay import (EthernetRelay, ARTIQ_RELAY_IDX,
                                           SOURCE_RELAY_IDX, MAGNET_INHIBIT_IDX)
 
@@ -55,9 +55,41 @@ class EthernetRelayGUI(QMainWindow):
         
         # Initial status check
         self.update_status()
+    
+    def create_ethernet_icon(self):
+        """Create a simple ethernet connector icon"""
+        size = 64
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        
+        # Draw ethernet connector outline
+        pen = QPen(QColor("#2196F3"), 2)
+        painter.setPen(pen)
+        painter.setBrush(QBrush(QColor("#E3F2FD")))
+        
+        # Main connector body (rectangle)
+        painter.drawRect(12, 20, 40, 20)
+        
+        # Draw 4 pins/connectors at bottom
+        pin_positions = [18, 26, 34, 42]
+        for x in pin_positions:
+            painter.drawRect(x - 2, 40, 4, 8)
+        
+        # Draw ethernet cable (curved lines from sides)
+        cable_pen = QPen(QColor("#1976D2"), 1.5)
+        painter.setPen(cable_pen)
+        painter.drawLine(10, 30, 5, 45)  # Left cable
+        painter.drawLine(54, 30, 59, 45)  # Right cable
+        
+        painter.end()
+        return QIcon(pixmap)
         
     def init_ui(self):
         self.setWindowTitle("Ethernet Relay Control")
+        self.setWindowIcon(self.create_ethernet_icon())
         self.setGeometry(100, 100, 100, 300)
         
         # Create central widget and main layout

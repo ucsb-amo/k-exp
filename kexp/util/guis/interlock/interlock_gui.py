@@ -1,4 +1,5 @@
 from PyQt6 import QtCore
+from PyQt6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 import pyqtgraph as pg
 from random import randint
 import sympy as sympy
@@ -58,6 +59,7 @@ class MainWindow(QMainWindow):
         self._ethernet_relay = EthernetRelay()
         self._ethernet_relay.enable_magnets()
         self.setWindowTitle("Interlock GUI")
+        self.setWindowIcon(self._create_no_symbol_icon())
         # button = QPushButton("RESET INTERLOCK!")
         # button.setCheckable(True)
         # button.clicked.connect(self.the_button_was_clicked)
@@ -185,6 +187,27 @@ class MainWindow(QMainWindow):
         # Set the central widget of the Window. Widget will expand
         # to take up all the space in the window by default.
         self.setCentralWidget(widget)
+
+    def _create_no_symbol_icon(self):
+        pixmap = QPixmap(128, 128)
+        pixmap.fill(QtCore.Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        red = QColor(210, 0, 0)
+        ring_pen = QPen(red, 14)
+        ring_pen.setCapStyle(QtCore.Qt.PenCapStyle.RoundCap)
+        painter.setPen(ring_pen)
+        painter.drawEllipse(14, 14, 100, 100)
+
+        slash_pen = QPen(red, 14)
+        slash_pen.setCapStyle(QtCore.Qt.PenCapStyle.RoundCap)
+        painter.setPen(slash_pen)
+        painter.drawLine(34, 94, 94, 34)
+
+        painter.end()
+        return QIcon(pixmap)
 
     def kill_magnets_persistent(self):
         while True:
