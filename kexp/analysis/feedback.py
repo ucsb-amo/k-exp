@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -18,6 +18,25 @@ from kexp.base.feedback import Feedback, _feedback_kwargs_from_atomdata
 
 
 DEFAULT_OMEGA_GROUP_TOLERANCE_RAD_S = 2.0 * np.pi * 100.0
+
+# ---------------------------------------------------------------------------
+# Module-level helpers for multiprocessing-based outer candidate parallelism.
+# They must live at module scope so they are picklable on all platforms.
+# ---------------------------------------------------------------------------
+_MP_WORKER_OPTIMIZER = None
+
+
+def _mp_worker_init(optimizer_bytes: bytes) -> None:
+    """Initialise a worker process with a deserialised optimizer copy."""
+    global _MP_WORKER_OPTIMIZER
+    import pickle
+    _MP_WORKER_OPTIMIZER = pickle.loads(optimizer_bytes)
+
+
+def _mp_worker_eval(args: tuple) -> dict:
+    """Evaluate one candidate inside a worker process."""
+    index_tuple, eval_kwargs = args
+    return _MP_WORKER_OPTIMIZER._evaluate_candidate(index_tuple, **eval_kwargs)
 
 
 @dataclass
@@ -419,6 +438,7 @@ class FeedbackReplayCore(Feedback):
         feedback_apd_map_enabled: Optional[bool],
         feedback_apd_map_verbose: Optional[bool],
         fractional_initial_offset: Optional[float],
+        extra_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Tuple[np.ndarray, int]:
         kwargs = dict(self._base_kwargs)
 
@@ -457,6 +477,9 @@ class FeedbackReplayCore(Feedback):
 
         if fractional_initial_offset is not None:
             kwargs["fractional_initial_offset"] = float(fractional_initial_offset)
+
+        if extra_kwargs:
+            kwargs.update(extra_kwargs)
 
         omega_guess, zidx = self._resolve_grid(
             feedback_grid_size_override=feedback_grid_size_override,
@@ -704,6 +727,7 @@ class FeedbackReplayCore(Feedback):
         feedback_apd_map_verbose: Optional[bool] = None,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
+        **extra_kwargs,
     ) -> FeedbackReplayResult:
         """Replay using measured APD and measured control omega by default.
 
@@ -714,6 +738,11 @@ class FeedbackReplayCore(Feedback):
             Use -1 to use all available cores. Values > 1 enable parallel processing.
         parallel_verbose
             Verbosity level for joblib parallel execution (0-10).
+        **extra_kwargs
+            Additional parameters forwarded to ``_apply_feedback_kwargs_to_params``
+            (e.g. ``v_apd_all_up``, ``v_apd_all_down``, ``photon_count_scale``,
+            ``n_photons_per_shot``, ``guess_span_Omega``, ``amp_imaging``, etc.).
+            Useful when sweeping these parameters via ``FeedbackReplaySweep``.
         """
         return self._run_sequence(
             include_photon_noise=include_photon_noise,
@@ -740,6 +769,7 @@ class FeedbackReplayCore(Feedback):
             default_use_measured_apd=True,
             n_jobs=int(n_jobs),
             parallel_verbose=int(parallel_verbose),
+            extra_kwargs=extra_kwargs or None,
         )
 
     def simulate_counterfactual(
@@ -768,6 +798,7 @@ class FeedbackReplayCore(Feedback):
         feedback_apd_map_verbose: Optional[bool] = None,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
+        **extra_kwargs,
     ) -> FeedbackReplayResult:
         """Run a what-if simulation with optional APD and omega inputs.
 
@@ -778,6 +809,9 @@ class FeedbackReplayCore(Feedback):
             Use -1 to use all available cores. Values > 1 enable parallel processing.
         parallel_verbose
             Verbosity level for joblib parallel execution (0-10).
+        **extra_kwargs
+            Additional parameters forwarded to ``_apply_feedback_kwargs_to_params``
+            (e.g. ``v_apd_all_up``, ``v_apd_all_down``, ``photon_count_scale``, etc.).
         """
         return self._run_sequence(
             include_photon_noise=include_photon_noise,
@@ -804,6 +838,7 @@ class FeedbackReplayCore(Feedback):
             default_use_measured_apd=False,
             n_jobs=int(n_jobs),
             parallel_verbose=int(parallel_verbose),
+            extra_kwargs=extra_kwargs or None,
         )
 
     def _run_shot_parallel(
@@ -923,6 +958,7 @@ class FeedbackReplayCore(Feedback):
         default_use_measured_apd: bool,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
+        extra_kwargs: Optional[Dict[str, Any]] = None,
     ) -> FeedbackReplayResult:
         if include_photon_noise is None:
             include_photon_noise = bool(getattr(self.p, "include_photon_noise", 1))
@@ -959,6 +995,7 @@ class FeedbackReplayCore(Feedback):
             feedback_apd_map_enabled=feedback_apd_map_enabled,
             feedback_apd_map_verbose=feedback_apd_map_verbose,
             fractional_initial_offset=float(fractional_initial_offset_r[0]),
+            extra_kwargs=extra_kwargs,
         )
 
         timing = self._resolve_timing(
@@ -1825,7 +1862,7 @@ class FeedbackReplay(FeedbackReplayCore):
         ]
 
         run_id = int(result.metadata.get("run_id", -1))
-        ax.set_title(f"run {run_id}: omega control vs recomputed (pulse index, ctrl lag={control_lag_steps}, rec lag={recomputed_lag_steps})")
+        ax.set_title(f"run {run_id}: omega control")
         ax.set_xlabel("pulse index")
         ax.set_ylabel("detuning / Omega")
         ymin, ymax = ax.get_ylim()
@@ -2656,6 +2693,7 @@ class FeedbackReplayOptimizer:
         surrogate_beta: float = 2.0,
         surrogate_candidate_pool_size: int = 1024,
         surrogate_exploration_probability: float = 0.05,
+        outer_n_jobs: int = 1,
     ) -> Dict[str, object]:
         """Fit one or more replay parameters against APD data.
 
@@ -2788,112 +2826,157 @@ class FeedbackReplayOptimizer:
         refine_top_k_resolved = max(1, int(refine_top_k))
         rng = np.random.default_rng(int(random_state))
 
+        # When parallelising across processes, disable inner shot-level threading
+        # to prevent core over-subscription.
+        inner_n_jobs = 1 if outer_n_jobs != 1 else int(n_jobs)
+        _eval_kwargs: Dict[str, Any] = dict(
+            replay_kwargs=replay_kwargs,
+            group_shots=bool(group_shots),
+            tolerance_rad_s=tolerance_rad_s,
+            include_apd_noise=include_apd_noise,
+            apd_noise_override_fraction=apd_noise_override_fraction,
+            apd_noise_min_std=apd_noise_min_std,
+            aggregate_mode=aggregate_mode,
+            n_jobs=inner_n_jobs,
+            parallel_verbose=int(parallel_verbose),
+            pulse_weight_power=float(pulse_weight_power),
+            eps=eps,
+        )
+
         records: List[Dict[str, object]] = []
         evaluated = set()
+
+        # Build a persistent process pool for the duration of this fit call.
+        # Each worker receives the serialised optimizer once (via the initializer)
+        # so subsequent tasks only need to send the small index_tuple + eval_kwargs.
+        _pool = None
+        if outer_n_jobs != 1:
+            import multiprocessing as _mp
+            import pickle as _pickle
+            import warnings as _warnings
+            _n_cpu = _mp.cpu_count()
+            _n_workers = _n_cpu if outer_n_jobs == -1 else min(abs(outer_n_jobs), _n_cpu)
+            _n_workers = max(1, min(_n_workers, budget))
+            try:
+                _opt_bytes = _pickle.dumps(self)
+                _ctx = _mp.get_context("spawn")
+                _pool = _ctx.Pool(
+                    _n_workers,
+                    initializer=_mp_worker_init,
+                    initargs=(_opt_bytes,),
+                )
+            except Exception as _exc:
+                _warnings.warn(
+                    f"outer_n_jobs: could not create process pool ({_exc}); "
+                    "falling back to sequential evaluation.",
+                    UserWarning,
+                )
+                _pool = None
+
+        def _register(record: Dict[str, object]) -> None:
+            packed = tuple(int(i) for i in record["indices"])
+            record["eval_index"] = int(len(records))
+            records.append(record)
+            evaluated.add(packed)
 
         def evaluate(index_tuple: Tuple[int, ...]) -> None:
             packed = tuple(int(i) for i in index_tuple)
             if packed in evaluated:
                 return
+            _register(self._evaluate_candidate(packed, **_eval_kwargs))
 
-            record = self._evaluate_candidate(
-                packed,
-                replay_kwargs=replay_kwargs,
-                group_shots=bool(group_shots),
-                tolerance_rad_s=tolerance_rad_s,
-                include_apd_noise=include_apd_noise,
-                apd_noise_override_fraction=apd_noise_override_fraction,
-                apd_noise_min_std=apd_noise_min_std,
-                aggregate_mode=aggregate_mode,
-                n_jobs=int(n_jobs),
-                parallel_verbose=int(parallel_verbose),
-                pulse_weight_power=float(pulse_weight_power),
-                eps=eps,
-            )
-            record["eval_index"] = int(len(records))
-            records.append(record)
-            evaluated.add(packed)
-
-        if method_norm == "grid":
-            for candidate in self._sample_grid_indices(shape, budget):
-                evaluate(candidate)
-        elif method_norm == "adaptive":
-            initial_candidates = self._sample_initial_indices(
-                shape,
-                sample_count=n_initial_resolved,
-                rng=rng,
-            )
-            for candidate in initial_candidates:
-                if len(evaluated) >= budget:
-                    break
-                evaluate(candidate)
-
-            while len(evaluated) < budget:
-                finite_records = [
-                    record
-                    for record in records
-                    if np.isfinite(float(record["loss"]))
+        def evaluate_batch(candidates: List[Tuple[int, ...]]) -> None:
+            new_cands = [
+                c for c in candidates if tuple(int(i) for i in c) not in evaluated
+            ]
+            if not new_cands:
+                return
+            if _pool is not None:
+                tasks = [(c, _eval_kwargs) for c in new_cands]
+                batch_records = _pool.map(_mp_worker_eval, tasks)
+            else:
+                batch_records = [
+                    self._evaluate_candidate(c, **_eval_kwargs) for c in new_cands
                 ]
+            for record in batch_records:
+                _register(record)
 
-                if len(finite_records) == 0:
-                    fallback = self._random_unseen_index(shape, evaluated, rng)
-                    if fallback is None:
-                        break
-                    evaluate(fallback)
-                    continue
-
-                finite_records_sorted = sorted(
-                    finite_records,
-                    key=lambda record: float(record["loss"]),
-                )
-                candidate_queue: List[Tuple[int, ...]] = []
-                for seed in finite_records_sorted[:refine_top_k_resolved]:
-                    for neighbor in self._neighbor_indices(seed["indices"], shape):
-                        if neighbor in evaluated or neighbor in candidate_queue:
-                            continue
-                        candidate_queue.append(neighbor)
-
-                if len(candidate_queue) == 0:
-                    fallback = self._random_unseen_index(shape, evaluated, rng)
-                    if fallback is None:
-                        break
-                    evaluate(fallback)
-                    continue
-
-                for candidate in candidate_queue:
-                    if len(evaluated) >= budget:
-                        break
-                    evaluate(candidate)
-        else:
-            initial_candidates = self._sample_initial_indices(
-                shape,
-                sample_count=n_initial_resolved,
-                rng=rng,
-            )
-            for candidate in initial_candidates:
-                if len(evaluated) >= budget:
-                    break
-                evaluate(candidate)
-
-            while len(evaluated) < budget:
-                next_candidate = self._select_bayesian_candidate(
-                    shape=shape,
-                    evaluated=evaluated,
-                    records=records,
+        try:
+            if method_norm == "grid":
+                evaluate_batch(list(self._sample_grid_indices(shape, budget)))
+            elif method_norm == "adaptive":
+                initial_candidates = self._sample_initial_indices(
+                    shape,
+                    sample_count=n_initial_resolved,
                     rng=rng,
-                    surrogate_length_scale=surrogate_length_scale_resolved,
-                    surrogate_noise=surrogate_noise_resolved,
-                    surrogate_beta=surrogate_beta_resolved,
-                    surrogate_candidate_pool_size=surrogate_candidate_pool_size_resolved,
-                    surrogate_exploration_probability=surrogate_exploration_probability_resolved,
-                    refine_top_k=refine_top_k_resolved,
                 )
-                if next_candidate is None:
-                    fallback = self._random_unseen_index(shape, evaluated, rng)
-                    if fallback is None:
-                        break
-                    next_candidate = fallback
-                evaluate(next_candidate)
+                evaluate_batch(initial_candidates[:budget])
+
+                while len(evaluated) < budget:
+                    finite_records = [
+                        record
+                        for record in records
+                        if np.isfinite(float(record["loss"]))
+                    ]
+
+                    if len(finite_records) == 0:
+                        fallback = self._random_unseen_index(shape, evaluated, rng)
+                        if fallback is None:
+                            break
+                        evaluate(fallback)
+                        continue
+
+                    finite_records_sorted = sorted(
+                        finite_records,
+                        key=lambda record: float(record["loss"]),
+                    )
+                    candidate_queue: List[Tuple[int, ...]] = []
+                    for seed in finite_records_sorted[:refine_top_k_resolved]:
+                        for neighbor in self._neighbor_indices(seed["indices"], shape):
+                            if neighbor in evaluated or neighbor in candidate_queue:
+                                continue
+                            candidate_queue.append(neighbor)
+
+                    if len(candidate_queue) == 0:
+                        fallback = self._random_unseen_index(shape, evaluated, rng)
+                        if fallback is None:
+                            break
+                        evaluate(fallback)
+                        continue
+
+                    remaining = budget - len(evaluated)
+                    evaluate_batch(candidate_queue[:remaining])
+            else:
+                initial_candidates = self._sample_initial_indices(
+                    shape,
+                    sample_count=n_initial_resolved,
+                    rng=rng,
+                )
+                evaluate_batch(initial_candidates[:budget])
+
+                while len(evaluated) < budget:
+                    next_candidate = self._select_bayesian_candidate(
+                        shape=shape,
+                        evaluated=evaluated,
+                        records=records,
+                        rng=rng,
+                        surrogate_length_scale=surrogate_length_scale_resolved,
+                        surrogate_noise=surrogate_noise_resolved,
+                        surrogate_beta=surrogate_beta_resolved,
+                        surrogate_candidate_pool_size=surrogate_candidate_pool_size_resolved,
+                        surrogate_exploration_probability=surrogate_exploration_probability_resolved,
+                        refine_top_k=refine_top_k_resolved,
+                    )
+                    if next_candidate is None:
+                        fallback = self._random_unseen_index(shape, evaluated, rng)
+                        if fallback is None:
+                            break
+                        next_candidate = fallback
+                    evaluate(next_candidate)
+        finally:
+            if _pool is not None:
+                _pool.terminate()
+                _pool.join()
 
         if len(records) == 0:
             raise RuntimeError("No optimizer candidates were evaluated.")
@@ -3016,7 +3099,7 @@ class FeedbackReplayOptimizer:
         """Validate that a multi-parameter minimum is robust, not noise.
         
         Strategy:
-        1. Build a finer local grid around best_params (±local_span in fractional space)
+        1. Build a finer local grid around best_params (+/-local_span in fractional space)
         2. Evaluate MSE at all local points
         3. Apply Gaussian smoothing to the local landscape
         4. Check that smoothed minimum is stable (close to original)
@@ -3209,6 +3292,7 @@ class FeedbackReplayOptimizer:
         validate_minimum: bool = False,
         validation_local_span: float = 0.15,
         validation_n_points: int = 11,
+        outer_n_jobs: int = -1,
     ) -> Dict[str, object]:
         """Run fit and generate standard diagnostics plots and summary output.
 
@@ -3228,7 +3312,7 @@ class FeedbackReplayOptimizer:
             Default: False.
         validation_local_span : float, optional
             Fractional span around best_params for local re-sampling grid.
-            E.g., 0.15 means ±15% of the reference parameter value.
+            E.g., 0.15 means +/-15% of the reference parameter value.
             Default: 0.15.
         validation_n_points : int, optional
             Number of points per dimension in the local validation grid.
@@ -3261,6 +3345,7 @@ class FeedbackReplayOptimizer:
             surrogate_beta=float(surrogate_beta),
             surrogate_candidate_pool_size=int(surrogate_candidate_pool_size),
             surrogate_exploration_probability=float(surrogate_exploration_probability),
+            outer_n_jobs=outer_n_jobs,
         )
 
         losses = np.asarray(fit_payload["losses"], dtype=float)
@@ -3347,7 +3432,7 @@ class FeedbackReplayOptimizer:
                 tolerance_rad_s=tolerance_rad_s,
             )
 
-        fig, axs = plt.subplots(1, 2, figsize=(13, 4.8), layout="constrained")
+        fig, axs = plt.subplots(1, 3, figsize=(18, 4.8), layout="constrained")
 
         # Panel 1: objective view
         if len(param_names) == 1:
@@ -3567,6 +3652,14 @@ class FeedbackReplayOptimizer:
         axs[1].set_xlabel("time (s)")
         axs[1].set_ylabel("spin-like value")
         axs[1].grid(alpha=0.25)
+
+        # Panel 3: control omega used in experiment vs recomputed control omega.
+        self.replay.plot_omega_feedback_comparison(
+            best_result,
+            grouped_average=bool(group_shots),
+            ax=axs[2],
+        )
+
         fig.suptitle(f"run {run_id}: multi-parameter feedback fit overlay")
 
         if verbose:
