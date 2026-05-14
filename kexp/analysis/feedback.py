@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import dataclass, field
+from time import perf_counter
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import matplotlib.colors as mcolors
@@ -121,6 +122,11 @@ class FeedbackReplayCore(Feedback):
         omega_group_tolerance_rad_s: float = DEFAULT_OMEGA_GROUP_TOLERANCE_RAD_S,
     ):
         self.ad = ad
+        self._run_id = int(getattr(getattr(ad, "run_info", None), "run_id", -1))
+        self._apd_rr_cached = self._to_repeat_step(ad.data.apd, "ad.data.apd")
+        self._omega_rr_cached = None
+        if hasattr(ad.data, "omega_raman"):
+            self._omega_rr_cached = self._to_repeat_step(ad.data.omega_raman, "ad.data.omega_raman")
         # Create independent copy of parameters so modifications don't affect shared atomdata
         self.p = copy.copy(ad.p)
         self._base_kwargs = self._build_base_feedback_kwargs(ad)
@@ -134,6 +140,15 @@ class FeedbackReplayCore(Feedback):
 
         self._apply_feedback_kwargs_to_params(self._base_kwargs)
         Feedback.__init__(self)
+
+    def __getstate__(self) -> Dict[str, object]:
+        """Drop non-picklable atomdata references for process-based workers."""
+        state = dict(self.__dict__)
+        state["ad"] = None
+        return state
+
+    def __setstate__(self, state: Dict[str, object]) -> None:
+        self.__dict__.update(state)
 
     def _apply_feedback_kwargs_to_params(self, kwargs: Dict[str, object]) -> None:
         """Apply replay keyword-style parameters onto ``self.p`` for Feedback init.
@@ -531,7 +546,7 @@ class FeedbackReplayCore(Feedback):
 
     def _resolve_apd_rr(self, apd_override_rr: Optional[Sequence[float]]) -> np.ndarray:
         if apd_override_rr is None:
-            apd_rr = self._to_repeat_step(self.ad.data.apd, "ad.data.apd")
+            apd_rr = np.asarray(self._apd_rr_cached, dtype=float)
         else:
             apd_rr = self._to_repeat_step(apd_override_rr, "apd_override_rr")
 
@@ -549,11 +564,11 @@ class FeedbackReplayCore(Feedback):
         if omega_override_rr is not None:
             return self._broadcast_override(omega_override_rr, "omega_override_rr", n_repeat, n_step)
 
-        if hasattr(self.ad.data, "omega_raman"):
-            omega_rr = self._to_repeat_step(self.ad.data.omega_raman, "ad.data.omega_raman")
+        if self._omega_rr_cached is not None:
+            omega_rr = np.asarray(self._omega_rr_cached, dtype=float)
             if omega_rr.shape != (n_repeat, n_step):
                 raise ValueError(
-                    f"ad.data.omega_raman shape {omega_rr.shape} does not match APD shape ({n_repeat}, {n_step})."
+                    f"cached omega_raman shape {omega_rr.shape} does not match APD shape ({n_repeat}, {n_step})."
                 )
             return omega_rr
 
@@ -566,14 +581,29 @@ class FeedbackReplayCore(Feedback):
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
     ) -> np.ndarray:
         apd_arr = np.asarray(apd_rr, dtype=float)
-        map_spin = np.vectorize(
-            lambda value: self.spin_value_from_apd(
-                float(value),
-                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            ),
-            otypes=[float],
-        )
-        return map_spin(apd_arr)
+
+        # Vectorized equivalent of spin_value_from_apd to avoid per-element Python overhead
+        # during optimizer replay loops.
+        photon_fraction = (apd_arr - float(self.v_apd_all_down)) / float(self.v_range)
+        p1 = np.clip(photon_fraction, 0.0, 1.0)
+
+        if feedback_measurement_midpoint_remap_enabled is None:
+            use_midpoint_remap = bool(self.feedback_measurement_midpoint_remap_enabled)
+        else:
+            use_midpoint_remap = bool(feedback_measurement_midpoint_remap_enabled)
+
+        if not use_midpoint_remap:
+            return 2.0 * p1 - 1.0
+
+        midpoint = float(self.feedback_measurement_midpoint_fraction)
+        delta = midpoint - 0.5
+        if abs(delta) < 1.0e-15:
+            return 2.0 * p1 - 1.0
+
+        discriminant = 0.25 - 4.0 * delta * (p1 - midpoint)
+        discriminant = np.maximum(discriminant, 0.0)
+        hz = (0.5 - np.sqrt(discriminant)) / (2.0 * delta)
+        return np.clip(hz, -1.0, 1.0)
 
     def _group_repeats_by_omega(
         self,
@@ -841,7 +871,7 @@ class FeedbackReplayCore(Feedback):
             extra_kwargs=extra_kwargs or None,
         )
 
-    def _run_shot_parallel(
+    def _run_shot_into_buffers(
         self,
         r: int,
         n_step: int,
@@ -855,28 +885,37 @@ class FeedbackReplayCore(Feedback):
         update_rabi_frequency: bool,
         return_full_state: bool,
         zidx: int,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, Optional[np.ndarray]]:
-        """Process a single shot (repeat) in parallel-safe manner.
+        s_z_rr: np.ndarray,
+        P0_rr: np.ndarray,
+        omega_control_rr: np.ndarray,
+        omega_recomputed_rr: np.ndarray,
+        t_input_rr: np.ndarray,
+        t_s_z_rr: np.ndarray,
+        k_rr: np.ndarray,
+        state_rr: Optional[np.ndarray],
+    ) -> None:
+        """Process a single shot (repeat) and write outputs in-place.
 
-        Returns (s_z, P0, omega_control, omega_recomputed, t_input, t_s_z, k, state).
+        Using preallocated output buffers avoids per-shot tuple allocation and copy-back
+        overhead, which is especially expensive in threaded replay runs.
         """
         self.reset_feedback_state()
 
         phase_tracker = 0.0
         omega_prev = 0.0
 
-        s_z = np.zeros(n_step, dtype=float)
-        P0 = np.zeros((n_step, self.m), dtype=float)
-        omega_control = np.zeros(n_step, dtype=float)
-        omega_recomputed = np.zeros(n_step, dtype=float)
-        t_input = np.zeros(n_step, dtype=float)
-        t_s_z = np.zeros(n_step, dtype=float)
-        k = np.zeros(n_step, dtype=float)
-        state = np.zeros((n_step, 3), dtype=float) if return_full_state else None
-
         tP_mu = int(timing["t_between_pulses_mu"])
         dt_mu = int(timing["delta_t_mu"])
         tR_mu = int(timing["t_raman_set_pretrigger_mu"])
+        t_s_z_offset = float(timing["dt_eff"]) + float(timing["t_img_pulse"])
+
+        # Precompute photon-count-equivalent measurements once per shot to reduce
+        # per-step Python call overhead in the hot replay loop.
+        k_vals = np.rint(
+            float(self.N_photons_per_shot)
+            * (np.asarray(apd_rr[r], dtype=float) - float(self.v_apd_all_down))
+            / float(self.v_range)
+        ).astype(float, copy=False)
 
         omega_guess_start_r = float(
             self._omega_resonance_rad_s + self.Omega * float(fractional_initial_offset_r[r])
@@ -900,7 +939,7 @@ class FeedbackReplayCore(Feedback):
             )
 
             t_in = i * tP_mu * 1.0e-9
-            k_val = self.convert_measurement(float(apd_rr[r, i]))
+            k_val = float(k_vals[i])
 
             omega_prev = self.omega_raman
             omega_new, omega_std = self.generate_posterior(
@@ -915,20 +954,18 @@ class FeedbackReplayCore(Feedback):
             self.omega_raman = float(omega_new)
             self.Omega = float(omega_std)
 
-            s_z[i] = float(self.state_z[zidx])
-            P0[i, :] = self.P0
-            omega_control[i] = omega_ctrl
-            omega_recomputed[i] = float(self.omega_raman)
-            t_input[i] = t_in
-            t_s_z[i] = t_in + float(timing["dt_eff"]) + float(timing["t_img_pulse"])
-            k[i] = float(k_val)
+            s_z_rr[r, i] = float(self.state_z[zidx])
+            P0_rr[r, i, :] = self.P0
+            omega_control_rr[r, i] = omega_ctrl
+            omega_recomputed_rr[r, i] = float(self.omega_raman)
+            t_input_rr[r, i] = t_in
+            t_s_z_rr[r, i] = t_in + t_s_z_offset
+            k_rr[r, i] = k_val
 
-            if state is not None:
-                state[i, 0] = float(self.state_x[zidx])
-                state[i, 1] = float(self.state_y[zidx])
-                state[i, 2] = float(self.state_z[zidx])
-
-        return s_z, P0, omega_control, omega_recomputed, t_input, t_s_z, k, state
+            if return_full_state and state_rr is not None:
+                state_rr[r, i, 0] = float(self.state_x[zidx])
+                state_rr[r, i, 1] = float(self.state_y[zidx])
+                state_rr[r, i, 2] = float(self.state_z[zidx])
 
 
     def _run_sequence(
@@ -1010,6 +1047,16 @@ class FeedbackReplayCore(Feedback):
         if control_omega_source in {"measured", "override"} and omega_measured_rr is None:
             raise ValueError("No omega control data available. Provide omega_override_rr or saved ad.data.omega_raman.")
 
+        # Preallocate output arrays once and fill them in-place.
+        s_z_rr = np.zeros((n_repeat, n_step), dtype=float)
+        P0_rr = np.zeros((n_repeat, n_step, self.m), dtype=float)
+        omega_control_rr = np.zeros((n_repeat, n_step), dtype=float)
+        omega_recomputed_rr = np.zeros((n_repeat, n_step), dtype=float)
+        t_input_rr = np.zeros((n_repeat, n_step), dtype=float)
+        t_s_z_rr = np.zeros((n_repeat, n_step), dtype=float)
+        k_rr = np.zeros((n_repeat, n_step), dtype=float)
+        state_rr = np.zeros((n_repeat, n_step, 3), dtype=float) if return_full_state else None
+
         # Use parallel processing if n_jobs != 1 and joblib is available
         use_parallel = n_jobs != 1 and HAS_JOBLIB
         if n_jobs != 1 and not HAS_JOBLIB:
@@ -1021,8 +1068,8 @@ class FeedbackReplayCore(Feedback):
             )
 
         if use_parallel:
-            shot_results = Parallel(n_jobs=n_jobs, verbose=parallel_verbose, backend='threading')(
-                delayed(self._run_shot_parallel)(
+            Parallel(n_jobs=n_jobs, verbose=parallel_verbose, backend='threading')(
+                delayed(self._run_shot_into_buffers)(
                     r,
                     n_step,
                     apd_rr,
@@ -1035,55 +1082,25 @@ class FeedbackReplayCore(Feedback):
                     update_rabi_frequency,
                     return_full_state,
                     zidx,
+                    s_z_rr,
+                    P0_rr,
+                    omega_control_rr,
+                    omega_recomputed_rr,
+                    t_input_rr,
+                    t_s_z_rr,
+                    k_rr,
+                    state_rr,
                 )
                 for r in range(n_repeat)
             )
-            # Collect results from parallel execution
-            s_z_rr = np.zeros((n_repeat, n_step), dtype=float)
-            P0_rr = np.zeros((n_repeat, n_step, self.m), dtype=float)
-            omega_control_rr = np.zeros((n_repeat, n_step), dtype=float)
-            omega_recomputed_rr = np.zeros((n_repeat, n_step), dtype=float)
-            t_input_rr = np.zeros((n_repeat, n_step), dtype=float)
-            t_s_z_rr = np.zeros((n_repeat, n_step), dtype=float)
-            k_rr = np.zeros((n_repeat, n_step), dtype=float)
-            state_rr = np.zeros((n_repeat, n_step, 3), dtype=float) if return_full_state else None
-
-            for r, (s_z, P0, omega_ctrl, omega_recomp, t_in, t_s, k, state) in enumerate(shot_results):
-                s_z_rr[r, :] = s_z
-                P0_rr[r, :, :] = P0
-                omega_control_rr[r, :] = omega_ctrl
-                omega_recomputed_rr[r, :] = omega_recomp
-                t_input_rr[r, :] = t_in
-                t_s_z_rr[r, :] = t_s
-                k_rr[r, :] = k
-                if state_rr is not None and state is not None:
-                    state_rr[r, :, :] = state
         else:
-            # Sequential processing (original code)
-            s_z_rr = np.zeros((n_repeat, n_step), dtype=float)
-            P0_rr = np.zeros((n_repeat, n_step, self.m), dtype=float)
-            omega_control_rr = np.zeros((n_repeat, n_step), dtype=float)
-            omega_recomputed_rr = np.zeros((n_repeat, n_step), dtype=float)
-            t_input_rr = np.zeros((n_repeat, n_step), dtype=float)
-            t_s_z_rr = np.zeros((n_repeat, n_step), dtype=float)
-            k_rr = np.zeros((n_repeat, n_step), dtype=float)
-            state_rr = np.zeros((n_repeat, n_step, 3), dtype=float) if return_full_state else None
-
             for r in range(n_repeat):
-                s_z, P0, omega_ctrl, omega_recomp, t_in, t_s, k, state = self._run_shot_parallel(
+                self._run_shot_into_buffers(
                     r, n_step, apd_rr, fractional_initial_offset_r, omega_measured_rr, control_omega_source, timing,
                     include_photon_noise, update_raman_frequency, update_rabi_frequency,
                     return_full_state, zidx,
+                    s_z_rr, P0_rr, omega_control_rr, omega_recomputed_rr, t_input_rr, t_s_z_rr, k_rr, state_rr,
                 )
-                s_z_rr[r, :] = s_z
-                P0_rr[r, :, :] = P0
-                omega_control_rr[r, :] = omega_ctrl
-                omega_recomputed_rr[r, :] = omega_recomp
-                t_input_rr[r, :] = t_in
-                t_s_z_rr[r, :] = t_s
-                k_rr[r, :] = k
-                if state_rr is not None and state is not None:
-                    state_rr[r, :, :] = state
 
         apd_norm_rr = self._normalize_apd(
             apd_rr,
@@ -1104,7 +1121,7 @@ class FeedbackReplayCore(Feedback):
             zidx=int(zidx),
             state_rr=state_rr,
             metadata={
-                "run_id": int(getattr(self.ad.run_info, "run_id", -1)),
+                "run_id": int(getattr(self, "_run_id", -1)),
                 "N_repeat": int(n_repeat),
                 "N_step": int(getattr(self.p, "N_pulses", n_step)),
                 "feedback_grid_size": self._effective_feedback_grid_size(),
@@ -1307,6 +1324,7 @@ class FeedbackReplay(FeedbackReplayCore):
         result: FeedbackReplayResult,
         *,
         group_shots: bool = True,
+        precomputed_groups: Optional[List[Dict[str, np.ndarray]]] = None,
         include_apd_noise: Optional[bool] = None,
         apd_noise_override_fraction: Optional[float] = None,
         apd_noise_min_std: float = 0.03,
@@ -1365,12 +1383,14 @@ class FeedbackReplay(FeedbackReplayCore):
             Keys: overall_mse, n_groups, n_points, apd_noise_fraction,
             apd_noise_applied_any, group_metrics.
         """
-        groups = self.summarize_result_groups(
-            result,
-            group_shots=group_shots,
-            use_stderr=True,
-            tolerance_rad_s=tolerance_rad_s,
-        )
+        groups = precomputed_groups
+        if groups is None:
+            groups = self.summarize_result_groups(
+                result,
+                group_shots=group_shots,
+                use_stderr=True,
+                tolerance_rad_s=tolerance_rad_s,
+            )
 
         if float(apd_noise_min_std) < 0.0:
             raise ValueError("apd_noise_min_std must be non-negative.")
@@ -2341,7 +2361,9 @@ class FeedbackReplayOptimizer:
         parallel_verbose: int,
         pulse_weight_power: float,
         eps: float,
+        lightweight_candidates: bool = False,
     ) -> Dict[str, object]:
+        t_start = perf_counter()
         params = self._index_to_params(index_tuple)
         resolved_params: Dict[str, float] = {}
         for key, value in params.items():
@@ -2356,10 +2378,23 @@ class FeedbackReplayOptimizer:
         resolved_replay_kwargs["n_jobs"] = int(n_jobs)
         resolved_replay_kwargs["parallel_verbose"] = int(parallel_verbose)
 
+        t_replay_start = perf_counter()
         result = self.replay.replay_measured(**resolved_replay_kwargs)
+
+        # Compute grouped summaries once per candidate and reuse in fit metrics.
+        t_group_start = perf_counter()
+        groups = self.replay.summarize_result_groups(
+            result,
+            group_shots=bool(group_shots),
+            use_stderr=False,
+            tolerance_rad_s=tolerance_rad_s,
+        )
+
+        t_fit_start = perf_counter()
         fit_metrics = self.replay.compute_group_fit_metrics_with_noise(
             result,
             group_shots=bool(group_shots),
+            precomputed_groups=groups,
             include_apd_noise=include_apd_noise,
             apd_noise_override_fraction=apd_noise_override_fraction,
             apd_noise_min_std=apd_noise_min_std,
@@ -2368,20 +2403,26 @@ class FeedbackReplayOptimizer:
             pulse_weight_power=float(pulse_weight_power),
             eps=eps,
         )
-        groups = self.replay.summarize_result_groups(
-            result,
-            group_shots=bool(group_shots),
-            use_stderr=False,
-            tolerance_rad_s=tolerance_rad_s,
-        )
+
+        t_end = perf_counter()
+        timing_s = {
+            "replay": float(t_group_start - t_replay_start),
+            "group_summary": float(t_fit_start - t_group_start),
+            "fit_metrics": float(t_end - t_fit_start),
+            "total": float(t_end - t_start),
+        }
+
+        candidate_result = None if bool(lightweight_candidates) else result
+        candidate_groups = None if bool(lightweight_candidates) else groups
 
         return {
             "indices": tuple(int(i) for i in index_tuple),
             "params": params,
-            "result": result,
-            "groups": groups,
+            "result": candidate_result,
+            "groups": candidate_groups,
             "fit": fit_metrics,
             "loss": float(fit_metrics["overall_mse"]),
+            "timing_s": timing_s,
         }
 
     @staticmethod
@@ -2694,6 +2735,7 @@ class FeedbackReplayOptimizer:
         surrogate_candidate_pool_size: int = 1024,
         surrogate_exploration_probability: float = 0.05,
         outer_n_jobs: int = 1,
+        lightweight_candidates: bool = False,
     ) -> Dict[str, object]:
         """Fit one or more replay parameters against APD data.
 
@@ -2743,6 +2785,10 @@ class FeedbackReplayOptimizer:
         pulse_weight_power
             Exponent applied to pulse index in the coherence-derived fit weight
             profile. Default 0 gives uniform weighting.
+        lightweight_candidates
+            If True, per-candidate records omit heavy replay/group payloads for
+            non-final candidates to reduce process-transfer overhead. The best
+            candidate payload is automatically re-hydrated before returning.
 
         Returns
         -------
@@ -2841,6 +2887,7 @@ class FeedbackReplayOptimizer:
             parallel_verbose=int(parallel_verbose),
             pulse_weight_power=float(pulse_weight_power),
             eps=eps,
+            lightweight_candidates=bool(lightweight_candidates),
         )
 
         records: List[Dict[str, object]] = []
@@ -3017,6 +3064,31 @@ class FeedbackReplayOptimizer:
 
         best_idx = int(np.nanargmin(selection_losses))
         best_record = records[best_idx]
+
+        # In lightweight mode, restore full payload for the winning candidate so
+        # downstream fit_report/sweep consumers remain API-compatible.
+        if bool(lightweight_candidates) and (
+            best_record.get("result") is None or best_record.get("groups") is None
+        ):
+            hydrated = self._evaluate_candidate(
+                tuple(int(i) for i in best_record["indices"]),
+                replay_kwargs=replay_kwargs,
+                group_shots=bool(group_shots),
+                tolerance_rad_s=tolerance_rad_s,
+                include_apd_noise=include_apd_noise,
+                apd_noise_override_fraction=apd_noise_override_fraction,
+                apd_noise_min_std=apd_noise_min_std,
+                aggregate_mode=aggregate_mode,
+                n_jobs=inner_n_jobs,
+                parallel_verbose=int(parallel_verbose),
+                pulse_weight_power=float(pulse_weight_power),
+                eps=eps,
+                lightweight_candidates=False,
+            )
+            hydrated["eval_index"] = int(best_record.get("eval_index", best_idx))
+            records[best_idx] = hydrated
+            best_record = hydrated
+
         parameter_names = [name for name, _ in self._parameters]
 
         search_metadata = {
@@ -3027,7 +3099,29 @@ class FeedbackReplayOptimizer:
             "n_initial": int(n_initial_resolved),
             "refine_top_k": int(refine_top_k_resolved),
             "random_state": int(random_state),
+            "lightweight_candidates": bool(lightweight_candidates),
         }
+
+        timing_records = [
+            record.get("timing_s")
+            for record in records
+            if isinstance(record.get("timing_s"), dict)
+        ]
+        if len(timing_records) > 0:
+            replay_times = np.asarray([float(row.get("replay", np.nan)) for row in timing_records], dtype=float)
+            group_times = np.asarray([float(row.get("group_summary", np.nan)) for row in timing_records], dtype=float)
+            fit_times = np.asarray([float(row.get("fit_metrics", np.nan)) for row in timing_records], dtype=float)
+            total_times = np.asarray([float(row.get("total", np.nan)) for row in timing_records], dtype=float)
+            search_metadata["timing_summary_s"] = {
+                "replay_mean": float(np.nanmean(replay_times)),
+                "replay_median": float(np.nanmedian(replay_times)),
+                "group_summary_mean": float(np.nanmean(group_times)),
+                "group_summary_median": float(np.nanmedian(group_times)),
+                "fit_metrics_mean": float(np.nanmean(fit_times)),
+                "fit_metrics_median": float(np.nanmedian(fit_times)),
+                "total_mean": float(np.nanmean(total_times)),
+                "total_median": float(np.nanmedian(total_times)),
+            }
 
         if method_norm == "bayesian":
             search_metadata.update(
@@ -3293,6 +3387,7 @@ class FeedbackReplayOptimizer:
         validation_local_span: float = 0.15,
         validation_n_points: int = 11,
         outer_n_jobs: int = -1,
+        lightweight_candidates: bool = False,
     ) -> Dict[str, object]:
         """Run fit and generate standard diagnostics plots and summary output.
 
@@ -3346,6 +3441,7 @@ class FeedbackReplayOptimizer:
             surrogate_candidate_pool_size=int(surrogate_candidate_pool_size),
             surrogate_exploration_probability=float(surrogate_exploration_probability),
             outer_n_jobs=outer_n_jobs,
+            lightweight_candidates=bool(lightweight_candidates),
         )
 
         losses = np.asarray(fit_payload["losses"], dtype=float)
@@ -3687,6 +3783,15 @@ class FeedbackReplayOptimizer:
                 f"{int(search_meta.get('n_evaluated', len(fit_payload['records'])))} / "
                 f"{int(search_meta.get('n_total_possible', len(fit_payload['records'])))}"
             )
+            timing_summary = search_meta.get("timing_summary_s")
+            if isinstance(timing_summary, dict):
+                print("candidate timing (median s): ")
+                print(
+                    f"  replay={float(timing_summary.get('replay_median', np.nan)):.4g}, "
+                    f"group={float(timing_summary.get('group_summary_median', np.nan)):.4g}, "
+                    f"fit={float(timing_summary.get('fit_metrics_median', np.nan)):.4g}, "
+                    f"total={float(timing_summary.get('total_median', np.nan)):.4g}"
+                )
             if method_used == "bayesian":
                 print("surrogate model: gaussian_process_rbf")
                 print("surrogate acquisition: lower_confidence_bound")
