@@ -16,16 +16,20 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.frequency_raman_transition = 1.19740406e+08
+        self.p.frequency_raman_transition = 119.4641e6
+        # self.p.frequency_raman_transition = 119918210.0
+
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
         self.p.t_continuous_rabi = 450.e-6
 
-        # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
-        self.p.t_raman_pulse = 8.8699e-6
+        # self.xvar('t_raman_pulse',9.2565e-06 + 9.2565e-06*np.linspace(0.,1.,7))
+        # self.xvar('t_raman_pulse', 9.2565e-06 + np.array([0.0, (9.2565e-06) / 2, 9.2565e-06]))
+        self.p.t_raman_pulse = (9.2565e-06) / 2
         
-        # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
-        self.p.amp_imaging = 1.7
+        self.xvar('amp_imaging',np.linspace(.1,.6, 5))
+        self.p.amp_imaging = .6
 
         self.p.hf_imaging_detuning = -568.e6 # 182.
 
@@ -33,13 +37,14 @@ class hf_monitored_rabi(EnvExperiment, Base):
         
         self.p.dimension_slm_mask = 20.e-6
 
+        # self.xvar('phase_slm_mask',np.linspace(0.0*np.pi,.5*np.pi,10))
         self.p.phase_slm_mask = 0.186 * np.pi
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 100
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -61,12 +66,14 @@ class hf_monitored_rabi(EnvExperiment, Base):
         delay(10.e-3)
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
+
+        self.raman.pulse(t=self.p.t_raman_pulse)
         
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         self.imaging.on()
-        delay(3.e-6)
-        
-        self.raman.pulse(t=self.p.t_continuous_rabi)
+        delay(1.e-6)
+        delay(200.e-6)
+        # self.raman.pulse(t=self.p.t_continuous_rabi)
 
         self.imaging.off()
 

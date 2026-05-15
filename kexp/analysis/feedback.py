@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Any, Dict, List, Optional, Sequence, Tuple
@@ -97,24 +98,38 @@ class FeedbackReplayResult:
 class FeedbackReplayCore(Feedback):
     """Replay engine for feedback experiments using atomdata.
 
-    Public API
-    ----------
-    replay_measured(...)
-        Reconstructs measured experiment behavior using measured APD and,
-        by default, measured control omega.
-
-    simulate_counterfactual(...)
-        Runs what-if simulations with override knobs for timing, coherence,
-        grid size, and control-omega source.
-
-    Notes
-    -----
-    - No dummy leading sample handling is applied. All provided pulse steps are
-      simulated in-order as actual measurements.
-    - Posterior input time uses reconstructed pulse-start time from
-      `t_between_pulses_mu`.
-    - `t_s_z_rr` is returned for post-measurement alignment in plotting.
+    Setting ``fr.p.<param> = value`` before calling replay will override that
+    parameter for all subsequent replays.  The change is detected by comparing
+    the current ``self.p`` against a baseline snapshot taken at construction
+    time, so only explicitly modified attributes are treated as overrides.
     """
+
+    # Maps self.p attribute name → kwargs key used by _apply_feedback_kwargs_to_params
+    _P_ATTR_TO_KWARG: Dict[str, str] = {
+        "feedback_grid_size": "feedback_grid_size",
+        "t_raman_pulse": "t_raman_pulse",
+        "t_raman_pulse_ideal": "t_raman_pulse_ideal",
+        "t_img_pulse": "t_img_pulse",
+        "t_raman_pi_pulse": "t_raman_pi_pulse",
+        "amp_imaging": "amp_imaging",
+        "frequency_raman_transition": "frequency_resonance",
+        "frequency_lightshift": "frequency_z_lightshift",
+        "back_action_coherence": "back_action_coherence",
+        "feedback_fractional_grid_center_offset": "fractional_grid_center_offset",
+        "feedback_fractional_initial_offset": "fractional_initial_offset",
+        "feedback_guess_span_Omega": "guess_span_Omega",
+        "N_photons_per_shot": "n_photons_per_shot",
+        "std_n_photons_per_shot": "std_n_photons_per_shot",
+        "v_apd_all_up": "v_apd_all_up",
+        "v_apd_all_down": "v_apd_all_down",
+        "feedback_photon_count_scale": "photon_count_scale",
+        "feedback_measurement_midpoint_fraction": "feedback_measurement_midpoint_fraction",
+        "feedback_measurement_midpoint_remap_enabled": "feedback_measurement_midpoint_remap_enabled",
+        "feedback_apd_map_enabled": "feedback_apd_map_enabled",
+        "feedback_apd_map_a": "feedback_apd_map_a",
+        "feedback_apd_map_b": "feedback_apd_map_b",
+        "feedback_apd_map_verbose": "feedback_apd_map_verbose",
+    }
 
     def __init__(
         self,
@@ -140,6 +155,9 @@ class FeedbackReplayCore(Feedback):
 
         self._apply_feedback_kwargs_to_params(self._base_kwargs)
         Feedback.__init__(self)
+        # Snapshot self.p after initialization so later fr.p.x = val assignments
+        # can be detected and honoured during replay reinitialisation.
+        self._p_baseline: Dict[str, object] = self._snapshot_p_for_replay()
 
     def __getstate__(self) -> Dict[str, object]:
         """Drop non-picklable atomdata references for process-based workers."""
@@ -149,6 +167,38 @@ class FeedbackReplayCore(Feedback):
 
     def __setstate__(self, state: Dict[str, object]) -> None:
         self.__dict__.update(state)
+
+    def _snapshot_p_for_replay(self) -> Dict[str, object]:
+        """Return a dict of all replay-relevant self.p values keyed by attr name."""
+        p = self.p
+        return {attr: getattr(p, attr, None) for attr in self._P_ATTR_TO_KWARG}
+
+    def _extract_p_user_overrides(self) -> Dict[str, object]:
+        """Return a kwargs-keyed dict of self.p values that differ from the baseline snapshot.
+
+        Only attributes that the user explicitly changed on ``fr.p`` after
+        construction are returned.  The baseline is fixed at construction time
+        and is never updated, so overrides persist across multiple replay calls.
+        """
+        p = self.p
+        baseline = self._p_baseline
+        overrides: Dict[str, object] = {}
+        for attr, kwarg_key in self._P_ATTR_TO_KWARG.items():
+            current_val = getattr(p, attr, None)
+            baseline_val = baseline.get(attr)
+            if current_val is None and baseline_val is None:
+                continue
+            if current_val is None or baseline_val is None:
+                if current_val is not None:
+                    overrides[kwarg_key] = current_val
+                continue
+            try:
+                changed = bool(current_val != baseline_val)
+            except (TypeError, ValueError):
+                changed = True
+            if changed:
+                overrides[kwarg_key] = current_val
+        return overrides
 
     def _apply_feedback_kwargs_to_params(self, kwargs: Dict[str, object]) -> None:
         """Apply replay keyword-style parameters onto ``self.p`` for Feedback init.
@@ -314,13 +364,11 @@ class FeedbackReplayCore(Feedback):
     def _resolve_fractional_initial_offset_r(
         self,
         n_repeat: int,
-        *,
-        fractional_initial_offset_override: Optional[Sequence[float]],
     ) -> np.ndarray:
-        source = (
-            self._fractional_initial_offset_source
-            if fractional_initial_offset_override is None
-            else fractional_initial_offset_override
+        source = getattr(
+            self.p,
+            "feedback_fractional_initial_offset",
+            self._fractional_initial_offset_source,
         )
 
         values = np.asarray(source, dtype=float).ravel()
@@ -409,30 +457,23 @@ class FeedbackReplayCore(Feedback):
 
     def _resolve_grid(
         self,
-        feedback_grid_size_override: Optional[int],
-        omega_guess_list_override: Optional[Sequence[float]],
     ) -> Tuple[np.ndarray, int]:
         freq_res = float(self._base_kwargs["frequency_resonance"])
         omega_res = 2.0 * np.pi * freq_res
-
-        if omega_guess_list_override is not None:
-            omega_guess = np.asarray(omega_guess_list_override, dtype=float).ravel()
-            if omega_guess.size < 2:
-                raise ValueError("omega_guess_list_override must contain at least two points.")
-            return omega_guess, int(np.argmin(np.abs(omega_guess - omega_res)))
 
         if hasattr(self.p, "omega_guess_list"):
             omega_saved = np.asarray(self.p.omega_guess_list, dtype=float).ravel()
         else:
             omega_saved = np.asarray(self.omega_guess_list, dtype=float).ravel()
 
-        if feedback_grid_size_override is None or int(feedback_grid_size_override) == omega_saved.size:
+        feedback_grid_size = getattr(self.p, "feedback_grid_size", None)
+        if feedback_grid_size is None or int(feedback_grid_size) == omega_saved.size:
             omega_guess = omega_saved
         else:
             omega_guess = np.linspace(
                 float(np.min(omega_saved)),
                 float(np.max(omega_saved)),
-                int(feedback_grid_size_override),
+                int(feedback_grid_size),
             )
 
         zidx = int(np.argmin(np.abs(omega_guess - omega_res)))
@@ -440,66 +481,15 @@ class FeedbackReplayCore(Feedback):
 
     def _reinitialize_feedback(
         self,
-        *,
-        back_action_coherence: Optional[float],
-        t_raman_pulse: Optional[float],
-        t_raman_pulse_ideal: Optional[float],
-        t_img_pulse: Optional[float],
-        frequency_z_lightshift: Optional[float],
-        feedback_grid_size_override: Optional[int],
-        omega_guess_list_override: Optional[Sequence[float]],
-        feedback_measurement_midpoint_fraction: Optional[float],
-        feedback_measurement_midpoint_remap_enabled: Optional[bool],
-        feedback_apd_map_enabled: Optional[bool],
-        feedback_apd_map_verbose: Optional[bool],
-        fractional_initial_offset: Optional[float],
-        extra_kwargs: Optional[Dict[str, Any]] = None,
     ) -> Tuple[np.ndarray, int]:
         kwargs = dict(self._base_kwargs)
 
-        if back_action_coherence is not None:
-            kwargs["back_action_coherence"] = float(back_action_coherence)
+        # Honour any fr.p.x = val overrides set by the user before this replay call.
+        # These take precedence over _base_kwargs.
+        user_p_overrides = self._extract_p_user_overrides()
+        kwargs.update(user_p_overrides)
 
-        if t_raman_pulse is not None:
-            kwargs["t_raman_pulse"] = float(t_raman_pulse)
-            kwargs["dt_eff"] = float(t_raman_pulse)
-
-        if t_raman_pulse_ideal is not None:
-            kwargs["t_raman_pulse_ideal"] = float(t_raman_pulse_ideal)
-            kwargs["dt_ideal"] = float(t_raman_pulse_ideal)
-
-        if t_img_pulse is not None:
-            kwargs["t_img_pulse"] = float(t_img_pulse)
-
-        if frequency_z_lightshift is not None:
-            kwargs["frequency_z_lightshift"] = float(frequency_z_lightshift)
-
-        if feedback_measurement_midpoint_fraction is not None:
-            kwargs["feedback_measurement_midpoint_fraction"] = float(
-                feedback_measurement_midpoint_fraction
-            )
-
-        if feedback_measurement_midpoint_remap_enabled is not None:
-            kwargs["feedback_measurement_midpoint_remap_enabled"] = bool(
-                feedback_measurement_midpoint_remap_enabled
-            )
-
-        if feedback_apd_map_enabled is not None:
-            kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
-
-        if feedback_apd_map_verbose is not None:
-            kwargs["feedback_apd_map_verbose"] = bool(feedback_apd_map_verbose)
-
-        if fractional_initial_offset is not None:
-            kwargs["fractional_initial_offset"] = float(fractional_initial_offset)
-
-        if extra_kwargs:
-            kwargs.update(extra_kwargs)
-
-        omega_guess, zidx = self._resolve_grid(
-            feedback_grid_size_override=feedback_grid_size_override,
-            omega_guess_list_override=omega_guess_list_override,
-        )
+        omega_guess, zidx = self._resolve_grid()
 
         kwargs["feedback_grid_size"] = int(omega_guess.size)
 
@@ -515,32 +505,24 @@ class FeedbackReplayCore(Feedback):
 
     def _resolve_timing(
         self,
-        *,
-        t_raman_pulse: Optional[float],
-        t_raman_pulse_ideal: Optional[float],
-        t_img_pulse: Optional[float],
-        delta_t_mu: Optional[int],
-        t_between_pulses_mu: Optional[int],
     ) -> Dict[str, float]:
+        p = self.p
         timing = dict(self._default_timing)
 
-        if delta_t_mu is not None:
-            timing["delta_t_mu"] = int(delta_t_mu)
+        if hasattr(p, "delta_t_mu"):
+            timing["delta_t_mu"] = int(getattr(p, "delta_t_mu"))
+        if hasattr(p, "t_between_pulses_mu"):
+            timing["t_between_pulses_mu"] = int(getattr(p, "t_between_pulses_mu"))
+        if hasattr(p, "t_raman_set_pretrigger_mu"):
+            timing["t_raman_set_pretrigger_mu"] = int(getattr(p, "t_raman_set_pretrigger_mu"))
 
-        dt_eff = float(self.dt_eff if t_raman_pulse is None else t_raman_pulse)
-        dt_ideal = float(self.dt_ideal if t_raman_pulse_ideal is None else t_raman_pulse_ideal)
-        dt_img = float(self.dt_z if t_img_pulse is None else t_img_pulse)
+        dt_eff = float(self.dt_eff)
+        dt_ideal = float(self.dt_ideal)
+        dt_img = float(self.dt_z)
 
         timing["dt_eff"] = dt_eff
         timing["dt_ideal"] = dt_ideal
         timing["t_img_pulse"] = dt_img
-
-        if t_between_pulses_mu is not None:
-            timing["t_between_pulses_mu"] = int(t_between_pulses_mu)
-        elif (t_raman_pulse is not None) or (t_img_pulse is not None):
-            # When scanning timing parameters, use frozen t_between_pulses_mu instead of recalculating.
-            # This preserves the original timing relationship while accounting for new pulse areas via delta_t_mu.
-            timing["t_between_pulses_mu"] = self._frozen_t_between_pulses_mu
 
         return timing
 
@@ -739,40 +721,12 @@ class FeedbackReplayCore(Feedback):
         update_rabi_frequency: bool = False,
         control_omega_source: str = "measured",
         return_full_state: bool = False,
-        back_action_coherence: Optional[float] = None,
-        t_raman_pulse: Optional[float] = None,
-        t_raman_pulse_ideal: Optional[float] = None,
-        t_img_pulse: Optional[float] = None,
-        frequency_z_lightshift: Optional[float] = None,
-        delta_t_mu: Optional[int] = None,
-        t_between_pulses_mu: Optional[int] = None,
-        feedback_grid_size_override: Optional[int] = None,
-        omega_guess_list_override: Optional[Sequence[float]] = None,
-        apd_override_rr: Optional[Sequence[float]] = None,
-        omega_override_rr: Optional[Sequence[float]] = None,
-        fractional_initial_offset_override: Optional[Sequence[float]] = None,
-        feedback_measurement_midpoint_fraction: Optional[float] = None,
-        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
-        feedback_apd_map_enabled: Optional[bool] = None,
-        feedback_apd_map_verbose: Optional[bool] = None,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
-        **extra_kwargs,
     ) -> FeedbackReplayResult:
         """Replay using measured APD and measured control omega by default.
 
-        Parameters
-        ----------
-        n_jobs
-            Number of cores to use for parallel shot simulation. Default 1 (sequential).
-            Use -1 to use all available cores. Values > 1 enable parallel processing.
-        parallel_verbose
-            Verbosity level for joblib parallel execution (0-10).
-        **extra_kwargs
-            Additional parameters forwarded to ``_apply_feedback_kwargs_to_params``
-            (e.g. ``v_apd_all_up``, ``v_apd_all_down``, ``photon_count_scale``,
-            ``n_photons_per_shot``, ``guess_span_Omega``, ``amp_imaging``, etc.).
-            Useful when sweeping these parameters via ``FeedbackReplaySweep``.
+        Replay parameters are sourced from ``self.p``.
         """
         return self._run_sequence(
             include_photon_noise=include_photon_noise,
@@ -780,26 +734,11 @@ class FeedbackReplayCore(Feedback):
             update_rabi_frequency=update_rabi_frequency,
             control_omega_source=control_omega_source,
             return_full_state=return_full_state,
-            back_action_coherence=back_action_coherence,
-            t_raman_pulse=t_raman_pulse,
-            t_raman_pulse_ideal=t_raman_pulse_ideal,
-            t_img_pulse=t_img_pulse,
-            frequency_z_lightshift=frequency_z_lightshift,
-            delta_t_mu=delta_t_mu,
-            t_between_pulses_mu=t_between_pulses_mu,
-            feedback_grid_size_override=feedback_grid_size_override,
-            omega_guess_list_override=omega_guess_list_override,
-            apd_override_rr=apd_override_rr,
-            omega_override_rr=omega_override_rr,
-            fractional_initial_offset_override=fractional_initial_offset_override,
-            feedback_measurement_midpoint_fraction=feedback_measurement_midpoint_fraction,
-            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            feedback_apd_map_enabled=feedback_apd_map_enabled,
-            feedback_apd_map_verbose=feedback_apd_map_verbose,
+            apd_override_rr=None,
+            omega_override_rr=None,
             default_use_measured_apd=True,
             n_jobs=int(n_jobs),
             parallel_verbose=int(parallel_verbose),
-            extra_kwargs=extra_kwargs or None,
         )
 
     def simulate_counterfactual(
@@ -812,36 +751,12 @@ class FeedbackReplayCore(Feedback):
         update_rabi_frequency: bool = False,
         control_omega_source: str = "recomputed",
         return_full_state: bool = False,
-        back_action_coherence: Optional[float] = None,
-        t_raman_pulse: Optional[float] = None,
-        t_raman_pulse_ideal: Optional[float] = None,
-        t_img_pulse: Optional[float] = None,
-        frequency_z_lightshift: Optional[float] = None,
-        delta_t_mu: Optional[int] = None,
-        t_between_pulses_mu: Optional[int] = None,
-        feedback_grid_size_override: Optional[int] = None,
-        omega_guess_list_override: Optional[Sequence[float]] = None,
-        fractional_initial_offset_override: Optional[Sequence[float]] = None,
-        feedback_measurement_midpoint_fraction: Optional[float] = None,
-        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
-        feedback_apd_map_enabled: Optional[bool] = None,
-        feedback_apd_map_verbose: Optional[bool] = None,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
-        **extra_kwargs,
     ) -> FeedbackReplayResult:
         """Run a what-if simulation with optional APD and omega inputs.
 
-        Parameters
-        ----------
-        n_jobs
-            Number of cores to use for parallel shot simulation. Default 1 (sequential).
-            Use -1 to use all available cores. Values > 1 enable parallel processing.
-        parallel_verbose
-            Verbosity level for joblib parallel execution (0-10).
-        **extra_kwargs
-            Additional parameters forwarded to ``_apply_feedback_kwargs_to_params``
-            (e.g. ``v_apd_all_up``, ``v_apd_all_down``, ``photon_count_scale``, etc.).
+        Replay parameters are sourced from ``self.p``.
         """
         return self._run_sequence(
             include_photon_noise=include_photon_noise,
@@ -849,26 +764,11 @@ class FeedbackReplayCore(Feedback):
             update_rabi_frequency=update_rabi_frequency,
             control_omega_source=control_omega_source,
             return_full_state=return_full_state,
-            back_action_coherence=back_action_coherence,
-            t_raman_pulse=t_raman_pulse,
-            t_raman_pulse_ideal=t_raman_pulse_ideal,
-            t_img_pulse=t_img_pulse,
-            frequency_z_lightshift=frequency_z_lightshift,
-            delta_t_mu=delta_t_mu,
-            t_between_pulses_mu=t_between_pulses_mu,
-            feedback_grid_size_override=feedback_grid_size_override,
-            omega_guess_list_override=omega_guess_list_override,
             apd_override_rr=apd_input_rr,
             omega_override_rr=omega_control_rr,
-            fractional_initial_offset_override=fractional_initial_offset_override,
-            feedback_measurement_midpoint_fraction=feedback_measurement_midpoint_fraction,
-            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            feedback_apd_map_enabled=feedback_apd_map_enabled,
-            feedback_apd_map_verbose=feedback_apd_map_verbose,
             default_use_measured_apd=False,
             n_jobs=int(n_jobs),
             parallel_verbose=int(parallel_verbose),
-            extra_kwargs=extra_kwargs or None,
         )
 
     def _run_shot_into_buffers(
@@ -976,26 +876,11 @@ class FeedbackReplayCore(Feedback):
         update_rabi_frequency: bool,
         control_omega_source: str,
         return_full_state: bool,
-        back_action_coherence: Optional[float],
-        t_raman_pulse: Optional[float],
-        t_raman_pulse_ideal: Optional[float],
-        t_img_pulse: Optional[float],
-        frequency_z_lightshift: Optional[float],
-        delta_t_mu: Optional[int],
-        t_between_pulses_mu: Optional[int],
-        feedback_grid_size_override: Optional[int],
-        omega_guess_list_override: Optional[Sequence[float]],
         apd_override_rr: Optional[Sequence[float]],
         omega_override_rr: Optional[Sequence[float]],
-        fractional_initial_offset_override: Optional[Sequence[float]],
-        feedback_measurement_midpoint_fraction: Optional[float],
-        feedback_measurement_midpoint_remap_enabled: Optional[bool],
-        feedback_apd_map_enabled: Optional[bool],
-        feedback_apd_map_verbose: Optional[bool],
         default_use_measured_apd: bool,
         n_jobs: int = 1,
         parallel_verbose: int = 0,
-        extra_kwargs: Optional[Dict[str, Any]] = None,
     ) -> FeedbackReplayResult:
         if include_photon_noise is None:
             include_photon_noise = bool(getattr(self.p, "include_photon_noise", 1))
@@ -1014,34 +899,11 @@ class FeedbackReplayCore(Feedback):
 
         apd_rr = self._resolve_apd_rr(apd_override_rr=apd_override_rr)
         n_repeat, n_step = apd_rr.shape
-        fractional_initial_offset_r = self._resolve_fractional_initial_offset_r(
-            n_repeat=n_repeat,
-            fractional_initial_offset_override=fractional_initial_offset_override,
-        )
+        fractional_initial_offset_r = self._resolve_fractional_initial_offset_r(n_repeat=n_repeat)
 
-        omega_guess_list, zidx = self._reinitialize_feedback(
-            back_action_coherence=back_action_coherence,
-            t_raman_pulse=t_raman_pulse,
-            t_raman_pulse_ideal=t_raman_pulse_ideal,
-            t_img_pulse=t_img_pulse,
-            frequency_z_lightshift=frequency_z_lightshift,
-            feedback_grid_size_override=feedback_grid_size_override,
-            omega_guess_list_override=omega_guess_list_override,
-            feedback_measurement_midpoint_fraction=feedback_measurement_midpoint_fraction,
-            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            feedback_apd_map_enabled=feedback_apd_map_enabled,
-            feedback_apd_map_verbose=feedback_apd_map_verbose,
-            fractional_initial_offset=float(fractional_initial_offset_r[0]),
-            extra_kwargs=extra_kwargs,
-        )
+        omega_guess_list, zidx = self._reinitialize_feedback()
 
-        timing = self._resolve_timing(
-            t_raman_pulse=t_raman_pulse,
-            t_raman_pulse_ideal=t_raman_pulse_ideal,
-            t_img_pulse=t_img_pulse,
-            delta_t_mu=delta_t_mu,
-            t_between_pulses_mu=t_between_pulses_mu,
-        )
+        timing = self._resolve_timing()
 
         omega_measured_rr = self._resolve_omega_rr(n_repeat=n_repeat, n_step=n_step, omega_override_rr=omega_override_rr)
         if control_omega_source in {"measured", "override"} and omega_measured_rr is None:
@@ -1104,7 +966,6 @@ class FeedbackReplayCore(Feedback):
 
         apd_norm_rr = self._normalize_apd(
             apd_rr,
-            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
         )
 
         return FeedbackReplayResult(
@@ -1504,7 +1365,6 @@ class FeedbackReplay(FeedbackReplayCore):
     def replay_validation_mode(
         self,
         *,
-        back_action_coherence: Optional[float] = None,
         control_omega_source: str = "measured",
         include_photon_noise: Optional[bool] = None,
         update_raman_frequency: Optional[bool] = None,
@@ -1517,7 +1377,6 @@ class FeedbackReplay(FeedbackReplayCore):
     ) -> Dict[str, object]:
         """Run fixed-omega validation-style replay and return grouped fit summary."""
         result = self.replay_measured(
-            back_action_coherence=back_action_coherence,
             control_omega_source=control_omega_source,
             include_photon_noise=include_photon_noise,
             update_raman_frequency=update_raman_frequency,
@@ -1547,7 +1406,6 @@ class FeedbackReplay(FeedbackReplayCore):
     def replay_feedback_mode(
         self,
         *,
-        back_action_coherence: Optional[float] = None,
         control_omega_source: str = "measured",
         include_photon_noise: Optional[bool] = None,
         update_raman_frequency: Optional[bool] = None,
@@ -1558,7 +1416,6 @@ class FeedbackReplay(FeedbackReplayCore):
     ) -> Dict[str, object]:
         """Run feedback-enabled replay and return posterior-ready summary payload."""
         result = self.replay_measured(
-            back_action_coherence=back_action_coherence,
             control_omega_source=control_omega_source,
             include_photon_noise=include_photon_noise,
             update_raman_frequency=update_raman_frequency,
@@ -2045,10 +1902,8 @@ class FeedbackReplayOptimizer:
     """
 
     PARAMETER_ALIASES = {
-        "feedback_grid_size": "feedback_grid_size_override",
-        "frequency_lightshift": "frequency_z_lightshift",
-        "feedback_fractional_initial_offset": "fractional_initial_offset_override",
-        "fractional_initial_offset": "fractional_initial_offset_override",
+        "frequency_z_lightshift": "frequency_lightshift",
+        "fractional_initial_offset": "feedback_fractional_initial_offset",
     }
 
     def __init__(
@@ -2063,6 +1918,10 @@ class FeedbackReplayOptimizer:
             self.replay = FeedbackReplay(replay_or_ad)
 
         self.replay_defaults = {} if replay_defaults is None else dict(replay_defaults)
+        for key, value in self.replay_defaults.items():
+            attr = self._resolve_parameter_name(str(key))
+            if hasattr(self.replay.p, attr):
+                setattr(self.replay.p, attr, value)
         self._parameters: List[Tuple[str, np.ndarray]] = []
 
     @property
@@ -2072,6 +1931,28 @@ class FeedbackReplayOptimizer:
 
     def _resolve_parameter_name(self, parameter_name: str) -> str:
         return str(self.PARAMETER_ALIASES.get(parameter_name, parameter_name))
+
+    @contextmanager
+    def _with_temporary_replay_params(self, params: Dict[str, object]):
+        """Context manager that applies temporary overrides on replay.p."""
+        previous: Dict[str, object] = {}
+        missing = object()
+        p = self.replay.p
+        for key, value in params.items():
+            attr = self._resolve_parameter_name(str(key))
+            previous[attr] = getattr(p, attr, missing)
+            setattr(p, attr, value)
+        try:
+            yield
+        finally:
+            for attr, old in previous.items():
+                if old is missing:
+                    try:
+                        delattr(p, attr)
+                    except AttributeError:
+                        pass
+                else:
+                    setattr(p, attr, old)
 
     def _resolve_default_center_value(self, parameter_name: str) -> float:
         resolved_name = self._resolve_parameter_name(parameter_name)
@@ -2168,7 +2049,7 @@ class FeedbackReplayOptimizer:
                 continue
             if self._resolve_parameter_name(existing_name) == resolved_name:
                 raise ValueError(
-                    f"Parameter {name!r} maps to replay kwarg {resolved_name!r}, which is already "
+                    f"Parameter {name!r} maps to replay parameter {resolved_name!r}, which is already "
                     f"configured by {existing_name!r}. Remove one of them."
                 )
 
@@ -2365,21 +2246,19 @@ class FeedbackReplayOptimizer:
     ) -> Dict[str, object]:
         t_start = perf_counter()
         params = self._index_to_params(index_tuple)
-        resolved_params: Dict[str, float] = {}
-        for key, value in params.items():
-            resolved_params[self._resolve_parameter_name(key)] = float(value)
-
-        # Build kwargs: scanned parameters + user overrides
-        # Replay uses self.p for any parameters not explicitly provided
-        resolved_replay_kwargs = {}
+        resolved_param_updates: Dict[str, object] = {}
         if replay_kwargs:
-            resolved_replay_kwargs.update(replay_kwargs)
-        resolved_replay_kwargs.update(resolved_params)
-        resolved_replay_kwargs["n_jobs"] = int(n_jobs)
-        resolved_replay_kwargs["parallel_verbose"] = int(parallel_verbose)
+            for key, value in replay_kwargs.items():
+                resolved_param_updates[self._resolve_parameter_name(str(key))] = value
+        for key, value in params.items():
+            resolved_param_updates[self._resolve_parameter_name(str(key))] = float(value)
 
         t_replay_start = perf_counter()
-        result = self.replay.replay_measured(**resolved_replay_kwargs)
+        with self._with_temporary_replay_params(resolved_param_updates):
+            result = self.replay.replay_measured(
+                n_jobs=int(n_jobs),
+                parallel_verbose=int(parallel_verbose),
+            )
 
         # Compute grouped summaries once per candidate and reuse in fit metrics.
         t_group_start = perf_counter()
@@ -3241,20 +3120,20 @@ class FeedbackReplayOptimizer:
                 local_candidate[param_name] = float(local_grids[param_name][int(idx)])
 
             try:
-                # Resolve parameter names and build replay kwargs
-                resolved_replay_kwargs = {}
+                resolved_param_updates = {}
                 if replay_kwargs:
-                    resolved_replay_kwargs.update(replay_kwargs)
-                
+                    for key, value in replay_kwargs.items():
+                        resolved_param_updates[self._resolve_parameter_name(str(key))] = value
+
                 for param_name, value in local_candidate.items():
                     resolved_name = self._resolve_parameter_name(param_name)
-                    resolved_replay_kwargs[resolved_name] = float(value)
-                
-                resolved_replay_kwargs["n_jobs"] = int(n_jobs)
-                resolved_replay_kwargs["parallel_verbose"] = int(parallel_verbose)
-                
-                # Run replay with these parameters
-                result = self.replay.replay_measured(**resolved_replay_kwargs)
+                    resolved_param_updates[resolved_name] = float(value)
+
+                with self._with_temporary_replay_params(resolved_param_updates):
+                    result = self.replay.replay_measured(
+                        n_jobs=int(n_jobs),
+                        parallel_verbose=int(parallel_verbose),
+                    )
                 
                 # Compute fit metrics
                 fit_metrics = self.replay.compute_group_fit_metrics_with_noise(
@@ -3518,9 +3397,11 @@ class FeedbackReplayOptimizer:
         expt_result = None
         expt_groups: List[Dict[str, np.ndarray]] = []
         if len(expt_param_pairs) > 0 and not params_match_experiment:
-            overlay_kwargs["n_jobs"] = int(n_jobs)
-            overlay_kwargs["parallel_verbose"] = int(parallel_verbose)
-            expt_result = self.replay.replay_measured(**overlay_kwargs)
+            with self._with_temporary_replay_params(overlay_kwargs):
+                expt_result = self.replay.replay_measured(
+                    n_jobs=int(n_jobs),
+                    parallel_verbose=int(parallel_verbose),
+                )
             expt_groups = self.replay.summarize_result_groups(
                 expt_result,
                 group_shots=bool(group_shots),

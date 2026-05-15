@@ -14,7 +14,7 @@ class hf_raman(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
-
+        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
         # self.xvar('beans',[0]*50)
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.5,0.,8))
@@ -50,12 +50,12 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
         self.p.t_tweezer_hold = .1e-3
 
-        # self.xvar('t_tof',np.linspace(400.,2500.,15)*1.e-6) 
+        self.xvar('t_tof',np.linspace(500.,2000.,15)*1.e-6) 
         self.p.t_tof = 100.e-6
 
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 3
 
         # self.camera_params.gain = 75.
 
@@ -69,7 +69,7 @@ class hf_raman(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=True)
+        self.prepare_hf_tweezers(squeeze=False)
 
         # self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
         #                 fraction_power = self.params.fraction_power_raman)

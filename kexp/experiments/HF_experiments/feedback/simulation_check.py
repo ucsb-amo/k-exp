@@ -40,9 +40,9 @@ class feedback(EnvExperiment, Base, Feedback):
         # self.p.intermediate_detuning = 2*np.pi*self.p.frequency_raman_transition + 2*Omega*0
         # self.xvar('intermediate_detuning',  2*np.pi*self.p.frequency_raman_transition + Omega*(np.linspace(10, 11, 20)))
 
-        np.random.seed(5342) # deterministic seed
+        # np.random.seed() # deterministic seed
         detuning_list = ((np.random.rand(self.p.N_pulses) - 0.5) * 2) # from -1 to 1
-        detuning_list = detuning_list * Omega * 10.
+        detuning_list = detuning_list * Omega * 1.
         detuning_list[0] = 0.
         self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + detuning_list
         

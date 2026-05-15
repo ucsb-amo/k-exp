@@ -16,7 +16,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=False,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
 
         self.p.frequency_raman_transition = 119.4639e6 + 32.57e3 # 182 A -1 --> 0 + .2 img amp lightshift
 
@@ -24,7 +24,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_continuous_rabi = 300.e-6
 
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
-        # self.xvar('t_raman_pulse',[0.0, (8.8699e-6) / 2, 8.8699e-6])
+        # self.xvar('t_raman_pulse',[0.0, (9.2565e-06) / 2, 9.2565e-06])
         self.p.t_raman_pulse = 8.8699e-6
         
         # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
@@ -56,7 +56,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers(squeeze=True)
 
         self.raman.init(fraction_power = self.p.fraction_power_raman,
                         frequency_transition = self.p.frequency_raman_transition)

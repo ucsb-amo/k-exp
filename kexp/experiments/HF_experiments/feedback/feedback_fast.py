@@ -6,7 +6,7 @@ from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
 from numpy import int64
 
-from kexp.util.artiq.async_print import aprint
+from kexp.util.artiq.async_print import aprints
 
 T_CONV_MU = 30
 
@@ -30,9 +30,9 @@ class feedback(EnvExperiment, Base, Feedback):
         ### parameters
 
         self.p.feedback_fractional_initial_offset = 2.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-5.,5.,21))
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(-5.,5.,21))
         
-        self.p.N_repeats = 125
+        self.p.N_repeats = 2
 
         self.p.feedback_guess_span_Omega = 5.0
 
