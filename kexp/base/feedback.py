@@ -89,16 +89,12 @@ class Feedback:
 
     @portable(flags={"fast-math"})
     def expected_photon_fraction(self, hz):
-        if not self.feedback_measurement_midpoint_remap_enabled:
-            p1 = 0.5 * (1.0 + hz)
-            if p1 < 0.0:
-                return 0.0
-            if p1 > 1.0:
-                return 1.0
-            return p1
+        p1 = 0.5 * (1.0 + hz)
+        
+        if self.feedback_measurement_midpoint_remap_enabled:
+            midpoint = self.feedback_measurement_midpoint_fraction
+            p1 += + (midpoint - 0.5) * (1.0 - hz * hz)
 
-        midpoint = self.feedback_measurement_midpoint_fraction
-        p1 = 0.5 * (1.0 + hz) + (midpoint - 0.5) * (1.0 - hz * hz)
         if p1 < 0.0:
             return 0.0
         if p1 > 1.0:
@@ -278,11 +274,11 @@ class Feedback:
             num = k - n_photons * p1
             if include_photon_noise:
                 f = sigma / np.sqrt(npq) * np.exp(-num * num / (2.0 * npq))
-                pj = P0[j] * f
             else:
                 p1_pow = self.powi(p1, k_int)
                 q_pow = self.powi(q, nk_int)
-                pj = P0[j] * p1_pow * q_pow                
+                f = p1_pow * q_pow
+            pj = P0[j] * f            
 
             P0_total += pj
             mn += pj * omega

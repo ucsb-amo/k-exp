@@ -33,7 +33,7 @@ class dds(EnvExperiment):
         self.T = 4.
         self.N = 50
         self.dt = self.T / self.N
-        self.df = np.linspace(-5.e6,5.e6,self.N)
+        self.df = np.linspace(-1.e6,1.e6,self.N)
         self.df = np.concat([np.flip(self.df),self.df])
         print(self.df)
 
@@ -86,7 +86,7 @@ class dds(EnvExperiment):
                 t0 = (t + 30000) & ~7
                 # dt = T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU + int64(20)
                 self.t_phase_origin_mu = t0
-                self.fast_set(f0=50.e6 + df,
+                self.fast_set(f0=27.214e6 + df,
                             f1=31.4e6 - df,
                             t_phase_origin_mu=t0,
                             dt_phase_origin_shift_mu=-int64(648))
