@@ -110,9 +110,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
             f = self.omega_raman / (2*np.pi)
             self.data.omega_raman.shot_data[i] = self.omega_raman
-            # self.data.Omega.shot_data[i+1] = var
 
-            # if i > 0:
             at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
             self.raman.set_frequency_fast(f)
 
