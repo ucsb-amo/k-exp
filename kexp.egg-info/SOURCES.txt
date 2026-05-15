@@ -17,8 +17,6 @@ kexp/base/control.py
 kexp/base/cooling.py
 kexp/base/devices.py
 kexp/base/feedback.py
-kexp/base/feedback_replay.py
-kexp/base/feedback_replay_core.py
 kexp/base/image.py
 kexp/calibrations/__init__.py
 kexp/calibrations/imaging.py
