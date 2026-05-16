@@ -146,8 +146,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 1.0361e-05 #66783, 2026-05-14
-        
+        self.t_raman_pi_pulse = 9.9769e-06 #66809, 2026-05-16
+                
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
         self.amp_d1_3d_r = 0.3
@@ -360,7 +360,7 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
 
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
-        self.frequency_raman_transition = 119.4641e6 #66508 # chenhao magnet turned on yesterday
+        self.frequency_raman_transition = 119.4643e6 #66808
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
