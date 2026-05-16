@@ -274,6 +274,7 @@ class Devices():
     def init_all_dds(self):
         for dds in self.dds.dds_list:
             dds.dds_device.init()
+            dds._store_io_update_delay()
             delay(10*us)
 
     @kernel
