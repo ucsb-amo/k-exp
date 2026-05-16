@@ -1,16 +1,14 @@
 ﻿import sys
 from queue import Queue
 from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QStyle
-from PyQt6.QtGui import QFont, QIcon, QGuiApplication
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QThread
-import numpy as np
+from PyQt6.QtGui import QFont, QGuiApplication
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 import time
 
 from waxa import ROI
-from waxa.image_processing import compute_OD, process_ODs
 
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
-from kexp.util.live_od.camera_connection_widget import CamConnBar, ROISelector
+from kexp.util.live_od.camera_connection_widget import CamConnBar
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.analyzer import Analyzer
 from kexp.util.live_od.gui.plotter import LiveODPlotter
@@ -93,8 +91,6 @@ class LiveODWindow(QWidget):
         self.camera_conn_bar = CamConnBar(self.camera_nanny, self.output_window)
 
         self.setup_screenshot_button()
-        self.roi_select = ROISelector(server_talk=self.server_talk)
-        self.roi_select.crop_dropdown.currentIndexChanged.connect(self.update_roi)
         self.plotting_queue = Queue()
         self.analyzer = Analyzer(self.plotting_queue, self.viewer_window)
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
@@ -146,7 +142,6 @@ class LiveODWindow(QWidget):
         cam_bar.addWidget(self.camera_conn_bar)
         control_bar.addLayout(cam_bar)
         control_bar.addWidget(self.status_lights)
-        control_bar.addWidget(self.roi_select)
         control_bar.addWidget(self.fix_button)
         # control_bar.addStretch()
         layout.addLayout(control_bar)
@@ -214,52 +209,6 @@ class LiveODWindow(QWidget):
             self.last_camera = camera_select
             self.set_default_roi(camera_select)
 
-    def update_roi(self):
-        roi_key = self.roi_select.crop_dropdown.currentText()
-        self.analyzer.roi = ROI(roi_id=roi_key, use_saved_roi=False, printouts=False)
-        # Recompute and replot OD from currently displayed images
-        atoms = getattr(self.viewer_window, '_last_atoms', None)
-        light = getattr(self.viewer_window, '_last_light', None)
-        dark = getattr(self.viewer_window, '_last_dark', None)
-        roi = self.analyzer.roi
-        width = roi.roix[1] - roi.roix[0]
-        height = roi.roiy[1] - roi.roiy[0]
-        # --- Adjust OD window axis limits to match ROI aspect ratio, sized to larger axis ---
-        if width > 0 and height > 0:
-            if width >= height:
-                x0, x1 = 0, width
-                y0, y1 = 0, width * (height / width)
-            else:
-                y0, y1 = 0, height
-                x0, x1 = 0, height * (width / height)
-            self.viewer_window.od_plot.setXRange(x0, x1, padding=0)
-            self.viewer_window.od_plot.setYRange(y0, y1, padding=0)
-        # --- End axis adjustment ---
-        if atoms is not None and light is not None and dark is not None:
-            od = compute_OD(atoms, light, dark)
-            od = np.array([od])
-            od_cropped, sumodx, sumody = process_ODs(od, roi)
-            od_cropped = od_cropped[0]
-            sumodx = sumodx[0]
-            sumody = sumody[0]
-            self.viewer_window.plot_od(od_cropped, sumodx, sumody)
-            # --- Autoscale sumodx and sumody panels ---
-            if sumodx is not None and len(sumodx) > 0:
-                max_x = np.max(sumodx)
-                self.viewer_window.sumodx_panel.setYRange(0, max_x if max_x > 0 else 1, padding=0)
-            if sumody is not None and len(sumody) > 0:
-                max_y = np.max(sumody)
-                self.viewer_window.sumody_panel.setYRange(0, max_y if max_y > 0 else 1, padding=0)
-        elif hasattr(self, 'analyzer') and hasattr(self.analyzer, 'imgs') and self.analyzer.imgs:
-            if len(self.analyzer.imgs) == (getattr(self.analyzer, 'N_pwa_per_shot', 0) + 2):
-                self.analyzer.analyze()
-        elif hasattr(self, 'viewer_window') and hasattr(self.viewer_window, '_last_od'):
-            od = getattr(self.viewer_window, '_last_od', None)
-            sumodx = getattr(self.viewer_window, '_last_sumodx', None)
-            sumody = getattr(self.viewer_window, '_last_sumody', None)
-            if od is not None and sumodx is not None and sumody is not None:
-                self.viewer_window.plot_od(od, sumodx, sumody)
-
     def set_default_roi(self, camera_select):
         if 'andor' in camera_select:
             key = 'andor_all'
@@ -269,7 +218,6 @@ class LiveODWindow(QWidget):
             key = None
         if key:
             self.analyzer.roi = ROI(roi_id=key, use_saved_roi=False, printouts=False)
-            self.roi_select.set_dropdown_to_key(key)
 
     def get_img_number(self, N_img, N_shots, N_pwa_per_shot):
         self.N_pwa_per_shot = N_pwa_per_shot
