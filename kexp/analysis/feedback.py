@@ -41,6 +41,12 @@ def _mp_worker_eval(args: tuple) -> dict:
     return _MP_WORKER_OPTIMIZER._evaluate_candidate(index_tuple, **eval_kwargs)
 
 
+def _require_atomdata_attr(obj, name, path_hint):
+    if not hasattr(obj, name):
+        raise ValueError(f"Missing {path_hint}.{name} required for plotting.")
+    return getattr(obj, name)
+
+
 @dataclass
 class FeedbackReplayResult:
     """Container for replay/simulation outputs.
@@ -1005,6 +1011,27 @@ class FeedbackReplay(FeedbackReplayCore):
     core replay engine so simulation methods stay focused and readable.
     """
 
+    def apd_to_sz(
+        self,
+        apd,
+        *,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+    ):
+        """Convert APD voltage value(s) into measured spin-like Sz.
+
+        This applies the same APD calibration and optional midpoint remap used
+        by replay and fitting code, so notebook checks match the feedback model.
+        Scalars return a float; array-like inputs return a NumPy array.
+        """
+        apd_arr = np.asarray(apd, dtype=float)
+        sz = self._normalize_apd(
+            apd_arr,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
+        if apd_arr.ndim == 0:
+            return float(sz)
+        return np.asarray(sz, dtype=float)
+
     def run_default(self, *, return_full_state: bool = False) -> FeedbackReplayResult:
         """Convenience default: replay measured APD with measured omega control."""
         return self.replay_measured(return_full_state=return_full_state)
@@ -1595,6 +1622,122 @@ class FeedbackReplay(FeedbackReplayCore):
             "aggregate_mode": str(aggregate_mode),
             "tolerance_rad_s": tolerance_rad_s,
         }
+
+    def plot_data_sz_vs_apd(
+        self,
+        *,
+        grouped_average: bool = True,
+        use_stderr: bool = True,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        ax=None,
+    ) -> Tuple[plt.Figure, plt.Axes]:
+        """Plot saved in-run s_z against APD-derived spin values from atomdata."""
+        apd_rr = self._to_repeat_step(
+            _require_atomdata_attr(self.ad.data, "apd", "ad.data"),
+            "ad.data.apd",
+        )
+        sz_rr = self._to_repeat_step(
+            _require_atomdata_attr(self.ad.data, "s_z", "ad.data"),
+            "ad.data.s_z",
+        )
+        t_rr = self._to_repeat_step(
+            _require_atomdata_attr(self.ad.data, "t", "ad.data"),
+            "ad.data.t",
+        )
+
+        if sz_rr.shape != apd_rr.shape:
+            raise ValueError(
+                f"saved s_z shape {sz_rr.shape} does not match APD shape {apd_rr.shape}."
+            )
+        if t_rr.shape != apd_rr.shape:
+            raise ValueError(
+                f"saved time shape {t_rr.shape} does not match APD shape {apd_rr.shape}."
+            )
+
+        apd_norm_rr = self._normalize_apd(
+            apd_rr,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7, 4))
+        else:
+            fig = ax.figure
+
+        color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
+
+        if grouped_average:
+            omega_rr = self._omega_rr_cached
+            if omega_rr is not None and np.asarray(omega_rr).shape == apd_rr.shape:
+                groups = self._group_repeats_by_omega(np.asarray(omega_rr, dtype=float))
+            else:
+                groups = [list(range(apd_rr.shape[0]))]
+
+            for gidx, members in enumerate(groups):
+                idx = np.asarray(members, dtype=int)
+                n_members = int(idx.size)
+                denom = np.sqrt(float(n_members)) if use_stderr and n_members > 1 else 1.0
+                color = color_cycle[gidx % len(color_cycle)]
+
+                t_mean = np.mean(t_rr[idx], axis=0)
+                apd_mean = np.mean(apd_norm_rr[idx], axis=0)
+                apd_std = (
+                    np.std(apd_norm_rr[idx], axis=0, ddof=1)
+                    if n_members > 1
+                    else np.zeros(apd_norm_rr.shape[1], dtype=float)
+                )
+                sz_mean = np.mean(sz_rr[idx], axis=0)
+
+                if n_members > 1:
+                    ax.errorbar(
+                        t_mean,
+                        apd_mean,
+                        yerr=apd_std / denom,
+                        fmt="o",
+                        markersize=4,
+                        capsize=2,
+                        elinewidth=1.0,
+                        alpha=0.85,
+                        color=color,
+                        label=f"group {gidx} APD",
+                    )
+                else:
+                    ax.scatter(
+                        t_mean,
+                        apd_mean,
+                        s=18,
+                        alpha=0.85,
+                        color=color,
+                        label=f"group {gidx} APD",
+                    )
+
+                ax.plot(
+                    t_mean,
+                    sz_mean,
+                    "-",
+                    lw=1.6,
+                    alpha=0.95,
+                    color=color,
+                    label=f"group {gidx} saved s_z",
+                )
+        else:
+            n_repeat = apd_rr.shape[0]
+            for r in range(n_repeat):
+                t = t_rr[r]
+                color = color_cycle[r % len(color_cycle)]
+                ax.scatter(t, apd_norm_rr[r], s=12, alpha=0.55, color=color)
+                ax.plot(t, sz_rr[r], "-", lw=1.3, alpha=0.8, color=color)
+
+            ax.scatter([], [], s=18, label="APD-derived spin")
+            ax.plot([], [], "-", label="saved in-run s_z")
+
+        run_id = int(getattr(getattr(self.ad, "run_info", None), "run_id", -1))
+        ax.set_title(f"run {run_id}: APD-derived spin vs saved in-run s_z")
+        ax.set_xlabel("time (s)")
+        ax.set_ylabel("spin-like value")
+        ax.set_ylim(-1.05, 1.05)
+        ax.grid(alpha=0.25)
+        return fig, ax
 
     def plot_sz_vs_apd(
         self,
