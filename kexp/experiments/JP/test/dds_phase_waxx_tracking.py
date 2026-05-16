@@ -30,12 +30,11 @@ class dds(EnvExperiment):
 
         self.t_phase_origin_mu = np.int64(0)
 
-        self.T = 4.
-        self.N = 50
+        self.T = 2.
+        self.N = 100
         self.dt = self.T / self.N
-        self.df = np.linspace(-1.e6,1.e6,self.N)
+        self.df = np.linspace(-0.1e6,0.1e6,self.N)
         self.df = np.concat([np.flip(self.df),self.df])
-        print(self.df)
 
     @kernel
     def get_slack(self):
@@ -53,7 +52,7 @@ class dds(EnvExperiment):
         # delay(10.e-3)
 
         self.dds0.on()
-        self.dds1.off()
+        self.dds1.on()
 
         with parallel:
             self.dds0.set_dds(init=True)
@@ -75,8 +74,10 @@ class dds(EnvExperiment):
         dt = int64(self.dt * 1.e9)
 
         x = 0
-        while x < 120:
-            for i in range(len(self.df)):
+        # while x < 120:
+        while x < 1:
+            # for i in range(len(self.df)):
+            for i in range(1):
 
                 df = self.df[i]
 
@@ -89,7 +90,7 @@ class dds(EnvExperiment):
                 self.fast_set(f0=27.214e6 + df,
                             f1=31.4e6 - df,
                             t_phase_origin_mu=t0,
-                            dt_phase_origin_shift_mu=-int64(648))
+                            dt_phase_origin_shift_mu=91)
                 
                 at_mu(t0 & ~7)
                 self.ttl1.on()
@@ -99,6 +100,15 @@ class dds(EnvExperiment):
             x += 1
 
         self.clean_up_fast_frequency_update()
+    
+    @kernel
+    def get_tracking_mode_pow(self, dds, t_now,
+                                t_phase_origin_mu,
+                                dt_phase_origin_shift_mu) -> np.int32:
+        dt_io = np.int64(dds.dds_device.sync_data.io_update_delay)
+        dt = np.int32(t_now) - np.int32(t_phase_origin_mu - dt_phase_origin_shift_mu - dt_io)
+        pow = dt * dds._ftw * dds.dds_device.sysclk_per_mu >> 16
+        return pow
 
     @kernel
     def fast_set(self, f0, f1,
@@ -113,33 +123,32 @@ class dds(EnvExperiment):
         
         at_mu(now_mu() & ~7)
 
-        dt = np.int32(now_mu()) - np.int32(t_phase_origin_mu - dt_phase_origin_shift_mu)
-        a = np.int32(dt * self.dds0.dds_device.sysclk_per_mu / 2)
-        
-        pow0 = a * ftw0
-        pow1 = a * ftw1
+        t_now = now_mu()
+        pow0 = self.get_tracking_mode_pow(self.dds0, t_now, t_phase_origin_mu, dt_phase_origin_shift_mu)
+        pow1 = self.get_tracking_mode_pow(self.dds1, t_now, t_phase_origin_mu, dt_phase_origin_shift_mu)
 
         with parallel:
-                self.dds0.dds_device.write64(_AD9910_REG_PROFILE0 + 7,
-                                (asf0 << 16) | (pow0 & 0xffff), ftw0)
-                self.dds1.dds_device.write64(_AD9910_REG_PROFILE0 + 7,
+                with sequential:
+                    self.dds0.dds_device.write64(_AD9910_REG_PROFILE0 + 7,
+                                    (asf0 << 16) | (pow0 & 0xffff), ftw0)
+                    delay_mu(int64(self.dds0.dds_device.sync_data.io_update_delay))
+                    self.dds0.dds_device.cpld.io_update.pulse_mu(8)
+                    tf = now_mu() + 4
+
+                    self.dds0.frequency = f0
+                    self.dds0._ftw = ftw0
+                with sequential:
+                    self.dds1.dds_device.write64(_AD9910_REG_PROFILE0 + 7,
                                 (asf1 << 16) | (pow1 & 0xffff), ftw1)
-        with parallel:
-            with sequential:
-                # delay_mu(int64(self.dds0.dds_device.sync_data.io_update_delay))
-                self.dds0.dds_device.cpld.io_update.pulse_mu(8)
+                    delay_mu(int64(self.dds1.dds_device.sync_data.io_update_delay))
+                    self.dds1.dds_device.cpld.io_update.pulse_mu(8)
 
-                self.dds0.frequency = f0
-                self.dds0._ftw = ftw0
-
-            # with sequential:
-            #     delay_mu(int64(self.dds1.dds_device.sync_data.io_update_delay))
-            #     self.dds1.dds_device.cpld.io_update.pulse_mu(8)
-
-            #     self.dds1.frequency = f1
-            #     self.dds1._ftw = ftw1
+                    self.dds1.frequency = f1
+                    self.dds1._ftw = ftw1
                 
         at_mu(now_mu() & ~7)
+
+        aprint(tf - t_now)
     
     @kernel
     def set_up_fast_frequency_update(self):
