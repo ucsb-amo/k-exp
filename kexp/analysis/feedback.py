@@ -1796,7 +1796,7 @@ class FeedbackReplay(FeedbackReplayCore):
             ax.plot([], [], "-", label="saved in-run s_z")
 
         run_id = int(getattr(getattr(self.ad, "run_info", None), "run_id", -1))
-        ax.set_title(f"run {run_id}: APD-derived spin vs saved in-run s_z")
+        ax.set_title(f"run {run_id}: expt APD, $S_z$")
         ax.set_xlabel("time (s)")
         ax.set_ylabel("spin-like value")
         ax.set_ylim(-1.05, 1.05)
