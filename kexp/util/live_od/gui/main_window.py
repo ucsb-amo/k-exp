@@ -294,6 +294,8 @@ class LiveODWindow(QWidget):
         self.camera_nanny.interrupted = False
 
 if __name__ == '__main__':
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.live_od')
     app = QApplication(sys.argv)
     win = LiveODWindow()
     win.setWindowTitle("LiveOD")

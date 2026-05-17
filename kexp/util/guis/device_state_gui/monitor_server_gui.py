@@ -6,6 +6,8 @@ from waxx.util.guis.monitor_server_gui import MonitorServerGUI
 from kexp.config.ip import MONITOR_SERVER_IP, MONITOR_SERVER_PORT, MONITOR_EXPT_PATH
 
 def main():
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.monitor_server')
     app = QApplication(sys.argv)
     app.setStyle('Windows')
     gui = MonitorServerGUI(monitor_server_ip=MONITOR_SERVER_IP,

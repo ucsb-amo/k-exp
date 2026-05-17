@@ -9,6 +9,8 @@ from kexp.config.dac_id import dac_frame
 
 def main():
     """Main application entry point"""
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.device_control')
     app = QApplication(sys.argv)
     
     # Set application style
