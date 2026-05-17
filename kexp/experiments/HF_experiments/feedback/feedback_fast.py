@@ -199,5 +199,5 @@ class feedback(EnvExperiment, Base, Feedback):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
 
-        from kexp.util.remote_control.remote_control import send_all_off_command
-        send_all_off_command()
+        # from kexp.util.remote_control.remote_control import send_all_off_command
+        # send_all_off_command()
