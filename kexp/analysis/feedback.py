@@ -648,7 +648,32 @@ class FeedbackReplayCore(Feedback):
         tolerance_rad_s: Optional[float] = None,
     ) -> List[List[int]]:
         tol = self.omega_group_tolerance_rad_s if tolerance_rad_s is None else float(tolerance_rad_s)
-        n_repeat = omega_rr.shape[0]
+        omega_arr = np.asarray(omega_rr, dtype=float)
+        cache_key = (
+            int(omega_arr.__array_interface__["data"][0]),
+            tuple(int(v) for v in omega_arr.shape),
+            str(omega_arr.dtype),
+            float(tol),
+        )
+        if self._omega_group_cache_key == cache_key and self._omega_group_cache_value is not None:
+            return [list(group) for group in self._omega_group_cache_value]
+
+        n_repeat = omega_arr.shape[0]
+        if n_repeat <= 1:
+            groups = [[idx] for idx in range(n_repeat)]
+            self._omega_group_cache_key = cache_key
+            self._omega_group_cache_value = tuple(tuple(group) for group in groups)
+            return groups
+
+        # For moderate repeat counts, compute all reference distances in one NumPy pass.
+        # This preserves the existing first-reference grouping semantics while moving the
+        # expensive max(abs(...)) work out of nested Python loops.
+        use_vectorized_distance = n_repeat <= 512 and omega_arr.ndim == 2
+        pairwise_within_tol = None
+        if use_vectorized_distance:
+            pairwise_within_tol = (
+                np.max(np.abs(omega_arr[:, None, :] - omega_arr[None, :, :]), axis=2) <= tol
+            )
 
         groups: List[List[int]] = []
         for r in range(n_repeat):
@@ -3964,6 +3989,13 @@ class FeedbackReplayOptimizer:
         if verbose:
             print(f"fit mode: {fit_mode}")
             print(f"method: {method_used}")
+            if method_used != str(search_meta.get("method_requested", method_used)):
+                print(
+                    "method fallback: "
+                    f"requested={str(search_meta.get('method_requested', method_used))}, "
+                    f"effective={method_used}, "
+                    f"reason={search_meta.get('method_fallback_reason', 'n/a')}"
+                )
             print(f"parameters: {param_names}")
             for pname in param_names:
                 print(f"best {pname}: {float(best_params[pname]):.6g}")
