@@ -6,9 +6,13 @@ from kexp.config.ip import ETHERNET_RELAY_IP, ETHERNET_RELAY_PORT
 
 N_RELAYS = 4
 
+ARTIQ_MAIN_RELAY_IDX = 1
 MAGNET_INHIBIT_IDX = 2
 SOURCE_RELAY_IDX = 3
-ARTIQ_RELAY_IDX = 4
+ARTIQ_SATELLITES_RELAY_IDX = 4
+
+ARTIQ_RESTART_TIME_S = 3.
+ARTIQ_SATELLITE_MAIN_RESTART_OFFSET_S = 5.
 
 class EthernetRelay(EthernetRelayWaxx):
 	def __init__(self):
@@ -30,25 +34,51 @@ class EthernetRelay(EthernetRelayWaxx):
 		_ = self.__board.turn_on_relay_by_index(SOURCE_RELAY_IDX)
 		self.close()
 
-	def toggle_artiq_power(self):
+	def restart_artiq(self, t_wait=ARTIQ_RESTART_TIME_S, t_between=ARTIQ_SATELLITE_MAIN_RESTART_OFFSET_S):
+		self.toggle_artiq_satellites_power(t_wait)
+		time.sleep(t_between)
+		self.toggle_artiq_main_power(t_wait)
+		
+	def toggle_artiq_main_power(self, t_wait=ARTIQ_RESTART_TIME_S):
 		self.connect()
-		_ = self.__board.turn_on_relay_by_index(ARTIQ_RELAY_IDX)
+		_ = self.__board.turn_on_relay_by_index(ARTIQ_MAIN_RELAY_IDX)
 		self.close()
 		
-		time.sleep(3.)
+		time.sleep(t_wait)
 
 		self.connect()
-		_ = self.__board.turn_off_relay_by_index(ARTIQ_RELAY_IDX)
+		_ = self.__board.turn_off_relay_by_index(ARTIQ_MAIN_RELAY_IDX)
 		self.close()
 
-	def artiq_on(self):
+	def toggle_artiq_satellites_power(self, t_wait=ARTIQ_RESTART_TIME_S):
 		self.connect()
-		_ = self.__board.turn_off_relay_by_index(ARTIQ_RELAY_IDX)
+		_ = self.__board.turn_on_relay_by_index(ARTIQ_SATELLITES_RELAY_IDX)
+		self.close()
+		
+		time.sleep(t_wait)
+
+		self.connect()
+		_ = self.__board.turn_off_relay_by_index(ARTIQ_SATELLITES_RELAY_IDX)
 		self.close()
 
-	def artiq_off(self):
+	def artiq_satellites_on(self):
 		self.connect()
-		_ = self.__board.turn_on_relay_by_index(ARTIQ_RELAY_IDX)
+		_ = self.__board.turn_off_relay_by_index(ARTIQ_SATELLITES_RELAY_IDX)
+		self.close()
+
+	def artiq_satellites_off(self):
+		self.connect()
+		_ = self.__board.turn_on_relay_by_index(ARTIQ_SATELLITES_RELAY_IDX)
+		self.close()
+
+	def artiq_main_on(self):
+		self.connect()
+		_ = self.__board.turn_off_relay_by_index(ARTIQ_MAIN_RELAY_IDX)
+		self.close()
+
+	def artiq_main_off(self):
+		self.connect()
+		_ = self.__board.turn_on_relay_by_index(ARTIQ_MAIN_RELAY_IDX)
 		self.close()
 
 	def enable_magnets(self):
