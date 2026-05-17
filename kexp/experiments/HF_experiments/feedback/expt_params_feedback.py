@@ -12,7 +12,8 @@ class ExptParams(expt_params_kexp):
         self.feedback_guess_span_Omega = 5.0
 
         self.dt_t_raman_pulse_offset = 220.e-9 # non ideal pulse width
-        self.t_raman_pulse_ideal = self.t_raman_pi_pulse / 2
+        # self.t_raman_pulse_ideal = self.t_raman_pi_pulse / 2
+        self.t_raman_pulse_ideal = 4.656e-06
         self.t_raman_pulse = self.t_raman_pulse_ideal + self.dt_t_raman_pulse_offset
 
         # calibration run 66811
@@ -41,8 +42,8 @@ class ExptParams(expt_params_kexp):
         self.std_n_photons_per_shot = 66.409 # avg of up/down
         self.feedback_measurement_midpoint_fraction = 0.37056
 
-        # run 66493 | multi-parameter grid fit result
-        self.back_action_coherence = 0.92
+        # run 66841 | multi-parameter grid fit result
+        self.back_action_coherence = 0.7706
     
         self.feedback_measurement_midpoint_remap_enabled = True
 
@@ -57,7 +58,7 @@ class ExptParams(expt_params_kexp):
         self.t_fifo_mu = int64(18416)
         self.t_raman_set_pretrigger_mu = int64(4000) & ~7 # int64(1260)
 
-        self.delta_t_mu = int64(104)
+        self.delta_t_mu = int64(1256+104)
 
         ### other
         self.phase_offset = 0.0

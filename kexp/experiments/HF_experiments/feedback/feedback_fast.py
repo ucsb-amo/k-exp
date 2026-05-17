@@ -6,8 +6,6 @@ from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
 from numpy import int64
 
-from kexp.util.artiq.async_print import aprints
-
 T_CONV_MU = 30
 
 from waxx.control.artiq.DDS import T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU
@@ -29,10 +27,10 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(-5.,5.,21))
+        # self.p.feedback_fractional_initial_offset = 2.
+        self.xvar('feedback_fractional_initial_offset', np.linspace(-5.,5.,21))
         
-        self.p.N_repeats = 2
+        self.p.N_repeats = 100
 
         self.p.feedback_guess_span_Omega = 5.0
 
@@ -131,9 +129,7 @@ class feedback(EnvExperiment, Base, Feedback):
             t_step += self.p.t_between_pulses_mu
 
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
-
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
-
             # self.store_probabilities_to_host(self.P0, self.scan_xvars[0].counter, i)
 
     @kernel
@@ -174,9 +170,6 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.core.wait_until_mu(now_mu())
         self.reset_initial_omega_from_params()
-        # print((self.data.omega_raman.shot_data/(2*np.pi) - self.p.frequency_raman_transition)/1.e3)
-        # self.scope.read_sweep(0)
-        # self.core.break_realtime()
         delay(30.e-3)
 
     @kernel
@@ -205,3 +198,6 @@ class feedback(EnvExperiment, Base, Feedback):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
+
+        from kexp.util.remote_control.remote_control import send_all_off_command
+        send_all_off_command()
