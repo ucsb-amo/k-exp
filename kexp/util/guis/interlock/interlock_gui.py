@@ -453,6 +453,8 @@ class MainWindow(QMainWindow):
 
         print(f"Data saved to {filename}")
 
+import ctypes
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.interlock')
 app = QApplication(sys.argv)
 
 # Create a Qt widget, which will be our window.

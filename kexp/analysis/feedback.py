@@ -154,6 +154,9 @@ class FeedbackReplayCore(Feedback):
         self._omega_resonance_rad_s = 2.0 * np.pi * float(self._base_kwargs["frequency_resonance"])
         self.omega_group_tolerance_rad_s = float(omega_group_tolerance_rad_s)
         self._default_timing = self._get_default_timing_params()
+        self._omega_group_cache_key: Optional[Tuple[object, ...]] = None
+        self._omega_group_cache_value: Optional[Tuple[Tuple[int, ...], ...]] = None
+        self._pulse_weight_profile_cache: Dict[Tuple[int, float, float], np.ndarray] = {}
         
         # Freeze t_between_pulses_mu so scanning t_raman_pulse, t_img_pulse, delta_t_mu
         # doesn't change it. Phase is recomputed with frozen t_between and new pulse timings.
@@ -169,6 +172,9 @@ class FeedbackReplayCore(Feedback):
         """Drop non-picklable atomdata references for process-based workers."""
         state = dict(self.__dict__)
         state["ad"] = None
+        state["_omega_group_cache_key"] = None
+        state["_omega_group_cache_value"] = None
+        state["_pulse_weight_profile_cache"] = {}
         return state
 
     def __setstate__(self, state: Dict[str, object]) -> None:
@@ -593,26 +599,100 @@ class FeedbackReplayCore(Feedback):
         hz = (0.5 - np.sqrt(discriminant)) / (2.0 * delta)
         return np.clip(hz, -1.0, 1.0)
 
+    def _resolve_result_apd_norm_rr(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+    ) -> np.ndarray:
+        """Reuse stored APD normalization unless callers request a different remap mode."""
+        result_remap_enabled = bool(
+            result.metadata.get(
+                "feedback_measurement_midpoint_remap_enabled",
+                self.feedback_measurement_midpoint_remap_enabled,
+            )
+        )
+        if (
+            feedback_measurement_midpoint_remap_enabled is None
+            or bool(feedback_measurement_midpoint_remap_enabled) == result_remap_enabled
+        ):
+            return np.asarray(result.apd_norm_rr, dtype=float)
+
+        return self._normalize_apd(
+            result.apd_rr,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
+
+    def _get_cached_pulse_weight_profile(
+        self,
+        n_points: int,
+        *,
+        pulse_weight_power: float = 0.0,
+    ) -> np.ndarray:
+        coherence = float(np.clip(self.back_action_coherence, 0.0, 1.0))
+        cache_key = (int(n_points), float(pulse_weight_power), coherence)
+        cached = self._pulse_weight_profile_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        profile = self._compute_pulse_weight_profile(
+            n_points,
+            pulse_weight_power=pulse_weight_power,
+        )
+        self._pulse_weight_profile_cache[cache_key] = profile
+        return profile
+
     def _group_repeats_by_omega(
         self,
         omega_rr: np.ndarray,
         tolerance_rad_s: Optional[float] = None,
     ) -> List[List[int]]:
         tol = self.omega_group_tolerance_rad_s if tolerance_rad_s is None else float(tolerance_rad_s)
-        n_repeat = omega_rr.shape[0]
+        omega_arr = np.asarray(omega_rr, dtype=float)
+        cache_key = (
+            int(omega_arr.__array_interface__["data"][0]),
+            tuple(int(v) for v in omega_arr.shape),
+            str(omega_arr.dtype),
+            float(tol),
+        )
+        if self._omega_group_cache_key == cache_key and self._omega_group_cache_value is not None:
+            return [list(group) for group in self._omega_group_cache_value]
+
+        n_repeat = omega_arr.shape[0]
+        if n_repeat <= 1:
+            groups = [[idx] for idx in range(n_repeat)]
+            self._omega_group_cache_key = cache_key
+            self._omega_group_cache_value = tuple(tuple(group) for group in groups)
+            return groups
+
+        # For moderate repeat counts, compute all reference distances in one NumPy pass.
+        # This preserves the existing first-reference grouping semantics while moving the
+        # expensive max(abs(...)) work out of nested Python loops.
+        use_vectorized_distance = n_repeat <= 512 and omega_arr.ndim == 2
+        pairwise_within_tol = None
+        if use_vectorized_distance:
+            pairwise_within_tol = (
+                np.max(np.abs(omega_arr[:, None, :] - omega_arr[None, :, :]), axis=2) <= tol
+            )
 
         groups: List[List[int]] = []
         for r in range(n_repeat):
             placed = False
             for group in groups:
                 ref = group[0]
-                if np.max(np.abs(omega_rr[r] - omega_rr[ref])) <= tol:
+                if pairwise_within_tol is not None:
+                    is_match = bool(pairwise_within_tol[r, ref])
+                else:
+                    is_match = bool(np.max(np.abs(omega_arr[r] - omega_arr[ref])) <= tol)
+                if is_match:
                     group.append(r)
                     placed = True
                     break
             if not placed:
                 groups.append([r])
 
+        self._omega_group_cache_key = cache_key
+        self._omega_group_cache_value = tuple(tuple(group) for group in groups)
         return groups
 
     def average_by_omega_group(
@@ -625,13 +705,9 @@ class FeedbackReplayCore(Feedback):
     ) -> List[Dict[str, np.ndarray]]:
         """Compute grouped averages for repeats sharing the same omega sequence."""
         groups = self._group_repeats_by_omega(result.omega_control_rr, tolerance_rad_s=tolerance_rad_s)
-        apd_norm_rr = (
-            np.asarray(result.apd_norm_rr, dtype=float)
-            if feedback_measurement_midpoint_remap_enabled is None
-            else self._normalize_apd(
-                result.apd_rr,
-                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            )
+        apd_norm_rr = self._resolve_result_apd_norm_rr(
+            result,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
         )
 
         summaries: List[Dict[str, np.ndarray]] = []
@@ -690,13 +766,9 @@ class FeedbackReplayCore(Feedback):
                 feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
             )
 
-        apd_norm_rr = (
-            np.asarray(result.apd_norm_rr, dtype=float)
-            if feedback_measurement_midpoint_remap_enabled is None
-            else self._normalize_apd(
-                result.apd_rr,
-                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
-            )
+        apd_norm_rr = self._resolve_result_apd_norm_rr(
+            result,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
         )
 
         summaries: List[Dict[str, np.ndarray]] = []
@@ -1089,8 +1161,6 @@ class FeedbackReplay(FeedbackReplayCore):
         weight_sum = 0.0
         total_points = 0
 
-        pulse_weight_profile: Optional[np.ndarray] = None
-
         for gidx, group in enumerate(groups):
             sim = np.asarray(group["s_z_mean"], dtype=float).ravel()
             apd = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
@@ -1107,12 +1177,10 @@ class FeedbackReplay(FeedbackReplayCore):
 
             residual = sim - apd
             sq = residual * residual
-
-            if pulse_weight_profile is None or pulse_weight_profile.size != residual.size:
-                pulse_weight_profile = self._compute_pulse_weight_profile(
-                    residual.size,
-                    pulse_weight_power=pulse_weight_power,
-                )
+            pulse_weight_profile = self._get_cached_pulse_weight_profile(
+                residual.size,
+                pulse_weight_power=pulse_weight_power,
+            )
 
             if use_weighted_loss:
                 sigma = np.asarray(group.get("apd_norm_err", np.zeros_like(residual)), dtype=float).ravel()
@@ -1309,8 +1377,6 @@ class FeedbackReplay(FeedbackReplayCore):
         weighted_sq_sum = 0.0
         weight_sum = 0.0
 
-        pulse_weight_profile: Optional[np.ndarray] = None
-
         for gidx, group in enumerate(groups):
             sim = np.asarray(group["s_z_mean"], dtype=float).ravel()
             apd = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
@@ -1331,12 +1397,10 @@ class FeedbackReplay(FeedbackReplayCore):
 
             residual = sim - apd
             sq = residual * residual
-
-            if pulse_weight_profile is None or pulse_weight_profile.size != residual.size:
-                pulse_weight_profile = self._compute_pulse_weight_profile(
-                    residual.size,
-                    pulse_weight_power=pulse_weight_power,
-                )
+            pulse_weight_profile = self._get_cached_pulse_weight_profile(
+                residual.size,
+                pulse_weight_power=pulse_weight_power,
+            )
 
             if use_group_apd_noise:
                 # Weight by inverse measurement uncertainty with a floor to avoid
@@ -1744,7 +1808,7 @@ class FeedbackReplay(FeedbackReplayCore):
         result: FeedbackReplayResult,
         *,
         grouped_average: bool = True,
-        use_stderr: bool = True,
+        use_stderr: bool = False,
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         ax=None,
     ) -> Tuple[plt.Figure, plt.Axes]:
@@ -2066,14 +2130,129 @@ class FeedbackReplayOptimizer:
             if hasattr(self.replay.p, attr):
                 setattr(self.replay.p, attr, value)
         self._parameters: List[Tuple[str, np.ndarray]] = []
+        self._experiment_overlay_cache_key: Optional[Tuple[object, ...]] = None
+        self._experiment_overlay_cache_value: Optional[Dict[str, object]] = None
 
     @property
     def p(self):
         """Alias to self.replay.p (replay's independent parameter copy)."""
         return self.replay.p
 
+    def _estimate_replay_work_units(self) -> int:
+        """Cheap proxy for replay cost per candidate.
+
+        Work roughly scales with repeats * pulses * feedback-grid size.
+        """
+        try:
+            apd_rr = np.asarray(getattr(self.replay, "_apd_rr_cached"), dtype=float)
+            n_repeat, n_step = apd_rr.shape
+        except Exception:
+            n_repeat = int(getattr(self.replay.p, "N_repeats", 1))
+            n_step = int(getattr(self.replay.p, "N_pulses", 1))
+
+        try:
+            grid_size = int(self.replay._effective_feedback_grid_size())
+        except Exception:
+            grid_size = int(getattr(self.replay.p, "feedback_grid_size", 1))
+
+        return max(1, int(n_repeat)) * max(1, int(n_step)) * max(1, int(grid_size))
+
+    def _resolve_outer_parallelism(
+        self,
+        *,
+        outer_n_jobs_requested: int,
+        budget: int,
+        n_dimensions: int,
+    ) -> Tuple[int, Optional[str], int]:
+        """Choose effective outer process parallelism for the current fit."""
+        requested = int(outer_n_jobs_requested)
+        if requested == 1:
+            return 1, None, 1
+
+        import multiprocessing as _mp
+
+        n_cpu = _mp.cpu_count()
+        requested_workers = n_cpu if requested == -1 else min(abs(requested), n_cpu)
+        requested_workers = max(1, min(requested_workers, int(budget)))
+
+        work_units = self._estimate_replay_work_units()
+        if int(budget) < max(16, 2 * requested_workers):
+            return 1, "candidate_budget_too_small", requested_workers
+        if int(n_dimensions) <= 1 and work_units <= 50000 and int(budget) <= 256:
+            return 1, "per_candidate_work_too_small", requested_workers
+
+        return requested, None, requested_workers
+
     def _resolve_parameter_name(self, parameter_name: str) -> str:
         return str(self.PARAMETER_ALIASES.get(parameter_name, parameter_name))
+
+    @staticmethod
+    def _freeze_overlay_value(value: object) -> object:
+        if isinstance(value, np.ndarray):
+            return ("ndarray", tuple(np.asarray(value).shape), np.asarray(value).dtype.str, np.asarray(value).tobytes())
+        if isinstance(value, (list, tuple)):
+            return tuple(FeedbackReplayOptimizer._freeze_overlay_value(item) for item in value)
+        if isinstance(value, dict):
+            return tuple(
+                (str(key), FeedbackReplayOptimizer._freeze_overlay_value(val))
+                for key, val in sorted(value.items(), key=lambda item: str(item[0]))
+            )
+        if isinstance(value, np.generic):
+            return value.item()
+        return value
+
+    def _experiment_overlay_cache_token(
+        self,
+        *,
+        overlay_kwargs: Dict[str, object],
+        group_shots: bool,
+        tolerance_rad_s: Optional[float],
+    ) -> Tuple[object, ...]:
+        return (
+            bool(group_shots),
+            None if tolerance_rad_s is None else float(tolerance_rad_s),
+            tuple(
+                (str(key), self._freeze_overlay_value(value))
+                for key, value in sorted(overlay_kwargs.items(), key=lambda item: str(item[0]))
+            ),
+        )
+
+    def _get_cached_experiment_overlay(
+        self,
+        *,
+        overlay_kwargs: Dict[str, object],
+        group_shots: bool,
+        tolerance_rad_s: Optional[float],
+        n_jobs: int,
+        parallel_verbose: int,
+    ) -> Dict[str, object]:
+        cache_key = self._experiment_overlay_cache_token(
+            overlay_kwargs=overlay_kwargs,
+            group_shots=group_shots,
+            tolerance_rad_s=tolerance_rad_s,
+        )
+        if self._experiment_overlay_cache_key == cache_key and self._experiment_overlay_cache_value is not None:
+            return self._experiment_overlay_cache_value
+
+        with self._with_temporary_replay_params(overlay_kwargs):
+            expt_result = self.replay.replay_measured(
+                n_jobs=int(n_jobs),
+                parallel_verbose=int(parallel_verbose),
+            )
+        expt_groups = self.replay.summarize_result_groups(
+            expt_result,
+            group_shots=bool(group_shots),
+            use_stderr=False,
+            tolerance_rad_s=tolerance_rad_s,
+        )
+
+        cached_overlay = {
+            "result": expt_result,
+            "groups": expt_groups,
+        }
+        self._experiment_overlay_cache_key = cache_key
+        self._experiment_overlay_cache_value = cached_overlay
+        return cached_overlay
 
     @contextmanager
     def _with_temporary_replay_params(self, params: Dict[str, object]):
@@ -2820,10 +2999,10 @@ class FeedbackReplayOptimizer:
         if len(self._parameters) == 0:
             raise ValueError("No parameters registered. Call add_parameter(...) before fit().")
 
-        method_norm = str(method).strip().lower()
-        if method_norm in {"bayes", "gp"}:
-            method_norm = "bayesian"
-        if method_norm not in {"adaptive", "bayesian", "grid"}:
+        method_requested = str(method).strip().lower()
+        if method_requested in {"bayes", "gp"}:
+            method_requested = "bayesian"
+        if method_requested not in {"adaptive", "bayesian", "grid"}:
             raise ValueError("method must be 'adaptive', 'bayesian', or 'grid'.")
 
         if replay_kwargs is None:
@@ -2847,7 +3026,7 @@ class FeedbackReplayOptimizer:
         if total_possible <= 0:
             raise ValueError("Parameter grid is empty; check add_parameter inputs.")
 
-        if method_norm == "grid":
+        if method_requested == "grid":
             max_evals_resolved = total_possible
         elif max_evals is None:
             max_evals_resolved = min(total_possible, max(24, 8 * len(shape)))
@@ -2858,6 +3037,11 @@ class FeedbackReplayOptimizer:
             raise ValueError("max_evals must be positive.")
 
         budget = min(total_possible, int(max_evals_resolved))
+        method_norm = method_requested
+        method_fallback_reason = None
+        if method_requested == "bayesian" and budget >= total_possible:
+            method_norm = "grid"
+            method_fallback_reason = "full_grid_requested"
 
         surrogate_length_scale_resolved = float(surrogate_length_scale)
         surrogate_noise_resolved = float(surrogate_noise)
@@ -2894,9 +3078,15 @@ class FeedbackReplayOptimizer:
         refine_top_k_resolved = max(1, int(refine_top_k))
         rng = np.random.default_rng(int(random_state))
 
+        outer_n_jobs_effective, outer_parallelism_disabled_reason, outer_workers_requested = self._resolve_outer_parallelism(
+            outer_n_jobs_requested=int(outer_n_jobs),
+            budget=int(budget),
+            n_dimensions=len(shape),
+        )
+
         # When parallelising across processes, disable inner shot-level threading
         # to prevent core over-subscription.
-        inner_n_jobs = 1 if outer_n_jobs != 1 else int(n_jobs)
+        inner_n_jobs = 1 if outer_n_jobs_effective != 1 else int(n_jobs)
         _eval_kwargs: Dict[str, Any] = dict(
             replay_kwargs=replay_kwargs,
             group_shots=bool(group_shots),
@@ -2919,12 +3109,12 @@ class FeedbackReplayOptimizer:
         # Each worker receives the serialised optimizer once (via the initializer)
         # so subsequent tasks only need to send the small index_tuple + eval_kwargs.
         _pool = None
-        if outer_n_jobs != 1:
+        if outer_n_jobs_effective != 1:
             import multiprocessing as _mp
             import pickle as _pickle
             import warnings as _warnings
             _n_cpu = _mp.cpu_count()
-            _n_workers = _n_cpu if outer_n_jobs == -1 else min(abs(outer_n_jobs), _n_cpu)
+            _n_workers = _n_cpu if outer_n_jobs_effective == -1 else min(abs(outer_n_jobs_effective), _n_cpu)
             _n_workers = max(1, min(_n_workers, budget))
             try:
                 _opt_bytes = _pickle.dumps(self)
@@ -3122,6 +3312,15 @@ class FeedbackReplayOptimizer:
             "refine_top_k": int(refine_top_k_resolved),
             "random_state": int(random_state),
             "lightweight_candidates": bool(lightweight_candidates),
+            "method_requested": str(method_requested),
+            "method_effective": str(method_norm),
+            "method_fallback_reason": method_fallback_reason,
+            "outer_n_jobs_requested": int(outer_n_jobs),
+            "outer_n_jobs_effective": int(outer_n_jobs_effective),
+            "outer_workers_requested": int(outer_workers_requested),
+            "inner_n_jobs_effective": int(inner_n_jobs),
+            "outer_parallelism_disabled_reason": outer_parallelism_disabled_reason,
+            "estimated_replay_work_units": int(self._estimate_replay_work_units()),
         }
 
         timing_records = [
@@ -3539,18 +3738,18 @@ class FeedbackReplayOptimizer:
 
         expt_result = None
         expt_groups: List[Dict[str, np.ndarray]] = []
-        if len(expt_param_pairs) > 0 and not params_match_experiment:
-            with self._with_temporary_replay_params(overlay_kwargs):
-                expt_result = self.replay.replay_measured(
-                    n_jobs=int(n_jobs),
-                    parallel_verbose=int(parallel_verbose),
-                )
-            expt_groups = self.replay.summarize_result_groups(
-                expt_result,
+        max_groups_to_plot_int = max(0, int(max_groups_to_plot))
+        should_plot_overlay_groups = max_groups_to_plot_int > 0 and int(best_fit["n_groups"]) > 0
+        if should_plot_overlay_groups and len(expt_param_pairs) > 0 and not params_match_experiment:
+            overlay_payload = self._get_cached_experiment_overlay(
+                overlay_kwargs=overlay_kwargs,
                 group_shots=bool(group_shots),
-                use_stderr=False,
                 tolerance_rad_s=tolerance_rad_s,
+                n_jobs=int(n_jobs),
+                parallel_verbose=int(parallel_verbose),
             )
+            expt_result = overlay_payload["result"]
+            expt_groups = list(overlay_payload["groups"])
 
         fig, axs = plt.subplots(1, 3, figsize=(18, 4.8), layout="constrained")
 
@@ -3590,8 +3789,11 @@ class FeedbackReplayOptimizer:
 
         # Panel 2: best-fit APD vs simulation overlay
         n_groups = int(best_fit["n_groups"])
-        if n_groups > int(max_groups_to_plot):
-            target = max(1, int(max_groups_to_plot))
+        if not should_plot_overlay_groups:
+            plotted_group_indices = []
+            overlay_title = "Best fit overlay skipped"
+        elif n_groups > max_groups_to_plot_int:
+            target = max_groups_to_plot_int
             plotted_group_indices = np.unique(np.linspace(0, n_groups - 1, target, dtype=int)).tolist()
             overlay_title = f"Best fit overlay (shown groups: {len(plotted_group_indices)}/{n_groups})"
         else:
@@ -3718,6 +3920,8 @@ class FeedbackReplayOptimizer:
         value_text += "\n" + "\n".join(expt_lines[:3])
         if len(expt_lines) > 3:
             value_text += "\n..."
+        if not should_plot_overlay_groups:
+            value_text += "\nplotting disabled"
 
         axs[1].text(
             0.02,
@@ -3785,6 +3989,13 @@ class FeedbackReplayOptimizer:
         if verbose:
             print(f"fit mode: {fit_mode}")
             print(f"method: {method_used}")
+            if method_used != str(search_meta.get("method_requested", method_used)):
+                print(
+                    "method fallback: "
+                    f"requested={str(search_meta.get('method_requested', method_used))}, "
+                    f"effective={method_used}, "
+                    f"reason={search_meta.get('method_fallback_reason', 'n/a')}"
+                )
             print(f"parameters: {param_names}")
             for pname in param_names:
                 print(f"best {pname}: {float(best_params[pname]):.6g}")
@@ -3797,8 +4008,20 @@ class FeedbackReplayOptimizer:
             print(f"APD noise applied to any group: {best_fit.get('apd_noise_applied_any', False)}")
             if params_match_experiment:
                 print("overlay optimization: experiment params match best-fit params; collapsed duplicate traces")
-            print(f"max groups shown before representative-run mode: {int(max_groups_to_plot)}")
-            print(f"parallelization: n_jobs={n_jobs} (1=sequential, -1=all cores)")
+            print(f"max groups shown before representative-run mode: {max_groups_to_plot_int}")
+            if not should_plot_overlay_groups:
+                print("overlay plotting skipped: max_groups_to_plot <= 0 or no groups available")
+            print(
+                "parallelization: "
+                f"outer_n_jobs requested={int(search_meta.get('outer_n_jobs_requested', outer_n_jobs))}, "
+                f"effective={int(search_meta.get('outer_n_jobs_effective', outer_n_jobs))}; "
+                f"inner replay n_jobs effective={int(search_meta.get('inner_n_jobs_effective', n_jobs))}"
+            )
+            if search_meta.get("outer_parallelism_disabled_reason") is not None:
+                print(
+                    "outer parallelism heuristic: disabled due to "
+                    f"{search_meta.get('outer_parallelism_disabled_reason')}"
+                )
             print(f"selection metric: {selection_metric}")
             if selection_metric == "smoothed_mse":
                 print(f"MSE smoothing sigma (points): {float(fit_payload.get('mse_smoothing_points', mse_smoothing_points)):.6g}")

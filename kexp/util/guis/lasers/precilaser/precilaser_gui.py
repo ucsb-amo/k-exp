@@ -8,6 +8,8 @@ from kexp.config.ip import PRECILASER_SERVER_IP, PRECILASER_SERVER_PORT
 
 def main() -> None:
     """Launch the remote Precilaser GUI frontend."""
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.precilaser')
     app = QApplication(sys.argv)
 
     gui = PrecilaserControlGUI(
