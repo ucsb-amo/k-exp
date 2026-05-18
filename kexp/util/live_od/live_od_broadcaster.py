@@ -22,19 +22,23 @@ import queue
 
 import zmq
 from PyQt6.QtCore import QThread
+from waxx.util.comms_server.waxx_server import WaxxServer
 
 
-class LiveODBroadcaster(QThread):
+class LiveODBroadcaster(QThread, WaxxServer):
     """Thread-safe ZMQ PUB broadcaster.
 
     Uses an internal queue so that Qt signal callbacks (which run on the
     GUI thread) can safely enqueue messages without touching the ZMQ socket
     directly — ZMQ sockets are not thread-safe.
+
+    Broadcasts a service-discovery beacon under server_id ``'live_od_broadcast'``
+    so that RemoteViewerWindow instances can discover the publish port via UDP.
     """
 
-    def __init__(self, port: int):
-        super().__init__()
-        self._port = port
+    def __init__(self):
+        super().__init__()  # QThread.__init__
+        WaxxServer.__init__(self, "live_od_broadcast", 0)  # port updated in run()
         self._queue: queue.Queue = queue.Queue()
         self._running = False
 
@@ -45,7 +49,10 @@ class LiveODBroadcaster(QThread):
     def run(self):
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
-        socket.bind(f"tcp://*:{self._port}")
+        actual_port = socket.bind_to_random_port("tcp://*")
+        self._port = actual_port
+        self._waxx_port = actual_port
+        self._start_beacon()
         self._running = True
         print(f"[LiveODBroadcaster] Publishing on tcp://*:{self._port}")
         try:
@@ -62,6 +69,7 @@ class LiveODBroadcaster(QThread):
             context.term()
 
     def stop(self):
+        self._stop_beacon()
         self._running = False
 
     # ------------------------------------------------------------------

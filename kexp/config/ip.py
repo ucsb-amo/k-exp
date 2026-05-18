@@ -22,7 +22,6 @@ server_talk = st(data_dir=DATA_DIR,
                  on_data_dir_disconnected_bat_path=MAP_BAT_PATH)
 
 ### monitor
-MONITOR_SERVER_PORT = 6789
 MONITOR_STATE_FILEPATH = os.path.join(DATA_DIR,'device_state_config.json')
 # MONITOR_EXPT_PATH = str( Path(EXPT_PACKAGE_DIR) / 'experiments' / 'tools' / 'monitor.py' )
 MONITOR_EXPT_PATH = os.path.join(EXPT_PACKAGE_DIR,'experiments','tools','monitor.py')
@@ -39,19 +38,12 @@ ETHERNET_RELAY_IP = "192.168.1.109"
 ETHERNET_RELAY_PORT = 2101
 
 ### ALS server
-ALS_SERVER_PORT = 5557
 ALS_COM = 'COM6'
 
 ### Precilaser server
-PRECILASER_SERVER_PORT = 5558
-
-### liveOD ZMQ server
-LIVEOD_SERVER_PORT = 5560
-LIVEOD_BROADCAST_PORT = 5561   # ZMQ PUB broadcast to remote viewer clients
 PRECILASER_COM = 'COM20'
 
 ###
-MAGNETOMETER_SERVER_PORT = 5559
 MAGNETOMETER_COM = 'COM33'
 MAGNETOMETER_REFERENCE_CSV_PATH = os.path.join(DATA_DIR,'magnetometer_reference.csv')
 

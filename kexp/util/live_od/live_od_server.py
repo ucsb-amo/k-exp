@@ -47,7 +47,7 @@ class LiveODServer(QThread, WaxxServer):
     run_started_signal = pyqtSignal(int)                      # run_id (emitted after INIT_RUN, before new_run_signal)
     reset_signal = pyqtSignal()                               # triggered by remote RESET command
 
-    def __init__(self, server_talk, data_saver, port: int):
+    def __init__(self, server_talk, data_saver, port: int = 0):
         super().__init__()  # QThread.__init__
         WaxxServer.__init__(self, "live_od", port)  # explicit — avoids MRO conflict
         self._server_talk = server_talk
@@ -88,7 +88,9 @@ class LiveODServer(QThread, WaxxServer):
     def run(self):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
-        socket.bind(f"tcp://0.0.0.0:{self._port}")
+        actual_port = socket.bind_to_random_port("tcp://0.0.0.0")
+        self._port = actual_port
+        self._waxx_port = actual_port   # sync beacon port before _start_beacon()
         socket.setsockopt(zmq.RCVTIMEO, 500)   # 500 ms poll so we can honour stop()
         self._running = True
         self._start_beacon()

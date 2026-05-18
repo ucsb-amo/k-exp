@@ -6,7 +6,6 @@ from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_gui import MagnetometerGUI
 from kexp.config.ip import (
     MAGNETOMETER_REFERENCE_CSV_PATH,
-    MAGNETOMETER_SERVER_PORT,
 )
 
 

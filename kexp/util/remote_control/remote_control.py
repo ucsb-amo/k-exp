@@ -1,7 +1,6 @@
 from kexp.util.remote_control.command_handler import CommandHandler
 from waxx.util.guis.als.als_gui_client import ALSGuiClient
 from waxx.util.guis.precilaser.precilaser_gui_client import PrecilaserGuiClient
-from kexp.config.ip import ALS_SERVER_PORT, PRECILASER_SERVER_PORT
 from waxx.util.notifications import send_email, _load_credentials
 import logging
 

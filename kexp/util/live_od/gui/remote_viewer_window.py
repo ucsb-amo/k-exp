@@ -119,14 +119,16 @@ class RemoteViewerWindow(QWidget):
     def __init__(self, ip: str = None, port: int = None):
         super().__init__()
 
-        from kexp.config.ip import LIVEOD_BROADCAST_PORT
         from waxx.util.comms_server.waxx_client import discover
-        if ip is not None:
-            self._ip = ip
-        else:
-            result = discover("live_od", timeout=3.0)
-            self._ip = result[0] if result is not None else None
-        self._port = port if port is not None else LIVEOD_BROADCAST_PORT
+        broadcast_result = discover("live_od_broadcast", timeout=3.0)
+        if broadcast_result is None:
+            raise RuntimeError(
+                "[RemoteViewerWindow] 'live_od_broadcast' not discovered. "
+                "Is LiveODWindow running?"
+            )
+        discovered_ip, discovered_port = broadcast_result
+        self._ip = ip if ip is not None else discovered_ip
+        self._port = port if port is not None else discovered_port
 
         # Viewer + plotter (same components as the server window)
         self.plotting_queue: Queue = Queue()
@@ -238,12 +240,17 @@ class RemoteViewerWindow(QWidget):
         threading.Thread(target=self._send_reset_to_server, daemon=True).start()
 
     def _send_reset_to_server(self):
-        from kexp.config.ip import LIVEOD_SERVER_PORT
+        from waxx.util.comms_server.waxx_client import discover
+        result = discover("live_od", timeout=3.0)
+        if result is None:
+            print("[RemoteViewer] Reset failed: live_od server not discovered")
+            return
+        _ip, _port = result
         ctx = zmq.Context()
         sock = ctx.socket(zmq.REQ)
         sock.setsockopt(zmq.SNDTIMEO, 3000)
         sock.setsockopt(zmq.RCVTIMEO, 3000)
-        sock.connect(f"tcp://{self._ip}:{LIVEOD_SERVER_PORT}")
+        sock.connect(f"tcp://{_ip}:{_port}")
         try:
             sock.send(pickle.dumps({'tag': 'RESET'}))
             reply = pickle.loads(sock.recv())

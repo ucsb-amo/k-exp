@@ -3,7 +3,6 @@ import sys
 from PyQt6.QtWidgets import QApplication
 
 from waxx.util.guis.precilaser.precilaser_control_gui import PrecilaserControlGUI
-from kexp.config.ip import PRECILASER_SERVER_PORT
 
 
 def main() -> None:
@@ -12,9 +11,7 @@ def main() -> None:
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.precilaser')
     app = QApplication(sys.argv)
 
-    gui = PrecilaserControlGUI(
-        port=PRECILASER_SERVER_PORT,
-    )
+    gui = PrecilaserControlGUI()
     gui.show()
 
     sys.exit(app.exec())

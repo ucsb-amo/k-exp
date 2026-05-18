@@ -23,10 +23,8 @@ class LiveODWindow(QWidget):
 
         super().__init__()
 
-        from kexp.config.ip import server_talk, LIVEOD_SERVER_PORT, PATHS
+        from kexp.config.ip import server_talk, PATHS
         self.server_talk = server_talk
-
-        self.queue = Queue()
         self.camera_nanny = CameraNanny()
         # CameraMother is kept as a no-op stub for import compatibility.
         self.camera_mother = CameraMother(output_queue=self.queue,
@@ -46,7 +44,7 @@ class LiveODWindow(QWidget):
         self.data_saver = DataSaver(*PATHS, server_talk=self.server_talk)
         self.live_od_server = LiveODServer(
             self.server_talk, self.data_saver,
-            LIVEOD_SERVER_PORT,
+            0,
         )
         self.live_od_server.new_run_signal.connect(self.spawn_baby)
         self.live_od_server.shot_progress_signal.connect(self.on_shot_progress)
@@ -55,8 +53,7 @@ class LiveODWindow(QWidget):
         self.live_od_server.start()
 
         # ZMQ PUB broadcaster — forwards OD images and run events to remote viewers.
-        from kexp.config.ip import LIVEOD_BROADCAST_PORT
-        self.broadcaster = LiveODBroadcaster(LIVEOD_BROADCAST_PORT)
+        self.broadcaster = LiveODBroadcaster()
         self.broadcaster.start()
         self.live_od_server.run_started_signal.connect(self.broadcaster.broadcast_run_started)
         self.live_od_server.shot_progress_signal.connect(self.broadcaster.broadcast_shot_progress)

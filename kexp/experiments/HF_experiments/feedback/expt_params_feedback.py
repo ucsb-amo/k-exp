@@ -16,12 +16,12 @@ class ExptParams(expt_params_kexp):
 
         self.dt_t_raman_pulse_offset = 220.e-9 # non ideal pulse width
         # self.t_raman_pulse_ideal = self.t_raman_pi_pulse / 2
-        self.t_raman_pulse_ideal = 5.01e-06
-        self.t_raman_pulse = self.t_raman_pulse_ideal + self.dt_t_raman_pulse_offset
+        self.t_raman_pulse = 5.181e-06 #66911, 2026-05-18
+        self.t_raman_pulse_ideal = self.t_raman_pi_pulse / 2
 
-        # calibration run 66857
+        
         # img amp 0.2, pulse time 5.0e-06 s
-        self.frequency_lightshift = 3.09e+04  # Hz
+        self.frequency_lightshift = 3.155e+04
 
         # # calibration run 66491
         # self.t_img_pulse = 1e-05  # s
@@ -35,18 +35,29 @@ class ExptParams(expt_params_kexp):
         # self.feedback_measurement_midpoint_fraction = 0.4346
 
         # calibration run 66897
+        # self.t_img_pulse = 5e-06  # s
+        # self.amp_imaging = 0.2
+        # self.v_apd_all_up = -0.17041
+        # self.v_apd_all_down = -0.22012
+        # self.n_photons_per_shot = 936.17
+        # # self.std_n_photons_up = 187.96
+        # # self.std_n_photons_down = 70.993
+        # self.std_n_photons_per_shot = 129.48 # avg of up/down
+        # self.feedback_measurement_midpoint_fraction = 0.46203
+
+        # calibration run 66915
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.17041
-        self.v_apd_all_down = -0.22012
-        self.n_photons_per_shot = 936.17
-        # self.std_n_photons_up = 187.96
-        # self.std_n_photons_down = 70.993
-        self.std_n_photons_per_shot = 129.48 # avg of up/down
-        self.feedback_measurement_midpoint_fraction = 0.46203
+        self.v_apd_all_up = -0.17107
+        self.v_apd_all_down = -0.22064
+        self.n_photons_per_shot = 914
+        # self.std_n_photons_up = 123.06
+        # self.std_n_photons_down = 56.804
+        self.std_n_photons_per_shot = 89.933 # avg of up/down
+        self.feedback_measurement_midpoint_fraction = 0.4607
 
         # run 66841 | multi-parameter grid fit result
-        self.back_action_coherence = 0.8441
+        self.back_action_coherence = 0.8794
     
         self.feedback_measurement_midpoint_remap_enabled = True
 
