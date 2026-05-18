@@ -28,9 +28,9 @@ class feedback(EnvExperiment, Base, Feedback):
         ### parameters
 
         self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(-10,3,6))
+        self.xvar('feedback_fractional_initial_offset', np.linspace(-10,3,11))
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 75
 
         self.p.feedback_guess_span_Omega = 5.0
 

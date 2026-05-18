@@ -25,6 +25,8 @@ class LiveODWindow(QWidget):
 
         from kexp.config.ip import server_talk, PATHS
         self.server_talk = server_talk
+
+        self.queue = Queue()
         self.camera_nanny = CameraNanny()
         # CameraMother is kept as a no-op stub for import compatibility.
         self.camera_mother = CameraMother(output_queue=self.queue,
