@@ -119,8 +119,13 @@ class RemoteViewerWindow(QWidget):
     def __init__(self, ip: str = None, port: int = None):
         super().__init__()
 
-        from kexp.config.ip import LIVEOD_SERVER_IP, LIVEOD_BROADCAST_PORT
-        self._ip = ip if ip is not None else LIVEOD_SERVER_IP
+        from kexp.config.ip import LIVEOD_BROADCAST_PORT
+        from waxx.util.comms_server.waxx_client import discover
+        if ip is not None:
+            self._ip = ip
+        else:
+            result = discover("live_od", timeout=3.0)
+            self._ip = result[0] if result is not None else None
         self._port = port if port is not None else LIVEOD_BROADCAST_PORT
 
         # Viewer + plotter (same components as the server window)

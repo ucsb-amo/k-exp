@@ -23,7 +23,7 @@ class LiveODWindow(QWidget):
 
         super().__init__()
 
-        from kexp.config.ip import server_talk, LIVEOD_SERVER_IP, LIVEOD_SERVER_PORT, PATHS
+        from kexp.config.ip import server_talk, LIVEOD_SERVER_PORT, PATHS
         self.server_talk = server_talk
 
         self.queue = Queue()
@@ -46,7 +46,7 @@ class LiveODWindow(QWidget):
         self.data_saver = DataSaver(*PATHS, server_talk=self.server_talk)
         self.live_od_server = LiveODServer(
             self.server_talk, self.data_saver,
-            LIVEOD_SERVER_IP, LIVEOD_SERVER_PORT,
+            LIVEOD_SERVER_PORT,
         )
         self.live_od_server.new_run_signal.connect(self.spawn_baby)
         self.live_od_server.shot_progress_signal.connect(self.on_shot_progress)

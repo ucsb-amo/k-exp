@@ -18,13 +18,16 @@ import pickle
 
 import zmq
 
+from waxx.util.comms_server.waxx_client import WaxxClient
 
-class LiveODClient:
+
+class LiveODClient(WaxxClient):
     """REQ socket client for LiveODServer."""
 
-    def __init__(self, ip: str, port: int, timeout_ms: int = 5000):
-        self._ip = ip
-        self._port = port
+    def __init__(self, timeout_ms: int = 5000):
+        super().__init__("live_od")
+        self._ip = self.host
+        self._port = self.port
         self._timeout_ms = timeout_ms
         # Context and socket are created lazily on first _send_recv call so
         # that constructing this object in Base.__init__ / prepare() does NOT

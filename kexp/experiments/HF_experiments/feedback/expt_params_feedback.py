@@ -16,7 +16,7 @@ class ExptParams(expt_params_kexp):
 
         self.dt_t_raman_pulse_offset = 220.e-9 # non ideal pulse width
         # self.t_raman_pulse_ideal = self.t_raman_pi_pulse / 2
-        self.t_raman_pulse_ideal = 4.647e-06
+        self.t_raman_pulse_ideal = 5.01e-06
         self.t_raman_pulse = self.t_raman_pulse_ideal + self.dt_t_raman_pulse_offset
 
         # calibration run 66857

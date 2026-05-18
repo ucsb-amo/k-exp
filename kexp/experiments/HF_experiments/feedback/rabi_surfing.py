@@ -12,7 +12,7 @@ from kexp.util.artiq.async_print import aprint
 class rabi_oscillation(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
@@ -20,16 +20,14 @@ class rabi_oscillation(EnvExperiment, Base):
         self.p.amp_imaging_pci = 0.2
         # self.xvar('amp_imaging_pci',np.linspace(0.1,0.5,30))
 
-        self.p.t_imaging_pulse = 10.e-6
+        self.p.t_imaging_pulse = 5.e-6
 
-        self.p.N_divider = 1
+        self.p.N_divider = 2
         self.p.N_divider = int(self.p.N_divider)
         if self.p.N_divider <= 0:
             raise ValueError("N_divider must be a positive integer.")
-        
-        
 
-        self.p.t_raman_pulse = 2 * self.p.t_raman_pi_pulse / self.p.N_divider
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / self.p.N_divider
         # Minimal pulse count that gives a 2*pi total pulse area per train.
         self.p.N_raman_pulses_between_measurements = self.p.N_divider
 
@@ -47,7 +45,7 @@ class rabi_oscillation(EnvExperiment, Base):
 
         self.p.N_pulses = 30
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
-        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+        # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
         self.data.t = self.data.add_data_container(self.p.N_pulses)
 
@@ -101,10 +99,10 @@ class rabi_oscillation(EnvExperiment, Base):
         delay(self.p.t_tof)
         self.abs_image()
 
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep([0])
-        self.core.break_realtime()
-        delay(150.e-3)
+        # self.core.wait_until_mu(now_mu())
+        # self.scope.read_sweep([0])
+        # self.core.break_realtime()
+        # delay(150.e-3)
 
     @kernel
     def run(self):

@@ -1,7 +1,7 @@
 from kexp.util.remote_control.command_handler import CommandHandler
 from waxx.util.guis.als.als_gui_client import ALSGuiClient
 from waxx.util.guis.precilaser.precilaser_gui_client import PrecilaserGuiClient
-from kexp.config.ip import ALS_SERVER_IP, ALS_SERVER_PORT, PRECILASER_SERVER_IP, PRECILASER_SERVER_PORT
+from kexp.config.ip import ALS_SERVER_PORT, PRECILASER_SERVER_PORT
 from waxx.util.notifications import send_email, _load_credentials
 import logging
 
@@ -26,8 +26,8 @@ class RemoteControl(CommandHandler):
     def __init__(self):
         super().__init__()
 
-        self.als_client = ALSGuiClient(host=ALS_SERVER_IP, port=ALS_SERVER_PORT)
-        self.precilaser_client = PrecilaserGuiClient(host=PRECILASER_SERVER_IP, port=PRECILASER_SERVER_PORT)
+        self.als_client = ALSGuiClient()
+        self.precilaser_client = PrecilaserGuiClient()
 
         # Whitelist of approved phone numbers (10 digits, no delimiters)
         self.add_to_whitelist("9165834119")

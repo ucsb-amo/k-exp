@@ -20,9 +20,10 @@ import zmq
 import numpy as np
 from PyQt6.QtCore import QThread, pyqtSignal
 from waxa.data.data_saver import DataSaver
+from waxx.util.comms_server.waxx_server import WaxxServer
 
 
-class LiveODServer(QThread):
+class LiveODServer(QThread, WaxxServer):
     """ZMQ REP server embedded in the liveOD process.
 
     Listens for messages from the experiment client and drives file I/O
@@ -46,11 +47,12 @@ class LiveODServer(QThread):
     run_started_signal = pyqtSignal(int)                      # run_id (emitted after INIT_RUN, before new_run_signal)
     reset_signal = pyqtSignal()                               # triggered by remote RESET command
 
-    def __init__(self, server_talk, data_saver, ip: str, port: int):
-        super().__init__()
+    def __init__(self, server_talk, data_saver, port: int):
+        super().__init__()  # QThread.__init__
+        WaxxServer.__init__(self, "live_od", port)  # explicit — avoids MRO conflict
         self._server_talk = server_talk
         self._data_saver = data_saver
-        self._ip = ip
+        self._ip = "0.0.0.0"
         self._port = port
         self._cam_ready_event = threading.Event()
         self._running = False
@@ -76,6 +78,7 @@ class LiveODServer(QThread):
 
     def stop(self):
         """Request the server loop to stop on the next poll cycle."""
+        self._stop_beacon()
         self._running = False
 
     # ------------------------------------------------------------------
@@ -85,10 +88,11 @@ class LiveODServer(QThread):
     def run(self):
         context = zmq.Context()
         socket = context.socket(zmq.REP)
-        socket.bind(f"tcp://{self._ip}:{self._port}")
+        socket.bind(f"tcp://0.0.0.0:{self._port}")
         socket.setsockopt(zmq.RCVTIMEO, 500)   # 500 ms poll so we can honour stop()
         self._running = True
-        print(f"[LiveODServer] Listening on tcp://{self._ip}:{self._port}")
+        self._start_beacon()
+        print(f"[LiveODServer] Listening on tcp://0.0.0.0:{self._port}")
         try:
             while self._running:
                 try:
