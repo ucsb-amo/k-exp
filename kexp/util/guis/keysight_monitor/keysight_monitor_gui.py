@@ -68,6 +68,12 @@ class ResilientInstrument:
             self.connected = False
             raise
 
+    def close(self):
+        try:
+            self._instr.close()
+        except Exception:
+            pass
+
 class current_supply_widget(QWidget):
     def __init__(self,ip:str,max_current:int):
         super().__init__()
@@ -114,6 +120,10 @@ class current_supply_widget(QWidget):
     def clear_protect_status(self):
         self.supply.write("OUTP:PROT:CLE")
         self.status = 0
+
+    def close(self):
+        if self.supply is not None:
+            self.supply.close()
 
     def handle_click(self):
         if not self.connected:
@@ -235,9 +245,16 @@ class Window(QWidget):
     def update_UI(self):
         for supply_UI in self.supply_UIs:
             supply_UI.update_UI()
+
+    def closeEvent(self, event):
+        self.timer.stop()
+        for supply_UI in self.supply_UIs:
+            supply_UI.close()
+        event.accept()
     
 def main():
     
+    import atexit
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.keysight_monitor')
     app = QApplication(sys.argv)
@@ -245,6 +262,7 @@ def main():
     app.setStyle("Windows") # fun formatting
 
     window = Window()
+    atexit.register(lambda: [s.close() for s in window.supply_UIs])
     window.setLayout(window.layout)
     window.setWindowTitle("Keysight PSU Monitor")
     window.setWindowIcon(QIcon('banana-icon.png'))
