@@ -428,7 +428,6 @@ class Feedback:
             omega_resonance=omega_resonance,
             fractional_grid_center_offset_requested=self.p.feedback_fractional_grid_center_offset_requested,
             guess_span_Omega_requested=self.p.feedback_guess_span_Omega_requested,
-            fractional_initial_offset=self.p.feedback_fractional_initial_offset,
         )
         self.p.feedback_guess_span_Omega = float(span_effective)
         self.p.feedback_resonance_grid_index = int(resonance_idx)
@@ -458,7 +457,6 @@ class Feedback:
         omega_resonance,
         fractional_grid_center_offset_requested,
         guess_span_Omega_requested,
-        fractional_initial_offset,
     ):
         if self.m == 1:
             return np.asarray([float(omega_resonance)], dtype=np.float64), 0, 0.0
@@ -468,11 +466,8 @@ class Feedback:
 
         c = float(fractional_grid_center_offset_requested)
         s_requested = float(guess_span_Omega_requested)
-        o = float(fractional_initial_offset)
         mid = 0.5 * (self.m - 1)
 
-        # Keep initial offset fixed: if center is fixed at c, minimum span for coverage is |o-c|/2.
-        span_min_from_guess = abs(o - c) / 2.0
         candidates = []
         tiny = 1.0e-15
         for j in range(self.m):
@@ -480,25 +475,20 @@ class Feedback:
 
             if abs(dj) <= tiny:
                 if abs(c) <= tiny:
-                    s_candidate = max(s_requested, span_min_from_guess)
-                    candidates.append((j, s_candidate))
+                    candidates.append((j, s_requested))
                 continue
 
-            s_candidate = -c * (self.m - 1) / (4.0 * dj)
+            s_candidate = -c * (self.m - 1) / (2.0 * dj)
             if s_candidate < -tiny:
                 continue
             if s_candidate < 0.0:
                 s_candidate = 0.0
-            if s_candidate + tiny < span_min_from_guess:
-                continue
 
             candidates.append((j, float(s_candidate)))
 
         if len(candidates) == 0:
             raise ValueError(
-                "Cannot construct a uniform feedback grid that keeps fractional_initial_offset and "
-                "feedback_grid_size fixed while including exact resonance. "
-                f"fractional_initial_offset={o:.6g}, "
+                "Cannot construct a uniform feedback grid that places resonance on-grid. "
                 f"fractional_grid_center_offset={c:.6g}, "
                 f"feedback_grid_size={self.m}, "
                 f"guess_span_Omega_requested={s_requested:.6g}."
@@ -512,7 +502,7 @@ class Feedback:
         center_target = float(omega_resonance) + self.Omega * c
         dj_res = float(resonance_idx) - mid
         if abs(dj_res) <= tiny:
-            domega = 4.0 * max(s_requested, span_min_from_guess) * self.Omega / (self.m - 1)
+            domega = 2.0 * s_requested * self.Omega / (self.m - 1)
         else:
             domega = (float(omega_resonance) - center_target) / dj_res
 
@@ -524,12 +514,7 @@ class Feedback:
         # Force exact resonance representation at the selected index.
         omega_guess[resonance_idx] = float(omega_resonance)
 
-        span_effective = abs(domega) * (self.m - 1) / (4.0 * self.Omega)
-        if span_effective + tiny < span_min_from_guess:
-            raise ValueError(
-                "Internal inconsistency while constructing feedback grid: computed span is too small "
-                "to include the fixed initial offset."
-            )
+        span_effective = abs(domega) * (self.m - 1) / (2.0 * self.Omega)
         return omega_guess, int(resonance_idx), float(span_effective)
 
     def _validate_resonance_in_grid(self, omega_resonance):
