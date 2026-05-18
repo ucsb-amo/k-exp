@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPu
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 import time
+import names
 
 from waxa import ROI
 from waxa.data import DataSaver
@@ -37,6 +38,7 @@ class LiveODWindow(QWidget):
         self.last_camera = ""
         self.img_count = 0
         self.img_count_run = 0
+        self._run_active = False   # True between INIT_RUN and END_RUN/reset
         self.setup_widgets()
         self.setup_layout()
 
@@ -141,11 +143,13 @@ class LiveODWindow(QWidget):
         Called from LiveODServer.new_run_signal (Qt queued connection so this
         always runs on the GUI thread).
         """
-        import random, string
-        name = ''.join(random.choices(string.ascii_lowercase, k=6))
+        name = names.get_first_name()
+        self._run_name = name
+
+        self._run_active = True
 
         if not capture_images:
-            self.msg(f"Run started (no camera images). save_data={save_data}")
+            self.msg(f"{name}: I am born! (no camera, save_data={save_data})")
             self.the_baby = None
             self.data_handler = None
             return
@@ -191,7 +195,13 @@ class LiveODWindow(QWidget):
 
     def on_run_done(self):
         """Called when the LiveODServer processes an END_RUN message."""
-        self.msg('Run complete.')
+        self._run_active = False
+        name = getattr(self, '_run_name', '?')
+        if self.the_baby is None:
+            # No-camera run — emit the honorable death message here.
+            self.msg(f"{name}: All shots complete.")
+            self.msg(f"{name} has died honorably.")
+        # Camera runs emit their own honorable_death_signal message.
         self.the_baby = None
         self.data_handler = None
 
@@ -239,7 +249,6 @@ class LiveODWindow(QWidget):
     def count_images(self):
         self.img_count += 1
         self.img_count_run += 1
-        self.update_image_count(self.img_count_run, self.N_img if hasattr(self, 'N_img') else 0)
         if self.img_count == self.N_pwa_per_shot:
             self.img_count = 0
 
@@ -249,7 +258,10 @@ class LiveODWindow(QWidget):
         self.analyzer.imgs = []
 
     def msg(self, msg):
+        print(msg)
         self.output_window.appendPlainText(msg)
+        if hasattr(self, 'broadcaster'):
+            self.broadcaster.broadcast_log_msg(msg)
 
     def grab_start_msg(self, Nimg, *_):
         self.N_img = Nimg
@@ -267,6 +279,11 @@ class LiveODWindow(QWidget):
         self.viewer_window.update_image_count(count, total)
 
     def reset(self):
+        # Ensure the ZMQ server flag is set regardless of whether this was
+        # triggered by the local button or by the remote viewer (which goes
+        # through _handle_reset first, but this is idempotent).
+        if hasattr(self, 'live_od_server'):
+            self.live_od_server._reset_requested = True
         if hasattr(self, 'camera_nanny'):
             try:
                 self.camera_nanny.interrupted = True
@@ -284,17 +301,20 @@ class LiveODWindow(QWidget):
             try:
                 self.the_baby.interrupted = True
                 # self.the_baby.dishonorable_death()
-                msg = 'Acquisition aborted, run ID advanced.'
-                print(msg)
-                self.msg(msg)
+                self.msg('Acquisition aborted, run ID advanced.')
             except Exception as e:
                 print(e)
         else:
-            msg = 'No active run to abort. Incrementing Run ID.'
-            print(msg)
+            if getattr(self, '_run_active', False):
+                # A no-camera run (setup_camera=False) is in progress.
+                # The ZMQ poll mechanism will abort it at the next shot boundary.
+                name = getattr(self, '_run_name', '?')
+                msg = f'Run reset. {name} has died dishonorably.'
+                self._run_active = False
+            else:
+                msg = 'No active run. Incrementing Run ID.'
             self.msg(msg)
             self.server_talk.update_run_id()
-            pass
 
         if self.the_baby is not None:
             while not getattr(self.the_baby, 'dead', False):

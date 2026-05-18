@@ -11,6 +11,7 @@ client never needs the data drive mounted.
 """
 
 import pickle
+import os
 import threading
 import time
 
@@ -111,6 +112,8 @@ class LiveODServer(QThread):
                         reply = self._handle_reset(msg)
                     elif tag == "POLL":
                         reply = self._handle_poll(msg)
+                    elif tag == "ABORT_RUN":
+                        reply = self._handle_abort_run(msg)
                     else:
                         reply = {"ok": False, "error": f"Unknown tag: {tag}"}
                 except Exception as exc:
@@ -173,7 +176,9 @@ class LiveODServer(QThread):
         self.shot_progress_signal.emit(shot_idx, N_total, xvar_values)
         if not self._current_capture_images:
             print(f"[LiveODServer] shot {shot_idx + 1}/{N_total}")
-        return {"ok": True}
+        # Include reset flag so the experiment can abort at shot boundary
+        # even if the POLL-based check misses it.
+        return {"ok": True, "reset_requested": self._reset_requested}
 
     def _handle_end_run(self, msg: dict) -> dict:
         if self._reset_requested:
@@ -229,6 +234,24 @@ class LiveODServer(QThread):
         print("[LiveODServer] RESET requested by remote viewer.")
         self._reset_requested = True
         self.reset_signal.emit()
+        return {"ok": True}
+
+    def _handle_abort_run(self, msg: dict) -> dict:
+        """Experiment has acknowledged the abort — clean up and close out the run."""
+        print("Experiment acknowledged: run aborted.")
+        # For no-camera runs the HDF5 file was created during INIT_RUN but
+        # will never be completed.  Delete it so no orphaned file is left on
+        # disk.  Camera runs are already cleaned up by CameraBaby.dishonorable_death().
+        if (not self._current_capture_images
+                and self._current_filepath
+                and os.path.exists(self._current_filepath)):
+            try:
+                os.remove(self._current_filepath)
+                print(f"Deleted incomplete data file: {self._current_filepath}")
+            except Exception as exc:
+                print(f"Warning: could not delete incomplete data file: {exc}")
+        self._reset_requested = False
+        self.run_done_signal.emit()
         return {"ok": True}
 
     def _handle_poll(self, msg: dict) -> dict:

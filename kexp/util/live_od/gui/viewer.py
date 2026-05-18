@@ -44,7 +44,7 @@ class LiveODViewer(QWidget):
     def init_ui(self):
         self.reset_zoom_button = QPushButton('Reset zoom')
         self.clear_button = QPushButton('Clear')
-        self.image_count_label = QLabel('Image count: 0/0')
+        self.image_count_label = QLabel('Shot count: 0/0')
         control_bar = QHBoxLayout()
 
         self.lock_views_checkbox = QCheckBox("Lock view ranges")
@@ -327,7 +327,7 @@ class LiveODViewer(QWidget):
             del self._last_view_ranges
 
     def update_image_count(self, count, total):
-        self.image_count_label.setText(f'Image count: {count}/{total}')
+        self.image_count_label.setText(f'Shot count: {count}/{total}')
 
     def get_img_number(self, N_img, N_shots, N_pwa_per_shot, run_id=None):
         self.Nimg = N_img

@@ -108,9 +108,17 @@ class LiveODClient:
 
     def shot_complete(
         self, shot_idx: int, N_shots_total: int, xvar_values: dict
-    ):
-        """Notify the server that a shot has completed."""
-        self._send_recv(
+    ) -> bool:
+        """Notify the server that a shot has completed.
+
+        Returns True if the server has a pending reset request so the
+        caller can abort the run at the shot boundary.
+
+        Falls back to an explicit POLL if the server's SHOT_COMPLETE reply
+        does not include ``reset_requested`` (older server builds that
+        pre-date the field).
+        """
+        reply = self._send_recv(
             {
                 "tag": "SHOT_COMPLETE",
                 "shot_idx": shot_idx,
@@ -118,6 +126,12 @@ class LiveODClient:
                 "xvar_values": xvar_values,
             }
         )
+        if "reset_requested" in reply:
+            return bool(reply["reset_requested"])
+        # Old server: reset_requested field not present — fall back to POLL.
+        print("[LiveODClient] shot_complete: reply missing 'reset_requested' field — "
+              "falling back to poll_reset() (liveOD GUI may need a restart).")
+        return self.poll_reset()
 
     def end_run(self, payload: dict) -> bool:
         """Send END_RUN with final params and DataVault data.
@@ -133,6 +147,17 @@ class LiveODClient:
             )
         return True
 
+    def abort_run(self) -> None:
+        """Notify the server that the experiment has acknowledged the abort.
+
+        Best-effort — all errors are suppressed because the experiment is
+        already in the process of terminating and must not block.
+        """
+        try:
+            self._send_recv({"tag": "ABORT_RUN"})
+        except Exception:
+            pass
+
     def poll_reset(self) -> bool:
         """Ask the server if a reset has been requested.
 
@@ -142,8 +167,14 @@ class LiveODClient:
         """
         try:
             reply = self._send_recv({"tag": "POLL"})
+            if not reply.get("ok", False):
+                # Server returned an error — likely an old build that doesn't
+                # recognise the POLL tag.  Warn once so the user knows.
+                print(f"[LiveODClient] poll_reset: unexpected server reply: {reply}"
+                      "\n  → liveOD GUI may need to be restarted to pick up new code.")
             return bool(reply.get("reset_requested", False))
-        except Exception:
+        except Exception as exc:
+            print(f"[LiveODClient] poll_reset: network error (returning False): {exc}")
             return False
 
     def close(self):

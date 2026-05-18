@@ -109,3 +109,6 @@ class LiveODBroadcaster(QThread):
 
     def broadcast_run_done(self):
         self._enqueue({'tag': 'RUN_DONE'})
+
+    def broadcast_log_msg(self, text: str):
+        self._enqueue({'tag': 'LOG_MSG', 'text': str(text)})

@@ -46,6 +46,7 @@ class LiveODSubscriber(QThread):
     shot_progress_signal = pyqtSignal(int, int, object)  # shot_idx, N_total, xvar_values
     run_started_signal = pyqtSignal(int)            # run_id
     run_done_signal = pyqtSignal()
+    log_msg_signal = pyqtSignal(str)
     connection_status_signal = pyqtSignal(str)
 
     def __init__(self, ip: str, port: int):
@@ -95,6 +96,8 @@ class LiveODSubscriber(QThread):
                         self.run_started_signal.emit(int(msg.get("run_id", 0)))
                     elif tag == "RUN_DONE":
                         self.run_done_signal.emit()
+                    elif tag == "LOG_MSG":
+                        self.log_msg_signal.emit(str(msg.get("text", "")))
                 except Exception as exc:
                     print(f"[LiveODSubscriber] signal error ({tag}): {exc}")
         finally:
@@ -132,9 +135,12 @@ class RemoteViewerWindow(QWidget):
         self.subscriber.shot_progress_signal.connect(self._on_shot_progress)
         self.subscriber.run_started_signal.connect(self._on_run_started)
         self.subscriber.run_done_signal.connect(self._on_run_done)
+        self.subscriber.log_msg_signal.connect(
+            self.viewer_window.output_window.appendPlainText)
         self.subscriber.connection_status_signal.connect(self._on_connection_status)
         self.subscriber.start()
 
+        self._current_run_id: int = 0
         self._setup_layout()
 
     # ------------------------------------------------------------------
@@ -148,15 +154,28 @@ class RemoteViewerWindow(QWidget):
 
         # Status bar
         status_bar = QHBoxLayout()
-        self.status_label = QLabel(
-            f"Connecting to tcp://{self._ip}:{self._port} …"
+
+        label_col = QVBoxLayout()
+        label_col.setSpacing(2)
+
+        self.run_id_label = QLabel("")
+        self.run_id_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        run_id_font = QFont()
+        run_id_font.setBold(True)
+        run_id_font.setPointSize(13)
+        self.run_id_label.setFont(run_id_font)
+
+        self.connection_label = QLabel(
+            f"tcp://{self._ip}:{self._port} — connecting…"
         )
-        self.status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        font = QFont()
-        font.setBold(True)
-        font.setPointSize(11)
-        self.status_label.setFont(font)
-        status_bar.addWidget(self.status_label)
+        self.connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        conn_font = QFont()
+        conn_font.setPointSize(9)
+        self.connection_label.setFont(conn_font)
+
+        label_col.addWidget(self.run_id_label)
+        label_col.addWidget(self.connection_label)
+        status_bar.addLayout(label_col)
 
         self.reset_button = QPushButton("Reset")
         self.reset_button.setMinimumHeight(40)
@@ -175,13 +194,13 @@ class RemoteViewerWindow(QWidget):
     # ------------------------------------------------------------------
 
     def _on_connection_status(self, msg: str):
-        self.status_label.setText(msg)
+        self.connection_label.setText(msg)
         self.viewer_window.output_window.appendPlainText(msg)
 
     def _on_run_started(self, run_id: int):
-        self.status_label.setText(
-            f"Run {run_id} in progress  |  {self._ip}:{self._port}"
-        )
+        self._current_run_id = run_id
+        self.run_id_label.setText(f"Run {run_id} — in progress")
+        self.connection_label.setText(f"tcp://{self._ip}:{self._port}")
         self.viewer_window.clear_plots()
         self.viewer_window.output_window.appendPlainText(
             f"--- Run {run_id} started ---"
@@ -201,9 +220,9 @@ class RemoteViewerWindow(QWidget):
 
     def _on_run_done(self):
         self.viewer_window.output_window.appendPlainText("Run complete.")
-        self.status_label.setText(
-            f"Run complete  |  {self._ip}:{self._port}"
-        )
+        run_id_str = f"Run {self._current_run_id} — " if self._current_run_id else ""
+        self.run_id_label.setText(f"{run_id_str}complete")
+        self.connection_label.setText(f"tcp://{self._ip}:{self._port}")
 
     # ------------------------------------------------------------------
     # Reset
@@ -261,6 +280,6 @@ if __name__ == "__main__":
     win.setWindowIcon(
         win.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogListView)
     )
-    win.resize(1400, 900)
+    # win.resize(1400, 900)
     win.show()
     sys.exit(app.exec())
