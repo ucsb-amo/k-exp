@@ -24,103 +24,62 @@ def nothing():
     pass
 
 class CameraMother(QThread):
-    
-    new_camera_baby = pyqtSignal(str,str)
+    """Legacy stub kept for import compatibility.
 
-    def __init__(self,output_queue:Queue=None,start_watching=True,
-                 manage_babies=True,N_runs:int=None,
+    File-watching has been removed.  Run spawning is now driven by
+    ``LiveODServer.new_run_signal`` → ``LiveODWindow.spawn_baby``.
+    """
+
+    new_camera_baby = pyqtSignal(str, str)
+
+    def __init__(self, output_queue: Queue = None, start_watching=False,
+                 manage_babies=False, N_runs: int = None,
                  camera_nanny=CameraNanny(),
                  server_talk=None):
         super().__init__()
 
-        if server_talk == None:
+        if server_talk is None:
             self.server_talk = st()
         else:
             self.server_talk = server_talk
         self.server_talk: st
 
-        self.latest_file = ""
-
-        if N_runs == None:
-            self.N_runs = - 1
-        else:
-            self.N_runs = N_runs
-
-        if not output_queue:
-            self.output_queue = output_queue
-        else:
-            self.output_queue = Queue()
-
-        if start_watching:
-            self.watch_for_new_file(manage_babies)
-        else:
-            pass
-
         self.camera_nanny = camera_nanny
 
-    def run(self):
-        self.watch_for_new_file()
-
-    def watch_for_new_file(self,manage_babies=False):
-        new_file_bool = False
-        attempts = -1
-        print("\nMother is watching...\n")
-        count = 0
-        while True:
-            new_file_bool, latest_file, run_id = self.check_files()
-            if new_file_bool:
-                count += 1
-                file, name = self.new_file(latest_file, run_id)
-                self.new_camera_baby.emit(file, name)
-                self.handle_baby_creation(file, name, manage_babies)
-            if count == self.N_runs:
-                break
-            self.file_checking_timer(attempts)
-            
-    def file_checking_timer(self,attempts):
-        attempts += 1
-        time.sleep(CHECK_DELAY)
-        if attempts == UPDATE_EVERY:
-            attempts = 0
-            print("No new file found.")
-
-    def handle_baby_creation(self, file, name, manage_babies):
-        if manage_babies:
-            self.data_writer = DataHandler(self.output_queue,data_filepath=file)
-            self.baby = CameraBaby(file,name,self.output_queue,self.camera_nanny)
-            self.baby.image_captured.connect(self.data_writer.start)
-            self.baby.run()
-            print("Mother is watching...")
-
-    def check_files(self):
-        latest_file = self.server_talk.get_latest_data_file()
-        new_file_bool, run_id = self.check_if_file_new(latest_file)
-        return new_file_bool, latest_file, run_id
-    
-    def check_if_file_new(self,latest_filepath):
-        if latest_filepath != self.latest_file:
-            rid = self.server_talk.run_id_from_filepath(latest_filepath)
-            if rid == self.server_talk.get_run_id():
-                new_file_bool = True
-                self.latest_file = latest_filepath
-            else:
-                new_file_bool = False
+        if not output_queue:
+            self.output_queue = Queue()
         else:
-            new_file_bool = False
-            rid = None
-        return new_file_bool, rid
+            self.output_queue = output_queue
 
-    def new_file(self,file,run_id):
-        name = names.get_first_name()
-        print(f"New file found! Run ID {run_id}. Welcome to the world, little {name}...")
-        return file, name
+    def run(self):
+        # No-op: file-watching has been removed.
+        pass
 
-class DataHandler(QThread,Scribe):
+class DataHandler(QThread, Scribe):
     got_image_from_queue = pyqtSignal(np.ndarray)
     save_data_bool_signal = pyqtSignal(int)
     image_type_signal = pyqtSignal(bool)
 
-    def __init__(self,queue:Queue,data_filepath):
+    def __init__(self, queue: Queue, data_filepath: str,
+                 save_data=None, imaging_type=None, camera_key=""):
+        """Create a DataHandler.
+
+        Parameters
+        ----------
+        queue:
+            Image queue shared with CameraBaby.
+        data_filepath:
+            Path to the HDF5 file.  Pass ``""`` when ``save_data=False``.
+        save_data:
+            Pre-populate ``self.save_data`` so no HDF5 read is needed.
+            If *None* the value will be read from the HDF5 in
+            ``read_params()`` (legacy behaviour).
+        imaging_type:
+            Pre-populate ``run_info.imaging_type``.  *None* ⟹ read from HDF5.
+        camera_key:
+            Camera key string (e.g. ``'xy_basler'``) used to look up
+            ``camera_params`` when no HDF5 file exists (``save_data=False``).
+        """
         self.data_filepath = data_filepath
         super().__init__()
         self.queue = queue
@@ -132,11 +91,22 @@ class DataHandler(QThread,Scribe):
         self.camera_params = CameraParams()
         self.run_info = RunInfo()
         self.interrupted = False
+        self._camera_key_hint = ""
 
-    def get_save_data_bool(self,save_data_bool):
+        # Pre-populate from constructor arguments so HDF5 reads are
+        # optional (required when save_data=False / no file exists).
+        if save_data is not None:
+            self.save_data = bool(save_data)
+            self.run_info.save_data = int(bool(save_data))
+        if imaging_type is not None:
+            self.run_info.imaging_type = imaging_type
+        if camera_key:
+            self._camera_key_hint = camera_key
+
+    def get_save_data_bool(self, save_data_bool):
         self.save_data = save_data_bool
 
-    def get_img_number(self,N_img,N_shots,N_pwa_per_shot):
+    def get_img_number(self, N_img, N_shots, N_pwa_per_shot):
         self.N_img = N_img
         self.N_shots = N_shots
         self.N_pwa_per_shot = N_pwa_per_shot
@@ -147,10 +117,28 @@ class DataHandler(QThread,Scribe):
         self.write_image_to_dataset()
 
     def read_params(self):
-        with self.wait_for_data_available() as f:
-            unpack_group(f,'camera_params',self.camera_params)
-            unpack_group(f,'params',self.params)
-            unpack_group(f,'run_info',self.run_info)
+        """Populate camera/run-info attrs, then emit configuration signals.
+
+        When ``save_data=True`` (HDF5 file available) the camera_params and
+        run_info are read back from the file so that any server-side
+        adjustments are reflected.  When ``save_data=False`` the attrs have
+        already been set at construction time, so we skip the file read and
+        just try to look up the camera by key.
+        """
+        if getattr(self, 'save_data', True) and self.data_filepath:
+            with self.wait_for_data_available() as f:
+                unpack_group(f, 'camera_params', self.camera_params)
+                unpack_group(f, 'params', self.params)
+                unpack_group(f, 'run_info', self.run_info)
+        elif hasattr(self, '_camera_key_hint') and self._camera_key_hint:
+            # No HDF5 — look up camera params by key so create_camera() works.
+            from kexp.config.camera_id import cameras as cam_catalog, CameraParams as CP
+            for cam in vars(cam_catalog).values():
+                if isinstance(cam, CP):
+                    cam_key = cam.key if not isinstance(cam.key, bytes) else cam.key.decode()
+                    if cam_key == self._camera_key_hint:
+                        self.camera_params = cam
+                        break
         self.image_type_signal.emit(self.run_info.imaging_type)
         self.save_data_bool_signal.emit(self.run_info.save_data)
 
@@ -228,14 +216,23 @@ class CameraBaby(QThread):
         self.done_signal.emit()
 
     def handshake(self):
-        self.create_camera() # checks for camera
+        """Connect camera and signal readiness via cam_status_signal.
+
+        Status codes
+        ------------
+        0  baby born
+        1  camera opened
+        2  camera ready (triggers LiveODServer._cam_ready_event via
+           a DirectConnection in LiveODWindow.spawn_baby)
+        3  (legacy: ready-ack; kept for status-light compatibility)
+        """
+        self.create_camera()
         self.cam_status_signal.emit(1)
-        if self.camera is not None and self.camera.is_opened():
-            self.data_handler.mark_camera_ready(self.break_check)
-        else:
+        if self.camera is None or not self.camera.is_opened():
             raise ValueError("Camera not ready")
+        # Status 2 → triggers server._cam_ready_event via DirectConnection
         self.cam_status_signal.emit(2)
-        self.data_handler.check_camera_ready_ack(self.break_check)
+        # Status 3 kept for the status-lights widget
         self.cam_status_signal.emit(3)
 
     def create_camera(self):

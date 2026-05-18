@@ -24,7 +24,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  imaging_type=img.ABSORPTION,
                  absorption_image=None,
                  camera_select=cameras.xy_basler,
-                 expt_params=None):
+                 expt_params=None,
+                 suppress_live_od=False):
 
         super().__init__(setup_camera=setup_camera,
                          absorption_image=absorption_image,
@@ -41,13 +42,32 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.prepare_devices(expt_params=self.params)
 
-        _img_config = self.choose_camera(setup_camera,imaging_type,camera_select)
+        _img_config = self.choose_camera(imaging_type, camera_select)
         self.configure_imaging_system(imaging_configuration=_img_config)
 
         self.data = DataVault(self)
-        self.ds = DataSaver(*PATHS,server_talk=server_talk)
+        self.ds = DataSaver(*PATHS, server_talk=server_talk)
 
-        Clients.__init__(self)
+        Clients.__init__(self, suppress_live_od=suppress_live_od)
+
+    def _check_data_file_exists(self, raise_error=True) -> bool:
+        """Override: use ZMQ poll to check for a reset request instead of
+        checking whether the data file still exists on disk.
+
+        Falls back to the parent (file-based) check when no live_od_client
+        is attached (e.g. suppress_live_od=True runs, or no liveOD server).
+        """
+        _client = getattr(self, 'live_od_client', None)
+        if _client is not None:
+            if _client.poll_reset():
+                if raise_error:
+                    raise RuntimeError(
+                        f"[Base] Reset requested — aborting run "
+                        f"{self.run_info.run_id}."
+                    )
+                return False
+            return True
+        return super()._check_data_file_exists(raise_error=raise_error)
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """

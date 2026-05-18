@@ -7,18 +7,18 @@ class ExptParams(expt_params_kexp):
 
         self.feedback_grid_size = 31
         self.N_pulses = 20
-        self.feedback_fractional_grid_center_offset = 2.0
+        self.feedback_fractional_grid_center_offset = 5.0
         self.feedback_fractional_initial_offset = 0.0
         self.feedback_guess_span_Omega = 5.0
 
         self.dt_t_raman_pulse_offset = 220.e-9 # non ideal pulse width
         # self.t_raman_pulse_ideal = self.t_raman_pi_pulse / 2
-        self.t_raman_pulse_ideal = 4.656e-06
+        self.t_raman_pulse_ideal = 4.647e-06
         self.t_raman_pulse = self.t_raman_pulse_ideal + self.dt_t_raman_pulse_offset
 
-        # calibration run 66811
+        # calibration run 66857
         # img amp 0.2, pulse time 5.0e-06 s
-        self.frequency_lightshift = 2.84e+04  # Hz
+        self.frequency_lightshift = 3.09e+04  # Hz
 
         # # calibration run 66491
         # self.t_img_pulse = 1e-05  # s
@@ -31,19 +31,19 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 108.36 # avg of up/down
         # self.feedback_measurement_midpoint_fraction = 0.4346
 
-        # calibration run 66810
+        # calibration run 66860
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.15525
-        self.v_apd_all_down = -0.22326
-        self.n_photons_per_shot = 1242.2
-        # self.std_n_photons_up = 81.443
-        # self.std_n_photons_down = 51.375
-        self.std_n_photons_per_shot = 66.409 # avg of up/down
-        self.feedback_measurement_midpoint_fraction = 0.37056
+        self.v_apd_all_up = -0.15727
+        self.v_apd_all_down = -0.22308
+        self.n_photons_per_shot = 1224.9
+        # self.std_n_photons_up = 84.302
+        # self.std_n_photons_down = 49.874
+        self.std_n_photons_per_shot = 67.088 # avg of up/down
+        self.feedback_measurement_midpoint_fraction = 0.41633
 
         # run 66841 | multi-parameter grid fit result
-        self.back_action_coherence = 0.7706
+        self.back_action_coherence = 0.8441
     
         self.feedback_measurement_midpoint_remap_enabled = True
 
@@ -58,7 +58,8 @@ class ExptParams(expt_params_kexp):
         self.t_fifo_mu = int64(18416)
         self.t_raman_set_pretrigger_mu = int64(4000) & ~7 # int64(1260)
 
-        self.delta_t_mu = int64(1256+104)
+        self.delta_t_mu = int64(1356)
+        # self.delta_t_mu = int64(2000)
 
         ### other
         self.phase_offset = 0.0

@@ -19,7 +19,7 @@ class feedback(EnvExperiment, Base, Feedback):
     def prepare(self):
     
         self.p = ExptParamsFeedback()
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
@@ -28,21 +28,26 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 11
+        self.p.N_repeats = 50
         self.p.N_pulses = 12 # number of steps of evolution
         
         ### parameters
+
+        self.get_new_pulse_list()
         
         Omega = np.pi / self.p.t_raman_pi_pulse
 
-        self.p.delta_t_mu = int64(1256+104)
+        # self.xvar('pulse_list_width_Omega', np.linspace(0, 10, 11))
+        self.p.pulse_list_width_Omega = 3.
+        self.xvar('pulse_list_seed', np.linspace(0, 10000, 11, dtype=np.int32))
+        self.p.pulse_list_seed = 0
 
         # self.p.intermediate_detuning = 2*np.pi*self.p.frequency_raman_transition + 2*Omega*0
         # self.xvar('intermediate_detuning',  2*np.pi*self.p.frequency_raman_transition + Omega*(np.linspace(10, 11, 20)))
 
         # np.random.seed() # deterministic seed
         detuning_list = ((np.random.rand(self.p.N_pulses) - 0.5) * 2) # from -1 to 1
-        detuning_list = detuning_list * Omega * 3.
+        detuning_list = detuning_list * Omega * self.p.pulse_list_width_Omega
         detuning_list[0] = 0.
         self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + detuning_list
         
@@ -86,6 +91,19 @@ class feedback(EnvExperiment, Base, Feedback):
         self.finish_prepare()
 
         self.p.probabilities = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
+
+    @rpc
+    def get_new_pulse_list(self, seed=0) -> TArray(TFloat):
+        Omega = np.pi / self.p.t_raman_pi_pulse
+        if seed != 0:
+            np.random.seed(seed)
+        else:
+            np.random.seed()
+        detuning_list = ((np.random.rand(self.p.N_pulses) - 0.5) * 2) # from -1 to 1
+        detuning_list = detuning_list * Omega * self.p.pulse_list_width_Omega
+        detuning_list[0] = 0.
+        self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + detuning_list
+        return self.p.omega_pulse_list
 
     @kernel
     def feedback_loop(self, t_start_mu,
@@ -157,6 +175,10 @@ class feedback(EnvExperiment, Base, Feedback):
 
     @kernel
     def scan_kernel(self):
+
+        self.core.wait_until_mu(now_mu())
+        self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
+
         self.core.break_realtime()
 
         self.integrator.init()

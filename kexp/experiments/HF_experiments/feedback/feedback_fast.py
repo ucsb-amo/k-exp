@@ -17,7 +17,7 @@ class feedback(EnvExperiment, Base, Feedback):
     def prepare(self):
 
         self.p = ExptParamsFeedback()
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
@@ -28,9 +28,9 @@ class feedback(EnvExperiment, Base, Feedback):
         ### parameters
 
         # self.p.feedback_fractional_initial_offset = 2.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-5.,5.,21))
+        self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,7))
         
-        self.p.N_repeats = 100
+        self.p.N_repeats = 50
 
         self.p.feedback_guess_span_Omega = 5.0
 

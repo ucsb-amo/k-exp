@@ -1,0 +1,159 @@
+"""
+ZMQ REQ client used by the experiment process to communicate with LiveODServer.
+
+All public methods are synchronous (blocking) and must be called sequentially
+— one outstanding request at a time, matching the REQ/REP pattern.
+
+Typical per-run sequence:
+
+    reply = client.init_run(payload)          # INIT_RUN
+    if capture_images:
+        client.wait_cam_ready()               # WAIT_CAM_READY
+    for each shot:
+        client.shot_complete(idx, N, xvars)   # SHOT_COMPLETE
+    client.end_run(payload)                   # END_RUN
+"""
+
+import pickle
+
+import zmq
+
+
+class LiveODClient:
+    """REQ socket client for LiveODServer."""
+
+    def __init__(self, ip: str, port: int, timeout_ms: int = 5000):
+        self._ip = ip
+        self._port = port
+        self._timeout_ms = timeout_ms
+        # Context and socket are created lazily on first _send_recv call so
+        # that constructing this object in Base.__init__ / prepare() does NOT
+        # open a network connection immediately.
+        self._context = None
+        self._socket = None
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    def _connect(self):
+        """(Re)create the REQ socket and connect to the server."""
+        if self._context is None:
+            self._context = zmq.Context()
+        if self._socket is not None:
+            try:
+                self._socket.close()
+            except Exception:
+                pass
+        self._socket = self._context.socket(zmq.REQ)
+        self._socket.setsockopt(zmq.SNDTIMEO, self._timeout_ms)
+        self._socket.setsockopt(zmq.RCVTIMEO, self._timeout_ms)
+        self._socket.connect(f"tcp://{self._ip}:{self._port}")
+
+    def _send_recv(self, payload: dict, rcvtimeo_ms: int = None) -> dict:
+        """Send ``payload`` and return the decoded reply.
+
+        If ``rcvtimeo_ms`` is given, the receive timeout is temporarily
+        overridden (e.g. for WAIT_CAM_READY and END_RUN which can be slow).
+        """
+        if self._socket is None:
+            self._connect()
+        if rcvtimeo_ms is not None:
+            self._socket.setsockopt(zmq.RCVTIMEO, rcvtimeo_ms)
+        try:
+            self._socket.send(pickle.dumps(payload))
+            return pickle.loads(self._socket.recv())
+        except zmq.Again:
+            # Socket state is now dirty — recreate before next use.
+            self._connect()
+            raise ConnectionError(
+                f"[LiveODClient] No response from liveOD server at "
+                f"tcp://{self._ip}:{self._port}. Is liveOD running?"
+            )
+        finally:
+            if rcvtimeo_ms is not None:
+                self._socket.setsockopt(zmq.RCVTIMEO, self._timeout_ms)
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def init_run(self, payload: dict) -> dict:
+        """Send INIT_RUN.  Returns ``{"run_id": int, "filepath": str}``."""
+        payload["tag"] = "INIT_RUN"
+        reply = self._send_recv(payload)
+        if not reply.get("ok"):
+            raise RuntimeError(
+                f"[LiveODClient] INIT_RUN failed: {reply.get('error')}"
+            )
+        return reply
+
+    def wait_cam_ready(self, timeout: float = 60.0) -> bool:
+        """Block until liveOD confirms the camera is ready.
+
+        ``timeout`` (seconds) is forwarded to the server so it can give up
+        instead of blocking forever.  The socket receive timeout is
+        extended by 5 s on top to allow for network latency.
+        """
+        reply = self._send_recv(
+            {"tag": "WAIT_CAM_READY", "timeout": timeout},
+            rcvtimeo_ms=int((timeout + 5.0) * 1000),
+        )
+        if not reply.get("ok") or not reply.get("ready"):
+            raise ValueError(
+                f"[LiveODClient] Camera ready timed out or failed: "
+                f"{reply.get('error')}"
+            )
+        return True
+
+    def shot_complete(
+        self, shot_idx: int, N_shots_total: int, xvar_values: dict
+    ):
+        """Notify the server that a shot has completed."""
+        self._send_recv(
+            {
+                "tag": "SHOT_COMPLETE",
+                "shot_idx": shot_idx,
+                "N_shots_total": N_shots_total,
+                "xvar_values": xvar_values,
+            }
+        )
+
+    def end_run(self, payload: dict) -> bool:
+        """Send END_RUN with final params and DataVault data.
+
+        The server may take several seconds to write the HDF5 file, so
+        the receive timeout is raised to 5 minutes.
+        """
+        payload["tag"] = "END_RUN"
+        reply = self._send_recv(payload, rcvtimeo_ms=300_000)
+        if not reply.get("ok"):
+            raise RuntimeError(
+                f"[LiveODClient] END_RUN failed: {reply.get('error')}"
+            )
+        return True
+
+    def poll_reset(self) -> bool:
+        """Ask the server if a reset has been requested.
+
+        Called as an RPC between shots. Returns True if the experiment
+        should abort. Returns False on any network error so a transient
+        glitch doesn't kill the run.
+        """
+        try:
+            reply = self._send_recv({"tag": "POLL"})
+            return bool(reply.get("reset_requested", False))
+        except Exception:
+            return False
+
+    def close(self):
+        """Release ZMQ resources."""
+        if self._socket is not None:
+            try:
+                self._socket.close()
+            except Exception:
+                pass
+        try:
+            self._context.term()
+        except Exception:
+            pass

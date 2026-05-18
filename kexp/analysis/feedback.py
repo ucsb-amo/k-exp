@@ -1808,6 +1808,7 @@ class FeedbackReplay(FeedbackReplayCore):
         result: FeedbackReplayResult,
         *,
         grouped_average: bool = True,
+        
         use_stderr: bool = False,
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         ax=None,

@@ -1,55 +1,20 @@
 ﻿import sys
 from queue import Queue
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QStyle
-from PyQt6.QtGui import QFont, QGuiApplication
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QStyle
+from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 import time
 
 from waxa import ROI
+from waxa.data import DataSaver
 
 from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
 from kexp.util.live_od.camera_connection_widget import CamConnBar
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.analyzer import Analyzer
 from kexp.util.live_od.gui.plotter import LiveODPlotter
-
-class StatusLightsWidget(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.lights = {}
-        layout = QVBoxLayout()
-        for label in ["baby born", "cam ready", "ready marked", "ready ack"]:
-            h = QHBoxLayout()
-            light = QFrame()
-            light.setFixedSize(18, 18)
-            light.setStyleSheet("background-color: gray; border-radius: 9px; border: 1px solid black;")
-            self.lights[label] = light
-            h.addWidget(light)
-            h.addWidget(QLabel(label))
-            h.addStretch()
-            layout.addLayout(h)
-        self.setLayout(layout)
-
-    def set_light(self, label, state):
-        color = {True: "green", False: "gray"}[state]
-        if label in self.lights:
-            self.lights[label].setStyleSheet(f"background-color: {color}; border-radius: 9px; border: 1px solid black;")
-
-    # Add methods to set the lights from signals
-    def set_cam_status_lights(self,status_int):
-        if status_int == -1:
-            self.set_light("baby born", False)
-            self.set_light("cam ready", False)
-            self.set_light("ready marked", False)
-            self.set_light("ready ack", False)
-        elif status_int == 0:
-            self.set_light("baby born", True)
-        elif status_int == 1:
-            self.set_light("cam ready", True)
-        elif status_int == 2:
-            self.set_light("ready marked", True)
-        elif status_int == 3:
-            self.set_light("ready ack", True)
+from kexp.util.live_od.live_od_server import LiveODServer
+from kexp.util.live_od.live_od_broadcaster import LiveODBroadcaster
 
 class LiveODWindow(QWidget):
     interrupt = pyqtSignal()
@@ -57,22 +22,44 @@ class LiveODWindow(QWidget):
 
         super().__init__()
 
-        from kexp.config.ip import server_talk
+        from kexp.config.ip import server_talk, LIVEOD_SERVER_IP, LIVEOD_SERVER_PORT, PATHS
         self.server_talk = server_talk
 
         self.queue = Queue()
         self.camera_nanny = CameraNanny()
-        self.camera_mother = CameraMother(start_watching=False, manage_babies=False, output_queue=self.queue, camera_nanny=self.camera_nanny, N_runs=1,
-                                          server_talk = self.server_talk)
+        # CameraMother is kept as a no-op stub for import compatibility.
+        self.camera_mother = CameraMother(output_queue=self.queue,
+                                          camera_nanny=self.camera_nanny,
+                                          server_talk=self.server_talk)
 
         self.the_baby = None
+        self.data_handler = None
         self.last_camera = ""
         self.img_count = 0
         self.img_count_run = 0
         self.setup_widgets()
         self.setup_layout()
-        self.camera_mother.new_camera_baby.connect(self.create_camera_baby)
-        self.camera_mother.start()
+
+        # ZMQ REP server — drives all run lifecycle events.
+        self.data_saver = DataSaver(*PATHS, server_talk=self.server_talk)
+        self.live_od_server = LiveODServer(
+            self.server_talk, self.data_saver,
+            LIVEOD_SERVER_IP, LIVEOD_SERVER_PORT,
+        )
+        self.live_od_server.new_run_signal.connect(self.spawn_baby)
+        self.live_od_server.shot_progress_signal.connect(self.on_shot_progress)
+        self.live_od_server.run_done_signal.connect(self.on_run_done)
+        self.live_od_server.reset_signal.connect(self.reset)
+        self.live_od_server.start()
+
+        # ZMQ PUB broadcaster — forwards OD images and run events to remote viewers.
+        from kexp.config.ip import LIVEOD_BROADCAST_PORT
+        self.broadcaster = LiveODBroadcaster(LIVEOD_BROADCAST_PORT)
+        self.broadcaster.start()
+        self.live_od_server.run_started_signal.connect(self.broadcaster.broadcast_run_started)
+        self.live_od_server.shot_progress_signal.connect(self.broadcaster.broadcast_shot_progress)
+        self.live_od_server.run_done_signal.connect(self.broadcaster.broadcast_run_done)
+        self.analyzer.broadcast_signal.connect(self.broadcaster.broadcast_od_image)
 
     def update_run_id_label(self):
         try:
@@ -90,18 +77,13 @@ class LiveODWindow(QWidget):
         self.setup_fix_button()
         self.camera_conn_bar = CamConnBar(self.camera_nanny, self.output_window)
 
-        self.setup_screenshot_button()
         self.plotting_queue = Queue()
         self.analyzer = Analyzer(self.plotting_queue, self.viewer_window)
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
-        self.status_lights = StatusLightsWidget()
         self.plotter.start()
 
     def setup_screenshot_button(self):
-        self.screenshot_button = QPushButton("📷 Screenshot 📷")
-        self.screenshot_button.setStyleSheet('background-color: #3464eb; font-size: 16px; color: #f2f2f2; font-weight: bold;')
-        self.screenshot_button.clicked.connect(self.copy_screenshot_to_clipboard)
-        self.screenshot_button.clicked.connect(lambda: self.msg("Screenshot copied to clipboard."))
+        pass  # removed
 
     def setup_fix_button(self):
         self.fix_button = QPushButton('Reset')
@@ -133,34 +115,55 @@ class LiveODWindow(QWidget):
 
     def setup_layout(self):
         layout = QVBoxLayout()
-        # Add the Run ID label above the camera buttons
-        # layout.addWidget(self.run_id_label)
         control_bar = QHBoxLayout()
         cam_bar = QVBoxLayout()
         cam_bar.addWidget(self.run_id_label)
-        cam_bar.addWidget(self.screenshot_button) 
         cam_bar.addWidget(self.camera_conn_bar)
         control_bar.addLayout(cam_bar)
-        control_bar.addWidget(self.status_lights)
         control_bar.addWidget(self.fix_button)
-        # control_bar.addStretch()
         layout.addLayout(control_bar)
         layout.addWidget(self.viewer_window)
         self.setLayout(layout)
     
-    # Slot to copy screenshot
-    def copy_screenshot_to_clipboard(self):
-        # Grab the window as a QPixmap
-        pixmap = self.grab()  # If this is your main window
-        # Copy to clipboard
-        clipboard = QGuiApplication.clipboard()
-        clipboard.setPixmap(pixmap)
+    # Slot to copy screenshot removed.
 
     def create_camera_baby(self, file, name):
-        self.data_handler = DataHandler(self.queue, data_filepath=file)
-        self.the_baby = CameraBaby(self.data_handler, name, self.queue, self.camera_nanny)
-        self.data_handler.save_data_bool_signal.connect(self.data_handler.get_save_data_bool)
-        self.data_handler.image_type_signal.connect(self.analyzer.get_analysis_type)
+        """Legacy stub — use spawn_baby via LiveODServer.new_run_signal."""
+        self.spawn_baby(filepath=file, camera_key="",
+                        capture_images=True, save_data=True,
+                        imaging_type=0)
+
+    def spawn_baby(self, filepath: str, camera_key: str,
+                   capture_images: bool, save_data: bool,
+                   imaging_type: int):
+        """Spawn a new CameraBaby for an incoming run.
+
+        Called from LiveODServer.new_run_signal (Qt queued connection so this
+        always runs on the GUI thread).
+        """
+        import random, string
+        name = ''.join(random.choices(string.ascii_lowercase, k=6))
+
+        if not capture_images:
+            self.msg(f"Run started (no camera images). save_data={save_data}")
+            self.the_baby = None
+            self.data_handler = None
+            return
+
+        self.data_handler = DataHandler(
+            self.queue, data_filepath=filepath,
+            save_data=save_data,
+            imaging_type=imaging_type,
+            camera_key=camera_key,
+        )
+        self.the_baby = CameraBaby(self.data_handler, name, self.queue,
+                                   self.camera_nanny)
+
+        # Standard data/image wiring
+        self.data_handler.save_data_bool_signal.connect(
+            self.data_handler.get_save_data_bool)
+        self.data_handler.image_type_signal.connect(
+            self.analyzer.get_analysis_type)
         self.data_handler.got_image_from_queue.connect(self.analyzer.got_img)
         self.data_handler.got_image_from_queue.connect(self.count_images)
 
@@ -173,24 +176,35 @@ class LiveODWindow(QWidget):
         self.the_baby.camera_grab_start.connect(self.data_handler.start)
         self.the_baby.camera_grab_start.connect(self.reset_count)
 
-        self.the_baby.honorable_death_signal.connect(lambda: self.msg(f'Run complete. {name} has died honorably.'))
+        self.the_baby.honorable_death_signal.connect(
+            lambda: self.msg(f'Run complete. {name} has died honorably.'))
+        self.the_baby.dishonorable_death_signal.connect(
+            lambda: self.msg(f'{name} died dishonorably.'))
 
-        self.the_baby.dishonorable_death_signal.connect(lambda: self.msg(f'{name} has died dishonorably. Incomplete data deleted.'))
-        
-        self.the_baby.done_signal.connect(self.restart_mother)
-        self.the_baby.done_signal.connect(self.server_talk.update_run_id)
+        self.the_baby.cam_status_signal.connect(
+            lambda s: self.live_od_server.on_cam_ready() if s == 2 else None,
+            Qt.ConnectionType.DirectConnection,
+        )
 
-        self.the_baby.cam_status_signal.connect(self.status_lights.set_cam_status_lights)
         self.the_baby.start()
+        self.msg(f"Baby {name} born — camera_key={camera_key}")
 
-    def clear_cams(self):
+    def on_run_done(self):
+        """Called when the LiveODServer processes an END_RUN message."""
+        self.msg('Run complete.')
         self.the_baby = None
         self.data_handler = None
-        
+
+    def on_shot_progress(self, shot_idx: int, N_total: int, xvar_values: object):
+        """Update the GUI with per-shot progress from the ZMQ server."""
+        try:
+            self.update_image_count(shot_idx + 1, N_total)
+        except Exception:
+            pass
+
     def restart_mother(self):
-        import time
-        time.sleep(0.25)
-        self.camera_mother.start()
+        """Legacy slot kept for compatibility — no-op in ZMQ mode."""
+        pass
 
     def check_new_camera(self, camera_select):
         # Update button color immediately when camera connection changes
@@ -298,7 +312,7 @@ if __name__ == '__main__':
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.live_od')
     app = QApplication(sys.argv)
     win = LiveODWindow()
-    win.setWindowTitle("LiveOD")
+    win.setWindowTitle("LiveOD Server")
     win.setWindowIcon(win.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogListView))
     win.show()
     sys.exit(app.exec())
