@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QApplication
 from waxx.util.guis.device_control_gui import DeviceStateGUI
 
 from kexp.config.ip import MONITOR_STATE_FILEPATH, server_talk
-from kexp import dds_frame, dac_frame
+from kexp.config.dds_id import dds_frame, dac_frame
 
 def main():
     """Main application entry point"""
