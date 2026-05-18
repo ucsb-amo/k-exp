@@ -4,7 +4,7 @@ import copy
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from time import perf_counter
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -445,6 +445,38 @@ class FeedbackReplayCore(Feedback):
         if x.ndim == 2:
             return x
         raise ValueError(f"{name} must be 1D or 2D (repeat, step), got shape {x.shape}.")
+
+    def _resolve_trace_indices(
+        self,
+        n_traces: int,
+        trace_indices: Optional[Union[int, Sequence[int]]] = None,
+        *,
+        name: str = "trace_indices",
+    ) -> List[int]:
+        if n_traces < 0:
+            raise ValueError(f"n_traces must be non-negative, got {n_traces}.")
+
+        if trace_indices is None:
+            return list(range(int(n_traces)))
+
+        if np.isscalar(trace_indices):
+            raw_indices = [trace_indices]
+        else:
+            raw_indices = list(trace_indices)
+
+        selected: List[int] = []
+        for raw in raw_indices:
+            idx = int(raw)
+            if idx < 0:
+                idx += int(n_traces)
+            if idx < 0 or idx >= int(n_traces):
+                raise ValueError(
+                    f"{name} contains out-of-range index {int(raw)} for {n_traces} traces."
+                )
+            if idx not in selected:
+                selected.append(idx)
+
+        return selected
 
     def _broadcast_override(
         self,
@@ -1693,6 +1725,7 @@ class FeedbackReplay(FeedbackReplayCore):
         grouped_average: bool = True,
         use_stderr: bool = True,
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        trace_indices: Optional[Union[int, Sequence[int]]] = None,
         ax=None,
     ) -> Tuple[plt.Figure, plt.Axes]:
         """Plot saved in-run s_z against APD-derived spin values from atomdata."""
@@ -1737,7 +1770,14 @@ class FeedbackReplay(FeedbackReplayCore):
             else:
                 groups = [list(range(apd_rr.shape[0]))]
 
-            for gidx, members in enumerate(groups):
+            selected_group_indices = self._resolve_trace_indices(
+                len(groups),
+                trace_indices,
+                name="trace_indices",
+            )
+
+            for gidx in selected_group_indices:
+                members = groups[int(gidx)]
                 idx = np.asarray(members, dtype=int)
                 n_members = int(idx.size)
                 denom = np.sqrt(float(n_members)) if use_stderr and n_members > 1 else 1.0
@@ -1786,7 +1826,13 @@ class FeedbackReplay(FeedbackReplayCore):
                 )
         else:
             n_repeat = apd_rr.shape[0]
-            for r in range(n_repeat):
+            selected_repeat_indices = self._resolve_trace_indices(
+                n_repeat,
+                trace_indices,
+                name="trace_indices",
+            )
+
+            for r in selected_repeat_indices:
                 t = t_rr[r]
                 color = color_cycle[r % len(color_cycle)]
                 ax.scatter(t, apd_norm_rr[r], s=12, alpha=0.55, color=color)
@@ -1811,6 +1857,7 @@ class FeedbackReplay(FeedbackReplayCore):
         
         use_stderr: bool = False,
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        trace_indices: Optional[Union[int, Sequence[int]]] = None,
         ax=None,
     ) -> Tuple[plt.Figure, plt.Axes]:
         """Plot simulation s_z against APD-derived spin values, grouped when appropriate."""
@@ -1827,7 +1874,13 @@ class FeedbackReplay(FeedbackReplayCore):
                 use_stderr=use_stderr,
                 feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
             )
-            for gidx, group in enumerate(groups):
+            selected_group_indices = self._resolve_trace_indices(
+                len(groups),
+                trace_indices,
+                name="trace_indices",
+            )
+            for gidx in selected_group_indices:
+                group = groups[int(gidx)]
                 t = group["t_s_z"]
                 color = color_cycle[gidx % len(color_cycle)]
                 apd_mean = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
@@ -1871,7 +1924,12 @@ class FeedbackReplay(FeedbackReplayCore):
                 result.apd_rr,
                 feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
             )
-            for r in range(n_repeat):
+            selected_repeat_indices = self._resolve_trace_indices(
+                n_repeat,
+                trace_indices,
+                name="trace_indices",
+            )
+            for r in selected_repeat_indices:
                 t = result.t_s_z_rr[r]
                 color = color_cycle[r % len(color_cycle)]
                 ax.scatter(t, apd_norm_rr[r], s=12, alpha=0.55, color=color)
@@ -1895,6 +1953,9 @@ class FeedbackReplay(FeedbackReplayCore):
         grouped_average: bool = True,
         control_lag_steps: int = 0,
         recomputed_lag_steps: int = 0,
+        trace_indices: Optional[Union[int, Sequence[int]]] = None,
+        group_indices: Optional[Sequence[int]] = None,
+        trace_colors: Optional[Sequence[object]] = None,
         ax=None,
     ) -> Tuple[plt.Figure, plt.Axes]:
         """Compare control omega used in experiment vs recomputed omega on pulse index."""
@@ -1918,24 +1979,57 @@ class FeedbackReplay(FeedbackReplayCore):
                 return x[lag:], y[:-lag]
             return x[:lag], y[-lag:]
 
+        if trace_indices is not None and group_indices is not None:
+            raise ValueError("Pass only one of trace_indices or group_indices.")
+        selected_indices = group_indices if trace_indices is None else trace_indices
+
         if grouped_average:
             groups = self.average_by_omega_group(result, use_stderr=True)
-            for gidx, group in enumerate(groups):
+            selected_group_indices = self._resolve_trace_indices(
+                len(groups),
+                selected_indices,
+                name="trace_indices",
+            )
+
+            if trace_colors is not None:
+                color_overrides = list(trace_colors)
+            else:
+                color_overrides = []
+
+            for local_idx, gidx in enumerate(selected_group_indices):
+                group = groups[int(gidx)]
                 pulse_idx = np.arange(len(group["omega_control_mean"]), dtype=float)
                 ctrl = (group["omega_control_mean"] / (2.0 * np.pi) - f0) / f_rabi
                 rec = (group["omega_recomputed_mean"] / (2.0 * np.pi) - f0) / f_rabi
-                color = color_cycle[gidx % len(color_cycle)]
+                if local_idx < len(color_overrides):
+                    color = color_overrides[local_idx]
+                else:
+                    color = color_cycle[gidx % len(color_cycle)]
                 x_ctrl, ctrl_plot = _lag_xy(pulse_idx, np.asarray(ctrl, dtype=float), int(control_lag_steps))
                 x_rec, rec_plot = _lag_xy(pulse_idx, np.asarray(rec, dtype=float), int(recomputed_lag_steps))
                 ax.scatter(x_ctrl, ctrl_plot, s=18, alpha=0.85, color=color)
                 ax.plot(x_rec, rec_plot, "-", lw=1.6, alpha=0.95, color=color)
         else:
             n_repeat = result.omega_control_rr.shape[0]
-            for r in range(n_repeat):
+            selected_repeat_indices = self._resolve_trace_indices(
+                n_repeat,
+                selected_indices,
+                name="trace_indices",
+            )
+
+            if trace_colors is not None:
+                color_overrides = list(trace_colors)
+            else:
+                color_overrides = []
+
+            for local_idx, r in enumerate(selected_repeat_indices):
                 pulse_idx = np.arange(result.omega_control_rr.shape[1], dtype=float)
                 ctrl = (result.omega_control_rr[r] / (2.0 * np.pi) - f0) / f_rabi
                 rec = (result.omega_recomputed_rr[r] / (2.0 * np.pi) - f0) / f_rabi
-                color = color_cycle[r % len(color_cycle)]
+                if local_idx < len(color_overrides):
+                    color = color_overrides[local_idx]
+                else:
+                    color = color_cycle[r % len(color_cycle)]
                 x_ctrl, ctrl_plot = _lag_xy(pulse_idx, np.asarray(ctrl, dtype=float), int(control_lag_steps))
                 x_rec, rec_plot = _lag_xy(pulse_idx, np.asarray(rec, dtype=float), int(recomputed_lag_steps))
                 ax.scatter(x_ctrl, ctrl_plot, s=12, alpha=0.55, color=color)
@@ -3820,9 +3914,11 @@ class FeedbackReplayOptimizer:
         plotted_sim_best = False
 
         cmap = plt.get_cmap("tab20", max(1, len(plotted_group_indices)))
+        plotted_group_colors = []
         for cidx, gidx in enumerate(plotted_group_indices):
             group = best_groups[int(gidx)]
             group_color = cmap(cidx)
+            plotted_group_colors.append(group_color)
             t = np.asarray(group["t_s_z"], dtype=float).ravel()
             apd_best_mean = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
             apd_best_err = np.asarray(group["apd_norm_err"], dtype=float).ravel()
@@ -3979,11 +4075,32 @@ class FeedbackReplayOptimizer:
         axs[1].grid(alpha=0.25)
 
         # Panel 3: control omega used in experiment vs recomputed control omega.
-        self.replay.plot_omega_feedback_comparison(
-            best_result,
-            grouped_average=bool(group_shots),
-            ax=axs[2],
-        )
+        if len(plotted_group_indices) > 0:
+            self.replay.plot_omega_feedback_comparison(
+                best_result,
+                grouped_average=bool(group_shots),
+                group_indices=plotted_group_indices,
+                trace_colors=plotted_group_colors,
+                ax=axs[2],
+            )
+            axs[2].set_title(
+                f"run {run_id}: omega control (shown groups: {len(plotted_group_indices)}/{n_groups})"
+            )
+        else:
+            axs[2].set_title("Omega control traces skipped (no groups selected)")
+            axs[2].set_xlabel("pulse index")
+            axs[2].set_ylabel("detuning / Omega")
+            axs[2].grid(alpha=0.25)
+            axs[2].text(
+                0.5,
+                0.5,
+                "No groups selected for overlay",
+                transform=axs[2].transAxes,
+                ha="center",
+                va="center",
+                fontsize="small",
+                color="0.35",
+            )
 
         fig.suptitle(f"run {run_id}: multi-parameter feedback fit overlay")
 

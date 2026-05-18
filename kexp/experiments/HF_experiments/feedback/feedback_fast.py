@@ -27,10 +27,10 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        # self.p.feedback_fractional_initial_offset = 2.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,7))
+        self.p.feedback_fractional_initial_offset = 5.
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(-10,3,6))
         
-        self.p.N_repeats = 50
+        self.p.N_repeats = 10
 
         self.p.feedback_guess_span_Omega = 5.0
 
@@ -199,5 +199,5 @@ class feedback(EnvExperiment, Base, Feedback):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
 
-        # from kexp.util.remote_control.remote_control import send_all_off_command
-        # send_all_off_command()
+        from kexp.util.remote_control.remote_control import send_all_off_command
+        send_all_off_command()

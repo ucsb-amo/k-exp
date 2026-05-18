@@ -7,7 +7,7 @@ class ExptParams(expt_params_kexp):
 
         self.feedback_grid_size = 31
         self.N_pulses = 20
-        self.feedback_fractional_grid_center_offset = 5.0
+        self.feedback_fractional_grid_center_offset = -5.0
         self.feedback_fractional_initial_offset = 0.0
         self.feedback_guess_span_Omega = 5.0
 
@@ -31,16 +31,16 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 108.36 # avg of up/down
         # self.feedback_measurement_midpoint_fraction = 0.4346
 
-        # calibration run 66860
+        # calibration run 66897
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.15727
-        self.v_apd_all_down = -0.22308
-        self.n_photons_per_shot = 1224.9
-        # self.std_n_photons_up = 84.302
-        # self.std_n_photons_down = 49.874
-        self.std_n_photons_per_shot = 67.088 # avg of up/down
-        self.feedback_measurement_midpoint_fraction = 0.41633
+        self.v_apd_all_up = -0.17041
+        self.v_apd_all_down = -0.22012
+        self.n_photons_per_shot = 936.17
+        # self.std_n_photons_up = 187.96
+        # self.std_n_photons_down = 70.993
+        self.std_n_photons_per_shot = 129.48 # avg of up/down
+        self.feedback_measurement_midpoint_fraction = 0.46203
 
         # run 66841 | multi-parameter grid fit result
         self.back_action_coherence = 0.8441
