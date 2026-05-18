@@ -131,7 +131,34 @@ class LiveODServer(QThread):
     # Message handlers
     # ------------------------------------------------------------------
 
+    def _finalize_reset_run(self):
+        """Finalize a reset-aborted run.
+
+        This is called either when the experiment explicitly sends ABORT_RUN,
+        or opportunistically on the next INIT_RUN if the experiment process was
+        killed and never sent that confirmation.
+        """
+        # For no-camera runs the HDF5 file was created during INIT_RUN but
+        # may never be completed if the experiment process died before
+        # END_RUN/ABORT_RUN. Remove it to avoid orphaned files.
+        if (not self._current_capture_images
+                and self._current_filepath
+                and os.path.exists(self._current_filepath)):
+            try:
+                os.remove(self._current_filepath)
+                print(f"Deleted incomplete data file: {self._current_filepath}")
+            except Exception as exc:
+                print(f"Warning: could not delete incomplete data file: {exc}")
+        self._reset_requested = False
+        self.run_done_signal.emit()
+
     def _handle_init_run(self, msg: dict) -> dict:
+        # If the previous run was reset but the experiment process was killed
+        # before sending ABORT_RUN, finalize that reset now. This keeps the
+        # next run start non-blocking and stateless.
+        if self._reset_requested:
+            self._finalize_reset_run()
+
         save_data = bool(msg.get("save_data", False))
         capture_images = bool(msg.get("capture_images", False))
         camera_key = str(msg.get("camera_key", ""))
@@ -150,7 +177,7 @@ class LiveODServer(QThread):
 
         self._current_filepath = filepath
         self._current_run_id = run_id
-        self._reset_requested = False   # clear any stale reset from previous run
+        self._reset_requested = False
         self._shot_timestamps = []       # reset per-run timestamp list
 
         self.run_started_signal.emit(run_id)
@@ -239,19 +266,7 @@ class LiveODServer(QThread):
     def _handle_abort_run(self, msg: dict) -> dict:
         """Experiment has acknowledged the abort — clean up and close out the run."""
         print("Experiment acknowledged: run aborted.")
-        # For no-camera runs the HDF5 file was created during INIT_RUN but
-        # will never be completed.  Delete it so no orphaned file is left on
-        # disk.  Camera runs are already cleaned up by CameraBaby.dishonorable_death().
-        if (not self._current_capture_images
-                and self._current_filepath
-                and os.path.exists(self._current_filepath)):
-            try:
-                os.remove(self._current_filepath)
-                print(f"Deleted incomplete data file: {self._current_filepath}")
-            except Exception as exc:
-                print(f"Warning: could not delete incomplete data file: {exc}")
-        self._reset_requested = False
-        self.run_done_signal.emit()
+        self._finalize_reset_run()
         return {"ok": True}
 
     def _handle_poll(self, msg: dict) -> dict:

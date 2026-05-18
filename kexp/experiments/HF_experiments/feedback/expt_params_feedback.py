@@ -5,6 +5,9 @@ class ExptParams(expt_params_kexp):
     def __init__(self):
         super().__init__()
 
+        self.update_raman_frequency_bool = 0
+        self.include_photon_noise = 1
+
         self.feedback_grid_size = 31
         self.N_pulses = 20
         self.feedback_fractional_grid_center_offset = -5.0

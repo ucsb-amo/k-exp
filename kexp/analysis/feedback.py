@@ -1952,7 +1952,6 @@ class FeedbackReplay(FeedbackReplayCore):
         *,
         grouped_average: bool = True,
         control_lag_steps: int = 0,
-        recomputed_lag_steps: int = 0,
         trace_indices: Optional[Union[int, Sequence[int]]] = None,
         group_indices: Optional[Sequence[int]] = None,
         trace_colors: Optional[Sequence[object]] = None,
@@ -1963,6 +1962,11 @@ class FeedbackReplay(FeedbackReplayCore):
             fig, ax = plt.subplots(figsize=(7, 4))
         else:
             fig = ax.figure
+
+        if self.p.update_raman_frequency_bool:
+            recomputed_lag_steps = 1
+        else:
+            recomputed_lag_steps = 0
 
         color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
 

@@ -12,9 +12,15 @@ ALS_STARTUP_SLACK_SUBJECT = "1064nm laser on in 3418"
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+ALL_OFF_NOTIFICATION_RECIPIENT = "herberthearsall@gmail.com"
 def send_all_off_command():
-    email, _ = _load_credentials()
-    send_email(email, "all off", "all off")
+    subject = "ALL OFF command executed"
+    body = "All off command was run (all systems should be off)."
+    try:
+        send_email(ALL_OFF_NOTIFICATION_RECIPIENT, subject, body)
+        logger.info("All off notification sent to %s: %s", ALL_OFF_NOTIFICATION_RECIPIENT, subject)
+    except Exception as exc:
+        logger.warning("Failed to send all off notification: %s", exc)
 
 class RemoteControl(CommandHandler):
     def __init__(self):

@@ -32,15 +32,13 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.N_pulses = 12 # number of steps of evolution
         
         ### parameters
-
-        
         
         Omega = np.pi / self.p.t_raman_pi_pulse
 
         # self.xvar('pulse_list_span_Omega', np.linspace(-3, 8, 5))
         self.p.pulse_list_span_Omega = 6.
-        self.xvar('pulse_list_seed', np.linspace(1, 10000, 5, dtype=np.int32))
-        self.p.pulse_list_seed = 1
+        # self.xvar('pulse_list_seed', np.linspace(1, 10000, 5, dtype=np.int32))
+        self.p.pulse_list_seed = 5342
 
         self.get_new_pulse_list()
         
