@@ -36,9 +36,9 @@ class feedback(EnvExperiment, Base, Feedback):
         Omega = np.pi / self.p.t_raman_pi_pulse
 
         # self.xvar('pulse_list_span_Omega', np.linspace(-3, 8, 5))
-        self.p.pulse_list_span_Omega = 4.
-        self.xvar('pulse_list_seed', np.linspace(1, 10000, 5, dtype=np.int32))
-        # self.p.pulse_list_seed = 5342
+        self.p.pulse_list_span_Omega = 0.
+        # self.xvar('pulse_list_seed', np.linspace(1, 10000, 5, dtype=np.int32))
+        self.p.pulse_list_seed = 5342
 
         self.get_new_pulse_list()
         
@@ -50,6 +50,7 @@ class feedback(EnvExperiment, Base, Feedback):
             t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
             t_raman_pulse=self.p.t_raman_pulse,
             t_img_pulse=self.p.t_img_pulse,
+            t_raman_pretrigger=self.p.t_raman_set_pretrigger_mu,
             t_fifo_mu=self.p.t_fifo_mu
         )
 
@@ -114,7 +115,7 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(t_start_mu - (10000 & ~7))
 
         self.raman.set_frequency_fast(self.p.omega_pulse_list[0] / (2*np.pi))
-        self.raman.reset_phase()
+        self.raman.stage_ffua()
         # aprint(self.raman.get_phase())
         # self._phase = 0
         phase_tracker = 0.
@@ -124,6 +125,8 @@ class feedback(EnvExperiment, Base, Feedback):
         tP = self.p.t_between_pulses_mu
         dt = self.p.delta_t_mu
         tR = self.p.t_raman_set_pretrigger_mu
+
+        dt_set = np.int64(0)
         
         for i in range(self.p.N_pulses):
             # self.omega_raman = self.p.intermediate_detuning
@@ -144,6 +147,11 @@ class feedback(EnvExperiment, Base, Feedback):
             # phi = phase_tracker
 
             self.raman.pulse(self.p.t_raman_pulse)
+
+            t0 = now_mu()
+            self.raman.stage_ffua()
+            at_mu(t0)
+
             k = self.measurement(i)
             omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
@@ -158,7 +166,6 @@ class feedback(EnvExperiment, Base, Feedback):
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
             self.data.phi.put_data(phase_tracker, i)
             # self.store_probabilities_to_host(self.P0, self.scan_xvars[0].counter, i)
-
         
     @rpc(flags={"async"})
     def store_probabilities_to_host(self, pulse_probabilities, shot_idx, pulse_idx):
@@ -188,7 +195,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         t_pulse_start_mu = now_mu() + 5000000
 
-        self.raman.set_up_fast_frequency_update()
+        self.raman.set_up_fast_frequency_update(aggressive_mode=1)
 
         at_mu(t_pulse_start_mu - 20000) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)

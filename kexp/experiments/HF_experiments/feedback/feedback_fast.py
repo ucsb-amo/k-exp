@@ -27,12 +27,14 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 2.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-10,3,11))
+        # self.p.feedback_fractional_initial_offset = 2.
+        self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,11))
         
-        self.p.N_repeats = 75
+        self.p.N_repeats = 10
 
-        self.p.feedback_guess_span_Omega = 5.0
+        self.p.feedback_guess_span_Omega = 10.0
+
+        self.p.feedback_fractional_grid_center_offset = 5.
 
         ###
 
@@ -41,6 +43,7 @@ class feedback(EnvExperiment, Base, Feedback):
             t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
             t_raman_pulse=self.p.t_raman_pulse,
             t_img_pulse=self.p.t_img_pulse,
+            t_raman_pretrigger=self.p.t_raman_set_pretrigger_mu,
             t_fifo_mu=self.p.t_fifo_mu
         )
 
@@ -94,6 +97,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.raman.set_frequency_fast(f)
         self.raman.reset_phase()
+        self.raman.stage_ffua()
         # aprint(self.raman.get_phase())
         # self._phase = 0
         phase_tracker = 0.
@@ -118,6 +122,9 @@ class feedback(EnvExperiment, Base, Feedback):
             phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
 
             self.raman.pulse(self.p.t_raman_pulse)
+            t0 = now_mu()
+            self.raman.stage_ffua()
+            at_mu(t0)
             k = self.measurement(i)
             omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
@@ -152,7 +159,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         t_pulse_start_mu = now_mu() + 500000
 
-        self.raman.set_up_fast_frequency_update()
+        self.raman.set_up_fast_frequency_update(aggressive_mode=1)
 
         at_mu(t_pulse_start_mu - 20000) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)
@@ -164,7 +171,7 @@ class feedback(EnvExperiment, Base, Feedback):
         delay(self.p.t_tweezer_hold)
         self.raman.clean_up_fast_frequency_update()
 
-        self.tweezer.off()
+        # self.tweezer.off()
         delay(self.p.t_tof)
         self.abs_image()
 

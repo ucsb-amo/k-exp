@@ -331,6 +331,7 @@ class Feedback:
         t_calculation_slack_compensation_mu,
         t_raman_pulse,
         t_img_pulse,
+        t_raman_pretrigger = 700,
         t_fifo_mu = int64(1000)
     ) -> TInt64:
         T_MIN_FIFO_MU = t_fifo_mu
@@ -338,9 +339,11 @@ class Feedback:
         t_img_pulse_mu = np.int64(t_img_pulse * 1.0e9)
         return (
             t_calculation_slack_compensation_mu
+            + t_raman_pretrigger
             + t_raman_pulse_mu
             + t_img_pulse_mu
             + T_MIN_FIFO_MU
+            - 10000
         ) & ~7
 
     @kernel

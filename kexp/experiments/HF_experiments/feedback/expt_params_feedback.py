@@ -11,8 +11,9 @@ class ExptParams(expt_params_kexp):
         self.feedback_grid_size = 31
         self.N_pulses = 20
         self.feedback_fractional_grid_center_offset = -5.0
+
         self.feedback_fractional_initial_offset = 0.0
-        self.feedback_guess_span_Omega = 5.0
+        self.feedback_guess_span_Omega = 10.0
 
         self.dt_t_raman_pulse_offset = 220.e-9 # non ideal pulse width
         # self.t_raman_pulse_ideal = self.t_raman_pi_pulse / 2
@@ -45,16 +46,16 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 129.48 # avg of up/down
         # self.feedback_measurement_midpoint_fraction = 0.46203
 
-        # calibration run 66915
+        # calibration run 67012
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.17107
-        self.v_apd_all_down = -0.22064
-        self.n_photons_per_shot = 914
-        # self.std_n_photons_up = 123.06
-        # self.std_n_photons_down = 56.804
-        self.std_n_photons_per_shot = 89.933 # avg of up/down
-        self.feedback_measurement_midpoint_fraction = 0.4607
+        self.v_apd_all_up = -0.18066
+        self.v_apd_all_down = -0.21225
+        self.n_photons_per_shot = 588.75
+        # self.std_n_photons_up = 101.17
+        # self.std_n_photons_down = 58.775
+        self.std_n_photons_per_shot = 79.975 # avg of up/down
+        self.feedback_measurement_midpoint_fraction = 0.48968
 
         # run 66841 | multi-parameter grid fit result
         self.back_action_coherence = 0.8794
@@ -70,9 +71,9 @@ class ExptParams(expt_params_kexp):
         ### timing
         self.t_calculation_slack_compensation_mu = int64(0.61 * self.feedback_grid_size * 1.e3) + 20000 if self.feedback_grid_size > 10 else int64(10000)
         self.t_fifo_mu = int64(18416)
-        self.t_raman_set_pretrigger_mu = int64(4000) & ~7 # int64(1260)
+        self.t_raman_set_pretrigger_mu = int64(700) & ~7 # int64(1260)
 
-        self.delta_t_mu = int64(1356)
+        self.delta_t_mu = int64(608)
         # self.delta_t_mu = int64(2000)
 
         ### other
