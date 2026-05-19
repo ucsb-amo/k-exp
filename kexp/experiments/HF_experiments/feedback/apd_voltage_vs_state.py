@@ -20,7 +20,7 @@ class sigma_z(EnvExperiment, Base):
         self.p.t_between_pulses_mu = 20000  # from pulse start to next pulse start, in mu
 
         self.p.t_raman_pulse = 0.
-        self.p.t_raman_pulse_offset = 0.e-9
+        self.p.t_raman_pulse_offset = 209.7e-6
         self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,5) + self.p.t_raman_pulse_offset)
 
         self.p.t_tweezer_hold = 20.e-3
