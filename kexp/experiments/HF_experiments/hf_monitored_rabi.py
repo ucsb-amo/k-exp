@@ -18,7 +18,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         # self.p.frequency_raman_transition = 147.2778e6 # .1 img amp
         # self.p.frequency_raman_transition = 119.48395e6 # 182 A -1 --> 0\
-        self.p.frequency_raman_transition = 119570351.42857143 # 182 A -1 --> 0
+        # self.p.frequency_raman_transition = 119570351.42857143 # 182 A -1 --> 0
         # self.xvar('frequency_raman_transition', 119544805.0 + np.linspace(-75.e3,75.e3,10))
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
@@ -30,7 +30,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.p.t_raman_pulse = 8.8699e-6
         
         # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
-        self.p.amp_imaging = .6
+        self.p.amp_imaging = .3
 
         self.p.hf_imaging_detuning = -568.e6 # 182.
 

@@ -50,6 +50,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 
+
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of prepare.
@@ -185,7 +186,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
     @kernel
     def cleanup_scan_kernel(self):
+
         self.cleanup_image_count()
+
+        self.raman.clean_up_fast_frequency_update()
+        self.ttl.raman_shutter.off()
 
         self.core.break_realtime()
         self.reset_coils()

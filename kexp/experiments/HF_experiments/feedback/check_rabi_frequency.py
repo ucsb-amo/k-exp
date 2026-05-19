@@ -15,13 +15,15 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
  
-        self.xvar('t_raman_pulse', np.linspace(0., 90., 50)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0., 45., 1)*1.e-6)
 
-        self.p.t_tweezer_hold = .01e-3
+        # self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.array([0.,1.]))
+
+        self.p.t_tweezer_hold = 1.e-3
 
         self.p.t_tof = 90.e-6
         
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
 
@@ -33,24 +35,19 @@ class hf_raman(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.camera_params.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=True)
-
-        self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
-                        fraction_power = self.params.fraction_power_raman)
-        
-        self.ttl.raman_shutter.on()
-        delay(10.e-3)
-        self.ttl.line_trigger.wait_for_line_trigger()
-        delay(4.7e-3)
+        # self.prepare_hf_tweezers(squeeze=True)
+        self.prep_raman()
 
         self.raman.pulse(self.p.t_raman_pulse)
 
-        self.ttl.raman_shutter.off()
+        self.raman.on()
 
-        delay(self.p.t_tweezer_hold)
-        self.tweezer.off()
+        # self.ttl.raman_shutter.off()
 
-        delay(self.p.t_tof)
+        # delay(self.p.t_tweezer_hold)
+        # self.tweezer.off()
+
+        # delay(self.p.t_tof)
 
         self.abs_image()
 

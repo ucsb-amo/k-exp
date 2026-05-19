@@ -11,10 +11,16 @@ monitor_controller = MonitorController(MONITOR_STATE_FILEPATH) if os.path.isfile
 
 class Clients():
     def __init__(self, suppress_live_od=False):
-        self.monitor = Monitor(self,
+        try:
+            self.monitor = Monitor(self,
                         device_state_json_path=MONITOR_STATE_FILEPATH)
+        except Exception as e:
+            print(f"Failed to connect to Monitor: {e}")
 
         self.magnetometer = HMRClient()
 
         if not suppress_live_od:
-            self.live_od_client = LiveODClient()
+            try:
+                self.live_od_client = LiveODClient()
+            except Exception as e:
+                print(f"Failed to connect to LiveODClient: {e}")

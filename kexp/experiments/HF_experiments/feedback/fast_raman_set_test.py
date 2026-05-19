@@ -7,6 +7,8 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu
 
+from waxx.util.artiq.async_print import aprint
+
 class hf_raman(EnvExperiment, Base):
 
     def prepare(self):
@@ -17,13 +19,17 @@ class hf_raman(EnvExperiment, Base):
  
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
-        self.p.t_tweezer_hold = .01e-3
+        self.p.use_fast_set = 1
+        self.xvar('use_fast_set', [0, 1])
+
+        self.xvar('f_raman_set', self.p.frequency_raman_transition - np.array([10.e6, 0.]))
+        # self.xvar('frequency_raman_transition', self.p.frequency_raman_transition - np.array([0., 10.e6]))
 
         self.p.t_tof = 90.e-6
         
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -33,16 +39,16 @@ class hf_raman(EnvExperiment, Base):
         self.prepare_hf_tweezers(squeeze=True)
         self.prep_raman(phase_mode=0)
 
-        self.raman.set_up_fast_frequency_update(aggressive=1)
-        self.raman.stage_ffua()
-
-        self.raman.set_frequency_fast(self.p.frequency_raman_transition)
+        if self.p.use_fast_set:
+            self.raman.set_up_fast_frequency_update(aggressive_mode=0)
+            self.raman.stage_ffua()
+            self.raman.set_frequency_fast(self.p.f_raman_set)
+        else:
+            self.raman.set(frequency_transition=self.p.f_raman_set)
 
         delay(1.e-6)
 
         self.raman.pulse(self.p.t_raman_pi_pulse)
-
-        
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()

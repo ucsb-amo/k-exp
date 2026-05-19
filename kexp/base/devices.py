@@ -7,6 +7,7 @@ from artiq.coredevice.core import Core
 from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
 from artiq.coredevice.grabber import Grabber
+from artiq.coredevice import urukul
 
 from kexp.config.expt_params import ExptParams
 
@@ -99,8 +100,8 @@ class Devices():
                              shuttler_frame_obj=self.shuttler,
                               core=self.core, expt_params=self.params)
         # self.dds.dds_manager = [DDSManager(self.core)]
-        self.get_dds_devices()
         self.dds_list = self.dds.dds_list
+        self.get_dds_devices()
 
         self.rf = doubled_rf(dds_ch=self.dds.antenna_rf, expt_params=self.params)
 
@@ -258,9 +259,8 @@ class Devices():
     def set_all_dds(self):
         for dds in self.dds.dds_list:
             dds.set_dds(init=True)
-            dds.dds_device.set_att(0. * dB)
             delay(5.e-6)
-
+            
     @kernel
     def switch_all_dds(self,state):
         for dds in self.dds.dds_list:
@@ -274,14 +274,16 @@ class Devices():
     def init_all_dds(self):
         for dds in self.dds.dds_list:
             dds.dds_device.init()
+            delay(1e-3)
             dds._store_io_update_delay()
-            delay(10*us)
-
+        
     @kernel
     def init_all_cpld(self):
         for ddss in self.dds.dds_array:
             ddss[0].cpld_device.init()
-            delay(10*us)
+            delay(1e-3)
+        for dds in self.dds.dds_list:
+            dds.dds_device.set_att(0.*dB)
 
     # def shutdown_sources(self):
     #     from kexp import EthernetRelay
