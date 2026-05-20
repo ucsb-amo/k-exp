@@ -147,12 +147,9 @@ class LiveODServer(QThread, WaxxServer):
         or opportunistically on the next INIT_RUN if the experiment process was
         killed and never sent that confirmation.
         """
-        # For no-camera runs the HDF5 file was created during INIT_RUN but
-        # may never be completed if the experiment process died before
-        # END_RUN/ABORT_RUN. Remove it to avoid orphaned files.
-        if (not self._current_capture_images
-                and self._current_filepath
-                and os.path.exists(self._current_filepath)):
+        # Delete the HDF5 file if it still exists (may already be gone for
+        # camera runs whose CameraBaby called dishonorable_death).
+        if self._current_filepath and os.path.exists(self._current_filepath):
             try:
                 os.remove(self._current_filepath)
                 print(f"Deleted incomplete data file: {self._current_filepath}")
@@ -223,6 +220,12 @@ class LiveODServer(QThread, WaxxServer):
     def _handle_end_run(self, msg: dict) -> dict:
         if self._reset_requested:
             print(f"[LiveODServer] END_RUN: run {self._current_run_id} was reset — discarding data.")
+            if self._current_filepath and os.path.exists(self._current_filepath):
+                try:
+                    os.remove(self._current_filepath)
+                    print(f"[LiveODServer] Deleted data file: {self._current_filepath}")
+                except Exception as exc:
+                    print(f"[LiveODServer] Warning: could not delete data file: {exc}")
             self._reset_requested = False
             self.run_done_signal.emit()
             return {"ok": True}

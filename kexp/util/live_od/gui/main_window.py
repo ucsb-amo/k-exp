@@ -148,6 +148,19 @@ class LiveODWindow(QWidget):
 
         self._run_active = True
 
+        # Interrupt any CameraBaby left over from the previous run.
+        # This happens when images never arrived (e.g. camera not triggered by
+        # the remote machine's hardware) and the grab-loop timed out slowly, or
+        # when on_run_done() was called before the baby finished its grab.
+        if self.the_baby is not None and self.the_baby.isRunning():
+            self.msg(f"Warning: previous CameraBaby still running — interrupting it.")
+            try:
+                self.the_baby.interrupted = True
+            except Exception:
+                pass
+            self.the_baby = None
+            self.data_handler = None
+
         if not capture_images:
             self.msg(f"{name}: I am born! (no camera, save_data={save_data})")
             self.the_baby = None

@@ -220,6 +220,7 @@ class CameraBaby(QThread):
             print(e)
         if self.interrupted:
             print('Grab loop interrupted, shutting down.')
+            self.death = self.dishonorable_death
         self.death()
         if self.interrupted:
             self.dead = True

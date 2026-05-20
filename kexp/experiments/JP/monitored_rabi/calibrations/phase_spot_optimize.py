@@ -10,29 +10,35 @@ from artiq.language import now_mu
 class phase_spot(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 0.5
+        self.p.amp_imaging = 0.2
+        self.p.t_imaging_pulse = 5.e-6
 
-        # self.xvar('phase_slm_mask',np.linspace(0.*np.pi,3.*np.pi,7))
-        # self.p.phase_slm_mask = 0.9 * np.pi
+        self.xvar('phase_slm_mask',np.linspace(0.*np.pi, 0.25*np.pi, 5))
+        self.p.phase_slm_mask = 0.186 * np.pi
 
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
-        self.p.dimension_slm_mask = 20.e-6
+        # self.p.dimension_slm_mask = 20.e-6
 
-        self.p.t_tof = 100.e-6
-        self.p.N_repeats = 1
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse
+        
+        self.p.N_repeats = 3
 
-        self.camera_params.gain = 500
+        self.data.apd = self.data.add_data_container(3)
 
-        self.finish_prepare(shuffle=False)
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
+
+        self.integrator.init()
 
         # set up weak measurement
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
@@ -40,13 +46,22 @@ class phase_spot(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
+        self.prep_raman(phase_mode=0)
 
-        delay(self.p.t_tweezer_hold)
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+
+        self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=0)
+        delay(3.e-6)
+
+        self.raman.pulse(self.p.t_raman_pulse)
+
+        self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=1)
+        delay(10.e-6)
 
         self.tweezer.off()
 
-        delay(self.p.t_tof)
-        self.abs_image()
+        delay(400.e-6)
+        self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=2)
 
     @kernel
     def run(self):
