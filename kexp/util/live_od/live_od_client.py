@@ -45,6 +45,7 @@ class LiveODClient(WaxxClient):
             self._context = zmq.Context()
         if self._socket is not None:
             try:
+                self._socket.setsockopt(zmq.LINGER, 0)
                 self._socket.close()
             except Exception:
                 pass
@@ -52,6 +53,16 @@ class LiveODClient(WaxxClient):
         self._socket.setsockopt(zmq.SNDTIMEO, self._timeout_ms)
         self._socket.setsockopt(zmq.RCVTIMEO, self._timeout_ms)
         self._socket.connect(f"tcp://{self._ip}:{self._port}")
+
+    def _rediscover(self) -> None:
+        """Update ``_ip``/``_port`` from the latest beacon cache.
+
+        Delegates to ``WaxxClient._rediscover()`` then syncs the ZMQ
+        address fields from the updated ``self.host``/``self.port``.
+        """
+        super()._rediscover(timeout=2.0)
+        self._ip = self.host
+        self._port = self.port
 
     def _send_recv(self, payload: dict, rcvtimeo_ms: int = None) -> dict:
         """Send ``payload`` and return the decoded reply.
@@ -67,7 +78,9 @@ class LiveODClient(WaxxClient):
             self._socket.send(pickle.dumps(payload))
             return pickle.loads(self._socket.recv())
         except zmq.Again:
-            # Socket state is now dirty — recreate before next use.
+            # Re-discover in case liveOD restarted on a new port, then
+            # recreate the socket to the (possibly updated) address.
+            self._rediscover()
             self._connect()
             raise ConnectionError(
                 f"[LiveODClient] No response from liveOD server at "
