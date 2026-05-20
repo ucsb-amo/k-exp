@@ -61,7 +61,8 @@ class DataHandler(QThread, Scribe):
     image_type_signal = pyqtSignal(bool)
 
     def __init__(self, queue: Queue, data_filepath: str,
-                 save_data=None, imaging_type=None, camera_key=""):
+                 save_data=None, imaging_type=None, camera_key="",
+                 n_img=None, n_shots=None, n_pwa_per_shot=None):
         """Create a DataHandler.
 
         Parameters
@@ -102,6 +103,15 @@ class DataHandler(QThread, Scribe):
             self.run_info.imaging_type = imaging_type
         if camera_key:
             self._camera_key_hint = camera_key
+
+        # Pre-populate image count params when provided (critical for
+        # save_data=False runs where read_params() skips the HDF5 read).
+        if n_img is not None:
+            self.params.N_img = int(n_img)
+        if n_shots is not None:
+            self.params.N_shots = int(n_shots)
+        if n_pwa_per_shot is not None:
+            self.params.N_pwa_per_shot = int(n_pwa_per_shot)
 
     def get_save_data_bool(self, save_data_bool):
         self.save_data = save_data_bool

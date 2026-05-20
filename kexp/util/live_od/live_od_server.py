@@ -31,17 +31,20 @@ class LiveODServer(QThread, WaxxServer):
 
     Signals
     -------
-    new_run_signal(filepath, camera_key, capture_images, save_data, imaging_type)
+    new_run_signal(filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa_per_shot)
         Emitted after INIT_RUN.  ``filepath`` is ``""`` when
         ``save_data=False``.  ``capture_images`` indicates whether a
-        CameraBaby should be spawned.
+        CameraBaby should be spawned.  ``n_img``, ``n_shots``, and
+        ``n_pwa_per_shot`` carry the image-count params from the payload so
+        ``DataHandler`` can be initialised correctly even when
+        ``save_data=False`` (and no HDF5 file is read).
     shot_progress_signal(shot_idx, N_shots_total, xvar_values_dict)
         Emitted for each SHOT_COMPLETE message.
     run_done_signal()
         Emitted after END_RUN is fully handled.
     """
 
-    new_run_signal = pyqtSignal(str, str, bool, bool, int)   # filepath, camera_key, capture_images, save_data, imaging_type
+    new_run_signal = pyqtSignal(str, str, bool, bool, int, int, int, int)   # filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa_per_shot
     shot_progress_signal = pyqtSignal(int, int, object)       # shot_idx, N_total, xvar_values dict
     run_done_signal = pyqtSignal()
     run_started_signal = pyqtSignal(int)                      # run_id (emitted after INIT_RUN, before new_run_signal)
@@ -186,8 +189,12 @@ class LiveODServer(QThread, WaxxServer):
         self._reset_requested = False
         self._shot_timestamps = []       # reset per-run timestamp list
 
+        n_img = int(msg.get('params', {}).get('N_img', 1))
+        n_shots = int(msg.get('N_shots_with_repeats', 1))
+        n_pwa = int(msg.get('N_pwa_per_shot', 1))
+
         self.run_started_signal.emit(run_id)
-        self.new_run_signal.emit(filepath, camera_key, capture_images, save_data, imaging_type)
+        self.new_run_signal.emit(filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa)
         print(
             f"[LiveODServer] INIT_RUN: run_id={run_id}, "
             f"save={save_data}, cam={capture_images}"
