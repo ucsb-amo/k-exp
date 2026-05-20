@@ -46,9 +46,9 @@ class ttl_frame(ttl_frame_waxx):
         self.integrator_reset = self.assign_ttl_out(38)
 
         self.keithley_trigger = self.assign_ttl_out(48)
-        self.imaging_pid_int_clear_hold = self.assign_ttl_out(49)
+        self.imaging_pid_int_clear_hold = self.assign_ttl_out(49) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class
         self.b_field_stab_SRS_blanking_input = self.assign_ttl_out(50)
-        self.imaging_pid_manual_override = self.assign_ttl_out(51)
+        self.imaging_pid_manual_override = self.assign_ttl_out(51) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class
         self.ry_980_sw = self.assign_ttl_out(52)
         self.phase_lock_beam_enable = self.assign_ttl_out(53)
 

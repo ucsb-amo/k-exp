@@ -14,21 +14,28 @@ class hf_raman(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
+
+        # self.xvar('beans', [0,1]*100)
+        self.p.beans = 1
  
         self.p.frequency_raman_transition += 10.e6
         
-        self.p.t_raman_pulse = 50.e-6
+        self.p.t_raman_pulse = 5.e-6
+        self.p.fraction_power_raman = 1.0
 
         self.p.t_tweezer_hold = 1.e-3
 
         self.p.t_tof = 90.e-6
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 100
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
+
+        if self.p.beans == 0:
+            self.raman.off()
 
         # self.set_high_field_imaging(i_outer=self.p.i_hf_raman)
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
@@ -36,11 +43,13 @@ class hf_raman(EnvExperiment, Base):
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-        self.prep_raman()
+        self.prep_raman() 
 
-        self.raman.pulse(self.p.t_raman_pulse)
+        if self.p.beans:
+            # self.raman.on()
+            self.raman.pulse(self.p.t_raman_pulse)
 
-        self.ttl.raman_shutter.off()
+        # self.ttl.raman_shutter.off()
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
@@ -48,6 +57,8 @@ class hf_raman(EnvExperiment, Base):
         delay(self.p.t_tof)
 
         self.abs_image()
+
+        self.raman.off()
 
     @kernel
     def run(self):
