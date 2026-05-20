@@ -4,7 +4,7 @@ import numpy as np
 from PyQt6 import QtCore
 import pyqtgraph as pg
 from PIL import Image, ImageDraw
-
+from kexp.config import ExptParams
 
 class SLMController(QtCore.QObject):
     """
@@ -17,7 +17,8 @@ class SLMController(QtCore.QObject):
         self.canvas_res = canvas_res
 
         # state
-        self.spot_center = [994, 824]
+        p = ExptParams()
+        self.spot_center = [p.px_slm_phase_mask_position_x, p.px_slm_phase_mask_position_y]
         self.spot_radius = 10
 
         self.grating_center = [994, 824]

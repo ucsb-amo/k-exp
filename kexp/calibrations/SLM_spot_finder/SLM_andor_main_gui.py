@@ -3,7 +3,6 @@ import time
 import numpy as np
 from PyQt6 import QtWidgets, QtCore
 import pyqtgraph as pg
-from artiq.language.environment import EnvExperiment
 
 from waxx.control import AndorEMCCD, DummyCamera
 
@@ -436,7 +435,7 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
 
         g.addWidget(QtWidgets.QLabel("EM Gain:"), 1, 0)
         self.gain_sb = QtWidgets.QSpinBox()
-        self.gain_sb.setRange(0, 1000)
+        self.gain_sb.setRange(0, 100)
         self.gain_sb.setValue(0)
         g.addWidget(self.gain_sb, 1, 1)
 
@@ -603,8 +602,8 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
             self.worker.stop()
         try:
             self.camera.setup_shutter(mode=mode)
-        except Exception:
-            pass
+        except Exception as e:
+            print(e)
         if was_running:
             self.worker.start()
 
@@ -770,10 +769,10 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         event.accept()
 
 
-class UnifiedExperiment(EnvExperiment):
+class UnifiedExperiment():
     def build(self):
         try:
-            self.camera = AndorEMCCD(ExposureTime=0.05, gain=0.0, hs_speed=0, vs_speed=0)
+            self.camera = AndorEMCCD(ExposureTime=0.05, gain=0.0)
         except Exception:
             self.camera = DummyCamera()
 
@@ -783,8 +782,7 @@ class UnifiedExperiment(EnvExperiment):
         gui.show()
         app.exec()
 
-
 if __name__ == "__main__":
-    from artiq.frontend.artiq_run import main
-    sys.argv.append(__file__)
-    main()
+    ue = UnifiedExperiment()
+    ue.build()
+    ue.run()
