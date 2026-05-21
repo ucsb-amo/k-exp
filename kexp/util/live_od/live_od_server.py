@@ -44,7 +44,7 @@ class LiveODServer(QThread, WaxxServer):
         Emitted after END_RUN is fully handled.
     """
 
-    new_run_signal = pyqtSignal(str, str, bool, bool, int, int, int, int)   # filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa_per_shot
+    new_run_signal = pyqtSignal(str, str, bool, bool, int, int, int, int, object)   # filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa_per_shot, camera_params
     shot_progress_signal = pyqtSignal(int, int, object)       # shot_idx, N_total, xvar_values dict
     run_done_signal = pyqtSignal()
     run_started_signal = pyqtSignal(int)                      # run_id (emitted after INIT_RUN, before new_run_signal)
@@ -170,6 +170,7 @@ class LiveODServer(QThread, WaxxServer):
         camera_key = str(msg.get("camera_key", ""))
         imaging_type = int(msg.get("imaging_type", 0))
 
+        camera_params = msg.get('camera_params', {})
         self._cam_ready_event.clear()
         self._current_save_data = save_data
         self._current_capture_images = capture_images
@@ -191,7 +192,7 @@ class LiveODServer(QThread, WaxxServer):
         n_pwa = int(msg.get('N_pwa_per_shot', 1))
 
         self.run_started_signal.emit(run_id)
-        self.new_run_signal.emit(filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa)
+        self.new_run_signal.emit(filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa, camera_params)
         print(
             f"[LiveODServer] INIT_RUN: run_id={run_id}, "
             f"save={save_data}, cam={capture_images}"

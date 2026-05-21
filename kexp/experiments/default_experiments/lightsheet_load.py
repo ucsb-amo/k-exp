@@ -16,13 +16,13 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 800.e-6
+        self.p.t_tof = 100.e-6
         # self.xvar('t_tof',np.linspace(100,1200.,10)*1.e-6)
-        self.xvar('t_tof',np.linspace(20.,1200.,16)*1.e-6)
+        # self.xvar('t_tof',np.linspace(20.,1200.,16)*1.e-6)
         # self.xvar('dumy',[0]*100)
 
         #self.xvar('i_magtrap_init',np.linspace(65.,120.,20))
-        self.p.i_magtrap_init = 100.0
+        # self.p.i_magtrap_init = 100.0
 
         # self.xvar('t_magtrap',np.linspace(.1,3.,15))
         # self.p.t_magtrap = 1.
@@ -32,9 +32,9 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('amp_imaging',np.linspace(0.08,0.12,5))
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 65
         self.p.t_mot_load = 1.
-        self.p.amp_imaging = .18
+        # self.p.amp_imaging = .5
         self.p.imaging_state = 2.
 
         self.finish_prepare(shuffle=True)
@@ -42,7 +42,8 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.mot(self.p.t_mot_load)
         self.dds.push.off()

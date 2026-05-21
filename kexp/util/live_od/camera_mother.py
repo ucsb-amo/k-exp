@@ -62,6 +62,7 @@ class DataHandler(QThread, Scribe):
 
     def __init__(self, queue: Queue, data_filepath: str,
                  save_data=None, imaging_type=None, camera_key="",
+                 camera_params=None,
                  n_img=None, n_shots=None, n_pwa_per_shot=None):
         """Create a DataHandler.
 
@@ -104,6 +105,10 @@ class DataHandler(QThread, Scribe):
         if camera_key:
             self._camera_key_hint = camera_key
 
+        self._camera_params_payload = None
+        if camera_params:
+            self._camera_params_payload = camera_params
+
         # Pre-populate image count params when provided (critical for
         # save_data=False runs where read_params() skips the HDF5 read).
         if n_img is not None:
@@ -140,6 +145,13 @@ class DataHandler(QThread, Scribe):
                 unpack_group(f, 'camera_params', self.camera_params)
                 unpack_group(f, 'params', self.params)
                 unpack_group(f, 'run_info', self.run_info)
+        elif getattr(self, '_camera_params_payload', None):
+            # No HDF5 — use the exact camera params from the experiment client.
+            for key, val in self._camera_params_payload.items():
+                try:
+                    setattr(self.camera_params, key, val)
+                except Exception:
+                    pass
         elif hasattr(self, '_camera_key_hint') and self._camera_key_hint:
             # No HDF5 — look up camera params by key so create_camera() works.
             from kexp.config.camera_id import cameras as cam_catalog, CameraParams as CP
