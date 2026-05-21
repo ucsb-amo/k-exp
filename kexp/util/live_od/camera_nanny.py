@@ -76,11 +76,13 @@ class CameraNanny():
             if camera_type == "basler":
                 camera.set_exposure(camera_params.exposure_time)
                 camera.set_gain(camera_params.gain)
+                print(f"[CameraNanny] {camera_params.key}: gain set to {camera_params.gain}")
             elif camera_type == "andor":
                 camera.set_EMCCD_gain(camera_params.gain)
                 camera.set_exposure(camera_params.exposure_time)
                 camera.set_amp_mode(preamp=camera_params.preamp)
                 camera.set_hsspeed(camera_params.hs_speed)
+                print(f"[CameraNanny] {camera_params.key}: gain set to {camera_params.gain}")
         except Exception as e:
             print(e)
             print(f"There was an issue opening the requested camera (key: {camera_params.key}).")
