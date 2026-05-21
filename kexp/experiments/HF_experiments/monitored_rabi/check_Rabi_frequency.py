@@ -7,7 +7,7 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu
 
-class hf_raman(EnvExperiment, Base):
+class hf_raman(EnvExperiment, Base)
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
@@ -40,14 +40,7 @@ class hf_raman(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-
-        self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
-                        fraction_power = self.params.fraction_power_raman)
-        
-        self.ttl.raman_shutter.on()
-        delay(10.e-3)
-        self.ttl.line_trigger.wait_for_line_trigger()
-        delay(4.7e-3)
+        self.prep_raman()
 
         self.raman.pulse(self.p.t_raman_pulse)
 
