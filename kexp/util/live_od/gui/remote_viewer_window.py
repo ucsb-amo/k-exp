@@ -15,10 +15,11 @@ Usage (run from any machine on the lab network)::
 import pickle
 import sys
 import threading
+import time
 from queue import Queue
 
 import zmq
-from PyQt6.QtCore import QThread, Qt, pyqtSignal
+from PyQt6.QtCore import QThread, Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont
 from PyQt6.QtWidgets import (
     QApplication,
@@ -40,7 +41,12 @@ from kexp.util.live_od.gui.viewer import LiveODViewer
 
 class LiveODSubscriber(QThread):
     """Receives broadcast messages from ``LiveODBroadcaster`` and re-emits
-    them as Qt signals so the GUI thread can process them safely."""
+    them as Qt signals so the GUI thread can process them safely.
+    
+    Periodically polls the server to verify connection status. If the
+    server becomes unreachable, automatically attempts to rediscover it
+    via UDP broadcast and reconnect.
+    """
 
     od_image_signal = pyqtSignal(object)            # plot_data tuple
     shot_progress_signal = pyqtSignal(int, int, object)  # shot_idx, N_total, xvar_values
@@ -49,60 +55,175 @@ class LiveODSubscriber(QThread):
     log_msg_signal = pyqtSignal(str)
     connection_status_signal = pyqtSignal(str)
 
+    # Polling configuration (seconds)
+    POLL_INTERVAL = 5.0          # How often to check server connection
+    RECONNECT_RETRY_INTERVAL = 2.0  # How often to retry server discovery
+    DISCOVERY_TIMEOUT = 3.0      # Timeout for UDP broadcast discovery
+
     def __init__(self, ip: str, port: int):
         super().__init__()
         self._ip = ip
         self._port = port
         self._running = False
+        self._last_poll_time = 0.0
+        self._connection_ok = True
+        self._attempting_reconnect = False
 
     def run(self):
+        """Main subscriber loop: connect and receive messages, with periodic polling."""
         context = zmq.Context()
-        socket = context.socket(zmq.SUB)
-        socket.setsockopt(zmq.RCVTIMEO, 500)        # 500 ms poll so stop() is noticed
-        socket.setsockopt(zmq.SUBSCRIBE, b"")       # subscribe to all topics
-        socket.connect(f"tcp://{self._ip}:{self._port}")
-        self._running = True
-        self.connection_status_signal.emit(
-            f"Connected to tcp://{self._ip}:{self._port}"
-        )
+        
+        while self._running:
+            try:
+                socket = context.socket(zmq.SUB)
+                socket.setsockopt(zmq.RCVTIMEO, 500)        # 500 ms poll for timeouts
+                socket.setsockopt(zmq.SUBSCRIBE, b"")       # subscribe to all topics
+                socket.connect(f"tcp://{self._ip}:{self._port}")
+                self._running = True
+                self._connection_ok = True
+                self._attempting_reconnect = False
+                self.connection_status_signal.emit(
+                    f"Connected to tcp://{self._ip}:{self._port}"
+                )
+                print(f"[LiveODSubscriber] Connected to tcp://{self._ip}:{self._port}")
+                self._last_poll_time = time.time()
+                
+                # Receive loop with periodic polling
+                while self._running:
+                    try:
+                        raw = socket.recv()
+                        # Reset last poll time on successful message
+                        self._last_poll_time = time.time()
+                    except zmq.Again:
+                        # Poll timeout — check if we should poll the server
+                        self._maybe_poll_server(context)
+                        continue
+
+                    try:
+                        msg = pickle.loads(raw)
+                    except Exception as exc:
+                        print(f"[LiveODSubscriber] deserialisation error: {exc}")
+                        continue
+
+                    tag = msg.get("tag", "")
+                    try:
+                        if tag == "OD_IMAGE":
+                            plot_data = (
+                                msg["img_atoms"], msg["img_light"], msg["img_dark"],
+                                msg["od"], msg["sum_od_x"], msg["sum_od_y"],
+                            )
+                            self.od_image_signal.emit(plot_data)
+                        elif tag == "SHOT_PROGRESS":
+                            self.shot_progress_signal.emit(
+                                int(msg["shot_idx"]),
+                                int(msg["N_total"]),
+                                msg.get("xvar_values", {}),
+                            )
+                        elif tag == "RUN_STARTED":
+                            self.run_started_signal.emit(int(msg.get("run_id", 0)))
+                        elif tag == "RUN_DONE":
+                            self.run_done_signal.emit()
+                        elif tag == "LOG_MSG":
+                            self.log_msg_signal.emit(str(msg.get("text", "")))
+                    except Exception as exc:
+                        print(f"[LiveODSubscriber] signal error ({tag}): {exc}")
+            
+            except Exception as exc:
+                print(f"[LiveODSubscriber] Connection error: {exc}")
+                self._on_connection_lost()
+            finally:
+                try:
+                    socket.close()
+                except:
+                    pass
+            
+            # If we exited the receive loop but should still run, attempt reconnection
+            if self._running:
+                self._attempt_reconnection(context)
+        
+        context.term()
+
+    def _maybe_poll_server(self, context: zmq.Context):
+        """Check if it's time to poll the server for liveness."""
+        now = time.time()
+        if now - self._last_poll_time >= self.POLL_INTERVAL:
+            self._poll_server(context)
+
+    def _poll_server(self, context: zmq.Context):
+        """Send a POLL message to the server to verify it's still responding."""
         try:
-            while self._running:
-                try:
-                    raw = socket.recv()
-                except zmq.Again:
-                    continue  # poll timeout — check _running
+            poll_socket = context.socket(zmq.REQ)
+            poll_socket.setsockopt(zmq.SNDTIMEO, 1000)
+            poll_socket.setsockopt(zmq.RCVTIMEO, 1000)
+            poll_socket.connect(f"tcp://{self._ip}:{self._port}")
+            
+            try:
+                poll_socket.send(pickle.dumps({'tag': 'POLL'}))
+                _ = poll_socket.recv()  # Just check for a reply
+                self._last_poll_time = time.time()
+                
+                # If previously disconnected, announce reconnection
+                if not self._connection_ok:
+                    self._connection_ok = True
+                    self.connection_status_signal.emit(
+                        f"Reconnected to tcp://{self._ip}:{self._port}"
+                    )
+                    print(f"[LiveODSubscriber] Server is responding again")
+            except zmq.Again:
+                # Poll timeout — server not responding
+                self._on_connection_lost()
+            finally:
+                poll_socket.close()
+        except Exception as exc:
+            print(f"[LiveODSubscriber] Poll failed: {exc}")
+            self._on_connection_lost()
 
-                try:
-                    msg = pickle.loads(raw)
-                except Exception as exc:
-                    print(f"[LiveODSubscriber] deserialisation error: {exc}")
-                    continue
+    def _on_connection_lost(self):
+        """Handle connection loss by marking as disconnected."""
+        if self._connection_ok:
+            self._connection_ok = False
+            self.connection_status_signal.emit(
+                "Disconnected from server — attempting to rediscover…"
+            )
+            print(f"[LiveODSubscriber] Server not responding — marked as disconnected")
 
-                tag = msg.get("tag", "")
-                try:
-                    if tag == "OD_IMAGE":
-                        plot_data = (
-                            msg["img_atoms"], msg["img_light"], msg["img_dark"],
-                            msg["od"], msg["sum_od_x"], msg["sum_od_y"],
-                        )
-                        self.od_image_signal.emit(plot_data)
-                    elif tag == "SHOT_PROGRESS":
-                        self.shot_progress_signal.emit(
-                            int(msg["shot_idx"]),
-                            int(msg["N_total"]),
-                            msg.get("xvar_values", {}),
-                        )
-                    elif tag == "RUN_STARTED":
-                        self.run_started_signal.emit(int(msg.get("run_id", 0)))
-                    elif tag == "RUN_DONE":
-                        self.run_done_signal.emit()
-                    elif tag == "LOG_MSG":
-                        self.log_msg_signal.emit(str(msg.get("text", "")))
-                except Exception as exc:
-                    print(f"[LiveODSubscriber] signal error ({tag}): {exc}")
+    def _attempt_reconnection(self, context: zmq.Context):
+        """Attempt to rediscover the server via UDP broadcast and reconnect."""
+        if not self._running:
+            return
+        
+        if self._attempting_reconnect:
+            print(f"[LiveODSubscriber] Reconnection already in progress, waiting…")
+            time.sleep(self.RECONNECT_RETRY_INTERVAL)
+            return
+        
+        self._attempting_reconnect = True
+        print(f"[LiveODSubscriber] Attempting to rediscover server via UDP broadcast…")
+        
+        try:
+            from waxx.util.comms_server.waxx_client import discover
+            
+            result = discover("live_od_broadcast", timeout=self.DISCOVERY_TIMEOUT)
+            if result is not None:
+                new_ip, new_port = result
+                self._ip = new_ip
+                self._port = new_port
+                self._connection_ok = False
+                self.connection_status_signal.emit(
+                    f"Rediscovered server at tcp://{self._ip}:{self._port} — reconnecting…"
+                )
+                print(f"[LiveODSubscriber] Rediscovered server at tcp://{self._ip}:{self._port}")
+            else:
+                self.connection_status_signal.emit(
+                    "Server not found via broadcast — retrying in a moment…"
+                )
+                print(f"[LiveODSubscriber] Server not found via broadcast — will retry")
+                time.sleep(self.RECONNECT_RETRY_INTERVAL)
+        except Exception as exc:
+            print(f"[LiveODSubscriber] Rediscovery error: {exc}")
+            time.sleep(self.RECONNECT_RETRY_INTERVAL)
         finally:
-            socket.close()
-            context.term()
+            self._attempting_reconnect = False
 
     def stop(self):
         self._running = False
