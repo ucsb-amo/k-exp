@@ -230,7 +230,7 @@ class CameraBaby(QThread):
             self.grab_loop()
         except Exception as e:
             print(e)
-        if self.interrupted:
+        if self.interrupted and self.death is not self.honorable_death:
             print('Grab loop interrupted, shutting down.')
             self.death = self.dishonorable_death
         self.death()

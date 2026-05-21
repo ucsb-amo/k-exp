@@ -74,6 +74,13 @@ class CameraNanny():
 
         try:
             if camera_type == "basler":
+                # Guard: stop grabbing if the camera was left in grabbing state
+                # (e.g. from an interrupted run whose StopGrabbing failed silently).
+                if hasattr(camera, 'IsGrabbing') and camera.IsGrabbing():
+                    try:
+                        camera.StopGrabbing()
+                    except Exception:
+                        pass
                 camera.set_exposure(camera_params.exposure_time)
                 camera.set_gain(camera_params.gain)
                 print(f"[CameraNanny] {camera_params.key}: gain set to {camera_params.gain}")

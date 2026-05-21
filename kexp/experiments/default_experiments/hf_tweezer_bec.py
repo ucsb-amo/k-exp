@@ -12,12 +12,12 @@ class hf_bec(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        # self.xvar('t_tof',np.linspace(100.,1000.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
         self.p.t_tof = 100.e-6
 
         # self.xvar('frequency_detuned_hf_f1m1',-575.e6 + np.arange(-6.,6.+3,3)*1.e6)
 
-        self.p.t_tweezer_hold = 300.e-3
+        self.p.t_tweezer_hold = 20.e-3
         self.p.N_repeats = 3
         self.p.t_mot_load = 1.
 
@@ -44,7 +44,6 @@ class hf_bec(EnvExperiment, Base):
         self.init_kernel(setup_slm=False)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
-        self.mot_observe()
 
     def analyze(self):
         import os
