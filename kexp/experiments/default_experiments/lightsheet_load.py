@@ -30,11 +30,13 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_hold',np.linspace(0.05,1.,5))
         self.p.t_lightsheet_hold = .1
 
-        # self.xvar('amp_imaging',np.linspace(0.08,0.12,5))
+        # self.xvar('amp_imaging',np.linspace(0.08,0.12,5)) 
 
-        self.p.N_repeats = 65
+        # self.xvar('v_pd_lightsheet_rampup_end', np.linspace(4.,8.,10))
+
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
-        # self.p.amp_imaging = .5
+        self.p.amp_imaging = .25
         self.p.imaging_state = 2.
 
         self.finish_prepare(shuffle=True)
