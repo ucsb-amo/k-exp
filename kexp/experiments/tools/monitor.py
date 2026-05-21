@@ -24,7 +24,8 @@ class testcrate_base(EnvExperiment, Base):
                          beat_ref_on=True,
                          init_shuttler=False,
                          init_imaging=False,
-                         init_ry=False)
+                         init_ry=False,
+                         init_magnets=False)
         # self.init_kernel(run_id=False,
         #                  dds_off=False,
         #                  dds_set=False,
