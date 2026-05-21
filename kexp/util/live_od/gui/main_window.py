@@ -145,6 +145,7 @@ class LiveODWindow(QWidget):
         """
         name = names.get_first_name()
         self._run_name = name
+        self._run_capture_images = capture_images
 
         self._run_active = True
 
@@ -213,8 +214,11 @@ class LiveODWindow(QWidget):
         """Called when the LiveODServer processes an END_RUN message."""
         self._run_active = False
         name = getattr(self, '_run_name', '?')
-        if self.the_baby is None:
+        if self.the_baby is None and not getattr(self, '_run_capture_images', True):
             # No-camera run — emit the honorable death message here.
+            # (camera runs that were reset also have the_baby=None by this
+            # point, so we guard with _run_capture_images to avoid printing
+            # a spurious honorable-death after an aborted camera run.)
             self.msg(f"{name}: All shots complete.")
             self.msg(f"{name} has died honorably.")
         # Camera runs emit their own honorable_death_signal message.

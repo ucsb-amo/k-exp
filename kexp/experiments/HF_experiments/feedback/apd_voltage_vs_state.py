@@ -25,7 +25,7 @@ class sigma_z(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 10
+        self.p.N_repeats = 3
 
         self.p.N_pulses = 5
 
@@ -43,7 +43,7 @@ class sigma_z(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
-        self.prep_raman()
+        self.prep_raman(phase_mode=0)
 
         self.raman.pulse(self.p.t_raman_pulse)
         

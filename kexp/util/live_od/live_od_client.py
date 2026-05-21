@@ -24,8 +24,8 @@ from waxx.util.comms_server.waxx_client import WaxxClient
 class LiveODClient(WaxxClient):
     """REQ socket client for LiveODServer."""
 
-    def __init__(self, timeout_ms: int = 5000):
-        super().__init__("live_od")
+    def __init__(self, timeout_ms: int = 5000, discovery_timeout: float = 10.0):
+        super().__init__("live_od", discovery_timeout=discovery_timeout)
         self._ip = self.host
         self._port = self.port
         self._timeout_ms = timeout_ms

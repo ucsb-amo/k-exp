@@ -23,12 +23,9 @@ class Clients():
             try:
                 self.live_od_client = LiveODClient()
             except Exception as e:
-                print(f"[LiveOD] WARNING: Could not connect to LiveOD server: {e}")
-                print("[LiveOD] Check that the LiveOD server window is running on the control PC.")
-                print("[LiveOD] Camera capture will be disabled for this run.")
-                # Disable camera capture so the experiment does not hang in
-                # wait_for_camera_ready(). The legacy HDF5-polling path no
-                # longer works (CameraMother is a no-op stub) and would block
-                # for 45 s before crashing with ValueError.
-                if getattr(self, 'setup_camera', False):
-                    self.setup_camera = False
+                raise RuntimeError(
+                    f"[LiveOD] Could not connect to LiveOD server: {e}\n"
+                    "Check that the LiveOD server window is running on the control PC.\n"
+                    "To run without a LiveOD server, pass suppress_live_od=True "
+                    "(and setup_camera=False) to Base.__init__."
+                ) from e

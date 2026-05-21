@@ -17,7 +17,7 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('amp_imaging', np.linspace(0.2, 1.5, 6))
         self.xvar('with_imaging', [0,1])
-        self.xvar('relative_phase', np.linspace(0., 2*np.pi, 15))
+        self.xvar('relative_phase', np.linspace(0., 3*np.pi, 25))
 
         self.p.t_ramsey = 10.e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
@@ -28,7 +28,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 100.e-6
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
         

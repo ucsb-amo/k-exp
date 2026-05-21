@@ -260,6 +260,7 @@ class Devices():
         for dds in self.dds.dds_list:
             dds.set_dds(init=True)
             delay(5.e-6)
+            dds.dds_device.set_att(0.*dB)
             
     @kernel
     def switch_all_dds(self,state):
@@ -282,8 +283,8 @@ class Devices():
         for ddss in self.dds.dds_array:
             ddss[0].cpld_device.init()
             delay(1e-3)
-        for dds in self.dds.dds_list:
-            dds.dds_device.set_att(0.*dB)
+        # for dds in self.dds.dds_list:
+        #     dds.dds_device.set_att(0.*dB)
 
     # def shutdown_sources(self):
     #     from kexp import EthernetRelay
