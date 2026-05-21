@@ -26,8 +26,6 @@ class hf_monitored_rabi(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
-        self.camera_params.gain = 100
-
         self.data.apd = self.data.add_data_container(3)
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
