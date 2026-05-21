@@ -221,11 +221,11 @@ class LiveODWindow(QWidget):
             # (camera runs that were reset also have the_baby=None by this
             # point, so we guard with _run_capture_images to avoid printing
             # a spurious honorable-death after an aborted camera run.)
-            self.msg(f"{name}: All shots complete.")
             self.msg(f"{name} has died honorably.")
         # Camera runs emit their own honorable_death_signal message.
         self.the_baby = None
         self.data_handler = None
+        self.server_talk.update_run_id()
 
     def on_shot_progress(self, shot_idx: int, N_total: int, xvar_values: object):
         """Update the GUI with per-shot progress from the ZMQ server."""
@@ -335,8 +335,8 @@ class LiveODWindow(QWidget):
                 self._run_active = False
             else:
                 msg = 'No active run. Incrementing Run ID.'
-            self.msg(msg)
             self.server_talk.update_run_id()
+            self.msg(msg)
 
         if self.the_baby is not None:
             while not getattr(self.the_baby, 'dead', False):
