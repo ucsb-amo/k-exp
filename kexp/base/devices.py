@@ -100,9 +100,9 @@ class Devices():
                              shuttler_frame_obj=self.shuttler,
                               core=self.core, expt_params=self.params)
         # self.dds.dds_manager = [DDSManager(self.core)]
-        self.dds_list = self.dds.dds_list
         self.get_dds_devices()
-
+        self.dds_list = self.dds.dds_list
+        
         self.rf = doubled_rf(dds_ch=self.dds.antenna_rf, expt_params=self.params)
 
         # magnet coils
@@ -260,7 +260,7 @@ class Devices():
         for dds in self.dds.dds_list:
             dds.set_dds(init=True)
             delay(5.e-6)
-            dds.dds_device.set_att(0.*dB)
+            # 
             
     @kernel
     def switch_all_dds(self,state):
@@ -275,16 +275,17 @@ class Devices():
     def init_all_dds(self):
         for dds in self.dds.dds_list:
             dds.dds_device.init()
-            delay(1e-3)
             dds._store_io_update_delay()
+            delay(10.e-6)
+            
         
     @kernel
     def init_all_cpld(self):
         for ddss in self.dds.dds_array:
             ddss[0].cpld_device.init()
             delay(1e-3)
-        # for dds in self.dds.dds_list:
-        #     dds.dds_device.set_att(0.*dB)
+        for dds in self.dds.dds_list:
+            dds.dds_device.set_att(0.*dB)
 
     # def shutdown_sources(self):
     #     from kexp import EthernetRelay

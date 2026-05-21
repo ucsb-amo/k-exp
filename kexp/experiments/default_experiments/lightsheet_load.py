@@ -28,7 +28,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_magtrap = 1.
         
         # self.xvar('t_lightsheet_hold',np.linspace(0.05,1.,5))
-        self.p.t_lightsheet_hold = .1
+        self.p.t_lightsheet_hold = .01
 
         # self.xvar('amp_imaging',np.linspace(0.08,0.12,5)) 
 
@@ -38,6 +38,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_mot_load = 1.
         self.p.amp_imaging = .25
         self.p.imaging_state = 2.
+        print(self.camera_params.amp_imaging)
 
         self.finish_prepare(shuffle=True)
 
@@ -53,9 +54,9 @@ class mag_trap(EnvExperiment, Base):
         
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
-
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
         delay(self.p.t_lightsheet_hold)
 
