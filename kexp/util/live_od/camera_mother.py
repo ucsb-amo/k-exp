@@ -272,7 +272,6 @@ class CameraBaby(QThread):
         except:
             pass
         print(f"{self.name}: All images captured.")
-        print(f"{self.name} has died honorably.")
         time.sleep(0.1)
         self.honorable_death_signal.emit()
         self.cam_status_signal.emit(-1)
@@ -284,7 +283,6 @@ class CameraBaby(QThread):
         except:
             pass
         self.data_handler.remove_incomplete_data(delete_data)
-        print(f"{self.name} has died dishonorably.")
         time.sleep(0.1)
         self.dishonorable_death_signal.emit()
         self.cam_status_signal.emit(-1)
