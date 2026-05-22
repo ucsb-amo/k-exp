@@ -9,4 +9,3 @@ for %%F in ("%SCRIPTS_DIR%\*.bat") do (
 )
 
 endlocal
-pause
