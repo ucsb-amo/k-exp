@@ -209,6 +209,12 @@ class LiveODWindow(QWidget):
             Qt.ConnectionType.DirectConnection,
         )
 
+        # Clear the nanny's interrupt flag before starting the new baby.
+        # Without this, if spawn_baby fires during reset()'s processEvents() loop
+        # (i.e. the experiment sends INIT_RUN before the old grab loop has died),
+        # persistent_get_camera() would hit break_check() → True and return a
+        # DummyCamera, causing "Camera not ready" on every subsequent run.
+        self.camera_nanny.interrupted = False
         self.the_baby.start()
         self.msg(f"Baby {name} born — camera_key={camera_key}")
 
@@ -339,7 +345,16 @@ class LiveODWindow(QWidget):
             self.msg(msg)
 
         if self.the_baby is not None:
-            while not getattr(self.the_baby, 'dead', False):
+            baby_to_wait_for = self.the_baby
+            while not getattr(baby_to_wait_for, 'dead', False):
+                if self.the_baby is not baby_to_wait_for:
+                    # spawn_baby() fired during processEvents() — the experiment
+                    # sent INIT_RUN before the old grab loop finished dying.
+                    # The old baby will finish in the background; the new one
+                    # already started.  Stop waiting here so camera_nanny.
+                    # interrupted gets cleared below before the new baby's
+                    # persistent_get_camera() runs.
+                    break
                 QApplication.processEvents()
                 time.sleep(0.05)
 

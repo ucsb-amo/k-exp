@@ -122,8 +122,6 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
         self.t_tweezer_squeezer_ramp_2 = 20.e-3
-        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.04 on vpd1
-        self.v_pd_hf_tweezer_squeeze_power = .444
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -299,6 +297,9 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
         self.v_pd_hf_tweezer_1064_rampdown3_end = 4.3
         self.n_tweezer_ramp_steps = 1000
+
+        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
+        self.v_pd_hf_tweezer_squeeze_power = .444
 
         self.n_tweezers = 2
 

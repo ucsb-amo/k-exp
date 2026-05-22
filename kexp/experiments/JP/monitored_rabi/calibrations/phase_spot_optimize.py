@@ -26,6 +26,8 @@ class phase_spot(EnvExperiment, Base):
         # self.p.dimension_slm_mask = 20.e-6
 
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
+
+        self.p.v_pd_hf_tweezer_squeeze_power = 8.
         
         self.p.N_repeats = 5
 
