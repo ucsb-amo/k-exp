@@ -27,6 +27,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  expt_params=None,
                  suppress_live_od=False):
 
+        if suppress_live_od:
+            setup_camera = False
+            save_data = False
+
         super().__init__(setup_camera=setup_camera,
                          absorption_image=absorption_image,
                          save_data=save_data,
