@@ -236,6 +236,8 @@ class LiveODServer(QThread, WaxxServer):
                 self._write_shot_timestamps(msg)
                 self._server_talk.update_run_id()
                 print(f"[LiveODServer] END_RUN: run_id={self._current_run_id} saved.")
+                # Clear filepath so a late RESET cannot delete an already-saved file.
+                self._current_filepath = ""
             except Exception as exc:
                 import traceback
                 print(f"[LiveODServer] END_RUN: save failed:")

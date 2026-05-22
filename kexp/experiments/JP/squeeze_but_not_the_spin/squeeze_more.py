@@ -12,16 +12,24 @@ class hf_bec(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
-        self.p.t_tof = 50.e-6
+        # self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
+        self.p.t_tof = 2.5e-6
 
-        # self.xvar('t_tweezer_hold', np.linspace(0.,50.,10) * 1.e-6)
-        self.t_tweezer_hold = 10.e-3
+        # self.xvar('frequency_detuned_hf_f1m1',-575.e6 + np.arange(-6.,6.+3,3)*1.e6)
 
-        self.xvar('t_tweezer_paint_rampdown',np.linspace(0.33,10.,5)*1.e-3)
+        # self.p.v_pd_hf_tweezer_squeeze_power
+        # from kexp.calibrations.tweezer import tweezer_vpd2_to_vpd1
+        # vpd1_0 = tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp)
+        # self.xvar('v_pd_hf_tweezer_squeeze_power', np.linspace(vpd1_0, 0.5, 7))
+        # self.xvar('v_pd_hf_tweezer_squeeze_power', np.linspace(0.1, 8., 7))
+        # self.p.v_pd_hf_tweezer_squeeze_power = 8.
 
-        self.p.t_tweezer_paint_rampdown
-        self.p.N_repeats = 2
+        self.p.t_tweezer_hold = 100.e-3
+        # self.xvar('t_tweezer_hold', np.linspace(0., 300, 5)*1.e-3)
+        # self.p.t_tweezer_squeezer_ramp_2 = 20.e-3
+        # self.xvar('t_tweezer_squeezer_ramp_2', np.linspace(3.,100.,2)*1.e-3)
+        self.p.N_repeats = 3
+        self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
 
