@@ -6,18 +6,15 @@ import numpy as np
 class mot_killa(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False)
+        Base.__init__(self,suppress_live_od=False)
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def run(self):
         self.init_kernel()
-        self.ttl.pd_scope_trig()
-        self.ttl.imaging_shutter_x.on()
-        self.dds.imaging.on()
-        delay(0.7e-6)
-        self.dds.imaging.off()
+        self.prep_raman()
+        self.raman.on()
 
     def analyze(self):
         import os
