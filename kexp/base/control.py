@@ -142,7 +142,8 @@ class Control():
             fraction_power=dv,
             global_phase=0.,relative_phase=0.,
             t_phase_origin_mu=np.int64(-1),
-            phase_mode=1):
+            phase_mode=1,
+            line_trigger=True):
         
         if frequency_transition == dv:
             frequency_transition = self.p.frequency_raman_transition

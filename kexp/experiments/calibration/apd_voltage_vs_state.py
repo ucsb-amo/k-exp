@@ -21,11 +21,11 @@ class sigma_z(EnvExperiment, Base):
         print(self.p.t_between_pulses_mu)
 
         self.p.t_raman_pulse = 0.
-        self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,5))
+        self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,1))
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 2
+        self.p.N_repeats = 10
 
         self.p.N_pulses = 5
 

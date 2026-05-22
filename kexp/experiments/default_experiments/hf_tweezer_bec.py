@@ -15,13 +15,12 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
         self.p.t_tof = 50.e-6
 
-        # self.xvar('t_tweezer_hold', np.linspace(0.,50.,10) * 1.e-6)
+        # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
+        
+        # self.xvar('t_tweezer_hold', np.linspace(0.,20.,10) * 1.e-6)
         self.t_tweezer_hold = 10.e-3
 
-        self.xvar('t_tweezer_paint_rampdown',np.linspace(0.33,10.,5)*1.e-3)
-
-        self.p.t_tweezer_paint_rampdown
-        self.p.N_repeats = 2
+        self.p.N_repeats = 4
 
         self.finish_prepare(shuffle=True)
 
