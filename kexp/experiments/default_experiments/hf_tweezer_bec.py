@@ -8,7 +8,7 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,setup_camera=True,save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
@@ -18,7 +18,7 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('frequency_detuned_hf_f1m1',-575.e6 + np.arange(-6.,6.+3,3)*1.e6)
 
         self.p.t_tweezer_hold = 20.e-3
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -28,7 +28,7 @@ class hf_bec(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
 
-        self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers(squeeze=True)
         
         delay(self.p.t_tweezer_hold)
         
@@ -41,7 +41,7 @@ class hf_bec(EnvExperiment, Base):
 
     @kernel
     def run(self):
-        self.init_kernel(setup_slm=False)
+        self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
 
