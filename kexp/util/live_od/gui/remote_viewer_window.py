@@ -72,14 +72,14 @@ class LiveODSubscriber(QThread):
     def run(self):
         """Main subscriber loop: connect and receive messages, with periodic polling."""
         context = zmq.Context()
-        
+        self._running = True
+
         while self._running:
             try:
                 socket = context.socket(zmq.SUB)
                 socket.setsockopt(zmq.RCVTIMEO, 500)        # 500 ms poll for timeouts
                 socket.setsockopt(zmq.SUBSCRIBE, b"")       # subscribe to all topics
                 socket.connect(f"tcp://{self._ip}:{self._port}")
-                self._running = True
                 self._connection_ok = True
                 self._attempting_reconnect = False
                 self.connection_status_signal.emit(
