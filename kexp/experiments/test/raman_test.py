@@ -15,6 +15,7 @@ class mot_killa(EnvExperiment, Base):
         self.init_kernel()
         self.prep_raman()
         self.raman.on()
+        self.ttl.raman_shutter.on()
 
     def analyze(self):
         import os
