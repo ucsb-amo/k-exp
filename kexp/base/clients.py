@@ -4,7 +4,7 @@ from kexp.config.ip import MONITOR_STATE_FILEPATH
 
 from waxx.util.device_state.monitor_controller import MonitorController
 
-from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient
+from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient, HMRDummy
 from kexp.util.live_od.live_od_client import LiveODClient
 
 monitor_controller = MonitorController(MONITOR_STATE_FILEPATH) if os.path.isfile(MONITOR_STATE_FILEPATH) else None
@@ -17,7 +17,11 @@ class Clients():
         except Exception as e:
             print(f"Failed to connect to Monitor: {e}")
 
-        self.magnetometer = HMRClient()
+        try:
+            self.magnetometer = HMRClient()
+        except RuntimeError as e:
+            print(f"Failed to connect to HMR Magnetometer server: {e}")
+            self.magnetometer = HMRDummy()
 
         if not suppress_live_od:
             try:

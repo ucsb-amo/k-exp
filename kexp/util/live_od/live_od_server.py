@@ -286,7 +286,18 @@ class LiveODServer(QThread, WaxxServer):
         """Experiment has acknowledged the abort — clean up and close out the run."""
         print("Experiment acknowledged: run aborted.")
         self._finalize_reset_run()
+        self._notify_monitor_restart()
         return {"ok": True}
+
+    def _notify_monitor_restart(self):
+        """Send a reset message to the monitor server after a successful run abort."""
+        try:
+            from waxx.util.comms_server.comm_client import MonitorClient
+            client = MonitorClient(discovery_timeout=2.0)
+            client.send_reset()
+            print("[LiveODServer] Monitor server restart requested.")
+        except Exception as exc:
+            print(f"[LiveODServer] Could not notify monitor server: {exc}")
 
     def _handle_poll(self, msg: dict) -> dict:
         """Lightweight poll — lets the experiment check for a pending reset."""

@@ -29,7 +29,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.data.apd = self.data.add_data_container(3)
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
-        self.p.v_pd_hf_tweezer_squeeze_power = 8.
+        # self.p.v_pd_hf_tweezer_squeeze_power = 8.
 
         self.finish_prepare(shuffle=True)
 

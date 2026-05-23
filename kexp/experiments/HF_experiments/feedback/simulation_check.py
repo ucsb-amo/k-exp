@@ -28,7 +28,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 10
+        self.p.N_repeats = 2
         self.p.N_pulses = 12 # number of steps of evolution
         
         ### parameters
@@ -125,8 +125,6 @@ class feedback(EnvExperiment, Base, Feedback):
         tP = self.p.t_between_pulses_mu
         dt = self.p.delta_t_mu
         tR = self.p.t_raman_set_pretrigger_mu
-
-        dt_set = np.int64(0)
         
         for i in range(self.p.N_pulses):
             # self.omega_raman = self.p.intermediate_detuning
@@ -148,10 +146,6 @@ class feedback(EnvExperiment, Base, Feedback):
 
             self.raman.pulse(self.p.t_raman_pulse)
 
-            t0 = now_mu()
-            self.raman.stage_ffua()
-            at_mu(t0)
-
             k = self.measurement(i)
             omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
@@ -164,7 +158,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
-            self.data.phi.put_data(phase_tracker, i)
+            # self.data.phi.put_data(phase_tracker, i)
             # self.store_probabilities_to_host(self.P0, self.scan_xvars[0].counter, i)
         
     @rpc(flags={"async"})
@@ -224,11 +218,14 @@ class feedback(EnvExperiment, Base, Feedback):
         self.integrator.begin_integrate(reset=False)
         self.imaging.pulse(self.p.t_img_pulse)
         self.integrator.stop_and_settle()
-        t = now_mu()
+
+        t0 = now_mu()
+        self.raman.stage_ffua()
+
         # start the clear after the integrator voltage is already in the sampler
-        at_mu(t + T_CONV_MU)
+        at_mu(t0 + T_CONV_MU)
         self.integrator.clear(t=0)
-        at_mu(t)
+        at_mu(t0)
         self.data.apd.shot_data[i] = self.integrator.sample()
         v = self.convert_measurement(self.data.apd.shot_data[i])
         i = i + 1

@@ -9,7 +9,7 @@ from artiq.language import now_mu, at_mu
 
 from kexp.util.artiq.async_print import aprint
 
-class rabi_oscillation(EnvExperiment, Base):
+class rabi_surfing(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False,
@@ -29,19 +29,16 @@ class rabi_oscillation(EnvExperiment, Base):
 
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / self.p.N_divider
         # Minimal pulse count that gives a 2*pi total pulse area per train.
-        self.p.N_raman_pulses_between_measurements = self.p.N_divider
+        self.p.N_raman_pulses_between_measurements = 2 * self.p.N_divider
 
-        fraction_range = 0.2
-        self.xvar('t_raman_pulse', self.p.t_raman_pulse * (1 + fraction_range * np.linspace(-1,1,11)))
+        self.xvar('t_raman_pulse', self.p.t_raman_pulse + 350.e-9 * np.linspace(-1,1,7))
 
         self.p.phase_rabi_surf_train_radians = 0
 
         self.p.time_for_bye = 10.e-6
 
-        self.camera_params.gain = 0
-
         self.p.t_tof = 100.e-6
-        self.p.N_repeats = 5
+        self.p.N_repeats = 10
 
         self.p.N_pulses = 30
         self.data.apd = self.data.add_data_container(self.p.N_pulses)

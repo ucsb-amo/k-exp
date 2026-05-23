@@ -34,7 +34,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.p.feedback_guess_span_Omega = 10.0
 
-        self.p.feedback_fractional_grid_center_offset = 5.
+        self.p.feedback_fractional_grid_center_offset = 3.5
 
         ###
 
@@ -96,7 +96,7 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(t_start_mu - (10000 & ~7))
 
         self.raman.set_frequency_fast(f)
-        self.raman.reset_phase()
+        # self.raman.reset_phase()
         self.raman.stage_ffua()
         # aprint(self.raman.get_phase())
         # self._phase = 0
@@ -122,9 +122,7 @@ class feedback(EnvExperiment, Base, Feedback):
             phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
 
             self.raman.pulse(self.p.t_raman_pulse)
-            t0 = now_mu()
-            self.raman.stage_ffua()
-            at_mu(t0)
+            
             k = self.measurement(i)
             omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
@@ -185,11 +183,13 @@ class feedback(EnvExperiment, Base, Feedback):
         self.integrator.begin_integrate(reset=False)
         self.imaging.pulse(self.p.t_img_pulse)
         self.integrator.stop_and_settle()
-        t = now_mu()
+
+        t0 = now_mu()
+        self.raman.stage_ffua()
         # start the clear after the integrator voltage is already in the sampler
-        at_mu(t + T_CONV_MU)
+        at_mu(t0 + T_CONV_MU)
         self.integrator.clear(t=0)
-        at_mu(t)
+        at_mu(t0)
         self.data.apd.shot_data[i] = self.integrator.sample()
         v = self.convert_measurement(self.data.apd.shot_data[i])
         i = i + 1

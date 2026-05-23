@@ -39,6 +39,7 @@ class LiveODWindow(QWidget):
         self.img_count = 0
         self.img_count_run = 0
         self._run_active = False   # True between INIT_RUN and END_RUN/reset
+        self._run_was_reset = False  # True when reset() kills an active no-camera run
         self.setup_widgets()
         self.setup_layout()
 
@@ -147,6 +148,7 @@ class LiveODWindow(QWidget):
         name = names.get_first_name()
         self._run_name = name
         self._run_capture_images = capture_images
+        self._run_was_reset = False
 
         self._run_active = True
 
@@ -227,11 +229,16 @@ class LiveODWindow(QWidget):
             # (camera runs that were reset also have the_baby=None by this
             # point, so we guard with _run_capture_images to avoid printing
             # a spurious honorable-death after an aborted camera run.)
-            self.msg(f"{name} has died honorably.")
+            if not self._run_was_reset:
+                self.msg(f"{name} has died honorably.")
         # Camera runs emit their own honorable_death_signal message.
         self.the_baby = None
         self.data_handler = None
-        self.server_talk.update_run_id()
+        # For no-camera resets, reset() already called update_run_id(); skip
+        # it here to avoid double-incrementing the run ID.
+        if not self._run_was_reset:
+            self.server_talk.update_run_id()
+        self._run_was_reset = False
 
     def on_shot_progress(self, shot_idx: int, N_total: int, xvar_values: object):
         """Update the GUI with per-shot progress from the ZMQ server."""
@@ -307,6 +314,14 @@ class LiveODWindow(QWidget):
         self.viewer_window.update_image_count(count, total)
 
     def reset(self):
+        # Guard against duplicate calls (e.g. local button + remote reset_signal
+        # arriving close together).  If _reset_requested is already set and
+        # there is no active run or camera baby, the reset was already handled.
+        if (hasattr(self, 'live_od_server') and
+                self.live_od_server._reset_requested and
+                not getattr(self, '_run_active', False) and
+                getattr(self, 'the_baby', None) is None):
+            return
         # Ensure the ZMQ server flag is set regardless of whether this was
         # triggered by the local button or by the remote viewer (which goes
         # through _handle_reset first, but this is idempotent).
@@ -339,6 +354,7 @@ class LiveODWindow(QWidget):
                 name = getattr(self, '_run_name', '?')
                 msg = f'Run reset. {name} has died dishonorably.'
                 self._run_active = False
+                self._run_was_reset = True
             else:
                 msg = 'No active run. Incrementing Run ID.'
             self.server_talk.update_run_id()

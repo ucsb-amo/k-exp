@@ -19,17 +19,19 @@ class phase_spot(EnvExperiment, Base):
         self.p.amp_imaging = 0.2
         self.p.t_imaging_pulse = 5.e-6
 
-        self.xvar('phase_slm_mask',np.linspace(0.*np.pi, 3.*np.pi, 21))
-        self.p.phase_slm_mask = 0.186 * np.pi
+        self.xvar('phase_slm_mask',np.linspace(0.1, 0.4, 11) * np.pi)
+        # self.p.phase_slm_mask = 0.186 * np.pi
 
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         # self.p.dimension_slm_mask = 20.e-6
-
+        
+        # self.xvar('frequency_detuned_hf_midpoint', self.p.frequency_detuned_hf_midpoint + 50e6 * np.linspace(-1,1,20))
+        
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
 
-        self.p.v_pd_hf_tweezer_squeeze_power = 8.
+        # self.p.v_pd_hf_tweezer_squeeze_power = 8.
         
-        self.p.N_repeats = 4
+        self.p.N_repeats = 3
 
         self.data.apd = self.data.add_data_container(3)
 
