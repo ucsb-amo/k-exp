@@ -303,20 +303,35 @@ class EmailHandler:
         
         return command in ignored_commands and value in ignored_commands.get(command, [])
 
-    def run_continuous(self, check_interval=CHECK_EMAIL_INTERVAL):
+    def run_continuous(self, check_interval=CHECK_EMAIL_INTERVAL,
+                       on_poll_complete=None, stop_flag=None):
         """
         Run the controller continuously, checking for new emails
-        at specified intervals (in seconds)
+        at specified intervals (in seconds).
+
+        Args:
+            check_interval: Seconds between polls.
+            on_poll_complete: Optional callable(success: bool) called after each
+                poll attempt.  Intended for GUI status indicators.
+            stop_flag: Optional callable that returns True when the loop should exit.
+                Useful for stopping from a QThread without KeyboardInterrupt.
         """
         logger.info(f"Starting command controller with {check_interval}s check interval.\n")
         
         while True:
+            if stop_flag is not None and stop_flag():
+                logger.info("Command controller stopped.")
+                break
             try:
                 self.check_emails()
+                if on_poll_complete is not None:
+                    on_poll_complete(True)
                 time.sleep(check_interval)
             except KeyboardInterrupt:
                 logger.info("Command controller stopped by user")
                 break
             except Exception as e:
                 logger.error(f"Unexpected error: {e}")
+                if on_poll_complete is not None:
+                    on_poll_complete(False)
                 time.sleep(check_interval)

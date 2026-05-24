@@ -22,15 +22,15 @@ class feedback(EnvExperiment, Base, Feedback):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
                       expt_params=self.p)
-        self.p.update_raman_frequency_bool = 1
+        # self.p.update_raman_frequency_bool = 1
         self.p.include_photon_noise = 1
         
         ### parameters
 
-        # self.p.feedback_fractional_initial_offset = 2.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,11))
+        self.p.feedback_fractional_initial_offset = 2.
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,11))
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 1
 
         self.p.feedback_guess_span_Omega = 10.0
 

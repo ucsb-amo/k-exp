@@ -1,8 +1,35 @@
+import json
+import os
+
 from kexp.util.remote_control.command_handler import CommandHandler
 from waxx.util.guis.als.als_gui_client import ALSGuiClient
 from waxx.util.guis.precilaser.precilaser_gui_client import PrecilaserGuiClient
 from waxx.util.notifications import send_email, _load_credentials
 import logging
+
+# Whitelist is stored at DATA_DIR (B:\_K\PotassiumData) on the lab machine.
+# Falls back to the script's directory on developer machines.
+_DATA_DIR = os.getenv("data")
+WHITELIST_PATH = (
+    os.path.join(_DATA_DIR, "remote_whitelist.json")
+    if _DATA_DIR
+    else os.path.join(os.path.dirname(__file__), "remote_whitelist.json")
+)
+
+# Default whitelist — only used to seed the JSON file on first run.
+_DEFAULT_PHONES = [
+    "9165834119",
+    "5104069659",
+    "7022366997",
+    "8052848029",
+    "8052847408",
+]
+_DEFAULT_EMAILS = [
+    "pagett.jared@gmail.com",
+    "jestes@ucsb.edu",
+    "jpagett@ucsb.edu",
+    "mbl@ucsb.edu",
+]
 
 ALS_STARTUP_SLACK_RECIPIENT = "general-aaaaahzr4dmblwquygpk47q6le@weldlab.slack.com"
 ALS_STARTUP_SLACK_SUBJECT = "1064nm laser on in 3418"
@@ -25,28 +52,74 @@ class RemoteControl(CommandHandler):
     def __init__(self):
         super().__init__()
 
-        self.als_client = ALSGuiClient()
-        self.precilaser_client = PrecilaserGuiClient()
+        try:
+            self.als_client = ALSGuiClient()
+        except RuntimeError as exc:
+            logger.warning("ALS server not available at startup: %s", exc)
+            self.als_client = None
 
-        # Whitelist of approved phone numbers (10 digits, no delimiters)
-        self.add_to_whitelist("9165834119")
-        self.add_to_whitelist("5104069659")
-        self.add_to_whitelist("7022366997")
-        self.add_to_whitelist("8052848029")
-        self.add_to_whitelist("8052847408")
-        
-        # Whitelist of approved email addresses
-        self.add_to_whitelist("pagett.jared@gmail.com")
-        self.add_to_whitelist("jestes@ucsb.edu")
-        self.add_to_whitelist("jpagett@ucsb.edu")
-        self.add_to_whitelist("mbl@ucsb.edu")
+        try:
+            self.precilaser_client = PrecilaserGuiClient()
+        except RuntimeError as exc:
+            logger.warning("Precilaser server not available at startup: %s", exc)
+            self.precilaser_client = None
+
+        # Load whitelist from JSON file (creates it with defaults on first run)
+        self.load_whitelist_from_file()
+
+        # Always allow the configured account to send commands to itself
         self.add_to_whitelist(self.email_handler.email_address)
-        
+
         # Command handlers - maps keywords to handler functions
         self.add_command_handler(["sources","source","atoms"], self.handle_sources_command)
         self.add_command_handler(["als"], self.handle_als_command)
         self.add_command_handler(["preci", "precilaser"], self.handle_precilaser_command)
         self.add_command_handler(["all"], self.handle_all_command)
+
+    def load_whitelist_from_file(self):
+        """Load whitelist from JSON file.  Creates the file with defaults if absent."""
+        if not os.path.exists(WHITELIST_PATH):
+            logger.info(f"Whitelist file not found — creating defaults at {WHITELIST_PATH}")
+            data = {"phones": _DEFAULT_PHONES, "emails": _DEFAULT_EMAILS}
+            try:
+                os.makedirs(os.path.dirname(WHITELIST_PATH), exist_ok=True)
+                with open(WHITELIST_PATH, "w") as f:
+                    json.dump(data, f, indent=2)
+            except Exception as exc:
+                logger.warning(f"Could not write whitelist file: {exc}")
+        else:
+            try:
+                with open(WHITELIST_PATH, "r") as f:
+                    data = json.load(f)
+            except Exception as exc:
+                logger.error(f"Could not read whitelist file: {exc} — using empty whitelist")
+                return
+
+        for phone in data.get("phones", []):
+            self.add_to_whitelist(phone)
+        for email_addr in data.get("emails", []):
+            self.add_to_whitelist(email_addr)
+        logger.info(
+            f"Loaded {len(data.get('phones', []))} phones and "
+            f"{len(data.get('emails', []))} emails from whitelist."
+        )
+
+    def save_whitelist_to_file(self):
+        """Persist the current in-memory whitelist back to the JSON file."""
+        data = {
+            "phones": list(self.email_handler.phone_whitelist),
+            "emails": [
+                addr for addr in self.email_handler.whitelist
+                if not addr.endswith("@txt.voice.google.com")
+            ],
+        }
+        try:
+            os.makedirs(os.path.dirname(WHITELIST_PATH), exist_ok=True)
+            with open(WHITELIST_PATH, "w") as f:
+                json.dump(data, f, indent=2)
+            logger.info(f"Whitelist saved to {WHITELIST_PATH}")
+        except Exception as exc:
+            logger.error(f"Could not save whitelist: {exc}")
 
     def send_als_startup_notification(self):
         """Send ALS startup notification via Slack email."""
@@ -78,6 +151,8 @@ class RemoteControl(CommandHandler):
 
     def handle_als_command(self, value):
         """Handle ALS startup/shutdown commands sent through remote control."""
+        if self.als_client is None:
+            return "ALS server not connected"
         try:
             value_lower = value.strip().lower()
 
@@ -111,6 +186,8 @@ class RemoteControl(CommandHandler):
 
     def handle_precilaser_command(self, value):
         """Handle Precilaser startup/shutdown commands sent through remote control."""
+        if self.precilaser_client is None:
+            return "Precilaser server not connected"
         try:
             value_lower = value.strip().lower()
 
@@ -210,9 +287,16 @@ class RemoteControl(CommandHandler):
             return f"Error in all command: {exc}"
         
 def main():
-    """Main function to run the command controller"""
+    """Main function to run the remote control GUI."""
+    import sys
+    from PyQt6.QtWidgets import QApplication
+    from kexp.util.remote_control.remote_control_gui import RemoteControlGUI
+
+    app = QApplication(sys.argv)
     controller = RemoteControl()
-    controller.run_continuous()
+    window = RemoteControlGUI(controller)
+    window.show()
+    sys.exit(app.exec())
 
 if __name__ == "__main__":
     main()
