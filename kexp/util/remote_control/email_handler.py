@@ -36,7 +36,7 @@ class EmailHandler:
 
     def print_instructions(self):
         gvnumber = f"{GVOICE_NUMBER[:3]}-{GVOICE_NUMBER[3:6]}-{GVOICE_NUMBER[6:]}"
-        logger.info(f"Email check success. Send commands to {gvnumber} or to {self.email_address}.")
+        logger.debug(f"Email check success. Send commands to {gvnumber} or to {self.email_address}.")
     
     def connect_to_email(self):
         """Connect to Gmail IMAP server"""
@@ -128,7 +128,7 @@ class EmailHandler:
         """
         try:
             if self.is_message_stale(msg):
-                logger.info("Ignoring stale message older than %ss", MAX_MESSAGE_AGE_SECONDS)
+                logger.debug("Ignoring stale message older than %ss", MAX_MESSAGE_AGE_SECONDS)
                 return
 
             # Extract sender information
@@ -148,7 +148,7 @@ class EmailHandler:
             # Process commands using the provided command processor
             commands = self.parse_commands(body)
             if not commands:
-                logger.info("No valid commands found in email")
+                logger.debug("No valid commands found in email")
                 return
             
             self.process_commands(sender,commands)

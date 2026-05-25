@@ -1,35 +1,10 @@
 import json
 import os
 
+from kexp.config.ip import WHITELIST_PATH
 from kexp.util.remote_control.command_handler import CommandHandler
-from waxx.util.guis.als.als_gui_client import ALSGuiClient
-from waxx.util.guis.precilaser.precilaser_gui_client import PrecilaserGuiClient
 from waxx.util.notifications import send_email, _load_credentials
 import logging
-
-# Whitelist is stored at DATA_DIR (B:\_K\PotassiumData) on the lab machine.
-# Falls back to the script's directory on developer machines.
-_DATA_DIR = os.getenv("data")
-WHITELIST_PATH = (
-    os.path.join(_DATA_DIR, "remote_whitelist.json")
-    if _DATA_DIR
-    else os.path.join(os.path.dirname(__file__), "remote_whitelist.json")
-)
-
-# Default whitelist — only used to seed the JSON file on first run.
-_DEFAULT_PHONES = [
-    "9165834119",
-    "5104069659",
-    "7022366997",
-    "8052848029",
-    "8052847408",
-]
-_DEFAULT_EMAILS = [
-    "pagett.jared@gmail.com",
-    "jestes@ucsb.edu",
-    "jpagett@ucsb.edu",
-    "mbl@ucsb.edu",
-]
 
 ALS_STARTUP_SLACK_RECIPIENT = "general-aaaaahzr4dmblwquygpk47q6le@weldlab.slack.com"
 ALS_STARTUP_SLACK_SUBJECT = "1064nm laser on in 3418"
@@ -52,19 +27,14 @@ class RemoteControl(CommandHandler):
     def __init__(self):
         super().__init__()
 
-        try:
-            self.als_client = ALSGuiClient()
-        except RuntimeError as exc:
-            logger.warning("ALS server not available at startup: %s", exc)
-            self.als_client = None
+        # Start with no server clients — the GUI buttons discover them in the background.
+        self.als_client = None
+        self.precilaser_client = None
 
-        try:
-            self.precilaser_client = PrecilaserGuiClient()
-        except RuntimeError as exc:
-            logger.warning("Precilaser server not available at startup: %s", exc)
-            self.precilaser_client = None
+        # label store: maps phone/email value → human label string
+        self._labels: dict = {}
 
-        # Load whitelist from JSON file (creates it with defaults on first run)
+        # Load whitelist from JSON file (creates empty file on first run)
         self.load_whitelist_from_file()
 
         # Always allow the configured account to send commands to itself
@@ -77,10 +47,14 @@ class RemoteControl(CommandHandler):
         self.add_command_handler(["all"], self.handle_all_command)
 
     def load_whitelist_from_file(self):
-        """Load whitelist from JSON file.  Creates the file with defaults if absent."""
+        """Load whitelist from JSON file.
+
+        Supports both old format (plain strings) and new format
+        ({"value": ..., "label": ...} objects).  Creates an empty file if absent.
+        """
         if not os.path.exists(WHITELIST_PATH):
-            logger.info(f"Whitelist file not found — creating defaults at {WHITELIST_PATH}")
-            data = {"phones": _DEFAULT_PHONES, "emails": _DEFAULT_EMAILS}
+            logger.info(f"Whitelist file not found — creating empty file at {WHITELIST_PATH}")
+            data = {"phones": [], "emails": []}
             try:
                 os.makedirs(os.path.dirname(WHITELIST_PATH), exist_ok=True)
                 with open(WHITELIST_PATH, "w") as f:
@@ -95,10 +69,22 @@ class RemoteControl(CommandHandler):
                 logger.error(f"Could not read whitelist file: {exc} — using empty whitelist")
                 return
 
-        for phone in data.get("phones", []):
-            self.add_to_whitelist(phone)
-        for email_addr in data.get("emails", []):
-            self.add_to_whitelist(email_addr)
+        def _entry(item):
+            """Return (value, label) from either a plain string or a dict entry."""
+            if isinstance(item, dict):
+                return item.get("value", ""), item.get("label", "")
+            return str(item), ""
+
+        for item in data.get("phones", []):
+            value, label = _entry(item)
+            if value:
+                self.add_to_whitelist(value)
+                self._labels[value] = label
+        for item in data.get("emails", []):
+            value, label = _entry(item)
+            if value:
+                self.add_to_whitelist(value)
+                self._labels[value] = label
         logger.info(
             f"Loaded {len(data.get('phones', []))} phones and "
             f"{len(data.get('emails', []))} emails from whitelist."
@@ -106,10 +92,13 @@ class RemoteControl(CommandHandler):
 
     def save_whitelist_to_file(self):
         """Persist the current in-memory whitelist back to the JSON file."""
+        def _obj(value):
+            return {"value": value, "label": self._labels.get(value, "")}
+
         data = {
-            "phones": list(self.email_handler.phone_whitelist),
+            "phones": [_obj(p) for p in self.email_handler.phone_whitelist],
             "emails": [
-                addr for addr in self.email_handler.whitelist
+                _obj(addr) for addr in self.email_handler.whitelist
                 if not addr.endswith("@txt.voice.google.com")
             ],
         }

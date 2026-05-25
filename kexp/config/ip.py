@@ -49,3 +49,10 @@ MAGNETOMETER_REFERENCE_CSV_PATH = os.path.join(DATA_DIR,'magnetometer_reference.
 
 ### kinesis motors
 DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961
+
+### remote control
+WHITELIST_PATH = (
+    os.path.join(DATA_DIR, "remote_whitelist.json")
+    if DATA_DIR
+    else os.path.join(os.path.dirname(__file__), "remote_whitelist.json")
+)

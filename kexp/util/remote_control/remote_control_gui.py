@@ -11,21 +11,23 @@ from waxx.util.guis.als.als_gui_client import ALSGuiClient
 from waxx.util.guis.precilaser.precilaser_gui_client import PrecilaserGuiClient
 
 from PyQt6.QtCore import QObject, QThread, Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QIcon, QPainter, QPixmap
 from PyQt6.QtWidgets import (
     QApplication,
     QDialog,
     QDialogButtonBox,
     QGroupBox,
     QHBoxLayout,
+    QHeaderView,
     QInputDialog,
     QLabel,
     QLineEdit,
-    QListWidget,
     QMainWindow,
     QMessageBox,
     QPlainTextEdit,
     QPushButton,
+    QTableWidget,
+    QTableWidgetItem,
     QVBoxLayout,
     QWidget,
 )
@@ -102,8 +104,15 @@ class WhitelistEditor(QDialog):
         info.setWordWrap(True)
         layout.addWidget(info)
 
-        self._list = QListWidget()
-        layout.addWidget(self._list)
+        self._table = QTableWidget(0, 3)
+        self._table.setHorizontalHeaderLabels(["Type", "Value", "Label"])
+        self._table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self._table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        self._table.verticalHeader().setVisible(False)
+        self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self._table.setEditTriggers(QTableWidget.EditTrigger.DoubleClicked | QTableWidget.EditTrigger.SelectedClicked)
+        layout.addWidget(self._table)
 
         btn_row = QHBoxLayout()
         self._add_btn = QPushButton("Add…")
@@ -118,16 +127,42 @@ class WhitelistEditor(QDialog):
 
         self._add_btn.clicked.connect(self._add_entry)
         self._remove_btn.clicked.connect(self._remove_entry)
+        self._table.cellChanged.connect(self._on_cell_changed)
         buttons.rejected.connect(self.accept)
 
     def _populate(self):
-        self._list.clear()
+        self._table.blockSignals(True)
+        self._table.setRowCount(0)
         eh = self._controller.email_handler
+        labels = getattr(self._controller, '_labels', {})
+        rows = []
         for phone in sorted(eh.phone_whitelist):
-            self._list.addItem(f"[phone] {phone}")
+            rows.append(("phone", phone, labels.get(phone, "")))
         for addr in sorted(eh.whitelist):
             if not addr.endswith("@txt.voice.google.com"):
-                self._list.addItem(f"[email] {addr}")
+                rows.append(("email", addr, labels.get(addr, "")))
+        for kind, value, label in rows:
+            row = self._table.rowCount()
+            self._table.insertRow(row)
+            type_item = QTableWidgetItem(kind)
+            type_item.setFlags(type_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            value_item = QTableWidgetItem(value)
+            value_item.setFlags(value_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            label_item = QTableWidgetItem(label)
+            self._table.setItem(row, 0, type_item)
+            self._table.setItem(row, 1, value_item)
+            self._table.setItem(row, 2, label_item)
+        self._table.blockSignals(False)
+
+    def _on_cell_changed(self, row: int, col: int):
+        if col != 2:
+            return
+        value_item = self._table.item(row, 1)
+        label_item = self._table.item(row, 2)
+        if value_item is None or label_item is None:
+            return
+        self._controller._labels[value_item.text()] = label_item.text().strip()
+        self._controller.save_whitelist_to_file()
 
     def _add_entry(self):
         text, ok = QInputDialog.getText(
@@ -140,29 +175,30 @@ class WhitelistEditor(QDialog):
         self._populate()
 
     def _remove_entry(self):
-        item = self._list.currentItem()
-        if item is None:
+        row = self._table.currentRow()
+        if row < 0:
             return
-
-        raw = item.text()
+        kind_item  = self._table.item(row, 0)
+        value_item = self._table.item(row, 1)
+        if kind_item is None or value_item is None:
+            return
+        kind  = kind_item.text()
+        value = value_item.text()
         eh = self._controller.email_handler
 
-        if raw.startswith("[phone] "):
-            phone = raw[len("[phone] "):]
-            if phone in eh.phone_whitelist:
-                eh.phone_whitelist.remove(phone)
-            # Also remove the derived GVoice email
+        if kind == "phone":
+            if value in eh.phone_whitelist:
+                eh.phone_whitelist.remove(value)
+            self._controller._labels.pop(value, None)
             from kexp.util.remote_control.email_handler import GVOICE_NUMBER
-            gv_email = f"1{GVOICE_NUMBER}.1{phone}.placeholder@txt.voice.google.com"
+            gv_email = f"1{GVOICE_NUMBER}.1{value}.placeholder@txt.voice.google.com"
             if gv_email in eh.whitelist:
                 eh.whitelist.remove(gv_email)
-
-        elif raw.startswith("[email] "):
-            addr = raw[len("[email] "):]
+        elif kind == "email":
             lc = [a.lower() for a in eh.whitelist]
-            if addr.lower() in lc:
-                idx = lc.index(addr.lower())
-                eh.whitelist.pop(idx)
+            if value.lower() in lc:
+                eh.whitelist.pop(lc.index(value.lower()))
+            self._controller._labels.pop(value, None)
 
         self._controller.save_whitelist_to_file()
         self._populate()
@@ -189,9 +225,9 @@ class ServerStatusButton(QPushButton):
     daemon thread so the UI is never frozen.
     """
 
-    _STYLE_CONNECTED    = "background-color: #2ba363; color: white; border-radius: 8px; padding: 6px 12px; font-weight: 700;"
-    _STYLE_DISCONNECTED = "background-color: #c87c1a; color: white; border-radius: 8px; padding: 6px 12px; font-weight: 700;"
-    _STYLE_OFFLINE      = "background-color: #d03f37; color: white; border-radius: 8px; padding: 6px 12px; font-weight: 700;"
+    _STYLE_CONNECTED    = "background-color: #2ba363; color: white; border-radius: 4px; padding: 2px 6px; font-weight: 700;"
+    _STYLE_DISCONNECTED = "background-color: #c87c1a; color: white; border-radius: 4px; padding: 2px 6px; font-weight: 700;"
+    _STYLE_OFFLINE      = "background-color: #d03f37; color: white; border-radius: 4px; padding: 2px 6px; font-weight: 700;"
 
     # Signals must be class-level for PyQt6
     _poll_result  = pyqtSignal(str)   # "CONNECTED" | "DISCONNECTED" | "OFFLINE"
@@ -343,13 +379,9 @@ class PollDot(QWidget):
         if success:
             self._dot.setStyleSheet(_STYLE_GREEN)
             self._label.setText("Poll OK")
-            QTimer.singleShot(600, self._reset)
         else:
             self._dot.setStyleSheet(_STYLE_RED)
             self._label.setText("Poll error")
-
-    def _reset(self):
-        self._dot.setStyleSheet(_STYLE_GRAY)
 
 
 # ---------------------------------------------------------------------------
@@ -361,11 +393,32 @@ class RemoteControlGUI(QMainWindow):
         super().__init__(parent)
         self._controller = controller
         self.setWindowTitle("K-Exp Remote Control")
-        self.setMinimumSize(700, 480)
+        self.setMinimumSize(320, 200)
 
+        self._set_window_icon()
         self._build_ui()
         self._setup_logging()
         self._start_polling()
+
+    # --- Window icon ---
+
+    def _set_window_icon(self):
+        icon = QIcon()
+        for size in (16, 24, 32, 48, 64, 128):
+            pixmap = QPixmap(size, size)
+            pixmap.fill(Qt.GlobalColor.transparent)
+            painter = QPainter(pixmap)
+            painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
+            font = QFont("Segoe UI Emoji")
+            font.setPixelSize(int(size * 0.8))
+            painter.setFont(font)
+            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, "📡")
+            painter.end()
+            icon.addPixmap(pixmap)
+        self.setWindowIcon(icon)
+        app = QApplication.instance()
+        if app is not None:
+            app.setWindowIcon(icon)
 
     # --- UI construction ---
 
@@ -373,9 +426,13 @@ class RemoteControlGUI(QMainWindow):
         central = QWidget()
         self.setCentralWidget(central)
         main_layout = QVBoxLayout(central)
+        main_layout.setContentsMargins(4, 4, 4, 4)
+        main_layout.setSpacing(4)
 
         # ---- top bar ----
         top = QHBoxLayout()
+        top.setContentsMargins(0, 0, 0, 0)
+        top.setSpacing(4)
         self._poll_dot = PollDot()
         top.addWidget(self._poll_dot)
         top.addStretch()
@@ -388,19 +445,19 @@ class RemoteControlGUI(QMainWindow):
         # ---- server connection status ----
         server_group = QGroupBox("Server Connection")
         server_layout = QHBoxLayout(server_group)
+        server_layout.setContentsMargins(4, 4, 4, 4)
+        server_layout.setSpacing(4)
 
         self._als_btn = ServerStatusButton(
             "ALS", self._controller, "als_client",
             client_factory=ALSGuiClient, poll_interval_ms=3000,
         )
-        self._als_btn.setMinimumHeight(36)
         server_layout.addWidget(self._als_btn)
 
         self._preci_btn = ServerStatusButton(
             "Precilaser", self._controller, "precilaser_client",
             client_factory=PrecilaserGuiClient, poll_interval_ms=3000,
         )
-        self._preci_btn.setMinimumHeight(36)
         server_layout.addWidget(self._preci_btn)
 
         main_layout.addWidget(server_group)
@@ -408,16 +465,16 @@ class RemoteControlGUI(QMainWindow):
         # ---- all on / all off buttons ----
         cmd_group = QGroupBox("Manual Commands")
         cmd_layout = QHBoxLayout(cmd_group)
+        cmd_layout.setContentsMargins(4, 4, 4, 4)
+        cmd_layout.setSpacing(4)
 
         all_on_btn = QPushButton("All ON")
-        all_on_btn.setMinimumHeight(40)
-        all_on_btn.setStyleSheet("background-color: #2ba363; color: white; font-weight: bold;")
+        all_on_btn.setStyleSheet("background-color: #888; color: white; font-weight: bold; border-radius: 4px; padding: 2px 6px;")
         all_on_btn.clicked.connect(self._all_on)
         cmd_layout.addWidget(all_on_btn)
 
         all_off_btn = QPushButton("All OFF")
-        all_off_btn.setMinimumHeight(40)
-        all_off_btn.setStyleSheet("background-color: #d03f37; color: white; font-weight: bold;")
+        all_off_btn.setStyleSheet("background-color: #888; color: white; font-weight: bold; border-radius: 4px; padding: 2px 6px;")
         all_off_btn.clicked.connect(self._all_off)
         cmd_layout.addWidget(all_off_btn)
 
@@ -426,6 +483,8 @@ class RemoteControlGUI(QMainWindow):
         # ---- log window ----
         log_group = QGroupBox("Log")
         log_layout = QVBoxLayout(log_group)
+        log_layout.setContentsMargins(4, 4, 4, 4)
+        log_layout.setSpacing(2)
         self._log_view = QPlainTextEdit()
         self._log_view.setReadOnly(True)
         self._log_view.setFont(QFont("Courier New", 9))
@@ -447,7 +506,6 @@ class RemoteControlGUI(QMainWindow):
         for name in (
             "kexp.util.remote_control.remote_control",
             "kexp.util.remote_control.command_handler",
-            "kexp.util.remote_control.email_handler",
         ):
             logging.getLogger(name).addHandler(handler)
 
@@ -507,6 +565,11 @@ class RemoteControlGUI(QMainWindow):
 # ---------------------------------------------------------------------------
 
 def main():
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+        'weldlab.kexp.gui.remote_control'
+    )
+
     from kexp.util.remote_control.remote_control import RemoteControl
 
     app = QApplication(sys.argv)

@@ -152,6 +152,17 @@ class LiveODWindow(QWidget):
 
         self._run_active = True
 
+        # Interrupt any DataHandler left over from the previous run.
+        # On long runs the DataHandler thread can still be draining the shared
+        # queue when the next INIT_RUN arrives.  If not interrupted here, the
+        # old DataHandler consumes images placed by the new CameraBaby before
+        # the new DataHandler has started, so the display never updates.
+        if self.data_handler is not None and self.data_handler.isRunning():
+            self.msg("Warning: previous DataHandler still running — interrupting it.")
+            self.data_handler.interrupted = True
+            self.data_handler.wait(500)
+            self.data_handler = None
+
         # Interrupt any CameraBaby left over from the previous run.
         # This happens when images never arrived (e.g. camera not triggered by
         # the remote machine's hardware) and the grab-loop timed out slowly, or
