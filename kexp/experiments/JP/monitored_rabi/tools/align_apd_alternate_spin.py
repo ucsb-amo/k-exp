@@ -16,7 +16,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=False,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.t_imaging_pulse = 20.e-6
+        self.p.t_imaging_pulse = 10.e-6
         self.xvar('dummy',[0]*1000)
         
         self.p.amp_imaging = 0.2

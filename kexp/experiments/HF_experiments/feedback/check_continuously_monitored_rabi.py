@@ -17,14 +17,16 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 450.e-6
+        self.p.t_continuous_rabi = 200.e-6
+
+        # self.p.v_pd_hf_tweezer_squeeze_power = 8.
 
         # self.xvar('t_raman_pulse',9.2565e-06 + 9.2565e-06*np.linspace(0.,1.,7))
         # self.xvar('t_raman_pulse', 9.2565e-06 + np.array([0.0, (9.2565e-06) / 2, 9.2565e-06]))
         # self.p.t_raman_pulse = (9.2565e-06) / 2
         
         # self.xvar('amp_imaging',np.linspace(.1,.6, 5))
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .2 * 2
 
         # self.p.hf_imaging_detuning = -568.e6 # 182.
 
@@ -34,7 +36,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         # calibration run 67282
         # img amp 0.2, pulse time 1.0e-05 s
-        self.p.frequency_lightshift = 3.26e+04  # Hz
+        self.p.frequency_lightshift = 3.06e+04 * 2  # Hz
 
         # self.xvar('phase_slm_mask',np.linspace(0.0*np.pi,.5*np.pi,10))
         # self.p.phase_slm_mask = 0.186 * np.pi
@@ -62,22 +64,22 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.prep_raman(frequency_transition=self.p.frequency_raman_transition_lightshifted,
                         phase_mode=0)
 
-        # self.raman.set_up_fast_frequency_update(aggressive_mode=0)
-        # self.raman.set_frequency_fast(self.p.frequency_raman_transition_lightshifted,
-        #                               do_io_update=False)
-
-        t0 = now_mu()
+        self.raman.set_up_fast_frequency_update(aggressive_mode=1)
+        self.raman.set_frequency_fast(self.p.frequency_raman_transition_lightshifted,
+                                      do_io_update=False)
 
         self.raman.on()
-        # delay( self.p.t_raman_pi_pulse * 20 )
+        delay( self.p.t_raman_pi_pulse * 10 )
+        self.raman.off()
 
-        # self.raman.io_update()
-        # delay_mu(100)
+        self.raman.io_update()
+        delay_mu(100)
 
         self.imaging.on()
+        self.raman.on()
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         
-        at_mu(t0 + self.core.seconds_to_mu(self.p.t_continuous_rabi))
+        delay(self.p.t_continuous_rabi)
         self.imaging.off()
         self.raman.off()
 

@@ -293,6 +293,11 @@ class EmailHandler:
         Check if a command should be ignored (filtered out without logging)
         Returns True if the command should be ignored
         """
+        # Commands to ignore regardless of value
+        always_ignored_commands = {'to'}
+        if command in always_ignored_commands:
+            return True
+
         # Commands to ignore (Google Voice auto-generated content)
         ignored_commands = {
             '<https': ['//voice.google.com>', '//productforums.google.com/forum/#!forum/voice>', '//voice.google.com/settings#messaging>.', '//voice.google.com> help center'],

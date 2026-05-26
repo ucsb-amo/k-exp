@@ -59,6 +59,7 @@ class DataHandler(QThread, Scribe):
     got_image_from_queue = pyqtSignal(np.ndarray)
     save_data_bool_signal = pyqtSignal(int)
     image_type_signal = pyqtSignal(bool)
+    done_writing_signal = pyqtSignal()   # emitted after HDF5 handle is closed (or immediately when save_data=False)
 
     def __init__(self, queue: Queue, data_filepath: str,
                  save_data=None, imaging_type=None, camera_key="",
@@ -191,6 +192,7 @@ class DataHandler(QThread, Scribe):
             if self.save_data: f.close()
         except:
             pass
+        self.done_writing_signal.emit()
 
     def break_check(self):
         return self.interrupted

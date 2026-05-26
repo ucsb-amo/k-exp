@@ -3,14 +3,18 @@ import sys
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtWidgets
 
+import os
+
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_server import MagnetometerServer
 from kexp.config.ip import (
+    DATA_DIR,
     MAGNETOMETER_COM,
     MAGNETOMETER_REFERENCE_CSV_PATH,
 )
 
 DEFAULT_SERIAL_PORT = MAGNETOMETER_COM
 DEFAULT_REFERENCE_CSV_PATH = MAGNETOMETER_REFERENCE_CSV_PATH
+_LOG_PATH = os.path.join(DATA_DIR, "_logs", "hmr_magnetometer_server.log") if DATA_DIR else None
 
 def main():
     server = MagnetometerServer(
@@ -18,7 +22,7 @@ def main():
         reference_csv_path=DEFAULT_REFERENCE_CSV_PATH,
     )
     try:
-        server.run()
+        server.run(log_path=_LOG_PATH)
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted — shutting down.")
     finally:

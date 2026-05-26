@@ -113,7 +113,7 @@ class LiveODWindow(QWidget):
         # Timer for periodic update
         self.run_id_timer = QTimer(self)
         self.run_id_timer.timeout.connect(self.update_run_id_label)
-        self.run_id_timer.start(1)  # 10 seconds
+        self.run_id_timer.start(2000)  # 2 seconds
 
     def setup_layout(self):
         layout = QVBoxLayout()
@@ -219,6 +219,10 @@ class LiveODWindow(QWidget):
 
         self.the_baby.cam_status_signal.connect(
             lambda s: self.live_od_server.on_cam_ready() if s == 2 else None,
+            Qt.ConnectionType.DirectConnection,
+        )
+        self.data_handler.done_writing_signal.connect(
+            self.live_od_server.on_data_handler_done,
             Qt.ConnectionType.DirectConnection,
         )
 

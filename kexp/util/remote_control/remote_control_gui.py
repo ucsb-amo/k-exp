@@ -36,6 +36,112 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Dark mode stylesheet
+# ---------------------------------------------------------------------------
+
+_DARK_STYLESHEET = """
+QWidget {
+    background-color: #2b2b2b;
+    color: #e0e0e0;
+}
+QGroupBox {
+    border: 1px solid #555;
+    border-radius: 4px;
+    margin-top: 6px;
+    color: #e0e0e0;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 8px;
+    padding: 0 2px;
+}
+QGroupBox[title=""] {
+    border: none;
+    margin-top: 0;
+}
+QPushButton {
+    background-color: #444;
+    color: #e0e0e0;
+    border: 1px solid #666;
+    border-radius: 4px;
+    padding: 3px 8px;
+}
+QPushButton:hover {
+    background-color: #555;
+}
+QPushButton:pressed {
+    background-color: #333;
+}
+QPushButton:disabled {
+    background-color: #383838;
+    color: #888;
+    border-color: #555;
+}
+QPlainTextEdit {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border: 1px solid #555;
+}
+QTableWidget {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    gridline-color: #444;
+}
+QTableWidget::item:selected {
+    background-color: #3a5a8a;
+}
+QHeaderView::section {
+    background-color: #3c3c3c;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    padding: 2px 4px;
+}
+QDialog {
+    background-color: #2b2b2b;
+}
+QLabel {
+    color: #e0e0e0;
+}
+QLineEdit {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 2px 4px;
+}
+QScrollBar:vertical {
+    background: #2b2b2b;
+    width: 10px;
+    border: none;
+}
+QScrollBar::handle:vertical {
+    background: #555;
+    border-radius: 4px;
+    min-height: 20px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0;
+}
+QScrollBar:horizontal {
+    background: #2b2b2b;
+    height: 10px;
+    border: none;
+}
+QScrollBar::handle:horizontal {
+    background: #555;
+    border-radius: 4px;
+    min-width: 20px;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0;
+}
+QDialogButtonBox QPushButton {
+    min-width: 60px;
+}
+"""
+
+
+# ---------------------------------------------------------------------------
 # Logging bridge: Python logging → Qt signal → QPlainTextEdit
 # ---------------------------------------------------------------------------
 
@@ -316,14 +422,12 @@ class ServerStatusButton(QPushButton):
     # --- visual state ---
 
     def _apply_state(self):
+        self.setText(self._label)
         if self._connection_state == "CONNECTED":
-            self.setText(f"{self._label}  Connected")
             self.setStyleSheet(self._STYLE_CONNECTED)
         elif self._connection_state == "DISCONNECTED":
-            self.setText(f"{self._label}  Disconnected")
             self.setStyleSheet(self._STYLE_DISCONNECTED)
         else:
-            self.setText(f"{self._label}  Offline")
             self.setStyleSheet(self._STYLE_OFFLINE)
 
     # --- click handler ---
@@ -400,6 +504,10 @@ class RemoteControlGUI(QMainWindow):
         self._setup_logging()
         self._start_polling()
 
+        app = QApplication.instance()
+        if app is not None:
+            app.setStyleSheet(_DARK_STYLESHEET)
+
     # --- Window icon ---
 
     def _set_window_icon(self):
@@ -463,9 +571,9 @@ class RemoteControlGUI(QMainWindow):
         main_layout.addWidget(server_group)
 
         # ---- all on / all off buttons ----
-        cmd_group = QGroupBox("Manual Commands")
-        cmd_layout = QHBoxLayout(cmd_group)
-        cmd_layout.setContentsMargins(4, 4, 4, 4)
+        cmd_widget = QWidget()
+        cmd_layout = QHBoxLayout(cmd_widget)
+        cmd_layout.setContentsMargins(4, 0, 4, 0)
         cmd_layout.setSpacing(4)
 
         all_on_btn = QPushButton("All ON")
@@ -478,7 +586,7 @@ class RemoteControlGUI(QMainWindow):
         all_off_btn.clicked.connect(self._all_off)
         cmd_layout.addWidget(all_off_btn)
 
-        main_layout.addWidget(cmd_group)
+        main_layout.addWidget(cmd_widget)
 
         # ---- log window ----
         log_group = QGroupBox("Log")

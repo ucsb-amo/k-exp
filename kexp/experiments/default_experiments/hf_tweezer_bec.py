@@ -20,15 +20,19 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold', np.linspace(0.,20.,10) * 1.e-6)
         self.t_tweezer_hold = 10.e-3
 
-        self.p.N_repeats = 4
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.prepare_hf_tweezers(squeeze=True)
+        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        # self.prepare_hf_tweezers(squeeze=True)
+
+        # delay(-10.)
+
+        self.core.break_realtime()
         
         delay(self.p.t_tweezer_hold)
         

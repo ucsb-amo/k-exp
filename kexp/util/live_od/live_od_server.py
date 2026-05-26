@@ -58,6 +58,8 @@ class LiveODServer(QThread, WaxxServer):
         self._ip = "0.0.0.0"
         self._port = port
         self._cam_ready_event = threading.Event()
+        self._data_handler_done_event = threading.Event()
+        self._data_handler_done_event.set()  # default: no DataHandler in flight
         self._running = False
         self._current_save_data = False
         self._current_capture_images = False
@@ -78,6 +80,15 @@ class LiveODServer(QThread, WaxxServer):
         threading.Event is set from the CameraBaby thread immediately.
         """
         self._cam_ready_event.set()
+
+    def on_data_handler_done(self):
+        """Set the data-handler-done event.
+
+        Connect to ``DataHandler.done_writing_signal`` with
+        ``Qt.ConnectionType.DirectConnection`` so the event is set from
+        the DataHandler thread immediately after it closes the HDF5 file.
+        """
+        self._data_handler_done_event.set()
 
     def stop(self):
         """Request the server loop to stop on the next poll cycle."""
@@ -147,14 +158,26 @@ class LiveODServer(QThread, WaxxServer):
         or opportunistically on the next INIT_RUN if the experiment process was
         killed and never sent that confirmation.
         """
+        # Emit reset_signal so the GUI's reset() handler interrupts the
+        # DataHandler and CameraBaby.  This sets data_handler.interrupted=True
+        # and calls data_handler.quit(), which causes the DataHandler to close
+        # its HDF5 handle and emit done_writing_signal — which in turn sets
+        # _data_handler_done_event.  Must happen BEFORE the wait below.
+        self.reset_signal.emit()
         # Delete the HDF5 file if it still exists (may already be gone for
         # camera runs whose CameraBaby called dishonorable_death).
         if self._current_filepath and os.path.exists(self._current_filepath):
+            # Wait for the DataHandler (camera writer) to close its HDF5
+            # handle before attempting deletion.  Without this the file is
+            # still open and os.remove raises WinError 32 on Windows.
+            if not self._data_handler_done_event.wait(timeout=30.0):
+                print("[LiveODServer] WARNING: DataHandler did not release the file within 30 s — deletion may fail.")
             try:
                 os.remove(self._current_filepath)
                 print(f"Deleted incomplete data file: {self._current_filepath}")
             except Exception as exc:
                 print(f"Warning: could not delete incomplete data file: {exc}")
+            self._current_filepath = ""
         self._reset_requested = False
         self.run_done_signal.emit()
 
@@ -174,6 +197,11 @@ class LiveODServer(QThread, WaxxServer):
         self._cam_ready_event.clear()
         self._current_save_data = save_data
         self._current_capture_images = capture_images
+        # Gate END_RUN saves on DataHandler finishing.  For no-camera runs
+        # there is no DataHandler, so mark it done immediately.
+        self._data_handler_done_event.clear()
+        if not capture_images:
+            self._data_handler_done_event.set()
 
         run_id = 0
         filepath = ""
@@ -231,10 +259,14 @@ class LiveODServer(QThread, WaxxServer):
             self.run_done_signal.emit()
             return {"ok": True}
         if self._current_save_data and self._current_filepath:
+            # Wait for DataHandler to close its HDF5 handle before we open
+            # the same file for the end-of-run save.  Without this wait the
+            # two h5py opens race and either corrupt the file or raise OSError.
+            if not self._data_handler_done_event.wait(timeout=60.0):
+                print("[LiveODServer] WARNING: DataHandler did not finish within 60 s — proceeding anyway.")
             try:
                 self._data_saver.save_data_from_payload(msg, self._current_filepath)
                 self._write_shot_timestamps(msg)
-                self._server_talk.update_run_id()
                 print(f"[LiveODServer] END_RUN: run_id={self._current_run_id} saved.")
                 # Clear filepath so a late RESET cannot delete an already-saved file.
                 self._current_filepath = ""
@@ -286,18 +318,7 @@ class LiveODServer(QThread, WaxxServer):
         """Experiment has acknowledged the abort — clean up and close out the run."""
         print("Experiment acknowledged: run aborted.")
         self._finalize_reset_run()
-        self._notify_monitor_restart()
         return {"ok": True}
-
-    def _notify_monitor_restart(self):
-        """Send a reset message to the monitor server after a successful run abort."""
-        try:
-            from waxx.util.comms_server.comm_client import MonitorClient
-            client = MonitorClient(discovery_timeout=2.0)
-            client.send_reset()
-            print("[LiveODServer] Monitor server restart requested.")
-        except Exception as exc:
-            print(f"[LiveODServer] Could not notify monitor server: {exc}")
 
     def _handle_poll(self, msg: dict) -> dict:
         """Lightweight poll — lets the experiment check for a pending reset."""

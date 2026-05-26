@@ -87,7 +87,7 @@ class Control():
                                                     amp_list1=self.params.amp_tweezer_list1,
                                                     amp_list2=self.params.amp_tweezer_list2)
             self.tweezer.reset_traps(self.xvarnames)
-            delay(100.e-3)
+            delay(15.e-3)
             self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)

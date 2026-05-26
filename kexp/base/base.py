@@ -207,6 +207,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
     @kernel
     def post_scan(self):
+        self.core.break_realtime()
         self.background_field()
 
     @kernel
