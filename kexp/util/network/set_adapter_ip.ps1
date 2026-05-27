@@ -259,6 +259,16 @@ foreach ($adapter in $adapters) {
                              -ErrorAction Stop | Out-Null
 
             Write-Host "  Successfully configured (Static)" -ForegroundColor Green
+
+            # Set network profile to Private so services can bind on the LAN interface
+            try {
+                Get-NetConnectionProfile -InterfaceIndex $adapter.InterfaceIndex |
+                    Set-NetConnectionProfile -NetworkCategory Private -ErrorAction Stop
+                Write-Host "  Network profile set to Private" -ForegroundColor Green
+            }
+            catch {
+                Write-Host "  Warning: Could not set network profile: $($_.Exception.Message)" -ForegroundColor Yellow
+            }
         }
         else {
             Write-Host "  Skipping: Unknown Network type '$networkType'" -ForegroundColor Yellow
@@ -271,4 +281,26 @@ foreach ($adapter in $adapters) {
     Write-Host ""
 }
 
-Write-Host "Configuration complete!" -ForegroundColor Cyan
+# Configure firewall rule for WaxxDiscovery UDP beacon reception
+Write-Host "`nConfiguring firewall rules..." -ForegroundColor Cyan
+$fwRuleName = "WaxxDiscovery-IN"
+$existingRule = Get-NetFirewallRule -DisplayName $fwRuleName -ErrorAction SilentlyContinue
+if (-not $existingRule) {
+    Write-Host "  Adding firewall rule '$fwRuleName'..." -ForegroundColor Cyan
+    try {
+        New-NetFirewallRule -DisplayName $fwRuleName `
+            -Direction Inbound -Action Allow `
+            -Protocol UDP -LocalPort 50099 `
+            -RemoteAddress "192.168.1.0/24" `
+            -Profile Any -ErrorAction Stop | Out-Null
+        Write-Host "  Firewall rule '$fwRuleName' added." -ForegroundColor Green
+    }
+    catch {
+        Write-Host "  Error adding firewall rule: $($_.Exception.Message)" -ForegroundColor Red
+    }
+}
+else {
+    Write-Host "  Firewall rule '$fwRuleName' already exists, skipping." -ForegroundColor Yellow
+}
+
+Write-Host "`nConfiguration complete!" -ForegroundColor Cyan
