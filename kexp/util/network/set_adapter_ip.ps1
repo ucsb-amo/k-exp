@@ -197,18 +197,31 @@ foreach ($adapter in $adapters) {
         if ($networkType -eq 'Broida') {
             Write-Host "  Action: Enable DHCP" -ForegroundColor Cyan
 
-            Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -Dhcp Enabled -ErrorAction Stop
-            Set-DnsClientServerAddress -InterfaceIndex $adapter.InterfaceIndex -ResetServerAddresses -ErrorAction SilentlyContinue
+            $ipInterface = Get-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue
+            $dhcpAlreadyEnabled = $ipInterface -and $ipInterface.Dhcp -eq 'Enabled'
 
             $existingManual = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
                 Where-Object { $_.PrefixOrigin -eq 'Manual' }
-            foreach ($ip in $existingManual) {
-                Remove-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -IPAddress $ip.IPAddress -Confirm:$false -ErrorAction SilentlyContinue
+            $hasManualIPv4 = $existingManual -and $existingManual.Count -gt 0
+
+            # DNS check is intentionally omitted: Get-DnsClientServerAddress returns DHCP-assigned
+            # DNS servers too, so a non-empty ServerAddresses list does not indicate static DNS.
+            # DHCP enabled + no manual IPs is sufficient to confirm correct Broida config.
+            if ($dhcpAlreadyEnabled -and -not $hasManualIPv4) {
+                Write-Host "  Current DHCP configuration matches target. Skipping changes." -ForegroundColor Yellow
             }
+            else {
+                Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -Dhcp Enabled -ErrorAction Stop
+                Set-DnsClientServerAddress -InterfaceIndex $adapter.InterfaceIndex -ResetServerAddresses -ErrorAction SilentlyContinue
 
-            Remove-NetRoute -InterfaceIndex $adapter.InterfaceIndex -Confirm:$false -ErrorAction SilentlyContinue
+                foreach ($ip in $existingManual) {
+                    Remove-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -IPAddress $ip.IPAddress -Confirm:$false -ErrorAction SilentlyContinue
+                }
 
-            Write-Host "  Successfully configured (DHCP)" -ForegroundColor Green
+                Remove-NetRoute -InterfaceIndex $adapter.InterfaceIndex -Confirm:$false -ErrorAction SilentlyContinue
+
+                Write-Host "  Successfully configured (DHCP)" -ForegroundColor Green
+            }
         }
         elseif ($networkType -eq 'LAN') {
             $targetIp = $row.IP
@@ -225,19 +238,25 @@ foreach ($adapter in $adapters) {
                 continue
             }
 
+
             Write-Host "  Action: Set static IP" -ForegroundColor Cyan
             Write-Host "  Target IP: $targetIp"
             Write-Host "  Subnet Mask: $subnetMask"
             Write-Host "  Default Gateway: $defaultGateway"
 
-            Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -Dhcp Disabled -ErrorAction SilentlyContinue
-
-            $existingIPs = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue
-            foreach ($ip in $existingIPs) {
-                Remove-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -IPAddress $ip.IPAddress -Confirm:$false -ErrorAction SilentlyContinue
+            # Check current config
+            $currentIP = $null
+            $currentPrefix = $null
+            $currentGateway = $null
+            $currentIPObj = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.PrefixOrigin -eq 'Manual' -or $_.PrefixOrigin -eq 'Dhcp' }
+            if ($currentIPObj) {
+                $currentIP = $currentIPObj.IPAddress
+                $currentPrefix = $currentIPObj.PrefixLength
             }
-
-            Remove-NetRoute -InterfaceIndex $adapter.InterfaceIndex -Confirm:$false -ErrorAction SilentlyContinue
+            $currentGatewayObj = Get-NetRoute -InterfaceIndex $adapter.InterfaceIndex -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($currentGatewayObj) {
+                $currentGateway = $currentGatewayObj.NextHop
+            }
 
             $prefixLength = switch ($subnetMask) {
                 '255.255.255.0' { 24 }
@@ -252,13 +271,31 @@ foreach ($adapter in $adapters) {
                 default { 24 }
             }
 
-            New-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex `
-                             -IPAddress $targetIp `
-                             -PrefixLength $prefixLength `
-                             -DefaultGateway $defaultGateway `
-                             -ErrorAction Stop | Out-Null
+            $needsChange = $false
+            if ($currentIP -ne $targetIp -or $currentPrefix -ne $prefixLength -or $currentGateway -ne $defaultGateway) {
+                $needsChange = $true
+            }
 
-            Write-Host "  Successfully configured (Static)" -ForegroundColor Green
+            if (-not $needsChange) {
+                Write-Host "  Current static IP configuration matches target. Skipping changes." -ForegroundColor Yellow
+            } else {
+                Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -Dhcp Disabled -ErrorAction SilentlyContinue
+
+                $existingIPs = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue
+                foreach ($ip in $existingIPs) {
+                    Remove-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -IPAddress $ip.IPAddress -Confirm:$false -ErrorAction SilentlyContinue
+                }
+
+                Remove-NetRoute -InterfaceIndex $adapter.InterfaceIndex -Confirm:$false -ErrorAction SilentlyContinue
+
+                New-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex `
+                                 -IPAddress $targetIp `
+                                 -PrefixLength $prefixLength `
+                                 -DefaultGateway $defaultGateway `
+                                 -ErrorAction Stop | Out-Null
+
+                Write-Host "  Successfully configured (Static)" -ForegroundColor Green
+            }
 
             # Set network profile to Private so services can bind on the LAN interface
             try {
