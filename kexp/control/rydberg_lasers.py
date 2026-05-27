@@ -4,6 +4,10 @@ from waxx.control.misc.sdg6000x import SDG6000X_CH, dv, SDG6000X_Params
 from waxx.control.artiq.TTL import TTL_OUT
 from waxx.control.artiq.DAC_CH import DAC_CH
 from waxx.control.artiq.DDS import DDS
+
+from waxx.control.misc.moglabs_wavemeter import WavemeterClient
+from kexp.config.ip import WAVEMETER_MOGLABS_IP
+
 from artiq.language import now_mu, kernel, delay, portable
 
 def remap_class(base_obj, target_class):
@@ -149,6 +153,7 @@ class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
     def __init__(self,
                 siglent_ch:SDG6000X_CH,
                 dds_sw:DDS,
+                wavemeter_object,
                 ao_order_cavity=-1,
                 ao_order_pid=1,
                 frequency_pid_ao=80.e6):
@@ -158,6 +163,8 @@ class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
         self._ao_order_pid = ao_order_pid
         self._frequency_pid_ao = frequency_pid_ao
         self._f_siglent_detuning_reference = self.siglent._p.frequency
+
+        self.wavemeter = wavemeter_object
 
         self.siglent._stash_defaults()
 
@@ -181,6 +188,7 @@ class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
 class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
     def __init__(self,
                 siglent_ch:SDG6000X_CH,
+                wavemeter_object,
                 eo_order_sideband=-1,
                 ttl_ao_sw=TTL_OUT,
                 ao_order_cavity=1,
@@ -198,5 +206,7 @@ class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
         self._frequency_pid_ao = frequency_pid_ao
         self._frequency_sw_ao = frequency_sw_ao
         self._eo_order_sideband = eo_order_sideband
+
+        self.wavemeter = wavemeter_object
 
         self.siglent._stash_defaults()

@@ -7,8 +7,7 @@ class turn_on_imaging(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      imaging_type=img_types.ABSORPTION,
-                      setup_camera=False)
+                      suppress_live_od=True)
 
         self.finish_prepare(shuffle=False)
        
@@ -19,8 +18,9 @@ class turn_on_imaging(EnvExperiment, Base):
                          init_lightsheet=False,
                          init_shuttler=False)
         
-        self.init_raman_beams_nf(frequency_transition=460.e6,fraction_power=1.0)
-        self.raman_nf.on()
+        self.prep_raman()
+        self.raman.dds_sw.set_dds(amplitude=0.05)
+        self.raman.on()
     
     def analyze(self):
         import os

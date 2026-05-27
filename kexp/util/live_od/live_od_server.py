@@ -163,7 +163,11 @@ class LiveODServer(QThread, WaxxServer):
         # and calls data_handler.quit(), which causes the DataHandler to close
         # its HDF5 handle and emit done_writing_signal — which in turn sets
         # _data_handler_done_event.  Must happen BEFORE the wait below.
-        self.reset_signal.emit()
+        # Only emit when a camera run is active: for no-camera runs there is
+        # no DataHandler or CameraBaby to clean up, and reset() would
+        # incorrectly call update_run_id() (no active baby → else branch).
+        if self._current_capture_images:
+            self.reset_signal.emit()
         # Delete the HDF5 file if it still exists (may already be gone for
         # camera runs whose CameraBaby called dishonorable_death).
         if self._current_filepath and os.path.exists(self._current_filepath):
@@ -318,6 +322,11 @@ class LiveODServer(QThread, WaxxServer):
         """Experiment has acknowledged the abort — clean up and close out the run."""
         print("Experiment acknowledged: run aborted.")
         self._finalize_reset_run()
+        # reset_signal (emitted inside _finalize_reset_run) is queued to the
+        # main thread and may cause main_window.reset() to set _reset_requested
+        # back to True after _finalize_reset_run already cleared it.  Clear it
+        # here, after _finalize_reset_run has fully returned, to win any race.
+        self._reset_requested = False
         return {"ok": True}
 
     def _handle_poll(self, msg: dict) -> dict:

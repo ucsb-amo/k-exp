@@ -131,8 +131,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if init_magnets:
             self.outer_coil.off()
             self.inner_coil.off()
-        # if init_ry:
-        #     self.ry_405.init()
+        if init_ry:
+            # self._fzw.connect()
+            pass
         
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):

@@ -47,13 +47,13 @@ QWidget {
 QGroupBox {
     border: 1px solid #555;
     border-radius: 4px;
-    margin-top: 6px;
+    margin-top: 14px;
     color: #e0e0e0;
 }
 QGroupBox::title {
     subcontrol-origin: margin;
     left: 8px;
-    padding: 0 2px;
+    padding: 2px 6px;
 }
 QGroupBox[title=""] {
     border: none;
@@ -463,29 +463,30 @@ _STYLE_RED    = "background-color: #d03f37; border-radius: 8px; min-width: 16px;
 
 
 class PollDot(QWidget):
-    """Small colored dot that briefly flashes green on a successful poll."""
+    """Pill-shaped status indicator that updates on each poll."""
+
+    _PILL_GRAY  = "background-color: #666; color: white; border-radius: 8px; padding: 2px 8px;"
+    _PILL_GREEN = "background-color: #2ba363; color: white; border-radius: 8px; padding: 2px 8px;"
+    _PILL_RED   = "background-color: #d03f37; color: white; border-radius: 8px; padding: 2px 8px;"
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._dot = QPushButton()
-        self._dot.setEnabled(False)
-        self._dot.setFixedSize(16, 16)
-        self._dot.setStyleSheet(_STYLE_GRAY)
-        self._label = QLabel("Waiting for first poll…")
+        self._pill = QLabel("Waiting…")
+        self._pill.setStyleSheet(self._PILL_GRAY)
+        self._pill.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(self._dot)
-        row.addWidget(self._label)
+        row.addWidget(self._pill)
         row.addStretch()
 
     def on_poll(self, success: bool):
         if success:
-            self._dot.setStyleSheet(_STYLE_GREEN)
-            self._label.setText("Poll OK")
+            self._pill.setStyleSheet(self._PILL_GREEN)
+            self._pill.setText("Poll OK")
         else:
-            self._dot.setStyleSheet(_STYLE_RED)
-            self._label.setText("Poll error")
+            self._pill.setStyleSheet(self._PILL_RED)
+            self._pill.setText("Poll error")
 
 
 # ---------------------------------------------------------------------------
