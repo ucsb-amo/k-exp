@@ -1,4 +1,4 @@
-from mogdevice import MOGDevice
+from waxx.control.misc.moglabs import MOGDevice
 from waxx.control.misc.moglabs_wavemeter import WavemeterClient as WavemeterWaxx, WavemeterController
 from kexp.config.ip import WAVEMETER_MOGLABS_IP
 
@@ -15,9 +15,9 @@ class fzw_frame():
     def __init__(self):
 
         self._fzw = WavemeterController(WAVEMETER_MOGLABS_IP)
-        self.ry_405 = Wavemeter(ch=2, target_freq=741.09000e12,
+        self.ry_405 = Wavemeter(ch=2, target_freq=741.09120e12,
                                 wavemeter_device=self._fzw)
-        self.ry_980 = Wavemeter(ch=5, target_freq=307.45715e12,
+        self.ry_980 = Wavemeter(ch=5, target_freq=307.45730e12,
                                 wavemeter_device=self._fzw)
 
     def write_keys(self):
