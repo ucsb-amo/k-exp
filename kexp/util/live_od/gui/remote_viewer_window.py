@@ -55,8 +55,7 @@ class LiveODSubscriber(QThread):
     log_msg_signal = pyqtSignal(str)
     connection_status_signal = pyqtSignal(str)
 
-    # Polling configuration (seconds)
-    POLL_INTERVAL = 5.0          # How often to check server connection
+    # Reconnection configuration (seconds)
     RECONNECT_RETRY_INTERVAL = 2.0  # How often to retry server discovery
     DISCOVERY_TIMEOUT = 3.0      # Timeout for UDP broadcast discovery
 
@@ -65,7 +64,6 @@ class LiveODSubscriber(QThread):
         self._ip = ip
         self._port = port
         self._running = False
-        self._last_poll_time = 0.0
         self._connection_ok = True
         self._attempting_reconnect = False
 
@@ -77,8 +75,13 @@ class LiveODSubscriber(QThread):
         while self._running:
             try:
                 socket = context.socket(zmq.SUB)
-                socket.setsockopt(zmq.RCVTIMEO, 500)        # 500 ms poll for timeouts
+                socket.setsockopt(zmq.RCVTIMEO, 500)        # 500 ms poll for graceful shutdown
                 socket.setsockopt(zmq.SUBSCRIBE, b"")       # subscribe to all topics
+                # TCP keepalive: OS detects dead connections without false positives
+                socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
+                socket.setsockopt(zmq.TCP_KEEPALIVE_IDLE, 10)
+                socket.setsockopt(zmq.TCP_KEEPALIVE_INTVL, 5)
+                socket.setsockopt(zmq.TCP_KEEPALIVE_CNT, 3)
                 socket.connect(f"tcp://{self._ip}:{self._port}")
                 self._connection_ok = True
                 self._attempting_reconnect = False
@@ -86,24 +89,13 @@ class LiveODSubscriber(QThread):
                     f"Connected to tcp://{self._ip}:{self._port}"
                 )
                 print(f"[LiveODSubscriber] Connected to tcp://{self._ip}:{self._port}")
-                self._last_poll_time = time.time()
-                
-                # Receive loop with periodic polling
+
+                # Receive loop — zmq.Again just means the server is idle, not down
                 while self._running:
                     try:
                         raw = socket.recv()
-                        # Reset last poll time on successful message
-                        self._last_poll_time = time.time()
                     except zmq.Again:
-                        # Poll timeout — check if we should treat this as
-                        # a connection loss and trigger reconnection.
-                        was_ok = self._connection_ok
-                        self._maybe_poll_server(context)
-                        # If _maybe_poll_server just marked us as disconnected,
-                        # break out so the outer loop can call _attempt_reconnection.
-                        if was_ok and not self._connection_ok:
-                            break
-                        continue
+                        continue  # no message yet; server may simply be idle
 
                     try:
                         msg = pickle.loads(raw)
@@ -148,27 +140,6 @@ class LiveODSubscriber(QThread):
                 self._attempt_reconnection(context)
         
         context.term()
-
-    def _maybe_poll_server(self, context: zmq.Context):
-        """Check if it's time to poll the server for liveness."""
-        now = time.time()
-        if now - self._last_poll_time >= self.POLL_INTERVAL:
-            self._poll_server(context)
-
-    def _poll_server(self, context: zmq.Context):
-        """Check liveness by tracking time since last received message.
-
-        A separate REQ socket is not used because the subscriber connects to a
-        PUB broadcast port that never replies to REQ messages.  Instead, the
-        absence of any broadcast message for longer than POLL_INTERVAL is
-        treated as a potential connection loss.
-        """
-        # Always update so we enforce the POLL_INTERVAL rate limit regardless
-        # of outcome — prevents rapid repeated calls exhausting file descriptors.
-        self._last_poll_time = time.time()
-        # No messages for POLL_INTERVAL seconds → treat as disconnected and
-        # let the outer loop's _attempt_reconnection handle rediscovery.
-        self._on_connection_lost()
 
     def _on_connection_lost(self):
         """Handle connection loss by marking as disconnected."""
