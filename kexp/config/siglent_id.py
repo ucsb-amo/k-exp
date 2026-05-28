@@ -9,14 +9,16 @@ class siglent_frame(siglent_frame_waxx):
 
         IP_RY_CAVITY_SIGLENT = "192.168.1.101"
         self.siglent_980 = self.assign_sdg6000x_ch(1,IP_RY_CAVITY_SIGLENT,
-                                                   frequency=371.8e6,
-                                                   amplitude_vpp=0.6,
-                                                   max_amplitude_vpp=1.)
-        self.siglent_405 = self.assign_sdg6000x_ch(2,IP_RY_CAVITY_SIGLENT,
-                                                   frequency=80.0e6,
-                                                   amplitude_vpp=0.362,
-                                                   max_amplitude_vpp=1.0,
-                                                   max_frequency=95.e6,
-                                                   min_frequency=65.e6)
+                                                   frequency=139.0e6,
+                                                   amplitude_vpp=0.610,
+                                                   max_amplitude_vpp=1.,
+                                                   min_frequency=40.e6,
+                                                   max_frequency=180.e6)
+        # self.siglent_405 = self.assign_sdg6000x_ch(2,IP_RY_CAVITY_SIGLENT,
+        #                                            frequency=80.0e6,
+        #                                            amplitude_vpp=0.362,
+        #                                            max_amplitude_vpp=1.0,
+        #                                            max_frequency=95.e6,
+        #                                            min_frequency=65.e6)
         
         self.cleanup()

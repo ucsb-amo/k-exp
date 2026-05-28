@@ -130,24 +130,54 @@ class RydbergLaser_Params():
         self._p_405 = ry_405_params
         self._p_980 = ry_980_params
 
-class RydbergLasers():
+# class RydbergLasers():
+#     def __init__(self,
+#                  siglent_405_cavity:SDG6000X_CH,
+#                  dac_pid_setpoint_405:DAC_CH,
+#                  dds_sw_405:TTL_OUT,
+#                  siglent_980_cavity:SDG6000X_CH,
+#                  dac_pid_setpoint_980:DAC_CH,
+#                  ttl_sw_980:TTL_OUT):
+        
+#         self.beam_405 = SiglentDDSBeam(siglent_ch=siglen t_405_cavity,
+#                                     dac_pid_setpoint=dac_pid_setpoint_405,
+#                                     dds_sw=dds_sw_405)
+#         self.beam_980 = SiglentTTLBeam(siglent_ch=siglent_980_cavity,
+#                                     dac_pid_setpoint=dac_pid_setpoint_980,
+#                                     ttl_sw=ttl_sw_980)
+        
+#         self._p = RydbergLaser_Params(ry_405_params=self.beam_405._p,
+#                                       ry_980_params=self.beam_980._p)
+        
+class FixedRyDDSBeamPID():
     def __init__(self,
-                 siglent_405_cavity:SDG6000X_CH,
-                 dac_pid_setpoint_405:DAC_CH,
-                 dds_sw_405:TTL_OUT,
-                 siglent_980_cavity:SDG6000X_CH,
-                 dac_pid_setpoint_980:DAC_CH,
-                 ttl_sw_980:TTL_OUT):
-        
-        self.beam_405 = SiglentDDSBeam(siglent_ch=siglent_405_cavity,
-                                    dac_pid_setpoint=dac_pid_setpoint_405,
-                                    dds_sw=dds_sw_405)
-        self.beam_980 = SiglentTTLBeam(siglent_ch=siglent_980_cavity,
-                                    dac_pid_setpoint=dac_pid_setpoint_980,
-                                    ttl_sw=ttl_sw_980)
-        
-        self._p = RydbergLaser_Params(ry_405_params=self.beam_405._p,
-                                      ry_980_params=self.beam_980._p)
+                 dds_sw:DDS,
+                 dac_pid:DAC_CH,
+                #  wavemeter_object: WavemeterClient)
+                ):
+        self.dds_sw = dds_sw
+        self.dac_pid = dac_pid
+        # self.wavemeter = wavemeter_object
+
+    # def check_lock(self) -> bool:
+    #     return self.wavemeter.lock_status()
+
+    @kernel
+    def set_power(self, v):
+        self.dac_pid.set(v)
+
+    @kernel
+    def on(self):
+        self.dds_sw.on()
+
+    @kernel
+    def off(self):
+        self.dds_sw.off()
+    
+    @kernel
+    def init(self):
+        self.set_power(self.dac_pid.v)
+        self.dds_sw.off()
         
 class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
     def __init__(self,
@@ -210,3 +240,8 @@ class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
         # self.wavemeter = wavemeter_object
 
         self.siglent._stash_defaults()
+    
+    @kernel
+    def init(self):
+        self.siglent.init()
+        self.ttl_sw.off()
