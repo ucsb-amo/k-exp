@@ -43,6 +43,14 @@ class Control():
         self.p = self.params
 
     @kernel
+    def warmup_ry(self):
+        self.ry_980.on()
+        self.ry_405.on()
+        delay(100.e-3)
+        self.ry_405.off()
+        self.ry_980.off()
+
+    @kernel
     def integrated_imaging_pulse(self, data_container, t, idx=0,
                                 dark=False):
         T_CONV_MU = 80

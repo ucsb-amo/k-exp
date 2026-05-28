@@ -41,30 +41,24 @@ class hf_bec(EnvExperiment, Base):
         self.ry_405.off()
         self.ry_980.off()
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.prepare_hf_tweezers(squeeze=True)
-        
-        delay(50e-3)
+        self.ry_980.on()
 
-        # if self.p.wee == 1:
-        #      self.ry_405.on()
-        
-        # if self.p.wee == 1:
-        #     self.ry_980.on()
+        self.mot(self.p.t_mot_load)
+        self.dds.push.off()
 
-        delay(self.p.t_tweezer_hold)
+        self.cmot_d1(self.p.t_d1cmot)
 
-        self.ry_405.off()
-        self.ry_980.off()
+        self.ttl.pd_scope_trig.pulse(1.e-8)
+        self.gm(self.p.t_gm)
+        self.gm_ramp(self.p.t_gmramp)
 
-        delay(50e-3)
-
-        self.tweezer.off()
-
+        self.release()
         delay(self.p.t_tof)
+        self.ry_980.off()
+        delay(100.e-6)
+        self.flash_repump()
         self.abs_image()
-
-        self.outer_coil.off()
+        
 
     @kernel
     def run(self):
