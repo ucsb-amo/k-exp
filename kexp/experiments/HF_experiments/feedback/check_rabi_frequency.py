@@ -16,7 +16,7 @@ class hf_raman(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_raman_pulse', np.linspace(100.,110.,30)*1.e-6)
-        self.xvar('t_raman_pulse', np.linspace(0.,100.,75)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0.,200.,80)*1.e-6)
         # self.xvar('t_tof',np.linspace(3.,100.,15)*1.e-6)
 
         self.p.t_tweezer_hold = 1.e-3
@@ -28,7 +28,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.t_tof = 80.e-6
         
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
 

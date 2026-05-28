@@ -21,15 +21,16 @@ class sigma_z(EnvExperiment, Base):
 
         self.p.t_raman_pulse = 0.
         # self.p.t_raman_pulse_offset = 209.7e-9
-        t_sample_low = self.p.t_raman_pi_pulse * np.linspace(0.,0.2,7)
-        t_sample_mid = self.p.t_raman_pi_pulse * np.linspace(0.25,0.7,7)
-        t_sample_high = self.p.t_raman_pi_pulse * np.linspace(0.75, 1.5, 19)
-        t_sample = np.concat( (t_sample_low, t_sample_mid, t_sample_high) )
-        self.xvar('t_raman_pulse', t_sample)
+        # t_sample_low = self.p.t_raman_pi_pulse * np.linspace(0.,0.2,7)
+        # t_sample_mid = self.p.t_raman_pi_pulse * np.linspace(0.25,0.7,7)
+        # t_sample_high = self.p.t_raman_pi_pulse * np.linspace(0.75, 1.5, 19)
+        # t_sample = np.concat( (t_sample_low, t_sample_mid, t_sample_high) )
+        # self.xvar('t_raman_pulse', t_sample)
+        self.xvar('t_raman_pulse', [0,self.p.t_raman_pi_pulse])
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 5
+        self.p.N_repeats = 2
 
         self.p.N_pulses = 5
 
@@ -65,7 +66,7 @@ class sigma_z(EnvExperiment, Base):
         self.tweezer.off()
 
         self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
+        _ = self.scope.read_sweep(0)
         self.core.break_realtime()
         delay(30.e-3)
 

@@ -13,20 +13,20 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
-        self.p.t_tof = 50.e-6
+        self.p.t_tof = 80.e-6
 
-        self.xvar('wee',[1,0])
+        # self.xvar('wee',[1,0])
         self.p.wee = 1
 
-        # self.xvar('frequency_eo_980', np.arange(50.,170.,10)*1.e6)
-        self.p.frequency_eo_980 = 139*1.e6
+        self.xvar('frequency_eo_980', np.arange(137.,149.,1)*1.e6)
+        # self.p.frequency_eo_980 = 139*1.e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
         
-        self.xvar('t_tweezer_hold', np.linspace(0.,20.,5) * 1.e-3)
-        self.t_tweezer_hold = 0.3e-3
+        # self.xvar('t_tweezer_hold', np.linspace(0.,75.,15) * 1.e-3)
+        self.t_tweezer_hold = 5.e-3
 
-        self.p.N_repeats = 50
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 
@@ -34,11 +34,10 @@ class hf_bec(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.ry_980.set_siglent(self.p.frequency_eo_980)
-        
-        self.ry_405.off()
-        self.ry_980.off()
 
-        self.ry_405.set_power(0.760)
+        self.ry_405.on()
+        delay(100.e-3)
+        self.ry_405.off()
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.prepare_hf_tweezers(squeeze=True)
@@ -48,13 +47,13 @@ class hf_bec(EnvExperiment, Base):
         if self.p.wee == 1:
              self.ry_405.on()
         
-        # if self.p.wee == 1:
-        #     self.ry_980.on()
+        if self.p.wee == 1:
+            self.ry_980.on()
 
         delay(self.p.t_tweezer_hold)
 
         self.ry_405.off()
-        # self.ry_980.off()
+        self.ry_980.off()
 
         delay(50e-3)
 

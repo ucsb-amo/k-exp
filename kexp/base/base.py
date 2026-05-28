@@ -154,6 +154,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.reset_tweezers(two_d_tweezers)
 
         self.core.break_realtime()
+        
+        self.ry_405.init()
+        self.ry_980.init()
 
         # self.dds.ry_405_sw.on()
         # self.dds.ry_405_sw.set_dds(init=True)
@@ -177,8 +180,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.dds.d2_2dv_c.on()
         self.dds.d2_2dv_r.on()
         self.dds.push.on()
-
-        self.dds.ry_405_sw.on()
 
         # reset imaging detuning, power
         self.set_imaging_shutters()
@@ -212,6 +213,5 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.core.break_realtime()
         self.background_field()
 
-    @kernel
     def end(self, expt_filepath, notify=True):
         self.end_wax(expt_filepath=expt_filepath, notify=notify)
