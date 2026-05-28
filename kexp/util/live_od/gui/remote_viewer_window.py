@@ -95,8 +95,14 @@ class LiveODSubscriber(QThread):
                         # Reset last poll time on successful message
                         self._last_poll_time = time.time()
                     except zmq.Again:
-                        # Poll timeout — check if we should poll the server
+                        # Poll timeout — check if we should treat this as
+                        # a connection loss and trigger reconnection.
+                        was_ok = self._connection_ok
                         self._maybe_poll_server(context)
+                        # If _maybe_poll_server just marked us as disconnected,
+                        # break out so the outer loop can call _attempt_reconnection.
+                        if was_ok and not self._connection_ok:
+                            break
                         continue
 
                     try:
@@ -150,33 +156,19 @@ class LiveODSubscriber(QThread):
             self._poll_server(context)
 
     def _poll_server(self, context: zmq.Context):
-        """Send a POLL message to the server to verify it's still responding."""
-        try:
-            poll_socket = context.socket(zmq.REQ)
-            poll_socket.setsockopt(zmq.SNDTIMEO, 1000)
-            poll_socket.setsockopt(zmq.RCVTIMEO, 1000)
-            poll_socket.connect(f"tcp://{self._ip}:{self._port}")
-            
-            try:
-                poll_socket.send(pickle.dumps({'tag': 'POLL'}))
-                _ = poll_socket.recv()  # Just check for a reply
-                self._last_poll_time = time.time()
-                
-                # If previously disconnected, announce reconnection
-                if not self._connection_ok:
-                    self._connection_ok = True
-                    self.connection_status_signal.emit(
-                        f"Reconnected to tcp://{self._ip}:{self._port}"
-                    )
-                    print(f"[LiveODSubscriber] Server is responding again")
-            except zmq.Again:
-                # Poll timeout — server not responding
-                self._on_connection_lost()
-            finally:
-                poll_socket.close()
-        except Exception as exc:
-            print(f"[LiveODSubscriber] Poll failed: {exc}")
-            self._on_connection_lost()
+        """Check liveness by tracking time since last received message.
+
+        A separate REQ socket is not used because the subscriber connects to a
+        PUB broadcast port that never replies to REQ messages.  Instead, the
+        absence of any broadcast message for longer than POLL_INTERVAL is
+        treated as a potential connection loss.
+        """
+        # Always update so we enforce the POLL_INTERVAL rate limit regardless
+        # of outcome — prevents rapid repeated calls exhausting file descriptors.
+        self._last_poll_time = time.time()
+        # No messages for POLL_INTERVAL seconds → treat as disconnected and
+        # let the outer loop's _attempt_reconnection handle rediscovery.
+        self._on_connection_lost()
 
     def _on_connection_lost(self):
         """Handle connection loss by marking as disconnected."""

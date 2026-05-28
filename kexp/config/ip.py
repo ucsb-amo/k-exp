@@ -50,6 +50,9 @@ MAGNETOMETER_REFERENCE_CSV_PATH = os.path.join(DATA_DIR,'magnetometer_reference.
 ###
 WAVEMETER_MOGLABS_IP = '192.168.1.94'
 
+### Bristol wavemeter
+BRISTOL_WAVEMETER_IP = '192.168.1.105'
+
 ### kinesis motors
 DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961
 
