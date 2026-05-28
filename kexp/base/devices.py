@@ -179,19 +179,19 @@ class Devices():
 
         self.siglent = siglent_frame(self.core)
 
-        self._fzw = fzw_frame()
+        # self._fzw = fzw_frame()
 
         self.ry_405 = CavityAOControlledRyDDSBeam(
                             siglent_ch=self.siglent.siglent_405,
                             dds_sw=self.dds.ry_405_sw,
-                            wavemeter_object=self._fzw.ry_405,
+                            # wavemeter_object=self._fzw.ry_405,
                             ao_order_cavity=1,
                             ao_order_pid=-1,
                             frequency_pid_ao=80.e6)
         
         self.ry_980 = FiberEOControlledRyDDSBeam(
             siglent_ch=self.siglent.siglent_980,
-            wavemeter_object=self._fzw.ry_980,
+            # wavemeter_object=self._fzw.ry_980,
             eo_order_sideband=-1,
             ttl_ao_sw=self.ttl.ry_980_sw,
             ao_order_cavity=1,
