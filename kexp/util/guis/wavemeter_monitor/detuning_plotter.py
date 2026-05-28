@@ -4,7 +4,7 @@ from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 import numpy as np
 from kamo import Potassium39
-from mogdevice import MOGDevice
+from waxx.control.misc.moglabs import MOGDevice
 
 # Use the existing atom and fzw variables from the notebook
 

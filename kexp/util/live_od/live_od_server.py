@@ -151,12 +151,19 @@ class LiveODServer(QThread, WaxxServer):
     # Message handlers
     # ------------------------------------------------------------------
 
-    def _finalize_reset_run(self):
+    def _finalize_reset_run(self, notify_gui: bool = True):
         """Finalize a reset-aborted run.
 
         This is called either when the experiment explicitly sends ABORT_RUN,
         or opportunistically on the next INIT_RUN if the experiment process was
         killed and never sent that confirmation.
+
+        ``notify_gui`` controls whether ``reset_signal`` is emitted to drive
+        ``main_window.reset()``.  Set it to False when the GUI was already
+        notified by the original ``_handle_reset`` call — re-emitting would
+        race with the next ``INIT_RUN`` and cause ``main_window.reset()`` to
+        set ``_reset_requested = True`` after the new run has already started,
+        aborting the new run on its first poll.
         """
         # Emit reset_signal so the GUI's reset() handler interrupts the
         # DataHandler and CameraBaby.  This sets data_handler.interrupted=True
@@ -166,7 +173,7 @@ class LiveODServer(QThread, WaxxServer):
         # Only emit when a camera run is active: for no-camera runs there is
         # no DataHandler or CameraBaby to clean up, and reset() would
         # incorrectly call update_run_id() (no active baby → else branch).
-        if self._current_capture_images:
+        if notify_gui and self._current_capture_images:
             self.reset_signal.emit()
         # Delete the HDF5 file if it still exists (may already be gone for
         # camera runs whose CameraBaby called dishonorable_death).
@@ -188,9 +195,12 @@ class LiveODServer(QThread, WaxxServer):
     def _handle_init_run(self, msg: dict) -> dict:
         # If the previous run was reset but the experiment process was killed
         # before sending ABORT_RUN, finalize that reset now. This keeps the
-        # next run start non-blocking and stateless.
+        # next run start non-blocking and stateless.  The GUI was already
+        # notified by the original _handle_reset call, so don't re-emit
+        # reset_signal — that would race with this INIT_RUN and cause the
+        # new run to abort on its first poll.
         if self._reset_requested:
-            self._finalize_reset_run()
+            self._finalize_reset_run(notify_gui=False)
 
         save_data = bool(msg.get("save_data", False))
         capture_images = bool(msg.get("capture_images", False))
@@ -289,14 +299,20 @@ class LiveODServer(QThread, WaxxServer):
         """Append ``timestamp_shot_end`` to the HDF5 data file.
 
         Timestamps are recorded server-side in ``_handle_shot_complete`` so
-        they are independent of any experiment-side clock. They are unshuffled
-        before writing to match the canonical shot order.
+        they are independent of any experiment-side clock. They are reshaped
+        to scan-data shape ``(*xvardims,)`` and unshuffled before writing to
+        match the canonical shot order.
         """
         if not self._shot_timestamps or not self._current_filepath:
             return
         timestamps = np.array(self._shot_timestamps, dtype=np.float64)
+        xvardims = list(end_run_msg.get("xvardims", []))
         sort_idx_raw = end_run_msg.get("sort_idx", [])
         sort_N_raw = end_run_msg.get("sort_N", [])
+        # Reshape to scan-data shape before unshuffling so that each xvar
+        # axis is unshuffled independently (required for multi-xvar scans).
+        if xvardims and int(np.prod(xvardims)) == len(timestamps):
+            timestamps = timestamps.reshape(xvardims)
         if sort_idx_raw:
             timestamps = DataSaver._unshuffle_single_array(
                 timestamps, sort_idx_raw, sort_N_raw, exclude_dims=0
@@ -321,11 +337,17 @@ class LiveODServer(QThread, WaxxServer):
     def _handle_abort_run(self, msg: dict) -> dict:
         """Experiment has acknowledged the abort — clean up and close out the run."""
         print("Experiment acknowledged: run aborted.")
-        self._finalize_reset_run()
-        # reset_signal (emitted inside _finalize_reset_run) is queued to the
-        # main thread and may cause main_window.reset() to set _reset_requested
-        # back to True after _finalize_reset_run already cleared it.  Clear it
-        # here, after _finalize_reset_run has fully returned, to win any race.
+        # If _reset_requested is True, the viewer's _handle_reset already
+        # emitted reset_signal and the GUI ran main_window.reset().  Re-emitting
+        # reset_signal here would queue a second main_window.reset() that races
+        # with the next INIT_RUN: when save_data=False, INIT_RUN is fast enough
+        # to return (clearing _reset_requested) before that queued reset() runs,
+        # and reset()'s unconditional `_reset_requested = True` then aborts the
+        # new run on its first poll.  Only emit reset_signal if no prior RESET
+        # set the flag (e.g. RTIOUnderflow path, where the experiment aborts
+        # itself without going through _handle_reset).
+        gui_already_notified = self._reset_requested
+        self._finalize_reset_run(notify_gui=not gui_already_notified)
         self._reset_requested = False
         return {"ok": True}
 

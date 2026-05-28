@@ -200,7 +200,7 @@ class EmailHandler:
         """
         mail = self.connect_to_email()
         if not mail:
-            return
+            raise ConnectionError("Failed to connect to email server")
         
         try:
             # Select the inbox
