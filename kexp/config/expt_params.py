@@ -121,7 +121,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown = 0.e-3
+        self.t_tweezer_paint_rampdown = 3.e-3
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
         self.t_tweezer_squeezer_ramp_2 = 20.e-3
 
@@ -366,7 +366,7 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
 
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
-        self.frequency_raman_transition = 119.4639e6 #67269
+        self.frequency_raman_transition = 119.4637e6 #67744
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2

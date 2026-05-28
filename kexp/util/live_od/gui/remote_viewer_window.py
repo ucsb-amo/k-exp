@@ -229,28 +229,80 @@ class RemoteViewerWindow(QWidget):
     """Standalone window that subscribes to a LiveODBroadcaster and displays
     live OD images, sum-OD projections, and shot progress."""
 
+    _discovery_status_signal = pyqtSignal(str)
+    _discovery_done_signal   = pyqtSignal(str, int)   # ip, port
+
     def __init__(self, ip: str = None, port: int = None):
         super().__init__()
 
-        from waxx.util.comms_server.waxx_client import discover
-        broadcast_result = discover("live_od_broadcast", timeout=3.0)
-        if broadcast_result is None:
-            raise RuntimeError(
-                "[RemoteViewerWindow] 'live_od_broadcast' not discovered. "
-                "Is LiveODWindow running?"
-            )
-        discovered_ip, discovered_port = broadcast_result
-        self._ip = ip if ip is not None else discovered_ip
-        self._port = port if port is not None else discovered_port
+        self._requested_ip   = ip
+        self._requested_port = port
+        self._ip   = ip   or "—"
+        self._port = port or 0
 
-        # Viewer + plotter (same components as the server window)
+        # Viewer + plotter (independent of network)
         self.plotting_queue: Queue = Queue()
         self.viewer_window = LiveODViewer()
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
         self.plotter.start()
 
-        # Subscriber thread
-        self.subscriber = LiveODSubscriber(self._ip, self._port)
+        self.subscriber: LiveODSubscriber | None = None
+        self._current_run_id: int = 0
+
+        self._setup_layout()
+
+        # Connect discovery signals (emitted from worker thread)
+        self._discovery_status_signal.connect(self._on_connection_status)
+        self._discovery_done_signal.connect(self._on_discovered)
+
+        # Kick off discovery after the event loop starts
+        QTimer.singleShot(0, self._start_discovery)
+
+    # ------------------------------------------------------------------
+    # Discovery
+    # ------------------------------------------------------------------
+
+    def _start_discovery(self) -> None:
+        """Show 'searching' and start background discovery thread."""
+        if self._requested_ip is not None and self._requested_port is not None:
+            # Both supplied explicitly — connect directly without UDP discovery.
+            QTimer.singleShot(0, lambda: self._on_discovered(
+                self._requested_ip, self._requested_port))
+            return
+        self._on_connection_status("Searching for LiveOD server…")
+        threading.Thread(target=self._discover_worker, daemon=True).start()
+
+    def _discover_worker(self) -> None:
+        """Background thread: loops until 'live_od_broadcast' is found."""
+        from waxx.util.comms_server.waxx_client import discover
+        while True:
+            result = discover("live_od_broadcast", timeout=3.0)
+            if result is not None:
+                discovered_ip, discovered_port = result
+                ip   = self._requested_ip   if self._requested_ip   is not None else discovered_ip
+                port = self._requested_port if self._requested_port is not None else discovered_port
+                self._discovery_done_signal.emit(ip, port)
+                return
+            self._discovery_status_signal.emit(
+                "LiveOD server not found — retrying…"
+            )
+            time.sleep(1.0)
+
+    def _on_discovered(self, ip: str, port: int) -> None:
+        """Called on the main thread once the server is discovered."""
+        self._ip   = ip
+        self._port = port
+        self.connection_label.setText(f"tcp://{ip}:{port} — connecting…")
+        self.viewer_window.output_window.appendPlainText(
+            f"Discovered LiveOD server at tcp://{ip}:{port}"
+        )
+        self._start_subscriber(ip, port)
+
+    def _start_subscriber(self, ip: str, port: int) -> None:
+        if self.subscriber is not None:
+            self.subscriber.stop()
+            self.subscriber.wait(1000)
+        self.subscriber = LiveODSubscriber(ip, port)
         self.subscriber.od_image_signal.connect(self._on_od_image)
         self.subscriber.shot_progress_signal.connect(self._on_shot_progress)
         self.subscriber.run_started_signal.connect(self._on_run_started)
@@ -259,9 +311,6 @@ class RemoteViewerWindow(QWidget):
             self.viewer_window.output_window.appendPlainText)
         self.subscriber.connection_status_signal.connect(self._on_connection_status)
         self.subscriber.start()
-
-        self._current_run_id: int = 0
-        self._setup_layout()
 
     # ------------------------------------------------------------------
     # Layout
@@ -285,9 +334,7 @@ class RemoteViewerWindow(QWidget):
         run_id_font.setPointSize(13)
         self.run_id_label.setFont(run_id_font)
 
-        self.connection_label = QLabel(
-            f"tcp://{self._ip}:{self._port} — connecting…"
-        )
+        self.connection_label = QLabel("Searching for LiveOD server…")
         self.connection_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         conn_font = QFont()
         conn_font.setPointSize(9)
@@ -379,8 +426,9 @@ class RemoteViewerWindow(QWidget):
     # ------------------------------------------------------------------
 
     def closeEvent(self, event):
-        self.subscriber.stop()
-        self.subscriber.wait(2000)
+        if self.subscriber is not None:
+            self.subscriber.stop()
+            self.subscriber.wait(2000)
         self.plotter.quit()
         self.plotter.wait(2000)
         super().closeEvent(event)

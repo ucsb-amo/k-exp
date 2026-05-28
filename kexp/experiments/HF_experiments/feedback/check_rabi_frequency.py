@@ -15,21 +15,27 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        self.xvar('t_raman_pulse', np.linspace(0.,50.,30)*1.e-6)
+        # self.xvar('t_raman_pulse', np.linspace(100.,110.,30)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0.,100.,75)*1.e-6)
         # self.xvar('t_tof',np.linspace(3.,100.,15)*1.e-6)
 
         self.p.t_tweezer_hold = 1.e-3
 
-        self.p.v_pd_hf_tweezer_squeeze_power = 7.
+        self.p.fraction_power_raman = 0.2
 
-        self.p.t_tof = 8.e-6
+        # self.p.v_pd_hf_tweezer_squeeze_power = 7.
+        # self.p.t_tof = 8.e-6
+
+        self.p.t_tof = 80.e-6
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 2
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
+
+        self.ry_405.off()
 
         # self.set_high_field_imaging(i_outer=self.p.i_hf_raman)
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)

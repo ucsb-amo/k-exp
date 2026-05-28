@@ -17,7 +17,7 @@ class sigma_z(EnvExperiment, Base):
         self.p.t_pci_pulse = 5.e-6
         # self.xvar('t_pci_pulse', np.linspace(3.e-6, 10.e-6, 5))
         
-        self.p.t_between_pulses_mu = 28000  # from pulse start to next pulse start, in mu
+        self.p.t_between_pulses_mu = 32000  # from pulse start to next pulse start, in mu
 
         self.p.t_raman_pulse = 0.
         # self.p.t_raman_pulse_offset = 209.7e-9
@@ -29,7 +29,7 @@ class sigma_z(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 10
+        self.p.N_repeats = 5
 
         self.p.N_pulses = 5
 
