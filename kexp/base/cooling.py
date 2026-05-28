@@ -1125,6 +1125,7 @@ class Cooling():
         self.dds.raman_switch.set_dds(amplitude=0.)
         # self.dds.imaging.set_dds(amplitude=0.)
         self.dds.antenna_rf.set_dds(amplitude=0.)
+        self.dds.ry_405_sw.set_dds(amplitude=0.)
 
         # to avoid sequence errors from all the TTLs being at once
         self.dds.d1_3d_r.off()
@@ -1145,6 +1146,7 @@ class Cooling():
         self.dds.raman_switch.off()
         # self.dds.imaging.off()
         self.dds.antenna_rf.off()
+        self.dds.ry_405_sw.off()
         delay_mu(8)
 
     @kernel
@@ -1162,3 +1164,4 @@ class Cooling():
         self.dds.d2_2dv_r.set_dds(init=True)
         self.dds.push.set_dds(init=True)
         self.dds.raman_switch.set_dds(init=True)
+        self.dds.ry_405_sw.set_dds(init=True)
