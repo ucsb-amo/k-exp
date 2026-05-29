@@ -18,7 +18,7 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
         
         # self.xvar('t_tweezer_hold', np.linspace(0.,20.,10) * 1.e-6)
-        self.t_tweezer_hold = 500.e-3
+        self.t_tweezer_hold = 20.e-3
 
         self.p.N_repeats = 50
 
@@ -26,9 +26,6 @@ class hf_bec(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-
-        self.ry_405.off()
-        self.ry_405.set_power(0.760)
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.prepare_hf_tweezers(squeeze=True)
