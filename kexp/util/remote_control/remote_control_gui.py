@@ -509,6 +509,27 @@ class RemoteControlGUI(QMainWindow):
         if app is not None:
             app.setStyleSheet(_DARK_STYLESHEET)
 
+        self._apply_dark_titlebar()
+
+    # --- Dark title bar (Windows only) ---
+
+    def _apply_dark_titlebar(self):
+        """Use DWM API to enable dark mode on the native Win32 title bar."""
+        try:
+            import ctypes
+            import ctypes.wintypes
+            hwnd = int(self.winId())
+            DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+            value = ctypes.c_int(1)
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(
+                hwnd,
+                DWMWA_USE_IMMERSIVE_DARK_MODE,
+                ctypes.byref(value),
+                ctypes.sizeof(value),
+            )
+        except Exception:
+            pass  # Non-Windows or unsupported version — silently ignore
+
     # --- Window icon ---
 
     def _set_window_icon(self):
