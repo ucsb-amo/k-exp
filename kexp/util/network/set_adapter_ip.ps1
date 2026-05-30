@@ -318,26 +318,91 @@ foreach ($adapter in $adapters) {
     Write-Host ""
 }
 
-# Configure firewall rule for WaxxDiscovery UDP beacon reception
+# Configure firewall rules
 Write-Host "`nConfiguring firewall rules..." -ForegroundColor Cyan
-$fwRuleName = "WaxxDiscovery-IN"
-$existingRule = Get-NetFirewallRule -DisplayName $fwRuleName -ErrorAction SilentlyContinue
-if (-not $existingRule) {
-    Write-Host "  Adding firewall rule '$fwRuleName'..." -ForegroundColor Cyan
-    try {
-        New-NetFirewallRule -DisplayName $fwRuleName `
-            -Direction Inbound -Action Allow `
-            -Protocol UDP -LocalPort 50099 `
-            -RemoteAddress "192.168.1.0/24" `
-            -Profile Any -ErrorAction Stop | Out-Null
-        Write-Host "  Firewall rule '$fwRuleName' added." -ForegroundColor Green
+
+function Add-FwRuleIfMissing {
+    param(
+        [string]$DisplayName,
+        [scriptblock]$CreateBlock
+    )
+    $existing = Get-NetFirewallRule -DisplayName $DisplayName -ErrorAction SilentlyContinue
+    if (-not $existing) {
+        Write-Host "  Adding firewall rule '$DisplayName'..." -ForegroundColor Cyan
+        try {
+            & $CreateBlock
+            Write-Host "  Firewall rule '$DisplayName' added." -ForegroundColor Green
+        }
+        catch {
+            Write-Host "  Error adding firewall rule '$DisplayName': $($_.Exception.Message)" -ForegroundColor Red
+        }
     }
-    catch {
-        Write-Host "  Error adding firewall rule: $($_.Exception.Message)" -ForegroundColor Red
+    else {
+        Write-Host "  Firewall rule '$DisplayName' already exists, skipping." -ForegroundColor Yellow
+    }
+}
+
+# 1. Allow inbound UDP beacon reception (WaxxDiscovery)
+Add-FwRuleIfMissing -DisplayName "WaxxDiscovery-IN" -CreateBlock {
+    New-NetFirewallRule -DisplayName "WaxxDiscovery-IN" `
+        -Direction Inbound -Action Allow `
+        -Protocol UDP -LocalPort 50099 `
+        -RemoteAddress "192.168.1.0/24" `
+        -Profile Any -ErrorAction Stop | Out-Null
+}
+
+# 2. Remove any existing inbound Block rules targeting python (override accidental "Block" pop-up choices)
+Write-Host "  Checking for Python inbound block rules to remove..." -ForegroundColor Cyan
+$pythonBlockRules = Get-NetFirewallRule -Direction Inbound -Action Block -ErrorAction SilentlyContinue |
+    Where-Object {
+        $filter = $_ | Get-NetFirewallApplicationFilter -ErrorAction SilentlyContinue
+        $filter -and $filter.Program -match "python"
+    }
+if ($pythonBlockRules) {
+    foreach ($rule in $pythonBlockRules) {
+        Write-Host "  Removing Python block rule: $($rule.DisplayName)" -ForegroundColor Yellow
+        $rule | Remove-NetFirewallRule -ErrorAction SilentlyContinue
     }
 }
 else {
-    Write-Host "  Firewall rule '$fwRuleName' already exists, skipping." -ForegroundColor Yellow
+    Write-Host "  No Python block rules found." -ForegroundColor Yellow
+}
+
+# 3. Allow inbound TCP on ephemeral ports from lab subnet (WaxxServers)
+Add-FwRuleIfMissing -DisplayName "WaxxServers-IN" -CreateBlock {
+    New-NetFirewallRule -DisplayName "WaxxServers-IN" `
+        -Direction Inbound -Action Allow `
+        -Protocol TCP -LocalPort 49152-65535 `
+        -RemoteAddress "192.168.1.0/24" `
+        -Profile Any -ErrorAction Stop | Out-Null
+}
+
+# 4. Allow venv Python explicitly (uses %CODE% system environment variable)
+Add-FwRuleIfMissing -DisplayName "Python kexp/waxx (Inbound)" -CreateBlock {
+    $pythonExe = "$env:CODE\.venv\Scripts\python.exe"
+    if (-not (Test-Path $pythonExe)) {
+        throw "Python executable not found at '$pythonExe'. Check that the CODE environment variable is set correctly."
+    }
+    New-NetFirewallRule -DisplayName "Python kexp/waxx (Inbound)" `
+        -Direction Inbound -Action Allow `
+        -Program $pythonExe `
+        -Profile Any -RemoteAddress "192.168.1.0/24" `
+        -ErrorAction Stop | Out-Null
+}
+
+# 5. Allow uv.exe runner (if present; path resolved at creation time)
+$uvExe = "$env:LOCALAPPDATA\uv\uv.exe"
+if (Test-Path $uvExe) {
+    Add-FwRuleIfMissing -DisplayName "uv runner (Inbound)" -CreateBlock {
+        New-NetFirewallRule -DisplayName "uv runner (Inbound)" `
+            -Direction Inbound -Action Allow `
+            -Program $uvExe `
+            -Profile Private -RemoteAddress "192.168.1.0/24" `
+            -ErrorAction Stop | Out-Null
+    }
+}
+else {
+    Write-Host "  uv.exe not found at '$uvExe', skipping uv firewall rule." -ForegroundColor Yellow
 }
 
 Write-Host "`nConfiguration complete!" -ForegroundColor Cyan
