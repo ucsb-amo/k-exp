@@ -182,26 +182,14 @@ class Devices():
         # self._fzw = fzw_frame()
 
         self.ry_405 = FixedRyDDSBeamPID(
-                            # siglent_ch=self.siglent.siglent_405,
                             dds_sw=self.dds.ry_405_sw,
-                            # wavemeter_object=self._fzw.ry_405,
                             dac_pid=self.dac.ry_405_intensity_control,
-                            # ao_order_cavity=1,
-                            # ao_order_pid=-1,
-                            # frequency_pid_ao=80.e6
-        )
+                            )
         
         self.ry_980 = FiberEOControlledRyDDSBeam(
             siglent_ch=self.siglent.siglent_980,
-            # wavemeter_object=self._fzw.ry_980,
-            eo_order_sideband=-1,
             ttl_ao_sw=self.ttl.ry_980_sw,
-            ao_order_cavity=1,
-            frequency_cavity_ao=80.e6,
-            ao_order_sw=-1,
-            frequency_sw_ao=80.e6,
-            ao_order_pid=1,
-            frequency_pid_ao=80.e6)
+            )
         
         # self.reference_arm_waveplate_pid = WaveplateRotatorPhotodiodePID(
         #     kinesis_device_id = DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR,
@@ -267,7 +255,6 @@ class Devices():
         for dds in self.dds.dds_list:
             dds.set_dds(init=True)
             delay(5.e-6)
-            # 
             
     @kernel
     def switch_all_dds(self,state):

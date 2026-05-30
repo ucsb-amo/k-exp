@@ -176,8 +176,14 @@ class FixedRyDDSBeamPID():
     
     @kernel
     def init(self):
+        self.dds_sw._restore_defaults()
+        self.dds_sw.set_dds(init=True)
         self.set_power(self.dac_pid.v)
         self.dds_sw.off()
+
+    @kernel
+    def reboot(self):
+        self.dds_sw.set_dds(amplitude=self.dds_sw._amplitude_default)
         
 class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
     def __init__(self,
@@ -218,26 +224,9 @@ class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
 class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
     def __init__(self,
                 siglent_ch:SDG6000X_CH,
-                # wavemeter_object,
-                eo_order_sideband=-1,
-                ttl_ao_sw=TTL_OUT,
-                ao_order_cavity=1,
-                frequency_cavity_ao=80.e6,
-                ao_order_sw=1,
-                frequency_sw_ao=80.e6,
-                ao_order_pid=1,
-                frequency_pid_ao=80.e6):
+                ttl_ao_sw=TTL_OUT):
         super().__init__(siglent_ch=siglent_ch,
                          ttl_sw=ttl_ao_sw)
-        self._ao_order_cavity = ao_order_cavity
-        self._ao_order_pid = ao_order_pid
-        self._ao_order_sw = ao_order_sw
-        self._frequency_cavity_ao = frequency_cavity_ao
-        self._frequency_pid_ao = frequency_pid_ao
-        self._frequency_sw_ao = frequency_sw_ao
-        self._eo_order_sideband = eo_order_sideband
-
-        # self.wavemeter = wavemeter_object
 
         self.siglent._stash_defaults()
     
@@ -245,3 +234,31 @@ class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
     def init(self):
         self.siglent.init()
         self.ttl_sw.off()
+
+    @kernel
+    def sweep_to(self,
+                frequency_end=dv,
+                frequency_step=1.e6,
+                reset=False):
+        self.siglent.sweep(frequency_end, frequency_step, reset)
+
+class FiberEORyDDSBeamPID(SiglentTTLBeam):
+    def __init__(self,
+                siglent_ch:SDG6000X_CH,
+                ttl_ao_sw=TTL_OUT):
+        super().__init__(siglent_ch=siglent_ch,
+                         ttl_sw=ttl_ao_sw)
+
+        self.siglent._stash_defaults()
+    
+    @kernel
+    def init(self):
+        self.siglent.init()
+        self.ttl_sw.off()
+
+    @kernel
+    def sweep_to(self,
+                frequency_end=dv,
+                frequency_step=1.e6,
+                reset=False):
+        self.siglent.sweep(frequency_end, frequency_step, reset)

@@ -13,12 +13,12 @@ class ry_405_pulses(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.N_pulses = 2
+        self.p.N_pulses = 1
         self.p.t_between_pulses = 10.e-3
         self.p.t_pulse = 3.e-3
         self.p.N_repeats = 10
 
-        self.xvar('p',[0.,0.])
+        self.xvar('v_pd_ry_405', np.linspace(0.25, 8.8, 10))
         
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -27,11 +27,11 @@ class ry_405_pulses(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.ry_405.on()
-        delay(100.e-3)
-        self.ry_405.off()
+        # self.ry_405.on()
+        # delay(100.e-3)
+        # self.ry_405.off()
 
-        delay(4.)
+        self.ry_405.set_power(self.p.v_pd_ry_405)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
@@ -41,7 +41,7 @@ class ry_405_pulses(EnvExperiment, Base):
             self.ry_405.off()
             delay(self.p.t_between_pulses)
 
-        delay(1.)
+        delay(4.)
         
         self.core.wait_until_mu(now_mu())
         _ = self.scope.read_sweep(1)

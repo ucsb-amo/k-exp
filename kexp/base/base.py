@@ -109,13 +109,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.init_all_dds() # initializes DDS channels
         if dds_set:
             delay(1*ms)
+            self.dds.stash_defaults()
             self.set_all_dds() # set DDS to default values
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
-
-        self.dds.ry_405_sw.on()
-        self.dds.ry_405_sw.set_dds(init=True)
-
         self.core.break_realtime()
         if init_imaging:
             self.imaging.init()
@@ -155,8 +152,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.core.break_realtime()
         
-        self.ry_405.init()
-        self.ry_980.init()
+        # self.ry_405.init()
+        # self.ry_980.init()
 
         # self.dds.ry_405_sw.on()
         # self.dds.ry_405_sw.set_dds(init=True)
@@ -210,6 +207,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
     @kernel
     def post_scan(self):
+        self.ry_980.sweep_to(reset=True)
+
         self.core.break_realtime()
         self.background_field()
 
