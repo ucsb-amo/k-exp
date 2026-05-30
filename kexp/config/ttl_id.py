@@ -52,7 +52,7 @@ class ttl_frame(ttl_frame_waxx):
         self.ry_980_sw = self.assign_ttl_out(52)
         self.phase_lock_beam_enable = self.assign_ttl_out(53)
 
-        self.z_shim_pid_int_hold_zero = self.assign_ttl_out(56)
+        self.ry_intensity_pid_clear = self.assign_ttl_out(56)
 
         self.line_trigger = self.assign_ttl_in(40)
 

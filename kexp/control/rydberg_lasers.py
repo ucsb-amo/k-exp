@@ -129,25 +129,6 @@ class RydbergLaser_Params():
                 ry_980_params: SiglentPID_Params):
         self._p_405 = ry_405_params
         self._p_980 = ry_980_params
-
-# class RydbergLasers():
-#     def __init__(self,
-#                  siglent_405_cavity:SDG6000X_CH,
-#                  dac_pid_setpoint_405:DAC_CH,
-#                  dds_sw_405:TTL_OUT,
-#                  siglent_980_cavity:SDG6000X_CH,
-#                  dac_pid_setpoint_980:DAC_CH,
-#                  ttl_sw_980:TTL_OUT):
-        
-#         self.beam_405 = SiglentDDSBeam(siglent_ch=siglen t_405_cavity,
-#                                     dac_pid_setpoint=dac_pid_setpoint_405,
-#                                     dds_sw=dds_sw_405)
-#         self.beam_980 = SiglentTTLBeam(siglent_ch=siglent_980_cavity,
-#                                     dac_pid_setpoint=dac_pid_setpoint_980,
-#                                     ttl_sw=ttl_sw_980)
-        
-#         self._p = RydbergLaser_Params(ry_405_params=self.beam_405._p,
-#                                       ry_980_params=self.beam_980._p)
         
 class FixedRyDDSBeamPID():
     def __init__(self,
@@ -184,76 +165,26 @@ class FixedRyDDSBeamPID():
     @kernel
     def reboot(self):
         self.dds_sw.set_dds(amplitude=self.dds_sw._amplitude_default)
-        
-class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
-    def __init__(self,
-                siglent_ch:SDG6000X_CH,
-                dds_sw:DDS,
-                # wavemeter_object,
-                ao_order_cavity=-1,
-                ao_order_pid=1,
-                frequency_pid_ao=80.e6):
-        super().__init__(siglent_ch,dds_sw=dds_sw)
-
-        self._ao_order_cavity = ao_order_cavity
-        self._ao_order_pid = ao_order_pid
-        self._frequency_pid_ao = frequency_pid_ao
-        self._f_siglent_detuning_reference = self.siglent._p.frequency
-
-        # self.wavemeter = wavemeter_object
-
-        self.siglent._stash_defaults()
-
-    @kernel
-    def set_detuning(self,frequency_detuned):
-        f_ao = self.detuning_to_cavity_ao_frequency(frequency_detuned)
-        self.siglent.set(frequency=f_ao)
-
-    @portable(flags={"fast-math"})
-    def detuning_to_cavity_ao_frequency(self,frequency_detuned) -> TFloat:
-        delta = frequency_detuned
-        a_c = self._ao_order_cavity
-        f_0 = self._f_siglent_detuning_reference
-        a_pid = self._ao_order_pid
-        f_pid = self._frequency_pid_ao
-        a_sw = self.dds_sw.aom_order
-        f_sw = self.dds_sw.frequency
-        f_ao = f_0 + (delta-2*a_pid*f_pid-2*a_sw*f_sw)/(-2*a_c)
-        return f_ao
-    
-class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
-    def __init__(self,
-                siglent_ch:SDG6000X_CH,
-                ttl_ao_sw=TTL_OUT):
-        super().__init__(siglent_ch=siglent_ch,
-                         ttl_sw=ttl_ao_sw)
-
-        self.siglent._stash_defaults()
-    
-    @kernel
-    def init(self):
-        self.siglent.init()
-        self.ttl_sw.off()
-
-    @kernel
-    def sweep_to(self,
-                frequency_end=dv,
-                frequency_step=1.e6,
-                reset=False):
-        self.siglent.sweep(frequency_end, frequency_step, reset)
 
 class FiberEORyDDSBeamPID(SiglentTTLBeam):
     def __init__(self,
                 siglent_ch:SDG6000X_CH,
+                dac_pid:DAC_CH,
                 ttl_ao_sw=TTL_OUT):
         super().__init__(siglent_ch=siglent_ch,
                          ttl_sw=ttl_ao_sw)
 
+        self.dac_pid = dac_pid
         self.siglent._stash_defaults()
+
+    @kernel
+    def set_power(self, v_pd=dv, load_dac=True):
+        self.dac_pid.set(v_pd, load_dac)
     
     @kernel
     def init(self):
         self.siglent.init()
+        self.dac_pid.set(self.dac_pid.v)
         self.ttl_sw.off()
 
     @kernel
@@ -262,3 +193,79 @@ class FiberEORyDDSBeamPID(SiglentTTLBeam):
                 frequency_step=1.e6,
                 reset=False):
         self.siglent.sweep(frequency_end, frequency_step, reset)
+
+# class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
+#     def __init__(self,
+#                 siglent_ch:SDG6000X_CH,
+#                 ttl_ao_sw=TTL_OUT):
+#         super().__init__(siglent_ch=siglent_ch,
+#                          ttl_sw=ttl_ao_sw)
+
+#         self.siglent._stash_defaults()
+    
+#     @kernel
+#     def init(self):
+#         self.siglent.init()
+#         self.ttl_sw.off()
+
+#     @kernel
+#     def sweep_to(self,
+#                 frequency_end=dv,
+#                 frequency_step=1.e6,
+#                 reset=False):
+#         self.siglent.sweep(frequency_end, frequency_step, reset)
+
+# class CavityAOControlledRyDDSBeam(SiglentDDSBeam):
+#     def __init__(self,
+#                 siglent_ch:SDG6000X_CH,
+#                 dds_sw:DDS,
+#                 # wavemeter_object,
+#                 ao_order_cavity=-1,
+#                 ao_order_pid=1,
+#                 frequency_pid_ao=80.e6):
+#         super().__init__(siglent_ch,dds_sw=dds_sw)
+
+#         self._ao_order_cavity = ao_order_cavity
+#         self._ao_order_pid = ao_order_pid
+#         self._frequency_pid_ao = frequency_pid_ao
+#         self._f_siglent_detuning_reference = self.siglent._p.frequency
+
+#         # self.wavemeter = wavemeter_object
+
+#         self.siglent._stash_defaults()
+
+#     @kernel
+#     def set_detuning(self,frequency_detuned):
+#         f_ao = self.detuning_to_cavity_ao_frequency(frequency_detuned)
+#         self.siglent.set(frequency=f_ao)
+
+#     @portable(flags={"fast-math"})
+#     def detuning_to_cavity_ao_frequency(self,frequency_detuned) -> TFloat:
+#         delta = frequency_detuned
+#         a_c = self._ao_order_cavity
+#         f_0 = self._f_siglent_detuning_reference
+#         a_pid = self._ao_order_pid
+#         f_pid = self._frequency_pid_ao
+#         a_sw = self.dds_sw.aom_order
+#         f_sw = self.dds_sw.frequency
+#         f_ao = f_0 + (delta-2*a_pid*f_pid-2*a_sw*f_sw)/(-2*a_c)
+#         return f_ao
+
+# class RydbergLasers():
+#     def __init__(self,
+#                  siglent_405_cavity:SDG6000X_CH,
+#                  dac_pid_setpoint_405:DAC_CH,
+#                  dds_sw_405:TTL_OUT,
+#                  siglent_980_cavity:SDG6000X_CH,
+#                  dac_pid_setpoint_980:DAC_CH,
+#                  ttl_sw_980:TTL_OUT):
+        
+#         self.beam_405 = SiglentDDSBeam(siglent_ch=siglen t_405_cavity,
+#                                     dac_pid_setpoint=dac_pid_setpoint_405,
+#                                     dds_sw=dds_sw_405)
+#         self.beam_980 = SiglentTTLBeam(siglent_ch=siglent_980_cavity,
+#                                     dac_pid_setpoint=dac_pid_setpoint_980,
+#                                     ttl_sw=ttl_sw_980)
+        
+#         self._p = RydbergLaser_Params(ry_405_params=self.beam_405._p,
+#                                       ry_980_params=self.beam_980._p)

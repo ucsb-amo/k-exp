@@ -35,7 +35,7 @@ from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
 from kexp.control.awg_tweezer import tweezer
 from kexp.control.doubled_rf import doubled_rf
-from kexp.control.rydberg_lasers import FixedRyDDSBeamPID, CavityAOControlledRyDDSBeam, FiberEOControlledRyDDSBeam
+from kexp.control.rydberg_lasers import FixedRyDDSBeamPID, FiberEORyDDSBeamPID
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
@@ -186,9 +186,10 @@ class Devices():
                             dac_pid=self.dac.ry_405_intensity_control,
                             )
         
-        self.ry_980 = FiberEOControlledRyDDSBeam(
+        self.ry_980 = FiberEORyDDSBeamPID(
             siglent_ch=self.siglent.siglent_980,
             ttl_ao_sw=self.ttl.ry_980_sw,
+            dac_pid=self.dac.ry_980_intensity_control
             )
         
         # self.reference_arm_waveplate_pid = WaveplateRotatorPhotodiodePID(
