@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QPixmap, QPainter, QFont, QIcon
 from PyQt6.QtCore import Qt
 
-from waxx.util.guis.mot_viewer.mot_viewer import BaslerCameraViewer
+from waxx.util.guis.basler.basler_cameras_gui import BaslerCamerasMainWindow
 
 mot_basler_serial = "40277706"
 
@@ -24,7 +24,11 @@ def main():
     painter.end()
     app.setWindowIcon(QIcon(pixmap))
 
-    viewer = BaslerCameraViewer(mot_basler_serial)
+    viewer = BaslerCamerasMainWindow(
+        serial_filter=[mot_basler_serial],
+        auto_open=True,
+    )
+    viewer.setWindowTitle("MOT Viewer")
     viewer.show()
     sys.exit(app.exec())
 
