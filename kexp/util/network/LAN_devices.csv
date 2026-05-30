@@ -33,7 +33,7 @@
 "LAN","control desk siglent scope","","192.168.1.108",,
 "LAN","3418 ethernet relay (ARTIQ, sources, magnets)","","192.168.1.109",,
 "LAN","ry siglent scope","","192.168.1.110",,
-"LAN","wanderer0 usb hub","","192.168.1.111",,
+"LAN","wanderer0 usb hub","00-E0-4C-68-04-63","192.168.1.111",,
 "LAN","Siglent scope ","","192.168.1.112",,
 "LAN","Siglent machine table south","","192.168.1.113",,
 "LAN","sheck (jared office pc)","18-C0-4D-64-9F-70","192.168.1.114",,
