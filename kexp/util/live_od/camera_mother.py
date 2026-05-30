@@ -166,10 +166,19 @@ class DataHandler(QThread, Scribe):
         self.save_data_bool_signal.emit(self.run_info.save_data)
 
     def write_image_to_dataset(self):
+        save_worker = None
         try:
             if self.save_data:
                 f = self.wait_for_data_available(timeout=DATA_SAVER_TIMEOUT,
                                                  check_interrupt_method=self.break_check)
+                save_queue = Queue()
+                save_worker = SaveWorker(save_queue, f, self.N_img)
+                # Route SaveWorker's done signal through DataHandler so
+                # downstream consumers (live_od_server._data_handler_done_event)
+                # are unaffected.
+                save_worker.done_writing_signal.connect(self.done_writing_signal)
+                save_worker.start()
+
             while True:
                 if self.interrupted:
                     break
@@ -178,9 +187,7 @@ class DataHandler(QThread, Scribe):
                     img_t = time.time()
                     self.got_image_from_queue.emit(img)
                     if self.save_data:
-                        f['data']['images'][idx] = img
-                        f['data']['image_timestamps'][idx] = img_t
-                        print(f"saved {idx+1}/{self.N_img}")
+                        save_queue.put((img, idx, img_t))   # non-blocking hand-off
                     if idx == (self.N_img - 1):
                         break
                 except:
@@ -188,14 +195,70 @@ class DataHandler(QThread, Scribe):
         except Exception as e:
             # print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
             print(e)
-        try:
-            if self.save_data: f.close()
-        except:
-            pass
-        self.done_writing_signal.emit()
+
+        if self.save_data and save_worker is not None:
+            # Propagate interruption so SaveWorker drains without writing.
+            save_worker.interrupted = self.interrupted
+            save_queue.put(None)    # sentinel — SaveWorker closes file & emits done
+            # done_writing_signal is emitted by SaveWorker; don't emit it here.
+        else:
+            self.done_writing_signal.emit()
 
     def break_check(self):
         return self.interrupted
+
+
+class SaveWorker(QThread):
+    """Writes images to HDF5 on a dedicated thread so that DataHandler's
+    image-dispatch loop is never blocked by disk I/O.
+
+    Usage
+    -----
+    1. Open the HDF5 file and pass the handle to the constructor.
+    2. Call ``start()``.
+    3. For each image, ``save_queue.put((img, idx, img_t))``.
+    4. When the grab loop ends, ``save_queue.put(None)`` (sentinel).
+    5. SaveWorker closes the file and emits ``done_writing_signal``.
+
+    Interruption
+    ------------
+    Set ``interrupted = True`` *before* putting the sentinel.  The worker
+    will drain the queue without writing, then close the file and emit.
+    """
+
+    done_writing_signal = pyqtSignal()
+
+    def __init__(self, save_queue: Queue, h5_file, n_img: int):
+        super().__init__()
+        self._save_queue = save_queue
+        self._f = h5_file
+        self._n_img = n_img
+        self.interrupted = False
+
+    def run(self):
+        try:
+            while True:
+                item = self._save_queue.get()
+                if item is None:            # sentinel — we're done
+                    break
+                if self.interrupted:
+                    continue                # drain without writing
+                img, idx, img_t = item
+                try:
+                    self._f['data']['images'][idx] = img
+                    self._f['data']['image_timestamps'][idx] = img_t
+                    print(f"saved {idx + 1}/{self._n_img}")
+                except Exception as exc:
+                    print(f"[SaveWorker] write error at idx={idx}: {exc}")
+        except Exception as exc:
+            print(f"[SaveWorker] unexpected error: {exc}")
+        finally:
+            try:
+                self._f.close()
+            except Exception:
+                pass
+            self.done_writing_signal.emit()
+
 
 class CameraBaby(QThread):
     image_captured = pyqtSignal(int)

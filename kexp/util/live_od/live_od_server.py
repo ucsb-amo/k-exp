@@ -14,12 +14,11 @@ import pickle
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
-import h5py
 import zmq
 import numpy as np
 from PyQt6.QtCore import QThread, pyqtSignal
-from waxa.data.data_saver import DataSaver
 from waxx.util.comms_server.waxx_server import WaxxServer
 
 
@@ -60,6 +59,7 @@ class LiveODServer(QThread, WaxxServer):
         self._cam_ready_event = threading.Event()
         self._data_handler_done_event = threading.Event()
         self._data_handler_done_event.set()  # default: no DataHandler in flight
+        self._file_creation_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="liveod_file_create")
         self._running = False
         self._current_save_data = False
         self._current_capture_images = False
@@ -222,7 +222,15 @@ class LiveODServer(QThread, WaxxServer):
 
         if save_data:
             run_id = self._server_talk.get_run_id()
-            filepath = self._data_saver.create_data_file_from_payload(msg, run_id)
+            # Compute the filepath immediately (pure string ops, no I/O).
+            filepath = self._data_saver.compute_data_filepath_from_payload(msg, run_id)
+            # Create the HDF5 file on a background thread so the ZMQ REP
+            # socket can reply at once and not block the experiment client.
+            # DataHandler.wait_for_data_available() already polls until the
+            # file exists, so the delay is handled transparently.
+            self._file_creation_executor.submit(
+                self._data_saver.create_data_file_from_payload, msg, run_id
+            )
 
         self._current_filepath = filepath
         self._current_run_id = run_id
@@ -279,8 +287,10 @@ class LiveODServer(QThread, WaxxServer):
             if not self._data_handler_done_event.wait(timeout=60.0):
                 print("[LiveODServer] WARNING: DataHandler did not finish within 60 s — proceeding anyway.")
             try:
-                self._data_saver.save_data_from_payload(msg, self._current_filepath)
-                self._write_shot_timestamps(msg)
+                self._data_saver.save_data_from_payload(
+                    msg, self._current_filepath,
+                    shot_timestamps=self._shot_timestamps,
+                )
                 print(f"[LiveODServer] END_RUN: run_id={self._current_run_id} saved.")
                 # Clear filepath so a late RESET cannot delete an already-saved file.
                 self._current_filepath = ""
@@ -294,39 +304,6 @@ class LiveODServer(QThread, WaxxServer):
 
         self.run_done_signal.emit()
         return {"ok": True}
-
-    def _write_shot_timestamps(self, end_run_msg: dict):
-        """Append ``timestamp_shot_end`` to the HDF5 data file.
-
-        Timestamps are recorded server-side in ``_handle_shot_complete`` so
-        they are independent of any experiment-side clock. They are reshaped
-        to scan-data shape ``(*xvardims,)`` and unshuffled before writing to
-        match the canonical shot order.
-        """
-        if not self._shot_timestamps or not self._current_filepath:
-            return
-        timestamps = np.array(self._shot_timestamps, dtype=np.float64)
-        xvardims = list(end_run_msg.get("xvardims", []))
-        sort_idx_raw = end_run_msg.get("sort_idx", [])
-        sort_N_raw = end_run_msg.get("sort_N", [])
-        # Reshape to scan-data shape before unshuffling so that each xvar
-        # axis is unshuffled independently (required for multi-xvar scans).
-        if xvardims and int(np.prod(xvardims)) == len(timestamps):
-            timestamps = timestamps.reshape(xvardims)
-        if sort_idx_raw:
-            timestamps = DataSaver._unshuffle_single_array(
-                timestamps, sort_idx_raw, sort_N_raw, exclude_dims=0
-            )
-        try:
-            with h5py.File(self._current_filepath, "r+") as f:
-                grp = f["data"]
-                if "timestamp_shot_end" in grp:
-                    del grp["timestamp_shot_end"]
-                grp.create_dataset("timestamp_shot_end", data=timestamps)
-        except Exception:
-            import traceback
-            print("[LiveODServer] Warning: could not write timestamp_shot_end:")
-            traceback.print_exc()
 
     def _handle_reset(self, msg: dict) -> dict:
         print("[LiveODServer] RESET requested by remote viewer.")
