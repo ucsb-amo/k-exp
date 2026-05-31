@@ -43,7 +43,11 @@ class Cooling():
     #         self.tweezer.off()
 
     @kernel
-    def prepare_hf_tweezers(self, squeeze=True, cubic_ramp_squeeze=True):
+    def prepare_hf_tweezers(self,
+                            squeeze=True,
+                            cubic_ramp_squeeze=True,
+                            do_tweezer_evap_2=True,
+                            do_tweezer_evap_3=True):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
         """   
@@ -103,15 +107,19 @@ class Cooling():
                              i_start=self.p.i_hf_tweezer_evap1_current,
                              i_end=self.p.i_hf_tweezer_evap2_current)
         
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
-                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
-                          paint=True,keep_trap_frequency_constant=True)
-       
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                          paint=True,keep_trap_frequency_constant=True,low_power=True)
+        if do_tweezer_evap_2:
+        
+            self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
+                            v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
+                            v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
+                            paint=True,keep_trap_frequency_constant=True)
+            
+            if do_tweezer_evap_3:
+            
+                self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+                                v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+                                v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                                paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.dac.supply_current_2dmot.set(v=0.)
 
