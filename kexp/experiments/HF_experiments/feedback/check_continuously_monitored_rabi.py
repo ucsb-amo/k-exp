@@ -43,7 +43,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.p.frequency_raman_transition_lightshifted = self.p.frequency_lightshift + self.p.frequency_raman_transition
 
-        self.p.fraction_power_raman = 0.25
+        self.p.fraction_power_raman = 1.
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
@@ -63,19 +63,20 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-        # self.prep_raman(frequency_transition=self.p.frequency_raman_transition_lightshifted,
-        #                 phase_mode=0)
-        self.prep_raman(frequency_transition=self.p.frequency_raman_transition,
+        self.prep_raman(frequency_transition=self.p.frequency_raman_transition_lightshifted,
                         phase_mode=0)
+        # self.prep_raman(frequency_transition=self.p.frequency_raman_transition,
+        #                 phase_mode=0)
 
-        self.raman.set_up_fast_frequency_update(aggressive_mode=1)
-        self.raman.set_frequency_fast(self.p.frequency_raman_transition_lightshifted,
-                                      do_io_update=False)
+        # self.raman.set_up_fast_frequency_update(aggressive_mode=1)
+        # self.raman.set_frequency_fast(self.p.frequency_raman_transition_lightshifted,
+        #                               do_io_update=False)
+        delay(1.e-3)
 
         self.raman.on()
-        delay( self.p.t_raman_pi_pulse * 20 )
+        # delay( self.p.t_raman_pi_pulse * 10 )
 
-        self.raman.io_update()
+        # self.raman.io_update()
         self.imaging.on()
         delay_mu(91)
         

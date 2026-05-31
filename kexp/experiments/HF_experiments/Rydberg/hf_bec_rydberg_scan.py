@@ -8,63 +8,61 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
-        self.p.t_tof = 200.e-6
+        self.p.t_tof = 100.e-6
 
         # self.xvar('wee',[1,0])
         self.p.wee = 1
 
-        # self.xvar('frequency_eo_980', np.arange(150.,175.,2.)*1.e6)
+        self.xvar('frequency_eo_980', np.arange(155.7,156.1,.03)*1.e6)
         self.p.frequency_eo_980 = 139.e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
         
-        # self.xvar('t_tweezer_hold', np.linspace(0.,100.,5) * 1.e-3)
-        self.t_tweezer_hold = 10.e-3
+        # self.xvar('t_tweezer_hold', np.linspace(1500.,2000.,3) * 1.e-3)
+        self.t_tweezer_hold = 1750.e-3
 
         # self.xvar('v_vva_ry_405',np.linspace(0.3,1.,10))
-        self.p.v_vva_ry_405 = 0.61
+        # self.p.v_pd_ry_405 = 8.9 # 3.0 mW
+        # self.p.v_pd_ry_405 = 8. # 2.7 mW
+        # self.p.v_pd_ry_405 = 3.52 # 1.2 mW
+        self.p.v_pd_ry_405 = 0.2 # 1.2 mW
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 25
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
         
-        self.ry_405.set_power(self.p.v_vva_ry_405)
-
+        self.ry_405.set_power(self.p.v_pd_ry_405)
         self.ry_980.sweep_to(self.p.frequency_eo_980)
 
-        self.ry_980.on()
-        self.ry_405.on()
-        delay(100.e-3)
-        self.ry_405.off()
-        self.ry_980.off()
-
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.prepare_hf_tweezers(do_tweezer_evap_3=False, squeeze=False)
+        self.prepare_hf_tweezers(do_tweezer_evap_2=False, squeeze=False)
         self.ry_405.reboot()
-        
-        delay(10e-3)
+        self.ry_405.dds_sw.set_dds(amplitude=0.08)
 
-        # if self.p.wee == 1:
-        #      self.ry_405.on()
+        delay(100e-3)
+
+        if self.p.wee == 1:
+             self.ry_405.on()
+             self.ry_980.on()
         
-        if self.p.wee == 1:   
-            for i in range(500):
-                    self.ry_980.on()
-                    delay(10e-6)
-                    self.ry_980.off()
-                    delay(10e-3)
-        else:
-            delay((100*((5e-3)+(5e-6))))
+        # if self.p.wee == 1:   
+        #     for i in range(500):
+        #             self.ry_980.on()
+        #             delay(10e-6)
+        #             self.ry_980.off()
+        #             delay(10e-3)
+        # else:
+        #     delay((100*((5e-3)+(5e-6))))
 
 
         delay(self.p.t_tweezer_hold)

@@ -46,7 +46,6 @@ class mag_trap(EnvExperiment, Base):
         self.p.v_pd_hf_tweezer_1064_rampdown2_end = 1.
 
 
-
         self.finish_prepare(shuffle=False)
 
     @kernel
