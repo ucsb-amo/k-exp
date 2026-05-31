@@ -1,5 +1,5 @@
 import numpy as np
-from waxx.config.data_vault import DataVault as DataVaultWax
+from waxx.config.data_vault import DataVault as DataVaultWax, DataContainer
 
 class DataVault(DataVaultWax):
     def __init__(self, expt):
@@ -10,3 +10,6 @@ class DataVault(DataVaultWax):
         self.post_shot_absorption = self.add_data_container(4)
 
         self.b = self.add_data_container(1)
+
+        self.lock_status_405 = self.add_data_container(1)
+        self.lock_status_980 = self.add_data_container(1)

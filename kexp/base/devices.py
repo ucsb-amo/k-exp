@@ -30,6 +30,7 @@ from kexp.config.sampler_id import sampler_frame
 from kexp.config.siglent_id import siglent_frame
 from kexp.config.ip import DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR
 from kexp.config.wavemeter_id import fzw_frame
+from kexp.config.data_vault import DataVault, DataContainer
 
 from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
@@ -60,6 +61,7 @@ class Devices():
         self.lightsheet = lightsheet()
         self.params = ExptParams()
         self.raman = RamanBeamPair()
+        self.data = DataVault()
         self.p = self.params
 
     def prepare_devices(self,expt_params:ExptParams=d_exptparams):
@@ -179,18 +181,25 @@ class Devices():
 
         self.siglent = siglent_frame(self.core)
 
-        # self._fzw = fzw_frame()
+        self._fzw = fzw_frame()
 
         self.ry_405 = FixedRyDDSBeamPID(
                             dds_sw=self.dds.ry_405_sw,
                             dac_pid=self.dac.ry_405_intensity_control,
-                            ttl_shutter=self.ttl.ry_405_shutter
+                            ttl_shutter=self.ttl.ry_405_shutter,
+                            wavemeter=self._fzw.ry_405,
+                            lock_data_container=self.data.lock_status_405,
+                            core=self.core
                             )
         
         self.ry_980 = FiberEORyDDSBeamPID(
             siglent_ch=self.siglent.siglent_980,
             ttl_ao_sw=self.ttl.ry_980_sw,
-            dac_pid=self.dac.ry_980_intensity_control
+            dac_pid=self.dac.ry_980_intensity_control,
+            eo_sideband_order=-1,
+            wavemeter=self._fzw.ry_980,
+            lock_data_container=self.data.lock_status_980,
+            core=self.core
             )
         
         # self.reference_arm_waveplate_pid = WaveplateRotatorPhotodiodePID(

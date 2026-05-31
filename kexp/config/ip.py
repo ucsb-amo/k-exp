@@ -1,4 +1,4 @@
-import os
+﻿import os
 from datetime import datetime
 from waxa.data.server_talk import server_talk as st
 
@@ -8,6 +8,19 @@ INTERLOCK_EMAIL_CREDENTIALS_FILEPATH = r"G:\Shared drives\Tweezers\Environments 
 ### data, filepaths
 DATA_DIR = os.getenv("data")
 EXPT_PACKAGE_DIR = os.path.join(os.getenv("code"),"k-exp","kexp")
+
+### dashboard log directories
+# Resolved lazily at use-site (see waxx.util.dashboard.logging_setup) so that
+# tooling can run when DATA_DIR is unmapped.  The constants below may be None
+# if the shared drive is not available; consumers must check and fall back.
+if DATA_DIR:
+    LOG_DIR = os.path.join(DATA_DIR, "_logs")
+    SERVER_LOG_DIR = os.path.join(LOG_DIR, "server")
+    CLIENT_LOG_DIR = os.path.join(LOG_DIR, "client")
+else:
+    LOG_DIR = None
+    SERVER_LOG_DIR = None
+    CLIENT_LOG_DIR = None
 EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
 BASE_CLASS_RELPATH = os.path.join("base")  # all .py files in this directory will be saved
 PATHS = (DATA_DIR, EXPT_PACKAGE_DIR, EXPT_PARAM_RELPATH, BASE_CLASS_RELPATH)

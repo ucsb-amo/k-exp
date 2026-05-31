@@ -1,12 +1,15 @@
 from artiq.language import TFloat
+from artiq.coredevice.core import Core
 
+from waxx.control.artiq.dummy_core import DummyCore
 from waxx.control.misc.sdg6000x import SDG6000X_CH, dv, SDG6000X_Params
 from waxx.control.artiq.TTL import TTL_OUT
 from waxx.control.artiq.DAC_CH import DAC_CH
 from waxx.control.artiq.DDS import DDS
 
-from waxx.control.misc.moglabs_wavemeter import WavemeterClient
+from waxx.control.misc.moglabs_wavemeter import WavemeterClient, DummyWavemeterClient
 from kexp.config.ip import WAVEMETER_MOGLABS_IP
+from kexp.config.data_vault import DataVault, DataContainer
 
 from artiq.language import now_mu, kernel, delay, portable
 
@@ -134,11 +137,17 @@ class FixedRyDDSBeamPID():
     def __init__(self,
                 dds_sw:DDS,
                 dac_pid:DAC_CH,
-                ttl_shutter:TTL_OUT
+                ttl_shutter:TTL_OUT,
+                wavemeter:WavemeterClient,
+                lock_data_container = DataContainer,
+                core:Core = DummyCore()
                 ):
         self.dds_sw = dds_sw
         self.dac_pid = dac_pid
         self.ttl_shutter = ttl_shutter
+        self._wavemeter = wavemeter
+        self._core = core
+        self._dc = lock_data_container
 
     @kernel
     def set_power(self, v):
@@ -165,16 +174,34 @@ class FixedRyDDSBeamPID():
         self.dds_sw.set_dds(amplitude=self.dds_sw._amplitude_default)
         self.ttl_shutter.on()
 
+    @kernel
+    def lock_status(self):
+        self._core.wait_until_mu(now_mu())
+        lock_bool = self._wavemeter.lock_status()
+        self._dc.put_data(lock_bool)
+        self._core.break_realtime()
+
 class FiberEORyDDSBeamPID(SiglentTTLBeam):
     def __init__(self,
                 siglent_ch:SDG6000X_CH,
                 dac_pid:DAC_CH,
-                ttl_ao_sw=TTL_OUT):
+                ttl_ao_sw:TTL_OUT,
+                eo_sideband_order,
+                wavemeter:WavemeterClient,
+                lock_data_container = DataContainer,
+                core:Core = DummyCore()
+                ):
         super().__init__(siglent_ch=siglent_ch,
                          ttl_sw=ttl_ao_sw)
 
         self.dac_pid = dac_pid
         self.siglent._stash_defaults()
+
+        self._eo_order = eo_sideband_order
+
+        self._wavemeter = wavemeter
+        self._dc = lock_data_container
+        self._core = core
 
     @kernel
     def set_power(self, v_pd=dv, load_dac=True):
@@ -192,6 +219,15 @@ class FiberEORyDDSBeamPID(SiglentTTLBeam):
                 frequency_step=1.e6,
                 reset=False):
         self.siglent.sweep(frequency_end, frequency_step, reset)
+
+    @kernel
+    def lock_status(self, robust=True):
+        self._core.wait_until_mu(now_mu())
+        self.siglent.fetch_state()
+        frequency_shift = - self._eo_order * frequency_shift
+        lock_bool = self._wavemeter.lock_status(frequency_shift, robust)
+        self._dc.put_data(lock_bool)
+        self._core.break_realtime()
 
 # class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
 #     def __init__(self,

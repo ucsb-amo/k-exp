@@ -43,16 +43,18 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.params = expt_params
 
         self.p = self.params
-
+        self.data = DataVault(self)
+        
         self.prepare_devices(expt_params=self.params)
 
         _img_config = self.choose_camera(imaging_type, camera_select)
         self.configure_imaging_system(imaging_configuration=_img_config)
 
-        self.data = DataVault(self)
+        
         self.ds = DataSaver(*PATHS, server_talk=server_talk)
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
+
 
 
     def finish_prepare(self,N_repeats=[],shuffle=True):

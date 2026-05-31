@@ -135,8 +135,8 @@ class Cooling():
         delay(30.e-3)
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        if squeeze:
-            self.tweezer_squeeze()
+        if squeeze and do_tweezer_evap_2 and do_tweezer_evap_3:
+            self.tweezer_squeeze(cubic_ramp_squeeze)
 
     @kernel
     def tweezer_squeeze(self, cubic_ramp=True):
