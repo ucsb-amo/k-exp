@@ -177,7 +177,7 @@ class FixedRyDDSBeamPID():
     @kernel
     def lock_status(self):
         self._core.wait_until_mu(now_mu())
-        lock_bool = self._wavemeter.lock_status()
+        lock_bool = float(self._wavemeter.lock_status())
         self._dc.put_data(lock_bool)
         self._core.break_realtime()
 
@@ -224,7 +224,7 @@ class FiberEORyDDSBeamPID(SiglentTTLBeam):
     def lock_status(self, robust=True):
         self._core.wait_until_mu(now_mu())
         self.siglent.fetch_state()
-        frequency_shift = - self._eo_order * frequency_shift
+        frequency_shift = - self._eo_order * self.siglent._p.frequency
         lock_bool = self._wavemeter.lock_status(frequency_shift, robust)
         self._dc.put_data(lock_bool)
         self._core.break_realtime()

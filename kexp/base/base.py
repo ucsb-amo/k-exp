@@ -143,8 +143,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.background_field()
         self.read_magnetometer()
-
-        # self.slm.check_for_old_setting()
         
         self.core.reset()
         
@@ -152,10 +150,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.reset_tweezers(two_d_tweezers)
 
-        self.core.break_realtime()
-        
-        # self.ry_405.init()
-        # self.ry_980.init()
+        self.ry_405.lock_status()
+        self.ry_980.lock_status()
 
         # self.dds.ry_405_sw.on()
         # self.dds.ry_405_sw.set_dds(init=True)
