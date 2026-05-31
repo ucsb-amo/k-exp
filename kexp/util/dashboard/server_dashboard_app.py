@@ -53,7 +53,6 @@ from waxx.util.dashboard.server_supervisor import ServerSupervisor
 EXTRA_CLIENT_IDS_ON_SERVER_DASHBOARD: list[str] = [
     "remote_control",
     "ethernet_relay",
-    "keysight",
     "device_control",
 ]
 
