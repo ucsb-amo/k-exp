@@ -177,7 +177,7 @@ class FixedRyDDSBeamPID():
     @kernel
     def lock_status(self):
         self._core.wait_until_mu(now_mu())
-        lock_bool = float(self._wavemeter.lock_status())
+        lock_bool = self._wavemeter.lock_status()
         self._dc.put_data(lock_bool)
         self._core.break_realtime()
 

@@ -66,6 +66,12 @@ WAVEMETER_MOGLABS_IP = '192.168.1.94'
 ### Bristol wavemeter
 BRISTOL_WAVEMETER_IP = '192.168.1.105'
 
+### Keysight DC current supplies — (max_current_A, ip)
+KEYSIGHT_SUPPLIES = [
+    (170, '192.168.1.77'),
+    (500, '192.168.1.78'),
+]
+
 ### kinesis motors
 DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961
 

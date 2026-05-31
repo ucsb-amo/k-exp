@@ -126,6 +126,25 @@ SERVER_SPECS: list[ServerSpec] = [
         default_placement="dock",
     ),
     ServerSpec(
+        id="keysight",
+        label="Keysight Supplies",
+        # Embeds the thin client widget (KeysightServerPanel == KeysightClientPanel)
+        # that talks to the headless KeysightServer over TCP.  No dashboard
+        # opens a VXI11 connection to the supplies directly.
+        body_factory=_lazy_panel(
+            "kexp.util.guis.keysight_monitor.keysight_panel",
+            "KeysightServerPanel",
+        ),
+        server_cmd=[_PY, "-m", "kexp.util.guis.keysight_monitor.keysight_server_headless"],
+        cwd=_REPO,
+        com_label="LAN",
+        graceful_stop_timeout_s=5.0,
+        restart_on_crash=False,
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="diag",
+    ),
+    ServerSpec(
         id="interlock",
         label="Interlock",
         body_factory=_lazy_panel("kexp.util.guis.interlock.interlock_panel", "InterlockPanel"),
