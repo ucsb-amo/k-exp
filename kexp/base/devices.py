@@ -184,6 +184,7 @@ class Devices():
         self.ry_405 = FixedRyDDSBeamPID(
                             dds_sw=self.dds.ry_405_sw,
                             dac_pid=self.dac.ry_405_intensity_control,
+                            ttl_shutter=self.ttl.ry_405_shutter
                             )
         
         self.ry_980 = FiberEORyDDSBeamPID(

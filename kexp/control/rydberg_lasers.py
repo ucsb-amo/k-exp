@@ -132,16 +132,13 @@ class RydbergLaser_Params():
         
 class FixedRyDDSBeamPID():
     def __init__(self,
-                 dds_sw:DDS,
-                 dac_pid:DAC_CH,
-                #  wavemeter_object: WavemeterClient)
+                dds_sw:DDS,
+                dac_pid:DAC_CH,
+                ttl_shutter:TTL_OUT
                 ):
         self.dds_sw = dds_sw
         self.dac_pid = dac_pid
-        # self.wavemeter = wavemeter_object
-
-    # def check_lock(self) -> bool:
-    #     return self.wavemeter.lock_status()
+        self.ttl_shutter = ttl_shutter
 
     @kernel
     def set_power(self, v):
@@ -161,10 +158,12 @@ class FixedRyDDSBeamPID():
         self.dds_sw.set_dds(init=True)
         self.set_power(self.dac_pid.v)
         self.dds_sw.off()
+        self.ttl_shutter.off()
 
     @kernel
     def reboot(self):
         self.dds_sw.set_dds(amplitude=self.dds_sw._amplitude_default)
+        self.ttl_shutter.on()
 
 class FiberEORyDDSBeamPID(SiglentTTLBeam):
     def __init__(self,
