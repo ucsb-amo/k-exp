@@ -546,15 +546,10 @@ class InterlockService:
             if not stale:
                 return
             self._consecutive_stale_windows += 1
-            should_email = (self._consecutive_stale_windows >= 3
-                            and not self._has_emailed_for_current_outage)
         _LOG.error("PLC data stale: age=%.1fs threshold=%.1fs", age, self._cfg.stale_threshold_s)
+        # _trip() will queue a single "K-Interlock Tripped" email containing
+        # the stale-data reason; do not send a separate "PLC silence" email.
         self._trip(reason=f"no valid PLC data for {age:.1f}s")
-        if should_email:
-            self._queue_email("K-Interlock: PLC silence",
-                              f"No valid PLC data for {age:.1f} s (threshold {self._cfg.stale_threshold_s:.1f} s).")
-            with self._state_lock:
-                self._has_emailed_for_current_outage = True
 
     def _try_reopen_if_needed(self) -> None:
         with self._serial_lock:
