@@ -1,11 +1,12 @@
 import os
 from datetime import datetime
 from waxa.data.server_talk import server_talk as st
+
 from waxx.config.ip import EMAIL_CREDENTIALS_FILEPATH  # noqa: F401  (re-exported for kexp consumers)
+INTERLOCK_EMAIL_CREDENTIALS_FILEPATH = r"G:\Shared drives\Tweezers\Environments and Profiles\interlock_gmail_credentials.txt"
 
 ### data, filepaths
 DATA_DIR = os.getenv("data")
-# DATA_DIR = 'Z:\_K\PotassiumData'
 EXPT_PACKAGE_DIR = os.path.join(os.getenv("code"),"k-exp","kexp")
 EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
 BASE_CLASS_RELPATH = os.path.join("base")  # all .py files in this directory will be saved
