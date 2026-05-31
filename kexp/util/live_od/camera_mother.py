@@ -64,6 +64,8 @@ class DataHandler(QThread, Scribe):
     def __init__(self, queue: Queue, data_filepath: str,
                  save_data=None, imaging_type=None, camera_key="",
                  camera_params=None,
+                 params_payload=None,
+                 run_info_payload=None,
                  n_img=None, n_shots=None, n_pwa_per_shot=None):
         """Create a DataHandler.
 
@@ -109,6 +111,8 @@ class DataHandler(QThread, Scribe):
         self._camera_params_payload = None
         if camera_params:
             self._camera_params_payload = camera_params
+        self._params_payload = params_payload or {}
+        self._run_info_payload = run_info_payload or {}
 
         # Pre-populate image count params when provided (critical for
         # save_data=False runs where read_params() skips the HDF5 read).
@@ -135,33 +139,57 @@ class DataHandler(QThread, Scribe):
     def read_params(self):
         """Populate camera/run-info attrs, then emit configuration signals.
 
-        When ``save_data=True`` (HDF5 file available) the camera_params and
-        run_info are read back from the file so that any server-side
-        adjustments are reflected.  When ``save_data=False`` the attrs have
-        already been set at construction time, so we skip the file read and
-        just try to look up the camera by key.
+        All three groups (camera_params, params, run_info) are taken directly
+        from the in-memory payloads sent by the experiment client, bypassing
+        the HDF5 file entirely.  This eliminates the race where the DataHandler
+        opens the file before the background file-creation thread has finished
+        writing a group.
+
+        Falls back to reading from HDF5 only when no payload is available
+        (legacy path).
         """
-        if getattr(self, 'save_data', True) and self.data_filepath:
+        have_payload = bool(
+            getattr(self, '_camera_params_payload', None)
+            or getattr(self, '_params_payload', None)
+            or getattr(self, '_run_info_payload', None)
+        )
+
+        if not have_payload and getattr(self, 'save_data', True) and self.data_filepath:
+            # Legacy path: no in-memory state — read everything from HDF5.
             with self.wait_for_data_available() as f:
                 unpack_group(f, 'camera_params', self.camera_params)
                 unpack_group(f, 'params', self.params)
                 unpack_group(f, 'run_info', self.run_info)
-        elif getattr(self, '_camera_params_payload', None):
-            # No HDF5 — use the exact camera params from the experiment client.
-            for key, val in self._camera_params_payload.items():
+        else:
+            # Apply all three payloads from memory.
+            if getattr(self, '_camera_params_payload', None):
+                for key, val in self._camera_params_payload.items():
+                    try:
+                        setattr(self.camera_params, key, val)
+                    except Exception:
+                        pass
+            elif hasattr(self, '_camera_key_hint') and self._camera_key_hint:
+                # No camera_params payload — look up by key.
+                from kexp.config.camera_id import cameras as cam_catalog, CameraParams as CP
+                for cam in vars(cam_catalog).values():
+                    if isinstance(cam, CP):
+                        cam_key = cam.key if not isinstance(cam.key, bytes) else cam.key.decode()
+                        if cam_key == self._camera_key_hint:
+                            self.camera_params = cam
+                            break
+
+            for key, val in getattr(self, '_params_payload', {}).items():
                 try:
-                    setattr(self.camera_params, key, val)
+                    setattr(self.params, key, val)
                 except Exception:
                     pass
-        elif hasattr(self, '_camera_key_hint') and self._camera_key_hint:
-            # No HDF5 — look up camera params by key so create_camera() works.
-            from kexp.config.camera_id import cameras as cam_catalog, CameraParams as CP
-            for cam in vars(cam_catalog).values():
-                if isinstance(cam, CP):
-                    cam_key = cam.key if not isinstance(cam.key, bytes) else cam.key.decode()
-                    if cam_key == self._camera_key_hint:
-                        self.camera_params = cam
-                        break
+
+            for key, val in getattr(self, '_run_info_payload', {}).items():
+                try:
+                    setattr(self.run_info, key, val)
+                except Exception:
+                    pass
+
         self.image_type_signal.emit(self.run_info.imaging_type)
         self.save_data_bool_signal.emit(self.run_info.save_data)
 

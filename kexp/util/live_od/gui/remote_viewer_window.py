@@ -49,6 +49,7 @@ class LiveODSubscriber(QThread):
     """
 
     od_image_signal = pyqtSignal(object)            # plot_data tuple
+    od_frame_age_signal = pyqtSignal(float)         # end-to-end frame age in seconds
     shot_progress_signal = pyqtSignal(int, int, object)  # shot_idx, N_total, xvar_values
     run_started_signal = pyqtSignal(int)            # run_id
     run_done_signal = pyqtSignal()
@@ -75,8 +76,9 @@ class LiveODSubscriber(QThread):
         while self._running:
             try:
                 socket = context.socket(zmq.SUB)
-                socket.setsockopt(zmq.RCVTIMEO, 500)        # 500 ms poll for graceful shutdown
+                socket.setsockopt(zmq.RCVTIMEO, 100)        # 100 ms poll for graceful shutdown
                 socket.setsockopt(zmq.SUBSCRIBE, b"")       # subscribe to all topics
+                socket.setsockopt(zmq.RCVHWM, 8)            # drop oldest frames if backed up
                 # TCP keepalive: OS detects dead connections without false positives
                 socket.setsockopt(zmq.TCP_KEEPALIVE, 1)
                 socket.setsockopt(zmq.TCP_KEEPALIVE_IDLE, 10)
@@ -86,9 +88,10 @@ class LiveODSubscriber(QThread):
                 self._connection_ok = True
                 self._attempting_reconnect = False
                 self.connection_status_signal.emit(
-                    f"Connected to tcp://{self._ip}:{self._port}"
+                    f"Connecting to tcp://{self._ip}:{self._port}…"
                 )
                 print(f"[LiveODSubscriber] Connected to tcp://{self._ip}:{self._port}")
+                first_message_received = False
 
                 # Receive loop — zmq.Again just means the server is idle, not down
                 while self._running:
@@ -104,6 +107,11 @@ class LiveODSubscriber(QThread):
                         continue
 
                     tag = msg.get("tag", "")
+                    if not first_message_received:
+                        first_message_received = True
+                        self.connection_status_signal.emit(
+                            f"Connected to tcp://{self._ip}:{self._port}"
+                        )
                     try:
                         if tag == "OD_IMAGE":
                             plot_data = (
@@ -111,6 +119,9 @@ class LiveODSubscriber(QThread):
                                 msg["od"], msg["sum_od_x"], msg["sum_od_y"],
                             )
                             self.od_image_signal.emit(plot_data)
+                            t_capture = msg.get("t_capture")
+                            if t_capture is not None:
+                                self.od_frame_age_signal.emit(time.time() - float(t_capture))
                         elif tag == "SHOT_PROGRESS":
                             self.shot_progress_signal.emit(
                                 int(msg["shot_idx"]),
@@ -123,6 +134,8 @@ class LiveODSubscriber(QThread):
                             self.run_done_signal.emit()
                         elif tag == "LOG_MSG":
                             self.log_msg_signal.emit(str(msg.get("text", "")))
+                        elif tag == "HELLO":
+                            pass  # heartbeat — already triggered connected status above
                     except Exception as exc:
                         print(f"[LiveODSubscriber] signal error ({tag}): {exc}")
             
@@ -275,6 +288,7 @@ class RemoteViewerWindow(QWidget):
             self.subscriber.wait(1000)
         self.subscriber = LiveODSubscriber(ip, port)
         self.subscriber.od_image_signal.connect(self._on_od_image)
+        self.subscriber.od_frame_age_signal.connect(self._on_frame_age)
         self.subscriber.shot_progress_signal.connect(self._on_shot_progress)
         self.subscriber.run_started_signal.connect(self._on_run_started)
         self.subscriber.run_done_signal.connect(self._on_run_done)
@@ -355,6 +369,11 @@ class RemoteViewerWindow(QWidget):
 
     def _on_od_image(self, plot_data: tuple):
         self.plotting_queue.put(plot_data)
+
+    def _on_frame_age(self, age_s: float):
+        self.connection_label.setText(
+            f"tcp://{self._ip}:{self._port}  —  frame age {age_s*1e3:.0f} ms"
+        )
 
     def _on_run_done(self):
         self.viewer_window.output_window.appendPlainText("Run complete.")

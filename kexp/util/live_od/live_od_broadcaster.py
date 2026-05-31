@@ -19,10 +19,22 @@ Message format — every message is a pickled dict with a 'tag' key:
 
 import pickle
 import queue
+import time
 
+import numpy as np
 import zmq
 from PyQt6.QtCore import QThread
 from waxx.util.comms_server.waxx_server import WaxxServer
+
+
+# Heartbeat interval (s) — sent when the broadcaster queue is idle so that
+# late-joining subscribers cross the PUB/SUB slow-joiner gap and can flip
+# their UI to "connected" without waiting for a real OD_IMAGE.
+_HEARTBEAT_INTERVAL_S = 0.5
+
+# ZMQ high-water mark — drop oldest frames when the pipeline backs up rather
+# than accumulating latency. 8 frames covers ~1 s of backlog at 8 Hz.
+_SNDHWM = 8
 
 
 class LiveODBroadcaster(QThread, WaxxServer):
@@ -49,18 +61,32 @@ class LiveODBroadcaster(QThread, WaxxServer):
     def run(self):
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
+        socket.setsockopt(zmq.SNDHWM, _SNDHWM)
         actual_port = socket.bind_to_random_port("tcp://*")
         self._port = actual_port
         self._waxx_port = actual_port
         self._start_beacon()
         self._running = True
         print(f"[LiveODBroadcaster] Publishing on tcp://*:{self._port}")
+        last_send = time.monotonic()
         try:
             while self._running:
                 try:
-                    msg = self._queue.get(timeout=0.5)
+                    msg = self._queue.get(timeout=_HEARTBEAT_INTERVAL_S)
                     socket.send(pickle.dumps(msg), zmq.NOBLOCK)
+                    last_send = time.monotonic()
                 except queue.Empty:
+                    # Idle — emit a lightweight HELLO so subscribers know the
+                    # link is alive (defeats PUB/SUB slow-joiner silence).
+                    if time.monotonic() - last_send >= _HEARTBEAT_INTERVAL_S:
+                        try:
+                            socket.send(
+                                pickle.dumps({'tag': 'HELLO', 't_send': time.time()}),
+                                zmq.NOBLOCK,
+                            )
+                        except Exception:
+                            pass
+                        last_send = time.monotonic()
                     continue
                 except Exception as exc:
                     print(f"[LiveODBroadcaster] send error: {exc}")
@@ -103,16 +129,21 @@ class LiveODBroadcaster(QThread, WaxxServer):
 
         ``plot_data`` is the tuple produced by ``Analyzer.analyze()``:
         ``(img_atoms, img_light, img_dark, od, sum_od_x, sum_od_y)``.
+
+        Raw camera frames are kept in their native uint16; OD arrays are
+        downcast to float32 before transmission. This is a display-only
+        downcast — the HDF5 save path on the server is untouched.
         """
         img_atoms, img_light, img_dark, od, sum_od_x, sum_od_y = plot_data
         self._enqueue({
             'tag': 'OD_IMAGE',
+            't_capture': time.time(),
             'img_atoms': img_atoms,
             'img_light': img_light,
             'img_dark': img_dark,
-            'od': od,
-            'sum_od_x': sum_od_x,
-            'sum_od_y': sum_od_y,
+            'od': np.asarray(od, dtype=np.float32),
+            'sum_od_x': np.asarray(sum_od_x, dtype=np.float32),
+            'sum_od_y': np.asarray(sum_od_y, dtype=np.float32),
         })
 
     def broadcast_run_done(self):

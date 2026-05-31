@@ -139,7 +139,9 @@ class LiveODWindow(QWidget):
                    capture_images: bool, save_data: bool,
                    imaging_type: int, n_img: int = 1,
                    n_shots: int = 1, n_pwa: int = 1,
-                   camera_params: dict = None):
+                   camera_params: dict = None,
+                   params_payload: dict = None,
+                   run_info_payload: dict = None):
         """Spawn a new CameraBaby for an incoming run.
 
         Called from LiveODServer.new_run_signal (Qt queued connection so this
@@ -188,6 +190,8 @@ class LiveODWindow(QWidget):
             imaging_type=imaging_type,
             camera_key=camera_key,
             camera_params=camera_params,
+            params_payload=params_payload,
+            run_info_payload=run_info_payload,
             n_img=n_img,
             n_shots=n_shots,
             n_pwa_per_shot=n_pwa,

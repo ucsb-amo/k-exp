@@ -43,7 +43,7 @@ class LiveODServer(QThread, WaxxServer):
         Emitted after END_RUN is fully handled.
     """
 
-    new_run_signal = pyqtSignal(str, str, bool, bool, int, int, int, int, object)   # filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa_per_shot, camera_params
+    new_run_signal = pyqtSignal(str, str, bool, bool, int, int, int, int, object, object, object)   # filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa_per_shot, camera_params, params_payload, run_info_payload
     shot_progress_signal = pyqtSignal(int, int, object)       # shot_idx, N_total, xvar_values dict
     run_done_signal = pyqtSignal()
     run_started_signal = pyqtSignal(int)                      # run_id (emitted after INIT_RUN, before new_run_signal)
@@ -241,8 +241,18 @@ class LiveODServer(QThread, WaxxServer):
         n_shots = int(msg.get('N_shots_with_repeats', 1))
         n_pwa = int(msg.get('N_pwa_per_shot', 1))
 
+        params_payload = dict(msg.get('params', {}))
+        run_info_payload = {
+            'imaging_type': imaging_type,
+            'save_data': int(msg.get('save_data_flag', int(save_data))),
+            'run_date_str': str(msg.get('run_date_str', '')),
+            'run_datetime_str': str(msg.get('run_datetime_str', '')),
+            'expt_class': str(msg.get('expt_class', '')),
+            'xvarnames': list(msg.get('xvarnames', [])),
+        }
+
         self.run_started_signal.emit(run_id)
-        self.new_run_signal.emit(filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa, camera_params)
+        self.new_run_signal.emit(filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa, camera_params, params_payload, run_info_payload)
         print(
             f"[LiveODServer] INIT_RUN: run_id={run_id}, "
             f"save={save_data}, cam={capture_images}"
