@@ -152,11 +152,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.ry_405.lock_status()
         self.ry_980.lock_status()
-
-        # self.dds.ry_405_sw.on()
-        # self.dds.ry_405_sw.set_dds(init=True)
-        # self.dds.d1_beatlock_ref.on()
-
+        
     @kernel
     def reset_devices(self):
         # 2D MOT current back on

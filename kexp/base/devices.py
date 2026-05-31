@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from artiq.experiment import *
 from artiq.experiment import delay_mu, delay
@@ -283,7 +284,6 @@ class Devices():
             dds._store_io_update_delay()
             delay(10.e-6)
             
-        
     @kernel
     def init_all_cpld(self):
         for ddss in self.dds.dds_array:
