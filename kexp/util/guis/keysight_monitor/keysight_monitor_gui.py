@@ -241,6 +241,10 @@ class Window(QWidget):
         # stack the layout for each of the supply UIs into the main window layout
         for supply_UI in self.supply_UIs:
             self.layout.addLayout(supply_UI.layout)
+        # Actually install the layout on the widget - main() does this for
+        # the standalone app but the embed path (KeysightPanel) only
+        # constructs Window(), so without this call the panel renders empty.
+        self.setLayout(self.layout)
 
     def update_UI(self):
         for supply_UI in self.supply_UIs:
@@ -263,7 +267,8 @@ def main():
 
     window = Window()
     atexit.register(lambda: [s.close() for s in window.supply_UIs])
-    window.setLayout(window.layout)
+    # Layout is now installed inside Window.set_layout(); the historical
+    # explicit call here is a no-op once that is in place.
     window.setWindowTitle("Keysight PSU Monitor")
     window.setWindowIcon(QIcon('banana-icon.png'))
     window.setBaseSize(250, 100)

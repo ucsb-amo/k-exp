@@ -18,8 +18,9 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('wee',[1,0])
         self.p.wee = 1
 
-        self.xvar('frequency_eo_980', np.arange(155.7,156.1,.03)*1.e6)
-        self.p.frequency_eo_980 = 139.e6
+        # self.xvar('frequency_eo_980', np.arange(155.7,156.1,.03)*1.e6)
+        # self.p.frequency_eo_980 = 139.e6
+        self.p.frequency_eo_980 = 125.4e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
         
@@ -34,7 +35,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
-        self.p.N_repeats = 25
+        self.p.N_repeats = 12
 
         self.finish_prepare(shuffle=True)
 

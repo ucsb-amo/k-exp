@@ -104,11 +104,11 @@ class RelayWorker(QThread):
             self.error.emit(str(e))
 
 class EthernetRelayGUI(QMainWindow):
-    BUTTON_HEIGHT = 28
-    BUTTON_MIN_WIDTH = 88
-    SUB_BUTTON_MIN_WIDTH = 82
-    STATUS_MIN_WIDTH = 72
-    SETTINGS_BUTTON_SIZE = 24
+    BUTTON_HEIGHT = 22
+    BUTTON_MIN_WIDTH = 70
+    SUB_BUTTON_MIN_WIDTH = 62
+    STATUS_MIN_WIDTH = 62
+    SETTINGS_BUTTON_SIZE = 20
 
     def __init__(self):
         super().__init__()
@@ -213,6 +213,8 @@ class EthernetRelayGUI(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QVBoxLayout(central_widget)
+        main_layout.setContentsMargins(4, 4, 4, 4)
+        main_layout.setSpacing(4)
         
         # Source Control Group
         source_group = QGroupBox("Source Control")
@@ -326,7 +328,8 @@ class EthernetRelayGUI(QMainWindow):
         self.refresh_btn.setMinimumWidth(self.BUTTON_MIN_WIDTH)
         self.refresh_btn.clicked.connect(self.update_status)
         
-        # Add all groups to main layout
+        # Stack all groups vertically so the magnet enable status sits in
+        # the same column as the source + ARTIQ controls.
         main_layout.addWidget(source_group)
         main_layout.addWidget(magnet_group)
         main_layout.addWidget(artiq_group)
