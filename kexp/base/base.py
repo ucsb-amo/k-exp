@@ -24,7 +24,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  imaging_type=img.ABSORPTION,
                  absorption_image=None,
                  camera_select=cameras.xy_basler,
-                 expt_params=None):
+                 expt_params=None,
+                 suppress_live_od=False):
+
+        if suppress_live_od:
+            setup_camera = False
+            save_data = False
 
         super().__init__(setup_camera=setup_camera,
                          absorption_image=absorption_image,
@@ -38,16 +43,19 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.params = expt_params
 
         self.p = self.params
-
+        self.data = DataVault(self)
+        
         self.prepare_devices(expt_params=self.params)
 
-        _img_config = self.choose_camera(setup_camera,imaging_type,camera_select)
+        _img_config = self.choose_camera(imaging_type, camera_select)
         self.configure_imaging_system(imaging_configuration=_img_config)
 
-        self.data = DataVault(self)
-        self.ds = DataSaver(*PATHS,server_talk=server_talk)
+        
+        self.ds = DataSaver(*PATHS, server_talk=server_talk)
 
-        Clients.__init__(self)
+        Clients.__init__(self, suppress_live_od=suppress_live_od)
+
+
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
@@ -103,13 +111,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.init_all_dds() # initializes DDS channels
         if dds_set:
             delay(1*ms)
+            self.dds.stash_defaults()
             self.set_all_dds() # set DDS to default values
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
-
-        self.dds.ry_405_sw.on()
-        self.dds.ry_405_sw.set_dds(init=True)
-
         self.core.break_realtime()
         if init_imaging:
             self.imaging.init()
@@ -125,8 +130,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if init_magnets:
             self.outer_coil.off()
             self.inner_coil.off()
-        # if init_ry:
-        #     self.ry_405.init()
+        if init_ry:
+            # self._fzw.connect()
+            # pass
+            self.ry_405.init()
+            self.ry_980.init()
         
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):
@@ -135,8 +143,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.background_field()
         self.read_magnetometer()
-
-        # self.slm.check_for_old_setting()
         
         self.core.reset()
         
@@ -144,11 +150,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.reset_tweezers(two_d_tweezers)
 
-        self.core.break_realtime()
+        self.ry_405.lock_status()
+        self.ry_980.lock_status()
 
-        self.dds.ry_405_sw.on()
-        self.dds.ry_405_sw.set_dds(init=True)
-        
+        # self.dds.ry_405_sw.on()
+        # self.dds.ry_405_sw.set_dds(init=True)
         # self.dds.d1_beatlock_ref.on()
 
     @kernel
@@ -170,8 +176,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.dds.d2_2dv_r.on()
         self.dds.push.on()
 
-        self.dds.ry_405_sw.on()
-
         # reset imaging detuning, power
         self.set_imaging_shutters()
         delay(10.e-3)
@@ -184,7 +188,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
     @kernel
     def cleanup_scan_kernel(self):
+
         self.cleanup_image_count()
+
+        self.core.break_realtime()
+        self.ttl.raman_shutter.off()
+        self.raman.clean_up_fast_frequency_update()
 
         self.core.break_realtime()
         self.reset_coils()
@@ -196,8 +205,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
     @kernel
     def post_scan(self):
+        self.ry_980.sweep_to(reset=True)
+
+        self.core.break_realtime()
         self.background_field()
 
-    @kernel
-    def end(self, expt_filepath):
-        self.end_wax(expt_filepath=expt_filepath)
+    def end(self, expt_filepath, notify=True):
+        self.end_wax(expt_filepath=expt_filepath, notify=notify)

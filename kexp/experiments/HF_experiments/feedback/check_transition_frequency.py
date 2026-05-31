@@ -15,9 +15,8 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('frequency_raman_transition',119.4639e6 + np.linspace(-0.7e3,0.7e3,7))
-
-        self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 5))
+        self.xvar('frequency_raman_transition',self.p.frequency_raman_transition + np.linspace(-0.7e3,0.7e3,11))
+        self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 6))
  
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
 
@@ -35,14 +34,7 @@ class hf_raman(EnvExperiment, Base):
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
-
-        self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
-                        fraction_power = self.params.fraction_power_raman)
-        
-        self.ttl.raman_shutter.on()
-        delay(10.e-3)
-        self.ttl.line_trigger.wait_for_line_trigger()
-        delay(4.7e-3)
+        self.prep_raman()
 
         self.raman.pulse(self.p.t_raman_pulse)
 

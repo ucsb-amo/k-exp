@@ -1,12 +1,26 @@
-import os
+﻿import os
 from datetime import datetime
 from waxa.data.server_talk import server_talk as st
+
 from waxx.config.ip import EMAIL_CREDENTIALS_FILEPATH  # noqa: F401  (re-exported for kexp consumers)
+INTERLOCK_EMAIL_CREDENTIALS_FILEPATH = r"G:\Shared drives\Tweezers\Environments and Profiles\interlock_gmail_credentials.txt"
 
 ### data, filepaths
 DATA_DIR = os.getenv("data")
-# DATA_DIR = 'Z:\_K\PotassiumData'
 EXPT_PACKAGE_DIR = os.path.join(os.getenv("code"),"k-exp","kexp")
+
+### dashboard log directories
+# Resolved lazily at use-site (see waxx.util.dashboard.logging_setup) so that
+# tooling can run when DATA_DIR is unmapped.  The constants below may be None
+# if the shared drive is not available; consumers must check and fall back.
+if DATA_DIR:
+    LOG_DIR = os.path.join(DATA_DIR, "_logs")
+    SERVER_LOG_DIR = os.path.join(LOG_DIR, "server")
+    CLIENT_LOG_DIR = os.path.join(LOG_DIR, "client")
+else:
+    LOG_DIR = None
+    SERVER_LOG_DIR = None
+    CLIENT_LOG_DIR = None
 EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
 BASE_CLASS_RELPATH = os.path.join("base")  # all .py files in this directory will be saved
 PATHS = (DATA_DIR, EXPT_PACKAGE_DIR, EXPT_PARAM_RELPATH, BASE_CLASS_RELPATH)
@@ -22,9 +36,6 @@ server_talk = st(data_dir=DATA_DIR,
                  on_data_dir_disconnected_bat_path=MAP_BAT_PATH)
 
 ### monitor
-MONITOR_SERVER_IP = "192.168.1.76"
-# MONITOR_SERVER_IP = "192.168.1.79"
-MONITOR_SERVER_PORT = 6789
 MONITOR_STATE_FILEPATH = os.path.join(DATA_DIR,'device_state_config.json')
 # MONITOR_EXPT_PATH = str( Path(EXPT_PACKAGE_DIR) / 'experiments' / 'tools' / 'monitor.py' )
 MONITOR_EXPT_PATH = os.path.join(EXPT_PACKAGE_DIR,'experiments','tools','monitor.py')
@@ -41,20 +52,27 @@ ETHERNET_RELAY_IP = "192.168.1.109"
 ETHERNET_RELAY_PORT = 2101
 
 ### ALS server
-ALS_SERVER_IP = "192.168.1.76"
-ALS_SERVER_PORT = 5557
 ALS_COM = 'COM6'
 
 ### Precilaser server
-PRECILASER_SERVER_IP = "192.168.1.76"
-PRECILASER_SERVER_PORT = 5558
 PRECILASER_COM = 'COM20'
 
 ###
-MAGNETOMETER_SERVER_IP = "192.168.1.76"
-MAGNETOMETER_SERVER_PORT = 5559
 MAGNETOMETER_COM = 'COM33'
 MAGNETOMETER_REFERENCE_CSV_PATH = os.path.join(DATA_DIR,'magnetometer_reference.csv')
 
+###
+WAVEMETER_MOGLABS_IP = '192.168.1.94'
+
+### Bristol wavemeter
+BRISTOL_WAVEMETER_IP = '192.168.1.105'
+
 ### kinesis motors
 DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961
+
+### remote control
+WHITELIST_PATH = (
+    os.path.join(DATA_DIR, "remote_whitelist.json")
+    if DATA_DIR
+    else os.path.join(os.path.dirname(__file__), "remote_whitelist.json")
+)

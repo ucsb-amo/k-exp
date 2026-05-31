@@ -31,12 +31,19 @@ class CommandHandler:
         self.command_handlers = {}
         self.command_aliases = {}  # Maps aliases to canonical command names
 
-    def run_continuous(self):
+    def run_continuous(self, on_poll_complete=None, stop_flag=None):
         """
         Run the controller continuously, checking for new emails
-        at specified intervals (in seconds)
+        at specified intervals (in seconds).
+
+        Args:
+            on_poll_complete: Optional callable(success: bool) forwarded to EmailHandler.
+            stop_flag: Optional callable forwarded to EmailHandler to stop the loop.
         """
-        self.email_handler.run_continuous()
+        self.email_handler.run_continuous(
+            on_poll_complete=on_poll_complete,
+            stop_flag=stop_flag,
+        )
     
     def parse_commands(self, email_body):
         """

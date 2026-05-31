@@ -13,10 +13,12 @@ from kexp.control.painted_lightsheet import lightsheet
 
 import numpy as np
 
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2, tweezer_vpd2_to_vpd1
+
 dv = 100.
 dvlist = np.linspace(1.,1.,5)
 
-from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.util.artiq.async_print import aprint
 
 class Cooling():
     def __init__(self):
@@ -41,7 +43,11 @@ class Cooling():
     #         self.tweezer.off()
 
     @kernel
-    def prepare_hf_tweezers(self, squeeze=True, cubic_ramp_squeeze=True):
+    def prepare_hf_tweezers(self,
+                            squeeze=True,
+                            cubic_ramp_squeeze=True,
+                            do_tweezer_evap_2=True,
+                            do_tweezer_evap_3=True):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
         """   
@@ -101,15 +107,19 @@ class Cooling():
                              i_start=self.p.i_hf_tweezer_evap1_current,
                              i_end=self.p.i_hf_tweezer_evap2_current)
         
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
-                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
-                          paint=True,keep_trap_frequency_constant=True)
-       
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                          paint=True,keep_trap_frequency_constant=True,low_power=True)
+        if do_tweezer_evap_2:
+        
+            self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
+                            v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
+                            v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
+                            paint=True,keep_trap_frequency_constant=True)
+            
+            if do_tweezer_evap_3:
+            
+                self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+                                v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+                                v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                                paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.dac.supply_current_2dmot.set(v=0.)
 
@@ -125,8 +135,31 @@ class Cooling():
         delay(30.e-3)
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        if squeeze:
-            self.tweezer_squeeze()
+        if squeeze and do_tweezer_evap_2 and do_tweezer_evap_3:
+            self.tweezer_squeeze(cubic_ramp_squeeze)
+
+    @kernel
+    def tweezer_squeeze(self, cubic_ramp=True):
+        if self.p.t_tweezer_paint_rampdown == 0:
+            self.tweezer.paint_amp_dac.set(-7.)
+        else:
+            v0 = self.tweezer.paint_amp_dac.v
+            self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown,
+                                                  v_start=v0,
+                                                  v_end=-7.,
+                                                  n=100)
+        
+        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
+                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                          v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
+                          low_power=True, paint=False, keep_trap_frequency_constant=False,
+                          cubic_ramp=cubic_ramp)
+
+        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
+                          v_start=tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
+                          v_end=self.p.v_pd_hf_tweezer_squeeze_power,
+                          paint=False,keep_trap_frequency_constant=False,
+                          cubic_ramp=cubic_ramp)
 
     @kernel
     def prepare_lf_tweezers(self):
@@ -1094,12 +1127,13 @@ class Cooling():
         self.dds.push.set_dds(amplitude=0.)
         self.dds.mot_killer.set_dds(amplitude=0.)
         self.dds.optical_pumping.set_dds(amplitude=0.)
-        self.dds.raman_150_minus.set_dds(amplitude=0.)
-        self.dds.raman_150_plus.set_dds(amplitude=0.)
-        self.dds.raman_80_plus.set_dds(amplitude=0.)
+        # self.dds.raman_150_minus.set_dds(amplitude=0.)
+        # self.dds.raman_150_plus.set_dds(amplitude=0.)
+        # self.dds.raman_80_plus.set_dds(amplitude=0.)
         self.dds.raman_switch.set_dds(amplitude=0.)
         # self.dds.imaging.set_dds(amplitude=0.)
         self.dds.antenna_rf.set_dds(amplitude=0.)
+        self.dds.ry_405_sw.set_dds(amplitude=0.)
 
         # to avoid sequence errors from all the TTLs being at once
         self.dds.d1_3d_r.off()
@@ -1114,12 +1148,13 @@ class Cooling():
         self.dds.push.off()
         self.dds.mot_killer.off()
         self.dds.optical_pumping.off()
-        self.dds.raman_150_minus.off()
-        self.dds.raman_150_plus.off()
-        self.dds.raman_80_plus.off()
+        # self.dds.raman_150_minus.off()
+        # self.dds.raman_150_plus.off()
+        # self.dds.raman_80_plus.off()
         self.dds.raman_switch.off()
         # self.dds.imaging.off()
         self.dds.antenna_rf.off()
+        self.dds.ry_405_sw.off()
         delay_mu(8)
 
     @kernel
@@ -1137,3 +1172,4 @@ class Cooling():
         self.dds.d2_2dv_r.set_dds(init=True)
         self.dds.push.set_dds(init=True)
         self.dds.raman_switch.set_dds(init=True)
+        self.dds.ry_405_sw.set_dds(init=True)

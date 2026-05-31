@@ -92,6 +92,7 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(t_start_mu - (10000 & ~7))
 
         self.raman.set_frequency_fast(f)
+        self.raman.stage_ffua()
         phase_tracker = 0.
 
         at_mu(t_start_mu)
@@ -114,6 +115,9 @@ class feedback(EnvExperiment, Base, Feedback):
             phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
 
             self.raman.pulse(self.p.t_raman_pulse)
+            t0 = now_mu()
+            self.raman.stage_ffua()
+            at_mu(t0)
             k = self.measurement(i)
             omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
@@ -142,7 +146,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         t_pulse_start_mu = now_mu() + 500000
 
-        self.raman.set_up_fast_frequency_update()
+        self.raman.set_up_fast_frequency_update(aggressive_mode=1)
 
         at_mu(t_pulse_start_mu - 20000) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)

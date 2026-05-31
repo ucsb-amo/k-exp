@@ -6,8 +6,6 @@ from pyqtgraph.Qt import QtCore, QtGui, QtWidgets
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_gui import MagnetometerGUI
 from kexp.config.ip import (
     MAGNETOMETER_REFERENCE_CSV_PATH,
-    MAGNETOMETER_SERVER_IP,
-    MAGNETOMETER_SERVER_PORT,
 )
 
 
@@ -39,9 +37,7 @@ def main():
     icon = _create_magnet_icon()
     app.setWindowIcon(icon)
 
-    window = MagnetometerGUI(server_host=MAGNETOMETER_SERVER_IP,
-                              server_port=MAGNETOMETER_SERVER_PORT,
-                              reference_csv_path=MAGNETOMETER_REFERENCE_CSV_PATH)
+    window = MagnetometerGUI(reference_csv_path=MAGNETOMETER_REFERENCE_CSV_PATH)
     window.setWindowIcon(icon)
     window.show()
 

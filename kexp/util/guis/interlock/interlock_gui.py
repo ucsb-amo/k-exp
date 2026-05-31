@@ -43,6 +43,8 @@ from email.mime.text import MIMEText
 #import space
 
 from kexp import EthernetRelay
+from kexp.config.ip import INTERLOCK_EMAIL_CREDENTIALS_FILEPATH
+from waxx.util.notifications import _load_credentials
 
 # You need one (and only one) QApplication instance per application.
 # Pass in sys.argv to allow command line arguments for your app.
@@ -58,6 +60,12 @@ class MainWindow(QMainWindow):
 
         self._ethernet_relay = EthernetRelay()
         self._ethernet_relay.enable_magnets()
+
+        # Load Gmail credentials from a shared-drive file so secrets aren't
+        # committed to a public repo.
+        self._email_address, self._email_password = _load_credentials(
+            INTERLOCK_EMAIL_CREDENTIALS_FILEPATH
+        )
         self.setWindowTitle("Interlock GUI")
         self.setWindowIcon(self._create_no_symbol_icon())
         # button = QPushButton("RESET INTERLOCK!")
@@ -395,49 +403,32 @@ class MainWindow(QMainWindow):
         self.button.setEnabled(False)
         self.button.clicked.disconnect(self.the_button_was_clicked)
 
-    def send_email_tripped(self):
-        # # Create a MIME object
+    def _send_email(self, subject, body,
+                    recipient='infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'):
         msg = MIMEMultipart()
-        msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
-        msg['To'] = 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'
-        msg['Subject'] = 'K-Interlock Tripped'
-        # Attach the message to the MIME object
-        msg.attach(MIMEText('K-Interlock tripped due to too high temperature, too low flowrate or loss of power!', 'plain'))
-        
-        # Set up the SMTP server
+        msg['From'] = self._email_address
+        msg['To'] = recipient
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
         server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
-        server.login('harry.who.is.ultra.cold@gmail.com', 'dvlw elsd mhqb mzfo')
-        
-        # Send the email
-        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
-        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
-
-        # Close the server connection
-        server.quit()   
-        print("Email sent successfully!")
-
-    def send_email_check(self):
-        # # Create a MIME object
-        msg = MIMEMultipart()
-        msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
-        msg['To'] = 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'
-        msg['Subject'] = 'K-Interlock Lost connection with Kong'
-        # Attach the message to the MIME object
-        msg.attach(MIMEText('K Interlock has lost connection with kong -- check', 'plain'))
-        
-        # Set up the SMTP server
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
-        server.login('harry.who.is.ultra.cold@gmail.com', 'dvlw elsd mhqb mzfo')
-        
-        # Send the email
-        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
-        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
-
-        # Close the server connection
+        server.starttls()
+        server.login(self._email_address, self._email_password)
+        server.sendmail(self._email_address, recipient, msg.as_string())
         server.quit()
         print("Email sent successfully!")
+
+    def send_email_tripped(self):
+        self._send_email(
+            'K-Interlock Tripped',
+            'K-Interlock tripped due to too high temperature, too low flowrate or loss of power!',
+        )
+
+    def send_email_check(self):
+        self._send_email(
+            'K-Interlock Lost connection with Kong',
+            'K Interlock has lost connection with kong -- check',
+        )
 
     def save_to_csv(self):
         import os

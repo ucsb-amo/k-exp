@@ -10,7 +10,7 @@ from waxx.util.artiq.async_print import aprint
 class testcrate_base(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False)
+        Base.__init__(self, setup_camera=False, suppress_live_od=True)
         self.finish_prepare(shuffle=False)
 
     @kernel
@@ -24,7 +24,8 @@ class testcrate_base(EnvExperiment, Base):
                          beat_ref_on=True,
                          init_shuttler=False,
                          init_imaging=False,
-                         init_ry=False)
+                         init_ry=False,
+                         init_magnets=False)
         # self.init_kernel(run_id=False,
         #                  dds_off=False,
         #                  dds_set=False,

@@ -7,25 +7,30 @@ from numpy import int64
 class sigma_z(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
         self.p.amp_imaging = 0.2
-        # self.xvar('amp_imaging', np.linspace(0.4, 0.7, 5))
+        # self.xvar('amp_imagin
         self.p.t_pci_pulse = 5.e-6
         # self.xvar('t_pci_pulse', np.linspace(3.e-6, 10.e-6, 5))
         
-        self.p.t_between_pulses_mu = 20000  # from pulse start to next pulse start, in mu
+        self.p.t_between_pulses_mu = 32000  # from pulse start to next pulse start, in mu
 
         self.p.t_raman_pulse = 0.
-        self.p.t_raman_pulse_offset = 220.e-9
-        self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,5) + self.p.t_raman_pulse_offset)
+        # self.p.t_raman_pulse_offset = 209.7e-9
+        # t_sample_low = self.p.t_raman_pi_pulse * np.linspace(0.,0.2,7)
+        # t_sample_mid = self.p.t_raman_pi_pulse * np.linspace(0.25,0.7,7)
+        # t_sample_high = self.p.t_raman_pi_pulse * np.linspace(0.75, 1.5, 19)
+        # t_sample = np.concat( (t_sample_low, t_sample_mid, t_sample_high) )
+        # self.xvar('t_raman_pulse', t_sample)
+        self.xvar('t_raman_pulse', [0,self.p.t_raman_pi_pulse])
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 5
+        self.p.N_repeats = 2
 
         self.p.N_pulses = 5
 
@@ -42,12 +47,12 @@ class sigma_z(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers()
-        self.prep_raman()
+        self.prepare_hf_tweezers(squeeze=True)
+        self.prep_raman(phase_mode=0)
 
         self.raman.pulse(self.p.t_raman_pulse)
         
-        delay(10.e-6)
+        delay(100.e-6)
 
         t = now_mu()
         self.ttl.pd_scope_trig3.pulse(1.e-6)
@@ -58,14 +63,10 @@ class sigma_z(EnvExperiment, Base):
             t += self.p.t_between_pulses_mu
             at_mu(t)
 
-        delay(self.p.t_tweezer_hold)
-
         self.tweezer.off()
-        delay(self.p.t_tof)
-        self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
+        _ = self.scope.read_sweep(0)
         self.core.break_realtime()
         delay(30.e-3)
 

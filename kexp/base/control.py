@@ -22,8 +22,6 @@ from waxx.control.misc.oscilloscopes import ScopeData
 dv = -0.1
 dvlist = np.linspace(1.,1.,5)
 
-from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2, tweezer_vpd2_to_vpd1
-
 class Control():
     def __init__(self):
         # just to get syntax highlighting, placeholders
@@ -43,6 +41,14 @@ class Control():
         self.integrator = Integrator()
         self.scope_data = ScopeData()
         self.p = self.params
+
+    @kernel
+    def warmup_ry(self):
+        self.ry_980.on()
+        self.ry_405.on()
+        delay(100.e-3)
+        self.ry_405.off()
+        self.ry_980.off()
 
     @kernel
     def integrated_imaging_pulse(self, data_container, t, idx=0,
@@ -79,22 +85,6 @@ class Control():
         self.integrated_imaging_pulse(dc,t,2)
         delay(10.e-6)
         self.integrated_imaging_pulse(dc,t,3,dark=True)
-
-    @kernel
-    def tweezer_squeeze(self, cubic_ramp=True):
-        self.tweezer.paint_amp_dac.set(-7.)
-        
-        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
-                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                          v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
-                          low_power=True, paint=False, keep_trap_frequency_constant=False,
-                          cubic_ramp=cubic_ramp)
-
-        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
-                          v_start=tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
-                          v_end=self.p.v_pd_hf_tweezer_squeeze_power,
-                          paint=False,keep_trap_frequency_constant=False,
-                          cubic_ramp=cubic_ramp)
         
     @kernel
     def reset_tweezers(self, two_d_tweezers):
@@ -105,7 +95,7 @@ class Control():
                                                     amp_list1=self.params.amp_tweezer_list1,
                                                     amp_list2=self.params.amp_tweezer_list2)
             self.tweezer.reset_traps(self.xvarnames)
-            delay(100.e-3)
+            delay(15.e-3)
             self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
@@ -160,7 +150,8 @@ class Control():
             fraction_power=dv,
             global_phase=0.,relative_phase=0.,
             t_phase_origin_mu=np.int64(-1),
-            phase_mode=1):
+            phase_mode=1,
+            line_trigger=True):
         
         if frequency_transition == dv:
             frequency_transition = self.p.frequency_raman_transition

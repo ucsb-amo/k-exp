@@ -197,18 +197,31 @@ foreach ($adapter in $adapters) {
         if ($networkType -eq 'Broida') {
             Write-Host "  Action: Enable DHCP" -ForegroundColor Cyan
 
-            Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -Dhcp Enabled -ErrorAction Stop
-            Set-DnsClientServerAddress -InterfaceIndex $adapter.InterfaceIndex -ResetServerAddresses -ErrorAction SilentlyContinue
+            $ipInterface = Get-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue
+            $dhcpAlreadyEnabled = $ipInterface -and $ipInterface.Dhcp -eq 'Enabled'
 
             $existingManual = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue |
                 Where-Object { $_.PrefixOrigin -eq 'Manual' }
-            foreach ($ip in $existingManual) {
-                Remove-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -IPAddress $ip.IPAddress -Confirm:$false -ErrorAction SilentlyContinue
+            $hasManualIPv4 = $existingManual -and $existingManual.Count -gt 0
+
+            # DNS check is intentionally omitted: Get-DnsClientServerAddress returns DHCP-assigned
+            # DNS servers too, so a non-empty ServerAddresses list does not indicate static DNS.
+            # DHCP enabled + no manual IPs is sufficient to confirm correct Broida config.
+            if ($dhcpAlreadyEnabled -and -not $hasManualIPv4) {
+                Write-Host "  Current DHCP configuration matches target. Skipping changes." -ForegroundColor Yellow
             }
+            else {
+                Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -Dhcp Enabled -ErrorAction Stop
+                Set-DnsClientServerAddress -InterfaceIndex $adapter.InterfaceIndex -ResetServerAddresses -ErrorAction SilentlyContinue
 
-            Remove-NetRoute -InterfaceIndex $adapter.InterfaceIndex -Confirm:$false -ErrorAction SilentlyContinue
+                foreach ($ip in $existingManual) {
+                    Remove-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -IPAddress $ip.IPAddress -Confirm:$false -ErrorAction SilentlyContinue
+                }
 
-            Write-Host "  Successfully configured (DHCP)" -ForegroundColor Green
+                Remove-NetRoute -InterfaceIndex $adapter.InterfaceIndex -Confirm:$false -ErrorAction SilentlyContinue
+
+                Write-Host "  Successfully configured (DHCP)" -ForegroundColor Green
+            }
         }
         elseif ($networkType -eq 'LAN') {
             $targetIp = $row.IP
@@ -225,19 +238,25 @@ foreach ($adapter in $adapters) {
                 continue
             }
 
+
             Write-Host "  Action: Set static IP" -ForegroundColor Cyan
             Write-Host "  Target IP: $targetIp"
             Write-Host "  Subnet Mask: $subnetMask"
             Write-Host "  Default Gateway: $defaultGateway"
 
-            Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -Dhcp Disabled -ErrorAction SilentlyContinue
-
-            $existingIPs = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue
-            foreach ($ip in $existingIPs) {
-                Remove-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -IPAddress $ip.IPAddress -Confirm:$false -ErrorAction SilentlyContinue
+            # Check current config
+            $currentIP = $null
+            $currentPrefix = $null
+            $currentGateway = $null
+            $currentIPObj = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue | Where-Object { $_.PrefixOrigin -eq 'Manual' -or $_.PrefixOrigin -eq 'Dhcp' }
+            if ($currentIPObj) {
+                $currentIP = $currentIPObj.IPAddress
+                $currentPrefix = $currentIPObj.PrefixLength
             }
-
-            Remove-NetRoute -InterfaceIndex $adapter.InterfaceIndex -Confirm:$false -ErrorAction SilentlyContinue
+            $currentGatewayObj = Get-NetRoute -InterfaceIndex $adapter.InterfaceIndex -DestinationPrefix '0.0.0.0/0' -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($currentGatewayObj) {
+                $currentGateway = $currentGatewayObj.NextHop
+            }
 
             $prefixLength = switch ($subnetMask) {
                 '255.255.255.0' { 24 }
@@ -252,13 +271,41 @@ foreach ($adapter in $adapters) {
                 default { 24 }
             }
 
-            New-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex `
-                             -IPAddress $targetIp `
-                             -PrefixLength $prefixLength `
-                             -DefaultGateway $defaultGateway `
-                             -ErrorAction Stop | Out-Null
+            $needsChange = $false
+            if ($currentIP -ne $targetIp -or $currentPrefix -ne $prefixLength -or $currentGateway -ne $defaultGateway) {
+                $needsChange = $true
+            }
 
-            Write-Host "  Successfully configured (Static)" -ForegroundColor Green
+            if (-not $needsChange) {
+                Write-Host "  Current static IP configuration matches target. Skipping changes." -ForegroundColor Yellow
+            } else {
+                Set-NetIPInterface -InterfaceIndex $adapter.InterfaceIndex -Dhcp Disabled -ErrorAction SilentlyContinue
+
+                $existingIPs = Get-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue
+                foreach ($ip in $existingIPs) {
+                    Remove-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex -IPAddress $ip.IPAddress -Confirm:$false -ErrorAction SilentlyContinue
+                }
+
+                Remove-NetRoute -InterfaceIndex $adapter.InterfaceIndex -Confirm:$false -ErrorAction SilentlyContinue
+
+                New-NetIPAddress -InterfaceIndex $adapter.InterfaceIndex `
+                                 -IPAddress $targetIp `
+                                 -PrefixLength $prefixLength `
+                                 -DefaultGateway $defaultGateway `
+                                 -ErrorAction Stop | Out-Null
+
+                Write-Host "  Successfully configured (Static)" -ForegroundColor Green
+            }
+
+            # Set network profile to Private so services can bind on the LAN interface
+            try {
+                Get-NetConnectionProfile -InterfaceIndex $adapter.InterfaceIndex |
+                    Set-NetConnectionProfile -NetworkCategory Private -ErrorAction Stop
+                Write-Host "  Network profile set to Private" -ForegroundColor Green
+            }
+            catch {
+                Write-Host "  Warning: Could not set network profile: $($_.Exception.Message)" -ForegroundColor Yellow
+            }
         }
         else {
             Write-Host "  Skipping: Unknown Network type '$networkType'" -ForegroundColor Yellow
@@ -271,4 +318,91 @@ foreach ($adapter in $adapters) {
     Write-Host ""
 }
 
-Write-Host "Configuration complete!" -ForegroundColor Cyan
+# Configure firewall rules
+Write-Host "`nConfiguring firewall rules..." -ForegroundColor Cyan
+
+function Add-FwRuleIfMissing {
+    param(
+        [string]$DisplayName,
+        [scriptblock]$CreateBlock
+    )
+    $existing = Get-NetFirewallRule -DisplayName $DisplayName -ErrorAction SilentlyContinue
+    if (-not $existing) {
+        Write-Host "  Adding firewall rule '$DisplayName'..." -ForegroundColor Cyan
+        try {
+            & $CreateBlock
+            Write-Host "  Firewall rule '$DisplayName' added." -ForegroundColor Green
+        }
+        catch {
+            Write-Host "  Error adding firewall rule '$DisplayName': $($_.Exception.Message)" -ForegroundColor Red
+        }
+    }
+    else {
+        Write-Host "  Firewall rule '$DisplayName' already exists, skipping." -ForegroundColor Yellow
+    }
+}
+
+# 1. Allow inbound UDP beacon reception (WaxxDiscovery)
+Add-FwRuleIfMissing -DisplayName "WaxxDiscovery-IN" -CreateBlock {
+    New-NetFirewallRule -DisplayName "WaxxDiscovery-IN" `
+        -Direction Inbound -Action Allow `
+        -Protocol UDP -LocalPort 50099 `
+        -RemoteAddress "192.168.1.0/24" `
+        -Profile Any -ErrorAction Stop | Out-Null
+}
+
+# 2. Remove any existing inbound Block rules targeting python (override accidental "Block" pop-up choices)
+Write-Host "  Checking for Python inbound block rules to remove..." -ForegroundColor Cyan
+$pythonBlockRules = Get-NetFirewallRule -Direction Inbound -Action Block -ErrorAction SilentlyContinue |
+    Where-Object {
+        $filter = $_ | Get-NetFirewallApplicationFilter -ErrorAction SilentlyContinue
+        $filter -and $filter.Program -match "python"
+    }
+if ($pythonBlockRules) {
+    foreach ($rule in $pythonBlockRules) {
+        Write-Host "  Removing Python block rule: $($rule.DisplayName)" -ForegroundColor Yellow
+        $rule | Remove-NetFirewallRule -ErrorAction SilentlyContinue
+    }
+}
+else {
+    Write-Host "  No Python block rules found." -ForegroundColor Yellow
+}
+
+# 3. Allow inbound TCP on ephemeral ports from lab subnet (WaxxServers)
+Add-FwRuleIfMissing -DisplayName "WaxxServers-IN" -CreateBlock {
+    New-NetFirewallRule -DisplayName "WaxxServers-IN" `
+        -Direction Inbound -Action Allow `
+        -Protocol TCP -LocalPort 49152-65535 `
+        -RemoteAddress "192.168.1.0/24" `
+        -Profile Any -ErrorAction Stop | Out-Null
+}
+
+# 4. Allow venv Python explicitly (uses %CODE% system environment variable)
+Add-FwRuleIfMissing -DisplayName "Python kexp/waxx (Inbound)" -CreateBlock {
+    $pythonExe = "$env:CODE\.venv\Scripts\python.exe"
+    if (-not (Test-Path $pythonExe)) {
+        throw "Python executable not found at '$pythonExe'. Check that the CODE environment variable is set correctly."
+    }
+    New-NetFirewallRule -DisplayName "Python kexp/waxx (Inbound)" `
+        -Direction Inbound -Action Allow `
+        -Program $pythonExe `
+        -Profile Any -RemoteAddress "192.168.1.0/24" `
+        -ErrorAction Stop | Out-Null
+}
+
+# 5. Allow uv.exe runner (if present; path resolved at creation time)
+$uvExe = "$env:LOCALAPPDATA\uv\uv.exe"
+if (Test-Path $uvExe) {
+    Add-FwRuleIfMissing -DisplayName "uv runner (Inbound)" -CreateBlock {
+        New-NetFirewallRule -DisplayName "uv runner (Inbound)" `
+            -Direction Inbound -Action Allow `
+            -Program $uvExe `
+            -Profile Private -RemoteAddress "192.168.1.0/24" `
+            -ErrorAction Stop | Out-Null
+    }
+}
+else {
+    Write-Host "  uv.exe not found at '$uvExe', skipping uv firewall rule." -ForegroundColor Yellow
+}
+
+Write-Host "`nConfiguration complete!" -ForegroundColor Cyan

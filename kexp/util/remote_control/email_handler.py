@@ -36,7 +36,7 @@ class EmailHandler:
 
     def print_instructions(self):
         gvnumber = f"{GVOICE_NUMBER[:3]}-{GVOICE_NUMBER[3:6]}-{GVOICE_NUMBER[6:]}"
-        logger.info(f"Email check success. Send commands to {gvnumber} or to {self.email_address}.")
+        logger.debug(f"Email check success. Send commands to {gvnumber} or to {self.email_address}.")
     
     def connect_to_email(self):
         """Connect to Gmail IMAP server"""
@@ -128,7 +128,7 @@ class EmailHandler:
         """
         try:
             if self.is_message_stale(msg):
-                logger.info("Ignoring stale message older than %ss", MAX_MESSAGE_AGE_SECONDS)
+                logger.debug("Ignoring stale message older than %ss", MAX_MESSAGE_AGE_SECONDS)
                 return
 
             # Extract sender information
@@ -148,7 +148,7 @@ class EmailHandler:
             # Process commands using the provided command processor
             commands = self.parse_commands(body)
             if not commands:
-                logger.info("No valid commands found in email")
+                logger.debug("No valid commands found in email")
                 return
             
             self.process_commands(sender,commands)
@@ -200,7 +200,7 @@ class EmailHandler:
         """
         mail = self.connect_to_email()
         if not mail:
-            return
+            raise ConnectionError("Failed to connect to email server")
         
         try:
             # Select the inbox
@@ -293,6 +293,11 @@ class EmailHandler:
         Check if a command should be ignored (filtered out without logging)
         Returns True if the command should be ignored
         """
+        # Commands to ignore regardless of value
+        always_ignored_commands = {'to'}
+        if command in always_ignored_commands:
+            return True
+
         # Commands to ignore (Google Voice auto-generated content)
         ignored_commands = {
             '<https': ['//voice.google.com>', '//productforums.google.com/forum/#!forum/voice>', '//voice.google.com/settings#messaging>.', '//voice.google.com> help center'],
@@ -303,20 +308,35 @@ class EmailHandler:
         
         return command in ignored_commands and value in ignored_commands.get(command, [])
 
-    def run_continuous(self, check_interval=CHECK_EMAIL_INTERVAL):
+    def run_continuous(self, check_interval=CHECK_EMAIL_INTERVAL,
+                       on_poll_complete=None, stop_flag=None):
         """
         Run the controller continuously, checking for new emails
-        at specified intervals (in seconds)
+        at specified intervals (in seconds).
+
+        Args:
+            check_interval: Seconds between polls.
+            on_poll_complete: Optional callable(success: bool) called after each
+                poll attempt.  Intended for GUI status indicators.
+            stop_flag: Optional callable that returns True when the loop should exit.
+                Useful for stopping from a QThread without KeyboardInterrupt.
         """
         logger.info(f"Starting command controller with {check_interval}s check interval.\n")
         
         while True:
+            if stop_flag is not None and stop_flag():
+                logger.info("Command controller stopped.")
+                break
             try:
                 self.check_emails()
+                if on_poll_complete is not None:
+                    on_poll_complete(True)
                 time.sleep(check_interval)
             except KeyboardInterrupt:
                 logger.info("Command controller stopped by user")
                 break
             except Exception as e:
                 logger.error(f"Unexpected error: {e}")
+                if on_poll_complete is not None:
+                    on_poll_complete(False)
                 time.sleep(check_interval)

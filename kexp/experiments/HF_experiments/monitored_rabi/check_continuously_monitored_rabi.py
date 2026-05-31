@@ -16,7 +16,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.frequency_raman_transition = 119.4641e6
+        # self.p.frequency_raman_transition = 119.4641e6
         # self.p.frequency_raman_transition = 119918210.0
 
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
@@ -28,8 +28,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_raman_pulse', 9.2565e-06 + np.array([0.0, (9.2565e-06) / 2, 9.2565e-06]))
         self.p.t_raman_pulse = (9.2565e-06) / 2
         
-        self.xvar('amp_imaging',np.linspace(.1,.6, 5))
-        self.p.amp_imaging = .6
+        # self.xvar('amp_imaging',np.linspace(.1,.6, 5))
+        self.p.amp_imaging = .2
 
         self.p.hf_imaging_detuning = -568.e6 # 182.
 
@@ -67,13 +67,14 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
 
-        self.raman.pulse(t=self.p.t_raman_pulse)
+        # self.raman.pulse(t=self.p.t_raman_pulse)
         
-        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        
         self.imaging.on()
         delay(1.e-6)
-        delay(200.e-6)
-        # self.raman.pulse(t=self.p.t_continuous_rabi)
+        # delay(200.e-6)
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        self.raman.pulse(t=self.p.t_continuous_rabi)
 
         self.imaging.off()
 
@@ -90,7 +91,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.abs_image()
 
         self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
+        # self.scope.read_sweep(0)
         self.core.break_realtime()
         delay(30.e-3)
 

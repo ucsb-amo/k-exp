@@ -36,47 +36,46 @@ class Feedback:
     }
 
     def __init__(self, lut_size=4096):
+        from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams
         if not hasattr(self, "p"):
-            self.p = _FeedbackParamStore()
+            self.p = ExptParams()
 
         p = self.p
         feedback_grid_size_param = getattr(p, "feedback_grid_size", None)
         if feedback_grid_size_param is None:
             feedback_grid_size_param = getattr(self, "m", 21)
         self._initialize_timing(
-            feedback_grid_size=feedback_grid_size_param,
-            t_raman_pulse=getattr(p, "t_raman_pulse", None),
-            t_raman_pulse_ideal=getattr(p, "t_raman_pulse_ideal", None),
-            dt_eff=None,
-            dt_ideal=None,
-            t_img_pulse=getattr(p, "t_img_pulse", None),
-            t_raman_pi_pulse=getattr(p, "t_raman_pi_pulse", None),
+            feedback_grid_size=p.feedback_grid_size,
+            t_raman_pulse=p.t_raman_pulse,
+            t_raman_pulse_ideal=p.t_raman_pulse_ideal,
+            t_img_pulse=p.t_img_pulse,
+            t_raman_pi_pulse=p.t_raman_pi_pulse,
         )
         self._initialize_lightshift(
-            amp_imaging=getattr(p, "amp_imaging", None),
-            frequency_z_lightshift=getattr(p, "frequency_lightshift", None),
-            back_action_coherence=getattr(p, "back_action_coherence", None),
+            amp_imaging=p.amp_imaging,
+            frequency_z_lightshift=p.frequency_lightshift,
+            back_action_coherence=p.back_action_coherence,
         )
         self._initialize_frequency_grid(
-            frequency_resonance=getattr(p, "frequency_raman_transition", None),
-            fractional_grid_center_offset=getattr(p, "feedback_fractional_grid_center_offset", 2.0),
-            fractional_initial_offset=getattr(p, "feedback_fractional_initial_offset", -5.0),
-            guess_span_Omega=getattr(p, "feedback_guess_span_Omega", 5.0),
+            frequency_resonance=p.frequency_raman_transition,
+            fractional_grid_center_offset=p.feedback_fractional_grid_center_offset,
+            fractional_initial_offset=p.feedback_fractional_initial_offset,
+            guess_span_Omega=p.feedback_guess_span_Omega,
         )
         self._initialize_measurement_calibrations(
-            amp_imaging=getattr(p, "amp_imaging", None),
-            t_img_pulse=getattr(p, "t_img_pulse", None),
-            n_photons_per_shot=getattr(p, "n_photons_per_shot", getattr(p, "N_photons_per_shot", None)),
-            std_n_photons_per_shot=getattr(p, "n_std_photons_per_shot", getattr(p, "std_n_photons_per_shot", None)),
-            v_apd_all_up=getattr(p, "v_apd_all_up", None),
-            v_apd_all_down=getattr(p, "v_apd_all_down", None),
+            amp_imaging=p.amp_imaging,
+            t_img_pulse=p.t_img_pulse,
+            n_photons_per_shot=p.n_photons_per_shot,
+            std_n_photons_per_shot=p.std_n_photons_per_shot,
+            v_apd_all_up=p.v_apd_all_up,
+            v_apd_all_down=p.v_apd_all_down,
             photon_count_scale=getattr(p, "feedback_photon_count_scale", 1.0),
-            feedback_measurement_midpoint_fraction=getattr(p, "feedback_measurement_midpoint_fraction", None),
-            feedback_measurement_midpoint_remap_enabled=getattr(p, "feedback_measurement_midpoint_remap_enabled", None),
-            feedback_apd_map_enabled=getattr(p, "feedback_apd_map_enabled", None),
-            feedback_apd_map_a=getattr(p, "feedback_apd_map_a", None),
-            feedback_apd_map_b=getattr(p, "feedback_apd_map_b", None),
-            feedback_apd_map_verbose=getattr(p, "feedback_apd_map_verbose", None),
+            feedback_measurement_midpoint_fraction=p.feedback_measurement_midpoint_fraction,
+            feedback_measurement_midpoint_remap_enabled=p.feedback_measurement_midpoint_remap_enabled,
+            feedback_apd_map_enabled=p.feedback_apd_map_enabled,
+            feedback_apd_map_a=p.feedback_apd_map_a,
+            feedback_apd_map_b=p.feedback_apd_map_b,
+            feedback_apd_map_verbose=p.feedback_apd_map_verbose,
         )
         self._initialize_posterior_state()
         self._initialize_trig_lut(lut_size=lut_size)
@@ -332,6 +331,7 @@ class Feedback:
         t_calculation_slack_compensation_mu,
         t_raman_pulse,
         t_img_pulse,
+        t_raman_pretrigger = 650,
         t_fifo_mu = int64(1000)
     ) -> TInt64:
         T_MIN_FIFO_MU = t_fifo_mu
@@ -339,9 +339,11 @@ class Feedback:
         t_img_pulse_mu = np.int64(t_img_pulse * 1.0e9)
         return (
             t_calculation_slack_compensation_mu
+            + t_raman_pretrigger
             + t_raman_pulse_mu
             + t_img_pulse_mu
             + T_MIN_FIFO_MU
+            - 10000
         ) & ~7
 
     @kernel
@@ -391,44 +393,21 @@ class Feedback:
         feedback_grid_size,
         t_raman_pulse,
         t_raman_pulse_ideal,
-        dt_eff,
-        dt_ideal,
         t_img_pulse,
         t_raman_pi_pulse,
     ):
         self.p.feedback_grid_size = int(feedback_grid_size)
         self.m = self.p.feedback_grid_size
         self.Omega = np.pi / t_raman_pi_pulse
-
-        # Accept either legacy t_raman_* names or explicit dt_* names.
-        resolved_dt_eff = t_raman_pulse if t_raman_pulse is not None else dt_eff
-        if resolved_dt_eff is None:
-            raise ValueError("Missing t_raman_pulse/dt_eff required for feedback timing.")
-
-        resolved_dt_ideal = t_raman_pulse_ideal if t_raman_pulse_ideal is not None else dt_ideal
-        if resolved_dt_ideal is None:
-            # Backward compatibility: if ideal timing is not provided, use effective timing.
-            resolved_dt_ideal = resolved_dt_eff
-
-        self.dt_eff = float(resolved_dt_eff)
-        self.dt_ideal = float(resolved_dt_ideal)
+        self.dt_eff = float(t_raman_pulse)
+        self.dt_ideal = float(t_raman_pulse_ideal)
         self.dt_z = float(t_img_pulse)
 
-    def _initialize_lightshift(
-        self,
-        amp_imaging,
-        frequency_z_lightshift,
-        back_action_coherence=None
-    ):
-        self.p.frequency_lightshift = self._resolve_lightshift_calibration(
-            amp_imaging=amp_imaging,
-            frequency_z_lightshift=frequency_z_lightshift,
-        )
+    def _initialize_lightshift(self, amp_imaging, frequency_z_lightshift, back_action_coherence):
+        self.p.frequency_lightshift = self._resolve_lightshift_calibration(amp_imaging, frequency_z_lightshift)
         self.frequency_z_lightshift = self.p.frequency_lightshift
         self.omega_z_lightshift = 2.0 * np.pi * self.frequency_z_lightshift
-
-        if back_action_coherence is not None:
-            self.p.back_action_coherence = back_action_coherence
+        self.p.back_action_coherence = float(back_action_coherence)
         self.back_action_coherence = self.p.back_action_coherence
 
     def _initialize_frequency_grid(
@@ -452,7 +431,6 @@ class Feedback:
             omega_resonance=omega_resonance,
             fractional_grid_center_offset_requested=self.p.feedback_fractional_grid_center_offset_requested,
             guess_span_Omega_requested=self.p.feedback_guess_span_Omega_requested,
-            fractional_initial_offset=self.p.feedback_fractional_initial_offset,
         )
         self.p.feedback_guess_span_Omega = float(span_effective)
         self.p.feedback_resonance_grid_index = int(resonance_idx)
@@ -482,7 +460,6 @@ class Feedback:
         omega_resonance,
         fractional_grid_center_offset_requested,
         guess_span_Omega_requested,
-        fractional_initial_offset,
     ):
         if self.m == 1:
             return np.asarray([float(omega_resonance)], dtype=np.float64), 0, 0.0
@@ -492,11 +469,8 @@ class Feedback:
 
         c = float(fractional_grid_center_offset_requested)
         s_requested = float(guess_span_Omega_requested)
-        o = float(fractional_initial_offset)
         mid = 0.5 * (self.m - 1)
 
-        # Keep initial offset fixed: if center is fixed at c, minimum span for coverage is |o-c|/2.
-        span_min_from_guess = abs(o - c) / 2.0
         candidates = []
         tiny = 1.0e-15
         for j in range(self.m):
@@ -504,25 +478,20 @@ class Feedback:
 
             if abs(dj) <= tiny:
                 if abs(c) <= tiny:
-                    s_candidate = max(s_requested, span_min_from_guess)
-                    candidates.append((j, s_candidate))
+                    candidates.append((j, s_requested))
                 continue
 
-            s_candidate = -c * (self.m - 1) / (4.0 * dj)
+            s_candidate = -c * (self.m - 1) / (2.0 * dj)
             if s_candidate < -tiny:
                 continue
             if s_candidate < 0.0:
                 s_candidate = 0.0
-            if s_candidate + tiny < span_min_from_guess:
-                continue
 
             candidates.append((j, float(s_candidate)))
 
         if len(candidates) == 0:
             raise ValueError(
-                "Cannot construct a uniform feedback grid that keeps fractional_initial_offset and "
-                "feedback_grid_size fixed while including exact resonance. "
-                f"fractional_initial_offset={o:.6g}, "
+                "Cannot construct a uniform feedback grid that places resonance on-grid. "
                 f"fractional_grid_center_offset={c:.6g}, "
                 f"feedback_grid_size={self.m}, "
                 f"guess_span_Omega_requested={s_requested:.6g}."
@@ -536,7 +505,7 @@ class Feedback:
         center_target = float(omega_resonance) + self.Omega * c
         dj_res = float(resonance_idx) - mid
         if abs(dj_res) <= tiny:
-            domega = 4.0 * max(s_requested, span_min_from_guess) * self.Omega / (self.m - 1)
+            domega = 2.0 * s_requested * self.Omega / (self.m - 1)
         else:
             domega = (float(omega_resonance) - center_target) / dj_res
 
@@ -548,12 +517,7 @@ class Feedback:
         # Force exact resonance representation at the selected index.
         omega_guess[resonance_idx] = float(omega_resonance)
 
-        span_effective = abs(domega) * (self.m - 1) / (4.0 * self.Omega)
-        if span_effective + tiny < span_min_from_guess:
-            raise ValueError(
-                "Internal inconsistency while constructing feedback grid: computed span is too small "
-                "to include the fixed initial offset."
-            )
+        span_effective = abs(domega) * (self.m - 1) / (2.0 * self.Omega)
         return omega_guess, int(resonance_idx), float(span_effective)
 
     def _validate_resonance_in_grid(self, omega_resonance):
@@ -672,33 +636,15 @@ class Feedback:
         if abs(self.v_range) < 1.0e-15:
             raise ValueError("APD calibration range is zero; cannot normalize APD.")
 
-    def _resolve_measurement_midpoint_remap_enabled(
-        self,
-        feedback_measurement_midpoint_remap_enabled,
-    ):
-        midpoint_remap_enabled = (
-            getattr(self.p, "feedback_measurement_midpoint_remap_enabled", True)
-            if feedback_measurement_midpoint_remap_enabled is None
-            else feedback_measurement_midpoint_remap_enabled
-        )
-        return bool(midpoint_remap_enabled)
+    def _resolve_measurement_midpoint_remap_enabled(self, feedback_measurement_midpoint_remap_enabled):
+        return bool(feedback_measurement_midpoint_remap_enabled)
 
-    def _resolve_measurement_midpoint_fraction(
-        self,
-        feedback_measurement_midpoint_fraction,
-    ):
-        midpoint_fraction = (
-            getattr(self.p, "feedback_measurement_midpoint_fraction", 0.5)
-            if feedback_measurement_midpoint_fraction is None
-            else feedback_measurement_midpoint_fraction
-        )
-        midpoint_fraction = float(midpoint_fraction)
+    def _resolve_measurement_midpoint_fraction(self, feedback_measurement_midpoint_fraction):
+        midpoint_fraction = float(feedback_measurement_midpoint_fraction)
         if not np.isfinite(midpoint_fraction):
             raise ValueError("feedback_measurement_midpoint_fraction must be finite.")
         if midpoint_fraction < 0.0 or midpoint_fraction > 1.0:
-            raise ValueError(
-                "feedback_measurement_midpoint_fraction must be between 0 and 1 inclusive."
-            )
+            raise ValueError("feedback_measurement_midpoint_fraction must be between 0 and 1 inclusive.")
         return midpoint_fraction
 
     def _initialize_posterior_state(self):
@@ -810,37 +756,12 @@ class Feedback:
         return float(frequency_z_lightshift)
 
     def _resolve_apd_affine_map_settings(
-        self,
-        feedback_apd_map_enabled,
-        feedback_apd_map_a,
-        feedback_apd_map_b,
-        feedback_apd_map_verbose,
+        self, feedback_apd_map_enabled, feedback_apd_map_a, feedback_apd_map_b, feedback_apd_map_verbose
     ):
-        map_enabled = (
-            getattr(self.p, "feedback_apd_map_enabled", False)
-            if feedback_apd_map_enabled is None
-            else feedback_apd_map_enabled
-        )
-        map_a = (
-            getattr(self.p, "feedback_apd_map_a", 1.0)
-            if feedback_apd_map_a is None
-            else feedback_apd_map_a
-        )
-        map_b = (
-            getattr(self.p, "feedback_apd_map_b", 0.0)
-            if feedback_apd_map_b is None
-            else feedback_apd_map_b
-        )
-        map_verbose = (
-            getattr(self.p, "feedback_apd_map_verbose", True)
-            if feedback_apd_map_verbose is None
-            else feedback_apd_map_verbose
-        )
-
-        map_enabled = bool(map_enabled)
-        map_a = float(map_a)
-        map_b = float(map_b)
-        map_verbose = bool(map_verbose)
+        map_enabled = bool(feedback_apd_map_enabled)
+        map_a = float(feedback_apd_map_a)
+        map_b = float(feedback_apd_map_b)
+        map_verbose = bool(feedback_apd_map_verbose)
 
         if not np.isfinite(map_a) or not np.isfinite(map_b):
             raise ValueError("feedback_apd_map_a and feedback_apd_map_b must be finite.")
@@ -1037,28 +958,26 @@ def _feedback_kwargs_from_atomdata(ad):
         return {}
 
     return {
-        "t_raman_pulse": getattr(p, "t_raman_pulse", getattr(p, "dt_eff", None)),
-        "t_raman_pulse_ideal": getattr(p, "t_raman_pulse_ideal", getattr(p, "dt_ideal", None)),
-        "dt_eff": getattr(p, "dt_eff", None),
-        "dt_ideal": getattr(p, "dt_ideal", None),
-        "t_img_pulse": getattr(p, "t_img_pulse", None),
-        "amp_imaging": getattr(p, "amp_imaging", None),
-        "t_raman_pi_pulse": getattr(p, "t_raman_pi_pulse", None),
-        "frequency_resonance": getattr(p, "frequency_raman_transition", None),
-        "frequency_z_lightshift": getattr(p, "frequency_lightshift", None),
-        "v_apd_all_up": getattr(p, "v_apd_all_up", None),
-        "v_apd_all_down": getattr(p, "v_apd_all_down", None),
-        "n_photons_per_shot": getattr(p, "n_photons_per_shot", getattr(p, "N_photons_per_shot", None)),
-        "std_n_photons_per_shot": getattr(p, "std_n_photons_per_shot", None),
+        "t_raman_pulse": p.t_raman_pulse,
+        "t_raman_pulse_ideal": p.t_raman_pulse_ideal,
+        "t_img_pulse": p.t_img_pulse,
+        "amp_imaging": p.amp_imaging,
+        "t_raman_pi_pulse": p.t_raman_pi_pulse,
+        "frequency_resonance": p.frequency_raman_transition,
+        "frequency_z_lightshift": p.frequency_lightshift,
+        "v_apd_all_up": p.v_apd_all_up,
+        "v_apd_all_down": p.v_apd_all_down,
+        "n_photons_per_shot": p.n_photons_per_shot,
+        "std_n_photons_per_shot": p.std_n_photons_per_shot,
         "photon_count_scale": getattr(p, "feedback_photon_count_scale", 1.0),
-        "feedback_measurement_midpoint_fraction": getattr(p, "feedback_measurement_midpoint_fraction", None),
-        "feedback_measurement_midpoint_remap_enabled": getattr(p, "feedback_measurement_midpoint_remap_enabled", None),
-        "feedback_grid_size": int(getattr(p, "feedback_grid_size", 21)),
-        "fractional_grid_center_offset": float(getattr(p, "feedback_fractional_grid_center_offset", 2.0)),
-        "fractional_initial_offset": getattr(p, "feedback_fractional_initial_offset", -5.0),
-        "guess_span_Omega": float(getattr(p, "feedback_guess_span_Omega", 5.0)),
-        "feedback_apd_map_enabled": getattr(p, "feedback_apd_map_enabled", None),
-        "feedback_apd_map_a": getattr(p, "feedback_apd_map_a", None),
-        "feedback_apd_map_b": getattr(p, "feedback_apd_map_b", None),
-        "feedback_apd_map_verbose": getattr(p, "feedback_apd_map_verbose", None),
+        "feedback_measurement_midpoint_fraction": p.feedback_measurement_midpoint_fraction,
+        "feedback_measurement_midpoint_remap_enabled": p.feedback_measurement_midpoint_remap_enabled,
+        "feedback_grid_size": int(p.feedback_grid_size),
+        "fractional_grid_center_offset": float(p.feedback_fractional_grid_center_offset),
+        "fractional_initial_offset": p.feedback_fractional_initial_offset,
+        "guess_span_Omega": float(p.feedback_guess_span_Omega),
+        "feedback_apd_map_enabled": p.feedback_apd_map_enabled,
+        "feedback_apd_map_a": p.feedback_apd_map_a,
+        "feedback_apd_map_b": p.feedback_apd_map_b,
+        "feedback_apd_map_verbose": p.feedback_apd_map_verbose,
     }

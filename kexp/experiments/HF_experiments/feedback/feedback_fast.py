@@ -17,22 +17,24 @@ class feedback(EnvExperiment, Base, Feedback):
     def prepare(self):
 
         self.p = ExptParamsFeedback()
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
                       expt_params=self.p)
-        self.p.update_raman_frequency_bool = 1
+        # self.p.update_raman_frequency_bool = 1
         self.p.include_photon_noise = 1
         
         ### parameters
 
-        # self.p.feedback_fractional_initial_offset = 2.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-5.,5.,21))
+        self.p.feedback_fractional_initial_offset = 2.
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,11))
         
-        self.p.N_repeats = 100
+        self.p.N_repeats = 1
 
-        self.p.feedback_guess_span_Omega = 5.0
+        self.p.feedback_guess_span_Omega = 10.0
+
+        self.p.feedback_fractional_grid_center_offset = 3.5
 
         ###
 
@@ -41,6 +43,7 @@ class feedback(EnvExperiment, Base, Feedback):
             t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
             t_raman_pulse=self.p.t_raman_pulse,
             t_img_pulse=self.p.t_img_pulse,
+            t_raman_pretrigger=self.p.t_raman_set_pretrigger_mu,
             t_fifo_mu=self.p.t_fifo_mu
         )
 
@@ -93,7 +96,8 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(t_start_mu - (10000 & ~7))
 
         self.raman.set_frequency_fast(f)
-        self.raman.reset_phase()
+        # self.raman.reset_phase()
+        self.raman.stage_ffua()
         # aprint(self.raman.get_phase())
         # self._phase = 0
         phase_tracker = 0.
@@ -118,6 +122,7 @@ class feedback(EnvExperiment, Base, Feedback):
             phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
 
             self.raman.pulse(self.p.t_raman_pulse)
+            
             k = self.measurement(i)
             omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
@@ -152,7 +157,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         t_pulse_start_mu = now_mu() + 500000
 
-        self.raman.set_up_fast_frequency_update()
+        self.raman.set_up_fast_frequency_update(aggressive_mode=1)
 
         at_mu(t_pulse_start_mu - 20000) # beginning of time
         self.ttl.pd_scope_trig3.pulse(1.e-6)
@@ -164,7 +169,7 @@ class feedback(EnvExperiment, Base, Feedback):
         delay(self.p.t_tweezer_hold)
         self.raman.clean_up_fast_frequency_update()
 
-        self.tweezer.off()
+        # self.tweezer.off()
         delay(self.p.t_tof)
         self.abs_image()
 
@@ -178,11 +183,13 @@ class feedback(EnvExperiment, Base, Feedback):
         self.integrator.begin_integrate(reset=False)
         self.imaging.pulse(self.p.t_img_pulse)
         self.integrator.stop_and_settle()
-        t = now_mu()
+
+        t0 = now_mu()
+        self.raman.stage_ffua()
         # start the clear after the integrator voltage is already in the sampler
-        at_mu(t + T_CONV_MU)
+        at_mu(t0 + T_CONV_MU)
         self.integrator.clear(t=0)
-        at_mu(t)
+        at_mu(t0)
         self.data.apd.shot_data[i] = self.integrator.sample()
         v = self.convert_measurement(self.data.apd.shot_data[i])
         i = i + 1
@@ -198,6 +205,3 @@ class feedback(EnvExperiment, Base, Feedback):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
-
-        # from kexp.util.remote_control.remote_control import send_all_off_command
-        # send_all_off_command()

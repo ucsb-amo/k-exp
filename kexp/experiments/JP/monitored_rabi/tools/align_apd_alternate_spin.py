@@ -11,12 +11,12 @@ from kexp.util.artiq.async_print import aprint
 class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=False,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.t_imaging_pulse = 20.e-6
+        self.p.t_imaging_pulse = 10.e-6
         self.xvar('dummy',[0]*1000)
         
         self.p.amp_imaging = 0.2
@@ -26,10 +26,10 @@ class hf_monitored_rabi(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
-        self.camera_params.gain = 100
-
         self.data.apd = self.data.add_data_container(3)
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+
+        # self.p.v_pd_hf_tweezer_squeeze_power = 8.
 
         self.finish_prepare(shuffle=True)
 

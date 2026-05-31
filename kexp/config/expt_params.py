@@ -69,9 +69,12 @@ class ExptParams(ExptParamsWaxx):
 
         # SLM settings
         self.dimension_slm_mask = 20.e-6 
-        # self.phase_slm_mask = 0.32 * np.pi
-        self.phase_slm_mask = 0.186 * np.pi # for 1,-1 to 1,0
-        self.px_slm_phase_mask_position_x = 993
+        # self.phase_slm_mask = 0.186 * np.pi
+        self.phase_slm_mask = 0.16 * np.pi
+        # self.phase_slm_mask = 0.186 * np.pi 
+        # self.phase_slm_mask = 1.4 * np.pi # for 1,-1 to 1,0
+        # self.phase_slm_mask = 0.125 * np.pi
+        self.px_slm_phase_mask_position_x = 994
         self.px_slm_phase_mask_position_y = 820
         # Cooling timing
         self.t_tof = 20.e-6
@@ -118,10 +121,9 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
+        self.t_tweezer_paint_rampdown = 3.e-3
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
         self.t_tweezer_squeezer_ramp_2 = 20.e-3
-        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9.
-        self.v_pd_hf_tweezer_squeeze_power = .444
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -146,7 +148,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 9.9769e-06 #66809, 2026-05-16
+        # self.t_raman_pi_pulse = 1.0483e-05 #67009, 2026-05-18
+        self.t_raman_pi_pulse = 8.4310e-06 #67681, 2026-05-26
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -172,7 +175,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_2d_mot_current = 2.2
 
         #MOT
-        self.detune_d2_c_mot = -2.8
+        self.detune_d2_c_mot = -1.8
         self.amp_d2_c_mot = 0.188
 
         self.detune_d2_r_mot = -3.9
@@ -297,6 +300,9 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_rampdown3_end = 4.3
         self.n_tweezer_ramp_steps = 1000
 
+        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
+        self.v_pd_hf_tweezer_squeeze_power = .444
+
         self.n_tweezers = 2
 
         self.frequency_tweezer_list1 = [72250000.,72833333.33333333,73416666.66666667,74000000.]
@@ -314,7 +320,7 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = .5
-        self.v_hf_tweezer_paint_amp_max = -2. # -1.7
+        self.v_hf_tweezer_paint_amp_max = -1.6 # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -360,7 +366,7 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
 
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
-        self.frequency_raman_transition = 119.4643e6 #66808
+        self.frequency_raman_transition = 119.4637e6 #67744
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2

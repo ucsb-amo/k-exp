@@ -38,8 +38,9 @@ class dac_frame(dac_frame_waxx):
         self.outer_coil_pid = self.assign_dac_ch(19)
         self.imaging_pid = self.assign_dac_ch(20, v=0.5)
         self.z_shim_mosfet_gate = self.assign_dac_ch(25)
-        self.vva_ry_980 = self.assign_dac_ch(26)
 
-        self.vva_ry_405 = self.assign_dac_ch(31)
+        self.ry_980_intensity_control = self.assign_dac_ch(30, v=2.1)
+        self.ry_405_intensity_control = self.assign_dac_ch(31, v=4.)
+        # self.ry_405_intensity_control = self.assign_dac_ch(31, v=0.745)
 
         self.cleanup()
