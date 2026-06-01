@@ -77,7 +77,7 @@ class Cooling():
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
         
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_hf_lightsheet_evap1_current,
+                            #  i_start=self.p.i_hf_lightsheet_evap1_current,
                              i_end=self.p.i_hf_tweezer_load_current)
         
         self.tweezer.on()
@@ -85,16 +85,20 @@ class Cooling():
                           v_start=0.,
                           v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False)
+        
+        # self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown2,
+        #                      v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_hf_lightsheet_rampdown2_end)
                           
         # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
-                                v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
+                                # v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
                                 v_end=self.p.v_pd_lightsheet_rampdown3_end)
         # self.lightsheet.pid_int_zero_ttl.on()
         self.lightsheet.off()
 
         self.outer_coil.ramp_supply(t=5.e-3,
-                             i_start=self.p.i_hf_tweezer_load_current,
+                            #  i_start=self.p.i_hf_tweezer_load_current,
                              i_end=self.p.i_hf_tweezer_evap1_current)
 
         # tweezer evap 1 with constant trap frequency
@@ -104,8 +108,8 @@ class Cooling():
                           paint=True,keep_trap_frequency_constant=True)
         
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_hf_tweezer_evap1_current,
-                             i_end=self.p.i_hf_tweezer_evap2_current)
+                            #  i_start=self.p.i_hf_tweezer_evap1_current,
+                                i_end=self.p.i_hf_tweezer_evap2_current)
         
         if do_tweezer_evap_2:
         
