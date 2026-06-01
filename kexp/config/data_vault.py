@@ -11,5 +11,5 @@ class DataVault(DataVaultWax):
 
         self.b = self.add_data_container(1)
 
-        self.lock_status_405 = self.add_data_container(1)
-        self.lock_status_980 = self.add_data_container(1)
+        self.frequency_wavemeter_405 = self.add_data_container(1)
+        self.frequency_wavemeter_980 = self.add_data_container(1)

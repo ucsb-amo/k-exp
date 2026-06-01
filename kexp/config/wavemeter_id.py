@@ -1,8 +1,9 @@
 from waxx.control.misc.moglabs import MOGDevice
 from waxx.control.misc.moglabs_wavemeter import WavemeterClient as WavemeterWaxx, WavemeterController, DummyWavemeterController, DummyWavemeterClient
 from kexp.config.ip import WAVEMETER_MOGLABS_IP
+from kexp.config.expt_params import ExptParams
 
-LOCK_TOLERANCE = 25.e6
+LOCK_TOLERANCE = 30.e6
 
 class Wavemeter(WavemeterWaxx):
     def __init__(self,
@@ -12,7 +13,9 @@ class Wavemeter(WavemeterWaxx):
         super().__init__(ch,target_freq,wavemeter_device,locked_tolerance)
 
 class fzw_frame():
-    def __init__(self):
+    def __init__(self, params=ExptParams()):
+
+        p = params
 
         try:
             self._fzw = WavemeterController(WAVEMETER_MOGLABS_IP)
@@ -20,8 +23,8 @@ class fzw_frame():
             print('Failed to connect to wavemeter -- please close wavemeter software if it is open. Lock status will not be checked.')
             self._fzw = DummyWavemeterController()
 
-        self.ry_405 = self.add_wavemeter(2, target_frequency=741.09120e12)
-        self.ry_980 = self.add_wavemeter(5, target_frequency=307.45729e12)
+        self.ry_405 = self.add_wavemeter(2, target_frequency=p.frequency_target_405_lock)
+        self.ry_980 = self.add_wavemeter(5, target_frequency=p.frequency_target_980_lock)
 
         self.write_keys()
 

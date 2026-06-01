@@ -149,9 +149,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.reset_devices()
 
         self.reset_tweezers(two_d_tweezers)
-
-        self.ry_405.lock_status()
-        self.ry_980.lock_status()
         
     @kernel
     def reset_devices(self):
@@ -196,6 +193,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.core.break_realtime()
         self.ttl.line_trigger.clear_input_events()
+
+        self.core.break_realtime()
+        self.ry_405.lock_status()
+        self.ry_980.lock_status()
 
         self.cleanup_scan_kernel_wax()
 
