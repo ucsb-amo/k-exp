@@ -175,7 +175,7 @@ class tweezer(wax_tweezer.TweezerController):
         """        
 
         if v_start == dv:
-            v_start = 0.
+            v_start = self.pid1_dac.v
         if v_end == dv:
             v_end = self.params.v_pd_hf_tweezer_1064_ramp_end
         if n_steps == di:

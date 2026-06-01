@@ -66,7 +66,7 @@ class lightsheet():
              keep_trap_frequency_constant=True):
         
         if v_start == dv:
-            v_start = self.params.v_pd_lightsheet_rampup_start
+            v_start = self.pid_dac.v
         if v_end == dv:
             v_end = self.params.v_pd_lightsheet_rampup_end
         if n_steps == di:
