@@ -98,7 +98,7 @@ def main(argv: list[str] | None = None) -> int:
     panel_by_id: dict[str, ClientPanel] = {}
     for spec in specs:
         dock_area, _placement = _resolve_placement(spec, overrides)
-        panel = ClientPanel(spec.id, spec.label, body_factory=spec.body_factory)
+        panel = ClientPanel(spec.id, spec.label, body_factory=spec.body_factory, icon=spec.icon)
         panels.append((panel, dock_area))
         panel_by_id[spec.id] = panel
 

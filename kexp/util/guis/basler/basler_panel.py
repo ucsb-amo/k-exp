@@ -20,6 +20,16 @@ class BaslerServerPanel(WidgetPanelBase):
         # the whole QMainWindow visibly so those docks remain reachable.
         embed_main_window(self, self._gui, embed_as_window=True)
 
+    def cleanup(self) -> None:
+        # Forward the dashboard's panel-cleanup hook to the embedded GUI
+        # so its discovery thread / rescan timer get stopped cleanly.
+        gui_cleanup = getattr(self._gui, "cleanup", None)
+        if callable(gui_cleanup):
+            try:
+                gui_cleanup()
+            except Exception:
+                pass
+
 
 # Same widget works on either dashboard side.
 BaslerClientPanel = BaslerServerPanel

@@ -31,6 +31,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="device_control",
         label="Device Control",
+        icon="🎮",  # matches device_control_gui window icon
         body_factory=_lazy_panel("kexp.util.guis.device_state_gui.monitor_panel", "MonitorClientPanel"),
         default_dock_area="bottom",
         default_placement="dock",
@@ -39,6 +40,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="ethernet_relay",
         label="Ethernet Relay",
+        icon="🔌",
         body_factory=_lazy_panel("kexp.util.guis.ethernet_relay.ethernet_relay_panel", "EthernetRelayPanel"),
         default_dock_area="right",
         default_placement="tab",
@@ -48,6 +50,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="remote_control",
         label="Remote Control",
+        icon="📡",  # matches remote_control_gui window icon
         body_factory=_lazy_panel("kexp.util.guis.remote_control_panel", "RemoteControlPanel"),
         default_dock_area="right",
         default_placement="tab",
@@ -57,6 +60,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="keysight",
         label="Keysight",
+        icon="🍌",
         body_factory=_lazy_panel("kexp.util.guis.keysight_monitor.keysight_panel", "KeysightPanel"),
         default_dock_area="right",
         default_placement="tab",
@@ -68,6 +72,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="bristol",
         label="Bristol Wavemeter",
+        icon="〰",
         body_factory=_lazy_panel(
             "kexp.util.guis.wavemeter_monitor.bristol.bristol_panel",
             "BristolClientPanel",
@@ -79,6 +84,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="basler",
         label="Basler Cameras",
+        icon="📷",
         body_factory=_lazy_panel("kexp.util.guis.basler.basler_panel", "BaslerClientPanel"),
         default_dock_area="right",
         default_placement="dock",
@@ -87,6 +93,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="als",
         label="ALS Laser",
+        icon="🔫",
         body_factory=_lazy_panel("kexp.util.guis.lasers.als.als_panel", "AlsPanel"),
         default_dock_area="left",
         default_placement="dock",
@@ -95,6 +102,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="precilaser",
         label="Precilaser",
+        icon="💀",
         body_factory=_lazy_panel(
             "kexp.util.guis.lasers.precilaser.precilaser_panel",
             "PrecilaserPanel",
@@ -106,6 +114,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="magnetometer",
         label="HMR Magnetometer",
+        icon="🧲",
         body_factory=_lazy_panel(
             "kexp.util.guis.magnetic_field_monitor.magnetometer_panel",
             "MagnetometerPanel",
@@ -117,6 +126,7 @@ CLIENT_SPECS: list[ClientSpec] = [
     ClientSpec(
         id="interlock",
         label="Interlock (read-only view)",
+        icon="🔒",
         body_factory=_lazy_panel("kexp.util.guis.interlock.interlock_panel", "InterlockClientPanel"),
         default_dock_area="top",
         default_placement="dock",

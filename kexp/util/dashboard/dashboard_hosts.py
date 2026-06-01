@@ -28,6 +28,7 @@ HOST_AUTOSTART_SERVERS: dict[str, list[str]] = {
         "magnetometer",
         "bristol",
         "basler",
+        "keysight",
         "interlock",
     ],
 }

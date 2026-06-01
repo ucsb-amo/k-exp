@@ -154,6 +154,7 @@ def main(argv: list[str] | None = None) -> int:
             spec.id, spec.label,
             body_factory=spec.body_factory,
             com_label=spec.com_label,
+            icon=spec.icon,
         )
 
         # Specs with empty server_cmd are *in-process* panels: the embedded
@@ -211,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
             log.warning("server-dashboard extra client id=%s not in CLIENT_SPECS", cid)
             continue
         c_dock_area = overrides.get(cspec.id, {}).get("dock_area", cspec.default_dock_area)
-        cpanel = ClientPanel(cspec.id, cspec.label, body_factory=cspec.body_factory)
+        cpanel = ClientPanel(cspec.id, cspec.label, body_factory=cspec.body_factory, icon=cspec.icon)
         panels.append((cpanel, c_dock_area, "servers"))
         log.info("added client panel '%s' to server dashboard", cspec.id)
 

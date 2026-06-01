@@ -49,6 +49,7 @@ SERVER_SPECS: list[ServerSpec] = [
     ServerSpec(
         id="als",
         label="ALS Laser",
+        icon="🔫",  # matches the standalone als_control_gui window icon
         body_factory=_lazy_panel("kexp.util.guis.lasers.als.als_panel", "AlsPanel"),
         server_cmd=[_PY, "-m", "kexp.util.guis.lasers.als.als_server"],
         cwd=_REPO,
@@ -61,6 +62,7 @@ SERVER_SPECS: list[ServerSpec] = [
     ServerSpec(
         id="precilaser",
         label="Precilaser",
+        icon="💀",  # matches the standalone precilaser_control_gui window icon
         body_factory=_lazy_panel("kexp.util.guis.lasers.precilaser.precilaser_panel", "PrecilaserPanel"),
         server_cmd=[_PY, "-m", "kexp.util.guis.lasers.precilaser.precilaser_server"],
         cwd=_REPO,
@@ -73,6 +75,7 @@ SERVER_SPECS: list[ServerSpec] = [
     ServerSpec(
         id="monitor",
         label="Monitor",
+        icon="👁",  # matches monitor_server_gui (hidden panel; harmless)
         # Headless and panel-less: ready/not-ready state is shown by the
         # Device Control GUI, so neither a Qt window nor a dashboard tile
         # is needed. The supervisor still runs in the background and is
@@ -89,6 +92,7 @@ SERVER_SPECS: list[ServerSpec] = [
     ServerSpec(
         id="magnetometer",
         label="HMR Magnetometer",
+        icon="🧲",  # matches magnetometer_hmr_gui window icon
         body_factory=_lazy_panel("kexp.util.guis.magnetic_field_monitor.magnetometer_panel", "MagnetometerPanel"),
         server_cmd=[_PY, "-m", "kexp.util.guis.magnetic_field_monitor.magnetometer_hmr_server"],
         cwd=_REPO,
@@ -102,10 +106,10 @@ SERVER_SPECS: list[ServerSpec] = [
     ServerSpec(
         id="bristol",
         label="Bristol Wavemeter",
+        icon="〰",  # wavy dash; the standalone bristol GUI draws a sine icon
         body_factory=_lazy_panel("kexp.util.guis.wavemeter_monitor.bristol.bristol_panel", "BristolServerPanel"),
         server_cmd=[_PY, "-m", "kexp.util.guis.wavemeter_monitor.bristol.bristol_server"],
         cwd=_REPO,
-        com_label="LAN",
         graceful_stop_timeout_s=5.0,
         restart_on_crash=False,
         default_dock_area="right",
@@ -115,6 +119,7 @@ SERVER_SPECS: list[ServerSpec] = [
     ServerSpec(
         id="basler",
         label="Basler Cameras",
+        icon="📷",  # matches basler_gui window icon
         body_factory=_lazy_panel("kexp.util.guis.basler.basler_panel", "BaslerServerPanel"),
         # The embedded BaslerCamerasMainWindow is a ZMQ *client* that
         # discovers and connects to the headless server we spawn here.
@@ -128,6 +133,7 @@ SERVER_SPECS: list[ServerSpec] = [
     ServerSpec(
         id="keysight",
         label="Keysight Supplies",
+        icon="🍌",  # standalone keysight_monitor_gui uses banana-icon.png
         # Embeds the thin client widget (KeysightServerPanel == KeysightClientPanel)
         # that talks to the headless KeysightServer over TCP.  No dashboard
         # opens a VXI11 connection to the supplies directly.
@@ -137,7 +143,6 @@ SERVER_SPECS: list[ServerSpec] = [
         ),
         server_cmd=[_PY, "-m", "kexp.util.guis.keysight_monitor.keysight_server_headless"],
         cwd=_REPO,
-        com_label="LAN",
         graceful_stop_timeout_s=5.0,
         restart_on_crash=False,
         default_dock_area="right",
@@ -147,6 +152,7 @@ SERVER_SPECS: list[ServerSpec] = [
     ServerSpec(
         id="interlock",
         label="Interlock",
+        icon="🔒",  # padlock
         body_factory=_lazy_panel("kexp.util.guis.interlock.interlock_panel", "InterlockPanel"),
         server_cmd=[_PY, "-m", "kexp.util.guis.interlock.interlock_server"],
         cwd=_REPO,
