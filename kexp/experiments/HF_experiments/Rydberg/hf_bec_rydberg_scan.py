@@ -16,16 +16,20 @@ class hf_bec(EnvExperiment, Base):
         self.p.t_tof = 100.e-6
 
         # self.xvar('wee',[1,0])
-        self.p.wee = 1
+        # self.p.wee = 1
 
-        # self.xvar('frequency_eo_980', np.arange(155.7,156.1,.03)*1.e6)
+        # self.xvar('do_405_pulse',[1,0])
+        self.p.do_405_pulse = 1
+        self.p.do_980_pulse = 1
+
+        self.xvar('frequency_eo_980', np.arange(100.,170.,.33)*1.e6)
         # self.p.frequency_eo_980 = 139.e6
         self.p.frequency_eo_980 = 125.4e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
         
-        # self.xvar('t_tweezer_hold', np.linspace(1500.,2000.,3) * 1.e-3)
-        self.t_tweezer_hold = 1750.e-3
+        # self.xvar('t_tweezer_hold', self.powspace(0.0, 2000.0, 11, power=3) * 1.e-3)
+        self.t_tweezer_hold = 1500.e-3
 
         # self.xvar('v_vva_ry_405',np.linspace(0.3,1.,10))
         # self.p.v_pd_ry_405 = 8.9 # 3.0 mW
@@ -35,9 +39,16 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
-        self.p.N_repeats = 12
+        self.p.amp_dds_405 = 0.08
+
+        self.p.N_repeats = 5
 
         self.finish_prepare(shuffle=True)
+
+        if self.p.do_405_pulse == 1:
+            print(f'doing 405 pulse')
+        if self.p.do_980_pulse == 1:
+            print(f'doing 980 pulse')
 
     @kernel
     def scan_kernel(self):
@@ -46,14 +57,16 @@ class hf_bec(EnvExperiment, Base):
         self.ry_980.sweep_to(self.p.frequency_eo_980)
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.prepare_hf_tweezers(do_tweezer_evap_2=False, squeeze=False)
+        self.prepare_hf_tweezers(squeeze=False)
+
         self.ry_405.reboot()
-        self.ry_405.dds_sw.set_dds(amplitude=0.08)
+        self.ry_405.dds_sw.set_dds(amplitude=self.p.amp_dds_405)
 
         delay(100e-3)
 
-        if self.p.wee == 1:
+        if self.p.do_405_pulse == 1:
              self.ry_405.on()
+        if self.p.do_980_pulse == 1:
              self.ry_980.on()
         
         # if self.p.wee == 1:   
