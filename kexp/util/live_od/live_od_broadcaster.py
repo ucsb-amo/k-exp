@@ -151,3 +151,14 @@ class LiveODBroadcaster(QThread, WaxxServer):
 
     def broadcast_log_msg(self, text: str):
         self._enqueue({'tag': 'LOG_MSG', 'text': str(text)})
+
+    def broadcast_camera_state(self, states: dict):
+        """Broadcast the current state of every camera button.
+
+        ``states`` is a dict mapping camera_key -> one of
+        ``'open' | 'closed' | 'loading' | 'failed' | 'grabbing'``.
+        """
+        self._enqueue({
+            'tag': 'CAMERA_STATE',
+            'states': {str(k): str(v) for k, v in states.items()},
+        })

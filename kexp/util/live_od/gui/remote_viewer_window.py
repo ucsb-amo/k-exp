@@ -55,6 +55,7 @@ class LiveODSubscriber(QThread):
     run_done_signal = pyqtSignal()
     log_msg_signal = pyqtSignal(str)
     connection_status_signal = pyqtSignal(str)
+    camera_state_signal = pyqtSignal(object)        # dict[camera_key -> state]
 
     # Reconnection configuration (seconds)
     RECONNECT_RETRY_INTERVAL = 2.0  # How often to retry server discovery
@@ -134,6 +135,9 @@ class LiveODSubscriber(QThread):
                             self.run_done_signal.emit()
                         elif tag == "LOG_MSG":
                             self.log_msg_signal.emit(str(msg.get("text", "")))
+                        elif tag == "CAMERA_STATE":
+                            states = msg.get("states", {}) or {}
+                            self.camera_state_signal.emit(dict(states))
                         elif tag == "HELLO":
                             pass  # heartbeat — already triggered connected status above
                     except Exception as exc:
@@ -215,6 +219,7 @@ class RemoteViewerWindow(QWidget):
 
     _discovery_status_signal = pyqtSignal(str)
     _discovery_done_signal   = pyqtSignal(str, int)   # ip, port
+    _camera_request_done_signal = pyqtSignal(str)    # camera_key (worker -> GUI re-enable)
 
     def __init__(self, ip: str = None, port: int = None):
         super().__init__()
@@ -233,11 +238,18 @@ class RemoteViewerWindow(QWidget):
         self.subscriber: LiveODSubscriber | None = None
         self._current_run_id: int = 0
 
+        # Cached endpoint for the LiveOD REP server (RESET / CAMERA_CONTROL).
+        # Populated lazily on the first request that succeeds; falls back to
+        # UDP discover() if a request fails (server moved or restarted).
+        self._req_ip: str | None = None
+        self._req_port: int | None = None
+
         self._setup_layout()
 
         # Connect discovery signals (emitted from worker thread)
         self._discovery_status_signal.connect(self._on_connection_status)
         self._discovery_done_signal.connect(self._on_discovered)
+        self._camera_request_done_signal.connect(self._on_camera_request_done)
 
         # Kick off discovery after the event loop starts
         QTimer.singleShot(0, self._start_discovery)
@@ -295,6 +307,7 @@ class RemoteViewerWindow(QWidget):
         self.subscriber.log_msg_signal.connect(
             self.viewer_window.output_window.appendPlainText)
         self.subscriber.connection_status_signal.connect(self._on_connection_status)
+        self.subscriber.camera_state_signal.connect(self._on_camera_state)
         self.subscriber.start()
 
     # ------------------------------------------------------------------
@@ -338,6 +351,16 @@ class RemoteViewerWindow(QWidget):
         status_bar.addWidget(self.reset_button)
 
         layout.addLayout(status_bar)
+
+        # Camera control row — buttons are created lazily from the first
+        # CAMERA_STATE broadcast received from the server.  This avoids
+        # importing the kexp camera config here so the remote viewer can run
+        # on machines that don't have ARTIQ / kexp installed.
+        self._camera_buttons: dict[str, QPushButton] = {}
+        self._camera_row = QHBoxLayout()
+        self._camera_row.setSpacing(4)
+        layout.addLayout(self._camera_row)
+
         layout.addWidget(self.viewer_window)
         self.setLayout(layout)
 
@@ -389,27 +412,133 @@ class RemoteViewerWindow(QWidget):
         self.viewer_window.output_window.appendPlainText("Sending Reset to server…")
         threading.Thread(target=self._send_reset_to_server, daemon=True).start()
 
-    def _send_reset_to_server(self):
+    # ------------------------------------------------------------------
+    # Camera control
+    # ------------------------------------------------------------------
+
+    _STATE_COLORS = {
+        'open':     'green',
+        'closed':   'gray',
+        'failed':   'red',
+        'loading':  'orchid',
+        'grabbing': 'blue',
+    }
+
+    def _on_camera_state(self, states: dict):
+        for key, state in states.items():
+            btn = self._camera_buttons.get(key)
+            if btn is None:
+                btn = QPushButton(key)
+                btn.setMinimumHeight(28)
+                btn.clicked.connect(
+                    lambda _=False, k=key: self._on_camera_button_clicked(k))
+                self._camera_buttons[key] = btn
+                self._camera_row.addWidget(btn)
+            color = self._STATE_COLORS.get(state, 'gray')
+            btn.setStyleSheet(f"background-color: {color}")
+            # An incoming state update is the server's authoritative echo —
+            # re-enable any button that was greyed out after a click.
+            if not btn.isEnabled():
+                btn.setEnabled(True)
+
+    def _on_camera_button_clicked(self, camera_key: str):
+        btn = self._camera_buttons.get(camera_key)
+        if btn is not None:
+            # Disable until the server broadcasts the new CAMERA_STATE or the
+            # worker thread's request fails.  Prevents queued duplicate REQs.
+            btn.setEnabled(False)
+        self.viewer_window.output_window.appendPlainText(
+            f"Toggling camera {camera_key}…"
+        )
+        threading.Thread(
+            target=self._send_camera_control,
+            args=(camera_key, 'toggle'),
+            daemon=True,
+        ).start()
+
+    def _on_camera_request_done(self, camera_key: str):
+        """Called from the GUI thread when a CAMERA_CONTROL REQ finishes.
+
+        On success we keep the button disabled; the next CAMERA_STATE
+        broadcast will re-enable it.  On failure we re-enable immediately so
+        the user can retry.  Either way, schedule a fallback re-enable after
+        a few seconds in case the broadcast never arrives.
+        """
+        btn = self._camera_buttons.get(camera_key)
+        if btn is None:
+            return
+        # Fallback: if no CAMERA_STATE arrives within 5 s, re-enable the
+        # button so it doesn't stay greyed out forever.
+        QTimer.singleShot(5000, lambda b=btn: b.setEnabled(True))
+
+    def _send_camera_control(self, camera_key: str, action: str):
+        ip, port = self._resolve_req_endpoint()
+        if ip is None:
+            print("[RemoteViewer] Camera control failed: live_od server not discovered")
+            self._camera_request_done_signal.emit(camera_key)
+            return
+        ok = self._send_req(
+            ip, port,
+            {'tag': 'CAMERA_CONTROL', 'camera_key': camera_key, 'action': action},
+            label="Camera control",
+        )
+        if not ok:
+            # Cached endpoint stale — rediscover once and retry.
+            self._req_ip = None
+            self._req_port = None
+            ip, port = self._resolve_req_endpoint()
+            if ip is not None:
+                self._send_req(
+                    ip, port,
+                    {'tag': 'CAMERA_CONTROL', 'camera_key': camera_key, 'action': action},
+                    label="Camera control (retry)",
+                )
+        self._camera_request_done_signal.emit(camera_key)
+
+    def _resolve_req_endpoint(self) -> tuple[str | None, int | None]:
+        """Return cached (ip, port) for the live_od REP server, discovering
+        via UDP if no cached value exists."""
+        if self._req_ip is not None and self._req_port is not None:
+            return self._req_ip, self._req_port
         from waxx.util.comms_server.waxx_client import discover
         result = discover("live_od", timeout=3.0)
         if result is None:
-            print("[RemoteViewer] Reset failed: live_od server not discovered")
-            return
-        _ip, _port = result
+            return None, None
+        self._req_ip, self._req_port = result
+        return self._req_ip, self._req_port
+
+    def _send_req(self, ip: str, port: int, payload: dict, label: str = "REQ") -> bool:
         ctx = zmq.Context()
         sock = ctx.socket(zmq.REQ)
         sock.setsockopt(zmq.SNDTIMEO, 3000)
-        sock.setsockopt(zmq.RCVTIMEO, 3000)
-        sock.connect(f"tcp://{_ip}:{_port}")
+        sock.setsockopt(zmq.RCVTIMEO, 5000)
+        sock.setsockopt(zmq.LINGER, 0)
         try:
-            sock.send(pickle.dumps({'tag': 'RESET'}))
+            sock.connect(f"tcp://{ip}:{port}")
+            sock.send(pickle.dumps(payload))
             reply = pickle.loads(sock.recv())
-            print(f"[RemoteViewer] Reset reply: {reply}")
+            print(f"[RemoteViewer] {label} reply: {reply}")
+            return True
         except Exception as exc:
-            print(f"[RemoteViewer] Reset failed: {exc}")
+            print(f"[RemoteViewer] {label} failed: {exc}")
+            return False
         finally:
             sock.close()
             ctx.term()
+
+    def _send_reset_to_server(self):
+        ip, port = self._resolve_req_endpoint()
+        if ip is None:
+            print("[RemoteViewer] Reset failed: live_od server not discovered")
+            return
+        ok = self._send_req(ip, port, {'tag': 'RESET'}, label="Reset")
+        if not ok:
+            # Cached endpoint stale — rediscover once and retry.
+            self._req_ip = None
+            self._req_port = None
+            ip, port = self._resolve_req_endpoint()
+            if ip is not None:
+                self._send_req(ip, port, {'tag': 'RESET'}, label="Reset (retry)")
 
     # ------------------------------------------------------------------
     # Cleanup

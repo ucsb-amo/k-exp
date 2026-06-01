@@ -48,6 +48,7 @@ class LiveODServer(QThread, WaxxServer):
     run_done_signal = pyqtSignal()
     run_started_signal = pyqtSignal(int)                      # run_id (emitted after INIT_RUN, before new_run_signal)
     reset_signal = pyqtSignal()                               # triggered by remote RESET command
+    camera_control_signal = pyqtSignal(str, str)              # camera_key, action ('open'|'close'|'toggle')
 
     def __init__(self, server_talk, data_saver, port: int = 0):
         super().__init__()  # QThread.__init__
@@ -66,6 +67,7 @@ class LiveODServer(QThread, WaxxServer):
         self._current_filepath = ""
         self._current_run_id = 0
         self._reset_requested = False   # set by RESET; cleared by next INIT_RUN
+        self._run_in_progress = False   # True between INIT_RUN and END_RUN/ABORT
         self._shot_timestamps: list = []  # Unix timestamps (s) recorded server-side on each SHOT_COMPLETE
 
     # ------------------------------------------------------------------
@@ -130,6 +132,8 @@ class LiveODServer(QThread, WaxxServer):
                         reply = self._handle_end_run(msg)
                     elif tag == "RESET":
                         reply = self._handle_reset(msg)
+                    elif tag == "CAMERA_CONTROL":
+                        reply = self._handle_camera_control(msg)
                     elif tag == "POLL":
                         reply = self._handle_poll(msg)
                     elif tag == "ABORT_RUN":
@@ -190,6 +194,7 @@ class LiveODServer(QThread, WaxxServer):
                 print(f"Warning: could not delete incomplete data file: {exc}")
             self._current_filepath = ""
         self._reset_requested = False
+        self._run_in_progress = False
         self.run_done_signal.emit()
 
     def _handle_init_run(self, msg: dict) -> dict:
@@ -235,6 +240,7 @@ class LiveODServer(QThread, WaxxServer):
         self._current_filepath = filepath
         self._current_run_id = run_id
         self._reset_requested = False
+        self._run_in_progress = True
         self._shot_timestamps = []       # reset per-run timestamp list
 
         n_img = int(msg.get('params', {}).get('N_img', 1))
@@ -288,6 +294,7 @@ class LiveODServer(QThread, WaxxServer):
                 except Exception as exc:
                     print(f"[LiveODServer] Warning: could not delete data file: {exc}")
             self._reset_requested = False
+            self._run_in_progress = False
             self.run_done_signal.emit()
             return {"ok": True}
         if self._current_save_data and self._current_filepath:
@@ -312,6 +319,7 @@ class LiveODServer(QThread, WaxxServer):
         else:
             print("[LiveODServer] END_RUN: save_data=False, nothing written.")
 
+        self._run_in_progress = False
         self.run_done_signal.emit()
         return {"ok": True}
 
@@ -319,6 +327,25 @@ class LiveODServer(QThread, WaxxServer):
         print("[LiveODServer] RESET requested by remote viewer.")
         self._reset_requested = True
         self.reset_signal.emit()
+        return {"ok": True}
+
+    def _handle_camera_control(self, msg: dict) -> dict:
+        camera_key = str(msg.get("camera_key", ""))
+        action = str(msg.get("action", "toggle"))
+        if action not in ("open", "close", "toggle"):
+            return {"ok": False, "error": f"Unknown camera action: {action}"}
+        if not camera_key:
+            return {"ok": False, "error": "Missing camera_key"}
+        # Refuse camera open/close/toggle during an active run.  Closing a
+        # camera being driven by a CameraBaby crashes the grab loop
+        # (dishonorable_death); opening any camera blocks the GUI thread
+        # (Andor cooler init can take several seconds) and stalls all queued
+        # SHOT_COMPLETE / RESET signals.
+        if self._run_in_progress:
+            print(f"[LiveODServer] CAMERA_CONTROL rejected ({camera_key} -> {action}): run in progress")
+            return {"ok": False, "error": "Camera control rejected: run in progress"}
+        print(f"[LiveODServer] CAMERA_CONTROL: {camera_key} -> {action}")
+        self.camera_control_signal.emit(camera_key, action)
         return {"ok": True}
 
     def _handle_abort_run(self, msg: dict) -> dict:

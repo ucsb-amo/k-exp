@@ -53,6 +53,7 @@ class LiveODWindow(QWidget):
         self.live_od_server.shot_progress_signal.connect(self.on_shot_progress)
         self.live_od_server.run_done_signal.connect(self.on_run_done)
         self.live_od_server.reset_signal.connect(self.reset)
+        self.live_od_server.camera_control_signal.connect(self.on_remote_camera_control)
         self.live_od_server.start()
 
         # ZMQ PUB broadcaster — forwards OD images and run events to remote viewers.
@@ -62,6 +63,52 @@ class LiveODWindow(QWidget):
         self.live_od_server.shot_progress_signal.connect(self.broadcaster.broadcast_shot_progress)
         self.live_od_server.run_done_signal.connect(self.broadcaster.broadcast_run_done)
         self.analyzer.broadcast_signal.connect(self.broadcaster.broadcast_od_image)
+
+        # Broadcast camera-button state changes so remote viewers can mirror
+        # the open/closed/grabbing UI.
+        for btn in self.camera_conn_bar.buttons:
+            btn.state_changed.connect(self._broadcast_camera_states)
+        # Periodic re-broadcast so late-joining remote viewers learn current
+        # state without needing to click anything.
+        self._camera_state_timer = QTimer(self)
+        self._camera_state_timer.timeout.connect(self._broadcast_camera_states)
+        self._camera_state_timer.start(2000)
+        # Initial broadcast (will reach any already-subscribed viewers).
+        QTimer.singleShot(500, self._broadcast_camera_states)
+
+    def _broadcast_camera_states(self, *_):
+        try:
+            self.broadcaster.broadcast_camera_state(
+                self.camera_conn_bar.get_states())
+        except Exception as e:
+            print(f"[LiveODWindow] camera-state broadcast error: {e}")
+
+    def on_remote_camera_control(self, camera_key: str, action: str):
+        """Slot for ``LiveODServer.camera_control_signal``.
+
+        Routes the request to the matching ``CameraButton`` on the local
+        ``CamConnBar``.  Runs on the GUI thread (PyQt widget state is not
+        thread-safe), but the server already refuses CAMERA_CONTROL while a
+        run is in progress, so any blocking driver call here cannot stall
+        SHOT_COMPLETE / RESET signals during acquisition.
+        """
+        btn = self.camera_conn_bar.get_button(camera_key)
+        if btn is None:
+            self.msg(f"Remote camera control: unknown camera {camera_key!r}")
+            return
+        try:
+            if action == 'open':
+                if not btn.camera.is_opened():
+                    btn.open_camera()
+            elif action == 'close':
+                if btn.camera.is_opened():
+                    btn.close_camera()
+            else:  # toggle
+                btn.button_pressed()
+        except Exception as e:
+            self.msg(f"Remote camera control error ({camera_key}/{action}): {e}")
+        finally:
+            self._broadcast_camera_states()
 
     def update_run_id_label(self):
         try:
