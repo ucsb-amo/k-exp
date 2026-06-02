@@ -24,6 +24,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
         self.p.t_continuous_rabi = 400.e-6
 
+        self.v_pd_hf_tweezer_squeeze_power = .16
+
         # self.xvar('t_raman_pulse',[0, 8.7e-06 / 2, 8.7e-06])
 
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
@@ -39,7 +41,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('hf_imaging_detuning_mid',np.arange(-680.,-610.,10)*1.e6)
         # self.xvar('hf_imaging_detuning_mid',[-670.e6,-640.e6])
         # self.p.hf_imaging_detuning_mid = -640.e6 # -635.e6
-        self.p.hf_imaging_detuning_mid = -514.e6 # -1 --> 0
+        self.p.hf_imaging_detuning_mid = -514.5e6 # -1 --> 0
         
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         self.p.dimension_slm_mask = 20.e-6
@@ -61,12 +63,12 @@ class hf_monitored_rabi(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
-        self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning_mid)
+        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_midpoint)
         # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=True)
+        self.prepare_hf_tweezers(squeeze=False)
 
         self.raman.init(fraction_power = self.p.fraction_power_raman,
                         frequency_transition = self.p.frequency_raman_transition)

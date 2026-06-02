@@ -50,7 +50,7 @@ class ExptParams(ExptParamsWaxx):
 
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
-        self.frequency_detuned_hf_midpoint = -514.e6
+        self.frequency_detuned_hf_midpoint = -514.5e6
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
@@ -149,7 +149,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_feshbach_field_ramp_special = 20.e-3
 
         # self.t_raman_pi_pulse = 1.0483e-05 #67009, 2026-05-18
-        self.t_raman_pi_pulse = 8.4310e-06 #67681, 2026-05-26
+        self.t_raman_pi_pulse = 7.9104e-06 #68428, 2026-06-01
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -175,10 +175,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_2d_mot_current = 2.2
 
         #MOT
-        self.detune_d2_c_mot = -1.8
+        self.detune_d2_c_mot = -2.5
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -3.9
+        self.detune_d2_r_mot = -3.8
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -189,9 +189,9 @@ class ExptParams(ExptParamsWaxx):
 
         self.i_mot = 19.2
 
-        self.v_zshim_current = .5
-        self.v_xshim_current = 1.4
-        self.v_yshim_current = 2.1
+        self.v_zshim_current = .6
+        self.v_xshim_current = .0
+        self.v_yshim_current = 2.5
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -219,9 +219,9 @@ class ExptParams(ExptParamsWaxx):
         self.i_cmot = self.i_mot
         
         #GM
-        self.v_zshim_current_gm = 0.684
-        self.v_xshim_current_gm = 0.2
-        self.v_yshim_current_gm = 2.86
+        self.v_zshim_current_gm = 0.73
+        self.v_xshim_current_gm = 0.
+        self.v_yshim_current_gm = 2.1
 
         self.pfrac_d1_c_gm = .9
         self.pfrac_d1_r_gm = 0.86
@@ -240,8 +240,8 @@ class ExptParams(ExptParamsWaxx):
 
         # Discrete GM ramp
         #v_pd values for start and end of ramp
-        # self.pfrac_c_gmramp_end = .05 #0.01
-        # self.pfrac_r_gmramp_end = .764# 0.729
+        # self.pfrac_c_gmramp_end = .04 #0.01
+        # self.pfrac_r_gmramp_end = .63# 0.729
         self.n_gmramp_steps = 200
 
         # mag trap
@@ -276,9 +276,9 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lightsheet = 7.5
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         # self.v_pd_lightsheet_rampup_end = 7.3
-        self.v_pd_lightsheet_rampup_end = 6.7
+        self.v_pd_lightsheet_rampup_end = 7.
         self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = 0.8 #.65 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .86 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -297,7 +297,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.75 # 4.3
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.3
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
@@ -320,7 +320,7 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = .5
-        self.v_hf_tweezer_paint_amp_max = -2.33 # -1.6 # -1.7
+        self.v_hf_tweezer_paint_amp_max = -1.6 # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -359,14 +359,14 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.99
+        self.fraction_power_raman = 0.3
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
 
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
-        self.frequency_raman_transition = 119.4637e6 #67744
+        self.frequency_raman_transition = 119.4641e6 #67744
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
