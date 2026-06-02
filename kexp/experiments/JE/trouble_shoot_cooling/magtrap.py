@@ -44,8 +44,8 @@ class mag_trap(EnvExperiment, Base):
         
         # self.xvar('detune_d2_c_mot',np.linspace(-5.,0.,8))
         # self.xvar('detune_d2_r_mot',np.linspace(-6.,-1.,8))
-        self.p.detune_d2_r_mot = -3.8
-        self.p.detune_d2_c_mot = -2.5
+        # self.p.detune_d2_r_mot = -3.8
+        # self.p.detune_d2_c_mot = -2.5
         
         # self.xvar('i_mot',np.linspace(10.,35.,20))
         # self.p.i_mot = 20.

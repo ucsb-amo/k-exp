@@ -22,12 +22,12 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('i_hf_tweezer_load_current',[193.6, 193.7, 193.8])
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.,-1,7))
         # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end', np.linspace(4.3,5.2,11))
-        # self.p.v_pd_lightsheet_rampup_end = 6.7
-        # self.p.i_hf_tweezer_load_current = 193.7
-        # self.p.t_hf_tweezer_1064_ramp = 0.19
-        # self.p.v_pd_hf_lightsheet_rampdown_end = 0.8
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.75
-        # self.p.v_hf_tweezer_paint_amp_max = -2.33
+        self.p.v_pd_lightsheet_rampup_end = 6.7
+        self.p.i_hf_tweezer_load_current = 193.7
+        self.p.t_hf_tweezer_1064_ramp = 0.19
+        self.p.v_pd_hf_lightsheet_rampdown_end = 0.8
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.75
+        self.p.v_hf_tweezer_paint_amp_max = -2.33
 
         # self.xvar('skip_evap_ramp',[0,1])
 
@@ -61,7 +61,7 @@ class hf_bec(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
         self.imaging.set_power(self.camera_params.amp_imaging)
-        self.prepare_hf_tweezers(squeeze=True)
+        self.prepare_hf_tweezers(squeeze=False)
         # self.prep_raman()
         
         # self.raman.on()

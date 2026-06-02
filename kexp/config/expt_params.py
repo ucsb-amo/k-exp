@@ -121,7 +121,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown = 2.5e-3
+        self.t_tweezer_paint_rampdown = 0.
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
         self.t_tweezer_squeezer_ramp_2 = 20.e-3
 
@@ -149,7 +149,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_feshbach_field_ramp_special = 20.e-3
 
         # self.t_raman_pi_pulse = 1.0483e-05 #67009, 2026-05-18
-        self.t_raman_pi_pulse = 7.9104e-06 #68428, 2026-06-01
+        self.t_raman_pi_pulse = 7.4196e-06 #68660, 2026-06-02
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -175,10 +175,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_2d_mot_current = 2.2
 
         #MOT
-        self.detune_d2_c_mot = -2.5
+        self.detune_d2_c_mot = -2.2
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -3.8
+        self.detune_d2_r_mot = -4.5
         self.amp_d2_r_mot = 0.188
 
         self.detune_d1_c_mot = 0.
@@ -233,9 +233,9 @@ class ExptParams(ExptParamsWaxx):
         # self.v_xshim_current_gm = 0.4
         # self.v_yshim_current_gm = 2.
 
-        self.detune_d1_c_gm = 8. # 7.37
+        self.detune_d1_c_gm = 9.5 # 7.37
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
-        self.detune_d1_r_gm = 8.
+        self.detune_d1_r_gm = 9.5
         # self.pfrac_d1_r_gm = .99
 
         # Discrete GM ramp
@@ -297,7 +297,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.3
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.7
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
@@ -320,7 +320,7 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = .5
-        self.v_hf_tweezer_paint_amp_max = -1.6 # -1.7
+        self.v_hf_tweezer_paint_amp_max = -2. # -1.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4

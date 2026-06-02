@@ -22,7 +22,7 @@ class hf_bec(EnvExperiment, Base):
         self.p.do_405_pulse = 1
         self.p.do_980_pulse = 1
 
-        self.xvar('frequency_eo_980', np.arange(100.,170.,.33)*1.e6)
+        self.xvar('frequency_eo_980', np.arange(120.,150.,.2)*1.e6)
         # self.p.frequency_eo_980 = 139.e6
         self.p.frequency_eo_980 = 125.4e6
 
@@ -41,14 +41,26 @@ class hf_bec(EnvExperiment, Base):
 
         self.p.amp_dds_405 = 0.08
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 21
+
+        # magic numbers while JE troubleshoots, to be removed later
+        self.p.v_pd_lightsheet_rampup_end = 6.7
+        self.p.i_hf_tweezer_load_current = 193.7
+        self.p.t_hf_tweezer_1064_ramp = 0.19
+        self.p.v_pd_hf_lightsheet_rampdown_end = 0.8
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.75
+        self.p.v_hf_tweezer_paint_amp_max = -2.33
 
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
             print(f'doing 405 pulse')
+        else:
+            print(f'not doing 405 pulse')
         if self.p.do_980_pulse == 1:
             print(f'doing 980 pulse')
+        else:
+            print(f'not doing 980 pulse')
 
     @kernel
     def scan_kernel(self):
@@ -59,13 +71,12 @@ class hf_bec(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.prepare_hf_tweezers(squeeze=False)
 
-        self.ry_405.reboot()
-        self.ry_405.dds_sw.set_dds(amplitude=self.p.amp_dds_405)
-
         delay(100e-3)
 
         if self.p.do_405_pulse == 1:
-             self.ry_405.on()
+            self.ry_405.reboot()
+            self.ry_405.dds_sw.set_dds(amplitude=self.p.amp_dds_405)
+            self.ry_405.on()
         if self.p.do_980_pulse == 1:
              self.ry_980.on()
         
@@ -83,8 +94,9 @@ class hf_bec(EnvExperiment, Base):
 
         self.ry_405.off()
         self.ry_980.off()
+        self.ry_405.ttl_shutter.off()
 
-        delay(10e-3)
+        delay(40e-3)
 
         self.tweezer.off()
 

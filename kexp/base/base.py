@@ -203,9 +203,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     @kernel
     def post_scan(self):
         self.ry_980.sweep_to(reset=True)
-
+        self.tweezer.reset_awg()
+        # self.tweezer.close()
         self.core.break_realtime()
         self.background_field()
+        
 
     def end(self, expt_filepath, notify=True):
         self.end_wax(expt_filepath=expt_filepath, notify=notify)

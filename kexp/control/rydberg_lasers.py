@@ -173,6 +173,7 @@ class FixedRyDDSBeamPID():
     def reboot(self):
         self.dds_sw.set_dds(amplitude=self.dds_sw._amplitude_default)
         self.ttl_shutter.on()
+        delay(3.e-3)
 
     @kernel
     def lock_status(self):
@@ -225,8 +226,8 @@ class FiberEORyDDSBeamPID(SiglentTTLBeam):
         self._core.wait_until_mu(now_mu())
         self.siglent.fetch_state()
         frequency_shift = - self._eo_order * self.siglent._p.frequency
-        f_fzw = self._wavemeter.lock_status(frequency_shift, robust)
-        self._dc.put_data(f_fzw)
+        # f_fzw = self._wavemeter.lock_status(frequency_shift, robust)
+        # self._dc.put_data(f_fzw)
         self._core.break_realtime()
 
 # class FiberEOControlledRyDDSBeam(SiglentTTLBeam):
