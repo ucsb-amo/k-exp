@@ -88,7 +88,7 @@ class Cooling():
                           
         # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
-                                v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
+                                v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
                                 v_end=self.p.v_pd_lightsheet_rampdown3_end)
         # self.lightsheet.pid_int_zero_ttl.on()
         self.lightsheet.off()

@@ -12,11 +12,11 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,camera_select='xy_basler',
-                      save_data=True)
+                      save_data=False)
 
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
-        self.xvar('dumy',[0,1,2]*5)
+        self.xvar('dumy',[0,1,2]*500)
 
         self.p.t_magtrap_hold = .15
         
@@ -39,7 +39,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        # self.imaging.set_power(power_control_parameter=6.)
+        self.imaging.set_power(power_control_parameter=.7)
 
         if self.p.dumy == 0:
             self.mot(self.p.t_mot_load)

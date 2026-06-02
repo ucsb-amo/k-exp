@@ -24,7 +24,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
         self.p.t_continuous_rabi = 400.e-6
 
-        # self.xvar('t_raman_pulse',[0, 8.7e-06 / 2, 8.7e-06])
+        # self.xvar('t_raman_pulse',[0, 8.7e-06])
 
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
         # self.p.t_raman_pulse = 8.8699e-6
@@ -44,6 +44,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         self.p.dimension_slm_mask = 20.e-6
 
+        self.xvar('phase_slm_mask',np.linspace(0.,.5*np.pi,10))
         # self.p.phase_slm_mask = 0.371 * np.pi
         self.p.phase_slm_mask = 0.3 * np.pi
 
@@ -75,14 +76,17 @@ class hf_monitored_rabi(EnvExperiment, Base):
         delay(10.e-3)
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
-
-        # self.raman.pulse(t=24*self.p.t_raman_pi_pulse)
         
         self.ttl.pd_scope_trig3.pulse(1.e-6)
+
         self.imaging.on()
-        delay(3.e-6)
-        self.raman.pulse(t=self.p.t_continuous_rabi)
-        # delay(self.p.t_continuous_rabi)
+        delay(20.e-6)
+        self.imaging.off()
+
+        self.raman.pulse(t=self.p.t_raman_pi_pulse)
+
+        self.imaging.on()
+        delay(20.e-6)
         self.imaging.off()
 
         self.ttl.raman_shutter.off()
