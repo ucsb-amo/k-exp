@@ -6,3 +6,5 @@
 *.mdb-lock
 *.gif
 *.PKL
+kexp/util/.DS_Store
+.DS_Store
