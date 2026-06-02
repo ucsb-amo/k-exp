@@ -61,8 +61,8 @@ class dds_frame(dds_frame_waxx):
                                     dac_ch_vpd = self._dac_frame.v_pd_tweezer_pid2.ch,
                                     default_amp = self.p.amp_tweezer_pid2)
         self.ry_405_sw = self.dds_assign(1,1,
-                                    default_freq = 287.4e6,
-                                    default_amp = 0.08,
+                                    default_freq = 130.0e6,
+                                    default_amp = 0.145,
                                     ao_order = 1)
         
         self.d2_3d_c = self.dds_assign(1,2, ao_order = -1, transition = 'D2',
@@ -81,9 +81,9 @@ class dds_frame(dds_frame_waxx):
         self.d2_2dv_c = self.dds_assign(2,2, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2v_c_2dmot,
                                     default_amp = self.p.amp_d2v_c_2dmot)
-        self.d2_2dh_r = self.dds_assign(2,3, ao_order = 1, transition = 'D2',
-                                    default_detuning = self.p.detune_d2h_r_2dmot,
-                                    default_amp = self.p.amp_d2h_r_2dmot)
+        self.raman_150_plus = self.dds_assign(2,3, ao_order = 1,
+                                    default_freq = 150.e6,
+                                    default_amp = 0.324)
         
         self.d2_2dh_c = self.dds_assign(3,0, ao_order = -1, transition = 'D2',
                                     default_detuning = self.p.detune_d2h_c_2dmot,
@@ -125,8 +125,9 @@ class dds_frame(dds_frame_waxx):
                                         ao_order=1,
                                         default_freq=100.e6,
                                         default_amp=0.3)
-        self.raman_150_plus = self.dds_assign(5,3, ao_order = 1,
-                                    default_freq = 150.e6,
-                                    default_amp = 0.324)
+        self.d2_2dh_r = self.dds_assign(5,3, ao_order = 1, transition = 'D2',
+                                    default_detuning = self.p.detune_d2h_r_2dmot,
+                                    default_amp = self.p.amp_d2h_r_2dmot)
+        
         
         self.cleanup()

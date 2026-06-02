@@ -1,0 +1,51 @@
+
+
+        # self.p.frequency_lightshift = 3.43e+04  # Hz, for imaging amp 0.2
+
+        # self.p.amp_imaging = 0.2
+        # self.p.t_img_pulse = 10.e-6
+        # self.p.frequency_lightshift = 3.43e+04  # Hz, for imaging amp 0.2
+        # self.xvar('frequency_lightshift', self.p.frequency_lightshift * np.linspace(.7,1.3,5))
+
+        # 66177, amp imaging = 0.2, t_pci_pulse = 3.00e-06 µs 
+        # self.p.v_apd_all_up = -0.189459375
+        # self.p.v_apd_all_down = -0.21777812500000002
+
+
+        # 66121, amp imaging = 0.2, t_pci_pulse = 5.00e-06 µs 
+        # self.p.v_apd_all_up = -0.15910937500000003
+        # self.p.v_apd_all_down = -0.221565625
+
+        # 66183, amp imaging = 0.2, t_pci_pulse = 8.00e-06 µs 
+        # self.p.v_apd_all_up = -0.12293125
+        # self.p.v_apd_all_down = -0.22101874999999999
+
+        # 66173 10 us pulse at .2 img amp
+        # self.p.v_apd_all_up = -0.09701562500000001
+        # self.p.v_apd_all_down = -0.22722187500000005
+
+        # 66201, amp imaging = 0.2, t_pci_pulse = 1.20e-05 µs 
+        # self.p.v_apd_all_up = -0.07627500000000001
+        # self.p.v_apd_all_down = -0.22460937500000006
+
+        # 3 us pulse at .2 img amp
+        # self.p.n_photons_per_shot = 751.
+        # self.p.n_std_photons_per_shot = 53.
+        
+        # 5 us pulse at .2 img amp
+        # self.p.n_photons_per_shot = 1252
+        # self.p.n_std_photons_per_shot = 89
+
+        # 8 us pulse at .2 img amp
+        # self.p.n_photons_per_shot = 2000
+        # self.p.n_std_photons_per_shot = 153
+
+        # 10 us pulse at .2 img amp
+        # self.p.n_photons_per_shot = 2500
+        # self.p.n_std_photons_per_shot = 193
+
+        # 12 us pulse at .2 img amp
+        # self.p.n_photons_per_shot = 3000
+        # self.p.n_std_photons_per_shot = 233
+
+        

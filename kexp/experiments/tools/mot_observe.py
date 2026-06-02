@@ -7,7 +7,8 @@ import numpy as np
 class mot_observe(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self, setup_camera = False)
+        Base.__init__(self,
+                      suppress_live_od=True)
         self.finish_prepare()
 
     @kernel
@@ -22,5 +23,5 @@ class mot_observe(EnvExperiment, Base):
     def analyze(self):
         import os
         expt_filepath = os.path.abspath(__file__)
-        self.end(expt_filepath)
+        self.end(expt_filepath, notify=False)
         print("Done!")

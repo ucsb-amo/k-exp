@@ -1,4 +1,5 @@
 from PyQt6 import QtCore
+from PyQt6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 import pyqtgraph as pg
 from random import randint
 import sympy as sympy
@@ -42,6 +43,8 @@ from email.mime.text import MIMEText
 #import space
 
 from kexp import EthernetRelay
+from kexp.config.ip import INTERLOCK_EMAIL_CREDENTIALS_FILEPATH
+from waxx.util.notifications import _load_credentials
 
 # You need one (and only one) QApplication instance per application.
 # Pass in sys.argv to allow command line arguments for your app.
@@ -57,7 +60,14 @@ class MainWindow(QMainWindow):
 
         self._ethernet_relay = EthernetRelay()
         self._ethernet_relay.enable_magnets()
+
+        # Load Gmail credentials from a shared-drive file so secrets aren't
+        # committed to a public repo.
+        self._email_address, self._email_password = _load_credentials(
+            INTERLOCK_EMAIL_CREDENTIALS_FILEPATH
+        )
         self.setWindowTitle("Interlock GUI")
+        self.setWindowIcon(self._create_no_symbol_icon())
         # button = QPushButton("RESET INTERLOCK!")
         # button.setCheckable(True)
         # button.clicked.connect(self.the_button_was_clicked)
@@ -185,6 +195,27 @@ class MainWindow(QMainWindow):
         # Set the central widget of the Window. Widget will expand
         # to take up all the space in the window by default.
         self.setCentralWidget(widget)
+
+    def _create_no_symbol_icon(self):
+        pixmap = QPixmap(128, 128)
+        pixmap.fill(QtCore.Qt.GlobalColor.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        red = QColor(210, 0, 0)
+        ring_pen = QPen(red, 14)
+        ring_pen.setCapStyle(QtCore.Qt.PenCapStyle.RoundCap)
+        painter.setPen(ring_pen)
+        painter.drawEllipse(14, 14, 100, 100)
+
+        slash_pen = QPen(red, 14)
+        slash_pen.setCapStyle(QtCore.Qt.PenCapStyle.RoundCap)
+        painter.setPen(slash_pen)
+        painter.drawLine(34, 94, 94, 34)
+
+        painter.end()
+        return QIcon(pixmap)
 
     def kill_magnets_persistent(self):
         while True:
@@ -372,49 +403,32 @@ class MainWindow(QMainWindow):
         self.button.setEnabled(False)
         self.button.clicked.disconnect(self.the_button_was_clicked)
 
-    def send_email_tripped(self):
-        # # Create a MIME object
+    def _send_email(self, subject, body,
+                    recipient='infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'):
         msg = MIMEMultipart()
-        msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
-        msg['To'] = 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'
-        msg['Subject'] = 'K-Interlock Tripped'
-        # Attach the message to the MIME object
-        msg.attach(MIMEText('K-Interlock tripped due to too high temperature, too low flowrate or loss of power!', 'plain'))
-        
-        # Set up the SMTP server
+        msg['From'] = self._email_address
+        msg['To'] = recipient
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
         server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
-        server.login('harry.who.is.ultra.cold@gmail.com', 'dvlw elsd mhqb mzfo')
-        
-        # Send the email
-        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
-        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
-
-        # Close the server connection
-        server.quit()   
-        print("Email sent successfully!")
-
-    def send_email_check(self):
-        # # Create a MIME object
-        msg = MIMEMultipart()
-        msg['From'] = 'harry.who.is.ultra.cold@gmail.com'
-        msg['To'] = 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'
-        msg['Subject'] = 'K-Interlock Lost connection with Kong'
-        # Attach the message to the MIME object
-        msg.attach(MIMEText('K Interlock has lost connection with kong -- check', 'plain'))
-        
-        # Set up the SMTP server
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()  # Upgrade the connection to a secure encrypted SSL/TLS connection
-        server.login('harry.who.is.ultra.cold@gmail.com', 'dvlw elsd mhqb mzfo')
-        
-        # Send the email
-        server.sendmail('harry.who.is.ultra.cold@gmail.com', 'infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com', msg.as_string())
-        # server.sendmail('harry.who.is.ultra.cold@gmail.com', 'jackkingdon@ucsb.edu', msg.as_string())
-
-        # Close the server connection
+        server.starttls()
+        server.login(self._email_address, self._email_password)
+        server.sendmail(self._email_address, recipient, msg.as_string())
         server.quit()
         print("Email sent successfully!")
+
+    def send_email_tripped(self):
+        self._send_email(
+            'K-Interlock Tripped',
+            'K-Interlock tripped due to too high temperature, too low flowrate or loss of power!',
+        )
+
+    def send_email_check(self):
+        self._send_email(
+            'K-Interlock Lost connection with Kong',
+            'K Interlock has lost connection with kong -- check',
+        )
 
     def save_to_csv(self):
         import os
@@ -430,6 +444,8 @@ class MainWindow(QMainWindow):
 
         print(f"Data saved to {filename}")
 
+import ctypes
+ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.interlock')
 app = QApplication(sys.argv)
 
 # Create a Qt widget, which will be our window.

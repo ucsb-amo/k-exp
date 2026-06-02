@@ -25,13 +25,12 @@ class lz_sweep_transition_find(EnvExperiment, Base):
         df = self.p.frequency_raman_zeeman_state_xfer_sweep_fullwidth
 
         self.p.frequency_raman_transition = f_f1m1_f10[0]*1.e6
-        self.p.fraction_power_raman = 0.5
+        # self.p.t_raman_pi_pulse_f1m1_f10 = # 
         
-        self.xvar('t_raman_pulse',np.linspace(0.,500.,150)*1.e-6)
+        self.xvar('t_raman_pulse',np.linspace(100.,150.,15)*1.e-6)
 
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 3
-
+        self.p.N_repeats = 1
         self.camera_params.gain = 300
 
         self.finish_prepare(shuffle=True)
@@ -47,6 +46,10 @@ class lz_sweep_transition_find(EnvExperiment, Base):
         self.prep_raman()
 
         self.raman.pulse(self.p.t_raman_pulse)
+
+        # self.raman.pulse(self.p.t_raman_pi_pulse_f1m1_f10/2)
+        # delay(self.p.t_ramsey)
+        # self.raman.pulse(self.p.t_raman_pi_pulse_f1m1_f10/2)
 
         self.ttl.raman_shutter.off()
 

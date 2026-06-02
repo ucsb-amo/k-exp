@@ -9,13 +9,13 @@ from PyQt6.QtWidgets import (
     QSizePolicy, QMessageBox, QComboBox, QDoubleSpinBox
 )
 from PyQt6.QtCore import Qt, QSize, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor, QIcon
+from PyQt6.QtGui import QColor, QIcon, QFont, QFontMetrics
 
 import vxi11
 import time
 
 T_UPDATE_MS = 500
-FONTSIZE_PT = 18
+FONTSIZE_PT = 14
 
 class status_decoder():
     def __init__(self):
@@ -46,18 +46,57 @@ class status_decoder():
         return err_str
 
 # one of these per current supply
+ALERT_THRESHOLDS = {500: 100, 170: 50}
+
+class ResilientInstrument:
+    """vxi11.Instrument wrapper that marks .connected = False on any comm error."""
+    def __init__(self, ip):
+        self._instr = vxi11.Instrument(ip)  # raises on failure; caller handles
+        self.connected = True
+
+    def write(self, cmd):
+        try:
+            self._instr.write(cmd)
+        except Exception:
+            self.connected = False
+            raise
+
+    def ask(self, cmd):
+        try:
+            return self._instr.ask(cmd)
+        except Exception:
+            self.connected = False
+            raise
+
+    def close(self):
+        try:
+            self._instr.close()
+        except Exception:
+            pass
+
 class current_supply_widget(QWidget):
     def __init__(self,ip:str,max_current:int):
         super().__init__()
         self.ip = ip
         self.max_current = max_current
-        self.supply = vxi11.Instrument(ip)
+        self.alert_threshold = ALERT_THRESHOLDS.get(max_current, None)
         self.status = 0
         self.err_str = ""
-        self.init_device()
+        self.connected = False
+        self.output_on = True
+        self.supply = None
+        self.status_decoder = status_decoder()
+        self._try_connect()
         self.init_UI()
 
-        self.status_decoder = status_decoder()
+    def _try_connect(self):
+        try:
+            self.supply = ResilientInstrument(self.ip)
+            self.init_device()
+            self.connected = True
+        except Exception as e:
+            print(f'Connection to {self.ip} failed: {e}')
+            self.connected = False
 
     def init_device(self):
         # make sure the device is set up to listen to its inhibit pin
@@ -68,6 +107,12 @@ class current_supply_widget(QWidget):
         v = self.supply.ask(":MEASure:CURRent:DC?")
         # convert it value to a number since it's a nasty string
         return float(v)
+
+    def read_output_state(self):
+        return bool(int(self.supply.ask("OUTP?")))
+
+    def set_output_on(self):
+        self.supply.write("OUTP ON")
     
     def read_status(self):
         self.status = int(self.supply.ask("STAT:QUES:COND?"))
@@ -75,17 +120,63 @@ class current_supply_widget(QWidget):
     def clear_protect_status(self):
         self.supply.write("OUTP:PROT:CLE")
         self.status = 0
+
+    def close(self):
+        if self.supply is not None:
+            self.supply.close()
+
+    def handle_click(self):
+        if not self.connected:
+            self._try_connect()
+        elif not self.output_on:
+            try:
+                self.set_output_on()
+                self.output_on = True
+            except Exception:
+                self.connected = self.supply.connected
+        else:
+            try:
+                self.clear_protect_status()
+            except Exception:
+                self.connected = self.supply.connected
+        self.update_UI()
     
     def update_UI(self):
-        if not self.status:
-            self.read_status()
-            current = self.read_current()
-            # set the value text of our box (see "init_UI") to the new current
-            # the "1.4f" formats the number to a string as with 4 decimal places (f for "float")
-            self.value_label.setText(f"{current:1.4f}  A")
-        else:
-            self.err_str = self.status_decoder.decode_status(self.status)
-            self.value_label.setText(f"{self.err_str}")
+        if not self.connected:
+            self.value_label.setText("CXN_ERR")
+            self.value_label.setStyleSheet(
+                f"font-weight: bold; font-size: {FONTSIZE_PT}pt; text-align: right; padding-right: 10px; background-color: orange;"
+            )
+            return
+
+        alert = False
+        try:
+            if not self.status:
+                self.read_status()
+                self.output_on = self.read_output_state()
+                if not self.output_on:
+                    self.value_label.setText("OFF")
+                    self.value_label.setStyleSheet(
+                        f"font-weight: bold; font-size: {FONTSIZE_PT}pt; text-align: right; padding-right: 10px; background-color: orange;"
+                    )
+                    return
+                current = self.read_current()
+                self.value_label.setText(f"{current:1.2f} A")
+                if self.alert_threshold is not None and current > self.alert_threshold:
+                    alert = True
+            else:
+                self.err_str = self.status_decoder.decode_status(self.status)
+                self.value_label.setText(f"{self.err_str}")
+        except Exception as e:
+            print(f'Communication error with {self.ip}: {e}')
+            self.connected = self.supply.connected
+            self.update_UI()
+            return
+
+        bg_color = "red" if alert else ""
+        self.value_label.setStyleSheet(
+            f"font-weight: bold; font-size: {FONTSIZE_PT}pt; text-align: right; padding-right: 10px; background-color: {bg_color};"
+        )
 
         if 'UNR' in self.err_str:
             self.clear_protect_status()
@@ -95,8 +186,14 @@ class current_supply_widget(QWidget):
         # this one gets "self" (is an attribute) since I'll need to update it
         # later when I check the current value
         self.value_label = QPushButton("")
-        self.value_label.clicked.connect(self.clear_protect_status)
+        self.value_label.clicked.connect(self.handle_click)
         self.value_label.setStyleSheet("font-weight: bold; font-size: {FONTSIZE_PT}pt; text-align: right; padding-right: 10px;")
+        _font = QFont()
+        _font.setPointSize(FONTSIZE_PT)
+        _font.setBold(True)
+        _fm = QFontMetrics(_font)
+        _fixed_width = _fm.horizontalAdvance("000.00 A") + 20  # +20 for button padding
+        self.value_label.setFixedWidth(_fixed_width)
 
         # these ones will remain the same forever so I just name them here and
         # don't bother to save them as an attribute (since I don't need to
@@ -148,13 +245,24 @@ class Window(QWidget):
     def update_UI(self):
         for supply_UI in self.supply_UIs:
             supply_UI.update_UI()
+
+    def closeEvent(self, event):
+        self.timer.stop()
+        for supply_UI in self.supply_UIs:
+            supply_UI.close()
+        event.accept()
     
 def main():
+    
+    import atexit
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.keysight_monitor')
     app = QApplication(sys.argv)
 
     app.setStyle("Windows") # fun formatting
 
     window = Window()
+    atexit.register(lambda: [s.close() for s in window.supply_UIs])
     window.setLayout(window.layout)
     window.setWindowTitle("Keysight PSU Monitor")
     window.setWindowIcon(QIcon('banana-icon.png'))

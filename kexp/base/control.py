@@ -1,7 +1,7 @@
 import numpy as np
 
 from artiq.experiment import *
-from artiq.experiment import delay, delay_mu, parallel, sequential
+from artiq.experiment import delay, delay_mu, parallel, sequential, at_mu
 from artiq.language.core import now_mu
 from waxx.control.artiq.dummy_core import DummyCore
 
@@ -21,8 +21,6 @@ from waxx.control.misc.oscilloscopes import ScopeData
 
 dv = -0.1
 dvlist = np.linspace(1.,1.,5)
-
-from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2, tweezer_vpd2_to_vpd1
 
 class Control():
     def __init__(self):
@@ -45,6 +43,31 @@ class Control():
         self.p = self.params
 
     @kernel
+    def warmup_ry(self):
+        self.ry_980.on()
+        self.ry_405.on()
+        delay(100.e-3)
+        self.ry_405.off()
+        self.ry_980.off()
+
+    @kernel
+    def integrated_imaging_pulse(self, data_container, t, idx=0,
+                                dark=False):
+        T_CONV_MU = 80
+        self.integrator.begin_integrate(reset=False)
+        if dark:
+            delay(t)
+        else:
+            self.imaging.pulse(t)
+        self.integrator.stop_and_settle()
+        t0 = now_mu()
+        # start the clear after the integrator voltage will already be in the sampler
+        at_mu(t0 + T_CONV_MU)
+        self.integrator.clear(t=0)
+        at_mu(t0)
+        data_container.put_data(self.integrator.sample(), idx)
+
+    @kernel
     def tof_apd_abs_image(self):
 
         self.tweezer.off()
@@ -54,7 +77,7 @@ class Control():
         dc = self.data.post_shot_absorption
 
         self.integrated_imaging_pulse(dc,t,0)
-        delay(1.e-6)
+        delay(3.e-6)
         self.raman.pulse(self.p.t_raman_pi_pulse)
         delay(2.e-6)
         self.integrated_imaging_pulse(dc,t,1)
@@ -62,34 +85,6 @@ class Control():
         self.integrated_imaging_pulse(dc,t,2)
         delay(10.e-6)
         self.integrated_imaging_pulse(dc,t,3,dark=True)
-
-    @kernel
-    def integrated_imaging_pulse(self,data_container,t=dv,idx=0,dark=False):
-        if t == dv:
-            t = self.p.t_imaging_pulse_apd_abs
-        self.integrator.begin_integrate()
-        if dark:
-            delay(t)
-        else:
-            self.imaging.pulse(t)
-        data_container.shot_data[idx] = self.integrator.stop_and_sample()
-        self.integrator.clear()
-
-    @kernel
-    def tweezer_squeeze(self, cubic_ramp=True):
-        self.tweezer.paint_amp_dac.set(-7.)
-        
-        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
-                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                          v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
-                          low_power=True, paint=False, keep_trap_frequency_constant=False,
-                          cubic_ramp=cubic_ramp)
-
-        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
-                          v_start=tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
-                          v_end=self.p.v_pd_hf_tweezer_squeeze_power,
-                          paint=False,keep_trap_frequency_constant=False,
-                          cubic_ramp=cubic_ramp)
         
     @kernel
     def reset_tweezers(self, two_d_tweezers):
@@ -100,7 +95,7 @@ class Control():
                                                     amp_list1=self.params.amp_tweezer_list1,
                                                     amp_list2=self.params.amp_tweezer_list2)
             self.tweezer.reset_traps(self.xvarnames)
-            delay(100.e-3)
+            delay(15.e-3)
             self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
         
         self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
@@ -150,15 +145,32 @@ class Control():
         self.core.break_realtime()
 
     @kernel
-    def prep_raman(self, frequency_raman = dv):
+    def prep_raman(self,
+            frequency_transition=dv,
+            fraction_power=dv,
+            global_phase=0.,relative_phase=0.,
+            t_phase_origin_mu=np.int64(-1),
+            phase_mode=1,
+            line_trigger=True):
         
-        if frequency_raman == dv:
-            frequency_raman = self.p.frequency_raman_transition
-
-        self.raman.init(frequency_transition = frequency_raman, 
-                        fraction_power = self.params.fraction_power_raman)
+        if frequency_transition == dv:
+            frequency_transition = self.p.frequency_raman_transition
+        if fraction_power == dv:
+            fraction_power = self.p.fraction_power_raman
+            
+        self.raman.init(frequency_transition,
+                        fraction_power,
+                        global_phase,
+                        relative_phase,
+                        t_phase_origin_mu,
+                        phase_mode)
         
         self.ttl.raman_shutter.on()
-        delay(10.e-3)
+        delay(3.e-3)
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
+        if phase_mode == 1:
+            self.raman.set_phase(t_phase_origin_mu=now_mu())
+        
+
+        

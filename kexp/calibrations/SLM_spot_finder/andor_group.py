@@ -95,6 +95,8 @@ def apply_camera_params(camera, DummyCameraCls, worker, exposure_s: float, gain:
         except Exception:
             pass
 
+    print(camera.__class__.__name__)
+
     ok = True
     msgs = []
 

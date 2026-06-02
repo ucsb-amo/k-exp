@@ -1,18 +1,20 @@
+import os
+
 from waxx.util.guis.precilaser.precilaser_server import main as run_precilaser_server
 
 from kexp.config.ip import (
+    DATA_DIR,
     PRECILASER_COM,
-    PRECILASER_SERVER_IP,
-    PRECILASER_SERVER_PORT,
 )
+
+_LOG_PATH = os.path.join(DATA_DIR, "_logs", "precilaser_server.log") if DATA_DIR else None
 
 
 def main() -> None:
     """Launch the standalone Precilaser hardware server."""
     run_precilaser_server(
-        host=PRECILASER_SERVER_IP,
-        port=PRECILASER_SERVER_PORT,
         serial_port=PRECILASER_COM,
+        log_path=_LOG_PATH,
     )
 
 

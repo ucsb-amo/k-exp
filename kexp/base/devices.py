@@ -7,6 +7,7 @@ from artiq.coredevice.core import Core
 from artiq.coredevice.zotino import Zotino
 from artiq.coredevice.dma import CoreDMA
 from artiq.coredevice.grabber import Grabber
+from artiq.coredevice import urukul
 
 from kexp.config.expt_params import ExptParams
 
@@ -28,12 +29,14 @@ from kexp.config.shuttler_id import shuttler_frame
 from kexp.config.sampler_id import sampler_frame
 from kexp.config.siglent_id import siglent_frame
 from kexp.config.ip import DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR
+from kexp.config.wavemeter_id import fzw_frame
+from kexp.config.data_vault import DataVault, DataContainer
 
 from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
 from kexp.control.awg_tweezer import tweezer
 from kexp.control.doubled_rf import doubled_rf
-from kexp.control.rydberg_lasers import RydbergLasers, CavityAOControlledRyDDSBeam, FiberEOControlledRyDDSBeam
+from kexp.control.rydberg_lasers import FixedRyDDSBeamPID, FiberEORyDDSBeamPID
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
@@ -47,6 +50,19 @@ from waxx.util.artiq.async_print import aprint
 from kexp.base.cameras import img_config
 
 class Devices():
+    def __init__(self):
+        # just to get syntax highlighting
+        self.dds = dds_frame()
+        self.ttl = ttl_frame()
+        self.dac = dac_frame()
+        self.inner_coil = hbridge_magnet()
+        self.outer_coil = igbt_magnet()
+        self.tweezer = tweezer()
+        self.lightsheet = lightsheet()
+        self.params = ExptParams()
+        self.raman = RamanBeamPair()
+        self.data = DataVault()
+        self.p = self.params
 
     def prepare_devices(self,expt_params:ExptParams=d_exptparams):
         # for syntax highlighting
@@ -89,7 +105,7 @@ class Devices():
         # self.dds.dds_manager = [DDSManager(self.core)]
         self.get_dds_devices()
         self.dds_list = self.dds.dds_list
-
+        
         self.rf = doubled_rf(dds_ch=self.dds.antenna_rf, expt_params=self.params)
 
         # magnet coils
@@ -165,23 +181,26 @@ class Devices():
 
         self.siglent = siglent_frame(self.core)
 
-        self.ry_405 = CavityAOControlledRyDDSBeam(
-                            siglent_ch=self.siglent.siglent_405,
+        self._fzw = fzw_frame()
+
+        self.ry_405 = FixedRyDDSBeamPID(
                             dds_sw=self.dds.ry_405_sw,
-                            ao_order_cavity=1,
-                            ao_order_pid=-1,
-                            frequency_pid_ao=80.e6)
+                            dac_pid=self.dac.ry_405_intensity_control,
+                            ttl_shutter=self.ttl.ry_405_shutter,
+                            wavemeter=self._fzw.ry_405,
+                            lock_data_container=self.data.lock_status_405,
+                            core=self.core
+                            )
         
-        self.ry_980 = FiberEOControlledRyDDSBeam(
+        self.ry_980 = FiberEORyDDSBeamPID(
             siglent_ch=self.siglent.siglent_980,
-            eo_order_sideband=-1,
             ttl_ao_sw=self.ttl.ry_980_sw,
-            ao_order_cavity=1,
-            frequency_cavity_ao=80.e6,
-            ao_order_sw=-1,
-            frequency_sw_ao=80.e6,
-            ao_order_pid=1,
-            frequency_pid_ao=80.e6)
+            dac_pid=self.dac.ry_980_intensity_control,
+            eo_sideband_order=-1,
+            wavemeter=self._fzw.ry_980,
+            lock_data_container=self.data.lock_status_980,
+            core=self.core
+            )
         
         # self.reference_arm_waveplate_pid = WaveplateRotatorPhotodiodePID(
         #     kinesis_device_id = DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR,
@@ -246,9 +265,8 @@ class Devices():
     def set_all_dds(self):
         for dds in self.dds.dds_list:
             dds.set_dds(init=True)
-            dds.dds_device.set_att(0. * dB)
             delay(5.e-6)
-
+            
     @kernel
     def switch_all_dds(self,state):
         for dds in self.dds.dds_list:
@@ -262,15 +280,19 @@ class Devices():
     def init_all_dds(self):
         for dds in self.dds.dds_list:
             dds.dds_device.init()
-            delay(10*us)
-
+            dds._store_io_update_delay()
+            delay(10.e-6)
+            
+        
     @kernel
     def init_all_cpld(self):
         for ddss in self.dds.dds_array:
             ddss[0].cpld_device.init()
-            delay(10*us)
+            delay(1e-3)
+        for dds in self.dds.dds_list:
+            dds.dds_device.set_att(0.*dB)
 
-    def shutdown_sources(self):
-        from kexp import EthernetRelay
-        relay = EthernetRelay()
-        relay.source_off()
+    # def shutdown_sources(self):
+    #     from kexp import EthernetRelay
+    #     relay = EthernetRelay()
+    #     relay.source_off()

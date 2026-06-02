@@ -5,6 +5,7 @@ from queue import Queue
 
 class Analyzer(QThread):
     analyzed = pyqtSignal()
+    broadcast_signal = pyqtSignal(object)   # emits plot_data tuple for LiveODBroadcaster
     def __init__(self, plotting_queue: Queue, viewer=None):
         super().__init__()
         # self.atom = Potassium39()
@@ -50,7 +51,9 @@ class Analyzer(QThread):
         self.sum_od_y = cropped_sum_od_y
         
         self.analyzed.emit()
-        self.plotting_queue.put((self.img_atoms, self.img_light, self.img_dark, self.od, self.sum_od_x, self.sum_od_y))
+        plot_data = (self.img_atoms, self.img_light, self.img_dark, self.od, self.sum_od_x, self.sum_od_y)
+        self.plotting_queue.put(plot_data)
+        self.broadcast_signal.emit(plot_data)
         
     def crop_od_to_view_range(self, od):
         """

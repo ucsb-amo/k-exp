@@ -1,4 +1,4 @@
-import time
+﻿import time
 import numpy as np
 import os
 import names
@@ -24,103 +24,67 @@ def nothing():
     pass
 
 class CameraMother(QThread):
-    
-    new_camera_baby = pyqtSignal(str,str)
+    """Legacy stub kept for import compatibility.
 
-    def __init__(self,output_queue:Queue=None,start_watching=True,
-                 manage_babies=True,N_runs:int=None,
+    File-watching has been removed.  Run spawning is now driven by
+    ``LiveODServer.new_run_signal`` → ``LiveODWindow.spawn_baby``.
+    """
+
+    new_camera_baby = pyqtSignal(str, str)
+
+    def __init__(self, output_queue: Queue = None, start_watching=False,
+                 manage_babies=False, N_runs: int = None,
                  camera_nanny=CameraNanny(),
                  server_talk=None):
         super().__init__()
 
-        if server_talk == None:
+        if server_talk is None:
             self.server_talk = st()
         else:
             self.server_talk = server_talk
         self.server_talk: st
 
-        self.latest_file = ""
-
-        if N_runs == None:
-            self.N_runs = - 1
-        else:
-            self.N_runs = N_runs
-
-        if not output_queue:
-            self.output_queue = output_queue
-        else:
-            self.output_queue = Queue()
-
-        if start_watching:
-            self.watch_for_new_file(manage_babies)
-        else:
-            pass
-
         self.camera_nanny = camera_nanny
 
-    def run(self):
-        self.watch_for_new_file()
-
-    def watch_for_new_file(self,manage_babies=False):
-        new_file_bool = False
-        attempts = -1
-        print("\nMother is watching...\n")
-        count = 0
-        while True:
-            new_file_bool, latest_file, run_id = self.check_files()
-            if new_file_bool:
-                count += 1
-                file, name = self.new_file(latest_file, run_id)
-                self.new_camera_baby.emit(file, name)
-                self.handle_baby_creation(file, name, manage_babies)
-            if count == self.N_runs:
-                break
-            self.file_checking_timer(attempts)
-            
-    def file_checking_timer(self,attempts):
-        attempts += 1
-        time.sleep(CHECK_DELAY)
-        if attempts == UPDATE_EVERY:
-            attempts = 0
-            print("No new file found.")
-
-    def handle_baby_creation(self, file, name, manage_babies):
-        if manage_babies:
-            self.data_writer = DataHandler(self.output_queue,data_filepath=file)
-            self.baby = CameraBaby(file,name,self.output_queue,self.camera_nanny)
-            self.baby.image_captured.connect(self.data_writer.start)
-            self.baby.run()
-            print("Mother is watching...")
-
-    def check_files(self):
-        latest_file = self.server_talk.get_latest_data_file()
-        new_file_bool, run_id = self.check_if_file_new(latest_file)
-        return new_file_bool, latest_file, run_id
-    
-    def check_if_file_new(self,latest_filepath):
-        if latest_filepath != self.latest_file:
-            rid = self.server_talk.run_id_from_filepath(latest_filepath)
-            if rid == self.server_talk.get_run_id():
-                new_file_bool = True
-                self.latest_file = latest_filepath
-            else:
-                new_file_bool = False
+        if not output_queue:
+            self.output_queue = Queue()
         else:
-            new_file_bool = False
-            rid = None
-        return new_file_bool, rid
+            self.output_queue = output_queue
 
-    def new_file(self,file,run_id):
-        name = names.get_first_name()
-        print(f"New file found! Run ID {run_id}. Welcome to the world, little {name}...")
-        return file, name
+    def run(self):
+        # No-op: file-watching has been removed.
+        pass
 
-class DataHandler(QThread,Scribe):
+class DataHandler(QThread, Scribe):
     got_image_from_queue = pyqtSignal(np.ndarray)
     save_data_bool_signal = pyqtSignal(int)
     image_type_signal = pyqtSignal(bool)
+    done_writing_signal = pyqtSignal()   # emitted after HDF5 handle is closed (or immediately when save_data=False)
 
-    def __init__(self,queue:Queue,data_filepath):
+    def __init__(self, queue: Queue, data_filepath: str,
+                 save_data=None, imaging_type=None, camera_key="",
+                 camera_params=None,
+                 params_payload=None,
+                 run_info_payload=None,
+                 n_img=None, n_shots=None, n_pwa_per_shot=None):
+        """Create a DataHandler.
+
+        Parameters
+        ----------
+        queue:
+            Image queue shared with CameraBaby.
+        data_filepath:
+            Path to the HDF5 file.  Pass ``""`` when ``save_data=False``.
+        save_data:
+            Pre-populate ``self.save_data`` so no HDF5 read is needed.
+            If *None* the value will be read from the HDF5 in
+            ``read_params()`` (legacy behaviour).
+        imaging_type:
+            Pre-populate ``run_info.imaging_type``.  *None* ⟹ read from HDF5.
+        camera_key:
+            Camera key string (e.g. ``'xy_basler'``) used to look up
+            ``camera_params`` when no HDF5 file exists (``save_data=False``).
+        """
         self.data_filepath = data_filepath
         super().__init__()
         self.queue = queue
@@ -132,11 +96,37 @@ class DataHandler(QThread,Scribe):
         self.camera_params = CameraParams()
         self.run_info = RunInfo()
         self.interrupted = False
+        self._camera_key_hint = ""
 
-    def get_save_data_bool(self,save_data_bool):
+        # Pre-populate from constructor arguments so HDF5 reads are
+        # optional (required when save_data=False / no file exists).
+        if save_data is not None:
+            self.save_data = bool(save_data)
+            self.run_info.save_data = int(bool(save_data))
+        if imaging_type is not None:
+            self.run_info.imaging_type = imaging_type
+        if camera_key:
+            self._camera_key_hint = camera_key
+
+        self._camera_params_payload = None
+        if camera_params:
+            self._camera_params_payload = camera_params
+        self._params_payload = params_payload or {}
+        self._run_info_payload = run_info_payload or {}
+
+        # Pre-populate image count params when provided (critical for
+        # save_data=False runs where read_params() skips the HDF5 read).
+        if n_img is not None:
+            self.params.N_img = int(n_img)
+        if n_shots is not None:
+            self.params.N_shots = int(n_shots)
+        if n_pwa_per_shot is not None:
+            self.params.N_pwa_per_shot = int(n_pwa_per_shot)
+
+    def get_save_data_bool(self, save_data_bool):
         self.save_data = save_data_bool
 
-    def get_img_number(self,N_img,N_shots,N_pwa_per_shot):
+    def get_img_number(self, N_img, N_shots, N_pwa_per_shot):
         self.N_img = N_img
         self.N_shots = N_shots
         self.N_pwa_per_shot = N_pwa_per_shot
@@ -147,18 +137,76 @@ class DataHandler(QThread,Scribe):
         self.write_image_to_dataset()
 
     def read_params(self):
-        with self.wait_for_data_available() as f:
-            unpack_group(f,'camera_params',self.camera_params)
-            unpack_group(f,'params',self.params)
-            unpack_group(f,'run_info',self.run_info)
+        """Populate camera/run-info attrs, then emit configuration signals.
+
+        All three groups (camera_params, params, run_info) are taken directly
+        from the in-memory payloads sent by the experiment client, bypassing
+        the HDF5 file entirely.  This eliminates the race where the DataHandler
+        opens the file before the background file-creation thread has finished
+        writing a group.
+
+        Falls back to reading from HDF5 only when no payload is available
+        (legacy path).
+        """
+        have_payload = bool(
+            getattr(self, '_camera_params_payload', None)
+            or getattr(self, '_params_payload', None)
+            or getattr(self, '_run_info_payload', None)
+        )
+
+        if not have_payload and getattr(self, 'save_data', True) and self.data_filepath:
+            # Legacy path: no in-memory state — read everything from HDF5.
+            with self.wait_for_data_available() as f:
+                unpack_group(f, 'camera_params', self.camera_params)
+                unpack_group(f, 'params', self.params)
+                unpack_group(f, 'run_info', self.run_info)
+        else:
+            # Apply all three payloads from memory.
+            if getattr(self, '_camera_params_payload', None):
+                for key, val in self._camera_params_payload.items():
+                    try:
+                        setattr(self.camera_params, key, val)
+                    except Exception:
+                        pass
+            elif hasattr(self, '_camera_key_hint') and self._camera_key_hint:
+                # No camera_params payload — look up by key.
+                from kexp.config.camera_id import cameras as cam_catalog, CameraParams as CP
+                for cam in vars(cam_catalog).values():
+                    if isinstance(cam, CP):
+                        cam_key = cam.key if not isinstance(cam.key, bytes) else cam.key.decode()
+                        if cam_key == self._camera_key_hint:
+                            self.camera_params = cam
+                            break
+
+            for key, val in getattr(self, '_params_payload', {}).items():
+                try:
+                    setattr(self.params, key, val)
+                except Exception:
+                    pass
+
+            for key, val in getattr(self, '_run_info_payload', {}).items():
+                try:
+                    setattr(self.run_info, key, val)
+                except Exception:
+                    pass
+
         self.image_type_signal.emit(self.run_info.imaging_type)
         self.save_data_bool_signal.emit(self.run_info.save_data)
 
     def write_image_to_dataset(self):
+        save_worker = None
         try:
             if self.save_data:
                 f = self.wait_for_data_available(timeout=DATA_SAVER_TIMEOUT,
                                                  check_interrupt_method=self.break_check)
+                save_queue = Queue()
+                save_worker = SaveWorker(save_queue, f, self.N_img)
+                # Route SaveWorker's done signal through DataHandler so
+                # downstream consumers (live_od_server._data_handler_done_event)
+                # are unaffected.
+                save_worker.done_writing_signal.connect(self.done_writing_signal)
+                save_worker.start()
+
             while True:
                 if self.interrupted:
                     break
@@ -167,9 +215,7 @@ class DataHandler(QThread,Scribe):
                     img_t = time.time()
                     self.got_image_from_queue.emit(img)
                     if self.save_data:
-                        f['data']['images'][idx] = img
-                        f['data']['image_timestamps'][idx] = img_t
-                        print(f"saved {idx+1}/{self.N_img}")
+                        save_queue.put((img, idx, img_t))   # non-blocking hand-off
                     if idx == (self.N_img - 1):
                         break
                 except:
@@ -177,13 +223,70 @@ class DataHandler(QThread,Scribe):
         except Exception as e:
             # print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
             print(e)
-        try:
-            if self.save_data: f.close()
-        except:
-            pass
+
+        if self.save_data and save_worker is not None:
+            # Propagate interruption so SaveWorker drains without writing.
+            save_worker.interrupted = self.interrupted
+            save_queue.put(None)    # sentinel — SaveWorker closes file & emits done
+            # done_writing_signal is emitted by SaveWorker; don't emit it here.
+        else:
+            self.done_writing_signal.emit()
 
     def break_check(self):
         return self.interrupted
+
+
+class SaveWorker(QThread):
+    """Writes images to HDF5 on a dedicated thread so that DataHandler's
+    image-dispatch loop is never blocked by disk I/O.
+
+    Usage
+    -----
+    1. Open the HDF5 file and pass the handle to the constructor.
+    2. Call ``start()``.
+    3. For each image, ``save_queue.put((img, idx, img_t))``.
+    4. When the grab loop ends, ``save_queue.put(None)`` (sentinel).
+    5. SaveWorker closes the file and emits ``done_writing_signal``.
+
+    Interruption
+    ------------
+    Set ``interrupted = True`` *before* putting the sentinel.  The worker
+    will drain the queue without writing, then close the file and emit.
+    """
+
+    done_writing_signal = pyqtSignal()
+
+    def __init__(self, save_queue: Queue, h5_file, n_img: int):
+        super().__init__()
+        self._save_queue = save_queue
+        self._f = h5_file
+        self._n_img = n_img
+        self.interrupted = False
+
+    def run(self):
+        try:
+            while True:
+                item = self._save_queue.get()
+                if item is None:            # sentinel — we're done
+                    break
+                if self.interrupted:
+                    continue                # drain without writing
+                img, idx, img_t = item
+                try:
+                    self._f['data']['images'][idx] = img
+                    self._f['data']['image_timestamps'][idx] = img_t
+                    print(f"saved {idx + 1}/{self._n_img}")
+                except Exception as exc:
+                    print(f"[SaveWorker] write error at idx={idx}: {exc}")
+        except Exception as exc:
+            print(f"[SaveWorker] unexpected error: {exc}")
+        finally:
+            try:
+                self._f.close()
+            except Exception:
+                pass
+            self.done_writing_signal.emit()
+
 
 class CameraBaby(QThread):
     image_captured = pyqtSignal(int)
@@ -220,27 +323,37 @@ class CameraBaby(QThread):
             self.grab_loop()
         except Exception as e:
             print(e)
-        if self.interrupted:
+        if self.interrupted and self.death is not self.honorable_death:
             print('Grab loop interrupted, shutting down.')
+            self.death = self.dishonorable_death
         self.death()
         if self.interrupted:
             self.dead = True
         self.done_signal.emit()
 
     def handshake(self):
-        self.create_camera() # checks for camera
+        """Connect camera and signal readiness via cam_status_signal.
+
+        Status codes
+        ------------
+        0  baby born
+        1  camera opened
+        2  camera ready (triggers LiveODServer._cam_ready_event via
+           a DirectConnection in LiveODWindow.spawn_baby)
+        3  (legacy: ready-ack; kept for status-light compatibility)
+        """
+        self.create_camera()
         self.cam_status_signal.emit(1)
-        if self.camera.is_opened():
-            self.data_handler.mark_camera_ready(self.break_check)
-        else:
+        if self.camera is None or not self.camera.is_opened():
             raise ValueError("Camera not ready")
+        # Status 2 → triggers server._cam_ready_event via DirectConnection
         self.cam_status_signal.emit(2)
-        self.data_handler.check_camera_ready_ack(self.break_check)
+        # Status 3 kept for the status-lights widget
         self.cam_status_signal.emit(3)
 
     def create_camera(self):
         self.camera = self.camera_nanny.persistent_get_camera(self.data_handler.camera_params)
-        self.camera_nanny.update_params(self.camera,self.data_handler.camera_params)
+        self.camera = self.camera_nanny.update_params(self.camera,self.data_handler.camera_params)
         camera_select = self.data_handler.camera_params.key
         if type(camera_select) == bytes: 
             camera_select = camera_select.decode()
@@ -252,7 +365,6 @@ class CameraBaby(QThread):
         except:
             pass
         print(f"{self.name}: All images captured.")
-        print(f"{self.name} has died honorably.")
         time.sleep(0.1)
         self.honorable_death_signal.emit()
         self.cam_status_signal.emit(-1)
@@ -264,7 +376,6 @@ class CameraBaby(QThread):
         except:
             pass
         self.data_handler.remove_incomplete_data(delete_data)
-        print(f"{self.name} has died dishonorably.")
         time.sleep(0.1)
         self.dishonorable_death_signal.emit()
         self.cam_status_signal.emit(-1)

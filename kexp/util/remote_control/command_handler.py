@@ -3,17 +3,17 @@ import re
 import logging
 from kexp.control.ethernet_relay import EthernetRelay
 from kexp.util.remote_control.email_handler import EmailHandler
-from win10toast import ToastNotifier
+# from win10toast import ToastNotifier
 
 logger = logging.getLogger(__name__)
 
-class MyToastNotifier(ToastNotifier):
-    def __init__(self):
-        super().__init__()
+# class MyToastNotifier(ToastNotifier):
+#     def __init__(self):
+#         super().__init__()
 
-    def on_destroy(self, hwnd, msg, wparam, lparam):
-        super().on_destroy(hwnd, msg, wparam, lparam)
-        return 0
+#     def on_destroy(self, hwnd, msg, wparam, lparam):
+#         super().on_destroy(hwnd, msg, wparam, lparam)
+#         return 0
 
 class CommandHandler:
     """
@@ -31,12 +31,19 @@ class CommandHandler:
         self.command_handlers = {}
         self.command_aliases = {}  # Maps aliases to canonical command names
 
-    def run_continuous(self):
+    def run_continuous(self, on_poll_complete=None, stop_flag=None):
         """
         Run the controller continuously, checking for new emails
-        at specified intervals (in seconds)
+        at specified intervals (in seconds).
+
+        Args:
+            on_poll_complete: Optional callable(success: bool) forwarded to EmailHandler.
+            stop_flag: Optional callable forwarded to EmailHandler to stop the loop.
         """
-        self.email_handler.run_continuous()
+        self.email_handler.run_continuous(
+            on_poll_complete=on_poll_complete,
+            stop_flag=stop_flag,
+        )
     
     def parse_commands(self, email_body):
         """
@@ -86,8 +93,8 @@ class CommandHandler:
                 logger.warning(f"Unknown command: {keyword}")
                 results.append(f"{keyword}: Unknown command")
         commands_processed_str = f"Processed commands:\n" + "\n     ".join(results)
-        MyToastNotifier().show_toast(f"New commands received from {sender}",
-                                   commands_processed_str)
+        # MyToastNotifier().show_toast(f"New commands received from {sender}",
+        #                            commands_processed_str)
         logger.info(commands_processed_str)
     
     def add_command_handler(self, keywords, handler_function):
@@ -113,15 +120,12 @@ class CommandHandler:
         
         logger.info(f"Added command handler for keyword(s): {keywords} (canonical: {canonical_keyword})")
     
-    def send_slack_notification(self, message, subject='K-Exp Control Notification', recipient=None,
-                                sender_email=None, sender_password=None):
-        """Send a notification message to the Slack channel"""
+    def send_slack_notification(self, message, subject='K-Exp Control Notification', recipient=None):
+        """Send a notification message to the Slack channel."""
         return self.email_handler.send_slack_notification(
             message,
             subject=subject,
             recipient=recipient,
-            sender_email=sender_email,
-            sender_password=sender_password,
         )
     
     def add_to_whitelist(self, email_or_phone):

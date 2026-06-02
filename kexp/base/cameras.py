@@ -35,7 +35,7 @@ class Cameras():
 
     ### Camera setup functions ###
 
-    def choose_camera(self,setup_camera=True,
+    def choose_camera(self,
                       imaging_type=img_types.ABSORPTION,
                       camera=cameras.xy_basler):
         
@@ -48,28 +48,25 @@ class Cameras():
         # _img_config_bit = img_config.SWITCH
         _img_config_bit = img_config.PID
 
-        if not setup_camera:
-            self.camera = DummyCamera()
-            self.camera_params = CameraParams()
-            # self.start_triggered_grab = self.nothing
-            self.ttl.camera = DummyTTL()
-        else:
-            match camera.key:
-                case cameras.xy_basler.key:
-                    ttl = self.ttl.basler
-                case cameras.x_basler.key:
-                    ttl = self.ttl.z_basler
-                case cameras.z_basler.key:
-                    ttl = self.ttl.z_basler
-                case cameras.andor.key:
-                    ttl = self.ttl.andor
-                    # _img_config_bit = img_config.POLMOD
-                    # _img_config_bit = img_config.PID
-                case cameras.basler_2dmot.key:
-                    ttl = self.ttl.basler_2dmot
-                case _:
-                    raise ValueError("'setup_camera' option is True, but a valid camera was not specified in 'camera_select'.")
-            self.assign_camera_stuff(camera,camera_ttl=ttl,imaging_type=imaging_type)
+        # Always configure camera params and TTL regardless of setup_camera.
+        # The experiment client needs the correct TTL assigned even when no
+        # images are being taken (e.g. save_data=False / setup_camera=False).
+        match camera.key:
+            case cameras.xy_basler.key:
+                ttl = self.ttl.basler
+            case cameras.x_basler.key:
+                ttl = self.ttl.z_basler
+            case cameras.z_basler.key:
+                ttl = self.ttl.z_basler
+            case cameras.andor.key:
+                ttl = self.ttl.andor
+            case cameras.basler_2dmot.key:
+                ttl = self.ttl.basler_2dmot
+            case _:
+                raise ValueError(
+                    f"No camera TTL mapping found for camera key '{camera.key}'."
+                )
+        self.assign_camera_stuff(camera, camera_ttl=ttl, imaging_type=imaging_type)
         self.run_info.imaging_type = imaging_type
         return _img_config_bit
 

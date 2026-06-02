@@ -1,0 +1,4544 @@
+from __future__ import annotations
+
+import copy
+from contextlib import contextmanager
+from dataclasses import dataclass, field
+from time import perf_counter
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+
+import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import numpy as np
+
+try:
+    from joblib import Parallel, delayed
+    HAS_JOBLIB = True
+except ImportError:
+    HAS_JOBLIB = False
+
+from kexp.base.feedback import Feedback, _feedback_kwargs_from_atomdata
+
+
+DEFAULT_OMEGA_GROUP_TOLERANCE_RAD_S = 2.0 * np.pi * 100.0
+
+# ---------------------------------------------------------------------------
+# Module-level helpers for multiprocessing-based outer candidate parallelism.
+# They must live at module scope so they are picklable on all platforms.
+# ---------------------------------------------------------------------------
+_MP_WORKER_OPTIMIZER = None
+
+
+def _mp_worker_init(optimizer_bytes: bytes) -> None:
+    """Initialise a worker process with a deserialised optimizer copy."""
+    global _MP_WORKER_OPTIMIZER
+    import pickle
+    _MP_WORKER_OPTIMIZER = pickle.loads(optimizer_bytes)
+
+
+def _mp_worker_eval(args: tuple) -> dict:
+    """Evaluate one candidate inside a worker process."""
+    index_tuple, eval_kwargs = args
+    return _MP_WORKER_OPTIMIZER._evaluate_candidate(index_tuple, **eval_kwargs)
+
+
+def _require_atomdata_attr(obj, name, path_hint):
+    if not hasattr(obj, name):
+        raise ValueError(f"Missing {path_hint}.{name} required for plotting.")
+    return getattr(obj, name)
+
+
+@dataclass
+class FeedbackReplayResult:
+    """Container for replay/simulation outputs.
+
+    Shapes use repeat on axis 0 and pulse-step on axis 1.
+
+    Attributes
+    ----------
+    s_z_rr
+        Resonance-track expectation value for each repeat and step.
+        Shape: (N_repeat, N_step).
+    P0_rr
+        Posterior over frequency hypotheses for each repeat/step.
+        Shape: (N_repeat, N_step, m).
+    omega_control_rr
+        Control omega used as experiment input per repeat/step (rad/s).
+    omega_recomputed_rr
+        Recomputed omega from posterior per repeat/step (rad/s).
+    t_input_rr
+        Reconstructed pulse-start time used as input to posterior update (s).
+    t_s_z_rr
+        Time associated with stored s_z values (post-measurement, s).
+    k_rr
+        Photon-count-equivalent measurement used by posterior update.
+    apd_rr
+        APD voltages used by replay/simulation (V).
+    apd_norm_rr
+        APD mapped to spin-like scale in [-1, 1] using the selected measurement model.
+    omega_guess_list
+        Frequency hypothesis grid used in this run (rad/s).
+    zidx
+        Index in omega_guess_list nearest to real resonance.
+    state_rr
+        Optional resonance Bloch trajectory [sx, sy, sz].
+        Shape: (N_repeat, N_step, 3) when requested, else None.
+    metadata
+        Additional run metadata and applied overrides.
+    """
+
+    s_z_rr: np.ndarray
+    P0_rr: np.ndarray
+    omega_control_rr: np.ndarray
+    omega_recomputed_rr: np.ndarray
+    t_input_rr: np.ndarray
+    t_s_z_rr: np.ndarray
+    k_rr: np.ndarray
+    apd_rr: np.ndarray
+    apd_norm_rr: np.ndarray
+    omega_guess_list: np.ndarray
+    zidx: int
+    state_rr: Optional[np.ndarray] = None
+    metadata: Dict[str, object] = field(default_factory=dict)
+
+
+class FeedbackReplayCore(Feedback):
+    """Replay engine for feedback experiments using atomdata.
+
+    Setting ``fr.p.<param> = value`` before calling replay will override that
+    parameter for all subsequent replays.  The change is detected by comparing
+    the current ``self.p`` against a baseline snapshot taken at construction
+    time, so only explicitly modified attributes are treated as overrides.
+    """
+
+    # Maps self.p attribute name → kwargs key used by _apply_feedback_kwargs_to_params
+    _P_ATTR_TO_KWARG: Dict[str, str] = {
+        "feedback_grid_size": "feedback_grid_size",
+        "t_raman_pulse": "t_raman_pulse",
+        "t_raman_pulse_ideal": "t_raman_pulse_ideal",
+        "t_img_pulse": "t_img_pulse",
+        "t_raman_pi_pulse": "t_raman_pi_pulse",
+        "amp_imaging": "amp_imaging",
+        "frequency_raman_transition": "frequency_resonance",
+        "frequency_lightshift": "frequency_z_lightshift",
+        "back_action_coherence": "back_action_coherence",
+        "feedback_fractional_grid_center_offset": "fractional_grid_center_offset",
+        "feedback_fractional_initial_offset": "fractional_initial_offset",
+        "feedback_guess_span_Omega": "guess_span_Omega",
+        "N_photons_per_shot": "n_photons_per_shot",
+        "std_n_photons_per_shot": "std_n_photons_per_shot",
+        "v_apd_all_up": "v_apd_all_up",
+        "v_apd_all_down": "v_apd_all_down",
+        "feedback_photon_count_scale": "photon_count_scale",
+        "feedback_measurement_midpoint_fraction": "feedback_measurement_midpoint_fraction",
+        "feedback_measurement_midpoint_remap_enabled": "feedback_measurement_midpoint_remap_enabled",
+        "feedback_apd_map_enabled": "feedback_apd_map_enabled",
+        "feedback_apd_map_a": "feedback_apd_map_a",
+        "feedback_apd_map_b": "feedback_apd_map_b",
+        "feedback_apd_map_verbose": "feedback_apd_map_verbose",
+    }
+
+    def __init__(
+        self,
+        ad,
+        omega_group_tolerance_rad_s: float = DEFAULT_OMEGA_GROUP_TOLERANCE_RAD_S,
+    ):
+        self.ad = ad
+        self._run_id = int(getattr(getattr(ad, "run_info", None), "run_id", -1))
+        self._apd_rr_cached = self._to_repeat_step(ad.data.apd, "ad.data.apd")
+        self._omega_rr_cached = None
+        if hasattr(ad.data, "omega_raman"):
+            self._omega_rr_cached = self._to_repeat_step(ad.data.omega_raman, "ad.data.omega_raman")
+        # Create independent copy of parameters so modifications don't affect shared atomdata
+        self.p = copy.copy(ad.p)
+        self._base_kwargs = self._build_base_feedback_kwargs(ad)
+        self._omega_resonance_rad_s = 2.0 * np.pi * float(self._base_kwargs["frequency_resonance"])
+        self.omega_group_tolerance_rad_s = float(omega_group_tolerance_rad_s)
+        self._default_timing = self._get_default_timing_params()
+        self._omega_group_cache_key: Optional[Tuple[object, ...]] = None
+        self._omega_group_cache_value: Optional[Tuple[Tuple[int, ...], ...]] = None
+        self._pulse_weight_profile_cache: Dict[Tuple[int, float, float], np.ndarray] = {}
+        
+        # Freeze t_between_pulses_mu so scanning t_raman_pulse, t_img_pulse, delta_t_mu
+        # doesn't change it. Phase is recomputed with frozen t_between and new pulse timings.
+        self._frozen_t_between_pulses_mu = int(self._default_timing.get("t_between_pulses_mu", 0))
+
+        self._apply_feedback_kwargs_to_params(self._base_kwargs)
+        Feedback.__init__(self)
+        # Snapshot self.p after initialization so later fr.p.x = val assignments
+        # can be detected and honoured during replay reinitialisation.
+        self._p_baseline: Dict[str, object] = self._snapshot_p_for_replay()
+
+    def __getstate__(self) -> Dict[str, object]:
+        """Drop non-picklable atomdata references for process-based workers."""
+        state = dict(self.__dict__)
+        state["ad"] = None
+        state["_omega_group_cache_key"] = None
+        state["_omega_group_cache_value"] = None
+        state["_pulse_weight_profile_cache"] = {}
+        return state
+
+    def __setstate__(self, state: Dict[str, object]) -> None:
+        self.__dict__.update(state)
+
+    def _snapshot_p_for_replay(self) -> Dict[str, object]:
+        """Return a dict of all replay-relevant self.p values keyed by attr name."""
+        p = self.p
+        return {attr: getattr(p, attr, None) for attr in self._P_ATTR_TO_KWARG}
+
+    def _extract_p_user_overrides(self) -> Dict[str, object]:
+        """Return a kwargs-keyed dict of self.p values that differ from the baseline snapshot.
+
+        Only attributes that the user explicitly changed on ``fr.p`` after
+        construction are returned.  The baseline is fixed at construction time
+        and is never updated, so overrides persist across multiple replay calls.
+        """
+        p = self.p
+        baseline = self._p_baseline
+        overrides: Dict[str, object] = {}
+        for attr, kwarg_key in self._P_ATTR_TO_KWARG.items():
+            current_val = getattr(p, attr, None)
+            baseline_val = baseline.get(attr)
+            if current_val is None and baseline_val is None:
+                continue
+            if current_val is None or baseline_val is None:
+                if current_val is not None:
+                    overrides[kwarg_key] = current_val
+                continue
+            try:
+                changed = bool(current_val != baseline_val)
+            except (TypeError, ValueError):
+                changed = True
+            if changed:
+                overrides[kwarg_key] = current_val
+        return overrides
+
+    def _apply_feedback_kwargs_to_params(self, kwargs: Dict[str, object]) -> None:
+        """Apply replay keyword-style parameters onto ``self.p`` for Feedback init.
+
+        ``Feedback.__init__`` now reads values from ``self.p`` instead of accepting
+        replay kwargs directly, so replay-side overrides are mirrored onto params
+        before reinitialization.
+        """
+        p = self.p
+
+        if kwargs.get("feedback_grid_size") is not None:
+            p.feedback_grid_size = int(kwargs["feedback_grid_size"])
+
+        t_raman_pulse = kwargs.get("t_raman_pulse", kwargs.get("dt_eff"))
+        if t_raman_pulse is not None:
+            p.t_raman_pulse = float(t_raman_pulse)
+
+        t_raman_pulse_ideal = kwargs.get("t_raman_pulse_ideal", kwargs.get("dt_ideal"))
+        if t_raman_pulse_ideal is not None:
+            p.t_raman_pulse_ideal = float(t_raman_pulse_ideal)
+
+        if kwargs.get("t_img_pulse") is not None:
+            p.t_img_pulse = float(kwargs["t_img_pulse"])
+
+        if kwargs.get("t_raman_pi_pulse") is not None:
+            p.t_raman_pi_pulse = float(kwargs["t_raman_pi_pulse"])
+
+        if kwargs.get("amp_imaging") is not None:
+            p.amp_imaging = float(kwargs["amp_imaging"])
+
+        if kwargs.get("frequency_resonance") is not None:
+            p.frequency_raman_transition = float(kwargs["frequency_resonance"])
+
+        if kwargs.get("frequency_z_lightshift") is not None:
+            p.frequency_lightshift = float(kwargs["frequency_z_lightshift"])
+
+        if kwargs.get("back_action_coherence") is not None:
+            p.back_action_coherence = float(kwargs["back_action_coherence"])
+
+        if kwargs.get("fractional_grid_center_offset") is not None:
+            p.feedback_fractional_grid_center_offset = float(kwargs["fractional_grid_center_offset"])
+
+        if kwargs.get("fractional_initial_offset") is not None:
+            p.feedback_fractional_initial_offset = float(kwargs["fractional_initial_offset"])
+
+        if kwargs.get("guess_span_Omega") is not None:
+            p.feedback_guess_span_Omega = float(kwargs["guess_span_Omega"])
+
+        if kwargs.get("n_photons_per_shot") is not None:
+            n_photons = float(kwargs["n_photons_per_shot"])
+            p.n_photons_per_shot = n_photons
+            p.N_photons_per_shot = n_photons
+
+        if kwargs.get("std_n_photons_per_shot") is not None:
+            std_photons = float(kwargs["std_n_photons_per_shot"])
+            p.std_n_photons_per_shot = std_photons
+            p.n_std_photons_per_shot = std_photons
+
+        if kwargs.get("v_apd_all_up") is not None:
+            p.v_apd_all_up = float(kwargs["v_apd_all_up"])
+
+        if kwargs.get("v_apd_all_down") is not None:
+            p.v_apd_all_down = float(kwargs["v_apd_all_down"])
+
+        if kwargs.get("photon_count_scale") is not None:
+            p.feedback_photon_count_scale = float(kwargs["photon_count_scale"])
+
+        if kwargs.get("feedback_measurement_midpoint_fraction") is not None:
+            p.feedback_measurement_midpoint_fraction = float(kwargs["feedback_measurement_midpoint_fraction"])
+
+        if kwargs.get("feedback_measurement_midpoint_remap_enabled") is not None:
+            p.feedback_measurement_midpoint_remap_enabled = bool(
+                kwargs["feedback_measurement_midpoint_remap_enabled"]
+            )
+
+        if kwargs.get("feedback_apd_map_enabled") is not None:
+            p.feedback_apd_map_enabled = bool(kwargs["feedback_apd_map_enabled"])
+
+        if kwargs.get("feedback_apd_map_a") is not None:
+            p.feedback_apd_map_a = float(kwargs["feedback_apd_map_a"])
+
+        if kwargs.get("feedback_apd_map_b") is not None:
+            p.feedback_apd_map_b = float(kwargs["feedback_apd_map_b"])
+
+        if kwargs.get("feedback_apd_map_verbose") is not None:
+            p.feedback_apd_map_verbose = bool(kwargs["feedback_apd_map_verbose"])
+
+    def get_t_between_pulses_mu_frozen(self) -> int:
+        """Get the frozen t_between_pulses_mu from when replay was created.
+        
+        This value is NOT recalculated when timing parameters (t_raman_pulse, t_img_pulse, delta_t_mu)
+        are modified for scanning. Phase calculations in replay use this frozen value plus the scanned
+        timing parameters to recompute the phase with ideal pulse area accounting.
+        """
+        return self._frozen_t_between_pulses_mu
+
+    def _effective_feedback_grid_size(self) -> int:
+        p = self.p
+        if p is not None and hasattr(p, "feedback_grid_size"):
+            return int(getattr(p, "feedback_grid_size"))
+
+        if p is not None and hasattr(p, "omega_guess_list"):
+            omega_guess = np.asarray(getattr(p, "omega_guess_list"), dtype=float).ravel()
+            omega_guess = omega_guess[np.isfinite(omega_guess)]
+            if omega_guess.size > 0:
+                return int(omega_guess.size)
+
+        return int(self.m)
+
+    def _build_base_feedback_kwargs(self, ad) -> Dict[str, object]:
+        kwargs = _feedback_kwargs_from_atomdata(ad)
+
+        p = getattr(ad, "p", None)
+        if p is None:
+            raise ValueError("atomdata must provide ad.p with feedback parameters.")
+
+        if kwargs.get("frequency_resonance") is None:
+            raise ValueError("Missing ad.p.frequency_raman_transition required for replay.")
+        if kwargs.get("t_raman_pi_pulse") is None:
+            raise ValueError("Missing ad.p.t_raman_pi_pulse required for replay.")
+        if kwargs.get("t_raman_pulse") is None and kwargs.get("dt_eff") is None:
+            raise ValueError("Missing t_raman_pulse/dt_eff required for replay timing.")
+        if kwargs.get("t_img_pulse") is None:
+            raise ValueError("Missing ad.p.t_img_pulse required for replay timing.")
+        if kwargs.get("back_action_coherence") is None:
+            kwargs["back_action_coherence"] = float(getattr(p, "back_action_coherence", 1.0))
+
+        if not hasattr(ad, "data") or not hasattr(ad.data, "apd"):
+            raise ValueError("atomdata must provide ad.data.apd for replay.")
+
+        if hasattr(p, "feedback_grid_size"):
+            kwargs["feedback_grid_size"] = int(getattr(p, "feedback_grid_size"))
+        elif hasattr(p, "omega_guess_list"):
+            omega_guess = np.asarray(p.omega_guess_list, dtype=float)
+            if omega_guess.ndim == 1 and omega_guess.size > 0:
+                kwargs["feedback_grid_size"] = int(omega_guess.size)
+
+        # Keep the raw value for per-repeat replay support when scanned in xvar.
+        self._fractional_initial_offset_source = getattr(
+            p,
+            "feedback_fractional_initial_offset",
+            kwargs.get("fractional_initial_offset", -5.0),
+        )
+        kwargs["fractional_initial_offset"] = self._scalar_from_maybe_array(
+            self._fractional_initial_offset_source,
+            name="feedback_fractional_initial_offset",
+            fallback=-5.0,
+        )
+
+        return kwargs
+
+    def _scalar_from_maybe_array(self, value, *, name: str, fallback: float) -> float:
+        if value is None:
+            return float(fallback)
+
+        arr = np.asarray(value, dtype=float).ravel()
+        if arr.size == 0:
+            return float(fallback)
+        if not np.isfinite(arr[0]):
+            raise ValueError(f"{name} must contain finite values.")
+        return float(arr[0])
+
+    def _resolve_fractional_initial_offset_r(
+        self,
+        n_repeat: int,
+    ) -> np.ndarray:
+        source = getattr(
+            self.p,
+            "feedback_fractional_initial_offset",
+            self._fractional_initial_offset_source,
+        )
+
+        values = np.asarray(source, dtype=float).ravel()
+        if values.size == 0:
+            raise ValueError("feedback_fractional_initial_offset cannot be empty.")
+        if not np.all(np.isfinite(values)):
+            raise ValueError("feedback_fractional_initial_offset must be finite.")
+
+        if values.size == 1:
+            return np.full((n_repeat,), float(values[0]), dtype=float)
+
+        if values.size != int(n_repeat):
+            raise ValueError(
+                "feedback_fractional_initial_offset must be scalar or length N_repeat. "
+                f"Got length {values.size} for N_repeat={n_repeat}."
+            )
+
+        return np.asarray(values, dtype=float)
+
+    def _get_default_timing_params(self) -> Dict[str, float]:
+        p = self.p
+
+        t_between = getattr(p, "t_between_pulses_mu", None)
+        if t_between is None:
+            t_calc = int(getattr(p, "t_calculation_slack_compensation_mu", 0))
+            t_fifo = int(getattr(p, "t_fifo_mu", 1000))
+            t_between = int(
+                self.compute_t_between_pulses_mu(
+                    t_calculation_slack_compensation_mu=t_calc,
+                    t_raman_pulse=float(getattr(p, "t_raman_pulse", getattr(p, "dt_eff"))),
+                    t_img_pulse=float(getattr(p, "t_img_pulse")),
+                    t_fifo_mu=np.int64(t_fifo),
+                )
+            )
+
+        return {
+            "t_between_pulses_mu": int(t_between),
+            "delta_t_mu": int(getattr(p, "delta_t_mu", 0)),
+            "t_raman_set_pretrigger_mu": int(getattr(p, "t_raman_set_pretrigger_mu", 0)),
+            "t_calculation_slack_compensation_mu": int(getattr(p, "t_calculation_slack_compensation_mu", 0)),
+            "t_fifo_mu": int(getattr(p, "t_fifo_mu", 1000)),
+        }
+
+    def _to_repeat_step(self, arr, name: str) -> np.ndarray:
+        x = np.asarray(arr)
+
+        if x.dtype == object:
+            rows = [np.asarray(row, dtype=float).ravel() for row in x]
+            if len(rows) == 0:
+                raise ValueError(f"{name} cannot be empty.")
+            n_step = len(rows[0])
+            for idx, row in enumerate(rows):
+                if len(row) != n_step:
+                    raise ValueError(
+                        f"{name} has ragged row lengths; row 0 has {n_step}, row {idx} has {len(row)}."
+                    )
+            return np.vstack(rows)
+
+        x = np.asarray(arr, dtype=float)
+        if x.ndim == 1:
+            return x.reshape(1, -1)
+        if x.ndim == 2:
+            return x
+        raise ValueError(f"{name} must be 1D or 2D (repeat, step), got shape {x.shape}.")
+
+    def _resolve_trace_indices(
+        self,
+        n_traces: int,
+        trace_indices: Optional[Union[int, Sequence[int]]] = None,
+        *,
+        name: str = "trace_indices",
+    ) -> List[int]:
+        if n_traces < 0:
+            raise ValueError(f"n_traces must be non-negative, got {n_traces}.")
+
+        if trace_indices is None:
+            return list(range(int(n_traces)))
+
+        if np.isscalar(trace_indices):
+            raw_indices = [trace_indices]
+        else:
+            raw_indices = list(trace_indices)
+
+        selected: List[int] = []
+        for raw in raw_indices:
+            idx = int(raw)
+            if idx < 0:
+                idx += int(n_traces)
+            if idx < 0 or idx >= int(n_traces):
+                raise ValueError(
+                    f"{name} contains out-of-range index {int(raw)} for {n_traces} traces."
+                )
+            if idx not in selected:
+                selected.append(idx)
+
+        return selected
+
+    def _broadcast_override(
+        self,
+        arr: Optional[Sequence[float]],
+        name: str,
+        n_repeat: int,
+        n_step: int,
+    ) -> Optional[np.ndarray]:
+        if arr is None:
+            return None
+
+        x = np.asarray(arr, dtype=float)
+        if x.ndim == 1:
+            if x.shape[0] != n_step:
+                raise ValueError(f"{name} length must be {n_step}, got {x.shape[0]}.")
+            return np.tile(x.reshape(1, -1), (n_repeat, 1))
+        if x.ndim == 2:
+            if x.shape != (n_repeat, n_step):
+                raise ValueError(f"{name} shape must be ({n_repeat}, {n_step}), got {x.shape}.")
+            return x
+        raise ValueError(f"{name} must be 1D or 2D, got shape {x.shape}.")
+
+    def _resolve_grid(
+        self,
+    ) -> Tuple[np.ndarray, int]:
+        freq_res = float(self._base_kwargs["frequency_resonance"])
+        omega_res = 2.0 * np.pi * freq_res
+
+        if hasattr(self.p, "omega_guess_list"):
+            omega_saved = np.asarray(self.p.omega_guess_list, dtype=float).ravel()
+        else:
+            omega_saved = np.asarray(self.omega_guess_list, dtype=float).ravel()
+
+        feedback_grid_size = getattr(self.p, "feedback_grid_size", None)
+        if feedback_grid_size is None or int(feedback_grid_size) == omega_saved.size:
+            omega_guess = omega_saved
+        else:
+            omega_guess = np.linspace(
+                float(np.min(omega_saved)),
+                float(np.max(omega_saved)),
+                int(feedback_grid_size),
+            )
+
+        zidx = int(np.argmin(np.abs(omega_guess - omega_res)))
+        return omega_guess, zidx
+
+    def _reinitialize_feedback(
+        self,
+    ) -> Tuple[np.ndarray, int]:
+        kwargs = dict(self._base_kwargs)
+
+        # Honour any fr.p.x = val overrides set by the user before this replay call.
+        # These take precedence over _base_kwargs.
+        user_p_overrides = self._extract_p_user_overrides()
+        kwargs.update(user_p_overrides)
+
+        omega_guess, zidx = self._resolve_grid()
+
+        kwargs["feedback_grid_size"] = int(omega_guess.size)
+
+        self._apply_feedback_kwargs_to_params(kwargs)
+        Feedback.__init__(self)
+
+        self.omega_guess_list = np.asarray(omega_guess, dtype=float)
+        self.p.omega_guess_list = self.omega_guess_list
+        self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
+        self._validate_initial_guess_in_grid()
+
+        return self.omega_guess_list.copy(), int(zidx)
+
+    def _resolve_timing(
+        self,
+    ) -> Dict[str, float]:
+        p = self.p
+        timing = dict(self._default_timing)
+
+        if hasattr(p, "delta_t_mu"):
+            timing["delta_t_mu"] = int(getattr(p, "delta_t_mu"))
+        if hasattr(p, "t_between_pulses_mu"):
+            timing["t_between_pulses_mu"] = int(getattr(p, "t_between_pulses_mu"))
+        if hasattr(p, "t_raman_set_pretrigger_mu"):
+            timing["t_raman_set_pretrigger_mu"] = int(getattr(p, "t_raman_set_pretrigger_mu"))
+
+        dt_eff = float(self.dt_eff)
+        dt_ideal = float(self.dt_ideal)
+        dt_img = float(self.dt_z)
+
+        timing["dt_eff"] = dt_eff
+        timing["dt_ideal"] = dt_ideal
+        timing["t_img_pulse"] = dt_img
+
+        return timing
+
+    def _resolve_apd_rr(self, apd_override_rr: Optional[Sequence[float]]) -> np.ndarray:
+        if apd_override_rr is None:
+            apd_rr = np.asarray(self._apd_rr_cached, dtype=float)
+        else:
+            apd_rr = self._to_repeat_step(apd_override_rr, "apd_override_rr")
+
+        if apd_rr.shape[1] == 0:
+            raise ValueError("APD input must contain at least one pulse step.")
+
+        return apd_rr
+
+    def _resolve_omega_rr(
+        self,
+        n_repeat: int,
+        n_step: int,
+        omega_override_rr: Optional[Sequence[float]],
+    ) -> Optional[np.ndarray]:
+        if omega_override_rr is not None:
+            return self._broadcast_override(omega_override_rr, "omega_override_rr", n_repeat, n_step)
+
+        if self._omega_rr_cached is not None:
+            omega_rr = np.asarray(self._omega_rr_cached, dtype=float)
+            if omega_rr.shape != (n_repeat, n_step):
+                raise ValueError(
+                    f"cached omega_raman shape {omega_rr.shape} does not match APD shape ({n_repeat}, {n_step})."
+                )
+            return omega_rr
+
+        return None
+
+    def _normalize_apd(
+        self,
+        apd_rr: np.ndarray,
+        *,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+    ) -> np.ndarray:
+        apd_arr = np.asarray(apd_rr, dtype=float)
+
+        # Vectorized equivalent of spin_value_from_apd to avoid per-element Python overhead
+        # during optimizer replay loops.
+        photon_fraction = (apd_arr - float(self.v_apd_all_down)) / float(self.v_range)
+        p1 = np.clip(photon_fraction, 0.0, 1.0)
+
+        if feedback_measurement_midpoint_remap_enabled is None:
+            use_midpoint_remap = bool(self.feedback_measurement_midpoint_remap_enabled)
+        else:
+            use_midpoint_remap = bool(feedback_measurement_midpoint_remap_enabled)
+
+        if not use_midpoint_remap:
+            return 2.0 * p1 - 1.0
+
+        midpoint = float(self.feedback_measurement_midpoint_fraction)
+        delta = midpoint - 0.5
+        if abs(delta) < 1.0e-15:
+            return 2.0 * p1 - 1.0
+
+        discriminant = 0.25 - 4.0 * delta * (p1 - midpoint)
+        discriminant = np.maximum(discriminant, 0.0)
+        hz = (0.5 - np.sqrt(discriminant)) / (2.0 * delta)
+        return np.clip(hz, -1.0, 1.0)
+
+    def _resolve_result_apd_norm_rr(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+    ) -> np.ndarray:
+        """Reuse stored APD normalization unless callers request a different remap mode."""
+        result_remap_enabled = bool(
+            result.metadata.get(
+                "feedback_measurement_midpoint_remap_enabled",
+                self.feedback_measurement_midpoint_remap_enabled,
+            )
+        )
+        if (
+            feedback_measurement_midpoint_remap_enabled is None
+            or bool(feedback_measurement_midpoint_remap_enabled) == result_remap_enabled
+        ):
+            return np.asarray(result.apd_norm_rr, dtype=float)
+
+        return self._normalize_apd(
+            result.apd_rr,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
+
+    def _get_cached_pulse_weight_profile(
+        self,
+        n_points: int,
+        *,
+        pulse_weight_power: float = 0.0,
+    ) -> np.ndarray:
+        coherence = float(np.clip(self.back_action_coherence, 0.0, 1.0))
+        cache_key = (int(n_points), float(pulse_weight_power), coherence)
+        cached = self._pulse_weight_profile_cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        profile = self._compute_pulse_weight_profile(
+            n_points,
+            pulse_weight_power=pulse_weight_power,
+        )
+        self._pulse_weight_profile_cache[cache_key] = profile
+        return profile
+
+    def _group_repeats_by_omega(
+        self,
+        omega_rr: np.ndarray,
+        tolerance_rad_s: Optional[float] = None,
+    ) -> List[List[int]]:
+        tol = self.omega_group_tolerance_rad_s if tolerance_rad_s is None else float(tolerance_rad_s)
+        omega_arr = np.asarray(omega_rr, dtype=float)
+        cache_key = (
+            int(omega_arr.__array_interface__["data"][0]),
+            tuple(int(v) for v in omega_arr.shape),
+            str(omega_arr.dtype),
+            float(tol),
+        )
+        if self._omega_group_cache_key == cache_key and self._omega_group_cache_value is not None:
+            return [list(group) for group in self._omega_group_cache_value]
+
+        n_repeat = omega_arr.shape[0]
+        if n_repeat <= 1:
+            groups = [[idx] for idx in range(n_repeat)]
+            self._omega_group_cache_key = cache_key
+            self._omega_group_cache_value = tuple(tuple(group) for group in groups)
+            return groups
+
+        # For moderate repeat counts, compute all reference distances in one NumPy pass.
+        # This preserves the existing first-reference grouping semantics while moving the
+        # expensive max(abs(...)) work out of nested Python loops.
+        use_vectorized_distance = n_repeat <= 512 and omega_arr.ndim == 2
+        pairwise_within_tol = None
+        if use_vectorized_distance:
+            pairwise_within_tol = (
+                np.max(np.abs(omega_arr[:, None, :] - omega_arr[None, :, :]), axis=2) <= tol
+            )
+
+        groups: List[List[int]] = []
+        for r in range(n_repeat):
+            placed = False
+            for group in groups:
+                ref = group[0]
+                if pairwise_within_tol is not None:
+                    is_match = bool(pairwise_within_tol[r, ref])
+                else:
+                    is_match = bool(np.max(np.abs(omega_arr[r] - omega_arr[ref])) <= tol)
+                if is_match:
+                    group.append(r)
+                    placed = True
+                    break
+            if not placed:
+                groups.append([r])
+
+        self._omega_group_cache_key = cache_key
+        self._omega_group_cache_value = tuple(tuple(group) for group in groups)
+        return groups
+
+    def average_by_omega_group(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        use_stderr: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+    ) -> List[Dict[str, np.ndarray]]:
+        """Compute grouped averages for repeats sharing the same omega sequence."""
+        groups = self._group_repeats_by_omega(result.omega_control_rr, tolerance_rad_s=tolerance_rad_s)
+        apd_norm_rr = self._resolve_result_apd_norm_rr(
+            result,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
+
+        summaries: List[Dict[str, np.ndarray]] = []
+        for members in groups:
+            idx = np.asarray(members, dtype=int)
+            n = max(1, len(members))
+            denom = np.sqrt(float(n)) if use_stderr and n > 1 else 1.0
+
+            apd_mean = np.mean(apd_norm_rr[idx], axis=0)
+            apd_std = np.std(apd_norm_rr[idx], axis=0, ddof=1) if n > 1 else np.zeros(apd_norm_rr.shape[1])
+
+            sz_mean = np.mean(result.s_z_rr[idx], axis=0)
+            sz_std = np.std(result.s_z_rr[idx], axis=0, ddof=1) if n > 1 else np.zeros(result.s_z_rr.shape[1])
+
+            omega_mean = np.mean(result.omega_control_rr[idx], axis=0)
+            omega_comp_mean = np.mean(result.omega_recomputed_rr[idx], axis=0)
+
+            summaries.append(
+                {
+                    "members": idx,
+                    "t_input": np.mean(result.t_input_rr[idx], axis=0),
+                    "t_s_z": np.mean(result.t_s_z_rr[idx], axis=0),
+                    "apd_norm_mean": apd_mean,
+                    "apd_norm_err": apd_std / denom,
+                    "s_z_mean": sz_mean,
+                    "s_z_err": sz_std / denom,
+                    "omega_control_mean": omega_mean,
+                    "omega_recomputed_mean": omega_comp_mean,
+                }
+            )
+
+        return summaries
+
+    def summarize_result_groups(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        group_shots: bool = True,
+        use_stderr: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+    ) -> List[Dict[str, np.ndarray]]:
+        """Return either omega-group summaries or one summary per shot.
+
+        Parameters
+        ----------
+        group_shots
+            If True, group repeats by shared omega-control sequence.
+            If False, treat each repeat as its own fit group.
+        """
+        if group_shots:
+            return self.average_by_omega_group(
+                result,
+                use_stderr=use_stderr,
+                tolerance_rad_s=tolerance_rad_s,
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            )
+
+        apd_norm_rr = self._resolve_result_apd_norm_rr(
+            result,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
+
+        summaries: List[Dict[str, np.ndarray]] = []
+        n_repeat = int(result.s_z_rr.shape[0])
+        for repeat_idx in range(n_repeat):
+            idx = np.asarray([repeat_idx], dtype=int)
+            summaries.append(
+                {
+                    "members": idx,
+                    "t_input": np.asarray(result.t_input_rr[repeat_idx], dtype=float),
+                    "t_s_z": np.asarray(result.t_s_z_rr[repeat_idx], dtype=float),
+                    "apd_norm_mean": np.asarray(apd_norm_rr[repeat_idx], dtype=float),
+                    "apd_norm_err": np.zeros(apd_norm_rr.shape[1], dtype=float),
+                    "s_z_mean": np.asarray(result.s_z_rr[repeat_idx], dtype=float),
+                    "s_z_err": np.zeros(result.s_z_rr.shape[1], dtype=float),
+                    "omega_control_mean": np.asarray(result.omega_control_rr[repeat_idx], dtype=float),
+                    "omega_recomputed_mean": np.asarray(result.omega_recomputed_rr[repeat_idx], dtype=float),
+                }
+            )
+
+        return summaries
+
+    def replay_measured(
+        self,
+        *,
+        include_photon_noise: Optional[bool] = None,
+        update_raman_frequency: Optional[bool] = None,
+        update_rabi_frequency: bool = False,
+        control_omega_source: str = "measured",
+        return_full_state: bool = False,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+    ) -> FeedbackReplayResult:
+        """Replay using measured APD and measured control omega by default.
+
+        Replay parameters are sourced from ``self.p``.
+        """
+        return self._run_sequence(
+            include_photon_noise=include_photon_noise,
+            update_raman_frequency=update_raman_frequency,
+            update_rabi_frequency=update_rabi_frequency,
+            control_omega_source=control_omega_source,
+            return_full_state=return_full_state,
+            apd_override_rr=None,
+            omega_override_rr=None,
+            default_use_measured_apd=True,
+            n_jobs=int(n_jobs),
+            parallel_verbose=int(parallel_verbose),
+        )
+
+    def simulate_counterfactual(
+        self,
+        *,
+        apd_input_rr: Optional[Sequence[float]] = None,
+        omega_control_rr: Optional[Sequence[float]] = None,
+        include_photon_noise: Optional[bool] = None,
+        update_raman_frequency: Optional[bool] = None,
+        update_rabi_frequency: bool = False,
+        control_omega_source: str = "recomputed",
+        return_full_state: bool = False,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+    ) -> FeedbackReplayResult:
+        """Run a what-if simulation with optional APD and omega inputs.
+
+        Replay parameters are sourced from ``self.p``.
+        """
+        return self._run_sequence(
+            include_photon_noise=include_photon_noise,
+            update_raman_frequency=update_raman_frequency,
+            update_rabi_frequency=update_rabi_frequency,
+            control_omega_source=control_omega_source,
+            return_full_state=return_full_state,
+            apd_override_rr=apd_input_rr,
+            omega_override_rr=omega_control_rr,
+            default_use_measured_apd=False,
+            n_jobs=int(n_jobs),
+            parallel_verbose=int(parallel_verbose),
+        )
+
+    def _run_shot_into_buffers(
+        self,
+        r: int,
+        n_step: int,
+        apd_rr: np.ndarray,
+        fractional_initial_offset_r: np.ndarray,
+        omega_measured_rr: Optional[np.ndarray],
+        control_omega_source: str,
+        timing: Dict[str, float],
+        include_photon_noise: bool,
+        update_raman_frequency: bool,
+        update_rabi_frequency: bool,
+        return_full_state: bool,
+        zidx: int,
+        s_z_rr: np.ndarray,
+        P0_rr: np.ndarray,
+        omega_control_rr: np.ndarray,
+        omega_recomputed_rr: np.ndarray,
+        t_input_rr: np.ndarray,
+        t_s_z_rr: np.ndarray,
+        k_rr: np.ndarray,
+        state_rr: Optional[np.ndarray],
+    ) -> None:
+        """Process a single shot (repeat) and write outputs in-place.
+
+        Using preallocated output buffers avoids per-shot tuple allocation and copy-back
+        overhead, which is especially expensive in threaded replay runs.
+        """
+        self.reset_feedback_state()
+
+        phase_tracker = 0.0
+        omega_prev = 0.0
+
+        tP_mu = int(timing["t_between_pulses_mu"])
+        dt_mu = int(timing["delta_t_mu"])
+        tR_mu = int(timing["t_raman_set_pretrigger_mu"])
+        t_s_z_offset = float(timing["dt_eff"]) + float(timing["t_img_pulse"])
+
+        # Precompute photon-count-equivalent measurements once per shot to reduce
+        # per-step Python call overhead in the hot replay loop.
+        k_vals = np.rint(
+            float(self.N_photons_per_shot)
+            * (np.asarray(apd_rr[r], dtype=float) - float(self.v_apd_all_down))
+            / float(self.v_range)
+        ).astype(float, copy=False)
+
+        omega_guess_start_r = float(
+            self._omega_resonance_rad_s + self.Omega * float(fractional_initial_offset_r[r])
+        )
+
+        if control_omega_source in {"measured", "override"}:
+            self.omega_raman = float(omega_measured_rr[r, 0])
+        else:
+            self.omega_raman = omega_guess_start_r
+
+        for i in range(n_step):
+            if control_omega_source in {"measured", "override"}:
+                omega_ctrl = float(omega_measured_rr[r, i])
+            else:
+                omega_ctrl = float(self.omega_raman)
+
+            self.omega_raman = omega_ctrl
+
+            phase_tracker += (
+                ((tP_mu - tR_mu + dt_mu) * omega_prev + (tR_mu - dt_mu) * self.omega_raman) * 1.0e-9
+            )
+
+            t_in = i * tP_mu * 1.0e-9
+            k_val = float(k_vals[i])
+
+            omega_prev = self.omega_raman
+            omega_new, omega_std = self.generate_posterior(
+                k_val,
+                t_in,
+                phase_raman_pulse_start=phase_tracker,
+                update_raman_frequency=1 if update_raman_frequency else 0,
+                update_rabi_frequency=1 if update_rabi_frequency else 0,
+                include_photon_noise=1 if include_photon_noise else 0,
+            )
+
+            self.omega_raman = float(omega_new)
+            self.Omega = float(omega_std)
+
+            s_z_rr[r, i] = float(self.state_z[zidx])
+            P0_rr[r, i, :] = self.P0
+            omega_control_rr[r, i] = omega_ctrl
+            omega_recomputed_rr[r, i] = float(self.omega_raman)
+            t_input_rr[r, i] = t_in
+            t_s_z_rr[r, i] = t_in + t_s_z_offset
+            k_rr[r, i] = k_val
+
+            if return_full_state and state_rr is not None:
+                state_rr[r, i, 0] = float(self.state_x[zidx])
+                state_rr[r, i, 1] = float(self.state_y[zidx])
+                state_rr[r, i, 2] = float(self.state_z[zidx])
+
+
+    def _run_sequence(
+        self,
+        *,
+        include_photon_noise: Optional[bool],
+        update_raman_frequency: Optional[bool],
+        update_rabi_frequency: bool,
+        control_omega_source: str,
+        return_full_state: bool,
+        apd_override_rr: Optional[Sequence[float]],
+        omega_override_rr: Optional[Sequence[float]],
+        default_use_measured_apd: bool,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+    ) -> FeedbackReplayResult:
+        if include_photon_noise is None:
+            include_photon_noise = bool(getattr(self.p, "include_photon_noise", 1))
+
+        if update_raman_frequency is None:
+            update_raman_frequency = bool(getattr(self.p, "update_raman_frequency_bool", 1))
+
+        if control_omega_source not in {"measured", "recomputed", "override"}:
+            raise ValueError("control_omega_source must be one of: measured, recomputed, override.")
+
+        if control_omega_source == "override" and omega_override_rr is None:
+            raise ValueError("control_omega_source='override' requires omega_override_rr.")
+
+        if (apd_override_rr is None) and (not default_use_measured_apd):
+            raise ValueError("simulate_counterfactual requires apd_input_rr when not using measured APD.")
+
+        apd_rr = self._resolve_apd_rr(apd_override_rr=apd_override_rr)
+        n_repeat, n_step = apd_rr.shape
+        fractional_initial_offset_r = self._resolve_fractional_initial_offset_r(n_repeat=n_repeat)
+
+        omega_guess_list, zidx = self._reinitialize_feedback()
+
+        timing = self._resolve_timing()
+
+        omega_measured_rr = self._resolve_omega_rr(n_repeat=n_repeat, n_step=n_step, omega_override_rr=omega_override_rr)
+        if control_omega_source in {"measured", "override"} and omega_measured_rr is None:
+            raise ValueError("No omega control data available. Provide omega_override_rr or saved ad.data.omega_raman.")
+
+        # Preallocate output arrays once and fill them in-place.
+        s_z_rr = np.zeros((n_repeat, n_step), dtype=float)
+        P0_rr = np.zeros((n_repeat, n_step, self.m), dtype=float)
+        omega_control_rr = np.zeros((n_repeat, n_step), dtype=float)
+        omega_recomputed_rr = np.zeros((n_repeat, n_step), dtype=float)
+        t_input_rr = np.zeros((n_repeat, n_step), dtype=float)
+        t_s_z_rr = np.zeros((n_repeat, n_step), dtype=float)
+        k_rr = np.zeros((n_repeat, n_step), dtype=float)
+        state_rr = np.zeros((n_repeat, n_step, 3), dtype=float) if return_full_state else None
+
+        # Use parallel processing if n_jobs != 1 and joblib is available
+        use_parallel = n_jobs != 1 and HAS_JOBLIB
+        if n_jobs != 1 and not HAS_JOBLIB:
+            import warnings
+            warnings.warn(
+                "joblib not installed; falling back to sequential processing. "
+                "Install joblib for parallel execution: pip install joblib",
+                UserWarning,
+            )
+
+        if use_parallel:
+            Parallel(n_jobs=n_jobs, verbose=parallel_verbose, backend='threading')(
+                delayed(self._run_shot_into_buffers)(
+                    r,
+                    n_step,
+                    apd_rr,
+                    fractional_initial_offset_r,
+                    omega_measured_rr,
+                    control_omega_source,
+                    timing,
+                    include_photon_noise,
+                    update_raman_frequency,
+                    update_rabi_frequency,
+                    return_full_state,
+                    zidx,
+                    s_z_rr,
+                    P0_rr,
+                    omega_control_rr,
+                    omega_recomputed_rr,
+                    t_input_rr,
+                    t_s_z_rr,
+                    k_rr,
+                    state_rr,
+                )
+                for r in range(n_repeat)
+            )
+        else:
+            for r in range(n_repeat):
+                self._run_shot_into_buffers(
+                    r, n_step, apd_rr, fractional_initial_offset_r, omega_measured_rr, control_omega_source, timing,
+                    include_photon_noise, update_raman_frequency, update_rabi_frequency,
+                    return_full_state, zidx,
+                    s_z_rr, P0_rr, omega_control_rr, omega_recomputed_rr, t_input_rr, t_s_z_rr, k_rr, state_rr,
+                )
+
+        apd_norm_rr = self._normalize_apd(
+            apd_rr,
+        )
+
+        return FeedbackReplayResult(
+            s_z_rr=s_z_rr,
+            P0_rr=P0_rr,
+            omega_control_rr=omega_control_rr,
+            omega_recomputed_rr=omega_recomputed_rr,
+            t_input_rr=t_input_rr,
+            t_s_z_rr=t_s_z_rr,
+            k_rr=k_rr,
+            apd_rr=apd_rr,
+            apd_norm_rr=apd_norm_rr,
+            omega_guess_list=omega_guess_list,
+            zidx=int(zidx),
+            state_rr=state_rr,
+            metadata={
+                "run_id": int(getattr(self, "_run_id", -1)),
+                "N_repeat": int(n_repeat),
+                "N_step": int(getattr(self.p, "N_pulses", n_step)),
+                "feedback_grid_size": self._effective_feedback_grid_size(),
+                "control_omega_source": str(control_omega_source),
+                "include_photon_noise": bool(include_photon_noise),
+                "update_raman_frequency": bool(update_raman_frequency),
+                "update_rabi_frequency": bool(update_rabi_frequency),
+                "feedback_measurement_midpoint_remap_enabled": bool(
+                    self.feedback_measurement_midpoint_remap_enabled
+                ),
+                "timing": timing,
+            },
+        )
+
+
+class FeedbackReplay(FeedbackReplayCore):
+    """Notebook-friendly wrapper around FeedbackReplayCore.
+
+    This subclass keeps plotting and quick-analysis helpers separate from the
+    core replay engine so simulation methods stay focused and readable.
+    """
+
+    def apd_to_sz(
+        self,
+        apd,
+        *,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+    ):
+        """Convert APD voltage value(s) into measured spin-like Sz.
+
+        This applies the same APD calibration and optional midpoint remap used
+        by replay and fitting code, so notebook checks match the feedback model.
+        Scalars return a float; array-like inputs return a NumPy array.
+        """
+        apd_arr = np.asarray(apd, dtype=float)
+        sz = self._normalize_apd(
+            apd_arr,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
+        if apd_arr.ndim == 0:
+            return float(sz)
+        return np.asarray(sz, dtype=float)
+
+    def run_default(self, *, return_full_state: bool = False) -> FeedbackReplayResult:
+        """Convenience default: replay measured APD with measured omega control."""
+        return self.replay_measured(return_full_state=return_full_state)
+
+    def run_with_recomputed_omega_control(
+        self,
+        *,
+        return_full_state: bool = False,
+        include_photon_noise: Optional[bool] = None,
+        update_raman_frequency: Optional[bool] = None,
+    ) -> FeedbackReplayResult:
+        """Replay APD while applying recomputed omega as control at each step."""
+        return self.replay_measured(
+            control_omega_source="recomputed",
+            return_full_state=return_full_state,
+            include_photon_noise=include_photon_noise,
+            update_raman_frequency=update_raman_frequency,
+        )
+
+    def grouped_average(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        use_stderr: bool = True,
+    ) -> List[Dict[str, np.ndarray]]:
+        """Easy-call grouped averaging by shared omega control sequence."""
+        return self.average_by_omega_group(result, use_stderr=use_stderr)
+
+    def compute_group_fit_metrics(
+        self,
+        groups: List[Dict[str, np.ndarray]],
+        *,
+        use_weighted_loss: bool = False,
+        pulse_weight_power: float = 0.0,
+        eps: float = 1.0e-12,
+    ) -> Dict[str, object]:
+        """Compute aggregate fit metrics between grouped APD and grouped resonant s_z.
+
+        Parameters
+        ----------
+        groups
+            Output of `grouped_average(...)` or `average_by_omega_group(...)`.
+        use_weighted_loss
+            If True, use weights 1/(apd_norm_err^2 + eps).
+        pulse_weight_power
+            Exponent applied to pulse index in the coherence-derived weight
+            profile: ``weight_i = back_action_coherence ** (pulse_weight_power * i)``.
+            Default 0 gives uniform weighting.
+        eps
+            Small positive number for weighted-loss stability.
+        """
+        group_rows: List[Dict[str, float]] = []
+
+        weighted_sq_sum = 0.0
+        weight_sum = 0.0
+        total_points = 0
+
+        for gidx, group in enumerate(groups):
+            sim = np.asarray(group["s_z_mean"], dtype=float).ravel()
+            apd = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
+
+            if sim.size == 0 or apd.size == 0 or sim.shape != apd.shape:
+                group_rows.append(
+                    {
+                        "group_index": float(gidx),
+                        "mse": np.nan,
+                        "n_points": 0.0,
+                    }
+                )
+                continue
+
+            residual = sim - apd
+            sq = residual * residual
+            pulse_weight_profile = self._get_cached_pulse_weight_profile(
+                residual.size,
+                pulse_weight_power=pulse_weight_power,
+            )
+
+            if use_weighted_loss:
+                sigma = np.asarray(group.get("apd_norm_err", np.zeros_like(residual)), dtype=float).ravel()
+                if sigma.shape != residual.shape:
+                    sigma = np.zeros_like(residual)
+                w = 1.0 / (sigma * sigma + float(eps))
+            else:
+                w = np.ones_like(residual)
+
+            w = w * pulse_weight_profile
+
+            group_weight_sum = float(np.sum(w))
+            group_sq_sum = float(np.sum(w * sq))
+            group_mse = np.nan if group_weight_sum <= 0.0 else group_sq_sum / group_weight_sum
+
+            weighted_sq_sum += group_sq_sum
+            weight_sum += group_weight_sum
+            total_points += int(residual.size)
+
+            group_rows.append(
+                {
+                    "group_index": float(gidx),
+                    "mse": float(group_mse),
+                    "n_points": float(residual.size),
+                }
+            )
+
+        overall_mse = np.nan if weight_sum <= 0.0 else weighted_sq_sum / weight_sum
+        return {
+            "overall_mse": float(overall_mse) if np.isfinite(overall_mse) else np.nan,
+            "n_groups": int(len(groups)),
+            "n_points": int(total_points),
+            "use_weighted_loss": bool(use_weighted_loss),
+            "back_action_coherence": float(np.clip(self.back_action_coherence, 0.0, 1.0)),
+            "pulse_weight_power": float(pulse_weight_power),
+            "group_metrics": group_rows,
+        }
+
+    def _compute_pulse_weight_profile(
+        self,
+        n_points: int,
+        *,
+        pulse_weight_power: float = 0.0,
+    ) -> np.ndarray:
+        """Return per-pulse fit weights implied by back-action coherence.
+
+        The feedback model multiplies transverse coherence by
+        ``back_action_coherence`` after each pulse. Reuse that same geometric
+        decay in the fit objective so later, more-dephased points count less.
+        """
+        n_points = int(n_points)
+        if n_points < 0:
+            raise ValueError("n_points must be non-negative.")
+        if n_points == 0:
+            return np.zeros(0, dtype=float)
+
+        coherence = float(np.clip(self.back_action_coherence, 0.0, 1.0))
+        power = float(pulse_weight_power)
+        if power < 0.0:
+            raise ValueError("pulse_weight_power must be non-negative.")
+
+        if coherence == 1.0 or power == 0.0:
+            return np.ones(n_points, dtype=float)
+
+        step_index = np.arange(n_points, dtype=float) * power
+        return np.power(coherence, step_index, dtype=float)
+
+    def _extract_apd_noise_fraction(self) -> float:
+        """Extract APD measurement noise as a fraction of expected photon count.
+
+        Returns ratio of std_n_photons_per_shot / N_photons_per_shot if available,
+        else returns 0.0 (noiseless assumption).
+        """
+        try:
+            N_photons = float(getattr(self.p, "N_photons_per_shot", 1.0))
+            std_photons = float(getattr(self.p, "std_n_photons_per_shot", 0.0))
+            if N_photons > 0.0:
+                return std_photons / N_photons
+        except (AttributeError, TypeError, ValueError):
+            pass
+        return 0.0
+
+    @staticmethod
+    def _resolve_aggregate_mode(aggregate_mode: str, *, group_shots: bool) -> str:
+        mode = str(aggregate_mode).strip().lower()
+        if mode == "auto":
+            return "point_weighted" if group_shots else "mean_over_groups"
+        if mode not in ("point_weighted", "mean_over_groups"):
+            raise ValueError(
+                f"Unsupported aggregate_mode={aggregate_mode!r}. "
+                "Use 'auto', 'point_weighted' or 'mean_over_groups'."
+            )
+        return mode
+
+    def compute_group_fit_metrics_with_noise(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        group_shots: bool = True,
+        precomputed_groups: Optional[List[Dict[str, np.ndarray]]] = None,
+        include_apd_noise: Optional[bool] = None,
+        apd_noise_override_fraction: Optional[float] = None,
+        apd_noise_min_std: float = 0.03,
+        aggregate_mode: str = "auto",
+        tolerance_rad_s: Optional[float] = None,
+        pulse_weight_power: float = 0.0,
+        eps: float = 1.0e-12,
+    ) -> Dict[str, object]:
+        """Compute per-omega-group fit metrics (naturally per-shot for feedback runs).
+
+        Groups repeats by omega sequence similarity. For validation experiments
+        with deterministic omega (all repeats same), this yields 1 group and 1 MSE.
+        For feedback experiments with varying omega per shot, this yields N groups
+        (one per unique omega) and returns the average MSE across groups.
+
+        Parameters
+        ----------
+        result
+            Replay result from replay_measured(...) or similar.
+        group_shots
+            If True, group repeats by shared omega-control sequence before
+            scoring. If False, score each repeat independently (per-shot fit).
+        include_apd_noise
+            Global APD-noise enable flag.
+            If None (default), APD noise is enabled in principle and then filtered
+            per group by shot count: groups with more than one run do not use APD
+            noise weighting. Groups with exactly one run can use APD noise weighting.
+            If False, APD noise weighting is disabled for all groups.
+            If True, APD noise weighting is enabled for singleton groups only
+            (groups with >1 run still do not use APD noise weighting).
+        apd_noise_override_fraction
+            Optional override for APD noise fraction (std_photons / N_photons).
+            If provided, use this value instead of extracting from calibration.
+            Only used when APD noise weighting is enabled.
+        apd_noise_min_std
+            Minimum APD uncertainty floor on normalized APD scale. This prevents
+            near-zero APD points from receiving extremely large weights.
+        aggregate_mode
+            Group-loss aggregation mode:
+            - 'auto': point-weighted for grouped fits, mean-over-groups for per-shot fits
+            - 'point_weighted': aggregate by total weighted residual across points
+            - 'mean_over_groups': arithmetic mean of per-group MSE values
+        tolerance_rad_s
+            Omega grouping tolerance. If None, uses self.omega_group_tolerance_rad_s.
+            Tighter tolerance → more groups (for feedback: closer to 1 group per shot).
+        pulse_weight_power
+            Exponent applied to pulse index in the coherence-derived weight
+            profile: ``weight_i = back_action_coherence ** (pulse_weight_power * i)``.
+            Default 0 gives uniform weighting.
+        eps
+            Small positive number for numerical stability.
+
+        Returns
+        -------
+        dict
+            Keys: overall_mse, n_groups, n_points, apd_noise_fraction,
+            apd_noise_applied_any, group_metrics.
+        """
+        groups = precomputed_groups
+        if groups is None:
+            groups = self.summarize_result_groups(
+                result,
+                group_shots=group_shots,
+                use_stderr=True,
+                tolerance_rad_s=tolerance_rad_s,
+            )
+
+        if float(apd_noise_min_std) < 0.0:
+            raise ValueError("apd_noise_min_std must be non-negative.")
+        aggregate_mode_resolved = self._resolve_aggregate_mode(
+            aggregate_mode,
+            group_shots=bool(group_shots),
+        )
+
+        # Auto: enable APD noise globally, but still filter per-group by member count.
+        global_include_apd_noise = True if include_apd_noise is None else bool(include_apd_noise)
+
+        # Determine APD noise fraction once, then apply per eligible group.
+        if global_include_apd_noise:
+            if apd_noise_override_fraction is not None:
+                apd_noise_frac = float(apd_noise_override_fraction)
+            else:
+                apd_noise_frac = self._extract_apd_noise_fraction()
+        else:
+            apd_noise_frac = 0.0
+
+        if apd_noise_frac < 0.0:
+            raise ValueError("APD noise fraction must be non-negative.")
+
+        group_rows: List[Dict[str, float]] = []
+        group_mse_values: List[float] = []
+        total_points = 0
+        apd_noise_applied_any = False
+        weighted_sq_sum = 0.0
+        weight_sum = 0.0
+
+        for gidx, group in enumerate(groups):
+            sim = np.asarray(group["s_z_mean"], dtype=float).ravel()
+            apd = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
+            n_members = int(np.asarray(group.get("members", []), dtype=int).size)
+            use_group_apd_noise = bool(global_include_apd_noise and apd_noise_frac > 0.0 and n_members <= 1)
+
+            if sim.size == 0 or apd.size == 0 or sim.shape != apd.shape:
+                group_rows.append(
+                    {
+                        "group_index": float(gidx),
+                        "mse": np.nan,
+                        "n_points": 0.0,
+                        "n_members": float(n_members),
+                        "use_apd_noise": float(1 if use_group_apd_noise else 0),
+                    }
+                )
+                continue
+
+            residual = sim - apd
+            sq = residual * residual
+            pulse_weight_profile = self._get_cached_pulse_weight_profile(
+                residual.size,
+                pulse_weight_power=pulse_weight_power,
+            )
+
+            if use_group_apd_noise:
+                # Weight by inverse measurement uncertainty with a floor to avoid
+                # pathological overweighting at near-zero APD.
+                measurement_std = np.hypot(np.abs(apd) * apd_noise_frac, float(apd_noise_min_std))
+                w = 1.0 / (measurement_std * measurement_std + float(eps))
+                apd_noise_applied_any = True
+            else:
+                w = np.ones_like(residual)
+
+            w = w * pulse_weight_profile
+
+            group_weight_sum = float(np.sum(w))
+            group_sq_sum = float(np.sum(w * sq))
+            group_mse = np.nan if group_weight_sum <= 0.0 else group_sq_sum / group_weight_sum
+            weighted_sq_sum += group_sq_sum
+            weight_sum += group_weight_sum
+
+            total_points += int(residual.size)
+
+            if np.isfinite(group_mse):
+                group_mse_values.append(float(group_mse))
+
+            group_rows.append({
+                "group_index": float(gidx),
+                "mse": float(group_mse) if np.isfinite(group_mse) else np.nan,
+                "n_points": float(residual.size),
+                "n_members": float(n_members),
+                "use_apd_noise": float(1 if use_group_apd_noise else 0),
+                "weight_sum": float(group_weight_sum),
+            })
+
+        if aggregate_mode_resolved == "point_weighted":
+            overall_mse = np.nan if weight_sum <= 0.0 else float(weighted_sq_sum / weight_sum)
+        else:
+            overall_mse = np.nan if len(group_mse_values) == 0 else float(np.mean(group_mse_values))
+
+        return {
+            "overall_mse": float(overall_mse) if np.isfinite(overall_mse) else np.nan,
+            "n_groups": int(len(groups)),
+            "n_points": int(total_points),
+            "apd_noise_fraction": float(apd_noise_frac),
+            "apd_noise_min_std": float(apd_noise_min_std),
+            "aggregate_mode": str(aggregate_mode_resolved),
+            "aggregate_mode_requested": str(aggregate_mode),
+            "back_action_coherence": float(np.clip(self.back_action_coherence, 0.0, 1.0)),
+            "pulse_weight_power": float(pulse_weight_power),
+            "group_shots": bool(group_shots),
+            "apd_noise_applied_any": bool(apd_noise_applied_any),
+            "group_metrics": group_rows,
+        }
+
+    def replay_validation_mode(
+        self,
+        *,
+        control_omega_source: str = "measured",
+        include_photon_noise: Optional[bool] = None,
+        update_raman_frequency: Optional[bool] = None,
+        update_rabi_frequency: bool = False,
+        use_stderr: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+        use_weighted_loss: bool = False,
+        pulse_weight_power: float = 0.0,
+        eps: float = 1.0e-12,
+    ) -> Dict[str, object]:
+        """Run fixed-omega validation-style replay and return grouped fit summary."""
+        result = self.replay_measured(
+            control_omega_source=control_omega_source,
+            include_photon_noise=include_photon_noise,
+            update_raman_frequency=update_raman_frequency,
+            update_rabi_frequency=update_rabi_frequency,
+            return_full_state=False,
+        )
+
+        if tolerance_rad_s is None:
+            groups = self.grouped_average(result, use_stderr=use_stderr)
+        else:
+            groups = self.average_by_omega_group(result, use_stderr=use_stderr, tolerance_rad_s=tolerance_rad_s)
+
+        fit_metrics = self.compute_group_fit_metrics(
+            groups,
+            use_weighted_loss=use_weighted_loss,
+            pulse_weight_power=pulse_weight_power,
+            eps=eps,
+        )
+        return {
+            "result": result,
+            "groups": groups,
+            "fit": fit_metrics,
+            "mode": "validation",
+            "control_omega_source": str(control_omega_source),
+        }
+
+    def replay_feedback_mode(
+        self,
+        *,
+        control_omega_source: str = "measured",
+        include_photon_noise: Optional[bool] = None,
+        update_raman_frequency: Optional[bool] = None,
+        update_rabi_frequency: bool = False,
+        return_full_state: bool = False,
+        use_stderr: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+    ) -> Dict[str, object]:
+        """Run feedback-enabled replay and return posterior-ready summary payload."""
+        result = self.replay_measured(
+            control_omega_source=control_omega_source,
+            include_photon_noise=include_photon_noise,
+            update_raman_frequency=update_raman_frequency,
+            update_rabi_frequency=update_rabi_frequency,
+            return_full_state=return_full_state,
+        )
+
+        if tolerance_rad_s is None:
+            groups = self.grouped_average(result, use_stderr=use_stderr)
+        else:
+            groups = self.average_by_omega_group(result, use_stderr=use_stderr, tolerance_rad_s=tolerance_rad_s)
+
+        return {
+            "result": result,
+            "groups": groups,
+            "mode": "feedback",
+            "control_omega_source": str(control_omega_source),
+            "zidx": int(result.zidx),
+            "posterior_rrm": result.P0_rr,
+        }
+
+    def sweep_replay_parameter(
+        self,
+        parameter_name: str,
+        values: Sequence[float],
+        *,
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        group_shots: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+        include_apd_noise: Optional[bool] = None,
+        apd_noise_override_fraction: Optional[float] = None,
+        apd_noise_min_std: float = 0.03,
+        aggregate_mode: str = "auto",
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = False,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        eps: float = 1.0e-12,
+        mse_smoothing_points: float = 0.0,
+        pulse_weight_power: float = 0.0,
+    ) -> Dict[str, object]:
+        """Sweep one replay parameter and rank fits against APD data via per-omega-group metrics.
+
+        For each parameter value, groups repeats by omega sequence similarity and computes
+        per-group MSE, then returns the average MSE.
+
+        **Automatic behavior:**
+        - **Validation runs** (deterministic omega, all repeats same): 1 omega group → 1 MSE
+        - **Feedback runs** (varying omega per shot): N omega groups (one per unique omega) → avg of N MSEs
+
+        The grouping is automatic: use `tolerance_rad_s` to control tightness.
+        - Small tolerance: tight grouping (feedback: closer to 1 group per shot)
+        - Large tolerance: loose grouping (validation: all together)
+        - None (default): uses `self.omega_group_tolerance_rad_s`
+
+        Parameters
+        ----------
+        parameter_name
+            Parameter to sweep (e.g., 'back_action_coherence'). Must be a
+            keyword argument accepted by replay_measured(...).
+        values
+            Sequence of parameter values to evaluate.
+        replay_kwargs
+            Additional keyword arguments passed to replay_measured(...).
+        group_shots
+            If True, score grouped repeats. If False, score each repeat as an
+            independent fit trace.
+        tolerance_rad_s
+            Omega grouping tolerance (rad/s). Controls how similar two omega sequences
+            must be to be considered the same group. If None, uses class default.
+            Tighter (smaller) → more groups. For feedback with unique omegas per shot,
+            use small tolerance to get one group per shot.
+        include_apd_noise
+                        Global APD-noise flag for fit weighting.
+                        If None (default), APD noise is enabled in principle and then filtered
+                        by per-group shot count in fit evaluation.
+                        If True, APD noise is enabled for singleton groups only.
+                        If False, APD noise is disabled for all groups.
+        apd_noise_override_fraction
+            Optional override for APD noise fraction (std_photons / N_photons).
+            If provided, use this value instead of extracting from calibration.
+            Only used when APD noise weighting is enabled.
+        apd_noise_min_std
+            Minimum APD uncertainty floor on normalized APD scale for
+            APD-noise weighting.
+        aggregate_mode
+            Group-loss aggregation mode passed to
+            compute_group_fit_metrics_with_noise(...). 'auto' uses pooled
+            point weighting for grouped fits and equal-shot averaging for
+            per-shot fits.
+        n_jobs
+            Number of cores for parallel shot simulation within each replay.
+            Default 1 (sequential). Use -1 for all cores.
+        parallel_verbose
+            Verbosity level for joblib parallel execution (0-10).
+        eps
+            Small positive number for numerical stability.
+        mse_smoothing_points
+            Gaussian smoothing width (sigma) in grid points for 1-D MSE
+            traces. If > 0, best-index selection uses smoothed MSE.
+        pulse_weight_power
+            Exponent applied to pulse index in the coherence-derived fit weight
+            profile. Default 0 gives uniform weighting.
+
+        Returns
+        -------
+        dict
+            Keys: parameter_name, values, losses (MSE per sweep point),
+            records, best_index, best_value, best_result, best_groups, best_fit,
+            replay_kwargs, fit_mode ('omega_group').
+        """
+        if replay_kwargs is None:
+            replay_kwargs = {}
+
+        value_list = [float(value) for value in values]
+        if len(value_list) == 0:
+            raise ValueError("values must contain at least one entry.")
+
+        optimizer = FeedbackReplayOptimizer(self, replay_defaults=replay_kwargs)
+        optimizer.add_parameter(parameter_name, value_list)
+        fit_payload = optimizer.fit(
+            method="grid",
+            group_shots=bool(group_shots),
+            tolerance_rad_s=tolerance_rad_s,
+            include_apd_noise=include_apd_noise,
+            apd_noise_override_fraction=apd_noise_override_fraction,
+            apd_noise_min_std=apd_noise_min_std,
+            aggregate_mode=aggregate_mode,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            feedback_apd_map_enabled=feedback_apd_map_enabled,
+            feedback_apd_map_verbose=feedback_apd_map_verbose,
+            n_jobs=int(n_jobs),
+            parallel_verbose=int(parallel_verbose),
+            eps=eps,
+            mse_smoothing_points=float(mse_smoothing_points),
+            pulse_weight_power=float(pulse_weight_power),
+        )
+
+        records: List[Dict[str, object]] = []
+        for record in fit_payload["records"]:
+            value = float(record["params"][parameter_name])
+            records.append(
+                {
+                    parameter_name: value,
+                    "result": record["result"],
+                    "groups": record["groups"],
+                    "fit": record["fit"],
+                }
+            )
+
+        losses = np.asarray([record["fit"]["overall_mse"] for record in records], dtype=float)
+        smoothed_losses = np.asarray(fit_payload.get("smoothed_losses", losses), dtype=float)
+        if not np.isfinite(losses).any():
+            raise RuntimeError(f"All sweep losses are non-finite for parameter {parameter_name!r}.")
+
+        best_idx = int(fit_payload["best_index"])
+        best_record = records[best_idx]
+
+        return {
+            "parameter_name": str(parameter_name),
+            "values": np.asarray(value_list, dtype=float),
+            "losses": losses,
+            "smoothed_losses": smoothed_losses,
+            "records": records,
+            "best_index": int(best_idx),
+            "best_value": float(best_record[parameter_name]),
+            "best_result": best_record["result"],
+            "best_groups": best_record["groups"],
+            "best_fit": best_record["fit"],
+            "replay_kwargs": dict(replay_kwargs),
+            "fit_mode": str(fit_payload.get("fit_mode", "omega_group")),
+            "selection_metric": str(fit_payload.get("selection_metric", "raw_mse")),
+            "mse_smoothing_points": float(fit_payload.get("mse_smoothing_points", 0.0)),
+            "include_apd_noise": include_apd_noise,
+            "apd_noise_min_std": float(apd_noise_min_std),
+            "aggregate_mode": str(aggregate_mode),
+            "tolerance_rad_s": tolerance_rad_s,
+        }
+
+    def plot_data_sz_vs_apd(
+        self,
+        *,
+        grouped_average: bool = True,
+        use_stderr: bool = True,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        trace_indices: Optional[Union[int, Sequence[int]]] = None,
+        ax=None,
+    ) -> Tuple[plt.Figure, plt.Axes]:
+        """Plot saved in-run s_z against APD-derived spin values from atomdata."""
+        apd_rr = self._to_repeat_step(
+            _require_atomdata_attr(self.ad.data, "apd", "ad.data"),
+            "ad.data.apd",
+        )
+        sz_rr = self._to_repeat_step(
+            _require_atomdata_attr(self.ad.data, "s_z", "ad.data"),
+            "ad.data.s_z",
+        )
+        t_rr = self._to_repeat_step(
+            _require_atomdata_attr(self.ad.data, "t", "ad.data"),
+            "ad.data.t",
+        )
+
+        if sz_rr.shape != apd_rr.shape:
+            raise ValueError(
+                f"saved s_z shape {sz_rr.shape} does not match APD shape {apd_rr.shape}."
+            )
+        if t_rr.shape != apd_rr.shape:
+            raise ValueError(
+                f"saved time shape {t_rr.shape} does not match APD shape {apd_rr.shape}."
+            )
+
+        apd_norm_rr = self._normalize_apd(
+            apd_rr,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+        )
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7, 4))
+        else:
+            fig = ax.figure
+
+        color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
+
+        if grouped_average:
+            omega_rr = self._omega_rr_cached
+            if omega_rr is not None and np.asarray(omega_rr).shape == apd_rr.shape:
+                groups = self._group_repeats_by_omega(np.asarray(omega_rr, dtype=float))
+            else:
+                groups = [list(range(apd_rr.shape[0]))]
+
+            selected_group_indices = self._resolve_trace_indices(
+                len(groups),
+                trace_indices,
+                name="trace_indices",
+            )
+
+            for gidx in selected_group_indices:
+                members = groups[int(gidx)]
+                idx = np.asarray(members, dtype=int)
+                n_members = int(idx.size)
+                denom = np.sqrt(float(n_members)) if use_stderr and n_members > 1 else 1.0
+                color = color_cycle[gidx % len(color_cycle)]
+
+                t_mean = np.mean(t_rr[idx], axis=0)
+                apd_mean = np.mean(apd_norm_rr[idx], axis=0)
+                apd_std = (
+                    np.std(apd_norm_rr[idx], axis=0, ddof=1)
+                    if n_members > 1
+                    else np.zeros(apd_norm_rr.shape[1], dtype=float)
+                )
+                sz_mean = np.mean(sz_rr[idx], axis=0)
+
+                if n_members > 1:
+                    ax.errorbar(
+                        t_mean,
+                        apd_mean,
+                        yerr=apd_std / denom,
+                        fmt="o",
+                        markersize=4,
+                        capsize=2,
+                        elinewidth=1.0,
+                        alpha=0.85,
+                        color=color,
+                        label=f"group {gidx} APD",
+                    )
+                else:
+                    ax.scatter(
+                        t_mean,
+                        apd_mean,
+                        s=18,
+                        alpha=0.85,
+                        color=color,
+                        label=f"group {gidx} APD",
+                    )
+
+                ax.plot(
+                    t_mean,
+                    sz_mean,
+                    "-",
+                    lw=1.6,
+                    alpha=0.95,
+                    color=color,
+                    label=f"group {gidx} saved s_z",
+                )
+        else:
+            n_repeat = apd_rr.shape[0]
+            selected_repeat_indices = self._resolve_trace_indices(
+                n_repeat,
+                trace_indices,
+                name="trace_indices",
+            )
+
+            for r in selected_repeat_indices:
+                t = t_rr[r]
+                color = color_cycle[r % len(color_cycle)]
+                ax.scatter(t, apd_norm_rr[r], s=12, alpha=0.55, color=color)
+                ax.plot(t, sz_rr[r], "-", lw=1.3, alpha=0.8, color=color)
+
+            ax.scatter([], [], s=18, label="APD-derived spin")
+            ax.plot([], [], "-", label="saved in-run s_z")
+
+        run_id = int(getattr(getattr(self.ad, "run_info", None), "run_id", -1))
+        ax.set_title(f"run {run_id}: expt APD, $S_z$")
+        ax.set_xlabel("time (s)")
+        ax.set_ylabel("spin-like value")
+        ax.set_ylim(-1.05, 1.05)
+        ax.grid(alpha=0.25)
+        return fig, ax
+
+    def plot_sz_vs_apd(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        grouped_average: bool = True,
+        
+        use_stderr: bool = False,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        trace_indices: Optional[Union[int, Sequence[int]]] = None,
+        ax=None,
+    ) -> Tuple[plt.Figure, plt.Axes]:
+        """Plot simulation s_z against APD-derived spin values, grouped when appropriate."""
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7, 4))
+        else:
+            fig = ax.figure
+
+        color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
+
+        if grouped_average:
+            groups = self.average_by_omega_group(
+                result,
+                use_stderr=use_stderr,
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            )
+            selected_group_indices = self._resolve_trace_indices(
+                len(groups),
+                trace_indices,
+                name="trace_indices",
+            )
+            for gidx in selected_group_indices:
+                group = groups[int(gidx)]
+                t = group["t_s_z"]
+                color = color_cycle[gidx % len(color_cycle)]
+                apd_mean = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
+                apd_err = np.asarray(group["apd_norm_err"], dtype=float).ravel()
+                n_members = int(np.asarray(group.get("members", []), dtype=int).size)
+
+                if n_members > 1:
+                    ax.errorbar(
+                        t,
+                        apd_mean,
+                        yerr=apd_err,
+                        fmt="o",
+                        markersize=4,
+                        capsize=2,
+                        elinewidth=1.0,
+                        alpha=0.85,
+                        color=color,
+                        label=f"group {gidx} APD",
+                    )
+                else:
+                    ax.scatter(
+                        t,
+                        apd_mean,
+                        s=18,
+                        alpha=0.85,
+                        color=color,
+                        label=f"group {gidx} APD",
+                    )
+                ax.plot(
+                    t,
+                    group["s_z_mean"],
+                    "-",
+                    lw=1.6,
+                    alpha=0.95,
+                    color=color,
+                    label=f"group {gidx} sim",
+                )
+        else:
+            n_repeat = result.s_z_rr.shape[0]
+            apd_norm_rr = self._normalize_apd(
+                result.apd_rr,
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            )
+            selected_repeat_indices = self._resolve_trace_indices(
+                n_repeat,
+                trace_indices,
+                name="trace_indices",
+            )
+            for r in selected_repeat_indices:
+                t = result.t_s_z_rr[r]
+                color = color_cycle[r % len(color_cycle)]
+                ax.scatter(t, apd_norm_rr[r], s=12, alpha=0.55, color=color)
+                ax.plot(t, result.s_z_rr[r], "-", lw=1.3, alpha=0.8, color=color)
+
+            ax.scatter([], [], s=18, label="APD-derived spin")
+            ax.plot([], [], "-", label="simulated s_z")
+
+        run_id = int(result.metadata.get("run_id", -1))
+        ax.set_title(f"run {run_id}: APD-derived spin vs simulated s_z")
+        ax.set_xlabel("time (s)")
+        ax.set_ylabel("spin-like value")
+        ax.set_ylim(-1.05, 1.05)
+        ax.grid(alpha=0.25)
+        return fig, ax
+
+    def plot_omega_feedback_comparison(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        grouped_average: bool = True,
+        control_lag_steps: int = 0,
+        trace_indices: Optional[Union[int, Sequence[int]]] = None,
+        group_indices: Optional[Sequence[int]] = None,
+        trace_colors: Optional[Sequence[object]] = None,
+        ax=None,
+    ) -> Tuple[plt.Figure, plt.Axes]:
+        """Compare control omega used in experiment vs recomputed omega on pulse index."""
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(7, 4))
+        else:
+            fig = ax.figure
+
+        if self.p.update_raman_frequency_bool:
+            recomputed_lag_steps = 1
+        else:
+            recomputed_lag_steps = 0
+
+        color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
+
+        f0 = float(getattr(self.p, "frequency_raman_transition", 0.0))
+        f_rabi = 1.0 / (2.0 * float(self.p.t_raman_pi_pulse))
+
+        def _lag_xy(x: np.ndarray, y: np.ndarray, lag_steps: int) -> Tuple[np.ndarray, np.ndarray]:
+            lag = int(lag_steps)
+            if lag == 0:
+                return x, y
+            if abs(lag) >= len(x):
+                return np.asarray([], dtype=float), np.asarray([], dtype=float)
+            if lag > 0:
+                return x[lag:], y[:-lag]
+            return x[:lag], y[-lag:]
+
+        if trace_indices is not None and group_indices is not None:
+            raise ValueError("Pass only one of trace_indices or group_indices.")
+        selected_indices = group_indices if trace_indices is None else trace_indices
+
+        if grouped_average:
+            groups = self.average_by_omega_group(result, use_stderr=True)
+            selected_group_indices = self._resolve_trace_indices(
+                len(groups),
+                selected_indices,
+                name="trace_indices",
+            )
+
+            if trace_colors is not None:
+                color_overrides = list(trace_colors)
+            else:
+                color_overrides = []
+
+            for local_idx, gidx in enumerate(selected_group_indices):
+                group = groups[int(gidx)]
+                pulse_idx = np.arange(len(group["omega_control_mean"]), dtype=float)
+                ctrl = (group["omega_control_mean"] / (2.0 * np.pi) - f0) / f_rabi
+                rec = (group["omega_recomputed_mean"] / (2.0 * np.pi) - f0) / f_rabi
+                if local_idx < len(color_overrides):
+                    color = color_overrides[local_idx]
+                else:
+                    color = color_cycle[gidx % len(color_cycle)]
+                x_ctrl, ctrl_plot = _lag_xy(pulse_idx, np.asarray(ctrl, dtype=float), int(control_lag_steps))
+                x_rec, rec_plot = _lag_xy(pulse_idx, np.asarray(rec, dtype=float), int(recomputed_lag_steps))
+                ax.scatter(x_ctrl, ctrl_plot, s=18, alpha=0.85, color=color)
+                ax.plot(x_rec, rec_plot, "-", lw=1.6, alpha=0.95, color=color)
+        else:
+            n_repeat = result.omega_control_rr.shape[0]
+            selected_repeat_indices = self._resolve_trace_indices(
+                n_repeat,
+                selected_indices,
+                name="trace_indices",
+            )
+
+            if trace_colors is not None:
+                color_overrides = list(trace_colors)
+            else:
+                color_overrides = []
+
+            for local_idx, r in enumerate(selected_repeat_indices):
+                pulse_idx = np.arange(result.omega_control_rr.shape[1], dtype=float)
+                ctrl = (result.omega_control_rr[r] / (2.0 * np.pi) - f0) / f_rabi
+                rec = (result.omega_recomputed_rr[r] / (2.0 * np.pi) - f0) / f_rabi
+                if local_idx < len(color_overrides):
+                    color = color_overrides[local_idx]
+                else:
+                    color = color_cycle[r % len(color_cycle)]
+                x_ctrl, ctrl_plot = _lag_xy(pulse_idx, np.asarray(ctrl, dtype=float), int(control_lag_steps))
+                x_rec, rec_plot = _lag_xy(pulse_idx, np.asarray(rec, dtype=float), int(recomputed_lag_steps))
+                ax.scatter(x_ctrl, ctrl_plot, s=12, alpha=0.55, color=color)
+                ax.plot(x_rec, rec_plot, "-", lw=1.3, alpha=0.8, color=color)
+
+        legend_handles = [
+            plt.Line2D([], [], color="0.55", marker="o", linestyle="None", markersize=5, label="Experiment shot"),
+            plt.Line2D([], [], color="0.20", linestyle="-", lw=1.8, label="Recomputed"),
+        ]
+
+        run_id = int(result.metadata.get("run_id", -1))
+        ax.set_title(f"run {run_id}: omega control")
+        ax.set_xlabel("pulse index")
+        ax.set_ylabel("detuning / Omega")
+        ymin, ymax = ax.get_ylim()
+        ax.set_ylim(min(float(ymin), -1.0), max(float(ymax), 1.0))
+        ax.grid(alpha=0.25)
+        ax.legend(handles=legend_handles, loc="best")
+        return fig, ax
+
+    def plot_probability_comparison(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        repeat_idx: int = 0,
+        log_scale: bool = True,
+        normalize_after: int = 0,
+        cmap: str = "viridis",
+    ) -> Tuple[plt.Figure, np.ndarray]:
+        """Side-by-side 2D maps: experiment probabilities vs recomputed posterior."""
+        if repeat_idx < 0 or repeat_idx >= result.P0_rr.shape[0]:
+            raise ValueError(f"repeat_idx {repeat_idx} out of range for N_repeat={result.P0_rr.shape[0]}.")
+
+        def _has_probability_signal(prob_map: np.ndarray) -> bool:
+            vals = np.asarray(prob_map, dtype=float)
+            finite = vals[np.isfinite(vals)]
+            return bool(finite.size > 0 and np.any(finite > 0.0))
+
+        exp_probs = None
+        exp_probs_label = "experiment probabilities reconstructed from measured APD"
+        if hasattr(self.p, "probabilities"):
+            probs = np.asarray(self.p.probabilities)
+            if probs.ndim == 3:
+                exp_probs = np.asarray(probs[repeat_idx], dtype=float).T
+                exp_probs_label = "experiment ad.p.probabilities"
+            elif probs.ndim == 2:
+                exp_probs = np.asarray(probs, dtype=float).T
+                exp_probs_label = "experiment ad.p.probabilities"
+
+        # Some runs save all-zero probability maps; when that happens, rebuild
+        # experiment probabilities from measured APD/omega and experiment params.
+        if exp_probs is not None and not _has_probability_signal(exp_probs):
+            exp_probs = None
+
+        if exp_probs is None:
+            try:
+                expt_result = self.replay_measured(
+                    control_omega_source="measured",
+                    include_photon_noise=None,
+                    update_raman_frequency=None,
+                    update_rabi_frequency=False,
+                    return_full_state=False,
+                )
+                if repeat_idx < expt_result.P0_rr.shape[0]:
+                    exp_probs = np.asarray(expt_result.P0_rr[repeat_idx], dtype=float).T
+                    exp_probs_label = "experiment probabilities recomputed from measured APD + measured omega"
+            except Exception:
+                exp_probs = None
+
+        if exp_probs is None:
+            exp_probs = np.asarray(result.P0_rr[repeat_idx], dtype=float).T
+
+        sim_probs = np.asarray(result.P0_rr[repeat_idx], dtype=float).T
+
+        n_omega_bins = sim_probs.shape[0]
+        n_pulses = sim_probs.shape[1]
+
+        omega_guess_hz = np.asarray(result.omega_guess_list, dtype=float) / (2.0 * np.pi)
+        detuning_hz = omega_guess_hz - float(self.p.frequency_raman_transition)
+        f_rabi = 1.0 / (2.0 * float(self.p.t_raman_pi_pulse))
+        detuning_over_omega = detuning_hz / f_rabi
+
+        if len(detuning_over_omega) != n_omega_bins:
+            n = min(len(detuning_over_omega), n_omega_bins)
+            detuning_over_omega = detuning_over_omega[:n]
+            sim_probs = sim_probs[:n]
+            n_omega_bins = n
+            if exp_probs is not None:
+                exp_probs = exp_probs[:n, :]
+
+        if n_omega_bins == 1:
+            y_edges = np.array([detuning_over_omega[0] - 0.5, detuning_over_omega[0] + 0.5], dtype=float)
+        else:
+            y_mid = 0.5 * (detuning_over_omega[1:] + detuning_over_omega[:-1])
+            y_first = detuning_over_omega[0] - (y_mid[0] - detuning_over_omega[0])
+            y_last = detuning_over_omega[-1] + (detuning_over_omega[-1] - y_mid[-1])
+            y_edges = np.concatenate(([y_first], y_mid, [y_last]))
+
+        x_edges = np.arange(n_pulses + 1)
+
+        norm_region_sim = sim_probs[:, normalize_after:] if n_pulses > normalize_after else sim_probs
+        all_for_norm = norm_region_sim if exp_probs is None else np.concatenate(
+            [
+                norm_region_sim.ravel(),
+                np.asarray(exp_probs[:, normalize_after:] if n_pulses > normalize_after else exp_probs).ravel(),
+            ]
+        )
+
+        if log_scale:
+            positive = all_for_norm[all_for_norm > 0]
+            vmin = float(np.min(positive)) if positive.size > 0 else 1.0e-12
+            vmax = float(np.max(all_for_norm)) if all_for_norm.size > 0 else vmin * 10.0
+            if vmax <= vmin:
+                vmax = vmin * 10.0
+            norm = mcolors.LogNorm(vmin=vmin, vmax=vmax)
+            cb_label = "probability (log)"
+        else:
+            vmin = float(np.nanmin(all_for_norm)) if all_for_norm.size > 0 else 0.0
+            vmax = float(np.nanmax(all_for_norm)) if all_for_norm.size > 0 else 1.0
+            if vmax <= vmin:
+                vmax = vmin + 1.0
+            norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
+            cb_label = "probability"
+
+        fig, axs = plt.subplots(1, 2, figsize=(12, 4), sharex=True, sharey=True, layout="constrained")
+
+        if exp_probs is not None:
+            axs[0].pcolormesh(x_edges, y_edges, exp_probs, shading="auto", cmap=cmap, norm=norm)
+            axs[0].set_title(exp_probs_label)
+
+        im1 = axs[1].pcolormesh(x_edges, y_edges, sim_probs, shading="auto", cmap=cmap, norm=norm)
+        axs[1].set_title("recomputed replay posterior")
+
+        for ax in axs:
+            ax.axhline(0.0, color="red", linestyle="--", linewidth=1.0, alpha=0.7)
+            if normalize_after > 0:
+                ax.axvline(normalize_after, color="red", linestyle="--", linewidth=1.0, alpha=0.7)
+            ax.set_xlabel("pulse index")
+
+        axs[0].set_ylabel("detuning / Omega")
+
+        run_id = int(result.metadata.get("run_id", -1))
+        fig.suptitle(f"run {run_id}: probability comparison (repeat {repeat_idx})")
+        cbar = fig.colorbar(im1, ax=axs, shrink=0.95)
+        cbar.set_label(cb_label)
+
+        return fig, axs
+
+
+class FeedbackReplayOptimizer:
+    """Discrete optimizer for one or more replay parameters.
+
+    This helper wraps replay simulation and per-omega-group fitting in a
+    notebook-friendly API:
+
+    1. ``add_parameter(name, values=None)`` for each parameter to tune.
+    2. ``fit(...)`` to run simulations and rank candidates by overall MSE.
+
+    If ``values`` is omitted, the default sweep is centered on the current
+    parameter value and spans:
+
+    ``value * (1 + np.linspace(-0.2, 0.2, 51))``
+
+    Notes
+    -----
+    - ``method='adaptive'`` evaluates a DOE-style subset of combinations and
+      refines near current best candidates under ``max_evals`` budget.
+        - ``method='bayesian'`` evaluates an initial DOE subset, then uses a
+            Gaussian-process surrogate with lower-confidence-bound acquisition to
+            pick the next candidates.
+        - ``method='grid'`` evaluates the full Cartesian grid.
+    """
+
+    PARAMETER_ALIASES = {
+        "frequency_z_lightshift": "frequency_lightshift",
+        "fractional_initial_offset": "feedback_fractional_initial_offset",
+    }
+
+    def __init__(
+        self,
+        replay_or_ad,
+        *,
+        replay_defaults: Optional[Dict[str, object]] = None,
+    ):
+        if isinstance(replay_or_ad, FeedbackReplay):
+            self.replay = replay_or_ad
+        else:
+            self.replay = FeedbackReplay(replay_or_ad)
+
+        self.replay_defaults = {} if replay_defaults is None else dict(replay_defaults)
+        for key, value in self.replay_defaults.items():
+            attr = self._resolve_parameter_name(str(key))
+            if hasattr(self.replay.p, attr):
+                setattr(self.replay.p, attr, value)
+        self._parameters: List[Tuple[str, np.ndarray]] = []
+        self._experiment_overlay_cache_key: Optional[Tuple[object, ...]] = None
+        self._experiment_overlay_cache_value: Optional[Dict[str, object]] = None
+
+    @property
+    def p(self):
+        """Alias to self.replay.p (replay's independent parameter copy)."""
+        return self.replay.p
+
+    def _estimate_replay_work_units(self) -> int:
+        """Cheap proxy for replay cost per candidate.
+
+        Work roughly scales with repeats * pulses * feedback-grid size.
+        """
+        try:
+            apd_rr = np.asarray(getattr(self.replay, "_apd_rr_cached"), dtype=float)
+            n_repeat, n_step = apd_rr.shape
+        except Exception:
+            n_repeat = int(getattr(self.replay.p, "N_repeats", 1))
+            n_step = int(getattr(self.replay.p, "N_pulses", 1))
+
+        try:
+            grid_size = int(self.replay._effective_feedback_grid_size())
+        except Exception:
+            grid_size = int(getattr(self.replay.p, "feedback_grid_size", 1))
+
+        return max(1, int(n_repeat)) * max(1, int(n_step)) * max(1, int(grid_size))
+
+    def _resolve_outer_parallelism(
+        self,
+        *,
+        outer_n_jobs_requested: int,
+        budget: int,
+        n_dimensions: int,
+    ) -> Tuple[int, Optional[str], int]:
+        """Choose effective outer process parallelism for the current fit."""
+        requested = int(outer_n_jobs_requested)
+        if requested == 1:
+            return 1, None, 1
+
+        import multiprocessing as _mp
+
+        n_cpu = _mp.cpu_count()
+        requested_workers = n_cpu if requested == -1 else min(abs(requested), n_cpu)
+        requested_workers = max(1, min(requested_workers, int(budget)))
+
+        work_units = self._estimate_replay_work_units()
+        if int(budget) < max(16, 2 * requested_workers):
+            return 1, "candidate_budget_too_small", requested_workers
+        if int(n_dimensions) <= 1 and work_units <= 50000 and int(budget) <= 256:
+            return 1, "per_candidate_work_too_small", requested_workers
+
+        return requested, None, requested_workers
+
+    def _resolve_parameter_name(self, parameter_name: str) -> str:
+        return str(self.PARAMETER_ALIASES.get(parameter_name, parameter_name))
+
+    @staticmethod
+    def _freeze_overlay_value(value: object) -> object:
+        if isinstance(value, np.ndarray):
+            return ("ndarray", tuple(np.asarray(value).shape), np.asarray(value).dtype.str, np.asarray(value).tobytes())
+        if isinstance(value, (list, tuple)):
+            return tuple(FeedbackReplayOptimizer._freeze_overlay_value(item) for item in value)
+        if isinstance(value, dict):
+            return tuple(
+                (str(key), FeedbackReplayOptimizer._freeze_overlay_value(val))
+                for key, val in sorted(value.items(), key=lambda item: str(item[0]))
+            )
+        if isinstance(value, np.generic):
+            return value.item()
+        return value
+
+    def _experiment_overlay_cache_token(
+        self,
+        *,
+        overlay_kwargs: Dict[str, object],
+        group_shots: bool,
+        tolerance_rad_s: Optional[float],
+    ) -> Tuple[object, ...]:
+        return (
+            bool(group_shots),
+            None if tolerance_rad_s is None else float(tolerance_rad_s),
+            tuple(
+                (str(key), self._freeze_overlay_value(value))
+                for key, value in sorted(overlay_kwargs.items(), key=lambda item: str(item[0]))
+            ),
+        )
+
+    def _get_cached_experiment_overlay(
+        self,
+        *,
+        overlay_kwargs: Dict[str, object],
+        group_shots: bool,
+        tolerance_rad_s: Optional[float],
+        n_jobs: int,
+        parallel_verbose: int,
+    ) -> Dict[str, object]:
+        cache_key = self._experiment_overlay_cache_token(
+            overlay_kwargs=overlay_kwargs,
+            group_shots=group_shots,
+            tolerance_rad_s=tolerance_rad_s,
+        )
+        if self._experiment_overlay_cache_key == cache_key and self._experiment_overlay_cache_value is not None:
+            return self._experiment_overlay_cache_value
+
+        with self._with_temporary_replay_params(overlay_kwargs):
+            expt_result = self.replay.replay_measured(
+                n_jobs=int(n_jobs),
+                parallel_verbose=int(parallel_verbose),
+            )
+        expt_groups = self.replay.summarize_result_groups(
+            expt_result,
+            group_shots=bool(group_shots),
+            use_stderr=False,
+            tolerance_rad_s=tolerance_rad_s,
+        )
+
+        cached_overlay = {
+            "result": expt_result,
+            "groups": expt_groups,
+        }
+        self._experiment_overlay_cache_key = cache_key
+        self._experiment_overlay_cache_value = cached_overlay
+        return cached_overlay
+
+    @contextmanager
+    def _with_temporary_replay_params(self, params: Dict[str, object]):
+        """Context manager that applies temporary overrides on replay.p."""
+        previous: Dict[str, object] = {}
+        missing = object()
+        p = self.replay.p
+        for key, value in params.items():
+            attr = self._resolve_parameter_name(str(key))
+            previous[attr] = getattr(p, attr, missing)
+            setattr(p, attr, value)
+        try:
+            yield
+        finally:
+            for attr, old in previous.items():
+                if old is missing:
+                    try:
+                        delattr(p, attr)
+                    except AttributeError:
+                        pass
+                else:
+                    setattr(p, attr, old)
+
+    def _resolve_default_center_value(self, parameter_name: str) -> float:
+        resolved_name = self._resolve_parameter_name(parameter_name)
+
+        # Prefer replay's independent parameter copy first.
+        if hasattr(self.replay, "p"):
+            if hasattr(self.replay.p, parameter_name):
+                base_value_raw = getattr(self.replay.p, parameter_name)
+            elif resolved_name != parameter_name and hasattr(self.replay.p, resolved_name):
+                base_value_raw = getattr(self.replay.p, resolved_name)
+            else:
+                base_value_raw = None
+        else:
+            base_value_raw = None
+
+        # Fall back to replay defaults when replay.p does not provide the key.
+        if base_value_raw is None:
+            if parameter_name in self.replay_defaults:
+                base_value_raw = self.replay_defaults[parameter_name]
+            elif resolved_name in self.replay_defaults:
+                base_value_raw = self.replay_defaults[resolved_name]
+
+        if base_value_raw is None:
+            raise ValueError(
+                f"Cannot infer default sweep center for {parameter_name!r}. "
+                "Pass values explicitly or provide this key in replay_defaults."
+            )
+
+        base_value_array = np.asarray(base_value_raw, dtype=float).ravel()
+        if base_value_array.size != 1:
+            raise ValueError(
+                f"Default center for {parameter_name!r} must be scalar, got shape {base_value_array.shape}."
+            )
+
+        base_value = float(base_value_array[0])
+        if not np.isfinite(base_value):
+            raise ValueError(f"Default center for {parameter_name!r} must be finite, got {base_value!r}.")
+
+        return base_value
+
+    def add_parameter(
+        self,
+        parameter_name: str,
+        values: Optional[Sequence[float]] = None,
+        *,
+        fractional_span: float = 0.2,
+        n_points: int = 120,
+    ) -> "FeedbackReplayOptimizer":
+        """Register or replace a parameter search axis.
+
+        Parameters
+        ----------
+        parameter_name
+            Name of a replay parameter accepted by ``replay_measured``.
+        values
+            Explicit values to evaluate. If omitted, values are generated from
+            the current scalar parameter value as:
+            ``value * (1 + np.linspace(-fractional_span, fractional_span, n_points))``.
+        fractional_span
+            Relative half-span for the default generated grid.
+        n_points
+            Number of points for the default generated grid.
+        """
+        name = str(parameter_name).strip()
+        if len(name) == 0:
+            raise ValueError("parameter_name must be a non-empty string.")
+
+        resolved_name = self._resolve_parameter_name(name)
+
+        if values is None:
+            span = float(fractional_span)
+            if span < 0.0:
+                raise ValueError("fractional_span must be non-negative.")
+
+            points = int(n_points)
+            if points < 2:
+                raise ValueError("n_points must be at least 2.")
+
+            base_value = self._resolve_default_center_value(name)
+
+            value_array = base_value * (1.0 + np.linspace(-span, span, points))
+        else:
+            value_array = np.asarray(values, dtype=float).ravel()
+
+        if value_array.size == 0:
+            raise ValueError(f"{name} values must contain at least one entry.")
+        if not np.all(np.isfinite(value_array)):
+            raise ValueError(f"{name} values must all be finite numbers.")
+
+        cleaned = np.asarray(value_array, dtype=float)
+
+        for existing_name, _ in self._parameters:
+            if existing_name == name:
+                continue
+            if self._resolve_parameter_name(existing_name) == resolved_name:
+                raise ValueError(
+                    f"Parameter {name!r} maps to replay parameter {resolved_name!r}, which is already "
+                    f"configured by {existing_name!r}. Remove one of them."
+                )
+
+        for idx, (existing_name, _) in enumerate(self._parameters):
+            if existing_name == name:
+                self._parameters[idx] = (name, cleaned)
+                break
+        else:
+            self._parameters.append((name, cleaned))
+
+        return self
+
+    def add_parameters(
+        self,
+        *parameter_names: str,
+        fractional_span: float = 0.2,
+        n_points: int = 51,
+    ) -> "FeedbackReplayOptimizer":
+        """Convenience method to add multiple default relative sweeps."""
+        for parameter_name in parameter_names:
+            self.add_parameter(
+                parameter_name,
+                values=None,
+                fractional_span=fractional_span,
+                n_points=n_points,
+            )
+        return self
+
+    def clear_parameters(self) -> "FeedbackReplayOptimizer":
+        """Clear all registered parameter axes."""
+        self._parameters = []
+        return self
+
+    def _shape(self) -> Tuple[int, ...]:
+        return tuple(int(values.size) for _, values in self._parameters)
+
+    def _index_to_params(self, index_tuple: Tuple[int, ...]) -> Dict[str, float]:
+        params: Dict[str, float] = {}
+        for (name, values), idx in zip(self._parameters, index_tuple):
+            params[name] = float(values[int(idx)])
+        return params
+
+    def _neighbor_indices(
+        self,
+        index_tuple: Tuple[int, ...],
+        shape: Tuple[int, ...],
+    ) -> List[Tuple[int, ...]]:
+        neighbors: List[Tuple[int, ...]] = []
+        for dim in range(len(shape)):
+            for step in (-1, 1):
+                idx = int(index_tuple[dim]) + int(step)
+                if idx < 0 or idx >= int(shape[dim]):
+                    continue
+                candidate = list(index_tuple)
+                candidate[dim] = idx
+                neighbors.append(tuple(candidate))
+        return neighbors
+
+    def _random_unseen_index(
+        self,
+        shape: Tuple[int, ...],
+        seen: set,
+        rng: np.random.Generator,
+    ) -> Optional[Tuple[int, ...]]:
+        total = int(np.prod(np.asarray(shape, dtype=np.int64)))
+        if len(seen) >= total:
+            return None
+
+        max_attempts = max(256, 32 * len(shape))
+        for _ in range(max_attempts):
+            candidate = tuple(int(rng.integers(0, int(size))) for size in shape)
+            if candidate not in seen:
+                return candidate
+
+        for candidate in np.ndindex(shape):
+            packed = tuple(int(i) for i in candidate)
+            if packed not in seen:
+                return packed
+        return None
+
+    def _sample_initial_indices(
+        self,
+        shape: Tuple[int, ...],
+        sample_count: int,
+        rng: np.random.Generator,
+    ) -> List[Tuple[int, ...]]:
+        if sample_count <= 0:
+            return []
+
+        samples: List[Tuple[int, ...]] = []
+        seen = set()
+
+        center = tuple((int(size) - 1) // 2 for size in shape)
+        samples.append(center)
+        seen.add(center)
+
+        if sample_count > 1:
+            low_corner = tuple(0 for _ in shape)
+            if low_corner not in seen:
+                samples.append(low_corner)
+                seen.add(low_corner)
+
+        if sample_count > 2:
+            high_corner = tuple(int(size) - 1 for size in shape)
+            if high_corner not in seen:
+                samples.append(high_corner)
+                seen.add(high_corner)
+
+        max_attempts = max(1024, sample_count * 32)
+        attempts = 0
+        while len(samples) < sample_count and attempts < max_attempts:
+            candidate = tuple(int(rng.integers(0, int(size))) for size in shape)
+            if candidate not in seen:
+                samples.append(candidate)
+                seen.add(candidate)
+            attempts += 1
+
+        if len(samples) < sample_count:
+            for candidate in np.ndindex(shape):
+                packed = tuple(int(i) for i in candidate)
+                if packed in seen:
+                    continue
+                samples.append(packed)
+                seen.add(packed)
+                if len(samples) >= sample_count:
+                    break
+
+        return samples
+
+    def _sample_grid_indices(
+        self,
+        shape: Tuple[int, ...],
+        sample_count: int,
+    ) -> List[Tuple[int, ...]]:
+        """Sample grid points that span the full Cartesian index range.
+
+        For full evaluation this returns all points. If ``sample_count`` is
+        smaller than the full grid size, it returns approximately evenly spaced
+        points over the flattened grid index and then maps them back to
+        multi-dimensional indices.
+        """
+        total = int(np.prod(np.asarray(shape, dtype=np.int64)))
+        if total <= 0 or sample_count <= 0:
+            return []
+
+        if sample_count >= total:
+            return [tuple(int(i) for i in idx) for idx in np.ndindex(shape)]
+
+        flat_positions = np.linspace(0, total - 1, sample_count)
+        candidate_flat = np.rint(flat_positions).astype(np.int64)
+
+        chosen_flat: List[int] = []
+        seen_flat = set()
+        for flat in candidate_flat:
+            flat_int = int(flat)
+            if flat_int in seen_flat:
+                continue
+            seen_flat.add(flat_int)
+            chosen_flat.append(flat_int)
+
+        # Fill any missing samples (possible with rounding collisions).
+        if len(chosen_flat) < sample_count:
+            step = max(1, total // sample_count)
+            probe = 0
+            while len(chosen_flat) < sample_count and probe < total * 2:
+                flat_int = int((probe * step) % total)
+                if flat_int not in seen_flat:
+                    seen_flat.add(flat_int)
+                    chosen_flat.append(flat_int)
+                probe += 1
+
+        indices: List[Tuple[int, ...]] = []
+        for flat_int in chosen_flat[:sample_count]:
+            idx = np.unravel_index(int(flat_int), shape)
+            indices.append(tuple(int(i) for i in idx))
+        return indices
+
+    def _evaluate_candidate(
+        self,
+        index_tuple: Tuple[int, ...],
+        *,
+        replay_kwargs: Dict[str, object],
+        group_shots: bool,
+        tolerance_rad_s: Optional[float],
+        include_apd_noise: Optional[bool],
+        apd_noise_override_fraction: Optional[float],
+        apd_noise_min_std: float,
+        aggregate_mode: str,
+        n_jobs: int,
+        parallel_verbose: int,
+        pulse_weight_power: float,
+        eps: float,
+        lightweight_candidates: bool = False,
+    ) -> Dict[str, object]:
+        t_start = perf_counter()
+        params = self._index_to_params(index_tuple)
+        resolved_param_updates: Dict[str, object] = {}
+        if replay_kwargs:
+            for key, value in replay_kwargs.items():
+                resolved_param_updates[self._resolve_parameter_name(str(key))] = value
+        for key, value in params.items():
+            resolved_param_updates[self._resolve_parameter_name(str(key))] = float(value)
+
+        t_replay_start = perf_counter()
+        with self._with_temporary_replay_params(resolved_param_updates):
+            result = self.replay.replay_measured(
+                n_jobs=int(n_jobs),
+                parallel_verbose=int(parallel_verbose),
+            )
+
+        # Compute grouped summaries once per candidate and reuse in fit metrics.
+        t_group_start = perf_counter()
+        groups = self.replay.summarize_result_groups(
+            result,
+            group_shots=bool(group_shots),
+            use_stderr=False,
+            tolerance_rad_s=tolerance_rad_s,
+        )
+
+        t_fit_start = perf_counter()
+        fit_metrics = self.replay.compute_group_fit_metrics_with_noise(
+            result,
+            group_shots=bool(group_shots),
+            precomputed_groups=groups,
+            include_apd_noise=include_apd_noise,
+            apd_noise_override_fraction=apd_noise_override_fraction,
+            apd_noise_min_std=apd_noise_min_std,
+            aggregate_mode=aggregate_mode,
+            tolerance_rad_s=tolerance_rad_s,
+            pulse_weight_power=float(pulse_weight_power),
+            eps=eps,
+        )
+
+        t_end = perf_counter()
+        timing_s = {
+            "replay": float(t_group_start - t_replay_start),
+            "group_summary": float(t_fit_start - t_group_start),
+            "fit_metrics": float(t_end - t_fit_start),
+            "total": float(t_end - t_start),
+        }
+
+        candidate_result = None if bool(lightweight_candidates) else result
+        candidate_groups = None if bool(lightweight_candidates) else groups
+
+        return {
+            "indices": tuple(int(i) for i in index_tuple),
+            "params": params,
+            "result": candidate_result,
+            "groups": candidate_groups,
+            "fit": fit_metrics,
+            "loss": float(fit_metrics["overall_mse"]),
+            "timing_s": timing_s,
+        }
+
+    @staticmethod
+    def _gaussian_kernel_1d(sigma_points: float) -> np.ndarray:
+        sigma = float(sigma_points)
+        if sigma <= 0.0:
+            return np.asarray([1.0], dtype=float)
+
+        radius = max(1, int(np.ceil(4.0 * sigma)))
+        x = np.arange(-radius, radius + 1, dtype=float)
+        kernel = np.exp(-0.5 * (x / sigma) ** 2)
+        kernel_sum = float(np.sum(kernel))
+        if kernel_sum <= 0.0:
+            return np.asarray([1.0], dtype=float)
+        return kernel / kernel_sum
+
+    @classmethod
+    def _smooth_1d_nanaware(cls, values: np.ndarray, sigma_points: float) -> np.ndarray:
+        arr = np.asarray(values, dtype=float)
+        if arr.size == 0:
+            return arr.copy()
+
+        sigma = float(sigma_points)
+        if sigma <= 0.0:
+            return arr.copy()
+
+        kernel = cls._gaussian_kernel_1d(sigma)
+        finite = np.isfinite(arr).astype(float)
+        arr0 = np.where(np.isfinite(arr), arr, 0.0)
+
+        num = np.convolve(arr0, kernel, mode="same")
+        den = np.convolve(finite, kernel, mode="same")
+
+        out = np.full(arr.shape, np.nan, dtype=float)
+        mask = den > 0.0
+        out[mask] = num[mask] / den[mask]
+        return out
+
+    @staticmethod
+    def _indices_to_unit_coordinates(
+        indices: Sequence[Tuple[int, ...]],
+        shape: Tuple[int, ...],
+    ) -> np.ndarray:
+        """Map discrete grid indices to unit-cube coordinates in [0, 1]^d."""
+        if len(indices) == 0:
+            return np.zeros((0, len(shape)), dtype=float)
+
+        coords = np.zeros((len(indices), len(shape)), dtype=float)
+        for row, index_tuple in enumerate(indices):
+            for dim, (idx, size) in enumerate(zip(index_tuple, shape)):
+                denom = max(1, int(size) - 1)
+                coords[row, dim] = float(idx) / float(denom)
+        return coords
+
+    @staticmethod
+    def _rbf_kernel(
+        xa: np.ndarray,
+        xb: np.ndarray,
+        *,
+        length_scale: float,
+    ) -> np.ndarray:
+        """Squared-exponential kernel on normalized coordinates."""
+        x1 = np.asarray(xa, dtype=float)
+        x2 = np.asarray(xb, dtype=float)
+        if x1.ndim != 2 or x2.ndim != 2:
+            raise ValueError("Kernel inputs must be 2-D arrays.")
+        if x1.shape[1] != x2.shape[1]:
+            raise ValueError("Kernel inputs must share feature dimension.")
+        if x1.shape[0] == 0 or x2.shape[0] == 0:
+            return np.zeros((x1.shape[0], x2.shape[0]), dtype=float)
+
+        ls = max(float(length_scale), 1.0e-6)
+        diff = x1[:, None, :] - x2[None, :, :]
+        sqdist = np.sum(diff * diff, axis=2)
+        return np.exp(-0.5 * sqdist / (ls * ls))
+
+    @classmethod
+    def _fit_gp_surrogate(
+        cls,
+        train_indices: Sequence[Tuple[int, ...]],
+        train_losses: np.ndarray,
+        *,
+        shape: Tuple[int, ...],
+        length_scale: float,
+        noise: float,
+    ) -> Optional[Dict[str, object]]:
+        """Fit a lightweight GP surrogate over evaluated discrete candidates."""
+        y = np.asarray(train_losses, dtype=float).ravel()
+        if y.size == 0 or len(train_indices) != int(y.size):
+            return None
+        if not np.all(np.isfinite(y)):
+            return None
+
+        x_train = cls._indices_to_unit_coordinates(train_indices, shape)
+        y_mean = float(np.mean(y))
+        y_std = float(np.std(y))
+        if not np.isfinite(y_std) or y_std < 1.0e-12:
+            y_std = 1.0
+        y_norm = (y - y_mean) / y_std
+
+        k_train = cls._rbf_kernel(x_train, x_train, length_scale=length_scale)
+        eye = np.eye(k_train.shape[0], dtype=float)
+        base_noise = max(float(noise), 1.0e-10)
+
+        chol = None
+        jitter_used = np.nan
+        for factor in (1.0, 10.0, 100.0, 1.0e3, 1.0e4, 1.0e5):
+            jitter = base_noise * factor
+            try:
+                chol = np.linalg.cholesky(k_train + jitter * eye)
+                jitter_used = float(jitter)
+                break
+            except np.linalg.LinAlgError:
+                continue
+
+        if chol is None:
+            return None
+
+        alpha = np.linalg.solve(chol.T, np.linalg.solve(chol, y_norm))
+        return {
+            "x_train": x_train,
+            "alpha": alpha,
+            "chol": chol,
+            "y_mean": float(y_mean),
+            "y_std": float(y_std),
+            "length_scale": float(max(float(length_scale), 1.0e-6)),
+            "jitter": float(jitter_used),
+        }
+
+    @classmethod
+    def _gp_predict_surrogate(
+        cls,
+        gp_model: Dict[str, object],
+        candidate_indices: Sequence[Tuple[int, ...]],
+        *,
+        shape: Tuple[int, ...],
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Predict mean/std at candidate indices using fitted GP model."""
+        if len(candidate_indices) == 0:
+            return np.zeros(0, dtype=float), np.zeros(0, dtype=float)
+
+        x_train = np.asarray(gp_model["x_train"], dtype=float)
+        alpha = np.asarray(gp_model["alpha"], dtype=float).ravel()
+        chol = np.asarray(gp_model["chol"], dtype=float)
+        y_mean = float(gp_model["y_mean"])
+        y_std = float(gp_model["y_std"])
+        length_scale = float(gp_model["length_scale"])
+
+        x_query = cls._indices_to_unit_coordinates(candidate_indices, shape)
+        k_star = cls._rbf_kernel(x_query, x_train, length_scale=length_scale)
+
+        mu_norm = k_star @ alpha
+        v = np.linalg.solve(chol, k_star.T)
+        var_norm = np.maximum(0.0, 1.0 - np.sum(v * v, axis=0))
+
+        mu = y_mean + y_std * mu_norm
+        sigma = np.sqrt(var_norm) * y_std
+        return mu, sigma
+
+    def _build_surrogate_candidate_pool(
+        self,
+        *,
+        shape: Tuple[int, ...],
+        evaluated: set,
+        records: Sequence[Dict[str, object]],
+        rng: np.random.Generator,
+        pool_size: int,
+        seed_top_k: int,
+    ) -> List[Tuple[int, ...]]:
+        """Create a compact pool of unexplored candidates for surrogate ranking."""
+        target = max(1, int(pool_size))
+        pool: List[Tuple[int, ...]] = []
+        pool_set = set()
+
+        finite_records_sorted = sorted(
+            [record for record in records if np.isfinite(float(record["loss"]))],
+            key=lambda record: float(record["loss"]),
+        )
+
+        for seed in finite_records_sorted[:max(1, int(seed_top_k))]:
+            for neighbor in self._neighbor_indices(seed["indices"], shape):
+                if neighbor in evaluated or neighbor in pool_set:
+                    continue
+                pool.append(neighbor)
+                pool_set.add(neighbor)
+                if len(pool) >= target:
+                    return pool
+
+        max_attempts = max(1024, 32 * target)
+        attempts = 0
+        while len(pool) < target and attempts < max_attempts:
+            candidate = tuple(int(rng.integers(0, int(size))) for size in shape)
+            if candidate in evaluated or candidate in pool_set:
+                attempts += 1
+                continue
+            pool.append(candidate)
+            pool_set.add(candidate)
+            attempts += 1
+
+        if len(pool) < target:
+            for candidate in np.ndindex(shape):
+                packed = tuple(int(i) for i in candidate)
+                if packed in evaluated or packed in pool_set:
+                    continue
+                pool.append(packed)
+                pool_set.add(packed)
+                if len(pool) >= target:
+                    break
+
+        return pool
+
+    def _select_bayesian_candidate(
+        self,
+        *,
+        shape: Tuple[int, ...],
+        evaluated: set,
+        records: Sequence[Dict[str, object]],
+        rng: np.random.Generator,
+        surrogate_length_scale: float,
+        surrogate_noise: float,
+        surrogate_beta: float,
+        surrogate_candidate_pool_size: int,
+        surrogate_exploration_probability: float,
+        refine_top_k: int,
+    ) -> Optional[Tuple[int, ...]]:
+        """Select next candidate using GP lower-confidence-bound acquisition."""
+        total = int(np.prod(np.asarray(shape, dtype=np.int64)))
+        unseen = total - len(evaluated)
+        if unseen <= 0:
+            return None
+
+        pool_size = min(unseen, max(8, int(surrogate_candidate_pool_size)))
+        candidate_pool = self._build_surrogate_candidate_pool(
+            shape=shape,
+            evaluated=evaluated,
+            records=records,
+            rng=rng,
+            pool_size=pool_size,
+            seed_top_k=max(1, int(refine_top_k)),
+        )
+        if len(candidate_pool) == 0:
+            return None
+
+        # Keep some random exploration to avoid model-confirmation lock-in.
+        if float(rng.random()) < float(surrogate_exploration_probability):
+            idx = int(rng.integers(0, len(candidate_pool)))
+            return candidate_pool[idx]
+
+        finite_records = [record for record in records if np.isfinite(float(record["loss"]))]
+        if len(finite_records) < 2:
+            idx = int(rng.integers(0, len(candidate_pool)))
+            return candidate_pool[idx]
+
+        train_indices = [tuple(int(i) for i in record["indices"]) for record in finite_records]
+        train_losses = np.asarray([float(record["loss"]) for record in finite_records], dtype=float)
+
+        gp_model = self._fit_gp_surrogate(
+            train_indices,
+            train_losses,
+            shape=shape,
+            length_scale=float(surrogate_length_scale),
+            noise=float(surrogate_noise),
+        )
+        if gp_model is None:
+            idx = int(rng.integers(0, len(candidate_pool)))
+            return candidate_pool[idx]
+
+        pred_mean, pred_std = self._gp_predict_surrogate(
+            gp_model,
+            candidate_pool,
+            shape=shape,
+        )
+        lcb = pred_mean - float(surrogate_beta) * pred_std
+
+        finite_mask = np.isfinite(lcb)
+        if not np.any(finite_mask):
+            idx = int(rng.integers(0, len(candidate_pool)))
+            return candidate_pool[idx]
+
+        finite_idx = np.flatnonzero(finite_mask)
+        best_local = int(finite_idx[np.argmin(lcb[finite_mask])])
+        return candidate_pool[best_local]
+
+    def fit(
+        self,
+        *,
+        method: str = "adaptive",
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        group_shots: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+        include_apd_noise: Optional[bool] = None,
+        apd_noise_override_fraction: Optional[float] = None,
+        apd_noise_min_std: float = 0.03,
+        aggregate_mode: str = "auto",
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = False,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        eps: float = 1.0e-12,
+        mse_smoothing_points: float = 0.0,
+        pulse_weight_power: float = 0.0,
+        max_evals: Optional[int] = None,
+        n_initial: Optional[int] = None,
+        refine_top_k: int = 4,
+        random_state: int = 0,
+        surrogate_length_scale: float = 0.25,
+        surrogate_noise: float = 1.0e-6,
+        surrogate_beta: float = 2.0,
+        surrogate_candidate_pool_size: int = 1024,
+        surrogate_exploration_probability: float = 0.05,
+        outer_n_jobs: int = 1,
+        lightweight_candidates: bool = False,
+    ) -> Dict[str, object]:
+        """Fit one or more replay parameters against APD data.
+
+        Parameters
+        ----------
+        method
+            Search strategy:
+            - ``'adaptive'``: DOE-style subset + local neighbor refinement.
+            - ``'bayesian'``: initial DOE + GP lower-confidence-bound acquisition.
+            - ``'grid'``: evaluate full Cartesian grid.
+        replay_kwargs
+            Extra keyword arguments passed to ``replay_measured`` for all runs.
+        group_shots
+            If True, group repeats by omega-control sequence before scoring.
+            If False, score each repeat independently (per-shot fitting).
+        max_evals
+            Maximum number of candidates to evaluate in adaptive mode. Grid mode
+            always evaluates the full Cartesian grid and ignores this argument.
+        n_initial
+            Initial DOE sample size for adaptive/bayesian modes. If ``None``,
+            chosen from parameter dimensionality and ``max_evals``.
+        aggregate_mode
+            Method to aggregate APD data for loss computation. Passed to
+            ``compute_group_fit_metrics_with_noise``. Default 'auto' chooses
+            'mean' for group_shots=True and 'repeat' for group_shots=False.
+        refine_top_k
+            Number of best current candidates used as local-neighbor seeds in
+            adaptive mode.
+        random_state
+            Seed for adaptive random sampling.
+        surrogate_length_scale
+            RBF kernel length scale in normalized index space for Bayesian mode.
+        surrogate_noise
+            Jitter/noise term added to GP covariance diagonal in Bayesian mode.
+        surrogate_beta
+            Exploration coefficient for GP lower-confidence-bound acquisition.
+            Lower values exploit more; higher values explore more.
+        surrogate_candidate_pool_size
+            Number of unseen candidates scored by GP per Bayesian iteration.
+        surrogate_exploration_probability
+            Probability of random unexplored candidate selection each Bayesian
+            iteration (epsilon-greedy exploration).
+        mse_smoothing_points
+            Gaussian smoothing width (sigma) in points for 1-D loss traces.
+            Applied only when fitting exactly one parameter. If > 0, the best
+            index is selected from smoothed losses.
+        pulse_weight_power
+            Exponent applied to pulse index in the coherence-derived fit weight
+            profile. Default 0 gives uniform weighting.
+        lightweight_candidates
+            If True, per-candidate records omit heavy replay/group payloads for
+            non-final candidates to reduce process-transfer overhead. The best
+            candidate payload is automatically re-hydrated before returning.
+
+        Returns
+        -------
+        dict
+            Best-fit-first payload with records and search metadata.
+        """
+        if len(self._parameters) == 0:
+            raise ValueError("No parameters registered. Call add_parameter(...) before fit().")
+
+        method_requested = str(method).strip().lower()
+        if method_requested in {"bayes", "gp"}:
+            method_requested = "bayesian"
+        if method_requested not in {"adaptive", "bayesian", "grid"}:
+            raise ValueError("method must be 'adaptive', 'bayesian', or 'grid'.")
+
+        if replay_kwargs is None:
+            replay_kwargs = {}
+        else:
+            replay_kwargs = dict(replay_kwargs)
+
+        if feedback_apd_map_enabled is not None:
+            replay_kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
+
+        if feedback_measurement_midpoint_remap_enabled is not None:
+            replay_kwargs["feedback_measurement_midpoint_remap_enabled"] = bool(
+                feedback_measurement_midpoint_remap_enabled
+            )
+
+        if feedback_apd_map_verbose is not None:
+            replay_kwargs["feedback_apd_map_verbose"] = bool(feedback_apd_map_verbose)
+
+        shape = self._shape()
+        total_possible = int(np.prod(np.asarray(shape, dtype=np.int64)))
+        if total_possible <= 0:
+            raise ValueError("Parameter grid is empty; check add_parameter inputs.")
+
+        if method_requested == "grid":
+            max_evals_resolved = total_possible
+        elif max_evals is None:
+            max_evals_resolved = min(total_possible, max(24, 8 * len(shape)))
+        else:
+            max_evals_resolved = int(max_evals)
+
+        if max_evals_resolved <= 0:
+            raise ValueError("max_evals must be positive.")
+
+        budget = min(total_possible, int(max_evals_resolved))
+        method_norm = method_requested
+        method_fallback_reason = None
+        if method_requested == "bayesian" and budget >= total_possible:
+            method_norm = "grid"
+            method_fallback_reason = "full_grid_requested"
+
+        surrogate_length_scale_resolved = float(surrogate_length_scale)
+        surrogate_noise_resolved = float(surrogate_noise)
+        surrogate_beta_resolved = float(surrogate_beta)
+        surrogate_candidate_pool_size_resolved = int(surrogate_candidate_pool_size)
+        surrogate_exploration_probability_resolved = float(surrogate_exploration_probability)
+
+        if method_norm == "bayesian":
+            if surrogate_length_scale_resolved <= 0.0:
+                raise ValueError("surrogate_length_scale must be > 0 for Bayesian mode.")
+            if surrogate_noise_resolved < 0.0:
+                raise ValueError("surrogate_noise must be >= 0 for Bayesian mode.")
+            if surrogate_beta_resolved < 0.0:
+                raise ValueError("surrogate_beta must be >= 0 for Bayesian mode.")
+            if surrogate_candidate_pool_size_resolved <= 0:
+                raise ValueError("surrogate_candidate_pool_size must be > 0 for Bayesian mode.")
+            if not (0.0 <= surrogate_exploration_probability_resolved <= 1.0):
+                raise ValueError("surrogate_exploration_probability must be in [0, 1] for Bayesian mode.")
+
+        if n_initial is None:
+            if method_norm == "bayesian":
+                n_initial_resolved = min(budget, max(10, 4 * len(shape)))
+            else:
+                n_initial_resolved = min(budget, max(8, 3 * len(shape)))
+        else:
+            n_initial_resolved = int(n_initial)
+            if n_initial_resolved <= 0:
+                raise ValueError("n_initial must be positive when provided.")
+            n_initial_resolved = min(n_initial_resolved, budget)
+
+        if method_norm == "bayesian" and budget >= 2:
+            n_initial_resolved = max(2, n_initial_resolved)
+
+        refine_top_k_resolved = max(1, int(refine_top_k))
+        rng = np.random.default_rng(int(random_state))
+
+        outer_n_jobs_effective, outer_parallelism_disabled_reason, outer_workers_requested = self._resolve_outer_parallelism(
+            outer_n_jobs_requested=int(outer_n_jobs),
+            budget=int(budget),
+            n_dimensions=len(shape),
+        )
+
+        # When parallelising across processes, disable inner shot-level threading
+        # to prevent core over-subscription.
+        inner_n_jobs = 1 if outer_n_jobs_effective != 1 else int(n_jobs)
+        _eval_kwargs: Dict[str, Any] = dict(
+            replay_kwargs=replay_kwargs,
+            group_shots=bool(group_shots),
+            tolerance_rad_s=tolerance_rad_s,
+            include_apd_noise=include_apd_noise,
+            apd_noise_override_fraction=apd_noise_override_fraction,
+            apd_noise_min_std=apd_noise_min_std,
+            aggregate_mode=aggregate_mode,
+            n_jobs=inner_n_jobs,
+            parallel_verbose=int(parallel_verbose),
+            pulse_weight_power=float(pulse_weight_power),
+            eps=eps,
+            lightweight_candidates=bool(lightweight_candidates),
+        )
+
+        records: List[Dict[str, object]] = []
+        evaluated = set()
+
+        # Build a persistent process pool for the duration of this fit call.
+        # Each worker receives the serialised optimizer once (via the initializer)
+        # so subsequent tasks only need to send the small index_tuple + eval_kwargs.
+        _pool = None
+        if outer_n_jobs_effective != 1:
+            import multiprocessing as _mp
+            import pickle as _pickle
+            import warnings as _warnings
+            _n_cpu = _mp.cpu_count()
+            _n_workers = _n_cpu if outer_n_jobs_effective == -1 else min(abs(outer_n_jobs_effective), _n_cpu)
+            _n_workers = max(1, min(_n_workers, budget))
+            try:
+                _opt_bytes = _pickle.dumps(self)
+                _ctx = _mp.get_context("spawn")
+                _pool = _ctx.Pool(
+                    _n_workers,
+                    initializer=_mp_worker_init,
+                    initargs=(_opt_bytes,),
+                )
+            except Exception as _exc:
+                _warnings.warn(
+                    f"outer_n_jobs: could not create process pool ({_exc}); "
+                    "falling back to sequential evaluation.",
+                    UserWarning,
+                )
+                _pool = None
+
+        def _register(record: Dict[str, object]) -> None:
+            packed = tuple(int(i) for i in record["indices"])
+            record["eval_index"] = int(len(records))
+            records.append(record)
+            evaluated.add(packed)
+
+        def evaluate(index_tuple: Tuple[int, ...]) -> None:
+            packed = tuple(int(i) for i in index_tuple)
+            if packed in evaluated:
+                return
+            _register(self._evaluate_candidate(packed, **_eval_kwargs))
+
+        def evaluate_batch(candidates: List[Tuple[int, ...]]) -> None:
+            new_cands = [
+                c for c in candidates if tuple(int(i) for i in c) not in evaluated
+            ]
+            if not new_cands:
+                return
+            if _pool is not None:
+                tasks = [(c, _eval_kwargs) for c in new_cands]
+                batch_records = _pool.map(_mp_worker_eval, tasks)
+            else:
+                batch_records = [
+                    self._evaluate_candidate(c, **_eval_kwargs) for c in new_cands
+                ]
+            for record in batch_records:
+                _register(record)
+
+        try:
+            if method_norm == "grid":
+                evaluate_batch(list(self._sample_grid_indices(shape, budget)))
+            elif method_norm == "adaptive":
+                initial_candidates = self._sample_initial_indices(
+                    shape,
+                    sample_count=n_initial_resolved,
+                    rng=rng,
+                )
+                evaluate_batch(initial_candidates[:budget])
+
+                while len(evaluated) < budget:
+                    finite_records = [
+                        record
+                        for record in records
+                        if np.isfinite(float(record["loss"]))
+                    ]
+
+                    if len(finite_records) == 0:
+                        fallback = self._random_unseen_index(shape, evaluated, rng)
+                        if fallback is None:
+                            break
+                        evaluate(fallback)
+                        continue
+
+                    finite_records_sorted = sorted(
+                        finite_records,
+                        key=lambda record: float(record["loss"]),
+                    )
+                    candidate_queue: List[Tuple[int, ...]] = []
+                    for seed in finite_records_sorted[:refine_top_k_resolved]:
+                        for neighbor in self._neighbor_indices(seed["indices"], shape):
+                            if neighbor in evaluated or neighbor in candidate_queue:
+                                continue
+                            candidate_queue.append(neighbor)
+
+                    if len(candidate_queue) == 0:
+                        fallback = self._random_unseen_index(shape, evaluated, rng)
+                        if fallback is None:
+                            break
+                        evaluate(fallback)
+                        continue
+
+                    remaining = budget - len(evaluated)
+                    evaluate_batch(candidate_queue[:remaining])
+            else:
+                initial_candidates = self._sample_initial_indices(
+                    shape,
+                    sample_count=n_initial_resolved,
+                    rng=rng,
+                )
+                evaluate_batch(initial_candidates[:budget])
+
+                while len(evaluated) < budget:
+                    next_candidate = self._select_bayesian_candidate(
+                        shape=shape,
+                        evaluated=evaluated,
+                        records=records,
+                        rng=rng,
+                        surrogate_length_scale=surrogate_length_scale_resolved,
+                        surrogate_noise=surrogate_noise_resolved,
+                        surrogate_beta=surrogate_beta_resolved,
+                        surrogate_candidate_pool_size=surrogate_candidate_pool_size_resolved,
+                        surrogate_exploration_probability=surrogate_exploration_probability_resolved,
+                        refine_top_k=refine_top_k_resolved,
+                    )
+                    if next_candidate is None:
+                        fallback = self._random_unseen_index(shape, evaluated, rng)
+                        if fallback is None:
+                            break
+                        next_candidate = fallback
+                    evaluate(next_candidate)
+        finally:
+            if _pool is not None:
+                _pool.terminate()
+                _pool.join()
+
+        if len(records) == 0:
+            raise RuntimeError("No optimizer candidates were evaluated.")
+
+        losses = np.asarray([float(record["loss"]) for record in records], dtype=float)
+        if not np.isfinite(losses).any():
+            raise RuntimeError("All optimizer losses are non-finite.")
+
+        smoothing_points = float(mse_smoothing_points)
+        if smoothing_points < 0.0:
+            raise ValueError("mse_smoothing_points must be >= 0.")
+
+        smoothed_losses = losses.copy()
+        selection_losses = losses
+        selection_metric = "raw_mse"
+
+        if smoothing_points > 0.0:
+            if len(self._parameters) == 1:
+                pname = self._parameters[0][0]
+                xvals = np.asarray([float(record["params"][pname]) for record in records], dtype=float)
+                order = np.argsort(xvals)
+                losses_sorted = losses[order]
+                smoothed_sorted = self._smooth_1d_nanaware(losses_sorted, smoothing_points)
+
+                smoothed_losses = np.full(losses.shape, np.nan, dtype=float)
+                smoothed_losses[order] = smoothed_sorted
+
+                if np.isfinite(smoothed_losses).any():
+                    selection_losses = smoothed_losses
+                    selection_metric = "smoothed_mse"
+            else:
+                import warnings
+                warnings.warn(
+                    "mse_smoothing_points is only applied for single-parameter fits; "
+                    "using raw losses for best-index selection.",
+                    UserWarning,
+                )
+
+        best_idx = int(np.nanargmin(selection_losses))
+        best_record = records[best_idx]
+
+        # In lightweight mode, restore full payload for the winning candidate so
+        # downstream fit_report/sweep consumers remain API-compatible.
+        if bool(lightweight_candidates) and (
+            best_record.get("result") is None or best_record.get("groups") is None
+        ):
+            hydrated = self._evaluate_candidate(
+                tuple(int(i) for i in best_record["indices"]),
+                replay_kwargs=replay_kwargs,
+                group_shots=bool(group_shots),
+                tolerance_rad_s=tolerance_rad_s,
+                include_apd_noise=include_apd_noise,
+                apd_noise_override_fraction=apd_noise_override_fraction,
+                apd_noise_min_std=apd_noise_min_std,
+                aggregate_mode=aggregate_mode,
+                n_jobs=inner_n_jobs,
+                parallel_verbose=int(parallel_verbose),
+                pulse_weight_power=float(pulse_weight_power),
+                eps=eps,
+                lightweight_candidates=False,
+            )
+            hydrated["eval_index"] = int(best_record.get("eval_index", best_idx))
+            records[best_idx] = hydrated
+            best_record = hydrated
+
+        parameter_names = [name for name, _ in self._parameters]
+
+        search_metadata = {
+            "n_total_possible": int(total_possible),
+            "n_evaluated": int(len(records)),
+            "evaluation_fraction": float(len(records)) / float(total_possible),
+            "max_evals": int(max_evals_resolved),
+            "n_initial": int(n_initial_resolved),
+            "refine_top_k": int(refine_top_k_resolved),
+            "random_state": int(random_state),
+            "lightweight_candidates": bool(lightweight_candidates),
+            "method_requested": str(method_requested),
+            "method_effective": str(method_norm),
+            "method_fallback_reason": method_fallback_reason,
+            "outer_n_jobs_requested": int(outer_n_jobs),
+            "outer_n_jobs_effective": int(outer_n_jobs_effective),
+            "outer_workers_requested": int(outer_workers_requested),
+            "inner_n_jobs_effective": int(inner_n_jobs),
+            "outer_parallelism_disabled_reason": outer_parallelism_disabled_reason,
+            "estimated_replay_work_units": int(self._estimate_replay_work_units()),
+        }
+
+        timing_records = [
+            record.get("timing_s")
+            for record in records
+            if isinstance(record.get("timing_s"), dict)
+        ]
+        if len(timing_records) > 0:
+            replay_times = np.asarray([float(row.get("replay", np.nan)) for row in timing_records], dtype=float)
+            group_times = np.asarray([float(row.get("group_summary", np.nan)) for row in timing_records], dtype=float)
+            fit_times = np.asarray([float(row.get("fit_metrics", np.nan)) for row in timing_records], dtype=float)
+            total_times = np.asarray([float(row.get("total", np.nan)) for row in timing_records], dtype=float)
+            search_metadata["timing_summary_s"] = {
+                "replay_mean": float(np.nanmean(replay_times)),
+                "replay_median": float(np.nanmedian(replay_times)),
+                "group_summary_mean": float(np.nanmean(group_times)),
+                "group_summary_median": float(np.nanmedian(group_times)),
+                "fit_metrics_mean": float(np.nanmean(fit_times)),
+                "fit_metrics_median": float(np.nanmedian(fit_times)),
+                "total_mean": float(np.nanmean(total_times)),
+                "total_median": float(np.nanmedian(total_times)),
+            }
+
+        if method_norm == "bayesian":
+            search_metadata.update(
+                {
+                    "surrogate_model": "gaussian_process_rbf",
+                    "surrogate_acquisition": "lower_confidence_bound",
+                    "surrogate_length_scale": float(surrogate_length_scale_resolved),
+                    "surrogate_noise": float(surrogate_noise_resolved),
+                    "surrogate_beta": float(surrogate_beta_resolved),
+                    "surrogate_candidate_pool_size": int(surrogate_candidate_pool_size_resolved),
+                    "surrogate_exploration_probability": float(surrogate_exploration_probability_resolved),
+                }
+            )
+
+        return {
+            "method": method_norm,
+            "fit_mode": "omega_group" if group_shots else "per_shot",
+            "parameter_names": parameter_names,
+            "parameter_values": {
+                name: values.copy() for name, values in self._parameters
+            },
+            "records": records,
+            "losses": losses,
+            "smoothed_losses": smoothed_losses,
+            "selection_losses": selection_losses,
+            "selection_metric": str(selection_metric),
+            "mse_smoothing_points": float(smoothing_points),
+            "pulse_weight_power": float(pulse_weight_power),
+            "group_shots": bool(group_shots),
+            "best_index": int(best_idx),
+            "best_params": dict(best_record["params"]),
+            "best_value": float(next(iter(best_record["params"].values())))
+            if len(best_record["params"]) == 1
+            else None,
+            "best_result": best_record["result"],
+            "best_groups": best_record["groups"],
+            "best_fit": best_record["fit"],
+            "search_metadata": search_metadata,
+            "replay_kwargs": dict(replay_kwargs),
+            "include_apd_noise": include_apd_noise,
+            "apd_noise_min_std": float(apd_noise_min_std),
+            "aggregate_mode": str(aggregate_mode),
+            "tolerance_rad_s": tolerance_rad_s,
+            "apd_noise_override_fraction": apd_noise_override_fraction,
+        }
+
+    def _validate_minimum_with_smoothing(
+        self,
+        best_params: Dict[str, float],
+        fit_payload: Dict[str, object],
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        group_shots: bool = True,
+        local_span: float = 0.15,
+        n_local_points: int = 11,
+        smoothing_sigma: float = 1.5,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        include_apd_noise: Optional[bool] = None,
+        apd_noise_override_fraction: Optional[float] = None,
+        apd_noise_min_std: float = 0.03,
+        aggregate_mode: str = "auto",
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = False,
+        tolerance_rad_s: Optional[float] = None,
+        pulse_weight_power: float = 0.0,
+        verbose: bool = True,
+    ) -> Dict[str, object]:
+        """Validate that a multi-parameter minimum is robust, not noise.
+        
+        Strategy:
+        1. Build a finer local grid around best_params (+/-local_span in fractional space)
+        2. Evaluate MSE at all local points
+        3. Apply Gaussian smoothing to the local landscape
+        4. Check that smoothed minimum is stable (close to original)
+        5. Return validation report with landscape statistics
+        """
+        try:
+            import scipy.ndimage as ndimage
+        except ImportError:
+            return {"validated": False, "error": "scipy.ndimage not available"}
+
+        if len(best_params) == 0:
+            return {"validated": False, "error": "No parameters to validate"}
+
+        param_names = list(best_params.keys())
+        n_params = len(param_names)
+
+        # Build local grid axes around best_params
+        local_grids = {}
+        for pname in param_names:
+            center = float(best_params[pname])
+            ref_val = getattr(self.replay.p, pname, center)
+            
+            # Fractional span relative to reference value
+            if abs(float(ref_val)) > 1e-12:
+                span = abs(float(ref_val)) * float(local_span)
+            else:
+                span = abs(center) * float(local_span) if abs(center) > 1e-12 else 0.1
+            
+            local_grids[pname] = np.linspace(center - span, center + span, int(n_local_points))
+
+        # Generate all local candidate indices
+        local_shape = tuple(int(values.size) for values in local_grids.values())
+        local_indices = np.ndindex(local_shape)
+
+        # Evaluate local landscape
+        local_losses = {}
+        local_records = []
+        
+        if verbose:
+            print(f"  Validating minimum with local re-sampling ({np.prod(local_shape)} points)...")
+
+        for idx_tuple in local_indices:
+            local_candidate = {}
+            for param_name, idx in zip(param_names, idx_tuple):
+                local_candidate[param_name] = float(local_grids[param_name][int(idx)])
+
+            try:
+                resolved_param_updates = {}
+                if replay_kwargs:
+                    for key, value in replay_kwargs.items():
+                        resolved_param_updates[self._resolve_parameter_name(str(key))] = value
+
+                for param_name, value in local_candidate.items():
+                    resolved_name = self._resolve_parameter_name(param_name)
+                    resolved_param_updates[resolved_name] = float(value)
+
+                with self._with_temporary_replay_params(resolved_param_updates):
+                    result = self.replay.replay_measured(
+                        n_jobs=int(n_jobs),
+                        parallel_verbose=int(parallel_verbose),
+                    )
+                
+                # Compute fit metrics
+                fit_metrics = self.replay.compute_group_fit_metrics_with_noise(
+                    result,
+                    group_shots=bool(group_shots),
+                    include_apd_noise=include_apd_noise,
+                    apd_noise_override_fraction=apd_noise_override_fraction,
+                    apd_noise_min_std=apd_noise_min_std,
+                    aggregate_mode=aggregate_mode,
+                    tolerance_rad_s=tolerance_rad_s,
+                    pulse_weight_power=pulse_weight_power,
+                    eps=1.0e-12,
+                )
+                
+                loss = float(fit_metrics["overall_mse"])
+                local_losses[idx_tuple] = loss
+                local_records.append({
+                    "idx": idx_tuple,
+                    "params": dict(local_candidate),
+                    "loss": loss,
+                    "fit": fit_metrics,
+                })
+            except Exception as e:
+                if verbose:
+                    print(f"    Warning: evaluation failed at {local_candidate}: {e}")
+                local_losses[idx_tuple] = np.inf
+
+        if len(local_records) == 0:
+            return {"validated": False, "error": "No local evaluations succeeded"}
+
+        # Reshape losses to grid
+        loss_grid = np.full(local_shape, np.inf, dtype=float)
+        for idx_tuple, loss in local_losses.items():
+            loss_grid[idx_tuple] = loss
+
+        original_min_loss = loss_grid[tuple(int(n_local_points // 2) for _ in range(n_params))]
+        
+        # Apply Gaussian smoothing
+        smoothed_grid = ndimage.gaussian_filter(
+            np.where(np.isfinite(loss_grid), loss_grid, np.nanmax(loss_grid[np.isfinite(loss_grid)])),
+            sigma=float(smoothing_sigma),
+            mode="nearest",
+        )
+
+        # Find minimum in original and smoothed grids
+        orig_min_idx = np.unravel_index(np.nanargmin(loss_grid), local_shape)
+        smooth_min_idx = np.unravel_index(np.nanargmin(smoothed_grid), local_shape)
+        
+        orig_min_loss = float(loss_grid[orig_min_idx])
+        smooth_min_loss = float(smoothed_grid[smooth_min_idx])
+        center_idx = tuple(int(n_local_points // 2) for _ in range(n_params))
+        center_loss_smooth = float(smoothed_grid[center_idx])
+
+        # Extract the smoothed-minimum candidate
+        smooth_min_params = {}
+        for param_name, idx in zip(param_names, smooth_min_idx):
+            smooth_min_params[param_name] = float(local_grids[param_name][int(idx)])
+
+        # Compute distance between original and smoothed minimum
+        param_distance = np.sqrt(sum(
+            ((float(orig_min_idx[i]) - float(smooth_min_idx[i])) / float(n_local_points)) ** 2
+            for i in range(n_params)
+        ))
+
+        # Robustness: if smoothed minimum is close to center, the original min is likely robust
+        stability_score = 1.0 - min(1.0, param_distance / np.sqrt(n_params))
+        validated = bool(stability_score > 0.7)  # Threshold for "good" stability
+
+        if verbose:
+            print(f"  Original grid minimum loss: {orig_min_loss:.6e}")
+            print(f"  Smoothed grid minimum loss: {smooth_min_loss:.6e}")
+            print(f"  Center (best_params) smoothed loss: {center_loss_smooth:.6e}")
+            print(f"  Parameter distance (normalized): {param_distance:.4f}")
+            print(f"  Stability score: {stability_score:.4f}")
+            print(f"  Validated: {validated}")
+
+        return {
+            "validated": validated,
+            "stability_score": float(stability_score),
+            "original_min_loss": orig_min_loss,
+            "original_min_idx": tuple(int(i) for i in orig_min_idx),
+            "smoothed_min_loss": smooth_min_loss,
+            "smoothed_min_idx": tuple(int(i) for i in smooth_min_idx),
+            "smoothed_min_params": smooth_min_params,
+            "center_smoothed_loss": center_loss_smooth,
+            "parameter_distance": float(param_distance),
+            "local_grid_shape": tuple(int(s) for s in local_shape),
+            "local_records": local_records,
+            "grid_losses": loss_grid.copy(),
+            "grid_smoothed": smoothed_grid.copy(),
+        }
+
+    def fit_report(
+        self,
+        *,
+        method: str = "adaptive",
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        group_shots: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+        use_stderr: bool = True,
+        include_apd_noise: Optional[bool] = None,
+        apd_noise_override_fraction: Optional[float] = None,
+        apd_noise_min_std: float = 0.03,
+        aggregate_mode: str = "auto",
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = False,
+        n_jobs: int = -1,
+        parallel_verbose: int = 0,
+        eps: float = 1.0e-12,
+        mse_smoothing_points: float = 5.0,
+        pulse_weight_power: float = 0.0,
+        max_evals: Optional[int] = None,
+        n_initial: Optional[int] = None,
+        refine_top_k: int = 4,
+        random_state: int = 0,
+        surrogate_length_scale: float = 0.25,
+        surrogate_noise: float = 1.0e-6,
+        surrogate_beta: float = 2.0,
+        surrogate_candidate_pool_size: int = 1024,
+        surrogate_exploration_probability: float = 0.05,
+        max_groups_to_plot: int = 7,
+        show_posterior: bool = False,
+        posterior_repeat_idx: int = 0,
+        posterior_log_scale: bool = True,
+        posterior_normalize_after: int = 0,
+        posterior_cmap: str = "viridis",
+        verbose: bool = True,
+        validate_minimum: bool = False,
+        validation_local_span: float = 0.15,
+        validation_n_points: int = 11,
+        outer_n_jobs: int = -1,
+        lightweight_candidates: bool = False,
+    ) -> Dict[str, object]:
+        """Run fit and generate standard diagnostics plots and summary output.
+
+        This method keeps the notebook surface minimal by combining:
+        - optimizer fitting,
+        - objective and overlay plotting,
+        - optional posterior diagnostic,
+        - optional printed summary,
+        - optional minimum validation via local re-sampling and smoothing.
+
+        Parameters
+        ----------
+        validate_minimum : bool, optional
+            If True, after finding the best parameters, re-sample a finer grid
+            around the minimum and apply Gaussian smoothing to validate that
+            the minimum is robust (not just noise). Adds ~10-100 extra evaluations.
+            Default: False.
+        validation_local_span : float, optional
+            Fractional span around best_params for local re-sampling grid.
+            E.g., 0.15 means +/-15% of the reference parameter value.
+            Default: 0.15.
+        validation_n_points : int, optional
+            Number of points per dimension in the local validation grid.
+            Total evaluations: validation_n_points^n_parameters.
+            Default: 11.
+        """
+        fit_payload = self.fit(
+            method=method,
+            replay_kwargs=replay_kwargs,
+            group_shots=bool(group_shots),
+            tolerance_rad_s=tolerance_rad_s,
+            include_apd_noise=include_apd_noise,
+            apd_noise_override_fraction=apd_noise_override_fraction,
+            apd_noise_min_std=apd_noise_min_std,
+            aggregate_mode=aggregate_mode,
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            feedback_apd_map_enabled=feedback_apd_map_enabled,
+            feedback_apd_map_verbose=feedback_apd_map_verbose,
+            n_jobs=n_jobs,
+            parallel_verbose=parallel_verbose,
+            eps=eps,
+            mse_smoothing_points=float(mse_smoothing_points),
+            pulse_weight_power=float(pulse_weight_power),
+            max_evals=max_evals,
+            n_initial=n_initial,
+            refine_top_k=refine_top_k,
+            random_state=random_state,
+            surrogate_length_scale=float(surrogate_length_scale),
+            surrogate_noise=float(surrogate_noise),
+            surrogate_beta=float(surrogate_beta),
+            surrogate_candidate_pool_size=int(surrogate_candidate_pool_size),
+            surrogate_exploration_probability=float(surrogate_exploration_probability),
+            outer_n_jobs=outer_n_jobs,
+            lightweight_candidates=bool(lightweight_candidates),
+        )
+
+        losses = np.asarray(fit_payload["losses"], dtype=float)
+        smoothed_losses = np.asarray(fit_payload.get("smoothed_losses", losses), dtype=float)
+        selection_losses = np.asarray(fit_payload.get("selection_losses", losses), dtype=float)
+        selection_metric = str(fit_payload.get("selection_metric", "raw_mse"))
+        best_idx = int(fit_payload["best_index"])
+        best_result = fit_payload["best_result"]
+        best_groups = list(fit_payload["best_groups"])
+        best_fit = fit_payload["best_fit"]
+        best_params = dict(fit_payload["best_params"])
+        param_names = list(fit_payload["parameter_names"])
+        method_used = str(fit_payload.get("method", method))
+        run_id = int(best_result.metadata.get("run_id", -1))
+        search_meta = dict(fit_payload.get("search_metadata", {}))
+        fit_mode = str(fit_payload.get("fit_mode", "omega_group"))
+
+        ad = self.replay.ad
+        N_exp = float(getattr(ad.p, "n_photons_per_shot", getattr(ad.p, "N_photons_per_shot", np.nan)))
+        std_exp = getattr(ad.p, "std_n_photons_per_shot", None)
+        if std_exp is None:
+            std_exp = getattr(ad.p, "n_std_photons_per_shot", np.nan)
+        std_exp = float(std_exp)
+        exp_noise_fraction = std_exp / N_exp if np.isfinite(std_exp) and np.isfinite(N_exp) and N_exp > 0 else np.nan
+        sim_noise_fraction = float(best_fit.get("apd_noise_fraction", np.nan))
+
+        overlay_kwargs = dict(self.replay_defaults)
+        if replay_kwargs is not None:
+            overlay_kwargs.update(dict(replay_kwargs))
+        if feedback_measurement_midpoint_remap_enabled is not None:
+            overlay_kwargs["feedback_measurement_midpoint_remap_enabled"] = bool(
+                feedback_measurement_midpoint_remap_enabled
+            )
+        if feedback_apd_map_enabled is not None:
+            overlay_kwargs["feedback_apd_map_enabled"] = bool(feedback_apd_map_enabled)
+        if feedback_apd_map_verbose is not None:
+            overlay_kwargs["feedback_apd_map_verbose"] = bool(feedback_apd_map_verbose)
+
+        expt_param_pairs: List[Tuple[str, float]] = []
+        for pname in param_names:
+            resolved_name = self._resolve_parameter_name(pname)
+            raw_value = None
+            if hasattr(ad.p, pname):
+                raw_value = getattr(ad.p, pname)
+            elif resolved_name != pname and hasattr(ad.p, resolved_name):
+                raw_value = getattr(ad.p, resolved_name)
+
+            try:
+                value = np.nan if raw_value is None else float(raw_value)
+            except (TypeError, ValueError):
+                value = np.nan
+
+            if np.isfinite(value):
+                overlay_kwargs[resolved_name] = value
+                expt_param_pairs.append((pname, value))
+
+        expt_param_map = {name: value for name, value in expt_param_pairs}
+        all_expt_params_available = all(name in expt_param_map for name in param_names)
+        params_match_experiment = bool(
+            all_expt_params_available
+            and len(param_names) > 0
+            and all(
+                np.isclose(
+                    float(best_params[name]),
+                    float(expt_param_map[name]),
+                    rtol=1.0e-9,
+                    atol=1.0e-12,
+                    equal_nan=True,
+                )
+                for name in param_names
+            )
+        )
+
+        expt_result = None
+        expt_groups: List[Dict[str, np.ndarray]] = []
+        max_groups_to_plot_int = max(0, int(max_groups_to_plot))
+        should_plot_overlay_groups = max_groups_to_plot_int > 0 and int(best_fit["n_groups"]) > 0
+        if should_plot_overlay_groups and len(expt_param_pairs) > 0 and not params_match_experiment:
+            overlay_payload = self._get_cached_experiment_overlay(
+                overlay_kwargs=overlay_kwargs,
+                group_shots=bool(group_shots),
+                tolerance_rad_s=tolerance_rad_s,
+                n_jobs=int(n_jobs),
+                parallel_verbose=int(parallel_verbose),
+            )
+            expt_result = overlay_payload["result"]
+            expt_groups = list(overlay_payload["groups"])
+
+        fig, axs = plt.subplots(1, 3, figsize=(18, 4.8), layout="constrained")
+
+        # Panel 1: objective view
+        if len(param_names) == 1:
+            pname = param_names[0]
+            xvals = np.asarray([float(record["params"][pname]) for record in fit_payload["records"]], dtype=float)
+            order = np.argsort(xvals)
+            axs[0].plot(xvals[order], losses[order], "o-", lw=1.3, ms=4.5, alpha=0.8, label="MSE")
+
+            if selection_metric == "smoothed_mse":
+                sigma_points = float(fit_payload.get("mse_smoothing_points", mse_smoothing_points))
+                axs[0].plot(
+                    xvals[order],
+                    smoothed_losses[order],
+                    "s-",
+                    lw=2.0,
+                    ms=4.2,
+                    alpha=0.85,
+                    label=f"smoothed MSE (sigma={sigma_points:g} pts)",
+                )
+
+            axs[0].axvline(float(best_params[pname]), color="red", linestyle="--", lw=1.2, alpha=0.8, label="best")
+            axs[0].scatter([float(best_params[pname])], [selection_losses[best_idx]], color="red", s=55, marker="*", zorder=3)
+            axs[0].set_xlabel(pname)
+        else:
+            eval_idx = np.arange(len(losses), dtype=int)
+            axs[0].plot(eval_idx, losses, "o-", lw=1.1, ms=3.8, alpha=0.7, label="MSE per evaluated candidate")
+            axs[0].axvline(best_idx, color="red", linestyle="--", lw=1.2, alpha=0.8, label="best index")
+            axs[0].scatter([best_idx], [selection_losses[best_idx]], color="red", s=55, marker="*", zorder=3)
+            axs[0].set_xlabel("evaluation index")
+
+        axs[0].set_ylabel("MSE objective")
+        axs[0].set_title(f"Multi-parameter fit ({method_used}; {len(param_names)} params)")
+        axs[0].legend(loc="best")
+        axs[0].grid(alpha=0.25)
+
+        # Panel 2: best-fit APD vs simulation overlay
+        n_groups = int(best_fit["n_groups"])
+        if not should_plot_overlay_groups:
+            plotted_group_indices = []
+            overlay_title = "Best fit overlay skipped"
+        elif n_groups > max_groups_to_plot_int:
+            target = max_groups_to_plot_int
+            plotted_group_indices = np.unique(np.linspace(0, n_groups - 1, target, dtype=int)).tolist()
+            overlay_title = f"Best fit overlay (shown groups: {len(plotted_group_indices)}/{n_groups})"
+        else:
+            plotted_group_indices = list(range(n_groups))
+            overlay_title = (
+                f"Best fit grouped overlay ({n_groups} groups)"
+                if group_shots
+                else f"Best fit per-shot overlay ({n_groups} shots)"
+            )
+
+        def _series_match(a: np.ndarray, b: np.ndarray) -> bool:
+            aa = np.asarray(a, dtype=float).ravel()
+            bb = np.asarray(b, dtype=float).ravel()
+            if aa.shape != bb.shape:
+                return False
+            return bool(np.allclose(aa, bb, rtol=1.0e-9, atol=1.0e-12, equal_nan=True))
+
+        plotted_apd_single = False
+        plotted_apd_expt = False
+        plotted_apd_best = False
+        plotted_sim_single = False
+        plotted_sim_expt = False
+        plotted_sim_best = False
+
+        cmap = plt.get_cmap("tab20", max(1, len(plotted_group_indices)))
+        plotted_group_colors = []
+        for cidx, gidx in enumerate(plotted_group_indices):
+            group = best_groups[int(gidx)]
+            group_color = cmap(cidx)
+            plotted_group_colors.append(group_color)
+            t = np.asarray(group["t_s_z"], dtype=float).ravel()
+            apd_best_mean = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
+            apd_best_err = np.asarray(group["apd_norm_err"], dtype=float).ravel()
+            sim_best_mean = np.asarray(group["s_z_mean"], dtype=float).ravel()
+            n_members = int(np.asarray(group.get("members", []), dtype=int).size)
+
+            has_expt_group = int(gidx) < len(expt_groups)
+            if has_expt_group:
+                expt_group = expt_groups[int(gidx)]
+                sim_expt_mean = np.asarray(expt_group["s_z_mean"], dtype=float).ravel()
+                apd_expt_mean = np.asarray(expt_group["apd_norm_mean"], dtype=float).ravel()
+                apd_expt_err = np.asarray(expt_group["apd_norm_err"], dtype=float).ravel()
+            else:
+                sim_expt_mean = None
+                apd_expt_mean = None
+                apd_expt_err = None
+
+            same_sim = bool(has_expt_group and _series_match(sim_best_mean, sim_expt_mean))
+            same_apd = bool(
+                has_expt_group
+                and _series_match(apd_best_mean, apd_expt_mean)
+                and _series_match(apd_best_err, apd_expt_err)
+            )
+
+            # APD trace(s): collapse to one when experiment and best-fit APD are effectively identical.
+            if not has_expt_group or same_apd:
+                if n_members > 1:
+                    axs[1].errorbar(
+                        t,
+                        apd_best_mean,
+                        yerr=apd_best_err,
+                        fmt="o",
+                        markersize=4,
+                        capsize=2,
+                        elinewidth=1.0,
+                        alpha=0.8,
+                        color=group_color,
+                    )
+                else:
+                    axs[1].scatter(t, apd_best_mean, s=16, alpha=0.8, color=group_color)
+                plotted_apd_single = True
+            else:
+                if n_members > 1:
+                    axs[1].errorbar(
+                        t,
+                        apd_expt_mean,
+                        yerr=apd_expt_err,
+                        fmt="o",
+                        markersize=4,
+                        capsize=2,
+                        elinewidth=1.0,
+                        alpha=0.55,
+                        mfc="none",
+                        mec=group_color,
+                        ecolor=group_color,
+                        color=group_color,
+                    )
+                    axs[1].errorbar(
+                        t,
+                        apd_best_mean,
+                        yerr=apd_best_err,
+                        fmt="s",
+                        markersize=3.8,
+                        capsize=2,
+                        elinewidth=1.0,
+                        alpha=0.8,
+                        color=group_color,
+                    )
+                else:
+                    axs[1].scatter(t, apd_expt_mean, s=20, alpha=0.65, facecolors="none", edgecolors=group_color)
+                    axs[1].scatter(t, apd_best_mean, s=16, alpha=0.8, marker="s", color=group_color)
+                plotted_apd_expt = True
+                plotted_apd_best = True
+
+            # Simulation trace(s): collapse to one when experiment and best-fit simulation are identical.
+            if not has_expt_group or same_sim:
+                axs[1].plot(t, sim_best_mean, "-", lw=1.5, alpha=0.95, color=group_color)
+                plotted_sim_single = True
+            else:
+                axs[1].plot(t, sim_best_mean, "-", lw=1.5, alpha=0.95, color=group_color)
+                axs[1].plot(t, sim_expt_mean, ":", lw=1.8, alpha=0.95, color=group_color)
+                plotted_sim_best = True
+                plotted_sim_expt = True
+
+        axs[1].set_title(overlay_title)
+        axs[1].set_ylim(-1.05, 1.05)
+
+        best_lines = [f"{name}={float(best_params[name]):.4g}" for name in param_names]
+        if len(expt_param_pairs) == 0:
+            expt_lines = ["experiment: n/a"]
+        else:
+            expt_lines = [f"exp {name}={value:.4g}" for name, value in expt_param_pairs]
+        value_text = "best:\n" + "\n".join(best_lines[:6])
+        if len(best_lines) > 6:
+            value_text += "\n..."
+        value_text += "\n" + "\n".join(expt_lines[:3])
+        if len(expt_lines) > 3:
+            value_text += "\n..."
+        if not should_plot_overlay_groups:
+            value_text += "\nplotting disabled"
+
+        axs[1].text(
+            0.02,
+            0.98,
+            value_text,
+            transform=axs[1].transAxes,
+            ha="left",
+            va="top",
+            fontsize="small",
+            bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="0.7", alpha=0.85),
+        )
+
+        legend_handles = []
+        if plotted_sim_single:
+            legend_handles.append(
+                plt.Line2D([], [], color="0.15", linestyle="-", lw=1.8, label="sim")
+            )
+        if plotted_sim_best:
+            legend_handles.append(
+                plt.Line2D([], [], color="0.15", linestyle="-", lw=1.8, label="sim best-fit")
+            )
+        if plotted_sim_expt:
+            legend_handles.append(
+                plt.Line2D([], [], color="0.35", linestyle=":", lw=2.0, label="sim experiment")
+            )
+        if plotted_apd_single:
+            legend_handles.append(
+                plt.Line2D([], [], color="0.55", marker="o", linestyle="None", markersize=5, label="APD")
+            )
+        if plotted_apd_best:
+            legend_handles.append(
+                plt.Line2D([], [], color="0.55", marker="s", linestyle="None", markersize=5, label="APD best-fit")
+            )
+        if plotted_apd_expt:
+            legend_handles.append(
+                plt.Line2D(
+                    [],
+                    [],
+                    color="0.55",
+                    marker="o",
+                    markerfacecolor="none",
+                    linestyle="None",
+                    markersize=5,
+                    label="APD experiment",
+                )
+            )
+        if len(legend_handles) == 0:
+            legend_handles.append(
+                plt.Line2D([], [], color="0.15", linestyle="-", lw=1.8, label="sim")
+            )
+        axs[1].legend(handles=legend_handles, loc="best")
+        axs[1].set_xlabel("time (s)")
+        axs[1].set_ylabel("spin-like value")
+        axs[1].grid(alpha=0.25)
+
+        # Panel 3: control omega used in experiment vs recomputed control omega.
+        if len(plotted_group_indices) > 0:
+            self.replay.plot_omega_feedback_comparison(
+                best_result,
+                grouped_average=bool(group_shots),
+                group_indices=plotted_group_indices,
+                trace_colors=plotted_group_colors,
+                ax=axs[2],
+            )
+            axs[2].set_title(
+                f"run {run_id}: omega control (shown groups: {len(plotted_group_indices)}/{n_groups})"
+            )
+        else:
+            axs[2].set_title("Omega control traces skipped (no groups selected)")
+            axs[2].set_xlabel("pulse index")
+            axs[2].set_ylabel("detuning / Omega")
+            axs[2].grid(alpha=0.25)
+            axs[2].text(
+                0.5,
+                0.5,
+                "No groups selected for overlay",
+                transform=axs[2].transAxes,
+                ha="center",
+                va="center",
+                fontsize="small",
+                color="0.35",
+            )
+
+        fig.suptitle(f"run {run_id}: multi-parameter feedback fit overlay")
+
+        if verbose:
+            print(f"fit mode: {fit_mode}")
+            print(f"method: {method_used}")
+            if method_used != str(search_meta.get("method_requested", method_used)):
+                print(
+                    "method fallback: "
+                    f"requested={str(search_meta.get('method_requested', method_used))}, "
+                    f"effective={method_used}, "
+                    f"reason={search_meta.get('method_fallback_reason', 'n/a')}"
+                )
+            print(f"parameters: {param_names}")
+            for pname in param_names:
+                print(f"best {pname}: {float(best_params[pname]):.6g}")
+            print(f"best overall MSE: {best_fit['overall_mse']:.6e}")
+            print(f"omega groups: {best_fit['n_groups']} | measurement points: {best_fit['n_points']}")
+            print(f"APD noise fraction (simulation): {sim_noise_fraction:.6g}")
+            print(f"APD noise fraction (experiment): {exp_noise_fraction:.6g}")
+            print(f"APD noise min std: {best_fit.get('apd_noise_min_std', np.nan):.6g}")
+            print(f"aggregation mode: {best_fit.get('aggregate_mode', 'mean_over_groups')}")
+            print(f"APD noise applied to any group: {best_fit.get('apd_noise_applied_any', False)}")
+            if params_match_experiment:
+                print("overlay optimization: experiment params match best-fit params; collapsed duplicate traces")
+            print(f"max groups shown before representative-run mode: {max_groups_to_plot_int}")
+            if not should_plot_overlay_groups:
+                print("overlay plotting skipped: max_groups_to_plot <= 0 or no groups available")
+            print(
+                "parallelization: "
+                f"outer_n_jobs requested={int(search_meta.get('outer_n_jobs_requested', outer_n_jobs))}, "
+                f"effective={int(search_meta.get('outer_n_jobs_effective', outer_n_jobs))}; "
+                f"inner replay n_jobs effective={int(search_meta.get('inner_n_jobs_effective', n_jobs))}"
+            )
+            if search_meta.get("outer_parallelism_disabled_reason") is not None:
+                print(
+                    "outer parallelism heuristic: disabled due to "
+                    f"{search_meta.get('outer_parallelism_disabled_reason')}"
+                )
+            print(f"selection metric: {selection_metric}")
+            if selection_metric == "smoothed_mse":
+                print(f"MSE smoothing sigma (points): {float(fit_payload.get('mse_smoothing_points', mse_smoothing_points)):.6g}")
+            print(
+                "evaluated candidates: "
+                f"{int(search_meta.get('n_evaluated', len(fit_payload['records'])))} / "
+                f"{int(search_meta.get('n_total_possible', len(fit_payload['records'])))}"
+            )
+            timing_summary = search_meta.get("timing_summary_s")
+            if isinstance(timing_summary, dict):
+                print("candidate timing (median s): ")
+                print(
+                    f"  replay={float(timing_summary.get('replay_median', np.nan)):.4g}, "
+                    f"group={float(timing_summary.get('group_summary_median', np.nan)):.4g}, "
+                    f"fit={float(timing_summary.get('fit_metrics_median', np.nan)):.4g}, "
+                    f"total={float(timing_summary.get('total_median', np.nan)):.4g}"
+                )
+            if method_used == "bayesian":
+                print("surrogate model: gaussian_process_rbf")
+                print("surrogate acquisition: lower_confidence_bound")
+                print(f"surrogate length scale: {float(search_meta.get('surrogate_length_scale', np.nan)):.6g}")
+                print(f"surrogate beta: {float(search_meta.get('surrogate_beta', np.nan)):.6g}")
+                print(f"surrogate candidate pool size: {int(search_meta.get('surrogate_candidate_pool_size', 0))}")
+                print(
+                    "surrogate exploration probability: "
+                    f"{float(search_meta.get('surrogate_exploration_probability', np.nan)):.6g}"
+                )
+
+        posterior_figure = None
+        posterior_axes = None
+        if show_posterior:
+            posterior_figure, posterior_axes = self.replay.plot_probability_comparison(
+                best_result,
+                repeat_idx=int(posterior_repeat_idx),
+                log_scale=bool(posterior_log_scale),
+                normalize_after=int(posterior_normalize_after),
+                cmap=str(posterior_cmap),
+            )
+            posterior_figure.suptitle(
+                f"run {run_id}: posterior reconstruction at best multi-parameter fit"
+            )
+
+        # Optional: validate that the minimum is robust, not noise
+        validation_report = None
+        if validate_minimum and len(param_names) > 0:
+            if verbose:
+                print("\nValidating minimum robustness...")
+            try:
+                validation_report = self._validate_minimum_with_smoothing(
+                    best_params=best_params,
+                    fit_payload=fit_payload,
+                    replay_kwargs=replay_kwargs,
+                    group_shots=bool(group_shots),
+                    local_span=float(validation_local_span),
+                    n_local_points=int(validation_n_points),
+                    smoothing_sigma=1.5,
+                    n_jobs=n_jobs,
+                    parallel_verbose=parallel_verbose,
+                    include_apd_noise=include_apd_noise,
+                    apd_noise_override_fraction=apd_noise_override_fraction,
+                    apd_noise_min_std=apd_noise_min_std,
+                    aggregate_mode=aggregate_mode,
+                    feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+                    feedback_apd_map_enabled=feedback_apd_map_enabled,
+                    feedback_apd_map_verbose=feedback_apd_map_verbose,
+                    tolerance_rad_s=tolerance_rad_s,
+                    pulse_weight_power=pulse_weight_power,
+                    verbose=verbose,
+                )
+            except Exception as e:
+                if verbose:
+                    print(f"Validation failed: {e}")
+                validation_report = {"validated": False, "error": str(e)}
+
+        return {
+            "fit": fit_payload,
+            "figure": fig,
+            "axes": axs,
+            "posterior_figure": posterior_figure,
+            "posterior_axes": posterior_axes,
+            "best_result": best_result,
+            "best_groups": best_groups,
+            "best_fit": best_fit,
+            "best_params": best_params,
+            "run_id": run_id,
+            "validation": validation_report,
+            "experiment_overlay": {
+                "result": expt_result,
+                "groups": expt_groups,
+                "params": expt_param_pairs,
+            },
+        }
+
+
+class FeedbackReplaySweep(FeedbackReplayOptimizer):
+    """Grid-sweep helper with optimizer-style parameter registration.
+
+    Usage pattern mirrors ``FeedbackReplayOptimizer``:
+
+    1. ``add_parameter(...)`` one or more times.
+    2. ``run(...)`` to evaluate the full Cartesian grid.
+    3. ``plot_sz_vs_apd(...)`` to overlay all unique APD/simulation traces.
+    """
+
+    def __init__(
+        self,
+        replay_or_ad,
+        *,
+        replay_defaults: Optional[Dict[str, object]] = None,
+    ):
+        super().__init__(replay_or_ad, replay_defaults=replay_defaults)
+        self._last_sweep_payload: Optional[Dict[str, object]] = None
+
+    def run(
+        self,
+        *,
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        group_shots: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+        include_apd_noise: Optional[bool] = None,
+        apd_noise_override_fraction: Optional[float] = None,
+        apd_noise_min_std: float = 0.03,
+        aggregate_mode: str = "auto",
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        feedback_apd_map_enabled: Optional[bool] = None,
+        feedback_apd_map_verbose: Optional[bool] = False,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        eps: float = 1.0e-12,
+        mse_smoothing_points: float = 0.0,
+        pulse_weight_power: float = 0.0,
+    ) -> Dict[str, object]:
+        """Evaluate all configured parameter combinations on a full grid."""
+        payload = self.fit(
+            method="grid",
+            replay_kwargs=replay_kwargs,
+            group_shots=bool(group_shots),
+            tolerance_rad_s=tolerance_rad_s,
+            include_apd_noise=include_apd_noise,
+            apd_noise_override_fraction=apd_noise_override_fraction,
+            apd_noise_min_std=float(apd_noise_min_std),
+            aggregate_mode=str(aggregate_mode),
+            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            feedback_apd_map_enabled=feedback_apd_map_enabled,
+            feedback_apd_map_verbose=feedback_apd_map_verbose,
+            n_jobs=int(n_jobs),
+            parallel_verbose=int(parallel_verbose),
+            eps=float(eps),
+            mse_smoothing_points=float(mse_smoothing_points),
+            pulse_weight_power=float(pulse_weight_power),
+        )
+        self._last_sweep_payload = payload
+        return payload
+
+    @staticmethod
+    def _series_match(a: np.ndarray, b: np.ndarray) -> bool:
+        aa = np.asarray(a, dtype=float).ravel()
+        bb = np.asarray(b, dtype=float).ravel()
+        if aa.shape != bb.shape:
+            return False
+        return bool(np.allclose(aa, bb, rtol=1.0e-9, atol=1.0e-12, equal_nan=True))
+
+    @classmethod
+    def _find_matching_trace_index(
+        cls,
+        traces: List[Dict[str, object]],
+        *,
+        t: np.ndarray,
+        y: np.ndarray,
+        yerr: Optional[np.ndarray],
+    ) -> Optional[int]:
+        for idx, trace in enumerate(traces):
+            if not cls._series_match(trace["t"], t):
+                continue
+            if not cls._series_match(trace["y"], y):
+                continue
+
+            trace_err = trace.get("yerr")
+            if trace_err is None and yerr is None:
+                return int(idx)
+            if (trace_err is None) != (yerr is None):
+                continue
+            if cls._series_match(trace_err, yerr):
+                return int(idx)
+
+        return None
+
+    @classmethod
+    def _append_unique_trace(
+        cls,
+        traces: List[Dict[str, object]],
+        *,
+        t: np.ndarray,
+        y: np.ndarray,
+        yerr: Optional[np.ndarray],
+        from_best: bool,
+    ) -> None:
+        match_idx = cls._find_matching_trace_index(traces, t=t, y=y, yerr=yerr)
+        if match_idx is None:
+            traces.append(
+                {
+                    "t": np.asarray(t, dtype=float).ravel(),
+                    "y": np.asarray(y, dtype=float).ravel(),
+                    "yerr": None if yerr is None else np.asarray(yerr, dtype=float).ravel(),
+                    "count": 1,
+                    "from_best": bool(from_best),
+                }
+            )
+            return
+
+        traces[match_idx]["count"] = int(traces[match_idx]["count"]) + 1
+        traces[match_idx]["from_best"] = bool(traces[match_idx]["from_best"]) or bool(from_best)
+
+    def _resolve_sweep_payload(self, sweep_payload: Optional[Dict[str, object]]) -> Dict[str, object]:
+        payload = self._last_sweep_payload if sweep_payload is None else sweep_payload
+        if payload is None:
+            raise ValueError("No sweep payload available. Run sweep first or pass sweep_payload.")
+        if not isinstance(payload, dict):
+            raise ValueError("sweep_payload must be a dict returned by run(...) or fit_report(...).")
+
+        if "records" not in payload and isinstance(payload.get("fit"), dict):
+            payload = payload["fit"]
+
+        records = payload.get("records")
+        if not isinstance(records, list) or len(records) == 0:
+            raise ValueError("Sweep payload must contain a non-empty 'records' list.")
+
+        return payload
+
+    def plot_sz_vs_apd(
+        self,
+        sweep_payload: Optional[Dict[str, object]] = None,
+        *,
+        grouped_average: bool = True,
+        use_stderr: bool = True,
+        tolerance_rad_s: Optional[float] = None,
+        feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
+        max_groups_per_record: Optional[int] = None,
+        ax=None,
+    ) -> Tuple[plt.Figure, plt.Axes]:
+        """Overlay APD vs simulated s_z for all swept candidates.
+
+        Duplicate APD/simulation traces are collapsed so the plot remains useful
+        even when many candidates reproduce the same curves.
+        """
+        payload = self._resolve_sweep_payload(sweep_payload)
+        records = list(payload.get("records", []))
+
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(8, 4.8))
+        else:
+            fig = ax.figure
+
+        best_idx = int(payload.get("best_index", -1))
+        apd_traces: List[Dict[str, object]] = []
+        sim_traces: List[Dict[str, object]] = []
+        total_apd_traces = 0
+        total_sim_traces = 0
+        run_id = -1
+
+        for ridx, record in enumerate(records):
+            result = record.get("result")
+            if not isinstance(result, FeedbackReplayResult):
+                continue
+
+            if run_id < 0:
+                run_id = int(result.metadata.get("run_id", -1))
+
+            groups = self.replay.summarize_result_groups(
+                result,
+                group_shots=bool(grouped_average),
+                use_stderr=bool(use_stderr),
+                tolerance_rad_s=tolerance_rad_s,
+                feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            )
+
+            if len(groups) == 0:
+                continue
+
+            if max_groups_per_record is not None and len(groups) > int(max_groups_per_record):
+                target = max(1, int(max_groups_per_record))
+                group_indices = np.unique(np.linspace(0, len(groups) - 1, target, dtype=int)).tolist()
+            else:
+                group_indices = list(range(len(groups)))
+
+            for gidx in group_indices:
+                group = groups[int(gidx)]
+                t = np.asarray(group["t_s_z"], dtype=float).ravel()
+                apd_mean = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
+                apd_err = np.asarray(group.get("apd_norm_err", np.zeros_like(apd_mean)), dtype=float).ravel()
+                sim_mean = np.asarray(group["s_z_mean"], dtype=float).ravel()
+
+                from_best = bool(ridx == best_idx)
+
+                self._append_unique_trace(
+                    apd_traces,
+                    t=t,
+                    y=apd_mean,
+                    yerr=apd_err,
+                    from_best=from_best,
+                )
+                self._append_unique_trace(
+                    sim_traces,
+                    t=t,
+                    y=sim_mean,
+                    yerr=None,
+                    from_best=from_best,
+                )
+
+                total_apd_traces += 1
+                total_sim_traces += 1
+
+        if len(apd_traces) == 0 or len(sim_traces) == 0:
+            raise RuntimeError("No plottable traces found in sweep payload.")
+
+        for trace in apd_traces:
+            t = np.asarray(trace["t"], dtype=float)
+            y = np.asarray(trace["y"], dtype=float)
+            yerr = trace.get("yerr")
+            yerr_arr = None if yerr is None else np.asarray(yerr, dtype=float)
+            has_err = bool(
+                yerr_arr is not None
+                and np.any(np.isfinite(yerr_arr))
+                and np.nanmax(np.abs(yerr_arr)) > 0.0
+            )
+
+            if has_err:
+                ax.errorbar(
+                    t,
+                    y,
+                    yerr=yerr_arr,
+                    fmt="o",
+                    markersize=3.8,
+                    capsize=2,
+                    elinewidth=1.0,
+                    alpha=0.55,
+                    color="0.45",
+                    zorder=1,
+                )
+            else:
+                ax.scatter(t, y, s=14, alpha=0.5, color="0.45", zorder=1)
+
+        non_best_count = sum(0 if bool(trace["from_best"]) else 1 for trace in sim_traces)
+        cmap = plt.get_cmap("tab20", max(1, non_best_count))
+        color_idx = 0
+
+        for trace in sim_traces:
+            t = np.asarray(trace["t"], dtype=float)
+            y = np.asarray(trace["y"], dtype=float)
+
+            if bool(trace["from_best"]):
+                color = "C3"
+                lw = 2.0
+                alpha = 0.95
+                zorder = 3
+            else:
+                color = cmap(color_idx)
+                color_idx += 1
+                lw = 1.2
+                alpha = 0.65
+                zorder = 2
+
+            ax.plot(t, y, "-", color=color, lw=lw, alpha=alpha, zorder=zorder)
+
+        collapsed_apd = max(0, int(total_apd_traces) - len(apd_traces))
+        collapsed_sim = max(0, int(total_sim_traces) - len(sim_traces))
+        legend_handles = [
+            plt.Line2D(
+                [],
+                [],
+                color="0.45",
+                marker="o",
+                linestyle="None",
+                markersize=5,
+                label=f"APD unique {len(apd_traces)}/{int(total_apd_traces)}",
+            )
+        ]
+
+        if non_best_count > 0:
+            legend_handles.append(
+                plt.Line2D([], [], color="0.2", linestyle="-", lw=1.4, alpha=0.75, label="sim candidates")
+            )
+        if any(bool(trace["from_best"]) for trace in sim_traces):
+            legend_handles.append(
+                plt.Line2D([], [], color="C3", linestyle="-", lw=2.0, alpha=0.95, label="sim best")
+            )
+
+        ax.legend(handles=legend_handles, loc="best")
+        mode_label = "grouped" if grouped_average else "per-shot"
+        ax.set_title(
+            f"run {run_id}: sweep APD vs sim ({mode_label}; collapsed APD={collapsed_apd}, sim={collapsed_sim})"
+        )
+        ax.set_xlabel("time (s)")
+        ax.set_ylabel("spin-like value")
+        ax.set_ylim(-1.05, 1.05)
+        ax.grid(alpha=0.25)
+
+        return fig, ax
