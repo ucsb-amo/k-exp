@@ -61,14 +61,26 @@ EXTRA_CLIENT_IDS_ON_SERVER_DASHBOARD: list[str] = [
 try:
     from kexp.config import ip as _kexp_ip
     _kexp_log_root = getattr(_kexp_ip, "LOG_DIR", None)
+    _kexp_data_dir = getattr(_kexp_ip, "DATA_DIR", None)
+    _kexp_map_bat = getattr(_kexp_ip, "MAP_BAT_PATH", None)
 except Exception:
     _kexp_log_root = None
+    _kexp_data_dir = None
+    _kexp_map_bat = None
 logging_setup.configure(app_name="kexp", log_root=_kexp_log_root, logger_namespace="kexp")
 host_config.configure(
     hosts_module="kexp.util.dashboard.dashboard_hosts",
     layout_module="kexp.util.dashboard.dashboard_layout",
     subnet_prefix="192.168.1.",
 )
+# Make ensure_data_dir() see the lab DATA_DIR + map-network-drives bat so
+# every server supervisor pre-checks the shared drive before spawning, and
+# every server_talk file access retries through the same code path.
+try:
+    from waxx.util.dashboard import data_dir_guard  # noqa: PLC0415
+    data_dir_guard.configure(_kexp_data_dir, _kexp_map_bat)
+except Exception:
+    pass
 
 
 def _parse_args(argv: list[str]) -> argparse.Namespace:
@@ -143,6 +155,7 @@ def main(argv: list[str] | None = None) -> int:
                 restart_on_crash=spec.restart_on_crash,
                 snapshot_host=spec.snapshot_host,
                 snapshot_port=spec.snapshot_port,
+                requires_data_dir=getattr(spec, "requires_data_dir", True),
             )
             child_log = server_child_logger(spec.id)
             sup.log_line.connect(child_log.info)
@@ -189,6 +202,7 @@ def main(argv: list[str] | None = None) -> int:
             restart_on_crash=spec.restart_on_crash,
             snapshot_host=spec.snapshot_host,
             snapshot_port=spec.snapshot_port,
+            requires_data_dir=getattr(spec, "requires_data_dir", True),
         )
         # Wire supervisor -> header.
         sup.state_changed.connect(panel.header().set_state)
@@ -240,7 +254,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     # Stop all supervisors gracefully on dashboard close (releases COM
     # ports, network sockets, etc. owned by the subprocesses).
-    win.register_supervisors(supervisors)
+    # COM-managing supervisors are shut down first with a blocking modal
+    # so serial ports release cleanly before the window goes away.
+    com_ids = {spec.id for spec in specs if getattr(spec, "com_label", None)}
+    win.register_supervisors(supervisors, com_ids=com_ids)
 
     win.resize(1400, 900)
     win.show()
