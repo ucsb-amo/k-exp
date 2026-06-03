@@ -16,15 +16,12 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.frequency_raman_transition = self.p.frequency_raman_transition + 35698.09523809523
-        # self.p.frequency_raman_transition = 119.48395e6 # 182 A -1 --> 0
-        # self.p.frequency_raman_transition = 119570351.42857143 # 182 A -1 --> 0
-        # self.xvar('frequency_raman_transition', 119544805.0 + np.linspace(-75.e3,75.e3,10))
+        self.p.frequency_raman_transition = self.p.frequency_raman_transition + 34593.33333333332
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
         self.p.t_continuous_rabi = 450.e-6
 
-        self.p.v_pd_hf_tweezer_squeeze_power = .246
+        self.p.v_pd_hf_tweezer_squeeze_power = .984
 
         # self.xvar('t_raman_pulse',[0, 8.7e-06 / 2, 8.7e-06])
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
@@ -89,9 +86,9 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.abs_image()
 
-        # self.core.wait_until_mu(now_mu())
-        # self.scope.read_sweep(0)
-        # self.core.break_realtime()
+        self.core.wait_until_mu(now_mu())
+        self.scope.read_sweep(0)
+        self.core.break_realtime()
         delay(30.e-3)
 
     @kernel

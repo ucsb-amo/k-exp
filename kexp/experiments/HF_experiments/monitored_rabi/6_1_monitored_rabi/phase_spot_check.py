@@ -21,7 +21,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         # self.xvar('t_raman_pulse',[0, 8.7e-06])
 
-        self.p.v_pd_hf_tweezer_squeeze_power = .246
+        self.p.v_pd_hf_tweezer_squeeze_power = .984
 
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
         # self.p.t_raman_pulse = 8.8699e-6

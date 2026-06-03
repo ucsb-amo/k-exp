@@ -22,13 +22,13 @@ class hf_bec(EnvExperiment, Base):
         self.p.do_405_pulse = 1
         self.p.do_980_pulse = 1
 
-        self.xvar('frequency_eo_980', np.arange(120.,150.,.2)*1.e6)
+        # self.xvar('frequency_eo_980', np.arange(120.,150.,.2)*1.e6)
         # self.p.frequency_eo_980 = 139.e6
         self.p.frequency_eo_980 = 125.4e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
         
-        # self.xvar('t_tweezer_hold', self.powspace(0.0, 2000.0, 11, power=3) * 1.e-3)
+        self.xvar('t_tweezer_hold', self.powspace(0.0, 2000.0, 11, power=3) * 1.e-3)
         self.t_tweezer_hold = 1500.e-3
 
         # self.xvar('v_vva_ry_405',np.linspace(0.3,1.,10))
@@ -41,7 +41,7 @@ class hf_bec(EnvExperiment, Base):
 
         self.p.amp_dds_405 = 0.08
 
-        self.p.N_repeats = 21
+        self.p.N_repeats = 1
 
         # magic numbers while JE troubleshoots, to be removed later
         self.p.v_pd_lightsheet_rampup_end = 6.7
