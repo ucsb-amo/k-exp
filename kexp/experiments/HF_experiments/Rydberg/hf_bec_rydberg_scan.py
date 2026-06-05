@@ -22,24 +22,24 @@ class hf_bec(EnvExperiment, Base):
         self.p.do_405_pulse = 1
         self.p.do_980_pulse = 1
 
-        # self.xvar('frequency_eo_980', np.linspace(350.,450.,2)*1.e6)
+        self.xvar('frequency_eo_980', np.linspace(350.,450.,20)*1.e6)
         # self.p.frequency_eo_980 = 139.e6
         self.p.frequency_eo_980 = 355.4e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
         
 
-        self.xvar('t_tweezer_hold', np.linspace(0.0, 1000.0, 2) * 1.e-3)
+        # self.xvar('t_tweezer_hold', np.linspace(0.0, 1500.0, 3) * 1.e-3)
         self.t_tweezer_hold = 1000.e-3
 
   
-        self.p.v_pd_ry_405 = 0.5
+        self.p.v_pd_ry_405 = 0.8
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
         self.p.amp_dds_405 = 0.08
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
 
         # # magic numbers while JE troubleshoots, to be removed later
         # self.p.v_pd_lightsheet_rampup_end = 6.7
@@ -75,8 +75,8 @@ class hf_bec(EnvExperiment, Base):
         self.ry_405.reboot()
         self.ry_405.dds_sw.set_dds(amplitude=self.p.amp_dds_405)
         self.ry_405.on()
-        # if self.p.do_980_pulse == 1:
-        self.ry_980.on()
+        if self.p.do_980_pulse == 1:
+            self.ry_980.on()
         
         # if self.p.wee == 1:   
         #     for i in range(500):

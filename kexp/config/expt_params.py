@@ -123,7 +123,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_tweezer_paint_rampdown = 0.
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
-        self.t_tweezer_squeezer_ramp_2 = 40.e-3
+        self.t_tweezer_squeezer_ramp_2 = 20.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -149,7 +149,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_feshbach_field_ramp_special = 20.e-3
 
         # self.t_raman_pi_pulse = 1.0483e-05 #67009, 2026-05-18
-        self.t_raman_pi_pulse = 7.4501e-06 #68803, 2026-06-03
+        self.t_raman_pi_pulse = 7.5525e-06 #69026, 2026-06-04
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -359,7 +359,7 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.31
+        self.fraction_power_raman = 0.32
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 

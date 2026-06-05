@@ -32,7 +32,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         self.p.dimension_slm_mask = 20.e-6
 
-        self.xvar('phase_slm_mask',np.linspace(.2*np.pi,.5*np.pi,10))
+        self.xvar('phase_slm_mask',np.linspace(.12*np.pi,.45*np.pi,10))
         # self.p.phase_slm_mask = 0.3 * np.pi
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))

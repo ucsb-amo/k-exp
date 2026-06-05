@@ -18,9 +18,9 @@ class hf_raman(EnvExperiment, Base):
         self.xvar('t_raman_pulse', np.linspace(0., 50., 30)*1.e-6)
 
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
-        self.p.fraction_power_raman = .31
+        self.p.fraction_power_raman = .32
 
-        self.p.v_pd_hf_tweezer_squeeze_power = .984
+        self.p.v_pd_hf_tweezer_squeeze_power = 3.94
         
         # self.xvar('amp_imaging',np.linspace(0.1,.8,10))
         self.p.amp_imaging = .2
@@ -33,7 +33,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_tweezer_hold = .1e-3
 
         # self.xvar('t_tof',np.linspace(500.,2500.,15)*1.e-6) 
-        self.p.t_tof = 60.e-6
+        self.p.t_tof = 40.e-6
 
         self.p.t_mot_load = 1.
         
