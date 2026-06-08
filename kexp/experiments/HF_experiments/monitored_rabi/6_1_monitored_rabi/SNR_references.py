@@ -16,28 +16,28 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.t_continuous_rabi = 450.e-6
+        self.p.t_continuous_rabi = 2000.e-6
 
-        self.p.v_pd_hf_tweezer_squeeze_power = 3.94
+        self.p.v_pd_hf_tweezer_squeeze_power = 1.97
 
         # self.p.t_raman_pulse = 0.
-        self.p.t_raman_pulse = 3*self.p.t_raman_pi_pulse / 2
-        # self.p.t_raman_pulse = self.p.t_raman_pi_pulse
+        # self.p.t_raman_pulse = 3*self.p.t_raman_pi_pulse / 2
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse
         
-        # self.xvar('amp_imaging', np.linspace(.3,2., 3))
+        self.xvar('amp_imaging', np.linspace(.2,2.5, 10))
         self.p.amp_imaging = 2.
         
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         self.p.dimension_slm_mask = 20.e-6
 
-        self.xvar('phase_slm_mask',np.linspace(0.1*np.pi,.7*np.pi,5))
-        self.p.phase_slm_mask = 0.39 * np.pi
+        # self.xvar('phase_slm_mask',np.linspace(0.01*np.pi,.4*np.pi,5))
+        self.p.phase_slm_mask = 0.205 * np.pi
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 10
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -51,7 +51,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers(squeeze=True)
 
         self.raman.init(fraction_power = self.p.fraction_power_raman,
                         frequency_transition = self.p.frequency_raman_transition)

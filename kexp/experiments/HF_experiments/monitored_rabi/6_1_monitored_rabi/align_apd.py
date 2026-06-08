@@ -23,6 +23,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
         self.p.t_continuous_rabi = 450.e-6
 
+        self.p.v_pd_hf_tweezer_squeeze_power = 1.97
+
         # self.xvar('t_raman_pulse',[0, 8.7e-06 / 2, 8.7e-06])
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
         # self.p.t_raman_pulse = 8.8699e-6
@@ -34,7 +36,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.dimension_slm_mask = 20.e-6
 
         # self.xvar('phase_slm_mask',np.linspace(0.,.7*np.pi,10))
-        self.p.phase_slm_mask = 0.35 * np.pi
+        self.p.phase_slm_mask = 0.25 * np.pi
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
@@ -54,7 +56,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers(squeeze=True)
 
         self.raman.init(fraction_power = self.p.fraction_power_raman,
                         frequency_transition = self.p.frequency_raman_transition)

@@ -22,21 +22,21 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('i_hf_tweezer_load_current',[193.6, 193.7, 193.8])
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.,-1,7))
         # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end', np.linspace(4.3,5.2,11))
-        self.p.v_pd_lightsheet_rampup_end = 6.7
-        self.p.i_hf_tweezer_load_current = 193.7
-        self.p.t_hf_tweezer_1064_ramp = 0.19
-        self.p.v_pd_hf_lightsheet_rampdown_end = 0.8
-        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.75
-        self.p.v_hf_tweezer_paint_amp_max = -2.33
+        # self.p.v_pd_lightsheet_rampup_end = 6.7
+        # self.p.i_hf_tweezer_load_current = 193.7
+        # self.p.t_hf_tweezer_1064_ramp = 0.19
+        # self.p.v_pd_hf_lightsheet_rampdown_end = 0.8
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.75
+        # self.p.v_hf_tweezer_paint_amp_max = -2.33
 
         # self.xvar('skip_evap_ramp',[0,1])
 
-        self.p.t_tweezer_hold = 100.e-3
+        self.p.t_tweezer_hold = 10.e-3
 
         # self.p.v_pd_hf_tweezer_squeeze_power
         # self.xvar('v_pd_hf_tweezer_squeeze_power', np.linspace(0.3,6.7,21))
 
-        # self.xvar('t_tof',np.linspace(200.,2000.,8)*1.e-6)
+        self.xvar('t_tof',np.linspace(1000.,2800.,8)*1.e-6)
         self.p.t_tof = 200.e-6
         # self.p.t_tof = 20.e-6
 
@@ -45,7 +45,7 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('v',np.linspace(0.,1.,5))
         # self.p.v = 3.
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 3
 
         self.p.t_mot_load = 1.
 
@@ -74,7 +74,7 @@ class hf_bec(EnvExperiment, Base):
         # self.raman.off()
         # self.ry_405.ttl_shutter.off()
 
-        delay(10.e-3)
+        # delay(10.e-3)
         
         self.tweezer.off()
 
