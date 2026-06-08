@@ -51,13 +51,14 @@ class ExptParams(expt_params_kexp):
         # t_pi_meas = 10.8555 µs  (stored: 10.5540 µs)
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.18121
-        self.v_apd_all_down = -0.22123
+        self.v_apd_all_up = -0.17572
+        self.v_apd_all_down = -0.22453
         self.n_photons_per_shot = 715.12
         # self.std_n_photons_up = 47.803
         # self.std_n_photons_down = 70.229
         self.std_n_photons_per_shot = 59.016 # avg of up/down
-        self.feedback_measurement_midpoint_fraction = 0.5181
+        self.feedback_measurement_midpoint_fraction = 0.35115
+        # self.feedback_measurement_midpoint_fraction = 0.5181
 
         # # # calibration run 67410
         # # self.t_img_pulse = 5e-06  # s
