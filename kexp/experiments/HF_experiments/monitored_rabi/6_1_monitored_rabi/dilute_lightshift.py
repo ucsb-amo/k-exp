@@ -23,11 +23,15 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_ramsey = 5.e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
+        self.p.v_pd_hf_tweezer_1064_rampdown_end = 5.
+
+        # self.xvar('t_dilution',np.linspace(1.,5000.,5)*1.e-3) 
+
         self.p.amp_imaging = .2
         self.p.t_tweezer_hold = 15.e-3
-        self.p.t_tof = 25.e-6
+        self.p.t_tof = 100.e-6
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 5
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 
@@ -38,7 +42,15 @@ class hf_raman(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=True)
+        self.prepare_hf_tweezers(squeeze=False,
+                                 do_tweezer_evap_2=False,
+                                 do_tweezer_evap_3=False)
+
+        self.tweezer.ramp(t=10.e-3,
+                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
+                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
+                          paint=True,keep_trap_frequency_constant=True)
+
         self.prep_raman()
 
         self.raman.set(t_phase_origin_mu=now_mu())

@@ -22,14 +22,14 @@ class rabi_surfing(EnvExperiment, Base):
 
         self.p.t_imaging_pulse = 5.e-6
 
-        self.p.N_divider = 2
+        self.p.N_divider = 1.
         self.p.N_divider = int(self.p.N_divider)
         if self.p.N_divider <= 0:
             raise ValueError("N_divider must be a positive integer.")
 
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / self.p.N_divider
         # Minimal pulse count that gives a 2*pi total pulse area per train.
-        self.p.N_raman_pulses_between_measurements = 2 * self.p.N_divider
+        self.p.N_raman_pulses_between_measurements = 1 * self.p.N_divider
 
         self.xvar('t_raman_pulse', self.p.t_raman_pulse + 350.e-9 * np.linspace(-1,1,7))
 
@@ -38,7 +38,7 @@ class rabi_surfing(EnvExperiment, Base):
         self.p.time_for_bye = 10.e-6
 
         self.p.t_tof = 100.e-6
-        self.p.N_repeats = 10
+        self.p.N_repeats = 3
 
         self.p.N_pulses = 30
         self.data.apd = self.data.add_data_container(self.p.N_pulses)

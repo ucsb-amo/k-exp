@@ -26,7 +26,7 @@ class hf_raman(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_squeeze_power = 7.
         # self.p.t_tof = 8.e-6
 
-        self.p.t_tof = 120.e-6
+        self.p.t_tof = 100.e-6
         
         self.p.N_repeats = 2
 

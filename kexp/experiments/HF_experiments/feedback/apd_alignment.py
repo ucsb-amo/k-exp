@@ -13,7 +13,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=True,
+                      save_data=False,
                       imaging_type=img_types.DISPERSIVE)
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
@@ -32,15 +32,15 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         self.p.dimension_slm_mask = 20.e-6
 
-        self.xvar('phase_slm_mask',np.linspace(.01*np.pi,0.3*np.pi,5))
-        # self.p.phase_slm_mask = 0.3 * np.pi
+        # self.xvar('phase_slm_mask',np.linspace(.1*np.pi,0.3*np.pi,10))
+        self.p.phase_slm_mask = 0.2 * np.pi
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1000
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -88,9 +88,9 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.abs_image()
 
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
-        self.core.break_realtime()
+        # self.core.wait_until_mu(now_mu())
+        # self.scope.read_sweep(0)
+        # self.core.break_realtime()
         delay(30.e-3)
 
     @kernel

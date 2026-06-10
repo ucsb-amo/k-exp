@@ -23,7 +23,7 @@ class ExptParams(expt_params_kexp):
         
         # calibration run 67455
         # img amp 0.2, pulse time 5.0e-06 s
-        self.frequency_lightshift = 2.88e+04  # Hz
+        self.frequency_lightshift = 3.08e+04# 2.88e+04  # Hz
 
         # # calibration run 66491
         # self.t_img_pulse = 1e-05  # s
@@ -49,16 +49,27 @@ class ExptParams(expt_params_kexp):
 
         # calibration run 67527
         # t_pi_meas = 10.8555 µs  (stored: 10.5540 µs)
-        self.t_img_pulse = 5e-06  # s
-        self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.17572
-        self.v_apd_all_down = -0.22453
-        self.n_photons_per_shot = 715.12
+        # self.t_img_pulse = 5e-06  # s
+        # self.amp_imaging = 0.2
+        # self.v_apd_all_up = -0.18215625000000002
+        # self.v_apd_all_down = -0.22096875
+        # self.n_photons_per_shot = 495.58
         # self.std_n_photons_up = 47.803
         # self.std_n_photons_down = 70.229
-        self.std_n_photons_per_shot = 59.016 # avg of up/down
-        self.feedback_measurement_midpoint_fraction = 0.35115
+        # self.std_n_photons_per_shot = 32.02 # avg of up/down
+        # self.feedback_measurement_midpoint_fraction = 0.37121
         # self.feedback_measurement_midpoint_fraction = 0.5181
+
+        # calibration run 69588
+        self.t_img_pulse = 5e-06  # s
+        self.amp_imaging = 0.2
+        self.v_apd_all_up = -0.17785
+        self.v_apd_all_down = -0.21937
+        self.n_photons_per_shot = 385.01
+        # self.std_n_photons_up = 68.926
+        # self.std_n_photons_down = 39.602
+        self.std_n_photons_per_shot = 54.264 # avg of up/down
+        self.feedback_measurement_midpoint_fraction = 0.32919
 
         # # # calibration run 67410
         # # self.t_img_pulse = 5e-06  # s
@@ -74,7 +85,7 @@ class ExptParams(expt_params_kexp):
         # self.feedback_measurement_midpoint_fraction = 0.50745
 
         # run 66841 | multi-parameter grid fit result
-        self.back_action_coherence = 0.8794
+        self.back_action_coherence = 0.78
     
         self.feedback_measurement_midpoint_remap_enabled = True
 
