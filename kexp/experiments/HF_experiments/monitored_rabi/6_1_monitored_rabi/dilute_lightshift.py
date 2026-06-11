@@ -27,7 +27,7 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('t_dilution',np.linspace(1.,5000.,5)*1.e-3) 
 
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .8 #.6  .8
         self.p.t_tweezer_hold = 15.e-3
         self.p.t_tof = 100.e-6
         self.p.t_mot_load = 1.

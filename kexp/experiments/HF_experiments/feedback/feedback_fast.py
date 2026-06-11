@@ -27,7 +27,7 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = -2.
+        self.p.feedback_fractional_initial_offset = +3.
         # self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,11))
         
         self.p.N_repeats = 20
@@ -80,7 +80,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
     @kernel
     def feedback_loop(self, t_start_mu,
-                       update_raman_frequency=1,
+                       update_raman_frequency=0,
                        update_rabi_frequency=0,
                        include_photon_noise=1):
         
@@ -168,8 +168,9 @@ class feedback(EnvExperiment, Base, Feedback):
 
         delay(self.p.t_tweezer_hold)
         self.raman.clean_up_fast_frequency_update()
+        self.ttl.raman_shutter.off()
 
-        # self.tweezer.off()
+        self.tweezer.off()
         delay(self.p.t_tof)
         self.abs_image()
 

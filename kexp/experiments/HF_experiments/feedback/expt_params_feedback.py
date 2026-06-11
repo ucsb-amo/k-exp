@@ -60,16 +60,28 @@ class ExptParams(expt_params_kexp):
         # self.feedback_measurement_midpoint_fraction = 0.37121
         # self.feedback_measurement_midpoint_fraction = 0.5181
 
-        # calibration run 69588
+        # calibration run 69642
+        # self.t_img_pulse = 5e-06  # s
+        # self.amp_imaging = 0.2
+        # self.v_apd_all_up = -0.18153125
+        # self.v_apd_all_down = -0.21965625
+        # self.n_photons_per_shot = 340.45
+        # self.std_n_photons_up = 96.335
+        # self.std_n_photons_down = 103.8
+        # self.std_n_photons_per_shot = 100.07 # avg of up/down
+        # self.feedback_measurement_midpoint_fraction = 0.20684
+
+
+        # calibration run 69701
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.17785
-        self.v_apd_all_down = -0.21937
-        self.n_photons_per_shot = 385.01
-        # self.std_n_photons_up = 68.926
-        # self.std_n_photons_down = 39.602
-        self.std_n_photons_per_shot = 54.264 # avg of up/down
-        self.feedback_measurement_midpoint_fraction = 0.32919
+        self.v_apd_all_up = -0.18626
+        self.v_apd_all_down = -0.21911
+        self.n_photons_per_shot = 307.56
+        # self.std_n_photons_up = 37.248
+        # self.std_n_photons_down = 17.498
+        self.std_n_photons_per_shot = 27.373 # avg of up/down
+        self.feedback_measurement_midpoint_fraction = 0.43189
 
         # # # calibration run 67410
         # # self.t_img_pulse = 5e-06  # s
@@ -85,7 +97,7 @@ class ExptParams(expt_params_kexp):
         # self.feedback_measurement_midpoint_fraction = 0.50745
 
         # run 66841 | multi-parameter grid fit result
-        self.back_action_coherence = 0.78
+        self.back_action_coherence = 0.8059
     
         self.feedback_measurement_midpoint_remap_enabled = True
 
