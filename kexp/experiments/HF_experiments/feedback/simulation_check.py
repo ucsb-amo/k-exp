@@ -28,15 +28,15 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 20
+        self.p.N_repeats = 7
         self.p.N_pulses = 12 # number of steps of evolution
         
         ### parameters
 
-        # self.xvar('pulse_list_span_Omega', np.linspace(0, 4, 10))
-        self.p.pulse_list_span_Omega = 2.
-        # self.xvar('pulse_list_seed', np.linspace(1, 10000, 5, dtype=np.int32))
-        self.p.pulse_list_seed = 5342
+        self.xvar('pulse_list_span_Omega', np.linspace(0, 3, 3))
+        # self.p.pulse_list_span_Omega = 4.
+        # self.xvar('pulse_list_seed', np.linspace(1056, 15432, 3, dtype=np.int32))
+        self.p.pulse_list_seed = 1056
 
         self.get_new_pulse_list()
         

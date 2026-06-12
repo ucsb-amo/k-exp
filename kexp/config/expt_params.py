@@ -149,7 +149,8 @@ class ExptParams(ExptParamsWaxx):
         self.t_feshbach_field_ramp_special = 20.e-3
 
         # self.t_raman_pi_pulse = 1.0483e-05 #67009, 2026-05-18
-        self.t_raman_pi_pulse = 7.6582e-06 #69628, 2026-06-10
+        # self.t_raman_pi_pulse = 8.6051e-06 #69699, 2026-06-10
+        self.t_raman_pi_pulse = 8.5137e-06 #69705, 2026-06-11
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -320,7 +321,8 @@ class ExptParams(ExptParamsWaxx):
         self.amp_tweezer_list = [.18] # [.15]
 
         self.v_lf_tweezer_paint_amp_max = .5
-        self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
+        # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
+        self.v_hf_tweezer_paint_amp_max = -2.33
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4

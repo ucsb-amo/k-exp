@@ -7,7 +7,7 @@ from numpy import int64
 class sigma_z(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
@@ -17,7 +17,7 @@ class sigma_z(EnvExperiment, Base):
         self.p.t_pci_pulse = 5.e-6
         # self.xvar('t_pci_pulse', np.linspace(3.e-6, 10.e-6, 5))
 
-        self.p.t_between_pulses_mu = 20000  # from pulse start to next pulse start, in mu
+        self.p.t_between_pulses_mu = 25000  # from pulse start to next pulse start, in mu
 
         self.p.t_raman_pulse = 0.
         self.p.t_raman_pulse_offset = 220.e-9
@@ -25,10 +25,10 @@ class sigma_z(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 8
+        self.p.N_repeats = 11
         
 
-        self.p.N_pulses = 6
+        self.p.N_pulses = 1
 
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
 

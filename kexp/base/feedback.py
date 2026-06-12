@@ -1,4 +1,4 @@
-from artiq.experiment import kernel, portable, TInt64
+from artiq.experiment import kernel, portable, TInt64, TTuple, TArray, TFloat
 import numpy as np
 from numpy import int64
 from kexp.calibrations.imaging import integrator_calibration, imaging_lightshift
@@ -15,7 +15,6 @@ class Feedback:
         "dt_ideal",
         "dt_z",
         # "omega_z_lightshift",
-        "omega_guess_start",
         "N_photons_per_shot",
         "std_n_photons_per_shot",
         "v_apd_all_up",
@@ -269,7 +268,8 @@ class Feedback:
 
             p1 = self.expected_photon_fraction(hz)
             q = 1.0 - p1
-            npq = n_photons * p1 * q + sigma_sq
+            # npq = n_photons * p1 * q + sigma_sq
+            npq = sigma_sq
             num = k - n_photons * p1
             if include_photon_noise:
                 f = sigma / np.sqrt(npq) * np.exp(-num * num / (2.0 * npq))
@@ -415,8 +415,8 @@ class Feedback:
         frequency_resonance,
         fractional_grid_center_offset,
         fractional_initial_offset,
-        guess_span_Omega,
-    ):
+        guess_span_Omega) -> TTuple([TArray(TFloat), TArray(TFloat)]):
+
         omega_resonance = 2.0 * np.pi * float(frequency_resonance)
         self.p.feedback_fractional_grid_center_offset_requested = float(fractional_grid_center_offset)
         self.p.feedback_fractional_initial_offset = float(fractional_initial_offset)
@@ -448,12 +448,12 @@ class Feedback:
                 f"effective={self.p.feedback_guess_span_Omega:.6g}."
             )
 
-        self.omega_guess_start = omega_resonance + self.Omega * self.p.feedback_fractional_initial_offset
         self._validate_resonance_in_grid(omega_resonance=omega_resonance)
-        self._validate_initial_guess_in_grid()
+        # self._validate_initial_guess_in_grid()
         self.p.omega_guess_list = self.omega_guess_list
-        self.omega_raman = self.omega_guess_start
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
+        self.omega_raman = self.reset_initial_omega_from_params()
+        return self.p.omega_guess_list, self.omega_sq_list
 
     def _construct_span_adjusted_grid(
         self,
@@ -540,11 +540,15 @@ class Feedback:
         grid_max = float(np.max(omega_guess))
         tol = 1.0e-12 * max(1.0, abs(grid_min), abs(grid_max))
 
-        if self.omega_guess_start < (grid_min - tol) or self.omega_guess_start > (grid_max + tol):
+        omega_guess_start = (
+            2.0 * np.pi * float(self.p.frequency_raman_transition)
+            + float(self.Omega) * float(self.p.feedback_fractional_initial_offset)
+        )
+        if omega_guess_start < (grid_min - tol) or omega_guess_start > (grid_max + tol):
             grid_center = 0.5 * (grid_min + grid_max)
             raise ValueError(
                 "Feedback initial guess is outside the constructed hypothesis grid. "
-                f"omega_guess_start={self.omega_guess_start:.6e} rad/s, "
+                f"omega_guess_start={omega_guess_start:.6e} rad/s, "
                 f"grid_min={grid_min:.6e} rad/s, "
                 f"grid_max={grid_max:.6e} rad/s, "
                 f"grid_center={grid_center:.6e} rad/s, "

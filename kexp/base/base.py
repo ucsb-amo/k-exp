@@ -203,7 +203,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     @kernel
     def post_scan(self):
         self.ry_980.sweep_to(reset=True)
-        self.tweezer.reset_awg()
+        try:
+            self.tweezer.reset_awg()
+        except:
+            pass
         # self.tweezer.close()
         self.core.break_realtime()
         self.background_field()
