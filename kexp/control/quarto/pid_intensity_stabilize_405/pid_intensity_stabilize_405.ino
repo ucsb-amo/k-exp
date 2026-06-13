@@ -24,9 +24,9 @@ struct Cal
 
 void setup() {
   configureADC(1, 1, 0, BIPOLAR_5V, getMeas1);
-  // configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
+  configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
   configureADC(3, 1, 0, BIPOLAR_5V, getMeas2);
-  // configureADC(4,1,0,BIPOLAR_10V,getSet2);
+  configureADC(4, 1, 0,BIPOLAR_10V,getSet2);
 
   qC.assignVariable("p1", &P1);
   qC.assignVariable("i1", &I1);
@@ -36,7 +36,7 @@ void setup() {
   qC.assignVariable("set1", &SETPOINT1);
   qC.assignVariable("set2", &SETPOINT2);
 
-  enableInterruptTrigger(1,BOTH_EDGES,&clear_integrator);
+  enableInterruptTrigger(1,BOTH_EDGES,&clear_integrator2);
   // enableInterruptTrigger(2,BOTH_EDGES,&switch2);
 
   qC.addCommand("c", clear_integrator);
@@ -71,6 +71,11 @@ void switch2() {
 }
 
 void clear_integrator(qCommand& qC, Stream& S) {
+  integral1 = 0;
+  integral2 = 0;
+}
+
+void clear_integrator2() {
   integral1 = 0;
   integral2 = 0;
 }
