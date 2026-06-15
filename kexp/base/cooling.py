@@ -494,11 +494,11 @@ class Cooling():
         
         ### Start Defaults ###
         if detune_d2_c == dv:
-            detune_d2_c = self.params.detune_d2_c_mot
+            detune_d2_c = self.params.detune_d2_c_hmot
         if amp_d2_c == dv:
             amp_d2_c = self.params.amp_d2_c_mot
         if detune_d2_r == dv:
-            detune_d2_r = self.params.detune_d2_r_mot
+            detune_d2_r = self.params.detune_d2_r_hmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_mot
         ### End Defaults ###

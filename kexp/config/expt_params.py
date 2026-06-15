@@ -182,10 +182,13 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d2_r_mot = -4.5
         self.amp_d2_r_mot = 0.188
 
-        self.detune_d1_c_mot = 0.
+        self.detune_d2_c_hmot = -1.7
+        self.detune_d2_r_hmot = -3.2
+
+        self.detune_d1_c_mot = 11.
         self.v_pd_d1_c_mot = 5.0
 
-        self.detune_d1_r_mot = 0.
+        self.detune_d1_r_mot = 7.5
         self.v_pd_d1_r_mot = 5.0
 
         self.i_mot = 19.2
