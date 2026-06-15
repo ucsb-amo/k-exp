@@ -24,9 +24,9 @@ struct Cal
 
 void setup() {
   configureADC(1, 1, 0, BIPOLAR_5V, getMeas1);
-  // configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
-  configureADC(3, 1, 0, BIPOLAR_2500mV, getMeas2);
-  // configureADC(4,1,0,BIPOLAR_10V,getSet2);
+  configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
+  configureADC(3, 1, 0, BIPOLAR_5V, getMeas2);
+  configureADC(4, 1, 0,BIPOLAR_10V,getSet2);
 
   qC.assignVariable("p1", &P1);
   qC.assignVariable("i1", &I1);
@@ -36,7 +36,7 @@ void setup() {
   qC.assignVariable("set1", &SETPOINT1);
   qC.assignVariable("set2", &SETPOINT2);
 
-  // enableInterruptTrigger(1,BOTH_EDGES,&switch1);
+  enableInterruptTrigger(1,BOTH_EDGES,&clear_integrator2);
   // enableInterruptTrigger(2,BOTH_EDGES,&switch2);
 
   qC.addCommand("c", clear_integrator);
@@ -75,12 +75,17 @@ void clear_integrator(qCommand& qC, Stream& S) {
   integral2 = 0;
 }
 
+void clear_integrator2() {
+  integral1 = 0;
+  integral2 = 0;
+}
+
 //Read ADC, output ADC value at Ch3 and set point on CH4, calculate PID, output PID at CH1
 void getMeas1() {
   double newadc1 = readADC1_from_ISR();
   double newdac1 = 0.;
   writeDAC(3, newadc1);
-  writeDAC(4, SETPOINT1);
+  // writeDAC(4, SETPOINT1);
 
   if (pid_enable1) {
     double prop1 = (newadc1 - SETPOINT1) * P1;
@@ -107,7 +112,7 @@ void getSet1() {
 void getMeas2() {
   double newadc2 = readADC3_from_ISR();
   double newdac2 = 0.;
-  // writeDAC(3, newadc2);
+  writeDAC(4, newadc2);
   // writeDAC(4, SETPOINT2);
 
   if (pid_enable2) {
@@ -129,7 +134,7 @@ void getMeas2() {
 }
 
 void getSet2() {
-  // SETPOINT2 = readADC4_from_ISR();
+  SETPOINT2 = readADC4_from_ISR();
 }
 
 void loop() {
