@@ -55,8 +55,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 
-
-
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of prepare.
@@ -134,7 +132,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             # self._fzw.connect()
             # pass
             self.ry_405.init()
-            self.ry_980.init()
+            # self.ry_980.init()
         
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):
@@ -196,18 +194,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.core.break_realtime()
         self.ry_405.lock_status()
-        self.ry_980.lock_status()
+        # self.ry_980.lock_status()
 
         self.cleanup_scan_kernel_wax()
 
     @kernel
     def post_scan(self):
-        self.ry_980.sweep_to(reset=True)
-        try:
-            self.tweezer.reset_awg()
-        except:
-            pass
-        # self.tweezer.close()
+        # self.ry_980.sweep_to(reset=True)
+        self.tweezer.reset_awg()
         self.core.break_realtime()
         self.background_field()
         
