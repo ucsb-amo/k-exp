@@ -15,18 +15,19 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
-        # self.xvar('beans',[0]*50)
+        self.xvar('shot_number',np.linspace(1,400,400))
 
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.,9.,15))
         # self.p.v_pd_lightsheet_rampup_end = 7.
 
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.5,1.,15))
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.6,1.2,8))
+        # self.p.v_pd_hf_lightsheet_rampdown_end = .8
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.5,-1.,8))
-        # self.p.v_hf_tweezer_paint_amp_max = -2.
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
+        # self.p.v_hf_tweezer_paint_amp_max = -2.2
 
         # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.7
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 3.94
 
@@ -58,7 +59,7 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
         self.p.t_tweezer_hold = .1e-3
 
-        self.xvar('t_tof',np.linspace(1000.,2800.,10)*1.e-6) 
+        # self.xvar('t_tof',np.linspace(1000.,2800.,10)*1.e-6) 
         self.p.t_tof = 2000.e-6
 
         self.p.t_mot_load = 1.
@@ -67,7 +68,7 @@ class hf_raman(EnvExperiment, Base):
 
         # self.camera_params.gain = 75.
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

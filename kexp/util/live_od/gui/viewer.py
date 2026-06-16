@@ -4,7 +4,7 @@ import pickle
 import json
 import pyqtgraph as pg
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QLabel, QPushButton, QPlainTextEdit, QSlider, QSizePolicy, QLineEdit, QDoubleSpinBox, QCheckBox
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 import sys
 import contextlib
 
@@ -22,6 +22,8 @@ class SuppressPrints:
             sys.stdout = self._original_stdout
 
 class LiveODViewer(QWidget):
+    live_plot_requested = pyqtSignal()   # emitted when the Live Plot button is clicked
+
     def __init__(self):
         super().__init__()
         self.Nimg = 0
@@ -44,6 +46,7 @@ class LiveODViewer(QWidget):
     def init_ui(self):
         self.reset_zoom_button = QPushButton('Reset zoom')
         self.clear_button = QPushButton('Clear')
+        self.live_plot_button = QPushButton('Live Plot')
         self.image_count_label = QLabel('Shot count: 0/0')
         control_bar = QHBoxLayout()
 
@@ -53,10 +56,13 @@ class LiveODViewer(QWidget):
 
         control_bar.addWidget(self.reset_zoom_button)
         control_bar.addWidget(self.clear_button)
+        control_bar.addWidget(self.live_plot_button)
         control_bar.addWidget(self.lock_views_checkbox)
         control_bar.addWidget(self.image_count_label)
 
         control_bar.addStretch()
+
+        self.live_plot_button.clicked.connect(self.live_plot_requested)
 
         self.output_window = QPlainTextEdit()
         self.output_window.setReadOnly(True)

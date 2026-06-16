@@ -112,8 +112,12 @@ class LiveODBroadcaster(QThread, WaxxServer):
     # Public broadcast methods — safe to call from any thread / Qt slot
     # ------------------------------------------------------------------
 
-    def broadcast_run_started(self, run_id: int):
-        self._enqueue({'tag': 'RUN_STARTED', 'run_id': int(run_id)})
+    def broadcast_run_started(self, run_id: int, xvarnames: object = None):
+        self._enqueue({
+            'tag': 'RUN_STARTED',
+            'run_id': int(run_id),
+            'xvarnames': list(xvarnames) if xvarnames else [],
+        })
 
     def broadcast_shot_progress(self, shot_idx: int, N_total: int,
                                  xvar_values: object):
@@ -148,6 +152,14 @@ class LiveODBroadcaster(QThread, WaxxServer):
 
     def broadcast_run_done(self):
         self._enqueue({'tag': 'RUN_DONE'})
+
+    def broadcast_shot_scalars(self, scalars: dict):
+        """Broadcast per-shot scalar quantities to remote viewers.
+
+        ``scalars`` is the dict emitted by ``Analyzer.shot_scalars_signal``.
+        NaN values are kept as-is (receivers should handle them gracefully).
+        """
+        self._enqueue({'tag': 'SHOT_SCALARS', **scalars})
 
     def broadcast_log_msg(self, text: str):
         self._enqueue({'tag': 'LOG_MSG', 'text': str(text)})

@@ -46,7 +46,7 @@ class LiveODServer(QThread, WaxxServer):
     new_run_signal = pyqtSignal(str, str, bool, bool, int, int, int, int, object, object, object)   # filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa_per_shot, camera_params, params_payload, run_info_payload
     shot_progress_signal = pyqtSignal(int, int, object)       # shot_idx, N_total, xvar_values dict
     run_done_signal = pyqtSignal()
-    run_started_signal = pyqtSignal(int)                      # run_id (emitted after INIT_RUN, before new_run_signal)
+    run_started_signal = pyqtSignal(int, object)               # run_id, xvarnames (emitted after INIT_RUN, before new_run_signal)
     reset_signal = pyqtSignal()                               # triggered by remote RESET command
     camera_control_signal = pyqtSignal(str, str)              # camera_key, action ('open'|'close'|'toggle')
 
@@ -69,6 +69,8 @@ class LiveODServer(QThread, WaxxServer):
         self._reset_requested = False   # set by RESET; cleared by next INIT_RUN
         self._run_in_progress = False   # True between INIT_RUN and END_RUN/ABORT
         self._shot_timestamps: list = []  # Unix timestamps (s) recorded server-side on each SHOT_COMPLETE
+        self._scalar_subscriber_count: dict = {}  # tier -> subscriber count
+        self._scalar_lock = threading.Lock()
 
     # ------------------------------------------------------------------
     # Public slots (safe to call from any thread)
@@ -138,6 +140,10 @@ class LiveODServer(QThread, WaxxServer):
                         reply = self._handle_poll(msg)
                     elif tag == "ABORT_RUN":
                         reply = self._handle_abort_run(msg)
+                    elif tag == "SUBSCRIBE_SCALARS":
+                        reply = self._handle_subscribe_scalars(msg)
+                    elif tag == "UNSUBSCRIBE_SCALARS":
+                        reply = self._handle_unsubscribe_scalars(msg)
                     else:
                         reply = {"ok": False, "error": f"Unknown tag: {tag}"}
                 except Exception as exc:
@@ -257,7 +263,7 @@ class LiveODServer(QThread, WaxxServer):
             'xvarnames': list(msg.get('xvarnames', [])),
         }
 
-        self.run_started_signal.emit(run_id)
+        self.run_started_signal.emit(run_id, list(run_info_payload.get('xvarnames', [])))
         self.new_run_signal.emit(filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa, camera_params, params_payload, run_info_payload)
         print(
             f"[LiveODServer] INIT_RUN: run_id={run_id}, "
@@ -368,3 +374,45 @@ class LiveODServer(QThread, WaxxServer):
     def _handle_poll(self, msg: dict) -> dict:
         """Lightweight poll — lets the experiment check for a pending reset."""
         return {"ok": True, "reset_requested": self._reset_requested}
+
+    def _handle_subscribe_scalars(self, msg: dict) -> dict:
+        """Remote viewer subscribes to scalar compute tier."""
+        tier = str(msg.get('tier', 'atom_number'))
+        if tier not in ('atom_number', 'fits'):
+            return {"ok": False, "error": f"Unknown tier: {tier}"}
+        with self._scalar_lock:
+            self._scalar_subscriber_count[tier] = self._scalar_subscriber_count.get(tier, 0) + 1
+        return {"ok": True}
+
+    def _handle_unsubscribe_scalars(self, msg: dict) -> dict:
+        """Remote viewer unsubscribes from scalar compute tier."""
+        tier = str(msg.get('tier', 'atom_number'))
+        with self._scalar_lock:
+            count = self._scalar_subscriber_count.get(tier, 0)
+            self._scalar_subscriber_count[tier] = max(0, count - 1)
+        return {"ok": True}
+
+    def get_requested_metrics(self) -> set:
+        """Return set of tiers currently requested by any subscriber.
+
+        Called from the Analyzer thread — reads under lock for safety.
+        """
+        with self._scalar_lock:
+            return {
+                tier
+                for tier, count in self._scalar_subscriber_count.items()
+                if count > 0
+            }
+
+    def register_scalar_subscription(self, tier: str):
+        """In-process subscription (local scalar plot window)."""
+        if tier not in ('atom_number', 'fits'):
+            return
+        with self._scalar_lock:
+            self._scalar_subscriber_count[tier] = self._scalar_subscriber_count.get(tier, 0) + 1
+
+    def unregister_scalar_subscription(self, tier: str):
+        """In-process unsubscription (local scalar plot window)."""
+        with self._scalar_lock:
+            count = self._scalar_subscriber_count.get(tier, 0)
+            self._scalar_subscriber_count[tier] = max(0, count - 1)

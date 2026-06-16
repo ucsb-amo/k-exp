@@ -26,6 +26,9 @@ class gm_tof(EnvExperiment, Base):
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
+
+        # self.camera_params.gain = 28.
+
         self.finish_prepare(shuffle=True)
 
     @kernel

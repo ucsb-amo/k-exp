@@ -150,7 +150,7 @@ class ExptParams(ExptParamsWaxx):
 
         # self.t_raman_pi_pulse = 1.0483e-05 #67009, 2026-05-18
         # self.t_raman_pi_pulse = 8.6051e-06 #69699, 2026-06-10
-        self.t_raman_pi_pulse = 8.5137e-06 #69705, 2026-06-11
+        self.t_raman_pi_pulse = 8.5568e-06 #69818, 2026-06-12
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -191,9 +191,9 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d1_r_mot = 7.5
         self.v_pd_d1_r_mot = 5.0
 
-        self.i_mot = 19.2
+        self.i_mot = 20.
 
-        self.v_zshim_current = .6
+        self.v_zshim_current = .57
         self.v_xshim_current = .0
         self.v_yshim_current = 2.5
 
@@ -230,7 +230,7 @@ class ExptParams(ExptParamsWaxx):
         self.pfrac_d1_c_gm = .9
         self.pfrac_d1_r_gm = 0.86
 
-        self.pfrac_c_gmramp_end = 0.05
+        self.pfrac_c_gmramp_end = 0.03
         self.pfrac_r_gmramp_end = 0.62
 
         # self.v_zshim_current_gm = 0.7
@@ -282,7 +282,7 @@ class ExptParams(ExptParamsWaxx):
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 7.
         self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .86 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .8 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = .25
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -301,7 +301,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.7
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
@@ -325,7 +325,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = -2.33
+        self.v_hf_tweezer_paint_amp_max = -2.2
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
