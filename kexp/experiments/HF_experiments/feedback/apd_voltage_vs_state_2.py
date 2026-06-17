@@ -28,7 +28,7 @@ class sigma_z(EnvExperiment, Base):
         self.p.N_repeats = 11
         
 
-        self.p.N_pulses = 1
+        self.p.N_pulses = 6
 
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
 

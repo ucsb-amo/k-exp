@@ -17,7 +17,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       imaging_type=img_types.DISPERSIVE)
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 400.e-6
+        # self.p.t_continuous_rabi = 400.e-6
 
         # self.xvar('t_raman_pulse',[0, 8.7e-06])
 

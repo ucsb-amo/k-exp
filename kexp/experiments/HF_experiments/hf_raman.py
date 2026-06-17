@@ -15,7 +15,7 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
-        self.xvar('shot_number',np.linspace(1,400,400))
+        # self.xvar('shot_number',np.linspace(1,400,400))
 
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.,9.,15))
         # self.p.v_pd_lightsheet_rampup_end = 7.

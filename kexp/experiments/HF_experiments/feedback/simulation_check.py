@@ -28,7 +28,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 7
+        self.p.N_repeats = 10
         self.p.N_pulses = 12 # number of steps of evolution
         
         ### parameters
@@ -68,6 +68,7 @@ class feedback(EnvExperiment, Base, Feedback):
         Feedback.__init__(self)
         
         self.zidx = self.p.feedback_resonance_grid_index
+        # self.zidx = self.p.feedback_grid_size//2
 
         ###
 

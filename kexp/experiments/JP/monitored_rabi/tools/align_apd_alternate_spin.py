@@ -16,7 +16,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=False,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.t_imaging_pulse = 10.e-6
+        self.p.t_imaging_pulse = 15.e-6
         self.xvar('dummy',[0]*1000)
         
         self.p.amp_imaging = 0.2
@@ -24,7 +24,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 1000
 
         self.data.apd = self.data.add_data_container(3)
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)

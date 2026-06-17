@@ -31,7 +31,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.feedback_fractional_initial_offset = 3.
         # self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,11))
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 20
 
         self.p.feedback_guess_span_Omega = 5.0
 
@@ -62,8 +62,10 @@ class feedback(EnvExperiment, Base, Feedback):
         self.data.t = self.data.add_data_container(self.p.N_pulses)
 
         Feedback.__init__(self)
-        
+
         self.zidx = self.p.feedback_resonance_grid_index
+
+        # self.zidx = self.p.feedback_grid_size//2 
 
         ###
 
