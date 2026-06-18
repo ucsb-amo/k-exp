@@ -33,9 +33,9 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        self.xvar('pulse_list_span_Omega', np.linspace(0, 3, 3))
-        # self.p.pulse_list_span_Omega = 4.
-        # self.xvar('pulse_list_seed', np.linspace(1056, 15432, 3, dtype=np.int32))
+        # self.xvar('pulse_list_span_Omega', np.linspace(0, 3, 3))
+        self.p.pulse_list_span_Omega = 2.
+        # self.xvar('pulse_list_seed', np.linspace(1056, 15432, 5, dtype=np.int32))
         self.p.pulse_list_seed = 1056
 
         self.get_new_pulse_list()

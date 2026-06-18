@@ -11,53 +11,56 @@ class ExptParams(expt_params_kexp):
 
         self.feedback_grid_size = 21
         self.N_pulses = 20
-        self.feedback_fractional_grid_center_offset = -5.0
 
         self.feedback_fractional_initial_offset = 0.0
         self.feedback_guess_span_Omega = 8.0
 
-        self.dt_t_raman_pulse_offset = 220.e-9 # non ideal pulse width
         self.t_raman_pulse = self.t_raman_pi_pulse / 2
-        self.t_raman_pulse_ideal = 3.727e-06
-
-        # self.t_raman_pulse_ideal = 3.335e-06
-        # self.t_raman_pulse = 4.25685e-06
-        
-        # calibration run 67455
-        # img amp 0.2, pulse time 5.0e-06 s
-        # self.frequency_lightshift = 3.08e+04# 2.88e+04  # Hz
-        # self.frequency_lightshift = 2.886e+04
+        self.t_raman_pulse_ideal = 3.576e-06 #3.742e-06
 
         # calibration run 69942
         # img amp 0.2, pulse time 5.0e-06 s
-        self.frequency_lightshift = 3.38e+04  # Hz
+        # self.frequency_lightshift = 30.e+03  # Hz
+        self.frequency_lightshift = 2.797e+04 # 28.8e+03  # Hz
 
-        # calibration run 69744
+        # calibration run 69990
         # self.t_img_pulse = 5e-06  # s
         # self.amp_imaging = 0.2
-        # self.v_apd_all_up = -0.17312
-        # self.v_apd_all_down = -0.22099
-        # self.n_photons_per_shot = 924.01
-        # self.std_n_photons_up = 132.92
-        # self.std_n_photons_down = 86.981
-        # self.std_n_photons_per_shot = 109.95 # avg of up/down
-        # self.std_n_photons_per_shot = 30.
-        # self.std_n_photons_per_shot = np.sqrt( self.std_n_photons_up**2 + self.std_n_photons_down**2 )
-        # self.feedback_measurement_midpoint_fraction = 0.36462
+        # self.v_apd_all_up = -0.18053
+        # self.v_apd_all_down = -0.21441
+        # self.n_photons_per_shot = 654.6
+        # self.std_n_photons_up = 93.056
+        # self.std_n_photons_down = 40.679
+        # self.std_n_photons_per_shot = 66.868 # avg of up/down   
+        # self.std_n_photons_per_shot = 50. # avg of up/down  
+        # self.feedback_measurement_midpoint_fraction = 0.43527
 
-        # calibration run 69944
-        self.t_img_pulse = 5e-06  # s
+        # calibration run 70019
+        # self.t_img_pulse = 7e-06  # s
+        # self.amp_imaging = 0.2
+        # self.v_apd_all_up = -0.15305
+        # self.v_apd_all_down = -0.21326
+        # self.n_photons_per_shot = 1043.6
+        # self.std_n_photons_up = 146.25
+        # self.std_n_photons_down = 80.762
+        # self.std_n_photons_per_shot = 100 # avg of up/down
+        # self.feedback_measurement_midpoint_fraction = 0.40272
+
+        # calibration run 70025
+        self.t_img_pulse = 1e-05  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.18861
-        self.v_apd_all_down = -0.21472
-        self.n_photons_per_shot = 489.4
-        # self.std_n_photons_up = 118.53
-        # self.std_n_photons_down = 75.919
-        self.std_n_photons_per_shot = 97.224 # avg of up/down
-        self.feedback_measurement_midpoint_fraction = 0.4606
+        self.v_apd_all_up = -0.13526
+        self.v_apd_all_down = -0.21644
+        self.n_photons_per_shot = 1336.9
+        # self.std_n_photons_up = 191.57
+        # self.std_n_photons_down = 112.63
+        self.std_n_photons_per_shot = 152.1# 152.1 # avg of up/down
+        self.feedback_measurement_midpoint_fraction = 0.47789
+
+        
 
         # run 66841 | multi-parameter grid fit result
-        self.back_action_coherence = 0.8206    
+        self.back_action_coherence = 0.73    
 
         self.feedback_measurement_midpoint_remap_enabled = True
 
@@ -72,7 +75,7 @@ class ExptParams(expt_params_kexp):
         self.t_fifo_mu = int64(18416)
         self.t_raman_set_pretrigger_mu = int64(700) & ~7 # int64(1260)
 
-        self.delta_t_mu = int64(702)
+        self.delta_t_mu = int64(743)
         # self.delta_t_mu = int64(2000)
 
         ### other
