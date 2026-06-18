@@ -209,8 +209,9 @@ class FiberEORyDDSBeamPID(SiglentTTLBeam):
         self.dac_pid.set(v_pd, load_dac)
     
     @kernel
-    def init(self):
-        self.siglent.init()
+    def init(self, init_siglent=False):
+        if init_siglent:
+            self.siglent.init()
         self.dac_pid.set(self.dac_pid.v)
         self.ttl_sw.off()
 

@@ -131,8 +131,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if init_ry:
             # self._fzw.connect()
             pass
-            # self.ry_405.init()
-            # self.ry_980.init()
+            self.ry_405.init()
+            self.ry_980.init()
         
     @kernel
     def init_scan_kernel(self,two_d_tweezers = False):
