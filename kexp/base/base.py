@@ -130,8 +130,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.inner_coil.off()
         if init_ry:
             # self._fzw.connect()
-            # pass
-            self.ry_405.init()
+            pass
+            # self.ry_405.init()
             # self.ry_980.init()
         
     @kernel
@@ -193,7 +193,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.ttl.line_trigger.clear_input_events()
 
         self.core.break_realtime()
-        self.ry_405.lock_status()
+        # self.ry_405.lock_status()
         # self.ry_980.lock_status()
 
         self.cleanup_scan_kernel_wax()
