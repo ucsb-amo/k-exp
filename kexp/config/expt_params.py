@@ -121,9 +121,9 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown = 0.
+        self.t_tweezer_paint_rampdown = 10.e-3
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
-        self.t_tweezer_squeezer_ramp_2 = 100.e-3
+        self.t_tweezer_squeezer_ramp_2 = 30.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         
