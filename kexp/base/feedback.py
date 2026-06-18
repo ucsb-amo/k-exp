@@ -317,6 +317,14 @@ class Feedback:
     def initialize_feedback(self):
         """Warm up posterior runtime once, then reset state/P0 arrays."""
 
+        self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
+            t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
+            t_raman_pulse=self.p.t_raman_pulse,
+            t_img_pulse=self.p.t_img_pulse,
+            t_raman_pretrigger=self.p.t_raman_set_pretrigger_mu,
+            t_fifo_mu=self.p.t_fifo_mu
+        )
+
         n_test = int(round(self.N_photons_per_shot * self.expected_photon_fraction(0.0)))
 
         self.core.wait_until_mu(self.core.get_rtio_counter_mu())
@@ -386,6 +394,8 @@ class Feedback:
 
         self.p.omega_guess_list = self.omega_guess_list
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
+
+        self.p.feedback_resonance_grid_index = int(np.argmin(np.abs(self.omega_guess_list - omega_resonance)))
 
         self.omega_raman = self.reset_initial_omega_from_params()
 
@@ -795,7 +805,7 @@ def _feedback_kwargs_from_atomdata(ad):
         "feedback_measurement_midpoint_fraction": p.feedback_measurement_midpoint_fraction,
         "feedback_measurement_midpoint_remap_enabled": p.feedback_measurement_midpoint_remap_enabled,
         "feedback_grid_size": int(p.feedback_grid_size),
-        "fractional_grid_center_offset": float(p.feedback_fractional_grid_center_offset),
+        "fractional_grid_center_offset": float(p.feedback_fractional_grid_center_offset) if hasattr(p, "feedback_fractional_grid_center_offset") else None,
         "fractional_initial_offset": p.feedback_fractional_initial_offset,
         "guess_span_Omega": float(p.feedback_guess_span_Omega),
         "feedback_apd_map_enabled": p.feedback_apd_map_enabled,

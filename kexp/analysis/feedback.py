@@ -533,19 +533,31 @@ class FeedbackReplayCore(Feedback):
         user_p_overrides = self._extract_p_user_overrides()
         kwargs.update(user_p_overrides)
 
-        omega_guess, zidx = self._resolve_grid()
-
-        kwargs["feedback_grid_size"] = int(omega_guess.size)
-
         self._apply_feedback_kwargs_to_params(kwargs)
-        Feedback.__init__(self)
+        Feedback.__init__(self)  # computes omega_guess_list from formula
 
-        self.omega_guess_list = np.asarray(omega_guess, dtype=float)
-        self.p.omega_guess_list = self.omega_guess_list
-        self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
-        self._validate_initial_guess_in_grid()
+        omega_res = float(self._omega_resonance_rad_s)
+        zidx = int(np.argmin(np.abs(self.omega_guess_list - omega_res)))
 
         return self.omega_guess_list.copy(), int(zidx)
+
+    def _grid_for_offset(
+        self,
+        fractional_initial_offset: float,
+    ) -> Tuple[np.ndarray, int]:
+        """Recompute hypothesis grid and resonance index for a given initial offset.
+
+        The grid formula mirrors ``_initialize_frequency_grid``:
+            grid[j] = omega_res + Omega * (round(offset) - span * linspace(-1,1,m)[j])
+        """
+        omega_res = float(self._omega_resonance_rad_s)
+        Omega = float(self.Omega)
+        m = int(self.m)
+        span = float(self.p.feedback_guess_span_Omega)
+        n_center = float(np.round(float(fractional_initial_offset)))
+        grid = omega_res + Omega * (n_center - span * np.linspace(-1.0, 1.0, m))
+        zidx = int(np.argmin(np.abs(grid - omega_res)))
+        return grid, zidx
 
     def _resolve_timing(
         self,
@@ -909,6 +921,12 @@ class FeedbackReplayCore(Feedback):
         Using preallocated output buffers avoids per-shot tuple allocation and copy-back
         overhead, which is especially expensive in threaded replay runs.
         """
+        # Rebuild hypothesis grid for this shot's initial offset — each xvar
+        # value has a different grid center (round(initial_offset) in Omega units).
+        grid_r, zidx = self._grid_for_offset(float(fractional_initial_offset_r[r]))
+        self.omega_guess_list = grid_r
+        self.omega_sq_list = grid_r * grid_r
+
         self.reset_feedback_state()
 
         phase_tracker = 0.0

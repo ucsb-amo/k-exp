@@ -66,11 +66,18 @@ class LiveODServer(QThread, WaxxServer):
         self._current_capture_images = False
         self._current_filepath = ""
         self._current_run_id = 0
+        self._current_camera_key = ""
         self._reset_requested = False   # set by RESET; cleared by next INIT_RUN
         self._run_in_progress = False   # True between INIT_RUN and END_RUN/ABORT
         self._shot_timestamps: list = []  # Unix timestamps (s) recorded server-side on each SHOT_COMPLETE
         self._scalar_subscriber_count: dict = {}  # tier -> subscriber count
         self._scalar_lock = threading.Lock()
+        # Basler-specific: track whether the previous grab loop has fully exited.
+        # Cleared on each new Basler INIT_RUN (if a baby was already active),
+        # set when that baby's done_signal fires via on_basler_baby_done().
+        self._basler_prev_grab_done_event = threading.Event()
+        self._basler_prev_grab_done_event.set()  # no previous grab initially
+        self._basler_baby_active = False
 
     # ------------------------------------------------------------------
     # Public slots (safe to call from any thread)
@@ -84,6 +91,18 @@ class LiveODServer(QThread, WaxxServer):
         threading.Event is set from the CameraBaby thread immediately.
         """
         self._cam_ready_event.set()
+
+    def on_basler_baby_done(self):
+        """Called when a Basler CameraBaby's thread has fully finished.
+
+        Connect to ``CameraBaby.done_signal`` with
+        ``Qt.ConnectionType.DirectConnection`` for Basler cameras.
+        Sets ``_basler_prev_grab_done_event`` so that the next run's
+        ``WAIT_CAM_READY`` can proceed once the old grab loop has exited.
+        """
+        self._basler_prev_grab_done_event.set()
+        self._basler_baby_active = False
+        print("[LiveODServer] Basler grab loop exited.")
 
     def on_data_handler_done(self):
         """Set the data-handler-done event.
@@ -217,6 +236,16 @@ class LiveODServer(QThread, WaxxServer):
         capture_images = bool(msg.get("capture_images", False))
         camera_key = str(msg.get("camera_key", ""))
         imaging_type = int(msg.get("imaging_type", 0))
+        self._current_camera_key = camera_key
+
+        # For Basler cameras: if a previous baby is still running its grab
+        # loop (e.g. after a reset), clear the event so WAIT_CAM_READY will
+        # block until that grab loop fully exits and on_basler_baby_done() fires.
+        if "basler" in camera_key and capture_images:
+            if self._basler_baby_active:
+                self._basler_prev_grab_done_event.clear()
+                print("[LiveODServer] INIT_RUN: Basler previous grab not yet done — WAIT_CAM_READY will block until it exits.")
+            self._basler_baby_active = True
 
         camera_params = msg.get('camera_params', {})
         self._cam_ready_event.clear()
@@ -273,7 +302,20 @@ class LiveODServer(QThread, WaxxServer):
 
     def _handle_wait_cam_ready(self, msg: dict) -> dict:
         timeout = float(msg.get("timeout", 60.0))
-        ready = self._cam_ready_event.wait(timeout=timeout)
+        deadline = time.time() + timeout
+
+        # For Basler cameras: wait for the previous grab loop to fully exit
+        # before reporting camera-ready to the experiment.  This prevents the
+        # experiment from arming the hardware while the old grab is still
+        # blocking in RetrieveResult() and the camera is not yet free.
+        if "basler" in self._current_camera_key:
+            remaining = deadline - time.time()
+            grab_done = self._basler_prev_grab_done_event.wait(timeout=max(0.0, remaining))
+            if not grab_done:
+                return {"ok": False, "ready": False, "error": "Basler previous grab-loop exit timeout"}
+
+        remaining = deadline - time.time()
+        ready = self._cam_ready_event.wait(timeout=max(0.0, remaining))
         if not ready:
             return {"ok": False, "ready": False, "error": "Camera ready timeout"}
         return {"ok": True, "ready": True}

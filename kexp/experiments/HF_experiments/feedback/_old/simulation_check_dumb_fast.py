@@ -67,7 +67,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         Feedback.__init__(self)
         
-        self.zidx = self.p.feedback_resonance_grid_index
+        self.zidx = np.argmin(np.abs(self.p.omega_guess_list - (2.0 * np.pi * float(self.p.frequency_raman_transition))))
 
         ###
 

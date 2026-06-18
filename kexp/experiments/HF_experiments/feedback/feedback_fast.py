@@ -28,14 +28,14 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 3.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,11))
+        self.p.feedback_fractional_initial_offset = 2.
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(-3,5,7))
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 10
 
-        self.p.feedback_guess_span_Omega = 5.0
+        self.p.feedback_guess_span_Omega = 6.0
 
-        self.p.feedback_fractional_grid_center_offset = 2.
+        # self.p.feedback_fractional_grid_center_offset = 1.
 
         ###
 
@@ -62,8 +62,10 @@ class feedback(EnvExperiment, Base, Feedback):
         self.data.t = self.data.add_data_container(self.p.N_pulses)
 
         Feedback.__init__(self)
-        
-        self.zidx = self.p.feedback_resonance_grid_index
+
+        self.zidx = np.argmin(np.abs(self.p.omega_guess_list - (2.0 * np.pi * float(self.p.frequency_raman_transition))))
+
+        # self.zidx = self.p.feedback_grid_size//2 
 
         ###
 

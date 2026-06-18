@@ -55,7 +55,21 @@ class MonitorClientPanel(WidgetPanelBase):
             dds_frame=dds_frame,
             dac_frame=dac_frame,
         )
-        embed_main_window(self, self._gui)
+        from PyQt6.QtWidgets import QScrollArea, QVBoxLayout, QWidget  # noqa: PLC0415
+        from PyQt6.QtCore import Qt  # noqa: PLC0415
+        container = QWidget()
+        embed_main_window(container, self._gui)
+        scroll = QScrollArea()
+        scroll.setWidget(container)
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setStyleSheet("QScrollArea { border: none; background: transparent; }")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(scroll)
 
 
 __all__ = ["MonitorPanel", "MonitorClientPanel"]

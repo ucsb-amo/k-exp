@@ -57,18 +57,18 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_feshbach_field_rampup = 150.e-3
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,400.,15)*1.e-3)
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,8.,10))
+        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(4.,8.6,8))
         # self.p.t_lightsheet_rampup = 4.
         # self.p.v_pd_lightsheet_rampup_end = 7.2
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(191.,195.,15))
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(191.,195.,8))
         # self.p.i_hf_lightsheet_evap1_current = 193.57
         # self.p.i_hf_lightsheet_evap1_current = 18.
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,3.,20))
         # self.p.v_pd_hf_lightsheet_rampdown_end = .65
 
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,1000.,8)*1.e-3)
+        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,2000.,15)*1.e-3)
         # self.p.t_hf_lightsheet_rampdown = .45
         # self.p.t_hf_lightsheet_rampdown = 0.4401463
 
@@ -98,9 +98,9 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 25.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
-        self.p.amp_imaging = .13
+        self.p.amp_imaging = .5
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 2
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -109,7 +109,7 @@ class mag_trap(EnvExperiment, Base):
     def scan_kernel(self):
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.set_high_field_imaging(i_outer=self.p.i_hf_lightsheet_evap1_current)
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        self.imaging.set_power(power_control_parameter=self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)

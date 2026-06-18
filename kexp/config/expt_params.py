@@ -70,7 +70,7 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 20.e-6 
         # self.phase_slm_mask = 0.186 * np.pi
-        self.phase_slm_mask = 0.211 * np.pi
+        self.phase_slm_mask = 0.2 * np.pi
         # self.phase_slm_mask = 0.186 * np.pi 
         # self.phase_slm_mask = 1.4 * np.pi # for 1,-1 to 1,0
         # self.phase_slm_mask = 0.125 * np.pi
@@ -97,7 +97,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         
-        self.t_lightsheet_rampup = .1
+        self.t_lightsheet_rampup = .4
         self.t_lf_lightsheet_rampdown = 1.13
         self.t_hf_lightsheet_rampdown = .74
         self.t_hf_lightsheet_rampdown2 = .74
@@ -121,9 +121,9 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown = 0.
+        self.t_tweezer_paint_rampdown = 10.e-3
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
-        self.t_tweezer_squeezer_ramp_2 = 100.e-3
+        self.t_tweezer_squeezer_ramp_2 = 30.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -150,7 +150,8 @@ class ExptParams(ExptParamsWaxx):
 
         # self.t_raman_pi_pulse = 1.0483e-05 #67009, 2026-05-18
         # self.t_raman_pi_pulse = 8.6051e-06 #69699, 2026-06-10
-        self.t_raman_pi_pulse = 8.5568e-06 #69818, 2026-06-12
+        # self.t_raman_pi_pulse = 8.5568e-06 #69818, 2026-06-12
+        self.t_raman_pi_pulse = 8.7164e-06 #69966, 2026-06-17
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -277,13 +278,13 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lightsheet_pd_minimum = 0.0
         self.v_lightsheet_paint_amp_max = 3.6
 
-        self.v_pd_lightsheet = 7.5
+        self.v_pd_lightsheet = 8.55
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
         # self.v_pd_lightsheet_rampup_end = 7.3
-        self.v_pd_lightsheet_rampup_end = 7.
-        self.v_pd_lf_lightsheet_rampdown_end = .94 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = .8 #4.16
-        self.v_pd_hf_lightsheet_rampdown2_end = .25
+        self.v_pd_lightsheet_rampup_end = 8.6
+        self.v_pd_lf_lightsheet_rampdown_end = 1.042 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = 0.9 #4.16
+        self.v_pd_hf_lightsheet_rampdown2_end = 0.114
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
 
@@ -301,7 +302,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.7
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
@@ -325,7 +326,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = -2.2
+        self.v_hf_tweezer_paint_amp_max = -2.5
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -405,7 +406,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 193.3
+        self.i_hf_lightsheet_evap1_current = 193.8
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 193.7 # 193.4

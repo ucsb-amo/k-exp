@@ -13,26 +13,31 @@ class hf_bec(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('ramp_painting_off',[0,1])
+        # self.xvar('ramp_painting_off',[0,1])
         self.p.ramp_painting_off = 1
         self.p.ramp_painting_on = 0
 
-        # self.xvar('t_tof',np.linspace(100.,1000.,3)*1.e-6)
-        self.p.t_tof = 350.e-6
+        # self.xvar('t_tof',np.linspace(10.,200.,10)*1.e-6)
+        self.p.t_tof = 500.e-6
 
-        # self.xvar('t_tweezer_paint_rampdown', np.linspace(0.,70,7)*1.e-3)
-        self.p.t_tweezer_paint_rampdown = 50.e-3
+        # self.xvar('t_tweezer_paint_rampdown', np.linspace(0.,10.,7)*1.e-3)
+        # self.p.t_tweezer_paint_rampdown = 50.e-3
         self.p.t_tweezer_repaint = 0.
-        self.p.t_tweezer_hold = 100.e-3
+        self.p.t_tweezer_hold = 5.e-3
+
+        self.xvar('t_tweezer_squeezer_ramp_2', np.linspace(5.,50.,7)*1.e-3)
+        self.p.t_tweezer_squeezer_ramp_2 = 20.e-3
+
+        self.p.v_pd_hf_tweezer_squeeze_power = 3.97
 
         # self.xvar('compress',[0,1])
-        self.p.compress = 0
+        self.p.compress = 1
         # self.xvar('decompress',[0,1])
         self.p.decompress = 1
 
         self.camera_params.amp_imaging = 0.3
 
-        self.p.N_repeats = 8
+        self.p.N_repeats = 5
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
