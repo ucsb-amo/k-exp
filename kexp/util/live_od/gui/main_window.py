@@ -310,6 +310,14 @@ class LiveODWindow(QWidget):
             self.live_od_server.on_data_handler_done,
             Qt.ConnectionType.DirectConnection,
         )
+        # For Basler cameras: notify the server when this baby's grab loop has
+        # fully exited so that WAIT_CAM_READY for the next run is not released
+        # prematurely (while the old RetrieveResult() call is still blocking).
+        if "basler" in camera_key:
+            self.the_baby.done_signal.connect(
+                self.live_od_server.on_basler_baby_done,
+                Qt.ConnectionType.DirectConnection,
+            )
 
         # Clear the nanny's interrupt flag before starting the new baby.
         # Without this, if spawn_baby fires during reset()'s processEvents() loop
