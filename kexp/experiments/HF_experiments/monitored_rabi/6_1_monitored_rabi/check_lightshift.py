@@ -23,7 +23,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_ramsey = 5.e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
-        self.p.amp_imaging = .3
+        self.p.amp_imaging = .2
         self.p.t_tweezer_hold = 15.e-3
         self.p.t_tof = 50.e-6
         self.p.t_mot_load = 1.
