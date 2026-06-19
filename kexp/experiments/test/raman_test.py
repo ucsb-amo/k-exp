@@ -15,9 +15,9 @@ class mot_killa(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        pass
-        # self.prep_raman()
-        # self.raman.on()
+        self.prep_raman(phase_mode=0)
+        self.dds.dds_lo.set_dds(frequency=self.raman.frequency_transition/2)
+        self.dds.dds_lo.on()
 
     @kernel
     def run(self):

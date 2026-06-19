@@ -144,7 +144,7 @@ class Devices():
     def init_all_cpld(self):
         for ddss in self.dds.dds_array:
             ddss[0].cpld_device.init()
-            delay(1e-3)
+            delay(2e-3)
         for dds in self.dds.dds_list:
             dds.dds_device.set_att(0.*dB)
 
