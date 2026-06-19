@@ -134,6 +134,15 @@ def main(argv: list[str] | None = None) -> int:
     specs = _filter_specs(SERVER_SPECS, args.include, args.exclude)
     log.info("Building %d panel(s): %s", len(specs), [s.id for s in specs])
 
+    if sys.platform == "win32":
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                "kexp.ServerDashboard"
+            )
+        except Exception:
+            pass
+
     app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName("kexp Server Dashboard")
 
