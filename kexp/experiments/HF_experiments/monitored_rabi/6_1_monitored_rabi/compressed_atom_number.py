@@ -14,35 +14,17 @@ class hf_monitored_rabi(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.ABSORPTION)
 
-        self.p.frequency_raman_transition = self.p.frequency_raman_transition + 15.e3
-
-        # self.xvar('ls',np.linspace(0.e3,100.e3,10))
-
-        # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 2000.e-6
-
-        # self.p.v_pd_hf_tweezer_squeeze_power = 8.5
-        # self.p.v_pd_hf_tweezer_squeeze_power = 1.97
-
-        # self.xvar('t_raman_pulse',[0, 8.7e-06 / 2, 8.7e-06])
-        # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
-        # self.p.t_raman_pulse = 8.8699e-6
+        # self.p.v_pd_hf_tweezer_squeeze_power = 3.94
         
         # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
         self.p.amp_imaging = .2
-        
-        # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
-        self.p.dimension_slm_mask = 20.e-6
 
-        # self.xvar('frequency_detuned_hf_midpoint',np.linspace(-540.e6,-470.e6,5))
-
-        # self.xvar('phase_slm_mask',np.linspace(0.1*np.pi,.3*np.pi,5))
-        self.p.phase_slm_mask = 0.21 * np.pi
+        self.xvar('t_tof',np.linspace(20.,150.,15)*1.e-6)
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
-        self.p.t_tweezer_hold = 15.e-3
+        self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
@@ -55,36 +37,16 @@ class hf_monitored_rabi(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         
-        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_midpoint)
+        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
         # self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=True)
 
-        self.raman.init(fraction_power = self.p.fraction_power_raman,
-                        frequency_transition = self.p.frequency_raman_transition)
+        delay(1.e-3)
 
-        self.ttl.raman_shutter.on()
-        delay(10.e-3)
-        self.ttl.line_trigger.wait_for_line_trigger()
-        delay(4.7e-3)
-
-        # self.raman.pulse(t=24*self.p.t_raman_pi_pulse)
-        
-        self.ttl.pd_scope_trig3.pulse(1.e-6)
-        self.imaging.on()
-        delay(3.e-6)
-        self.raman.pulse(t=self.p.t_continuous_rabi)
-        # delay(self.p.t_continuous_rabi)
-        self.imaging.off()
-
-        self.ttl.raman_shutter.off()
-        
-        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(.2,reset_pid=True)
-
-        delay(self.p.t_tweezer_hold)
+        # delay(self.p.t_tweezer_hold)
         self.tweezer.off()
 
         delay(self.p.t_tof)

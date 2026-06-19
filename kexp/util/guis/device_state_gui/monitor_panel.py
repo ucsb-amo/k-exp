@@ -21,9 +21,10 @@ class MonitorPanel(WidgetPanelBase):
         super().__init__(parent)
         from PyQt6.QtWidgets import QVBoxLayout  # noqa: PLC0415
         from waxx.util.guis.monitor_server_gui import MonitorServerGUI  # noqa: PLC0415
-        from kexp.config.ip import MONITOR_EXPT_PATH  # noqa: PLC0415
+        from kexp.config.ip import MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH  # noqa: PLC0415
 
-        self._gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH)
+        self._gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH,
+                                     config_file_path=MONITOR_STATE_FILEPATH)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self._gui)
@@ -35,25 +36,21 @@ class MonitorClientPanel(WidgetPanelBase):
     def __init__(self, parent=None):
         super().__init__(parent)
         from waxx.util.guis.device_control_gui import DeviceStateGUI  # noqa: PLC0415
-        from kexp.config.ip import (  # noqa: PLC0415
-            MONITOR_STATE_FILEPATH,
-            server_talk,
-        )
         # Avoid heavy ARTIQ hardware imports at module load time by deferring.
+        # Instantiate the frames (both default to DummyCore — no hardware needed)
+        # so that DDSWidget/DACWidget can look up default values via hasattr().
         try:
-            from kexp.config import dds_frame as _dds_frame_mod  # noqa: PLC0415
-            from kexp.config import dac_frame as _dac_frame_mod  # noqa: PLC0415
-            dds_frame = getattr(_dds_frame_mod, "dds_frame", None)
-            dac_frame = getattr(_dac_frame_mod, "dac_frame", None)
+            from kexp.config.dac_id import dac_frame as _dac_frame_cls  # noqa: PLC0415
+            from kexp.config.dds_id import dds_frame as _dds_frame_cls  # noqa: PLC0415
+            dac = _dac_frame_cls()
+            dds = _dds_frame_cls(dac_frame_obj=dac)
         except Exception:
-            dds_frame = None
-            dac_frame = None
+            dds = None
+            dac = None
 
         self._gui = DeviceStateGUI(
-            device_state_json_path=MONITOR_STATE_FILEPATH,
-            server_talk=server_talk,
-            dds_frame=dds_frame,
-            dac_frame=dac_frame,
+            dds_frame=dds,
+            dac_frame=dac,
         )
         from PyQt6.QtWidgets import QScrollArea, QVBoxLayout, QWidget  # noqa: PLC0415
         from PyQt6.QtCore import Qt  # noqa: PLC0415

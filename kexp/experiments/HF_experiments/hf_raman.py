@@ -23,10 +23,10 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.6,1.2,8))
         # self.p.v_pd_hf_lightsheet_rampdown_end = .8
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
+        self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
         # self.p.v_hf_tweezer_paint_amp_max = -2.2
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
+        self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 3.94
@@ -60,7 +60,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_tweezer_hold = .1e-3
 
         # self.xvar('t_tof',np.linspace(1000.,2800.,10)*1.e-6) 
-        self.p.t_tof = 2000.e-6
+        self.p.t_tof = 2400.e-6
 
         self.p.t_mot_load = 1.
         
@@ -74,7 +74,7 @@ class hf_raman(EnvExperiment, Base):
     def scan_kernel(self):
 
         # self.set_high_field_imaging(i_outer=self.p.i_hf_raman)
-        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 

@@ -7,16 +7,32 @@ INTERLOCK_EMAIL_CREDENTIALS_FILEPATH = r"G:\Shared drives\Tweezers\Environments 
 
 ### data, filepaths
 DATA_DIR = os.getenv("data")
-EXPT_PACKAGE_DIR = os.path.join(os.getenv("code"),"k-exp","kexp")
+_CODE_DIR = os.getenv("code")
+
+
+def _safe_join(base, *parts):
+    """os.path.join that tolerates a missing (None) base.
+
+    On driveless client machines ``DATA_DIR`` / ``code`` may be unset; path
+    constants below then resolve to ``None`` instead of raising at import,
+    so client-only tooling (device control GUI, dashboards) imports cleanly.
+    Consumers that actually need the path must check for ``None``.
+    """
+    if base is None:
+        return None
+    return os.path.join(base, *parts)
+
+
+EXPT_PACKAGE_DIR = _safe_join(_CODE_DIR, "k-exp", "kexp")
 
 ### dashboard log directories
 # Resolved lazily at use-site (see waxx.util.dashboard.logging_setup) so that
 # tooling can run when DATA_DIR is unmapped.  The constants below may be None
 # if the shared drive is not available; consumers must check and fall back.
 
-LOG_DIR = os.path.join(DATA_DIR, "_logs")
-SERVER_LOG_DIR = os.path.join(LOG_DIR, "server")
-CLIENT_LOG_DIR = os.path.join(LOG_DIR, "client")
+LOG_DIR = _safe_join(DATA_DIR, "_logs")
+SERVER_LOG_DIR = _safe_join(LOG_DIR, "server")
+CLIENT_LOG_DIR = _safe_join(LOG_DIR, "client")
 EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
 BASE_CLASS_RELPATH = os.path.join("base")  # all .py files in this directory will be saved
 PATHS = (DATA_DIR, EXPT_PACKAGE_DIR, EXPT_PARAM_RELPATH, BASE_CLASS_RELPATH)
@@ -32,9 +48,9 @@ server_talk = st(data_dir=DATA_DIR,
                  on_data_dir_disconnected_bat_path=MAP_BAT_PATH)
 
 ### monitor
-MONITOR_STATE_FILEPATH = os.path.join(DATA_DIR,'device_state_config.json')
+MONITOR_STATE_FILEPATH = _safe_join(DATA_DIR, 'device_state_config.json')
 # MONITOR_EXPT_PATH = str( Path(EXPT_PACKAGE_DIR) / 'experiments' / 'tools' / 'monitor.py' )
-MONITOR_EXPT_PATH = os.path.join(EXPT_PACKAGE_DIR,'experiments','tools','monitor.py')
+MONITOR_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'monitor.py')
 
 ### SRS control servers
 SRS_CONTROL_IP = "192.168.1.76"
@@ -55,7 +71,7 @@ PRECILASER_COM = 'COM20'
 
 ###
 MAGNETOMETER_COM = 'COM33'
-MAGNETOMETER_REFERENCE_CSV_PATH = os.path.join(DATA_DIR,'magnetometer_reference.csv')
+MAGNETOMETER_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'magnetometer_reference.csv')
 
 ### Interlock controller
 INTERLOCK_COM = 'COM5'

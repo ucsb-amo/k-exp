@@ -46,7 +46,7 @@ from waxx.util.dashboard.panel_container import ClientPanel, ServerPanel
 from waxx.util.dashboard.panel_spec import ServerSpec
 from kexp.util.dashboard.server_registry import SERVER_SPECS
 from kexp.util.dashboard.client_registry import get_spec as _get_client_spec
-from waxx.util.dashboard.server_supervisor import ServerSupervisor
+from waxx.util.dashboard.server_supervisor import ServerSupervisor, install_console_signal_guard
 
 # Extra client-side panels (no subprocess) to also show in the server
 # dashboard for one-stop control on the lab PC.
@@ -118,6 +118,11 @@ def main(argv: list[str] | None = None) -> int:
     log_path = configure_server_logging("dashboard")
     log = logging.getLogger("kexp.dashboard.server_app")
     log.info("Server dashboard starting; logs -> %s", log_path)
+
+    # Make the dashboard immune to CTRL_C / CTRL_BREAK so stopping or
+    # restarting a single supervised server (which sends CTRL_BREAK to the
+    # child's console group) can never take down the whole GUI.
+    install_console_signal_guard()
 
     host_ip = resolve_host_ip(args.host_ip)
     log.info("Host IP resolved: %s (hostname=%s)", host_ip, hostname())

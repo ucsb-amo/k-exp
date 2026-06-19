@@ -8,11 +8,11 @@ from __future__ import annotations
 import sys
 
 from waxx.util.guis.monitor_server_headless import run
-from kexp.config.ip import MONITOR_EXPT_PATH
+from kexp.config.ip import MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH
 
 
 def main() -> int:
-    return run(MONITOR_EXPT_PATH)
+    return run(MONITOR_EXPT_PATH, config_file_path=MONITOR_STATE_FILEPATH)
 
 
 if __name__ == "__main__":

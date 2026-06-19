@@ -46,7 +46,6 @@ class rabi_surfing(EnvExperiment, Base):
 
         self.data.t = self.data.add_data_container(self.p.N_pulses)
 
-
         self.finish_prepare(shuffle=True)
 
     @kernel

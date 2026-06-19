@@ -3,14 +3,15 @@ from PyQt6.QtWidgets import QApplication
 
 from waxx.util.guis.monitor_server_gui import MonitorServerGUI
 
-from kexp.config.ip import MONITOR_EXPT_PATH
+from kexp.config.ip import MONITOR_EXPT_PATH, MONITOR_STATE_FILEPATH
 
 def main():
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.monitor_server')
     app = QApplication(sys.argv)
     app.setStyle('Windows')
-    gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH)
+    gui = MonitorServerGUI(monitor_expt_path=MONITOR_EXPT_PATH,
+                           config_file_path=MONITOR_STATE_FILEPATH)
     gui.show()
     sys.exit(app.exec())
 

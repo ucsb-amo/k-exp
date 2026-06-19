@@ -15,7 +15,7 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        self.xvar('t_raman_pulse', np.linspace(350.,400.,30)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(300.,350.,30)*1.e-6)
         # self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,20.,7),np.linspace(200.,220.,7)))*1.e-6)
         # self.xvar('t_tof',np.linspace(3.,100.,15)*1.e-6)
 
@@ -34,8 +34,6 @@ class hf_raman(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-
-        self.ry_405.off()
 
         # self.set_high_field_imaging(i_outer=self.p.i_hf_raman)
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)

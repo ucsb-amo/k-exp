@@ -33,6 +33,7 @@ from waxx.util.dashboard.host_config import (
 from waxx.util.dashboard.logging_setup import configure_client_logging
 from waxx.util.dashboard.panel_container import ClientPanel
 from waxx.util.dashboard.panel_spec import ClientSpec
+from waxx.util.dashboard.server_supervisor import install_console_signal_guard
 
 # Lab-specific wiring.
 try:
@@ -83,6 +84,10 @@ def main(argv: list[str] | None = None) -> int:
     log_path = configure_client_logging()
     log = logging.getLogger("kexp.dashboard.client_app")
     log.info("Client dashboard starting; logs -> %s", log_path)
+
+    # Stay immune to CTRL_C / CTRL_BREAK leaking from any console-attached
+    # child processes so the GUI cannot be killed by a stray console signal.
+    install_console_signal_guard()
 
     host_ip = resolve_host_ip(args.host_ip)
     log.info("Host IP resolved: %s (hostname=%s)", host_ip, hostname())
