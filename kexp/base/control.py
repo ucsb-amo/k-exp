@@ -30,96 +30,10 @@ class Control():
         self.dds = dds_frame()
         self.ttl = ttl_frame()
         self.dac = dac_frame()
-        self.inner_coil = hbridge_magnet()
-        self.outer_coil = igbt_magnet()
-        self.tweezer = tweezer()
-        self.lightsheet = lightsheet()
         self.params = ExptParams()
         self.raman = RamanBeamPair()
-        self.raman_nf = RamanBeamPair()
-        self.magnetometer = HMRClient()
-        self.integrator = Integrator()
         self.scope_data = ScopeData()
         self.p = self.params
-
-    @kernel
-    def warmup_ry(self):
-        self.ry_980.on()
-        self.ry_405.on()
-        delay(100.e-3)
-        self.ry_405.off()
-        self.ry_980.off()
-
-    @kernel
-    def integrated_imaging_pulse(self, data_container, t, idx=0,
-                                dark=False):
-        T_CONV_MU = 80
-        self.integrator.begin_integrate(reset=False)
-        if dark:
-            delay(t)
-        else:
-            self.imaging.pulse(t)
-        self.integrator.stop_and_settle()
-        t0 = now_mu()
-        # start the clear after the integrator voltage will already be in the sampler
-        at_mu(t0 + T_CONV_MU)
-        self.integrator.clear(t=0)
-        at_mu(t0)
-        data_container.put_data(self.integrator.sample(), idx)
-
-    @kernel
-    def tof_apd_abs_image(self):
-
-        self.tweezer.off()
-        delay(self.p.t_tof_apd_abs)
-        
-        t = self.p.t_imaging_pulse_apd_abs
-        dc = self.data.post_shot_absorption
-
-        self.integrated_imaging_pulse(dc,t,0)
-        delay(3.e-6)
-        self.raman.pulse(self.p.t_raman_pi_pulse)
-        delay(2.e-6)
-        self.integrated_imaging_pulse(dc,t,1)
-        delay(200.e-6)
-        self.integrated_imaging_pulse(dc,t,2)
-        delay(10.e-6)
-        self.integrated_imaging_pulse(dc,t,3,dark=True)
-        
-    @kernel
-    def reset_tweezers(self, two_d_tweezers):
-        if self._setup_awg:
-            if two_d_tweezers:
-                self.tweezer.set_static_2d_tweezers(freq_list1=self.params.frequency_tweezer_list1,
-                                                    freq_list2=self.params.frequency_tweezer_list2,
-                                                    amp_list1=self.params.amp_tweezer_list1,
-                                                    amp_list2=self.params.amp_tweezer_list2)
-            self.tweezer.reset_traps(self.xvarnames)
-            delay(15.e-3)
-            self.tweezer.awg_trg_ttl.pulse(t=1.e-6)
-        
-        self.tweezer.pid1_int_hold_zero.pulse(1.e-6)
-        self.tweezer.pid1_int_hold_zero.on()
-
-    @kernel
-    def reset_coils(self):
-        """
-        Reset the inner, outer, and 2D coils to their default state.
-        This includes stopping any PID control, turning off the coils,
-        and discharging the power supplies through the coils.
-
-        This is typically called at the end of an experiment to ensure
-        that the coils are in a safe state for the next experiment.
-        """
-    
-        self.outer_coil.stop_pid()
-        delay(50.e-3)
-        self.outer_coil.off()
-        self.outer_coil.discharge()
-
-        self.inner_coil.stop_pid()
-        self.inner_coil.off()
-        self.inner_coil.discharge()
 
     @kernel
     def arm_scopes(self):
@@ -127,22 +41,15 @@ class Control():
         self.scope_data.arm()
         self.core.break_realtime()
 
-    @kernel
-    def background_field(self):
-        if self.outer_coil.i_supply != 0.:
-            self.outer_coil.off()
-        if self.inner_coil.i_supply != 0.:
-            self.inner_coil.off()
-        self.set_shims(0.,0.,0.)
-        self.dac.supply_current_2dmot.set(0.)
-        delay(10.e-3)
-
-    @kernel
-    def read_magnetometer(self):
-        self.core.wait_until_mu(now_mu())
-        b_magnitude = self.magnetometer.get_field_magnitude()
-        self.data.b.put_data(b_magnitude)
-        self.core.break_realtime()
+    # @kernel
+    # def background_field(self):
+    #     if self.outer_coil.i_supply != 0.:
+    #         self.outer_coil.off()
+    #     if self.inner_coil.i_supply != 0.:
+    #         self.inner_coil.off()
+    #     self.set_shims(0.,0.,0.)
+    #     self.dac.supply_current_2dmot.set(0.)
+    #     delay(10.e-3)
 
     @kernel
     def prep_raman(self,
@@ -165,10 +72,10 @@ class Control():
                         t_phase_origin_mu,
                         phase_mode)
         
-        self.ttl.raman_shutter.on()
+        # self.ttl.raman_shutter.on()
         delay(3.e-3)
-        self.ttl.line_trigger.wait_for_line_trigger()
-        delay(4.7e-3)
+        # self.ttl.line_trigger.wait_for_line_trigger()
+        # delay(4.7e-3)
         if phase_mode == 1:
             self.raman.set_phase(t_phase_origin_mu=now_mu())
         

@@ -6,7 +6,10 @@ import numpy as np
 class mot_killa(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,suppress_live_od=False)
+        Base.__init__(self,
+                      setup_camera=False,
+                      save_data=False,
+                      suppress_live_od=True)
 
         self.finish_prepare(shuffle=True)
 
@@ -15,7 +18,6 @@ class mot_killa(EnvExperiment, Base):
         self.init_kernel()
         self.prep_raman()
         self.raman.on()
-        self.ttl.raman_shutter.on()
 
     def analyze(self):
         import os

@@ -48,7 +48,7 @@ server_talk = st(data_dir=DATA_DIR,
                  on_data_dir_disconnected_bat_path=MAP_BAT_PATH)
 
 ### monitor
-MONITOR_STATE_FILEPATH = _safe_join(DATA_DIR, 'device_state_config.json')
+MONITOR_STATE_FILEPATH = _safe_join(DATA_DIR, 'device_state_config_test.json')
 # MONITOR_EXPT_PATH = str( Path(EXPT_PACKAGE_DIR) / 'experiments' / 'tools' / 'monitor.py' )
 MONITOR_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'monitor.py')
 

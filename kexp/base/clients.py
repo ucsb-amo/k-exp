@@ -19,11 +19,11 @@ class Clients():
         except Exception as e:
             print(f"Failed to connect to Monitor: {e}")
 
-        try:
-            self.magnetometer = HMRClient()
-        except RuntimeError as e:
-            print(f"Failed to connect to HMR Magnetometer server: {e}")
-            self.magnetometer = HMRDummy()
+        # try:
+        #     self.magnetometer = HMRClient()
+        # except RuntimeError as e:
+        #     print(f"Failed to connect to HMR Magnetometer server: {e}")
+        #     self.magnetometer = HMRDummy()
 
         if not suppress_live_od:
             try:
