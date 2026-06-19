@@ -48,7 +48,18 @@ server_talk = st(data_dir=DATA_DIR,
                  on_data_dir_disconnected_bat_path=MAP_BAT_PATH)
 
 ### monitor
-MONITOR_STATE_FILEPATH = _safe_join(DATA_DIR, 'device_state_config.json')
+# Scope the monitor state file to the hardware id (last octet of core_addr from
+# the device db at env var "db") so each server writes its own file without the
+# path being hardcoded per branch.  Falls back to the default below when the id
+# cannot be resolved (e.g. env var "db" unset).
+from waxx.util.comms_server.hardware_id import get_hardware_id
+
+_MONITOR_STATE_DEFAULT = _safe_join(DATA_DIR, 'device_state_config.json')
+_monitor_hw_id = get_hardware_id()
+MONITOR_STATE_FILEPATH = (
+    _safe_join(DATA_DIR, f'device_state_config_{_monitor_hw_id}.json')
+    if _monitor_hw_id is not None else _MONITOR_STATE_DEFAULT
+)
 # MONITOR_EXPT_PATH = str( Path(EXPT_PACKAGE_DIR) / 'experiments' / 'tools' / 'monitor.py' )
 MONITOR_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'monitor.py')
 
