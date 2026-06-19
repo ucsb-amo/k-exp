@@ -1,5 +1,6 @@
 import sys
 import time
+import logging
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                              QHBoxLayout, QPushButton, QLabel, QGroupBox, 
                              QMessageBox, QFrame, QDialog, QFormLayout,
@@ -10,6 +11,8 @@ from kexp.control.ethernet_relay import (EthernetRelay, SOURCE_RELAY_IDX,
                                           MAGNET_INHIBIT_IDX,
                                           ARTIQ_RESTART_TIME_S,
                                           ARTIQ_SATELLITE_MAIN_RESTART_OFFSET_S)
+
+logger = logging.getLogger("kexp.dashboard.client.ethernet_relay")
 
 
 class ArtiqRestartSettingsDialog(QDialog):
@@ -612,7 +615,7 @@ class EthernetRelayGUI(QMainWindow):
             self.set_buttons_enabled(True)
         else:
             self.set_buttons_enabled(True)
-            QMessageBox.warning(self, "Operation Failed", "The relay operation failed.")
+            logger.warning("The relay operation failed.")
             
     def on_artiq_restart_complete(self, success):
         """Handle completion of ARTIQ restart"""
@@ -660,7 +663,7 @@ class EthernetRelayGUI(QMainWindow):
             }
         """)
         
-        QMessageBox.critical(self, "Error", f"An error occurred:\n{error_message}")
+        logger.error("Relay operation failed: %s", error_message)
         
     def set_buttons_enabled(self, enabled):
         """Enable or disable all buttons"""
@@ -692,6 +695,9 @@ class EthernetRelayGUI(QMainWindow):
 
 def main():
     
+    from waxx.util.dashboard.logging_setup import configure_client_logging
+    configure_client_logging()
+
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.ethernet_relay')
     app = QApplication(sys.argv)
