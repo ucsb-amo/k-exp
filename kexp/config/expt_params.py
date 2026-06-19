@@ -99,7 +99,7 @@ class ExptParams(ExptParamsWaxx):
         
         self.t_lightsheet_rampup = .4
         self.t_lf_lightsheet_rampdown = 1.13
-        self.t_hf_lightsheet_rampdown = .74
+        self.t_hf_lightsheet_rampdown = 1.75
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = .01
@@ -151,7 +151,7 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 1.0483e-05 #67009, 2026-05-18
         # self.t_raman_pi_pulse = 8.6051e-06 #69699, 2026-06-10
         # self.t_raman_pi_pulse = 8.5568e-06 #69818, 2026-06-12
-        self.t_raman_pi_pulse = 8.9937e-06 #70060, 2026-06-18
+        self.t_raman_pi_pulse = 8.3333e-06 #70112, 2026-06-19
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -231,8 +231,8 @@ class ExptParams(ExptParamsWaxx):
         self.pfrac_d1_c_gm = .9
         self.pfrac_d1_r_gm = 0.86
 
-        self.pfrac_c_gmramp_end = 0.03
-        self.pfrac_r_gmramp_end = 0.62
+        self.pfrac_c_gmramp_end = 0.05
+        self.pfrac_r_gmramp_end = 0.66
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
@@ -250,7 +250,7 @@ class ExptParams(ExptParamsWaxx):
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 97.
+        self.i_magtrap_init = 101.
         self.i_magtrap_ramp_end = 169.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
@@ -259,8 +259,8 @@ class ExptParams(ExptParamsWaxx):
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
-        self.v_xshim_current_magtrap = 1.62
-        self.v_yshim_current_magtrap = 1.7
+        self.v_xshim_current_magtrap = 1.89
+        self.v_yshim_current_magtrap = 0.
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -326,7 +326,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = -2.5
+        self.v_hf_tweezer_paint_amp_max = -2.7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -365,7 +365,7 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.3
+        self.fraction_power_raman = 0.31
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 
@@ -413,7 +413,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_hf_tweezer_evap1_current = 193.7
         self.i_hf_tweezer_evap2_current = 194.4 # 193.
 
-        self.i_non_inter = 182.
+        self.i_non_inter = 176.
 
         # self.i_hf_raman = 191.
         self.i_hf_raman = 182.

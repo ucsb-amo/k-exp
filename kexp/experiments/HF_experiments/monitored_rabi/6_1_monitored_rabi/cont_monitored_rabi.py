@@ -46,7 +46,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 100
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -70,7 +70,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.ttl.line_trigger.wait_for_line_trigger()
         delay(4.7e-3)
 
-        # self.raman.pulse(t=24*self.p.t_raman_pi_pulse)
+        self.raman.pulse(t=24*self.p.t_raman_pi_pulse)
         
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         self.imaging.on()
@@ -91,9 +91,9 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.abs_image()
 
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
-        self.core.break_realtime()
+        # self.core.wait_until_mu(now_mu())
+        # self.scope.read_sweep(0)
+        # self.core.break_realtime()
         delay(30.e-3)
 
     @kernel

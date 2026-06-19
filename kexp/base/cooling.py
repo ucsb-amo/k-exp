@@ -44,10 +44,12 @@ class Cooling():
 
     @kernel
     def prepare_hf_tweezers(self,
+                            do_tweezer_evap_2=True,
+                            do_tweezer_evap_3=True,
+                            ramp_down_painting = False,
                             squeeze=True,
                             cubic_ramp_squeeze=True,
-                            do_tweezer_evap_2=True,
-                            do_tweezer_evap_3=True):
+                            ):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
         """   
@@ -137,13 +139,18 @@ class Cooling():
         self.outer_coil.start_pid()
         
         delay(30.e-3)
+        
+
+        if squeeze or ramp_down_painting:
+            self.ramp_down_painting()
+
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        if squeeze and do_tweezer_evap_2 and do_tweezer_evap_3:
+        if squeeze and ramp_down_painting and do_tweezer_evap_2 and do_tweezer_evap_3:
             self.tweezer_squeeze(cubic_ramp_squeeze)
 
     @kernel
-    def tweezer_squeeze(self, cubic_ramp=True):
+    def ramp_down_painting(self):
         if self.p.t_tweezer_paint_rampdown == 0:
             self.tweezer.paint_amp_dac.set(-7.)
         else:
@@ -152,7 +159,9 @@ class Cooling():
                                                   v_start=v0,
                                                   v_end=-7.,
                                                   n=100)
-        
+
+    @kernel
+    def tweezer_squeeze(self, cubic_ramp=True):
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
                           v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
                           v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
