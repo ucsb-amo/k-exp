@@ -17,7 +17,6 @@ class ttl_frame(ttl_frame_waxx):
         self.setup(N_TTL)
         
         # machine crate
-        self.no = self.assign_ttl_out(0)
         self.trig = self.assign_ttl_out(4)
         self.test = self.assign_ttl_out(5)
 
