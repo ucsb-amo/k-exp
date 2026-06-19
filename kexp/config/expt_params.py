@@ -14,6 +14,8 @@ class ExptParams(ExptParamsWaxx):
         self.N_shots_with_repeats = 1
         self.N_pwa_per_shot = 1
 
+        self.t_recover = 10.e-3
+
         self.frequency_raman_transition = 119.34e6
         self.fraction_power_raman = 1.
 

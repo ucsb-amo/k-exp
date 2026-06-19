@@ -48,10 +48,10 @@ class dds_frame(dds_frame_waxx):
 
         self.dds0 = self.dds_assign(0,0, ao_order = 1,
                                     default_freq=150.e6,
-                                    default_amp=0.5,)
+                                    default_amp=0.5)
         self.dds1 = self.dds_assign(0,1, ao_order = 1,
                                     default_freq = 80.e6,
-                                    default_amp = 0.5,)
+                                    default_amp = 0.5)
         self.dds_dummy = self.dds_assign(0,2,
                                           default_freq=100.e6,
                                           default_amp=0.5)

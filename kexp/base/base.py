@@ -115,8 +115,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.core.break_realtime()
         self.raman.clean_up_fast_frequency_update()
 
-        self.core.break_realtime()
-        self.reset_coils()
+        # self.core.break_realtime()
+        # self.reset_coils()
 
         self.core.break_realtime()
 

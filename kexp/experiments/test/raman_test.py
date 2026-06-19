@@ -14,10 +14,15 @@ class mot_killa(EnvExperiment, Base):
         self.finish_prepare(shuffle=True)
 
     @kernel
+    def scan_kernel(self):
+        pass
+        # self.prep_raman()
+        # self.raman.on()
+
+    @kernel
     def run(self):
         self.init_kernel()
-        self.prep_raman()
-        self.raman.on()
+        self.scan()
 
     def analyze(self):
         import os
