@@ -80,6 +80,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if init_dac:
             self.dac.dac_device.init() # initializes DAC
             delay(self.params.t_rtio)
+            delay(1.e-3)
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
             self.init_all_dds() # initializes DDS channels
