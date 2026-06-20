@@ -188,9 +188,9 @@ class LiveODSubscriber(QThread):
         print(f"[LiveODSubscriber] Attempting to rediscover server via UDP broadcast…")
         
         try:
-            from waxx.util.comms_server.waxx_client import discover
+            from waxx.util.comms_server.hardware_id import discover_scoped
             
-            result = discover("live_od_broadcast", timeout=self.DISCOVERY_TIMEOUT)
+            result = discover_scoped("live_od_broadcast", timeout=self.DISCOVERY_TIMEOUT)
             if result is not None:
                 new_ip, new_port = result
                 self._ip = new_ip
@@ -282,10 +282,10 @@ class RemoteViewerWindow(QWidget):
         threading.Thread(target=self._discover_worker, daemon=True).start()
 
     def _discover_worker(self) -> None:
-        """Background thread: loops until 'live_od_broadcast' is found."""
-        from waxx.util.comms_server.waxx_client import discover
+        """Background thread: loops until the matching 'live_od_broadcast' is found."""
+        from waxx.util.comms_server.hardware_id import discover_scoped
         while True:
-            result = discover("live_od_broadcast", timeout=3.0)
+            result = discover_scoped("live_od_broadcast", timeout=3.0)
             if result is not None:
                 discovered_ip, discovered_port = result
                 ip   = self._requested_ip   if self._requested_ip   is not None else discovered_ip
@@ -551,8 +551,8 @@ class RemoteViewerWindow(QWidget):
         via UDP if no cached value exists."""
         if self._req_ip is not None and self._req_port is not None:
             return self._req_ip, self._req_port
-        from waxx.util.comms_server.waxx_client import discover
-        result = discover("live_od", timeout=3.0)
+        from waxx.util.comms_server.hardware_id import discover_scoped
+        result = discover_scoped("live_od", timeout=3.0)
         if result is None:
             return None, None
         self._req_ip, self._req_port = result
