@@ -20,6 +20,7 @@ import zmq
 import numpy as np
 from PyQt6.QtCore import QThread, pyqtSignal
 from waxx.util.comms_server.waxx_server import WaxxServer
+from waxx.util.comms_server.hardware_id import scoped_server_id
 
 
 class LiveODServer(QThread, WaxxServer):
@@ -52,7 +53,7 @@ class LiveODServer(QThread, WaxxServer):
 
     def __init__(self, server_talk, data_saver, port: int = 0):
         super().__init__()  # QThread.__init__
-        WaxxServer.__init__(self, "live_od", port)  # explicit — avoids MRO conflict
+        WaxxServer.__init__(self, scoped_server_id("live_od"), port)  # explicit — avoids MRO conflict
         self._server_talk = server_talk
         self._data_saver = data_saver
         self._ip = "0.0.0.0"
@@ -261,13 +262,15 @@ class LiveODServer(QThread, WaxxServer):
         filepath = ""
 
         if save_data:
-            run_id = self._server_talk.get_run_id()
-            # Compute the filepath immediately (pure string ops, no I/O).
-            filepath = self._data_saver.compute_data_filepath_from_payload(msg, run_id)
-            # Create the HDF5 file on a background thread so the ZMQ REP
-            # socket can reply at once and not block the experiment client.
-            # DataHandler.wait_for_data_available() already polls until the
-            # file exists, so the delay is handled transparently.
+            # Atomically reserve a unique run_id by exclusively creating the
+            # data file ('x' mode).  Exclusive create is atomic on the shared
+            # filesystem, so two liveOD servers driving different hardware but
+            # writing to one data drive can never collide on a run_id.
+            run_id, filepath = self._data_saver.reserve_run_id_and_path(msg)
+            # Populate the reserved file (heavy I/O — image / DataVault
+            # pre-allocation) on a background thread so the ZMQ REP socket can
+            # reply at once.  DataHandler.wait_for_data_available() polls until
+            # the file is populated, so the delay is handled transparently.
             self._file_creation_executor.submit(
                 self._data_saver.create_data_file_from_payload, msg, run_id
             )

@@ -342,10 +342,8 @@ class LiveODWindow(QWidget):
         # Camera runs emit their own honorable_death_signal message.
         self.the_baby = None
         self.data_handler = None
-        # For no-camera resets, reset() already called update_run_id(); skip
-        # it here to avoid double-incrementing the run ID.
-        if not self._run_was_reset:
-            self.server_talk.update_run_id()
+        # run_id is claimed + incremented atomically at INIT_RUN
+        # (server_talk.claim_run_id), so there is nothing to increment here.
         self._run_was_reset = False
 
     def on_shot_progress(self, shot_idx: int, N_total: int, xvar_values: object):
@@ -459,13 +457,16 @@ class LiveODWindow(QWidget):
             if getattr(self, '_run_active', False):
                 # A no-camera run (setup_camera=False) is in progress.
                 # The ZMQ poll mechanism will abort it at the next shot boundary.
+                # The run_id was already claimed + incremented at INIT_RUN, so
+                # do not increment again here.
                 name = getattr(self, '_run_name', '?')
                 msg = f'Run reset. {name} has died dishonorably.'
                 self._run_active = False
                 self._run_was_reset = True
             else:
+                # No run was ever started for this id -> manually skip it.
                 msg = 'No active run. Incrementing Run ID.'
-            self.server_talk.update_run_id()
+                self.server_talk.update_run_id()
             self.msg(msg)
 
         if self.the_baby is not None:
