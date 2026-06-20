@@ -326,8 +326,9 @@ class RamanBeamPair():
 
     @kernel
     def _restore_default_profile_mode(self):
+        self.dds0.dds_device.set_cfr2(asf_profile_enable=1)
         self.dds0.dds_device.set_cfr1(
-            phase_autoclear=1,
+            phase_autoclear=0,
             internal_profile=0,
             ram_enable=0,
             ram_destination=0
@@ -364,11 +365,11 @@ class RamanBeamPair():
                                 frequency_transition):
         asf0 = self.dds0._asf
 
-        pow0 = 0
+        pow0 = self.dds0._pow
 
         self.state_splitting_to_ao_frequency(frequency_transition)
         f0 = self._dummy[DDS0_IDX]
-        ftw0 = int32(self.dds0.dds_device.ftw_per_hz * f0)
+        ftw0 = int32(round(self.dds0.dds_device.ftw_per_hz * f0))
         
         at_mu(now_mu() & ~7)
         
@@ -377,6 +378,7 @@ class RamanBeamPair():
 
         delay_mu(int64(self.dds0.dds_device.sync_data.io_update_delay))
         self.dds0.dds_device.cpld.io_update.pulse_mu(8)
+        self.dds0._ftw = ftw0
     
         at_mu(now_mu() & ~7)
         
