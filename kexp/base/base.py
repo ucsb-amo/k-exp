@@ -100,6 +100,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.arm_scopes()
         
         self.core.reset()
+
+        self.reset_devices()
         
     @kernel
     def reset_devices(self):

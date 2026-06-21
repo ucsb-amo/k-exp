@@ -18,7 +18,7 @@ from waxx.control.artiq.mirny import Mirny
 from waxx.control.artiq.Shuttler_CH import Shuttler_CH
 from waxx.control.misc.ssg3021x import SSG3021X
 from waxx.control.beat_lock import BeatLockImaging, PolModBeatLock, BeatLockImagingPID
-from waxx.control.raman_beams import RamanBeamPair
+# from waxx.control.raman_beams import RamanBeamPair
 from waxx.control.cameras.dummy_cam import DummyCamera
 from waxx.control.misc.thorlabs_kinesis import WaveplateRotatorPhotodiodePID
 from waxx.control.integrator import Integrator
@@ -33,6 +33,7 @@ from kexp.config.ip import DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR
 from kexp.config.wavemeter_id import fzw_frame
 from kexp.config.data_vault import DataVault, DataContainer
 
+from kexp.control.raman_beams_single_beam import RamanBeamPair
 from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
 from kexp.control.awg_tweezer import tweezer
