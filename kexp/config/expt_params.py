@@ -50,7 +50,7 @@ class ExptParams(ExptParamsWaxx):
 
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
-        self.frequency_detuned_hf_midpoint = -514.5e6 #-504.e6
+        self.frequency_detuned_hf_midpoint = -495.e6 #-504.e6
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
@@ -99,7 +99,7 @@ class ExptParams(ExptParamsWaxx):
         
         self.t_lightsheet_rampup = .4
         self.t_lf_lightsheet_rampdown = 1.13
-        self.t_hf_lightsheet_rampdown = 1.75
+        self.t_hf_lightsheet_rampdown = 1.2
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = .01
@@ -121,7 +121,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown = 10.e-3
+        self.t_tweezer_paint_rampdown = 30.e-3
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
         self.t_tweezer_squeezer_ramp_2 = 30.e-3
 
@@ -151,7 +151,7 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 1.0483e-05 #67009, 2026-05-18
         # self.t_raman_pi_pulse = 8.6051e-06 #69699, 2026-06-10
         # self.t_raman_pi_pulse = 8.5568e-06 #69818, 2026-06-12
-        self.t_raman_pi_pulse = 8.3333e-06 #70112, 2026-06-19
+        self.t_raman_pi_pulse = 8.3333e-06 #70253, 2026-06-20
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -259,8 +259,8 @@ class ExptParams(ExptParamsWaxx):
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
         self.v_zshim_current_magtrap = 0.0
-        self.v_xshim_current_magtrap = 1.89
-        self.v_yshim_current_magtrap = 0.
+        self.v_xshim_current_magtrap = .63
+        self.v_yshim_current_magtrap = .8
 
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
@@ -326,7 +326,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = -2.7
+        self.v_hf_tweezer_paint_amp_max = -2.5
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -406,7 +406,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 193.8
+        self.i_hf_lightsheet_evap1_current = 192.7
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 193.7 # 193.4
