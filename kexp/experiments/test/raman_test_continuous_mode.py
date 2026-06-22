@@ -22,24 +22,31 @@ class mot_killa(EnvExperiment, Base):
                       save_data=False,
                       suppress_live_od=True)
         
-        self.p.df_requested = 1.e6
+        self.p.df_requested = 250.e3
 
         self.p.dt_u = np.int64(91)
+        self.p.dt_i = np.int64(0)
         # self.xvar('dt_i', np.linspace(685,705,5).astype(np.int64))
-        # self.xvar('dt_i', np.linspace(0,91*2,3).astype(np.int64))
+        # self.xvar('dt_i', np.linspace(-100,100,21).astype(np.int64))
 
         self.p.dftw = int32(0)
         self.p.df = 0.
         self.p.T_beat_mu = int64(0)
 
-        self.p.n_T = 10
+        self.p.n_T = 2
 
-        self.p.relphase = 0.56*np.pi
-        # self.xvar('relphase',np.linspace(0.54,0.56,5)*np.pi)
+        # self.p.relphase = 0.56*np.pi
+        self.p.relphase = np.pi * (0.25/0.56)
+        # self.xvar('relphase',np.linspace(0.,1.,11)*np.pi)
 
         self.data.v = self.data.add_data_container(2)
 
-        self.finish_prepare(shuffle=False)
+        self.p.N_repeats = 1
+
+        self.p.n_sampler_avg = 300
+        self.p.t_sampler_sample_rate = 500.e-6
+
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def clear_phase_accumulators(self):
@@ -76,6 +83,17 @@ class mot_killa(EnvExperiment, Base):
         self.dds.dds_lo.on()
 
     @kernel
+    def sample(self,idx):
+        v = 0.
+        n = self.p.n_sampler_avg
+        for _ in range(n):
+            self.sampler.sample()
+            v += self.sampler.data[0]
+            delay(self.p.t_sampler_sample_rate)
+        self.data.v.put_data(v / n, idx)
+        delay(10.e-3)
+
+    @kernel
     def scan_kernel(self):
         # pass
 
@@ -87,14 +105,7 @@ class mot_killa(EnvExperiment, Base):
 
         delay(100.e-3)
 
-        v = 0.
-        n = 100
-        for _ in range(n):
-            self.sampler.sample()
-            v += self.sampler.data[0]
-            delay(1.e-3)
-        self.data.v.put_data(v / n, 0)
-        delay(10.e-3)
+        self.sample(0)
 
         delay(10.e-3)
 
@@ -126,31 +137,24 @@ class mot_killa(EnvExperiment, Base):
         at_mu(t)
 
         delay_mu(self.p.dt_u)
-        # frequency should update here
         t = now_mu()
-        self.trig()
+        # frequency should update here
         
+        self.trig()
 
         # queue up the next update
-        
         self.raman.stage_ffua()
         self.raman.set_ftw_fast(ftw0_old, do_io_update=False)
 
-        at_mu(t + self.p.T_beat_mu - self.p.dt_u)
+        # pretrigger the update by dt_u so that total on interval is T_beat_mu
+        at_mu(t + self.p.T_beat_mu - self.p.dt_u + self.p.dt_i)
         t = self.raman.io_update()
         at_mu(t)
         delay_mu(self.p.dt_u)
 
-        
-
         delay(0.1)
-        v = 0.
-        for _ in range(n):
-            self.sampler.sample()
-            v += self.sampler.data[0]
-            delay(1.e-3)
-        self.data.v.put_data(v / n, 1)
-        delay(10.e-3)
+        
+        self.sample(1)
 
         delay(1.)
 
@@ -210,4 +214,4 @@ class mot_killa(EnvExperiment, Base):
         np.save(r'C:\Users\bananas\code\k-jam\jpagett\data\data_v.npy', self.data.v._run_data)
 
         expt_filepath = os.path.abspath(__file__)
-        self.end(expt_filepath)
+        self.end(expt_filepath, notify=False)
