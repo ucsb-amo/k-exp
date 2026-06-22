@@ -50,7 +50,7 @@ class ExptParams(ExptParamsWaxx):
 
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
-        self.frequency_detuned_hf_midpoint = -495.e6 #-504.e6
+        self.frequency_detuned_hf_midpoint = -515.e6 #-504.e6
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6

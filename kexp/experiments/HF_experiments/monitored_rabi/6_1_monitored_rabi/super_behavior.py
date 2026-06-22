@@ -30,8 +30,11 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         self.p.dimension_slm_mask = 20.e-6
 
+        self.xvar('frequency_detuned_hf_midpoint',np.linspace(-500.e6,-480.e6,5))
+        self.p.frequency_detuned_hf_midpoint = -500.e6 #-504.e6
+
         # self.xvar('phase_slm_mask',np.linspace(0.1*np.pi,.4*np.pi,5))
-        self.p.phase_slm_mask = 0.1 * np.pi
+        self.p.phase_slm_mask = 1.25 * np.pi
 
         self.p.t_tweezer_hold = 15.e-3
         self.p.t_tof = 20.e-6

@@ -289,7 +289,7 @@ class Image():
         # atoms image (pwa)
         self.light_image()
 
-        self.tweezer.off()
+        # self.tweezer.off()
 
         # self.lightsheet.off()
 
