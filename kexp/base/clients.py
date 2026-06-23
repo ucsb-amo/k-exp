@@ -29,9 +29,16 @@ class Clients():
             try:
                 self.live_od_client = LiveODClient()
             except Exception as e:
-                raise RuntimeError(
-                    f"[LiveOD] Could not connect to LiveOD server: {e}\n"
-                    "Check that the LiveOD server window is running on the control PC.\n"
-                    "To run without a LiveOD server, pass suppress_live_od=True "
-                    "(and setup_camera=False) to Base.__init__."
-                ) from e
+                if not getattr(self, 'setup_camera', True):
+                    print(
+                        f"[LiveOD] WARNING: Could not connect to LiveOD server: {e}\n"
+                        "Running experiment without LiveOD (setup_camera=False).\n"
+                        "Start the LiveOD server window if imaging is needed."
+                    )
+                else:
+                    raise RuntimeError(
+                        f"[LiveOD] Could not connect to LiveOD server: {e}\n"
+                        "Check that the LiveOD server window is running on the control PC.\n"
+                        "To run without a LiveOD server, pass suppress_live_od=True "
+                        "(and setup_camera=False) to Base.__init__."
+                    ) from e

@@ -68,5 +68,14 @@ class MonitorClientPanel(WidgetPanelBase):
         layout.setSpacing(0)
         layout.addWidget(scroll)
 
+    def resizeEvent(self, event):  # noqa: N802 (Qt API)
+        # The embedded QMainWindow is hidden, so its own resize/show events
+        # never fire.  Drive the responsive collapse from the panel instead;
+        # the GUI measures the enclosing scroll viewport width itself.
+        super().resizeEvent(event)
+        gui = getattr(self, "_gui", None)
+        if gui is not None:
+            gui._recompute_compact()
+
 
 __all__ = ["MonitorPanel", "MonitorClientPanel"]
