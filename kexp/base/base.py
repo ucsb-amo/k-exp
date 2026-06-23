@@ -55,8 +55,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 
-
-
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
         To be called at the end of prepare.
@@ -132,7 +130,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.inner_coil.off()
         if init_ry:
             # self._fzw.connect()
-            # pass
+            pass
             self.ry_405.init()
             self.ry_980.init()
         
@@ -149,14 +147,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.reset_devices()
 
         self.reset_tweezers(two_d_tweezers)
-
-        self.ry_405.lock_status()
-        self.ry_980.lock_status()
-
-        # self.dds.ry_405_sw.on()
-        # self.dds.ry_405_sw.set_dds(init=True)
-        # self.dds.d1_beatlock_ref.on()
-
+        
     @kernel
     def reset_devices(self):
         # 2D MOT current back on
@@ -201,14 +192,19 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.core.break_realtime()
         self.ttl.line_trigger.clear_input_events()
 
+        self.core.break_realtime()
+        # self.ry_405.lock_status()
+        # self.ry_980.lock_status()
+
         self.cleanup_scan_kernel_wax()
 
     @kernel
     def post_scan(self):
-        self.ry_980.sweep_to(reset=True)
-
+        # self.ry_980.sweep_to(reset=True)
+        self.tweezer.reset_awg()
         self.core.break_realtime()
         self.background_field()
+        
 
     def end(self, expt_filepath, notify=True):
         self.end_wax(expt_filepath=expt_filepath, notify=notify)

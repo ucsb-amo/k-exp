@@ -1,6 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base, cameras
+from kexp import Base, cameras, aprint
 import numpy as np
 from kexp.calibrations import high_field_imaging_detuning
 
@@ -22,7 +22,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_magtrap_hold = 0.15 
         # self.p.t_magtrap_hold = 1.
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
 
         self.p.imaging_state = 2.
@@ -41,7 +41,6 @@ class mag_trap(EnvExperiment, Base):
         self.ttl.pd_scope_trig.pulse(1.e-8)
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
-
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,
                                         do_magtrap_rampup=False,

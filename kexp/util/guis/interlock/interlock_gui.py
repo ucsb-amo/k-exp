@@ -1,456 +1,113 @@
-from PyQt6 import QtCore
-from PyQt6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
-import pyqtgraph as pg
-from random import randint
-import sympy as sympy
-from PyQt6.QtWidgets import (
-    QApplication,
-    QCheckBox,
-    QComboBox,
-    QDateEdit,
-    QDateTimeEdit,
-    QDial,
-    QDoubleSpinBox,
-    QFontComboBox,
-    QLabel,
-    QLCDNumber,
-    QLineEdit,
-    QMainWindow,
-    QProgressBar,
-    QPushButton,
-    QRadioButton,
-    QSlider,
-    QSpinBox,
-    QTimeEdit,
-    QVBoxLayout,
-    QWidget,
-)
-# Only needed for access to command line arguments
+﻿"""interlock_gui.py — standalone wrapper kept for backward compatibility.
+
+Spawns the headless :mod:`interlock_server` as a child Python process,
+then opens a single-window UI containing the same :class:`InterlockPanel`
+the dashboard uses.  The panel discovers the just-spawned server over the
+LAN beacon and talks to it via TCP — same code path as the dashboard.
+
+When this window closes, the child server is asked to shut down (and
+killed after a graceful-stop timeout, never orphaned).
+
+Why a child process and not in-thread?
+--------------------------------------
+The interlock service uses a Windows named mutex (IT3) to prevent two
+instances.  Running it in-process here would conflict with the dashboard
+also wanting to spawn it.  Using a subprocess keeps behavior identical
+in both standalone and dashboard cases, and means the GUI window can
+crash without taking down safety monitoring.
+"""
+
+from __future__ import annotations
+
+import logging
 import sys
 
-import serial 
-import time
-import re
-import codecs
-import csv
-import os
-import textwrap
-from subprocess import PIPE, run
+from PyQt6.QtCore import QProcess, QTimer
+from PyQt6.QtWidgets import QApplication, QMainWindow, QMessageBox
 
-import smtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-#import space
+from waxx.util.dashboard.logging_setup import configure_client_logging
+from kexp.util.guis.interlock.interlock_panel import InterlockPanel
 
-from kexp import EthernetRelay
-from kexp.config.ip import INTERLOCK_EMAIL_CREDENTIALS_FILEPATH
-from waxx.util.notifications import _load_credentials
 
-# You need one (and only one) QApplication instance per application.
-# Pass in sys.argv to allow command line arguments for your app.
-# If you know you won't use command line arguments QApplication([]) works too.
-primes = [2,3,5,7,11]
-test_arr = [[1721757533.8153138,'Temp', 0, 294.95074],[1721757534.8153138,'Temp', 0, 293.95074],[1721757535.8153138,'Temp', 0, 295.95074],[1721757536.8153138,'Temp', 0, 294.95074],[1721757537.8153138,'Temp', 0, 296.95074]]
+_LOG = logging.getLogger("kexp.dashboard.client.interlock.standalone")
 
-class MainWindow(QMainWindow):
+
+class _InterlockStandaloneWindow(QMainWindow):
+    """Window that spawns the server child process and embeds InterlockPanel."""
+
     def __init__(self):
         super().__init__()
-        #If error called here, check if something else is using comport, eg arduino serial monitor is open
-        self.comPort = serial.Serial(port='COM5', baudrate=9600, timeout=1) 
+        self.setWindowTitle("Interlock GUI (standalone)")
+        self.resize(900, 600)
 
-        self._ethernet_relay = EthernetRelay()
-        self._ethernet_relay.enable_magnets()
+        self._panel = InterlockPanel(self)
+        self.setCentralWidget(self._panel)
 
-        # Load Gmail credentials from a shared-drive file so secrets aren't
-        # committed to a public repo.
-        self._email_address, self._email_password = _load_credentials(
-            INTERLOCK_EMAIL_CREDENTIALS_FILEPATH
-        )
-        self.setWindowTitle("Interlock GUI")
-        self.setWindowIcon(self._create_no_symbol_icon())
-        # button = QPushButton("RESET INTERLOCK!")
-        # button.setCheckable(True)
-        # button.clicked.connect(self.the_button_was_clicked)
-        # button.setStyleSheet("""
-        #     QPushButton {
-        #         background-color: red;
-        #         color: white;
-        #         font-size: 24px;
-        #         font-weight: bold;
-        #         padding: 10px 20px;
-        #     }
-        # """)
-        self.last_valid_data_time = time.time()
-        self.timeout_threshold = 15 
+        self._proc = QProcess(self)
+        self._proc.setProcessChannelMode(QProcess.ProcessChannelMode.SeparateChannels)
+        self._proc.readyReadStandardOutput.connect(self._drain_stdout)
+        self._proc.readyReadStandardError.connect(self._drain_stderr)
+        self._proc.finished.connect(self._on_finished)
 
-        # Timer for checking timeouts
-        self.timeout_timer = QtCore.QTimer()
-        self.timeout_timer.timeout.connect(self.check_data_timeout)
-        self.timeout_timer.start(5000)  # Check every 5 seconds
-        self.button = QPushButton("Interlock Active")
-        self.button.setStyleSheet("""
-            QPushButton {
-                background-color: green;
-                color: white;
-                font-size: 24px;
-                font-weight: bold;
-                padding: 10px 20px;
-            }
-        """)
-        self.button.setEnabled(False)
+        QTimer.singleShot(0, self._start_server)
 
+    def _start_server(self) -> None:
+        program = sys.executable
+        args = ["-m", "kexp.util.guis.interlock.interlock_server"]
+        _LOG.info("Launching interlock server: %s %s", program, args)
+        self._proc.start(program, args)
+        if not self._proc.waitForStarted(3000):
+            QMessageBox.critical(
+                self,
+                "Interlock server failed to start",
+                "Could not spawn interlock_server.py.\n\n"
+                "Check that the kexp environment is active and COM5 is free.",
+            )
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.button)
-        
-        # Set the central widget of the Window.
-        #self.setLeftWidget(button)
+    def _drain_stdout(self) -> None:
+        data = bytes(self._proc.readAllStandardOutput()).decode("utf-8", errors="replace")
+        for line in data.splitlines():
+            _LOG.info("[server] %s", line)
 
-        # Temperature vs time dynamic plot
-        self.plot_graph = pg.PlotWidget()
-        layout.addWidget(self.plot_graph)
-        #self.setCentralWidget(self.plot_graph)
-        self.plot_graph.setBackground("w")
-        pen = pg.mkPen(color=(255, 0, 0))
-        #self.plot_graph.setTitle("Chiller temperature and flow rate", color="b", size="20pt")
-        styles = {"color": "red", "font-size": "18px"}
-        self.plot_graph.setLabel("left", "Temperature (C)", **styles)
-        self.plot_graph.setLabel("right", "Flow Rate (V)", **styles)
-        self.plot_graph.setLabel("bottom", "Time (s)", **styles)
-        self.plot_graph.addLegend()
-        self.plot_graph.showGrid(x=True, y=True)
-        self.plot_graph.setYRange(0, 40)
-        
-        self.plot_graph.getAxis('right').setLabel('Flow Meter value (v)', color='blue')
-        self.plot_graph.getAxis('left').setLabel('Temp (c)', color='red')
+    def _drain_stderr(self) -> None:
+        data = bytes(self._proc.readAllStandardError()).decode("utf-8", errors="replace")
+        for line in data.splitlines():
+            _LOG.warning("[server-err] %s", line)
 
-        self.right_view = pg.ViewBox()
-        self.plot_graph.scene().addItem(self.right_view)
-        self.plot_graph.getAxis('right').linkToView(self.right_view)
-        self.right_view.setXLink(self.plot_graph)
+    def _on_finished(self, exit_code: int, exit_status) -> None:
+        _LOG.warning("Interlock server child exited code=%d status=%s",
+                     exit_code, exit_status.name if hasattr(exit_status, "name") else exit_status)
 
-        self.has_sent_email = False
-
-        self.plot_graph.getViewBox().sigResized.connect(self.update_views)
-
-        self.right_view.setYRange(3, 8, padding=0)
-
-        self.time = list(range(-1000,1))
-        self.temperature = [0 for _ in range(1001)]
-        self.flows = []
-        for i in range(4):
-            self.flows.append([0 for _ in range(1001)])
-        # Get a line reference
-        self.line = self.plot_graph.plot(
-            self.time,
-            self.temperature,
-            pen='r'
-        )
-        self.line_2 = pg.PlotCurveItem(
-            self.time,
-            self.flows[0],
-            name="Flow meter 1", pen = 'g')
-        self.line_3 = pg.PlotCurveItem(
-            self.time,
-            self.flows[1], 
-            name="Flow meter 2", pen = 'b')
-        self.line_4 = pg.PlotCurveItem(
-            self.time,
-            self.flows[2] , 
-            name="Flow meter 3", pen = 'cyan')
-        self.line_5 = pg.PlotCurveItem(
-            self.time,
-            self.flows[3] ,
-            name="Flow meter 4", pen = 'purple')
-        self.right_view.addItem(self.line_2)
-        self.right_view.addItem(self.line_3)
-        self.right_view.addItem(self.line_4)
-        self.right_view.addItem(self.line_5)
-
-        # Add legends to the plot
-        self.legend = pg.LegendItem((100, 60), offset=(70, 30))
-        self.legend.setParentItem(self.plot_graph.graphicsItem())
-
-        # Add items to the legend
-        self.legend.addItem(self.line, "Temp")
-        self.legend.addItem(self.line_2, "Flow Meter 1")
-        self.legend.addItem(self.line_3, "Flow Meter 2")
-        self.legend.addItem(self.line_4, "Flow Meter 3")
-        self.legend.addItem(self.line_5, "Flow Meter 4")
-
-        # Timer for live updating
-        self.timer = QtCore.QTimer()
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(self.update_plot)
-        self.timer.start()
-
-        # Timer for saving data to CSV
-        self.csv_timer = QtCore.QTimer()
-        self.csv_timer.timeout.connect(self.save_to_csv)
-        self.csv_timer.start(600000)  # Every 10 minutes (600,000 ms)
-
-        widget = QWidget()
-        widget.setLayout(layout)
-
-        # Set the central widget of the Window. Widget will expand
-        # to take up all the space in the window by default.
-        self.setCentralWidget(widget)
-
-    def _create_no_symbol_icon(self):
-        pixmap = QPixmap(128, 128)
-        pixmap.fill(QtCore.Qt.GlobalColor.transparent)
-
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        red = QColor(210, 0, 0)
-        ring_pen = QPen(red, 14)
-        ring_pen.setCapStyle(QtCore.Qt.PenCapStyle.RoundCap)
-        painter.setPen(ring_pen)
-        painter.drawEllipse(14, 14, 100, 100)
-
-        slash_pen = QPen(red, 14)
-        slash_pen.setCapStyle(QtCore.Qt.PenCapStyle.RoundCap)
-        painter.setPen(slash_pen)
-        painter.drawLine(34, 94, 94, 34)
-
-        painter.end()
-        return QIcon(pixmap)
-
-    def kill_magnets_persistent(self):
-        while True:
-            try:        
-                self._ethernet_relay.kill_magnets()
-                print("Killing magnets")
-                magnets_still_on_for_some_reason = self._ethernet_relay.read_magnet_status()
-                if not magnets_still_on_for_some_reason:
-                    break
-            except:
-                print("Killing magnets failed for some reason. Freaking out, trying again.")
-                pass
-
-    #Function that reads the PLCs serial output and parses to strings readable by the GUI
-    def read_PLC(self):
-        buffer = None
-        
+    def closeEvent(self, ev):  # noqa: N802
         try:
-            buffer = self.comPort.read(200)
-            decoded_string = codecs.decode(buffer, 'utf-8')
-        except:
-        # if not buffer:
-            print("No data received from serial port.")
-            #interlock is tripped
-            self.button.setText("No serial from PLC - loss of power?")
-            if not self.has_sent_email:
-                self.send_email_check()
-                self.has_sent_email = True
-            self.button.setStyleSheet("""
-                QPushButton {
-                    background-color: orange;
-                    color: white;
-                    font-size: 24px;
-                    font-weight: bold;
-                    padding: 10px 20px;
-                }
-            """)
-            self.button.setEnabled(True)
-            self.button.clicked.connect(self.the_button_was_clicked)
-            self.kill_magnets_persistent()
-
-        #print(buffer)
-        #print(decoded_string)
-        # time.sleep(0.1)
-        # Decode the input bytes to string
-        decoded_string = str(buffer)
-        # Split the string by '/'
-        #print(decoded_string)
-        data_segments = re.split(r'/', decoded_string)
-        # Initialize the 2D array
-        data_array = []
-
-        # Track if we received any valid data this cycle by multiplying primes 
-        received_valid_data = 1
-
-        # Parse each segment
-        for segment in data_segments:
-            #print(segment)
-
-            if 'Flowmeter' in segment:
-                #print("jeff")
-                flowmeter_match = re.search(r'Flowmeter (\d) reads ([\d\.]+)V', segment)
-                if flowmeter_match:
-                    meter_number = int(flowmeter_match.group(1))
-                    # print(meter_number)
-                    received_valid_data*=primes[meter_number-1]
-                    # print(f"Flow meter number {meter_number} corresponds to the prime {primes[meter_number-1]}.")
-                    value = float(flowmeter_match.group(2))
-                    data_array.append([time.time(),'Flowmeter', meter_number, value])
-                    #Each flowmeter has a different asigned prime -- at the end if 
-                    #we dont get all the prime factors out, we couldnt have had data from all the flowmeters
+            self._panel.cleanup()
+        except Exception:
+            _LOG.exception("Panel cleanup failed")
+        if self._proc is not None and self._proc.state() != QProcess.ProcessState.NotRunning:
+            _LOG.info("Terminating interlock server child")
+            try:
+                self._proc.terminate()
+                if not self._proc.waitForFinished(5000):
+                    _LOG.warning("Graceful stop timed out; killing")
+                    self._proc.kill()
+                    self._proc.waitForFinished(2000)
+            except Exception:
+                _LOG.exception("Error stopping server child")
+        super().closeEvent(ev)
 
 
-            elif 'Temp' in segment:
-                temp_match = re.search(r'Temp is ([\d\.]+)k', segment)
-                if temp_match:
-                    received_valid_data*=primes[4]
-                    value = float(temp_match.group(1))
-                    data_array.append([time.time(),'Temp',0, value])
-            elif 'TRIPPED' in segment:
-                tripped = re.search(r'I TRIPPED', segment)    
-                #print("TRIPPED")
-                received_valid_data = 2310
-                if tripped:
-                    data_array.append('I-T')
-        checksum_cont_primes = list(sympy.ntheory.factorint(received_valid_data).keys())
-        print(f"Checksum contains primes {checksum_cont_primes}, should contain, 2, 3, 5, 7 & 11.")
-        if all(val in checksum_cont_primes for val in primes):
-            print("Recieving good data")
-            self.last_valid_data_time = time.time()
-        else:
-            print("Not recieving good data.")
-        return data_array
+def main() -> int:
+    configure_client_logging()
+    try:
+        import ctypes  # noqa: PLC0415
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("weldlab.kexp.gui.interlock")
+    except Exception:
+        pass
+    app = QApplication.instance() or QApplication(sys.argv)
+    win = _InterlockStandaloneWindow()
+    win.show()
+    return app.exec()
 
 
-    def check_data_timeout(self):
-        """Check if we haven't received any expected data within the timeout period"""
-        current_time = time.time()
-        time_since_last_data = current_time - self.last_valid_data_time
-        
-        if time_since_last_data > self.timeout_threshold:
-            print("Timing out")
-            self.button.setText("Trying to trip interlock")
-            if not self.has_sent_email:
-                self.send_email_check()
-                self.has_sent_email = True
-            self.button.setStyleSheet("""
-                QPushButton {
-                    background-color: orange;
-                    color: white;
-                    font-size: 24px;
-                    font-weight: bold;
-                    padding: 10px 20px;
-                }
-            """)
-            self.button.setEnabled(True)
-            self.button.clicked.connect(self.the_button_was_clicked)
-            self.kill_magnets_persistent()
-        # else:
-            
-            # print("Recieving good data")
-
-
-    def update_views(self):
-        self.right_view.setGeometry(self.plot_graph.getViewBox().sceneBoundingRect())
-        self.right_view.linkedViewChanged(self.plot_graph.getViewBox(), self.right_view.XAxis)
-
-    def update_plot(self):
-        #self.time = self.time[1:]
-        #self.time.append(self.time[-1] + 1)
-        ##Function needs to grab data until it gets all neccessary types
-        data_inc = self.read_PLC()
-        if data_inc:     
-            for i in range(5):
-                if(data_inc[i] != 'I-T'):
-                    # print(data_inc[i])
-                    if(data_inc[i][2] == 0):
-                        self.temperature = self.temperature[1:]
-                        self.temperature.append(data_inc[i][3]-273)
-                    else:
-                        self.flows[data_inc[i][2]-1] = self.flows[data_inc[i][2]-1][1:]
-                        self.flows[data_inc[i][2]-1].append(data_inc[i][3])
-                    #print(data_inc[i][3])
-                elif(data_inc[i] == 'I-T'):
-                    #interlock is tripped
-                    self.button.setText("Interlock Tripped")
-                    if not self.has_sent_email:
-                        self.send_email_tripped()
-                        self.has_sent_email = True
-                    self.button.setStyleSheet("""
-                        QPushButton {
-                            background-color: red;
-                            color: white;
-                            font-size: 24px;
-                            font-weight: bold;
-                            padding: 10px 20px;
-                        }
-                    """)
-                    self.button.setEnabled(True)
-                    self.button.clicked.connect(self.the_button_was_clicked)
-        print("Next dataset")
-        print(f"Chiller water temperature is {self.temperature[-1]:.3f}c")
-        self.line.setData(self.time, self.temperature)
-        self.line_2.setData(self.time, self.flows[0])
-        self.line_3.setData(self.time, self.flows[1])
-        self.line_4.setData(self.time, self.flows[2])
-        self.line_5.setData(self.time, self.flows[3])
-    #infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com
-    
-    def the_button_was_clicked(self):
-        print("Interlock reset")
-        self.comPort.write(b'O')
-        self.has_sent_email = False
-        #print(time.time())
-        self.button.setText("Interlock Active")
-        self.button.setStyleSheet("""
-            QPushButton {
-                background-color: green;
-                color: white;
-                font-size: 24px;
-                font-weight: bold;
-                padding: 10px 20px;
-            }
-        """)
-        self.button.setEnabled(False)
-        self.button.clicked.disconnect(self.the_button_was_clicked)
-
-    def _send_email(self, subject, body,
-                    recipient='infrastructure-aaaaaxkptfownhvfr3q4he2qeu@weldlab.slack.com'):
-        msg = MIMEMultipart()
-        msg['From'] = self._email_address
-        msg['To'] = recipient
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(self._email_address, self._email_password)
-        server.sendmail(self._email_address, recipient, msg.as_string())
-        server.quit()
-        print("Email sent successfully!")
-
-    def send_email_tripped(self):
-        self._send_email(
-            'K-Interlock Tripped',
-            'K-Interlock tripped due to too high temperature, too low flowrate or loss of power!',
-        )
-
-    def send_email_check(self):
-        self._send_email(
-            'K-Interlock Lost connection with Kong',
-            'K Interlock has lost connection with kong -- check',
-        )
-
-    def save_to_csv(self):
-        import os
-        data_dir = os.getenv('data')
-        subdir = 'interlock_logs'
-        filename = 'plot_data.csv'
-        savedir = os.path.join(data_dir,subdir,filename)
-        with open(savedir, 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['x', 'y1', 'y2'])
-            for i in range(len(self.time)):
-                writer.writerow([self.time[i], self.temperature[i], self.flows[0][i], self.flows[1][i], self.flows[2][i], self.flows[3][i]])
-
-        print(f"Data saved to {filename}")
-
-import ctypes
-ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('weldlab.kexp.gui.interlock')
-app = QApplication(sys.argv)
-
-# Create a Qt widget, which will be our window.
-window = MainWindow()
-window.show()  # IMPORTANT!!!!! Windows are hidden by default.
-
-# Start the event loop.
-app.exec()
+if __name__ == "__main__":
+    sys.exit(main())

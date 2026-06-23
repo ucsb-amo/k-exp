@@ -1,4 +1,4 @@
-from artiq.experiment import kernel, portable, TInt64
+from artiq.experiment import kernel, portable, TInt64, TTuple, TArray, TFloat
 import numpy as np
 from numpy import int64
 from kexp.calibrations.imaging import integrator_calibration, imaging_lightshift
@@ -15,7 +15,6 @@ class Feedback:
         "dt_ideal",
         "dt_z",
         # "omega_z_lightshift",
-        "omega_guess_start",
         "N_photons_per_shot",
         "std_n_photons_per_shot",
         "v_apd_all_up",
@@ -40,43 +39,10 @@ class Feedback:
         if not hasattr(self, "p"):
             self.p = ExptParams()
 
-        p = self.p
-        feedback_grid_size_param = getattr(p, "feedback_grid_size", None)
-        if feedback_grid_size_param is None:
-            feedback_grid_size_param = getattr(self, "m", 21)
-        self._initialize_timing(
-            feedback_grid_size=p.feedback_grid_size,
-            t_raman_pulse=p.t_raman_pulse,
-            t_raman_pulse_ideal=p.t_raman_pulse_ideal,
-            t_img_pulse=p.t_img_pulse,
-            t_raman_pi_pulse=p.t_raman_pi_pulse,
-        )
-        self._initialize_lightshift(
-            amp_imaging=p.amp_imaging,
-            frequency_z_lightshift=p.frequency_lightshift,
-            back_action_coherence=p.back_action_coherence,
-        )
-        self._initialize_frequency_grid(
-            frequency_resonance=p.frequency_raman_transition,
-            fractional_grid_center_offset=p.feedback_fractional_grid_center_offset,
-            fractional_initial_offset=p.feedback_fractional_initial_offset,
-            guess_span_Omega=p.feedback_guess_span_Omega,
-        )
-        self._initialize_measurement_calibrations(
-            amp_imaging=p.amp_imaging,
-            t_img_pulse=p.t_img_pulse,
-            n_photons_per_shot=p.n_photons_per_shot,
-            std_n_photons_per_shot=p.std_n_photons_per_shot,
-            v_apd_all_up=p.v_apd_all_up,
-            v_apd_all_down=p.v_apd_all_down,
-            photon_count_scale=getattr(p, "feedback_photon_count_scale", 1.0),
-            feedback_measurement_midpoint_fraction=p.feedback_measurement_midpoint_fraction,
-            feedback_measurement_midpoint_remap_enabled=p.feedback_measurement_midpoint_remap_enabled,
-            feedback_apd_map_enabled=p.feedback_apd_map_enabled,
-            feedback_apd_map_a=p.feedback_apd_map_a,
-            feedback_apd_map_b=p.feedback_apd_map_b,
-            feedback_apd_map_verbose=p.feedback_apd_map_verbose,
-        )
+        self._initialize_timing()
+        self._initialize_lightshift()
+        self._initialize_frequency_grid()
+        self._initialize_measurement_calibrations()
         self._initialize_posterior_state()
         self._initialize_trig_lut(lut_size=lut_size)
         
@@ -269,7 +235,8 @@ class Feedback:
 
             p1 = self.expected_photon_fraction(hz)
             q = 1.0 - p1
-            npq = n_photons * p1 * q + sigma_sq
+            # npq = n_photons * p1 * q + sigma_sq
+            npq = sigma_sq
             num = k - n_photons * p1
             if include_photon_noise:
                 f = sigma / np.sqrt(npq) * np.exp(-num * num / (2.0 * npq))
@@ -350,6 +317,14 @@ class Feedback:
     def initialize_feedback(self):
         """Warm up posterior runtime once, then reset state/P0 arrays."""
 
+        self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
+            t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
+            t_raman_pulse=self.p.t_raman_pulse,
+            t_img_pulse=self.p.t_img_pulse,
+            t_raman_pretrigger=self.p.t_raman_set_pretrigger_mu,
+            t_fifo_mu=self.p.t_fifo_mu
+        )
+
         n_test = int(round(self.N_photons_per_shot * self.expected_photon_fraction(0.0)))
 
         self.core.wait_until_mu(self.core.get_rtio_counter_mu())
@@ -388,214 +363,71 @@ class Feedback:
         )
         return self.omega_raman
 
-    def _initialize_timing(
-        self,
-        feedback_grid_size,
-        t_raman_pulse,
-        t_raman_pulse_ideal,
-        t_img_pulse,
-        t_raman_pi_pulse,
-    ):
-        self.p.feedback_grid_size = int(feedback_grid_size)
+    def _initialize_timing(self):
+        self.p.feedback_grid_size = int(self.p.feedback_grid_size)
         self.m = self.p.feedback_grid_size
-        self.Omega = np.pi / t_raman_pi_pulse
-        self.dt_eff = float(t_raman_pulse)
-        self.dt_ideal = float(t_raman_pulse_ideal)
-        self.dt_z = float(t_img_pulse)
+        self.Omega = np.pi / self.p.t_raman_pi_pulse
+        self.dt_eff = float(self.p.t_raman_pulse)
+        self.dt_ideal = float(self.p.t_raman_pulse_ideal)
+        self.dt_z = float(self.p.t_img_pulse)
 
-    def _initialize_lightshift(self, amp_imaging, frequency_z_lightshift, back_action_coherence):
-        self.p.frequency_lightshift = self._resolve_lightshift_calibration(amp_imaging, frequency_z_lightshift)
+    def _initialize_lightshift(self):
+        self.p.frequency_lightshift = self._resolve_lightshift_calibration(self.p.amp_imaging, self.p.frequency_lightshift)
         self.frequency_z_lightshift = self.p.frequency_lightshift
         self.omega_z_lightshift = 2.0 * np.pi * self.frequency_z_lightshift
-        self.p.back_action_coherence = float(back_action_coherence)
+        self.p.back_action_coherence = float(self.p.back_action_coherence)
         self.back_action_coherence = self.p.back_action_coherence
 
-    def _initialize_frequency_grid(
-        self,
-        frequency_resonance,
-        fractional_grid_center_offset,
-        fractional_initial_offset,
-        guess_span_Omega,
-    ):
-        omega_resonance = 2.0 * np.pi * float(frequency_resonance)
-        self.p.feedback_fractional_grid_center_offset_requested = float(fractional_grid_center_offset)
-        self.p.feedback_fractional_initial_offset = float(fractional_initial_offset)
-        self.p.feedback_guess_span_Omega_requested = float(guess_span_Omega)
+    def _initialize_frequency_grid(self) -> TTuple([TArray(TFloat), TArray(TFloat)]):
+
+        omega_resonance = 2.0 * np.pi * float(self.p.frequency_raman_transition)
+        self.p.feedback_fractional_initial_offset = float(self.p.feedback_fractional_initial_offset)
 
         if self.m < 1:
             raise ValueError("feedback_grid_size must be >= 1.")
-        if self.p.feedback_guess_span_Omega_requested < 0.0:
+        if self.p.feedback_guess_span_Omega < 0.0:
             raise ValueError("guess_span_Omega must be non-negative.")
 
-        self.omega_guess_list, resonance_idx, span_effective = self._construct_span_adjusted_grid(
-            omega_resonance=omega_resonance,
-            fractional_grid_center_offset_requested=self.p.feedback_fractional_grid_center_offset_requested,
-            guess_span_Omega_requested=self.p.feedback_guess_span_Omega_requested,
-        )
-        self.p.feedback_guess_span_Omega = float(span_effective)
-        self.p.feedback_resonance_grid_index = int(resonance_idx)
+        n_grid_offset = np.round(self.p.feedback_fractional_initial_offset)
+        n_grid_halfwidth = self.p.feedback_guess_span_Omega
+        self.omega_guess_list = omega_resonance + self.Omega * (n_grid_offset - n_grid_halfwidth * np.linspace(-1,1,self.m))
 
-        self.omega_grid_center = 0.5 * (self.omega_guess_list[0] + self.omega_guess_list[-1])
-        if self.Omega != 0.0:
-            self.p.feedback_fractional_grid_center_offset = float((self.omega_grid_center - omega_resonance) / self.Omega)
-        else:
-            self.p.feedback_fractional_grid_center_offset = 0.0
-
-        if abs(self.p.feedback_guess_span_Omega - self.p.feedback_guess_span_Omega_requested) > 1.0e-12:
-            print(
-                "Feedback: adjusted guess_span_Omega to keep resonance on-grid. "
-                f"requested={self.p.feedback_guess_span_Omega_requested:.6g}, "
-                f"effective={self.p.feedback_guess_span_Omega:.6g}."
-            )
-
-        self.omega_guess_start = omega_resonance + self.Omega * self.p.feedback_fractional_initial_offset
-        self._validate_resonance_in_grid(omega_resonance=omega_resonance)
-        self._validate_initial_guess_in_grid()
         self.p.omega_guess_list = self.omega_guess_list
-        self.omega_raman = self.omega_guess_start
         self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
 
-    def _construct_span_adjusted_grid(
-        self,
-        omega_resonance,
-        fractional_grid_center_offset_requested,
-        guess_span_Omega_requested,
-    ):
-        if self.m == 1:
-            return np.asarray([float(omega_resonance)], dtype=np.float64), 0, 0.0
+        self.p.feedback_resonance_grid_index = int(np.argmin(np.abs(self.omega_guess_list - omega_resonance)))
 
-        if self.Omega == 0.0:
-            raise ValueError("Omega is zero; cannot construct a feedback hypothesis grid.")
+        self.omega_raman = self.reset_initial_omega_from_params()
 
-        c = float(fractional_grid_center_offset_requested)
-        s_requested = float(guess_span_Omega_requested)
-        mid = 0.5 * (self.m - 1)
+        return self.p.omega_guess_list, self.omega_sq_list
 
-        candidates = []
-        tiny = 1.0e-15
-        for j in range(self.m):
-            dj = float(j) - mid
-
-            if abs(dj) <= tiny:
-                if abs(c) <= tiny:
-                    candidates.append((j, s_requested))
-                continue
-
-            s_candidate = -c * (self.m - 1) / (2.0 * dj)
-            if s_candidate < -tiny:
-                continue
-            if s_candidate < 0.0:
-                s_candidate = 0.0
-
-            candidates.append((j, float(s_candidate)))
-
-        if len(candidates) == 0:
-            raise ValueError(
-                "Cannot construct a uniform feedback grid that places resonance on-grid. "
-                f"fractional_grid_center_offset={c:.6g}, "
-                f"feedback_grid_size={self.m}, "
-                f"guess_span_Omega_requested={s_requested:.6g}."
-            )
-
-        resonance_idx, _ = min(
-            candidates,
-            key=lambda pair: (abs(pair[1] - s_requested), abs(pair[1]), abs(float(pair[0]) - mid)),
-        )
-
-        center_target = float(omega_resonance) + self.Omega * c
-        dj_res = float(resonance_idx) - mid
-        if abs(dj_res) <= tiny:
-            domega = 2.0 * s_requested * self.Omega / (self.m - 1)
-        else:
-            domega = (float(omega_resonance) - center_target) / dj_res
-
-        if domega < 0.0:
-            domega = abs(domega)
-
-        offsets = np.arange(self.m, dtype=np.float64) - float(resonance_idx)
-        omega_guess = float(omega_resonance) + domega * offsets
-        # Force exact resonance representation at the selected index.
-        omega_guess[resonance_idx] = float(omega_resonance)
-
-        span_effective = abs(domega) * (self.m - 1) / (2.0 * self.Omega)
-        return omega_guess, int(resonance_idx), float(span_effective)
-
-    def _validate_resonance_in_grid(self, omega_resonance):
-        idx = int(np.argmin(np.abs(self.omega_guess_list - omega_resonance)))
-        if self.omega_guess_list[idx] != float(omega_resonance):
-            raise ValueError(
-                "Feedback grid does not include the exact resonance frequency. "
-                f"nearest_idx={idx}, "
-                f"nearest_value={self.omega_guess_list[idx]:.6e} rad/s, "
-                f"omega_resonance={float(omega_resonance):.6e} rad/s, "
-                f"delta={float(self.omega_guess_list[idx] - omega_resonance):.6e} rad/s."
-            )
-
-    def _validate_initial_guess_in_grid(self):
-        omega_guess = np.asarray(self.omega_guess_list, dtype=float).ravel()
-        if omega_guess.size == 0:
-            raise ValueError("Feedback grid cannot be empty.")
-
-        grid_min = float(np.min(omega_guess))
-        grid_max = float(np.max(omega_guess))
-        tol = 1.0e-12 * max(1.0, abs(grid_min), abs(grid_max))
-
-        if self.omega_guess_start < (grid_min - tol) or self.omega_guess_start > (grid_max + tol):
-            grid_center = 0.5 * (grid_min + grid_max)
-            raise ValueError(
-                "Feedback initial guess is outside the constructed hypothesis grid. "
-                f"omega_guess_start={self.omega_guess_start:.6e} rad/s, "
-                f"grid_min={grid_min:.6e} rad/s, "
-                f"grid_max={grid_max:.6e} rad/s, "
-                f"grid_center={grid_center:.6e} rad/s, "
-                f"fractional_initial_offset={self.p.feedback_fractional_initial_offset:.6g}, "
-                f"fractional_grid_center_offset={self.p.feedback_fractional_grid_center_offset:.6g}, "
-                f"guess_span_Omega={self.p.feedback_guess_span_Omega:.6g}, "
-                f"Omega={self.Omega:.6e} rad/s."
-            )
-
-    def _initialize_measurement_calibrations(
-        self,
-        amp_imaging,
-        t_img_pulse,
-        n_photons_per_shot,
-        std_n_photons_per_shot,
-        v_apd_all_up,
-        v_apd_all_down,
-        photon_count_scale,
-        feedback_measurement_midpoint_fraction,
-        feedback_measurement_midpoint_remap_enabled,
-        feedback_apd_map_enabled,
-        feedback_apd_map_a,
-        feedback_apd_map_b,
-        feedback_apd_map_verbose,
-    ):
+    def _initialize_measurement_calibrations(self):
         (
             n_photons_per_shot,
             v_apd_all_up,
             v_apd_all_down,
             std_n_photons_per_shot,
         ) = self._resolve_measurement_calibration(
-            amp_imaging=amp_imaging,
-            t_img_pulse=t_img_pulse,
-            n_photons_per_shot=n_photons_per_shot,
-            std_n_photons_per_shot=std_n_photons_per_shot,
-            v_apd_all_up=v_apd_all_up,
-            v_apd_all_down=v_apd_all_down,
-            photon_count_scale=photon_count_scale,
+            amp_imaging=self.p.amp_imaging,
+            t_img_pulse=self.p.t_img_pulse,
+            n_photons_per_shot=self.p.n_photons_per_shot,
+            std_n_photons_per_shot=self.p.std_n_photons_per_shot,
+            v_apd_all_up=self.p.v_apd_all_up,
+            v_apd_all_down=self.p.v_apd_all_down,
+            photon_count_scale=getattr(self.p, "feedback_photon_count_scale", 1.0),
         )
 
         map_enabled, map_a, map_b, map_verbose = self._resolve_apd_affine_map_settings(
-            feedback_apd_map_enabled=feedback_apd_map_enabled,
-            feedback_apd_map_a=feedback_apd_map_a,
-            feedback_apd_map_b=feedback_apd_map_b,
-            feedback_apd_map_verbose=feedback_apd_map_verbose,
+            feedback_apd_map_enabled=self.p.feedback_apd_map_enabled,
+            feedback_apd_map_a=self.p.feedback_apd_map_a,
+            feedback_apd_map_b=self.p.feedback_apd_map_b,
+            feedback_apd_map_verbose=self.p.feedback_apd_map_verbose,
         )
         midpoint_remap_enabled = self._resolve_measurement_midpoint_remap_enabled(
-            feedback_measurement_midpoint_remap_enabled=feedback_measurement_midpoint_remap_enabled,
+            feedback_measurement_midpoint_remap_enabled=self.p.feedback_measurement_midpoint_remap_enabled,
         )
         midpoint_fraction = self._resolve_measurement_midpoint_fraction(
-            feedback_measurement_midpoint_fraction=feedback_measurement_midpoint_fraction,
+            feedback_measurement_midpoint_fraction=self.p.feedback_measurement_midpoint_fraction,
         )
 
         v_apd_all_up_ref = float(v_apd_all_up)
@@ -973,7 +805,7 @@ def _feedback_kwargs_from_atomdata(ad):
         "feedback_measurement_midpoint_fraction": p.feedback_measurement_midpoint_fraction,
         "feedback_measurement_midpoint_remap_enabled": p.feedback_measurement_midpoint_remap_enabled,
         "feedback_grid_size": int(p.feedback_grid_size),
-        "fractional_grid_center_offset": float(p.feedback_fractional_grid_center_offset),
+        "fractional_grid_center_offset": float(p.feedback_fractional_grid_center_offset) if hasattr(p, "feedback_fractional_grid_center_offset") else None,
         "fractional_initial_offset": p.feedback_fractional_initial_offset,
         "guess_span_Omega": float(p.feedback_guess_span_Omega),
         "feedback_apd_map_enabled": p.feedback_apd_map_enabled,

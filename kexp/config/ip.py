@@ -7,20 +7,32 @@ INTERLOCK_EMAIL_CREDENTIALS_FILEPATH = r"G:\Shared drives\Tweezers\Environments 
 
 ### data, filepaths
 DATA_DIR = os.getenv("data")
-EXPT_PACKAGE_DIR = os.path.join(os.getenv("code"),"k-exp","kexp")
+_CODE_DIR = os.getenv("code")
+
+
+def _safe_join(base, *parts):
+    """os.path.join that tolerates a missing (None) base.
+
+    On driveless client machines ``DATA_DIR`` / ``code`` may be unset; path
+    constants below then resolve to ``None`` instead of raising at import,
+    so client-only tooling (device control GUI, dashboards) imports cleanly.
+    Consumers that actually need the path must check for ``None``.
+    """
+    if base is None:
+        return None
+    return os.path.join(base, *parts)
+
+
+EXPT_PACKAGE_DIR = _safe_join(_CODE_DIR, "k-exp", "kexp")
 
 ### dashboard log directories
 # Resolved lazily at use-site (see waxx.util.dashboard.logging_setup) so that
 # tooling can run when DATA_DIR is unmapped.  The constants below may be None
 # if the shared drive is not available; consumers must check and fall back.
-if DATA_DIR:
-    LOG_DIR = os.path.join(DATA_DIR, "_logs")
-    SERVER_LOG_DIR = os.path.join(LOG_DIR, "server")
-    CLIENT_LOG_DIR = os.path.join(LOG_DIR, "client")
-else:
-    LOG_DIR = None
-    SERVER_LOG_DIR = None
-    CLIENT_LOG_DIR = None
+
+LOG_DIR = _safe_join(DATA_DIR, "_logs")
+SERVER_LOG_DIR = _safe_join(LOG_DIR, "server")
+CLIENT_LOG_DIR = _safe_join(LOG_DIR, "client")
 EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
 BASE_CLASS_RELPATH = os.path.join("base")  # all .py files in this directory will be saved
 PATHS = (DATA_DIR, EXPT_PACKAGE_DIR, EXPT_PARAM_RELPATH, BASE_CLASS_RELPATH)
@@ -36,9 +48,20 @@ server_talk = st(data_dir=DATA_DIR,
                  on_data_dir_disconnected_bat_path=MAP_BAT_PATH)
 
 ### monitor
-MONITOR_STATE_FILEPATH = os.path.join(DATA_DIR,'device_state_config.json')
+# Scope the monitor state file to the hardware id (last octet of core_addr from
+# the device db at env var "db") so each server writes its own file without the
+# path being hardcoded per branch.  Falls back to the default below when the id
+# cannot be resolved (e.g. env var "db" unset).
+from waxx.util.comms_server.hardware_id import get_hardware_id
+
+_MONITOR_STATE_DEFAULT = _safe_join(DATA_DIR, 'device_state_config.json')
+_monitor_hw_id = get_hardware_id()
+MONITOR_STATE_FILEPATH = (
+    _safe_join(DATA_DIR, f'device_state_config_{_monitor_hw_id}.json')
+    if _monitor_hw_id is not None else _MONITOR_STATE_DEFAULT
+)
 # MONITOR_EXPT_PATH = str( Path(EXPT_PACKAGE_DIR) / 'experiments' / 'tools' / 'monitor.py' )
-MONITOR_EXPT_PATH = os.path.join(EXPT_PACKAGE_DIR,'experiments','tools','monitor.py')
+MONITOR_EXPT_PATH = _safe_join(EXPT_PACKAGE_DIR, 'experiments', 'tools', 'monitor.py')
 
 ### SRS control servers
 SRS_CONTROL_IP = "192.168.1.76"
@@ -59,13 +82,22 @@ PRECILASER_COM = 'COM20'
 
 ###
 MAGNETOMETER_COM = 'COM33'
-MAGNETOMETER_REFERENCE_CSV_PATH = os.path.join(DATA_DIR,'magnetometer_reference.csv')
+MAGNETOMETER_REFERENCE_CSV_PATH = _safe_join(DATA_DIR, 'magnetometer_reference.csv')
+
+### Interlock controller
+INTERLOCK_COM = 'COM5'
 
 ###
 WAVEMETER_MOGLABS_IP = '192.168.1.94'
 
 ### Bristol wavemeter
 BRISTOL_WAVEMETER_IP = '192.168.1.105'
+
+### Keysight DC current supplies — (max_current_A, ip)
+KEYSIGHT_SUPPLIES = [
+    (170, '192.168.1.77'),
+    (500, '192.168.1.78'),
+]
 
 ### kinesis motors
 DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961

@@ -741,7 +741,8 @@ device_db["eeprom_urukul2"] = {
         "busno": 65536,
         "sw0_device": "i2c_switch0_1",
         "sw1_device": "i2c_switch1_1"}
-    }
+}
+
 device_db["spi_urukul2"] = {
     "type": "local",
     "module": "artiq.coredevice.spi2",

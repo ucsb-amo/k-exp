@@ -7,7 +7,8 @@ class background_field(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
                       imaging_type=img_types.ABSORPTION,
-                      setup_camera=False)
+                      setup_camera=False,
+                      suppress_live_od=True)
 
         self.finish_prepare(shuffle=False)
        

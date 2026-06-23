@@ -44,10 +44,12 @@ class Cooling():
 
     @kernel
     def prepare_hf_tweezers(self,
+                            do_tweezer_evap_2=True,
+                            do_tweezer_evap_3=True,
+                            ramp_down_painting = False,
                             squeeze=True,
                             cubic_ramp_squeeze=True,
-                            do_tweezer_evap_2=True,
-                            do_tweezer_evap_3=True):
+                            ):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
         """   
@@ -77,7 +79,7 @@ class Cooling():
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
         
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_hf_lightsheet_evap1_current,
+                            #  i_start=self.p.i_hf_lightsheet_evap1_current,
                              i_end=self.p.i_hf_tweezer_load_current)
         
         self.tweezer.on()
@@ -85,6 +87,10 @@ class Cooling():
                           v_start=0.,
                           v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False)
+        
+        # self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown2,
+        #                      v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_hf_lightsheet_rampdown2_end)
                           
         # lightsheet ramp down (to off)
         self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
@@ -94,7 +100,7 @@ class Cooling():
         self.lightsheet.off()
 
         self.outer_coil.ramp_supply(t=5.e-3,
-                             i_start=self.p.i_hf_tweezer_load_current,
+                            #  i_start=self.p.i_hf_tweezer_load_current,
                              i_end=self.p.i_hf_tweezer_evap1_current)
 
         # tweezer evap 1 with constant trap frequency
@@ -104,8 +110,8 @@ class Cooling():
                           paint=True,keep_trap_frequency_constant=True)
         
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_hf_tweezer_evap1_current,
-                             i_end=self.p.i_hf_tweezer_evap2_current)
+                            #  i_start=self.p.i_hf_tweezer_evap1_current,
+                                i_end=self.p.i_hf_tweezer_evap2_current)
         
         if do_tweezer_evap_2:
         
@@ -133,13 +139,18 @@ class Cooling():
         self.outer_coil.start_pid()
         
         delay(30.e-3)
+        
+
+        if squeeze or ramp_down_painting:
+            self.ramp_down_painting()
+
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        if squeeze and do_tweezer_evap_2 and do_tweezer_evap_3:
+        if squeeze and ramp_down_painting and do_tweezer_evap_2 and do_tweezer_evap_3:
             self.tweezer_squeeze(cubic_ramp_squeeze)
 
     @kernel
-    def tweezer_squeeze(self, cubic_ramp=True):
+    def ramp_down_painting(self):
         if self.p.t_tweezer_paint_rampdown == 0:
             self.tweezer.paint_amp_dac.set(-7.)
         else:
@@ -148,7 +159,9 @@ class Cooling():
                                                   v_start=v0,
                                                   v_end=-7.,
                                                   n=100)
-        
+
+    @kernel
+    def tweezer_squeeze(self, cubic_ramp=True):
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
                           v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
                           v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
@@ -490,11 +503,11 @@ class Cooling():
         
         ### Start Defaults ###
         if detune_d2_c == dv:
-            detune_d2_c = self.params.detune_d2_c_mot
+            detune_d2_c = self.params.detune_d2_c_hmot
         if amp_d2_c == dv:
             amp_d2_c = self.params.amp_d2_c_mot
         if detune_d2_r == dv:
-            detune_d2_r = self.params.detune_d2_r_mot
+            detune_d2_r = self.params.detune_d2_r_hmot
         if amp_d2_r == dv:
             amp_d2_r = self.params.amp_d2_r_mot
         ### End Defaults ###

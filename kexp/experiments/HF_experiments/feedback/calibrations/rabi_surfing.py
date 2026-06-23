@@ -38,14 +38,13 @@ class rabi_surfing(EnvExperiment, Base):
         self.p.time_for_bye = 10.e-6
 
         self.p.t_tof = 100.e-6
-        self.p.N_repeats = 10
+        self.p.N_repeats = 3
 
         self.p.N_pulses = 30
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
         self.data.t = self.data.add_data_container(self.p.N_pulses)
-
 
         self.finish_prepare(shuffle=True)
 

@@ -20,6 +20,7 @@ import zmq
 import numpy as np
 from PyQt6.QtCore import QThread, pyqtSignal
 from waxx.util.comms_server.waxx_server import WaxxServer
+from waxx.util.comms_server.hardware_id import scoped_server_id
 
 
 class LiveODServer(QThread, WaxxServer):
@@ -46,12 +47,13 @@ class LiveODServer(QThread, WaxxServer):
     new_run_signal = pyqtSignal(str, str, bool, bool, int, int, int, int, object, object, object)   # filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa_per_shot, camera_params, params_payload, run_info_payload
     shot_progress_signal = pyqtSignal(int, int, object)       # shot_idx, N_total, xvar_values dict
     run_done_signal = pyqtSignal()
-    run_started_signal = pyqtSignal(int)                      # run_id (emitted after INIT_RUN, before new_run_signal)
+    run_started_signal = pyqtSignal(int, object)               # run_id, xvarnames (emitted after INIT_RUN, before new_run_signal)
     reset_signal = pyqtSignal()                               # triggered by remote RESET command
+    camera_control_signal = pyqtSignal(str, str)              # camera_key, action ('open'|'close'|'toggle')
 
     def __init__(self, server_talk, data_saver, port: int = 0):
         super().__init__()  # QThread.__init__
-        WaxxServer.__init__(self, "live_od", port)  # explicit — avoids MRO conflict
+        WaxxServer.__init__(self, scoped_server_id("live_od"), port)  # explicit — avoids MRO conflict
         self._server_talk = server_talk
         self._data_saver = data_saver
         self._ip = "0.0.0.0"
@@ -65,8 +67,18 @@ class LiveODServer(QThread, WaxxServer):
         self._current_capture_images = False
         self._current_filepath = ""
         self._current_run_id = 0
+        self._current_camera_key = ""
         self._reset_requested = False   # set by RESET; cleared by next INIT_RUN
+        self._run_in_progress = False   # True between INIT_RUN and END_RUN/ABORT
         self._shot_timestamps: list = []  # Unix timestamps (s) recorded server-side on each SHOT_COMPLETE
+        self._scalar_subscriber_count: dict = {}  # tier -> subscriber count
+        self._scalar_lock = threading.Lock()
+        # Basler-specific: track whether the previous grab loop has fully exited.
+        # Cleared on each new Basler INIT_RUN (if a baby was already active),
+        # set when that baby's done_signal fires via on_basler_baby_done().
+        self._basler_prev_grab_done_event = threading.Event()
+        self._basler_prev_grab_done_event.set()  # no previous grab initially
+        self._basler_baby_active = False
 
     # ------------------------------------------------------------------
     # Public slots (safe to call from any thread)
@@ -80,6 +92,18 @@ class LiveODServer(QThread, WaxxServer):
         threading.Event is set from the CameraBaby thread immediately.
         """
         self._cam_ready_event.set()
+
+    def on_basler_baby_done(self):
+        """Called when a Basler CameraBaby's thread has fully finished.
+
+        Connect to ``CameraBaby.done_signal`` with
+        ``Qt.ConnectionType.DirectConnection`` for Basler cameras.
+        Sets ``_basler_prev_grab_done_event`` so that the next run's
+        ``WAIT_CAM_READY`` can proceed once the old grab loop has exited.
+        """
+        self._basler_prev_grab_done_event.set()
+        self._basler_baby_active = False
+        print("[LiveODServer] Basler grab loop exited.")
 
     def on_data_handler_done(self):
         """Set the data-handler-done event.
@@ -130,10 +154,16 @@ class LiveODServer(QThread, WaxxServer):
                         reply = self._handle_end_run(msg)
                     elif tag == "RESET":
                         reply = self._handle_reset(msg)
+                    elif tag == "CAMERA_CONTROL":
+                        reply = self._handle_camera_control(msg)
                     elif tag == "POLL":
                         reply = self._handle_poll(msg)
                     elif tag == "ABORT_RUN":
                         reply = self._handle_abort_run(msg)
+                    elif tag == "SUBSCRIBE_SCALARS":
+                        reply = self._handle_subscribe_scalars(msg)
+                    elif tag == "UNSUBSCRIBE_SCALARS":
+                        reply = self._handle_unsubscribe_scalars(msg)
                     else:
                         reply = {"ok": False, "error": f"Unknown tag: {tag}"}
                 except Exception as exc:
@@ -190,6 +220,7 @@ class LiveODServer(QThread, WaxxServer):
                 print(f"Warning: could not delete incomplete data file: {exc}")
             self._current_filepath = ""
         self._reset_requested = False
+        self._run_in_progress = False
         self.run_done_signal.emit()
 
     def _handle_init_run(self, msg: dict) -> dict:
@@ -206,6 +237,16 @@ class LiveODServer(QThread, WaxxServer):
         capture_images = bool(msg.get("capture_images", False))
         camera_key = str(msg.get("camera_key", ""))
         imaging_type = int(msg.get("imaging_type", 0))
+        self._current_camera_key = camera_key
+
+        # For Basler cameras: if a previous baby is still running its grab
+        # loop (e.g. after a reset), clear the event so WAIT_CAM_READY will
+        # block until that grab loop fully exits and on_basler_baby_done() fires.
+        if "basler" in camera_key and capture_images:
+            if self._basler_baby_active:
+                self._basler_prev_grab_done_event.clear()
+                print("[LiveODServer] INIT_RUN: Basler previous grab not yet done — WAIT_CAM_READY will block until it exits.")
+            self._basler_baby_active = True
 
         camera_params = msg.get('camera_params', {})
         self._cam_ready_event.clear()
@@ -221,13 +262,15 @@ class LiveODServer(QThread, WaxxServer):
         filepath = ""
 
         if save_data:
-            run_id = self._server_talk.get_run_id()
-            # Compute the filepath immediately (pure string ops, no I/O).
-            filepath = self._data_saver.compute_data_filepath_from_payload(msg, run_id)
-            # Create the HDF5 file on a background thread so the ZMQ REP
-            # socket can reply at once and not block the experiment client.
-            # DataHandler.wait_for_data_available() already polls until the
-            # file exists, so the delay is handled transparently.
+            # Atomically reserve a unique run_id by exclusively creating the
+            # data file ('x' mode).  Exclusive create is atomic on the shared
+            # filesystem, so two liveOD servers driving different hardware but
+            # writing to one data drive can never collide on a run_id.
+            run_id, filepath = self._data_saver.reserve_run_id_and_path(msg)
+            # Populate the reserved file (heavy I/O — image / DataVault
+            # pre-allocation) on a background thread so the ZMQ REP socket can
+            # reply at once.  DataHandler.wait_for_data_available() polls until
+            # the file is populated, so the delay is handled transparently.
             self._file_creation_executor.submit(
                 self._data_saver.create_data_file_from_payload, msg, run_id
             )
@@ -235,6 +278,7 @@ class LiveODServer(QThread, WaxxServer):
         self._current_filepath = filepath
         self._current_run_id = run_id
         self._reset_requested = False
+        self._run_in_progress = True
         self._shot_timestamps = []       # reset per-run timestamp list
 
         n_img = int(msg.get('params', {}).get('N_img', 1))
@@ -251,7 +295,7 @@ class LiveODServer(QThread, WaxxServer):
             'xvarnames': list(msg.get('xvarnames', [])),
         }
 
-        self.run_started_signal.emit(run_id)
+        self.run_started_signal.emit(run_id, list(run_info_payload.get('xvarnames', [])))
         self.new_run_signal.emit(filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa, camera_params, params_payload, run_info_payload)
         print(
             f"[LiveODServer] INIT_RUN: run_id={run_id}, "
@@ -261,7 +305,20 @@ class LiveODServer(QThread, WaxxServer):
 
     def _handle_wait_cam_ready(self, msg: dict) -> dict:
         timeout = float(msg.get("timeout", 60.0))
-        ready = self._cam_ready_event.wait(timeout=timeout)
+        deadline = time.time() + timeout
+
+        # For Basler cameras: wait for the previous grab loop to fully exit
+        # before reporting camera-ready to the experiment.  This prevents the
+        # experiment from arming the hardware while the old grab is still
+        # blocking in RetrieveResult() and the camera is not yet free.
+        if "basler" in self._current_camera_key:
+            remaining = deadline - time.time()
+            grab_done = self._basler_prev_grab_done_event.wait(timeout=max(0.0, remaining))
+            if not grab_done:
+                return {"ok": False, "ready": False, "error": "Basler previous grab-loop exit timeout"}
+
+        remaining = deadline - time.time()
+        ready = self._cam_ready_event.wait(timeout=max(0.0, remaining))
         if not ready:
             return {"ok": False, "ready": False, "error": "Camera ready timeout"}
         return {"ok": True, "ready": True}
@@ -288,6 +345,7 @@ class LiveODServer(QThread, WaxxServer):
                 except Exception as exc:
                     print(f"[LiveODServer] Warning: could not delete data file: {exc}")
             self._reset_requested = False
+            self._run_in_progress = False
             self.run_done_signal.emit()
             return {"ok": True}
         if self._current_save_data and self._current_filepath:
@@ -312,6 +370,7 @@ class LiveODServer(QThread, WaxxServer):
         else:
             print("[LiveODServer] END_RUN: save_data=False, nothing written.")
 
+        self._run_in_progress = False
         self.run_done_signal.emit()
         return {"ok": True}
 
@@ -319,6 +378,25 @@ class LiveODServer(QThread, WaxxServer):
         print("[LiveODServer] RESET requested by remote viewer.")
         self._reset_requested = True
         self.reset_signal.emit()
+        return {"ok": True}
+
+    def _handle_camera_control(self, msg: dict) -> dict:
+        camera_key = str(msg.get("camera_key", ""))
+        action = str(msg.get("action", "toggle"))
+        if action not in ("open", "close", "toggle"):
+            return {"ok": False, "error": f"Unknown camera action: {action}"}
+        if not camera_key:
+            return {"ok": False, "error": "Missing camera_key"}
+        # Refuse camera open/close/toggle during an active run.  Closing a
+        # camera being driven by a CameraBaby crashes the grab loop
+        # (dishonorable_death); opening any camera blocks the GUI thread
+        # (Andor cooler init can take several seconds) and stalls all queued
+        # SHOT_COMPLETE / RESET signals.
+        if self._run_in_progress:
+            print(f"[LiveODServer] CAMERA_CONTROL rejected ({camera_key} -> {action}): run in progress")
+            return {"ok": False, "error": "Camera control rejected: run in progress"}
+        print(f"[LiveODServer] CAMERA_CONTROL: {camera_key} -> {action}")
+        self.camera_control_signal.emit(camera_key, action)
         return {"ok": True}
 
     def _handle_abort_run(self, msg: dict) -> dict:
@@ -341,3 +419,45 @@ class LiveODServer(QThread, WaxxServer):
     def _handle_poll(self, msg: dict) -> dict:
         """Lightweight poll — lets the experiment check for a pending reset."""
         return {"ok": True, "reset_requested": self._reset_requested}
+
+    def _handle_subscribe_scalars(self, msg: dict) -> dict:
+        """Remote viewer subscribes to scalar compute tier."""
+        tier = str(msg.get('tier', 'atom_number'))
+        if tier not in ('atom_number', 'fits'):
+            return {"ok": False, "error": f"Unknown tier: {tier}"}
+        with self._scalar_lock:
+            self._scalar_subscriber_count[tier] = self._scalar_subscriber_count.get(tier, 0) + 1
+        return {"ok": True}
+
+    def _handle_unsubscribe_scalars(self, msg: dict) -> dict:
+        """Remote viewer unsubscribes from scalar compute tier."""
+        tier = str(msg.get('tier', 'atom_number'))
+        with self._scalar_lock:
+            count = self._scalar_subscriber_count.get(tier, 0)
+            self._scalar_subscriber_count[tier] = max(0, count - 1)
+        return {"ok": True}
+
+    def get_requested_metrics(self) -> set:
+        """Return set of tiers currently requested by any subscriber.
+
+        Called from the Analyzer thread — reads under lock for safety.
+        """
+        with self._scalar_lock:
+            return {
+                tier
+                for tier, count in self._scalar_subscriber_count.items()
+                if count > 0
+            }
+
+    def register_scalar_subscription(self, tier: str):
+        """In-process subscription (local scalar plot window)."""
+        if tier not in ('atom_number', 'fits'):
+            return
+        with self._scalar_lock:
+            self._scalar_subscriber_count[tier] = self._scalar_subscriber_count.get(tier, 0) + 1
+
+    def unregister_scalar_subscription(self, tier: str):
+        """In-process unsubscription (local scalar plot window)."""
+        with self._scalar_lock:
+            count = self._scalar_subscriber_count.get(tier, 0)
+            self._scalar_subscriber_count[tier] = max(0, count - 1)

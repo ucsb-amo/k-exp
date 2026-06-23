@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from artiq.experiment import *
 from artiq.experiment import delay_mu, delay
@@ -181,14 +182,14 @@ class Devices():
 
         self.siglent = siglent_frame(self.core)
 
-        self._fzw = fzw_frame()
+        self._fzw = fzw_frame(params=self.params)
 
         self.ry_405 = FixedRyDDSBeamPID(
                             dds_sw=self.dds.ry_405_sw,
                             dac_pid=self.dac.ry_405_intensity_control,
                             ttl_shutter=self.ttl.ry_405_shutter,
                             wavemeter=self._fzw.ry_405,
-                            lock_data_container=self.data.lock_status_405,
+                            lock_data_container=self.data.frequency_wavemeter_405,
                             core=self.core
                             )
         
@@ -198,7 +199,7 @@ class Devices():
             dac_pid=self.dac.ry_980_intensity_control,
             eo_sideband_order=-1,
             wavemeter=self._fzw.ry_980,
-            lock_data_container=self.data.lock_status_980,
+            lock_data_container=self.data.frequency_wavemeter_980,
             core=self.core
             )
         
@@ -283,7 +284,6 @@ class Devices():
             dds._store_io_update_delay()
             delay(10.e-6)
             
-        
     @kernel
     def init_all_cpld(self):
         for ddss in self.dds.dds_array:

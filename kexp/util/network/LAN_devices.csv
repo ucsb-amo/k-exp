@@ -19,7 +19,7 @@
 "LAN","Lightsheet FM function generator (SDG6022X)","","192.168.1.92",,
 "LAN","reserved (krool ethernet for connection to test crate)","","192.168.1.93",,
 "LAN","Moglabs Wavemeter","","192.168.1.94",,
-"LAN","tiny","","192.168.1.95",,
+"LAN","tiny","00-24-9B-11-D7-1B","192.168.1.95",,
 "LAN","multimeter","","192.168.1.96",,
 "LAN","Ry fiber EO function generator (SSG3021X)","","192.168.1.97",,
 "LAN","SRS shutter driver 0","","192.168.1.100",,

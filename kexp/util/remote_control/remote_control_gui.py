@@ -559,68 +559,78 @@ class RemoteControlGUI(QMainWindow):
         main_layout.setContentsMargins(4, 4, 4, 4)
         main_layout.setSpacing(4)
 
-        # ---- top bar ----
+        # ---- top bar: poll status + server conn badges + whitelist ----
         top = QHBoxLayout()
         top.setContentsMargins(0, 0, 0, 0)
-        top.setSpacing(4)
+        top.setSpacing(6)
         self._poll_dot = PollDot()
         top.addWidget(self._poll_dot)
-        top.addStretch()
+
+        self._als_btn = ServerStatusButton(
+            "ALS", self._controller, "als_client",
+            client_factory=ALSGuiClient, poll_interval_ms=3000,
+        )
+        top.addWidget(self._als_btn)
+
+        self._preci_btn = ServerStatusButton(
+            "Precilaser", self._controller, "precilaser_client",
+            client_factory=PrecilaserGuiClient, poll_interval_ms=3000,
+        )
+        top.addWidget(self._preci_btn)
+
+        top.addStretch(1)
 
         whitelist_btn = QPushButton("Edit Whitelist…")
         whitelist_btn.clicked.connect(self._open_whitelist_editor)
         top.addWidget(whitelist_btn)
         main_layout.addLayout(top)
 
-        # ---- server connection status ----
-        server_group = QGroupBox("Server Connection")
-        server_layout = QHBoxLayout(server_group)
-        server_layout.setContentsMargins(4, 4, 4, 4)
-        server_layout.setSpacing(4)
-
-        self._als_btn = ServerStatusButton(
-            "ALS", self._controller, "als_client",
-            client_factory=ALSGuiClient, poll_interval_ms=3000,
-        )
-        server_layout.addWidget(self._als_btn)
-
-        self._preci_btn = ServerStatusButton(
-            "Precilaser", self._controller, "precilaser_client",
-            client_factory=PrecilaserGuiClient, poll_interval_ms=3000,
-        )
-        server_layout.addWidget(self._preci_btn)
-
-        main_layout.addWidget(server_group)
-
-        # ---- all on / all off buttons ----
-        cmd_widget = QWidget()
-        cmd_layout = QHBoxLayout(cmd_widget)
-        cmd_layout.setContentsMargins(4, 0, 4, 0)
+        # ---- All ON / All OFF in a single groupbox row ----
+        cmd_group = QGroupBox("Commands")
+        cmd_layout = QHBoxLayout(cmd_group)
+        cmd_layout.setContentsMargins(6, 4, 6, 4)
         cmd_layout.setSpacing(4)
 
         all_on_btn = QPushButton("All ON")
-        all_on_btn.setStyleSheet("background-color: #888; color: white; font-weight: bold; border-radius: 4px; padding: 2px 6px;")
+        all_on_btn.setStyleSheet(
+            "background-color: #888; color: white; font-weight: bold;"
+            " border-radius: 4px; padding: 2px 6px;"
+        )
         all_on_btn.clicked.connect(self._all_on)
         cmd_layout.addWidget(all_on_btn)
 
         all_off_btn = QPushButton("All OFF")
-        all_off_btn.setStyleSheet("background-color: #888; color: white; font-weight: bold; border-radius: 4px; padding: 2px 6px;")
+        all_off_btn.setStyleSheet(
+            "background-color: #888; color: white; font-weight: bold;"
+            " border-radius: 4px; padding: 2px 6px;"
+        )
         all_off_btn.clicked.connect(self._all_off)
         cmd_layout.addWidget(all_off_btn)
 
-        main_layout.addWidget(cmd_widget)
+        main_layout.addWidget(cmd_group)
 
-        # ---- log window ----
-        log_group = QGroupBox("Log")
-        log_layout = QVBoxLayout(log_group)
-        log_layout.setContentsMargins(4, 4, 4, 4)
-        log_layout.setSpacing(2)
-        self._log_view = QPlainTextEdit()
-        self._log_view.setReadOnly(True)
-        self._log_view.setFont(QFont("Courier New", 9))
-        self._log_view.setMaximumBlockCount(2000)
-        log_layout.addWidget(self._log_view)
-        main_layout.addWidget(log_group)
+        # ---- log window (collapsed by default) ----
+        try:
+            from waxx.util.dashboard.widgets import CollapsibleGroupBox  # noqa: PLC0415
+            log_group = CollapsibleGroupBox("Log", expanded=True)
+            self._log_view = QPlainTextEdit()
+            self._log_view.setReadOnly(True)
+            self._log_view.setFont(QFont("Courier New", 9))
+            self._log_view.setMaximumBlockCount(2000)
+            log_group.addWidget(self._log_view)
+            main_layout.addWidget(log_group, 1)
+        except Exception:
+            # Fallback to a plain GroupBox if waxx isn't importable here.
+            log_group = QGroupBox("Log")
+            log_layout = QVBoxLayout(log_group)
+            log_layout.setContentsMargins(4, 4, 4, 4)
+            log_layout.setSpacing(2)
+            self._log_view = QPlainTextEdit()
+            self._log_view.setReadOnly(True)
+            self._log_view.setFont(QFont("Courier New", 9))
+            self._log_view.setMaximumBlockCount(2000)
+            log_layout.addWidget(self._log_view)
+            main_layout.addWidget(log_group, 1)
 
     # --- Logging setup ---
 

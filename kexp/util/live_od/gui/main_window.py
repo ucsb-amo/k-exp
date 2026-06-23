@@ -16,6 +16,7 @@ from kexp.util.live_od.gui.analyzer import Analyzer
 from kexp.util.live_od.gui.plotter import LiveODPlotter
 from kexp.util.live_od.live_od_server import LiveODServer
 from kexp.util.live_od.live_od_broadcaster import LiveODBroadcaster
+from kexp.util.live_od.gui.live_scalar_plot_window import LiveScalarPlotWindow
 
 class LiveODWindow(QWidget):
     interrupt = pyqtSignal()
@@ -51,9 +52,16 @@ class LiveODWindow(QWidget):
         )
         self.live_od_server.new_run_signal.connect(self.spawn_baby)
         self.live_od_server.shot_progress_signal.connect(self.on_shot_progress)
+        self.live_od_server.shot_progress_signal.connect(
+            lambda _idx, _total, xvars: self.analyzer.set_xvar_values(xvars)
+        )
         self.live_od_server.run_done_signal.connect(self.on_run_done)
         self.live_od_server.reset_signal.connect(self.reset)
+        self.live_od_server.camera_control_signal.connect(self.on_remote_camera_control)
         self.live_od_server.start()
+
+        # Give the Analyzer a reference to the server for subscription queries
+        self.analyzer.set_server(self.live_od_server)
 
         # ZMQ PUB broadcaster — forwards OD images and run events to remote viewers.
         self.broadcaster = LiveODBroadcaster()
@@ -62,6 +70,57 @@ class LiveODWindow(QWidget):
         self.live_od_server.shot_progress_signal.connect(self.broadcaster.broadcast_shot_progress)
         self.live_od_server.run_done_signal.connect(self.broadcaster.broadcast_run_done)
         self.analyzer.broadcast_signal.connect(self.broadcaster.broadcast_od_image)
+        self.analyzer.shot_scalars_signal.connect(self.live_scalar_plot_window.on_shot_scalars)
+        self.analyzer.shot_scalars_signal.connect(self.broadcaster.broadcast_shot_scalars)
+        self.live_scalar_plot_window.subscription_changed_signal.connect(
+            self._on_scalar_subscription_changed
+        )
+
+        # Broadcast camera-button state changes so remote viewers can mirror
+        # the open/closed/grabbing UI.
+        for btn in self.camera_conn_bar.buttons:
+            btn.state_changed.connect(self._broadcast_camera_states)
+        # Periodic re-broadcast so late-joining remote viewers learn current
+        # state without needing to click anything.
+        self._camera_state_timer = QTimer(self)
+        self._camera_state_timer.timeout.connect(self._broadcast_camera_states)
+        self._camera_state_timer.start(2000)
+        # Initial broadcast (will reach any already-subscribed viewers).
+        QTimer.singleShot(500, self._broadcast_camera_states)
+
+    def _broadcast_camera_states(self, *_):
+        try:
+            self.broadcaster.broadcast_camera_state(
+                self.camera_conn_bar.get_states())
+        except Exception as e:
+            print(f"[LiveODWindow] camera-state broadcast error: {e}")
+
+    def on_remote_camera_control(self, camera_key: str, action: str):
+        """Slot for ``LiveODServer.camera_control_signal``.
+
+        Routes the request to the matching ``CameraButton`` on the local
+        ``CamConnBar``.  Runs on the GUI thread (PyQt widget state is not
+        thread-safe), but the server already refuses CAMERA_CONTROL while a
+        run is in progress, so any blocking driver call here cannot stall
+        SHOT_COMPLETE / RESET signals during acquisition.
+        """
+        btn = self.camera_conn_bar.get_button(camera_key)
+        if btn is None:
+            self.msg(f"Remote camera control: unknown camera {camera_key!r}")
+            return
+        try:
+            if action == 'open':
+                if not btn.camera.is_opened():
+                    btn.open_camera()
+            elif action == 'close':
+                if btn.camera.is_opened():
+                    btn.close_camera()
+            else:  # toggle
+                btn.button_pressed()
+        except Exception as e:
+            self.msg(f"Remote camera control error ({camera_key}/{action}): {e}")
+        finally:
+            self._broadcast_camera_states()
 
     def update_run_id_label(self):
         try:
@@ -83,6 +142,10 @@ class LiveODWindow(QWidget):
         self.analyzer = Analyzer(self.plotting_queue, self.viewer_window)
         self.plotter = LiveODPlotter(self.viewer_window, self.plotting_queue)
         self.plotter.start()
+
+        # Scalar plot window — created once, shown on demand via Live Plot button
+        self.live_scalar_plot_window = LiveScalarPlotWindow()
+        self.viewer_window.live_plot_requested.connect(self._open_live_scalar_plot)
 
     def setup_screenshot_button(self):
         pass  # removed
@@ -129,6 +192,18 @@ class LiveODWindow(QWidget):
     
     # Slot to copy screenshot removed.
 
+    def _open_live_scalar_plot(self):
+        """Show the live scalar plot window, creating it if needed."""
+        self.live_scalar_plot_window.show()
+        self.live_scalar_plot_window.raise_()
+
+    def _on_scalar_subscription_changed(self, old_tier, new_tier):
+        """Update the server's subscription counters when the plot window changes metric or visibility."""
+        if old_tier is not None:
+            self.live_od_server.unregister_scalar_subscription(old_tier)
+        if new_tier is not None:
+            self.live_od_server.register_scalar_subscription(new_tier)
+
     def create_camera_baby(self, file, name):
         """Legacy stub — use spawn_baby via LiveODServer.new_run_signal."""
         self.spawn_baby(filepath=file, camera_key="",
@@ -153,6 +228,12 @@ class LiveODWindow(QWidget):
         self._run_was_reset = False
 
         self._run_active = True
+
+        # Propagate run metadata to Analyzer and scalar plot window
+        self.analyzer.set_camera_params(camera_params or {})
+        self.analyzer.reset()
+        xvarnames = list(run_info_payload.get('xvarnames', [])) if run_info_payload else []
+        self.live_scalar_plot_window.on_new_run(self.live_od_server._current_run_id, xvarnames)
 
         # Interrupt any DataHandler left over from the previous run.
         # On long runs the DataHandler thread can still be draining the shared
@@ -229,6 +310,14 @@ class LiveODWindow(QWidget):
             self.live_od_server.on_data_handler_done,
             Qt.ConnectionType.DirectConnection,
         )
+        # For Basler cameras: notify the server when this baby's grab loop has
+        # fully exited so that WAIT_CAM_READY for the next run is not released
+        # prematurely (while the old RetrieveResult() call is still blocking).
+        if "basler" in camera_key:
+            self.the_baby.done_signal.connect(
+                self.live_od_server.on_basler_baby_done,
+                Qt.ConnectionType.DirectConnection,
+            )
 
         # Clear the nanny's interrupt flag before starting the new baby.
         # Without this, if spawn_baby fires during reset()'s processEvents() loop
@@ -253,10 +342,8 @@ class LiveODWindow(QWidget):
         # Camera runs emit their own honorable_death_signal message.
         self.the_baby = None
         self.data_handler = None
-        # For no-camera resets, reset() already called update_run_id(); skip
-        # it here to avoid double-incrementing the run ID.
-        if not self._run_was_reset:
-            self.server_talk.update_run_id()
+        # run_id is claimed + incremented atomically at INIT_RUN
+        # (server_talk.claim_run_id), so there is nothing to increment here.
         self._run_was_reset = False
 
     def on_shot_progress(self, shot_idx: int, N_total: int, xvar_values: object):
@@ -370,13 +457,16 @@ class LiveODWindow(QWidget):
             if getattr(self, '_run_active', False):
                 # A no-camera run (setup_camera=False) is in progress.
                 # The ZMQ poll mechanism will abort it at the next shot boundary.
+                # The run_id was already claimed + incremented at INIT_RUN, so
+                # do not increment again here.
                 name = getattr(self, '_run_name', '?')
                 msg = f'Run reset. {name} has died dishonorably.'
                 self._run_active = False
                 self._run_was_reset = True
             else:
+                # No run was ever started for this id -> manually skip it.
                 msg = 'No active run. Incrementing Run ID.'
-            self.server_talk.update_run_id()
+                self.server_talk.update_run_id()
             self.msg(msg)
 
         if self.the_baby is not None:

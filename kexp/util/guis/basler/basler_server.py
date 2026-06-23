@@ -123,7 +123,14 @@ class _CameraRow(QFrame):
 
     def _toggle(self) -> None:
         self._btn.setEnabled(False)
-        target = self.mc.close if self.mc.is_open else self.mc.open
+        # Operator-driven close is a deliberate override: force=True so
+        # the device is reclaimed even if remote clients are still
+        # attached.  Open uses a fixed operator id so multiple operator
+        # clicks don't accumulate ref-counts.
+        if self.mc.is_open:
+            target = lambda: self.mc.close("_server_gui", force=True)
+        else:
+            target = lambda: self.mc.open("_server_gui")
         threading.Thread(target=self._run_toggle, args=(target,), daemon=True).start()
 
     def _run_toggle(self, fn) -> None:

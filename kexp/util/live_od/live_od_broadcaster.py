@@ -25,6 +25,7 @@ import numpy as np
 import zmq
 from PyQt6.QtCore import QThread
 from waxx.util.comms_server.waxx_server import WaxxServer
+from waxx.util.comms_server.hardware_id import scoped_server_id
 
 
 # Heartbeat interval (s) — sent when the broadcaster queue is idle so that
@@ -50,7 +51,7 @@ class LiveODBroadcaster(QThread, WaxxServer):
 
     def __init__(self):
         super().__init__()  # QThread.__init__
-        WaxxServer.__init__(self, "live_od_broadcast", 0)  # port updated in run()
+        WaxxServer.__init__(self, scoped_server_id("live_od_broadcast"), 0)  # port updated in run()
         self._queue: queue.Queue = queue.Queue()
         self._running = False
 
@@ -112,8 +113,12 @@ class LiveODBroadcaster(QThread, WaxxServer):
     # Public broadcast methods — safe to call from any thread / Qt slot
     # ------------------------------------------------------------------
 
-    def broadcast_run_started(self, run_id: int):
-        self._enqueue({'tag': 'RUN_STARTED', 'run_id': int(run_id)})
+    def broadcast_run_started(self, run_id: int, xvarnames: object = None):
+        self._enqueue({
+            'tag': 'RUN_STARTED',
+            'run_id': int(run_id),
+            'xvarnames': list(xvarnames) if xvarnames else [],
+        })
 
     def broadcast_shot_progress(self, shot_idx: int, N_total: int,
                                  xvar_values: object):
@@ -149,5 +154,24 @@ class LiveODBroadcaster(QThread, WaxxServer):
     def broadcast_run_done(self):
         self._enqueue({'tag': 'RUN_DONE'})
 
+    def broadcast_shot_scalars(self, scalars: dict):
+        """Broadcast per-shot scalar quantities to remote viewers.
+
+        ``scalars`` is the dict emitted by ``Analyzer.shot_scalars_signal``.
+        NaN values are kept as-is (receivers should handle them gracefully).
+        """
+        self._enqueue({'tag': 'SHOT_SCALARS', **scalars})
+
     def broadcast_log_msg(self, text: str):
         self._enqueue({'tag': 'LOG_MSG', 'text': str(text)})
+
+    def broadcast_camera_state(self, states: dict):
+        """Broadcast the current state of every camera button.
+
+        ``states`` is a dict mapping camera_key -> one of
+        ``'open' | 'closed' | 'loading' | 'failed' | 'grabbing'``.
+        """
+        self._enqueue({
+            'tag': 'CAMERA_STATE',
+            'states': {str(k): str(v) for k, v in states.items()},
+        })

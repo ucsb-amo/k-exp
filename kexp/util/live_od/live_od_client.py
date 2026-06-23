@@ -19,13 +19,14 @@ import pickle
 import zmq
 
 from waxx.util.comms_server.waxx_client import WaxxClient
+from waxx.util.comms_server.hardware_id import resolve_scoped_server_id
 
 
 class LiveODClient(WaxxClient):
     """REQ socket client for LiveODServer."""
 
     def __init__(self, timeout_ms: int = 5000, discovery_timeout: float = 10.0):
-        super().__init__("live_od", discovery_timeout=discovery_timeout)
+        super().__init__(resolve_scoped_server_id("live_od"), discovery_timeout=discovery_timeout)
         self._ip = self.host
         self._port = self.port
         self._timeout_ms = timeout_ms

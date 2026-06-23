@@ -16,10 +16,10 @@ class mag_trap(EnvExperiment, Base):
                       save_data=True)
 
         self.p.t_tof = 8000.e-6
-        self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
+        # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
-        # self.xvar('dumy',[0]*500)
-        # self.xvar('dumy',np.linspace(1.,800.,800))
+        # self.xvar('dumy',np.linspace(1.,1000.,1000))
+        self.xvar('dumy',np.linspace(1.,300.,300))
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
         # self.p.t_pump_to_F1 = 50.e-6
@@ -44,8 +44,8 @@ class mag_trap(EnvExperiment, Base):
         
         # self.xvar('detune_d2_c_mot',np.linspace(-5.,0.,8))
         # self.xvar('detune_d2_r_mot',np.linspace(-6.,-1.,8))
-        self.p.detune_d2_r_mot = -3.8
-        self.p.detune_d2_c_mot = -2.5
+        # self.p.detune_d2_r_mot = -3.8
+        # self.p.detune_d2_c_mot = -2.5
         
         # self.xvar('i_mot',np.linspace(10.,35.,20))
         # self.p.i_mot = 20.
@@ -106,7 +106,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_magtrap_hold',np.linspace(1.,80.,8)*1.e-3)
         self.p.t_magtrap_hold = .15
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         self.p.t_mot_load = .5
 
         # self.xvar('amp_imaging',np.linspace(.05,1.75,15))
@@ -116,7 +116,7 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 50.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):

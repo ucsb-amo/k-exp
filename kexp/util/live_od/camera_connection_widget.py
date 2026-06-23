@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QLabel, QWidget, QVBoxLayout, QHBoxLayout,
                               QPushButton, QPlainTextEdit, QComboBox)
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, pyqtSignal
 import os
 import pandas as pd
 
@@ -33,6 +33,18 @@ class CamConnBar(QWidget):
         self.andor = CameraButton(cameras.andor,
                                   self.cn,self.output_window,
                                   open_camera_on_start=False)
+        self.buttons = [self.xy_basler_button, self.basler_2dmot_button,
+                        self.x_basler_button, self.z_basler_button,
+                        self.andor]
+
+    def get_button(self, camera_key: str):
+        for btn in self.buttons:
+            if btn.camera_name == camera_key:
+                return btn
+        return None
+
+    def get_states(self) -> dict:
+        return {btn.camera_name: btn.state for btn in self.buttons}
 
     def setup_layout(self):
         self.layout = QVBoxLayout()
@@ -48,6 +60,8 @@ class CamConnBar(QWidget):
         self.setLayout(self.layout)
 
 class CameraButton(QPushButton):
+    state_changed = pyqtSignal(str, str)   # camera_name, state
+
     def __init__(self,camera_params:CameraParams,
                  camera_nanny:CameraNanny,
                  output_window:QPlainTextEdit,
@@ -58,7 +72,9 @@ class CameraButton(QPushButton):
         self.cn = camera_nanny
         self.camera = DummyCamera()
         self.output_window = output_window
-        
+        self.state = 'closed'
+        self._set_color_closed()
+
         self.setText(self.camera_name)
         if open_camera_on_start:
             self.open_camera()
@@ -78,9 +94,25 @@ class CameraButton(QPushButton):
             self.open_camera()
     
     def close_camera(self):
-        if self.camera.is_opened():
-            self._set_color_closed()
-            self.camera.close()
+        if not self.camera.is_opened():
+            return
+        # Use Close() (capital) — both BaslerUSB and AndorEMCCD define a
+        # symmetric Open/Close pair.  AndorEMCCD.Close() closes the shutter
+        # before the underlying SDK close; the lowercase close() inherited
+        # from pylablib does not, which left the andor in a half-open state
+        # and required a second button press to fully release the device.
+        # Only swap to DummyCamera (and flip the button to gray) if the
+        # close actually succeeded; otherwise leave the live handle in place
+        # so the button still reports the real device state on the next
+        # check_new_camera() pass.
+        try:
+            self.camera.Close()
+        except Exception as e:
+            self.msg(f'Error closing {self.camera_name}: {e}')
+            self._set_color_failed()
+            return
+        self._set_color_closed()
+        self.camera = DummyCamera()
 
     def open_camera(self):
         self._set_color_loading()
@@ -101,20 +133,29 @@ class CameraButton(QPushButton):
         else:
             self._set_color_success()
 
+    def _set_state(self, state: str, color: str):
+        self.setStyleSheet(f"background-color: {color}")
+        if state != self.state:
+            self.state = state
+            try:
+                self.state_changed.emit(self.camera_name, state)
+            except Exception:
+                pass
+
     def _set_color_loading(self):
-        self.setStyleSheet("background-color: orchid")
+        self._set_state('loading', 'orchid')
 
     def _set_color_failed(self):
-        self.setStyleSheet("background-color: red")
+        self._set_state('failed', 'red')
 
     def _set_color_success(self):
-        self.setStyleSheet("background-color: green")
+        self._set_state('open', 'green')
 
     def _set_color_grabbing(self):
-        self.setStyleSheet("background-color: blue")
+        self._set_state('grabbing', 'blue')
 
     def _set_color_closed(self):
-        self.setStyleSheet("background-color: gray")
+        self._set_state('closed', 'gray')
 
 class ROISelector(QWidget):
     def __init__(self, server_talk=None):

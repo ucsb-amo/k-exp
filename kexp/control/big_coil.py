@@ -211,7 +211,7 @@ class igbt_magnet():
 
         if i_pid == dv:
             i_pid = self.i_supply
-
+        
         t_ramp = 50.e-3
         n_steps = 50
 

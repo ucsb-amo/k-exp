@@ -8,9 +8,8 @@ class turn_on_imaging(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
                       imaging_type=img_types.ABSORPTION,
-                      setup_camera=False)
-        
-        self.configure_imaging_system(img_config.SWITCH)
+                      setup_camera=True,
+                      suppress_live_od=True)
 
         # in case you want to use this to do triggering
         self.ttl.camera = self.ttl.basler
@@ -30,7 +29,7 @@ class turn_on_imaging(EnvExperiment, Base):
         self.set_imaging_shutters()
         
         frequency_detuned = 0.e6
-        amp_imaging = 0.54
+        amp_imaging = 0.5
         # v_pd = self.camera_params.amp_imaging
 
         # after running experiment, control power with DDS amplitude

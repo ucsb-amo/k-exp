@@ -22,19 +22,20 @@ class feedback(EnvExperiment, Base, Feedback):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
                       expt_params=self.p)
-        # self.p.update_raman_frequency_bool = 1
+        
+        self.p.update_raman_frequency_bool = 1
         self.p.include_photon_noise = 1
         
         ### parameters
 
         self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(-5,5,11))
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(-3,5,7))
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 5
 
-        self.p.feedback_guess_span_Omega = 10.0
+        self.p.feedback_guess_span_Omega = 6.0
 
-        self.p.feedback_fractional_grid_center_offset = 3.5
+        # self.p.feedback_fractional_grid_center_offset = 1.
 
         ###
 
@@ -61,8 +62,10 @@ class feedback(EnvExperiment, Base, Feedback):
         self.data.t = self.data.add_data_container(self.p.N_pulses)
 
         Feedback.__init__(self)
-        
-        self.zidx = self.p.feedback_resonance_grid_index
+
+        self.zidx = np.argmin(np.abs(self.p.omega_guess_list - (2.0 * np.pi * float(self.p.frequency_raman_transition))))
+
+        # self.zidx = self.p.feedback_grid_size//2 
 
         ###
 
@@ -80,7 +83,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
     @kernel
     def feedback_loop(self, t_start_mu,
-                       update_raman_frequency=1,
+                       update_raman_frequency=0,
                        update_rabi_frequency=0,
                        include_photon_noise=1):
         
@@ -96,42 +99,43 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(t_start_mu - (10000 & ~7))
 
         self.raman.set_frequency_fast(f)
-        # self.raman.reset_phase()
         self.raman.stage_ffua()
         # aprint(self.raman.get_phase())
         # self._phase = 0
         phase_tracker = 0.
+        
+        dT = self.p.t_between_pulses_mu
 
         at_mu(t_start_mu)
 
-        tP = self.p.t_between_pulses_mu
-        dt = self.p.delta_t_mu
-        tR = self.p.t_raman_set_pretrigger_mu
-        
         for i in range(self.p.N_pulses):
 
             f = self.omega_raman / (2*np.pi)
             self.data.omega_raman.shot_data[i] = self.omega_raman
 
             at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
-            self.raman.set_frequency_fast(f)
+            self.raman.set_frequency_fast(f, do_io_update=False)
 
             t = (t_step - t_start_mu)*1.e-9
             at_mu(t_step)
 
-            phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
+            phase_tracker = self.raman.io_update_and_phase_update(t_pulse_mu = t_step,
+                                                                t_last_update_mu = t_step - dT,
+                                                                t_io_update_delay_mu=self.p.delta_t_mu)
+
+            # phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
 
             self.raman.pulse(self.p.t_raman_pulse)
             
             k = self.measurement(i)
-            omega_prev = self.omega_raman
+            # omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
                                                     phase_raman_pulse_start=phase_tracker,
                                                     update_raman_frequency=update_raman_frequency,
                                                     update_rabi_frequency=update_rabi_frequency,
                                                     include_photon_noise=include_photon_noise)
 
-            t_step += self.p.t_between_pulses_mu
+            t_step += dT
 
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
@@ -143,8 +147,10 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.integrator.init()
 
+        # self._set_frequency_grid()
+
         self.initialize_feedback()
-        self.reset_initial_omega_from_params()
+        self.omega_raman = self.reset_initial_omega_from_params()
         delay(10.e-3)
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
@@ -168,8 +174,9 @@ class feedback(EnvExperiment, Base, Feedback):
 
         delay(self.p.t_tweezer_hold)
         self.raman.clean_up_fast_frequency_update()
+        self.ttl.raman_shutter.off()
 
-        # self.tweezer.off()
+        self.tweezer.off()
         delay(self.p.t_tof)
         self.abs_image()
 

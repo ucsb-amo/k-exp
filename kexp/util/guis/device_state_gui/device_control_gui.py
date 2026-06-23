@@ -3,7 +3,6 @@ from PyQt6.QtWidgets import QApplication
 
 from waxx.util.guis.device_control_gui import DeviceStateGUI
 
-from kexp.config.ip import MONITOR_STATE_FILEPATH, server_talk
 from kexp.config.dds_id import dds_frame, dac_frame
 
 def main():
@@ -18,9 +17,7 @@ def main():
     dac = dac_frame()
     dds = dds_frame(dac_frame_obj=dac)
     # Create and show main window
-    window = DeviceStateGUI(device_state_json_path=MONITOR_STATE_FILEPATH,
-                            server_talk=server_talk,
-                            dds_frame=dds,
+    window = DeviceStateGUI(dds_frame=dds,
                             dac_frame=dac)
     window.show()
     

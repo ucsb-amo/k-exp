@@ -28,15 +28,15 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 11
         self.p.N_pulses = 12 # number of steps of evolution
         
         ### parameters
 
-        # self.xvar('pulse_list_span_Omega', np.linspace(0, 4, 10))
-        self.p.pulse_list_span_Omega = 2.
-        # self.xvar('pulse_list_seed', np.linspace(1, 10000, 5, dtype=np.int32))
-        self.p.pulse_list_seed = 5342
+        # self.xvar('pulse_list_span_Omega', np.linspace(0, 3, 3))
+        self.p.pulse_list_span_Omega = 4.
+        self.xvar('pulse_list_seed', np.linspace(1056, 15432, 5, dtype=np.int32))
+        self.p.pulse_list_seed = 1056
 
         self.get_new_pulse_list()
         
@@ -68,6 +68,7 @@ class feedback(EnvExperiment, Base, Feedback):
         Feedback.__init__(self)
         
         self.zidx = self.p.feedback_resonance_grid_index
+        # self.zidx = self.p.feedback_grid_size//2
 
         ###
 
@@ -118,11 +119,9 @@ class feedback(EnvExperiment, Base, Feedback):
         # self._phase = 0
         phase_tracker = 0.
 
-        at_mu(t_start_mu)
+        dT = self.p.t_between_pulses_mu
 
-        tP = self.p.t_between_pulses_mu
-        dt = self.p.delta_t_mu
-        tR = self.p.t_raman_set_pretrigger_mu
+        at_mu(t_start_mu)
         
         for i in range(self.p.N_pulses):
             # self.omega_raman = self.p.intermediate_detuning
@@ -134,12 +133,15 @@ class feedback(EnvExperiment, Base, Feedback):
             # self.data.Omega.shot_data[i+1] = var
 
             at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
-            self.raman.set_frequency_fast(f)
+            self.raman.set_frequency_fast(f, do_io_update=False)
 
             t = (t_step - t_start_mu)*1.e-9
-            at_mu(t_step)                                                                                                                           
 
-            phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
+            phase_tracker = self.raman.io_update_and_phase_update(t_pulse_mu = t_step,
+                                                                t_last_update_mu = t_step - dT,
+                                                                t_io_update_delay_mu=self.p.delta_t_mu)
+
+            # phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
             # phi = phase_tracker
 
             self.raman.pulse(self.p.t_raman_pulse)
@@ -152,7 +154,7 @@ class feedback(EnvExperiment, Base, Feedback):
                                                     update_rabi_frequency=update_rabi_frequency,
                                                     include_photon_noise=include_photon_noise)
 
-            t_step += self.p.t_between_pulses_mu
+            t_step += dT
 
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
@@ -167,6 +169,7 @@ class feedback(EnvExperiment, Base, Feedback):
     def scan_kernel(self):
 
         self.core.wait_until_mu(now_mu())
+
         self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
 
         self.core.break_realtime()
