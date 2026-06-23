@@ -31,7 +31,7 @@ class feedback(EnvExperiment, Base, Feedback):
         self.p.feedback_fractional_initial_offset = 2.
         # self.xvar('feedback_fractional_initial_offset', np.linspace(-3,5,7))
         
-        self.p.N_repeats = 10
+        self.p.N_repeats = 5
 
         self.p.feedback_guess_span_Omega = 6.0
 
@@ -99,42 +99,43 @@ class feedback(EnvExperiment, Base, Feedback):
         at_mu(t_start_mu - (10000 & ~7))
 
         self.raman.set_frequency_fast(f)
-        # self.raman.reset_phase()
         self.raman.stage_ffua()
         # aprint(self.raman.get_phase())
         # self._phase = 0
         phase_tracker = 0.
+        
+        dT = self.p.t_between_pulses_mu
 
         at_mu(t_start_mu)
 
-        tP = self.p.t_between_pulses_mu
-        dt = self.p.delta_t_mu
-        tR = self.p.t_raman_set_pretrigger_mu
-        
         for i in range(self.p.N_pulses):
 
             f = self.omega_raman / (2*np.pi)
             self.data.omega_raman.shot_data[i] = self.omega_raman
 
             at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
-            self.raman.set_frequency_fast(f)
+            self.raman.set_frequency_fast(f, do_io_update=False)
 
             t = (t_step - t_start_mu)*1.e-9
             at_mu(t_step)
 
-            phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
+            phase_tracker = self.raman.io_update_and_phase_update(t_pulse_mu = t_step,
+                                                                t_last_update_mu = t_step - dT,
+                                                                t_io_update_delay_mu=self.p.delta_t_mu)
+
+            # phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
 
             self.raman.pulse(self.p.t_raman_pulse)
             
             k = self.measurement(i)
-            omega_prev = self.omega_raman
+            # omega_prev = self.omega_raman
             self.omega_raman, self.Omega = self.generate_posterior(k, t,
                                                     phase_raman_pulse_start=phase_tracker,
                                                     update_raman_frequency=update_raman_frequency,
                                                     update_rabi_frequency=update_rabi_frequency,
                                                     include_photon_noise=include_photon_noise)
 
-            t_step += self.p.t_between_pulses_mu
+            t_step += dT
 
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
