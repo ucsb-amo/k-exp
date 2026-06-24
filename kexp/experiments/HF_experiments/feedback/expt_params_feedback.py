@@ -14,12 +14,20 @@ class ExptParams(expt_params_kexp):
 
         self.feedback_fractional_initial_offset = 0.0
         self.feedback_guess_span_Omega = 8.0
+
         # Threshold for adaptive remesh: if posterior std < threshold * Omega,
         # halve the grid span and re-centre on omega_raman.  0.0 = disabled.
         self.feedback_remesh_threshold_Omega = 0.0
+        self.remesh_interpolate_posterior = 0
+        self.remesh_scale_factor = 0.5
+        self.remesh_threshold_scale_factor = 0.5
+        self.remesh_after_n_good_shots = 1
+        self.remesh_reset_counter_threshold_fraction = 1.5
+        self.n_initial_shots_before_remesh = 2
 
         self.t_raman_pulse = self.t_raman_pi_pulse / 2
         self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
+        # self.t_raman_pulse_ideal = 3.618e-06
         # self.t_raman_pulse_ideal = 4.973e-06
         # self.t_raman_pulse_ideal = 4.661e-06
 
@@ -32,7 +40,7 @@ class ExptParams(expt_params_kexp):
         # img amp 0.2, pulse time 5.0e-06 s
         # self.frequency_lightshift = 3.149e+04
         # self.frequency_lightshift = 28.21e3
-        self.frequency_lightshift = 3.414e+04
+        self.frequency_lightshift = 3.104e+04
 
         # calibration run 69990
         # self.t_img_pulse = 5e-06  # s
@@ -77,11 +85,11 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_up = 131.87
         # self.std_n_photons_down = 45.581
         # self.std_n_photons_per_shot = 88.723 # avg of up/down
-        self.std_n_photons_per_shot = 45.581 # using down std
+        self.std_n_photons_per_shot = 32. # using down std
         self.feedback_measurement_midpoint_fraction = 0.42421
 
         # run 66841 | multi-parameter grid fit result
-        self.back_action_coherence = 0.8471   
+        self.back_action_coherence = 0.8853  
 
         self.feedback_measurement_midpoint_remap_enabled = True
 
@@ -95,10 +103,12 @@ class ExptParams(expt_params_kexp):
         self.t_between_pulses_mu = int64(0)
         self.t_calculation_slack_compensation_mu = int64(0.7 * self.feedback_grid_size * 1.e3) + 15000 if self.feedback_grid_size > 10 else int64(10000)
         self.t_fifo_mu = int64(18416)
-        self.t_raman_set_pretrigger_mu = int64(700) & ~7 # int64(1260)
-
-        self.delta_t_mu = int64(91)
+        self.t_raman_set_pretrigger_mu = int64(800) & ~7 # int64(1260)
         # self.delta_t_mu = int64(2000)
+
+        self.t_ffu_dds_pipeline_latency = int64(79)
+        self.t_io_update_pretrigger_mu = int64(32)
+        self.t_ffu_pipeline_latency_fudge_mu = int64(0)
 
         ### other
         self.pulse_list_span_Omega = 0.

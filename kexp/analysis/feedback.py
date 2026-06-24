@@ -986,7 +986,7 @@ class FeedbackReplayCore(Feedback):
             k_val = float(k_vals[i])
 
             omega_prev = self.omega_raman
-            omega_new, omega_std = self.generate_posterior(
+            omega_new, _, omega_std = self.generate_posterior(
                 k_val,
                 t_in,
                 phase_raman_pulse_start=phase_tracker,

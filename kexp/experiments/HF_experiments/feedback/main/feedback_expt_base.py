@@ -150,12 +150,13 @@ class FeedbackExpt(Base, Feedback):
 
             self.raman.pulse(self.p.t_raman_pulse)
             k = self.measurement(i)
-            self.omega_raman, self.Omega = self.generate_posterior(k, t,
+            self.omega_raman, omega_posterior_mean, self.Omega = self.generate_posterior(k, t,
                                                     phase_raman_pulse_start=phase_tracker,
                                                     update_raman_frequency=update_raman_frequency,
                                                     update_rabi_frequency=update_rabi_frequency,
                                                     include_photon_noise=include_photon_noise)
-            self.maybe_remesh(self._posterior_std)
+            if i > (self.p.n_initial_shots_before_remesh-1):
+                self.maybe_remesh(self._posterior_std, omega_center=omega_posterior_mean)
 
             t_step += dT
 
