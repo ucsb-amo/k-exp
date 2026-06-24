@@ -25,7 +25,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  absorption_image=None,
                  camera_select=cameras.xy_basler,
                  expt_params=None,
-                 suppress_live_od=False):
+                 suppress_live_od=False,
+                 save_on_underflow=False):
 
         if suppress_live_od:
             setup_camera = False
@@ -52,6 +53,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         
         self.ds = DataSaver(*PATHS, server_talk=server_talk)
+
+        self.run_info.save_on_underflow = int(save_on_underflow)
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 
