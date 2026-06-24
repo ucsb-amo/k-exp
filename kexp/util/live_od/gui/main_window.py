@@ -55,6 +55,7 @@ class LiveODWindow(QWidget):
         self.live_od_server.shot_progress_signal.connect(
             lambda _idx, _total, xvars: self.analyzer.set_xvar_values(xvars)
         )
+        self.live_od_server.shot_timing_signal.connect(self.on_shot_timing)
         self.live_od_server.run_done_signal.connect(self.on_run_done)
         self.live_od_server.reset_signal.connect(self.reset)
         self.live_od_server.camera_control_signal.connect(self.on_remote_camera_control)
@@ -134,6 +135,7 @@ class LiveODWindow(QWidget):
 
         self.viewer_window = LiveODViewer()
         self.setup_run_id_label()
+        self.setup_eta_label()
         self.setup_output_window()
         self.setup_fix_button()
         self.camera_conn_bar = CamConnBar(self.camera_nanny, self.output_window)
@@ -149,6 +151,15 @@ class LiveODWindow(QWidget):
 
     def setup_screenshot_button(self):
         pass  # removed
+
+    def setup_eta_label(self):
+        self.eta_label = QLabel("ETA --:--")
+        self.eta_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        font = QFont()
+        font.setPointSize(11)
+        font.setBold(True)
+        self.eta_label.setFont(font)
+        self.eta_label.setStyleSheet("color: #444;")
 
     def setup_fix_button(self):
         self.fix_button = QPushButton('Reset')
@@ -182,7 +193,10 @@ class LiveODWindow(QWidget):
         layout = QVBoxLayout()
         control_bar = QHBoxLayout()
         cam_bar = QVBoxLayout()
-        cam_bar.addWidget(self.run_id_label)
+        run_id_row = QHBoxLayout()
+        run_id_row.addWidget(self.eta_label, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        run_id_row.addWidget(self.run_id_label, 1, Qt.AlignmentFlag.AlignCenter)
+        cam_bar.addLayout(run_id_row)
         cam_bar.addWidget(self.camera_conn_bar)
         control_bar.addLayout(cam_bar)
         control_bar.addWidget(self.fix_button)
@@ -232,6 +246,7 @@ class LiveODWindow(QWidget):
         # Propagate run metadata to Analyzer and scalar plot window
         self.analyzer.set_camera_params(camera_params or {})
         self.analyzer.reset()
+        self.eta_label.setText("ETA --:--")
         xvarnames = list(run_info_payload.get('xvarnames', [])) if run_info_payload else []
         self.live_scalar_plot_window.on_new_run(self.live_od_server._current_run_id, xvarnames)
 
@@ -345,6 +360,11 @@ class LiveODWindow(QWidget):
         # run_id is claimed + incremented atomically at INIT_RUN
         # (server_talk.claim_run_id), so there is nothing to increment here.
         self._run_was_reset = False
+        self.eta_label.setText("ETA --:--")
+
+    def on_shot_timing(self, delta_t: float, eta_str: str):
+        """Update the ETA label."""
+        self.eta_label.setText(f"ETA {eta_str}")
 
     def on_shot_progress(self, shot_idx: int, N_total: int, xvar_values: object):
         """Update the GUI with per-shot progress from the ZMQ server."""

@@ -46,6 +46,7 @@ class LiveODServer(QThread, WaxxServer):
 
     new_run_signal = pyqtSignal(str, str, bool, bool, int, int, int, int, object, object, object)   # filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa_per_shot, camera_params, params_payload, run_info_payload
     shot_progress_signal = pyqtSignal(int, int, object)       # shot_idx, N_total, xvar_values dict
+    shot_timing_signal = pyqtSignal(float, str)               # delta_t_s, eta_str ("HH:MM" or "--:--")
     run_done_signal = pyqtSignal()
     run_started_signal = pyqtSignal(int, object)               # run_id, xvarnames (emitted after INIT_RUN, before new_run_signal)
     reset_signal = pyqtSignal()                               # triggered by remote RESET command
@@ -79,6 +80,8 @@ class LiveODServer(QThread, WaxxServer):
         self._basler_prev_grab_done_event = threading.Event()
         self._basler_prev_grab_done_event.set()  # no previous grab initially
         self._basler_baby_active = False
+        self._init_run_time: float = 0.0  # time.time() recorded at INIT_RUN
+        self._shot_durations: list = []  # rolling list of last 5 shot durations (excluding first shot)
 
     # ------------------------------------------------------------------
     # Public slots (safe to call from any thread)
@@ -280,6 +283,8 @@ class LiveODServer(QThread, WaxxServer):
         self._reset_requested = False
         self._run_in_progress = True
         self._shot_timestamps = []       # reset per-run timestamp list
+        self._init_run_time = time.time()
+        self._shot_durations = []  # reset rolling average for new run
 
         n_img = int(msg.get('params', {}).get('N_img', 1))
         n_shots = int(msg.get('N_shots_with_repeats', 1))
@@ -324,13 +329,41 @@ class LiveODServer(QThread, WaxxServer):
         return {"ok": True, "ready": True}
 
     def _handle_shot_complete(self, msg: dict) -> dict:
-        self._shot_timestamps.append(time.time())
+        now = time.time()
         shot_idx = int(msg.get("shot_idx", 0))
         N_total = int(msg.get("N_shots_total", 1))
         xvar_values = msg.get("xvar_values", {})
+
+        # Delta-t: time since last shot (or since INIT_RUN for the first shot).
+        last_t = self._shot_timestamps[-1] if self._shot_timestamps else self._init_run_time
+        delta_t = now - last_t if last_t > 0.0 else 0.0
+        self._shot_timestamps.append(now)
+
+        # ETA: 5-shot rolling average of inter-shot durations (excluding first shot).
+        # Only show ETA after the second shot (shot_idx >= 1).
+        if shot_idx > 0:  # Second shot onwards
+            self._shot_durations.append(delta_t)
+            if len(self._shot_durations) > 5:
+                self._shot_durations.pop(0)
+            
+            avg_per_shot = sum(self._shot_durations) / len(self._shot_durations)
+            remaining = max(0, N_total - shot_idx - 1)
+            
+            if avg_per_shot > 0.0 and remaining > 0:
+                eta_epoch = now + avg_per_shot * remaining
+                eta_str = time.strftime("%H:%M", time.localtime(eta_epoch))
+            elif remaining == 0:
+                eta_str = time.strftime("%H:%M", time.localtime(now))
+            else:
+                eta_str = "--:--"
+        else:
+            eta_str = "--:--"
+
         self.shot_progress_signal.emit(shot_idx, N_total, xvar_values)
+        self.shot_timing_signal.emit(float(delta_t), str(eta_str))
+
         if not self._current_capture_images:
-            print(f"[LiveODServer] shot {shot_idx + 1}/{N_total}")
+            print(f"[LiveODServer] shot {shot_idx + 1}/{N_total} (Δt={delta_t:.1f}s | ETA {eta_str})")
         # Include reset flag so the experiment can abort at shot boundary
         # even if the POLL-based check misses it.
         return {"ok": True, "reset_requested": self._reset_requested}
