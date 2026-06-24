@@ -21,13 +21,13 @@ class feedback(EnvExperiment, FeedbackExpt):
         
         ### parameters
 
-        # self.p.feedback_fractional_initial_offset = 5.
-        self.xvar('feedback_fractional_initial_offset', np.linspace(-5.9,5.9,5))
+        # self.p.feedback_fractional_initial_offset = 8.
+        self.xvar('feedback_fractional_initial_offset', np.linspace(-1.9,1.9,7))
         
-        self.p.N_repeats = 31
+        self.p.N_repeats = 21
         self.p.N_pulses = 25 # number of steps of evolution
 
-        self.p.feedback_guess_span_Omega = 6.
+        self.p.feedback_guess_span_Omega = 2.
 
         self.finish_prepare()
     
