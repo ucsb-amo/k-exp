@@ -9,7 +9,7 @@ class ExptParams(expt_params_kexp):
         self.update_raman_frequency_bool = 0
         self.include_photon_noise = 1
 
-        self.feedback_grid_size = 21
+        self.feedback_grid_size = 11
         self.N_pulses = 20
 
         self.feedback_fractional_initial_offset = 0.0
@@ -20,7 +20,8 @@ class ExptParams(expt_params_kexp):
 
         self.t_raman_pulse = self.t_raman_pi_pulse / 2
         # self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
-        self.t_raman_pulse_ideal = 4.973e-06
+        # self.t_raman_pulse_ideal = 4.973e-06
+        self.t_raman_pulse_ideal = 4.511e-06
 
         # # calibration run 69942
         # # img amp 0.2, pulse time 5.0e-06 s
@@ -76,7 +77,8 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_up = 105.93
         # self.std_n_photons_down = 32.53
         self.std_n_photons_per_shot = 69.231 # avg of up/down
-        self.feedback_measurement_midpoint_fraction = 0.3831
+        # self.feedback_measurement_midpoint_fraction = 0.3831
+        self.feedback_measurement_midpoint_fraction = 0.4532
 
         # run 66841 | multi-parameter grid fit result
         self.back_action_coherence = 0.8471   
@@ -90,7 +92,7 @@ class ExptParams(expt_params_kexp):
         self.feedback_apd_map_verbose = True
 
         ### timing
-        self.t_calculation_slack_compensation_mu = int64(0.7 * self.feedback_grid_size * 1.e3) + 20000 if self.feedback_grid_size > 10 else int64(10000)
+        self.t_calculation_slack_compensation_mu = int64(0.7 * self.feedback_grid_size * 1.e3) + 12000 if self.feedback_grid_size > 10 else int64(10000)
         self.t_fifo_mu = int64(18416)
         self.t_raman_set_pretrigger_mu = int64(700) & ~7 # int64(1260)
 
