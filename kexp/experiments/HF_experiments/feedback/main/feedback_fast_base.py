@@ -14,7 +14,6 @@ class feedback(EnvExperiment, FeedbackExpt):
 
         FeedbackExpt.__init__(self,
                       save_data=True,
-                      imaging_type=img_types.DISPERSIVE,
                       save_on_underflow=True)
         
         self.p.update_raman_frequency_bool = 1

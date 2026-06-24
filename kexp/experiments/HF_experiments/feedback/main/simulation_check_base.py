@@ -36,29 +36,8 @@ class feedback(EnvExperiment, FeedbackExpt):
         self.finish_prepare()
 
     @kernel
-    def per_scan_kernel_top(self):
-        self.core.wait_until_mu(now_mu())
-        self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
-        self.omega_raman = self.p.omega_pulse_list[0]
-        self.core.break_realtime()
-
-    @kernel
     def per_feedback_loop_top(self, idx):
         self.omega_raman = self.p.omega_pulse_list[idx]
-
-    @rpc
-    def get_new_pulse_list(self, seed=0) -> TArray(TFloat):
-        Omega = np.pi / self.p.t_raman_pi_pulse
-        if seed != 0:
-            np.random.seed(seed)
-        else:
-            np.random.seed()
-        detuning_list = ((np.random.rand(self.p.N_pulses) - 0.5) * 2) # from -1 to 1
-        detuning_list = detuning_list * Omega * self.p.pulse_list_span_Omega
-        detuning_list[0] = 0.
-        self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + detuning_list
-        aprint(self.p.omega_pulse_list.shape)
-        return self.p.omega_pulse_list
     
     @kernel
     def run(self):

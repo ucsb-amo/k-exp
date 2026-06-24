@@ -36,7 +36,6 @@ class Feedback:
         if not hasattr(self, "p"):
             self.p = ExptParams()
 
-        
         self._preallocate_arrays()
         self._initialize_trig_lut(lut_size=lut_size)
         self._initialize_timing()

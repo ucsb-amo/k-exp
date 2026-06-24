@@ -9,7 +9,7 @@ class ExptParams(expt_params_kexp):
         self.update_raman_frequency_bool = 0
         self.include_photon_noise = 1
 
-        self.feedback_grid_size = 21
+        self.feedback_grid_size = 31
         self.N_pulses = 20
 
         self.feedback_fractional_initial_offset = 0.0
@@ -19,9 +19,9 @@ class ExptParams(expt_params_kexp):
         self.feedback_remesh_threshold_Omega = 0.0
 
         self.t_raman_pulse = self.t_raman_pi_pulse / 2
-        # self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
+        self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
         # self.t_raman_pulse_ideal = 4.973e-06
-        self.t_raman_pulse_ideal = 4.661e-06
+        # self.t_raman_pulse_ideal = 4.661e-06
 
         # # calibration run 69942
         # # img amp 0.2, pulse time 5.0e-06 s
@@ -68,18 +68,17 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_per_shot = 152.1# 152.1 # avg of up/down
         # self.feedback_measurement_midpoint_fraction = 0.47789
 
-        # calibration run 70862
+        # calibration run 70959
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.17114
-        self.v_apd_all_down = -0.21856
-        self.n_photons_per_shot = 792.63
-        # self.std_n_photons_up = 105.93
-        # self.std_n_photons_down = 32.53
-        # self.std_n_photons_per_shot = 69.231 # avg of up/down
-        self.std_n_photons_per_shot = 30. # avg of up/down
-        # self.feedback_measurement_midpoint_fraction = 0.3831
-        self.feedback_measurement_midpoint_fraction = 0.4569
+        self.v_apd_all_up = -0.17181
+        self.v_apd_all_down = -0.21521
+        self.n_photons_per_shot = 734.77
+        # self.std_n_photons_up = 131.87
+        # self.std_n_photons_down = 45.581
+        # self.std_n_photons_per_shot = 88.723 # avg of up/down
+        self.std_n_photons_per_shot = 45.581 # using down std
+        self.feedback_measurement_midpoint_fraction = 0.42421
 
         # run 66841 | multi-parameter grid fit result
         self.back_action_coherence = 0.8471   
@@ -93,7 +92,8 @@ class ExptParams(expt_params_kexp):
         self.feedback_apd_map_verbose = True
 
         ### timing
-        self.t_calculation_slack_compensation_mu = int64(0.7 * self.feedback_grid_size * 1.e3) + 10000 if self.feedback_grid_size > 10 else int64(10000)
+        self.t_between_pulses_mu = int64(0)
+        self.t_calculation_slack_compensation_mu = int64(0.7 * self.feedback_grid_size * 1.e3) + 15000 if self.feedback_grid_size > 10 else int64(10000)
         self.t_fifo_mu = int64(18416)
         self.t_raman_set_pretrigger_mu = int64(700) & ~7 # int64(1260)
 
@@ -101,8 +101,10 @@ class ExptParams(expt_params_kexp):
         # self.delta_t_mu = int64(2000)
 
         ### other
+        self.pulse_list_span_Omega = 0.
+        self.pulse_list_seed = 0
         self.phase_offset = 0.0
-
+        
         self.t_tweezer_hold = 30.e-3
 
 

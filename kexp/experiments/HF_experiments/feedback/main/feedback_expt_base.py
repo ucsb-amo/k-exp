@@ -56,12 +56,18 @@ class FeedbackExpt(Base, Feedback):
         
         super().finish_prepare(shuffle=shuffle)
 
+        self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
+
         # self.p.probabilities = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
         # self.omega_raman_mesh = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
 
     @kernel
     def scan_kernel(self):
-        self.per_scan_kernel_top()
+
+        self.core.wait_until_mu(now_mu())
+        self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
+        self.omega_raman = self.p.omega_pulse_list[0]
+        self.core.break_realtime()
 
         self.integrator.init()
 
@@ -192,6 +198,19 @@ class FeedbackExpt(Base, Feedback):
     def per_feedback_loop_end(self, idx):
         '''runs per step of the feedback loop after everything else'''
         pass
+
+    @rpc
+    def get_new_pulse_list(self, seed=0) -> TArray(TFloat):
+        Omega = np.pi / self.p.t_raman_pi_pulse
+        if seed != 0:
+            np.random.seed(seed)
+        else:
+            np.random.seed()
+        detuning_list = ((np.random.rand(self.p.N_pulses) - 0.5) * 2) # from -1 to 1
+        detuning_list = detuning_list * Omega * self.p.pulse_list_span_Omega
+        detuning_list[0] = 0.
+        self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + detuning_list
+        return self.p.omega_pulse_list
 
     @rpc(flags={"async"})
     def store_probabilities_to_host(self, pulse_probabilities, shot_idx, pulse_idx):
