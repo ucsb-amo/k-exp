@@ -1,4 +1,5 @@
 import numpy as np
+from numpy import int64
 from waxx.config.expt_params import ExptParams as ExptParamsWaxx
 from kexp.config.dds_calibration import DDS_VVA_Calibration
 
@@ -433,6 +434,10 @@ class ExptParams(ExptParamsWaxx):
 
         self.frequency_target_405_lock = 741.09120e12
         self.frequency_target_980_lock = 307.45729e12
+
+        self.t_ffu_dds_pipeline_latency = int64(79)
+        self.t_io_update_pretrigger_mu = int64(32)
+        self.t_ffu_pipeline_latency_fudge_mu = int64(0)
 
         self.compute_derived()
 

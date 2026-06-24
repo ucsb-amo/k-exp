@@ -135,6 +135,8 @@ class FeedbackReplayCore(Feedback):
         "feedback_apd_map_a": "feedback_apd_map_a",
         "feedback_apd_map_b": "feedback_apd_map_b",
         "feedback_apd_map_verbose": "feedback_apd_map_verbose",
+        "t_io_update_pretrigger_mu": "t_io_update_pretrigger_mu",
+        "t_ffu_pipeline_latency_fudge_mu": "t_ffu_pipeline_latency_fudge_mu",
     }
 
     def __init__(
@@ -298,12 +300,19 @@ class FeedbackReplayCore(Feedback):
         if kwargs.get("feedback_apd_map_verbose") is not None:
             p.feedback_apd_map_verbose = bool(kwargs["feedback_apd_map_verbose"])
 
+        if kwargs.get("t_io_update_pretrigger_mu") is not None:
+            p.t_io_update_pretrigger_mu = int(kwargs["t_io_update_pretrigger_mu"])
+
+        if kwargs.get("t_ffu_pipeline_latency_fudge_mu") is not None:
+            p.t_ffu_pipeline_latency_fudge_mu = int(kwargs["t_ffu_pipeline_latency_fudge_mu"])
+
     def get_t_between_pulses_mu_frozen(self) -> int:
         """Get the frozen t_between_pulses_mu from when replay was created.
         
-        This value is NOT recalculated when timing parameters (t_raman_pulse, t_img_pulse, delta_t_mu)
-        are modified for scanning. Phase calculations in replay use this frozen value plus the scanned
-        timing parameters to recompute the phase with ideal pulse area accounting.
+        This value is NOT recalculated when timing parameters (t_raman_pulse, t_img_pulse,
+        t_io_update_pretrigger_mu, t_ffu_pipeline_latency_fudge_mu) are modified for scanning.
+        Phase calculations in replay use this frozen value plus the scanned timing parameters
+        to recompute the phase with ideal pulse area accounting.
         """
         return self._frozen_t_between_pulses_mu
 
@@ -418,7 +427,8 @@ class FeedbackReplayCore(Feedback):
 
         return {
             "t_between_pulses_mu": int(t_between),
-            "delta_t_mu": int(getattr(p, "delta_t_mu", 0)),
+            "t_io_update_pretrigger_mu": int(getattr(p, "t_io_update_pretrigger_mu", 0)),
+            "t_ffu_pipeline_latency_fudge_mu": int(getattr(p, "t_ffu_pipeline_latency_fudge_mu", 0)),
             "t_raman_set_pretrigger_mu": int(getattr(p, "t_raman_set_pretrigger_mu", 0)),
             "t_calculation_slack_compensation_mu": int(getattr(p, "t_calculation_slack_compensation_mu", 0)),
             "t_fifo_mu": int(getattr(p, "t_fifo_mu", 1000)),
@@ -565,8 +575,10 @@ class FeedbackReplayCore(Feedback):
         p = self.p
         timing = dict(self._default_timing)
 
-        if hasattr(p, "delta_t_mu"):
-            timing["delta_t_mu"] = int(getattr(p, "delta_t_mu"))
+        if hasattr(p, "t_io_update_pretrigger_mu"):
+            timing["t_io_update_pretrigger_mu"] = int(getattr(p, "t_io_update_pretrigger_mu"))
+        if hasattr(p, "t_ffu_pipeline_latency_fudge_mu"):
+            timing["t_ffu_pipeline_latency_fudge_mu"] = int(getattr(p, "t_ffu_pipeline_latency_fudge_mu"))
         if hasattr(p, "t_between_pulses_mu"):
             timing["t_between_pulses_mu"] = int(getattr(p, "t_between_pulses_mu"))
         if hasattr(p, "t_raman_set_pretrigger_mu"):
@@ -933,7 +945,8 @@ class FeedbackReplayCore(Feedback):
         omega_prev = 0.0
 
         tP_mu = int(timing["t_between_pulses_mu"])
-        dt_mu = int(timing["delta_t_mu"])
+        T_pre_mu = int(timing["t_io_update_pretrigger_mu"])
+        dt_fudge_mu = int(timing["t_ffu_pipeline_latency_fudge_mu"])
         tR_mu = int(timing["t_raman_set_pretrigger_mu"])
         t_s_z_offset = float(timing["dt_eff"]) + float(timing["t_img_pulse"])
 
@@ -962,7 +975,12 @@ class FeedbackReplayCore(Feedback):
 
             self.omega_raman = omega_ctrl
 
-            phase_tracker += ((tP_mu - 12) * omega_prev + 12 * self.omega_raman) * 1.0e-9
+            # Phase model mirrors RamanBeamPair.io_update_and_phase_update with dt0=dt1=4 mu:
+            # old-freq period = tP - T_pretrigger + dt0 + dt_fudge
+            # new-freq period = T_pretrigger - dt0 - dt_fudge  (where dt0 = 4 mu)
+            _t_old = tP_mu - T_pre_mu + 4 + dt_fudge_mu
+            _t_new = T_pre_mu - 4 - dt_fudge_mu
+            phase_tracker += (_t_old * omega_prev + _t_new * self.omega_raman) * 1.0e-9
 
             t_in = i * tP_mu * 1.0e-9
             k_val = float(k_vals[i])
@@ -1151,6 +1169,40 @@ class FeedbackReplay(FeedbackReplayCore):
         if apd_arr.ndim == 0:
             return float(sz)
         return np.asarray(sz, dtype=float)
+
+    def compute_convergence_score(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        sigma_omega: float = 1.0,
+    ) -> float:
+        """Compute mean per-shot Gaussian convergence score for the last pulse.
+
+        For each shot the last-pulse recomputed omega (posterior mean) is
+        converted to a detuning in units of Omega (Rabi frequency).  A Gaussian
+        score ``exp(-0.5 * delta^2 / sigma_omega^2)`` is computed per shot and
+        averaged across all shots.  Score equals 1.0 when every shot ends
+        exactly at resonance, decaying toward 0 as shots diverge.
+
+        Parameters
+        ----------
+        result
+            Replay result from ``replay_measured(...)`` or similar.
+        sigma_omega
+            Gaussian width in Omega units.  Default 1.0 (one grid step width).
+
+        Returns
+        -------
+        float
+            Mean convergence score in [0, 1].
+        """
+        omega_last = np.asarray(result.omega_recomputed_rr[:, -1], dtype=float)
+        omega_res = float(self._omega_resonance_rad_s)
+        Omega = np.pi / float(self.p.t_raman_pi_pulse)
+        detuning = (omega_last - omega_res) / Omega
+        sigma = max(float(sigma_omega), 1.0e-12)
+        scores = np.exp(-0.5 * detuning * detuning / (sigma * sigma))
+        return float(np.mean(scores))
 
     def run_default(self, *, return_full_state: bool = False) -> FeedbackReplayResult:
         """Convenience default: replay measured APD with measured omega control."""
@@ -4558,3 +4610,384 @@ class FeedbackReplaySweep(FeedbackReplayOptimizer):
         ax.grid(alpha=0.25)
 
         return fig, ax
+
+
+class FeedbackConvergenceOptimizer(FeedbackReplayOptimizer):
+    """Optimizer that scores candidates by last-pulse convergence to resonance.
+
+    Figure of merit: mean over shots of ``exp(-0.5 * delta^2 / sigma_omega^2)``,
+    where ``delta`` is the last-pulse ``omega_recomputed`` detuning in Omega units.
+    Loss is ``1 - score``, so the inherited minimization machinery works unchanged.
+
+    Usage::
+
+        opt = FeedbackConvergenceOptimizer(ad)
+        opt.add_parameter('back_action_coherence', np.linspace(0.65, 1.0, 50))
+        report = opt.fit_report(method='bayesian', max_evals=60)
+        print(f"best back_action_coherence: {report['best_params']['back_action_coherence']:.4g}")
+        print(f"best convergence score: {report['best_score']:.4f}")
+    """
+
+    def __init__(
+        self,
+        replay_or_ad,
+        *,
+        replay_defaults: Optional[Dict[str, object]] = None,
+        sigma_omega: float = 1.0,
+    ):
+        super().__init__(replay_or_ad, replay_defaults=replay_defaults)
+        self.sigma_omega = float(sigma_omega)
+
+    def _evaluate_candidate(
+        self,
+        index_tuple: Tuple[int, ...],
+        *,
+        replay_kwargs: Dict[str, object],
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        lightweight_candidates: bool = False,
+        # MSE-specific kwargs accepted but ignored — keeps parent fit() compatible
+        **_ignored_mse_kwargs,
+    ) -> Dict[str, object]:
+        t_start = perf_counter()
+        params = self._index_to_params(index_tuple)
+
+        resolved_param_updates: Dict[str, object] = {}
+        if replay_kwargs:
+            for key, value in replay_kwargs.items():
+                resolved_param_updates[self._resolve_parameter_name(str(key))] = value
+        for key, value in params.items():
+            resolved_param_updates[self._resolve_parameter_name(str(key))] = float(value)
+
+        t_replay_start = perf_counter()
+        with self._with_temporary_replay_params(resolved_param_updates):
+            result = self.replay.replay_measured(
+                n_jobs=int(n_jobs),
+                parallel_verbose=int(parallel_verbose),
+            )
+        t_end = perf_counter()
+
+        conv_score = self.replay.compute_convergence_score(result, sigma_omega=self.sigma_omega)
+        loss = 1.0 - conv_score
+        n_shots = int(result.omega_recomputed_rr.shape[0])
+
+        candidate_result = None if bool(lightweight_candidates) else result
+
+        return {
+            "indices": tuple(int(i) for i in index_tuple),
+            "params": params,
+            "result": candidate_result,
+            "groups": None,
+            "fit": {
+                "convergence_score": float(conv_score),
+                "overall_mse": float(loss),  # alias so parent infrastructure works
+                "n_groups": 1,
+                "n_points": n_shots,
+            },
+            "loss": float(loss),
+            "timing_s": {
+                "replay": float(t_end - t_replay_start),
+                "group_summary": 0.0,
+                "fit_metrics": 0.0,
+                "total": float(t_end - t_start),
+            },
+        }
+
+    def fit(
+        self,
+        *,
+        method: str = "adaptive",
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        sigma_omega: Optional[float] = None,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        mse_smoothing_points: float = 0.0,
+        max_evals: Optional[int] = None,
+        n_initial: Optional[int] = None,
+        refine_top_k: int = 4,
+        random_state: int = 0,
+        surrogate_length_scale: float = 0.25,
+        surrogate_noise: float = 1.0e-6,
+        surrogate_beta: float = 2.0,
+        surrogate_candidate_pool_size: int = 1024,
+        surrogate_exploration_probability: float = 0.05,
+        outer_n_jobs: int = 1,
+        lightweight_candidates: bool = False,
+    ) -> Dict[str, object]:
+        """Fit registered parameters by maximising convergence score (minimising 1 - score).
+
+        Parameters are registered with ``add_parameter(...)`` before calling
+        this method.  All search methods (grid, adaptive, bayesian) are
+        inherited from the parent optimizer.
+
+        Parameters
+        ----------
+        sigma_omega
+            Override ``self.sigma_omega`` for this call only when provided.
+        """
+        if sigma_omega is not None:
+            self.sigma_omega = float(sigma_omega)
+
+        return super().fit(
+            method=method,
+            replay_kwargs=replay_kwargs,
+            # MSE-specific kwargs — passed to parent which puts them in _eval_kwargs;
+            # _evaluate_candidate then silently ignores them via **_ignored_mse_kwargs.
+            group_shots=True,
+            tolerance_rad_s=None,
+            include_apd_noise=False,
+            apd_noise_override_fraction=None,
+            apd_noise_min_std=0.0,
+            aggregate_mode="auto",
+            n_jobs=n_jobs,
+            parallel_verbose=parallel_verbose,
+            eps=1.0e-12,
+            mse_smoothing_points=mse_smoothing_points,
+            pulse_weight_power=0.0,
+            max_evals=max_evals,
+            n_initial=n_initial,
+            refine_top_k=refine_top_k,
+            random_state=random_state,
+            surrogate_length_scale=surrogate_length_scale,
+            surrogate_noise=surrogate_noise,
+            surrogate_beta=surrogate_beta,
+            surrogate_candidate_pool_size=surrogate_candidate_pool_size,
+            surrogate_exploration_probability=surrogate_exploration_probability,
+            outer_n_jobs=outer_n_jobs,
+            lightweight_candidates=lightweight_candidates,
+        )
+
+    def sweep_replay_parameter(
+        self,
+        parameter_name: str,
+        values: Sequence[float],
+        *,
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        sigma_omega: Optional[float] = None,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        outer_n_jobs: int = 1,
+    ) -> Dict[str, object]:
+        """Sweep one parameter over explicit values and rank by convergence score.
+
+        Returns
+        -------
+        dict
+            Keys: ``parameter_name``, ``values``, ``convergence_scores``,
+            ``records``, ``best_index``, ``best_value``, ``best_result``,
+            ``sigma_omega``.
+        """
+        if sigma_omega is not None:
+            self.sigma_omega = float(sigma_omega)
+
+        value_list = list(values)
+        if len(value_list) == 0:
+            raise ValueError("values must contain at least one entry.")
+
+        self.clear_parameters()
+        self.add_parameter(parameter_name, value_list)
+
+        fit_payload = self.fit(
+            method="grid",
+            replay_kwargs=replay_kwargs,
+            n_jobs=n_jobs,
+            parallel_verbose=parallel_verbose,
+            outer_n_jobs=outer_n_jobs,
+        )
+
+        records = fit_payload["records"]
+        xvals = np.asarray([float(r["params"][parameter_name]) for r in records], dtype=float)
+        raw_losses = np.asarray(fit_payload["losses"], dtype=float)
+        scores = 1.0 - raw_losses
+        order = np.argsort(xvals)
+
+        if not np.isfinite(scores).any():
+            raise RuntimeError(f"All convergence scores are non-finite for parameter {parameter_name!r}.")
+
+        best_idx = int(np.nanargmax(scores))
+
+        return {
+            "parameter_name": str(parameter_name),
+            "values": xvals[order],
+            "convergence_scores": scores[order],
+            "records": [records[i] for i in order.tolist()],
+            "best_index": int(np.where(order == best_idx)[0][0]),
+            "best_value": float(xvals[best_idx]),
+            "best_result": records[best_idx].get("result"),
+            "sigma_omega": float(self.sigma_omega),
+        }
+
+    def fit_report(
+        self,
+        *,
+        method: str = "adaptive",
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        sigma_omega: Optional[float] = None,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        mse_smoothing_points: float = 5.0,
+        max_evals: Optional[int] = None,
+        n_initial: Optional[int] = None,
+        refine_top_k: int = 4,
+        random_state: int = 0,
+        surrogate_length_scale: float = 0.25,
+        surrogate_noise: float = 1.0e-6,
+        surrogate_beta: float = 2.0,
+        surrogate_candidate_pool_size: int = 1024,
+        surrogate_exploration_probability: float = 0.05,
+        outer_n_jobs: int = 1,
+        lightweight_candidates: bool = False,
+        verbose: bool = True,
+    ) -> Dict[str, object]:
+        """Run convergence-score fit and generate diagnostics plots.
+
+        Produces a 2-panel figure:
+        - Panel 1: convergence score vs parameter (single-param) or vs eval
+          index (multi-param).
+        - Panel 2: ``plot_sz_vs_apd`` overlay at best-fit parameters.
+
+        Returns
+        -------
+        dict
+            Keys: ``fit``, ``figure``, ``axes``, ``best_result``,
+            ``best_params``, ``best_score``, ``run_id``.
+        """
+        if sigma_omega is not None:
+            self.sigma_omega = float(sigma_omega)
+
+        fit_payload = self.fit(
+            method=method,
+            replay_kwargs=replay_kwargs,
+            n_jobs=n_jobs,
+            parallel_verbose=parallel_verbose,
+            mse_smoothing_points=mse_smoothing_points,
+            max_evals=max_evals,
+            n_initial=n_initial,
+            refine_top_k=refine_top_k,
+            random_state=random_state,
+            surrogate_length_scale=surrogate_length_scale,
+            surrogate_noise=surrogate_noise,
+            surrogate_beta=surrogate_beta,
+            surrogate_candidate_pool_size=surrogate_candidate_pool_size,
+            surrogate_exploration_probability=surrogate_exploration_probability,
+            outer_n_jobs=outer_n_jobs,
+            lightweight_candidates=lightweight_candidates,
+        )
+
+        losses = np.asarray(fit_payload["losses"], dtype=float)
+        smoothed_losses = np.asarray(fit_payload.get("smoothed_losses", losses), dtype=float)
+        scores = 1.0 - losses
+        smoothed_scores = 1.0 - smoothed_losses
+        best_idx = int(fit_payload["best_index"])
+        best_result = fit_payload["best_result"]
+        best_params = dict(fit_payload["best_params"])
+        param_names = list(fit_payload["parameter_names"])
+        method_used = str(fit_payload.get("method", method))
+        search_meta = dict(fit_payload.get("search_metadata", {}))
+        run_id = int(best_result.metadata.get("run_id", -1)) if best_result is not None else -1
+        best_score = float(scores[best_idx])
+        selection_metric = str(fit_payload.get("selection_metric", "raw_mse"))
+
+        fig, axs = plt.subplots(1, 3, figsize=(18, 4.5), layout="constrained")
+
+        # Panel 1: convergence score vs parameter
+        if len(param_names) == 1:
+            pname = param_names[0]
+            xvals = np.asarray([float(r["params"][pname]) for r in fit_payload["records"]], dtype=float)
+            order = np.argsort(xvals)
+            axs[0].plot(xvals[order], scores[order], "o-", lw=1.3, ms=4.5, alpha=0.8, label="convergence score")
+            if selection_metric == "smoothed_mse" and np.any(np.isfinite(smoothed_scores)):
+                sigma_pts = float(fit_payload.get("mse_smoothing_points", mse_smoothing_points))
+                axs[0].plot(
+                    xvals[order], smoothed_scores[order],
+                    "s-", lw=2.0, ms=4.2, alpha=0.85,
+                    label=f"smoothed (σ={sigma_pts:g} pts)",
+                )
+            axs[0].axvline(float(best_params[pname]), color="red", linestyle="--", lw=1.2, alpha=0.8, label="best")
+            axs[0].scatter([float(best_params[pname])], [best_score], color="red", s=55, marker="*", zorder=3)
+            axs[0].set_xlabel(pname)
+        else:
+            eval_idx = np.arange(len(scores), dtype=int)
+            axs[0].plot(eval_idx, scores, "o-", lw=1.1, ms=3.8, alpha=0.7, label="convergence score")
+            axs[0].axvline(best_idx, color="red", linestyle="--", lw=1.2, alpha=0.8, label="best index")
+            axs[0].scatter([best_idx], [best_score], color="red", s=55, marker="*", zorder=3)
+            axs[0].set_xlabel("evaluation index")
+
+        axs[0].set_ylabel("convergence score")
+        axs[0].set_ylim(-0.02, 1.05)
+        axs[0].set_title(f"Convergence fit ({method_used}, σ_Ω={self.sigma_omega:.2g})")
+        axs[0].legend(loc="best")
+        axs[0].grid(alpha=0.25)
+
+        # Panel 2: best-fit APD vs simulation overlay
+        if best_result is not None:
+            self.replay.plot_sz_vs_apd(best_result, grouped_average=True, use_stderr=False, ax=axs[1])
+        else:
+            axs[1].text(
+                0.5, 0.5,
+                "No result\n(lightweight_candidates=True,\nre-run without it to plot)",
+                transform=axs[1].transAxes,
+                ha="center", va="center", fontsize="small", color="0.4",
+            )
+
+        value_lines = [f"best {name}={float(best_params[name]):.4g}" for name in param_names]
+        value_lines.append(f"score={best_score:.4f}")
+        axs[1].text(
+            0.02, 0.98,
+            "\n".join(value_lines),
+            transform=axs[1].transAxes,
+            ha="left", va="top", fontsize="small",
+            bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="0.7", alpha=0.85),
+        )
+
+        # Panel 3: per-shot omega trajectories — experiment (scatter) and recomputed (line)
+        if best_result is not None:
+            self.replay.plot_omega_feedback_comparison(
+                best_result,
+                grouped_average=False,
+                ax=axs[2],
+            )
+            axs[2].set_title(f"run {run_id}: omega per shot (best params)")
+        else:
+            axs[2].text(
+                0.5, 0.5,
+                "No result\n(lightweight_candidates=True,\nre-run without it to plot)",
+                transform=axs[2].transAxes,
+                ha="center", va="center", fontsize="small", color="0.4",
+            )
+            axs[2].set_xlabel("pulse index")
+            axs[2].set_ylabel("detuning / Omega")
+            axs[2].grid(alpha=0.25)
+
+        fig.suptitle(f"run {run_id}: convergence-score fit")
+
+        if verbose:
+            print(f"method: {method_used}")
+            print(f"sigma_omega: {self.sigma_omega:.4g}")
+            print(f"parameters: {param_names}")
+            for pname in param_names:
+                print(f"best {pname}: {float(best_params[pname]):.6g}")
+            print(f"best convergence score: {best_score:.6f}")
+            n_eval = int(search_meta.get("n_evaluated", len(fit_payload["records"])))
+            n_total = int(search_meta.get("n_total_possible", len(fit_payload["records"])))
+            print(f"evaluated candidates: {n_eval} / {n_total}")
+            outer_eff = int(search_meta.get("outer_n_jobs_effective", outer_n_jobs))
+            inner_eff = int(search_meta.get("inner_n_jobs_effective", n_jobs))
+            print(f"parallelization: outer={outer_eff}, inner={inner_eff}")
+            timing_summary = search_meta.get("timing_summary_s")
+            if isinstance(timing_summary, dict):
+                print(
+                    f"candidate timing median (s): "
+                    f"replay={float(timing_summary.get('replay_median', float('nan'))):.3g}, "
+                    f"total={float(timing_summary.get('total_median', float('nan'))):.3g}"
+                )
+
+        return {
+            "fit": fit_payload,
+            "figure": fig,
+            "axes": axs,
+            "best_result": best_result,
+            "best_params": best_params,
+            "best_score": float(best_score),
+            "run_id": run_id,
+        }

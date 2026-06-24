@@ -31,10 +31,13 @@ class Feedback:
         "inv_two_pi",
     }
 
-    def __init__(self, lut_size=4096):
-        from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams
-        if not hasattr(self, "p"):
-            self.p = ExptParams()
+    def __init__(self, lut_size=4096, expt_params=None):
+        if expt_params == None:
+            from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams
+            if not hasattr(self, "p"):
+                self.p = ExptParams()
+        else:
+            self.p = expt_params
 
         self._preallocate_arrays()
         self._initialize_trig_lut(lut_size=lut_size)
@@ -45,6 +48,12 @@ class Feedback:
         self._initialize_posterior_state()
         
         self._print_estimated_time = True
+
+        self._remesh_counter = 0
+
+    def omega_to_detuning(self, omega_raman):
+        '''Returns the detuning in units of Omega, given the Raman drive frequency in rad/s.'''
+        return (omega_raman - 2.0 * np.pi * self.p.frequency_raman_transition)/self.Omega
 
     def _preallocate_arrays(self):
         self.omega_guess_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
@@ -384,10 +393,6 @@ class Feedback:
         self.dt_ideal = float(self.p.t_raman_pulse_ideal)
         self.dt_z = float(self.p.t_img_pulse)
         # Remesh state (mutable per-shot; not kernel_invariants so they can be scanned)
-        self.feedback_remesh_threshold_omega = (
-            float(getattr(self.p, 'feedback_remesh_threshold_Omega', 0.0)) * self.Omega
-        )
-        self.feedback_remesh_span_Omega = float(self.p.feedback_guess_span_Omega)
 
     def _initialize_lightshift(self):
         self.p.frequency_lightshift = self._resolve_lightshift_calibration(self.p.amp_imaging, self.p.frequency_lightshift)
@@ -437,30 +442,140 @@ class Feedback:
         self.p.feedback_resonance_grid_index = best_idx
         self.omega_raman = self.reset_initial_omega_from_params()
 
+        self.feedback_remesh_threshold_omega = self.p.feedback_remesh_threshold_Omega * self.Omega
+        self.feedback_remesh_span_Omega = float(self.p.feedback_guess_span_Omega)
+
     @portable(flags={"fast-math"})
-    def remesh_to_centered(self, omega_center, span_Omega):
+    def remesh_to_centered(self, omega_center, span_Omega, interpolate_posterior=1):
         """Re-grid in-place, centred on omega_center with half-width span_Omega*Omega.
-        Resets the posterior state to uniform.  Kernel-safe: no numpy allocation."""
+
+        Two things are handled (transferred or reset from the old grid to the new one):
+
+        P0  -- if interpolate_posterior=True: linearly interpolated onto the new
+               (narrower) grid, then renormalised.  omega_sq_list is used as a
+               scratch buffer in Pass 1 and overwritten with omega^2 in Pass 2.
+               if interpolate_posterior=False: reset to uniform (1/m).
+
+        Bloch state -- each new point is seeded with the state vector of the nearest
+               old grid point (nearest-neighbour copy).  The fractional index is
+               recomputed from pre-captured local scalars (old_start, inv_old_step)
+               so that partial overwriting of omega_guess_list in Pass 2 does not
+               corrupt the lookup.  For the ~upper half of new indices the nearest
+               old index has already been written in this pass; in that region the
+               read returns the Bloch state of the nearest-old-of-nearest-old point
+               (one generation removed).  This is physically negligible: remesh only
+               fires when the posterior is concentrated, so all states in the active
+               region are nearly identical.
+
+        Args:
+            omega_center: new grid centre frequency (rad/s)
+            span_Omega: new grid half-width in units of Omega (dimensionless)
+            interpolate_posterior: if True (default), linearly interpolate old P0
+                                   onto new grid; if False, use flat posterior.
+
+        Kernel-safe: no numpy allocation, compatible with @portable fast-math."""
         m = self.m
         Omega = self.Omega
-        step = (2.0 * span_Omega * Omega) / (m - 1)
-        start = omega_center - span_Omega * Omega
+        
+        # Ensure span_Omega is positive so grid is always ascending (low to high)
+        if span_Omega < 0.0:
+            span_Omega = -span_Omega
+        
+        # Capture old grid geometry BEFORE building new grid
+        old_start = self.omega_guess_list[0]
+        if m > 1:
+            old_step = self.omega_guess_list[1] - old_start
+            inv_old_step = 1.0 / old_step
+        else:
+            old_step = 1.0
+            inv_old_step = 0.0
+
+        # Build new grid in the SAME order as the old grid
+        if old_step < 0.0:
+            # Descending order (high→low): new_start is the highest frequency
+            new_start = omega_center + span_Omega * Omega
+            step_new = -(2.0 * span_Omega * Omega) / (m - 1)
+        else:
+            # Ascending order (low→high): new_start is the lowest frequency
+            new_start = omega_center - span_Omega * Omega
+            step_new = (2.0 * span_Omega * Omega) / (m - 1)
+
+        # -- Pass 1 (optional): interpolate old P0 onto new grid --
+        if interpolate_posterior:
+            total = 0.0
+            i = 0
+            while i < m:
+                omega_i = new_start + i * step_new
+                frac = (omega_i - old_start) * inv_old_step
+                lo = int(frac)
+                if lo < 0:
+                    p = self.P0[0]
+                elif lo >= m - 1:
+                    p = self.P0[m - 1]
+                else:
+                    alpha = frac - lo
+                    p = (1.0 - alpha) * self.P0[lo] + alpha * self.P0[lo + 1]
+                if p < 0.0:
+                    p = 0.0
+                self.omega_sq_list[i] = p  # scratch
+                total += p
+                i += 1
+
+            if total <= 0.0:
+                total = 1.0  # guard: degenerate posterior -- fall back to uniform
+            inv_total = 1.0 / total
+        else:
+            inv_total = 1.0 / m
+
+        # -- Pass 2: write new grid, P0 (from scratch or uniform), nearest-neighbour Bloch state --
         i = 0
         while i < m:
-            omega = start + i * step
-            self.omega_guess_list[i] = omega
-            self.omega_sq_list[i] = omega * omega
+            if interpolate_posterior:
+                p_new = self.omega_sq_list[i] * inv_total  # read scratch before overwrite
+            else:
+                p_new = inv_total  # flat posterior
+            omega_i = new_start + i * step_new
+            # Nearest old grid index -- recomputed from pre-captured scalars so that
+            # partial overwriting of omega_guess_list earlier in this loop does not
+            # affect the result.
+            frac = (omega_i - old_start) * inv_old_step
+            lo = int(frac)
+            lo_nearest = lo + 1 if frac - lo >= 0.5 else lo
+            if lo_nearest < 0:
+                lo_nearest = 0
+            if lo_nearest >= m:
+                lo_nearest = m - 1
+            self.omega_guess_list[i] = omega_i
+            self.omega_sq_list[i] = omega_i * omega_i
+            self.P0[i] = p_new
+            self.state_x[i] = self.state_x[lo_nearest]
+            self.state_y[i] = self.state_y[lo_nearest]
+            self.state_z[i] = self.state_z[lo_nearest]
             i += 1
-        self.reset_feedback_state()
+        self.P0_total = 1.0
 
     @portable(flags={"fast-math"})
     def maybe_remesh(self, posterior_std):
         """Halve the grid span and re-centre on omega_raman if posterior_std is below
-        feedback_remesh_threshold_omega.  No-op when threshold is 0 (disabled)."""
+        feedback_remesh_threshold_omega.  No-op when threshold is 0 (disabled).
+
+        Args:
+            posterior_std: the posterior standard deviation (rad/s); remesh fires if
+                          posterior_std < feedback_remesh_threshold_omega.
+        """
         if self.feedback_remesh_threshold_omega > 0.0:
-            if posterior_std < self.feedback_remesh_threshold_omega:
+            if posterior_std < (self.feedback_remesh_threshold_omega):
+                self._remesh_counter += 1
+            elif posterior_std > 2*self.feedback_remesh_threshold_omega:
+                self._remesh_counter = 0
+
+            if self._remesh_counter > 2:
+                # aprint(posterior_std/self.Omega)
+                self.feedback_remesh_threshold_omega *= 0.5
                 self.feedback_remesh_span_Omega = self.feedback_remesh_span_Omega * 0.5
-                self.remesh_to_centered(self.omega_raman, self.feedback_remesh_span_Omega)
+                interpolate_posterior = self.p.remesh_interpolate_posterior
+                self.remesh_to_centered(self.omega_raman, self.feedback_remesh_span_Omega, interpolate_posterior)
+                self._remesh_counter = 0
 
     def _initialize_measurement_calibrations(self):
         (

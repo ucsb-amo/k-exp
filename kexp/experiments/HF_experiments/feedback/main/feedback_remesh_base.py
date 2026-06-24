@@ -21,16 +21,30 @@ class feedback(EnvExperiment, FeedbackExpt):
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 1.
+        self.p.feedback_fractional_initial_offset = 2.
         # self.xvar('feedback_fractional_initial_offset', np.linspace(-3,5,7))
         
         self.p.N_repeats = 7
 
-        self.p.feedback_guess_span_Omega = 4.
-
-        self.p.feedback_remesh_threshold_Omega = 1.
+        self.p.feedback_guess_span_Omega = 6.
+        self.p.feedback_remesh_threshold_Omega = 0.25
+        self.p.remesh_interpolate_posterior = 1
 
         self.finish_prepare()
+
+        self.omega_raman_mesh = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
+
+    @kernel
+    def per_feedback_loop_end(self, idx):
+        """Called at the end of each feedback loop iteration.  Can be used to store data
+        to host or update parameters."""
+        self.store_omega_guess_mesh(self.scan_xvars[0].counter, idx)
+    
+    @kernel
+    def run(self):
+        self.init_kernel()
+        self.load_2D_mot(self.p.t_2D_mot_load_delay)
+        self.scan()
 
     def analyze(self):
         self.store_mesh_to_params()

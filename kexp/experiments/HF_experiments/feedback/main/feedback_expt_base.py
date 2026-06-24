@@ -142,11 +142,11 @@ class FeedbackExpt(Base, Feedback):
             t = (t_step - t_start_mu)*1.e-9
 
             phase_tracker = self.raman.io_update_and_phase_update(t_pulse_mu = t_step,
-                                                                t_last_update_mu = t_step - dT,
-                                                                t_io_update_delay_mu=self.p.delta_t_mu)
+                                                                t_last_pulse_mu = t_step - dT)
             
             # phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
             # omega_prev = self.omega_raman
+            at_mu(t_step)
 
             self.raman.pulse(self.p.t_raman_pulse)
             k = self.measurement(i)
@@ -155,15 +155,12 @@ class FeedbackExpt(Base, Feedback):
                                                     update_raman_frequency=update_raman_frequency,
                                                     update_rabi_frequency=update_rabi_frequency,
                                                     include_photon_noise=include_photon_noise)
-            # self.maybe_remesh(self._posterior_std)
+            self.maybe_remesh(self._posterior_std)
 
             t_step += dT
 
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
-
-            # self.store_omega_guess_mesh(self.scan_xvars[0].counter, i)
-            # self.store_probabilities_to_host(self.P0, self.scan_xvars[0].counter, i)
 
             self.per_feedback_loop_end(idx=i)
 
