@@ -14,14 +14,11 @@ class Feedback:
         "dt_eff",
         "dt_ideal",
         "dt_z",
-        # "omega_z_lightshift",
         "N_photons_per_shot",
         "std_n_photons_per_shot",
         "v_apd_all_up",
         "v_apd_all_down",
         "v_range",
-        "omega_guess_list",
-        "omega_sq_list",
         "feedback_measurement_midpoint_fraction",
         "feedback_measurement_midpoint_remap_enabled",
         "sin_lut",
@@ -39,14 +36,21 @@ class Feedback:
         if not hasattr(self, "p"):
             self.p = ExptParams()
 
+        
+        self._preallocate_arrays()
+        self._initialize_trig_lut(lut_size=lut_size)
         self._initialize_timing()
         self._initialize_lightshift()
         self._initialize_frequency_grid()
         self._initialize_measurement_calibrations()
         self._initialize_posterior_state()
-        self._initialize_trig_lut(lut_size=lut_size)
         
         self._print_estimated_time = True
+
+    def _preallocate_arrays(self):
+        self.omega_guess_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
+        self.omega_sq_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
+        self.p.omega_guess_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
 
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
@@ -285,6 +289,9 @@ class Feedback:
             var = 0.0
         std = np.sqrt(var)
 
+        # Store true posterior std before it may be overridden below
+        self._posterior_std = std
+
         if not update_raman_frequency:
             mn = self.omega_raman
         if not update_rabi_frequency:
@@ -310,12 +317,13 @@ class Feedback:
             + t_raman_pulse_mu
             + t_img_pulse_mu
             + T_MIN_FIFO_MU
-            - 10000
         ) & ~7
 
     @kernel
     def initialize_feedback(self):
         """Warm up posterior runtime once, then reset state/P0 arrays."""
+
+        self.omega_raman = self.reset_initial_omega_from_params()
 
         self.p.t_between_pulses_mu = self.compute_t_between_pulses_mu(
             t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
@@ -341,7 +349,13 @@ class Feedback:
             aprint('calculation esimated slack consumption:', self.t_posterior_mu)
             self._print_estimated_time = False
         
+        # Reset the adaptive span to its original value each shot
+        self.feedback_remesh_span_Omega = self.p.feedback_guess_span_Omega
         self.reset_feedback_state()
+
+        self._initialize_frequency_grid()
+        self.p.omega_guess_list = self.omega_guess_list
+        # aprint((self.omega_guess_list/self.two_pi - self.p.frequency_raman_transition)/(self.Omega/(2*np.pi)))
 
     @portable(flags={"fast-math"})
     def reset_feedback_state(self):
@@ -370,6 +384,11 @@ class Feedback:
         self.dt_eff = float(self.p.t_raman_pulse)
         self.dt_ideal = float(self.p.t_raman_pulse_ideal)
         self.dt_z = float(self.p.t_img_pulse)
+        # Remesh state (mutable per-shot; not kernel_invariants so they can be scanned)
+        self.feedback_remesh_threshold_omega = (
+            float(getattr(self.p, 'feedback_remesh_threshold_Omega', 0.0)) * self.Omega
+        )
+        self.feedback_remesh_span_Omega = float(self.p.feedback_guess_span_Omega)
 
     def _initialize_lightshift(self):
         self.p.frequency_lightshift = self._resolve_lightshift_calibration(self.p.amp_imaging, self.p.frequency_lightshift)
@@ -378,28 +397,71 @@ class Feedback:
         self.p.back_action_coherence = float(self.p.back_action_coherence)
         self.back_action_coherence = self.p.back_action_coherence
 
-    def _initialize_frequency_grid(self) -> TTuple([TArray(TFloat), TArray(TFloat)]):
+    @portable(flags={"fast-math"})
+    def _initialize_frequency_grid(self):
+        """Kernel-safe loop-based grid initialisation (no numpy allocation)."""
+        omega_resonance = self.two_pi * self.p.frequency_raman_transition
+        self.p.feedback_fractional_initial_offset = self.p.feedback_fractional_initial_offset
+        n_grid_offset = round(self.p.feedback_fractional_initial_offset)
+        span = self.p.feedback_guess_span_Omega
+        m = self.m
+        Omega = self.Omega
 
-        omega_resonance = 2.0 * np.pi * float(self.p.frequency_raman_transition)
-        self.p.feedback_fractional_initial_offset = float(self.p.feedback_fractional_initial_offset)
+        # Build grid: omega[i] = omega_res + Omega*(offset - span*linspace(-1,1,m)[i])
+        # linspace(-1,1,m)[i] = -1 + i * 2/(m-1)
+        scale = 2.0 / (m - 1)
+        best_idx = 0
+        best_dist = 1.0e12
+        i = 0
+        while i < m:
+            t = -1.0 + i * scale
+            omega = omega_resonance + Omega * (n_grid_offset - span * t)
+            self.omega_guess_list[i] = omega
+            dist = omega - omega_resonance
+            if dist < 0.0:
+                dist = -dist
+            if dist < best_dist:
+                best_dist = dist
+                best_idx = i
+            i += 1
 
-        if self.m < 1:
-            raise ValueError("feedback_grid_size must be >= 1.")
-        if self.p.feedback_guess_span_Omega < 0.0:
-            raise ValueError("guess_span_Omega must be non-negative.")
-
-        n_grid_offset = np.round(self.p.feedback_fractional_initial_offset)
-        n_grid_halfwidth = self.p.feedback_guess_span_Omega
-        self.omega_guess_list = omega_resonance + self.Omega * (n_grid_offset - n_grid_halfwidth * np.linspace(-1,1,self.m))
+        # Shift so the nearest grid point lands exactly on resonance
+        omega_shift = omega_resonance - self.omega_guess_list[best_idx]
+        i = 0
+        while i < m:
+            omega = self.omega_guess_list[i] + omega_shift
+            self.omega_guess_list[i] = omega
+            self.omega_sq_list[i] = omega * omega
+            i += 1
 
         self.p.omega_guess_list = self.omega_guess_list
-        self.omega_sq_list = self.omega_guess_list * self.omega_guess_list
-
-        self.p.feedback_resonance_grid_index = int(np.argmin(np.abs(self.omega_guess_list - omega_resonance)))
-
+        self.p.feedback_resonance_grid_index = best_idx
         self.omega_raman = self.reset_initial_omega_from_params()
 
-        return self.p.omega_guess_list, self.omega_sq_list
+    @portable(flags={"fast-math"})
+    def remesh_to_centered(self, omega_center, span_Omega):
+        """Re-grid in-place, centred on omega_center with half-width span_Omega*Omega.
+        Resets the posterior state to uniform.  Kernel-safe: no numpy allocation."""
+        m = self.m
+        Omega = self.Omega
+        step = (2.0 * span_Omega * Omega) / (m - 1)
+        start = omega_center - span_Omega * Omega
+        i = 0
+        while i < m:
+            omega = start + i * step
+            self.omega_guess_list[i] = omega
+            self.omega_sq_list[i] = omega * omega
+            i += 1
+        self.reset_feedback_state()
+
+    @portable(flags={"fast-math"})
+    def maybe_remesh(self, posterior_std):
+        """Halve the grid span and re-centre on omega_raman if posterior_std is below
+        feedback_remesh_threshold_omega.  No-op when threshold is 0 (disabled)."""
+        if self.feedback_remesh_threshold_omega > 0.0:
+            if posterior_std < self.feedback_remesh_threshold_omega:
+                self.feedback_remesh_span_Omega = self.feedback_remesh_span_Omega * 0.5
+                self.remesh_to_centered(self.omega_raman, self.feedback_remesh_span_Omega)
 
     def _initialize_measurement_calibrations(self):
         (
@@ -488,6 +550,7 @@ class Feedback:
         self.state_y = np.zeros(self.m, dtype=np.float64)
         self.state_z = np.ones(self.m, dtype=np.float64)
         self.t_posterior_mu = np.int64(0)
+        self._posterior_std = 0.0  # side-channel: true posterior std before conditional override
 
     def _initialize_trig_lut(self, lut_size):
         self.two_pi = 2.0 * np.pi
@@ -646,7 +709,7 @@ class Feedback:
             x += two_pi
 
         y = x * self.lut_scale
-        i0 = int(y)
+        i0 = int(y) & self.lut_mask
         frac = y - i0
 
         lut_mask = self.lut_mask

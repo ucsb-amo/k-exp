@@ -1,6 +1,6 @@
 from artiq.experiment import *
 from artiq.language import now_mu, delay, delay_mu, TFloat, TArray, TTuple, at_mu, parallel
-from kexp import Base, img_types, cameras
+from kexp import Base, img_types, cameras, aprint
 from kexp.base import Feedback
 from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
@@ -28,14 +28,12 @@ class feedback(EnvExperiment, Base, Feedback):
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 2.
+        self.p.feedback_fractional_initial_offset = -5.
         # self.xvar('feedback_fractional_initial_offset', np.linspace(-3,5,7))
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 11
 
-        self.p.feedback_guess_span_Omega = 6.0
-
-        # self.p.feedback_fractional_grid_center_offset = 1.
+        self.p.feedback_guess_span_Omega = 6.
 
         ###
 
@@ -76,10 +74,16 @@ class feedback(EnvExperiment, Base, Feedback):
         self.finish_prepare()
 
         self.p.probabilities = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
+        self.omega_raman_mesh = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
 
     @rpc(flags={"async"})
     def store_probabilities_to_host(self, pulse_probabilities, shot_idx, pulse_idx):
         self.p.probabilities[shot_idx, pulse_idx] = pulse_probabilities
+
+    @portable
+    def store_omega_guess_mesh(self, shot_idx, pulse_idx):
+        for i in range(self.m):
+            self.omega_raman_mesh[shot_idx, pulse_idx, i] = self.omega_guess_list[i]
 
     @kernel
     def feedback_loop(self, t_start_mu,
@@ -100,8 +104,6 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.raman.set_frequency_fast(f)
         self.raman.stage_ffua()
-        # aprint(self.raman.get_phase())
-        # self._phase = 0
         phase_tracker = 0.
         
         dT = self.p.t_between_pulses_mu
@@ -139,6 +141,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
+            self.store_omega_guess_mesh(self.scan_xvars[0].counter, i)
             # self.store_probabilities_to_host(self.P0, self.scan_xvars[0].counter, i)
 
     @kernel
@@ -147,10 +150,7 @@ class feedback(EnvExperiment, Base, Feedback):
 
         self.integrator.init()
 
-        # self._set_frequency_grid()
-
         self.initialize_feedback()
-        self.omega_raman = self.reset_initial_omega_from_params()
         delay(10.e-3)
         
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
@@ -209,6 +209,8 @@ class feedback(EnvExperiment, Base, Feedback):
         self.scan()
 
     def analyze(self):
+        self.p.omega_raman_mesh = self.omega_raman_mesh
+        
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)

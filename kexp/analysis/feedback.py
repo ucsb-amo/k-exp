@@ -962,9 +962,7 @@ class FeedbackReplayCore(Feedback):
 
             self.omega_raman = omega_ctrl
 
-            phase_tracker += (
-                ((tP_mu - tR_mu + dt_mu) * omega_prev + (tR_mu - dt_mu) * self.omega_raman) * 1.0e-9
-            )
+            phase_tracker += ((tP_mu - 12) * omega_prev + 12 * self.omega_raman) * 1.0e-9
 
             t_in = i * tP_mu * 1.0e-9
             k_val = float(k_vals[i])
@@ -1741,7 +1739,7 @@ class FeedbackReplay(FeedbackReplayCore):
         self,
         *,
         grouped_average: bool = True,
-        use_stderr: bool = True,
+        use_stderr: bool = False,
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         trace_indices: Optional[Union[int, Sequence[int]]] = None,
         ax=None,
