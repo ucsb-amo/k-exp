@@ -8,8 +8,6 @@ from numpy import int64
 
 T_CONV_MU = 30
 
-from waxx.control.artiq.DDS import T_AD9910_REGISTER_UPDATE_FROM_PHASE_ORIGIN_MU
-
 from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams as ExptParamsFeedback
 
 class FeedbackExpt(Base, Feedback):
