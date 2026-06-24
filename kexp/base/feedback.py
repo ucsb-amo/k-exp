@@ -61,6 +61,8 @@ class Feedback:
         self.omega_guess_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.omega_sq_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.p.omega_guess_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
+        self.omega_original_min = 0.0
+        self.omega_original_max = 0.0
 
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
@@ -466,6 +468,16 @@ class Feedback:
         self.feedback_remesh_threshold_omega = self.p.feedback_remesh_threshold_Omega * self.Omega
         self.feedback_remesh_span_Omega = float(self.p.feedback_guess_span_Omega)
 
+        # Record the original grid bounds for remesh clamping
+        omega_lo = self.omega_guess_list[0]
+        omega_hi = self.omega_guess_list[m - 1]
+        if omega_lo < omega_hi:
+            self.omega_original_min = omega_lo
+            self.omega_original_max = omega_hi
+        else:
+            self.omega_original_min = omega_hi
+            self.omega_original_max = omega_lo
+
     @portable(flags={"fast-math"})
     def remesh_to_centered(self, omega_center, span_Omega, interpolate_posterior=1):
         """Re-grid in-place centred on omega_center with half-width span_Omega*Omega.
@@ -491,6 +503,22 @@ class Feedback:
             step_new = -(2.0 * span_Omega * Omega) / (m - 1)
         else:
             step_new = (2.0 * span_Omega * Omega) / (m - 1)
+
+        # Clamp omega_center so the new grid stays within the original grid bounds
+        half_width = step_new * (m - 1) * 0.5
+        if half_width < 0.0:
+            half_width = -half_width
+        clamp_lo = self.omega_original_min + half_width
+        clamp_hi = self.omega_original_max - half_width
+        if clamp_lo > clamp_hi:
+            # New grid is wider than the original (shouldn't happen in normal use);
+            # fall back to centering on the original grid midpoint
+            omega_center = (self.omega_original_min + self.omega_original_max) * 0.5
+        elif omega_center < clamp_lo:
+            omega_center = clamp_lo
+        elif omega_center > clamp_hi:
+            omega_center = clamp_hi
+
         new_start = omega_center - step_new * (m - 1) * 0.5
 
         # Precompute incremental fractional-index walk (avoids per-iter multiply)
