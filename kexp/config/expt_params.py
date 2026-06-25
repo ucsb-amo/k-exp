@@ -154,7 +154,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 8.5568e-06 #69818, 2026-06-12
         # self.t_raman_pi_pulse = 8.3333e-06 #70253, 2026-06-20
         # self.t_raman_pi_pulse = 9.5606e-06 #70859, 2026-06-23
-        self.t_raman_pi_pulse = 9.3672e-06 #70958, 2026-06-24
+        # self.t_raman_pi_pulse = 9.3672e-06 #70958, 2026-06-24
+        self.t_raman_pi_pulse = 9.2478e-06 #71073, 2026-06-25
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
