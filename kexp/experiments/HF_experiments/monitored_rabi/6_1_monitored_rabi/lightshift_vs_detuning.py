@@ -21,7 +21,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.xvar('frequency_detuned_hf_midpoint',np.linspace(-540.e6,-475.e6,10))
 
-        self.p.v_pd_hf_tweezer_squeeze_power = 1.97
+        # self.p.v_pd_hf_tweezer_squeeze_power = 1.97
 
         self.p.t_ramsey = 5.e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
