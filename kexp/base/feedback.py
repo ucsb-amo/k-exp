@@ -63,6 +63,9 @@ class Feedback:
         self.p.omega_guess_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.omega_original_min = 0.0
         self.omega_original_max = 0.0
+        self.state_x_scratch = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
+        self.state_y_scratch = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
+        self.state_z_scratch = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
 
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
@@ -479,14 +482,18 @@ class Feedback:
             self.omega_original_max = omega_lo
 
     @portable(flags={"fast-math"})
-    def remesh_to_centered(self, omega_center, span_Omega, interpolate_posterior=1):
+    def remesh_to_centered(self, omega_center, span_Omega,
+                            interpolate_posterior=1,
+                            interpolate_states=0):
         """Re-grid in-place centred on omega_center with half-width span_Omega*Omega.
 
         Grid order (ascending/descending) is inherited from the existing grid.
         P0 is linearly interpolated (interpolate_posterior=1) or reset to
-        uniform 1/m (=0).  Bloch state transferred by nearest-neighbour copy.
+        uniform 1/m (=0).  Bloch state transferred by nearest-neighbour copy
+        (interpolate_states=0) or linear interpolation (interpolate_states=1).
         No dynamic allocation; compatible with @portable fast-math."""
         interpolate_bool = bool(interpolate_posterior)
+        interpolate_states_bool = bool(interpolate_states)
         m = self.m
         Omega = self.Omega
 
@@ -548,7 +555,40 @@ class Feedback:
         else:
             inv_total = 1.0 / m
 
-        # ── Pass 2: write new omega grid, normalised P0, nearest-neighbour Bloch ──
+        # ── Pass 1.5: compute state transfer into scratch to avoid in-place corruption ──
+        # Writing state_x[i] while reading state_x[lo] / state_x[lo+1] is unsafe when
+        # lo < i (happens for i > m/2 in a centred shrink), so we stage into scratch first.
+        i    = 0
+        frac = frac_0
+        while i < m:
+            lo = int(frac)
+            if interpolate_states_bool:
+                t_frac = frac - lo
+                if lo < 0:
+                    self.state_x_scratch[i] = self.state_x[0]
+                    self.state_y_scratch[i] = self.state_y[0]
+                    self.state_z_scratch[i] = self.state_z[0]
+                elif lo >= m - 1:
+                    self.state_x_scratch[i] = self.state_x[m - 1]
+                    self.state_y_scratch[i] = self.state_y[m - 1]
+                    self.state_z_scratch[i] = self.state_z[m - 1]
+                else:
+                    self.state_x_scratch[i] = self.state_x[lo] + t_frac * (self.state_x[lo + 1] - self.state_x[lo])
+                    self.state_y_scratch[i] = self.state_y[lo] + t_frac * (self.state_y[lo + 1] - self.state_y[lo])
+                    self.state_z_scratch[i] = self.state_z[lo] + t_frac * (self.state_z[lo + 1] - self.state_z[lo])
+            else:
+                lo_nearest = lo + 1 if frac - lo >= 0.5 else lo
+                if lo_nearest < 0:
+                    lo_nearest = 0
+                elif lo_nearest >= m:
+                    lo_nearest = m - 1
+                self.state_x_scratch[i] = self.state_x[lo_nearest]
+                self.state_y_scratch[i] = self.state_y[lo_nearest]
+                self.state_z_scratch[i] = self.state_z[lo_nearest]
+            frac += dfrac
+            i    += 1
+
+        # ── Pass 2: write new omega grid, normalised P0, and committed Bloch state ──
         i     = 0
         frac  = frac_0
         omega = new_start
@@ -563,9 +603,9 @@ class Feedback:
             self.omega_guess_list[i] = omega
             self.omega_sq_list[i]    = omega * omega
             self.P0[i]               = p_new
-            self.state_x[i]          = self.state_x[lo_nearest]
-            self.state_y[i]          = self.state_y[lo_nearest]
-            self.state_z[i]          = self.state_z[lo_nearest]
+            self.state_x[i]          = self.state_x_scratch[i]
+            self.state_y[i]          = self.state_y_scratch[i]
+            self.state_z[i]          = self.state_z_scratch[i]
             frac  += dfrac
             omega += step_new
             i     += 1
@@ -593,7 +633,8 @@ class Feedback:
                 self.feedback_remesh_threshold_omega *= self.p.remesh_threshold_scale_factor
                 self.feedback_remesh_span_Omega = self.feedback_remesh_span_Omega * self.p.remesh_scale_factor
                 interpolate_posterior = self.p.remesh_interpolate_posterior
-                self.remesh_to_centered(omega_center, self.feedback_remesh_span_Omega, interpolate_posterior)
+                interpolate_states = self.p.remesh_interpolate_states
+                self.remesh_to_centered(omega_center, self.feedback_remesh_span_Omega, interpolate_posterior, interpolate_states)
                 self._remesh_counter = 0
 
     def _initialize_measurement_calibrations(self):
