@@ -23,9 +23,9 @@ struct Cal
 };
 
 void setup() {
-  configureADC(1, 1, 0, BIPOLAR_5V, getMeas1);
+  configureADC(1, 1, 0, BIPOLAR_10V, getMeas1);
   configureADC(2, 1, 0, BIPOLAR_10V, getSet1);
-  configureADC(3, 1, 0, BIPOLAR_5V, getMeas2);
+  configureADC(3, 1, 0, BIPOLAR_10V, getMeas2);
   configureADC(4, 1, 0,BIPOLAR_10V,getSet2);
 
   qC.assignVariable("p1", &P1);
