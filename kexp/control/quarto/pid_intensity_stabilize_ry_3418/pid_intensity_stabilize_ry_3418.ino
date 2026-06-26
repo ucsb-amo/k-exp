@@ -84,8 +84,8 @@ void clear_integrator2() {
 void getMeas1() {
   double newadc1 = readADC1_from_ISR();
   double newdac1 = 0.;
-  writeDAC(3, newadc1);
-  // writeDAC(4, SETPOINT1);
+  // writeDAC(3, newadc1);
+  writeDAC(4, SETPOINT1);
 
   if (pid_enable1) {
     double prop1 = (newadc1 - SETPOINT1) * P1;
@@ -112,8 +112,8 @@ void getSet1() {
 void getMeas2() {
   double newadc2 = readADC3_from_ISR();
   double newdac2 = 0.;
-  writeDAC(4, newadc2);
-  // writeDAC(4, SETPOINT2);
+  // writeDAC(4, newadc2);
+  writeDAC(3, SETPOINT2);
 
   if (pid_enable2) {
     double prop2 = (newadc2 - SETPOINT2) * P2;
