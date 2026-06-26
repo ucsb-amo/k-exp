@@ -9,7 +9,7 @@ class ExptParams(expt_params_kexp):
         self.update_raman_frequency_bool = 0
         self.include_photon_noise = 1
 
-        self.feedback_grid_size = 31
+        self.feedback_grid_size = 21
         self.N_pulses = 20
 
         self.feedback_fractional_initial_offset = 0.0
@@ -28,7 +28,7 @@ class ExptParams(expt_params_kexp):
         self.n_initial_shots_before_remesh = 2
 
         # self.t_raman_pulse = self.t_raman_pi_pulse * (np.pi / 6)
-        self.t_raman_pulse = self.t_raman_pi_pulse / 3
+        self.t_raman_pulse = 5 * self.t_raman_pi_pulse / 2
         self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
         # self.t_raman_pulse_ideal = 3.618e-06
         # self.t_raman_pulse_ideal = 4.973e-06
@@ -56,7 +56,7 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_up = 63.619
         # self.std_n_photons_down = 31.481
         # self.std_n_photons_per_shot = 47.55 # avg of up/down
-        self.std_n_photons_per_shot = 200.481 # using down std
+        self.std_n_photons_per_shot = 47.5 # using down std
         # self.std_n_photons_per_shot = 150.619 # using down std
         self.feedback_measurement_midpoint_fraction = 0.36689
 

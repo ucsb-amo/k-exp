@@ -22,9 +22,9 @@ class feedback(EnvExperiment, FeedbackExpt):
         ### parameters
 
         self.p.feedback_fractional_initial_offset = 2.
-        # self.xvar('feedback_fractional_initial_offset', np.linspace(-2.5,7.5,5))
+        # self.xvar('feedback_fractional_initial_offset', np.linspace(-4.,4.,5))
         
-        self.p.N_repeats = 6
+        self.p.N_repeats = 5
 
         self.p.feedback_guess_span_Omega = 5.
 
@@ -33,11 +33,11 @@ class feedback(EnvExperiment, FeedbackExpt):
         self.p.remesh_interpolate_posterior = 1
         self.p.remesh_interpolate_states = 1
 
-        self.p.remesh_after_n_good_shots = 4
+        self.p.remesh_after_n_good_shots = 3
         self.p.remesh_reset_counter_threshold_fraction = 2.
         self.p.n_initial_shots_before_remesh = 2
 
-        self.p.remesh_scale_factor = 0.8
+        self.p.remesh_scale_factor = 0.4
         # self.xvar('remesh_scale_factor', np.linspace(0.325,0.9,6))
         self.p.remesh_threshold_scale_factor = 0.75
 

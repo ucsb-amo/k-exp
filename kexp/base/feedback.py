@@ -678,7 +678,33 @@ class Feedback:
                 self.remesh_to_centered(omega_center, self.feedback_remesh_span_Omega,
                                         interpolate_posterior, interpolate_states,
                                         expand_clipped)
-                self._remesh_counter = 0
+
+                # Re-select omega_raman from the remeshed posterior:
+                # use the grid point with highest P0, or the mean if the
+                # distribution is too flat (max_prob < 1.15 * uniform).
+                # max_idx = 0
+                # max_prob = self.P0[0]
+                # mn_num = 0.0
+                # mn_den = 0.0
+                # ii = 0
+                # while ii < self.m:
+                #     if self.P0[ii] > max_prob:
+                #         max_prob = self.P0[ii]
+                #         max_idx = ii
+                #     mn_num += self.P0[ii] * self.omega_guess_list[ii]
+                #     mn_den += self.P0[ii]
+                #     ii += 1
+                # if mn_den > 0.0:
+                #     mn_num = mn_num / mn_den
+                # else:
+                #     mn_num = self.omega_raman
+                # uniform_prob = 1.0 / self.m
+                # if max_prob < 1.15 * uniform_prob:
+                #     self.omega_raman = mn_num
+                # else:
+                #     self.omega_raman = self.omega_guess_list[max_idx]
+
+                # self._remesh_counter = 0
 
     def _initialize_measurement_calibrations(self):
         (
