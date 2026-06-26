@@ -584,9 +584,9 @@ class FeedbackReplayCore(Feedback):
         if hasattr(p, "t_raman_set_pretrigger_mu"):
             timing["t_raman_set_pretrigger_mu"] = int(getattr(p, "t_raman_set_pretrigger_mu"))
 
-        dt_eff = float(self.dt_eff)
-        dt_ideal = float(self.dt_ideal)
-        dt_img = float(self.dt_z)
+        dt_eff = float(self.p.t_raman_pulse)
+        dt_ideal = float(self.p.t_raman_pulse_ideal)
+        dt_img = float(self.p.t_img_pulse)
 
         timing["dt_eff"] = dt_eff
         timing["dt_ideal"] = dt_ideal

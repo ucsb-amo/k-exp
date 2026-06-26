@@ -9,7 +9,7 @@ class ExptParams(expt_params_kexp):
         self.update_raman_frequency_bool = 0
         self.include_photon_noise = 1
 
-        self.feedback_grid_size = 41
+        self.feedback_grid_size = 31
         self.N_pulses = 20
 
         self.feedback_fractional_initial_offset = 0.0
@@ -19,77 +19,55 @@ class ExptParams(expt_params_kexp):
         # halve the grid span and re-centre on omega_raman.  0.0 = disabled.
         self.feedback_remesh_threshold_Omega = 0.0
         self.remesh_interpolate_posterior = 0
+        self.remesh_interpolate_states = 0
+        self.remesh_expand_clipped_grid_to_requested_size = 1
         self.remesh_scale_factor = 0.5
         self.remesh_threshold_scale_factor = 0.5
         self.remesh_after_n_good_shots = 1
         self.remesh_reset_counter_threshold_fraction = 1.5
         self.n_initial_shots_before_remesh = 2
 
-        self.t_raman_pulse = self.t_raman_pi_pulse / 2
+        # self.t_raman_pulse = self.t_raman_pi_pulse * (np.pi / 6)
+        self.t_raman_pulse = self.t_raman_pi_pulse / 3
         self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
         # self.t_raman_pulse_ideal = 3.618e-06
         # self.t_raman_pulse_ideal = 4.973e-06
         # self.t_raman_pulse_ideal = 4.661e-06
 
-        # # calibration run 69942
-        # # img amp 0.2, pulse time 5.0e-06 s
-        # # self.frequency_lightshift = 30.e+03  # Hz
-        # self.frequency_lightshift = 2.797e+04 # 28.8e+03  # Hz
+        self.frequency_lightshift = 3.187e+04
 
-        # calibration run 70842
-        # img amp 0.2, pulse time 5.0e-06 s
-        # self.frequency_lightshift = 3.149e+04
-        # self.frequency_lightshift = 28.21e3
-        self.frequency_lightshift = 3.104e+04
-
-        # calibration run 69990
         # self.t_img_pulse = 5e-06  # s
         # self.amp_imaging = 0.2
-        # self.v_apd_all_up = -0.18053
-        # self.v_apd_all_down = -0.21441
-        # self.n_photons_per_shot = 654.6
-        # self.std_n_photons_up = 93.056
-        # self.std_n_photons_down = 40.679
-        # self.std_n_photons_per_shot = 66.868 # avg of up/down   
-        # self.std_n_photons_per_shot = 50. # avg of up/down  
-        # self.feedback_measurement_midpoint_fraction = 0.43527
+        # self.v_apd_all_up = -0.17181
+        # self.v_apd_all_down = -0.21521
+        # self.n_photons_per_shot = 734.77
+        # # self.std_n_photons_up = 131.87
+        # # self.std_n_photons_down = 45.581
+        # # self.std_n_photons_per_shot = 88.723 # avg of up/down
+        # self.std_n_photons_per_shot = 32. # using down std
+        # self.feedback_measurement_midpoint_fraction = 0.42421
 
-        # calibration run 70019
-        # self.t_img_pulse = 7e-06  # s
-        # self.amp_imaging = 0.2
-        # self.v_apd_all_up = -0.15305
-        # self.v_apd_all_down = -0.21326
-        # self.n_photons_per_shot = 1043.6
-        # self.std_n_photons_up = 146.25
-        # self.std_n_photons_down = 80.762
-        # self.std_n_photons_per_shot = 100 # avg of up/down
-        # self.feedback_measurement_midpoint_fraction = 0.40272
-
-        # # calibration run 70025
-        # self.t_img_pulse = 1e-05  # s
-        # self.amp_imaging = 0.2
-        # self.v_apd_all_up = -0.13526
-        # self.v_apd_all_down = -0.21644
-        # self.n_photons_per_shot = 1336.9
-        # # self.std_n_photons_up = 191.57
-        # # self.std_n_photons_down = 112.63
-        # self.std_n_photons_per_shot = 152.1# 152.1 # avg of up/down
-        # self.feedback_measurement_midpoint_fraction = 0.47789
-
-        # calibration run 70959
+        # calibration run 71098
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.17181
-        self.v_apd_all_down = -0.21521
-        self.n_photons_per_shot = 734.77
-        # self.std_n_photons_up = 131.87
-        # self.std_n_photons_down = 45.581
-        # self.std_n_photons_per_shot = 88.723 # avg of up/down
-        self.std_n_photons_per_shot = 32. # using down std
-        self.feedback_measurement_midpoint_fraction = 0.42421
+        self.v_apd_all_up = -0.17433
+        self.v_apd_all_down = -0.21144
+        self.n_photons_per_shot = 613.32
+        # self.std_n_photons_up = 63.619
+        # self.std_n_photons_down = 31.481
+        # self.std_n_photons_per_shot = 47.55 # avg of up/down
+        self.std_n_photons_per_shot = 200.481 # using down std
+        # self.std_n_photons_per_shot = 150.619 # using down std
+        self.feedback_measurement_midpoint_fraction = 0.36689
+
+
+        # run 71081 | multi-parameter grid fit result
+        # self.feedback_measurement_midpoint_fraction = 0.494
+        # self.v_apd_all_up = -0.1665
+        # self.v_apd_all_down = -0.2274
 
         # run 66841 | multi-parameter grid fit result
-        self.back_action_coherence = 0.8853  
+        self.back_action_coherence = 0.8067
 
         self.feedback_measurement_midpoint_remap_enabled = True
 

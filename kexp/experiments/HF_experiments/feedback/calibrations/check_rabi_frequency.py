@@ -16,7 +16,7 @@ class hf_raman(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_raman_pulse', np.linspace(0.,75.,40)*1.e-6)
-        self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,40.,20),np.linspace(200.,220.,10)))*1.e-6)
+        self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,60.,40),np.linspace(200.,240.,20)))*1.e-6)
         # self.xvar('t_tof',np.linspace(3.,100.,15)*1.e-6)
         self.p.t_raman_pulse = 0.
 

@@ -13,9 +13,6 @@ class _FeedbackParamStore:
 class Feedback:
     kernel_invariants = {
         "m",
-        "dt_eff",
-        "dt_ideal",
-        "dt_z",
         "N_photons_per_shot",
         "std_n_photons_per_shot",
         "v_apd_all_up",
@@ -52,6 +49,8 @@ class Feedback:
         self._print_estimated_time = True
 
         self._remesh_counter = 0
+
+        self._flat_prob_counter = 0
 
     def omega_to_detuning(self, omega_raman):
         '''Returns the detuning in units of Omega, given the Raman drive frequency in rad/s.'''
@@ -159,10 +158,9 @@ class Feedback:
         Omega = self.Omega
         Omega_sq = Omega * Omega
 
-        dt_eff = self.dt_eff
-        dt_ideal = self.dt_ideal
-        
-        dt_z = self.dt_z
+        dt_eff = self.p.t_raman_pulse
+        dt_ideal = self.p.t_raman_pulse_ideal
+        dt_z = self.p.t_img_pulse
 
         if include_photon_noise:
             sigma = self.std_n_photons_per_shot
@@ -291,16 +289,16 @@ class Feedback:
         while i < len(P0):
             P0[i] = P0[i] / P0_total
             i += 1
-
-        total = 0.
-        for i in range(len(P0)):
-            total += P0[i]
         
         self.P0_total = P0_total
         var = moment_2 - mn * mn
         if var < 0.0:
             var = 0.0
         std = np.sqrt(var)
+
+        # total = 0.
+        # for i in range(len(P0)):
+        #     total += P0[i]
 
         # Find the frequency at maximum posterior probability
         max_idx = 0
@@ -315,8 +313,9 @@ class Feedback:
 
         # If distribution is nearly flat (max prob close to uniform), use mean instead of max
         uniform_prob = 1.0 / m
-        if max_prob < 1.5 * uniform_prob:
+        if max_prob < 1.15 * uniform_prob:
             omega_raman_out = mn  # Distribution is flat, use mean
+            self._flat_prob_counter += 1
         else:
             omega_raman_out = omega_max  # Distribution has a peak, use max
 
@@ -389,6 +388,7 @@ class Feedback:
 
         self._initialize_frequency_grid()
         self.p.omega_guess_list = self.omega_guess_list
+        self._flat_prob_counter = 0
         # aprint((self.omega_guess_list/self.two_pi - self.p.frequency_raman_transition)/(self.Omega/(2*np.pi)))
 
     @portable(flags={"fast-math"})
@@ -415,10 +415,6 @@ class Feedback:
         self.p.feedback_grid_size = int(self.p.feedback_grid_size)
         self.m = self.p.feedback_grid_size
         self.Omega = np.pi / self.p.t_raman_pi_pulse
-        self.dt_eff = float(self.p.t_raman_pulse)
-        self.dt_ideal = float(self.p.t_raman_pulse_ideal)
-        self.dt_z = float(self.p.t_img_pulse)
-        # Remesh state (mutable per-shot; not kernel_invariants so they can be scanned)
 
     def _initialize_lightshift(self):
         self.p.frequency_lightshift = self._resolve_lightshift_calibration(self.p.amp_imaging, self.p.frequency_lightshift)
@@ -484,13 +480,22 @@ class Feedback:
     @portable(flags={"fast-math"})
     def remesh_to_centered(self, omega_center, span_Omega,
                             interpolate_posterior=1,
-                            interpolate_states=0):
+                            interpolate_states=0,
+                            expand_clipped_grid_to_requested_size=1):
         """Re-grid in-place centred on omega_center with half-width span_Omega*Omega.
 
         Grid order (ascending/descending) is inherited from the existing grid.
         P0 is linearly interpolated (interpolate_posterior=1) or reset to
         uniform 1/m (=0).  Bloch state transferred by nearest-neighbour copy
         (interpolate_states=0) or linear interpolation (interpolate_states=1).
+
+        expand_clipped_grid_to_requested_size (1/0):
+          1 — shift omega_center toward the interior so the full requested span
+              always fits; grid width is preserved, center may move.
+          0 — keep omega_center as-is; symmetrically reduce the span to the
+              largest value that fits within the original bounds.  Writes the
+              actual span back to self.feedback_remesh_span_Omega.
+
         No dynamic allocation; compatible with @portable fast-math."""
         interpolate_bool = bool(interpolate_posterior)
         interpolate_states_bool = bool(interpolate_states)
@@ -511,20 +516,55 @@ class Feedback:
         else:
             step_new = (2.0 * span_Omega * Omega) / (m - 1)
 
-        # Clamp omega_center so the new grid stays within the original grid bounds
+        # Clamp so the new grid stays within the original grid bounds.
+        # Two modes controlled by expand_clipped_grid_to_requested_size:
+        #   1 (expand): shift center toward interior, preserve full span.
+        #   0 (clip):   keep center, reduce span symmetrically to fit.
         half_width = step_new * (m - 1) * 0.5
         if half_width < 0.0:
             half_width = -half_width
         clamp_lo = self.omega_original_min + half_width
         clamp_hi = self.omega_original_max - half_width
         if clamp_lo > clamp_hi:
-            # New grid is wider than the original (shouldn't happen in normal use);
-            # fall back to centering on the original grid midpoint
+            # Requested span exceeds original grid entirely; center on midpoint.
             omega_center = (self.omega_original_min + self.omega_original_max) * 0.5
-        elif omega_center < clamp_lo:
-            omega_center = clamp_lo
-        elif omega_center > clamp_hi:
-            omega_center = clamp_hi
+            if not expand_clipped_grid_to_requested_size:
+                # Shrink span to the largest symmetric fit.
+                max_hw = (self.omega_original_max - self.omega_original_min) * 0.5
+                if max_hw < 0.0:
+                    max_hw = 0.0
+                new_span = max_hw / Omega if Omega > 0.0 else span_Omega
+                if new_span < span_Omega:
+                    span_Omega = new_span
+                    if old_step < 0.0:
+                        step_new = -(2.0 * span_Omega * Omega) / (m - 1)
+                    else:
+                        step_new = (2.0 * span_Omega * Omega) / (m - 1)
+                    self.feedback_remesh_span_Omega = span_Omega
+        elif expand_clipped_grid_to_requested_size:
+            # Shift center so the full span fits inside the original bounds.
+            if omega_center < clamp_lo:
+                omega_center = clamp_lo
+            elif omega_center > clamp_hi:
+                omega_center = clamp_hi
+        else:
+            # Keep center; reduce span symmetrically when the grid would overflow.
+            if omega_center < clamp_lo or omega_center > clamp_hi:
+                dist_lo = omega_center - self.omega_original_min
+                dist_hi = self.omega_original_max - omega_center
+                if dist_lo < 0.0:
+                    dist_lo = 0.0
+                if dist_hi < 0.0:
+                    dist_hi = 0.0
+                max_hw = dist_lo if dist_lo < dist_hi else dist_hi
+                new_span = max_hw / Omega if Omega > 0.0 else span_Omega
+                if new_span < span_Omega:
+                    span_Omega = new_span
+                    if old_step < 0.0:
+                        step_new = -(2.0 * span_Omega * Omega) / (m - 1)
+                    else:
+                        step_new = (2.0 * span_Omega * Omega) / (m - 1)
+                    self.feedback_remesh_span_Omega = span_Omega
 
         new_start = omega_center - step_new * (m - 1) * 0.5
 
@@ -634,7 +674,10 @@ class Feedback:
                 self.feedback_remesh_span_Omega = self.feedback_remesh_span_Omega * self.p.remesh_scale_factor
                 interpolate_posterior = self.p.remesh_interpolate_posterior
                 interpolate_states = self.p.remesh_interpolate_states
-                self.remesh_to_centered(omega_center, self.feedback_remesh_span_Omega, interpolate_posterior, interpolate_states)
+                expand_clipped = self.p.remesh_expand_clipped_grid_to_requested_size
+                self.remesh_to_centered(omega_center, self.feedback_remesh_span_Omega,
+                                        interpolate_posterior, interpolate_states,
+                                        expand_clipped)
                 self._remesh_counter = 0
 
     def _initialize_measurement_calibrations(self):

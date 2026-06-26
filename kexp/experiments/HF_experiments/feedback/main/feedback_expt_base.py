@@ -158,12 +158,24 @@ class FeedbackExpt(Base, Feedback):
             if i > (self.p.n_initial_shots_before_remesh-1):
                 self.maybe_remesh(self._posterior_std, omega_center=omega_posterior_mean)
 
+            # Recompute the inter-pulse gap with current params so any per-step
+            # change to t_raman_pulse or t_img_pulse is reflected in the next step.
+            dT = self.compute_t_between_pulses_mu(
+                t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
+                t_raman_pulse=self.p.t_raman_pulse,
+                t_img_pulse=self.p.t_img_pulse,
+                t_raman_pretrigger=self.p.t_raman_set_pretrigger_mu,
+                t_fifo_mu=self.p.t_fifo_mu
+            )
+
             t_step += dT
 
             self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
             self.data.s_z.shot_data[i] = self.state_z[self.zidx]
 
             self.per_feedback_loop_end(idx=i)
+
+        self.per_scan_kernel_end()
 
     @kernel
     def measurement(self, i):
@@ -182,6 +194,11 @@ class FeedbackExpt(Base, Feedback):
         v = self.convert_measurement(self.data.apd.shot_data[i])
         i = i + 1
         return v
+    
+    @kernel
+    def per_scan_kernel_end(self):
+        '''runs per scan kernel after everything else'''
+        pass
     
     @kernel
     def per_scan_kernel_top(self):
@@ -212,14 +229,13 @@ class FeedbackExpt(Base, Feedback):
 
     @rpc(flags={"async"})
     def store_probabilities_to_host(self, pulse_probabilities, shot_idx, pulse_idx):
-        self.p.probabilities[shot_idx, pulse_idx] = pulse_probabilities
-
-    @portable
-    def store_omega_guess_mesh(self, shot_idx, pulse_idx):
-        for i in range(self.m):
-            self.omega_raman_mesh[shot_idx, pulse_idx, i] = self.omega_guess_list[i]
+        self.probabilities[shot_idx, pulse_idx] = pulse_probabilities
 
     def store_mesh_to_params(self):
         if hasattr(self, 'omega_raman_mesh'):
             if not np.all(self.omega_raman_mesh == 0.):
                 self.p.omega_raman_mesh = self.omega_raman_mesh
+
+        if hasattr(self, 'probabilities'):
+            if not np.all(self.probabilities == 0.):
+                self.p.probabilities = self.probabilities
