@@ -8,7 +8,7 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,setup_camera=True,save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
@@ -38,7 +38,7 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('v_pd_hf_tweezer_squeeze_power', np.linspace(0.3,6.7,21))
 
         # self.xvar('t_tof',np.linspace(300.,2800.,7)*1.e-6)
-        self.p.t_tof = 1000.e-6
+        # self.p.t_tof = 1000.e-6
         # self.p.t_tof = 20.e-6
 
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,7.2,3))
@@ -66,15 +66,17 @@ class hf_bec(EnvExperiment, Base):
         self.prepare_hf_tweezers(squeeze=False)
         # self.prep_raman()
 
+        delay(10.e-3)
+
         
         
         # self.raman.on()
-        # self.ry_405.reboot()
-        # self.ry_405.on()
+        self.ry_405.reboot()
+        self.ry_405.on()
         
         delay(self.p.t_tweezer_hold)
         
-        # self.ry_405.ttl_shutter.off()
+        self.ry_405.ttl_shutter.off()
         # self.raman.off()
         # self.ry_405.ttl_shutter.off()
 

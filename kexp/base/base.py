@@ -132,8 +132,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.outer_coil.off()
             self.inner_coil.off()
         if init_ry:
-            # self._fzw.connect()
-            pass
             self.ry_405.init()
             self.ry_980.init()
         
@@ -197,13 +195,13 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.core.break_realtime()
         # self.ry_405.lock_status()
-        # self.ry_980.lock_status()
+        self.ry_980.lock_status()
 
         self.cleanup_scan_kernel_wax()
 
     @kernel
     def post_scan(self):
-        # self.ry_980.sweep_to(reset=True)
+        self.ry_980.sweep_to(reset=True)
         self.tweezer.reset_awg()
         self.core.break_realtime()
         self.background_field()

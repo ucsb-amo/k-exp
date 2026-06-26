@@ -362,8 +362,7 @@ class LiveODServer(QThread, WaxxServer):
         self.shot_progress_signal.emit(shot_idx, N_total, xvar_values)
         self.shot_timing_signal.emit(float(delta_t), str(eta_str))
 
-        if not self._current_capture_images:
-            print(f"[LiveODServer] shot {shot_idx + 1}/{N_total} (Δt={delta_t:.1f}s | ETA {eta_str})")
+        print(f"[LiveODServer] shot {shot_idx + 1}/{N_total} (Δt={delta_t:.1f}s | ETA {eta_str})")
         # Include reset flag so the experiment can abort at shot boundary
         # even if the POLL-based check misses it.
         return {"ok": True, "reset_requested": self._reset_requested}

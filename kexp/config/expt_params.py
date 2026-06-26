@@ -155,7 +155,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 8.3333e-06 #70253, 2026-06-20
         # self.t_raman_pi_pulse = 9.5606e-06 #70859, 2026-06-23
         # self.t_raman_pi_pulse = 9.3672e-06 #70958, 2026-06-24
-        self.t_raman_pi_pulse = 9.2478e-06 #71073, 2026-06-25
+        # self.t_raman_pi_pulse = 9.2478e-06 #71073, 2026-06-25
+        self.t_raman_pi_pulse = 9.1654e-06 #71164, 2026-06-26
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -433,7 +434,8 @@ class ExptParams(ExptParamsWaxx):
         #
         self.v_integrated_apd_adc_background = -2.1
 
-        self.frequency_target_405_lock = 741.09120e12
+        # self.frequency_target_405_lock = 741.09120e12
+        self.frequency_target_405_lock = 741.092700e12
         self.frequency_target_980_lock = 307.45729e12
 
         self.t_ffu_dds_pipeline_latency = int64(79)

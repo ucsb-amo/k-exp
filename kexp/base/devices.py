@@ -197,7 +197,7 @@ class Devices():
             siglent_ch=self.siglent.siglent_980,
             ttl_ao_sw=self.ttl.ry_980_sw,
             dac_pid=self.dac.ry_980_intensity_control,
-            eo_sideband_order=-1,
+            eo_sideband_order=1,
             wavemeter=self._fzw.ry_980,
             lock_data_container=self.data.frequency_wavemeter_980,
             core=self.core
