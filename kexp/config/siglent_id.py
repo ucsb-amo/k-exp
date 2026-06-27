@@ -12,7 +12,7 @@ class siglent_frame(siglent_frame_waxx):
                                                    frequency=305.1e6,
                                                    amplitude_vpp=0.610,
                                                    max_amplitude_vpp=1.,
-                                                   min_frequency=200.e6,
+                                                   min_frequency=75.e6,
                                                    max_frequency=490.e6)
         self.siglent_405 = self.assign_sdg6000x_ch(2,IP_RY_CAVITY_SIGLENT,
                                                    frequency=490.0e6,
