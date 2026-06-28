@@ -133,8 +133,6 @@ class DataHandler(QThread, Scribe):
         self.N_pwa_per_shot = N_pwa_per_shot
 
     def run(self):
-        if self.interrupted:
-            self.quit()
         self.write_image_to_dataset()
 
     def read_params(self):
@@ -382,10 +380,15 @@ class CameraBaby(QThread):
         if self.interrupted and self.death is not self.honorable_death:
             print('Grab loop interrupted, shutting down.')
             self.death = self.dishonorable_death
-        self.death()
-        if self.interrupted:
-            self.dead = True
-        self.done_signal.emit()
+        try:
+            self.death()
+        except Exception as e:
+            print(f"[CameraBaby:{self.name}] error in death handler: {e}")
+            traceback.print_exc()
+        finally:
+            if self.interrupted:
+                self.dead = True
+            self.done_signal.emit()
 
     def handshake(self):
         """Connect camera and signal readiness via cam_status_signal.

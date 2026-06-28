@@ -289,6 +289,13 @@ class LiveODWindow(QWidget):
             self.data_handler = None
             return
 
+        # Replace the shared queue with a fresh one for every camera run.
+        # Without this, images left in the queue by an interrupted previous
+        # DataHandler appear at the start of the new run — displayed as old-run
+        # frames and (worse) written at indices 0, 1, … in the new HDF5 file.
+        # Old objects (if still alive) keep their reference to the old queue.
+        self.queue = Queue()
+
         self.data_handler = DataHandler(
             self.queue, data_filepath=filepath,
             save_data=save_data,
@@ -471,7 +478,6 @@ class LiveODWindow(QWidget):
         if hasattr(self, 'data_handler') and self.data_handler is not None:
             try:
                 self.data_handler.interrupted = True
-                self.data_handler.quit()
             except Exception as e:
                 print(e)
                 

@@ -21,13 +21,13 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.,9.,15))
         # self.p.v_pd_lightsheet_rampup_end = 7.
 
-        self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.6,1.2,15))
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.6,1.2,15))
         # self.p.v_pd_hf_lightsheet_rampdown_end = .8
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,20))
+        self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
         # self.p.v_hf_tweezer_paint_amp_max = -2.2
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
+        self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 3.94

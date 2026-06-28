@@ -122,9 +122,9 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown = 30.e-3
+        self.t_tweezer_paint_rampdown = 13.e-3
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
-        self.t_tweezer_squeezer_ramp_2 = 30.e-3
+        self.t_tweezer_squeezer_ramp_2 = 13.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -331,7 +331,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = -2.5
+        self.v_hf_tweezer_paint_amp_max = -2.2
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -370,7 +370,7 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.31
+        self.fraction_power_raman = 0.33
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 

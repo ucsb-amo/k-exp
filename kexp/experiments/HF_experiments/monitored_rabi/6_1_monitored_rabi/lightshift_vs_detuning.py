@@ -19,16 +19,16 @@ class hf_raman(EnvExperiment, Base):
         self.p.with_imaging = 1
         self.xvar('relative_phase', np.linspace(0., 2*np.pi, 12))
 
-        self.xvar('frequency_detuned_hf_midpoint',np.linspace(-540.e6,-475.e6,10))
+        self.xvar('frequency_detuned_hf_midpoint',np.linspace(-558.e6,-450.e6,13))
 
-        self.p.v_pd_hf_tweezer_squeeze_power = 3.94
+        self.p.v_pd_hf_tweezer_squeeze_power = 1.97
 
         self.p.t_ramsey = 5.e-6
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
         self.p.amp_imaging = .3
         self.p.t_tweezer_hold = 15.e-3
-        self.p.t_tof = 50.e-6
+        self.p.t_tof = 150.e-6
         self.p.t_mot_load = 1.
         self.p.N_repeats = 5
 
