@@ -22,9 +22,9 @@ class hf_bec(EnvExperiment, Base):
         self.p.do_405_pulse = 1
         self.p.do_980_pulse = 1
 
-        self.p.amp_dds_405 = 0.08
+        self.p.amp_dds_405 = 0.075
 
-        self.xvar('frequency_eo_980', np.arange(160000000.0,170000000.0,0.5e6))
+        self.xvar('frequency_eo_980', np.arange(180000000.0,180500000.0,0.5e6))
         self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
         # self.p.frequency_eo_980 = 305.1e6
 
@@ -36,7 +36,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.p.v_pd_ry_405 = 9.1 # for 1.95 mW
         # self.p.v_pd_ry_405 = 9.1 / 2 # for 1.95 mW
-        self.p.v_pd_ry_405 = 9.1 / 10 # for 1.95 mW
+        self.p.v_pd_ry_405 = 9.1 / 12 # for 1.95 mW
 
         # self.p.v_pd_ry_405 = 0.8
         # self.p.v_vva_ry_405 = 0.61

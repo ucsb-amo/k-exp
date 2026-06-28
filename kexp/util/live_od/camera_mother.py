@@ -1,4 +1,5 @@
 ﻿import time
+import traceback
 import numpy as np
 import os
 import names
@@ -166,8 +167,8 @@ class DataHandler(QThread, Scribe):
                 for key, val in self._camera_params_payload.items():
                     try:
                         setattr(self.camera_params, key, val)
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        print(f"[DataHandler] read_params: could not set camera_params.{key}={val!r}: {exc}")
             elif hasattr(self, '_camera_key_hint') and self._camera_key_hint:
                 # No camera_params payload — look up by key.
                 from kexp.config.camera_id import cameras as cam_catalog, CameraParams as CP
@@ -181,26 +182,34 @@ class DataHandler(QThread, Scribe):
             for key, val in getattr(self, '_params_payload', {}).items():
                 try:
                     setattr(self.params, key, val)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    print(f"[DataHandler] read_params: could not set params.{key}={val!r}: {exc}")
 
             for key, val in getattr(self, '_run_info_payload', {}).items():
                 try:
                     setattr(self.run_info, key, val)
-                except Exception:
-                    pass
+                except Exception as exc:
+                    print(f"[DataHandler] read_params: could not set run_info.{key}={val!r}: {exc}")
 
         self.image_type_signal.emit(self.run_info.imaging_type)
         self.save_data_bool_signal.emit(self.run_info.save_data)
 
     def write_image_to_dataset(self):
+        # Start SaveWorker immediately — it will wait for the HDF5 file in its
+        # own thread while the dispatch loop below runs unblocked.  Images that
+        # arrive before the file is ready queue up in save_queue (unbounded) and
+        # are drained by SaveWorker once the file becomes available.
         save_worker = None
+        save_queue = Queue()
         try:
             if self.save_data:
-                f = self.wait_for_data_available(timeout=DATA_SAVER_TIMEOUT,
-                                                 check_interrupt_method=self.break_check)
-                save_queue = Queue()
-                save_worker = SaveWorker(save_queue, f, self.N_img)
+                save_worker = SaveWorker(
+                    save_queue,
+                    wait_fn=self.wait_for_data_available,
+                    n_img=self.N_img,
+                    wait_timeout=DATA_SAVER_TIMEOUT,
+                    check_interrupt_method=self.break_check,
+                )
                 # Route SaveWorker's done signal through DataHandler so
                 # downstream consumers (live_od_server._data_handler_done_event)
                 # are unaffected.
@@ -213,16 +222,20 @@ class DataHandler(QThread, Scribe):
                 try:
                     img, _, idx = self.queue.get(block=False)
                     img_t = time.time()
-                    self.got_image_from_queue.emit(img)
+                    self.got_image_from_queue.emit(img)   # immediate display / OD plot
                     if self.save_data:
-                        save_queue.put((img, idx, img_t))   # non-blocking hand-off
+                        save_queue.put((img, idx, img_t))  # non-blocking hand-off
                     if idx == (self.N_img - 1):
                         break
-                except:
+                except Empty:
+                    self.msleep(1)
+                except Exception as e:
+                    print(f"[DataHandler] unexpected error in image dispatch loop: {e}")
+                    traceback.print_exc()
                     self.msleep(1)
         except Exception as e:
-            # print(f"No images received after {TIMEOUT} seconds. Did the grab time out?")
-            print(e)
+            print(f"[DataHandler] write_image_to_dataset failed: {e}")
+            traceback.print_exc()
 
         if self.save_data and save_worker is not None:
             # Propagate interruption so SaveWorker drains without writing.
@@ -237,16 +250,20 @@ class DataHandler(QThread, Scribe):
 
 
 class SaveWorker(QThread):
-    """Writes images to HDF5 on a dedicated thread so that DataHandler's
-    image-dispatch loop is never blocked by disk I/O.
+    """Writes images to HDF5 on a dedicated thread, decoupled from image display.
+
+    On start, waits for the HDF5 file to become available (via ``wait_fn``).
+    Images that arrive while waiting are buffered in ``save_queue`` (unbounded)
+    and flushed once the file is ready — so DataHandler's display loop is never
+    blocked by file I/O or slow NAS pre-allocation.
 
     Usage
     -----
-    1. Open the HDF5 file and pass the handle to the constructor.
-    2. Call ``start()``.
-    3. For each image, ``save_queue.put((img, idx, img_t))``.
-    4. When the grab loop ends, ``save_queue.put(None)`` (sentinel).
-    5. SaveWorker closes the file and emits ``done_writing_signal``.
+    1. Construct with ``wait_fn`` (DataHandler.wait_for_data_available) and call
+       ``start()``.  DataHandler begins dispatching images immediately.
+    2. For each image, ``save_queue.put((img, idx, img_t))``.
+    3. When the grab loop ends, ``save_queue.put(None)`` (sentinel).
+    4. SaveWorker closes the file and emits ``done_writing_signal``.
 
     Interruption
     ------------
@@ -256,35 +273,73 @@ class SaveWorker(QThread):
 
     done_writing_signal = pyqtSignal()
 
-    def __init__(self, save_queue: Queue, h5_file, n_img: int):
+    def __init__(self, save_queue: Queue, wait_fn, n_img: int,
+                 wait_timeout: float = 120.,
+                 check_interrupt_method=None):
         super().__init__()
         self._save_queue = save_queue
-        self._f = h5_file
+        self._wait_fn = wait_fn
         self._n_img = n_img
+        self._wait_timeout = wait_timeout
+        self._check_interrupt = check_interrupt_method if check_interrupt_method is not None else (lambda: False)
         self.interrupted = False
 
     def run(self):
+        # Wait for the HDF5 file to be available.  This blocks only THIS thread;
+        # DataHandler's dispatch loop (and therefore image display) continues
+        # uninterrupted.  Images accumulate in _save_queue during the wait.
+        f = None
+        try:
+            f = self._wait_fn(timeout=self._wait_timeout,
+                              check_interrupt_method=self._check_interrupt)
+        except Exception as exc:
+            print(f"[SaveWorker] Could not open data file: {exc}")
+            traceback.print_exc()
+            self.interrupted = True   # drain queue without writing
+
+        _datasets_created = False
         try:
             while True:
                 item = self._save_queue.get()
                 if item is None:            # sentinel — we're done
                     break
-                if self.interrupted:
+                if self.interrupted or f is None:
                     continue                # drain without writing
                 img, idx, img_t = item
                 try:
-                    self._f['data']['images'][idx] = img
-                    self._f['data']['image_timestamps'][idx] = img_t
+                    # Lazy dataset creation on the first image received.
+                    # images/image_timestamps are no longer pre-allocated by
+                    # create_data_file_from_payload (that heavy I/O was the race
+                    # source).  We create them here from the actual image shape.
+                    if not _datasets_created:
+                        dgrp = f['data']
+                        if 'images' not in dgrp:
+                            dgrp.create_dataset(
+                                'images',
+                                shape=(self._n_img,) + img.shape,
+                                dtype=img.dtype,
+                            )
+                            dgrp.create_dataset(
+                                'image_timestamps',
+                                shape=(self._n_img,),
+                                dtype=np.float64,
+                            )
+                        _datasets_created = True
+                    f['data']['images'][idx] = img
+                    f['data']['image_timestamps'][idx] = img_t
                     print(f"saved {idx + 1}/{self._n_img}")
                 except Exception as exc:
                     print(f"[SaveWorker] write error at idx={idx}: {exc}")
+                    traceback.print_exc()
         except Exception as exc:
             print(f"[SaveWorker] unexpected error: {exc}")
+            traceback.print_exc()
         finally:
-            try:
-                self._f.close()
-            except Exception:
-                pass
+            if f is not None:
+                try:
+                    f.close()
+                except Exception:
+                    pass
             self.done_writing_signal.emit()
 
 
@@ -322,7 +377,8 @@ class CameraBaby(QThread):
             self.handshake()
             self.grab_loop()
         except Exception as e:
-            print(e)
+            print(f"[CameraBaby:{self.name}] fatal error: {e}")
+            traceback.print_exc()
         if self.interrupted and self.death is not self.honorable_death:
             print('Grab loop interrupted, shutting down.')
             self.death = self.dishonorable_death

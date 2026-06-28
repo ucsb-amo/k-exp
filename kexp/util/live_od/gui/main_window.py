@@ -255,10 +255,19 @@ class LiveODWindow(QWidget):
         # queue when the next INIT_RUN arrives.  If not interrupted here, the
         # old DataHandler consumes images placed by the new CameraBaby before
         # the new DataHandler has started, so the display never updates.
-        if self.data_handler is not None and self.data_handler.isRunning():
-            self.msg("Warning: previous DataHandler still running — interrupting it.")
-            self.data_handler.interrupted = True
-            self.data_handler.wait(500)
+        if self.data_handler is not None:
+            if self.data_handler.isRunning():
+                self.msg("Warning: previous DataHandler still running — interrupting it.")
+                self.data_handler.interrupted = True
+                self.data_handler.wait(500)
+            # Disconnect before replacing so a late SaveWorker from the
+            # previous run can't falsely set _data_handler_done_event for
+            # the new run, causing END_RUN to proceed before images are saved.
+            try:
+                self.data_handler.done_writing_signal.disconnect(
+                    self.live_od_server.on_data_handler_done)
+            except Exception:
+                pass
             self.data_handler = None
 
         # Interrupt any CameraBaby left over from the previous run.
