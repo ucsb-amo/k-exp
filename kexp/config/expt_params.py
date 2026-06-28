@@ -435,8 +435,9 @@ class ExptParams(ExptParamsWaxx):
         self.v_integrated_apd_adc_background = -2.1
 
         # self.frequency_target_405_lock = 741.09120e12
-        self.frequency_target_405_lock = 741.092700e12
-        self.frequency_target_980_lock = 307.45729e12
+        self.frequency_target_405_lock = 741.092223e12 + 40.e6
+        # self.frequency_target_980_lock = 307.45729e12
+        self.frequency_target_980_lock = 307.420000e12 - 145.0e6 # n = 58
 
         self.t_ffu_dds_pipeline_latency = int64(79)
         self.t_io_update_pretrigger_mu = int64(32)

@@ -71,12 +71,12 @@ class hf_bec(EnvExperiment, Base):
         
         
         # self.raman.on()
-        self.ry_405.reboot()
-        self.ry_405.on()
+        # self.ry_405.reboot()
+        # self.ry_405.on()
         
         delay(self.p.t_tweezer_hold)
         
-        self.ry_405.ttl_shutter.off()
+        # self.ry_405.ttl_shutter.off()
         # self.raman.off()
         # self.ry_405.ttl_shutter.off()
 

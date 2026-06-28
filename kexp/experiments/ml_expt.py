@@ -9,10 +9,9 @@ class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select=cameras.andor,
-                      imaging_type=img_types.ABSORPTION,
-                      save_on_underflow=True)
-        
+                    camera_select=cameras.andor,
+                    imaging_type=img_types.ABSORPTION)
+
         # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
         self.p.t_tof = 500.e-6
 
@@ -25,8 +24,7 @@ class hf_bec(EnvExperiment, Base):
 
         self.p.amp_dds_405 = 0.08
 
-        # self.xvar('frequency_eo_980', np.arange(150.,350.,1)*1.e6)
-        # self.xvar('frequency_eo_980', np.linspace(290.,310.,10)*1.e6)
+        self.xvar('frequency_eo_980', np.arange(160000000.0,170000000.0,0.5e6))
         self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
         # self.p.frequency_eo_980 = 305.1e6
 
@@ -35,7 +33,7 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold', np.linspace(0.0, 500.0, 5) * 1.e-3)
         self.t_tweezer_hold = 200.e-3
 
-  
+
         # self.p.v_pd_ry_405 = 9.1 # for 1.95 mW
         # self.p.v_pd_ry_405 = 9.1 / 2 # for 1.95 mW
         self.p.v_pd_ry_405 = 9.1 / 10 # for 1.95 mW
@@ -44,7 +42,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 15
 
         self.finish_prepare(shuffle=True)
 
@@ -59,7 +57,7 @@ class hf_bec(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        
+
         self.ry_405.set_power(self.p.v_pd_ry_405)
 
         if self.p.do_980_pulse == 1:
@@ -76,7 +74,7 @@ class hf_bec(EnvExperiment, Base):
             self.ry_405.on()
         if self.p.do_980_pulse == 1:
             self.ry_980.on()
-        
+
         # if self.p.wee == 1:   
         #     for i in range(500):
         #             self.ry_980.on()

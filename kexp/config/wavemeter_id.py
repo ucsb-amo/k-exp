@@ -3,7 +3,7 @@ from waxx.control.misc.moglabs_wavemeter import WavemeterClient as WavemeterWaxx
 from kexp.config.ip import WAVEMETER_MOGLABS_IP
 from kexp.config.expt_params import ExptParams
 
-LOCK_TOLERANCE = 30.e6
+LOCK_TOLERANCE = 60.e6
 
 class Wavemeter(WavemeterWaxx):
     def __init__(self,

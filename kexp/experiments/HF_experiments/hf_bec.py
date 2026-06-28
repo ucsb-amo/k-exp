@@ -47,7 +47,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.camera_params.exposure_time = 20.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         
-        self.p.N_repeats = 100
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
 

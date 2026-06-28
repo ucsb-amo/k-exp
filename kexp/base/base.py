@@ -194,7 +194,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.ttl.line_trigger.clear_input_events()
 
         self.core.break_realtime()
-        # self.ry_405.lock_status()
+        self.ry_405.lock_status()
         self.ry_980.lock_status()
 
         self.cleanup_scan_kernel_wax()
