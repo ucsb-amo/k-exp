@@ -1,112 +1,97 @@
 
-import numpy as np
 from artiq.experiment import *
-from artiq.language.core import delay, kernel
+from artiq.experiment import delay
 from kexp import Base, img_types, cameras
+import numpy as np
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
+from kexp.calibrations.imaging import high_field_imaging_detuning
+from artiq.coredevice.sampler import Sampler
+from artiq.language import now_mu
+from kexp.util.artiq.async_print import aprint
 
-
-class hf_bec(EnvExperiment, Base):
+class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,setup_camera=True,
                     camera_select=cameras.andor,
-                    imaging_type=img_types.ABSORPTION)
+                    save_data=True,
+                    imaging_type=img_types.DISPERSIVE)
 
-        # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
-        self.p.t_tof = 500.e-6
+        self.p.v_pd_hf_tweezer_squeeze_power = 1.97
 
-        # self.xvar('wee',[1,0])
-        self.p.wee = 1
+        self.p.frequency_raman_transition = 119703945.0
 
-        # self.xvar('do_405_pulse',[1,0])
-        self.p.do_405_pulse = 1
-        self.p.do_980_pulse = 1
+        self.p.t_continuous_rabi = 500.e-6
 
-        self.p.amp_dds_405 = 0.075
+        self.p.amp_imaging = 1.2795918367346937
 
-        self.xvar('frequency_eo_980', np.arange(180000000.0,180500000.0,0.5e6))
-        self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
-        # self.p.frequency_eo_980 = 305.1e6
+        self.p.dimension_slm_mask = 20.e-6
 
-        # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
+        self.p.phase_slm_mask = 1.2 * np.pi
 
-        # self.xvar('t_tweezer_hold', np.linspace(0.0, 500.0, 5) * 1.e-3)
-        self.t_tweezer_hold = 200.e-3
+        self.p.t_tweezer_hold = 15.e-3
 
+        self.p.t_tof = 20.e-6
 
-        # self.p.v_pd_ry_405 = 9.1 # for 1.95 mW
-        # self.p.v_pd_ry_405 = 9.1 / 2 # for 1.95 mW
-        self.p.v_pd_ry_405 = 9.1 / 12 # for 1.95 mW
-
-        # self.p.v_pd_ry_405 = 0.8
-        # self.p.v_vva_ry_405 = 0.61
-        # self.p.v_vva_ry_405 = 0.76
+        self.p.t_mot_load = 1.0
 
         self.p.N_repeats = 15
 
-        self.finish_prepare(shuffle=True)
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
-        if self.p.do_405_pulse == 1:
-            print(f'doing 405 pulse')
-        else:
-            print(f'not doing 405 pulse')
-        if self.p.do_980_pulse == 1:
-            print(f'doing 980 pulse')
-        else:
-            print(f'not doing 980 pulse')
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
-        self.ry_405.set_power(self.p.v_pd_ry_405)
+        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_midpoint)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
+        self.imaging.set_power(self.p.amp_imaging)
 
-        if self.p.do_980_pulse == 1:
-            self.ry_980.sweep_to(self.p.frequency_eo_980)
+        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=True)
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.prepare_hf_tweezers(squeeze=False)
+        self.raman.init(fraction_power = self.p.fraction_power_raman,
+                        frequency_transition = self.p.frequency_raman_transition)
 
-        delay(100e-3)
+        self.ttl.raman_shutter.on()
+        delay(10.e-3)
+        self.ttl.line_trigger.wait_for_line_trigger()
+        delay(4.7e-3)
 
-        if self.p.do_405_pulse == 1:
-            self.ry_405.reboot()
-            self.ry_405.dds_sw.set_dds(amplitude=self.p.amp_dds_405)
-            self.ry_405.on()
-        if self.p.do_980_pulse == 1:
-            self.ry_980.on()
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        self.imaging.on()
+        delay(3.e-6)
 
-        # if self.p.wee == 1:   
-        #     for i in range(500):
-        #             self.ry_980.on()
-        #             delay(50e-6)
-        #             self.ry_980.off()
-        #             delay(50e-3)
-        # else:
-        #     delay((100*((5e-3)+(5e-6))))
+        self.raman.pulse(t=self.p.t_continuous_rabi)
 
+        self.imaging.off()
+
+        self.ttl.raman_shutter.off()
+
+        self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
+        self.imaging.set_power(.2,reset_pid=True)
 
         delay(self.p.t_tweezer_hold)
-
-        self.ry_405.off()
-        self.ry_980.off()
-        self.ry_405.ttl_shutter.off()
-
-        delay(40e-3)
-
         self.tweezer.off()
 
         delay(self.p.t_tof)
+
         self.abs_image()
 
-        self.outer_coil.off()
+        self.core.wait_until_mu(now_mu())
+        self.scope.read_sweep(0)
+        self.core.break_realtime()
+        delay(30.e-3)
 
     @kernel
     def run(self):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
         self.scan()
+        self.mot_observe()
 
     def analyze(self):
         import os
         expt_filepath = os.path.abspath(__file__)
+        # aprint(self.scope._data)
         self.end(expt_filepath)

@@ -51,7 +51,7 @@ class ExptParams(ExptParamsWaxx):
 
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
-        self.frequency_detuned_hf_midpoint = -515.e6 #-504.e6
+        self.frequency_detuned_hf_midpoint = -500.e6 #-504.e6
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
@@ -124,7 +124,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_tweezer_paint_rampdown = 13.e-3
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
-        self.t_tweezer_squeezer_ramp_2 = 13.e-3
+        self.t_tweezer_squeezer_ramp_2 = 20.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -156,7 +156,7 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 9.5606e-06 #70859, 2026-06-23
         # self.t_raman_pi_pulse = 9.3672e-06 #70958, 2026-06-24
         # self.t_raman_pi_pulse = 9.2478e-06 #71073, 2026-06-25
-        self.t_raman_pi_pulse = 9.1654e-06 #71164, 2026-06-26
+        self.t_raman_pi_pulse = 8.3698e-06 #71164, 2026-06-26
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
