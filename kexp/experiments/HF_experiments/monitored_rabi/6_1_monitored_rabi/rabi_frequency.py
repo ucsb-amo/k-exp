@@ -33,7 +33,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_tweezer_hold = .1e-3
 
         # self.xvar('t_tof',np.linspace(500.,2500.,15)*1.e-6) 
-        self.p.t_tof = 700.e-6
+        self.p.t_tof = 400.e-6
 
         self.p.t_mot_load = 1.
         

@@ -16,7 +16,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.v_pd_hf_tweezer_squeeze_power = 1.97
+        self.p.v_pd_hf_tweezer_squeeze_power = .985
         
         # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
         self.p.amp_imaging = .2
@@ -27,10 +27,10 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_tweezer_squeezer_ramp_1',np.linspace(1.1e-3,30.e-3,10))
         # self.p.t_tweezer_squeezer_ramp_1 = 15.e-3
 
-        # self.xvar('t_tweezer_squeezer_ramp_2',np.linspace(3.e-3,100.e-3,15))
+        # self.xvar('t_tweezer_squeezer_ramp_2',np.linspace(2.e-3,20.e-3,10))
         # self.p.t_tweezer_squeezer_ramp_2 = 15.e-3
 
-        self.xvar('t_tof',np.linspace(80.,300.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(100.,350.,10)*1.e-6)
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3

@@ -51,7 +51,7 @@ class ExptParams(ExptParamsWaxx):
 
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
-        self.frequency_detuned_hf_midpoint = -500.e6 #-504.e6
+        self.frequency_detuned_hf_midpoint = -517.5e6 #-504.e6
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
@@ -124,7 +124,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_tweezer_paint_rampdown = 13.e-3
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
-        self.t_tweezer_squeezer_ramp_2 = 20.e-3
+        self.t_tweezer_squeezer_ramp_2 = 10.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -182,10 +182,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_2d_mot_current = 2.2
 
         #MOT
-        self.detune_d2_c_mot = -2.2
+        self.detune_d2_c_mot = -2.14
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.5
+        self.detune_d2_r_mot = -4.3
         self.amp_d2_r_mot = 0.188
 
         self.detune_d2_c_hmot = -1.7
@@ -243,9 +243,9 @@ class ExptParams(ExptParamsWaxx):
         # self.v_xshim_current_gm = 0.4
         # self.v_yshim_current_gm = 2.
 
-        self.detune_d1_c_gm = 9.5 # 7.37
+        self.detune_d1_c_gm = 8. # 7.37
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
-        self.detune_d1_r_gm = 9.5
+        self.detune_d1_r_gm = 8.
         # self.pfrac_d1_r_gm = .99
 
         # Discrete GM ramp
