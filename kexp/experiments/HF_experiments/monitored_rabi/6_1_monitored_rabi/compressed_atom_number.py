@@ -16,25 +16,28 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.v_pd_hf_tweezer_squeeze_power = 3.94
+        self.p.v_pd_hf_tweezer_squeeze_power = .985
         
         # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
-        self.p.amp_imaging = .1
+        self.p.amp_imaging = .2
 
-        # self.xvar('t_tweezer_paint_rampdown',np.linspace(3.e-3,100.e-3,10))
+        # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.e-3,100.e-3,15))
         # self.p.t_tweezer_paint_rampdown = 11.e-3
 
-        # self.xvar('t_tweezer_squeezer_ramp_2',np.linspace(3.e-3,100.e-3,10))
-        self.p.t_tweezer_squeezer_ramp_2 = 29.e-3
+        # self.xvar('t_tweezer_squeezer_ramp_1',np.linspace(1.1e-3,30.e-3,10))
+        # self.p.t_tweezer_squeezer_ramp_1 = 15.e-3
 
-        self.xvar('t_tof',np.linspace(20.,200.,10)*1.e-6)
+        # self.xvar('t_tweezer_squeezer_ramp_2',np.linspace(2.e-3,20.e-3,10))
+        # self.p.t_tweezer_squeezer_ramp_2 = 15.e-3
+
+        self.xvar('t_tof',np.linspace(100.,350.,10)*1.e-6)
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
-        self.p.t_tof = 80.e-6
+        self.p.t_tof = 200.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 5
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 

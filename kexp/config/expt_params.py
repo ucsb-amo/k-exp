@@ -51,7 +51,7 @@ class ExptParams(ExptParamsWaxx):
 
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
-        self.frequency_detuned_hf_midpoint = -515.e6 #-504.e6
+        self.frequency_detuned_hf_midpoint = -517.5e6 #-504.e6
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
@@ -122,9 +122,9 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown = 30.e-3
+        self.t_tweezer_paint_rampdown = 13.e-3
         self.t_tweezer_squeezer_ramp_1 = 15.e-3
-        self.t_tweezer_squeezer_ramp_2 = 30.e-3
+        self.t_tweezer_squeezer_ramp_2 = 10.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -156,7 +156,7 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 9.5606e-06 #70859, 2026-06-23
         # self.t_raman_pi_pulse = 9.3672e-06 #70958, 2026-06-24
         # self.t_raman_pi_pulse = 9.2478e-06 #71073, 2026-06-25
-        self.t_raman_pi_pulse = 9.1654e-06 #71164, 2026-06-26
+        self.t_raman_pi_pulse = 8.3698e-06 #71164, 2026-06-26
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -182,10 +182,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_2d_mot_current = 2.2
 
         #MOT
-        self.detune_d2_c_mot = -2.2
+        self.detune_d2_c_mot = -2.14
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.5
+        self.detune_d2_r_mot = -4.3
         self.amp_d2_r_mot = 0.188
 
         self.detune_d2_c_hmot = -1.7
@@ -243,9 +243,9 @@ class ExptParams(ExptParamsWaxx):
         # self.v_xshim_current_gm = 0.4
         # self.v_yshim_current_gm = 2.
 
-        self.detune_d1_c_gm = 9.5 # 7.37
+        self.detune_d1_c_gm = 8. # 7.37
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
-        self.detune_d1_r_gm = 9.5
+        self.detune_d1_r_gm = 8.
         # self.pfrac_d1_r_gm = .99
 
         # Discrete GM ramp
@@ -331,7 +331,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = -2.5
+        self.v_hf_tweezer_paint_amp_max = -2.2
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -370,7 +370,7 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.31
+        self.fraction_power_raman = 0.33
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 

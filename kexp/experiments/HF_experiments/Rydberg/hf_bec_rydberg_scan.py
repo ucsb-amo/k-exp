@@ -10,8 +10,7 @@ class hf_bec(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
-                      imaging_type=img_types.ABSORPTION,
-                      save_on_underflow=True)
+                      imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
         self.p.t_tof = 500.e-6
@@ -21,9 +20,9 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('do_405_pulse',[1,0])
         self.p.do_405_pulse = 1
-        self.p.do_980_pulse = 1
+        self.p.do_980_pulse = 0
 
-        self.p.amp_dds_405 = 0.08
+        self.p.amp_dds_405 = 0.075
 
         # self.xvar('frequency_eo_980', np.arange(150.,350.,1)*1.e6)
         # self.xvar('frequency_eo_980', np.linspace(290.,310.,10)*1.e6)
@@ -32,13 +31,13 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
-        # self.xvar('t_tweezer_hold', np.linspace(0.0, 500.0, 5) * 1.e-3)
+        # self.xvar('t_tweezer_hold', np.linspace(0.0, 350.0, 5) * 1.e-3)
         self.t_tweezer_hold = 200.e-3
 
   
         # self.p.v_pd_ry_405 = 9.1 # for 1.95 mW
         # self.p.v_pd_ry_405 = 9.1 / 2 # for 1.95 mW
-        self.p.v_pd_ry_405 = 9.1 / 10 # for 1.95 mW
+        self.p.v_pd_ry_405 = 9.1 / 12 # for 1.95 mW
 
         # self.p.v_pd_ry_405 = 0.8
         # self.p.v_vva_ry_405 = 0.61

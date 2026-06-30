@@ -16,6 +16,8 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+from waxx.config.timeouts import DATA_SAVER_TIMEOUT
+
 import zmq
 import numpy as np
 from PyQt6.QtCore import QThread, pyqtSignal
@@ -214,8 +216,8 @@ class LiveODServer(QThread, WaxxServer):
             # Wait for the DataHandler (camera writer) to close its HDF5
             # handle before attempting deletion.  Without this the file is
             # still open and os.remove raises WinError 32 on Windows.
-            if not self._data_handler_done_event.wait(timeout=30.0):
-                print("[LiveODServer] WARNING: DataHandler did not release the file within 30 s — deletion may fail.")
+            if not self._data_handler_done_event.wait(timeout=DATA_SAVER_TIMEOUT):
+                print(f"[LiveODServer] WARNING: DataHandler did not release the file within {DATA_SAVER_TIMEOUT:.0f} s — deletion may fail.")
             try:
                 os.remove(self._current_filepath)
                 print(f"Deleted incomplete data file: {self._current_filepath}")
@@ -384,8 +386,8 @@ class LiveODServer(QThread, WaxxServer):
             # Wait for DataHandler to close its HDF5 handle before we open
             # the same file for the end-of-run save.  Without this wait the
             # two h5py opens race and either corrupt the file or raise OSError.
-            if not self._data_handler_done_event.wait(timeout=60.0):
-                print("[LiveODServer] WARNING: DataHandler did not finish within 60 s — proceeding anyway.")
+            if not self._data_handler_done_event.wait(timeout=DATA_SAVER_TIMEOUT):
+                print(f"[LiveODServer] WARNING: DataHandler did not finish within {DATA_SAVER_TIMEOUT:.0f} s — proceeding anyway.")
             try:
                 self._data_saver.save_data_from_payload(
                     msg, self._current_filepath,
