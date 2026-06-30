@@ -25,7 +25,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.amp_imaging = .4
         self.p.t_tweezer_hold = 15.e-3
-        self.p.t_tof = 150.e-6
+        self.p.t_tof = 500.e-6
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
@@ -38,7 +38,7 @@ class hf_raman(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=True)
+        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=False)
         self.prep_raman()
 
         self.raman.set(t_phase_origin_mu=now_mu())

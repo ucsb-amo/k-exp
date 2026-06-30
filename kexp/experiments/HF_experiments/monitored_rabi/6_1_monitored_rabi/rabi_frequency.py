@@ -15,7 +15,7 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
  
-        self.xvar('t_raman_pulse', np.linspace(0., 50., 30)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(300., 350., 30)*1.e-6)
 
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
         # self.p.fraction_power_raman = .33

@@ -30,7 +30,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_tweezer_squeezer_ramp_2',np.linspace(2.e-3,20.e-3,10))
         # self.p.t_tweezer_squeezer_ramp_2 = 15.e-3
 
-        self.xvar('t_tof',np.linspace(100.,350.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(100.,800.,10)*1.e-6)
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
@@ -49,7 +49,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=True)
+        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=False)
 
         delay(20.e-3)
 
