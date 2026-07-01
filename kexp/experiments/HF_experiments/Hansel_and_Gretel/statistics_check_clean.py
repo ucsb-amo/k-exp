@@ -18,14 +18,20 @@ class hf_bec(EnvExperiment, Base):
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 3
         self.p.t_weak_measure = 5.e-6
         self.p.t_strong_measure = 15.e-6
-        self.p.raman_phase_list = rng.uniform(low=0,high=2*np.pi,size=self.p.N_pulses)
+        self.p.raman_phase_list = rng.uniform(low=0,high=2*np.pi,size=(self.p.samples, self.p.N_pulses))
         self.p.N_pulses = 10
 
         self.p.amp_imaging = .2
 
-        self.xvar('do_weak_measurement',[0,1])
+        self.p.samples = 100
+        self.p.sample_index = 0
 
-        self.p.N_repeats = 100
+
+
+        self.xvar('do_weak_measurement',[0,1])
+        self.xvar('sample_index', np.arange(self.p.samples))
+
+        self.p.N_repeats = 1
 
         self.data.strong_measurement = self.data.add_data_container(1)
 
@@ -49,7 +55,7 @@ class hf_bec(EnvExperiment, Base):
             else:
                 delay(t_weak_measure)
             
-            self.raman.set(relative_phase=self.p.raman_phase_list[i])
+            self.raman.set(relative_phase=self.p.raman_phase_list[self.p.sample_index, i])
 
         self.strong_measurement(t_measure=t_strong_measure)
 
