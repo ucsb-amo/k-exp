@@ -58,7 +58,7 @@ class ttl_frame(ttl_frame_waxx):
         self.phase_lock_beam_enable = self.assign_ttl_out(53)
         self.ry_intensity_pid_clear = self.assign_ttl_out(56)
         
-        self.test_2 = self.assign_ttl_out(55)
+        self.test_2 = self.assign_ttl_out(54)
 
         self.imaging_pid_manual_override = self.assign_ttl_out(86) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class
         self.imaging_pid_int_clear_hold = self.assign_ttl_out(87) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class
