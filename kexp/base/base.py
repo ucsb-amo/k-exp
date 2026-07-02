@@ -58,12 +58,17 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 
-    def finish_prepare(self,N_repeats=[],shuffle=True):
+    def finish_prepare(self,N_repeats=[],shuffle=True,shuffle_mode='nested'):
         """
         To be called at the end of prepare.
+
+        ``shuffle_mode`` selects shot ordering when ``shuffle=True``:
+          'nested' (default) — legacy per-axis shuffle, nested-loop stepping.
+          'global'           — true-random single permutation over all grid
+                               cells (values stay natural).
         """
 
-        self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle)
+        self.finish_prepare_wax(N_repeats=N_repeats,shuffle=shuffle,shuffle_mode=shuffle_mode)
 
         # self.configure_imaging_system(polmod_ao_bool=self._polmod_config)
         self.dds.stash_defaults()
