@@ -8,12 +8,12 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,setup_camera=True,save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
-        self.p.t_tof = 800.e-6
+        self.p.t_tof = 400.e-6
 
         # self.xvar('wee',[1,0])
         # self.p.wee = 1
@@ -25,15 +25,16 @@ class hf_bec(EnvExperiment, Base):
 
         self.p.amp_dds_405 = 0.075
 
-        self.xvar('frequency_eo_980', np.arange(150.,350.,1)*1.e6)
+        # self.xvar('frequency_eo_980', np.linspace(352.,380.,70)*1.e6)
         # self.xvar('frequency_eo_980', np.linspace(242.,292.,10)*1.e6)
         # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
-        # self.p.frequency_eo_980 = 305.1e6
+        # self.p.frequency_eo_980 = 352.1e6
+        self.p.frequency_eo_980 = 365.8e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
         # self.xvar('t_tweezer_hold', np.linspace(0.0, 1050.0, 5) * 1.e-3)
-        self.p.t_tweezer_hold = 350.e-3
+        self.p.t_tweezer_hold = 250.e-3
 
   
         # self.p.v_pd_ry_405 = 9.1 # for 1.95 mW
@@ -44,7 +45,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
-        self.p.N_repeats = 7
+        self.p.N_repeats = 2000
 
         self.finish_prepare(shuffle=True)
 
