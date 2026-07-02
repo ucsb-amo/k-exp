@@ -14,7 +14,7 @@ class trap_frequency(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 500.e-6
 
         # self.xvar('t_tweezer_mod',np.linspace(1.,5.,10)*1.e-3)
         self.p.t_tweezer_mod = 15.e-3
@@ -23,8 +23,8 @@ class trap_frequency(EnvExperiment, Base):
 
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,8.7,8))
         # self.p.v_pd_hf_tweezer_squeeze_power = 0.444
-        self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(0.22,0.45,5))
-        self.xvar('f_tweezer_mod',np.linspace(2.4e3,4.5e3,20))
+        # self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(0.22,0.45,5))
+        self.xvar('f_tweezer_mod',np.linspace(200.,1.e3,20))
         # self.p.f_tweezer_mod = 500.
         # self.p.f_tweezer_mod = 3.6e3
 
@@ -49,7 +49,7 @@ class trap_frequency(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.camera_params.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=True)
+        self.prepare_hf_tweezers(squeeze=False)
 
         self.tweezer.trigger()
         delay(self.p.t_tweezer_mod)

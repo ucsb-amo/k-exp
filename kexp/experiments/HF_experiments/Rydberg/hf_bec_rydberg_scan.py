@@ -13,37 +13,38 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
-        self.p.t_tof = 500.e-6
+        self.p.t_tof = 800.e-6
 
         # self.xvar('wee',[1,0])
-        self.p.wee = 1
+        # self.p.wee = 1
 
         # self.xvar('do_405_pulse',[1,0])
         self.p.do_405_pulse = 1
-        self.p.do_980_pulse = 0
+        # self.xvar('do_980_pulse',[0,1])
+        self.p.do_980_pulse = 1
 
         self.p.amp_dds_405 = 0.075
 
-        # self.xvar('frequency_eo_980', np.arange(150.,350.,1)*1.e6)
-        # self.xvar('frequency_eo_980', np.linspace(290.,310.,10)*1.e6)
-        self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
+        self.xvar('frequency_eo_980', np.arange(150.,350.,1)*1.e6)
+        # self.xvar('frequency_eo_980', np.linspace(242.,292.,10)*1.e6)
+        # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
         # self.p.frequency_eo_980 = 305.1e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
-        # self.xvar('t_tweezer_hold', np.linspace(0.0, 350.0, 5) * 1.e-3)
-        self.t_tweezer_hold = 200.e-3
+        # self.xvar('t_tweezer_hold', np.linspace(0.0, 1050.0, 5) * 1.e-3)
+        self.p.t_tweezer_hold = 350.e-3
 
   
         # self.p.v_pd_ry_405 = 9.1 # for 1.95 mW
         # self.p.v_pd_ry_405 = 9.1 / 2 # for 1.95 mW
-        self.p.v_pd_ry_405 = 9.1 / 12 # for 1.95 mW
+        self.p.v_pd_ry_405 = 9.1 / 20
 
         # self.p.v_pd_ry_405 = 0.8
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 7
 
         self.finish_prepare(shuffle=True)
 
@@ -64,6 +65,8 @@ class hf_bec(EnvExperiment, Base):
         if self.p.do_980_pulse == 1:
             self.ry_980.sweep_to(self.p.frequency_eo_980)
 
+        self.ry_980.set_power(9.9)
+
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.prepare_hf_tweezers(squeeze=False)
 
@@ -76,15 +79,19 @@ class hf_bec(EnvExperiment, Base):
         if self.p.do_980_pulse == 1:
             self.ry_980.on()
         
-        # if self.p.wee == 1:   
-        #     for i in range(500):
-        #             self.ry_980.on()
-        #             delay(50e-6)
-        #             self.ry_980.off()
-        #             delay(50e-3)
+        
+        # T = 1.7e-3
+        # tau = T/2
+        # N = 1000
+        # if self.p.wee == 1:  
+        #     self.ry_980.on() 
+        #     for i in range(N):
+        #             self.ttl.ry_phase_lock_ao_sw_ttl.on()
+        #             delay(tau)
+        #             self.ttl.ry_phase_lock_ao_sw_ttl.off()
+        #             delay(T - tau)
         # else:
-        #     delay((100*((5e-3)+(5e-6))))
-
+        #     delay(N*T)
 
         delay(self.p.t_tweezer_hold)
 
