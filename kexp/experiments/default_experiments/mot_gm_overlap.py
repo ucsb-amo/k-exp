@@ -14,13 +14,13 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,
                       setup_camera=True,
                       camera_select=cameras.xy_basler,
-                      save_data=True)
+                      save_data=False)
 
-        self.p.t_tof = 20.e-6
-        self.xvar('t_tof',np.linspace(4,20.,14)*1.e-3)
+        self.p.t_tof = 15.e-3
+        # self.xvar('t_tof',np.linspace(4,20.,14)*1.e-3)
         # self.xvar('dumy',[0,1,2,3])
         # self.xvar('dumy',[0,1]*500)
-        self.p.dumy=1
+        # self.p.dumy=1
 
         self.p.t_magtrap_hold = .15
         
