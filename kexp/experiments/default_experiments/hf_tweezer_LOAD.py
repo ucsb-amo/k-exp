@@ -13,14 +13,14 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,setup_camera=True,save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
         # self.p.do_cubic_tweezer_ramp = 1
         # self.xvar('do_cubic_tweezer_ramp',[0,1])
 
-        self.p.t_tof = 150.e-6
+        self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(1000.,4500.,10)*1.e-6)
 
         # self.xvar('t_pulse',np.linspace(0.,1.,5)*1.e-3)
@@ -29,9 +29,9 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('dumy',[0]*3)
 
-        self.p.t_tweezer_hold = 100.e-3
+        self.p.t_tweezer_hold = 10.e-3
 
-        self.p.amp_imaging = .2
+        # self.p.amp_imaging = .2
 
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
@@ -43,11 +43,11 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_hf_lightsheet_rampdown', np.linspace(10.e-3, 125.e-3, 5))
         # self.xvar('t_hf_tweezer_1064_ramp', np.linspace(5.e-3, 50.e-3, 5))
 
-        self.p.v_hf_tweezer_paint_amp_max = -1.6
+        # self.p.v_hf_tweezer_paint_amp_max = -1.6
 
         # self.xvar('t_tof',np.linspace(80.,150,5) * 1.e-6)
 
-        self.p.N_repeats = 3
+        self.p.N_repeats = 100
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -57,7 +57,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
-        self.imaging.set_power(self.p.amp_imaging)
+        self.imaging.set_power(self.camera_params.amp_imaging)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
@@ -103,7 +103,30 @@ class mag_trap(EnvExperiment, Base):
                                 # v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
                                 v_end=self.p.v_pd_lightsheet_rampdown3_end)
         self.lightsheet.off()
+
+        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_ramp,
+        #                     v_start=self.p.v_pd_hf_tweezer_1064_ramp_end,
+        #                     v_end=self.p.v_pd_hf_tweezer_1064_rampdown_end,
+        #                     paint=True,keep_trap_frequency_constant=False,
+        #                     cubic_ramp=False)
         
+
+        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+        #                     #  i_start=self.p.i_hf_tweezer_evap1_current,
+        #                         i_end=self.p.i_hf_tweezer_evap2_current)
+        
+        
+        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
+        #                 v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
+        #                 v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
+        #                 paint=True,keep_trap_frequency_constant=True)
+
+        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+        #                     v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+        #                     v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+        #                     paint=True,keep_trap_frequency_constant=True,low_power=True)
+
+
         delay(self.p.t_tweezer_hold)
 
         # self.init_raman_beams_nf(frequency_transition=self.p.frequency_raman_transition_nf_1m1_20 - 10.e6,

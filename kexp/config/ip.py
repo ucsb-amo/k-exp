@@ -37,7 +37,7 @@ EXPT_PARAM_RELPATH = os.path.join("config","expt_params.py")
 BASE_CLASS_RELPATH = os.path.join("base")  # all .py files in this directory will be saved
 PATHS = (DATA_DIR, EXPT_PACKAGE_DIR, EXPT_PARAM_RELPATH, BASE_CLASS_RELPATH)
 
-MAP_BAT_PATH = "\"G:\\Shared drives\\Weld Lab Shared Drive\\Infrastructure\\map_network_drives_PeterRecommended.bat\""
+MAP_BAT_PATH = "\"G:\\Shared drives\\Weld Lab Shared Drive\\Infrastructure\\map_network_drives.bat\""
 # MAP_BAT_PATH = "\"G:\Shared drives\Tweezers\Software\map_fake_network_drive.bat\""
 FIRST_DATA_FOLDER_DATE = datetime(2023,6,22)
 
