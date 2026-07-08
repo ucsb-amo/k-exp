@@ -41,12 +41,16 @@ class LiveODViewer(QWidget):
         self._od_slider_steps = int(self._od_slider_max / 0.1) # for 0.025 step size
         self._lock_views = False  # Track lock state
         self._syncing_all_views = False  # Prevent recursion
+        self._camera_key = ""
+        self._roi_item = None   # pg.RectROI when active, else None
         self.init_ui()
         
     def init_ui(self):
         self.reset_zoom_button = QPushButton('Reset zoom')
         self.clear_button = QPushButton('Clear')
         self.live_plot_button = QPushButton('Live Plot')
+        self.set_roi_button = QPushButton('Set ROI')
+        self.clear_roi_button = QPushButton('Clear ROI')
         self.image_count_label = QLabel('Shot count: 0/0')
         control_bar = QHBoxLayout()
 
@@ -58,6 +62,8 @@ class LiveODViewer(QWidget):
         control_bar.addWidget(self.clear_button)
         control_bar.addWidget(self.live_plot_button)
         control_bar.addWidget(self.lock_views_checkbox)
+        control_bar.addWidget(self.set_roi_button)
+        control_bar.addWidget(self.clear_roi_button)
         control_bar.addWidget(self.image_count_label)
 
         control_bar.addStretch()
@@ -237,6 +243,8 @@ class LiveODViewer(QWidget):
         self.setLayout(layout)
         self.clear_button.clicked.connect(self.clear_plots)
         self.reset_zoom_button.clicked.connect(self.reset_zoom)
+        self.set_roi_button.clicked.connect(self._on_set_roi_clicked)
+        self.clear_roi_button.clicked.connect(self._on_clear_roi_clicked)
         self.od_plot.getViewBox().sigRangeChanged.connect(self.sync_sumod_panels)
 
         # Connect all view range signals
@@ -419,7 +427,7 @@ class LiveODViewer(QWidget):
     def _plot_sumodx(self, sumodx):
         if sumodx is not None:
             self.sumodx_panel.clear()
-            self.sumodx_panel.plot(sumodx, pen=pg.mkPen('w', width=2))
+            self.sumodx_panel.plot(sumodx, pen=None)
             # On first shot of a run, set y axis 0 to 1.5*max
 
     def _plot_sumody(self, sumody, od_shape):
@@ -428,7 +436,7 @@ class LiveODViewer(QWidget):
             x = sumody / np.max(sumody) * od_shape[0] * 0.8 + od_shape[0] * 0.1 if np.max(sumody) > 0 else sumody
             x = (x - np.mean(x)) * self._sumody_scale + np.mean(x)
             self.sumody_panel.clear()
-            self.sumody_panel.plot(x, y, pen=pg.mkPen('w', width=2))
+            self.sumody_panel.plot(x, y, pen=None)
             # On first shot of a run, set y axis 0 to 1.5*max
 
     def reset_zoom(self):
@@ -542,3 +550,128 @@ class LiveODViewer(QWidget):
         except Exception as e:
             # Return default range if anything goes wrong
             return [0, 512], [0, 512]
+
+    # ------------------------------------------------------------------
+    # ROI rectangle (drawn on OD image, persisted per camera)
+    # ------------------------------------------------------------------
+
+    _STATE_DIR = os.path.join(os.path.expanduser("~"), ".waxx")
+
+    def _rect_state_path(self, camera_key: str) -> str:
+        return os.path.join(self._STATE_DIR, f"live_od_{camera_key}_rect.json")
+
+    def set_camera_key(self, camera_key: str):
+        """Called on each new run. Loads the saved ROI rect for *camera_key*."""
+        self._camera_key = camera_key
+        # Remove any existing ROI first so we start fresh.
+        if self._roi_item is not None:
+            try:
+                self.od_plot.removeItem(self._roi_item)
+            except Exception:
+                pass
+            self._roi_item = None
+        if camera_key:
+            self._load_rect()
+
+    def get_od_roi_rect(self):
+        """Return (x1, y1, x2, y2) in OD pixel coords if a drawn ROI is active, else None."""
+        if self._roi_item is None:
+            return None
+        try:
+            pos = self._roi_item.pos()
+            size = self._roi_item.size()
+            x1 = pos.x()
+            y1 = pos.y()
+            x2 = x1 + size.x()
+            y2 = y1 + size.y()
+            # Ensure correct orientation (handles may be dragged to negative size)
+            if x2 < x1:
+                x1, x2 = x2, x1
+            if y2 < y1:
+                y1, y2 = y2, y1
+            return (x1, y1, x2, y2)
+        except Exception:
+            return None
+
+    def _show_roi(self, x1: float, y1: float, x2: float, y2: float):
+        """Create (or replace) the RectROI overlay on the OD plot."""
+        if self._roi_item is not None:
+            try:
+                self.od_plot.removeItem(self._roi_item)
+            except Exception:
+                pass
+        self._roi_item = pg.RectROI(
+            [x1, y1], [x2 - x1, y2 - y1],
+            pen=pg.mkPen('r', width=2),
+            handlePen=pg.mkPen('r', width=2),
+        )
+        self._roi_item.addScaleHandle([1, 1], [0, 0])
+        self._roi_item.addScaleHandle([0, 0], [1, 1])
+        self._roi_item.addScaleHandle([1, 0], [0, 1])
+        self._roi_item.addScaleHandle([0, 1], [1, 0])
+        self.od_plot.addItem(self._roi_item)
+        self._roi_item.sigRegionChangeFinished.connect(self._on_roi_changed)
+
+    def _on_set_roi_clicked(self):
+        """Place a default ROI centred on the current OD image (or at (50,50) if no image yet)."""
+        if self._roi_item is not None:
+            return  # already drawn — user can drag it
+        shape = getattr(self, '_last_od_shape', None)
+        if shape is not None:
+            h, w = shape
+            margin_x = w // 4
+            margin_y = h // 4
+            x1, y1 = float(margin_x), float(margin_y)
+            x2, y2 = float(w - margin_x), float(h - margin_y)
+        else:
+            x1, y1, x2, y2 = 50.0, 50.0, 250.0, 250.0
+        self._show_roi(x1, y1, x2, y2)
+        self._save_rect()
+
+    def _on_clear_roi_clicked(self):
+        """Remove the ROI overlay and delete the saved rect file."""
+        if self._roi_item is not None:
+            try:
+                self.od_plot.removeItem(self._roi_item)
+            except Exception:
+                pass
+            self._roi_item = None
+        if self._camera_key:
+            path = self._rect_state_path(self._camera_key)
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except Exception:
+                pass
+
+    def _on_roi_changed(self):
+        """Save the ROI to file whenever the user finishes dragging/resizing."""
+        self._save_rect()
+
+    def _save_rect(self):
+        if not self._camera_key or self._roi_item is None:
+            return
+        rect = self.get_od_roi_rect()
+        if rect is None:
+            return
+        x1, y1, x2, y2 = rect
+        try:
+            os.makedirs(self._STATE_DIR, exist_ok=True)
+            with open(self._rect_state_path(self._camera_key), 'w') as f:
+                json.dump({"rect": [x1, y1, x2, y2]}, f)
+        except Exception as exc:
+            print(f"[LiveODViewer] Warning: could not save ROI rect: {exc}")
+
+    def _load_rect(self):
+        if not self._camera_key:
+            return
+        path = self._rect_state_path(self._camera_key)
+        if not os.path.exists(path):
+            return
+        try:
+            with open(path) as f:
+                data = json.load(f)
+            x1, y1, x2, y2 = data["rect"]
+            self._show_roi(float(x1), float(y1), float(x2), float(y2))
+        except Exception as exc:
+            print(f"[LiveODViewer] Warning: could not load ROI rect: {exc}")
