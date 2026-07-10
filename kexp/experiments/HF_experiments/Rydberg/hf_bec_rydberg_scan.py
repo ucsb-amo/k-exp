@@ -8,12 +8,12 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=True,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)
-        self.p.t_tof = 400.e-6
+        self.xvar('t_tof',np.linspace(20.,400.,7)*1.e-6)
+        self.p.t_tof = 300.e-6
 
         # self.xvar('wee',[1,0])
         # self.p.wee = 1
@@ -23,29 +23,29 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('do_980_pulse',[0,1])
         self.p.do_980_pulse = 1
 
-        self.p.amp_dds_405 = 0.075
-
-        # self.xvar('frequency_eo_980', np.linspace(352.,380.,70)*1.e6)
-        # self.xvar('frequency_eo_980', np.linspace(242.,292.,10)*1.e6)
+        self.p.amp_dds_405 = 0.042
+# 
+        # self.xvar('frequency_eo_980', 366.4e6 + 1.e6 * np.linspace(-5,5,9))
+        # self.xvar('frequency_eo_980', np.linspace(364.8,366.8,15)*1.e6)
         # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
         # self.p.frequency_eo_980 = 352.1e6
-        self.p.frequency_eo_980 = 365.8e6
+        self.p.frequency_eo_980 = 366.4e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
         # self.xvar('t_tweezer_hold', np.linspace(0.0, 1050.0, 5) * 1.e-3)
-        self.p.t_tweezer_hold = 250.e-3
+        # self.p.t_tweezer_hold = 1200.e-3
 
   
-        # self.p.v_pd_ry_405 = 9.1 # for 1.95 mW
+        self.p.v_pd_ry_405 = 9.1 # for 1.95 mW
         # self.p.v_pd_ry_405 = 9.1 / 2 # for 1.95 mW
-        self.p.v_pd_ry_405 = 9.1 / 20
+        # self.p.v_pd_ry_405 = 9.1 / 20
 
         # self.p.v_pd_ry_405 = 0.8
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
-        self.p.N_repeats = 2000
+        self.p.N_repeats = 12
 
         self.finish_prepare(shuffle=True)
 
@@ -66,7 +66,7 @@ class hf_bec(EnvExperiment, Base):
         if self.p.do_980_pulse == 1:
             self.ry_980.sweep_to(self.p.frequency_eo_980)
 
-        self.ry_980.set_power(9.9)
+        # self.ry_980.set_power(9.9)
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.prepare_hf_tweezers(squeeze=False)

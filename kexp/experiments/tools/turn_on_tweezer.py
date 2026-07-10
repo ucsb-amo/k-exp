@@ -20,8 +20,8 @@ class turn_on_imaging(EnvExperiment, Base):
                       suppress_live_od=True)
         
         # self.p.y_intercept = -1.5
-        # self.p.slope = 70.30864948083167
-        self.p.y_intercept = -2.1376785723712772
+        # # self.p.slope = 70.30864948083167
+        # self.p.y_intercept = -2.1376785723712772
         self.p.slope = 71.67500001330266
 
         # self.xvar('slope', np.linspace(69., 74., 11))
@@ -42,7 +42,7 @@ class turn_on_imaging(EnvExperiment, Base):
         self.init_kernel(dds_off=False,
                          dds_set=False,
                          init_dds=False,
-                         setup_awg=False,
+                         setup_awg=True,
                          setup_slm=False,
                          init_lightsheet=False,
                          init_shuttler=False)
@@ -59,51 +59,51 @@ class turn_on_imaging(EnvExperiment, Base):
                           v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
                           paint=True,keep_trap_frequency_constant=False)
         
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown,
-                          v_start=self.p.v_pd_hf_tweezer_1064_ramp_end,
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown_end,
-                          paint=True,keep_trap_frequency_constant=True)
+        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown,
+        #                   v_start=self.p.v_pd_hf_tweezer_1064_ramp_end,
+        #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown_end,
+        #                   paint=True,keep_trap_frequency_constant=True)
         
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
-                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
-                          paint=True,keep_trap_frequency_constant=True)
+        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
+        #                   v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
+        #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
+        #                   paint=True,keep_trap_frequency_constant=True)
         
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-                          v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-                          v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                          paint=True,keep_trap_frequency_constant=True,low_power=True)
+        # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
+        #                   v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
+        #                   v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+        #                   paint=True,keep_trap_frequency_constant=True,low_power=True)
         
-        delay(100.e-3)
+        # delay(100.e-3)
         
-        if self.p.t_tweezer_paint_rampdown == 0:
-            self.tweezer.paint_amp_dac.set(-7.)
-        else:
-            v0 = self.tweezer.paint_amp_dac.v
-            self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown,
-                                                  v_start=v0,
-                                                  v_end=-7.,
-                                                  n=100)
+        # if self.p.t_tweezer_paint_rampdown == 0:
+        #     self.tweezer.paint_amp_dac.set(-7.)
+        # else:
+        #     v0 = self.tweezer.paint_amp_dac.v
+        #     self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown,
+        #                                           v_start=v0,
+        #                                           v_end=-7.,
+        #                                           n=100)
         
-        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
-                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                          v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
-                          low_power=True, paint=False, keep_trap_frequency_constant=False,
-                          cubic_ramp=True)
+        # self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
+        #                   v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+        #                   v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
+        #                   low_power=True, paint=False, keep_trap_frequency_constant=False,
+        #                   cubic_ramp=True)
         
-        self.ttl.pd_scope_trig.pulse(1.e-6)
+        # self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        vf = self.tweezer_vpd2_to_vpd1_squeezer2(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp)
-        if vf < 0.:
-            vf = 0.
-        if vf > 9.99:
-            vf = 9.99
+        # vf = self.tweezer_vpd2_to_vpd1_squeezer2(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp)
+        # if vf < 0.:
+        #     vf = 0.
+        # if vf > 9.99:
+        #     vf = 9.99
 
-        self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
-                          v_start=vf,
-                          v_end=self.p.v_pd_hf_tweezer_squeeze_power,
-                          paint=False,keep_trap_frequency_constant=False,
-                          cubic_ramp=True)
+        # self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
+        #                   v_start=vf,
+        #                   v_end=self.p.v_pd_hf_tweezer_squeeze_power,
+        #                   paint=False,keep_trap_frequency_constant=False,
+        #                   cubic_ramp=True)
         
         self.core.wait_until_mu(now_mu())
 

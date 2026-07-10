@@ -246,6 +246,7 @@ class LiveODWindow(QWidget):
         # Propagate run metadata to Analyzer and scalar plot window
         self.analyzer.set_camera_params(camera_params or {})
         self.analyzer.reset()
+        self.viewer_window.set_camera_key(camera_key)
         self.eta_label.setText("ETA --:--")
         xvarnames = list(run_info_payload.get('xvarnames', [])) if run_info_payload else []
         self.live_scalar_plot_window.on_new_run(self.live_od_server._current_run_id, xvarnames)

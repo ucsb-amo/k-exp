@@ -179,7 +179,12 @@ class Analyzer(QThread):
 
     def crop_od_to_view_range(self, od):
         """
-        Crop the OD array to the current view range of the viewer's OD plot
+        Crop the OD array to the drawn ROI rect (if set) or the current view range.
+
+        If the viewer has an active drawn rectangle (set via "Set ROI" button), that
+        rectangle is used as the crop region.  Otherwise falls back to the OD plot's
+        current zoom/pan view range so that zooming in still narrows the atom-number
+        integration region.
 
         Args:
             od (numpy.ndarray): The OD array to crop
@@ -191,6 +196,19 @@ class Analyzer(QThread):
             return od, slice(None), slice(None)
 
         try:
+            # --- Prefer drawn ROI rect over view range ---
+            roi_rect = self.viewer.get_od_roi_rect()
+            if roi_rect is not None:
+                x_min = max(0, int(round(roi_rect[0])))
+                y_min = max(0, int(round(roi_rect[1])))
+                x_max = min(od.shape[1], int(round(roi_rect[2])))
+                y_max = min(od.shape[0], int(round(roi_rect[3])))
+                if x_max > x_min and y_max > y_min:
+                    y_slice = slice(y_min, y_max)
+                    x_slice = slice(x_min, x_max)
+                    return od[y_slice, x_slice], x_slice, y_slice
+                # drawn rect is degenerate — fall through to view range
+
             # Get the current view range from the viewer's OD plot
             x_range, y_range = self.viewer.get_od_view_range()
 
