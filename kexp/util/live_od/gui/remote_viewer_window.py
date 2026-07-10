@@ -250,6 +250,7 @@ class RemoteViewerWindow(QWidget):
         self.live_scalar_plot_window.subscription_changed_signal.connect(
             self._on_scalar_subscription_changed
         )
+        self.viewer_window.live_plot_requested.connect(self._open_live_scalar_plot)
 
         # Cached endpoint for the LiveOD REP server (RESET / CAMERA_CONTROL).
         # Populated lazily on the first request that succeeds; falls back to

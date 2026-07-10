@@ -102,6 +102,10 @@ KEYSIGHT_SUPPLIES = [
 ### kinesis motors
 DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961
 
+### PDXC picomotor controller (kong, 192.168.1.76)
+PDXC_SERVER_IP = "192.168.1.76"   # kong
+PDXC_COM = "COM26"
+
 ### remote control
 WHITELIST_PATH = (
     os.path.join(DATA_DIR, "remote_whitelist.json")

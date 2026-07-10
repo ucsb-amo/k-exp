@@ -38,6 +38,7 @@ CLIENT_PLACEMENT: dict[str, dict] = {
     "remote_control": {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "keysight":       {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
     "interlock":      {"placement": "dock", "dock_area": "top"},
+    "pdxc":           {"placement": "tab",  "dock_area": "right", "tab_group": "control"},
 }
 
 # Per-host overrides: same shape as SERVER_PLACEMENT / CLIENT_PLACEMENT, keyed
