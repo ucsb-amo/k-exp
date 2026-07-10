@@ -369,6 +369,11 @@ class RemoteViewerWindow(QWidget):
         self.live_plot_button.clicked.connect(self._open_live_scalar_plot)
         status_bar.addWidget(self.live_plot_button)
 
+        self.reconnect_button = QPushButton("Reconnect")
+        self.reconnect_button.setMinimumHeight(40)
+        self.reconnect_button.clicked.connect(self._on_reconnect_clicked)
+        status_bar.addWidget(self.reconnect_button)
+
         layout.addLayout(status_bar)
 
         # Camera control row — buttons are created lazily from the first
@@ -423,6 +428,20 @@ class RemoteViewerWindow(QWidget):
         run_id_str = f"Run {self._current_run_id} — " if self._current_run_id else ""
         self.run_id_label.setText(f"{run_id_str}complete")
         self.connection_label.setText(f"tcp://{self._ip}:{self._port}")
+
+    # ------------------------------------------------------------------
+    # Reconnect
+    # ------------------------------------------------------------------
+
+    def _on_reconnect_clicked(self):
+        self.viewer_window.output_window.appendPlainText("Reconnecting — searching for LiveOD server…")
+        self._req_ip = None
+        self._req_port = None
+        if self.subscriber is not None:
+            self.subscriber.stop()
+            self.subscriber.wait(1000)
+            self.subscriber = None
+        threading.Thread(target=self._discover_worker, daemon=True).start()
 
     # ------------------------------------------------------------------
     # Reset
