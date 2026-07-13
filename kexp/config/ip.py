@@ -104,7 +104,7 @@ DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961
 
 ### PDXC picomotor controller (kong, 192.168.1.76)
 PDXC_SERVER_IP = "192.168.1.76"   # kong
-PDXC_COM = "COM26"
+PDXC_COM = "COM40"
 
 ### remote control
 WHITELIST_PATH = (
