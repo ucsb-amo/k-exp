@@ -33,7 +33,7 @@ class gm_tof(EnvExperiment, Base):
         
         # self.xvar('t_gm',[0.,self.p.t_gm])
 
-        self.xvar('t_tof',np.linspace(8.,17.,7)*1.e-3)
+        # self.xvar('t_tof',np.linspace(6.,12.,7)*1.e-3)
 
         # self.xvar('detune_d1_c_gm',np.linspace(6.,11.,7))
         # self.xvar('detune_d1_r_gm',np.linspace(6.,11.,7))
@@ -56,6 +56,13 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('')
 
+        self.p.N_pwa_per_shot = 6
+        self.p.t_tof_0 = 5.e-3
+        self.p.dt_tof = 1.5e-3
+
+        self.p.t_imaging_pulse = 10.e-6
+        self.p.t_repump_flash_imaging = 5.e-6
+
         self.finish_prepare(shuffle=True)
 
     @kernel
@@ -74,10 +81,18 @@ class gm_tof(EnvExperiment, Base):
 
         self.release()
         
-        delay(self.p.t_tof)
-
+        delay(self.p.t_tof_0)
         self.flash_repump()
-        self.abs_image()
+        for _ in range(self.p.N_pwa_per_shot):
+            self.light_image(t=self.p.t_imaging_pulse)
+            self.flash_repump()
+            delay(self.p.dt_tof)
+        
+        delay(10.e-3)
+        self.light_image()
+        delay(10.e-3)
+        self.dark_image()
+        # self.abs_image()
        
     @kernel
     def run(self):
@@ -91,45 +106,4 @@ class gm_tof(EnvExperiment, Base):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
         
-        # tof temperature fitting
-
-        import matplotlib.pyplot as plt
-        import matplotlib as mpl
-        import numpy as np
-
-        if 't_tof' in [s.key for s in self.scan_xvars]:
-
-            from waxa.atomdata import atomdata
-
-            ad = atomdata(0,'gm_tof')
-
-            fit_axis = 'x'
-            from waxa.plotting.standard_experiments import TOF
-
-            tof = TOF(ad,fit_axis)
-            # tof.compute_phase_space_density(num_tweezers=1, tweezer_final_frequency=455.)
-
-            fit = tof.fit
-            xfit = tof.t_tof
-            xplt = np.linspace(xfit[0],xfit[-1],1000)
-
-            if fit.T > 1.e-3:
-                mult = 1.e3
-                prefix = "m"
-            elif fit.T < 1.e-6:
-                mult = 1.e9
-                prefix = "n"
-            else:
-                mult = 1.e6
-                prefix = "u"
-
-            plt.figure(figsize=(4,3))
-            plt.plot(fit.xdata*1.e6, fit.ydata*1.e6, '.')
-            plt.plot(xplt*1.e6, np.interp(xplt,xfit,fit.y_fitdata)*1.e6, '--')
-            plt.ylabel("Width (um)")
-            plt.xlabel("TOF time (us)")
-            plt.title(f"TOF Expansion ({fit_axis} axis)\nRun ID: {ad.run_info.run_id}"\
-                    +f"\nFit temperature T = {float(fit.T) * mult:1.3g} +/- {float(fit.err_T) * mult:1.1f} {prefix}K"\
-            ) # +f"\nPSD = {tof.phase_space_density:1.3f}")
-            plt.legend(["Data","Fit"])
-            plt.show()            
+        
