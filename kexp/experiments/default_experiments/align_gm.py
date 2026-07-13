@@ -48,6 +48,16 @@ class gm_tof(EnvExperiment, Base):
         # self.p.pfrac_c_gmramp_start = 0.35
         # self.p.pfrac_r_gmramp_start = 0.5
 
+        self.adjust('detune_d1_c_gm', min_val=0., max_val=13.)
+        self.adjust('detune_d1_r_gm', min_val=0., max_val=13.)
+
+        self.adjust('pfrac_r_gmramp_end', min_val=0., max_val=self.p.pfrac_d1_r_gm)
+        self.adjust('pfrac_c_gmramp_end', min_val=0., max_val=self.p.pfrac_d1_c_gm)
+
+        self.adjust('v_xshim_current_gm',min_val=0.,max_val=9.9)
+        self.adjust('v_yshim_current_gm',min_val=0.,max_val=9.9)
+        self.adjust('v_zshim_current_gm',min_val=0.,max_val=9.9)
+
         self.p.pfrac_c_gmramp_end = 0.35
         self.p.pfrac_r_gmramp_end = 0.5
 
@@ -60,7 +70,6 @@ class gm_tof(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-
 
         self.imaging.set_power(self.camera_params.amp_imaging)
 
