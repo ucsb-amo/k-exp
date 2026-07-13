@@ -18,6 +18,7 @@ from kexp.util.live_od.live_od_server import LiveODServer
 from kexp.util.live_od.live_od_broadcaster import LiveODBroadcaster
 from kexp.util.live_od.gui.live_scalar_plot_window import LiveScalarPlotWindow
 from kexp.util.live_od.gui.fk_tof_window import FkTofWindow
+from kexp.util.live_od.gui.adjust_panel import AdjustPanel
 
 class LiveODWindow(QWidget):
     interrupt = pyqtSignal()
@@ -71,6 +72,9 @@ class LiveODWindow(QWidget):
         self.live_od_server.run_started_signal.connect(self.broadcaster.broadcast_run_started)
         self.live_od_server.shot_progress_signal.connect(self.broadcaster.broadcast_shot_progress)
         self.live_od_server.run_done_signal.connect(self.broadcaster.broadcast_run_done)
+        self.live_od_server.adjust_specs_signal.connect(self._on_adjust_specs)
+        self.live_od_server.shot_adjust_values_signal.connect(self.broadcaster.broadcast_adjust_values)
+        self.live_od_server.shot_adjust_values_signal.connect(self._adjust_panel.update_values)
         self.analyzer.broadcast_signal.connect(self.broadcaster.broadcast_od_image)
         self.analyzer.shot_scalars_signal.connect(self.live_scalar_plot_window.on_shot_scalars)
         self.analyzer.shot_scalars_signal.connect(self.broadcaster.broadcast_shot_scalars)
@@ -153,6 +157,14 @@ class LiveODWindow(QWidget):
         self.fk_tof_window = FkTofWindow()
         self.viewer_window.fk_tof_requested.connect(self._open_fk_tof)
         self.analyzer.fk_tof_signal.connect(self.fk_tof_window.on_pwa_data)
+
+        # Adjust panel — hidden until adjust specs arrive from INIT_RUN
+        self._adjust_panel = AdjustPanel()
+        self._adjust_button = QPushButton("Adjust")
+        self._adjust_button.setMinimumHeight(40)
+        self._adjust_button.setVisible(False)
+        self._adjust_button.clicked.connect(self._open_adjust_panel)
+
     def setup_screenshot_button(self):
         pass  # removed
 
@@ -220,6 +232,29 @@ class LiveODWindow(QWidget):
         """Show the FK TOF window."""
         self.fk_tof_window.show()
         self.fk_tof_window.raise_()
+
+    def _open_adjust_panel(self):
+        """Show the adjust panel."""
+        self._adjust_panel.show()
+        self._adjust_panel.raise_()
+
+    def _on_adjust_specs(self, specs: list):
+        """Called after INIT_RUN when adjust params are present."""
+        self._adjust_panel.populate(specs)
+        self._adjust_panel.value_changed_signal.connect(self._on_adjust_value_changed)
+        self._adjust_panel.spec_updated_signal.connect(self._on_adjust_spec_updated)
+        self._adjust_button.setVisible(bool(specs))
+
+    def _on_adjust_value_changed(self, key: str, value: float):
+        """Forward spinbox changes to the server's live adjust dict."""
+        self.live_od_server.update_adjust_value(key, value)
+
+    def _on_adjust_spec_updated(self, key: str, min_val: float, max_val: float, step: float):
+        """Sync new spec bounds to the server when the cog dialog is accepted."""
+        self.live_od_server._handle_set_adjust_spec(
+            {'key': key, 'min_val': min_val, 'max_val': max_val, 'step': step}
+        )
+
     def _on_scalar_subscription_changed(self, old_tier, new_tier):
         """Update the server's subscription counters when the plot window changes metric or visibility."""
         if old_tier is not None:
