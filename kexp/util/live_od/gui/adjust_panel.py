@@ -2,10 +2,9 @@
 Live-adjust panel for the liveOD GUI.
 
 AdjustPanel hosts one AdjustParamRow per adjustable parameter registered with
-``self.adjust()`` in an experiment's ``prepare()``.  Each row contains a
-spinbox that updates ``self.params`` on the host before the next shot.  A cog
-button opens AdjustSpecDialog to change the spinbox min/max/step and sync the
-new bounds back to the server.
+``self.adjust()`` in an experiment's ``prepare()``.  Each row shows a spinbox
+and a slider side-by-side, a reset button (↺) to revert to the default value,
+and a cog button to edit min/max/step bounds.
 """
 
 import threading
@@ -84,14 +83,13 @@ class AdjustSpecDialog(QDialog):
 
 
 class AdjustParamRow(QWidget):
-    """One row: key label | value control (spinbox or slider) | toggle | cog.
+    """One row: key label | spinbox | slider | reset | cog.
 
-    The toggle button switches the value control between an up/down spinbox
-    and a horizontal slider.  Both widgets are kept in sync so toggling
-    never changes the current value.
+    Spinbox and slider are always visible side-by-side and kept in sync.
+    The reset button (↺) reverts to the value present when adjust() was called.
     """
 
-    value_changed = pyqtSignal(str, float)          # key, new_value
+    value_changed = pyqtSignal(str, float)               # key, new_value
     spec_updated  = pyqtSignal(str, float, float, float)  # key, min, max, step
 
     def __init__(self, spec: dict, parent=None):
@@ -99,7 +97,7 @@ class AdjustParamRow(QWidget):
         self.spec = dict(spec)
         self.key  = spec['key']
         self._is_int = spec.get('dtype') == 'int'
-        self._use_slider = False
+        self._default_val = float(spec['current_val'])
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -121,22 +119,21 @@ class AdjustParamRow(QWidget):
             self._spinbox.setSingleStep(float(spec['step']))
             self._spinbox.setValue(float(spec['current_val']))
         self._spinbox.valueChanged.connect(self._on_spinbox_changed)
-        layout.addWidget(self._spinbox, 1)
+        layout.addWidget(self._spinbox)
 
-        # --- Slider (hidden by default) ---
+        # --- Slider ---
         self._slider = QSlider(Qt.Orientation.Horizontal)
         self._slider.setRange(0, _N_SLIDER_STEPS)
         self._slider.setValue(self._val_to_slider(float(spec['current_val'])))
-        self._slider.setVisible(False)
         self._slider.valueChanged.connect(self._on_slider_changed)
         layout.addWidget(self._slider, 1)
 
-        # --- Toggle button ---
-        self._toggle_btn = QPushButton("━")
-        self._toggle_btn.setFixedWidth(30)
-        self._toggle_btn.setToolTip("Switch to slider")
-        self._toggle_btn.clicked.connect(self._on_toggle)
-        layout.addWidget(self._toggle_btn)
+        # --- Reset button ---
+        reset_btn = QPushButton("↺")
+        reset_btn.setFixedWidth(30)
+        reset_btn.setToolTip(f"Revert to default ({self._default_val})")
+        reset_btn.clicked.connect(self._on_reset)
+        layout.addWidget(reset_btn)
 
         # --- Cog button ---
         cog = QPushButton("⚙")
@@ -185,16 +182,13 @@ class AdjustParamRow(QWidget):
         self._spinbox.blockSignals(False)
         self.value_changed.emit(self.key, val)
 
-    def _on_toggle(self):
-        self._use_slider = not self._use_slider
-        self._spinbox.setVisible(not self._use_slider)
-        self._slider.setVisible(self._use_slider)
-        if self._use_slider:
-            self._toggle_btn.setText("⇅")
-            self._toggle_btn.setToolTip("Switch to spinbox")
+    def _on_reset(self):
+        """Revert spinbox (and slider) to the default value."""
+        if self._is_int:
+            self._spinbox.setValue(int(round(self._default_val)))
         else:
-            self._toggle_btn.setText("━")
-            self._toggle_btn.setToolTip("Switch to slider")
+            self._spinbox.setValue(self._default_val)
+        # _on_spinbox_changed fires and syncs the slider + emits value_changed
 
     # ------------------------------------------------------------------
     # Public API
