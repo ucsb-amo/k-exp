@@ -53,6 +53,8 @@ class LiveODServer(QThread, WaxxServer):
     run_started_signal = pyqtSignal(int, object)               # run_id, xvarnames (emitted after INIT_RUN, before new_run_signal)
     reset_signal = pyqtSignal()                               # triggered by remote RESET command
     camera_control_signal = pyqtSignal(str, str)              # camera_key, action ('open'|'close'|'toggle')
+    adjust_specs_signal = pyqtSignal(list)                    # list of spec dicts, emitted after INIT_RUN when adjust params are present
+    shot_adjust_values_signal = pyqtSignal(dict)              # current adjust values dict, emitted per shot
 
     def __init__(self, server_talk, data_saver, port: int = 0):
         super().__init__()  # QThread.__init__
@@ -76,6 +78,9 @@ class LiveODServer(QThread, WaxxServer):
         self._shot_timestamps: list = []  # Unix timestamps (s) recorded server-side on each SHOT_COMPLETE
         self._scalar_subscriber_count: dict = {}  # tier -> subscriber count
         self._scalar_lock = threading.Lock()
+        self._adjust_specs: list = []    # list of spec dicts from INIT_RUN
+        self._adjust_values: dict = {}   # key -> live value (written by GUI or remote viewers)
+        self._adjust_lock = threading.Lock()
         # Basler-specific: track whether the previous grab loop has fully exited.
         # Cleared on each new Basler INIT_RUN (if a baby was already active),
         # set when that baby's done_signal fires via on_basler_baby_done().
@@ -169,6 +174,12 @@ class LiveODServer(QThread, WaxxServer):
                         reply = self._handle_subscribe_scalars(msg)
                     elif tag == "UNSUBSCRIBE_SCALARS":
                         reply = self._handle_unsubscribe_scalars(msg)
+                    elif tag == "GET_ADJUST_VALUES":
+                        reply = self._handle_get_adjust_values(msg)
+                    elif tag == "SET_ADJUST_VALUE":
+                        reply = self._handle_set_adjust_value(msg)
+                    elif tag == "SET_ADJUST_SPEC":
+                        reply = self._handle_set_adjust_spec(msg)
                     else:
                         reply = {"ok": False, "error": f"Unknown tag: {tag}"}
                 except Exception as exc:
@@ -302,6 +313,20 @@ class LiveODServer(QThread, WaxxServer):
             'xvarnames': list(msg.get('xvarnames', [])),
         }
 
+        adjust_specs = list(msg.get('adjust_specs', []))
+        with self._adjust_lock:
+            self._adjust_specs = adjust_specs
+            self._adjust_values = {s['key']: s['current_val'] for s in adjust_specs}
+        if adjust_specs:
+            self.adjust_specs_signal.emit(adjust_specs)
+            if save_data:
+                keys = ', '.join(s['key'] for s in adjust_specs)
+                print(
+                    f"[LiveODServer] WARNING: adjustable params [{keys}] are active "
+                    "with save_data=True. Values changed in the Adjust panel will NOT "
+                    "be reflected in saved data."
+                )
+
         self.run_started_signal.emit(run_id, list(run_info_payload.get('xvarnames', [])))
         self.new_run_signal.emit(filepath, camera_key, capture_images, save_data, imaging_type, n_img, n_shots, n_pwa, camera_params, params_payload, run_info_payload)
         print(
@@ -364,10 +389,15 @@ class LiveODServer(QThread, WaxxServer):
         self.shot_progress_signal.emit(shot_idx, N_total, xvar_values)
         self.shot_timing_signal.emit(float(delta_t), str(eta_str))
 
+        with self._adjust_lock:
+            adjust_values = dict(self._adjust_values)
+        if adjust_values:
+            self.shot_adjust_values_signal.emit(adjust_values)
+
         print(f"[LiveODServer] shot {shot_idx + 1}/{N_total} (Δt={delta_t:.1f}s | ETA {eta_str})")
         # Include reset flag so the experiment can abort at shot boundary
         # even if the POLL-based check misses it.
-        return {"ok": True, "reset_requested": self._reset_requested}
+        return {"ok": True, "reset_requested": self._reset_requested, "adjust_values": adjust_values}
 
     def _handle_end_run(self, msg: dict) -> dict:
         if self._reset_requested:
@@ -470,6 +500,53 @@ class LiveODServer(QThread, WaxxServer):
             count = self._scalar_subscriber_count.get(tier, 0)
             self._scalar_subscriber_count[tier] = max(0, count - 1)
         return {"ok": True}
+
+    def _handle_get_adjust_values(self, msg: dict) -> dict:
+        """Return current adjust specs and values. Called by remote viewers on connect."""
+        with self._adjust_lock:
+            return {"ok": True, "specs": list(self._adjust_specs), "values": dict(self._adjust_values)}
+
+    def _handle_set_adjust_value(self, msg: dict) -> dict:
+        """Remote viewer writes a new value for an adjustable parameter."""
+        key = str(msg.get('key', ''))
+        value = msg.get('value')
+        if value is None:
+            return {"ok": False, "error": "Missing value"}
+        with self._adjust_lock:
+            if key not in self._adjust_values:
+                return {"ok": False, "error": f"Unknown adjust key: {key!r}"}
+            spec = next((s for s in self._adjust_specs if s['key'] == key), None)
+            if spec:
+                value = max(spec['min_val'], min(spec['max_val'], float(value)))
+                if spec['dtype'] == 'int':
+                    value = float(int(round(value)))
+            self._adjust_values[key] = value
+        return {"ok": True}
+
+    def _handle_set_adjust_spec(self, msg: dict) -> dict:
+        """Remote viewer or GUI updates the min/max/step bounds for an adjust spec."""
+        key = str(msg.get('key', ''))
+        with self._adjust_lock:
+            spec = next((s for s in self._adjust_specs if s['key'] == key), None)
+            if spec is None:
+                return {"ok": False, "error": f"Unknown adjust key: {key!r}"}
+            if 'min_val' in msg:
+                spec['min_val'] = float(msg['min_val'])
+            if 'max_val' in msg:
+                spec['max_val'] = float(msg['max_val'])
+            if 'step' in msg:
+                spec['step'] = float(msg['step'])
+            # Clamp current value to new bounds
+            current = self._adjust_values.get(key, spec['min_val'])
+            current = max(spec['min_val'], min(spec['max_val'], current))
+            self._adjust_values[key] = current
+        return {"ok": True}
+
+    def update_adjust_value(self, key: str, value: float):
+        """Update an adjust value from the GUI thread (same process as server)."""
+        with self._adjust_lock:
+            if key in self._adjust_values:
+                self._adjust_values[key] = float(value)
 
     def get_requested_metrics(self) -> set:
         """Return set of tiers currently requested by any subscriber.

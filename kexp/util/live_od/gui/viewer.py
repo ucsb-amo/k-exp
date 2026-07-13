@@ -23,6 +23,7 @@ class SuppressPrints:
 
 class LiveODViewer(QWidget):
     live_plot_requested = pyqtSignal()   # emitted when the Live Plot button is clicked
+    fk_tof_requested = pyqtSignal()      # emitted when the FK TOF button is clicked
 
     def __init__(self):
         super().__init__()
@@ -49,6 +50,7 @@ class LiveODViewer(QWidget):
         self.reset_zoom_button = QPushButton('Reset zoom')
         self.clear_button = QPushButton('Clear')
         self.live_plot_button = QPushButton('Live Plot')
+        self.fk_tof_button = QPushButton('FK TOF')
         self.set_roi_button = QPushButton('Set ROI')
         self.clear_roi_button = QPushButton('Clear ROI')
         self.image_count_label = QLabel('Shot count: 0/0')
@@ -61,6 +63,7 @@ class LiveODViewer(QWidget):
         control_bar.addWidget(self.reset_zoom_button)
         control_bar.addWidget(self.clear_button)
         control_bar.addWidget(self.live_plot_button)
+        control_bar.addWidget(self.fk_tof_button)
         control_bar.addWidget(self.lock_views_checkbox)
         control_bar.addWidget(self.set_roi_button)
         control_bar.addWidget(self.clear_roi_button)
@@ -69,6 +72,7 @@ class LiveODViewer(QWidget):
         control_bar.addStretch()
 
         self.live_plot_button.clicked.connect(self.live_plot_requested)
+        self.fk_tof_button.clicked.connect(self.fk_tof_requested)
 
         self.output_window = QPlainTextEdit()
         self.output_window.setReadOnly(True)

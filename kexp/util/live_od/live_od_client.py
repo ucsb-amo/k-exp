@@ -35,6 +35,7 @@ class LiveODClient(WaxxClient):
         # open a network connection immediately.
         self._context = None
         self._socket = None
+        self.last_adjust_values: dict = {}
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -143,6 +144,7 @@ class LiveODClient(WaxxClient):
                 "xvar_values": xvar_values,
             }
         )
+        self.last_adjust_values = reply.get('adjust_values', {})
         if "reset_requested" in reply:
             return bool(reply["reset_requested"])
         # Old server: reset_requested field not present — fall back to POLL.

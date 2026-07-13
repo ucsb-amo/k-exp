@@ -175,3 +175,8 @@ class LiveODBroadcaster(QThread, WaxxServer):
             'tag': 'CAMERA_STATE',
             'states': {str(k): str(v) for k, v in states.items()},
         })
+
+    def broadcast_adjust_values(self, values: dict):
+        """Broadcast current adjust-parameter values to remote viewers."""
+        if values:
+            self._enqueue({'tag': 'ADJUST_VALUES', 'values': dict(values)})
