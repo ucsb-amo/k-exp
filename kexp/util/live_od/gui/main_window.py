@@ -17,6 +17,7 @@ from kexp.util.live_od.gui.plotter import LiveODPlotter
 from kexp.util.live_od.live_od_server import LiveODServer
 from kexp.util.live_od.live_od_broadcaster import LiveODBroadcaster
 from kexp.util.live_od.gui.live_scalar_plot_window import LiveScalarPlotWindow
+from kexp.util.live_od.gui.fk_tof_window import FkTofWindow
 
 class LiveODWindow(QWidget):
     interrupt = pyqtSignal()
@@ -149,6 +150,9 @@ class LiveODWindow(QWidget):
         self.live_scalar_plot_window = LiveScalarPlotWindow()
         self.viewer_window.live_plot_requested.connect(self._open_live_scalar_plot)
 
+        self.fk_tof_window = FkTofWindow()
+        self.viewer_window.fk_tof_requested.connect(self._open_fk_tof)
+        self.analyzer.fk_tof_signal.connect(self.fk_tof_window.on_pwa_data)
     def setup_screenshot_button(self):
         pass  # removed
 
@@ -199,6 +203,7 @@ class LiveODWindow(QWidget):
         cam_bar.addLayout(run_id_row)
         cam_bar.addWidget(self.camera_conn_bar)
         control_bar.addLayout(cam_bar)
+        control_bar.addWidget(self._adjust_button)
         control_bar.addWidget(self.fix_button)
         layout.addLayout(control_bar)
         layout.addWidget(self.viewer_window)
@@ -211,6 +216,10 @@ class LiveODWindow(QWidget):
         self.live_scalar_plot_window.show()
         self.live_scalar_plot_window.raise_()
 
+    def _open_fk_tof(self):
+        """Show the FK TOF window."""
+        self.fk_tof_window.show()
+        self.fk_tof_window.raise_()
     def _on_scalar_subscription_changed(self, old_tier, new_tier):
         """Update the server's subscription counters when the plot window changes metric or visibility."""
         if old_tier is not None:
@@ -250,6 +259,10 @@ class LiveODWindow(QWidget):
         self.eta_label.setText("ETA --:--")
         xvarnames = list(run_info_payload.get('xvarnames', [])) if run_info_payload else []
         self.live_scalar_plot_window.on_new_run(self.live_od_server._current_run_id, xvarnames)
+        self.fk_tof_window.on_new_run(
+            self.live_od_server._current_run_id,
+            dict(params_payload) if params_payload else {},
+        )
 
         # Interrupt any DataHandler left over from the previous run.
         # On long runs the DataHandler thread can still be draining the shared

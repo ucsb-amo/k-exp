@@ -11,6 +11,7 @@ class Analyzer(QThread):
     analyzed = pyqtSignal()
     broadcast_signal = pyqtSignal(object)    # emits plot_data tuple for LiveODBroadcaster
     shot_scalars_signal = pyqtSignal(object) # emits dict per analyzed shot
+    fk_tof_signal = pyqtSignal(object)       # emits per-shot FK TOF data (N_pwa > 1 only)
 
     def __init__(self, plotting_queue: Queue, viewer=None):
         super().__init__()
@@ -102,6 +103,8 @@ class Analyzer(QThread):
 
         # Compute and emit per-shot scalars if any subscriber is watching
         self._emit_scalars(cropped_od, self.sum_od_x, self.sum_od_y)
+        # For FK TOF: compute per-PWA widths when multiple atom images exist
+        self._emit_fk_tof()
         self._shot_idx += 1
         
     # ------------------------------------------------------------------
@@ -172,6 +175,58 @@ class Analyzer(QThread):
                 scalars['atom_number_fit_area_y'] = float(gy.area) * dx / _K39_CROSS_SECTION
         except Exception:
             pass
+
+    def _emit_fk_tof(self):
+        """Compute Gaussian sigma for each PWA image and emit fk_tof_signal.
+
+        Only runs when N_pwa_per_shot > 1.  Each PWA image (self.imgs[i]) is
+        paired with the shared reference light (self.img_light) and dark
+        (self.img_dark) to compute an absorption OD, then a Gaussian is fitted
+        to each projection to extract sigma_x and sigma_y.
+
+        self.imgs still holds all images when this is called from analyze()
+        because got_img() clears it only after analyze() returns.
+        """
+        if self.N_pwa_per_shot < 2:
+            return
+
+        cp = self.camera_params
+        dx = (cp.pixel_size_m / cp.magnification) if cp is not None else 1.0
+
+        sigma_x_list = []
+        sigma_y_list = []
+
+        try:
+            from waxa.fitting.gaussian import GaussianFit
+            for i in range(self.N_pwa_per_shot):
+                od_i = compute_OD(
+                    self.imgs[i], self.img_light, self.img_dark,
+                    imaging_type=self.imaging_type,
+                )
+                cropped_i, _, _ = self.crop_od_to_view_range(od_i)
+                sum_x_i = np.sum(cropped_i, axis=0)
+                sum_y_i = np.sum(cropped_i, axis=1)
+                xaxis_x = dx * np.arange(sum_x_i.size)
+                xaxis_y = dx * np.arange(sum_y_i.size)
+                try:
+                    gx = GaussianFit(xaxis_x, sum_x_i)
+                    sigma_x_list.append(float(gx.sigma))
+                except Exception:
+                    sigma_x_list.append(float('nan'))
+                try:
+                    gy = GaussianFit(xaxis_y, sum_y_i)
+                    sigma_y_list.append(float(gy.sigma))
+                except Exception:
+                    sigma_y_list.append(float('nan'))
+        except Exception:
+            return
+
+        self.fk_tof_signal.emit({
+            'sigma_x': sigma_x_list,
+            'sigma_y': sigma_y_list,
+            'shot_idx': self._shot_idx,
+            'N_pwa': self.N_pwa_per_shot,
+        })
 
     # ------------------------------------------------------------------
     # OD crop helper
