@@ -158,11 +158,10 @@ class LiveODWindow(QWidget):
         self.viewer_window.fk_tof_requested.connect(self._open_fk_tof)
         self.analyzer.fk_tof_signal.connect(self.fk_tof_window.on_pwa_data)
 
-        # Adjust panel — hidden until adjust specs arrive from INIT_RUN
+        # Adjust panel
         self._adjust_panel = AdjustPanel()
         self._adjust_button = QPushButton("Adjust")
         self._adjust_button.setMinimumHeight(40)
-        self._adjust_button.setVisible(False)
         self._adjust_button.clicked.connect(self._open_adjust_panel)
 
     def setup_screenshot_button(self):
@@ -243,7 +242,6 @@ class LiveODWindow(QWidget):
         self._adjust_panel.populate(specs)
         self._adjust_panel.value_changed_signal.connect(self._on_adjust_value_changed)
         self._adjust_panel.spec_updated_signal.connect(self._on_adjust_spec_updated)
-        self._adjust_button.setVisible(bool(specs))
 
     def _on_adjust_value_changed(self, key: str, value: float):
         """Forward spinbox changes to the server's live adjust dict."""

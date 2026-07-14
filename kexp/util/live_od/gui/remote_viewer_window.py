@@ -257,12 +257,11 @@ class RemoteViewerWindow(QWidget):
         )
         self.viewer_window.live_plot_requested.connect(self._open_live_scalar_plot)
 
-        # Adjust panel — hidden until specs are fetched from the server
+        # Adjust panel
         self._adjust_panel = AdjustPanel()
         self._adjust_panel.setWindowTitle("Adjust Parameters (Remote)")
         self._adjust_button = QPushButton("Adjust")
         self._adjust_button.setMinimumHeight(40)
-        self._adjust_button.setVisible(False)
         self._adjust_button.clicked.connect(self._open_adjust_panel)
 
         # Cached endpoint for the LiveOD REP server (RESET / CAMERA_CONTROL).
@@ -516,7 +515,6 @@ class RemoteViewerWindow(QWidget):
         self._adjust_panel.value_changed_signal.connect(self._on_remote_adjust_value_changed)
         self._adjust_panel.spec_updated_signal.connect(self._on_remote_spec_updated)
         self._adjust_panel.update_values(dict(values))
-        self._adjust_button.setVisible(True)
 
     def _on_remote_adjust_value_changed(self, key: str, value: float):
         threading.Thread(
