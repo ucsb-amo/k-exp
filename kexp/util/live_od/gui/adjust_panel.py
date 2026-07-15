@@ -10,11 +10,14 @@ and a cog button to edit min/max/step bounds.
 import threading
 
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QClipboard
 from PyQt6.QtWidgets import (
+    QApplication,
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
@@ -242,6 +245,28 @@ class AdjustPanel(QWidget):
         super().__init__(parent)
         self._rows: dict[str, AdjustParamRow] = {}
 
+        # --- Copy group box ---
+        copy_group = QGroupBox()
+        group_layout = QHBoxLayout(copy_group)
+        group_layout.setContentsMargins(4, 4, 4, 4)
+
+        self._expt_params_btn = QPushButton(".p")
+        self._expt_params_btn.setCheckable(True)
+        self._expt_params_btn.setChecked(True)
+        self._expt_params_btn.setFixedWidth(36)
+        self._expt_params_btn.setToolTip(
+            "When checked, copies 'self.p.key = value'; "
+            "when unchecked, copies 'self.key = value'"
+        )
+        group_layout.addWidget(self._expt_params_btn)
+
+        self._copy_btn = QPushButton("Copy params")
+        self._copy_btn.setToolTip(
+            "Copy all current adjust values as assignment lines"
+        )
+        self._copy_btn.clicked.connect(self._copy_params_to_clipboard)
+        group_layout.addWidget(self._copy_btn)
+
         # Scroll area so many params don't overflow the window
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -251,6 +276,7 @@ class AdjustPanel(QWidget):
         scroll.setWidget(container)
 
         outer = QVBoxLayout(self)
+        outer.addWidget(copy_group)
         outer.addWidget(scroll)
         self.setMinimumWidth(340)
         self.setWindowTitle("Adjust Parameters")
@@ -287,3 +313,21 @@ class AdjustPanel(QWidget):
         row = self._rows.get(key)
         if row is not None:
             row.apply_spec(min_val, max_val, step)
+
+    def _copy_params_to_clipboard(self):
+        """Copy all current adjust values as assignment lines to the clipboard."""
+        use_p = self._expt_params_btn.isChecked()
+        indent = "        "  # two leading indents (8 spaces)
+        lines = []
+        for key, row in self._rows.items():
+            value = row._spinbox.value()
+            if use_p:
+                line = f"self.p.{key} = {value}"
+            else:
+                line = f"self.{key} = {value}"
+            lines.append(line)
+        if lines:
+            text = lines[0] + ("\n" + "\n".join(indent + l for l in lines[1:]) if len(lines) > 1 else "")
+        else:
+            text = ""
+        QApplication.clipboard().setText(text)
