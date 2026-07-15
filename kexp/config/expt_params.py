@@ -183,10 +183,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_2d_mot_current = 2.2
 
         #MOT
-        self.detune_d2_c_mot = -2.14
+        self.detune_d2_c_mot = -2.9
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.3
+        self.detune_d2_r_mot = -4.5
         self.amp_d2_r_mot = 0.188
 
         self.detune_d2_c_hmot = -1.7
@@ -201,8 +201,8 @@ class ExptParams(ExptParamsWaxx):
         self.i_mot = 20.
 
         self.v_zshim_current = 0.860
-        self.v_xshim_current = 2.205
-        self.v_yshim_current = 4.290
+        self.v_xshim_current = .7
+        self.v_yshim_current = .86
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -230,32 +230,26 @@ class ExptParams(ExptParamsWaxx):
         self.i_cmot = self.i_mot
         
         #GM
-        # self.v_zshim_current_gm = 2.066
-        # self.v_xshim_current_gm = 1.386
-        # self.v_yshim_current_gm = 4.080
-        # self.v_zshim_current_gm = 0.73
-        # self.v_xshim_current_gm = 0.
-        # self.v_yshim_current_gm = 2.1
-        self.v_xshim_current = 1.215
-        self.v_yshim_current = 0.594
-        self.v_zshim_current = 0.958
+        # self.v_xshim_current = 1.215
+        # self.v_yshim_current = 0.594
+        # self.v_zshim_current = 0.958
 
         self.pfrac_d1_c_gm = 1.
         self.pfrac_d1_r_gm = 1.
 
-        self.pfrac_c_gmramp_end = 0.0086
-        self.pfrac_r_gmramp_end = 0.5912
+        self.pfrac_c_gmramp_end = 0.04
+        self.pfrac_r_gmramp_end = 0.69
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
         # self.v_yshim_current_gm = 2.
-        self.v_xshim_current_gm = 0.0
-        self.v_yshim_current_gm = 2.298
+        self.v_xshim_current_gm = 0.29
+        self.v_yshim_current_gm = 2.9
         self.v_zshim_current_gm = 0.72
 
-        self.detune_d1_c_gm = 8. # 7.37
+        self.detune_d1_c_gm = 9. # 7.37
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
-        self.detune_d1_r_gm = 8.
+        self.detune_d1_r_gm = 9.
         # self.pfrac_d1_r_gm = .99
 
         # Discrete GM ramp
