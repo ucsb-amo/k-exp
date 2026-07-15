@@ -78,6 +78,7 @@ class LiveODWindow(QWidget):
         self.analyzer.broadcast_signal.connect(self.broadcaster.broadcast_od_image)
         self.analyzer.shot_scalars_signal.connect(self.live_scalar_plot_window.on_shot_scalars)
         self.analyzer.shot_scalars_signal.connect(self.broadcaster.broadcast_shot_scalars)
+        self.analyzer.fk_tof_signal.connect(self.broadcaster.broadcast_fk_tof)
         self.live_scalar_plot_window.subscription_changed_signal.connect(
             self._on_scalar_subscription_changed
         )

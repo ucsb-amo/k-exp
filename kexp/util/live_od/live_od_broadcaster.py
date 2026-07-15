@@ -162,6 +162,13 @@ class LiveODBroadcaster(QThread, WaxxServer):
         """
         self._enqueue({'tag': 'SHOT_SCALARS', **scalars})
 
+    def broadcast_fk_tof(self, data: dict):
+        """Broadcast per-shot FK TOF widths to remote viewers.
+
+        ``data`` is the dict emitted by ``Analyzer.fk_tof_signal``.
+        """
+        self._enqueue({'tag': 'FK_TOF', **data})
+
     def broadcast_log_msg(self, text: str):
         self._enqueue({'tag': 'LOG_MSG', 'text': str(text)})
 

@@ -34,6 +34,7 @@ from PyQt6.QtWidgets import (
 from kexp.util.live_od.gui.plotter import LiveODPlotter
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.live_scalar_plot_window import LiveScalarPlotWindow
+from kexp.util.live_od.gui.fk_tof_window import FkTofWindow
 from kexp.util.live_od.gui.adjust_panel import AdjustPanel
 
 
@@ -59,6 +60,7 @@ class LiveODSubscriber(QThread):
     connection_status_signal = pyqtSignal(str)
     camera_state_signal = pyqtSignal(object)        # dict[camera_key -> state]
     shot_scalars_signal = pyqtSignal(object)        # per-shot scalar dict
+    fk_tof_signal = pyqtSignal(object)              # per-shot FK TOF width dict
     adjust_values_signal = pyqtSignal(object)       # dict[key -> current_val]
 
     # Reconnection configuration (seconds)
@@ -147,6 +149,8 @@ class LiveODSubscriber(QThread):
                             self.camera_state_signal.emit(dict(states))
                         elif tag == "SHOT_SCALARS":
                             self.shot_scalars_signal.emit(dict(msg))
+                        elif tag == "FK_TOF":
+                            self.fk_tof_signal.emit(dict(msg))
                         elif tag == "ADJUST_VALUES":
                             self.adjust_values_signal.emit(dict(msg.get('values', {})))
                         elif tag == "HELLO":
@@ -257,6 +261,10 @@ class RemoteViewerWindow(QWidget):
         )
         self.viewer_window.live_plot_requested.connect(self._open_live_scalar_plot)
 
+        # FK TOF window
+        self.fk_tof_window = FkTofWindow()
+        self.viewer_window.fk_tof_requested.connect(self._open_fk_tof)
+
         # Adjust panel
         self._adjust_panel = AdjustPanel()
         self._adjust_panel.setWindowTitle("Adjust Parameters (Remote)")
@@ -336,6 +344,7 @@ class RemoteViewerWindow(QWidget):
         self.subscriber.connection_status_signal.connect(self._on_connection_status)
         self.subscriber.camera_state_signal.connect(self._on_camera_state)
         self.subscriber.shot_scalars_signal.connect(self.live_scalar_plot_window.on_shot_scalars)
+        self.subscriber.fk_tof_signal.connect(self.fk_tof_window.on_pwa_data)
         self.subscriber.adjust_values_signal.connect(self._adjust_panel.update_values)
         self.subscriber.start()
         # Fetch current adjust state from server in background after subscriber starts
@@ -385,6 +394,11 @@ class RemoteViewerWindow(QWidget):
         self.live_plot_button.setMinimumHeight(40)
         self.live_plot_button.clicked.connect(self._open_live_scalar_plot)
         status_bar.addWidget(self.live_plot_button)
+
+        self.fk_tof_button = QPushButton("FK TOF")
+        self.fk_tof_button.setMinimumHeight(40)
+        self.fk_tof_button.clicked.connect(self._open_fk_tof)
+        status_bar.addWidget(self.fk_tof_button)
         status_bar.addWidget(self._adjust_button)
 
         self.reconnect_button = QPushButton("Reconnect")
@@ -423,6 +437,7 @@ class RemoteViewerWindow(QWidget):
             f"--- Run {run_id} started ---"
         )
         self.live_scalar_plot_window.on_new_run(run_id, list(xvarnames) if xvarnames else [])
+        self.fk_tof_window.on_new_run(run_id, {})
 
     def _on_shot_progress(self, shot_idx: int, N_total: int,
                           xvar_values: object):
@@ -476,6 +491,10 @@ class RemoteViewerWindow(QWidget):
     def _open_live_scalar_plot(self):
         self.live_scalar_plot_window.show()
         self.live_scalar_plot_window.raise_()
+
+    def _open_fk_tof(self):
+        self.fk_tof_window.show()
+        self.fk_tof_window.raise_()
 
     def _open_adjust_panel(self):
         self._adjust_panel.show()
