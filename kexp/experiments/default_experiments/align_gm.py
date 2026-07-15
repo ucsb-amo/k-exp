@@ -48,11 +48,25 @@ class gm_tof(EnvExperiment, Base):
         # self.p.pfrac_c_gmramp_start = 0.35
         # self.p.pfrac_r_gmramp_start = 0.5
 
+        self.adjust('t_tof',min_val=1.e-3, max_val=20.e-3)
+
+        self.adjust('i_mot',min_val=0., max_val=80.)
+
+        self.adjust('v_xshim_current',min_val=0.,max_val=9.9)
+        self.adjust('v_yshim_current',min_val=0.,max_val=9.9)
+        self.adjust('v_zshim_current',min_val=0.,max_val=9.9)
+
         self.adjust('detune_d1_c_gm', min_val=0., max_val=13.)
         self.adjust('detune_d1_r_gm', min_val=0., max_val=13.)
 
+        self.adjust('pfrac_d1_c_gm', min_val=0., max_val=1.)
+        self.adjust('pfrac_d1_r_gm', min_val=0., max_val=1.)
+
         self.adjust('pfrac_r_gmramp_end', min_val=0., max_val=self.p.pfrac_d1_r_gm)
         self.adjust('pfrac_c_gmramp_end', min_val=0., max_val=self.p.pfrac_d1_c_gm)
+
+        self.adjust('t_gm', min_val = 0., max_val = 10.e-3)
+        self.adjust('t_gmramp', min_val = 0., max_val = 10.e-3)
 
         self.adjust('v_xshim_current_gm',min_val=0.,max_val=9.9)
         self.adjust('v_yshim_current_gm',min_val=0.,max_val=9.9)

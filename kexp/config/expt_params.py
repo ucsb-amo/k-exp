@@ -200,8 +200,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.i_mot = 20.
 
-        self.v_zshim_current = 0.00
-        self.v_xshim_current = 1.870
+        self.v_zshim_current = 0.860
+        self.v_xshim_current = 2.205
         self.v_yshim_current = 4.290
 
         #D2 CMOT
@@ -230,19 +230,28 @@ class ExptParams(ExptParamsWaxx):
         self.i_cmot = self.i_mot
         
         #GM
-        self.v_zshim_current_gm = 0.73
-        self.v_xshim_current_gm = 0.
-        self.v_yshim_current_gm = 2.1
+        # self.v_zshim_current_gm = 2.066
+        # self.v_xshim_current_gm = 1.386
+        # self.v_yshim_current_gm = 4.080
+        # self.v_zshim_current_gm = 0.73
+        # self.v_xshim_current_gm = 0.
+        # self.v_yshim_current_gm = 2.1
+        self.v_xshim_current = 1.215
+        self.v_yshim_current = 0.594
+        self.v_zshim_current = 0.958
 
-        self.pfrac_d1_c_gm = .9
-        self.pfrac_d1_r_gm = 0.86
+        self.pfrac_d1_c_gm = 1.
+        self.pfrac_d1_r_gm = 1.
 
-        self.pfrac_c_gmramp_end = 0.05
-        self.pfrac_r_gmramp_end = 0.66
+        self.pfrac_c_gmramp_end = 0.0086
+        self.pfrac_r_gmramp_end = 0.5912
 
         # self.v_zshim_current_gm = 0.7
         # self.v_xshim_current_gm = 0.4
         # self.v_yshim_current_gm = 2.
+        self.v_xshim_current_gm = 0.0
+        self.v_yshim_current_gm = 2.298
+        self.v_zshim_current_gm = 0.72
 
         self.detune_d1_c_gm = 8. # 7.37
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
@@ -264,10 +273,11 @@ class ExptParams(ExptParamsWaxx):
         # self.v_zshim_current_magtrap = 0.67
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
-        self.v_zshim_current_magtrap = 0.0
+
         self.v_xshim_current_magtrap = .63
         self.v_yshim_current_magtrap = .8
-
+        self.v_zshim_current_magtrap = 0.0
+        
         #Optical Pumping
         self.detune_optical_pumping_op = 0.0
         self.amp_optical_pumping_op = 0.22

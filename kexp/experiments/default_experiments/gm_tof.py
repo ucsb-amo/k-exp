@@ -28,8 +28,8 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('v_zshim_current_gm',np.linspace(0,1.2,7))
 
 
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.0,0.5,9))
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.0,0.5,9))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.0,0.5,15))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.0,0.5,15))
         
         # self.xvar('t_gm',[0.,self.p.t_gm])
 
