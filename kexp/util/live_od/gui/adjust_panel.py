@@ -2,17 +2,19 @@
 Live-adjust panel for the liveOD GUI.
 
 AdjustPanel hosts one AdjustParamRow per adjustable parameter registered with
-``self.adjust()`` in an experiment's ``prepare()``.  Each row shows a spinbox
-and a slider side-by-side, a reset button (↺) to revert to the default value,
-and a cog button to edit min/max/step bounds.
+``self.adjust()`` in an experiment's ``prepare()``.  Each row shows a checkbox,
+a spinbox, a reset button (↺) to revert to the default value, and a cog button
+to edit min/max/step bounds.  Only checked rows are included in "Copy params".
 """
 
+import re
 import threading
 
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QClipboard
+from PyQt6.QtGui import QClipboard, QValidator
 from PyQt6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
@@ -22,15 +24,36 @@ from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
-    QSlider,
     QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
-# Number of discrete steps the slider uses to cover the [min, max] range.
-# Higher = finer float resolution at the cost of slider thumb sensitivity.
-_N_SLIDER_STEPS = 1000
+
+_SCI_RE = re.compile(r'^-?[0-9]*\.?[0-9]*([eE][+-]?[0-9]*)?$')
+
+
+class ScientificDoubleSpinBox(QDoubleSpinBox):
+    """QDoubleSpinBox that displays values in :.3e scientific notation."""
+
+    def textFromValue(self, value: float) -> str:
+        return f"{value:.3e}"
+
+    def valueFromText(self, text: str) -> float:
+        try:
+            return float(text)
+        except ValueError:
+            return self.minimum()
+
+    def validate(self, text: str, pos: int):
+        stripped = text.strip()
+        try:
+            float(stripped)
+            return QValidator.State.Acceptable, text, pos
+        except ValueError:
+            if stripped in ('', '-') or _SCI_RE.match(stripped):
+                return QValidator.State.Intermediate, text, pos
+            return QValidator.State.Invalid, text, pos
 
 
 class AdjustSpecDialog(QDialog):
@@ -45,26 +68,33 @@ class AdjustSpecDialog(QDialog):
 
         layout = QFormLayout(self)
 
-        def make_spin(value, min_v=None, max_v=None):
+        initial_step = float(spec.get('step', 1.0))
+        step_sb_step = max(1, int(initial_step // 20)) if self._is_int else initial_step / 20
+
+        def make_spin(value, min_v=None, max_v=None, single_step=None):
             if self._is_int:
                 sb = QSpinBox()
                 sb.setRange(int(min_v) if min_v is not None else -2_000_000_000,
                             int(max_v) if max_v is not None else  2_000_000_000)
                 sb.setValue(int(round(value)))
+                if single_step is not None:
+                    sb.setSingleStep(max(1, int(single_step)))
             else:
-                sb = QDoubleSpinBox()
+                sb = ScientificDoubleSpinBox()
                 sb.setDecimals(6)
                 sb.setRange(float(min_v) if min_v is not None else -1e18,
                             float(max_v) if max_v is not None else  1e18)
-                sb.setSingleStep(float(spec.get('step', 1.0)))
+                sb.setSingleStep(float(single_step) if single_step is not None else initial_step)
                 sb.setValue(float(value))
             return sb
 
         self._min_sb  = make_spin(spec['min_val'])
         self._max_sb  = make_spin(spec['max_val'])
         # step lower bound: 0 for float (functionally > 0 but hard to enforce), 1 for int
+        # step spinbox increments at 1/20 of the initial step size
         self._step_sb = make_spin(spec['step'],
-                                  min_v=1 if self._is_int else 0)
+                                  min_v=1 if self._is_int else 0,
+                                  single_step=step_sb_step)
         layout.addRow("Min", self._min_sb)
         layout.addRow("Max", self._max_sb)
         layout.addRow("Step", self._step_sb)
@@ -86,9 +116,9 @@ class AdjustSpecDialog(QDialog):
 
 
 class AdjustParamRow(QWidget):
-    """One row: key label | spinbox | slider | reset | cog.
+    """One row: checkbox | key label | spinbox | reset | cog.
 
-    Spinbox and slider are always visible side-by-side and kept in sync.
+    The checkbox controls whether this row is included in "Copy params".
     The reset button (↺) reverts to the value present when adjust() was called.
     """
 
@@ -105,6 +135,12 @@ class AdjustParamRow(QWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
+        # --- Checkbox ---
+        self._checkbox = QCheckBox()
+        self._checkbox.setChecked(True)
+        self._checkbox.setToolTip("Include in 'Copy params'")
+        layout.addWidget(self._checkbox)
+
         lbl = QLabel(self.key)
         lbl.setMinimumWidth(140)
         layout.addWidget(lbl)
@@ -116,20 +152,13 @@ class AdjustParamRow(QWidget):
             self._spinbox.setSingleStep(max(1, int(spec['step'])))
             self._spinbox.setValue(int(round(spec['current_val'])))
         else:
-            self._spinbox = QDoubleSpinBox()
+            self._spinbox = ScientificDoubleSpinBox()
             self._spinbox.setDecimals(6)
             self._spinbox.setRange(float(spec['min_val']), float(spec['max_val']))
             self._spinbox.setSingleStep(float(spec['step']))
             self._spinbox.setValue(float(spec['current_val']))
         self._spinbox.valueChanged.connect(self._on_spinbox_changed)
         layout.addWidget(self._spinbox)
-
-        # --- Slider ---
-        self._slider = QSlider(Qt.Orientation.Horizontal)
-        self._slider.setRange(0, _N_SLIDER_STEPS)
-        self._slider.setValue(self._val_to_slider(float(spec['current_val'])))
-        self._slider.valueChanged.connect(self._on_slider_changed)
-        layout.addWidget(self._slider, 1)
 
         # --- Reset button ---
         reset_btn = QPushButton("↺")
@@ -146,71 +175,35 @@ class AdjustParamRow(QWidget):
         layout.addWidget(cog)
 
     # ------------------------------------------------------------------
-    # Slider ↔ value mapping
-    # ------------------------------------------------------------------
-
-    def _val_to_slider(self, value: float) -> int:
-        min_v = float(self.spec['min_val'])
-        max_v = float(self.spec['max_val'])
-        if max_v == min_v:
-            return 0
-        frac = (value - min_v) / (max_v - min_v)
-        return int(round(max(0.0, min(float(_N_SLIDER_STEPS), frac * _N_SLIDER_STEPS))))
-
-    def _slider_to_val(self, pos: int) -> float:
-        min_v = float(self.spec['min_val'])
-        max_v = float(self.spec['max_val'])
-        val = min_v + (pos / _N_SLIDER_STEPS) * (max_v - min_v)
-        if self._is_int:
-            return float(int(round(val)))
-        return val
-
-    # ------------------------------------------------------------------
     # Internal slots
     # ------------------------------------------------------------------
 
     def _on_spinbox_changed(self, v):
-        self._slider.blockSignals(True)
-        self._slider.setValue(self._val_to_slider(float(v)))
-        self._slider.blockSignals(False)
         self.value_changed.emit(self.key, float(v))
 
-    def _on_slider_changed(self, pos: int):
-        val = self._slider_to_val(pos)
-        self._spinbox.blockSignals(True)
-        if self._is_int:
-            self._spinbox.setValue(int(round(val)))
-        else:
-            self._spinbox.setValue(val)
-        self._spinbox.blockSignals(False)
-        self.value_changed.emit(self.key, val)
-
     def _on_reset(self):
-        """Revert spinbox (and slider) to the default value."""
+        """Revert spinbox to the default value."""
         if self._is_int:
             self._spinbox.setValue(int(round(self._default_val)))
         else:
             self._spinbox.setValue(self._default_val)
-        # _on_spinbox_changed fires and syncs the slider + emits value_changed
+        # _on_spinbox_changed fires and emits value_changed
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
     def update_value(self, value: float):
-        """Update both widgets without triggering value_changed (remote sync)."""
+        """Update spinbox without triggering value_changed (remote sync)."""
         self._spinbox.blockSignals(True)
-        self._slider.blockSignals(True)
         if self._is_int:
             self._spinbox.setValue(int(round(value)))
         else:
             self._spinbox.setValue(float(value))
-        self._slider.setValue(self._val_to_slider(float(value)))
         self._spinbox.blockSignals(False)
-        self._slider.blockSignals(False)
 
     def apply_spec(self, min_val: float, max_val: float, step: float):
-        """Update range/step on both widgets (called after cog dialog)."""
+        """Update range/step on the spinbox (called after cog dialog)."""
         self.spec.update({'min_val': min_val, 'max_val': max_val, 'step': step})
         if self._is_int:
             self._spinbox.setRange(int(min_val), int(max_val))
@@ -218,10 +211,6 @@ class AdjustParamRow(QWidget):
         else:
             self._spinbox.setRange(min_val, max_val)
             self._spinbox.setSingleStep(step)
-        # Re-sync slider to current spinbox value under new range
-        self._slider.blockSignals(True)
-        self._slider.setValue(self._val_to_slider(float(self._spinbox.value())))
-        self._slider.blockSignals(False)
 
     def _on_cog_clicked(self):
         dlg = AdjustSpecDialog(self.spec, self)
@@ -315,11 +304,13 @@ class AdjustPanel(QWidget):
             row.apply_spec(min_val, max_val, step)
 
     def _copy_params_to_clipboard(self):
-        """Copy all current adjust values as assignment lines to the clipboard."""
+        """Copy checked adjust values as assignment lines to the clipboard."""
         use_p = self._expt_params_btn.isChecked()
         indent = "        "  # two leading indents (8 spaces)
         lines = []
         for key, row in self._rows.items():
+            if not row._checkbox.isChecked():
+                continue
             value = row._spinbox.value()
             if use_p:
                 line = f"self.p.{key} = {value}"

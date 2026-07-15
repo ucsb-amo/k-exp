@@ -53,7 +53,7 @@ class LiveODServer(QThread, WaxxServer):
     run_started_signal = pyqtSignal(int, object)               # run_id, xvarnames (emitted after INIT_RUN, before new_run_signal)
     reset_signal = pyqtSignal()                               # triggered by remote RESET command
     camera_control_signal = pyqtSignal(str, str)              # camera_key, action ('open'|'close'|'toggle')
-    adjust_specs_signal = pyqtSignal(list)                    # list of spec dicts, emitted after INIT_RUN when adjust params are present
+    adjust_specs_signal = pyqtSignal(list)                    # list of spec dicts, emitted after every INIT_RUN (empty list when no adjust params)
     shot_adjust_values_signal = pyqtSignal(dict)              # current adjust values dict, emitted per shot
 
     def __init__(self, server_talk, data_saver, port: int = 0):
@@ -317,9 +317,8 @@ class LiveODServer(QThread, WaxxServer):
         with self._adjust_lock:
             self._adjust_specs = adjust_specs
             self._adjust_values = {s['key']: s['current_val'] for s in adjust_specs}
-        if adjust_specs:
-            self.adjust_specs_signal.emit(adjust_specs)
-            if save_data:
+        self.adjust_specs_signal.emit(adjust_specs)
+        if adjust_specs and save_data:
                 keys = ', '.join(s['key'] for s in adjust_specs)
                 print(
                     f"[LiveODServer] WARNING: adjustable params [{keys}] are active "

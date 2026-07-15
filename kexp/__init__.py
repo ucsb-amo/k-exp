@@ -1,4 +1,5 @@
 from .base.base import Base
+from .base.adjust import Adjust
 from .config.dds_id import dds_frame
 from waxa import img_types, atomdata, load_atomdata, AtomdataVault
 from kexp.config.camera_id import cameras, CameraParams

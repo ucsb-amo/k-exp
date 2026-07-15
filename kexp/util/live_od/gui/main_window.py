@@ -161,6 +161,8 @@ class LiveODWindow(QWidget):
 
         # Adjust panel
         self._adjust_panel = AdjustPanel()
+        self._adjust_panel.value_changed_signal.connect(self._on_adjust_value_changed)
+        self._adjust_panel.spec_updated_signal.connect(self._on_adjust_spec_updated)
         self._adjust_button = QPushButton("Adjust")
         self._adjust_button.setMinimumHeight(40)
         self._adjust_button.clicked.connect(self._open_adjust_panel)
@@ -239,10 +241,8 @@ class LiveODWindow(QWidget):
         self._adjust_panel.raise_()
 
     def _on_adjust_specs(self, specs: list):
-        """Called after INIT_RUN when adjust params are present."""
+        """Called after INIT_RUN — repopulate with the new run's adjust params (may be empty)."""
         self._adjust_panel.populate(specs)
-        self._adjust_panel.value_changed_signal.connect(self._on_adjust_value_changed)
-        self._adjust_panel.spec_updated_signal.connect(self._on_adjust_spec_updated)
 
     def _on_adjust_value_changed(self, key: str, value: float):
         """Forward spinbox changes to the server's live adjust dict."""

@@ -200,9 +200,9 @@ class ExptParams(ExptParamsWaxx):
 
         self.i_mot = 20.
 
-        self.v_zshim_current = 0.860
+        self.v_zshim_current = 1.
         self.v_xshim_current = .7
-        self.v_yshim_current = .86
+        self.v_yshim_current = 2.5
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -416,7 +416,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 192.7
+        self.i_hf_lightsheet_evap1_current = 194.14
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 193.7 # 193.4
