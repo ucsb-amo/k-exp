@@ -134,7 +134,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_recover = 100.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 1.1
+        self.t_magtrap = 0.85
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
@@ -247,7 +247,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_yshim_current_gm = 2.9
         self.v_zshim_current_gm = 0.72
 
-        self.detune_d1_c_gm = 9. # 7.37
+        self.detune_d1_c_gm = 9. # 7.37F
         # self.pfrac_d1_c_gm = .736 # there is an ND on this photodiode -- much higher power/volt than the repump
         self.detune_d1_r_gm = 9.
         # self.pfrac_d1_r_gm = .99
@@ -260,16 +260,16 @@ class ExptParams(ExptParamsWaxx):
 
         # mag trap
         self.i_magtrap_init = 101.
-        self.i_magtrap_ramp_end = 169.
+        self.i_magtrap_ramp_end = 100.
         # self.n_magtrap_ramp_steps = 1000
         # self.n_magtrap_rampdown_steps = 1000
         
         # self.v_zshim_current_magtrap = 0.67
-        # self.v_xshim_current_magtrap = 0.
-        # self.v_yshim_current_magtrap = 6.4
+        # self.v_xshim_current_magtrap = 2.2
+        # self.v_yshim_current_magtrap = 0.0
 
-        self.v_xshim_current_magtrap = .57
-        self.v_yshim_current_magtrap = 1.71
+        self.v_xshim_current_magtrap = 0.56
+        self.v_yshim_current_magtrap = 1.33
         self.v_zshim_current_magtrap = 0.0
         
         #Optical Pumping
@@ -293,7 +293,7 @@ class ExptParams(ExptParamsWaxx):
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 8.6
         self.v_pd_lf_lightsheet_rampdown_end = 1.042 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = 0.81 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = 1.1 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.114
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -312,7 +312,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.7
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.3
         self.n_tweezer_ramp_steps = 1000
 
         self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
