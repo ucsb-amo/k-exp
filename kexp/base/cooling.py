@@ -47,7 +47,7 @@ class Cooling():
                             do_tweezer_evap_2=True,
                             do_tweezer_evap_3=True,
                             ramp_down_painting = False,
-                            squeeze=True,
+                            squeeze=False,
                             cubic_ramp_squeeze=True,
                             ):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with

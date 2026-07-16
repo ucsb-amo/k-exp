@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 700.e-6
+        self.p.t_tof = 900.e-6
         # self.xvar('t_tof',np.linspace(100,1200.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
@@ -27,7 +27,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.i_mot = 33.
 
         # self.xvar('i_magtrap_init',np.linspace(80.,150.,15))
-        self.i_magtrap_init = 101.
+        # self.p.i_magtrap_init = 101.
 
         # self.xvar('i_magtrap_ramp_end', np.linspace(80.,160.,20))
         # self.p.i_magtrap_ramp_end = 169.
@@ -47,9 +47,9 @@ class mag_trap(EnvExperiment, Base):
         # self.p.pfrac_c_gmramp_end = 0.05
         # self.p.pfrac_r_gmramp_end = 0.743
 
-        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,2.,20))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,4.,20))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,6.,20))
+        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,2.,15))
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,4.,8))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,6.,8))
         # self.p.v_yshim_current_magtrap = .8
         # self.p.v_xshim_current_magtrap = .63
 
@@ -88,6 +88,8 @@ class mag_trap(EnvExperiment, Base):
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
+        self.ttl.zshim_hbridge_flip.on()
+
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
         # self.set_shims(0.,0.,0.)
                                                    
@@ -99,6 +101,8 @@ class mag_trap(EnvExperiment, Base):
         self.flash_repump()
         # self.flash_cooler()
         self.abs_image()
+
+        self.ttl.zshim_hbridge_flip.off()
         
 
     @kernel

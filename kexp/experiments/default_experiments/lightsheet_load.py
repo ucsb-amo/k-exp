@@ -26,8 +26,8 @@ class mag_trap(EnvExperiment, Base):
         # self.p.v_xshim_current_magtrap = 0.85
         # self.p.v_yshim_current_magtrap = 0.5
 
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,1.,7))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(5.,1.,7))
+        self.xvar('v_xshim_current_magtrap',np.linspace(0.,2.,7))
+        self.xvar('v_yshim_current_magtrap',np.linspace(0.,2.5,7))
         # self.xvar('v_zshim_current_magtrap',np.linspace(5.,1.,7))
 
         #self.xvar('i_magtrap_init',np.linspace(65.,120.,20))
@@ -43,7 +43,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('v_pd_lightsheet_rampup_end', np.linspace(4.,8.,10))
 
-        self.p.N_repeats = 3
+        self.p.N_repeats = 2
         self.p.t_mot_load = 1.
         # self.p.amp_imaging = .25
         self.p.imaging_state = 2.

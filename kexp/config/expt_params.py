@@ -100,7 +100,7 @@ class ExptParams(ExptParamsWaxx):
         
         self.t_lightsheet_rampup = .4
         self.t_lf_lightsheet_rampdown = 1.13
-        self.t_hf_lightsheet_rampdown = 1.2
+        self.t_hf_lightsheet_rampdown = 1.1
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = .01
@@ -234,10 +234,10 @@ class ExptParams(ExptParamsWaxx):
         # self.v_yshim_current = 0.594
         # self.v_zshim_current = 0.958
 
-        self.pfrac_d1_c_gm = 1.
-        self.pfrac_d1_r_gm = 1.
+        self.pfrac_d1_c_gm = .99
+        self.pfrac_d1_r_gm = .9
 
-        self.pfrac_c_gmramp_end = 0.04
+        self.pfrac_c_gmramp_end = 0.07
         self.pfrac_r_gmramp_end = 0.69
 
         # self.v_zshim_current_gm = 0.7
@@ -268,8 +268,8 @@ class ExptParams(ExptParamsWaxx):
         # self.v_xshim_current_magtrap = 0.
         # self.v_yshim_current_magtrap = 6.4
 
-        self.v_xshim_current_magtrap = .63
-        self.v_yshim_current_magtrap = .8
+        self.v_xshim_current_magtrap = .57
+        self.v_yshim_current_magtrap = 1.71
         self.v_zshim_current_magtrap = 0.0
         
         #Optical Pumping
@@ -293,7 +293,7 @@ class ExptParams(ExptParamsWaxx):
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 8.6
         self.v_pd_lf_lightsheet_rampdown_end = 1.042 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = 0.9 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = 0.81 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.114
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -416,7 +416,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 194.14
+        self.i_hf_lightsheet_evap1_current = 193.
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 193.7 # 193.4
