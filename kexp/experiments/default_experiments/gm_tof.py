@@ -33,7 +33,7 @@ class gm_tof(EnvExperiment, Base):
         
         # self.xvar('t_gm',[0.,self.p.t_gm])
 
-        self.xvar('t_tof',np.linspace(8.,17.,7)*1.e-3)
+        self.xvar('t_tof',np.linspace(8.,20.,7)*1.e-3)
 
         # self.xvar('detune_d1_c_gm',np.linspace(6.,11.,7))
         # self.xvar('detune_d1_r_gm',np.linspace(6.,11.,7))

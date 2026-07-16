@@ -40,7 +40,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_squeeze_power
         # self.xvar('v_pd_hf_tweezer_squeeze_power', np.linspace(0.3,6.7,21))
 
-        # self.xvar('t_tof',np.linspace(300.,2800.,7)*1.e-6)
+        self.xvar('t_tof',np.linspace(1000.,3000.,7)*1.e-6)
         # self.p.t_tof = 1000.e-6
         # self.p.t_tof = 20.e-6
 
@@ -69,30 +69,17 @@ class hf_bec(EnvExperiment, Base):
         # self.ry_405.set_power(self.p.v)
         # self.ry_980.on()
 
-        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
         self.imaging.set_power(self.camera_params.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_2=False, do_tweezer_evap_3=False)
-        # self.prep_raman()
+        self.prepare_hf_tweezers()
 
         delay(10.e-3)
-        
-        # self.raman.on()
-        # self.ry_405.reboot()
-        # self.ry_405.on()
          
         delay(self.p.t_tweezer_hold)
         
-        # self.ry_405.off()
-        # self.ry_405.ttl_shutter.off()
-        # self.raman.off()
-        # self.ry_405.ttl_shutter.off()
-        # self.ttl.raman_shutter.off()
-        
-        # delay(10.e-3)
-        
-        # self.tweezer.off()
+        self.tweezer.off()
 
         delay(self.p.t_tof)
         self.abs_image()
