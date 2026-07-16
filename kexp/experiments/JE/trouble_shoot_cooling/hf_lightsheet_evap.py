@@ -45,8 +45,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,10))
         # self.xvar('v_yshim_current_magtrap',np.linspace(4.,9.9,10))
         
-        self.xvar('v_xshim_current_magtrap',np.linspace(0.,2.,7))
-        self.xvar('v_yshim_current_magtrap',np.linspace(0.,2.5,7))
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,2.,7))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,2.5,7))
         # self.p.v_zshim_current_magtrap_init = 0.
         # self.p.v_yshim_current_magtrap = 6.
         # self.p.v_xshim_current_magtrap = 0.5
@@ -114,7 +114,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.amp_imaging = 0.5
         # self.adjust('amp_imaging',0.3,0.6)
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 50
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
