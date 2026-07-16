@@ -1,6 +1,6 @@
 from artiq.experiment import *
 from artiq.experiment import delay
-from kexp import Base
+from kexp import Base, Adjust
 import numpy as np
 from kexp.calibrations import high_field_imaging_detuning
 from kexp import Base, img_types, cameras
@@ -12,10 +12,13 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,camera_select=cameras.xy_basler,
+        Base.__init__(self,
+                      setup_camera=True,
+                      save_data=True,
+                      camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 1200.e-6
+        self.p.t_tof = 100.e-6
         # self.xvar('t_tof',np.linspace(100,1500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy',[0,1]*2)
@@ -41,6 +44,9 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,3.,15))
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,10))
         # self.xvar('v_yshim_current_magtrap',np.linspace(4.,9.9,10))
+        
+        self.xvar('v_xshim_current_magtrap',np.linspace(0.,2.,7))
+        self.xvar('v_yshim_current_magtrap',np.linspace(0.,2.5,7))
         # self.p.v_zshim_current_magtrap_init = 0.
         # self.p.v_yshim_current_magtrap = 6.
         # self.p.v_xshim_current_magtrap = 0.5
@@ -98,18 +104,26 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 25.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.em_gain = 1.
-        self.p.amp_imaging = .5
+
+        # from kexp.calibrations.imaging import high_field_imaging_detuning
+        # f = high_field_imaging_detuning(self.p.i_hf_lightsheet_evap1_current)
+        # self.p.hf_imaging_detuning = f
+        # self.adjust('hf_imaging_detuning', min_val=-580e6, max_val=-650e6, dtype=float)
+        
+
+        # self.p.amp_imaging = 0.5
+        # self.adjust('amp_imaging',0.3,0.6)
 
         self.p.N_repeats = 1
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
-
+        
     @kernel
     def scan_kernel(self):
         # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.set_high_field_imaging(i_outer=self.p.i_hf_lightsheet_evap1_current)
-        self.imaging.set_power(power_control_parameter=self.p.amp_imaging)
+        # self.imaging.set_power(power_control_parameter=self.p.amp_imaging)
 
         # self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)

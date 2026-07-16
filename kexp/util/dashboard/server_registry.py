@@ -24,6 +24,7 @@ from kexp.config.ip import (
     PRECILASER_COM,
     MAGNETOMETER_COM,
     INTERLOCK_COM,
+    PDXC_COM,
 )
 
 
@@ -161,6 +162,23 @@ SERVER_SPECS: list[ServerSpec] = [
         restart_on_crash=False,
         default_dock_area="top",
         default_placement="dock",
+    ),
+    ServerSpec(
+        id="pdxc",
+        label="PDXC Picomotor",
+        icon="⚙",
+        body_factory=_lazy_panel(
+            "waxx.util.guis.pdxc.pdxc_client_gui",
+            "PDXCClientWidget",
+        ),
+        server_cmd=[_PY, "-m", "kexp.control.serial.server.pdxc_server"],
+        cwd=_REPO,
+        com_label=PDXC_COM,
+        graceful_stop_timeout_s=5.0,
+        restart_on_crash=False,
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="control",
     ),
 ]
 

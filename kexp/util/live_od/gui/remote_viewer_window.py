@@ -34,6 +34,8 @@ from PyQt6.QtWidgets import (
 from kexp.util.live_od.gui.plotter import LiveODPlotter
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.live_scalar_plot_window import LiveScalarPlotWindow
+from kexp.util.live_od.gui.fk_tof_window import FkTofWindow
+from kexp.util.live_od.gui.adjust_panel import AdjustPanel
 
 
 # ---------------------------------------------------------------------------
@@ -58,6 +60,8 @@ class LiveODSubscriber(QThread):
     connection_status_signal = pyqtSignal(str)
     camera_state_signal = pyqtSignal(object)        # dict[camera_key -> state]
     shot_scalars_signal = pyqtSignal(object)        # per-shot scalar dict
+    fk_tof_signal = pyqtSignal(object)              # per-shot FK TOF width dict
+    adjust_values_signal = pyqtSignal(object)       # dict[key -> current_val]
 
     # Reconnection configuration (seconds)
     RECONNECT_RETRY_INTERVAL = 2.0  # How often to retry server discovery
@@ -145,6 +149,10 @@ class LiveODSubscriber(QThread):
                             self.camera_state_signal.emit(dict(states))
                         elif tag == "SHOT_SCALARS":
                             self.shot_scalars_signal.emit(dict(msg))
+                        elif tag == "FK_TOF":
+                            self.fk_tof_signal.emit(dict(msg))
+                        elif tag == "ADJUST_VALUES":
+                            self.adjust_values_signal.emit(dict(msg.get('values', {})))
                         elif tag == "HELLO":
                             pass  # heartbeat — already triggered connected status above
                     except Exception as exc:
@@ -227,6 +235,7 @@ class RemoteViewerWindow(QWidget):
     _discovery_status_signal = pyqtSignal(str)
     _discovery_done_signal   = pyqtSignal(str, int)   # ip, port
     _camera_request_done_signal = pyqtSignal(str)    # camera_key (worker -> GUI re-enable)
+    _adjust_state_fetched_signal = pyqtSignal(list, object)  # specs, values dict
 
     def __init__(self, ip: str = None, port: int = None):
         super().__init__()
@@ -250,6 +259,18 @@ class RemoteViewerWindow(QWidget):
         self.live_scalar_plot_window.subscription_changed_signal.connect(
             self._on_scalar_subscription_changed
         )
+        self.viewer_window.live_plot_requested.connect(self._open_live_scalar_plot)
+
+        # FK TOF window
+        self.fk_tof_window = FkTofWindow()
+        self.viewer_window.fk_tof_requested.connect(self._open_fk_tof)
+
+        # Adjust panel
+        self._adjust_panel = AdjustPanel()
+        self._adjust_panel.setWindowTitle("Adjust Parameters (Remote)")
+        self._adjust_button = QPushButton("Adjust")
+        self._adjust_button.setMinimumHeight(40)
+        self._adjust_button.clicked.connect(self._open_adjust_panel)
 
         # Cached endpoint for the LiveOD REP server (RESET / CAMERA_CONTROL).
         # Populated lazily on the first request that succeeds; falls back to
@@ -263,6 +284,7 @@ class RemoteViewerWindow(QWidget):
         self._discovery_status_signal.connect(self._on_connection_status)
         self._discovery_done_signal.connect(self._on_discovered)
         self._camera_request_done_signal.connect(self._on_camera_request_done)
+        self._adjust_state_fetched_signal.connect(self._on_adjust_state_fetched)
 
         # Kick off discovery after the event loop starts
         QTimer.singleShot(0, self._start_discovery)
@@ -322,7 +344,11 @@ class RemoteViewerWindow(QWidget):
         self.subscriber.connection_status_signal.connect(self._on_connection_status)
         self.subscriber.camera_state_signal.connect(self._on_camera_state)
         self.subscriber.shot_scalars_signal.connect(self.live_scalar_plot_window.on_shot_scalars)
+        self.subscriber.fk_tof_signal.connect(self.fk_tof_window.on_pwa_data)
+        self.subscriber.adjust_values_signal.connect(self._adjust_panel.update_values)
         self.subscriber.start()
+        # Fetch current adjust state from server in background after subscriber starts
+        threading.Thread(target=self._fetch_adjust_state, daemon=True).start()
 
     # ------------------------------------------------------------------
     # Layout
@@ -369,6 +395,17 @@ class RemoteViewerWindow(QWidget):
         self.live_plot_button.clicked.connect(self._open_live_scalar_plot)
         status_bar.addWidget(self.live_plot_button)
 
+        self.fk_tof_button = QPushButton("FK TOF")
+        self.fk_tof_button.setMinimumHeight(40)
+        self.fk_tof_button.clicked.connect(self._open_fk_tof)
+        status_bar.addWidget(self.fk_tof_button)
+        status_bar.addWidget(self._adjust_button)
+
+        self.reconnect_button = QPushButton("Reconnect")
+        self.reconnect_button.setMinimumHeight(40)
+        self.reconnect_button.clicked.connect(self._on_reconnect_clicked)
+        status_bar.addWidget(self.reconnect_button)
+
         layout.addLayout(status_bar)
 
         # Camera control row — buttons are created lazily from the first
@@ -400,6 +437,7 @@ class RemoteViewerWindow(QWidget):
             f"--- Run {run_id} started ---"
         )
         self.live_scalar_plot_window.on_new_run(run_id, list(xvarnames) if xvarnames else [])
+        self.fk_tof_window.on_new_run(run_id, {})
 
     def _on_shot_progress(self, shot_idx: int, N_total: int,
                           xvar_values: object):
@@ -425,6 +463,20 @@ class RemoteViewerWindow(QWidget):
         self.connection_label.setText(f"tcp://{self._ip}:{self._port}")
 
     # ------------------------------------------------------------------
+    # Reconnect
+    # ------------------------------------------------------------------
+
+    def _on_reconnect_clicked(self):
+        self.viewer_window.output_window.appendPlainText("Reconnecting — searching for LiveOD server…")
+        self._req_ip = None
+        self._req_port = None
+        if self.subscriber is not None:
+            self.subscriber.stop()
+            self.subscriber.wait(1000)
+            self.subscriber = None
+        threading.Thread(target=self._discover_worker, daemon=True).start()
+
+    # ------------------------------------------------------------------
     # Reset
     # ------------------------------------------------------------------
 
@@ -439,6 +491,80 @@ class RemoteViewerWindow(QWidget):
     def _open_live_scalar_plot(self):
         self.live_scalar_plot_window.show()
         self.live_scalar_plot_window.raise_()
+
+    def _open_fk_tof(self):
+        self.fk_tof_window.show()
+        self.fk_tof_window.raise_()
+
+    def _open_adjust_panel(self):
+        self._adjust_panel.show()
+        self._adjust_panel.raise_()
+
+    def _fetch_adjust_state(self):
+        """Worker thread: GET_ADJUST_VALUES from the REP server, then signal GUI thread."""
+        try:
+            ip, port = self._resolve_req_endpoint()
+            if ip is None:
+                return
+            ctx = zmq.Context()
+            sock = ctx.socket(zmq.REQ)
+            sock.setsockopt(zmq.SNDTIMEO, 3000)
+            sock.setsockopt(zmq.RCVTIMEO, 5000)
+            sock.setsockopt(zmq.LINGER, 0)
+            try:
+                import pickle
+                sock.connect(f"tcp://{ip}:{port}")
+                sock.send(pickle.dumps({'tag': 'GET_ADJUST_VALUES'}))
+                reply = pickle.loads(sock.recv())
+                if reply.get('ok') and reply.get('specs'):
+                    self._adjust_state_fetched_signal.emit(
+                        list(reply['specs']), dict(reply.get('values', {}))
+                    )
+            except Exception as exc:
+                print(f"[RemoteViewer] GET_ADJUST_VALUES failed: {exc}")
+            finally:
+                sock.close()
+                ctx.term()
+        except Exception as exc:
+            print(f"[RemoteViewer] _fetch_adjust_state error: {exc}")
+
+    def _on_adjust_state_fetched(self, specs: list, values: object):
+        """Called on GUI thread after successful GET_ADJUST_VALUES."""
+        self._adjust_panel.populate(specs)
+        self._adjust_panel.value_changed_signal.connect(self._on_remote_adjust_value_changed)
+        self._adjust_panel.spec_updated_signal.connect(self._on_remote_spec_updated)
+        self._adjust_panel.update_values(dict(values))
+
+    def _on_remote_adjust_value_changed(self, key: str, value: float):
+        threading.Thread(
+            target=self._send_set_adjust_value, args=(key, value), daemon=True
+        ).start()
+
+    def _send_set_adjust_value(self, key: str, value: float):
+        ip, port = self._resolve_req_endpoint()
+        if ip is None:
+            return
+        self._send_req(ip, port, {'tag': 'SET_ADJUST_VALUE', 'key': key, 'value': value},
+                       label=f'SET_ADJUST_VALUE({key})')
+
+    def _on_remote_spec_updated(self, key: str, min_val: float, max_val: float, step: float):
+        """Sync new bounds to the server when cog dialog is accepted in the remote viewer."""
+        threading.Thread(
+            target=self._send_set_adjust_spec,
+            args=(key, min_val, max_val, step),
+            daemon=True,
+        ).start()
+
+    def _send_set_adjust_spec(self, key: str, min_val: float, max_val: float, step: float):
+        ip, port = self._resolve_req_endpoint()
+        if ip is None:
+            return
+        self._send_req(
+            ip, port,
+            {'tag': 'SET_ADJUST_SPEC', 'key': key, 'min_val': min_val,
+             'max_val': max_val, 'step': step},
+            label=f'SET_ADJUST_SPEC({key})',
+        )
 
     def _on_scalar_subscription_changed(self, old_tier, new_tier):
         """Send SUBSCRIBE / UNSUBSCRIBE REQ messages when the plot window

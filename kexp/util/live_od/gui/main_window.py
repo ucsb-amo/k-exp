@@ -17,6 +17,8 @@ from kexp.util.live_od.gui.plotter import LiveODPlotter
 from kexp.util.live_od.live_od_server import LiveODServer
 from kexp.util.live_od.live_od_broadcaster import LiveODBroadcaster
 from kexp.util.live_od.gui.live_scalar_plot_window import LiveScalarPlotWindow
+from kexp.util.live_od.gui.fk_tof_window import FkTofWindow
+from kexp.util.live_od.gui.adjust_panel import AdjustPanel
 
 class LiveODWindow(QWidget):
     interrupt = pyqtSignal()
@@ -70,9 +72,13 @@ class LiveODWindow(QWidget):
         self.live_od_server.run_started_signal.connect(self.broadcaster.broadcast_run_started)
         self.live_od_server.shot_progress_signal.connect(self.broadcaster.broadcast_shot_progress)
         self.live_od_server.run_done_signal.connect(self.broadcaster.broadcast_run_done)
+        self.live_od_server.adjust_specs_signal.connect(self._on_adjust_specs)
+        self.live_od_server.shot_adjust_values_signal.connect(self.broadcaster.broadcast_adjust_values)
+        self.live_od_server.shot_adjust_values_signal.connect(self._adjust_panel.update_values)
         self.analyzer.broadcast_signal.connect(self.broadcaster.broadcast_od_image)
         self.analyzer.shot_scalars_signal.connect(self.live_scalar_plot_window.on_shot_scalars)
         self.analyzer.shot_scalars_signal.connect(self.broadcaster.broadcast_shot_scalars)
+        self.analyzer.fk_tof_signal.connect(self.broadcaster.broadcast_fk_tof)
         self.live_scalar_plot_window.subscription_changed_signal.connect(
             self._on_scalar_subscription_changed
         )
@@ -149,6 +155,18 @@ class LiveODWindow(QWidget):
         self.live_scalar_plot_window = LiveScalarPlotWindow()
         self.viewer_window.live_plot_requested.connect(self._open_live_scalar_plot)
 
+        self.fk_tof_window = FkTofWindow()
+        self.viewer_window.fk_tof_requested.connect(self._open_fk_tof)
+        self.analyzer.fk_tof_signal.connect(self.fk_tof_window.on_pwa_data)
+
+        # Adjust panel
+        self._adjust_panel = AdjustPanel()
+        self._adjust_panel.value_changed_signal.connect(self._on_adjust_value_changed)
+        self._adjust_panel.spec_updated_signal.connect(self._on_adjust_spec_updated)
+        self._adjust_button = QPushButton("Adjust")
+        self._adjust_button.setMinimumHeight(40)
+        self._adjust_button.clicked.connect(self._open_adjust_panel)
+
     def setup_screenshot_button(self):
         pass  # removed
 
@@ -199,6 +217,7 @@ class LiveODWindow(QWidget):
         cam_bar.addLayout(run_id_row)
         cam_bar.addWidget(self.camera_conn_bar)
         control_bar.addLayout(cam_bar)
+        control_bar.addWidget(self._adjust_button)
         control_bar.addWidget(self.fix_button)
         layout.addLayout(control_bar)
         layout.addWidget(self.viewer_window)
@@ -210,6 +229,30 @@ class LiveODWindow(QWidget):
         """Show the live scalar plot window, creating it if needed."""
         self.live_scalar_plot_window.show()
         self.live_scalar_plot_window.raise_()
+
+    def _open_fk_tof(self):
+        """Show the FK TOF window."""
+        self.fk_tof_window.show()
+        self.fk_tof_window.raise_()
+
+    def _open_adjust_panel(self):
+        """Show the adjust panel."""
+        self._adjust_panel.show()
+        self._adjust_panel.raise_()
+
+    def _on_adjust_specs(self, specs: list):
+        """Called after INIT_RUN — repopulate with the new run's adjust params (may be empty)."""
+        self._adjust_panel.populate(specs)
+
+    def _on_adjust_value_changed(self, key: str, value: float):
+        """Forward spinbox changes to the server's live adjust dict."""
+        self.live_od_server.update_adjust_value(key, value)
+
+    def _on_adjust_spec_updated(self, key: str, min_val: float, max_val: float, step: float):
+        """Sync new spec bounds to the server when the cog dialog is accepted."""
+        self.live_od_server._handle_set_adjust_spec(
+            {'key': key, 'min_val': min_val, 'max_val': max_val, 'step': step}
+        )
 
     def _on_scalar_subscription_changed(self, old_tier, new_tier):
         """Update the server's subscription counters when the plot window changes metric or visibility."""
@@ -246,9 +289,14 @@ class LiveODWindow(QWidget):
         # Propagate run metadata to Analyzer and scalar plot window
         self.analyzer.set_camera_params(camera_params or {})
         self.analyzer.reset()
+        self.viewer_window.set_camera_key(camera_key)
         self.eta_label.setText("ETA --:--")
         xvarnames = list(run_info_payload.get('xvarnames', [])) if run_info_payload else []
         self.live_scalar_plot_window.on_new_run(self.live_od_server._current_run_id, xvarnames)
+        self.fk_tof_window.on_new_run(
+            self.live_od_server._current_run_id,
+            dict(params_payload) if params_payload else {},
+        )
 
         # Interrupt any DataHandler left over from the previous run.
         # On long runs the DataHandler thread can still be draining the shared

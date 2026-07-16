@@ -11,6 +11,7 @@ class Analyzer(QThread):
     analyzed = pyqtSignal()
     broadcast_signal = pyqtSignal(object)    # emits plot_data tuple for LiveODBroadcaster
     shot_scalars_signal = pyqtSignal(object) # emits dict per analyzed shot
+    fk_tof_signal = pyqtSignal(object)       # emits per-shot FK TOF data (N_pwa > 1 only)
 
     def __init__(self, plotting_queue: Queue, viewer=None):
         super().__init__()
@@ -102,6 +103,8 @@ class Analyzer(QThread):
 
         # Compute and emit per-shot scalars if any subscriber is watching
         self._emit_scalars(cropped_od, self.sum_od_x, self.sum_od_y)
+        # For FK TOF: compute per-PWA widths when multiple atom images exist
+        self._emit_fk_tof()
         self._shot_idx += 1
         
     # ------------------------------------------------------------------
@@ -173,13 +176,70 @@ class Analyzer(QThread):
         except Exception:
             pass
 
+    def _emit_fk_tof(self):
+        """Compute Gaussian sigma for each PWA image and emit fk_tof_signal.
+
+        Only runs when N_pwa_per_shot > 1.  Each PWA image (self.imgs[i]) is
+        paired with the shared reference light (self.img_light) and dark
+        (self.img_dark) to compute an absorption OD, then a Gaussian is fitted
+        to each projection to extract sigma_x and sigma_y.
+
+        self.imgs still holds all images when this is called from analyze()
+        because got_img() clears it only after analyze() returns.
+        """
+        if self.N_pwa_per_shot < 2:
+            return
+
+        cp = self.camera_params
+        dx = (cp.pixel_size_m / cp.magnification) if cp is not None else 1.0
+
+        sigma_x_list = []
+        sigma_y_list = []
+
+        try:
+            from waxa.fitting.gaussian import GaussianFit
+            for i in range(self.N_pwa_per_shot):
+                od_i = compute_OD(
+                    self.imgs[i], self.img_light, self.img_dark,
+                    imaging_type=self.imaging_type,
+                )
+                cropped_i, _, _ = self.crop_od_to_view_range(od_i)
+                sum_x_i = np.sum(cropped_i, axis=0)
+                sum_y_i = np.sum(cropped_i, axis=1)
+                xaxis_x = dx * np.arange(sum_x_i.size)
+                xaxis_y = dx * np.arange(sum_y_i.size)
+                try:
+                    gx = GaussianFit(xaxis_x, sum_x_i)
+                    sigma_x_list.append(float(gx.sigma))
+                except Exception:
+                    sigma_x_list.append(float('nan'))
+                try:
+                    gy = GaussianFit(xaxis_y, sum_y_i)
+                    sigma_y_list.append(float(gy.sigma))
+                except Exception:
+                    sigma_y_list.append(float('nan'))
+        except Exception:
+            return
+
+        self.fk_tof_signal.emit({
+            'sigma_x': sigma_x_list,
+            'sigma_y': sigma_y_list,
+            'shot_idx': self._shot_idx,
+            'N_pwa': self.N_pwa_per_shot,
+        })
+
     # ------------------------------------------------------------------
     # OD crop helper
     # ------------------------------------------------------------------
 
     def crop_od_to_view_range(self, od):
         """
-        Crop the OD array to the current view range of the viewer's OD plot
+        Crop the OD array to the drawn ROI rect (if set) or the current view range.
+
+        If the viewer has an active drawn rectangle (set via "Set ROI" button), that
+        rectangle is used as the crop region.  Otherwise falls back to the OD plot's
+        current zoom/pan view range so that zooming in still narrows the atom-number
+        integration region.
 
         Args:
             od (numpy.ndarray): The OD array to crop
@@ -191,6 +251,19 @@ class Analyzer(QThread):
             return od, slice(None), slice(None)
 
         try:
+            # --- Prefer drawn ROI rect over view range ---
+            roi_rect = self.viewer.get_od_roi_rect()
+            if roi_rect is not None:
+                x_min = max(0, int(round(roi_rect[0])))
+                y_min = max(0, int(round(roi_rect[1])))
+                x_max = min(od.shape[1], int(round(roi_rect[2])))
+                y_max = min(od.shape[0], int(round(roi_rect[3])))
+                if x_max > x_min and y_max > y_min:
+                    y_slice = slice(y_min, y_max)
+                    x_slice = slice(x_min, x_max)
+                    return od[y_slice, x_slice], x_slice, y_slice
+                # drawn rect is degenerate — fall through to view range
+
             # Get the current view range from the viewer's OD plot
             x_range, y_range = self.viewer.get_od_view_range()
 

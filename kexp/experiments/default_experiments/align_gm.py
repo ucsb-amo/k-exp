@@ -6,7 +6,7 @@ import numpy as np
 class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,setup_camera=True,save_data=False,
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
@@ -20,7 +20,7 @@ class gm_tof(EnvExperiment, Base):
         self.p.imaging_state = 2.
         self.p.t_tof = 12.e-3
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 1000
 
         # self.xvar('amp_imaging',np.linspace(0.25,1.,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.,8))
@@ -28,12 +28,12 @@ class gm_tof(EnvExperiment, Base):
         # self.xvar('v_zshim_current_gm',np.linspace(0,1.2,7))
 
 
-        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.0,0.5,15))
-        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.0,0.5,15))
+        # self.xvar('pfrac_r_gmramp_end',np.linspace(0.0,0.5,9))
+        # self.xvar('pfrac_c_gmramp_end',np.linspace(0.0,0.5,9))
         
         # self.xvar('t_gm',[0.,self.p.t_gm])
 
-        self.xvar('t_tof',np.linspace(8.,20.,7)*1.e-3)
+        # self.xvar('t_tof',np.linspace(6.,12.,10)*1.e-3)
 
         # self.xvar('detune_d1_c_gm',np.linspace(6.,11.,7))
         # self.xvar('detune_d1_r_gm',np.linspace(6.,11.,7))
@@ -48,8 +48,32 @@ class gm_tof(EnvExperiment, Base):
         # self.p.pfrac_c_gmramp_start = 0.35
         # self.p.pfrac_r_gmramp_start = 0.5
 
-        # self.p.pfrac_c_gmramp_end = 0.35
-        # self.p.pfrac_r_gmramp_end = 0.5
+        self.adjust('t_tof',min_val=1.e-3, max_val=20.e-3)
+
+        self.adjust('i_mot',min_val=0., max_val=80.)
+
+        self.adjust('v_xshim_current',min_val=0.,max_val=9.9)
+        self.adjust('v_yshim_current',min_val=0.,max_val=9.9)
+        self.adjust('v_zshim_current',min_val=0.,max_val=9.9)
+
+        self.adjust('detune_d1_c_gm', min_val=0., max_val=13.)
+        self.adjust('detune_d1_r_gm', min_val=0., max_val=13.)
+
+        self.adjust('pfrac_d1_c_gm', min_val=0., max_val=1.)
+        self.adjust('pfrac_d1_r_gm', min_val=0., max_val=1.)
+
+        self.adjust('pfrac_r_gmramp_end', min_val=0., max_val=self.p.pfrac_d1_r_gm)
+        self.adjust('pfrac_c_gmramp_end', min_val=0., max_val=self.p.pfrac_d1_c_gm)
+
+        self.adjust('t_gm', min_val = 0., max_val = 10.e-3)
+        self.adjust('t_gmramp', min_val = 0., max_val = 10.e-3)
+
+        self.adjust('v_xshim_current_gm',min_val=0.,max_val=9.9)
+        self.adjust('v_yshim_current_gm',min_val=0.,max_val=9.9)
+        self.adjust('v_zshim_current_gm',min_val=0.,max_val=9.9)
+
+        self.p.pfrac_c_gmramp_end = 0.35
+        self.p.pfrac_r_gmramp_end = 0.5
 
         # self.p.pfrac_c_gmramp_end = 0.15
         # self.p.pfrac_r_gmramp_end = 0.39
@@ -91,45 +115,4 @@ class gm_tof(EnvExperiment, Base):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
         
-        # tof temperature fitting
-
-        import matplotlib.pyplot as plt
-        import matplotlib as mpl
-        import numpy as np
-
-        if 't_tof' in [s.key for s in self.scan_xvars]:
-
-            from waxa.atomdata import atomdata
-
-            ad = atomdata(0,'gm_tof')
-
-            fit_axis = 'x'
-            from waxa.plotting.standard_experiments import TOF
-
-            tof = TOF(ad,fit_axis)
-            # tof.compute_phase_space_density(num_tweezers=1, tweezer_final_frequency=455.)
-
-            fit = tof.fit
-            xfit = tof.t_tof
-            xplt = np.linspace(xfit[0],xfit[-1],1000)
-
-            if fit.T > 1.e-3:
-                mult = 1.e3
-                prefix = "m"
-            elif fit.T < 1.e-6:
-                mult = 1.e9
-                prefix = "n"
-            else:
-                mult = 1.e6
-                prefix = "u"
-
-            plt.figure(figsize=(4,3))
-            plt.plot(fit.xdata*1.e6, fit.ydata*1.e6, '.')
-            plt.plot(xplt*1.e6, np.interp(xplt,xfit,fit.y_fitdata)*1.e6, '--')
-            plt.ylabel("Width (um)")
-            plt.xlabel("TOF time (us)")
-            plt.title(f"TOF Expansion ({fit_axis} axis)\nRun ID: {ad.run_info.run_id}"\
-                    +f"\nFit temperature T = {float(fit.T) * mult:1.3g} +/- {float(fit.err_T) * mult:1.1f} {prefix}K"\
-            ) # +f"\nPSD = {tof.phase_space_density:1.3f}")
-            plt.legend(["Data","Fit"])
-            plt.show()            
+        

@@ -9,13 +9,19 @@ class gm_tof(EnvExperiment, Base):
         Base.__init__(self,
                       setup_camera=False,
                       camera_select='xy_basler',
-                      save_data=False)
+                      save_data=False,
+                      suppress_live_od=True)
+                      
         
-        self.p.i_current_ramp_min = 15.
-        self.p.i_current_ramp_max = 60.
+        self.p.i_current_ramp_min = 17.
+        self.p.i_current_ramp_max = 80.
+
+        # self.adjust('v_xshim_current',min_val=0.,max_val=9.9)
+        # self.adjust('v_yshim_current',min_val=0.,max_val=9.9)
+        # self.adjust('v_zshim_current',min_val=0.,max_val=9.9)
 
         # self.xvar('amp_imaging',np.linspace(0.1,.4,15))
-        self.p.amp_imaging = .18
+        # self.p.amp_imaging = .18
         # self.p.imaging_state = 1.
         self.p.imaging_state = 2.
         self.p.t_tof = 20.e-6
@@ -26,7 +32,7 @@ class gm_tof(EnvExperiment, Base):
 
     @kernel
     def scan_kernel(self):
-        self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
         # self.set_imaging_detuning(self.p.frequency_detuned_imaging)
         
         self.mot(self.p.t_mot_load)

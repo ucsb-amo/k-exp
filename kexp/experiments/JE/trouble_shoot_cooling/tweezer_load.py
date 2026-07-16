@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 100.e-6
         # self.xvar('t_tof',np.linspace(20.,300.,10)*1.e-6)
         # self.xvar('dumy',[0]*100)
         
@@ -36,40 +36,31 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_lightsheet_rampdown = 1.3
 
         # self.xvar('t_hf_lightsheet_rampdown2',np.linspace(10.,100.,20)*1.e-3)
-        self.p.t_hf_lightsheet_rampdown2 = .015
+        # self.p.t_hf_lightsheet_rampdown2 = .015
 
         # self.xvar('i_hf_tweezer_load_current',np.linspace(180.,195.,20))
-        self.p.i_hf_tweezer_load_current = 193.4
+        # self.p.i_hf_tweezer_load_current = 193.4
 
         # self.xvar('i_tweezer_evap1_current',np.linspace(193.,198.,20))
         # self.p.i_tweezer_evap1_current = 194.4
 
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(5.,9.9,20))
-        self.p.v_pd_hf_tweezer_1064_ramp_end = 9.2
+        # self.p.v_pd_hf_tweezer_1064_ramp_end = 9.2
 
         # self.xvar('v_tweezer_paint_amp_max',np.linspace(-5.,5.,15))
-        self.p.v_tweezer_paint_amp_max = -1.5
+        # self.p.v_tweezer_paint_amp_max = -1.5
 
         # self.xvar('t_tweezer_1064_ramp',np.linspace(.05,.9,10))
         # self.p.t_tweezer_1064_ramp = .4
 
         # self.xvar('t_tweezer_hold',np.linspace(0.,10.,10)*1.e-3)
-        self.p.t_tweezer_hold = .01e-3
+        self.p.t_tweezer_hold = 1.e-3
 
         # self.xvar('v_pd_tweezer_1064_rampdown_end',np.linspace(.05,2.,8))
         # self.p.v_pd_tweezer_1064_rampdown_end = .88
 
         # self.xvar('t_tweezer_1064_rampdown',np.linspace(20.,150.,15)*1.e-3) 
         # self.p.t_tweezer_1064_rampdown = 65.e-3
-
-        self.p.frequency_tweezer_list = [74.e6,76.e6]
-        # self.p.frequency_tweezer_list = [74.e6,76.0e6,73.2e6,77.9e6]
-        # self.p.frequency_tweezer_list = np.linspace(76.e6,78.e6,6)
-
-        # a_list = [.45,.55]
-        a_list = [.24,.25]
-        # a_list = np.array([.15,.15,.17,.34])
-        self.p.amp_tweezer_list = a_list
 
         # self.xvar('hf_imaging_detuning', np.arange(-620.,-595.,3.)*1.e6)
 
@@ -84,7 +75,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('amp_imaging', np.linspace(.03,.2,20))
         # self.p.amp_imaging = .35
-        self.p.amp_imaging = .1
+        self.p.amp_imaging = .2
         self.p.imaging_state = 2.
 
         self.p.N_repeats = 1
@@ -138,9 +129,9 @@ class mag_trap(EnvExperiment, Base):
 
         self.ttl.pd_scope_trig.pulse(1.e-6)
         # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
+                                v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
+                                v_end=self.p.v_pd_lightsheet_rampdown3_end)
 
         # delay(self.p.t_lightsheet_hold)
         
