@@ -10,12 +10,12 @@ from artiq.language import now_mu
 class hf_raman(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
+        Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        # self.xvar('t_raman_pulse', np.linspace(0.,50.,8)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0.,150.,20)*1.e-6)
         # self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,60.,40),np.linspace(200.,240.,20)))*1.e-6)
 
         self.p.t_raman_pulse = 0.
@@ -27,7 +27,7 @@ class hf_raman(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_squeeze_power = 7.
         # self.p.t_tof = 8.e-6
 
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 600.e-6
         
         self.p.N_repeats = 1
 
