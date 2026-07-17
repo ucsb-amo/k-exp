@@ -97,7 +97,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('amp_tweezer',np.linspace(.13,.25,15))
         # self.xvar('freq_tweezer',75.e6 + np.linspace(-3.e6,0.e6,15))
 
-        self.xvar('hf_imaging_detuning', np.arange(-580.,-550.,3.)*1.e6)
+        # self.xvar('hf_imaging_detuning', np.arange(-580.,-550.,3.)*1.e6)
         # self.p.hf_imaging_detuning = -627.e6 # load
         # self.p.hf_imaging_detuning = -629.e6 # evap 1
         self.p.hf_imaging_detuning = -624.e6 # evap 2

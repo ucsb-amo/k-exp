@@ -37,7 +37,7 @@ class ScientificDoubleSpinBox(QDoubleSpinBox):
     """QDoubleSpinBox that displays values in :.3e scientific notation."""
 
     def textFromValue(self, value: float) -> str:
-        if -10 <= value <= 10:
+        if 1.e-3 <= abs(value) <= 10:
             return f"{value:.3f}"
         return f"{value:.3e}"
 
