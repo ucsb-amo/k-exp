@@ -8,7 +8,9 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,
+                      setup_camera=False,
+                      save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
@@ -20,40 +22,30 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.12,,5))
         # self.xvar('i_hf_tweezer_load_current',np.linspace(192.,195.,15))
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-5.,-1.,5))
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,5))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,6.,5))
         # self.p.v_pd_lightsheet_rampup_end = 6.7
         # self.p.i_hf_tweezer_load_current = 193.3
         # self.p.t_hf_tweezer_1064_ramp = 0.19
         # self.p.v_pd_hf_lightsheet_rampdown_end = 0.9
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.50
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.30
         # self.p.v_hf_tweezer_paint_amp_max = -2.5
 
-        # self.xvar('')
-
+        # self.xvar('beans',np.linspace(0,10,10))
+        # self.xvar('frequency_detuned_hf_f1m1',np.linspace(-400,-750,15)*1e6)
+        # self.p.frequency_detuned_hf_f1m1 = -568.e6
         # self.xvar('skip_evap_ramp',[0,1])
 
         # self.p.t_tweezer_hold = 0.5e-6
         self.p.t_tweezer_hold = 10.e-3
 
         # self.xvar('t_tweezer_hold',np.linspace(10.,1000.,4)*1.e-6)
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0,-3,10))
 
-        # self.p.v_pd_hf_tweezer_squeeze_power
-        # self.xvar('v_pd_hf_tweezer_squeeze_power', np.linspace(0.3,6.7,21))
-
-        self.xvar('t_tof',np.linspace(1000.,3000.,7)*1.e-6)
-        # self.p.t_tof = 1000.e-6
+        # self.xvar('t_tof',np.linspace(1000.,4000.,4)*1.e-6)
+        self.p.t_tof = 100.e-6
         # self.p.t_tof = 20.e-6
 
-        # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(5.,7.2,3))
-
-        # self.xvar('v',np.linspace(0.,1. ,5))
-        # self.p.v = 3.
-
-        self.p.fraction_power_raman = .2
-
-        self.p.frequency_raman_transition += 1.e6
-
-        self.p.N_repeats = 1
+        self.p.N_repeats = 1000
 
         # self.xvar('t_mot_load',[0.75,1.,1.5,1.75])
         self.p.t_mot_load = 1.0
@@ -66,11 +58,7 @@ class hf_bec(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # self.ry_405.set_power(self.p.v)
-        # self.ry_980.on()
-
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers()
@@ -82,7 +70,9 @@ class hf_bec(EnvExperiment, Base):
         self.tweezer.off()
 
         delay(self.p.t_tof)
-        self.abs_image()
+        # self.abs_image()
+
+        self.light_image()
 
         self.outer_coil.off()
 

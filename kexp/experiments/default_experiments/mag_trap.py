@@ -22,7 +22,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_magtrap_hold = 0.15 
         # self.p.t_magtrap_hold = 1.
 
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
 
         self.p.imaging_state = 2.
