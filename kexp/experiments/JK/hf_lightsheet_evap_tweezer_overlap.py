@@ -64,7 +64,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_hf_lightsheet_evap2_current',np.linspace(193.0,195.1,10))
         self.p.i_hf_lightsheet_evap2_current = 193.4
         self.p.i_hf_expt_current = 200.
-        self.xvar('i_hf_expt_current',np.linspace(194.4,195.4,7))
+        # self.xvar('i_hf_expt_current',np.linspace(194.4,195.4,7))
         self.p.t_lightsheet_hold = .0
        
         self.p.hf_imaging_detuning = -620.e6
@@ -81,6 +81,8 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_mot_load = 1.
         self.p.imaging_state = 2.
 
+        self.xvar('expt_style',[1,2,3])
+
         self.finish_prepare(shuffle=True)
 
     @kernel
@@ -90,58 +92,47 @@ class mag_trap(EnvExperiment, Base):
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-
+        if self.p.expt_style == 1:
         # self.switch_d2_2d(1)
-        self.mot(self.p.t_mot_load)
-        self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot * s )
-        
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
- 
-        self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
+            self.mot(self.p.t_mot_load)
+            self.dds.push.off()
+            self.cmot_d1(self.p.t_d1cmot * s )
+            
+            self.gm(self.p.t_gm * s)
+            self.gm_ramp(self.p.t_gmramp)
+    
+            self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-        # self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
+            # self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,self.p.v_yshim_current_magtrap,0.,n=500)
 
-        # # feshbach field on, ramp up to field 1
-        self.outer_coil.on()
-        self.outer_coil.set_voltage()
-        
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
-                             i_start=0.,
-                             i_end=self.p.i_hf_lightsheet_evap1_current)
-        
-        # lightsheet evap 1
-        self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
-                             v_start=self.p.v_pd_lightsheet_rampup_end,
-                             v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
-
-
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                             i_start=self.p.i_hf_lightsheet_evap1_current,
-                             i_end=self.p.i_hf_lightsheet_evap2_current)
+            # # feshbach field on, ramp up to field 1
+            self.outer_coil.on()
+            self.outer_coil.set_voltage()
+            
+            self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
+                                i_start=0.,
+                                i_end=self.p.i_hf_lightsheet_evap1_current)
+            
+            # lightsheet evap 1
+            self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
+                                v_start=self.p.v_pd_lightsheet_rampup_end,
+                                v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
 
 
-        # # #lightsheet evap 2
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
-        
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.ttl.line_trigger.wait_for_line_trigger()
+            self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+                                i_start=self.p.i_hf_lightsheet_evap1_current,
+                                i_end=self.p.i_hf_lightsheet_evap2_current)
 
-        ## lightsheet evap 3
-        # self.lightsheet.ramp(t=self.p.t_hflightsheet_rampdown3,
-        #                      v_start=self.p.v_pd_lightsheet_rampdown2_end,
-        #                      v_end=self.p.v_pd_hflightsheet_rampdown3_end)
 
-        # ramp field post lightsheet production (if wanted )
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                            i_start=self.p.i_hf_lightsheet_evap2_current,
-                            i_end=self.p.i_hf_expt_current)
-        # delay(self.p.t_lightsheet_hold)
-        
-        self.lightsheet.off()
+            # # #lightsheet evap 2
+            self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+                                v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
+                                v_end=self.p.v_pd_lightsheet_rampdown2_end)
+
+
+
+
+            self.lightsheet.off()
 
         delay(self.p.t_tof)
         self.flash_repump()

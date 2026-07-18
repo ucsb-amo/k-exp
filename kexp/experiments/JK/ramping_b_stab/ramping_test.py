@@ -16,29 +16,17 @@ class tweezer_load(EnvExperiment, Base):
         self.p.frequency_detuned_imaging = 290.e6
         self.xvar('beans',[0]*1000)
 
-        # self.xvar('hf_imaging_detuning', [340.e6,420.e6]*1)
-        
-       
-
-        # self.xvar('beans',[0,1])
-
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
-        # self.camera_params.amp_imaging = .12
-        # self.camera_params.exposure_time = 10.e-6
-        # self.p.t_imaging_pulse = self.camera_params.exposure_time
+        self.p.ramp_time=100.e3
+        self.res=150
 
-        # self.xvar('amp_imaging',np.linspace(.05,.2,10))
-        # self.p.amp_imaging = .15
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
-
-
-
         # feshbach field on, ramp up to field 1  
         self.outer_coil.on()
         # delay(1.e-3)
@@ -58,6 +46,10 @@ class tweezer_load(EnvExperiment, Base):
         self.outer_coil.start_pid()
         delay(125.e-3)
         self.ttl.test_trig.pulse(1.e-6)
+        for i in range(self.res):
+            dt=self.p.ramp_time/self.res
+            self.pid_dac.set(v=v_pid,load_dac=load_dac)
+
 
         delay(175.e-3)
 
