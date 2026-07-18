@@ -117,15 +117,15 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
         self.core.break_realtime()
+        if beat_ref_on:
+            self.dds.beatlock_ref.on()
         if init_imaging:
             self.imaging.init()
+            self.integrator.init()
             self.set_imaging_detuning()
             self.imaging.set_power(self.camera_params.amp_imaging)
         if init_sampler:
             self.sampler.init()
-        if beat_ref_on:
-            self.dds.beatlock_ref.on()
-            # self.dds.d1_beatlock_ref.on()
         if init_lightsheet:
             self.lightsheet.init()
         if init_magnets:

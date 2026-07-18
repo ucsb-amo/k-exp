@@ -17,6 +17,7 @@ from kexp.config.expt_params import ExptParams
 from kexp.config.camera_id import CameraParams
 
 from kexp.control.painted_lightsheet import lightsheet
+from kexp.control.awg_tweezer import tweezer
 
 import logging
 from kexp.calibrations import (high_field_imaging_detuning,
@@ -42,6 +43,7 @@ class Image():
         self.run_info = RunInfo()
         self.camera = DummyCamera()
         self.lightsheet = lightsheet()
+        self.tweezer = tweezer()
         self.scan_xvars = []
         self._counter = counter()
 
@@ -279,41 +281,42 @@ class Image():
             delay(repeat_delay)
 
     @kernel
-    def abs_image(self):
+    def abs_image(self, leave_traps_on=False):
         """Takes a light image (PWA), delays, another light image (PWOA), delay,
         then a dark image.
         """        
-        # self.dds.imaging.set_dds(amplitude=self.camera_params.amp_imaging)
-        # self.ttl.pd_scope_trig.pulse(1.e-6)
-        # self.ttl.pd_scope_trig3.pulse(1.e-6)
         # atoms image (pwa)
         self.light_image()
 
-        # self.tweezer.off()
+        if not leave_traps_on:
+            self.tweezer.off()
+            self.lightsheet.off()
 
-        # self.lightsheet.off()
-
-        # light-only image (pwoa)
-        delay(self.camera_params.t_light_only_image_delay * s)
-        self.light_image()
-
-        self.close_imaging_shutters()
-
-        # dark image
-        delay(self.camera_params.t_dark_image_delay * s)
-        self.dark_image()
+        self.pwoa_and_dark_img()
 
     @kernel
     def abs_image_in_trap(self):
         """Abs image, but takes the light image with the tweezer light on.
         """        
+        self.abs_image(leave_traps_on=False)
 
-        # atoms image (pwa)
-        self.light_image()
+    @kernel
+    def abs_image_and_apd(self, data_container,
+                          leave_traps_on = False):
 
-        self.tweezer.off()
-        self.lightsheet.off()
+        self.trigger_camera()
+        self.integrated_imaging_pulse(data_container,
+                                      t=self.params.t_imaging_pulse)
+        delay(30.e-6)
+        
+        if not leave_traps_on:
+            self.tweezer.off()
+            self.lightsheet.off()
+        
+        self.pwoa_and_dark_img()
 
+    @kernel
+    def pwoa_and_dark_img(self):
         # light-only image (pwoa)
         delay(self.camera_params.t_light_only_image_delay * s)
         self.light_image()
