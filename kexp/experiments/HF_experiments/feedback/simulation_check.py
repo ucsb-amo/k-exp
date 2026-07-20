@@ -10,7 +10,7 @@ from kexp.util.artiq.async_print import aprint
 
 from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
 
-class feedback(EnvExperiment, FeedbackExpt):
+class simulation_check(EnvExperiment, FeedbackExpt):
 
     def prepare(self):
 

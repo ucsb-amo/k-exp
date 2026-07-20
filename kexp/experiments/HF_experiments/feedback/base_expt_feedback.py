@@ -8,13 +8,16 @@ from numpy import int64
 
 T_CONV_MU = 30
 
+
 from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams as ExptParamsFeedback
+from kexp.experiments.HF_experiments.feedback.data_vault_feedback import DataVault
 
 class FeedbackExpt(Base, Feedback):
     def __init__(self,
                  save_data=True,
                  suppress_live_od=False,
                  save_on_underflow=True):
+        self.data = DataVault(self)
         self.p = ExptParamsFeedback()
         Base.__init__(self,
                     setup_camera=False,
@@ -22,6 +25,7 @@ class FeedbackExpt(Base, Feedback):
                     imaging_type=img_types.DISPERSIVE,
                     camera_select=cameras.andor,
                     expt_params=self.p,
+                    data_vault=self.data,
                     suppress_live_od=suppress_live_od,
                     save_on_underflow=save_on_underflow)
         
@@ -42,12 +46,6 @@ class FeedbackExpt(Base, Feedback):
         ### setup data containers
 
         self.idx = 0
-        self.data.omega_raman = self.data.add_data_container(self.p.N_pulses)
-        self.data.Omega = self.data.add_data_container(self.p.N_pulses)
-        self.data.apd = self.data.add_data_container(self.p.N_pulses)
-
-        self.data.s_z = self.data.add_data_container(self.p.N_pulses)
-        self.data.t = self.data.add_data_container(self.p.N_pulses)
 
         Feedback.__init__(self)
 
@@ -58,8 +56,10 @@ class FeedbackExpt(Base, Feedback):
 
         self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
 
-        # self.p.probabilities = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
-        # self.omega_raman_mesh = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
+        self.data.feedback_data_containers()
+        # populate first row of probabilities with pre-pulse lists
+        self.data.probabilities.shot_data[0, :] = self.P0
+        self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
 
     @kernel
     def scan_kernel(self):

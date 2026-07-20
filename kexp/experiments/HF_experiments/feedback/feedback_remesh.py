@@ -8,7 +8,7 @@ from numpy import int64
 
 from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
 
-class feedback(EnvExperiment, FeedbackExpt):
+class feedback_remesh(EnvExperiment, FeedbackExpt):
 
     def prepare(self):
 
@@ -42,13 +42,6 @@ class feedback(EnvExperiment, FeedbackExpt):
         self.p.remesh_threshold_scale_factor = 0.75
 
         self.finish_prepare()
-
-        self.data.omega_raman_mesh = self.data.add_data_container((self.p.N_pulses + 1, self.p.feedback_grid_size))
-        self.data.probabilities = self.data.add_data_container((self.p.N_pulses + 1, self.p.feedback_grid_size))
-        
-        # populate first row of probabilities with pre-pulse lists
-        self.data.probabilities.shot_data[0, :] = self.P0
-        self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
 
     @kernel
     def per_feedback_loop_end(self, idx):

@@ -10,7 +10,7 @@ from kexp.util.artiq.async_print import aprint
 
 from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
 
-class feedback(EnvExperiment, FeedbackExpt):
+class feedback_deterministic_bayesian(EnvExperiment, FeedbackExpt):
 
     def prepare(self):
 
@@ -26,23 +26,12 @@ class feedback(EnvExperiment, FeedbackExpt):
         
         ### parameters
 
-        Omega = np.pi / self.p.t_raman_pi_pulse
-        self.p.override_pulse_list = 1
-        self.p.omega_override_pulse_list = np.ones(self.p.N_pulses) * \
-            (2*np.pi*self.p.frequency_raman_transition + 2 * Omega)
-
-        # self.xvar('pulse_list_span_Omega', np.linspace(-12.,12.,9))
-        self.p.pulse_list_span_Omega = 0.
-        # self.xvar('pulse_list_seed', np.linspace(1056, 15432, 5, dtype=np.int32))
-        self.p.pulse_list_seed = 1055533
-
         self.get_new_pulse_list()
         self.finish_prepare()
 
     @rpc 
-    def get_new_pulse_list(self):
+    def get_new_pulse_list(self, seed=0):
         '''linearly spaced (rounded to grid)'''
-        Omega = np.pi / self.p.t_raman_pi_pulse
         m = self.p.feedback_grid_size
         omega_grid = self.p.omega_guess_list
 
@@ -52,10 +41,16 @@ class feedback(EnvExperiment, FeedbackExpt):
 
     @kernel
     def per_feedback_loop_top(self, idx):
-        if self.p.override_pulse_list:
-            self.omega_raman = self.p.omega_override_pulse_list[idx]
-        else:
-            self.omega_raman = self.p.omega_pulse_list[idx]
+        self.omega_raman = self.p.omega_pulse_list[idx]
+
+    @kernel
+    def per_feedback_loop_end(self, idx):
+        """
+        Store the probabilities and the frequency mesh at each step. Note the
+        use of +1 on the index, this accounts for the first row of each
+        corresponding to before the first shot.
+        """
+        self.data.probabilities.put_data_1d(self.P0, i=idx+1)
     
     @kernel
     def run(self):

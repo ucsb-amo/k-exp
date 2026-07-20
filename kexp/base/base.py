@@ -25,6 +25,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  absorption_image=None,
                  camera_select=cameras.xy_basler,
                  expt_params=None,
+                 data_vault=None,
                  suppress_live_od=False,
                  save_on_underflow=False):
 
@@ -44,7 +45,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.params = expt_params
 
         self.p = self.params
-        self.data = DataVault(self)
+        if data_vault == None:
+            self.data = DataVault(self)
+        else:
+            self.data = data_vault
         
         self.prepare_devices(expt_params=self.params)
 

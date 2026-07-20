@@ -41,7 +41,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 
