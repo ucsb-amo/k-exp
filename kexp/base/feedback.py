@@ -65,6 +65,7 @@ class Feedback:
         self.state_x_scratch = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.state_y_scratch = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.state_z_scratch = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
+        self.max_idx = 0
 
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
@@ -310,6 +311,7 @@ class Feedback:
                 max_idx = i
             i += 1
         omega_max = omega_guess_list[max_idx]
+        self.max_idx = max_idx
 
         # If distribution is nearly flat (max prob close to uniform), use mean instead of max
         uniform_prob = 1.0 / m
@@ -422,6 +424,23 @@ class Feedback:
         self.omega_z_lightshift = 2.0 * np.pi * self.frequency_z_lightshift
         self.p.back_action_coherence = float(self.p.back_action_coherence)
         self.back_action_coherence = self.p.back_action_coherence
+
+
+    @portable
+    def re_initalize_spin_vector(self):
+        xyproj = np.sqrt(self.state_x[self.max_idx]*self.state_x[self.max_idx] + self.state_y[self.max_idx]*self.state_y[self.max_idx])
+
+        theta = np.arctan2(-self.state_x[self.max_idx], self.state_y[self.max_idx])
+        phi = np.arctan2( xyproj, self.state_z[self.max_idx])
+
+        # theta = np.pi + theta
+
+        self.raman.set(relative_phase = theta)
+        self.raman.pulse(phi*self.p.t_raman_pi_pulse/np.pi)
+
+
+
+
 
     @portable(flags={"fast-math"})
     def _initialize_frequency_grid(self):
