@@ -13,28 +13,27 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,400.,7)*1.e-6)
-        self.p.t_tof = 1200.e-6
+        self.p.t_tof = 200.e-6
 
-        # self.xvar('wee',[1,0])
-        # self.p.wee = 1
+        # self.xvar('beans',np.linspace(0,10,4))
 
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
-        self.xvar('do_980_pulse',[0,1])
-        self.p.do_980_pulse = 1
+        # self.xvar('do_980_pulse',[0,1])
+        self.p.do_980_pulse = 0
 
         self.p.amp_dds_405 = 0.06
 # 
         # self.xvar('frequency_eo_980', 366.4e6 + 1.e6 * np.linspace(-5,5,9))
-        # self.xvar('frequency_eo_980', np.linspace(368.8,376.8,8)*1.e6)
+        # self.xvar('frequency_eo_980', np.linspace(348.8,360.8,5)*1.e6)
         # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
         # self.p.frequency_eo_980 = 352.1e6
         self.p.frequency_eo_980 = 372.04e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
-        # self.xvar('t_tweezer_hold', np.linspace(0.0, 1050.0, 5) * 1.e-3)
-        self.p.t_tweezer_hold = 971.e-3
+        self.xvar('t_tweezer_hold', np.linspace(0.0, 1050.0, 5) * 1.e-3)
+        self.p.t_tweezer_hold = 571.e-3
 
         self.p.amp_imaging = 0.1
         self.p.v_pd_ry_405 = 0.4
@@ -42,7 +41,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_vva_ry_405 = 0.61
         # self.p.v_vva_ry_405 = 0.76
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
 
         self.finish_prepare(shuffle=True)
 

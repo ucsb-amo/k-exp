@@ -123,9 +123,9 @@ class mag_trap(EnvExperiment, Base):
 
 
         # # #lightsheet evap 2
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
-                             v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
-                             v_end=self.p.v_pd_lightsheet_rampdown2_end)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown2,
+        #                      v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
+        #                      v_end=self.p.v_pd_lightsheet_rampdown2_end)
         
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         # self.ttl.line_trigger.wait_for_line_trigger()
