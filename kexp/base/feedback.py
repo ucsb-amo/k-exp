@@ -640,12 +640,12 @@ class Feedback:
             elif lo_nearest >= m:
                 lo_nearest = m - 1
             p_new = self.omega_sq_list[i] * inv_total if interpolate_bool else inv_total
-            self.omega_guess_list[i] = omega
+            self.omega_guess_list[i] = omega # write the new frequency mesh
             self.omega_sq_list[i]    = omega * omega
-            self.P0[i]               = p_new
-            self.state_x[i]          = self.state_x_scratch[i]
-            self.state_y[i]          = self.state_y_scratch[i]
-            self.state_z[i]          = self.state_z_scratch[i]
+            self.P0[i]               = p_new # write the interpolated probabilities
+            self.state_x[i]          = self.state_x_scratch[i] # write state
+            self.state_y[i]          = self.state_y_scratch[i] # write state
+            self.state_z[i]          = self.state_z_scratch[i] # write state
             frac  += dfrac
             omega += step_new
             i     += 1
@@ -655,6 +655,8 @@ class Feedback:
     def maybe_remesh(self, posterior_std, omega_center):
         """Halve the grid span and re-centre on omega_center if posterior_std is below
         feedback_remesh_threshold_omega.  No-op when threshold is 0 (disabled).
+
+        Note that after remesh_to_centered, the call to _initialize_frequency_grid
 
         Args:
             posterior_std: the posterior standard deviation (rad/s); remesh fires if

@@ -43,20 +43,23 @@ class feedback(EnvExperiment, FeedbackExpt):
 
         self.finish_prepare()
 
-        self.omega_raman_mesh = np.zeros((*self.xvardims, self.p.N_pulses, self.p.feedback_grid_size))
-        self.probabilities = np.zeros((*self.xvardims, self.p.N_pulses + 1, self.p.feedback_grid_size))
+        self.data.omega_raman_mesh = self.data.add_data_container((self.p.N_pulses + 1, self.p.feedback_grid_size))
+        self.data.probabilities = self.data.add_data_container((self.p.N_pulses + 1, self.p.feedback_grid_size))
         
         for i in range(self.probabilities.shape[0]):
-            self.probabilities[i, 0, :] = self.P0
+            self.data.probabilities.shot_data[0, :] = self.P0
+            self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
 
     @kernel
-    def per_feedback_loop_end(self, idx):
-        """Called at the end of each feedback loop iteration.  Can be used to store data
-        to host or update parameters."""
-        shot_idx = self.scan_xvars[0].counter
+    def per_feedback_loop_end(self, step_idx):
+        """
+        Store the probabilities and the frequency mesh at each step. Note the
+        use of +1 on the index, this accounts for the first row of each
+        corresponding to before the first shot.
+        """
         for i in range(self.m):
-            self.probabilities[shot_idx, idx + 1, i] = self.P0[i]
-            self.omega_raman_mesh[shot_idx, idx, i] = self.omega_guess_list[i]
+            self.data.probabilities.put_data_1d(self.P0, i=step_idx+1)
+            self.data.omega_raman_mesh.put_data_1d(self.omega_guess_list, i=step_idx+1)
     
     @kernel
     def run(self):
@@ -65,8 +68,6 @@ class feedback(EnvExperiment, FeedbackExpt):
         self.scan()
 
     def analyze(self):
-        self.store_mesh_to_params()
-
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)

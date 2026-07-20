@@ -134,7 +134,8 @@ class FeedbackExpt(Base, Feedback):
 
             self.per_feedback_loop_top(idx=i)
             f = self.omega_raman / (2*np.pi)
-            self.data.omega_raman.shot_data[i] = self.omega_raman
+
+            self.data.omega_raman.put_data(self.omega_raman, i)
 
             at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
             self.raman.set_frequency_fast(f, do_io_update=False)
@@ -144,8 +145,6 @@ class FeedbackExpt(Base, Feedback):
             phase_tracker = self.raman.io_update_and_phase_update(t_pulse_mu = t_step,
                                                                 t_last_pulse_mu = t_step - dT)
             
-            # phase_tracker += ((tP - tR + dt) * omega_prev + (tR - dt) * self.omega_raman) * 1.e-9
-            # omega_prev = self.omega_raman
             at_mu(t_step)
 
             self.raman.pulse(self.p.t_raman_pulse)
@@ -170,8 +169,8 @@ class FeedbackExpt(Base, Feedback):
 
             t_step += dT
 
-            self.data.t.shot_data[i] = t + self.p.t_raman_pulse + self.p.t_img_pulse
-            self.data.s_z.shot_data[i] = self.state_z[self.zidx]
+            self.data.t.put_data(t + self.p.t_raman_pulse + self.p.t_img_pulse, i)
+            self.data.s_z.put_data(self.state_z[self.zidx], i)
 
             self.per_feedback_loop_end(idx=i)
 
@@ -226,16 +225,3 @@ class FeedbackExpt(Base, Feedback):
         detuning_list[0] = 0.
         self.p.omega_pulse_list = 2*np.pi*self.p.frequency_raman_transition + detuning_list
         return self.p.omega_pulse_list
-
-    @rpc(flags={"async"})
-    def store_probabilities_to_host(self, pulse_probabilities, shot_idx, pulse_idx):
-        self.probabilities[shot_idx, pulse_idx] = pulse_probabilities
-
-    def store_mesh_to_params(self):
-        if hasattr(self, 'omega_raman_mesh'):
-            if not np.all(self.omega_raman_mesh == 0.):
-                self.p.omega_raman_mesh = self.omega_raman_mesh
-
-        if hasattr(self, 'probabilities'):
-            if not np.all(self.probabilities == 0.):
-                self.p.probabilities = self.probabilities

@@ -6,7 +6,7 @@ from kexp.calibrations.imaging import integrator_calibration
 import numpy as np
 from numpy import int64
 
-from kexp.experiments.HF_experiments.feedback.main.feedback_expt_base import FeedbackExpt
+from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
 
 class feedback(EnvExperiment, FeedbackExpt):
 
