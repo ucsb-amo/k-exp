@@ -115,7 +115,6 @@ class FeedbackExpt(Base, Feedback):
 
         k = 0
         f = self.omega_raman / (2*np.pi)
-        omega_prev = 0.
 
         t_start_mu = t_start_mu & ~7
         t_step = t_start_mu
@@ -135,6 +134,7 @@ class FeedbackExpt(Base, Feedback):
             self.per_feedback_loop_top(idx=i)
             f = self.omega_raman / (2*np.pi)
 
+            # pulse i frequency
             self.data.omega_raman.put_data(self.omega_raman, i)
 
             at_mu(t_step - self.p.t_raman_set_pretrigger_mu)
@@ -166,12 +166,14 @@ class FeedbackExpt(Base, Feedback):
                 t_raman_pretrigger=self.p.t_raman_set_pretrigger_mu,
                 t_fifo_mu=self.p.t_fifo_mu
             )
-
-            t_step += dT
-
+            
+            # time of result of pulse i
             self.data.t.put_data(t + self.p.t_raman_pulse + self.p.t_img_pulse, i)
-            self.data.s_z.put_data(self.state_z[self.zidx], i)
-
+            # result of pulse i
+            self.data.s_z.put_data(self.state_z[self.zidx], i) 
+            
+            t_step += dT
+            
             self.per_feedback_loop_end(idx=i)
 
         self.per_scan_kernel_end()

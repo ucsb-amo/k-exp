@@ -31,15 +31,13 @@ class feedback(EnvExperiment, FeedbackExpt):
 
         self.finish_prepare()
 
-        self.probabilities = np.zeros((*self.xvardims, self.p.N_pulses + 1, self.p.feedback_grid_size))
-        
-        for i in range(self.probabilities.shape[0]):
-            self.probabilities[i, 0, :] = self.P0
+        # self.probabilities = np.zeros((*self.xvardims, self.p.N_pulses + 1, self.p.feedback_grid_size))
+        self.data.probabilities = self.data.add_data_container((self.p.N_pulses + 1, self.p.feedback_grid_size))
+        self.data.probabilities[0, :] = self.P0
 
     @kernel
     def per_feedback_loop_end(self, idx):
-        for i in range(self.m):
-            self.probabilities[self.scan_xvars[0].counter, idx + 1, i] = self.P0[i]
+        self.data.probabilties.put_data_1d(self.P0, idx+1)
     
     @kernel
     def per_scan_kernel_end(self):
@@ -52,7 +50,6 @@ class feedback(EnvExperiment, FeedbackExpt):
         self.scan()
 
     def analyze(self):
-        self.store_mesh_to_params()
         
         import os
         expt_filepath = os.path.abspath(__file__)

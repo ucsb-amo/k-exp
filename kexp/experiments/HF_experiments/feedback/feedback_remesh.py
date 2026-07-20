@@ -46,20 +46,19 @@ class feedback(EnvExperiment, FeedbackExpt):
         self.data.omega_raman_mesh = self.data.add_data_container((self.p.N_pulses + 1, self.p.feedback_grid_size))
         self.data.probabilities = self.data.add_data_container((self.p.N_pulses + 1, self.p.feedback_grid_size))
         
-        for i in range(self.probabilities.shape[0]):
-            self.data.probabilities.shot_data[0, :] = self.P0
-            self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
+        # populate first row of probabilities with pre-pulse lists
+        self.data.probabilities.shot_data[0, :] = self.P0
+        self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
 
     @kernel
-    def per_feedback_loop_end(self, step_idx):
+    def per_feedback_loop_end(self, idx):
         """
         Store the probabilities and the frequency mesh at each step. Note the
         use of +1 on the index, this accounts for the first row of each
         corresponding to before the first shot.
         """
-        for i in range(self.m):
-            self.data.probabilities.put_data_1d(self.P0, i=step_idx+1)
-            self.data.omega_raman_mesh.put_data_1d(self.omega_guess_list, i=step_idx+1)
+        self.data.probabilities.put_data_1d(self.P0, i=idx+1)
+        self.data.omega_raman_mesh.put_data_1d(self.omega_guess_list, i=idx+1)
     
     @kernel
     def run(self):
