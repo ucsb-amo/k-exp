@@ -6,7 +6,7 @@ from artiq.language import now_mu, at_mu, delay_mu, delay
 class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
+        Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=False,
                       imaging_type=img_types.DISPERSIVE)
@@ -17,7 +17,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 1.
+        self.p.t_continuous_rabi = 300.e-6
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 8.
 
@@ -38,10 +38,10 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # img amp 0.2, pulse time 1.0e-05 s
         # self.p.frequency_lightshift = 3.28e+04 # Hz
         # self.p.frequency_lightshift = 3.8e+04  # Hz
-        self.p.frequency_lightshift = 3.79e+04  # Hz
+        self.p.frequency_lightshift = 36.68e+03  # Hz
 
         # self.xvar('phase_slm_mask',np.linspace(0.0*np.pi,.5*np.pi,10))
-        # self.p.phase_slm_mask = 0.186 * np.pi
+        self.p.phase_slm_mask = 1.2 * np.pi
 
         self.p.frequency_raman_transition_lightshifted = self.p.frequency_lightshift + self.p.frequency_raman_transition
 
@@ -52,6 +52,9 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_mot_load = 1.0
         
         self.p.N_repeats = 200
+
+        self.p.n_dark_pi_pulse = 10.
+        self.adjust('n_dark_pi_pulse',0.,20.,dtype=float)
 
         # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -64,7 +67,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=True)
+        self.prepare_hf_tweezers(squeeze=False)
         # self.prep_raman(frequency_transition=self.p.frequency_raman_transition_lightshifted,
         #                 phase_mode=0)
         self.prep_raman(frequency_transition=self.p.frequency_raman_transition,
@@ -77,11 +80,11 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.raman.on()
 
-        # delay( self.p.t_raman_pi_pulse * 10 )
+        # delay( self.p.t_raman_pi_pulse * self.p.n_dark_pi_pulse )
 
-        self.raman.io_update()
+        # self.raman.io_update()
         self.imaging.on()
-        delay_mu(91)
+        # delay_mu(91)
         
         # self.raman.on()
         self.ttl.pd_scope_trig3.pulse(1.e-6)

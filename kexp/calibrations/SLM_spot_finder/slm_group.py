@@ -21,7 +21,7 @@ class SLMController(QtCore.QObject):
         self.spot_center = [p.px_slm_phase_mask_position_x, p.px_slm_phase_mask_position_y]
         self.spot_radius = 10
 
-        self.grating_center = [994, 824]
+        self.grating_center = [p.px_slm_grating_position_x, p.px_slm_grating_position_y]
         self.grating_size = 300
         self.grating_spacing = 6
         self.angle_deg = 0.0
@@ -68,6 +68,14 @@ class SLMController(QtCore.QObject):
     def nudge_center(self, dx: int, dy: int):
         cx, cy = self.get_center()
         self.set_center(cx + dx, cy + dy)
+
+    def reset_center_to_default(self):
+        """Reset the center of the current mode (spot/grating) back to its default value."""
+        p = ExptParams()
+        if self.mode == "spot":
+            self.set_center(p.px_slm_phase_mask_position_x, p.px_slm_phase_mask_position_y)
+        else:
+            self.set_center(p.px_slm_grating_position_x, p.px_slm_grating_position_y)
 
     def send_update(self):
         if not self.sock:

@@ -19,7 +19,7 @@ class phase_spot(EnvExperiment, Base):
         self.p.amp_imaging = 0.2
         self.p.t_imaging_pulse = 5.e-6
 
-        self.xvar('phase_slm_mask',np.linspace(0.1, 0.4, 11) * np.pi)
+        self.xvar('phase_slm_mask', (0.368 + 0.15 * np.linspace(-1, 1, 11)) * np.pi)
         # self.p.phase_slm_mask = 0.186 * np.pi
 
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))

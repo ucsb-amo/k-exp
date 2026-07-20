@@ -478,6 +478,10 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.apply_center_btn.clicked.connect(self.on_apply_center)
         cg.addWidget(self.apply_center_btn, 2, 0, 1, 2)
 
+        self.reset_center_btn = QtWidgets.QPushButton("Reset to Default")
+        self.reset_center_btn.clicked.connect(self.on_reset_center)
+        cg.addWidget(self.reset_center_btn, 3, 0, 1, 2)
+
         self.center_x_sb.editingFinished.connect(self.on_apply_center)
         self.center_y_sb.editingFinished.connect(self.on_apply_center)
 
@@ -579,6 +583,9 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
 
     def on_apply_center(self):
         self.slm.set_center(self.center_x_sb.value(), self.center_y_sb.value())
+
+    def on_reset_center(self):
+        self.slm.reset_center_to_default()
 
     # Camera
     def on_apply_camera_params(self):

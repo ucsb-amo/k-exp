@@ -10,23 +10,28 @@ class hf_bec(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
                       setup_camera=True,
-                      save_data=False,
+                      save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
         self.p.t_tweezer_hold = 10.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,4000.,4)*1.e-6)
-        self.p.t_tof = 10.e-6
+        self.p.t_tof = 1000.e-6
 
         self.p.phase_slm_mask = 1.6 * np.pi
         
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 1
 
         self.p.t_mot_load = 1.0
-        self.p.t_imaging_pulse = 10.e-6
+        self.p.t_imaging_pulse = 20.e-6
+
+        # self.xvar('amp_imaging',np.linspace(0.05,0.15,5))
+        # self.p.amp_imaging = 0.1
 
         self.data.apd = self.data.add_data_container(1)
+
+        self.camera_params.gain = 300
 
         self.scanning()
         self.finish_prepare(shuffle=True)
@@ -52,7 +57,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('phase_slm_mask',np.linspace(0.,5.,17))
 
-        self.adjust('t_tof',100.e-6,3000.e-6)
+        # self.adjust('t_tof',100.e-6,3000.e-6)
         # self.adjust('phase_slm_mask',0.,4*np.pi)
         # self.adjust('dimension_slm_mask',10.e-6,200.e-6)
 
@@ -66,6 +71,7 @@ class hf_bec(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(dimension=self.p.dimension_slm_mask,
         #                                  phase=self.p.phase_slm_mask)
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        # self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
 
@@ -78,8 +84,8 @@ class hf_bec(EnvExperiment, Base):
         delay(self.p.t_tof)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
-        self.abs_image()
-        # self.abs_image_and_apd(self.data.apd)
+        # self.abs_image()
+        self.abs_image_and_apd(self.data.apd)
 
         self.outer_coil.off()
 

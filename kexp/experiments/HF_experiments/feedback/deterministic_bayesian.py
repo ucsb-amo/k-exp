@@ -8,8 +8,7 @@ from numpy import int64
 
 from kexp.util.artiq.async_print import aprint
 
-
-from kexp.experiments.HF_experiments.feedback.main.feedback_expt_base import FeedbackExpt
+from kexp.experiments.HF_experiments.feedback.base_expt_feedback import FeedbackExpt
 
 class feedback(EnvExperiment, FeedbackExpt):
 
@@ -39,6 +38,17 @@ class feedback(EnvExperiment, FeedbackExpt):
 
         self.get_new_pulse_list()
         self.finish_prepare()
+
+    @rpc 
+    def get_new_pulse_list(self):
+        '''linearly spaced (rounded to grid)'''
+        Omega = np.pi / self.p.t_raman_pi_pulse
+        m = self.p.feedback_grid_size
+        omega_grid = self.p.omega_guess_list
+
+        sample_idx = np.rint(np.linspace(0, m - 1, self.p.N_pulses))
+        sample_idx = np.clip(sample_idx, 0, m - 1).astype(int)
+        self.p.omega_pulse_list = omega_grid[sample_idx]
 
     @kernel
     def per_feedback_loop_top(self, idx):
