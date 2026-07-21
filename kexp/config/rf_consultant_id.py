@@ -21,9 +21,12 @@ objects).
 To (re)assign a consultant: plug the device into the TPI GUI, read its serial
 from the dock title, and add one line in ``rf_consultant_frame.__init__``::
 
-    self.raman_rf = self.assign("299", name="Raman RF", notes="80 MHz arm")
+    self.raman_rf = self.assign("299", name="Raman RF", notes="80 MHz arm",
+                                default_freq_mhz=80.0, default_level_dbm=-10)
 
-The attribute name (``raman_rf``) becomes the consultant's key.
+The attribute name (``raman_rf``) becomes the consultant's key.  The optional
+``default_freq_mhz`` / ``default_level_dbm`` populate the TPI GUI's *default*
+button for that consultant.
 
 Live reload
 -----------
@@ -45,11 +48,26 @@ class RfConsultantId:
     the record was assigned to.  ``name``/``notes`` are optional human context.
     """
 
-    def __init__(self, serial: str, name: str = "", notes: str = "") -> None:
+    def __init__(
+        self,
+        serial: str,
+        name: str = "",
+        notes: str = "",
+        default_freq_mhz: float | None = None,
+        default_level_dbm: int | None = None,
+    ) -> None:
         self.serial: str = str(serial)
         self.name: str = name
         self.notes: str = notes
         self.key: str = ""  # set by cleanup() -> the frame attribute name
+        # Optional "default" settings surfaced by the TPI GUI's default button.
+        # ``None`` means "no default configured" for that parameter.
+        self.default_freq_mhz: float | None = (
+            None if default_freq_mhz is None else float(default_freq_mhz)
+        )
+        self.default_level_dbm: int | None = (
+            None if default_level_dbm is None else int(default_level_dbm)
+        )
 
     @property
     def display_name(self) -> str:
@@ -74,7 +92,8 @@ class rf_consultant_frame:
         self.setup()
 
         # ---- assignments: serial -> frame attribute (== key) -------------
-        # self.raman_rf = self.assign("299", name="Raman RF")
+        # self.raman_rf = self.assign("299", name="Raman RF",
+        #                             default_freq_mhz=80.0, default_level_dbm=-10)
         # self.antenna_rf = self.assign("301", name="Antenna RF")
 
         self.cleanup()
@@ -86,11 +105,21 @@ class rf_consultant_frame:
     def setup(self) -> None:
         self._by_serial: dict[str, RfConsultantId] = {}
 
-    def assign(self, serial: str, name: str = "", notes: str = "") -> RfConsultantId:
+    def assign(
+        self,
+        serial: str,
+        name: str = "",
+        notes: str = "",
+        default_freq_mhz: float | None = None,
+        default_level_dbm: int | None = None,
+    ) -> RfConsultantId:
         """Register a consultant by serial and return its identity record.
 
         Assign the return value to a frame attribute; that attribute name is
         recorded as the consultant's ``key`` in :meth:`cleanup`.
+
+        ``default_freq_mhz`` / ``default_level_dbm`` are optional "default"
+        settings that the TPI GUI's *default* button loads on demand.
         """
         serial = str(serial)
         if serial in self._by_serial:
@@ -98,7 +127,13 @@ class rf_consultant_frame:
                 f"RF consultant serial {serial!r} already assigned to "
                 f"key {self._by_serial[serial].key or '<pending>'!r}"
             )
-        rf = RfConsultantId(serial, name=name, notes=notes)
+        rf = RfConsultantId(
+            serial,
+            name=name,
+            notes=notes,
+            default_freq_mhz=default_freq_mhz,
+            default_level_dbm=default_level_dbm,
+        )
         self._by_serial[serial] = rf
         return rf
 
@@ -162,9 +197,36 @@ def label_map(serials=None, reload_module: bool = True) -> dict[str, str]:
     return out
 
 
+def default_map(serials=None, reload_module: bool = True) -> dict[str, dict]:
+    """Return ``{serial: {"freq_mhz": .., "level_dbm": ..}}`` default settings.
+
+    Only consultants with at least one configured default are included; the
+    missing parameter within an entry is ``None``.  If ``serials`` is given,
+    the result is restricted to those serials.  Reads the freshest version of
+    this file by default so GUI edits take effect without a restart.
+    """
+    frame = load_frame(reload_module=reload_module)
+
+    def _has_default(rf: RfConsultantId) -> bool:
+        return rf.default_freq_mhz is not None or rf.default_level_dbm is not None
+
+    def _entry(rf: RfConsultantId) -> dict:
+        return {"freq_mhz": rf.default_freq_mhz, "level_dbm": rf.default_level_dbm}
+
+    if serials is None:
+        return {s: _entry(rf) for s, rf in frame._by_serial.items() if _has_default(rf)}
+    out: dict[str, dict] = {}
+    for s in serials:
+        rf = frame.get(s)
+        if rf is not None and _has_default(rf):
+            out[str(s)] = _entry(rf)
+    return out
+
+
 __all__ = [
     "RfConsultantId",
     "rf_consultant_frame",
     "load_frame",
     "label_map",
+    "default_map",
 ]
