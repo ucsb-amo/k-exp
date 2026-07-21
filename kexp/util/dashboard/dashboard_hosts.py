@@ -34,6 +34,7 @@ HOST_AUTOSTART_SERVERS: dict[str, list[str]] = {
         "keysight",
         "interlock",
         "pdxc",
+        "tpi",
     ],
     "192.168.1.79": [
         "monitor"

@@ -180,6 +180,21 @@ SERVER_SPECS: list[ServerSpec] = [
         default_placement="tab",
         tab_group="control",
     ),
+    ServerSpec(
+        id="tpi",
+        label="TPI Signal Generators",
+        icon="📻",  # matches the RF-consultants TPI GUI
+        # The embedded TpiDevicesMainWindow is a ZMQ client that discovers and
+        # connects to the headless server we spawn here (like Basler).
+        body_factory=_lazy_panel("waxx.util.guis.tpi.tpi_panel", "TpiServerPanel"),
+        server_cmd=[_PY, "-m", "waxx.util.guis.tpi.tpi_server"],
+        cwd=_REPO,
+        graceful_stop_timeout_s=5.0,
+        restart_on_crash=False,
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="control",
+    ),
 ]
 
 
