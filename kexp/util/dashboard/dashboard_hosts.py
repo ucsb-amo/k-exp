@@ -21,6 +21,9 @@ from __future__ import annotations
 # "interlock").
 HOST_AUTOSTART_SERVERS: dict[str, list[str]] = {
     # Lab control PC - runs every hardware-owning server.
+    "*": [
+        "basler",
+    ],
     "192.168.1.76": [
         "als",
         "precilaser",
