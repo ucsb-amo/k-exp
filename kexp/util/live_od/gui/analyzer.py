@@ -72,8 +72,17 @@ class Analyzer(QThread):
     def got_img(self, img):
         self.imgs.append(np.asarray(img))
         if len(self.imgs) == (self.N_pwa_per_shot + 2):
-            self.analyze()
-            self.imgs = []
+            # Guard the OD computation: a malformed/short image set or a shape
+            # mismatch must not kill the Analyzer thread (which would silently
+            # stop live display for the rest of the run).  Skip the bad shot.
+            try:
+                self.analyze()
+            except Exception:
+                import traceback
+                print("[Analyzer] analyze() failed — skipping this shot's OD:")
+                traceback.print_exc()
+            finally:
+                self.imgs = []
 
     def analyze(self):
         self.img_atoms = self.imgs[0]

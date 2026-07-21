@@ -3,6 +3,7 @@ import time
 
 from waxx.control import AndorEMCCD, BaslerUSB, DummyCamera
 from waxx.control.cameras.camera_param_classes import CameraParams
+from waxx.config.timeouts import CAMERA_OPEN_TIMEOUT
 
 CHECK_EVERY = 0.2
 CHECK_PERIOD = 2.0
@@ -29,14 +30,26 @@ class CameraNanny():
         except Exception:
             return False
 
-    def persistent_get_camera(self,camera_params) -> DummyCamera:
+    def persistent_get_camera(self, camera_params,
+                              timeout=CAMERA_OPEN_TIMEOUT) -> DummyCamera:
+        """Retry opening the camera until it succeeds, ``break_check()`` fires,
+        or ``timeout`` seconds elapse.
+
+        Returning a ``DummyCamera`` on timeout lets the CameraBaby handshake
+        report a fast camera-not-ready failure instead of blocking the run
+        indefinitely.  Pass ``timeout=None`` to retry forever (legacy behaviour).
+        """
         got_camera = False
         count = 1
+        deadline = None if timeout is None else time.time() + timeout
         while not got_camera:
             if self.break_check():
                 break
             camera = self.get_camera(camera_params)
             if self._is_dummy_or_none(camera):
+                if deadline is not None and time.time() >= deadline:
+                    print(f"[CameraNanny] Camera not reachable within {timeout:.0f}s — giving up.")
+                    break
                 count += 1
                 time.sleep(CHECK_PERIOD)
                 if np.mod(count,N_NOTIFY) == 0:

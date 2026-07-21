@@ -14,6 +14,7 @@ Typical per-run sequence:
     client.end_run(payload)                   # END_RUN
 """
 
+import atexit
 import pickle
 
 import zmq
@@ -36,6 +37,13 @@ class LiveODClient(WaxxClient):
         self._context = None
         self._socket = None
         self.last_adjust_values: dict = {}
+        # Cached reset flag from the most recent SHOT_COMPLETE reply.  The
+        # scan loop's between-shot abort check reads this instead of issuing a
+        # separate POLL round-trip (see scribe._check_for_abort_signal).
+        self.last_reset_requested: bool = False
+        # Release the socket/context at process exit — the experiment process
+        # otherwise never calls close(), leaking the ZMQ context.
+        atexit.register(self.close)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -99,6 +107,9 @@ class LiveODClient(WaxxClient):
     def init_run(self, payload: dict) -> dict:
         """Send INIT_RUN.  Returns ``{"run_id": int, "filepath": str}``."""
         payload["tag"] = "INIT_RUN"
+        # Clear any stale reset flag left over from a previously aborted run so
+        # the first shot of the new run is not spuriously aborted.
+        self.last_reset_requested = False
         reply = self._send_recv(payload)
         if not reply.get("ok"):
             raise RuntimeError(
@@ -146,11 +157,13 @@ class LiveODClient(WaxxClient):
         )
         self.last_adjust_values = reply.get('adjust_values', {})
         if "reset_requested" in reply:
-            return bool(reply["reset_requested"])
+            self.last_reset_requested = bool(reply["reset_requested"])
+            return self.last_reset_requested
         # Old server: reset_requested field not present — fall back to POLL.
         print("[LiveODClient] shot_complete: reply missing 'reset_requested' field — "
               "falling back to poll_reset() (liveOD GUI may need a restart).")
-        return self.poll_reset()
+        self.last_reset_requested = self.poll_reset()
+        return self.last_reset_requested
 
     def end_run(self, payload: dict) -> bool:
         """Send END_RUN with final params and DataVault data.
@@ -191,19 +204,24 @@ class LiveODClient(WaxxClient):
                 # recognise the POLL tag.  Warn once so the user knows.
                 print(f"[LiveODClient] poll_reset: unexpected server reply: {reply}"
                       "\n  → liveOD GUI may need to be restarted to pick up new code.")
-            return bool(reply.get("reset_requested", False))
+            self.last_reset_requested = bool(reply.get("reset_requested", False))
+            return self.last_reset_requested
         except Exception as exc:
             print(f"[LiveODClient] poll_reset: network error (returning False): {exc}")
             return False
 
     def close(self):
-        """Release ZMQ resources."""
+        """Release ZMQ resources.  Idempotent and safe to call at exit."""
         if self._socket is not None:
             try:
+                self._socket.setsockopt(zmq.LINGER, 0)  # don't block term() on unsent msgs
                 self._socket.close()
             except Exception:
                 pass
-        try:
-            self._context.term()
-        except Exception:
-            pass
+            self._socket = None
+        if self._context is not None:
+            try:
+                self._context.term()
+            except Exception:
+                pass
+            self._context = None

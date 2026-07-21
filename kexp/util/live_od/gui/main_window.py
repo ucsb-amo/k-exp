@@ -9,7 +9,7 @@ import names
 from waxa import ROI
 from waxa.data import DataSaver
 
-from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny
+from kexp.util.live_od.camera_mother import CameraMother, CameraBaby, DataHandler, CameraNanny, CAM_STATUS_FAILED
 from kexp.util.live_od.camera_connection_widget import CamConnBar
 from kexp.util.live_od.gui.viewer import LiveODViewer
 from kexp.util.live_od.gui.analyzer import Analyzer
@@ -19,6 +19,10 @@ from kexp.util.live_od.live_od_broadcaster import LiveODBroadcaster
 from kexp.util.live_od.gui.live_scalar_plot_window import LiveScalarPlotWindow
 from kexp.util.live_od.gui.fk_tof_window import FkTofWindow
 from kexp.util.live_od.gui.adjust_panel import AdjustPanel
+
+# Max seconds reset() will spin waiting for an interrupted CameraBaby to die
+# before giving up and continuing, so a wedged baby can't freeze the GUI.
+RESET_WAIT_TIMEOUT = 10.0
 
 class LiveODWindow(QWidget):
     interrupt = pyqtSignal()
@@ -382,7 +386,7 @@ class LiveODWindow(QWidget):
             lambda: self.msg(f'{name} died dishonorably.'))
 
         self.the_baby.cam_status_signal.connect(
-            lambda s: self.live_od_server.on_cam_ready() if s == 2 else None,
+            self._on_cam_status,
             Qt.ConnectionType.DirectConnection,
         )
         self.data_handler.done_writing_signal.connect(
@@ -406,6 +410,19 @@ class LiveODWindow(QWidget):
         self.camera_nanny.interrupted = False
         self.the_baby.start()
         self.msg(f"Baby {name} born — camera_key={camera_key}")
+
+    def _on_cam_status(self, s: int):
+        """Bridge CameraBaby handshake status to the server's ready/fail events.
+
+        Runs on the CameraBaby thread (DirectConnection); the server slots it
+        calls only set thread-safe ``threading.Event``s.  Status 2 means the
+        camera is ready; ``CAM_STATUS_FAILED`` (-2) means the handshake failed
+        so ``WAIT_CAM_READY`` can return a failure at once.
+        """
+        if s == 2:
+            self.live_od_server.on_cam_ready()
+        elif s == CAM_STATUS_FAILED:
+            self.live_od_server.on_cam_failed()
 
     def on_run_done(self):
         """Called when the LiveODServer processes an END_RUN message."""
@@ -503,6 +520,35 @@ class LiveODWindow(QWidget):
     def update_image_count(self, count, total):
         self.viewer_window.update_image_count(count, total)
 
+    def closeEvent(self, event):
+        """Release the ZMQ servers and open cameras on GUI shutdown.
+
+        Without this the beacon threads keep broadcasting and the camera
+        drivers (Basler/Andor) are never explicitly closed, so a restarted
+        GUI can find the device still held.
+        """
+        try:
+            if hasattr(self, '_camera_state_timer'):
+                self._camera_state_timer.stop()
+        except Exception as e:
+            print(f"[LiveODWindow] closeEvent timer stop error: {e}")
+        for name in ('live_od_server', 'broadcaster'):
+            obj = getattr(self, name, None)
+            if obj is None:
+                continue
+            try:
+                obj.stop()
+                obj.wait(2000)
+            except Exception as e:
+                print(f"[LiveODWindow] closeEvent {name} stop error: {e}")
+        try:
+            if hasattr(self, 'camera_nanny'):
+                self.camera_nanny.interrupted = True
+                self.camera_nanny.close_all()
+        except Exception as e:
+            print(f"[LiveODWindow] closeEvent camera close error: {e}")
+        super().closeEvent(event)
+
     def reset(self):
         # Guard against duplicate calls (e.g. local button + remote reset_signal
         # arriving close together).  If _reset_requested is already set and
@@ -516,7 +562,7 @@ class LiveODWindow(QWidget):
         # triggered by the local button or by the remote viewer (which goes
         # through _handle_reset first, but this is idempotent).
         if hasattr(self, 'live_od_server'):
-            self.live_od_server._reset_requested = True
+            self.live_od_server.request_reset()
         if hasattr(self, 'camera_nanny'):
             try:
                 self.camera_nanny.interrupted = True
@@ -554,6 +600,9 @@ class LiveODWindow(QWidget):
 
         if self.the_baby is not None:
             baby_to_wait_for = self.the_baby
+            # Bound the wait so a baby that never sets ``dead`` (e.g. wedged in a
+            # driver call) cannot freeze the GUI thread indefinitely.
+            reset_deadline = time.time() + RESET_WAIT_TIMEOUT
             while not getattr(baby_to_wait_for, 'dead', False):
                 if self.the_baby is not baby_to_wait_for:
                     # spawn_baby() fired during processEvents() — the experiment
@@ -562,6 +611,10 @@ class LiveODWindow(QWidget):
                     # already started.  Stop waiting here so camera_nanny.
                     # interrupted gets cleared below before the new baby's
                     # persistent_get_camera() runs.
+                    break
+                if time.time() > reset_deadline:
+                    self.msg(f"Warning: CameraBaby did not die within "
+                             f"{RESET_WAIT_TIMEOUT:.0f}s — abandoning it and continuing reset.")
                     break
                 QApplication.processEvents()
                 time.sleep(0.05)

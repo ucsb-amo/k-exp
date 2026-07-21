@@ -64,6 +64,15 @@ class LiveODServer(QThread, WaxxServer):
         self._ip = "0.0.0.0"
         self._port = port
         self._cam_ready_event = threading.Event()
+        # Set by either on_cam_ready() or on_cam_failed() so WAIT_CAM_READY can
+        # unblock on a failed handshake instead of waiting out the full timeout.
+        self._cam_done_event = threading.Event()
+        self._cam_fail_reason = ""
+        # Guards the reset/run-state flag transitions (_reset_requested,
+        # _run_in_progress) so the REP thread and the GUI thread cannot
+        # interleave a check-then-set.  Held only across quick flag flips —
+        # never across an event .wait() (see _handle_init_run).
+        self._state_lock = threading.RLock()
         self._data_handler_done_event = threading.Event()
         self._data_handler_done_event.set()  # default: no DataHandler in flight
         self._file_creation_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="liveod_file_create")
@@ -102,6 +111,18 @@ class LiveODServer(QThread, WaxxServer):
         threading.Event is set from the CameraBaby thread immediately.
         """
         self._cam_ready_event.set()
+        self._cam_done_event.set()
+
+    def on_cam_failed(self, reason: str = "Camera not ready"):
+        """Mark the camera handshake as failed.
+
+        Connect to ``CameraBaby.cam_status_signal`` filtered to status ==
+        ``CAM_STATUS_FAILED`` (-2) using ``DirectConnection``.  Leaves
+        ``_cam_ready_event`` clear but sets ``_cam_done_event`` so
+        ``_handle_wait_cam_ready`` returns a failure immediately.
+        """
+        self._cam_fail_reason = reason
+        self._cam_done_event.set()
 
     def on_basler_baby_done(self):
         """Called when a Basler CameraBaby's thread has fully finished.
@@ -246,7 +267,13 @@ class LiveODServer(QThread, WaxxServer):
         # notified by the original _handle_reset call, so don't re-emit
         # reset_signal — that would race with this INIT_RUN and cause the
         # new run to abort on its first poll.
-        if self._reset_requested:
+        with self._state_lock:
+            need_finalize = self._reset_requested
+        if need_finalize:
+            # NOTE: _finalize_reset_run may block on _data_handler_done_event
+            # for up to DATA_SAVER_TIMEOUT, so it must run WITHOUT _state_lock
+            # held — otherwise the GUI thread (which needs the lock in
+            # request_reset()) would freeze for the duration of that wait.
             self._finalize_reset_run(notify_gui=False)
 
         save_data = bool(msg.get("save_data", False))
@@ -266,6 +293,8 @@ class LiveODServer(QThread, WaxxServer):
 
         camera_params = msg.get('camera_params', {})
         self._cam_ready_event.clear()
+        self._cam_done_event.clear()
+        self._cam_fail_reason = ""
         self._current_save_data = save_data
         self._current_capture_images = capture_images
         # Gate END_RUN saves on DataHandler finishing.  For no-camera runs
@@ -287,14 +316,18 @@ class LiveODServer(QThread, WaxxServer):
             # pre-allocation) on a background thread so the ZMQ REP socket can
             # reply at once.  DataHandler.wait_for_data_available() polls until
             # the file is populated, so the delay is handled transparently.
-            self._file_creation_executor.submit(
+            # Attach a done-callback so a failure in the background thread is
+            # logged instead of silently swallowed (the future is discarded).
+            future = self._file_creation_executor.submit(
                 self._data_saver.create_data_file_from_payload, msg, run_id
             )
+            future.add_done_callback(self._log_file_creation_result)
 
         self._current_filepath = filepath
         self._current_run_id = run_id
-        self._reset_requested = False
-        self._run_in_progress = True
+        with self._state_lock:
+            self._reset_requested = False
+            self._run_in_progress = True
         self._shot_timestamps = []       # reset per-run timestamp list
         self._init_run_time = time.time()
         self._shot_durations = []  # reset rolling average for new run
@@ -349,9 +382,16 @@ class LiveODServer(QThread, WaxxServer):
                 return {"ok": False, "ready": False, "error": "Basler previous grab-loop exit timeout"}
 
         remaining = deadline - time.time()
-        ready = self._cam_ready_event.wait(timeout=max(0.0, remaining))
-        if not ready:
+        # Wait for the handshake to conclude either way.  on_cam_ready() sets
+        # both _cam_ready_event and _cam_done_event; on_cam_failed() sets only
+        # _cam_done_event.  This lets a failed handshake return at once rather
+        # than blocking until the deadline.
+        done = self._cam_done_event.wait(timeout=max(0.0, remaining))
+        if not done:
             return {"ok": False, "ready": False, "error": "Camera ready timeout"}
+        if not self._cam_ready_event.is_set():
+            return {"ok": False, "ready": False,
+                    "error": self._cam_fail_reason or "Camera handshake failed"}
         return {"ok": True, "ready": True}
 
     def _handle_shot_complete(self, msg: dict) -> dict:
@@ -439,9 +479,33 @@ class LiveODServer(QThread, WaxxServer):
 
     def _handle_reset(self, msg: dict) -> dict:
         print("[LiveODServer] RESET requested by remote viewer.")
-        self._reset_requested = True
+        with self._state_lock:
+            self._reset_requested = True
         self.reset_signal.emit()
         return {"ok": True}
+
+    def request_reset(self):
+        """Set the reset flag from the GUI thread (local fix button).
+
+        Locked so it cannot interleave with the REP thread's check-then-set
+        of ``_reset_requested`` in ``_handle_init_run``.  Does not emit
+        ``reset_signal`` — the GUI's own ``reset()`` slot is already running.
+        """
+        with self._state_lock:
+            self._reset_requested = True
+
+    def _log_file_creation_result(self, future):
+        """Done-callback for the background data-file creation future.
+
+        Without this the future's result is never retrieved, so an exception
+        raised in ``create_data_file_from_payload`` is silently swallowed and
+        only surfaces later as a SaveWorker open failure.
+        """
+        exc = future.exception()
+        if exc is not None:
+            import traceback
+            print("[LiveODServer] Background data-file creation failed:")
+            traceback.print_exception(type(exc), exc, exc.__traceback__)
 
     def _handle_camera_control(self, msg: dict) -> dict:
         camera_key = str(msg.get("camera_key", ""))

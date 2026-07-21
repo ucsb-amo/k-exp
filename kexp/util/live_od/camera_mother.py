@@ -21,6 +21,12 @@ from queue import Queue, Empty
 DATA_DIR = os.getenv("data")
 RUN_ID_PATH = os.path.join(DATA_DIR,"run_id.py")
 
+# CameraBaby.cam_status_signal codes (see CameraBaby.handshake):
+#   0 born, 1 camera opened, 2 camera ready, 3 legacy ready-ack, -1 died.
+# -2 signals that the handshake failed (camera never opened) so the server
+# can release WAIT_CAM_READY immediately instead of blocking to its timeout.
+CAM_STATUS_FAILED = -2
+
 def nothing():
     pass
 
@@ -404,6 +410,10 @@ class CameraBaby(QThread):
         self.create_camera()
         self.cam_status_signal.emit(1)
         if self.camera is None or not self.camera.is_opened():
+            # Signal the failure BEFORE raising so the server's DirectConnection
+            # slot sets its cam-done event and WAIT_CAM_READY fails fast instead
+            # of blocking to the full timeout (~60 s).
+            self.cam_status_signal.emit(CAM_STATUS_FAILED)
             raise ValueError("Camera not ready")
         # Status 2 → triggers server._cam_ready_event via DirectConnection
         self.cam_status_signal.emit(2)
