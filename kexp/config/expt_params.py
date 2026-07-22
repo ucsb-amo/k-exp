@@ -72,7 +72,8 @@ class ExptParams(ExptParamsWaxx):
         self.dimension_slm_mask = 20.e-6 
         # self.phase_slm_mask = 0.186 * np.pi
         # self.phase_slm_mask = 1.25 * np.pi
-        self.phase_slm_mask = 0.448 * np.pi
+        # self.phase_slm_mask = 0.448 * np.pi
+        self.phase_slm_mask = 2.9537 * np.pi
         # self.phase_slm_mask = 0.186 * np.pi 
         # self.phase_slm_mask = 1.4 * np.pi # for 1,-1 to 1,0
         # self.phase_slm_mask = 0.125 * np.pi
@@ -154,7 +155,8 @@ class ExptParams(ExptParamsWaxx):
 
         # self.t_raman_pi_pulse = 9.5028e-06 #72600, 2026-07-17
         # self.t_raman_pi_pulse = 2.1013e-05 #72709, 2026-07-20
-        self.t_raman_pi_pulse = 1.8876e-05 #72799, 2026-07-21
+        # self.t_raman_pi_pulse = 1.8876e-05 #72799, 2026-07-21
+        self.t_raman_pi_pulse = 2.0921e-05 #72831, 2026-07-22
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3

@@ -12,12 +12,12 @@ class sigma_z(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.amp_imaging = 0.2
+        self.p.amp_imaging = 0.1
         # self.xvar('amp_imaging', np.linspace(0.4, 0.7, 5))
-        self.p.t_pci_pulse = 5.e-6
+        self.p.t_pci_pulse = 20.e-6
         # self.xvar('t_pci_pulse', np.linspace(3.e-6, 10.e-6, 5))
         
-        self.p.t_between_pulses_mu = 20000  # from pulse start to next pulse start, in mu
+        self.p.t_between_pulses_mu = 30000  # from pulse start to next pulse start, in mu
         print(self.p.t_between_pulses_mu)
 
         self.p.t_raman_pulse = 0.
@@ -27,7 +27,7 @@ class sigma_z(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.N_repeats = 10
 
-        self.p.N_pulses = 5
+        self.p.N_pulses = 4
 
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
 
