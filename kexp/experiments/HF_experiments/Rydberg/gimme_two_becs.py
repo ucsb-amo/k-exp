@@ -14,9 +14,9 @@ class hf_bec(EnvExperiment, Base):
         
         self.p.t_tof = 100.e-6
 
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
 
-        self.tweezer.add_tweezer_list(frequency_list=[74.e6, 75.5e6],
+        self.tweezer.add_tweezer_list(frequency_list=[74.5e6, 75.5e6],
                                       amplitude_list=[0.18, 0.17])
 
         self.finish_prepare(shuffle=True)
@@ -26,7 +26,7 @@ class hf_bec(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
 
-        self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_3=False)
 
         self.tweezer.off()
 

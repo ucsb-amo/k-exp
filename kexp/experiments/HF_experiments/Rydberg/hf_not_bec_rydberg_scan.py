@@ -12,8 +12,8 @@ class hf_bec(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        # self.xvar('t_tof',np.linspace(20.,400.,7)*1.e-6)
-        self.p.t_tof = 1500.e-6
+        # self.xvar('t_tof',np.linspace(20.,2000.,11)*1.e-6)
+        self.p.t_tof = 300.e-6
 
         
 
@@ -25,19 +25,17 @@ class hf_bec(EnvExperiment, Base):
         self.p.amp_dds_405 = 0.06
 # 
         # self.xvar('v_pd_hf_tweezer_squeeze_power',[0.09,0.18,0.36])
-        self.p.v_pd_hf_tweezer_squeeze_power=5.74
         # self.xvar('frequency_eo_980', 366.4e6 + 1.e6 * np.linspace(-5,5,9))
-        self.xvar('frequency_eo_980', np.arange(230.,430.,2)*1.e6)
+        self.xvar('frequency_eo_980', np.arange(355.,367.,1)*1.e6)
         # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
         # self.p.frequency_eo_980 = 352.1e6
         self.p.frequency_eo_980 = 361.84e6
-
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 8.
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
         # self.xvar('t_tweezer_hold', np.linspace(0.0, 1050.0, 5) * 1.e-3)
-        # self.p.t_tweezer_hold = 571.e-3
-        self.p.t_tweezer_hold = 400.e-3
-
+        self.p.t_tweezer_hold = 571.e-3
+        # self.p.t_tweezer_hold = 1.e-3
 
         self.p.amp_imaging = 0.1
         self.p.v_pd_ry_405 = 0.4
@@ -50,7 +48,8 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('compress',[0,1])
         self.p.compress = 0
 
-        self.p.N_repeats = 3
+        self.p.N_repeats = 7
+
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
@@ -76,10 +75,7 @@ class hf_bec(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
-        if self.p.compress:
-            self.prepare_hf_tweezers(squeeze=True)
-        else:
-            self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_3=False, do_tweezer_evap_2=False)
 
 
         if self.p.do_405_pulse == 1:
