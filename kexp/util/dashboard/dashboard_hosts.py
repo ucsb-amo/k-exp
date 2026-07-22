@@ -23,6 +23,7 @@ HOST_AUTOSTART_SERVERS: dict[str, list[str]] = {
     # Lab control PC - runs every hardware-owning server.
     "*": [
         "basler",
+        "tpi"
     ],
     "192.168.1.76": [
         "als",
@@ -34,7 +35,6 @@ HOST_AUTOSTART_SERVERS: dict[str, list[str]] = {
         "keysight",
         "interlock",
         "pdxc",
-        "tpi",
     ],
     "192.168.1.79": [
         "monitor"
