@@ -182,6 +182,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.imaging.set_power(self.camera_params.amp_imaging,
                                 reset_pid=False)
 
+        self.integrator.init()
+
     @kernel
     def cleanup_scan_kernel(self):
 
