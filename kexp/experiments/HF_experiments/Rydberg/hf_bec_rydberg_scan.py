@@ -12,7 +12,7 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,400.,7)*1.e-6)
-        self.p.t_tof = 10.e-6
+        self.p.t_tof = 150.e-6
 
         
 
@@ -36,7 +36,8 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('t_tweezer_hold', np.linspace(0.0, 1050.0, 5) * 1.e-3)
         # self.p.t_tweezer_hold = 571.e-3
-        self.p.t_tweezer_hold = 400.e-3
+        # self.p.t_tweezer_hold = 400.e-3
+        self.p.t_tweezer_hold = 4.e-3
 
 
         self.p.amp_imaging = 0.1
@@ -49,7 +50,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('compress',[0,1])
         self.p.compress = 0
-        # self.xvar('beans',np.linspace(0,150,150))
+        # self.xvar('beans',np.linspace(0,70,70))
         self.p.N_repeats = 1
         self.finish_prepare(shuffle=False)
 
@@ -66,8 +67,8 @@ class hf_bec(EnvExperiment, Base):
     def scan_kernel(self):
         
         self.ry_405.set_power(self.p.v_pd_ry_405)
-        if self.p.compress:
-                self.p.t_tof = 40.e-6
+        # if self.p.compress:
+        #         self.p.t_tof = 40.e-6
         if self.p.do_980_pulse == 1:
             self.ry_980.sweep_to(self.p.frequency_eo_980)
 
@@ -76,10 +77,10 @@ class hf_bec(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
-        if self.p.compress:
-            self.prepare_hf_tweezers(squeeze=True)
-        else:
-            self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_3=False, do_tweezer_evap_2=True)
+        # if self.p.compress:
+        #     self.prepare_hf_tweezers(squeeze=True)
+        # else:
+        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_3=False, do_tweezer_evap_2=True)
 
 
         if self.p.do_405_pulse == 1:

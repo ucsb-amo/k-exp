@@ -12,27 +12,28 @@ class tweezer_load(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=False,
+                      save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
-        self.p.t_tof = .5e-3
+        self.p.t_tof = .2e-3
         
-        # self.xvar('beans',[0,1]*50)
+        self.xvar('beans',np.linspace(0,15,3))
 
         # self.xvar('i_hf_tweezer_load_current',np.linspace(191.,194.,10))
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,2.5,15))
         # self.p.v_lf_tweezer_paint_amp_max = -.286
-        
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.12,.3,15))
-        # self.p.v_pd_lf_tweezer_1064_rampdown2_end = .21
+        self.p.detune_d2_r_mot = -6.67
+        self.p.detune_d2_c_mot = -2.8
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(.12,.7,15))
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .33
 
         # self.xvar('i_non_inter',np.linspace(180.3,181.,20))
 
         # self.p.v_hf_paint_amp_end = -7.
         # self.p.t_ramp_down_painting_amp = 100.e-3
-        
+        # self.xvar('v_pd')
         # self.xvar('amp_imaging',np.linspace(0.08,.54,10))
         # self.p.amp_imaging = .28
         # self.p.amp_imaging = .33
@@ -49,7 +50,7 @@ class tweezer_load(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
@@ -57,7 +58,7 @@ class tweezer_load(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned = self.p.hf_imaging_detuning)
         # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
 
-        self.prepare_hf_tweezers()
+        self.prepare_hf_tweezers(do_tweezer_evap_2=True,do_tweezer_evap_3=False)
 
         self.dac.tweezer_paint_amp.linear_ramp(t=self.p.t_ramp_down_painting_amp,
                                                v_start=self.dac.tweezer_paint_amp.v,
