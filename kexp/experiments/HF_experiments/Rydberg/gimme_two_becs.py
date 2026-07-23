@@ -13,20 +13,28 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         self.p.t_tof = 100.e-6
+        self.xvar('t_tof',np.linspace(400.,3600.,7)*1.e-6)
+        # self.xvar('self.p.t_tof',[100*(1.e-6),1500*(1.e-6)])
 
         self.p.N_repeats = 1
 
-        self.tweezer.add_tweezer_list(frequency_list=[74.5e6, 75.5e6],
-                                      amplitude_list=[0.18, 0.17])
+        # self.tweezer.add_tweezer_list(frequency_list=[74.5e6, 75.5e6],
+        #                               amplitude_list=[0.165, 0.17])
+        # self.xvar('amp_center',np.linspace(0.165,0.19,5))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(4.3,7,5))
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end=5.5
+        self.p.frequency_tweezer_list=[74.7e6, 75.3e6]
+        self.p.amp_tweezer_list = [0.20,0.21]
 
         self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
+        # self.p.amp_tweezer_list = [self.p.amp_center-0.025, self.p.amp_center+0.025]
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
 
-        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_3=False)
+        self.prepare_hf_tweezers(squeeze=False, do_tweezer_evap_3=True)
 
         self.tweezer.off()
 

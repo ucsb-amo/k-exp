@@ -52,7 +52,7 @@ class tweezer_load(EnvExperiment, Base):
         # self.p.t_lf_tweezer_1064_rampdown2 =360.6e-3
 
         # self.xvar('t_tof',np.linspace(100.,1500.,10)*1.e-6)
-        self.p.t_tof = 800.e-6
+        self.p.t_tof = 80.e-6
 
         # self.xvar('v_paint_amp_end',np.linspace(-6.,-5.,10))
 
