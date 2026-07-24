@@ -18,7 +18,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_tof = 8000.e-6
         # self.xvar('t_tof',np.linspace(5.,10.,10)*1.e-3)
         
-        # self.xvar('dumy',np.linspace(1.,1000.,1000))
+        self.xvar('jeremy',np.linspace(1.,50.,50))
         # self.xvar('dumy',np.linspace(1.,300.,300))
 
         # self.xvar('t_pump_to_F1',np.linspace(5.,100.,10)*1.e-6)
@@ -50,7 +50,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_mot',np.linspace(10.,35.,20))
         # self.p.i_mot = 20.
 
-        # self.xvar('v_zshim_current',np.linspace(0.0,2.,15))
+        # self.xvar('v_zshim_current',np.linspace(0.4,0.7,10))
         # self.xvar('v_xshim_current',np.linspace(0.,5.,8))
         # self.xvar('v_yshim_current',np.linspace(0.0,6.,8))
         # self.p.v_zshim_current = .57
@@ -110,7 +110,7 @@ class mag_trap(EnvExperiment, Base):
         # self.camera_params.exposure_time = 50.e-6
         # self.p.t_imaging_pulse = self.camera_params.exposure_time
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
