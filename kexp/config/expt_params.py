@@ -104,7 +104,7 @@ class ExptParams(ExptParamsWaxx):
         
         self.t_lightsheet_rampup = .4
         self.t_lf_lightsheet_rampdown = 1.13
-        self.t_hf_lightsheet_rampdown = 1.1
+        self.t_hf_lightsheet_rampdown = 1.19
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = .01
@@ -138,7 +138,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_recover = 100.e-3
         self.t_magtrap_delay = 1.e-3
         self.t_pre_lightsheet_rampup_delay = 0.e-3
-        self.t_magtrap = 0.85
+        self.t_magtrap = 0.95
         self.t_magtrap_ramp = .4
         # self.t_magtrap_ramp = 4.4
         self.t_magtrap_rampdown = .05
@@ -167,25 +167,25 @@ class ExptParams(ExptParamsWaxx):
         self.amp_push = 0.188
 
         #2D MOT
-        self.detune_d2v_c_2dmot = -2.28
+        self.detune_d2v_c_2dmot = -3.4
         self.amp_d2v_c_2dmot = 0.188
 
         self.detune_d2h_c_2dmot = -1.71
         self.amp_d2h_c_2dmot = 0.188
 
-        self.detune_d2v_r_2dmot = -2.71
+        self.detune_d2v_r_2dmot = -4.71
         self.amp_d2v_r_2dmot = 0.188
 
-        self.detune_d2h_r_2dmot = -5.
+        self.detune_d2h_r_2dmot = -6.43
         self.amp_d2h_r_2dmot = 0.188
 
-        self.v_2d_mot_current = 2.2
+        self.v_2d_mot_current = 2.42
 
         #MOT
-        self.detune_d2_c_mot = -2.9
+        self.detune_d2_c_mot = -2.8
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.5
+        self.detune_d2_r_mot = -5.14
         self.amp_d2_r_mot = 0.188
 
         self.detune_d2_c_hmot = -1.7
@@ -199,9 +199,9 @@ class ExptParams(ExptParamsWaxx):
 
         self.i_mot = 20.
 
-        self.v_zshim_current = 1.
-        self.v_xshim_current = .7
-        self.v_yshim_current = 2.5
+        self.v_zshim_current = .5
+        self.v_xshim_current = 1.8
+        self.v_yshim_current = .86
 
         #D2 CMOT
         self.detune_d2_c_d2cmot = -0.9
@@ -229,20 +229,13 @@ class ExptParams(ExptParamsWaxx):
         self.i_cmot = self.i_mot
         
         #GM
-        # self.v_xshim_current = 1.215
-        # self.v_yshim_current = 0.594
-        # self.v_zshim_current = 0.958
-
         self.pfrac_d1_c_gm = .99
         self.pfrac_d1_r_gm = .9
 
         self.pfrac_c_gmramp_end = 0.07
         self.pfrac_r_gmramp_end = 0.69
 
-        # self.v_zshim_current_gm = 0.7
-        # self.v_xshim_current_gm = 0.4
-        # self.v_yshim_current_gm = 2.
-        self.v_xshim_current_gm = 0.29
+        self.v_xshim_current_gm = 0.2857
         self.v_yshim_current_gm = 2.9
         self.v_zshim_current_gm = 0.72
 
@@ -258,17 +251,11 @@ class ExptParams(ExptParamsWaxx):
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 101.
+        self.i_magtrap_init = 95.
         self.i_magtrap_ramp_end = 100.
-        # self.n_magtrap_ramp_steps = 1000
-        # self.n_magtrap_rampdown_steps = 1000
-        
-        # self.v_zshim_current_magtrap = 0.67
-        # self.v_xshim_current_magtrap = 2.2
-        # self.v_yshim_current_magtrap = 0.0
 
-        self.v_xshim_current_magtrap = 0.56
-        self.v_yshim_current_magtrap = 1.33
+        self.v_xshim_current_magtrap = 3.
+        self.v_yshim_current_magtrap = 1.71
         self.v_zshim_current_magtrap = 0.0
         
         #Optical Pumping
@@ -292,7 +279,7 @@ class ExptParams(ExptParamsWaxx):
         # self.v_pd_lightsheet_rampup_end = 7.3
         self.v_pd_lightsheet_rampup_end = 8.6
         self.v_pd_lf_lightsheet_rampdown_end = 1.042 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = 1.1 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = .9 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.114
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
@@ -415,7 +402,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 193.
+        self.i_hf_lightsheet_evap1_current = 194.1429
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 193.7 # 193.4

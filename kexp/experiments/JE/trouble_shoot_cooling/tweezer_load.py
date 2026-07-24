@@ -16,9 +16,9 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(20.,300.,10)*1.e-6)
-        # self.xvar('dumy',[0]*100)
+        self.xvar('dumy',[0]*100)
         
         self.p.t_lightsheet_hold = .2
 
@@ -75,7 +75,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('amp_imaging', np.linspace(.03,.2,20))
         # self.p.amp_imaging = .35
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .1
         self.p.imaging_state = 2.
 
         self.p.N_repeats = 1
@@ -129,16 +129,16 @@ class mag_trap(EnvExperiment, Base):
 
         self.ttl.pd_scope_trig.pulse(1.e-6)
         # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
-                                v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
-                                v_end=self.p.v_pd_lightsheet_rampdown3_end)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
+        #                         v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
+        #                         v_end=self.p.v_pd_lightsheet_rampdown3_end)
 
         # delay(self.p.t_lightsheet_hold)
         
-        self.lightsheet.off()
+        
         
         delay(self.p.t_tweezer_hold)
-
+        self.lightsheet.off()
         self.tweezer.off()
 
         delay(self.p.t_tof)

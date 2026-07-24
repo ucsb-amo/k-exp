@@ -18,17 +18,19 @@ class hf_raman(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
         # self.xvar('shot_number',np.linspace(1,400,400))
 
+        # self.xvar('dumy',np.linspace(0.,50.,50))
+
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.,9.,15))
         # self.p.v_pd_lightsheet_rampup_end = 7.
 
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.6,1.2,15))
-        self.p.v_pd_hf_lightsheet_rampdown_end = .8
+        # self.p.v_pd_hf_lightsheet_rampdown_end = .8
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
-        self.p.v_hf_tweezer_paint_amp_max = -2.5
+        self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
+        self.p.v_hf_tweezer_paint_amp_max = -3.5
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
+        self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 2.5
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 3.94
 
@@ -39,7 +41,7 @@ class hf_raman(EnvExperiment, Base):
         # self.p.frequency_raman_sweep_width = 10.e3
         # self.xvar('frequency_raman_sweep_center', 119.39586237e6 + np.arange(-50.e3,50.e3,self.p.frequency_raman_sweep_width))
 
-        self.xvar('frequency_raman_transition',119.3978e6 + np.linspace(-1.e3,1.e3,10))
+        # self.xvar('frequency_raman_transition',119.3978e6 + np.linspace(-1.e3,1.e3,10))
         # self.p.frequency_raman_transition = 147.2592e6 # 182. A -1 -2
         # self.p.frequency_raman_transition = 119.3978e6 # 182 A -1 0
 
@@ -63,7 +65,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_tweezer_hold = .1e-3
 
         # self.xvar('t_tof',np.linspace(1000.,3500.,10)*1.e-6) 
-        self.p.t_tof = 30.e-6
+        self.p.t_tof = 2000.e-6
 
         self.p.t_mot_load = 1.
         
@@ -83,21 +85,21 @@ class hf_raman(EnvExperiment, Base):
 
         self.prepare_hf_tweezers(ramp_down_painting=False,squeeze=False)
 
-        self.prep_raman(frequency_transition=self.p.frequency_raman_transition)
+        # self.prep_raman(frequency_transition=self.p.frequency_raman_transition)
 
-        self.raman.pulse(self.p.t_raman_pulse)
-        delay(self.p.t_raman_pulse)
+        # self.raman.pulse(self.p.t_raman_pulse)
+        # delay(self.p.t_raman_pulse)
 
         # delay(self.p.t_ramsey)
 
-        self.raman.pulse(self.p.t_raman_pulse)
+        # self.raman.pulse(self.p.t_raman_pulse)
 
         # self.raman.sweep(t=self.p.t_raman_sweep,
         #                  frequency_center=self.p.frequency_raman_sweep_center,
         #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
         #                  n_steps=100)
-        delay(1.e-3)
-        self.ttl.raman_shutter.off()
+        # delay(1.e-3)
+        # self.ttl.raman_shutter.off()
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
