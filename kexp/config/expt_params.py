@@ -72,7 +72,8 @@ class ExptParams(ExptParamsWaxx):
         self.dimension_slm_mask = 20.e-6 
         # self.phase_slm_mask = 0.186 * np.pi
         # self.phase_slm_mask = 1.25 * np.pi
-        self.phase_slm_mask = 0.448 * np.pi
+        # self.phase_slm_mask = 0.448 * np.pi
+        self.phase_slm_mask = 2.9537 * np.pi
         # self.phase_slm_mask = 0.186 * np.pi 
         # self.phase_slm_mask = 1.4 * np.pi # for 1,-1 to 1,0
         # self.phase_slm_mask = 0.125 * np.pi
@@ -103,7 +104,7 @@ class ExptParams(ExptParamsWaxx):
         
         self.t_lightsheet_rampup = .4
         self.t_lf_lightsheet_rampdown = 1.13
-        self.t_hf_lightsheet_rampdown = 1.1
+        self.t_hf_lightsheet_rampdown = 1.4
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = .01
@@ -153,7 +154,9 @@ class ExptParams(ExptParamsWaxx):
         self.t_feshbach_field_ramp_special = 20.e-3
 
         # self.t_raman_pi_pulse = 9.5028e-06 #72600, 2026-07-17
-        self.t_raman_pi_pulse = 2.1013e-05 #72709, 2026-07-20
+        # self.t_raman_pi_pulse = 2.1013e-05 #72709, 2026-07-20
+        # self.t_raman_pi_pulse = 1.8876e-05 #72799, 2026-07-21
+        self.t_raman_pi_pulse = 2.0921e-05 #72831, 2026-07-22
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -179,10 +182,10 @@ class ExptParams(ExptParamsWaxx):
         self.v_2d_mot_current = 2.2
 
         #MOT
-        self.detune_d2_c_mot = -2.9
+        self.detune_d2_c_mot = -3.8
         self.amp_d2_c_mot = 0.188
 
-        self.detune_d2_r_mot = -4.5
+        self.detune_d2_r_mot = -4.67
         self.amp_d2_r_mot = 0.188
 
         self.detune_d2_c_hmot = -1.7
@@ -196,8 +199,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.i_mot = 20.
 
-        self.v_zshim_current = 1.
-        self.v_xshim_current = .7
+        self.v_zshim_current = 0.6
+        self.v_xshim_current = 2.9
         self.v_yshim_current = 2.5
 
         #D2 CMOT
@@ -412,7 +415,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 193.
+        self.i_hf_lightsheet_evap1_current = 193.5
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 193.7 # 193.4

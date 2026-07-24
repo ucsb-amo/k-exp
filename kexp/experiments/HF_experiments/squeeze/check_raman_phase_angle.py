@@ -7,42 +7,42 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu
 
+from kexp.experiments.HF_experiments.squeeze.expt_params_squeezing import ExptParams
+
 class hf_raman(EnvExperiment, Base):
 
     def prepare(self):
+        self.p = ExptParams()
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
+                      expt_params=self.p,
                       imaging_type=img_types.ABSORPTION)
-        
-        self.xvar('t_raman_pulse', np.linspace(0.,80.,25)*1.e-6)
-        # self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,60.,40),np.linspace(200.,240.,20)))*1.e-6)
-        # self.xvar('t_raman_pulse', np.linspace(200.,240.,20)*1.e-6)
-        # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse]*5)
 
-        self.p.t_raman_pulse = 0.
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
         self.p.t_tweezer_hold = 2.e-3
-
-        # self.p.fraction_power_raman = 0.
-
-        # self.p.v_pd_hf_tweezer_squeeze_power = 7.
-        # self.p.t_tof = 8.e-6
-
-        self.p.t_tof = 600.e-6
         
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1
+
+        self.xvar('step_phase',[0,1])
 
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
 
+        # set up squeeze img
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=False)
-        self.prep_raman()
+        self.prep_raman(phase_mode=1)
+
+        self.raman.pulse(self.p.t_raman_pulse) # prepare x SCS
+
+        if self.p.step_phase:
+            self.raman.set_phase(np.pi/2)
 
         self.raman.pulse(self.p.t_raman_pulse)
 
@@ -51,9 +51,8 @@ class hf_raman(EnvExperiment, Base):
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
 
-        delay(self.p.t_tof)
-
         self.abs_image()
+        
 
     @kernel
     def run(self):

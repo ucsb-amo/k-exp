@@ -19,8 +19,8 @@ class phase_spot(EnvExperiment, Base):
         self.p.amp_imaging = 0.4
         self.p.t_imaging_pulse = 5.e-6
 
-        # self.xvar('phase_slm_mask', np.linspace(0.75, 5., 55) * np.pi)
-        self.p.phase_slm_mask = 1.05 * np.pi
+        self.xvar('phase_slm_mask', np.linspace(0.0, 3., 65) * np.pi)
+        # self.p.phase_slm_mask = 1.05 * np.pi
 
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         # self.p.dimension_slm_mask = 20.e-6
@@ -31,7 +31,7 @@ class phase_spot(EnvExperiment, Base):
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 8.
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 5
 
         self.data.apd = self.data.add_data_container(3)
 
@@ -66,7 +66,7 @@ class phase_spot(EnvExperiment, Base):
 
         self.tweezer.off()
 
-        delay(5.e-3)
+        delay(8.e-3)
         self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=2)
 
     @kernel

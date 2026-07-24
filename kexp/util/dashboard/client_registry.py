@@ -67,6 +67,16 @@ CLIENT_SPECS: list[ClientSpec] = [
         tab_group="control",
         default_visible=True,
     ),
+    ClientSpec(
+        id="tpi",
+        label="TPI Signal Generators",
+        icon="📻",
+        body_factory=_lazy_panel("waxx.util.guis.tpi.tpi_panel", "TpiClientPanel"),
+        default_dock_area="right",
+        default_placement="tab",
+        tab_group="control",
+        default_visible=True,
+    ),
 
     # --- remote views of the lab servers ------------------------------
     ClientSpec(

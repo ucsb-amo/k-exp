@@ -52,7 +52,11 @@ class Cooling():
                             ):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
-        """   
+        """
+        if squeeze:
+            ramp_down_painting = True
+
+
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -140,7 +144,7 @@ class Cooling():
         
         delay(30.e-3)
         
-
+        
         if squeeze or ramp_down_painting:
             self.ramp_down_painting()
 
