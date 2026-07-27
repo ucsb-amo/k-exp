@@ -13,24 +13,29 @@ class hf_monitored_rabi(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
-                      save_data=False,
+                      save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
         self.p.t_imaging_pulse = 15.e-6
-        self.xvar('dummy',[0])
+        # self.xvar('dummy',[0])
         
         # self.p.amp_imaging = 0.2
+
+        self.p.fraction_power_raman = .5
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_mot_load = 1.0
 
         self.p.t_tof = 2.e-3
         
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 2
+
+        self.p.phase_slm_mask = 0.1 * np.pi
+        self.xvar('phase_slm_mask',np.linspace(0.01*np.pi,1.5*np.pi,10))
 
         self.data.apd = self.data.add_data_container(3)
-        # self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
-        self.adjust('phase_slm_mask',0.,6*np.pi)
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+        # self.adjust('phase_slm_mask',0.,2*np.pi)
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 8.
 
@@ -69,7 +74,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         delay(100.e-3)
 
         self.core.wait_until_mu(now_mu())
-        # self.scope.read_sweep([0])
+        self.scope.read_sweep([0])
         self.core.break_realtime()
         delay(100.e-3)
 

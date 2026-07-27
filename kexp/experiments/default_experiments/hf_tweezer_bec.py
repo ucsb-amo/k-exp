@@ -17,14 +17,24 @@ class hf_bec(EnvExperiment, Base):
         self.p.t_tweezer_hold = 10.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,4000.,4)*1.e-6)
-        self.p.t_tof = 1000.e-6
+        self.p.t_tof = 2000.e-6
 
         self.p.phase_slm_mask = 1.6 * np.pi
         
         self.p.N_repeats = 1
 
+        self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
+        self.p.v_hf_tweezer_paint_amp_max = -2.2
+
+        self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 5.
+
         self.p.t_mot_load = 1.0
         self.p.t_imaging_pulse = 20.e-6
+
+
+        self.p.i_hf_lightsheet_evap1_current = 194.3
+        self.p.t_hf_lightsheet_rampdown = 1.3
 
         # self.xvar('amp_imaging',np.linspace(0.05,0.15,5))
         # self.p.amp_imaging = 0.1

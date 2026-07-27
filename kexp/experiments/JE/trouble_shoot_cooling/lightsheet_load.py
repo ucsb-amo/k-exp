@@ -19,20 +19,24 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_tof = 900.e-6
         # self.xvar('t_tof',np.linspace(100,1200.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
-        # self.xvar('dumy0',np.linspace(1.,50.,50))
+        # self.xvar('dumy0',np.linspace(1.,50.,10))
         # self.xvar('dumy',[0]*20)
         # self.p.dumy = 0
-        # self.xvar('dumy0',np.linspace(0.,50.,50))
+        # self.xvar('dumy',np.linspace(1.,50.,50))
 
         # self.p.i_mot = 33.
 
-        # self.xvar('i_magtrap_init',np.linspace(120.,140.,15))
-        # self.p.i_magtrap_init = 101.
+        # self.xvar('v_zshim_current',np.linspace(0.2,1.,15))
+        # self.xvar('v_xshim_current',np.linspace(0.,5.,8))
+        # self.xvar('v_yshim_current',np.linspace(0.0,6.,8))
 
-        # self.xvar('i_magtrap_ramp_end', np.linspace(90.,110.,20))
+        # self.xvar('i_magtrap_init',np.linspace(75.,130.,8))
+        # self.p.i_magtrap_init = 75.
+
+        # self.xvar('i_magtrap_ramp_end', np.linspace(100.,149.,20))
         # self.p.i_magtrap_ramp_end = 100.
 
-        # self.xvar('t_magtrap',np.linspace(100.,2500.,15)*1.e-3)
+        # self.xvar('t_magtrap',np.linspace(100.,2000.,8)*1.e-3)
         # self.xvar('t_magtrap',[0.1,0.5,0.8,1.7]*5)
 
         # self.p.t_magtrap = .85
@@ -51,9 +55,9 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,0.4,6))
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,4.,8))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,2.,8))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,3.,8))
         # self.p.v_yshim_current_magtrap = 1.43
-        # self.p.v_xshim_current_magtrap = 2.5
+        # self.p.v_xshim_current_magtrap = 1.71
 
         # self.p.v_xshim_current_magtrap = 1.1
 
@@ -90,7 +94,7 @@ class mag_trap(EnvExperiment, Base):
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
 
-        self.ttl.zshim_hbridge_flip.on()
+        # self.ttl.zshim_hbridge_flip.on()
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
         # self.set_shims(0.,0.,0.)
