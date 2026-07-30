@@ -41,7 +41,7 @@ class mag_trap(EnvExperiment, Base):
         self.p.i_hf_lightsheet_evap1_current = 193.33
         # self.p.i_hf_lightsheet_evap1_current = 187.4
  
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,.9,7))
+        self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,.9,7))
         self.p.v_pd_hf_lightsheet_rampdown_end = .6
 
         # self.xvar('t_hf_lightsheet_rampdown',np.linspace(600.,1100.,24)*1.e-3)
@@ -77,7 +77,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('amp_imaging',np.linspace(.08,.3,10))
         self.p.amp_imaging = .2
 
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
         self.p.imaging_state = 2.
 

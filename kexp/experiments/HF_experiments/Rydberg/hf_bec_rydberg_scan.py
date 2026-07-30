@@ -12,32 +12,34 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,400.,7)*1.e-6)
-        self.p.t_tof = 750.e-6
+        self.p.t_tof = 1550.e-6
 
         
 
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
-        self.xvar('do_980_pulse',[0,1])
+        # self.xvar('do_980_pulse',[0,1])
         self.p.do_980_pulse = 1
 
-        self.p.amp_dds_405 = 0.04
+        self.p.amp_dds_405 = 0.06
 # 
         # self.xvar('v_pd_hf_tweezer_squeeze_power',[0.09,0.18,0.36])
         self.p.v_pd_hf_tweezer_squeeze_power=5.74
         # self.xvar('frequency_eo_980', 366.4e6 + 1.e6 * np.linspace(-5,5,9))
-        # self.xvar('frequency_eo_980', np.arange(470.,490.,1)*1.e6)
+        self.xvar('frequency_eo_980', np.arange(208.,475.,1.5)*1.e6)
         # self.xvar('frequency_eo_980',[263.1*1.e6,288.0*1.e6])
         # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
         # self.p.frequency_eo_980 = 352.1e6
-        self.p.frequency_eo_980 = 475.84e6
+        self.p.frequency_eo_980 = 400.84e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
         # self.xvar('t_tweezer_hold', np.linspace(0.0, 1050.0, 5) * 1.e-3)
-        self.p.t_tweezer_hold = 471.e-3
+        self.p.t_tweezer_hold = 671.e-3
 
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
 
+        self.p.hf_imaging_detuning = -568.e6
 
         self.p.amp_imaging = 0.1
         self.p.v_pd_ry_405 = 0.4
@@ -46,8 +48,8 @@ class hf_bec(EnvExperiment, Base):
 
         # self.xvar('compress',[0,1])
         self.p.compress = 0
-        # self.xvar('beans',np.linspace(0,15,15))
-        self.p.N_repeats = 19
+        # self.xvar('beans',np.linspace(0,30,30))
+        self.p.N_repeats = 5
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
@@ -70,7 +72,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.ry_980.set_power(9.9)
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
         self.imaging.set_power(self.p.amp_imaging)
 
         # if self.p.compress:

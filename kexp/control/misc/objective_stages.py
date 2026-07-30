@@ -5,8 +5,8 @@ import time
 import numpy as np
 
 CONTROLLER_HOSTNAME = "192.168.1.80"
-N_OBJECTIVES = 2
-OBJECTIVE_NAMES = ["n","s"]
+N_OBJECTIVES = 3
+OBJECTIVE_NAMES = ["n","s","lightsheet"]
 AXES_LISTS = [[1,2,3],[4,5,6]]
 AXES_NAME_LIST = [["x","y",'z'],["x","y",'z']]
 
@@ -54,10 +54,15 @@ class controller():
         s_obj['-y'] = motor_axis(3,2,stage_obj=self.stage)
         s_obj['+z'] = motor_axis(3,3,stage_obj=self.stage)
         s_obj['-z'] = motor_axis(3,4,stage_obj=self.stage)
+
+        lightsheet = dict()
+        lightsheet['+x'] = motor_axis(4,2,stage_obj=self.stage)
+        lightsheet['+y'] = motor_axis(4,1,stage_obj=self.stage)
         
         self.axes = dict()
         self.axes['n'] = n_obj
         self.axes['s'] = s_obj
+        self.axes['lightsheet'] = lightsheet
 
     def translate(self,N_steps,obj:str,axis:str):
         if obj == 'n':
@@ -66,11 +71,8 @@ class controller():
         elif obj == 's':
             objective = self.axes['s']
             ysign = -1
-
-        # if '+' in axis:
-        #     sign = 1
-        # elif '-' in axis:
-        #     sign = -1
+        elif obj == 'lightsheet':
+            print('lightsheet cannot be translated!')
 
         axes_to_move = []
         # in order to translate in x, drive the motors which control rotation about z
@@ -99,36 +101,66 @@ class controller():
         if obj == 'n':
             objective = self.axes['n']
             ysign = 1
+            axes_to_move = []
+            if 'x' in axis:
+                if '+' in axis:
+                    axes_to_move.append(objective['+x'])
+                elif '-' in axis:
+                    axes_to_move.append(objective['-x'])
+            elif 'y' in axis:
+                if obj == 'n':
+                    axes_to_move.append(objective['+y'])
+                elif obj == 's':
+                    axes_to_move.append(objective['-y'])
+                N_steps = ysign * N_steps
+            elif 'z' in axis:
+                if '+' in axis:
+                    axes_to_move.append(objective['+z'])
+                elif '-' in axis:
+                    axes_to_move.append(objective['-z'])
+    
+            for this_axis in axes_to_move:
+                this_axis: motor_axis
+                this_axis.move(N_steps)
+        
         elif obj == 's':
             objective = self.axes['s']
             ysign = -1
-
-        # if '+' in axis:
-        #     sign = 1
-        # elif '-' in axis:
-        #     sign = -1
-
-        axes_to_move = []
-        if 'x' in axis:
-            if '+' in axis:
+            axes_to_move = []
+            if 'x' in axis:
+                if '+' in axis:
+                    axes_to_move.append(objective['+x'])
+                elif '-' in axis:
+                    axes_to_move.append(objective['-x'])
+            elif 'y' in axis:
+                if obj == 'n':
+                    axes_to_move.append(objective['+y'])
+                elif obj == 's':
+                    axes_to_move.append(objective['-y'])
+                N_steps = ysign * N_steps
+            elif 'z' in axis:
+                if '+' in axis:
+                    axes_to_move.append(objective['+z'])
+                elif '-' in axis:
+                    axes_to_move.append(objective['-z'])
+    
+            for this_axis in axes_to_move:
+                this_axis: motor_axis
+                this_axis.move(N_steps)
+            
+        elif obj == 'lightsheet':
+            objective = self.axes['lightsheet']
+            axes_to_move = []
+            if 'x' in axis:
                 axes_to_move.append(objective['+x'])
-            elif '-' in axis:
-                axes_to_move.append(objective['-x'])
-        elif 'y' in axis:
-            if obj == 'n':
+            elif 'y' in axis:
                 axes_to_move.append(objective['+y'])
-            elif obj == 's':
-                axes_to_move.append(objective['-y'])
-            N_steps = ysign * N_steps
-        elif 'z' in axis:
-            if '+' in axis:
-                axes_to_move.append(objective['+z'])
-            elif '-' in axis:
-                axes_to_move.append(objective['-z'])
+    
+            for this_axis in axes_to_move:
+                this_axis: motor_axis
+                this_axis.move(N_steps)
 
-        for this_axis in axes_to_move:
-            this_axis: motor_axis
-            this_axis.move(N_steps)
+        
             
     
     def translate_together_x(self,N_steps):

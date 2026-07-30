@@ -18,6 +18,11 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
         self.xvar('dumy',[0,1,2]*500)
 
+        self.p.pfrac_c_gmramp_end = 0.375
+        self.p.pfrac_r_gmramp_end = 0.2
+
+        #self.p.v_zshim_current = 1.32
+
         self.p.t_magtrap_hold = .15
         
         self.p.t_magtrap = .1

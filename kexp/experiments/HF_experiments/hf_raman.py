@@ -18,7 +18,7 @@ class hf_raman(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_1064_rampdown2_end = .5
         # self.xvar('shot_number',np.linspace(1,400,400))
 
-        # self.xvar('dumy',np.linspace(0.,50.,10))
+        # self.xvar('dumy',np.linspace(1.,100.,50))
 
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(6.,9.,15))
         # self.p.v_pd_lightsheet_rampup_end = 7.
@@ -26,14 +26,19 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.6,1.5,15))
         # self.p.v_pd_hf_lightsheet_rampdown_end = .8
 
-        # self.xvar('i_hf_tweezer_load_current',np.linspace(191.,194.5,8))
+        # self.xvar('i_hf_tweezer_load_current',np.linspace(191.,195.,15))
         # self.p.i_hf_tweezer_load_current = 193.7
 
-        self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.8,-1.5,15))
-        # self.p.v_hf_tweezer_paint_amp_max = -3.29
+        # self.xvar('i_hf_tweezer_evap1_current',np.linspace(192.,194.5,8))
+        # self.xvar('i_hf_tweezer_evap2_current',np.linspace(192.,194.5,8))
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown_end',np.linspace(.5,1.5,20))
+
+        self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.9,-1.,15))
+        self.p.v_hf_tweezer_paint_amp_max = -3.5
+
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.5,6.,10))
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.5
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 3.94
 
@@ -51,7 +56,7 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 5))
  
         # self.xvar('t_raman_pulse', [0.,self.p.t_raman_pi_pulse])
-        # self.xvar('t_raman_pulse', np.linspace(0., 50., 30)*1.e-6)
+        # self.xvar('t_raman_pulse', np.linspace(300., 350., 30)*1.e-6)
         # self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
         self.p.t_raman_pulse= 8.7e-6
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
@@ -59,10 +64,10 @@ class hf_raman(EnvExperiment, Base):
         
         # self.xvar('hf_imaging_detuning', np.linspace(-600.e6,-535.e6,20))
         # self.p.hf_imaging_detuning = -543.8e6
-        self.p.hf_imaging_detuning = -565.e6
+        self.p.hf_imaging_detuning = -568.e6
 
         # self.xvar('amp_imaging',np.linspace(0.1,.8,10))
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .1
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
         self.p.t_tweezer_hold = .1e-3
@@ -110,10 +115,6 @@ class hf_raman(EnvExperiment, Base):
         delay(self.p.t_tof)
 
         self.abs_image()
-
-        # self.outer_coil.stop_pid()
-
-        # self.outer_coil.off()
 
     @kernel
     def run(self):
