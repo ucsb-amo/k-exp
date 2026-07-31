@@ -16,14 +16,14 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.frequency_raman_transition = self.p.frequency_raman_transition + 70.e3
+        self.p.frequency_raman_transition = self.p.frequency_raman_transition + 35.e3
 
         # self.xvar('ls',np.linspace(0.e3,100.e3,10))
 
-        # self.xvar('beans',[0,1]*100)
+        self.xvar('beans',[0,1]*100)
 
         # self.xvar('t_continuous_rabi',np.linspace(0.,400.e-6,10))
-        self.p.t_continuous_rabi = 300.e-6
+        self.p.t_continuous_rabi = 2000.e-6
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 8.5
         # self.p.v_pd_hf_tweezer_squeeze_power = 1.97
@@ -32,18 +32,18 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_raman_pulse',np.linspace(0.,8.7e-6,7))
         # self.p.t_raman_pulse = 8.8699e-6
 
-        self.p.fraction_power_raman = .5
+        self.p.fraction_power_raman = .31
         
         # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
-        self.p.amp_imaging = .4
+        self.p.amp_imaging = .2
         
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         self.p.dimension_slm_mask = 20.e-6
 
         # self.xvar('frequency_detuned_hf_midpoint',np.linspace(-540.e6,-470.e6,5))
 
-        # self.xvar('phase_slm_mask',np.linspace(0.1*np.pi,.4*np.pi,5))
-        self.p.phase_slm_mask = 1.011 * np.pi
+        self.xvar('phase_slm_mask',np.linspace(0.1*np.pi,.5*np.pi,10))
+        self.p.phase_slm_mask = .45 * np.pi
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 15.e-3
@@ -96,9 +96,9 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.ttl.pd_scope_trig3.pulse(1.e-6)
         self.abs_image()
 
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
-        self.core.break_realtime()
+        # self.core.wait_until_mu(now_mu())
+        # self.scope.read_sweep(0)
+        # self.core.break_realtime()
         delay(30.e-3)
 
     @kernel

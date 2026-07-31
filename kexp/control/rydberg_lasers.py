@@ -151,6 +151,7 @@ class FixedRyDDSBeamPID():
 
     @kernel
     def set_power(self, v):
+        # self.ry_intensity_pid_clear.pulse(1.e-6)
         self.dac_pid.set(v)
 
     @kernel

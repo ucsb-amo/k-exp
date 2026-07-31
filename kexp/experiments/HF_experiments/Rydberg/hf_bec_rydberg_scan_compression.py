@@ -23,16 +23,15 @@ class hf_bec(EnvExperiment, Base):
         self.p.amp_dds_405 = 0.06
 # 
 
-
+        ##High
+        # self.xvar('v_pd_hf_tweezer_squeeze_power',[0.09,0.18,0.36])
+        self.p.v_pd_hf_tweezer_squeeze_power=0.16
          # self.xvar('compress',[0,1])
-        self.p.compress = 0
+        self.p.compress = 1
 
 
-        # self.xvar('frequency_eo_980', 366.4e6 + 1.e6 * np.linspace(-5,5,9))
-        self.xvar('frequency_eo_980', np.arange(417.5,418.5,0.3)*1.e6)
-        # self.xvar('frequency_eo_980',[263.1*1.e6,288.0*1.e6])
-        # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
-        # self.p.frequency_eo_980 = 352.1e6
+        # self.xvar('frequency_eo_980', np.arange(417,419,0.2)*1.e6)
+
         self.p.frequency_eo_980 = 418.1e6
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
@@ -45,15 +44,17 @@ class hf_bec(EnvExperiment, Base):
         self.p.hf_imaging_detuning = -568.e6
 
         self.p.amp_imaging = 0.1
-        # self.xvar('v_pd_ry_980',np.linspace(0.,1.,5))
+        # self.xvar('v_pd_ry_980',np.linspace(1,2.8,10))
+
+        self.xvar('v_pd_ry_980',np.linspace(1,2.8,10))
         self.p.v_pd_ry_405 = 0.6
-        self.p.v_pd_ry_980 = 2.8
+        self.p.v_pd_ry_980 = 3.
 
         self.p.i_hf_raman = 182.
 
        
         # self.xvar('beans',np.linspace(0,30,30))w
-        self.p.N_repeats = 3
+        self.p.N_repeats = 5
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:

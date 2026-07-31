@@ -33,13 +33,14 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_magtrap_init',np.linspace(65.,130.,15))
         self.p.i_magtrap_init = 75.
 
-        # self.xvar('i_magtrap_ramp_end', np.linspace(100.,149.,20))
+        self.xvar('i_magtrap_ramp_end', np.linspace(90.,145.,8))
         # self.p.i_magtrap_ramp_end = 100.
+        self.xvar('t_magtrap_ramp', np.linspace(.1,1.,8))
+        # self.p.t_magtrap_ramp = 0.4     
 
-        self.xvar('t_magtrap',np.linspace(100.,2000.,10)*1.e-3)
+        # self.xvar('t_magtrap',np.linspace(100.,2000.,10)*1.e-3)
         # self.xvar('t_magtrap',[0.1,0.5,0.8,1.7]*5)
-
-        # self.p.t_magtrap = .85
+        self.p.t_magtrap = .5
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,1000.,10)*1.e-3)
 
@@ -75,7 +76,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('t_mot_load',np.linspace(.5,2.,10))
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
         self.p.amp_imaging = .5
         self.p.imaging_state = 2.
