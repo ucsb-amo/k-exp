@@ -188,6 +188,7 @@ class Devices():
                             dds_sw=self.dds.ry_405_sw,
                             dac_pid=self.dac.ry_405_intensity_control,
                             ttl_shutter=self.ttl.ry_405_shutter,
+                            ttl_pid_clear=self.ttl.ry_intensity_pid_clear,
                             wavemeter=self._fzw.ry_405,
                             lock_data_container=self.data.frequency_wavemeter_405,
                             core=self.core
@@ -197,6 +198,7 @@ class Devices():
             siglent_ch=self.siglent.siglent_980,
             ttl_ao_sw=self.ttl.ry_980_sw,
             dac_pid=self.dac.ry_980_intensity_control,
+            ttl_pid_clear=self.ttl.ry_intensity_pid_clear,
             eo_sideband_order=-1,
             wavemeter=self._fzw.ry_980,
             lock_data_container=self.data.frequency_wavemeter_980,

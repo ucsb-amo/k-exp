@@ -70,13 +70,7 @@ class ExptParams(ExptParamsWaxx):
 
         # SLM settings
         self.dimension_slm_mask = 20.e-6 
-        # self.phase_slm_mask = 0.186 * np.pi
-        # self.phase_slm_mask = 1.25 * np.pi
-        # self.phase_slm_mask = 0.448 * np.pi
         self.phase_slm_mask = 2.9537 * np.pi
-        # self.phase_slm_mask = 0.186 * np.pi 
-        # self.phase_slm_mask = 1.4 * np.pi # for 1,-1 to 1,0
-        # self.phase_slm_mask = 0.125 * np.pi
         self.px_slm_phase_mask_position_x = 993
         self.px_slm_phase_mask_position_y = 818
         self.px_slm_grating_position_x = 994
@@ -153,10 +147,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        # self.t_raman_pi_pulse = 9.5028e-06 #72600, 2026-07-17
-        # self.t_raman_pi_pulse = 2.1013e-05 #72709, 2026-07-20
-        # self.t_raman_pi_pulse = 1.8876e-05 #72799, 2026-07-21
-        self.t_raman_pi_pulse = 9.4190e-06 #73380, 2026-07-29
+        self.t_raman_pi_pulse = 8.3820e-06 #73569, 2026-07-31
                 
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -351,7 +342,7 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.33
+        self.fraction_power_raman = 0.31
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 

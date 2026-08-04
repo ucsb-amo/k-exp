@@ -138,6 +138,7 @@ class FixedRyDDSBeamPID():
                 dds_sw:DDS,
                 dac_pid:DAC_CH,
                 ttl_shutter:TTL_OUT,
+                ttl_pid_clear:TTL_OUT,
                 wavemeter:WavemeterClient,
                 lock_data_container = DataContainer,
                 core:Core = DummyCore()
@@ -145,13 +146,14 @@ class FixedRyDDSBeamPID():
         self.dds_sw = dds_sw
         self.dac_pid = dac_pid
         self.ttl_shutter = ttl_shutter
+        self.ttl_pid_clear = ttl_pid_clear
         self._wavemeter = wavemeter
         self._core = core
         self._dc = lock_data_container
 
     @kernel
     def set_power(self, v):
-        # self.ry_intensity_pid_clear.pulse(1.e-6)
+        self.ttl_pid_clear.pulse(10.e-6)
         self.dac_pid.set(v)
 
     @kernel
@@ -188,6 +190,7 @@ class FiberEORyDDSBeamPID(SiglentTTLBeam):
                 siglent_ch:SDG6000X_CH,
                 dac_pid:DAC_CH,
                 ttl_ao_sw:TTL_OUT,
+                ttl_pid_clear:TTL_OUT,
                 eo_sideband_order,
                 wavemeter:WavemeterClient,
                 lock_data_container = DataContainer,
@@ -197,6 +200,7 @@ class FiberEORyDDSBeamPID(SiglentTTLBeam):
                          ttl_sw=ttl_ao_sw)
 
         self.dac_pid = dac_pid
+        self.ttl_pid_clear = ttl_pid_clear
         self.siglent._stash_defaults()
 
         self._eo_order = eo_sideband_order
@@ -207,6 +211,7 @@ class FiberEORyDDSBeamPID(SiglentTTLBeam):
 
     @kernel
     def set_power(self, v_pd=dv, load_dac=True):
+        self.ttl_pid_clear.pulse(10.e-6)
         self.dac_pid.set(v_pd, load_dac)
     
     @kernel
