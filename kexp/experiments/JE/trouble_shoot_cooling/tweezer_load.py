@@ -18,7 +18,7 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(20.,300.,10)*1.e-6)
-        self.xvar('dumy',np.linspace(1.,10.,50))
+        self.xvar('dumy',np.linspace(1.,10.,10))
 
         self.p.v_hf_tweezer_paint_amp_max = -2.2
         

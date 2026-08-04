@@ -33,14 +33,14 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('i_magtrap_init',np.linspace(65.,130.,15))
         self.p.i_magtrap_init = 75.
 
-        self.xvar('i_magtrap_ramp_end', np.linspace(90.,145.,8))
+        # self.xvar('i_magtrap_ramp_end', np.linspace(90.,145.,8))
         # self.p.i_magtrap_ramp_end = 100.
-        self.xvar('t_magtrap_ramp', np.linspace(.1,1.,8))
+        # self.xvar('t_magtrap_ramp', np.linspace(.1,1.,8))
         # self.p.t_magtrap_ramp = 0.4     
 
         # self.xvar('t_magtrap',np.linspace(100.,2000.,10)*1.e-3)
         # self.xvar('t_magtrap',[0.1,0.5,0.8,1.7]*5)
-        self.p.t_magtrap = .5
+        # self.p.t_magtrap = .5
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,1000.,10)*1.e-3)
 
@@ -57,8 +57,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_zshim_current_magtrap',np.linspace(0.,0.4,6))
         # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,15))
         # self.xvar('v_yshim_current_magtrap',np.linspace(0.,7.,15))
-        self.p.v_yshim_current_magtrap = 2.
-        self.p.v_xshim_current_magtrap = 1.78
+        # self.p.v_yshim_current_magtrap = 2.
+        # self.p.v_xshim_current_magtrap = 1.78
 
         # self.p.v_xshim_current_magtrap = 1.1
 

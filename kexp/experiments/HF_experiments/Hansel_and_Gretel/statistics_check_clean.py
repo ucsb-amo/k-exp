@@ -18,17 +18,14 @@ class hf_bec(EnvExperiment, Base):
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 3
         self.p.t_weak_measure = 5.e-6
         self.p.t_strong_measure = 15.e-6
-        self.p.raman_phase_list = rng.uniform(low=0,high=2*np.pi,size=(self.p.samples, self.p.N_pulses))
-        self.p.N_pulses = 10
-
-        self.p.amp_imaging = .2
-
         self.p.samples = 100
         self.p.sample_index = 0
+        self.p.N_pulses = 10
+        self.raman_phase_list = rng.uniform(low=0,high=2*np.pi,size=(self.p.samples*self.p.N_pulses))
 
-
-
-        self.xvar('do_weak_measurement',[0,1])
+        self.p.amp_imaging = .2
+        # self.xvar('do_weak_measurement',[0,1])
+        self.p.do_weak_measurement = 1
         self.xvar('sample_index', np.arange(self.p.samples))
 
         self.p.N_repeats = 1
@@ -43,19 +40,21 @@ class hf_bec(EnvExperiment, Base):
     def pulse_and_measure(self,t_weak_measure,
                             t_strong_measure,
                             weak_measure = True):
-        
+
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+
         for i in range(self.p.N_pulses):
 
             self.raman.pulse(self.p.t_raman_pulse)
 
-            if self.p.do_weak_measure:
+            if self.p.do_weak_measurement:
                 self.imaging.on()
                 delay(t_weak_measure)
                 self.imaging.off()
             else:
                 delay(t_weak_measure)
             
-            self.raman.set(relative_phase=self.p.raman_phase_list[self.p.sample_index, i])
+            self.raman.set(relative_phase=self.raman_phase_list[self.p.sample_index*self.p.N_pulses + i])
 
         self.strong_measurement(t_measure=t_strong_measure)
 
@@ -63,8 +62,8 @@ class hf_bec(EnvExperiment, Base):
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
-        self.imaging.set_power(self.camera_params.amp_imaging)
-        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=False)
+        self.imaging.set_power(self.p.amp_imaging)
+        self.prepare_hf_tweezers(ramp_down_painting=False,squeeze=False)
 
         self.prep_raman()
 
