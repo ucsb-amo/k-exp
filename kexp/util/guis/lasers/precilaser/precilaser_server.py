@@ -8,6 +8,8 @@ from kexp.config.ip import (
 )
 
 _LOG_PATH = os.path.join(DATA_DIR, "_logs", "precilaser_server.log") if DATA_DIR else None
+# Server-side persisted settings (e.g. the turn-on ramp endpoint in Amps).
+_CONFIG_PATH = os.path.join(DATA_DIR, "precilaser_config.json") if DATA_DIR else None
 
 
 def main() -> None:
@@ -15,6 +17,7 @@ def main() -> None:
     run_precilaser_server(
         serial_port=PRECILASER_COM,
         log_path=_LOG_PATH,
+        config_path=_CONFIG_PATH,
     )
 
 
