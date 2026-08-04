@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtGui import QPixmap, QPainter, QFont, QIcon
 from PyQt6.QtCore import Qt
 
-from waxx.util.guis.basler.basler_cameras_gui import BaslerCamerasMainWindow
+from beacon.basler.cameras_gui import BaslerCamerasMainWindow
 
 mot_basler_serial = "40277706"
 

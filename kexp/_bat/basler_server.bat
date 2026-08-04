@@ -1,4 +1,3 @@
 call %kpy%
-cd %code%\k-exp
-python %code%\k-exp\kexp\util\guis\basler\basler_server.py
+python -m beacon.basler.server_gui
 pause

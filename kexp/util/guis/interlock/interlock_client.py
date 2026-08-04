@@ -1,6 +1,6 @@
 """interlock_client.py — thin TCP wrapper for the interlock server.
 
-Uses WaxxClient for UDP service discovery, then a simple line+JSON wire
+Uses NetClient for UDP service discovery, then a simple line+JSON wire
 protocol matching ``interlock_server.py``.
 """
 
@@ -11,13 +11,13 @@ import logging
 import socket
 from typing import Any, Optional
 
-from waxx.util.comms_server.waxx_client import WaxxClient
+from beacon.discovery.client import NetClient
 
 
 _LOG = logging.getLogger("kexp.dashboard.client.interlock")
 
 
-class InterlockClient(WaxxClient):
+class InterlockClient(NetClient):
     """Discovery + RPC.  Short timeouts (Threat 9: never block UI)."""
 
     SERVER_ID = "interlock"

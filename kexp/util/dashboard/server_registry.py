@@ -124,7 +124,7 @@ SERVER_SPECS: list[ServerSpec] = [
         body_factory=_lazy_panel("kexp.util.guis.basler.basler_panel", "BaslerServerPanel"),
         # The embedded BaslerCamerasMainWindow is a ZMQ *client* that
         # discovers and connects to the headless server we spawn here.
-        server_cmd=[_PY, "-m", "kexp.util.guis.basler.basler_server_headless"],
+        server_cmd=[_PY, "-m", "beacon.basler.server_headless"],
         cwd=_REPO,
         graceful_stop_timeout_s=10.0,
         restart_on_crash=False,
@@ -187,7 +187,7 @@ SERVER_SPECS: list[ServerSpec] = [
         # The embedded TpiDevicesMainWindow is a ZMQ client that discovers and
         # connects to the headless server we spawn here (like Basler).
         body_factory=_lazy_panel("waxx.util.guis.tpi.tpi_panel", "TpiServerPanel"),
-        server_cmd=[_PY, "-m", "waxx.util.guis.tpi.tpi_server"],
+        server_cmd=[_PY, "-m", "beacon.tpi.server"],
         cwd=_REPO,
         graceful_stop_timeout_s=5.0,
         restart_on_crash=False,

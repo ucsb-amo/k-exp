@@ -13,7 +13,7 @@ from waxx.util.dashboard.embed_helpers import WidgetPanelBase, embed_main_window
 class BaslerServerPanel(WidgetPanelBase):
     def __init__(self, parent=None):
         super().__init__(parent)
-        from waxx.util.guis.basler.basler_cameras_gui import BaslerCamerasMainWindow  # noqa: PLC0415
+        from beacon.basler.cameras_gui import BaslerCamerasMainWindow  # noqa: PLC0415
 
         self._gui = BaslerCamerasMainWindow(auto_open=False)
         # Basler hosts nested QDockWidgets inside its QMainWindow; embed

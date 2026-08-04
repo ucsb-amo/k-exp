@@ -24,7 +24,7 @@ import time
 import numpy as np
 import zmq
 from PyQt6.QtCore import QThread
-from waxx.util.comms_server.waxx_server import WaxxServer
+from beacon.discovery.server import NetServer
 from waxx.util.comms_server.hardware_id import scoped_server_id
 
 
@@ -38,7 +38,7 @@ _HEARTBEAT_INTERVAL_S = 0.5
 _SNDHWM = 8
 
 
-class LiveODBroadcaster(QThread, WaxxServer):
+class LiveODBroadcaster(QThread, NetServer):
     """Thread-safe ZMQ PUB broadcaster.
 
     Uses an internal queue so that Qt signal callbacks (which run on the
@@ -51,7 +51,7 @@ class LiveODBroadcaster(QThread, WaxxServer):
 
     def __init__(self):
         super().__init__()  # QThread.__init__
-        WaxxServer.__init__(self, scoped_server_id("live_od_broadcast"), 0)  # port updated in run()
+        NetServer.__init__(self, scoped_server_id("live_od_broadcast"), 0)  # port updated in run()
         self._queue: queue.Queue = queue.Queue()
         self._running = False
 
