@@ -34,7 +34,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.frequency_eo_980 = 352.1e6
         # self.p.frequency_eo_980 = 418.1e6
 
-        self.xvar('frequency_eo_980', np.arange(416.,430.,0.1)*1.e6)
+        self.xvar('frequency_eo_980', np.arange(421.8,435.,0.2)*1.e6)
         # self.p.frequency_eo_980 = 418.1e6
         # self.xvar('frequency_eo_980', 418.1e6 + 1e6*np.linspace(-1,1,3))
 
@@ -55,7 +55,7 @@ class hf_bec(EnvExperiment, Base):
         self.p.i_hf_raman = 182.
 
         # self.xvar('beans',np.linspace(0,30,10))
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
