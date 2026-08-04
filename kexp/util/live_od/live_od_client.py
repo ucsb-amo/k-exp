@@ -18,11 +18,11 @@ import pickle
 
 import zmq
 
-from waxx.util.comms_server.waxx_client import WaxxClient
+from beacon.discovery.client import NetClient
 from waxx.util.comms_server.hardware_id import resolve_scoped_server_id
 
 
-class LiveODClient(WaxxClient):
+class LiveODClient(NetClient):
     """REQ socket client for LiveODServer."""
 
     def __init__(self, timeout_ms: int = 5000, discovery_timeout: float = 10.0):
@@ -59,7 +59,7 @@ class LiveODClient(WaxxClient):
     def _rediscover(self) -> None:
         """Update ``_ip``/``_port`` from the latest beacon cache.
 
-        Delegates to ``WaxxClient._rediscover()`` then syncs the ZMQ
+        Delegates to ``NetClient._rediscover()`` then syncs the ZMQ
         address fields from the updated ``self.host``/``self.port``.
         """
         super()._rediscover(timeout=2.0)

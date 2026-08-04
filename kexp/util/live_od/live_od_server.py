@@ -21,11 +21,11 @@ from waxx.config.timeouts import DATA_SAVER_TIMEOUT
 import zmq
 import numpy as np
 from PyQt6.QtCore import QThread, pyqtSignal
-from waxx.util.comms_server.waxx_server import WaxxServer
+from beacon.discovery.server import NetServer
 from waxx.util.comms_server.hardware_id import scoped_server_id
 
 
-class LiveODServer(QThread, WaxxServer):
+class LiveODServer(QThread, NetServer):
     """ZMQ REP server embedded in the liveOD process.
 
     Listens for messages from the experiment client and drives file I/O
@@ -58,7 +58,7 @@ class LiveODServer(QThread, WaxxServer):
 
     def __init__(self, server_talk, data_saver, port: int = 0):
         super().__init__()  # QThread.__init__
-        WaxxServer.__init__(self, scoped_server_id("live_od"), port)  # explicit — avoids MRO conflict
+        NetServer.__init__(self, scoped_server_id("live_od"), port)  # explicit — avoids MRO conflict
         self._server_talk = server_talk
         self._data_saver = data_saver
         self._ip = "0.0.0.0"
