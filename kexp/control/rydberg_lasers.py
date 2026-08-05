@@ -83,12 +83,12 @@ class RydbergBeamBase():
         """
         if self._used:
             self._core.wait_until_mu(now_mu())
-            self.siglent.fetch_state()
-            frequency_shift = ( self._eo_shift_direction * self.siglent._p.frequency
+            f_siglent = self.siglent.get_frequency()
+            frequency_shift = ( self._eo_shift_direction * f_siglent
                                 - self._cavity_ao_order * self._cavity_ao_frequency )
             f_fzw = self._wavemeter.lock_status(frequency_shift, robust)
             self._lock_dc.put_data(f_fzw)
-            self._siglent_freq_dc.put_data(self.siglent._p.frequency)
+            self._siglent_freq_dc.put_data(f_siglent)
             self._core.break_realtime()
 
 class RydbergDDSSwitchBeam(RydbergBeamBase):
@@ -140,7 +140,9 @@ class RydbergDDSSwitchBeam(RydbergBeamBase):
         self.dds_sw.off()
 
     @kernel
-    def init(self):
+    def init(self, init_siglent=False):
+        if init_siglent:
+            self.siglent.init()
         self.dds_sw._restore_defaults()
         self.dds_sw.set_dds(init=True)
         self.set_power(self.dac_pid.v)
