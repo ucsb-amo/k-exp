@@ -13,3 +13,5 @@ class DataVault(DataVaultWax):
 
         self.frequency_wavemeter_405 = self.add_data_container(1)
         self.frequency_wavemeter_980 = self.add_data_container(1)
+        self.frequency_siglent_405 = self.add_data_container(1)
+        self.frequency_siglent_980 = self.add_data_container(1)
