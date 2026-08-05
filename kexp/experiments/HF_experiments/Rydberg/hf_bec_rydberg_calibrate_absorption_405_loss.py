@@ -17,28 +17,16 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
         # self.xvar('do_980_pulse',[0,1])
-        self.p.do_980_pulse = 1
-        self.p.amp_dds_405 = 0.06
+        self.p.do_980_pulse = 0
+        # self.p.amp_dds_405 = 0.06
 #   
 
          # self.xvar('compress',[0,1])
         self.p.compress = 0
 
-
-        # self.xvar('frequency_eo_980', 366.4e6 + 1.e6 * np.linspace(-5,5,9))
-        self.xvar('frequency_eo_980', np.arange(400.,424.,0.05)*1.e6)
-        # self.xvar('frequency_eo_980', np.linspace(430.,460.,40)*1.e6)
-        # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
-        # self.p.frequency_eo_980 = 352.1e6
-        # self.p.frequency_eo_980 = 418.1e6
-
-        # self.xvar('frequency_eo_980', np.arange(422.,424.,0.1)*1.e6)
-        self.p.frequency_eo_980 = 422.1e6
-        # self.xvar('frequency_eo_980', 418.1e6 + 1e6*np.linspace(-1,1,3))
-
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
-        # self.xvar('t_tweezer_hold', np.linspace(0.0, 700.0, 4) * 1.e-3)
+        self.xvar('t_tweezer_hold', np.linspace(0.0, 100.0, 10) * 1.e-3)
         self.p.t_tweezer_hold = 512.e-3
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
@@ -47,13 +35,15 @@ class hf_bec(EnvExperiment, Base):
 
         self.p.amp_imaging = 0.125
         # self.xvar('v_pd_ry_980',np.linspace(0.,1.,5))
-        self.p.v_pd_ry_405 = 0.6
+        self.p.v_pd_ry_405 = 2.5 # maximum value 2.6 V
         self.p.v_pd_ry_980 = 2.8
+
+        self.p.amp_dds_405 = .1
 
         self.p.i_hf_raman = 182.
 
         # self.xvar('beans',np.linspace(0,30,10))
-        self.p.N_repeats = 1
+        self.p.N_repeats = 10
         self.finish_prepare(shuffle=True)
 
         if self.p.do_405_pulse == 1:
@@ -74,13 +64,10 @@ class hf_bec(EnvExperiment, Base):
 
         if self.p.compress:
             self.p.t_tof = 450.e-6
-        if self.p.do_980_pulse == 1:
-            self.ry_980.sweep_to(self.p.frequency_eo_980)
 
         # self.ry_980.set_power(9.9)
 
         self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        self.imaging.set_power(self.p.amp_imaging)
 
         if self.p.compress:
             self.prepare_hf_tweezers(squeeze=True)
