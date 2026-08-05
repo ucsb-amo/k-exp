@@ -146,10 +146,12 @@ class FeedbackReplayCore(Feedback):
     ):
         self.ad = ad
         self._run_id = int(getattr(getattr(ad, "run_info", None), "run_id", -1))
-        self._apd_rr_cached = self._to_repeat_step(ad.data.apd, "ad.data.apd")
+        self._apd_rr_cached = self._to_repeat_step(
+            self._restore_shot_step_axis(ad.data.apd), "ad.data.apd")
         self._omega_rr_cached = None
         if hasattr(ad.data, "omega_raman"):
-            self._omega_rr_cached = self._to_repeat_step(ad.data.omega_raman, "ad.data.omega_raman")
+            self._omega_rr_cached = self._to_repeat_step(
+                self._restore_shot_step_axis(ad.data.omega_raman), "ad.data.omega_raman")
         # Create independent copy of parameters so modifications don't affect shared atomdata
         self.p = copy.copy(ad.p)
         self._base_kwargs = self._build_base_feedback_kwargs(ad)
@@ -433,6 +435,23 @@ class FeedbackReplayCore(Feedback):
             "t_calculation_slack_compensation_mu": int(getattr(p, "t_calculation_slack_compensation_mu", 0)),
             "t_fifo_mu": int(getattr(p, "t_fifo_mu", 1000)),
         }
+
+    @staticmethod
+    def _restore_shot_step_axis(arr):
+        """Give a data-container array back its per-shot axis.
+
+        A container holding one value per shot loads from atomdata as
+        (n_shots,) -- the trailing size-1 per-shot axis is squeezed out (see
+        waxx.config.data_vault.DataContainer.squeeze_axes). _to_repeat_step
+        reads a 1D array as a single repeat of n steps, which is the right
+        reading for a user-supplied flat override but the wrong one here: these
+        are n shots of a single step. Restoring the axis keeps both readings
+        correct. No-op for arrays that already carry a per-shot axis.
+        """
+        x = np.asarray(arr)
+        if x.dtype != object and x.ndim == 1:
+            return x[:, None]
+        return arr
 
     def _to_repeat_step(self, arr, name: str) -> np.ndarray:
         x = np.asarray(arr)
@@ -1798,15 +1817,18 @@ class FeedbackReplay(FeedbackReplayCore):
     ) -> Tuple[plt.Figure, plt.Axes]:
         """Plot saved in-run s_z against APD-derived spin values from atomdata."""
         apd_rr = self._to_repeat_step(
-            _require_atomdata_attr(self.ad.data, "apd", "ad.data"),
+            self._restore_shot_step_axis(
+                _require_atomdata_attr(self.ad.data, "apd", "ad.data")),
             "ad.data.apd",
         )
         sz_rr = self._to_repeat_step(
-            _require_atomdata_attr(self.ad.data, "s_z", "ad.data"),
+            self._restore_shot_step_axis(
+                _require_atomdata_attr(self.ad.data, "s_z", "ad.data")),
             "ad.data.s_z",
         )
         t_rr = self._to_repeat_step(
-            _require_atomdata_attr(self.ad.data, "t", "ad.data"),
+            self._restore_shot_step_axis(
+                _require_atomdata_attr(self.ad.data, "t", "ad.data")),
             "ad.data.t",
         )
 
