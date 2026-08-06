@@ -65,8 +65,8 @@ class RydbergBeamBase():
 
     @kernel
     def set_power(self, v_pd=dv, load_dac=True):
-        self.ttl_pid_clear.pulse(10.e-6)
         self.dac_pid.set(v_pd, load_dac)
+        self.ttl_pid_clear.pulse(10.e-6)
 
     @kernel
     def sweep_to(self, frequency_end=dv, frequency_step=1.e6, reset=False):
