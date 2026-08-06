@@ -29,9 +29,11 @@ class hf_raman(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_squeeze_power = 7.
         # self.p.t_tof = 8.e-6
 
-        self.p.t_tof = 600.e-6
+        self.p.t_tof = 800.e-6
         
         self.p.N_repeats = 2
+
+        self.camera_params.amp_imaging = 0.2
 
         self.finish_prepare(shuffle=False)
 
@@ -41,7 +43,7 @@ class hf_raman(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.camera_params.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers()
         self.prep_raman()
 
         self.raman.pulse(self.p.t_raman_pulse)

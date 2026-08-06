@@ -12,7 +12,7 @@ class sigma_z(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.amp_imaging = 0.1
+        self.p.amp_imaging = 0.15
         # self.xvar('amp_imaging', np.linspace(0.4, 0.7, 5))
         self.p.t_pci_pulse = 20.e-6
         # self.xvar('t_pci_pulse', np.linspace(3.e-6, 10.e-6, 5))
