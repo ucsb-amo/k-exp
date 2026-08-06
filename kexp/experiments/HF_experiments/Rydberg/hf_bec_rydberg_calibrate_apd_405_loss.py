@@ -7,9 +7,9 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=True,
+        Base.__init__(self,setup_camera=False,save_data=True,
                       camera_select=cameras.andor,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.DISPERSIVE)
         
         # self.xvar('t_tof',np.linspace(20.,3000.,7)*1.e-6)
         self.p.t_tof = 1700.e-6
@@ -17,44 +17,38 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('do_405_pulse',[0,1])
         self.p.do_405_pulse = 1
         # self.xvar('do_980_pulse',[0,1])
-        self.p.do_980_pulse = 1
-        self.p.amp_dds_405 = 0.06
+        self.p.do_980_pulse = 0
+        # self.p.amp_dds_405 = 0.06
 #   
 
          # self.xvar('compress',[0,1])
         self.p.compress = 0
 
-
-        # self.xvar('frequency_eo_980', 366.4e6 + 1.e6 * np.linspace(-5,5,9))
-        self.xvar('frequency_eo_980', np.arange(400.,424.,0.05)*1.e6)
-        # self.xvar('frequency_eo_980', np.linspace(430.,460.,40)*1.e6)
-        # self.p.frequency_eo_980 = self.siglent.siglent_980._frequency_default
-        # self.p.frequency_eo_980 = 352.1e6
-        # self.p.frequency_eo_980 = 418.1e6
-
-        # self.xvar('frequency_eo_980', np.arange(422.,424.,0.1)*1.e6)
-        self.p.frequency_eo_980 = 422.1e6
-        # self.xvar('frequency_eo_980', 418.1e6 + 1e6*np.linspace(-1,1,3))
-
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
 
-        # self.xvar('t_tweezer_hold', np.linspace(0.0, 700.0, 4) * 1.e-3)
-        self.p.t_tweezer_hold = 512.e-3
+        self.xvar('t_tweezer_hold', np.linspace(0.0, 100.0, 12) * 1.e-3)
+        # self.p.t_tweezer_hold = 512.e-3
+        # self.p.t_tweezer_hold = 0.e-3
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
 
-        self.p.hf_imaging_detuning = -568.e6
+        # self.p.hf_imaging_detuning = -568.e6
 
-        self.p.amp_imaging = 0.125
+        self.p.amp_imaging = 0.25
         # self.xvar('v_pd_ry_980',np.linspace(0.,1.,5))
-        self.p.v_pd_ry_405 = 0.6
+        self.p.v_pd_ry_405 = 2.5 # maximum value 2.6 V
         self.p.v_pd_ry_980 = 2.8
+
+        self.p.amp_dds_405 = .1
 
         self.p.i_hf_raman = 182.
 
+        self.p.t_imaging_pulse = 10.e-6
+
         # self.xvar('beans',np.linspace(0,30,10))
-        self.p.N_repeats = 1
-        self.finish_prepare(shuffle=True)
+        self.p.N_repeats = 15
+
+        self.data.apd_no_atoms = self.data.add_data_container((1,), float)
 
         if self.p.do_405_pulse == 1:
             print(f'doing 405 pulse')
@@ -65,6 +59,9 @@ class hf_bec(EnvExperiment, Base):
         else:
             print(f'not doing 980 pulse')
 
+        self.finish_prepare(shuffle=True)
+        
+
     @kernel
     def scan_kernel(self):
         
@@ -74,12 +71,11 @@ class hf_bec(EnvExperiment, Base):
 
         if self.p.compress:
             self.p.t_tof = 450.e-6
-        if self.p.do_980_pulse == 1:
-            self.ry_980.sweep_to(self.p.frequency_eo_980)
 
         # self.ry_980.set_power(9.9)
 
-        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
+        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
         if self.p.compress:
@@ -109,14 +105,21 @@ class hf_bec(EnvExperiment, Base):
         self.ry_980.off()
         self.ry_405.ttl_shutter.off()
 
+        delay(100.e-6)
+
+        self.ttl.pd_scope_trig3.pulse(1.e-6)
+        self.integrated_imaging_pulse(self.data.apd,t=self.p.t_imaging_pulse)
+        # self.abs_image_and_apd(self.data.apd, t=self.p.t_imaging_pulse)
+
         delay(40e-3)
 
         self.tweezer.off()
-
-        delay(self.p.t_tof)
-        self.abs_image()
-
         self.outer_coil.off()
+
+        delay(10.e-3)
+        self.integrated_imaging_pulse(self.data.apd_no_atoms, t=self.p.t_imaging_pulse)
+
+        delay(10.e-3)
 
     @kernel
     def run(self):

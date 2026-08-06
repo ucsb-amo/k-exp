@@ -302,11 +302,15 @@ class Image():
 
     @kernel
     def abs_image_and_apd(self, data_container,
+                          t = dv,
                           leave_traps_on = False):
+
+        if t == dv:
+            t = self.params.t_imaging_pulse
 
         self.trigger_camera()
         self.integrated_imaging_pulse(data_container,
-                                      t=self.params.t_imaging_pulse)
+                                      t=t)
         delay(30.e-6)
         
         if not leave_traps_on:
