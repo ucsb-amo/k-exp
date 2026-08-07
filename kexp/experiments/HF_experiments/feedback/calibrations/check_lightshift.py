@@ -15,7 +15,8 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.xvar('with_imaging', [0,1])
+        # self.xvar('with_imaging', [0,1])
+        self.p.with_imaging = 1
         self.xvar('relative_phase', np.linspace(0., 4*np.pi, 21))
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 3.94
