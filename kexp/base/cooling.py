@@ -161,7 +161,7 @@ class Cooling():
             v0 = self.tweezer.paint_amp_dac.v
             self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown,
                                                   v_start=v0,
-                                                  v_end=-7.,
+                                                  v_end=self.p.v_tweezer_rampdown_end,
                                                   n=100)
 
     @kernel
@@ -169,13 +169,15 @@ class Cooling():
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
                           v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
                           v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
-                          low_power=True, paint=False, keep_trap_frequency_constant=False,
+                          low_power=True, paint=True, v_awg_am_max=self.p.v_tweezer_rampdown_end,
+                          keep_trap_frequency_constant=False,
                           cubic_ramp=cubic_ramp)
 
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
                           v_start=tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
                           v_end=self.p.v_pd_hf_tweezer_squeeze_power,
-                          paint=False,keep_trap_frequency_constant=False,
+                          paint=True,v_awg_am_max=self.p.v_tweezer_rampdown_end,
+                          keep_trap_frequency_constant=False,
                           cubic_ramp=cubic_ramp)
 
     @kernel
