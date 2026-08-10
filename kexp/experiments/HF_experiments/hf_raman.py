@@ -96,7 +96,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.prep_raman(frequency_transition=self.p.frequency_raman_transition)
 
-        self.raman.pulse(self.p.t_raman_pulse)
+        # self.raman.pulse(self.p.t_raman_pulse)
         # delay(self.p.t_raman_pulse)
 
         # delay(self.p.t_ramsey)
@@ -108,7 +108,7 @@ class hf_raman(EnvExperiment, Base):
         #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
         #                  n_steps=100)
         # delay(1.e-3)
-        self.ttl.raman_shutter.off()
+        # self.ttl.raman_shutter.off()
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()

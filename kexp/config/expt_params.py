@@ -290,7 +290,7 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
         self.n_tweezer_ramp_steps = 1000
 
-        self.v_tweezer_rampdown_end = -5.95
+        self.v_tweezer_paint_rampdown_end = -4.99
         self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
         self.v_pd_hf_tweezer_squeeze_power = .444
 

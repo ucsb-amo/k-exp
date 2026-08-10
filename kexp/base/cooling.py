@@ -161,7 +161,7 @@ class Cooling():
             v0 = self.tweezer.paint_amp_dac.v
             self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown,
                                                   v_start=v0,
-                                                  v_end=self.p.v_tweezer_rampdown_end,
+                                                  v_end=self.p.v_tweezer_paint_rampdown_end,
                                                   n=100)
 
     @kernel
