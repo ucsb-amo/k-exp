@@ -36,11 +36,17 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('i_hf_raman',np.linspace(174.,182.,10))
         # self.p.i_hf_raman = 176.5
 
-        # self.xvar('t_tweezer_paint_rampdown',np.linspace(2.e-3,30.e-3,10))
-        # self.p.t_tweezer_paint_rampdown = 41.1e-3
+        # self.xvar('t_tweezer_paint_rampdown',np.linspace(1.e-3,30.e-3,10))
+        self.p.t_tweezer_paint_rampdown = 17.e-3
 
-        # self.xvar('v_tweezer_rampdown_end',np.linspace(-6.3,-5.8,10))
-        # self.p.v_tweezer_rampdown_end = -6.
+        # self.xvar('v_tweezer_paint_rampdown_end1',np.linspace(-6.3,-5.9,10))
+        self.p.v_tweezer_paint_rampdown_end1 = -6.
+
+        self.xvar('t_tweezer_paint_rampdown2',np.linspace(.5e-3,10.e-3,10))
+        self.p.t_tweezer_paint_rampdown2 = 2.75e-3
+
+        # self.xvar('v_tweezer_paint_rampdown_end2',np.linspace(-6.3,-5.8,10))
+                # self.p.v_tweezer_paint_rampdown_end1 = -6.
 
         # self.xvar('t_tweezer_squeezer_ramp_1',np.linspace(1.5.e-3,70.e-3,10))
         # self.p.t_tweezer_squeezer_ramp_1 = 5.e-3
@@ -48,14 +54,14 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_tweezer_squeezer_ramp_2',np.linspace(5.e-3,50.e-3,10))
         # self.p.t_tweezer_squeezer_ramp_2 = 17.e-3
 
-        self.xvar('t_tof',np.linspace(1500.,4500.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(1500.,4500.,10)*1.e-6)
 
         # self.xvar('t_tweezer_hold',np.linspace(10.e-3,100.e-3,10))
         self.p.t_tweezer_hold = 10.e-3
-        self.p.t_tof = 4000.e-6
+        self.p.t_tof = 1500.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -67,7 +73,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(ramp_down_painting=False,squeeze=False)
+        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=False)
 
         # delay(10.e-3)
 

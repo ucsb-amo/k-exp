@@ -80,7 +80,7 @@ class tweezer(wax_tweezer.TweezerController):
 
     @kernel
     def painting_off(self):
-        self.paint_amp_dac.set(v=-7.)
+        self.paint_amp_dac.set(v=-4.99)
 
     @kernel
     def on(self,paint=False,v_awg_am=dv):
@@ -262,6 +262,6 @@ class tweezer(wax_tweezer.TweezerController):
         # rescale to between -5V (fraction painting = 0) and the maximum
         # painting amplitude specified (fraction painting = 1) for the
         # AWG input
-        v_awg_amp_mod = (paint_amp_frac - 0.5)*(v_awg_am_max - (-4.99)) \
-                            + (v_awg_am_max + (-4.99))/2
+        v_awg_amp_mod = (paint_amp_frac - 0.5)*(v_awg_am_max - (-6.)) \
+                            + (v_awg_am_max + (-6.))/2
         return v_awg_amp_mod

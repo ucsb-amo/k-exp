@@ -155,28 +155,32 @@ class Cooling():
 
     @kernel
     def ramp_down_painting(self):
-        if self.p.t_tweezer_paint_rampdown == 0:
+        if self.p.t_tweezer_paint_rampdown1 == 0:
             self.tweezer.paint_amp_dac.set(-7.)
         else:
             v0 = self.tweezer.paint_amp_dac.v
-            self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown,
+            self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown1,
                                                   v_start=v0,
-                                                  v_end=self.p.v_tweezer_paint_rampdown_end,
+                                                  v_end=self.p.v_tweezer_paint_rampdown_end1,
                                                   n=100)
+            self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown2,
+                                                              v_start=self.p.v_tweezer_paint_rampdown_end1,
+                                                              v_end=self.p.v_tweezer_paint_rampdown_end2,
+                                                              n=100)
 
     @kernel
     def tweezer_squeeze(self, cubic_ramp=True):
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
                           v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
                           v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
-                          low_power=True, paint=True, v_awg_am_max=self.p.v_tweezer_rampdown_end,
+                          low_power=True, paint=True, v_awg_am_max=self.p.v_tweezer_paint_rampdown_end2,
                           keep_trap_frequency_constant=False,
                           cubic_ramp=cubic_ramp)
 
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
                           v_start=tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
                           v_end=self.p.v_pd_hf_tweezer_squeeze_power,
-                          paint=True,v_awg_am_max=self.p.v_tweezer_rampdown_end,
+                          paint=True,v_awg_am_max=self.p.v_tweezer_paint_rampdown_end2,
                           keep_trap_frequency_constant=False,
                           cubic_ramp=cubic_ramp)
 
