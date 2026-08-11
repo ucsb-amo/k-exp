@@ -18,8 +18,9 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(20.,300.,10)*1.e-6)
-        self.xvar('dumy',np.linspace(1.,10.,10))
+        # self.xvar('dumy',np.linspace(1.,10.,10))
 
+        self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,10))
         self.p.v_hf_tweezer_paint_amp_max = -2.2
         
         self.p.t_lightsheet_hold = .2
@@ -33,7 +34,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.t_hf_lightsheet_rampdown = 1.3
 
 
-        self.p.amp_imaging = .1
+        self.p.amp_imaging = .2
         self.p.imaging_state = 2.
 
         self.p.N_repeats = 1

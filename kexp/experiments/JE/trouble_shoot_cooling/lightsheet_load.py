@@ -31,7 +31,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_yshim_current',np.linspace(0.0,6.,8))
 
         # self.xvar('i_magtrap_init',np.linspace(65.,130.,15))
-        self.p.i_magtrap_init = 75.
+        # self.p.i_magtrap_init = 75.
 
         # self.xvar('i_magtrap_ramp_end', np.linspace(90.,145.,8))
         # self.p.i_magtrap_ramp_end = 100.

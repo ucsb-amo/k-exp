@@ -14,7 +14,7 @@ class trap_frequency(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.t_tof = 500.e-6
+        self.p.t_tof = 800.e-6
 
         # self.xvar('t_tweezer_mod',np.linspace(1.,5.,10)*1.e-3)
         self.p.t_tweezer_mod = 15.e-3
@@ -24,7 +24,7 @@ class trap_frequency(EnvExperiment, Base):
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,8.7,8))
         # self.p.v_pd_hf_tweezer_squeeze_power = 0.444
         # self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(0.22,0.45,5))
-        self.xvar('f_tweezer_mod',np.linspace(800.,3.e3,20))
+        self.xvar('f_tweezer_mod',np.linspace(800.,3.e3,20)) # use awg to position modulate second aod
         # self.p.f_tweezer_mod = 500.
         # self.p.f_tweezer_mod = 3.6e3
 

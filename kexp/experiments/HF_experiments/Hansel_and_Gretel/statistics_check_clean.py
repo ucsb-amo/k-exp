@@ -9,7 +9,7 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,save_data=False,
+        Base.__init__(self,setup_camera=False,save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
@@ -18,13 +18,13 @@ class hf_bec(EnvExperiment, Base):
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 3
         self.p.t_weak_measure = 5.e-6
         self.p.t_strong_measure = 15.e-6
-        self.p.samples = 100
+        self.p.samples = 250
         self.p.sample_index = 0
         self.p.N_pulses = 10
         self.raman_phase_list = rng.uniform(low=0,high=2*np.pi,size=(self.p.samples*self.p.N_pulses))
 
         self.p.amp_imaging = .2
-        # self.xvar('do_weak_measurement',[0,1])
+        self.xvar('do_weak_measurement',[0,1])
         self.p.do_weak_measurement = 1
         self.xvar('sample_index', np.arange(self.p.samples))
 
@@ -63,6 +63,7 @@ class hf_bec(EnvExperiment, Base):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.p.amp_imaging)
+        self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.prepare_hf_tweezers(ramp_down_painting=False,squeeze=False)
 
         self.prep_raman()
@@ -93,7 +94,7 @@ class hf_bec(EnvExperiment, Base):
         at_mu(t0 + T_CONV_MU)
         self.integrator.clear(t=0)
         at_mu(t0)
-        self.data.apd.shot_data[0] = self.integrator.sample()
+        self.data.strong_measurement.shot_data[0] = self.integrator.sample()
 
     @kernel
     def run(self):

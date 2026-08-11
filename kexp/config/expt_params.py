@@ -45,6 +45,7 @@ class ExptParams(ExptParamsWaxx):
 
         # hf imaging settings with i_outer = 182
         # 1,-1 to 2,-2
+        # self.frequency_detuned_hf_f1m1 = -545.e6 # 176.5 A
         self.frequency_detuned_hf_f1m1 = -568.e6
         self.frequency_detuned_hf_f2m2 = -710.e6
         # self.frequency_detuned_hf_midpoint = -640.e6
@@ -52,6 +53,7 @@ class ExptParams(ExptParamsWaxx):
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
         self.frequency_detuned_hf_midpoint = -517.5e6 #-504.e6
+        # self.frequency_detuned_hf_midpoint = -489.5e6 #176.5 A
 
         ## 3D MOT beam imaging settings        
         self.t_repump_flash_imaging = 10.e-6
@@ -70,7 +72,7 @@ class ExptParams(ExptParamsWaxx):
 
         # SLM settings
         self.dimension_slm_mask = 20.e-6 
-        self.phase_slm_mask = 2.9537 * np.pi
+        self.phase_slm_mask =.45 * np.pi
         self.px_slm_phase_mask_position_x = 993
         self.px_slm_phase_mask_position_y = 818
         self.px_slm_grating_position_x = 994
@@ -120,9 +122,10 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown = 13.e-3
-        self.t_tweezer_squeezer_ramp_1 = 15.e-3
-        self.t_tweezer_squeezer_ramp_2 = 10.e-3
+        self.t_tweezer_paint_rampdown1 = 20.e-3
+        self.t_tweezer_paint_rampdown2 = 20.e-3
+        self.t_tweezer_squeezer_ramp_1 = 5.e-3
+        self.t_tweezer_squeezer_ramp_2 = 17.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -147,7 +150,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 8.6301e-06 #73824, 2026-08-06                
+        self.t_raman_pi_pulse = 1.0188e-05 #74856, 2026-08-09               
         
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -242,7 +245,7 @@ class ExptParams(ExptParamsWaxx):
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 75.
+        self.i_magtrap_init = 40.
         self.i_magtrap_ramp_end = 100.
 
         self.v_xshim_current_magtrap = 1.78
@@ -285,9 +288,11 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.
         self.n_tweezer_ramp_steps = 1000
 
+        self.v_tweezer_paint_rampdown_end1 = -6.
+        self.v_tweezer_paint_rampdown_end2 = -6.5
         self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
         self.v_pd_hf_tweezer_squeeze_power = .444
 
@@ -306,7 +311,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = -2.7
+        self.v_hf_tweezer_paint_amp_max = -2.
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -349,7 +354,8 @@ class ExptParams(ExptParamsWaxx):
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
 
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
-        self.frequency_raman_transition = 119.4640e6 #67744
+        self.frequency_raman_transition = 119.4640e6 #67744 182 A
+        # self.frequency_raman_transition = 119.3977e6 # 176.5 A
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
         self.frequency_raman_transition_nf_1m1_2m2 = 458.4e6 # 1.5 G 1,-1 to 2,-2
@@ -383,17 +389,17 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 192.71
+        self.i_hf_lightsheet_evap1_current = 193.6
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 192.7 # 193.4
+        self.i_hf_tweezer_load_current = 193. # 193.4
         self.i_hf_tweezer_evap1_current = 193.75
         self.i_hf_tweezer_evap2_current = 194.14 # 193.
 
         self.i_non_inter = 176.
 
-        # self.i_hf_raman = 191.
         self.i_hf_raman = 182.
+        # self.i_hf_raman = 176.5
 
         # self.i_evap2_current = 198.45
         # self.i_evap3_current = 198.7

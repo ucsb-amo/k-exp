@@ -17,11 +17,13 @@ class hf_bec(EnvExperiment, Base):
         self.p.t_tweezer_hold = 10.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,4000.,4)*1.e-6)
-        self.p.t_tof = 800.e-6
+        self.p.t_tof = 2000.e-6
 
         self.p.phase_slm_mask = 1.6 * np.pi
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 5
+
+        # self.xvar('t_ramp_down_painting_amp',np.linspace(0.,50.,10))
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
         # self.p.v_hf_tweezer_paint_amp_max = -2.2
@@ -43,6 +45,8 @@ class hf_bec(EnvExperiment, Base):
 
         self.camera_params.gain = 300
 
+        self.xvar('t_ramp_off', np.linspace(0, 100e-6, 5)) 
+
         self.scanning()
         self.finish_prepare(shuffle=True)
 
@@ -50,7 +54,8 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
         
         # self.xvar('v_pd_hf_lightsheet_rampdown_end', np.linspace(0.6,2.0,9))
-        # self.xvar('t_tweezer_hold', np.linspace(0.,500.,4) * 1.e-3)
+        dt = 10.
+        #self.xvar('t_tweezer_hold', np.arange(0.,100.+dt,dt) * 1.e-6) # compression tof
         # self.xvar('t_hf_tweezer_1064_ramp',np.linspace(160,220,3)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.12,,5))
         # self.xvar('i_hf_tweezer_load_current',np.linspace(192.,195.,15))
@@ -83,12 +88,19 @@ class hf_bec(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers()
+        self.prepare_hf_tweezers(ramp_down_painting=True) # made ramp_down_painting=True to compress
 
-        delay(10.e-3)
-         
+        delay(1000e-3)
+
         delay(self.p.t_tweezer_hold)
-        
+
+        if self.p.t_ramp_off != 0.:
+            dt_step = 4.e-6
+            n = int(self.p.t_ramp_off / dt_step)
+            self.tweezer.ramp(self.p.t_ramp_off,v_end=0.0, 
+                              n_steps=n,
+                                keep_trap_frequency_constant=False, 
+                                low_power=True)
         self.tweezer.off()
 
         delay(self.p.t_tof)

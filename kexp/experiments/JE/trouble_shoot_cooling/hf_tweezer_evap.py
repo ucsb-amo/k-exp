@@ -17,7 +17,7 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.t_tof = 2500.e-6
+        self.p.t_tof = 1000.e-6
         # self.p.t_tof = 10.e-6
         # self.xvar('t_tof',np.linspace(800.,3000.,15)*1.e-6) 
         # self.xvar('beans',[1]*3)
@@ -123,8 +123,8 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
-        # self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_load_current)
+        # self.set_imaging_detuning(frequency_detuned=self.p.hf_imaging_detuning)
+        self.set_high_field_imaging(i_outer=self.p.i_hf_tweezer_evap2_current)
         self.imaging.set_power(self.p.amp_imaging)
 
         # self.tweezer.traps[0].set_amp(self.p.amp_tweezer)
@@ -198,8 +198,8 @@ class mag_trap(EnvExperiment, Base):
         
         # self.ttl.pd_scope_trig.pulse(1.e-6)
         
-        self.outer_coil.ramp_supply(t=10.e-3,
-                             i_end=self.p.i_tunnel)
+        # self.outer_coil.ramp_supply(t=10.e-3,
+        #                      i_end=self.p.i_tunnel)
         
         delay(self.p.t_tweezer_hold)
         

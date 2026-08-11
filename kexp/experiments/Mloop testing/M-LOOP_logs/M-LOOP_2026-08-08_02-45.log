@@ -1,0 +1,51 @@
+2026-08-08 02:45:09,916 mloop                INFO     M-LOOP version 3.3.5
+2026-08-08 02:45:09,917 mloop                DEBUG    M-LOOP Logger configured.
+2026-08-08 02:45:09,917 mloop.interfaces     DEBUG    Creating interface.
+2026-08-08 02:45:09,918 mloop.controllers    DEBUG    Controller init completed.
+2026-08-08 02:45:09,919 mloop.learners.1     DEBUG    Learner init completed.
+2026-08-08 02:45:09,920 mloop.learners.2     DEBUG    Learner init completed.
+2026-08-08 02:45:09,920 mloop.controllers    INFO     Optimization started.
+2026-08-08 02:45:09,927 mloop.interfaces     DEBUG    Entering main loop of interface.
+2026-08-08 02:45:09,928 mloop.controllers    DEBUG    ML learner started.
+2026-08-08 02:45:09,989 mloop.controllers    DEBUG    Starting training optimization.
+2026-08-08 02:45:09,989 mloop.controllers    INFO     Run: 0 (training)
+2026-08-08 02:45:09,991 mloop.controllers    INFO     params [13.75   9.3   -3.5   13.5    1.67   0.183 13.   ]
+2026-08-08 02:45:14,138 mloop.controllers    INFO     cost -45.4368279289525 +/- 10.0
+2026-08-08 02:45:14,140 mloop.controllers    INFO     Run: 1 (training)
+2026-08-08 02:45:14,143 mloop.controllers    INFO     params [12.01019526  8.87350772 -0.69815153 14.31095205  2.47091618  0.31333586
+ 12.04720081]
+2026-08-08 02:45:17,016 mloop.controllers    INFO     cost -45.4368279289525 +/- 10.0
+2026-08-08 02:45:17,016 mloop.controllers    INFO     Run: 2 (training)
+2026-08-08 02:45:17,018 mloop.controllers    INFO     params [13.91594832  7.53695036  1.40993495 13.81537614  0.89732401  0.18989112
+ 12.26335024]
+2026-08-08 02:45:20,281 mloop.controllers    INFO     cost -45.4368279289525 +/- 10.0
+2026-08-08 02:45:20,282 mloop.controllers    INFO     Run: 3 (training)
+2026-08-08 02:45:20,284 mloop.controllers    INFO     params [15.57738132  5.95842302  0.63008832 14.05405645  2.64557928  0.17746091
+ 13.82668221]
+2026-08-08 02:45:23,641 mloop.controllers    INFO     cost -45.4368279289525 +/- 10.0
+2026-08-08 02:45:23,642 mloop.controllers    INFO     Run: 4 (training)
+2026-08-08 02:45:23,643 mloop.controllers    INFO     params [15.31772944  8.0475586   1.94849453 13.90586477  1.47048182  0.37720637
+ 13.50224262]
+2026-08-08 02:45:26,800 mloop.controllers    INFO     cost -45.4368279289525 +/- 10.0
+2026-08-08 02:45:26,801 mloop.controllers    INFO     Run: 5 (training)
+2026-08-08 02:45:26,803 mloop.controllers    INFO     params [15.20205884  7.65160424 -2.53981228 12.70536018  2.73852338  0.38058908
+ 13.72135041]
+2026-08-08 02:45:29,824 mloop.controllers    WARNING  !!! Do not give the interrupt signal again !!! 
+ M-LOOP stopped with keyboard interupt or system exit. Please wait at least 1 minute for the threads to safely shut down. 
+ 
+2026-08-08 02:45:29,826 mloop.controllers    WARNING  Closing down controller.
+2026-08-08 02:45:29,827 mloop.controllers    DEBUG    ML learner end set.
+2026-08-08 02:45:30,805 mloop.controllers    DEBUG    ML learner joined
+2026-08-08 02:45:30,805 mloop.controllers    INFO     Machine learning learner did not provide best and/or all minima.
+2026-08-08 02:45:30,806 mloop.controllers    DEBUG    Learner end event set.
+2026-08-08 02:45:30,806 mloop.controllers    DEBUG    Interface end event set.
+2026-08-08 02:45:30,830 mloop.learners.1     DEBUG    Learner end signal received. Ending
+2026-08-08 02:45:31,097 mloop.interfaces     DEBUG    Interface ended
+2026-08-08 02:45:31,837 mloop.controllers    DEBUG    Learner joined.
+2026-08-08 02:45:31,837 mloop.controllers    DEBUG    Interface joined.
+2026-08-08 02:45:31,839 mloop.controllers    INFO     Optimization ended because:
+2026-08-08 02:45:31,839 mloop.controllers    INFO     Results:
+2026-08-08 02:45:31,840 mloop.controllers    INFO     	* Best parameters found: [13.75   9.3   -3.5   13.5    1.67   0.183 13.   ]
+2026-08-08 02:45:31,841 mloop.controllers    INFO     	* Best cost returned: -45.4368279289525 +/- 10.0
+2026-08-08 02:45:31,842 mloop.controllers    INFO     	* Best run index: 0
+2026-08-08 02:45:31,843 mloop.controllers    INFO     M-LOOP Done.
