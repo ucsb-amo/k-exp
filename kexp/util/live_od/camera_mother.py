@@ -61,6 +61,7 @@ class DataHandler(QThread, Scribe):
     save_data_bool_signal = pyqtSignal(int)
     image_type_signal = pyqtSignal(bool)
     done_writing_signal = pyqtSignal()   # emitted after HDF5 handle is closed (or immediately when save_data=False)
+    save_failed_signal = pyqtSignal(str) # re-emitted from SaveWorker — data file unusable, run should abort
 
     def __init__(self, queue: Queue, data_filepath: str,
                  save_data=None, imaging_type=None, camera_key="",
@@ -208,10 +209,11 @@ class DataHandler(QThread, Scribe):
                     wait_timeout=DATA_SAVER_TIMEOUT,
                     check_interrupt_method=self.break_check,
                 )
-                # Route SaveWorker's done signal through DataHandler so
-                # downstream consumers (live_od_server._data_handler_done_event)
-                # are unaffected.
+                # Route SaveWorker's signals through DataHandler so downstream
+                # consumers (live_od_server._data_handler_done_event, the GUI's
+                # abort-on-save-failure slot) are unaffected.
                 save_worker.done_writing_signal.connect(self.done_writing_signal)
+                save_worker.save_failed_signal.connect(self.save_failed_signal)
                 save_worker.start()
 
             while True:
@@ -270,6 +272,7 @@ class SaveWorker(QThread):
     """
 
     done_writing_signal = pyqtSignal()
+    save_failed_signal = pyqtSignal(str)   # reason — emitted when the HDF5 file is unusable
 
     def __init__(self, save_queue: Queue, wait_fn, n_img: int,
                  wait_timeout: float = 120.,
@@ -294,6 +297,10 @@ class SaveWorker(QThread):
             print(f"[SaveWorker] Could not open data file: {exc}")
             traceback.print_exc()
             self.interrupted = True   # drain queue without writing
+            # Nothing can be saved for this run.  Tell the GUI so the run is
+            # aborted now instead of acquiring an entire scan whose images are
+            # all discarded, with the failure only surfacing at END_RUN.
+            self.save_failed_signal.emit(str(exc))
 
         _datasets_created = False
         try:
@@ -306,9 +313,10 @@ class SaveWorker(QThread):
                 img, idx, img_t = item
                 try:
                     # Lazy dataset creation on the first image received.
-                    # images/image_timestamps are no longer pre-allocated by
-                    # create_data_file_from_payload (that heavy I/O was the race
-                    # source).  We create them here from the actual image shape.
+                    # images/image_timestamps are deliberately not pre-allocated
+                    # at file creation (that heavy NAS write would block the
+                    # INIT_RUN reply).  We create them here from the actual
+                    # image shape.
                     if not _datasets_created:
                         dgrp = f['data']
                         if 'images' not in dgrp:

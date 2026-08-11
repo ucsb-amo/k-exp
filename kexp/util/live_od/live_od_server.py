@@ -14,7 +14,6 @@ import pickle
 import os
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 from waxx.config.timeouts import DATA_SAVER_TIMEOUT
 
@@ -66,7 +65,6 @@ class LiveODServer(QThread, NetServer):
         self._cam_ready_event = threading.Event()
         self._data_handler_done_event = threading.Event()
         self._data_handler_done_event.set()  # default: no DataHandler in flight
-        self._file_creation_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="liveod_file_create")
         self._running = False
         self._current_save_data = False
         self._current_capture_images = False
@@ -282,14 +280,30 @@ class LiveODServer(QThread, NetServer):
             # data file ('x' mode).  Exclusive create is atomic on the shared
             # filesystem, so two liveOD servers driving different hardware but
             # writing to one data drive can never collide on a run_id.
-            run_id, filepath = self._data_saver.reserve_run_id_and_path(msg)
-            # Populate the reserved file (heavy I/O — image / DataVault
-            # pre-allocation) on a background thread so the ZMQ REP socket can
-            # reply at once.  DataHandler.wait_for_data_available() polls until
-            # the file is populated, so the delay is handled transparently.
-            self._file_creation_executor.submit(
-                self._data_saver.create_data_file_from_payload, msg, run_id
-            )
+            #
+            # The file is fully populated inside that same exclusive open, so by
+            # the time we reply the file is ready for SaveWorker.  Doing this
+            # synchronously is deliberate: the previous background-thread design
+            # could fail silently and leave a file with no 'data' group, which
+            # cost an entire run's images before anything noticed.  Image
+            # pre-allocation is deferred to SaveWorker, so this is a small write.
+            _t_create = time.time()
+            try:
+                run_id, filepath = self._data_saver.reserve_run_id_and_path(msg)
+            except Exception as exc:
+                import traceback
+                print("[LiveODServer] INIT_RUN: could not create data file:")
+                traceback.print_exc()
+                # No DataHandler will be spawned, so release the gate we cleared
+                # above — otherwise the next END_RUN / reset blocks on it.
+                self._data_handler_done_event.set()
+                self._current_filepath = ""
+                self._run_in_progress = False
+                return {"ok": False, "error": f"Data file creation failed: {exc}"}
+            _dt_create = time.time() - _t_create
+            if _dt_create > 2.0:
+                print(f"[LiveODServer] WARNING: data file creation took "
+                      f"{_dt_create:.1f} s — is the data drive slow?")
 
         self._current_filepath = filepath
         self._current_run_id = run_id
@@ -429,6 +443,12 @@ class LiveODServer(QThread, NetServer):
                 import traceback
                 print(f"[LiveODServer] END_RUN: save failed:")
                 traceback.print_exc()
+                # The run is over either way.  Clear the in-progress state
+                # before reporting the failure, otherwise the server rejects
+                # all CAMERA_CONTROL for the rest of the session and the GUI
+                # never resets.
+                self._run_in_progress = False
+                self.run_done_signal.emit()
                 return {"ok": False, "error": str(exc)}
         else:
             print("[LiveODServer] END_RUN: save_data=False, nothing written.")

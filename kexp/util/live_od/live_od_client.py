@@ -97,9 +97,14 @@ class LiveODClient(NetClient):
     # ------------------------------------------------------------------
 
     def init_run(self, payload: dict) -> dict:
-        """Send INIT_RUN.  Returns ``{"run_id": int, "filepath": str}``."""
+        """Send INIT_RUN.  Returns ``{"run_id": int, "filepath": str}``.
+
+        The server creates and fully populates the HDF5 data file before
+        replying, so this can take a while on a slow/mapped data drive — hence
+        the raised receive timeout rather than the 5 s default.
+        """
         payload["tag"] = "INIT_RUN"
-        reply = self._send_recv(payload)
+        reply = self._send_recv(payload, rcvtimeo_ms=60_000)
         if not reply.get("ok"):
             raise RuntimeError(
                 f"[LiveODClient] INIT_RUN failed: {reply.get('error')}"
