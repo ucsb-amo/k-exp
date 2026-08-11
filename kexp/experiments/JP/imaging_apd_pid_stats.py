@@ -7,7 +7,7 @@ from kexp.util.artiq.async_print import aprint
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 
-class tweezer_load(EnvExperiment, Base):
+class imaging_apd_pid_stats(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=False,
@@ -33,8 +33,18 @@ class tweezer_load(EnvExperiment, Base):
         self.p.t_apd_imaging_check = 50.e-6
 
         self.p.N_max_iter = 50
+        self.p.frac_err_threshold = 0.01
+
+        self.p.pid_gain_p = -0.01
+        self.p.pid_gain_i = 0
+
+        # run many repeats to build up convergence statistics
+        self.p.N_repeats = 50
+
         self.data.apd_check = self.data.add_data_container(2) # 2 points, one each for light + dark
         self.data.frac_err = self.data.add_data_container(self.p.N_max_iter)
+        self.data.n_iter = self.data.add_data_container(1, int) # iterations taken (== N_max_iter if it never converged)
+        self.data.frac_err_converged = self.data.add_data_container(1) # frac_err at the last iteration taken
 
         self.finish_prepare(shuffle=True)
 
@@ -42,12 +52,12 @@ class tweezer_load(EnvExperiment, Base):
     def lightshift_to_v_target(self, f_lightshift):
         # CALIBRATED -- values here are an example
         # 0.05 integrated voltage above background per 10 kHz light shift
-        slope_v_apd_per_f_lightshift = 0.05 / 10.e3 
+        slope_v_apd_per_f_lightshift = 0.05 / 10.e3
         offset_v_apd_per_f_lightshift = 0. # should be exactly 0
 
         m = slope_v_apd_per_f_lightshift
         y0 = offset_v_apd_per_f_lightshift
-        
+
         return m * f_lightshift + y0
 
     @kernel
@@ -63,9 +73,9 @@ class tweezer_load(EnvExperiment, Base):
                                       t=self.p.t_apd_imaging_check,
                                       dark=True,
                                       idx=1)
-        
+
         delay(5.e-6)
-        
+
         v_light = self.data.apd_check.shot_data[0]
         v_dark = self.data.apd_check.shot_data[1]
         v_signal = v_light - v_dark
@@ -73,7 +83,7 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def jump_to_target(self, v_target):
-        
+
         v_signal = self.check_current_v_apd()
 
         v_pid_current = self.imaging.dac_pid.v
@@ -83,10 +93,13 @@ class tweezer_load(EnvExperiment, Base):
 
     @kernel
     def feedback_check_pid_for_lightshift(self, v_target):
-        p = -0.01
+        p = self.p.pid_gain_p
+        i_gain = self.p.pid_gain_i
 
         i = 0
         N_MAX_ITER = self.p.N_max_iter
+        frac_err = 1.
+        err_integral = 0.
 
         while i < N_MAX_ITER:
 
@@ -95,17 +108,21 @@ class tweezer_load(EnvExperiment, Base):
 
             frac_err = abs(err / v_target)
             self.data.frac_err.put_data(frac_err, i=i)
-            if frac_err < 0.01:
-                aprint('target met, fractional error = ', frac_err)
+            if frac_err < self.p.frac_err_threshold:
+                # aprint('target met, fractional error = ', frac_err)
                 break
             else:
-                aprint('step ', i, ': frac err =', frac_err)
-                self.core.break_realtime()
+                # aprint('step ', i, ': frac err =', frac_err)
+                # self.core.break_realtime()
+                err_integral += err
                 v_pid_current = self.imaging.dac_pid.v
-                new_v_pid = p * err + v_pid_current
+                new_v_pid = p * err + i_gain * err_integral + v_pid_current
                 self.imaging.set_power(new_v_pid)
                 delay(1.e-3)
                 i += 1
+
+        self.data.n_iter.put_data(i)
+        self.data.frac_err_converged.put_data(frac_err)
 
     @kernel
     def scan_kernel(self):
@@ -124,5 +141,26 @@ class tweezer_load(EnvExperiment, Base):
 
     def analyze(self):
         import os
+        import matplotlib.pyplot as plt
+
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
+
+        # suppress_live_od=True means nothing is saved to disk, so pull the
+        # stats straight from the in-memory run data instead of via atomdata
+        n_iter = self.data.n_iter._run_data
+        frac_err_converged = self.data.frac_err_converged._run_data
+
+        fig, (ax0, ax1) = plt.subplots(1, 2, figsize=(9, 4))
+
+        ax0.hist(n_iter, bins=np.arange(self.p.N_max_iter + 2) - 0.5)
+        ax0.set_xlabel('iterations until convergence')
+        ax0.set_ylabel('counts')
+        ax0.set_title(f'fractional error threshold = {self.p.frac_err_threshold:g}')
+
+        ax1.hist(frac_err_converged * 1.e3, bins=30)
+        ax1.set_xlabel('fractional error (x$10^3$) upon convergence')
+        ax1.set_ylabel('counts')
+
+        fig.tight_layout()
+        plt.show()

@@ -227,8 +227,12 @@ class Devices():
             self.imaging = BeatLockImagingPID(dds_sw=self.dds.imaging_x_switch,
                                               dds_beatref=self.dds.beatlock_ref,
                                               dds_pid=self.dds.imaging,
+                                              dac_pid_setpoint=self.dds.imaging.dac_ch_obj,
                                               pid_int_clear_ttl=self.ttl.imaging_pid_int_clear_hold,
                                               pid_override_ttl=self.ttl.imaging_pid_manual_override,
+                                              integrator=self.integrator,
+                                              sampler=self.sampler,
+                                              core=self.core,
                                               expt_params=self.params)
         else:
             raise ValueError('Both the xy and x imaging fibers are currently derived from the PID setup (as of 2026-02-17)')

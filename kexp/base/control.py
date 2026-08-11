@@ -53,19 +53,13 @@ class Control():
     @kernel
     def integrated_imaging_pulse(self, data_container, t, idx=0,
                                 dark=False):
-        T_CONV_MU = 80
-        self.integrator.begin_integrate(reset=False)
-        if dark:
-            delay(t)
-        else:
-            self.imaging.pulse(t)
-        self.integrator.stop_and_settle()
-        t0 = now_mu()
-        # start the clear after the integrator voltage will already be in the sampler
-        at_mu(t0 + T_CONV_MU)
-        self.integrator.clear(t=0)
-        at_mu(t0)
-        data_container.put_data(self.integrator.sample(), idx)
+        """Thin delegate -- the implementation now lives on the imaging beam
+        object (waxx.control.beat_lock.BeatLockImagingPID), which owns the
+        integrator. Kept here so the existing self.integrated_imaging_pulse(...)
+        call sites throughout kexp keep working; new code can call
+        self.imaging.integrated_imaging_pulse(...) directly.
+        """
+        self.imaging.integrated_imaging_pulse(data_container, t, idx, dark)
 
     @kernel
     def tof_apd_abs_image(self):
