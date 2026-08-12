@@ -16,6 +16,7 @@ import threading
 import time
 
 from waxx.config.timeouts import DATA_SAVER_TIMEOUT
+from waxa.data.data_saver import clear_end_run_payload, stash_end_run_payload
 
 import zmq
 import numpy as np
@@ -431,25 +432,43 @@ class LiveODServer(QThread, NetServer):
             # two h5py opens race and either corrupt the file or raise OSError.
             if not self._data_handler_done_event.wait(timeout=DATA_SAVER_TIMEOUT):
                 print(f"[LiveODServer] WARNING: DataHandler did not finish within {DATA_SAVER_TIMEOUT:.0f} s — proceeding anyway.")
+            # Stash the payload on local disk BEFORE touching the data file.
+            # The experiment sends its final params exactly once and then
+            # drops them, so without this a failed save loses them for good.
+            stash_path = stash_end_run_payload(
+                msg, self._current_filepath, self._current_run_id,
+                shot_timestamps=self._shot_timestamps,
+            )
             try:
                 self._data_saver.save_data_from_payload(
                     msg, self._current_filepath,
                     shot_timestamps=self._shot_timestamps,
                 )
                 print(f"[LiveODServer] END_RUN: run_id={self._current_run_id} saved.")
+                clear_end_run_payload(stash_path)
                 # Clear filepath so a late RESET cannot delete an already-saved file.
                 self._current_filepath = ""
             except Exception as exc:
                 import traceback
                 print(f"[LiveODServer] END_RUN: save failed:")
                 traceback.print_exc()
+                error = str(exc)
+                if stash_path:
+                    hint = (
+                        f"Final params for run {self._current_run_id} are preserved at "
+                        f"{stash_path}. Once the data drive is back, finish the save with:\n"
+                        f"    from waxa.data.data_saver import retry_pending_save\n"
+                        f"    retry_pending_save(r'{stash_path}')"
+                    )
+                    print(f"[LiveODServer] {hint}")
+                    error = f"{error}\n{hint}"
                 # The run is over either way.  Clear the in-progress state
                 # before reporting the failure, otherwise the server rejects
                 # all CAMERA_CONTROL for the rest of the session and the GUI
                 # never resets.
                 self._run_in_progress = False
                 self.run_done_signal.emit()
-                return {"ok": False, "error": str(exc)}
+                return {"ok": False, "error": error}
         else:
             print("[LiveODServer] END_RUN: save_data=False, nothing written.")
 

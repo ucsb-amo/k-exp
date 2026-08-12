@@ -160,11 +160,14 @@ class LiveODClient(NetClient):
     def end_run(self, payload: dict) -> bool:
         """Send END_RUN with final params and DataVault data.
 
-        The server may take several seconds to write the HDF5 file, so
-        the receive timeout is raised to 5 minutes.
+        The server may take several seconds to write the HDF5 file — and if
+        the data drive drops out it retries the save with backoff — so the
+        receive timeout is raised to 10 minutes.  This must stay comfortably
+        above the server's worst case (DATA_SAVER_TIMEOUT plus DataSaver's
+        retry budget), or the client gives up on a save that is still running.
         """
         payload["tag"] = "END_RUN"
-        reply = self._send_recv(payload, rcvtimeo_ms=300_000)
+        reply = self._send_recv(payload, rcvtimeo_ms=600_000)
         if not reply.get("ok"):
             raise RuntimeError(
                 f"[LiveODClient] END_RUN failed: {reply.get('error')}"
