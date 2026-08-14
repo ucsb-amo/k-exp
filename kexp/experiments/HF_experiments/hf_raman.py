@@ -52,33 +52,33 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('frequency_raman_transition',119.3978e6 + np.linspace(-1.e3,1.e3,10))
         # self.p.frequency_raman_transition = 147.2592e6 # 182. A -1 -2
-        self.p.frequency_raman_transition = 119.3978e6 # 176.5 A -1 0
+        # self.p.frequency_raman_transition = 119.3978e6 # 176.5 A -1 0
 
         # self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 5))
  
         # self.xvar('t_raman_pulse', [0.,self.p.t_raman_pi_pulse])
-        self.xvar('t_raman_pulse', np.linspace(10., 400., 15)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0., 50., 30)*1.e-6)
         # self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
         self.p.t_raman_pulse= 8.7e-6
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
-        self.p.fraction_power_raman = .35
+        # self.p.fraction_power_raman = .35
         
         # self.xvar('hf_imaging_detuning', np.linspace(-600.e6,-535.e6,20))
         # self.p.hf_imaging_detuning = -568.e6
         # self.p.hf_imaging_detuning = -545.e6
 
         # self.xvar('amp_imaging',np.linspace(0.1,.8,10))
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .1
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
         self.p.t_tweezer_hold = .1e-3
 
         # self.xvar('t_tof',np.linspace(1500.,4500.,10)*1.e-6) 
-        self.p.t_tof = 1500.e-6
+        self.p.t_tof = 2500.e-6
 
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 1
 
         # self.camera_params.gain = 75.
 

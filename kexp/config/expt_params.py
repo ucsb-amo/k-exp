@@ -52,7 +52,7 @@ class ExptParams(ExptParamsWaxx):
 
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
-        self.frequency_detuned_hf_midpoint = -517.5e6 #-504.e6
+        self.frequency_detuned_hf_midpoint = -516.e6 #-504.e6
         # self.frequency_detuned_hf_midpoint = -489.5e6 #176.5 A
 
         ## 3D MOT beam imaging settings        
@@ -122,7 +122,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown1 = 13.3333e-3
+        self.t_tweezer_paint_rampdown1 = 45.e-3
         self.t_tweezer_paint_rampdown2 = 8.e-3
         self.t_tweezer_squeezer_ramp_1 = 13.e-3
         self.t_tweezer_squeezer_ramp_2 = 24.e-3
@@ -150,7 +150,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 1.0188e-05 #74856, 2026-08-09               
+        self.t_raman_pi_pulse = 8.8210e-06 #75282, 2026-08-14          
         
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -347,7 +347,7 @@ class ExptParams(ExptParamsWaxx):
         # raman
         self.frequency_raman_zeeman_state_xfer_sweep_center = 40.e6
         self.frequency_raman_zeeman_state_xfer_sweep_fullwidth = 5.e6
-        self.fraction_power_raman = 0.31
+        self.fraction_power_raman = 0.35
         self.fraction_power_raman_nf = 1.
         self.n_raman_sweep_steps = 100
 

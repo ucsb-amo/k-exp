@@ -17,7 +17,7 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('with_imaging', [0,1])
         self.p.with_imaging = 1
-        self.xvar('relative_phase', np.linspace(0., 4*np.pi, 15))
+        self.xvar('relative_phase', np.linspace(0., 2*np.pi, 15))
 
         self.p.v_pd_hf_tweezer_squeeze_power = .985
 
@@ -25,14 +25,14 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
 
         # self.p.frequency_detuned_hf_f1m1 = -455.e6
-        # self.p.frequency_detuned_hf_midpoint = -700.e6
+        self.p.frequency_detuned_hf_midpoint = -700.e6
 
-        # self.xvar('amp_imaging',np.linspace(.4,2.5,10))
-        self.p.amp_imaging = .8
+        self.xvar('amp_imaging',np.linspace(.4,2.5,10))
+        self.p.amp_imaging = 2.
         self.p.t_tweezer_hold = 15.e-3
-        self.p.t_tof = 2000.e-6
+        self.p.t_tof = 2500.e-6
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 3
+        self.p.N_repeats = 5
 
         self.finish_prepare(shuffle=True)
 
@@ -82,4 +82,3 @@ class hf_raman(EnvExperiment, Base):
         import os
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
-
