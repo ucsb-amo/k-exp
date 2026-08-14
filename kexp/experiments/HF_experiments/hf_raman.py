@@ -36,10 +36,10 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.9,0.5,15))
         # self.xvar('v_hf_tweezer_paint_amp_max',[-2.7,-1.83])
-        self.p.v_hf_tweezer_paint_amp_max = -2.
+        # self.p.v_hf_tweezer_paint_amp_max = -2.
 
         # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(3.,6.,8))
-        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 3.94
 
@@ -52,16 +52,16 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('frequency_raman_transition',119.3978e6 + np.linspace(-1.e3,1.e3,10))
         # self.p.frequency_raman_transition = 147.2592e6 # 182. A -1 -2
-        # self.p.frequency_raman_transition = 119.3978e6 # 182 A -1 0
+        self.p.frequency_raman_transition = 119.3978e6 # 176.5 A -1 0
 
         # self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 5))
  
         # self.xvar('t_raman_pulse', [0.,self.p.t_raman_pi_pulse])
-        # self.xvar('t_raman_pulse', np.linspace(300., 350., 30)*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(10., 400., 15)*1.e-6)
         # self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
         self.p.t_raman_pulse= 8.7e-6
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
-        # self.p.fraction_power_raman = .25
+        self.p.fraction_power_raman = .35
         
         # self.xvar('hf_imaging_detuning', np.linspace(-600.e6,-535.e6,20))
         # self.p.hf_imaging_detuning = -568.e6
@@ -78,7 +78,7 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 3
+        self.p.N_repeats = 5
 
         # self.camera_params.gain = 75.
 
@@ -87,8 +87,8 @@ class hf_raman(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # self.set_high_field_imaging(i_outer=self.p.hf_imaging_detuning)
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.set_high_field_imaging(i_outer=self.p.i_hf_raman,pid_bool=True)
+        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
@@ -96,8 +96,8 @@ class hf_raman(EnvExperiment, Base):
 
         self.prep_raman(frequency_transition=self.p.frequency_raman_transition)
 
-        # self.raman.pulse(self.p.t_raman_pulse)
-        # delay(self.p.t_raman_pulse)
+        self.raman.pulse(self.p.t_raman_pulse)
+        delay(self.p.t_raman_pulse)
 
         # delay(self.p.t_ramsey)
 
@@ -108,7 +108,7 @@ class hf_raman(EnvExperiment, Base):
         #                  frequency_sweep_fullwidth=self.p.frequency_raman_sweep_width,
         #                  n_steps=100)
         # delay(1.e-3)
-        # self.ttl.raman_shutter.off()
+        self.ttl.raman_shutter.off()
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()

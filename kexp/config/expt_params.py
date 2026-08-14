@@ -46,8 +46,8 @@ class ExptParams(ExptParamsWaxx):
         # hf imaging settings with i_outer = 182
         # 1,-1 to 2,-2
         # self.frequency_detuned_hf_f1m1 = -545.e6 # 176.5 A
-        self.frequency_detuned_hf_f1m1 = -568.e6
-        self.frequency_detuned_hf_f2m2 = -710.e6
+        self.frequency_detuned_hf_f1m1 = -568.e6 # 182 A
+        self.frequency_detuned_hf_f2m2 = -710.e6 # - 182 A
         # self.frequency_detuned_hf_midpoint = -640.e6
 
         # 1,-1 to 1,0
@@ -122,10 +122,10 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_movement_dt = 10.e-6
         self.t_tweezer_amp_ramp_dt = 10.e-6
 
-        self.t_tweezer_paint_rampdown1 = 20.e-3
-        self.t_tweezer_paint_rampdown2 = 20.e-3
-        self.t_tweezer_squeezer_ramp_1 = 5.e-3
-        self.t_tweezer_squeezer_ramp_2 = 17.e-3
+        self.t_tweezer_paint_rampdown1 = 13.3333e-3
+        self.t_tweezer_paint_rampdown2 = 8.e-3
+        self.t_tweezer_squeezer_ramp_1 = 13.e-3
+        self.t_tweezer_squeezer_ramp_2 = 24.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         
@@ -288,12 +288,12 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_hf_tweezer_1064_ramp_end = 8.4
         self.v_pd_hf_tweezer_1064_rampdown_end = 1. # 1.13
         self.v_pd_hf_tweezer_1064_rampdown2_end = 0.16 # 0.15 # .21
-        self.v_pd_hf_tweezer_1064_rampdown3_end = 4.
+        self.v_pd_hf_tweezer_1064_rampdown3_end = 3.5
         self.n_tweezer_ramp_steps = 1000
 
-        self.v_tweezer_paint_rampdown_end1 = -6.
+        self.v_tweezer_paint_rampdown_end1 = -4.985
         self.v_tweezer_paint_rampdown_end2 = -6.5
-        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9. # 0.15 on vpd1
+        self.v_pd_tweezer_squeeze_rampup_handoff_lp = 9.99 # 0.155 on vpd1
         self.v_pd_hf_tweezer_squeeze_power = .444
 
         self.n_tweezers = 2
@@ -311,7 +311,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.v_lf_tweezer_paint_amp_max = .5
         # self.v_hf_tweezer_paint_amp_max = -1.94 # -1.7
-        self.v_hf_tweezer_paint_amp_max = -2.
+        self.v_hf_tweezer_paint_amp_max = .7
 
         self.v_paint_amp_end = -5.444444
         self.v_hf_paint_amp_end = -5.4
@@ -389,10 +389,10 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 193.6
+        self.i_hf_lightsheet_evap1_current = 193.8
         self.i_hf_lightsheet_evap2_current = 193.3
 
-        self.i_hf_tweezer_load_current = 193. # 193.4
+        self.i_hf_tweezer_load_current = 192.5 # 193.4
         self.i_hf_tweezer_evap1_current = 193.75
         self.i_hf_tweezer_evap2_current = 194.14 # 193.
 

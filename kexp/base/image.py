@@ -23,6 +23,7 @@ import logging
 from kexp.calibrations import (high_field_imaging_detuning,
                                 low_field_imaging_detuning,
                                 low_field_pid_imaging_detuning,
+                                high_field_pid_imaging_detuning,
                                 I_LF_HF_THRESHOLD)
 from kexp.config.camera_id import img_types as img, cameras
 
@@ -458,7 +459,10 @@ class Image():
             camera_params.amp_imaging.
         """        
         if i_outer > I_LF_HF_THRESHOLD:
-            detuning = high_field_imaging_detuning(i_transducer=i_outer)
+            if pid_bool:
+                detuning = high_field_pid_imaging_detuning(i_pid=i_outer)
+            else:
+                detuning = high_field_imaging_detuning(i_transducer=i_outer)
         elif not pid_bool:
             detuning = low_field_imaging_detuning(i_transducer=i_outer)
         else:

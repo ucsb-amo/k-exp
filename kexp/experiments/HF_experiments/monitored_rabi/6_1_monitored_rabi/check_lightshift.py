@@ -28,11 +28,11 @@ class hf_raman(EnvExperiment, Base):
         # self.p.frequency_detuned_hf_midpoint = -700.e6
 
         # self.xvar('amp_imaging',np.linspace(.4,2.5,10))
-        self.p.amp_imaging = .4
+        self.p.amp_imaging = .2
         self.p.t_tweezer_hold = 15.e-3
         self.p.t_tof = 1500.e-6
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 

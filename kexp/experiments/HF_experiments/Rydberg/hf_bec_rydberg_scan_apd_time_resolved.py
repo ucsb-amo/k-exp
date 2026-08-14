@@ -38,7 +38,7 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('frequency_eo_980', self.p.frequency_eo_980 + np.arange(-1.e6,1.e6,0.05e6))
 
         # self.xvar('t_tweezer_hold', np.linspace(0.0, 700.0, 4) * 1.e-3)
-        self.p.t_tweezer_hold = 800.e-3
+        self.p.t_tweezer_hold = 4000.e-3
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end=3.5
 
@@ -51,7 +51,7 @@ class hf_bec(EnvExperiment, Base):
         self.p.v_pd_ry_405 = 0.4
         self.p.v_pd_ry_980 = 2.8
 
-        self.p.N_pulses = 6
+        self.p.N_pulses = 10
 
         # self.xvar('beans',np.linspace(0,30,10))
         self.p.N_repeats = 1

@@ -87,9 +87,9 @@ def integrator_calibration(amp_imaging, t_imaging):
 # slope_imaging_frequency_per_i_transducer_hf = -4955357.14
 # yintercept_imaging_frequency_per_i_transducer_hf = 339875000.026
 
-# with PID, valid for 175-182 A
-slope_imaging_frequency_per_i_transducer_hf = -4.229e6
-yintercept_imaging_frequency_per_i_transducer_hf = 2.018e8
+# with PID, valid for 174-182 A from run 74714
+slope_imaging_frequency_per_i_transducer_hf = -4.093511e6
+yintercept_imaging_frequency_per_i_transducer_hf = 1.79155e8
 
 @portable
 def high_field_imaging_detuning(i_transducer) -> TFloat:
@@ -143,6 +143,12 @@ yintercept_imaging_frequency_per_i_transducer_lf_pid = 458222222.2222222
 def low_field_pid_imaging_detuning(i_pid) -> TFloat:
   detuning = slope_imaging_frequency_per_i_transducer_lf_pid * i_pid \
       + yintercept_imaging_frequency_per_i_transducer_lf_pid
+  return detuning
+
+@portable
+def high_field_pid_imaging_detuning(i_pid) -> TFloat:
+  detuning = slope_imaging_frequency_per_i_transducer_hf * i_pid \
+      + yintercept_imaging_frequency_per_i_transducer_hf
   return detuning
 
 # 2026-01-19 imaging power measurement.
