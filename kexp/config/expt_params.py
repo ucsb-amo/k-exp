@@ -52,7 +52,7 @@ class ExptParams(ExptParamsWaxx):
 
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
-        self.frequency_detuned_hf_midpoint = -516.e6 #-504.e6
+        self.frequency_detuned_hf_midpoint = -516.5e6 #-504.e6
         # self.frequency_detuned_hf_midpoint = -489.5e6 #176.5 A
 
         ## 3D MOT beam imaging settings        
@@ -125,7 +125,8 @@ class ExptParams(ExptParamsWaxx):
         self.t_tweezer_paint_rampdown1 = 45.e-3
         self.t_tweezer_paint_rampdown2 = 8.e-3
         self.t_tweezer_squeezer_ramp_1 = 13.e-3
-        self.t_tweezer_squeezer_ramp_2 = 24.e-3
+        self.t_tweezer_squeezer_ramp_2 = 11.e-3
+        # self.t_tweezer_squeezer_ramp_2 = 17.e-3
 
         self.t_ramp_down_painting_amp = 15.e-3
         

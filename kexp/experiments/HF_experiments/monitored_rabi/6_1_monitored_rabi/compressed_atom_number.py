@@ -18,10 +18,10 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
 
         # self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(.2,3.94, 15))
-        self.p.v_pd_hf_tweezer_squeeze_power = 2.
+        self.p.v_pd_hf_tweezer_squeeze_power = .246
         
         # self.xvar('amp_imaging',np.linspace(.2,1.5, 10))
-        self.p.amp_imaging = .1
+        self.p.amp_imaging = .2
 
         # self.p.amp_tweezer_list = [.18]
 
@@ -31,7 +31,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('i_hf_tweezer_load_current',np.linspace(191.,195.,15))
         # self.p.i_hf_tweezer_load_current = 193.
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-1.,5.0,15))
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-.5,3.5,15))
         # self.p.v_hf_tweezer_paint_amp_max = .7
 
         # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(1.5,6.,15))
@@ -50,14 +50,14 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('t_tweezer_squeezer_ramp_1',np.linspace(3.e-3,50.e-3,10))
         # self.p.t_tweezer_squeezer_ramp_1 = 13.e-3
 
-        # self.xvar('t_tweezer_squeezer_ramp_2',np.linspace(3.e-3,50.e-3,10))
-        # self.p.t_tweezer_squeezer_ramp_2 = 24.e-3
+        # self.xvar('t_tweezer_squeezer_ramp_2',np.linspace(3.e-3,20.e-3,10))
+        # self.p.t_tweezer_squeezer_ramp_2 = 17.e-3
 
-        self.xvar('t_tof',np.linspace(1000.,4000.,10)*1.e-6)
+        self.xvar('t_tof',np.linspace(500.,2500.,10)*1.e-6)
 
         # self.xvar('t_tweezer_hold',np.linspace(3.e-3,50.e-3,10))
         self.p.t_tweezer_hold = 10.e-3
-        self.p.t_tof = 3000.e-6
+        self.p.t_tof = 2600.e-6
         self.p.t_mot_load = 1.0
         
         self.p.N_repeats = 5

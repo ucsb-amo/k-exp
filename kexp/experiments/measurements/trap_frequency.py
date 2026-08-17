@@ -14,7 +14,7 @@ class trap_frequency(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.t_tof = 200.e-6
+        self.p.t_tof = 1500.e-6
 
         self.p.v_pd_hf_tweezer_squeeze_power = 3.94
 
@@ -26,14 +26,14 @@ class trap_frequency(EnvExperiment, Base):
         # self.xvar('v_pd_tweezer_1064_ramp_end',np.linspace(2.,8.7,8))
         # self.p.v_pd_hf_tweezer_squeeze_power = 0.444
         # self.xvar('v_pd_hf_tweezer_squeeze_power',np.linspace(0.22,0.45,5))
-        self.xvar('f_tweezer_mod',np.linspace(3000.,7.1e3,20)) # use awg to position modulate second aod
+        self.xvar('f_tweezer_mod',np.linspace(300.,1.3e3,20)) # use awg to position modulate second aod
         # self.p.f_tweezer_mod = 500.
         # self.p.f_tweezer_mod = 3.6e3
 
         self.p.x_tweezer_mod_amp = .15e-6 # ~51kHz mod depth on AOD tone (2025-05-15)
         # self.trap = self.tweezer.add_tweezer(frequency=75.e6, amplitude=0.18)
         self.p.amp_imaging = .2
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -51,7 +51,7 @@ class trap_frequency(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=True, ramp_down_painting=True)
+        self.prepare_hf_tweezers(squeeze=False, ramp_down_painting=False)
 
         self.tweezer.trigger()
         delay(self.p.t_tweezer_mod)

@@ -17,7 +17,7 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('with_imaging', [0,1])
         self.p.with_imaging = 1
-        self.xvar('relative_phase', np.linspace(0., 2*np.pi, 15))
+        self.xvar('relative_phase', np.linspace(0., 4*np.pi, 15))
 
         self.p.v_pd_hf_tweezer_squeeze_power = .985
 
@@ -30,7 +30,7 @@ class hf_raman(EnvExperiment, Base):
         self.xvar('amp_imaging',np.linspace(.4,2.5,10))
         self.p.amp_imaging = 2.
         self.p.t_tweezer_hold = 15.e-3
-        self.p.t_tof = 2500.e-6
+        self.p.t_tof = 2000.e-6
         self.p.t_mot_load = 1.
         self.p.N_repeats = 5
 
@@ -63,7 +63,7 @@ class hf_raman(EnvExperiment, Base):
         self.ttl.raman_shutter.off()
 
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(.1)
+        self.imaging.set_power(.2)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
