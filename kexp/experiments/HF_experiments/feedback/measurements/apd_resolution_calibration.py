@@ -21,7 +21,7 @@ class sigma_z(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 25
+        self.p.N_repeats = 1
 
         self.data.apd = self.data.add_data_container(2)
 
@@ -43,12 +43,8 @@ class sigma_z(EnvExperiment, Base):
             self.p.t_raman_pulse += self.p.t_raman_pulse_offset
         self.raman.pulse(self.p.t_raman_pulse)
 
-        delay(10.e-6)
+        delay(50.e-6)
 
-        t = now_mu()
-        self.ttl.pd_scope_trig3.pulse(1.e-6)
-
-        at_mu(t)
         self.integrated_imaging_pulse(self.data.apd, t=self.p.t_pci_pulse, idx=0)
 
         delay(self.p.t_tweezer_hold)
@@ -58,11 +54,6 @@ class sigma_z(EnvExperiment, Base):
         delay(100.e-3)
 
         self.integrated_imaging_pulse(self.data.apd, t=self.p.t_pci_pulse, idx=1)
-
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep(0)
-        self.core.break_realtime()
-        delay(30.e-3)
 
     @kernel
     def run(self):
