@@ -216,5 +216,5 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.background_field()
         
 
-    def end(self, expt_filepath, notify=True):
-        self.end_wax(expt_filepath=expt_filepath, notify=notify)
+    def end(self, expt_filepath, notify=True, restart_monitor=True):
+        self.end_wax(expt_filepath=expt_filepath, notify=notify, restart_monitor=restart_monitor)
