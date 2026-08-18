@@ -39,7 +39,7 @@ class hf_raman(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False)
+        self.prepare_hf_tweezers()
         self.prep_raman()
 
         self.raman.set(t_phase_origin_mu=now_mu())

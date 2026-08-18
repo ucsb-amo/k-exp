@@ -27,12 +27,8 @@ class ExptParams(expt_params_kexp):
         self.remesh_reset_counter_threshold_fraction = 1.5
         self.n_initial_shots_before_remesh = 2
 
-        # self.t_raman_pulse = self.t_raman_pi_pulse * (np.pi / 6)
         self.t_raman_pulse = 5 * self.t_raman_pi_pulse / 2
         self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
-        # self.t_raman_pulse_ideal = 3.618e-06
-        # self.t_raman_pulse_ideal = 4.973e-06
-        # self.t_raman_pulse_ideal = 4.661e-06
 
         self.frequency_lightshift = 3.187e+04
 
@@ -59,12 +55,6 @@ class ExptParams(expt_params_kexp):
         self.std_n_photons_per_shot = 47.5 # using down std
         # self.std_n_photons_per_shot = 150.619 # using down std
         self.feedback_measurement_midpoint_fraction = 0.36689
-
-
-        # run 71081 | multi-parameter grid fit result
-        # self.feedback_measurement_midpoint_fraction = 0.494
-        # self.v_apd_all_up = -0.1665
-        # self.v_apd_all_down = -0.2274
 
         # run 66841 | multi-parameter grid fit result
         self.back_action_coherence = 0.8067
