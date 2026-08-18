@@ -15,8 +15,8 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        self.xvar('t_raman_pulse', np.linspace(0.,150.,50)*1.e-6)
-        # self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,60.,40),np.linspace(200.,240.,20)))*1.e-6)
+        # self.xvar('t_raman_pulse', np.linspace(0.,100.,35)*1.e-6)
+        self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,60.,18),np.linspace(200.,240.,15)))*1.e-6)
         # self.xvar('t_raman_pulse', np.linspace(200.,240.,20)*1.e-6)
         # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse]*5)
 
@@ -31,9 +31,9 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.t_tof = 800.e-6
         
-        self.p.N_repeats = 5
+        self.p.N_repeats = 2
 
-        # self.camera_params.amp_imaging = 0.1
+        self.camera_params.amp_imaging = 0.2
 
         self.finish_prepare(shuffle=False)
 
