@@ -16,6 +16,7 @@ import numpy as np
 # di = 666420695318008 #causes failure #lmao
 di = 0
 dv = -1000.
+PAINTING_CONTROL_V_MIN = -4.985
 
 AWG_IP = 'TCPIP::192.168.1.83::inst0::INSTR'
 from kexp.calibrations.tweezer import tweezer_xmesh as KEXP_TWEEZER_XMESH
@@ -80,7 +81,7 @@ class tweezer(wax_tweezer.TweezerController):
 
     @kernel
     def painting_off(self):
-        self.paint_amp_dac.set(v=-7.)
+        self.paint_amp_dac.set(v=PAINTING_CONTROL_V_MIN)
 
     @kernel
     def on(self,paint=False,v_awg_am=dv):
@@ -105,7 +106,7 @@ class tweezer(wax_tweezer.TweezerController):
         if paint:
             self.paint_amp_dac.set(v=v_awg_am)
         else:
-            self.paint_amp_dac.set(v=-7.)
+            self.paint_amp_dac.set(v=PAINTING_CONTROL_V_MIN)
         with parallel:
             self.ao1_dds.on()
             self.sw_ttl.on()
@@ -259,9 +260,9 @@ class tweezer(wax_tweezer.TweezerController):
         # amplitude. To keep constant frequency, h should decrease by a factor equal
         # to the cube root of the fraction by which P changes
         paint_amp_frac = p_frac**(1/3)
-        # rescale to between -6V (fraction painting = 0) and the maximum
+        # rescale to between -5V (fraction painting = 0) and the maximum
         # painting amplitude specified (fraction painting = 1) for the
         # AWG input
-        v_awg_amp_mod = (paint_amp_frac - 0.5)*(v_awg_am_max - (-6)) \
-                            + (v_awg_am_max + (-6))/2
+        v_awg_amp_mod = (paint_amp_frac - 0.5)*(v_awg_am_max - (PAINTING_CONTROL_V_MIN)) \
+                            + (v_awg_am_max + (PAINTING_CONTROL_V_MIN))/2
         return v_awg_amp_mod

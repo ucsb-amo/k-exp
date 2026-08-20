@@ -13,7 +13,7 @@ from kexp.control.painted_lightsheet import lightsheet
 
 import numpy as np
 
-from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2, tweezer_vpd2_to_vpd1
+from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2, tweezer_vpd2_to_vpd1, tweezer_vpd2_to_vpd1_squeezer
 
 dv = 100.
 dvlist = np.linspace(1.,1.,5)
@@ -52,7 +52,11 @@ class Cooling():
                             ):
         """prepares hf evap tweezers at i_outer = ExptParams.i_non_inter with
         PID enabled.
-        """   
+        """
+        if squeeze:
+            ramp_down_painting = True
+
+
         self.switch_d2_2d(1)
         self.mot(self.p.t_mot_load)
         self.dds.push.off()
@@ -129,7 +133,7 @@ class Cooling():
 
         self.dac.supply_current_2dmot.set(v=0.)
 
-        self.outer_coil.ramp_supply(t=10.e-3,
+        self.outer_coil.ramp_supply(t=20.e-3,
                              i_end=self.p.i_hf_raman)
 
         # delay(100.e-3)
@@ -140,38 +144,43 @@ class Cooling():
         
         delay(30.e-3)
         
-
+        self.ttl.pd_scope_trig.pulse(1.e-6)
         if squeeze or ramp_down_painting:
             self.ramp_down_painting()
 
-        self.ttl.pd_scope_trig.pulse(1.e-6)
-
         if squeeze and ramp_down_painting and do_tweezer_evap_2 and do_tweezer_evap_3:
+            self.ttl.pd_scope_trig.pulse(1.e-6)
             self.tweezer_squeeze(cubic_ramp_squeeze)
 
     @kernel
     def ramp_down_painting(self):
-        if self.p.t_tweezer_paint_rampdown == 0:
-            self.tweezer.paint_amp_dac.set(-7.)
+        if self.p.t_tweezer_paint_rampdown1 == 0:
+            self.tweezer.paint_amp_dac.set(-4.985)
         else:
             v0 = self.tweezer.paint_amp_dac.v
-            self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown,
+            self.tweezer.paint_amp_dac.linear_ramp(t=self.p.t_tweezer_paint_rampdown1,
                                                   v_start=v0,
-                                                  v_end=-7.,
-                                                  n=100)
+                                                  v_end=self.p.v_tweezer_paint_rampdown_end1,
+                                                  n=1000)
+            # self.tweezer.paint_amp_dac.cubic_ramp(t=self.p.t_tweezer_paint_rampdown2,
+            #                                                   v_start=self.p.v_tweezer_paint_rampdown_end1,
+            #                                                   v_end=self.p.v_tweezer_paint_rampdown_end2,
+            #                                                   n=100)
 
     @kernel
-    def tweezer_squeeze(self, cubic_ramp=True):
+    def tweezer_squeeze(self, cubic_ramp=False):
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
                           v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
                           v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
-                          low_power=True, paint=False, keep_trap_frequency_constant=False,
+                          low_power=True, paint=True, v_awg_am_max=self.p.v_tweezer_paint_rampdown_end1,
+                          keep_trap_frequency_constant=False,
                           cubic_ramp=cubic_ramp)
-
+        
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_2,
-                          v_start=tweezer_vpd2_to_vpd1(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
+                          v_start=tweezer_vpd2_to_vpd1_squeezer(self.p.v_pd_tweezer_squeeze_rampup_handoff_lp),
                           v_end=self.p.v_pd_hf_tweezer_squeeze_power,
-                          paint=False,keep_trap_frequency_constant=False,
+                          paint=True,v_awg_am_max=self.p.v_tweezer_paint_rampdown_end1,
+                          keep_trap_frequency_constant=False,
                           cubic_ramp=cubic_ramp)
 
     @kernel

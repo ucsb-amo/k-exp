@@ -7,7 +7,7 @@ vpd2_per_vpd1_slope =  71.67500001330266
 v_pd2_y_intercept =  -2.1376785723712772
 
 vpd2_per_vpd1_slope_squeezer =  70.20864948083167
-v_pd2_y_intercept_squeezer =  -1.7167412763522654
+v_pd2_y_intercept_squeezer =  -.9167412763522654
 
 @portable(flags={"fast-math"})
 def tweezer_vpd1_to_vpd2(vpd_pid1) -> TFloat:

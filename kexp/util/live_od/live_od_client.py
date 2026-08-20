@@ -18,11 +18,11 @@ import pickle
 
 import zmq
 
-from waxx.util.comms_server.waxx_client import WaxxClient
+from beacon.discovery.client import NetClient
 from waxx.util.comms_server.hardware_id import resolve_scoped_server_id
 
 
-class LiveODClient(WaxxClient):
+class LiveODClient(NetClient):
     """REQ socket client for LiveODServer."""
 
     def __init__(self, timeout_ms: int = 5000, discovery_timeout: float = 10.0):
@@ -59,7 +59,7 @@ class LiveODClient(WaxxClient):
     def _rediscover(self) -> None:
         """Update ``_ip``/``_port`` from the latest beacon cache.
 
-        Delegates to ``WaxxClient._rediscover()`` then syncs the ZMQ
+        Delegates to ``NetClient._rediscover()`` then syncs the ZMQ
         address fields from the updated ``self.host``/``self.port``.
         """
         super()._rediscover(timeout=2.0)
@@ -97,9 +97,14 @@ class LiveODClient(WaxxClient):
     # ------------------------------------------------------------------
 
     def init_run(self, payload: dict) -> dict:
-        """Send INIT_RUN.  Returns ``{"run_id": int, "filepath": str}``."""
+        """Send INIT_RUN.  Returns ``{"run_id": int, "filepath": str}``.
+
+        The server creates and fully populates the HDF5 data file before
+        replying, so this can take a while on a slow/mapped data drive — hence
+        the raised receive timeout rather than the 5 s default.
+        """
         payload["tag"] = "INIT_RUN"
-        reply = self._send_recv(payload)
+        reply = self._send_recv(payload, rcvtimeo_ms=60_000)
         if not reply.get("ok"):
             raise RuntimeError(
                 f"[LiveODClient] INIT_RUN failed: {reply.get('error')}"
@@ -155,11 +160,14 @@ class LiveODClient(WaxxClient):
     def end_run(self, payload: dict) -> bool:
         """Send END_RUN with final params and DataVault data.
 
-        The server may take several seconds to write the HDF5 file, so
-        the receive timeout is raised to 5 minutes.
+        The server may take several seconds to write the HDF5 file — and if
+        the data drive drops out it retries the save with backoff — so the
+        receive timeout is raised to 10 minutes.  This must stay comfortably
+        above the server's worst case (DATA_SAVER_TIMEOUT plus DataSaver's
+        retry budget), or the client gives up on a save that is still running.
         """
         payload["tag"] = "END_RUN"
-        reply = self._send_recv(payload, rcvtimeo_ms=300_000)
+        reply = self._send_recv(payload, rcvtimeo_ms=600_000)
         if not reply.get("ok"):
             raise RuntimeError(
                 f"[LiveODClient] END_RUN failed: {reply.get('error')}"

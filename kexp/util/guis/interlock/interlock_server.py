@@ -48,7 +48,7 @@ faulthandler.enable()  # already enabled by logging_setup; idempotent
 LOGGER = logging.getLogger("kexp.dashboard.server.interlock.runner")
 
 # Now safe to import heavy stuff.
-from waxx.util.comms_server.waxx_server import WaxxServer  # noqa: E402
+from beacon.discovery.server import NetServer  # noqa: E402
 
 from kexp import EthernetRelay  # noqa: E402
 from kexp.config.ip import INTERLOCK_EMAIL_CREDENTIALS_FILEPATH  # noqa: E402
@@ -103,7 +103,7 @@ def _build_email_sender() -> Optional[callable]:
     return _send
 
 
-class InterlockTCPServer(WaxxServer):
+class InterlockTCPServer(NetServer):
     """Threaded TCP server + UDP beacon for the InterlockService."""
 
     def __init__(
@@ -113,7 +113,7 @@ class InterlockTCPServer(WaxxServer):
         host: str = "0.0.0.0",
         port: int = _DEFAULT_PORT,
     ):
-        WaxxServer.__init__(self, "interlock", port)
+        NetServer.__init__(self, "interlock", port)
         self._service = service
         self._host = host
         self._port = int(port)

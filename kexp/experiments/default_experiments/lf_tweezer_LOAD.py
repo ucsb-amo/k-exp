@@ -10,10 +10,14 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
-                      camera_select=cameras.xy_basler,
+                      camera_select=cameras.andor,
                       save_data=True)
 
         # self.xvar('frequency_detuned_imaging_m1',np.arange(250.,450.,8)*1.e6)
+        self.p.v_pd_lf_tweezer_1064_ramp_end=8.4
+        self.p.v_lf_tweezer_paint_amp_max=0.5
+        self.xvar('v_pd_lf_tweezer_1064_ramp_end',np.linspace(6.,9.6,6))
+        self.xvar('v_lf_tweezer_paint_amp_max',np.linspace(-4.,4.,16))
 
         # self.xvar('beans',[0]*3)
         

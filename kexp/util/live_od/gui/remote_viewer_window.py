@@ -694,7 +694,8 @@ class RemoteViewerWindow(QWidget):
             sock.connect(f"tcp://{ip}:{port}")
             sock.send(pickle.dumps(payload))
             reply = pickle.loads(sock.recv())
-            print(f"[RemoteViewer] {label} reply: {reply}")
+            if not reply.get('ok', True):
+                print(f"[RemoteViewer] {label} reply: {reply}")
             return True
         except Exception as exc:
             print(f"[RemoteViewer] {label} failed: {exc}")

@@ -14,18 +14,18 @@ import pickle
 import os
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 from waxx.config.timeouts import DATA_SAVER_TIMEOUT
+from waxa.data.data_saver import clear_end_run_payload, stash_end_run_payload
 
 import zmq
 import numpy as np
 from PyQt6.QtCore import QThread, pyqtSignal
-from waxx.util.comms_server.waxx_server import WaxxServer
+from beacon.discovery.server import NetServer
 from waxx.util.comms_server.hardware_id import scoped_server_id
 
 
-class LiveODServer(QThread, WaxxServer):
+class LiveODServer(QThread, NetServer):
     """ZMQ REP server embedded in the liveOD process.
 
     Listens for messages from the experiment client and drives file I/O
@@ -58,7 +58,7 @@ class LiveODServer(QThread, WaxxServer):
 
     def __init__(self, server_talk, data_saver, port: int = 0):
         super().__init__()  # QThread.__init__
-        WaxxServer.__init__(self, scoped_server_id("live_od"), port)  # explicit — avoids MRO conflict
+        NetServer.__init__(self, scoped_server_id("live_od"), port)  # explicit — avoids MRO conflict
         self._server_talk = server_talk
         self._data_saver = data_saver
         self._ip = "0.0.0.0"
@@ -66,7 +66,6 @@ class LiveODServer(QThread, WaxxServer):
         self._cam_ready_event = threading.Event()
         self._data_handler_done_event = threading.Event()
         self._data_handler_done_event.set()  # default: no DataHandler in flight
-        self._file_creation_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="liveod_file_create")
         self._running = False
         self._current_save_data = False
         self._current_capture_images = False
@@ -282,14 +281,30 @@ class LiveODServer(QThread, WaxxServer):
             # data file ('x' mode).  Exclusive create is atomic on the shared
             # filesystem, so two liveOD servers driving different hardware but
             # writing to one data drive can never collide on a run_id.
-            run_id, filepath = self._data_saver.reserve_run_id_and_path(msg)
-            # Populate the reserved file (heavy I/O — image / DataVault
-            # pre-allocation) on a background thread so the ZMQ REP socket can
-            # reply at once.  DataHandler.wait_for_data_available() polls until
-            # the file is populated, so the delay is handled transparently.
-            self._file_creation_executor.submit(
-                self._data_saver.create_data_file_from_payload, msg, run_id
-            )
+            #
+            # The file is fully populated inside that same exclusive open, so by
+            # the time we reply the file is ready for SaveWorker.  Doing this
+            # synchronously is deliberate: the previous background-thread design
+            # could fail silently and leave a file with no 'data' group, which
+            # cost an entire run's images before anything noticed.  Image
+            # pre-allocation is deferred to SaveWorker, so this is a small write.
+            _t_create = time.time()
+            try:
+                run_id, filepath = self._data_saver.reserve_run_id_and_path(msg)
+            except Exception as exc:
+                import traceback
+                print("[LiveODServer] INIT_RUN: could not create data file:")
+                traceback.print_exc()
+                # No DataHandler will be spawned, so release the gate we cleared
+                # above — otherwise the next END_RUN / reset blocks on it.
+                self._data_handler_done_event.set()
+                self._current_filepath = ""
+                self._run_in_progress = False
+                return {"ok": False, "error": f"Data file creation failed: {exc}"}
+            _dt_create = time.time() - _t_create
+            if _dt_create > 2.0:
+                print(f"[LiveODServer] WARNING: data file creation took "
+                      f"{_dt_create:.1f} s — is the data drive slow?")
 
         self._current_filepath = filepath
         self._current_run_id = run_id
@@ -417,19 +432,43 @@ class LiveODServer(QThread, WaxxServer):
             # two h5py opens race and either corrupt the file or raise OSError.
             if not self._data_handler_done_event.wait(timeout=DATA_SAVER_TIMEOUT):
                 print(f"[LiveODServer] WARNING: DataHandler did not finish within {DATA_SAVER_TIMEOUT:.0f} s — proceeding anyway.")
+            # Stash the payload on local disk BEFORE touching the data file.
+            # The experiment sends its final params exactly once and then
+            # drops them, so without this a failed save loses them for good.
+            stash_path = stash_end_run_payload(
+                msg, self._current_filepath, self._current_run_id,
+                shot_timestamps=self._shot_timestamps,
+            )
             try:
                 self._data_saver.save_data_from_payload(
                     msg, self._current_filepath,
                     shot_timestamps=self._shot_timestamps,
                 )
                 print(f"[LiveODServer] END_RUN: run_id={self._current_run_id} saved.")
+                clear_end_run_payload(stash_path)
                 # Clear filepath so a late RESET cannot delete an already-saved file.
                 self._current_filepath = ""
             except Exception as exc:
                 import traceback
                 print(f"[LiveODServer] END_RUN: save failed:")
                 traceback.print_exc()
-                return {"ok": False, "error": str(exc)}
+                error = str(exc)
+                if stash_path:
+                    hint = (
+                        f"Final params for run {self._current_run_id} are preserved at "
+                        f"{stash_path}. Once the data drive is back, finish the save with:\n"
+                        f"    from waxa.data.data_saver import retry_pending_save\n"
+                        f"    retry_pending_save(r'{stash_path}')"
+                    )
+                    print(f"[LiveODServer] {hint}")
+                    error = f"{error}\n{hint}"
+                # The run is over either way.  Clear the in-progress state
+                # before reporting the failure, otherwise the server rejects
+                # all CAMERA_CONTROL for the rest of the session and the GUI
+                # never resets.
+                self._run_in_progress = False
+                self.run_done_signal.emit()
+                return {"ok": False, "error": error}
         else:
             print("[LiveODServer] END_RUN: save_data=False, nothing written.")
 

@@ -16,12 +16,12 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=False,
                       imaging_type=img_types.ABSORPTION)
         
-        self.p.t_imaging_pulse = 50.e-6
+        self.p.t_imaging_pulse = 20.e-6
         
         self.xvar('make_atoms',[1]*1000)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 0.7
+        self.p.amp_imaging = 0.25
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
@@ -29,6 +29,11 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_mot_load = 1.0
         
         self.p.N_repeats = 1
+
+        self.p.make_atoms = 1.
+        self.adjust('make_atoms',0.,1.,1)
+
+        self.data.apd = self.data.add_data_container(1)
         
         self.finish_prepare(shuffle=False)
 
@@ -44,12 +49,12 @@ class hf_monitored_rabi(EnvExperiment, Base):
             delay(1.)
         
         delay(self.p.t_tweezer_hold)
-        self.tweezer.off()
+        # self.tweezer.off()
 
-        delay(self.p.t_tof)
+        # delay(self.p.t_tof)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
-        self.abs_image()
+        self.abs_image_and_apd(self.data.apd)
 
     @kernel
     def run(self):

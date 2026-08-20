@@ -9,7 +9,6 @@ from artiq.language import now_mu
 from kexp.util.artiq.async_print import aprint
 
 class hf_monitored_rabi(EnvExperiment, Base):
-
     def prepare(self):
         Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,

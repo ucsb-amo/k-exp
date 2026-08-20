@@ -13,7 +13,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
-                      save_data=False,
+                      save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
         self.p.frequency_raman_transition = self.p.frequency_raman_transition + 35.e3
@@ -35,7 +35,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         self.p.dimension_slm_mask = 20.e-6
 
-        # self.xvar('phase_slm_mask',np.linspace(0.,.7*np.pi,10))
+        self.xvar('phase_slm_mask',np.linspace(0.,1.3*np.pi,10))
         self.p.phase_slm_mask = 1.25 * np.pi
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
@@ -43,7 +43,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 3
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
@@ -56,7 +56,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=False)
+        self.prepare_hf_tweezers(ramp_down_painting=False,squeeze=False)
 
         self.raman.init(fraction_power = self.p.fraction_power_raman,
                         frequency_transition = self.p.frequency_raman_transition)
@@ -84,9 +84,9 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.abs_image()
 
-        # self.core.wait_until_mu(now_mu())
-        # self.scope.read_sweep(0)
-        # self.core.break_realtime()
+        self.core.wait_until_mu(now_mu())
+        self.scope.read_sweep(0)
+        self.core.break_realtime()
         delay(30.e-3)
 
     @kernel

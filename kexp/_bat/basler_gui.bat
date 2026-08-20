@@ -1,4 +1,5 @@
 call %kpy%
-cd %code%\k-exp
-python %code%\k-exp\kexp\util\guis\basler\basler_gui.py
+start "Basler Server" cmd /k python -m beacon.basler.server_gui
+timeout /t 2 /nobreak >nul
+python -m beacon.basler.gui
 pause

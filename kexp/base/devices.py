@@ -37,7 +37,7 @@ from kexp.control.big_coil import igbt_magnet, hbridge_magnet
 from kexp.control.painted_lightsheet import lightsheet
 from kexp.control.awg_tweezer import tweezer
 from kexp.control.doubled_rf import doubled_rf
-from kexp.control.rydberg_lasers import FixedRyDDSBeamPID, FiberEORyDDSBeamPID
+from kexp.control.rydberg_lasers import RydbergDDSSwitchBeam, RydbergTTLSwitchBeam
 
 from kexp.calibrations.magnets import (slope_i_transducer_per_v_setpoint_supply_outer,
                                        offset_i_transducer_per_v_setpoint_supply_outer,
@@ -184,22 +184,28 @@ class Devices():
 
         self._fzw = fzw_frame(params=self.params)
 
-        self.ry_405 = FixedRyDDSBeamPID(
+        self.ry_405 = RydbergDDSSwitchBeam(
+                            siglent_ch=self.siglent.siglent_405,
                             dds_sw=self.dds.ry_405_sw,
                             dac_pid=self.dac.ry_405_intensity_control,
                             ttl_shutter=self.ttl.ry_405_shutter,
+                            ttl_pid_clear=self.ttl.ry_intensity_pid_clear,
+                            eo_shift_direction=-1,
                             wavemeter=self._fzw.ry_405,
                             lock_data_container=self.data.frequency_wavemeter_405,
+                            siglent_freq_data_container=self.data.frequency_siglent_405,
                             core=self.core
                             )
         
-        self.ry_980 = FiberEORyDDSBeamPID(
+        self.ry_980 = RydbergTTLSwitchBeam(
             siglent_ch=self.siglent.siglent_980,
-            ttl_ao_sw=self.ttl.ry_980_sw,
+            ttl_sw=self.ttl.ry_980_sw,
             dac_pid=self.dac.ry_980_intensity_control,
-            eo_sideband_order=-1,
+            ttl_pid_clear=self.ttl.ry_intensity_pid_clear,
+            eo_shift_direction=-1,
             wavemeter=self._fzw.ry_980,
             lock_data_container=self.data.frequency_wavemeter_980,
+            siglent_freq_data_container=self.data.frequency_siglent_980,
             core=self.core
             )
         
@@ -221,8 +227,12 @@ class Devices():
             self.imaging = BeatLockImagingPID(dds_sw=self.dds.imaging_x_switch,
                                               dds_beatref=self.dds.beatlock_ref,
                                               dds_pid=self.dds.imaging,
+                                              dac_pid_setpoint=self.dds.imaging.dac_ch_obj,
                                               pid_int_clear_ttl=self.ttl.imaging_pid_int_clear_hold,
                                               pid_override_ttl=self.ttl.imaging_pid_manual_override,
+                                              integrator=self.integrator,
+                                              sampler=self.sampler,
+                                              core=self.core,
                                               expt_params=self.params)
         else:
             raise ValueError('Both the xy and x imaging fibers are currently derived from the PID setup (as of 2026-02-17)')

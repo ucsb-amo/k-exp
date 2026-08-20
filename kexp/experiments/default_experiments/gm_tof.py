@@ -22,6 +22,9 @@ class gm_tof(EnvExperiment, Base):
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
+        self.xvar('t_mot_load',[0.05,0.1,0.25])
+        # self.xvar('t_tof',np.linspace(1.,10.,4)*1.e-3)
+
         # self.xvar('amp_imaging',np.linspace(0.25,1.,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.,8))
         # self.xvar('v_yshim_current_gm',np.linspace(0.,3.,7))
@@ -33,7 +36,7 @@ class gm_tof(EnvExperiment, Base):
         
         # self.xvar('t_gm',[0.,self.p.t_gm])
 
-        self.xvar('t_tof',np.linspace(8.,20.,7)*1.e-3)
+        # self.xvar('t_tof',np.linspace(8.,20.,7)*1.e-3)
 
         # self.xvar('detune_d1_c_gm',np.linspace(6.,11.,7))
         # self.xvar('detune_d1_r_gm',np.linspace(6.,11.,7))
@@ -56,7 +59,7 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('')
 
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=True, shuffle_mode='global')
 
     @kernel
     def scan_kernel(self):
@@ -97,39 +100,39 @@ class gm_tof(EnvExperiment, Base):
         import matplotlib as mpl
         import numpy as np
 
-        if 't_tof' in [s.key for s in self.scan_xvars]:
+        # if 't_tof' in [s.key for s in self.scan_xvars]:
 
-            from waxa.atomdata import atomdata
+        #     from waxa.atomdata import atomdata
 
-            ad = atomdata(0,'gm_tof')
+        #     ad = atomdata(0,'gm_tof')
 
-            fit_axis = 'x'
-            from waxa.plotting.standard_experiments import TOF
+        #     fit_axis = 'x'
+        #     from waxa.plotting.standard_experiments import TOF
 
-            tof = TOF(ad,fit_axis)
-            # tof.compute_phase_space_density(num_tweezers=1, tweezer_final_frequency=455.)
+        #     tof = TOF(ad,fit_axis)
+        #     # tof.compute_phase_space_density(num_tweezers=1, tweezer_final_frequency=455.)
 
-            fit = tof.fit
-            xfit = tof.t_tof
-            xplt = np.linspace(xfit[0],xfit[-1],1000)
+        #     fit = tof.fit
+        #     xfit = tof.t_tof
+        #     xplt = np.linspace(xfit[0],xfit[-1],1000)
 
-            if fit.T > 1.e-3:
-                mult = 1.e3
-                prefix = "m"
-            elif fit.T < 1.e-6:
-                mult = 1.e9
-                prefix = "n"
-            else:
-                mult = 1.e6
-                prefix = "u"
+        #     if fit.T > 1.e-3:
+        #         mult = 1.e3
+        #         prefix = "m"
+        #     elif fit.T < 1.e-6:
+        #         mult = 1.e9
+        #         prefix = "n"
+        #     else:
+        #         mult = 1.e6
+        #         prefix = "u"
 
-            plt.figure(figsize=(4,3))
-            plt.plot(fit.xdata*1.e6, fit.ydata*1.e6, '.')
-            plt.plot(xplt*1.e6, np.interp(xplt,xfit,fit.y_fitdata)*1.e6, '--')
-            plt.ylabel("Width (um)")
-            plt.xlabel("TOF time (us)")
-            plt.title(f"TOF Expansion ({fit_axis} axis)\nRun ID: {ad.run_info.run_id}"\
-                    +f"\nFit temperature T = {float(fit.T) * mult:1.3g} +/- {float(fit.err_T) * mult:1.1f} {prefix}K"\
-            ) # +f"\nPSD = {tof.phase_space_density:1.3f}")
-            plt.legend(["Data","Fit"])
-            plt.show()            
+        #     plt.figure(figsize=(4,3))
+        #     plt.plot(fit.xdata*1.e6, fit.ydata*1.e6, '.')
+        #     plt.plot(xplt*1.e6, np.interp(xplt,xfit,fit.y_fitdata)*1.e6, '--')
+        #     plt.ylabel("Width (um)")
+        #     plt.xlabel("TOF time (us)")
+        #     plt.title(f"TOF Expansion ({fit_axis} axis)\nRun ID: {ad.run_info.run_id}"\
+        #             +f"\nFit temperature T = {float(fit.T) * mult:1.3g} +/- {float(fit.err_T) * mult:1.1f} {prefix}K"\
+        #     ) # +f"\nPSD = {tof.phase_space_density:1.3f}")
+        #     plt.legend(["Data","Fit"])
+        #     plt.show()            

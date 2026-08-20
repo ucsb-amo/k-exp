@@ -25,6 +25,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  absorption_image=None,
                  camera_select=cameras.xy_basler,
                  expt_params=None,
+                 data_vault=None,
                  suppress_live_od=False,
                  save_on_underflow=False):
 
@@ -44,7 +45,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.params = expt_params
 
         self.p = self.params
-        self.data = DataVault(self)
+        if data_vault == None:
+            self.data = DataVault(self)
+        else:
+            self.data = data_vault
         
         self.prepare_devices(expt_params=self.params)
 
@@ -117,15 +121,15 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if dds_off:
             self.switch_all_dds(0) # turn all DDS off to start experiment
         self.core.break_realtime()
+        if beat_ref_on:
+            self.dds.beatlock_ref.on()
         if init_imaging:
             self.imaging.init()
+            self.integrator.init()
             self.set_imaging_detuning()
             self.imaging.set_power(self.camera_params.amp_imaging)
         if init_sampler:
             self.sampler.init()
-        if beat_ref_on:
-            self.dds.beatlock_ref.on()
-            # self.dds.d1_beatlock_ref.on()
         if init_lightsheet:
             self.lightsheet.init()
         if init_magnets:
@@ -178,6 +182,11 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.imaging.set_power(self.camera_params.amp_imaging,
                                 reset_pid=False)
 
+        self.integrator.init()
+
+        self.ry_405.reset_used_flag()
+        self.ry_980.reset_used_flag()
+
     @kernel
     def cleanup_scan_kernel(self):
 
@@ -194,8 +203,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.ttl.line_trigger.clear_input_events()
 
         self.core.break_realtime()
-        # self.ry_405.lock_status()
-        # self.ry_980.lock_status()
+        self.ry_405.lock_status()
+        self.ry_980.lock_status()
 
         self.cleanup_scan_kernel_wax()
 
@@ -207,5 +216,5 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.background_field()
         
 
-    def end(self, expt_filepath, notify=True):
-        self.end_wax(expt_filepath=expt_filepath, notify=notify)
+    def end(self, expt_filepath, notify=True, restart_monitor=True):
+        self.end_wax(expt_filepath=expt_filepath, notify=notify, restart_monitor=restart_monitor)

@@ -15,13 +15,13 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,
                       setup_camera=True,
                       save_data=True,
-                      camera_select=cameras.andor,
+                      camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 100.e-6
+        self.p.t_tof = 1200.e-6
         # self.xvar('t_tof',np.linspace(100,1500.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
-        # self.xvar('dumy',[0,1]*2)
+        # self.xvar('dumy',np.linspace(1.,10.,50))
 
         # self.xvar('hf_imaging_detuning', [-594.e6,-494.e6])
 
@@ -30,7 +30,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_magtrap',np.linspace(0.,5000.,10)*1.e-3)
         # self.p.t_magtrap = .5
 
-        # self.xvar('i_magtrap_init',np.linspace(75.,97.,10))
+        # self.xvar('i_magtrap_init',np.linspace(20.,90.,15))
         # self.p.i_magtrap_init = 95.
 
         # self.p.v_yshim_current = 2.2
@@ -41,15 +41,13 @@ class mag_trap(EnvExperiment, Base):
         # self.p.pfrac_c_gmramp_end = 0.3
         # self.p.pfrac_r_gmramp_end = 0.2
 
-        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,3.,15))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,10))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(4.,9.9,10))
-        
-        # self.xvar('v_xshim_current_magtrap',1.33 + 0.5 * np.linspace(-1,1,5))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,2.5,7))
+        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,9.9,10))
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,15))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.0,3.0,15))
+
         # self.p.v_zshim_current_magtrap_init = 0.
-        # self.p.v_yshim_current_magtrap = 6.
-        # self.p.v_xshim_current_magtrap = 0.5
+        # self.p.v_yshim_current_magtrap = 1.16
+        # self.p.v_xshim_current_magtrap = 2.2
         # self.xvar('t_shim_delay',np.linspace(0.05,15.,20)*1.e-3)
         # self.p.t_shim_delay = 3.4e-3
 
@@ -65,19 +63,18 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,400.,15)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(4.,8.6,8))
         # self.p.t_lightsheet_rampup = 4.
-        # self.p.v_pd_lightsheet_rampup_end = 7.2
+        # self.p.v_pd_lightsheet_rampup_end = 8.
 
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(190.,199.,5))
-        # self.p.i_hf_lightsheet_evap1_current = 193.57
+        self.xvar('i_hf_lightsheet_evap1_current',np.linspace(192.,195.,15))
+        # self.p.i_hf_lightsheet_evap1_current = 192.5
         # self.p.i_hf_lightsheet_evap1_current = 18.
  
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.3,3.,20))
-        # self.p.v_pd_hf_lightsheet_rampdown_end = .65
+        # self.p.v_pd_hf_lightsheet_rampdown_end = 1.8
 
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(100.,2000.,8)*1.e-3)
-        # self.p.t_hf_lightsheet_rampdown = .45
-        # self.p.t_hf_lightsheet_rampdown = 0.4401463
-
+        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(500.,2000.,10)*1.e-3)
+        # self.p.t_hf_lightsheet_rampdown = 1.
+        
         # self.xvar('v_pd_hf_lightsheet_rampdown2_end',np.linspace(.1,.4,15))
         # self.p.v_pd_hf_lightsheet_rampdown2_end = 0.25
 
@@ -114,7 +111,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.amp_imaging = 0.5
         # self.adjust('amp_imaging',0.3,0.6)
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)

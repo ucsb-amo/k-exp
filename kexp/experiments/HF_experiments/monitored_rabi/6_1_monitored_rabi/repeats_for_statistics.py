@@ -11,12 +11,12 @@ from kexp.util.artiq.async_print import aprint
 class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.frequency_raman_transition = self.p.frequency_raman_transition + 74030.27027027027
+        self.p.frequency_raman_transition = self.p.frequency_raman_transition + 74.e3
         # self.p.frequency_raman_transition = self.p.frequency_raman_transition + 33470.4347826087
         # self.p.frequency_raman_transition = self.p.frequency_raman_transition + 72162.60869565219
         # self.p.frequency_raman_transition = self.p.frequency_raman_transition + 149546.95652173914
@@ -43,7 +43,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.dimension_slm_mask = 20.e-6
 
         # self.xvar('phase_slm_mask',np.linspace(0.,.7*np.pi,10))
-        self.p.phase_slm_mask = 1.2 * np.pi
+        self.p.phase_slm_mask = .4 * np.pi
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
@@ -64,7 +64,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=True)
+        self.prepare_hf_tweezers(ramp_down_painting=False,squeeze=False)
 
         self.raman.init(fraction_power = self.p.fraction_power_raman,
                         frequency_transition = self.p.frequency_raman_transition)

@@ -60,7 +60,6 @@ class trap_frequency(EnvExperiment):
                 # delay(5*us)   
                 # self.ttl6.pulse(5*ms)               #outputs 5ms pulse on TTL6
                 self.a = i
-                aprint("hi")
                 break
             else:
                 # aprint("off")

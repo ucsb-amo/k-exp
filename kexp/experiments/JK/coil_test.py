@@ -37,20 +37,6 @@ class tweezer_load(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # self.slm.write_phase_mask_kernel()
-        self.set_high_field_imaging(i_outer=self.p.i_spin_mixture,
-                                    pid_bool=False)
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_imaging)
-        # self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-
-        self.switch_d2_2d(1)
-        self.mot(self.p.t_mot_load)
-        self.dds.push.off()
-        self.cmot_d1(self.p.t_d1cmot * s)
-        
-        self.gm(self.p.t_gm * s)
-        self.gm_ramp(self.p.t_gmramp)
-
 
 
         # feshbach field on, ramp up to field 1  
@@ -74,14 +60,6 @@ class tweezer_load(EnvExperiment, Base):
         self.ttl.test_trig.pulse(1.e-6)
 
         delay(175.e-3)
-
-        # self.raman.sweep(t=self.p.t_raman_sweep,
-        #                  frequency_center=self.p.f_raman_sweep_center,
-        #                  frequency_sweep_fullwidth=self.p.f_raman_sweep_width)
-
-        # self.dds.raman_plus.on()
-        # delay(self.p.t_raman_pulse)
-        # self.dds.raman_plus.off()
 
 
         delay(self.p.t_tof)

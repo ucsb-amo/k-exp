@@ -65,6 +65,7 @@ class Feedback:
         self.state_x_scratch = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.state_y_scratch = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.state_z_scratch = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
+        self.max_idx = 0
 
     @portable(flags={"fast-math"})
     def convert_measurement(self, v_apd):
@@ -310,6 +311,7 @@ class Feedback:
                 max_idx = i
             i += 1
         omega_max = omega_guess_list[max_idx]
+        self.max_idx = max_idx
 
         # If distribution is nearly flat (max prob close to uniform), use mean instead of max
         uniform_prob = 1.0 / m
@@ -422,6 +424,23 @@ class Feedback:
         self.omega_z_lightshift = 2.0 * np.pi * self.frequency_z_lightshift
         self.p.back_action_coherence = float(self.p.back_action_coherence)
         self.back_action_coherence = self.p.back_action_coherence
+
+
+    @portable
+    def re_initalize_spin_vector(self):
+        xyproj = np.sqrt(self.state_x[self.max_idx]*self.state_x[self.max_idx] + self.state_y[self.max_idx]*self.state_y[self.max_idx])
+
+        theta = np.arctan2(-self.state_x[self.max_idx], self.state_y[self.max_idx])
+        phi = np.arctan2( xyproj, self.state_z[self.max_idx])
+
+        # theta = np.pi + theta
+
+        self.raman.set(relative_phase = theta)
+        self.raman.pulse(phi*self.p.t_raman_pi_pulse/np.pi)
+
+
+
+
 
     @portable(flags={"fast-math"})
     def _initialize_frequency_grid(self):
@@ -640,12 +659,12 @@ class Feedback:
             elif lo_nearest >= m:
                 lo_nearest = m - 1
             p_new = self.omega_sq_list[i] * inv_total if interpolate_bool else inv_total
-            self.omega_guess_list[i] = omega
+            self.omega_guess_list[i] = omega # write the new frequency mesh
             self.omega_sq_list[i]    = omega * omega
-            self.P0[i]               = p_new
-            self.state_x[i]          = self.state_x_scratch[i]
-            self.state_y[i]          = self.state_y_scratch[i]
-            self.state_z[i]          = self.state_z_scratch[i]
+            self.P0[i]               = p_new # write the interpolated probabilities
+            self.state_x[i]          = self.state_x_scratch[i] # write state
+            self.state_y[i]          = self.state_y_scratch[i] # write state
+            self.state_z[i]          = self.state_z_scratch[i] # write state
             frac  += dfrac
             omega += step_new
             i     += 1
@@ -655,6 +674,8 @@ class Feedback:
     def maybe_remesh(self, posterior_std, omega_center):
         """Halve the grid span and re-centre on omega_center if posterior_std is below
         feedback_remesh_threshold_omega.  No-op when threshold is 0 (disabled).
+
+        Note that after remesh_to_centered, the call to _initialize_frequency_grid
 
         Args:
             posterior_std: the posterior standard deviation (rad/s); remesh fires if

@@ -1,0 +1,61 @@
+
+import numpy as np
+from artiq.experiment import *
+from artiq.language.core import delay, kernel
+from kexp import Base, img_types, cameras
+
+
+class hf_bec(EnvExperiment, Base):
+
+    def prepare(self):
+        Base.__init__(self,
+                      setup_camera=True,
+                      save_data=False,
+                      camera_select=cameras.andor,
+                      imaging_type=img_types.ABSORPTION)
+        
+        self.p.t_raman_pulse = 1.e-6
+        self.p.t_tof = 1000.e-6
+
+        self.p.fraction_power_raman = 0.2
+        self.p.frequency_raman_transition += 1.e6
+
+        self.adjust('fraction_power_raman',0.,1.)
+        self.adjust('t_raman_pulse',1.e-6,100.e-6)
+
+        self.p.N_repeats = 1000
+
+        self.p.t_mot_load = 1.0
+
+        self.finish_prepare(shuffle=True)
+
+    @kernel
+    def scan_kernel(self):
+
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.imaging.set_power(self.camera_params.amp_imaging)
+
+        self.prepare_hf_tweezers()
+        self.prep_raman()
+
+        delay(10.e-3)
+
+        self.raman.pulse(self.p.t_raman_pulse)
+        self.tweezer.off()
+
+        delay(self.p.t_tof)
+        self.abs_image()
+
+        self.outer_coil.off()
+
+    @kernel
+    def run(self):
+        self.init_kernel()
+        self.load_2D_mot(self.p.t_2D_mot_load_delay)
+        self.scan()
+
+    def analyze(self):
+        import os
+        expt_filepath = os.path.abspath(__file__)
+        self.end(expt_filepath)
+

@@ -7,4 +7,5 @@ from .magnets import (i_transducer_to_magnetic_field,
 from .imaging import (high_field_imaging_detuning,
                     low_field_imaging_detuning,
                     low_field_pid_imaging_detuning,
+                    high_field_pid_imaging_detuning,
                     I_LF_HF_THRESHOLD)

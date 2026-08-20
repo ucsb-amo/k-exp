@@ -316,6 +316,12 @@ class LiveODWindow(QWidget):
                     self.live_od_server.on_data_handler_done)
             except Exception:
                 pass
+            # Likewise, a late save-failure from the previous run must not
+            # abort the run that is starting now.
+            try:
+                self.data_handler.save_failed_signal.disconnect(self.on_save_failed)
+            except Exception:
+                pass
             self.data_handler = None
 
         # Interrupt any CameraBaby left over from the previous run.
@@ -389,6 +395,9 @@ class LiveODWindow(QWidget):
             self.live_od_server.on_data_handler_done,
             Qt.ConnectionType.DirectConnection,
         )
+        # If the HDF5 file turns out to be unusable, abort the run right away
+        # rather than acquiring a full scan whose images are all discarded.
+        self.data_handler.save_failed_signal.connect(self.on_save_failed)
         # For Basler cameras: notify the server when this baby's grab loop has
         # fully exited so that WAIT_CAM_READY for the next run is not released
         # prematurely (while the old RetrieveResult() call is still blocking).
@@ -406,6 +415,19 @@ class LiveODWindow(QWidget):
         self.camera_nanny.interrupted = False
         self.the_baby.start()
         self.msg(f"Baby {name} born — camera_key={camera_key}")
+
+    def on_save_failed(self, reason: str):
+        """SaveWorker could not open/use the HDF5 file — abort the run.
+
+        Without this the run continues to completion with every image silently
+        dropped, and the failure only surfaces as a KeyError at END_RUN, by
+        which point the data is unrecoverable.  reset() sets the server's
+        _reset_requested flag, so the experiment aborts at the next shot
+        boundary and the unusable file is deleted.
+        """
+        self.msg(f"Data file unusable ({reason}) — aborting run.")
+        print(f"[LiveODWindow] Aborting run: data file unusable: {reason}")
+        self.reset()
 
     def on_run_done(self):
         """Called when the LiveODServer processes an END_RUN message."""

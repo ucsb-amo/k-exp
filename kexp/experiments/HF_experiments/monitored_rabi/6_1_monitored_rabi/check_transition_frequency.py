@@ -16,23 +16,24 @@ class hf_raman(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
 
-        self.xvar('frequency_raman_transition',119.4641e6 + np.linspace(-1.e3,1.e3,10))
+        self.xvar('frequency_raman_transition',119.3978e6 + np.linspace(-2.e3,2.e3,10))
 
         self.xvar('t_ramsey', np.linspace(10.e-6, 350.e-6, 5))
+        self.p.t_ramsey = 350.e-6
  
         # self.xvar('t_raman_pulse', np.linspace(0., 60., 30)*1.e-6)
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
         
         # self.xvar('amp_imaging',np.linspace(0.1,.8,10))
-        self.p.amp_imaging = .2
+        self.p.amp_imaging = .1
 
-        self.p.hf_imaging_detuning =  -568.e6 # 182. with PID
+        self.p.hf_imaging_detuning =  -545.e6 # 182. with PID
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
         self.p.t_tweezer_hold = .01e-3
 
         # self.xvar('t_tof',np.linspace(400.,2500.,15)*1.e-6) 
-        self.p.t_tof = 500.e-6
+        self.p.t_tof = 2000.e-6
 
         self.p.t_mot_load = 1.
         
@@ -50,7 +51,7 @@ class hf_raman(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=False)
+        self.prepare_hf_tweezers(ramp_down_painting=False,squeeze=False)
 
         self.raman.init(frequency_transition = self.p.frequency_raman_transition, 
                         fraction_power = self.params.fraction_power_raman)

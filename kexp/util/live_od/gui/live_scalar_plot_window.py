@@ -137,9 +137,6 @@ class LiveScalarPlotWindow(QWidget):
         # Plot
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.showGrid(x=True, y=True, alpha=0.3)
-        self._line_item = self.plot_widget.plot(
-            [], [], pen=pg.mkPen("w", width=1.5)
-        )
         self._scatter_item = pg.ScatterPlotItem(
             size=5, brush=pg.mkBrush(100, 180, 255, 200)
         )
@@ -218,7 +215,6 @@ class LiveScalarPlotWindow(QWidget):
     def _on_clear(self):
         self._data.clear()
         self._unit_cache.clear()
-        self._line_item.setData([], [])
         self._scatter_item.setData([], [])
         self.plot_widget.setTitle("")
 
@@ -251,7 +247,6 @@ class LiveScalarPlotWindow(QWidget):
 
     def _refresh_plot(self):
         if not self._data:
-            self._line_item.setData([], [])
             self._scatter_item.setData([], [])
             return
 
@@ -289,7 +284,6 @@ class LiveScalarPlotWindow(QWidget):
             ys.append(y_val)
 
         if not xs:
-            self._line_item.setData([], [])
             self._scatter_item.setData([], [])
             return
 
@@ -305,7 +299,6 @@ class LiveScalarPlotWindow(QWidget):
 
         ylabel = f"{_label} ({yunit})" if yunit else _label
 
-        self._line_item.setData(x_arr, y_arr)
         self._scatter_item.setData(x_arr, y_arr)
         self.plot_widget.setLabel("bottom", xlabel)
         self.plot_widget.setLabel("left", ylabel)

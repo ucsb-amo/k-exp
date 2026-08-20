@@ -20,18 +20,21 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.p.v_pd_hf_tweezer_squeeze_power = .985
 
+        # self.xvar('t_raman_pulse', [0.,self.p.t_raman_pi_pulse / 2])
         # self.p.t_raman_pulse = 0.
         # self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
         
-        self.xvar('amp_imaging', np.linspace(.2,2.5, 10))
-        self.p.amp_imaging = 2.
+        self.xvar('amp_imaging', np.linspace(.2,2., 5))
+        self.p.amp_imaging = 1.2
         
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         self.p.dimension_slm_mask = 20.e-6
 
         # self.xvar('phase_slm_mask',np.linspace(0.01*np.pi,.4*np.pi,5))
-        self.p.phase_slm_mask = 1.325 * np.pi
+        self.p.phase_slm_mask = .15 * np.pi
+
+        self.p.frequency_detuned_hf_midpoint = -515.e6
 
         self.p.t_tweezer_hold = 15.e-3
         self.p.t_tof = 20.e-6
@@ -41,7 +44,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
 
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
@@ -51,7 +54,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask,dimension=self.p.dimension_slm_mask)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=True)
+        self.prepare_hf_tweezers(ramp_down_painting=True,squeeze=False,cubic_ramp_squeeze=False)
 
         self.raman.init(fraction_power = self.p.fraction_power_raman,
                         frequency_transition = self.p.frequency_raman_transition)
@@ -62,6 +65,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         delay(4.7e-3)
 
         self.raman.pulse(t=self.p.t_raman_pulse)
+        # delay(self.p.t_raman_pulse)
         
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         self.imaging.on()
