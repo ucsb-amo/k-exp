@@ -6,7 +6,7 @@ from artiq.language import now_mu, at_mu, delay_mu, delay
 class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=False,
                       imaging_type=img_types.DISPERSIVE)
@@ -41,7 +41,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.frequency_lightshift = 36.68e+03  # Hz
 
         # self.xvar('phase_slm_mask',np.linspace(0.0*np.pi,.5*np.pi,10))
-        self.p.phase_slm_mask = 1.2 * np.pi
+        # self.p.phase_slm_mask = 1.2 * np.pi
 
         self.p.frequency_raman_transition_lightshifted = self.p.frequency_lightshift + self.p.frequency_raman_transition
 

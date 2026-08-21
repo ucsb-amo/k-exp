@@ -21,7 +21,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.xvar('make_atoms',[1]*1000)
         
         # self.xvar('amp_imaging',np.linspace(0.1,1.,10))
-        self.p.amp_imaging = 0.25
+        self.p.amp_imaging = 0.5
 
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,1.1e-3,10))
         self.p.t_tweezer_hold = 20.e-3
@@ -46,7 +46,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         if self.p.make_atoms:
             self.prepare_hf_tweezers()
         else:
-            delay(1.)
+            delay(0.2)
         
         delay(self.p.t_tweezer_hold)
         # self.tweezer.off()

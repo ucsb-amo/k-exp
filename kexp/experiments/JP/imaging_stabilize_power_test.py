@@ -20,13 +20,13 @@ class imaging_stabilize_power_test(EnvExperiment, Base):
 
         # these live in waxx ExptParams -- override here to test other settings
         self.p.t_apd_imaging_check = 150.e-6
-        self.p.frac_err_threshold_imaging_pid = 0.003
+        self.p.frac_err_threshold_imaging_pid = 0.005
         self.p.N_max_iter_imaging_pid = np.int32(50)
         self.p.gain_p_imaging_pid = -0.019
         self.p.gain_i_imaging_pid = -0.0175
 
         # run many repeats to build up convergence statistics
-        self.p.N_repeats = 100
+        self.p.N_repeats = 30
 
         self.data.n_iter = self.data.add_data_container(1, np.int32)
         self.data.frac_err_converged = self.data.add_data_container(1)

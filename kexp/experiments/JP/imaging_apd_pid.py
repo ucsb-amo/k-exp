@@ -30,7 +30,7 @@ class tweezer_load(EnvExperiment, Base):
 
         # v_apd should be exceptionally linear in the imaging power PID setpoint.
 
-        self.p.t_apd_imaging_check = 50.e-6
+        self.p.t_apd_imaging_check = 100.e-6
 
         self.p.N_max_iter = 50
         self.data.apd_check = self.data.add_data_container(2) # 2 points, one each for light + dark

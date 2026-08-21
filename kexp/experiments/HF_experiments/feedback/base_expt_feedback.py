@@ -51,15 +51,15 @@ class FeedbackExpt(Base, Feedback):
 
         self.zidx = self.p.feedback_resonance_grid_index
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
-        
-        super().finish_prepare(shuffle=shuffle)
 
         self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
-
-        self.data.feedback_data_containers()
+        
+        self.data.feedback_data_containers(self.p)
         # populate first row of probabilities with pre-pulse lists
         self.data.probabilities.shot_data[0, :] = self.P0
         self.data.omega_raman_mesh.shot_data[0, :] = self.omega_guess_list
+        
+        super().finish_prepare(shuffle=shuffle)
 
     @kernel
     def scan_kernel(self):
@@ -111,7 +111,7 @@ class FeedbackExpt(Base, Feedback):
                        update_rabi_frequency=0,
                        include_photon_noise=1):
         
-        self.omega_z_lightshift = 2*np.pi * self.p.frequency_lightshift
+        self.omega_z_lightshift = 2 * np.pi * self.p.frequency_lightshift
 
         k = 0
         f = self.omega_raman / (2*np.pi)

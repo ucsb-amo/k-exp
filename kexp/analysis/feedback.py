@@ -635,6 +635,7 @@ class FeedbackReplayCore(Feedback):
 
         if self._omega_rr_cached is not None:
             omega_rr = np.asarray(self._omega_rr_cached, dtype=float)
+            omega_rr = self._trim_known_unused_trailing_column(omega_rr, "ad.data.omega_raman", n_step)
             if omega_rr.shape != (n_repeat, n_step):
                 raise ValueError(
                     f"cached omega_raman shape {omega_rr.shape} does not match APD shape ({n_repeat}, {n_step})."
@@ -642,6 +643,35 @@ class FeedbackReplayCore(Feedback):
             return omega_rr
 
         return None
+
+    @staticmethod
+    def _trim_known_unused_trailing_column(
+        arr: np.ndarray, name: str, n_step: int, zero_atol: float = 1.0e-9
+    ) -> np.ndarray:
+        """Drop a known-dead trailing column from older HF_experiments/feedback runs.
+
+        omega_raman/s_z/t data containers used to be sized N_pulses+1 (mirroring
+        omega_raman_mesh/probabilities' reserved "before first pulse" row), but the
+        feedback_loop kernel only ever wrote `put_data(value, i)` for i in
+        range(N_pulses) -- no i+1 offset and no seeded index 0. So runs recorded
+        before data_vault_feedback.py was fixed to size these at N_pulses carry one
+        extra always-zero trailing column vs. apd. Trim it here so old runs still
+        load; only trims when that column is actually all-zero, so real data is
+        never silently discarded.
+        """
+        if arr.ndim < 2 or arr.shape[-1] != n_step + 1:
+            return arr
+        trailing = arr[..., -1]
+        if not np.allclose(trailing, 0.0, atol=zero_atol):
+            return arr
+        import warnings
+        warnings.warn(
+            f"{name} has shape {arr.shape}, one column more than APD's {n_step} steps; "
+            "trimming the unused all-zero trailing column left over from the old "
+            "N_pulses+1 container sizing.",
+            UserWarning,
+        )
+        return arr[..., :-1]
 
     def _normalize_apd(
         self,
@@ -1831,6 +1861,10 @@ class FeedbackReplay(FeedbackReplayCore):
                 _require_atomdata_attr(self.ad.data, "t", "ad.data")),
             "ad.data.t",
         )
+
+        n_step = apd_rr.shape[1]
+        sz_rr = self._trim_known_unused_trailing_column(sz_rr, "ad.data.s_z", n_step)
+        t_rr = self._trim_known_unused_trailing_column(t_rr, "ad.data.t", n_step)
 
         if sz_rr.shape != apd_rr.shape:
             raise ValueError(

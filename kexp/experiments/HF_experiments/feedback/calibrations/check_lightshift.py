@@ -6,18 +6,24 @@ from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu
+from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams
 
 class hf_raman(EnvExperiment, Base):
 
     def prepare(self):
+        p = ExptParams()
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.ABSORPTION,
+                      expt_params=p)
 
-        # self.xvar('with_imaging', [0,1])
+        self.xvar('with_imaging', [0,1])
         self.p.with_imaging = 1
-        self.xvar('relative_phase', np.linspace(0., 4*np.pi, 21))
+        # self.xvar('amp_imaging',np.linspace(0.05,0.4,15))
+        self.xvar('relative_phase', np.linspace(0., 3*np.pi, 17))
+
+        self.p.frequency_lightshift_target = 50.e3
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 3.94
 
@@ -26,9 +32,10 @@ class hf_raman(EnvExperiment, Base):
 
         self.p.amp_imaging = .2
         self.p.t_tweezer_hold = 15.e-3
-        self.p.t_tof = 600.e-6
+        self.p.t_tof = 800.e-6
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 3
+        self.p.N_repeats = 1
+        self.p.frequency_detuned_hf_midpoint = -516.5e6
 
         self.finish_prepare(shuffle=True)
 
@@ -72,6 +79,10 @@ class hf_raman(EnvExperiment, Base):
     def run(self):
         self.init_kernel(setup_slm=True)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
+
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
+        # self.imaging.stabilize_lightshift(self.p.frequency_lightshift_target)
+        
         self.scan()
         
     def analyze(self):

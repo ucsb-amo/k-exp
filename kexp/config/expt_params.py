@@ -73,10 +73,10 @@ class ExptParams(ExptParamsWaxx):
         # SLM settings
         self.dimension_slm_mask = 20.e-6 
         self.phase_slm_mask = .357 * np.pi
-        self.px_slm_phase_mask_position_x = 993
-        self.px_slm_phase_mask_position_y = 818
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
+        self.px_slm_phase_mask_position_x = 1016
+        self.px_slm_phase_mask_position_y = 820
         # Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3
@@ -151,7 +151,9 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 8.3800e-06 #75905, 2026-08-18
+        # self.t_raman_pi_pulse = 8.3588e-06 #76021, 2026-08-20
+        self.t_raman_pi_pulse = 8.8237e-06 #76038, 2026-08-20
+
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -356,7 +358,7 @@ class ExptParams(ExptParamsWaxx):
 
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
         # self.frequency_raman_transition = 119.4640e6 #67744 182 A
-        self.frequency_raman_transition = 119.4638e6 #75854 A
+        self.frequency_raman_transition = 119.4638e6 #76037 2026-8-20
         # self.frequency_raman_transition = 119.3977e6 # 176.5 A
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
@@ -420,6 +422,12 @@ class ExptParams(ExptParamsWaxx):
         self.t_ffu_dds_pipeline_latency = int64(79)
         self.t_io_update_pretrigger_mu = int64(32)
         self.t_ffu_pipeline_latency_fudge_mu = int64(0)
+
+        # imaging light shift <-> integrated APD voltage
+        # APD run    75914  (imaging_apd_v_per_t_vs_amp, t_img_pulse = 100.0 us)
+        # Ramsey run 75913  (check_lightshift, t_ramsey = 5.00 us)
+        # valid over f_lightshift = 1.85 .. 74.22 kHz
+        self.slope_imaging_lightshift_per_v_per_t = 2.993175961841646  # Hz per (V/s)
 
         self.compute_derived()
 

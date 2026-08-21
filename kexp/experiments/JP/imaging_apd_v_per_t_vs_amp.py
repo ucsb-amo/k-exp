@@ -9,9 +9,9 @@ class imaging_apd_v_per_t_vs_amp(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
-                      save_data=False,
+                      save_data=True,
                       imaging_type=img_types.ABSORPTION,
-                      suppress_live_od=True)
+                      suppress_live_od=False)
 
         # goal: measure the background-subtracted integrated APD voltage per
         # unit imaging time, (v_light - v_dark) / t_img_pulse, versus the
@@ -28,7 +28,7 @@ class imaging_apd_v_per_t_vs_amp(EnvExperiment, Base):
         self.xvar('amp_imaging',np.linspace(0.05,0.5,16))
         self.p.amp_imaging = 0.25
 
-        self.xvar('t_img_pulse',np.array([50.e-6,100.e-6,200.e-6]))
+        # self.xvar('t_img_pulse',np.array([50.e-6,100.e-6,200.e-6]))
         self.p.t_img_pulse = 100.e-6
 
         # amp_imaging steps between shots are large (and shuffled) compared to
@@ -37,7 +37,7 @@ class imaging_apd_v_per_t_vs_amp(EnvExperiment, Base):
         # CHECK ON A SCOPE that the beam has actually settled within this time.
         self.p.t_pid_settle = 20.e-3
 
-        self.p.N_repeats = 5
+        self.p.N_repeats = 50
 
         self.data.v_light = self.data.add_data_container(1)
         self.data.v_dark = self.data.add_data_container(1)
@@ -74,7 +74,7 @@ class imaging_apd_v_per_t_vs_amp(EnvExperiment, Base):
         # Detuning is pinned to the high-field imaging point the APD absorption
         # imaging actually runs at, since imaging AOM efficiency -- and so the
         # amp -> power map being calibrated here -- depends on drive frequency.
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.p.amp_imaging, reset_pid=True)
         delay(self.p.t_pid_settle)
 
@@ -96,8 +96,10 @@ class imaging_apd_v_per_t_vs_amp(EnvExperiment, Base):
         expt_filepath = os.path.abspath(__file__)
         self.end(expt_filepath)
 
-        # suppress_live_od=True means nothing is written to disk, so pull the
-        # data straight from the in-memory run arrays.
+        # This runs before the saved file is reloaded, so pull the data straight
+        # from the in-memory run arrays. (The saved run is what
+        # lightshift_vs_integrated_apd_voltage.ipynb consumes -- keep
+        # suppress_live_od=False or there will be no run ID to give it.)
         #
         # scan_xvars[i].values is the actual per-shot value list for axis i of
         # _run_data (already repeated and shuffled), so using it as the axis

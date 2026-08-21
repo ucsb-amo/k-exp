@@ -19,9 +19,9 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('t_tof',np.linspace(1000.,4000.,4)*1.e-6)
         self.p.t_tof = 800.e-6
 
-        self.p.phase_slm_mask = 1.6 * np.pi
+        # self.p.phase_slm_mask = 1.6 * np.pi
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 30
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
         # self.p.v_hf_tweezer_paint_amp_max = -2.2
@@ -94,8 +94,9 @@ class hf_bec(EnvExperiment, Base):
         delay(self.p.t_tof)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
-        # self.abs_image()
-        self.abs_image_and_apd(self.data.apd)
+        self.abs_image()
+        # self.abs_image_and_apd(self.data.apd)
+        # self.ttl.camera.pulse()
 
         self.outer_coil.off()
 

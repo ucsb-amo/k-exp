@@ -710,19 +710,25 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         ok = True
         msgs = []
 
-        # Apply exposure (different APIs may exist; try common names)
+        # Apply exposure. AndorEMCCD inherits set_exposure() from pylablib's
+        # AndorSDK2Camera -- that is the name its own __init__ uses. The camera
+        # quantizes the request and set_exposure() returns what it actually
+        # landed on, so report the readback rather than the value we asked for.
         try:
-            if hasattr(self.camera, "set_exposure_time"):
+            if hasattr(self.camera, "set_exposure"):
+                actual = self.camera.set_exposure(exp_s)
+                if actual is None and hasattr(self.camera, "get_exposure"):
+                    actual = self.camera.get_exposure()
+                msgs.append(f"exposure={float(actual):.4f}s"
+                            if actual is not None else f"exposure={exp_s:.4f}s")
+            elif hasattr(self.camera, "set_exposure_time"):
                 self.camera.set_exposure_time(exp_s)
                 msgs.append(f"exposure={exp_s:.4f}s")
             elif hasattr(self.camera, "set_ExposureTime"):
                 self.camera.set_ExposureTime(exp_s)
                 msgs.append(f"exposure={exp_s:.4f}s")
-            elif hasattr(self.camera, "ExposureTime"):
-                # some wrappers expose attribute
-                setattr(self.camera, "ExposureTime", exp_s)
-                msgs.append(f"exposure={exp_s:.4f}s")
             else:
+                ok = False
                 msgs.append("exposure: (method not found)")
         except Exception as e:
             ok = False
@@ -734,6 +740,7 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
                 self.camera.set_EMCCD_gain(gain)
                 msgs.append(f"gain={gain}")
             else:
+                ok = False
                 msgs.append("gain: (method not found)")
         except Exception as e:
             ok = False

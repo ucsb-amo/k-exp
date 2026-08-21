@@ -50,11 +50,11 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         delay(10.e-3)
 
-        if self._idx == 0:
-            self.raman.pulse(self.p.t_raman_pi_pulse)
-            self._idx = 1
-        else:
-            self._idx = 0
+        # if self._idx == 0:
+        #     self.raman.pulse(self.p.t_raman_pi_pulse)
+        #     self._idx = 1
+        # else:
+        #     self._idx = 0
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 

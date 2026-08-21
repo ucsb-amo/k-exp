@@ -29,7 +29,7 @@ class simulation_check(EnvExperiment, FeedbackExpt):
         Omega = np.pi / self.p.t_raman_pi_pulse
         self.p.override_pulse_list = 1
         self.p.omega_override_pulse_list = np.ones(self.p.N_pulses) * \
-            (2*np.pi*self.p.frequency_raman_transition + 2 * Omega)
+            (2*np.pi*self.p.frequency_raman_transition + 0 * Omega)
 
         # self.xvar('pulse_list_span_Omega', np.linspace(-12.,12.,9))
         self.p.pulse_list_span_Omega = 0.
