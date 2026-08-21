@@ -13,31 +13,27 @@ class hf_monitored_rabi(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
-                      save_data=True,
+                      save_data=False,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.t_imaging_pulse = 15.e-6
+        self.p.t_imaging_pulse = 7.e-6
         # self.xvar('dummy',[0])
         
-        # self.p.amp_imaging = 0.2
-
-        self.p.fraction_power_raman = .5
+        self.p.amp_imaging = 0.25
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_mot_load = 1.0
 
         self.p.t_tof = 2.e-3
         
-        self.p.N_repeats = 2
-
-        self.p.phase_slm_mask = 0.1 * np.pi
-        self.xvar('phase_slm_mask',np.linspace(0.01*np.pi,1.5*np.pi,10))
+        self.p.N_repeats = 1000
 
         self.data.apd = self.data.add_data_container(3)
-        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
+        self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
         # self.adjust('phase_slm_mask',0.,2*np.pi)
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 8.
+        self._idx = 0
 
         self.finish_prepare(shuffle=True)
 
@@ -47,12 +43,18 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_midpoint)
-        # self.imaging.set_power(self.p.amp_imaging)
+        self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
         self.prep_raman()
 
         delay(10.e-3)
+
+        if self._idx == 0:
+            self.raman.pulse(self.p.t_raman_pi_pulse)
+            self._idx = 1
+        else:
+            self._idx = 0
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
@@ -67,16 +69,16 @@ class hf_monitored_rabi(EnvExperiment, Base):
         delay(10.e-6)
 
         self.tweezer.off()
-        delay(self.p.t_tof)
+        delay(10.e-3)
 
         self.integrated_imaging_pulse(self.data.apd, self.p.t_imaging_pulse, 2)
 
         delay(100.e-3)
 
-        self.core.wait_until_mu(now_mu())
-        self.scope.read_sweep([0])
-        self.core.break_realtime()
-        delay(100.e-3)
+        # self.core.wait_until_mu(now_mu())
+        # self.scope.read_sweep([0])
+        # self.core.break_realtime()
+        # delay(100.e-3)
 
     @kernel
     def run(self):

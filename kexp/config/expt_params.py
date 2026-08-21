@@ -72,7 +72,7 @@ class ExptParams(ExptParamsWaxx):
 
         # SLM settings
         self.dimension_slm_mask = 20.e-6 
-        self.phase_slm_mask =.45 * np.pi
+        self.phase_slm_mask = .357 * np.pi
         self.px_slm_phase_mask_position_x = 993
         self.px_slm_phase_mask_position_y = 818
         self.px_slm_grating_position_x = 994
@@ -151,9 +151,8 @@ class ExptParams(ExptParamsWaxx):
 
         self.t_feshbach_field_ramp_special = 20.e-3
 
-        self.t_raman_pi_pulse = 8.3333e-06 #75847, 2026-08-17
+        self.t_raman_pi_pulse = 8.3800e-06 #75905, 2026-08-18
          
-        
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
         self.amp_d1_3d_r = 0.3

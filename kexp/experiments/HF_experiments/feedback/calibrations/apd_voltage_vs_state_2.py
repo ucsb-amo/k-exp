@@ -21,13 +21,13 @@ class sigma_z(EnvExperiment, Base):
 
         self.p.t_raman_pulse = 0.
         self.p.t_raman_pulse_offset = 127.e-9
-        self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,12))
+        self.xvar('t_raman_pulse', self.p.t_raman_pi_pulse * np.linspace(0.,1.,9))
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
         self.p.N_repeats = 7
         
-        self.p.N_pulses = 6
+        self.p.N_pulses = 5
 
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
 
