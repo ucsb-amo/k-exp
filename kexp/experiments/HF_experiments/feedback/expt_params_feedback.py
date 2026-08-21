@@ -7,8 +7,8 @@ class ExptParams(expt_params_kexp):
         super().__init__()
 
         # run 76036
-        self.frequency_detuned_hf_f1m1 = -574.51e6
-        self.frequency_detuned_hf_f10 = -465.38e6
+        # self.frequency_detuned_hf_f1m1 = -574.51e6
+        # self.frequency_detuned_hf_f10 = -465.38e6
         self.frequency_detuned_hf_midpoint = -519.94e6
 
         self.update_raman_frequency_bool = 0
