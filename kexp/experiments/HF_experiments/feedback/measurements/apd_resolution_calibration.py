@@ -21,7 +21,7 @@ class sigma_z(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 1
+        self.p.N_repeats = 25
 
         self.data.apd = self.data.add_data_container(2)
 

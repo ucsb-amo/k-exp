@@ -28,7 +28,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_tweezer_hold = 15.e-3
         self.p.t_tof = 600.e-6
         self.p.t_mot_load = 1.
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         self.finish_prepare(shuffle=True)
 

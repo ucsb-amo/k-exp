@@ -6,6 +6,11 @@ class ExptParams(expt_params_kexp):
     def __init__(self):
         super().__init__()
 
+        # run 76036
+        self.frequency_detuned_hf_f1m1 = -574.51e6
+        self.frequency_detuned_hf_f10 = -465.38e6
+        self.frequency_detuned_hf_midpoint = -519.94e6
+
         self.update_raman_frequency_bool = 0
         self.include_photon_noise = 1
 
@@ -31,18 +36,7 @@ class ExptParams(expt_params_kexp):
         self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
 
         self.frequency_lightshift = 3.187e+04
-
-        # self.t_img_pulse = 5e-06  # s
-        # self.amp_imaging = 0.2
-        # self.v_apd_all_up = -0.17181
-        # self.v_apd_all_down = -0.21521
-        # self.n_photons_per_shot = 734.77
-        # # self.std_n_photons_up = 131.87
-        # # self.std_n_photons_down = 45.581
-        # # self.std_n_photons_per_shot = 88.723 # avg of up/down
-        # self.std_n_photons_per_shot = 32. # using down std
-        # self.feedback_measurement_midpoint_fraction = 0.42421
-
+        
         # calibration run 71098
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2

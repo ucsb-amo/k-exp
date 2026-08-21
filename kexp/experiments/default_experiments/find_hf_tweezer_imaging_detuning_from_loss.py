@@ -24,11 +24,11 @@ class hf_bec(EnvExperiment, Base):
         
         self.p.t_imaging_pulse = 20.e-6
 
-        # self.f_f1m1 = self.p.frequency_detuned_hf_f1m1
+        self.f_f1m1 = self.p.frequency_detuned_hf_f1m1
         self.f_f1m1 = -574.5e6
         self.f_f0 = -462.5e6 # guess based on midpoint
 
-        f_scan_width = 20.e6
+        f_scan_width = 10.e6
         df = 0.5e6
 
         self.fshw = f_scan_width / 2
