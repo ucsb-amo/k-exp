@@ -52,7 +52,9 @@ class ExptParams(ExptParamsWaxx):
 
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
-        self.frequency_detuned_hf_midpoint = -516.5e6 #-504.e6
+        # self.frequency_detuned_hf_midpoint = -516.5e6 #-504.e6
+        self.frequency_detuned_hf_midpoint = -511.07e6 # run 76091
+
         # self.frequency_detuned_hf_midpoint = -489.5e6 #176.5 A
 
         ## 3D MOT beam imaging settings        
@@ -75,8 +77,8 @@ class ExptParams(ExptParamsWaxx):
         self.phase_slm_mask = .357 * np.pi
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
-        self.px_slm_phase_mask_position_x = 1016
-        self.px_slm_phase_mask_position_y = 820
+        self.px_slm_phase_mask_position_x = 1017
+        self.px_slm_phase_mask_position_y = 821
         # Cooling timing
         self.t_tof = 20.e-6
         self.t_discharge_igbt = 2.e-3

@@ -98,6 +98,16 @@ def read_camera_state(camera):
         ("gain", lambda: camera.get_EMCCD_gain()),
         ("trigger", lambda: camera.get_trigger_mode()),
         ("acq_mode", lambda: camera.get_acquisition_mode()),
+        ("frame_transfer", lambda: camera.is_frame_transfer_enabled()),
+        # Vertical shift settings are what smear looks like when they are
+        # wrong, and nothing else in this GUI reports them. There is no SDK
+        # getter for the vertical clock amplitude (it is write-only via
+        # SetVSAmplitude), so it cannot be verified here -- only the speed can.
+        ("vsspeed", lambda: camera.get_vsspeed()),
+        ("vsspeed_us", lambda: float(camera.get_vsspeed_period())),
+        ("vsspeed_rec", lambda: camera.get_max_vsspeed()),
+        ("hsspeed_MHz", lambda: float(camera.get_hsspeed_frequency()) / 1e6),
+        ("preamp_gain", lambda: float(camera.get_preamp_gain())),
     )
     state = {}
     for key, getter in fields:
@@ -122,7 +132,13 @@ def format_camera_state(state):
             f"frame_period={ms(period)}{rate}  "
             f"gain={gain}  "
             f"trigger={state.get('trigger')!r}  "
-            f"acq={state.get('acq_mode')!r}")
+            f"acq={state.get('acq_mode')!r}  "
+            f"frame_transfer={state.get('frame_transfer')}\n"
+            f"[camera]                vsspeed={state.get('vsspeed')} "
+            f"({state.get('vsspeed_us')} us, fastest recommended index "
+            f"{state.get('vsspeed_rec')})  "
+            f"hsspeed={state.get('hsspeed_MHz')} MHz  "
+            f"preamp_gain={state.get('preamp_gain')}")
 
 
 def print_camera_state(camera, label):
@@ -145,6 +161,22 @@ def warn_on_video_state(state):
     if state.get("acq_mode") != "cont":
         print(f"[camera] WARNING acquisition mode reads {state.get('acq_mode')!r}, "
               f"not 'cont'. The live view will not free-run.")
+    # Vertical shift indices run fastest-first, so an index below the fastest
+    # recommended one is clocking charge out faster than Andor rates the
+    # sensor for. At normal vertical clock amplitude that leaves charge behind
+    # on every shift: bright features come out depleted with a trail smeared
+    # down the column toward the readout register.
+    # vs, vs_rec = state.get("vsspeed"), state.get("vsspeed_rec")
+    # if isinstance(vs, int) and isinstance(vs_rec, int) and vs < vs_rec:
+    #     print(f"[camera] WARNING vsspeed index {vs} is faster than the fastest "
+    #           f"recommended index {vs_rec}. Expect incomplete vertical charge "
+    #           f"transfer (vertical smear) unless the vertical clock amplitude "
+    #           f"is raised.")
+    # if state.get("frame_transfer") is not True:
+    #     print(f"[camera] WARNING frame transfer reads {state.get('frame_transfer')!r}, "
+    #           f"not True. With the shutter held open, non-FT video exposes the "
+    #           f"sensor during readout, so every bright feature smears into a "
+    #           f"vertical streak.")
 
 
 def reset_camera_state(camera, DummyCameraCls):
@@ -165,6 +197,15 @@ def reset_camera_state(camera, DummyCameraCls):
         ("stop_acquisition()", lambda: camera.stop_acquisition()),
         ("set_trigger_mode('int')", lambda: camera.set_trigger_mode("int")),
         ("set_acquisition_mode('cont')", lambda: camera.set_acquisition_mode("cont")),
+        # Frame transfer is off by default (pylablib disables it at init, and
+        # AndorEMCCD.__init__ leaves it that way for the externally triggered
+        # single-shot use in experiments). This GUI runs free-running video
+        # with the shutter held open, and without FT the sensor keeps
+        # collecting light while the image is shifted out row by row -- every
+        # bright feature smears into a vertical streak and the frame washes
+        # gray. Solis's video mode enables frame transfer, which is why its
+        # images look fine on the same camera.
+        # ("enable_frame_transfer_mode(True)", lambda: camera.enable_frame_transfer_mode(True)),
         ("set_EMCCD_gain(0)", lambda: camera.set_EMCCD_gain(0)),
     )
     for name, step in steps:

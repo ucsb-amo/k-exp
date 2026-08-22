@@ -10,6 +10,8 @@ from andor_group import CameraWorker, FrameBuffer, reset_camera_state, apply_cam
 from slm_group import SLMController, SLMPreviewWidget
 
 class LiveScanPreviewDialog(QtWidgets.QDialog):
+    spot_picked = QtCore.pyqtSignal(int, int)  # (cx, cy) of the left-clicked tile
+
     def __init__(self, nx, ny, xs, ys, parent=None, title="Scan Preview (live)"):
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -50,6 +52,34 @@ class LiveScanPreviewDialog(QtWidgets.QDialog):
         self._msg = pg.TextItem("Waiting for first frame...", anchor=(0, 0))
         self._msg.setPos(0, 0)
         self.pw.addItem(self._msg)
+
+        self.center_readout = QtWidgets.QLabel("left-click a tile to move the spot there")
+        self.center_readout.setStyleSheet("color: gray;")
+        layout.addWidget(self.center_readout)
+        self.pw.scene().sigMouseClicked.connect(self._on_mouse_clicked)
+
+    def _pixel_to_center(self, x: int, y: int):
+        if not self._initialized:
+            return None
+        if x < 0 or y < 0 or x >= self.W * self.nx or y >= self.H * self.ny:
+            return None
+        c = x // self.W
+        r = y // self.H
+        if 0 <= c < len(self.xs) and 0 <= r < len(self.ys):
+            return (self.xs[c], self.ys[r])
+        return None
+
+    def _on_mouse_clicked(self, mouse_event):
+        if mouse_event.button() != QtCore.Qt.MouseButton.LeftButton:
+            return
+
+        mp = self.pw.getViewBox().mapSceneToView(mouse_event.scenePos())
+        center = self._pixel_to_center(int(np.floor(mp.x())), int(np.floor(mp.y())))
+        if center is None:
+            return
+
+        self.center_readout.setText(f"Spot set to ({center[0]}, {center[1]})")
+        self.spot_picked.emit(int(center[0]), int(center[1]))
 
     def _init_with_frame(self, frame: np.ndarray):
         self.H, self.W = frame.shape
@@ -115,6 +145,8 @@ class LiveScanPreviewDialog(QtWidgets.QDialog):
 
 
 class FinalScanPreviewDialog(QtWidgets.QDialog):
+    spot_picked = QtCore.pyqtSignal(int, int)  # (cx, cy) of the left-clicked tile
+
     def __init__(self, frames_grid, xs, ys, parent=None, title="Scan Preview"):
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -184,7 +216,7 @@ class FinalScanPreviewDialog(QtWidgets.QDialog):
         for r in range(1, self.ny):
             self.pw.addItem(pg.InfiniteLine(pos=r * self.H, angle=0, movable=False))
 
-        self.center_readout = QtWidgets.QLabel("center=(?, ?)  (right-click to copy)")
+        self.center_readout = QtWidgets.QLabel("center=(?, ?)  (left-click to set spot, right-click to copy)")
         self.center_readout.setStyleSheet("color: gray;")
         layout.addWidget(self.center_readout)
         self._mouse_proxy = pg.SignalProxy(
@@ -217,10 +249,13 @@ class FinalScanPreviewDialog(QtWidgets.QDialog):
             return
 
         self._last_center = center
-        self.center_readout.setText(f"spot position =({center[0]}, {center[1]})  (right-click to copy)")
+        self.center_readout.setText(
+            f"spot position =({center[0]}, {center[1]})  (left-click to set spot, right-click to copy)"
+        )
 
     def _on_mouse_clicked(self, mouse_event):
-        if mouse_event.button() != QtCore.Qt.MouseButton.RightButton:
+        button = mouse_event.button()
+        if button not in (QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.MouseButton.RightButton):
             return
 
         pos = mouse_event.scenePos()
@@ -231,6 +266,12 @@ class FinalScanPreviewDialog(QtWidgets.QDialog):
 
         if center is None:
             return
+
+        if button == QtCore.Qt.MouseButton.LeftButton:
+            self.center_readout.setText(f"Spot set to ({center[0]}, {center[1]})")
+            self.spot_picked.emit(int(center[0]), int(center[1]))
+            return
+
         text = (f"        self.px_slm_phase_mask_position_x = {center[0]}\n"
                 f"        self.px_slm_phase_mask_position_y = {center[1]}")
         
@@ -302,6 +343,9 @@ class ScanWorker(QtCore.QThread):
 
 
 class UnifiedControlGUI(QtWidgets.QMainWindow):
+    RADIUS_MIN = 1
+    RADIUS_MAX = 600
+
     def __init__(self, camera):
         super().__init__()
         self.setWindowTitle("SLM Andor preview")
@@ -323,6 +367,9 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self._scan_was_running = True
         self._scan_xs = []
         self._scan_ys = []
+        self._scan_start_center = None
+        self._scan_picked = False
+        self._scan_restore_pending = False
 
         self.init_ui()
         reset_camera_state(self.camera, DummyCamera)
@@ -488,6 +535,26 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         center_group.setLayout(cg)
         sidebar.addWidget(center_group)
 
+        size_group = QtWidgets.QGroupBox("Spot Size")
+        sz = QtWidgets.QGridLayout()
+
+        sz.addWidget(QtWidgets.QLabel("Radius (px):"), 0, 0)
+        self.radius_sb = QtWidgets.QSpinBox()
+        self.radius_sb.setRange(self.RADIUS_MIN, self.RADIUS_MAX)
+        self.radius_sb.setValue(self.slm.spot_radius)
+        self.radius_sb.valueChanged.connect(self.on_spot_radius_changed)
+        sz.addWidget(self.radius_sb, 0, 1)
+
+        self.radius_slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
+        self.radius_slider.setRange(self.RADIUS_MIN, self.RADIUS_MAX)
+        self.radius_slider.setValue(self.slm.spot_radius)
+        self.radius_slider.valueChanged.connect(self.on_spot_radius_changed)
+        sz.addWidget(self.radius_slider, 1, 0, 1, 2)
+
+        self.size_group = size_group
+        size_group.setLayout(sz)
+        sidebar.addWidget(size_group)
+
         info_group = QtWidgets.QGroupBox("Pattern Info")
         v = QtWidgets.QVBoxLayout()
         self.coord_label = QtWidgets.QLabel("")
@@ -502,7 +569,7 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         scan_group = QtWidgets.QGroupBox("Scan")
         scan_layout = QtWidgets.QGridLayout()
 
-        scan_layout.addWidget(QtWidgets.QLabel("Range R (px):"), 0, 0)
+        scan_layout.addWidget(QtWidgets.QLabel("Range ±R (px):"), 0, 0)
         self.scan_R_sb = QtWidgets.QSpinBox()
         self.scan_R_sb.setRange(0, 5000)
         self.scan_R_sb.setValue(1)
@@ -520,17 +587,21 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.preview_mode_cb.setCurrentIndex(0)
         scan_layout.addWidget(self.preview_mode_cb, 2, 1)
 
+        self.return_to_start_cb = QtWidgets.QCheckBox("Return to start position after scan")
+        self.return_to_start_cb.setChecked(True)
+        scan_layout.addWidget(self.return_to_start_cb, 3, 0, 1, 2)
+
         self.scan_btn = QtWidgets.QPushButton("Scan")
         self.scan_btn.clicked.connect(self.start_scan)
-        scan_layout.addWidget(self.scan_btn, 3, 0, 1, 1)
+        scan_layout.addWidget(self.scan_btn, 4, 0, 1, 1)
 
         self.stop_scan_btn = QtWidgets.QPushButton("Stop")
         self.stop_scan_btn.setEnabled(False)
         self.stop_scan_btn.clicked.connect(self.stop_scan)
-        scan_layout.addWidget(self.stop_scan_btn, 3, 1, 1, 1)
+        scan_layout.addWidget(self.stop_scan_btn, 4, 1, 1, 1)
 
         self.scan_progress = QtWidgets.QLabel("Idle")
-        scan_layout.addWidget(self.scan_progress, 4, 0, 1, 2)
+        scan_layout.addWidget(self.scan_progress, 5, 0, 1, 2)
 
         scan_group.setLayout(scan_layout)
         sidebar.addWidget(scan_group)
@@ -568,6 +639,13 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.center_x_sb.blockSignals(False)
         self.center_y_sb.blockSignals(False)
 
+        r = int(self.slm.spot_radius)
+        for w in (self.radius_sb, self.radius_slider):
+            w.blockSignals(True)
+            w.setValue(max(self.RADIUS_MIN, min(self.RADIUS_MAX, r)))
+            w.blockSignals(False)
+        self.size_group.setEnabled(self.slm.mode == "spot")
+
         self.coord_label.setText(f"Center: ({cx}, {cy})")
         if self.slm.mode == "spot":
             self.size_label.setText(f"Radius: {self.slm.spot_radius}")
@@ -580,6 +658,9 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
 
     def on_mode_changed(self):
         self.slm.set_mode("spot" if self.mode_spot_rb.isChecked() else "grating")
+
+    def on_spot_radius_changed(self, value):
+        self.slm.set_spot_radius(int(value))
 
     def on_apply_center(self):
         self.slm.set_center(self.center_x_sb.value(), self.center_y_sb.value())
@@ -635,11 +716,23 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         step = int(self.scan_step_sb.value())
 
         x0, y0 = self.slm.get_center()
-        xs = list(range(x0 - R, x0 + R, step)) if R > 0 else [x0]
-        ys = list(range(y0 - R, y0 + R, step)) if R > 0 else [y0]
+        self._scan_start_center = (x0, y0)
+        self._scan_picked = False
+        self._scan_restore_pending = False
 
-        xs = [max(0, min(self.slm.canvas_res[0] - 1, x)) for x in xs]
-        ys = [max(0, min(self.slm.canvas_res[1] - 1, y)) for y in ys]
+        # Symmetric grid about the current spot position: the center itself is
+        # always scanned, and offsets run out to +-R in multiples of `step`.
+        n = R // step if R > 0 else 0
+        offsets = [k * step for k in range(-n, n + 1)]
+
+        # Drop (rather than clamp) points off the canvas -- clamping would
+        # produce duplicate tiles sharing one label.
+        xs = [x0 + d for d in offsets if 0 <= x0 + d < self.slm.canvas_res[0]]
+        ys = [y0 + d for d in offsets if 0 <= y0 + d < self.slm.canvas_res[1]]
+
+        if not xs or not ys:
+            self.scan_progress.setText("Center is off canvas; nothing to scan.")
+            return
 
         nx, ny = len(xs), len(ys)
         centers = [(x, y) for y in ys for x in xs]
@@ -663,6 +756,8 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
             self.scan_preview_dlg = LiveScanPreviewDialog(
                 nx, ny, xs, ys, parent=self, title=f"Scan Preview (live) ({ny}x{nx})"
             )
+            self.scan_preview_dlg.spot_picked.connect(self.on_scan_spot_picked)
+            self.scan_preview_dlg.finished.connect(lambda *_: self._maybe_return_to_start())
             self.scan_preview_dlg.show()
         else:
             if self.scan_preview_dlg is not None:
@@ -692,6 +787,37 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
             self.scan_worker.tile_sig.connect(self._on_scan_tile)
 
         self.scan_worker.start()
+
+    def _maybe_return_to_start(self):
+        """Send the pattern back to where the scan started.
+
+        No-op if the user left-clicked a tile (their pick stands), if the
+        checkbox is off, or if there is no pending scan to return from.
+        """
+        if not self._scan_restore_pending:
+            return
+        self._scan_restore_pending = False
+        if self._scan_picked or self._scan_start_center is None:
+            return
+        if self.return_to_start_cb.isChecked():
+            self.slm.set_center(*self._scan_start_center)
+
+    @QtCore.pyqtSlot(int, int)
+    def on_scan_spot_picked(self, cx, cy):
+        """Left-click on a scan tile -> move the pattern to that tile's position.
+
+        Ignored while a scan is running: the ScanWorker owns the center then and
+        would overwrite the pick at the next grid point.
+        """
+        if self.scan_worker is not None and self.scan_worker.isRunning():
+            if self.scan_preview_dlg is not None:
+                self.scan_preview_dlg.center_readout.setText(
+                    "Scan still running -- click again once it finishes."
+                )
+            return
+        self._scan_picked = True
+        self._scan_restore_pending = False
+        self.slm.set_center(int(cx), int(cy))
 
     def stop_scan(self):
         """
@@ -727,6 +853,11 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         self.stop_scan_btn.setEnabled(False)
         self.scan_progress.setText("Idle")
 
+        # The scan leaves the pattern parked on the last grid point. Put it back
+        # where the scan started -- but only once the preview is done with, and
+        # only if the user did not left-click a tile to choose a position.
+        self._scan_restore_pending = True
+
         if not getattr(self, "_scan_was_running", True):
             self.video_btn.setChecked(False)
             self.worker.stop()
@@ -746,7 +877,12 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
             ys = getattr(self, "_scan_ys", list(range(ny)))
 
             dlg = FinalScanPreviewDialog(grid, xs, ys, parent=self, title=f"Scan Preview ({ny}x{nx})")
+            dlg.spot_picked.connect(self.on_scan_spot_picked)
             dlg.exec()
+            self._maybe_return_to_start()
+        elif self.scan_preview_dlg is None or not self.scan_preview_dlg.isVisible():
+            # live dialog already closed -> nothing left to click on
+            self._maybe_return_to_start()
 
     def closeEvent(self, event):
         try:
@@ -776,11 +912,46 @@ class UnifiedControlGUI(QtWidgets.QMainWindow):
         event.accept()
 
 
+def andor_readout_params():
+    """The vertical/horizontal shift settings this lab's Andor actually images with.
+
+    AndorEMCCD.__init__ has its own defaults for these, but they are not the
+    ones this camera is known to produce clean images at -- in particular it
+    defaults to vs_amp=0 (normal vertical clock voltage). The values the
+    experiment path images with are the AndorParams defaults, which reach the
+    camera through CameraNanny.open(); read them from there so this GUI and the
+    experiment stay on one set of numbers instead of drifting apart.
+
+    AndorParams is imported straight from waxx rather than through
+    kexp.config.camera_id because that module pulls in the kexp package root,
+    and so artiq -- a heavy import to hang a preview GUI on. kexp's camera_id
+    does not override any of these four, so the values are the same either way.
+    """
+    fallback = dict(hs_speed=0, vs_speed=1, vs_amp=3, preamp=2)
+    try:
+        from waxx.control.cameras.camera_param_classes import AndorParams
+        p = AndorParams()
+        params = dict(
+            hs_speed=int(p.hs_speed),
+            vs_speed=int(p.vs_speed),
+            vs_amp=int(p.vs_amp),
+            preamp=int(p.preamp),
+        )
+        print(f"[camera] readout params from AndorParams: {params}")
+        return params
+    except Exception as e:
+        print(f"[camera] could not read AndorParams ({e}); "
+              f"using known-good fallback {fallback}")
+        return fallback
+
+
 class UnifiedExperiment():
     def build(self):
+        params = andor_readout_params()
         try:
-            self.camera = AndorEMCCD(ExposureTime=0.05, gain=0.0)
-        except Exception:
+            self.camera = AndorEMCCD(ExposureTime=0.05, gain=0.0, vs_speed=4)
+        except Exception as e:
+            print(f"[camera] AndorEMCCD open failed ({e}); falling back to DummyCamera")
             self.camera = DummyCamera()
 
     def run(self):

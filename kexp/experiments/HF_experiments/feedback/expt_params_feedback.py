@@ -9,7 +9,7 @@ class ExptParams(expt_params_kexp):
         # run 76036
         # self.frequency_detuned_hf_f1m1 = -574.51e6
         # self.frequency_detuned_hf_f10 = -465.38e6
-        self.frequency_detuned_hf_midpoint = -519.94e6
+        # self.frequency_detuned_hf_midpoint = -519.94e6
 
         self.update_raman_frequency_bool = 0
         self.include_photon_noise = 1
@@ -32,7 +32,7 @@ class ExptParams(expt_params_kexp):
         self.remesh_reset_counter_threshold_fraction = 1.5
         self.n_initial_shots_before_remesh = 2
 
-        self.t_raman_pulse = 5 * self.t_raman_pi_pulse / 2
+        self.t_raman_pulse = self.t_raman_pi_pulse / 2
         self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
 
         # calibration run 76047
@@ -49,10 +49,13 @@ class ExptParams(expt_params_kexp):
         # self.std_n_photons_down = 157.56
         # self.std_n_photons_per_shot = 229.94 # avg of up/down
         self.std_n_photons_per_shot = 157.56 # using down std
-        self.feedback_measurement_midpoint_fraction = 0.45998
+        # self.feedback_measurement_midpoint_fraction = 0.45998
+        
+        # run 76057 | multi-parameter grid fit result
+        self.feedback_measurement_midpoint_fraction = 0.607
 
         # run 66841 | multi-parameter grid fit result
-        self.back_action_coherence = 0.8067
+        self.back_action_coherence = 0.852941
 
         self.feedback_measurement_midpoint_remap_enabled = True
 

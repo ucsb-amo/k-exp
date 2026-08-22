@@ -27,11 +27,11 @@ class simulation_check(EnvExperiment, FeedbackExpt):
         ### parameters
 
         Omega = np.pi / self.p.t_raman_pi_pulse
-        self.p.override_pulse_list = 1
+        self.p.override_pulse_list = 0
         self.p.omega_override_pulse_list = np.ones(self.p.N_pulses) * \
             (2*np.pi*self.p.frequency_raman_transition + 0 * Omega)
 
-        # self.xvar('pulse_list_span_Omega', np.linspace(-12.,12.,9))
+        self.xvar('pulse_list_span_Omega', np.linspace(-2.,2.,9))
         self.p.pulse_list_span_Omega = 0.
         # self.xvar('pulse_list_seed', np.linspace(1056, 15432, 5, dtype=np.int32))
         self.p.pulse_list_seed = 1055533

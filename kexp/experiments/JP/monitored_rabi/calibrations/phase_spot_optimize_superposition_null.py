@@ -19,20 +19,17 @@ class phase_spot(EnvExperiment, Base):
         self.p.amp_imaging = 0.2
         self.p.t_imaging_pulse = 5.e-6
 
-        f = 1.e6
-        df = 0.5e6
-        self.xvar('frequency_detuned_hf_midpoint', -519.5e6 + np.arange(-f,f+df,df))
+        f = 30.e6
+        df = 2.e6
+        np.arange(-f,f+df,df)
+        self.xvar('frequency_detuned_hf_midpoint', self.p.frequency_detuned_hf_midpoint + np.arange(-f,f+df,df))
 
-        # self.p.frequency_detuned_hf_midpoint = -519.5e6
-
-        # self.xvar('phase_slm_mask', 0.387097 * np.pi + np.linspace(-0.2, 0.2, 5) * np.pi)
-        self.xvar('phase_slm_mask', np.linspace(0.,1.,7) * np.pi)
+        # self.xvar('phase_slm_mask', 0.387097 * np.pi + np.linspace(-0.1, 0.1, 5) * np.pi)
+        # self.xvar('phase_slm_mask', np.linspace(0.,1.,7) * np.pi)
         self.p.phase_slm_mask = 0.387097 * np.pi
 
         # self.xvar('dimension_slm_mask',np.linspace(15.e-6,250.e-6,10))
         # self.p.dimension_slm_mask = 20.e-6
-        
-        
         
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse
 
@@ -48,25 +45,25 @@ class phase_spot(EnvExperiment, Base):
 
         self.finish_prepare(shuffle=True)
 
-    def up_first(self) -> TBool:
-        """Whether this shot should measure the "up" spin state first.
+    # def up_first(self) -> TBool:
+    #     """Whether this shot should measure the "up" spin state first.
 
-        Alternates deterministically based on the repeat number of the
-        current phase_slm_mask value (recovered from the xvar's shuffle
-        permutation), not the shuffled shot order -- so every other repeat
-        of a given phase value starts up-first vs down-first, regardless of
-        how the scan order was randomized.
-        """
-        xvar = self.scan_xvars[0]
-        repeat_idx = int(xvar.sort_idx[xvar.counter]) % self.p.N_repeats
-        return repeat_idx % 2 == 0
+    #     Alternates deterministically based on the repeat number of the
+    #     current phase_slm_mask value (recovered from the xvar's shuffle
+    #     permutation), not the shuffled shot order -- so every other repeat
+    #     of a given phase value starts up-first vs down-first, regardless of
+    #     how the scan order was randomized.
+    #     """
+    #     xvar = self.scan_xvars[0]
+    #     repeat_idx = int(xvar.sort_idx[xvar.counter]) % self.p.N_repeats
+    #     return repeat_idx % 2 == 0
 
     @kernel
     def scan_kernel(self):
 
         self.integrator.init()
 
-        up_first = self.up_first()
+        # up_first = self.up_first()
 
         # set up weak measurement
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
@@ -80,20 +77,20 @@ class phase_spot(EnvExperiment, Base):
 
         idx0 = 0
         idx1 = 1
-        if not up_first:
-            # if do pi pulse first, first spin state is now spin down
-            self.raman.pulse(self.p.t_raman_pulse)
-            idx0 = 1
-            idx1 = 0
+        # if not up_first:
+        #     # if do pi pulse first, first spin state is now spin down
+        #     self.raman.pulse(self.p.t_raman_pulse)
+        #     idx0 = 1
+        #     idx1 = 0
+
+        self.raman.pulse(self.p.t_raman_pi_pulse/2)
 
         self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=idx0) # first spin state
-        delay(5.e-6)
-
-        self.raman.pulse(self.p.t_raman_pulse)
-
+        delay(10.e-6)
+        self.raman.pulse(self.p.t_raman_pi_pulse)
+        delay(10.e-6)
         self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=idx1) # second spin state
         delay(10.e-6)
-
         self.tweezer.off()
 
         delay(8.e-3)
