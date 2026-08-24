@@ -18,7 +18,7 @@ class hf_raman(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION,
                       expt_params=p)
 
-        self.xvar('with_imaging', [0,1])
+        # self.xvar('with_imaging', [0,1])
         self.p.with_imaging = 1
         # self.xvar('amp_imaging',np.linspace(0.05,0.4,15))
         self.xvar('relative_phase', np.linspace(0., 3*np.pi, 17))
@@ -35,7 +35,7 @@ class hf_raman(EnvExperiment, Base):
         self.p.t_tof = 800.e-6
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
-        self.p.frequency_detuned_hf_midpoint = -516.5e6
+        # self.p.frequency_detuned_hf_midpoint = -516.5e6
 
         self.finish_prepare(shuffle=True)
 

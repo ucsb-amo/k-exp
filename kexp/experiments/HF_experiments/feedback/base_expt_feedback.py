@@ -53,7 +53,15 @@ class FeedbackExpt(Base, Feedback):
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
         self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
-        
+
+        ### randomized raman pulse-time list
+        self._init_t_raman_pulse_rng()
+        # Draw once so the list attribute has its compile-time shape/dtype,
+        # then rewind the RNG so shot 0 consumes the first batch of the stream.
+        self.p.t_raman_pulse_list = self.get_new_t_raman_pulse_list()
+        self._t_raman_pulse_rng = np.random.default_rng(self.p.t_raman_pulse_seed_used)
+
+
         self.data.feedback_data_containers(self.p)
         # populate first row of probabilities with pre-pulse lists
         self.data.probabilities.shot_data[0, :] = self.P0
@@ -66,7 +74,10 @@ class FeedbackExpt(Base, Feedback):
 
         self.core.wait_until_mu(now_mu())
         self.p.omega_pulse_list = self.get_new_pulse_list(seed=self.p.pulse_list_seed)
+        self.p.t_raman_pulse_list = self.get_new_t_raman_pulse_list()
         self.omega_raman = self.p.omega_pulse_list[0]
+        # record this shot's drawn pulse times (synced to host at end of shot)
+        self.data.t_raman_pulse.put_data_1d(self.p.t_raman_pulse_list)
         self.core.break_realtime()
 
         self.integrator.init()
@@ -127,12 +138,21 @@ class FeedbackExpt(Base, Feedback):
         
         dT = self.p.t_between_pulses_mu
 
+        # Fixed turn-on delay between the programmed and ideal pulse times;
+        # applied to each drawn pulse time below.
+        t_turn_on_delay = self.p.t_raman_pulse - self.p.t_raman_pulse_ideal
+
         at_mu(t_start_mu)
 
         for i in range(self.p.N_pulses):
 
             self.per_feedback_loop_top(idx=i)
             f = self.omega_raman / (2*np.pi)
+
+            # pulse i time (drawn per shot; see get_new_t_raman_pulse_list)
+            t_pulse = self.p.t_raman_pulse_list[i]
+            self.t_raman_pulse_current = t_pulse
+            self.t_raman_pulse_ideal_current = t_pulse - t_turn_on_delay
 
             # pulse i frequency
             self.data.omega_raman.put_data(self.omega_raman, i)
@@ -144,10 +164,10 @@ class FeedbackExpt(Base, Feedback):
 
             phase_tracker = self.raman.io_update_and_phase_update(t_pulse_mu = t_step,
                                                                 t_last_pulse_mu = t_step - dT)
-            
+
             at_mu(t_step)
 
-            self.raman.pulse(self.p.t_raman_pulse)
+            self.raman.pulse(t_pulse)
             k = self.measurement(i)
             self.omega_raman, omega_posterior_mean, self.Omega = self.generate_posterior(k, t,
                                                     phase_raman_pulse_start=phase_tracker,
@@ -157,23 +177,26 @@ class FeedbackExpt(Base, Feedback):
             if i > (self.p.n_initial_shots_before_remesh-1):
                 self.maybe_remesh(self._posterior_std, omega_center=omega_posterior_mean)
 
-            # Recompute the inter-pulse gap with current params so any per-step
-            # change to t_raman_pulse or t_img_pulse is reflected in the next step.
+            # Gap between the start of pulse i and pulse i+1: budgets pulse i's
+            # drawn duration plus imaging, calculation slack, and the next
+            # pulse's frequency-set pretrigger, so the period floats with the
+            # drawn pulse times. The analysis reconstructs this per step from
+            # the saved data.t_raman_pulse (FeedbackReplayCore._compute_dT_rr_mu).
             dT = self.compute_t_between_pulses_mu(
                 t_calculation_slack_compensation_mu=self.p.t_calculation_slack_compensation_mu,
-                t_raman_pulse=self.p.t_raman_pulse,
+                t_raman_pulse=t_pulse,
                 t_img_pulse=self.p.t_img_pulse,
                 t_raman_pretrigger=self.p.t_raman_set_pretrigger_mu,
                 t_fifo_mu=self.p.t_fifo_mu
             )
-            
+
             # time of result of pulse i
-            self.data.t.put_data(t + self.p.t_raman_pulse + self.p.t_img_pulse, i)
+            self.data.t.put_data(t + t_pulse + self.p.t_img_pulse, i)
             # result of pulse i
-            self.data.s_z.put_data(self.state_z[self.zidx], i) 
-            
+            self.data.s_z.put_data(self.state_z[self.zidx], i)
+
             t_step += dT
-            
+
             self.per_feedback_loop_end(idx=i)
 
         self.per_scan_kernel_end()
@@ -214,6 +237,53 @@ class FeedbackExpt(Base, Feedback):
     def per_feedback_loop_end(self, idx):
         '''runs per step of the feedback loop after everything else'''
         pass
+
+    ### randomized raman pulse-time list
+
+    def _init_t_raman_pulse_rng(self):
+        """Create the persistent RNG that draws per-shot raman pulse-time lists.
+
+        p.t_raman_pulse_seed = 0 means unseeded: a fresh seed is drawn from
+        entropy. Either way, the seed actually used is recorded in
+        p.t_raman_pulse_seed_used (saved with the run params), so the full
+        sequence of drawn lists is reproducible for any run.
+        """
+        seed = int(self.p.t_raman_pulse_seed)
+        if seed == 0:
+            # keep to 31 bits (and nonzero) so the param stays int32-typed on
+            # the kernel -- a fresh uint32 draw above 2**31 would retype the
+            # attribute as int64 and fail ARTIQ type unification
+            seed = int(np.random.SeedSequence().generate_state(1)[0] >> 1)
+            if seed == 0:
+                seed = 1
+        self.p.t_raman_pulse_seed_used = seed
+        self._t_raman_pulse_rng = np.random.default_rng(seed)
+
+    @rpc
+    def get_new_t_raman_pulse_list(self) -> TArray(TFloat):
+        """Draw the next shot's raman pulse times from the persistent RNG stream.
+
+        Uniform in [t_raman_pulse_min_frac_pi, t_raman_pulse_max_frac_pi] *
+        t_raman_pi_pulse, rounded to whole ns so that kernel delays and the mu
+        conversion in compute_t_between_pulses_mu agree exactly with the values
+        saved to data.t_raman_pulse. Each call consumes the next N_pulses draws
+        from the run's seeded stream, so every shot gets a fresh list while the
+        whole run remains reproducible from p.t_raman_pulse_seed_used.
+
+        With t_raman_pulse_random_bool = 0, returns a constant list at the
+        scalar p.t_raman_pulse (the pre-randomization behavior).
+        """
+        if not self.p.t_raman_pulse_random_bool:
+            self.p.t_raman_pulse_list = np.full(self.p.N_pulses,
+                                                self.p.t_raman_pulse)
+            return self.p.t_raman_pulse_list
+        t_pi = self.p.t_raman_pi_pulse
+        t_list = self._t_raman_pulse_rng.uniform(
+            self.p.t_raman_pulse_min_frac_pi * t_pi,
+            self.p.t_raman_pulse_max_frac_pi * t_pi,
+            self.p.N_pulses)
+        self.p.t_raman_pulse_list = np.round(t_list * 1.e9) * 1.e-9
+        return self.p.t_raman_pulse_list
 
     @rpc
     def get_new_pulse_list(self, seed=0) -> TArray(TFloat):

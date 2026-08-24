@@ -10,9 +10,9 @@ class hf_bec(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
                       setup_camera=True,
-                      save_data=True,
+                      save_data=False,
                       camera_select=cameras.andor,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.DISPERSIVE)
         
         self.p.t_tweezer_hold = 10.e-3
 
@@ -21,7 +21,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.p.phase_slm_mask = 1.6 * np.pi
         
-        self.p.N_repeats = 30
+        self.p.N_repeats = 1000
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
         # self.p.v_hf_tweezer_paint_amp_max = -2.2
@@ -68,8 +68,10 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('phase_slm_mask',np.linspace(0.,5.,17))
 
         # self.adjust('t_tof',100.e-6,3000.e-6)
-        # self.adjust('phase_slm_mask',0.,4*np.pi)
-        # self.adjust('dimension_slm_mask',10.e-6,200.e-6)
+        self.adjust('phase_slm_mask',0.,4*np.pi)
+        self.adjust('dimension_slm_mask',10.e-6,200.e-6)
+        self.adjust('px_slm_phase_mask_position_x',1000,1100,step=1,dtype=int)
+        self.adjust('px_slm_phase_mask_position_y',800,850,step=1,dtype=int)
 
         # self.xvar('t_tweezer_hold',np.linspace(10.,1000.,4)*1.e-6)
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0,-3,10))
@@ -78,9 +80,11 @@ class hf_bec(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        # self.slm.write_phase_mask_kernel(dimension=self.p.dimension_slm_mask,
-        #                                  phase=self.p.phase_slm_mask)
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.slm.write_phase_mask_kernel(dimension=self.p.dimension_slm_mask,
+                                         phase=self.p.phase_slm_mask,
+                                         x_center=self.p.px_slm_phase_mask_position_x,
+                                         y_center=self.p.px_slm_phase_mask_position_y)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()

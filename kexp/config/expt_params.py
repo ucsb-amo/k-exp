@@ -53,7 +53,7 @@ class ExptParams(ExptParamsWaxx):
         # 1,-1 to 1,0
         # self.frequency_detuned_hf_f10 = 
         # self.frequency_detuned_hf_midpoint = -516.5e6 #-504.e6
-        self.frequency_detuned_hf_midpoint = -511.07e6 # run 76091
+        self.frequency_detuned_hf_midpoint = -519.5e6 #-504.e6
 
         # self.frequency_detuned_hf_midpoint = -489.5e6 #176.5 A
 
@@ -73,11 +73,11 @@ class ExptParams(ExptParamsWaxx):
         self.detune_d2_2d_r_imaging = -4.4
 
         # SLM settings
-        self.dimension_slm_mask = 20.e-6 
-        self.phase_slm_mask = .357 * np.pi
+        self.dimension_slm_mask = 30.e-6 
+        self.phase_slm_mask = 0.387097 * np.pi
         self.px_slm_grating_position_x = 994
         self.px_slm_grating_position_y = 824
-        self.px_slm_phase_mask_position_x = 1017
+        self.px_slm_phase_mask_position_x = 1021
         self.px_slm_phase_mask_position_y = 821
         # Cooling timing
         self.t_tof = 20.e-6
@@ -154,7 +154,9 @@ class ExptParams(ExptParamsWaxx):
         self.t_feshbach_field_ramp_special = 20.e-3
 
         # self.t_raman_pi_pulse = 8.3588e-06 #76021, 2026-08-20
-        self.t_raman_pi_pulse = 8.8237e-06 #76038, 2026-08-20
+        # self.t_raman_pi_pulse = 8.8237e-06 #76038, 2026-08-20
+        # self.t_raman_pi_pulse = 8.9806e-06 #76115, 2026-08-21
+        self.t_raman_pi_pulse = 8.6438e-06 #76216, 2026-08-24
 
          
         # DAC controlled AO amplitudes
@@ -358,9 +360,9 @@ class ExptParams(ExptParamsWaxx):
 
         # self.frequency_raman_transition = 41.25e6 # 57 G 1,-1 to 1,0
 
+        self.frequency_raman_transition_1m1_2m2 = 147.2593e6 #76037 2026-8-20
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
-        # self.frequency_raman_transition = 119.4640e6 #67744 182 A
-        self.frequency_raman_transition = 119.4638e6 #76037 2026-8-20
+        self.frequency_raman_transition = 119.4640e6 #76214
         # self.frequency_raman_transition = 119.3977e6 # 176.5 A
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0

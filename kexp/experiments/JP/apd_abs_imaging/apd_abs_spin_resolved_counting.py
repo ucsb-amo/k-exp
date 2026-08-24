@@ -24,6 +24,10 @@ class spin_resolved_counting(EnvExperiment, Base):
         # self.xvar('t_inter_pulse_time',np.linspace(15.,200.,3)*1.e-6)
         self.p.t_inter_pulse_time = 100.e-6
 
+        self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2
+
+        # self.p.frequency_raman_transition = 147.2593e6
+
         self.p.t_imaging_pulse = 5.e-6
         self.p.t_cleanout_pulse = 80.e-6
 
@@ -43,7 +47,9 @@ class spin_resolved_counting(EnvExperiment, Base):
         self.prepare_hf_tweezers()
         self.prep_raman()
 
-        self.raman.pulse(self.p.t_raman_pi_pulse/2)
+        self.raman.pulse(self.p.t_raman_pulse)
+
+        self.raman.set(frequency_transition=)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         delay(self.p.t_scope_trig_to_pulse_offset)

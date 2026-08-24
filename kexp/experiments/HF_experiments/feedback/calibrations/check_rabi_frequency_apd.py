@@ -10,17 +10,19 @@ from artiq.language import now_mu
 class hf_raman(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,
+        Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
         
-        # self.xvar('t_raman_pulse', np.linspace(0.,100.,35)*1.e-6)
-        self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,100.,31),np.linspace(200.,240.,15)))*1.e-6)
+        self.xvar('t_raman_pulse', np.linspace(0.,50.,20)*1.e-6)
+        # self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,100.,31),np.linspace(200.,240.,15)))*1.e-6)
         # self.xvar('t_raman_pulse', np.linspace(200.,240.,20)*1.e-6)
         # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse]*5)
 
         self.p.t_raman_pulse = 0.
+
+        self.p.t_imaging_pulse = 10.e-6
 
         self.p.t_tweezer_hold = 2.e-3
 
@@ -29,9 +31,11 @@ class hf_raman(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_squeeze_power = 7.
         # self.p.t_tof = 8.e-6
 
+        self.data.apd = self.data.add_data_container(3)
+
         self.p.t_tof = 800.e-6
         
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1
 
         self.camera_params.amp_imaging = 0.2
 
@@ -50,12 +54,18 @@ class hf_raman(EnvExperiment, Base):
 
         self.ttl.raman_shutter.off()
 
+        self.imaging.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=0)
+
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
 
-        delay(self.p.t_tof)
+        delay(10.e-3)
 
-        self.abs_image()
+        self.imaging.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=1)
+
+        delay(50.e-6)
+
+        self.imaging.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=2, dark=True)
 
     @kernel
     def run(self):
