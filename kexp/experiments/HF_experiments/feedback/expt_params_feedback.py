@@ -35,27 +35,24 @@ class ExptParams(expt_params_kexp):
         self.t_raman_pulse = self.t_raman_pi_pulse / 2
         self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
 
-        # calibration run 76047
+        # calibration run 76224
         # img amp 0.2, pulse time 5.0e-06 s
-        self.frequency_lightshift = 3.5e+04  # Hz
+        self.frequency_lightshift = 3.46e+04  # Hz
                 
-        # calibration run 76050
+        # calibration run 76227
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.14057
-        self.v_apd_all_down = -0.18343
-        self.n_photons_per_shot = 625.02
-        # self.std_n_photons_up = 302.33
-        # self.std_n_photons_down = 157.56
-        # self.std_n_photons_per_shot = 229.94 # avg of up/down
-        self.std_n_photons_per_shot = 157.56 # using down std
-        # self.feedback_measurement_midpoint_fraction = 0.45998
-        
-        # run 76057 | multi-parameter grid fit result
-        self.feedback_measurement_midpoint_fraction = 0.607
+        self.v_apd_all_up = -0.1331
+        self.v_apd_all_down = -0.17931
+        self.n_photons_per_shot = 784.6
+        # self.std_n_photons_up = 69.696
+        # self.std_n_photons_down = 180.7
+        # self.std_n_photons_per_shot = 125.2 # avg of up/down
+        self.std_n_photons_per_shot = 180.7 # using down std
+        self.feedback_measurement_midpoint_fraction = 0.3237
 
-        # run 66841 | multi-parameter grid fit result
-        self.back_action_coherence = 0.852941
+        # run 76228 | multi-parameter grid fit result
+        self.back_action_coherence = 0.7563
 
         self.feedback_measurement_midpoint_remap_enabled = True
 
@@ -75,6 +72,21 @@ class ExptParams(expt_params_kexp):
         self.t_ffu_dds_pipeline_latency = int64(79)
         self.t_io_update_pretrigger_mu = int64(32)
         self.t_ffu_pipeline_latency_fudge_mu = int64(0)
+
+        ### randomized raman pulse times
+        # Each shot draws its own list of N_pulses raman pulse times, uniform
+        # in [min_frac, max_frac] * t_raman_pi_pulse, from a single RNG stream
+        # seeded once per run (see FeedbackExpt.get_new_t_raman_pulse_list).
+        # t_raman_pulse_seed = 0 --> unseeded (fresh entropy each run); the
+        # seed actually used is always recorded in t_raman_pulse_seed_used, and
+        # the drawn times are saved per shot in data.t_raman_pulse.
+        self.t_raman_pulse_random_bool = 1
+        self.t_raman_pulse_seed = 0
+        self.t_raman_pulse_seed_used = 0
+        self.t_raman_pulse_min_frac_pi = 1/3
+        self.t_raman_pulse_max_frac_pi = 2/3
+        # per-shot drawn pulse times; populated in finish_prepare / scan_kernel
+        self.t_raman_pulse_list = np.array([self.t_raman_pulse])
 
         ### other
         self.pulse_list_span_Omega = 0.

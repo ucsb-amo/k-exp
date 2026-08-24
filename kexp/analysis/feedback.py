@@ -82,6 +82,12 @@ class FeedbackReplayResult:
     state_rr
         Optional resonance Bloch trajectory [sx, sy, sz].
         Shape: (N_repeat, N_step, 3) when requested, else None.
+    t_raman_pulse_rr
+        Raman pulse time applied at each repeat/step (s), as used for the
+        replay time base. Saved per shot for randomized-pulse-time runs;
+        constant at p.t_raman_pulse for older datasets.
+    dT_mu_rr
+        Reconstructed inter-pulse gap following each pulse (machine units).
     metadata
         Additional run metadata and applied overrides.
     """
@@ -98,6 +104,8 @@ class FeedbackReplayResult:
     omega_guess_list: np.ndarray
     zidx: int
     state_rr: Optional[np.ndarray] = None
+    t_raman_pulse_rr: Optional[np.ndarray] = None
+    dT_mu_rr: Optional[np.ndarray] = None
     metadata: Dict[str, object] = field(default_factory=dict)
 
 
@@ -152,6 +160,14 @@ class FeedbackReplayCore(Feedback):
         if hasattr(ad.data, "omega_raman"):
             self._omega_rr_cached = self._to_repeat_step(
                 self._restore_shot_step_axis(ad.data.omega_raman), "ad.data.omega_raman")
+        # Per-shot drawn raman pulse times (randomized-pulse-time runs). Older
+        # datasets lack this container; _resolve_t_raman_pulse_rr then falls
+        # back to the scalar p.t_raman_pulse, which reproduces the
+        # pre-randomization replay exactly.
+        self._t_raman_pulse_rr_cached = None
+        if hasattr(ad.data, "t_raman_pulse"):
+            self._t_raman_pulse_rr_cached = self._to_repeat_step(
+                self._restore_shot_step_axis(ad.data.t_raman_pulse), "ad.data.t_raman_pulse")
         # Create independent copy of parameters so modifications don't affect shared atomdata
         self.p = copy.copy(ad.p)
         self._base_kwargs = self._build_base_feedback_kwargs(ad)
@@ -165,6 +181,30 @@ class FeedbackReplayCore(Feedback):
         # Freeze t_between_pulses_mu so scanning t_raman_pulse, t_img_pulse, delta_t_mu
         # doesn't change it. Phase is recomputed with frozen t_between and new pulse timings.
         self._frozen_t_between_pulses_mu = int(self._default_timing.get("t_between_pulses_mu", 0))
+
+        # The as-run scalar pulse time. Optimizer overrides of t_raman_pulse
+        # shift the per-pulse effective times by (override - nominal) while the
+        # as-run timeline stays frozen (see _run_shot_into_buffers).
+        self._t_raman_pulse_nominal_recorded = self._scalar_from_maybe_array(
+            self._base_kwargs.get("t_raman_pulse"), name="t_raman_pulse", fallback=0.0)
+
+        # Non-pulse part of the kernel's per-step gap formula,
+        #   dT_i = (slack + pretrigger + int64(t_pulse_i*1e9) + img + fifo) & ~7,
+        # reconstructed from recorded params for per-pulse timeline replay.
+        # Validated against the recorded t_between_pulses_mu at the nominal
+        # pulse time; if that fails (older data formats), _compute_dT_rr_mu
+        # falls back to the constant frozen gap, which is exact whenever the
+        # pulse-time list is constant.
+        self._t_between_base_mu = int(
+            self._default_timing["t_calculation_slack_compensation_mu"]
+            + self._default_timing["t_raman_set_pretrigger_mu"]
+            + self._default_timing["t_img_pulse_mu"]
+            + self._default_timing["t_fifo_mu"]
+        )
+        _nominal_mu = int(np.int64(self._t_raman_pulse_nominal_recorded * 1.0e9))
+        self._t_between_base_valid = (
+            ((self._t_between_base_mu + _nominal_mu) & ~7) == self._frozen_t_between_pulses_mu
+        )
 
         self._apply_feedback_kwargs_to_params(self._base_kwargs)
         Feedback.__init__(self)
@@ -434,6 +474,9 @@ class FeedbackReplayCore(Feedback):
             "t_raman_set_pretrigger_mu": int(getattr(p, "t_raman_set_pretrigger_mu", 0)),
             "t_calculation_slack_compensation_mu": int(getattr(p, "t_calculation_slack_compensation_mu", 0)),
             "t_fifo_mu": int(getattr(p, "t_fifo_mu", 1000)),
+            # recorded imaging pulse in mu, converted exactly as the kernel's
+            # compute_t_between_pulses_mu does (int64 truncation)
+            "t_img_pulse_mu": int(np.int64(float(getattr(p, "t_img_pulse", 0.0)) * 1.0e9)),
         }
 
     @staticmethod
@@ -643,6 +686,57 @@ class FeedbackReplayCore(Feedback):
             return omega_rr
 
         return None
+
+    def _resolve_t_raman_pulse_rr(self, n_repeat: int, n_step: int) -> Tuple[np.ndarray, str]:
+        """Per-shot, per-pulse raman pulse times actually applied by the experiment.
+
+        Returns ``(t_raman_pulse_rr, source)`` with shape (n_repeat, n_step).
+        New-format runs save the drawn times in ad.data.t_raman_pulse; older
+        runs pulsed the scalar p.t_raman_pulse every step, so the fallback is a
+        constant array at the recorded nominal -- with which the per-pulse
+        replay reduces exactly to the pre-randomization behavior.
+        """
+        if self._t_raman_pulse_rr_cached is not None:
+            t_rr = np.asarray(self._t_raman_pulse_rr_cached, dtype=float)
+            t_rr = self._trim_known_unused_trailing_column(t_rr, "ad.data.t_raman_pulse", n_step)
+            if t_rr.shape != (n_repeat, n_step):
+                raise ValueError(
+                    f"cached t_raman_pulse shape {t_rr.shape} does not match APD shape ({n_repeat}, {n_step})."
+                )
+            return t_rr, "measured"
+
+        return (
+            np.full((n_repeat, n_step), self._t_raman_pulse_nominal_recorded, dtype=float),
+            "constant-param",
+        )
+
+    def _compute_dT_rr_mu(self, t_raman_pulse_rr: np.ndarray) -> np.ndarray:
+        """Reconstruct each shot's per-step inter-pulse gap (machine units).
+
+        Mirrors the kernel's per-step recomputation in feedback_loop:
+            dT_i = (slack + pretrigger + int64(t_pulse_i * 1e9) + img + fifo) & ~7
+        using the recorded (frozen) non-pulse terms, so optimizer overrides of
+        t_raman_pulse / t_img_pulse shift pulse areas without rewriting the
+        as-run timeline (the same freezing policy as _frozen_t_between_pulses_mu).
+
+        When the base terms cannot be validated against the recorded
+        t_between_pulses_mu (pre-randomization data formats), falls back to the
+        constant frozen gap -- exact whenever the pulse-time list is constant.
+        """
+        t_pulse = np.asarray(t_raman_pulse_rr, dtype=float)
+        if not self._t_between_base_valid:
+            if not np.allclose(t_pulse, t_pulse.flat[0]):
+                import warnings
+                warnings.warn(
+                    "t_between_pulses_mu base terms could not be validated against the "
+                    "recorded value; replaying a varying pulse-time list with a constant "
+                    "inter-pulse gap. Timing may be off by up to 8 ns per step.",
+                    UserWarning,
+                )
+            return np.full(t_pulse.shape, self._frozen_t_between_pulses_mu, dtype=np.int64)
+        # .astype(np.int64) truncates toward zero, matching np.int64() in the kernel
+        t_pulse_mu = (t_pulse * 1.0e9).astype(np.int64)
+        return (np.int64(self._t_between_base_mu) + t_pulse_mu) & ~np.int64(7)
 
     @staticmethod
     def _trim_known_unused_trailing_column(
@@ -959,6 +1053,8 @@ class FeedbackReplayCore(Feedback):
         r: int,
         n_step: int,
         apd_rr: np.ndarray,
+        t_raman_pulse_rr: np.ndarray,
+        dT_rr_mu: np.ndarray,
         fractional_initial_offset_r: np.ndarray,
         omega_measured_rr: Optional[np.ndarray],
         control_omega_source: str,
@@ -996,8 +1092,22 @@ class FeedbackReplayCore(Feedback):
         tP_mu = int(timing["t_between_pulses_mu"])
         T_pre_mu = int(timing["t_io_update_pretrigger_mu"])
         dt_fudge_mu = int(timing["t_ffu_pipeline_latency_fudge_mu"])
-        tR_mu = int(timing["t_raman_set_pretrigger_mu"])
-        t_s_z_offset = float(timing["dt_eff"]) + float(timing["t_img_pulse"])
+        t_img = float(timing["t_img_pulse"])
+
+        # Per-pulse times for this shot. The as-run values set the timeline;
+        # optimizer overrides act on the pulse areas fed to the posterior:
+        # scanning t_raman_pulse shifts every drawn time by (override - nominal),
+        # and t_raman_pulse_ideal moves the turn-on delay -- for constant-list
+        # (older) runs both reduce exactly to the scalar behavior.
+        t_pulse_s = np.asarray(t_raman_pulse_rr[r], dtype=float)
+        dT_mu_s = dT_rr_mu[r]
+        dt_shift = float(timing["dt_eff"]) - self._t_raman_pulse_nominal_recorded
+        t_turn_on_delay = float(timing["dt_eff"]) - float(timing["dt_ideal"])
+        dt_eff_s = t_pulse_s + dt_shift
+        dt_ideal_s = dt_eff_s - t_turn_on_delay
+
+        # Pulse-start times: pulse i starts after the gaps trailing pulses 0..i-1.
+        t_in_s = np.concatenate(([0.0], np.cumsum(dT_mu_s[:-1]))) * 1.0e-9
 
         # Precompute photon-count-equivalent measurements once per shot to reduce
         # per-step Python call overhead in the hot replay loop.
@@ -1025,14 +1135,22 @@ class FeedbackReplayCore(Feedback):
             self.omega_raman = omega_ctrl
 
             # Phase model mirrors RamanBeamPair.io_update_and_phase_update with dt0=dt1=4 mu:
-            # old-freq period = tP - T_pretrigger + dt0 + dt_fudge
+            # old-freq period = dT - T_pretrigger + dt0 + dt_fudge
             # new-freq period = T_pretrigger - dt0 - dt_fudge  (where dt0 = 4 mu)
-            _t_old = tP_mu - T_pre_mu + 4 + dt_fudge_mu
+            # dT is the gap since the previous pulse (per-step for randomized
+            # pulse times); step 0 keeps the nominal tP_mu, matching the
+            # kernel's pre-loop dT (it multiplies omega_prev = 0 regardless).
+            _gap_mu = tP_mu if i == 0 else int(dT_mu_s[i - 1])
+            _t_old = _gap_mu - T_pre_mu + 4 + dt_fudge_mu
             _t_new = T_pre_mu - 4 - dt_fudge_mu
             phase_tracker += (_t_old * omega_prev + _t_new * self.omega_raman) * 1.0e-9
 
-            t_in = i * tP_mu * 1.0e-9
+            t_in = float(t_in_s[i])
             k_val = float(k_vals[i])
+
+            # pulse i's effective/ideal times, read by generate_posterior
+            self.t_raman_pulse_current = float(dt_eff_s[i])
+            self.t_raman_pulse_ideal_current = float(dt_ideal_s[i])
 
             omega_prev = self.omega_raman
             omega_new, _, omega_std = self.generate_posterior(
@@ -1052,7 +1170,7 @@ class FeedbackReplayCore(Feedback):
             omega_control_rr[r, i] = omega_ctrl
             omega_recomputed_rr[r, i] = float(self.omega_raman)
             t_input_rr[r, i] = t_in
-            t_s_z_rr[r, i] = t_in + t_s_z_offset
+            t_s_z_rr[r, i] = t_in + float(dt_eff_s[i]) + t_img
             k_rr[r, i] = k_val
 
             if return_full_state and state_rr is not None:
@@ -1098,6 +1216,15 @@ class FeedbackReplayCore(Feedback):
 
         timing = self._resolve_timing()
 
+        # As-run per-pulse times and the timeline they imply. A user override
+        # of p.t_between_pulses_mu still works as before: its difference from
+        # the frozen value shifts every reconstructed gap.
+        t_raman_pulse_rr, t_raman_pulse_source = self._resolve_t_raman_pulse_rr(
+            n_repeat=n_repeat, n_step=n_step)
+        dT_rr_mu = self._compute_dT_rr_mu(t_raman_pulse_rr)
+        dT_rr_mu = dT_rr_mu + np.int64(
+            int(timing["t_between_pulses_mu"]) - self._frozen_t_between_pulses_mu)
+
         omega_measured_rr = self._resolve_omega_rr(n_repeat=n_repeat, n_step=n_step, omega_override_rr=omega_override_rr)
         if control_omega_source in {"measured", "override"} and omega_measured_rr is None:
             raise ValueError("No omega control data available. Provide omega_override_rr or saved ad.data.omega_raman.")
@@ -1128,6 +1255,8 @@ class FeedbackReplayCore(Feedback):
                     r,
                     n_step,
                     apd_rr,
+                    t_raman_pulse_rr,
+                    dT_rr_mu,
                     fractional_initial_offset_r,
                     omega_measured_rr,
                     control_omega_source,
@@ -1151,7 +1280,8 @@ class FeedbackReplayCore(Feedback):
         else:
             for r in range(n_repeat):
                 self._run_shot_into_buffers(
-                    r, n_step, apd_rr, fractional_initial_offset_r, omega_measured_rr, control_omega_source, timing,
+                    r, n_step, apd_rr, t_raman_pulse_rr, dT_rr_mu,
+                    fractional_initial_offset_r, omega_measured_rr, control_omega_source, timing,
                     include_photon_noise, update_raman_frequency, update_rabi_frequency,
                     return_full_state, zidx,
                     s_z_rr, P0_rr, omega_control_rr, omega_recomputed_rr, t_input_rr, t_s_z_rr, k_rr, state_rr,
@@ -1174,10 +1304,14 @@ class FeedbackReplayCore(Feedback):
             omega_guess_list=omega_guess_list,
             zidx=int(zidx),
             state_rr=state_rr,
+            t_raman_pulse_rr=t_raman_pulse_rr,
+            dT_mu_rr=dT_rr_mu,
             metadata={
                 "run_id": int(getattr(self, "_run_id", -1)),
                 "N_repeat": int(n_repeat),
                 "N_step": int(getattr(self.p, "N_pulses", n_step)),
+                "t_raman_pulse_source": t_raman_pulse_source,
+                "t_raman_pulse_seed_used": int(getattr(self.p, "t_raman_pulse_seed_used", 0)),
                 "feedback_grid_size": self._effective_feedback_grid_size(),
                 "control_omega_source": str(control_omega_source),
                 "include_photon_noise": bool(include_photon_noise),

@@ -159,8 +159,12 @@ class Feedback:
         Omega = self.Omega
         Omega_sq = Omega * Omega
 
-        dt_eff = self.p.t_raman_pulse
-        dt_ideal = self.p.t_raman_pulse_ideal
+        # Pulse times of the raman pulse being processed. Equal to the scalar
+        # p.t_raman_pulse / p.t_raman_pulse_ideal unless the caller sets them
+        # per pulse (randomized pulse-time lists; see feedback_loop in
+        # base_expt_feedback.py and FeedbackReplayCore._run_shot_into_buffers).
+        dt_eff = self.t_raman_pulse_current
+        dt_ideal = self.t_raman_pulse_ideal_current
         dt_z = self.p.t_img_pulse
 
         if include_photon_noise:
@@ -417,6 +421,13 @@ class Feedback:
         self.p.feedback_grid_size = int(self.p.feedback_grid_size)
         self.m = self.p.feedback_grid_size
         self.Omega = np.pi / self.p.t_raman_pi_pulse
+        # Effective/ideal duration of the raman pulse currently being processed
+        # by generate_posterior. Scalar experiments leave these at the param
+        # values; randomized-pulse-time experiments (and replay) overwrite them
+        # per pulse. NOT kernel invariants for this reason.
+        self.t_raman_pulse_current = float(getattr(self.p, "t_raman_pulse", 0.0))
+        self.t_raman_pulse_ideal_current = float(
+            getattr(self.p, "t_raman_pulse_ideal", self.t_raman_pulse_current))
 
     def _initialize_lightshift(self):
         self.p.frequency_lightshift = self._resolve_lightshift_calibration(self.p.amp_imaging, self.p.frequency_lightshift)

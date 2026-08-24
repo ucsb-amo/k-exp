@@ -15,6 +15,11 @@ class DataVault(DataVaultKexp):
         # exactly or their last column is unwritten zero padding.
         self.omega_raman = self.add_data_container(p.N_pulses)
         self.apd = self.add_data_container(p.N_pulses)
+        # drawn raman pulse time for each pulse of this shot (see
+        # FeedbackExpt.get_new_t_raman_pulse_list); written once per shot with
+        # put_data_1d at the top of scan_kernel. Older datasets lack this
+        # container -- analysis falls back to the scalar p.t_raman_pulse.
+        self.t_raman_pulse = self.add_data_container(p.N_pulses)
 
         self.s_z = self.add_data_container(p.N_pulses)
         self.t = self.add_data_container(p.N_pulses)
