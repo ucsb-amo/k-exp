@@ -26,18 +26,29 @@ class feedback_deterministic_bayesian(EnvExperiment, FeedbackExpt):
         
         ### parameters
 
-        self.get_new_pulse_list()
+        # NOTE: get_new_pulse_list() is deliberately NOT called here. It reads
+        # self.p.omega_guess_list, which does not exist until Feedback.__init__
+        # builds the frequency grid -- and that runs inside finish_prepare().
+        # finish_prepare() calls get_new_pulse_list() itself once the grid is up.
         self.finish_prepare()
 
-    @rpc 
-    def get_new_pulse_list(self, seed=0):
-        '''linearly spaced (rounded to grid)'''
+    @rpc
+    def get_new_pulse_list(self, seed=0) -> TArray(TFloat):
+        '''linearly spaced (rounded to grid)
+
+        seed is accepted to match the base-class signature but is unused: this
+        experiment's pulse list is fully deterministic (grid-indexed), so
+        p.pulse_list_seed has no effect here.
+        '''
         m = self.p.feedback_grid_size
         omega_grid = self.p.omega_guess_list
 
         sample_idx = np.rint(np.linspace(0, m - 1, self.p.N_pulses))
         sample_idx = np.clip(sample_idx, 0, m - 1).astype(int)
         self.p.omega_pulse_list = omega_grid[sample_idx]
+        # Callers assign the return value (scan_kernel does so every shot);
+        # returning None here would null out the list we just built.
+        return self.p.omega_pulse_list
 
     @kernel
     def per_feedback_loop_top(self, idx):

@@ -89,7 +89,7 @@ def integrator_calibration(amp_imaging, t_imaging):
 
 # with PID, valid for 174-182 A from run 74714
 slope_imaging_frequency_per_i_transducer_hf = -4.093511e6
-yintercept_imaging_frequency_per_i_transducer_hf = 1.79155e8
+yintercept_imaging_frequency_per_i_transducer_hf = 1.79155e8 - 7.2e6
 
 @portable
 def high_field_imaging_detuning(i_transducer) -> TFloat:

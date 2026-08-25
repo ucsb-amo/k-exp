@@ -158,6 +158,8 @@ class Control():
                         relative_phase,
                         t_phase_origin_mu,
                         phase_mode)
+
+        self.raman.pulse(3.e-3) # warm up
         
         self.ttl.raman_shutter.on()
         delay(3.e-3)
@@ -165,6 +167,13 @@ class Control():
         delay(4.7e-3)
         if phase_mode == 1:
             self.raman.set_phase(t_phase_origin_mu=now_mu())
+
+    @kernel
+    def warmup_imaging(self):
+        self.ttl.imaging_shutter_x.off()
+        delay(3.e-3)
+        self.imaging.pulse(1.e-3)
+        self.ttl.imaging_shutter_x.on()
         
 
         

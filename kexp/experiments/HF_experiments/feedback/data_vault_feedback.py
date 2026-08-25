@@ -20,6 +20,9 @@ class DataVault(DataVaultKexp):
         # put_data_1d at the top of scan_kernel. Older datasets lack this
         # container -- analysis falls back to the scalar p.t_raman_pulse.
         self.t_raman_pulse = self.add_data_container(p.N_pulses)
+        # seed that generated this shot's t_raman_pulse list (p.t_raman_pulse_seed,
+        # or a fresh per-shot draw when that is 0)
+        self.t_raman_pulse_seed = self.add_data_container(1)
 
         self.s_z = self.add_data_container(p.N_pulses)
         self.t = self.add_data_container(p.N_pulses)

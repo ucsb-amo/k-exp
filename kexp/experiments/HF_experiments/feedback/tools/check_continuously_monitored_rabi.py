@@ -26,7 +26,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.p.t_raman_pulse = (9.2565e-06) / 2
         
         # self.xvar('amp_imaging',np.linspace(.1,.6, 5))
-        self.p.amp_imaging = .2 
+        self.p.amp_imaging = .2
 
         # self.p.hf_imaging_detuning = -568.e6 # 182.
 
@@ -38,7 +38,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # img amp 0.2, pulse time 1.0e-05 s
         # self.p.frequency_lightshift = 3.28e+04 # Hz
         # self.p.frequency_lightshift = 3.8e+04  # Hz
-        self.p.frequency_lightshift = 36.68e+03  # Hz
+        self.p.frequency_lightshift = 3.46e+04  # Hz
 
         # self.xvar('phase_slm_mask',np.linspace(0.0*np.pi,.5*np.pi,10))
         # self.p.phase_slm_mask = 1.2 * np.pi

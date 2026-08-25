@@ -1,0 +1,65 @@
+Traceback (most recent call last):
+  File "<string>", line 11, in <module>
+  File "C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.10_3.10.3056.0_x64__qbz5n2kfra8p0\lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 37-113: character maps to <undefined>
+Number of cells: 16
+================================================================================
+CELL 0 (code)
+================================================================================
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import numpy as np
+import matplotlib.colors as mcolors
+%matplotlib inline
+
+%load_ext autoreload
+%autoreload 2
+
+from waxa import atomdata
+from waxa.plotting import *
+
+font = 'Century Gothic'
+# font = 'Helvetica Neue'
+plt.rcParams['figure.dpi'] = 200
+plt.rcParams['legend.fontsize'] = 'small'
+plt.rcParams['font.family'] = font
+plt.rcParams['font.sans-serif'] = [font]
+plt.rcParams['mathtext.fontset'] = 'custom'
+--- OUTPUTS ---
+The autoreload extension is already loaded. To reload it, use:
+  %reload_ext autoreload
+
+
+================================================================================
+CELL 1 (code)
+================================================================================
+# ad=atomdata(path = r"G:\Shared drives\Tweezers\Other\0066083_2026-05-06_17-42-25_feedback.hdf5")
+# ad = atomdata(path=r"G:\Shared
+# drives\Tweezers\Oth-33-19_feedback.hdf5")
+# ad = atomdata(path=r"G:\Shared drives\Tweezers\Other\0066198_2026-05-08_19-09-56_feedback.hdf5")
+# ad = atomdata(path=r"G:\Shared drives\Tweezer\0066130_2026-05-07_17ers\Other\0066195_2026-05-08_18-59-49_feedback.hdf5")
+ad = atomdata(0, 'tweezy')
+--- OUTPUTS ---
+76272
+[atomdata timing] load total=0.628s | get_data_file(initial)=0.009s | h5_open=0.004s | headers=0.516s | core_arrays=0.003s | datavault=0.038s | scope_data=0.000s
+[atomdata timing] init total=0.630s | load_data=0.628s | setup+roi=0.000s | suggest_roi=0.000s | unshuffle_old=0.000s | initial_analysis=0.002s
+
+
+================================================================================
+CELL 2 (code)
+================================================================================
+from kexp.analysis.feedback import FeedbackReplay
+fr = FeedbackReplay(ad)
+res = fr.run_default()
+fig, ax = plt.subplots(1,2, figsize=(9,4))
+fr.plot_data_sz_vs_apd(ax=ax[0])
+fr.plot_omega_feedback_comparison(res, ax=ax[1])
+--- OUTPUTS ---
+(<Figure size 1800x800 with 2 Axes>,
+ <Axes: title={'center': 'run 76272: omega control'}, xlabel='pulse index', ylabel='detuning / Omega'>)
+<Figure size 1800x800 with 2 Axes>
+
+================================================================================
+CELL 3 (code)
+================================================================================

@@ -36,7 +36,8 @@ class phase_spot(EnvExperiment, Base):
         
         self.p.N_repeats = 3
 
-        self.data.apd = self.data.add_data_container(3)
+        # apd slots: 0 = up, 1 = down, 2 = none (dark), 3 = superposition
+        self.data.apd = self.data.add_data_container(4)
 
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=True)
 
@@ -88,6 +89,13 @@ class phase_spot(EnvExperiment, Base):
         self.raman.pulse(self.p.t_raman_pulse)
 
         self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=idx1) # second spin state
+        delay(5.e-6)
+
+        # pi/2 pulse from whichever spin state we ended on -> equal superposition.
+        # Done regardless of up_first, so idx=3 is always the superposition.
+        self.raman.pulse(self.p.t_raman_pulse/2)
+
+        self.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=3) # superposition
         delay(10.e-6)
 
         self.tweezer.off()

@@ -29,7 +29,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('dumy',[0]*3)
 
-        self.p.t_tweezer_hold = 10.e-3
+        self.p.t_tweezer_hold = 0.e-3
 
         # self.p.amp_imaging = .2
 
@@ -77,7 +77,7 @@ class mag_trap(EnvExperiment, Base):
                              i_start=0.,
                              i_end=self.p.i_hf_lightsheet_evap1_current)
         
-        self.set_shims(0.,0.,0.) 
+        self.set_shims(0.,0.,0.)
         
         # lightsheet evap 1
         self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
@@ -99,9 +99,9 @@ class mag_trap(EnvExperiment, Base):
         # lightsheet ramp down (to off)
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
-                                # v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
-                                v_end=self.p.v_pd_lightsheet_rampdown3_end)
+        # self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
+        #                         # v_start=self.p.v_pd_hf_lightsheet_rampdown2_end,
+        #                         v_end=self.p.v_pd_lightsheet_rampdown3_end)
         self.lightsheet.off()
 
         # self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_ramp,

@@ -29,7 +29,9 @@ class ExptParams(expt_params_kexp):
 
         # self.t_raman_pulse = self.t_raman_pi_pulse * (np.pi / 6)
         self.t_raman_pulse = 5 * self.t_raman_pi_pulse / 2
-        self.t_raman_pulse_ideal = self.t_raman_pulse - 127.e-9
+        # AOM/switch turn-on latency; see expt_params_feedback.py.
+        self.t_raman_pulse_offset = 127.e-9
+        self.t_raman_pulse_ideal = self.t_raman_pulse - self.t_raman_pulse_offset
         # self.t_raman_pulse_ideal = 3.618e-06
         # self.t_raman_pulse_ideal = 4.973e-06
         # self.t_raman_pulse_ideal = 4.661e-06

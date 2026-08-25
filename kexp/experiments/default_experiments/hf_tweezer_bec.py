@@ -10,18 +10,18 @@ class hf_bec(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
                       setup_camera=True,
-                      save_data=False,
+                      save_data=True,
                       camera_select=cameras.andor,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.ABSORPTION)
         
         self.p.t_tweezer_hold = 10.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,4000.,4)*1.e-6)
-        self.p.t_tof = 800.e-6
+        self.p.t_tof = 2.5e-3
 
         # self.p.phase_slm_mask = 1.6 * np.pi
         
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 20
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
         # self.p.v_hf_tweezer_paint_amp_max = -2.2
@@ -30,7 +30,7 @@ class hf_bec(EnvExperiment, Base):
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 5.
 
         self.p.t_mot_load = 1.0
-        self.p.t_imaging_pulse = 20.e-6
+        self.p.t_imaging_pulse = 10.e-6
 
 
         # self.p.i_hf_lightsheet_evap1_current = 194.3
@@ -68,10 +68,10 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('phase_slm_mask',np.linspace(0.,5.,17))
 
         # self.adjust('t_tof',100.e-6,3000.e-6)
-        self.adjust('phase_slm_mask',0.,4*np.pi)
-        self.adjust('dimension_slm_mask',10.e-6,200.e-6)
-        self.adjust('px_slm_phase_mask_position_x',1000,1100,step=1,dtype=int)
-        self.adjust('px_slm_phase_mask_position_y',800,850,step=1,dtype=int)
+        # self.adjust('phase_slm_mask',0.,4*np.pi)
+        # self.adjust('dimension_slm_mask',10.e-6,200.e-6)
+        # self.adjust('px_slm_phase_mask_position_x',1000,1100,step=1,dtype=int)
+        # self.adjust('px_slm_phase_mask_position_y',800,850,step=1,dtype=int)
 
         # self.xvar('t_tweezer_hold',np.linspace(10.,1000.,4)*1.e-6)
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0,-3,10))
@@ -80,16 +80,15 @@ class hf_bec(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.slm.write_phase_mask_kernel(dimension=self.p.dimension_slm_mask,
-                                         phase=self.p.phase_slm_mask,
-                                         x_center=self.p.px_slm_phase_mask_position_x,
-                                         y_center=self.p.px_slm_phase_mask_position_y)
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
+        # self.slm.write_phase_mask_kernel(dimension=self.p.dimension_slm_mask,
+        #                                  phase=self.p.phase_slm_mask,
+        #                                  x_center=self.p.px_slm_phase_mask_position_x,
+        #                                  y_center=self.p.px_slm_phase_mask_position_y)
+        # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
-
-        delay(10.e-3)
          
         delay(self.p.t_tweezer_hold)
         

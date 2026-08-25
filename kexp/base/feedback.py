@@ -1,4 +1,4 @@
-from artiq.experiment import kernel, portable, TInt64, TTuple, TArray, TFloat
+from artiq.experiment import kernel, portable, rpc, TInt32, TInt64, TTuple, TArray, TFloat
 import numpy as np
 from numpy import int64
 from kexp.calibrations.imaging import integrator_calibration, imaging_lightshift
@@ -52,11 +52,20 @@ class Feedback:
 
         self._flat_prob_counter = 0
 
+        # Counts posterior collapses (all grid points underflowed to zero) that
+        # were reset to uniform in generate_posterior. Unlike _flat_prob_counter
+        # this is NOT reset per shot: it accumulates over the whole run, so a
+        # nonzero value at the end means some updates were silently discarded.
+        self._degenerate_posterior_counter = 0
+
     def omega_to_detuning(self, omega_raman):
         '''Returns the detuning in units of Omega, given the Raman drive frequency in rad/s.'''
         return (omega_raman - 2.0 * np.pi * self.p.frequency_raman_transition)/self.Omega
 
     def _preallocate_arrays(self):
+        # Cast here, not just in _initialize_timing: this method runs first and
+        # already uses the value as an array shape.
+        self.p.feedback_grid_size = int(self.p.feedback_grid_size)
         self.omega_guess_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.omega_sq_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
         self.p.omega_guess_list = np.zeros(self.p.feedback_grid_size, dtype=np.float64)
@@ -74,7 +83,7 @@ class Feedback:
     @portable(flags={"fast-math"})
     def expected_photon_fraction(self, hz):
         p1 = 0.5 * (1.0 + hz)
-        
+
         if self.feedback_measurement_midpoint_remap_enabled:
             midpoint = self.feedback_measurement_midpoint_fraction
             p1 += + (midpoint - 0.5) * (1.0 - hz * hz)
@@ -255,6 +264,11 @@ class Feedback:
 
             p1 = self.expected_photon_fraction(hz)
             q = 1.0 - p1
+            # Fixed sigma, INTENTIONALLY: the binomial (projection-noise) term
+            # n_photons*p1*q is deliberately left out, so npq is just the fixed
+            # detector-noise variance. This is what makes the posterior tolerant
+            # of unmodelled excess measurement noise. Do not "restore" the term
+            # below without re-deriving the calibration.
             # npq = n_photons * p1 * q + sigma_sq
             npq = sigma_sq
             num = k - n_photons * p1
@@ -285,6 +299,21 @@ class Feedback:
             j += 1
 
         if P0_total <= 0.0:
+            # Every grid point evaluated to exactly zero -- an exact 0/1 binomial
+            # term, or a fully underflowed Gaussian tail. P0 was already
+            # overwritten with those zeros in the loop above, so returning here
+            # without repairing it would leave the prior identically zero: every
+            # later call in this shot recomputes pj = P0[j]*f = 0, re-enters this
+            # branch, and the feedback silently freezes for the rest of the shot.
+            # Reset to uniform instead -- this update is lost, but the estimator
+            # stays live. The counter makes the event visible after the run.
+            uniform = 1.0 / m
+            i = 0
+            while i < len(P0):
+                P0[i] = uniform
+                i += 1
+            self.P0_total = 1.0
+            self._degenerate_posterior_counter += 1
             return self.omega_raman, self.omega_raman, self.Omega
 
         mn = mn / P0_total
@@ -457,7 +486,12 @@ class Feedback:
     def _initialize_frequency_grid(self):
         """Kernel-safe loop-based grid initialisation (no numpy allocation)."""
         omega_resonance = self.two_pi * self.p.frequency_raman_transition
-        self.p.feedback_fractional_initial_offset = self.p.feedback_fractional_initial_offset
+        # NOTE: the grid is placed on an integer offset, while
+        # reset_initial_omega_from_params uses the unrounded value for the
+        # initial omega_raman. These agree only for whole-number offsets (every
+        # current config uses one). A fractional value would silently desync the
+        # grid centre from the initial guess -- and round() is half-to-even, so
+        # e.g. 0.5 rounds to 0.
         n_grid_offset = round(self.p.feedback_fractional_initial_offset)
         span = self.p.feedback_guess_span_Omega
         m = self.m
@@ -691,7 +725,10 @@ class Feedback:
         Args:
             posterior_std: the posterior standard deviation (rad/s); remesh fires if
                           posterior_std < feedback_remesh_threshold_omega.
-            omega_center: the frequency to center the new grid on. If None, uses self.omega_raman.
+            omega_center: the frequency to center the new grid on. Required and
+                          always concrete -- this is @portable, so None cannot
+                          type-check against TFloat. Pass self.omega_raman
+                          explicitly if that is what you want.
         """
             
         if self.feedback_remesh_threshold_omega > 0.0:
@@ -766,7 +803,6 @@ class Feedback:
         midpoint_fraction = self._resolve_measurement_midpoint_fraction(
             feedback_measurement_midpoint_fraction=self.p.feedback_measurement_midpoint_fraction,
         )
-
         v_apd_all_up_ref = float(v_apd_all_up)
         v_apd_all_down_ref = float(v_apd_all_down)
 
@@ -804,6 +840,16 @@ class Feedback:
         self.v_range = self.v_apd_all_up - self.v_apd_all_down
         if abs(self.v_range) < 1.0e-15:
             raise ValueError("APD calibration range is zero; cannot normalize APD.")
+        # generate_posterior computes f = sigma/sqrt(npq)*exp(...) with
+        # npq = sigma*sigma when include_photon_noise=1 (the default). A zero or
+        # negative sigma makes that 0/0 -> NaN on every grid point, and because
+        # generate_posterior is @portable the NaN propagates silently through
+        # P0 and omega_raman with no exception. Fail loudly here instead.
+        if not (self.std_n_photons_per_shot > 0.0):
+            raise ValueError(
+                "std_n_photons_per_shot must be positive; got "
+                f"{self.std_n_photons_per_shot}."
+            )
 
     def _resolve_measurement_midpoint_remap_enabled(self, feedback_measurement_midpoint_remap_enabled):
         return bool(feedback_measurement_midpoint_remap_enabled)
@@ -1082,6 +1128,186 @@ class Feedback:
         uz = delta_omega * inv_norm_H
         return np.array([ux, uy, uz], dtype=np.float64)
 
+### randomized raman pulse times
+#
+# One place where a shot's list of raman pulse times is drawn, so the live
+# feedback loop (base_expt_feedback.FeedbackExpt), the rabi-posterior pulse
+# train (rabi_posterior_pulse_train) and the host-side analyses
+# (kexp.analysis.feedback, kexp.analysis.rabi_posterior) all agree
+# bit-for-bit.
+
+
+def new_t_raman_pulse_seed(t_raman_pulse_seed):
+    """Seed for one shot's raman pulse-time list.
+
+    Returns `t_raman_pulse_seed` when it is nonzero (so a seed can be pinned or
+    scanned); otherwise draws a fresh one from entropy, which is what gives
+    every shot of a repeat-averaged run its own pulse sequence. Kept to 31 bits
+    and nonzero so it stays int32-typed on the kernel.
+    """
+    seed = int(t_raman_pulse_seed)
+    if seed == 0:
+        seed = int(np.random.SeedSequence().generate_state(1)[0] >> 1)
+        if seed == 0:
+            seed = 1
+    return seed
+
+
+def draw_t_raman_pulse_list(seed, N_pulses, t_raman_pi_pulse,
+                            t_raman_pulse_min_frac_pi,
+                            t_raman_pulse_max_frac_pi):
+    """Raman pulse times for one shot, as a pure function of `seed`.
+
+    Each pulse is drawn independently, uniform in
+    [min_frac_pi, max_frac_pi] * t_raman_pi_pulse, then rounded to whole ns so
+    that kernel delays and the mu conversion in compute_t_between_pulses_mu
+    agree exactly with the values saved to data.t_raman_pulse. Equal seeds give
+    identical lists, so repeating (or scanning) a seed replays the same pulse
+    sequence.
+    """
+    t_pi = float(t_raman_pi_pulse)
+    rng = np.random.default_rng(int(seed))
+    t_list = rng.uniform(float(t_raman_pulse_min_frac_pi) * t_pi,
+                         float(t_raman_pulse_max_frac_pi) * t_pi,
+                         int(N_pulses))
+    return np.round(t_list * 1.e9) * 1.e-9
+
+
+def draw_t_raman_pulse_list_blocks(seed, N_pulses, t_raman_pi_pulse,
+                                   t_raman_pulse_min_frac_pi,
+                                   t_raman_pulse_max_frac_pi,
+                                   n_random_per_block, n_const_per_block,
+                                   const_frac_pi):
+    """Alternating random / constant pulse-time schedule, one shot.
+
+    Repeats [n_random_per_block random pulses, n_const_per_block constant
+    pulses at const_frac_pi*t_pi] until N_pulses is filled. Like
+    draw_t_raman_pulse_list this is a pure function of `seed` and rounds to
+    whole ns, so a shot replays exactly.
+
+    WHY BOTH KINDS. The two blocks do different jobs and neither alone is best:
+
+      * CONSTANT pulses sharpen. Every pulse accumulates the same theta, so the
+        rotation angle grows linearly along the block and sensitivity to Omega
+        grows with it -- 15 pulses at 0.95*t_pi reach a Cramer-Rao bound of
+        228 Hz against 763 Hz for a randomized window.
+      * ...and for exactly that reason they alias. A hypothesis differing by a
+        whole extra turn per pulse predicts the same measurements. On their own,
+        constant schedules put ~62 kHz of expected posterior width on a 20-200
+        kHz prior -- the answer is sharp and in the wrong place.
+      * RANDOM pulses break the aliases, because no single Omega offset
+        reproduces a set of unequal rotations.
+
+    Random pulses come FIRST in each block on purpose. Measurement back-action
+    (back_action_coherence ~ 0.76) damps the transverse component every cycle,
+    so early pulses carry most of the information -- a schedule that is constant
+    first and random last cannot break its own aliases (measured: Cramer-Rao
+    202 Hz but 63 kHz of posterior width).
+
+    Measured, N_pulses = 20, N_repeats = 20, full RabiPosterior on a 20-200 kHz
+    grid, RMSE over 3 true frequencies x 25 noise realizations:
+
+        all random                        117.1 Hz
+        R6 -> C14        (1 block)         92.0 Hz
+        R3 C7 R3 C7      (2 blocks)        73.5 Hz   <-- best
+        R2 C5 x3         (3 blocks)        82.6 Hz
+        R2 C3 x4         (4 blocks)        92.8 Hz
+
+    Two alternations is the optimum: fewer wastes the alias-breaking, more
+    fragments the constant blocks and gives up the accumulated-angle sharpening.
+
+    WARNING -- NOT SAFE AT LOW N_repeats. The constant blocks leave a residual
+    alias that noise can push the posterior onto. At N_repeats = 1 every hybrid
+    tested failed (>5 kHz error) on 0.8-6.7% of shots where the all-random
+    schedule failed on 0%. It only becomes the better design once there is
+    enough SNR to suppress that, which at this calibration means roughly
+    N_repeats >= 10. Below that, set t_raman_pulse_block_bool = 0.
+    """
+    t_pi = float(t_raman_pi_pulse)
+    n_r = max(int(n_random_per_block), 0)
+    n_c = max(int(n_const_per_block), 0)
+    N = int(N_pulses)
+    if n_r + n_c <= 0:
+        raise ValueError("block must contain at least one pulse")
+
+    rng = np.random.default_rng(int(seed))
+    lo = float(t_raman_pulse_min_frac_pi) * t_pi
+    hi = float(t_raman_pulse_max_frac_pi) * t_pi
+    t_const = float(const_frac_pi) * t_pi
+
+    out = np.empty(N, dtype=float)
+    i = 0
+    while i < N:
+        for _ in range(n_r):
+            if i >= N:
+                break
+            out[i] = rng.uniform(lo, hi)
+            i += 1
+        for _ in range(n_c):
+            if i >= N:
+                break
+            out[i] = t_const
+            i += 1
+    return np.round(out * 1.e9) * 1.e-9
+
+
+class RandomRamanPulseTimes:
+    """Mixin giving an experiment a per-shot randomized raman pulse-time list.
+
+    Expects self.p to carry N_pulses, t_raman_pulse, t_raman_pi_pulse,
+    t_raman_pulse_random_bool, t_raman_pulse_seed, t_raman_pulse_min_frac_pi
+    and t_raman_pulse_max_frac_pi (all declared in expt_params_feedback.py).
+
+    Both methods are RPCs, so a kernel calls them with slack in hand
+    (core.wait_until_mu(now_mu()) ... core.break_realtime()). Draw the list at
+    the top of scan_kernel and save the seed alongside the drawn times, so the
+    shot can be replayed exactly.
+    """
+
+    @rpc
+    def resolve_t_raman_pulse_seed(self) -> TInt32:
+        """Seed for this shot's pulse-time list.
+
+        Returns p.t_raman_pulse_seed (possibly scanned via xvar) when nonzero;
+        otherwise a fresh seed drawn from entropy.
+        """
+        return new_t_raman_pulse_seed(self.p.t_raman_pulse_seed)
+
+    @rpc
+    def get_new_t_raman_pulse_list(self, seed=0) -> TArray(TFloat):
+        """This shot's raman pulse times, as a pure function of `seed`.
+
+        With t_raman_pulse_random_bool = 0, returns a constant list at the
+        scalar p.t_raman_pulse (the pre-randomization behavior).
+        """
+        if not self.p.t_raman_pulse_random_bool:
+            self.p.t_raman_pulse_list = np.full(self.p.N_pulses,
+                                                self.p.t_raman_pulse)
+            return self.p.t_raman_pulse_list
+        # Alternating random/constant blocks. Off unless a params file opts in,
+        # so the live feedback loop keeps the plain uniform draw it has always
+        # used. See draw_t_raman_pulse_list_blocks for why, and for the
+        # N_repeats floor below which this is the WORSE design.
+        if getattr(self.p, "t_raman_pulse_block_bool", 0):
+            self.p.t_raman_pulse_list = draw_t_raman_pulse_list_blocks(
+                seed=seed,
+                N_pulses=self.p.N_pulses,
+                t_raman_pi_pulse=self.p.t_raman_pi_pulse,
+                t_raman_pulse_min_frac_pi=self.p.t_raman_pulse_min_frac_pi,
+                t_raman_pulse_max_frac_pi=self.p.t_raman_pulse_max_frac_pi,
+                n_random_per_block=self.p.t_raman_pulse_n_random_per_block,
+                n_const_per_block=self.p.t_raman_pulse_n_const_per_block,
+                const_frac_pi=self.p.t_raman_pulse_const_frac_pi)
+            return self.p.t_raman_pulse_list
+        self.p.t_raman_pulse_list = draw_t_raman_pulse_list(
+            seed=seed,
+            N_pulses=self.p.N_pulses,
+            t_raman_pi_pulse=self.p.t_raman_pi_pulse,
+            t_raman_pulse_min_frac_pi=self.p.t_raman_pulse_min_frac_pi,
+            t_raman_pulse_max_frac_pi=self.p.t_raman_pulse_max_frac_pi)
+        return self.p.t_raman_pulse_list
+
+
 def _as_repeat_axis0(arr, name):
     x = np.asarray(arr)
     if x.ndim == 1:
@@ -1130,7 +1356,16 @@ def _feedback_kwargs_from_atomdata(ad):
 
     return {
         "t_raman_pulse": p.t_raman_pulse,
-        "t_raman_pulse_ideal": p.t_raman_pulse_ideal,
+        # datasets predating the turn-on-delay param used the same time for
+        # both effective and ideal pulse
+        "t_raman_pulse_ideal": getattr(p, "t_raman_pulse_ideal", p.t_raman_pulse),
+        # The AOM/switch turn-on latency itself. Preferred over the derived
+        # difference t_raman_pulse - t_raman_pulse_ideal, which is only right
+        # when both are scalars -- an experiment that scans t_raman_pulse leaves
+        # the scalar t_raman_pulse_ideal behind and the difference goes wrong.
+        # None means the dataset predates the parameter; replay then falls back
+        # to t_raman_pulse_ideal.
+        "t_raman_pulse_offset": getattr(p, "t_raman_pulse_offset", None),
         "t_img_pulse": p.t_img_pulse,
         "amp_imaging": p.amp_imaging,
         "t_raman_pi_pulse": p.t_raman_pi_pulse,

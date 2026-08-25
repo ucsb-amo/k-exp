@@ -21,7 +21,7 @@ class simulation_check(EnvExperiment, FeedbackExpt):
         self.p.update_raman_frequency_bool = 0
         self.p.include_photon_noise = 1
 
-        self.p.N_repeats = 9
+        self.p.N_repeats = 5
         self.p.N_pulses = 17 # number of steps of evolution
         
         ### parameters
@@ -31,8 +31,8 @@ class simulation_check(EnvExperiment, FeedbackExpt):
         self.p.omega_override_pulse_list = np.ones(self.p.N_pulses) * \
             (2*np.pi*self.p.frequency_raman_transition + 0 * Omega)
 
-        self.xvar('pulse_list_span_Omega', np.linspace(-2.,2.,5))
-        # self.p.pulse_list_span_Omega = 2.
+        # self.xvar('pulse_list_span_Omega', np.linspace(-3.,3.,11))
+        self.p.pulse_list_span_Omega = 3.
         # self.xvar('pulse_list_seed', np.linspace(1056, 15432, 5, dtype=np.int32))
         self.p.pulse_list_seed = 1055533
 

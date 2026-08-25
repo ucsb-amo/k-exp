@@ -14,43 +14,37 @@ class hf_raman(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
+
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0.2,1.8,8))
+        self.p.v_hf_tweezer_paint_amp_max = 1.3
+
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(1.5,5.,8))
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 2.5
+# 
+        # self.xvar('i_hf_tweezer_load_current',np.linspace(192.,195.,8))
+        self.p.i_hf_tweezer_load_current = 192.86
+
+        self.p.amp_imaging = .2
+
+        # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
+        self.p.t_tweezer_hold = .1e-3
+
+        # self.xvar('t_tof',np.linspace(1500.,4500.,10)*1.e-6) 
+        self.p.t_tof = 2500.e-6
+
+        self.p.t_mot_load = 1.
         
-        self.xvar('t_raman_pulse', np.linspace(0.,20.,21)*1.e-6)
-        # self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,100.,31),np.linspace(200.,240.,15)))*1.e-6)
-        # self.xvar('t_raman_pulse', np.linspace(200.,240.,20)*1.e-6)
-        # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse]*5)
+        self.p.N_repeats = 21
 
-        self.p.t_raman_pulse = 0.
-
-        # self.p.frequency_raman_transition = 147.2593e6
-
-        self.p.t_tweezer_hold = 2.e-3
-
-        # self.p.fraction_power_raman = 0.
-
-        # self.p.v_pd_hf_tweezer_squeeze_power = 7.
-        # self.p.t_tof = 8.e-6
-
-        self.p.t_tof = 1.e-3
-        
-        self.p.N_repeats = 3
-
-        self.camera_params.amp_imaging = 0.2
-
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     @kernel
     def scan_kernel(self):
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.camera_params.amp_imaging)
+        self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers()
-        self.prep_raman()
-
-        self.raman.pulse(self.p.t_raman_pulse)
-
-        self.ttl.raman_shutter.off()
+        self.prepare_hf_tweezers(ramp_down_painting=False,squeeze=False)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()

@@ -21,27 +21,24 @@ class feedback(EnvExperiment, FeedbackExpt):
         
         ### parameters
 
-        self.p.feedback_fractional_initial_offset = 8.
+        self.p.feedback_fractional_initial_offset = 2.
         # self.xvar('feedback_fractional_initial_offset', np.linspace(0,4.,5))
         
-        self.p.N_repeats = 3
-        self.p.N_pulses = 20 # number of steps of evolution
+        self.p.N_repeats = 21
+        self.p.N_pulses = 17 # number of steps of evolution
 
-        self.p.feedback_guess_span_Omega = 10.
+        self.p.feedback_guess_span_Omega = 3.
 
         self.finish_prepare()
 
-        # self.probabilities = np.zeros((*self.xvardims, self.p.N_pulses + 1, self.p.feedback_grid_size))
-        self.data.probabilities = self.data.add_data_container((self.p.N_pulses + 1, self.p.feedback_grid_size))
-        self.data.probabilities[0, :] = self.P0
-
     @kernel
     def per_feedback_loop_end(self, idx):
-        self.data.probabilties.put_data_1d(self.P0, idx+1)
+        self.data.probabilities.put_data_1d(self.P0, idx+1)
     
     @kernel
     def per_scan_kernel_end(self):
-        print(self._flat_prob_counter)
+        # print(self._flat_prob_counter)
+        pass
 
     @kernel
     def run(self):

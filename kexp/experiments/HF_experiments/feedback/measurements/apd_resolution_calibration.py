@@ -12,7 +12,7 @@ class sigma_z(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 
-        self.p.amp_imaging = 0.6
+        self.p.amp_imaging = 0.2
         # self.p.amp_imaging =
         self.p.t_pci_pulse = 5.e-6
 
@@ -22,7 +22,7 @@ class sigma_z(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_tof = 20.e-6
-        self.p.N_repeats = 25
+        self.p.N_repeats = 12
 
         self.data.apd = self.data.add_data_container(2)
 

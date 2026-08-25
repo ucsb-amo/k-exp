@@ -41,15 +41,13 @@ class spin_resolved_counting(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f2m2)
         self.imaging.set_power(self.camera_params.amp_imaging)
 
         self.prepare_hf_tweezers()
         self.prep_raman()
 
         self.raman.pulse(self.p.t_raman_pulse)
-
-        self.raman.set(frequency_transition=)
 
         self.ttl.pd_scope_trig3.pulse(1.e-6)
         delay(self.p.t_scope_trig_to_pulse_offset)

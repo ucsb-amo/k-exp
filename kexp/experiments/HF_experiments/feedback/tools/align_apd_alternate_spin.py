@@ -16,10 +16,10 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=False,
                       imaging_type=img_types.DISPERSIVE)
         
-        self.p.t_imaging_pulse = 7.e-6
+        self.p.t_imaging_pulse = 5.e-6
         # self.xvar('dummy',[0])
         
-        self.p.amp_imaging = 0.25
+        self.p.amp_imaging = 0.2
 
         self.p.t_tweezer_hold = 20.e-3
         self.p.t_mot_load = 1.0
@@ -32,7 +32,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.scope = self.scope_data.add_siglent_scope("192.168.1.108", label='PD', arm=False)
         # self.adjust('phase_slm_mask',0.,2*np.pi)
 
-        self.p.phase_slm_mask = 0.387097 * np.pi
+        # self.p.phase_slm_mask = 0.387097 * np.pi
         # self.adjust('frequency_detuned_hf_midpoint',-568e6,-489.e6)
         # self.adjust('phase_slm_mask',0.,2.*np.pi)
         # self.adjust('amp_imaging',0.1,0.8)
@@ -52,6 +52,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
+        self.warmup_imaging()
         self.prep_raman()
 
         # self.raman.dds0.off()
@@ -67,11 +68,14 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # if not self.p.trigger_later:
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
-        for _ in range(5):
+        for i in range(5):
             self.integrated_imaging_pulse(self.data.apd, self.p.t_imaging_pulse, 0)
 
             delay(10.e-6)
 
+            # if i == 0:
+            #     self.raman.pulse(5.85343e-6)
+            # else:
             self.raman.pulse(self.p.t_raman_pi_pulse)
 
             delay(5.e-6)

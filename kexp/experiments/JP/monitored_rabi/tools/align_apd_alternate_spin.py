@@ -41,6 +41,11 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=False)
+
+        self.ttl.imaging_shutter_x.off()
+        self.imaging.pulse(100.e-6)
+        self.ttl.imaging_shutter_x.on
+
         self.prep_raman()
 
         delay(10.e-3)

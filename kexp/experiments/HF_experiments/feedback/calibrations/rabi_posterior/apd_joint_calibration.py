@@ -4,56 +4,80 @@ from artiq.language import now_mu
 from kexp import Base, img_types, cameras
 from kexp.base import RandomRamanPulseTimes
 
-from kexp.experiments.HF_experiments.feedback.calibrations.rabi_posterior.expt_params_rabi_posterior \
-    import ExptParams as ExptParamsRabiPosterior
+from kexp.experiments.HF_experiments.feedback.calibrations.rabi_posterior.expt_params_apd_joint_calibration \
+    import ExptParams as ExptParamsAPDJoint
 
 
-class rabi_posterior_pulse_train(EnvExperiment, Base, RandomRamanPulseTimes):
-    """N_pulses raman pulses interleaved with APD measurement pulses, all at a
-    known (assumed correct) raman transition frequency.
+class apd_joint_calibration(EnvExperiment, Base, RandomRamanPulseTimes):
+    """Pulse train with a scanned pulse duration, for calibrating the APD.
 
-    The drive sits on resonance for the whole train, so the only unknown in the
-    Bloch-vector model is the Rabi frequency. Because each measurement is weak,
-    the Bloch vector survives across the train and each pulse rotates the
-    vector further -- the host-side posterior (kexp.analysis.RabiPosterior)
-    sharpens far faster than the same number of independent single-pulse shots
-    would allow.
+    Same sequence as rabi_posterior_pulse_train -- N_pulses raman pulses
+    interleaved with weak APD measurements, drive on resonance throughout --
+    but every pulse within a shot uses the SAME duration, and that duration is
+    scanned across shots over a wide range.
 
-    Every pulse duration is drawn independently per shot
-    (kexp.base.feedback.RandomRamanPulseTimes, the same draw the live feedback
-    loop uses), so each shot accumulates rotation on its own schedule and Omega
-    is measured over the same spread of pulse durations the feedback loop
-    actually drives -- see expt_params_rabi_posterior.py for why that, rather
-    than a tighter posterior, is the point. The drawn times go into
-    data.t_raman_pulse and the seed that produced them into
-    data.t_raman_pulse_seed, so any shot can be replayed exactly.
+    The point is what the host-side fit can then do with it. Written in voltage
+    rather than photon-count space the measurement model is
 
-    Unlike the feedback experiment this does NO on-kernel computation and never
-    changes the drive frequency, so none of the fast-frequency-update /
-    phase-tracking / rigid at_mu scheduling machinery is needed. The realized
-    start time of each pulse is recorded into data.t instead, which gives the
-    analysis exact timing for free.
+        v = (1 - g)*v_apd_all_down + g*v_apd_all_up
+
+    with g the photon fraction, which is exactly LINEAR in the two APD
+    endpoints while s_z depends only on the Bloch-level parameters. So
+    kexp.analysis.RabiJointPosterior can grid over
+    (f_rabi, midpoint_fraction, frequency_lightshift, back_action_coherence)
+    and marginalize v_apd_all_down and v_apd_all_up out in closed form,
+    returning all six at once. That turns the light shift and the back-action
+    coherence -- the constants that currently dominate the systematic budget on
+    f_rabi -- from assumed inputs into measured outputs.
+
+    Why the duration is scanned rather than randomized, and what it costs to do
+    otherwise, is in expt_params_apd_joint_calibration.py.
+
+    Analyze with:
+
+        from kexp import atomdata
+        from kexp.analysis import RabiJointPosterior
+
+        ad = atomdata(<run_id>)
+        jp = RabiJointPosterior(
+            ad,
+            f_rabi_grid=(54.e3, 58.e3, 81),
+            midpoint_grid=(0.50, 0.72, 45),
+            lightshift_grid=(28.e3, 42.e3, 21),
+            coherence_grid=(0.75, 0.95, 21),
+        )
+        jp.run().print()
     """
 
     def prepare(self):
-        self.p = ExptParamsRabiPosterior()
+        self.p = ExptParamsAPDJoint()
+        # DISPERSIVE, not ABSORPTION: init_kernel(setup_slm=True) branches on
+        # this to choose the SLM phase mask (Base.setup_slm), and ABSORPTION
+        # writes a FLAT mask instead of the phase-contrast dot. The weak APD
+        # state readout is a dispersive measurement, and the calibration this
+        # experiment exists to refine -- v_apd_all_up/down from
+        # apd_voltage_vs_state_2 -- is taken with the dot in place. Declaring
+        # ABSORPTION here reads the atoms out through a different optical
+        # configuration than the calibration was taken in, which inverts the
+        # sign of the state-dependent APD response (see runs 76245 / 76269, and
+        # RabiJointPosterior.polarity_check).
         Base.__init__(self, setup_camera=False,
                       camera_select=cameras.andor,
-                      save_data=True,
                       imaging_type=img_types.DISPERSIVE,
+                      save_data=True,
                       expt_params=self.p)
 
-        # Single dummy scan point -- statistics come from N_repeats shots, each
-        # of which yields a full N_pulses measurement record.
-        self.xvar('dummy', [0])
-        self.p.dummy = 0
-
-        self.p.N_repeats = 6
+        # The scan axis. Statistics come from N_repeats shots at each duration;
+        # the spread of durations is what makes the six-way fit identifiable.
+        self.xvar('t_raman_pulse',
+                  self.p.t_raman_pi_pulse * self.p.t_raman_pulse_frac_pi_list)
 
         # Draw once here so the list attribute has its compile-time shape and
-        # dtype; scan_kernel redraws it per shot. With
-        # p.t_raman_pulse_random_bool = 0 this is a constant list at the scalar
-        # p.t_raman_pulse, i.e. the pre-randomization behavior.
+        # dtype; scan_kernel rebuilds it per shot. With
+        # p.t_raman_pulse_random_bool = 0 (set in the params) this is a
+        # constant list at the scalar p.t_raman_pulse, which the scan machinery
+        # overwrites per shot -- so each shot gets a flat list at its own
+        # scanned duration.
         self.p.t_raman_pulse_list = self.get_new_t_raman_pulse_list(
             seed=self.resolve_t_raman_pulse_seed())
 
@@ -64,12 +88,12 @@ class rabi_posterior_pulse_train(EnvExperiment, Base, RandomRamanPulseTimes):
         # kexp.analysis.feedback._trim_known_unused_trailing_column).
         self.data.apd = self.data.add_data_container(self.p.N_pulses)
         self.data.t = self.data.add_data_container(self.p.N_pulses)
-        # drawn pulse duration for each pulse of this shot, plus the seed that
-        # produced the list (p.t_raman_pulse_seed, or a fresh per-shot draw
-        # when that is 0)
+        # The realized duration of each pulse of this shot. RabiJointPosterior
+        # reads this per shot and never has to trust the scan axis.
         self.data.t_raman_pulse = self.data.add_data_container(self.p.N_pulses)
         self.data.t_raman_pulse_seed = self.data.add_data_container(1)
-        # [0] light leakage with the atoms released, [1] detector dark level
+        # [0] light leakage with the atoms released, [1] detector dark level.
+        # [0] is an approximate independent anchor on v_apd_all_down.
         self.data.apd_reference = \
             self.data.add_data_container(self.p.N_reference_reads)
 
@@ -78,8 +102,9 @@ class rabi_posterior_pulse_train(EnvExperiment, Base, RandomRamanPulseTimes):
     @kernel
     def scan_kernel(self):
 
-        # This shot's pulse times, drawn on the host. Both RPCs need slack, so
-        # they run outside the RTIO timeline; break_realtime re-arms it.
+        # This shot's pulse times, built on the host from the scanned duration.
+        # Both RPCs need slack, so they run outside the RTIO timeline;
+        # break_realtime re-arms it.
         self.core.wait_until_mu(now_mu())
         t_raman_pulse_seed = self.resolve_t_raman_pulse_seed()
         self.p.t_raman_pulse_list = self.get_new_t_raman_pulse_list(
@@ -89,8 +114,9 @@ class rabi_posterior_pulse_train(EnvExperiment, Base, RandomRamanPulseTimes):
         self.core.break_realtime()
 
         # Midpoint detuning and amp_imaging must match what the APD/lightshift
-        # calibrations in expt_params_feedback.py were taken at, since the
-        # analysis reuses those constants verbatim.
+        # calibrations in expt_params_feedback.py were taken at -- this
+        # experiment refines those constants, so it has to sit at the same
+        # operating point they describe.
         self.set_imaging_detuning(
             frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.p.amp_imaging)
@@ -103,7 +129,6 @@ class rabi_posterior_pulse_train(EnvExperiment, Base, RandomRamanPulseTimes):
         # premise of this experiment is that it is already correct. phase_mode=1
         # anchors the DDS phase origin, so on resonance every pulse in the train
         # rotates about the same equatorial axis.
-        self.warmup_imaging()
         self.prep_raman()
 
         t0_mu = now_mu()
@@ -140,10 +165,6 @@ class rabi_posterior_pulse_train(EnvExperiment, Base, RandomRamanPulseTimes):
     def run(self):
         self.init_kernel(setup_slm=True)
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
-
-        self.warmup_imaging()
-        self.prep_raman()
-
         self.scan()
 
     def analyze(self):

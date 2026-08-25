@@ -7,13 +7,17 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 from artiq.coredevice.sampler import Sampler
 from artiq.language import now_mu
 
+from kexp.experiments.HF_experiments.feedback.expt_params_feedback import ExptParams as ExptParamsFeedback
+
 class hf_raman(EnvExperiment, Base):
 
     def prepare(self):
+        p = ExptParamsFeedback()
         Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      expt_params=p,
+                      imaging_type=img_types.DISPERSIVE)
         
         self.xvar('t_raman_pulse', np.linspace(0.,50.,20)*1.e-6)
         # self.xvar('t_raman_pulse', np.concatenate((np.linspace(0.,100.,31),np.linspace(200.,240.,15)))*1.e-6)
@@ -21,8 +25,6 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('t_raman_pulse',[0.,self.p.t_raman_pi_pulse]*5)
 
         self.p.t_raman_pulse = 0.
-
-        self.p.t_imaging_pulse = 10.e-6
 
         self.p.t_tweezer_hold = 2.e-3
 
@@ -37,15 +39,14 @@ class hf_raman(EnvExperiment, Base):
         
         self.p.N_repeats = 1
 
-        self.camera_params.amp_imaging = 0.2
 
         self.finish_prepare(shuffle=False)
 
     @kernel
     def scan_kernel(self):
 
-        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.camera_params.amp_imaging)
+        self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
+        self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
         self.prep_raman()
@@ -54,18 +55,18 @@ class hf_raman(EnvExperiment, Base):
 
         self.ttl.raman_shutter.off()
 
-        self.imaging.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=0)
+        self.imaging.integrated_imaging_pulse(self.data.apd, t=self.p.t_img_pulse, idx=0)
 
         delay(self.p.t_tweezer_hold)
         self.tweezer.off()
 
         delay(10.e-3)
 
-        self.imaging.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=1)
+        self.imaging.integrated_imaging_pulse(self.data.apd, t=self.p.t_img_pulse, idx=1)
 
         delay(50.e-6)
 
-        self.imaging.integrated_imaging_pulse(self.data.apd, t=self.p.t_imaging_pulse, idx=2, dark=True)
+        self.imaging.integrated_imaging_pulse(self.data.apd, t=self.p.t_img_pulse, idx=2, dark=True)
 
     @kernel
     def run(self):

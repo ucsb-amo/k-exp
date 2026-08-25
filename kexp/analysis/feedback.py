@@ -21,6 +21,17 @@ from kexp.base.feedback import Feedback, _feedback_kwargs_from_atomdata
 
 DEFAULT_OMEGA_GROUP_TOLERANCE_RAD_S = 2.0 * np.pi * 100.0
 
+# Colormap shared by every trace-overlay plot (replay plots and optimizer
+# fit-report overlays) so the same trace keeps the same colour across figures.
+TRACE_CMAP_NAME = "tab20"
+
+
+def _trace_color_list(n_traces: int) -> List[object]:
+    """Return `n_traces` colours from the shared trace colormap, in plot order."""
+    n = max(1, int(n_traces))
+    cmap = plt.get_cmap(TRACE_CMAP_NAME, n)
+    return [cmap(i) for i in range(n)]
+
 # ---------------------------------------------------------------------------
 # Module-level helpers for multiprocessing-based outer candidate parallelism.
 # They must live at module scope so they are picklable on all platforms.
@@ -123,6 +134,7 @@ class FeedbackReplayCore(Feedback):
         "feedback_grid_size": "feedback_grid_size",
         "t_raman_pulse": "t_raman_pulse",
         "t_raman_pulse_ideal": "t_raman_pulse_ideal",
+        "t_raman_pulse_offset": "t_raman_pulse_offset",
         "t_img_pulse": "t_img_pulse",
         "t_raman_pi_pulse": "t_raman_pi_pulse",
         "amp_imaging": "amp_imaging",
@@ -272,9 +284,21 @@ class FeedbackReplayCore(Feedback):
         if t_raman_pulse is not None:
             p.t_raman_pulse = float(t_raman_pulse)
 
+        # t_raman_pulse_offset (the AOM/switch turn-on latency) and
+        # t_raman_pulse_ideal express the same thing. The offset is the knob
+        # _resolve_timing reads, so whichever one arrives here, both are written
+        # and left consistent -- otherwise an override of one would be silently
+        # overruled by the stale value of the other. _reinitialize_feedback drops
+        # whichever the caller did not set, so scanning either one works.
+        t_raman_pulse_offset = kwargs.get("t_raman_pulse_offset")
         t_raman_pulse_ideal = kwargs.get("t_raman_pulse_ideal", kwargs.get("dt_ideal"))
-        if t_raman_pulse_ideal is not None:
+        if t_raman_pulse_offset is not None:
+            p.t_raman_pulse_offset = float(t_raman_pulse_offset)
+            p.t_raman_pulse_ideal = float(p.t_raman_pulse) - float(t_raman_pulse_offset)
+        elif t_raman_pulse_ideal is not None:
             p.t_raman_pulse_ideal = float(t_raman_pulse_ideal)
+            if hasattr(p, "t_raman_pulse_offset"):
+                p.t_raman_pulse_offset = float(p.t_raman_pulse) - float(t_raman_pulse_ideal)
 
         if kwargs.get("t_img_pulse") is not None:
             p.t_img_pulse = float(kwargs["t_img_pulse"])
@@ -437,6 +461,25 @@ class FeedbackReplayCore(Feedback):
         values = np.asarray(source, dtype=float).ravel()
         if values.size == 0:
             raise ValueError("feedback_fractional_initial_offset cannot be empty.")
+
+        # Feedback.__init__ needs a scalar offset to build one grid, so
+        # _base_kwargs reduces a scanned offset to its first element and
+        # _apply_feedback_kwargs_to_params writes that scalar onto self.p. Reading
+        # self.p alone would therefore replay every shot on shot 0's grid, even
+        # though _run_shot_into_buffers calls _grid_for_offset per shot precisely
+        # to honour the scan -- which is what _fractional_initial_offset_source was
+        # kept for. Recover it, but only while self.p still holds that collapsed
+        # first element, so a deliberate override (the optimizer registering this
+        # parameter) still wins.
+        raw = np.asarray(self._fractional_initial_offset_source, dtype=float).ravel()
+        if (
+            values.size == 1
+            and raw.size == int(n_repeat)
+            and raw.size > 1
+            and np.isfinite(raw).all()
+            and np.isclose(values[0], raw[0])
+        ):
+            values = raw
         if not np.all(np.isfinite(values)):
             raise ValueError("feedback_fractional_initial_offset must be finite.")
 
@@ -471,7 +514,11 @@ class FeedbackReplayCore(Feedback):
             "t_between_pulses_mu": int(t_between),
             "t_io_update_pretrigger_mu": int(getattr(p, "t_io_update_pretrigger_mu", 0)),
             "t_ffu_pipeline_latency_fudge_mu": int(getattr(p, "t_ffu_pipeline_latency_fudge_mu", 0)),
-            "t_raman_set_pretrigger_mu": int(getattr(p, "t_raman_set_pretrigger_mu", 0)),
+            # default mirrors the kernel's own default in
+            # Feedback.compute_t_between_pulses_mu (and the fallback call above,
+            # which relies on it). Defaulting to 0 here would silently shift
+            # every reconstructed dT by 650 mu on data missing this param.
+            "t_raman_set_pretrigger_mu": int(getattr(p, "t_raman_set_pretrigger_mu", 650)),
             "t_calculation_slack_compensation_mu": int(getattr(p, "t_calculation_slack_compensation_mu", 0)),
             "t_fifo_mu": int(getattr(p, "t_fifo_mu", 1000)),
             # recorded imaging pulse in mu, converted exactly as the kernel's
@@ -603,6 +650,15 @@ class FeedbackReplayCore(Feedback):
         # Honour any fr.p.x = val overrides set by the user before this replay call.
         # These take precedence over _base_kwargs.
         user_p_overrides = self._extract_p_user_overrides()
+
+        # t_raman_pulse_offset and t_raman_pulse_ideal express the same thing.
+        # Whichever one the caller actually set wins; the stale partner is
+        # dropped so it cannot silently overwrite the override.
+        if "t_raman_pulse_offset" in user_p_overrides:
+            kwargs.pop("t_raman_pulse_ideal", None)
+        elif "t_raman_pulse_ideal" in user_p_overrides:
+            kwargs.pop("t_raman_pulse_offset", None)
+
         kwargs.update(user_p_overrides)
 
         self._apply_feedback_kwargs_to_params(kwargs)
@@ -621,6 +677,17 @@ class FeedbackReplayCore(Feedback):
 
         The grid formula mirrors ``_initialize_frequency_grid``:
             grid[j] = omega_res + Omega * (round(offset) - span * linspace(-1,1,m)[j])
+        followed by the rigid shift that snaps the nearest hypothesis exactly onto
+        resonance (kexp/base/feedback.py:518-525).
+
+        That shift is not cosmetic. The raw formula only lands a hypothesis on
+        resonance when ``round(offset)`` happens to be a multiple of the grid
+        spacing ``2*span/(m-1)``; otherwise the whole grid sits up to half a step
+        off. Run 76272 (span 3.0, m 21, offset 2 -> spacing 0.3, 2/0.3 = 6.67) is
+        exactly such a case: without the shift every hypothesis frequency is
+        displaced by 0.1*Omega from the one the experiment actually drove, the
+        grid contains no zero-detuning point at all, and the resonance bin that
+        ``compute_posterior_peak_metrics`` scores against is not the resonance.
         """
         omega_res = float(self._omega_resonance_rad_s)
         Omega = float(self.Omega)
@@ -629,6 +696,8 @@ class FeedbackReplayCore(Feedback):
         n_center = float(np.round(float(fractional_initial_offset)))
         grid = omega_res + Omega * (n_center - span * np.linspace(-1.0, 1.0, m))
         zidx = int(np.argmin(np.abs(grid - omega_res)))
+        # Snap, exactly as the kernel does, so grid[zidx] == omega_res bit-for-bit.
+        grid = grid + (omega_res - grid[zidx])
         return grid, zidx
 
     def _resolve_timing(
@@ -647,7 +716,15 @@ class FeedbackReplayCore(Feedback):
             timing["t_raman_set_pretrigger_mu"] = int(getattr(p, "t_raman_set_pretrigger_mu"))
 
         dt_eff = float(self.p.t_raman_pulse)
-        dt_ideal = float(self.p.t_raman_pulse_ideal)
+        # Prefer the explicit turn-on latency. _run_shot_into_buffers turns
+        # dt_eff - dt_ideal back into a per-pulse delay, so scanning the offset
+        # moves every pulse's rotation area, including randomized-pulse-time runs
+        # where the scalar t_raman_pulse_ideal cannot track the drawn times.
+        t_offset = getattr(self.p, "t_raman_pulse_offset", None)
+        if t_offset is not None:
+            dt_ideal = dt_eff - float(t_offset)
+        else:
+            dt_ideal = float(self.p.t_raman_pulse_ideal)
         dt_img = float(self.p.t_img_pulse)
 
         timing["dt_eff"] = dt_eff
@@ -709,6 +786,22 @@ class FeedbackReplayCore(Feedback):
             np.full((n_repeat, n_step), self._t_raman_pulse_nominal_recorded, dtype=float),
             "constant-param",
         )
+
+    def _t_raman_pulse_seed_summary(self):
+        """Per-shot pulse-time seeds (data.t_raman_pulse_seed) for result metadata.
+
+        Returns the scalar seed when every shot used the same one, the
+        per-shot int array otherwise, or None for datasets without the container.
+        """
+        seeds = getattr(getattr(self.ad, "data", None), "t_raman_pulse_seed", None)
+        if seeds is None:
+            return None
+        seeds = np.asarray(seeds, dtype=float).ravel().astype(int)
+        if seeds.size == 0:
+            return None
+        if np.all(seeds == seeds[0]):
+            return int(seeds[0])
+        return seeds
 
     def _compute_dT_rr_mu(self, t_raman_pulse_rr: np.ndarray) -> np.ndarray:
         """Reconstruct each shot's per-step inter-pulse gap (machine units).
@@ -804,17 +897,32 @@ class FeedbackReplayCore(Feedback):
         *,
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
     ) -> np.ndarray:
-        """Reuse stored APD normalization unless callers request a different remap mode."""
+        """Reuse stored APD normalization unless it was built with different settings.
+
+        Stale-cache guard: the stored apd_norm_rr also depends on the midpoint
+        fraction, which optimizers sweep between the replay that produced
+        `result` and this call.
+        """
         result_remap_enabled = bool(
             result.metadata.get(
                 "feedback_measurement_midpoint_remap_enabled",
                 self.feedback_measurement_midpoint_remap_enabled,
             )
         )
-        if (
+        remap_matches = (
             feedback_measurement_midpoint_remap_enabled is None
             or bool(feedback_measurement_midpoint_remap_enabled) == result_remap_enabled
-        ):
+        )
+
+        stored_midpoint = result.metadata.get("feedback_measurement_midpoint_fraction")
+        midpoint_matches = stored_midpoint is None or np.isclose(
+            float(stored_midpoint),
+            float(self.feedback_measurement_midpoint_fraction),
+            rtol=0.0,
+            atol=1.0e-15,
+        )
+
+        if remap_matches and midpoint_matches:
             return np.asarray(result.apd_norm_rr, dtype=float)
 
         return self._normalize_apd(
@@ -1048,6 +1156,194 @@ class FeedbackReplayCore(Feedback):
             parallel_verbose=int(parallel_verbose),
         )
 
+    def simulate_feedback_run_apd(
+        self,
+        *,
+        detuning_offset_Omega: float = 0.0,
+        seed: int = 0,
+        noise_scale: float = 1.0,
+        include_photon_noise: bool = True,
+    ) -> Dict[str, object]:
+        """Synthesise a closed-loop feedback run with a known injected resonance.
+
+        The true resonance is placed ``detuning_offset_Omega`` away from
+        ``p.frequency_raman_transition``, and the loop is run forward: each pulse
+        drives at the frequency the posterior currently favours, the true Bloch
+        vector is rotated by that drive, photons are drawn from the resulting
+        ``s_z``, and the posterior consumes them and picks the next drive.
+
+        This is what makes a null test possible.  Scoring a real run against
+        ``p.frequency_raman_transition`` can only ever show self-consistency,
+        because that number is itself a calibration.  Here the answer is known and
+        deliberately *not* at the calibration label, so a pipeline that merely
+        gravitates toward its own prior is caught: the joint posterior has to land
+        on the injected offset, not on zero.
+
+        ``simulate_pulse_train_apd`` in ``kexp.analysis.rabi_posterior`` is the
+        open-loop analogue -- it holds the drive fixed, which is right for a Rabi
+        calibration train but not for a feedback run whose drive hops every pulse.
+
+        The synthetic run reuses the loaded run's shape and pulse schedule, so the
+        returned ``apd_rr`` can be handed straight to ``simulate_counterfactual``.
+
+        Parameters
+        ----------
+        detuning_offset_Omega
+            True resonance minus the nominal one, in units of Omega.  Use a value
+            that is *not* a multiple of the grid step to also probe off-grid truth.
+        noise_scale
+            Multiplies ``std_n_photons_per_shot`` when drawing photon counts.
+        include_photon_noise
+            Passed through to the posterior updates driving the loop.
+
+        Returns
+        -------
+        dict
+            ``apd_rr``, ``omega_control_rr``, ``s_z_true_rr``,
+            ``omega_true_rad_s``, ``detuning_offset_Omega``.
+        """
+        n_repeat, n_step = np.asarray(self._apd_rr_cached, dtype=float).shape
+        fractional_initial_offset_r = self._resolve_fractional_initial_offset_r(
+            n_repeat=n_repeat)
+
+        self._reinitialize_feedback()
+        timing = self._resolve_timing()
+
+        t_raman_pulse_rr, _ = self._resolve_t_raman_pulse_rr(
+            n_repeat=n_repeat, n_step=n_step)
+        dT_rr_mu = self._compute_dT_rr_mu(t_raman_pulse_rr)
+        dT_rr_mu = dT_rr_mu + np.int64(
+            int(timing["t_between_pulses_mu"]) - self._frozen_t_between_pulses_mu)
+
+        tP_mu = int(timing["t_between_pulses_mu"])
+        T_pre_mu = int(timing["t_io_update_pretrigger_mu"])
+        dt_fudge_mu = int(timing["t_ffu_pipeline_latency_fudge_mu"])
+        t_img = float(timing["t_img_pulse"])
+
+        dt_shift = float(timing["dt_eff"]) - self._t_raman_pulse_nominal_recorded
+        t_turn_on_delay = float(timing["dt_eff"]) - float(timing["dt_ideal"])
+
+        omega_true = float(
+            self._omega_resonance_rad_s + self.Omega * float(detuning_offset_Omega))
+        n_photons = float(self.N_photons_per_shot)
+        sigma_photons = float(self.std_n_photons_per_shot) * float(noise_scale)
+        v_down = float(self.v_apd_all_down)
+        v_range = float(self.v_range)
+
+        rng = np.random.default_rng(int(seed))
+        apd_rr = np.zeros((n_repeat, n_step), dtype=float)
+        omega_control_rr = np.zeros((n_repeat, n_step), dtype=float)
+        s_z_true_rr = np.zeros((n_repeat, n_step), dtype=float)
+
+        for r in range(n_repeat):
+            grid_r, _ = self._grid_for_offset(float(fractional_initial_offset_r[r]))
+            self.omega_guess_list = grid_r
+            self.omega_sq_list = grid_r * grid_r
+            self.reset_feedback_state()
+
+            t_pulse_s = np.asarray(t_raman_pulse_rr[r], dtype=float)
+            dt_eff_s = t_pulse_s + dt_shift
+            dt_ideal_s = dt_eff_s - t_turn_on_delay
+            dT_mu_s = dT_rr_mu[r]
+            t_in_s = np.concatenate(([0.0], np.cumsum(dT_mu_s[:-1]))) * 1.0e-9
+
+            # True Bloch vector, starting spin-up exactly as reset_feedback_state
+            # initialises every hypothesis.
+            sx, sy, sz = 0.0, 0.0, 1.0
+
+            phase_tracker = 0.0
+            omega_prev = 0.0
+            self.omega_raman = float(
+                self._omega_resonance_rad_s
+                + self.Omega * float(fractional_initial_offset_r[r]))
+
+            for i in range(n_step):
+                omega_ctrl = float(self.omega_raman)
+
+                _gap_mu = tP_mu if i == 0 else int(dT_mu_s[i - 1])
+                _t_old = _gap_mu - T_pre_mu + 4 + dt_fudge_mu
+                _t_new = T_pre_mu - 4 - dt_fudge_mu
+                phase_tracker += (_t_old * omega_prev + _t_new * omega_ctrl) * 1.0e-9
+
+                t_in = float(t_in_s[i])
+                dt_eff = float(dt_eff_s[i])
+                dt_ideal = float(dt_ideal_s[i])
+
+                # One hypothesis -- the true one -- stepped exactly as
+                # generate_posterior steps each grid point (kexp/base/feedback.py
+                # lines 205-256), so the synthetic data is generated by the same
+                # physics the analysis assumes.
+                delta_omega = omega_ctrl - omega_true
+                norm_H = np.sqrt(self.Omega * self.Omega + delta_omega * delta_omega)
+                if norm_H > 0.0:
+                    inv_norm_H = 1.0 / norm_H
+                    Omega_over_H = self.Omega * inv_norm_H
+                    u_z = delta_omega * inv_norm_H
+                    theta = -dt_ideal * norm_H
+                    sin_H, cos_H = np.sin(theta), np.cos(theta)
+                else:
+                    Omega_over_H, u_z, sin_H, cos_H = 0.0, 0.0, 0.0, 1.0
+
+                phi = phase_tracker - omega_true * t_in
+                u_x = Omega_over_H * np.cos(phi)
+                u_y = Omega_over_H * np.sin(phi)
+                omc = 1.0 - cos_H
+
+                hx = ((cos_H + omc * u_x * u_x) * sx
+                      + (omc * u_x * u_y - sin_H * u_z) * sy
+                      + (omc * u_x * u_z + sin_H * u_y) * sz)
+                hy = ((omc * u_x * u_y + sin_H * u_z) * sx
+                      + (cos_H + omc * u_y * u_y) * sy
+                      + (omc * u_y * u_z - sin_H * u_x) * sz)
+                hz = ((omc * u_x * u_z - sin_H * u_y) * sx
+                      + (omc * u_y * u_z + sin_H * u_x) * sy
+                      + (cos_H + omc * u_z * u_z) * sz)
+
+                # The APD sees this z; back-action never touches it.
+                p1 = float(self.expected_photon_fraction(hz))
+                k_true = n_photons * p1
+                if include_photon_noise and sigma_photons > 0.0:
+                    k_true = k_true + rng.normal(0.0, sigma_photons)
+                v_apd = v_down + k_true * v_range / n_photons
+
+                # z rotation from the imaging light shift, then measurement
+                # back-action on the transverse components only.
+                alpha_z = dt_eff * (omega_true - omega_ctrl) - self.omega_z_lightshift * t_img
+                cos_z, sin_z = np.cos(alpha_z), np.sin(alpha_z)
+                sx = (cos_z * hx + sin_z * hy) * self.back_action_coherence
+                sy = (-sin_z * hx + cos_z * hy) * self.back_action_coherence
+                sz = hz
+
+                apd_rr[r, i] = v_apd
+                omega_control_rr[r, i] = omega_ctrl
+                s_z_true_rr[r, i] = hz
+
+                # Advance the controller on the count the analysis would derive
+                # from this voltage, so the loop closes on the same quantity.
+                k_val = float(np.rint(n_photons * (v_apd - v_down) / v_range))
+                self.t_raman_pulse_current = dt_eff
+                self.t_raman_pulse_ideal_current = dt_ideal
+
+                omega_prev = omega_ctrl
+                omega_new, _, omega_std = self.generate_posterior(
+                    k_val,
+                    t_in,
+                    phase_raman_pulse_start=phase_tracker,
+                    update_raman_frequency=1,
+                    update_rabi_frequency=0,
+                    include_photon_noise=1 if include_photon_noise else 0,
+                )
+                self.omega_raman = float(omega_new)
+                self.Omega = float(omega_std)
+
+        return {
+            "apd_rr": apd_rr,
+            "omega_control_rr": omega_control_rr,
+            "s_z_true_rr": s_z_true_rr,
+            "omega_true_rad_s": omega_true,
+            "detuning_offset_Omega": float(detuning_offset_Omega),
+        }
+
     def _run_shot_into_buffers(
         self,
         r: int,
@@ -1239,7 +1535,22 @@ class FeedbackReplayCore(Feedback):
         k_rr = np.zeros((n_repeat, n_step), dtype=float)
         state_rr = np.zeros((n_repeat, n_step, 3), dtype=float) if return_full_state else None
 
-        # Use parallel processing if n_jobs != 1 and joblib is available
+        # Shot-level parallelism is NOT safe here. _run_shot_into_buffers mutates
+        # shared instance state on every pulse -- self.P0, self.state_x/y/z,
+        # self.omega_guess_list/omega_sq_list, self.omega_raman, self.Omega,
+        # self.t_raman_pulse_current -- all of which are single arrays/scalars
+        # allocated once by Feedback.__init__. Under backend='threading' concurrent
+        # shots overwrite each other's Bloch state and posterior with no locking,
+        # and the run returns wrong numbers silently rather than raising.
+        # Process-level parallelism (optimizer outer_n_jobs) is unaffected: each
+        # worker unpickles its own FeedbackReplay.
+        if n_jobs != 1:
+            raise ValueError(
+                f"n_jobs={n_jobs} is not supported: the shot loop mutates shared "
+                "posterior/Bloch state, so threaded replay silently corrupts results. "
+                "Use the optimizer's outer_n_jobs (process-based) for parallelism."
+            )
+
         use_parallel = n_jobs != 1 and HAS_JOBLIB
         if n_jobs != 1 and not HAS_JOBLIB:
             import warnings
@@ -1311,7 +1622,7 @@ class FeedbackReplayCore(Feedback):
                 "N_repeat": int(n_repeat),
                 "N_step": int(getattr(self.p, "N_pulses", n_step)),
                 "t_raman_pulse_source": t_raman_pulse_source,
-                "t_raman_pulse_seed_used": int(getattr(self.p, "t_raman_pulse_seed_used", 0)),
+                "t_raman_pulse_seed": self._t_raman_pulse_seed_summary(),
                 "feedback_grid_size": self._effective_feedback_grid_size(),
                 "control_omega_source": str(control_omega_source),
                 "include_photon_noise": bool(include_photon_noise),
@@ -1319,6 +1630,9 @@ class FeedbackReplayCore(Feedback):
                 "update_rabi_frequency": bool(update_rabi_frequency),
                 "feedback_measurement_midpoint_remap_enabled": bool(
                     self.feedback_measurement_midpoint_remap_enabled
+                ),
+                "feedback_measurement_midpoint_fraction": float(
+                    self.feedback_measurement_midpoint_fraction
                 ),
                 "timing": timing,
             },
@@ -1386,6 +1700,321 @@ class FeedbackReplay(FeedbackReplayCore):
         sigma = max(float(sigma_omega), 1.0e-12)
         scores = np.exp(-0.5 * detuning * detuning / (sigma * sigma))
         return float(np.mean(scores))
+
+    def _true_resonance_indices(self, result: FeedbackReplayResult) -> np.ndarray:
+        """Per-shot index of the exact-resonance hypothesis, in that shot's grid.
+
+        ``result.zidx`` is a single run-level value from ``_reinitialize_feedback``,
+        but ``_run_shot_into_buffers`` rebuilds the grid per shot from that shot's
+        ``feedback_fractional_initial_offset`` and writes ``P0_rr[r]`` against it.
+        For a run that scans the initial offset the two disagree, so the index has
+        to be recomputed shot by shot.
+        """
+        n_repeat = int(result.P0_rr.shape[0])
+        offset_r = self._resolve_fractional_initial_offset_r(n_repeat=n_repeat)
+        if np.all(offset_r == offset_r[0]):
+            return np.full(n_repeat, int(result.zidx), dtype=int)
+        return np.asarray(
+            [self._grid_for_offset(float(o))[1] for o in offset_r], dtype=int
+        )
+
+    def check_posterior_peak_preconditions(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        strict: bool = True,
+    ) -> Dict[str, object]:
+        """Validate that a run can carry a meaningful posterior-peak score.
+
+        Three things silently invalidate the metric:
+
+        remesh
+            ``maybe_remesh`` moves the hypothesis grid mid-shot, but
+            ``FeedbackReplayCore`` never calls it, so replay diverges from what
+            physically happened whenever the run had remeshing enabled.
+        timing
+            When ``_t_between_base_valid`` is False the inter-pulse gaps come from
+            a constant fallback, and the posterior phase
+            ``phi = phase_raman_pulse_start - omega0*t`` accumulates that error
+            over every pulse.
+        degenerate offsets
+            With ``feedback_fractional_initial_offset == 0`` for every shot the
+            grid already starts centred on the assumed resonance, so a model that
+            barely updates ``P0`` still scores near 1. The metric only has teeth
+            when the run scans the offset.
+
+        ``strict`` raises on the first two. The third is always just a warning: a
+        zero-offset run is still worth scoring, only not worth optimising against.
+        """
+        n_repeat = int(result.P0_rr.shape[0])
+        offset_r = self._resolve_fractional_initial_offset_r(n_repeat=n_repeat)
+        remesh_threshold = float(getattr(self.p, "feedback_remesh_threshold_Omega", 0.0))
+        degenerate = bool(np.all(offset_r == 0.0))
+
+        # With update_raman_frequency_bool = 0 the posterior never sets the next
+        # drive, so a 'recomputed' replay reproduces the 'measured' one and the
+        # two-mode comparison is vacuous. This is a property of how the run was
+        # taken, not of the analysis, so it is a warning rather than a failure.
+        updates_drive = bool(getattr(self.p, "update_raman_frequency_bool", 1))
+
+        # A run that scanned feedback_fractional_initial_offset carries one offset
+        # per shot in _fractional_initial_offset_source, and _run_shot_into_buffers
+        # calls _grid_for_offset per shot precisely to honour that. But
+        # _apply_feedback_kwargs_to_params writes the offset onto self.p through
+        # float(), collapsing the array to its first element, and
+        # _resolve_fractional_initial_offset_r reads self.p first -- so every shot
+        # is replayed on shot 0's grid. P0_rr then does not describe the experiment
+        # and no score computed from it means anything.
+        source = np.asarray(
+            getattr(self, "_fractional_initial_offset_source", offset_r), dtype=float
+        ).ravel()
+        offsets_collapsed = bool(
+            source.size == n_repeat
+            and np.unique(source).size > 1
+            and np.unique(offset_r).size == 1
+        )
+
+        problems: List[str] = []
+        if remesh_threshold != 0.0:
+            problems.append(
+                f"feedback_remesh_threshold_Omega = {remesh_threshold:g} (remeshing was "
+                "enabled), but FeedbackReplayCore never calls maybe_remesh, so the "
+                "replayed hypothesis grid is not the one the experiment used."
+            )
+        if offsets_collapsed:
+            problems.append(
+                "the run scans feedback_fractional_initial_offset over "
+                f"{int(np.unique(source).size)} values, but replay collapsed it to the "
+                f"single value {float(offset_r[0]):g}, so every shot was replayed on "
+                "shot 0's hypothesis grid instead of its own."
+            )
+        if not self._t_between_base_valid:
+            problems.append(
+                "inter-pulse gaps are reconstructed from the constant fallback "
+                "(_t_between_base_valid is False), so the posterior phase error "
+                "accumulates over every pulse."
+            )
+
+        report: Dict[str, object] = {
+            "remesh_threshold_Omega": remesh_threshold,
+            "remesh_replayed": bool(remesh_threshold == 0.0),
+            "timing_base_valid": bool(self._t_between_base_valid),
+            "offsets_degenerate": degenerate,
+            "n_unique_offsets": int(np.unique(offset_r).size),
+            "updates_drive": updates_drive,
+            "offsets_collapsed": offsets_collapsed,
+            "problems": problems,
+        }
+
+        if problems and strict:
+            raise ValueError(
+                "This run cannot carry a meaningful posterior-peak score:\n  - "
+                + "\n  - ".join(problems)
+                + "\nPass strict=False to score it anyway."
+            )
+        for message in problems:
+            print(f"[posterior-peak] warning: {message}")
+        if not updates_drive:
+            print(
+                "[posterior-peak] warning: update_raman_frequency_bool = 0, so the "
+                "posterior never chose the next drive frequency. A 'recomputed' replay "
+                "then reproduces the 'measured' one and the two-mode comparison says "
+                "nothing -- score this run in 'measured' mode only."
+            )
+        if degenerate:
+            print(
+                "[posterior-peak] warning: every shot has "
+                "feedback_fractional_initial_offset = 0, so the hypothesis grid starts "
+                "centred on the assumed resonance. A model that barely updates P0 still "
+                "scores near 1 -- scan the offset before optimising against this."
+            )
+        return report
+
+    def compute_posterior_peak_metrics(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        step_index: int = -1,
+        sigma_bins: float = 1.5,
+        tolerance_bins: int = 0,
+    ) -> Dict[str, float]:
+        """Score how often the per-shot posterior peaks at the true resonance.
+
+        Reads ``result.P0_rr[:, step_index, :]`` -- the posterior each shot ended
+        with -- and compares its peak against that shot's exact-resonance grid
+        index. Nothing is re-simulated: the replay already ran the real
+        ``generate_posterior``. ``_initialize_frequency_grid`` shifts the grid so
+        one hypothesis lands exactly on resonance, so "peaks at resonance" is
+        exactly ``argmax(P0) == true_idx``.
+
+        Scoring is deliberately split in two. ``hit_rate`` is the literal question,
+        but it is an integer count over shots, so as a function of any model
+        parameter it is a staircase with wide plateaus -- fine for a grid scan,
+        poor for the GP surrogate in ``fit(method='bayesian')``. ``gaussian_mass``
+        weights the whole posterior by its distance from the resonance bin, which
+        is smooth in the model parameters because ``P0`` is, and degrades
+        gracefully (off-by-one beats off-by-ten). Optimise the second, quote the
+        first.
+
+        Parameters
+        ----------
+        step_index
+            Which pulse's posterior to score. ``-1`` (default) is the final one.
+        sigma_bins
+            Width of the Gaussian weight, in grid steps.
+        tolerance_bins
+            A shot counts as a hit when its peak is within this many grid steps of
+            resonance. ``0`` (default) demands the exact bin.
+
+        Returns
+        -------
+        dict
+            ``hit_rate``, ``hit_rate_stderr``, ``gaussian_mass``,
+            ``mean_abs_index_error``, ``tie_fraction``,
+            ``flat_posterior_fraction``, ``n_repeat``.
+        """
+        P0_final = np.asarray(result.P0_rr[:, int(step_index), :], dtype=float)
+        true_idx = self._true_resonance_indices(result)
+        n_repeat, m = P0_final.shape
+        j = np.arange(m)
+
+        argmax_idx = np.argmax(P0_final, axis=1)
+        max_prob = P0_final[np.arange(n_repeat), argmax_idx]
+
+        # np.argmax silently takes the first of several equal maxima, so a tied
+        # posterior scores as a hit or a miss on grid ordering alone. Count them,
+        # so a run that is mostly ties cannot look decisive.
+        tie_fraction = float(
+            np.mean(np.sum(np.isclose(P0_final, max_prob[:, None]), axis=1) > 1))
+
+        # generate_posterior treats max_prob < 1.15/m as "no peak" and falls back
+        # to the posterior mean (kexp/base/feedback.py:320-326). Those shots have
+        # not converged; report them rather than letting them pass as neutral.
+        flat_fraction = float(np.mean(max_prob < 1.15 / m))
+
+        hit = np.abs(argmax_idx - true_idx) <= int(tolerance_bins)
+        hit_rate = float(np.mean(hit))
+
+        sigma = max(float(sigma_bins), 1.0e-12)
+        weight = np.exp(-0.5 * ((j[None, :] - true_idx[:, None]) / sigma) ** 2)
+        gaussian_mass_r = np.sum(P0_final * weight, axis=1)
+        gaussian_mass = float(np.mean(gaussian_mass_r))
+
+        # A uniform posterior collects sum_j (1/m)*w_j regardless of the data --
+        # a free floor of roughly sqrt(2*pi)*sigma/m (0.179 at m=21, sigma=1.5).
+        # Since a confident-but-3-bins-wrong posterior scores only 0.135, plain
+        # gaussian_mass can pay a candidate more for flattening P0 than for being
+        # informative. Report the floor and the excess over it so that incentive
+        # is visible, and expose log_score, which has no such floor.
+        gaussian_mass_uniform_r = np.sum(weight, axis=1) / float(m)
+        gaussian_mass_uniform = float(np.mean(gaussian_mass_uniform_r))
+
+        # Proper scoring rule: log P0 at the true hypothesis. Uniform scores
+        # exactly -log(m); confidently wrong is punished without bound, so there
+        # is no hedging optimum. Clipped only to keep -inf out of the mean.
+        p_true = P0_final[np.arange(n_repeat), true_idx]
+        log_score_r = np.log(np.clip(p_true, 1.0e-300, None))
+        log_score = float(np.mean(log_score_r))
+
+        def _stderr(x: np.ndarray) -> float:
+            x = np.asarray(x, dtype=float)
+            if x.size < 2:
+                return 0.0
+            return float(np.std(x, ddof=1) / np.sqrt(x.size))
+
+        return {
+            "hit_rate": hit_rate,
+            "hit_rate_stderr": float(
+                np.sqrt(max(hit_rate * (1.0 - hit_rate), 0.0) / max(n_repeat, 1))),
+            "gaussian_mass": gaussian_mass,
+            "gaussian_mass_stderr": _stderr(gaussian_mass_r),
+            "gaussian_mass_uniform": gaussian_mass_uniform,
+            "gaussian_mass_excess": gaussian_mass - gaussian_mass_uniform,
+            "log_score": log_score,
+            "log_score_stderr": _stderr(log_score_r),
+            "log_score_uniform": float(-np.log(max(m, 1))),
+            "p_true_mean": float(np.mean(p_true)),
+            "mean_abs_index_error": float(np.mean(np.abs(argmax_idx - true_idx))),
+            "tie_fraction": tie_fraction,
+            "flat_posterior_fraction": flat_fraction,
+            "n_repeat": int(n_repeat),
+        }
+
+    def compute_joint_posterior(
+        self,
+        result: FeedbackReplayResult,
+        *,
+        step_index: int = -1,
+        n_grid: Optional[int] = None,
+    ) -> Dict[str, object]:
+        """Combine every shot's final posterior into one posterior for the run.
+
+        Shots that started from different initial offsets ran on different
+        hypothesis grids (``_grid_for_offset``), so their ``P0`` arrays are not
+        elementwise comparable -- each is interpolated onto a common detuning axis
+        in units of Omega first. Where a shot's own grid did not reach, it made no
+        statement, so it contributes a flat factor rather than pulling the joint
+        toward an edge.
+
+        Shots are independent given the hypothesis, so the joint is the product of
+        their likelihoods -- but the prior is shared and must be counted once, not
+        once per shot. This is the accounting used by ``RabiPosterior.run``
+        (kexp/analysis/rabi_posterior.py:756-762); a naive product over ``P0``
+        would sharpen the result by re-multiplying the prior ``n_repeat - 1``
+        extra times.
+
+        Returns
+        -------
+        dict
+            ``detuning`` (common axis, Omega units), ``posterior_joint``,
+            ``posterior_shot`` (interpolated, per shot), ``map_detuning``,
+            ``peaks_at_resonance``, ``n_repeat``.
+        """
+        P0_final = np.asarray(result.P0_rr[:, int(step_index), :], dtype=float)
+        n_repeat, m = P0_final.shape
+        omega_res = float(self._omega_resonance_rad_s)
+        Omega = float(self.Omega)
+
+        offset_r = self._resolve_fractional_initial_offset_r(n_repeat=n_repeat)
+        grids = np.asarray(
+            [self._grid_for_offset(float(o))[0] for o in offset_r], dtype=float)
+        detuning_r = (grids - omega_res) / Omega
+
+        n_common = int(n_grid) if n_grid else max(4 * m, 201)
+        detuning = np.linspace(
+            float(np.min(detuning_r)), float(np.max(detuning_r)), n_common)
+        fill = 1.0 / float(n_common)
+
+        posterior_shot = np.empty((n_repeat, n_common), dtype=float)
+        for r in range(n_repeat):
+            order = np.argsort(detuning_r[r])
+            interp = np.interp(
+                detuning, detuning_r[r][order], P0_final[r][order],
+                left=np.nan, right=np.nan)
+            interp = np.where(np.isfinite(interp), interp, fill)
+            total = float(np.sum(interp))
+            posterior_shot[r] = interp / total if total > 0.0 else fill
+
+        tiny = np.finfo(float).tiny
+        log_prior = np.full(n_common, np.log(fill))
+        log_joint = np.sum(
+            np.log(np.where(posterior_shot > 0.0, posterior_shot, tiny)), axis=0)
+        log_joint = log_joint - (n_repeat - 1) * log_prior
+        log_joint = log_joint - np.max(log_joint)
+        posterior_joint = np.exp(log_joint)
+        posterior_joint = posterior_joint / np.sum(posterior_joint)
+
+        map_idx = int(np.argmax(posterior_joint))
+        step = float(detuning[1] - detuning[0]) if n_common > 1 else np.inf
+
+        return {
+            "detuning": detuning,
+            "posterior_joint": posterior_joint,
+            "posterior_shot": posterior_shot,
+            "map_detuning": float(detuning[map_idx]),
+            "peaks_at_resonance": bool(abs(float(detuning[map_idx])) <= 0.5 * step),
+            "n_repeat": int(n_repeat),
+        }
 
     def run_default(self, *, return_full_state: bool = False) -> FeedbackReplayResult:
         """Convenience default: replay measured APD with measured omega control."""
@@ -2019,7 +2648,6 @@ class FeedbackReplay(FeedbackReplayCore):
         else:
             fig = ax.figure
 
-        color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
 
         if grouped_average:
             omega_rr = self._omega_rr_cached
@@ -2034,12 +2662,14 @@ class FeedbackReplay(FeedbackReplayCore):
                 name="trace_indices",
             )
 
-            for gidx in selected_group_indices:
+            trace_colors = _trace_color_list(len(selected_group_indices))
+
+            for local_idx, gidx in enumerate(selected_group_indices):
                 members = groups[int(gidx)]
                 idx = np.asarray(members, dtype=int)
                 n_members = int(idx.size)
                 denom = np.sqrt(float(n_members)) if use_stderr and n_members > 1 else 1.0
-                color = color_cycle[gidx % len(color_cycle)]
+                color = trace_colors[local_idx]
 
                 t_mean = np.mean(t_rr[idx], axis=0)
                 apd_mean = np.mean(apd_norm_rr[idx], axis=0)
@@ -2090,9 +2720,11 @@ class FeedbackReplay(FeedbackReplayCore):
                 name="trace_indices",
             )
 
-            for r in selected_repeat_indices:
+            trace_colors = _trace_color_list(len(selected_repeat_indices))
+
+            for local_idx, r in enumerate(selected_repeat_indices):
                 t = t_rr[r]
-                color = color_cycle[r % len(color_cycle)]
+                color = trace_colors[local_idx]
                 ax.scatter(t, apd_norm_rr[r], s=12, alpha=0.55, color=color)
                 ax.plot(t, sz_rr[r], "-", lw=1.3, alpha=0.8, color=color)
 
@@ -2124,7 +2756,6 @@ class FeedbackReplay(FeedbackReplayCore):
         else:
             fig = ax.figure
 
-        color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
 
         if grouped_average:
             groups = self.average_by_omega_group(
@@ -2137,10 +2768,12 @@ class FeedbackReplay(FeedbackReplayCore):
                 trace_indices,
                 name="trace_indices",
             )
-            for gidx in selected_group_indices:
+            trace_colors = _trace_color_list(len(selected_group_indices))
+
+            for local_idx, gidx in enumerate(selected_group_indices):
                 group = groups[int(gidx)]
                 t = group["t_s_z"]
-                color = color_cycle[gidx % len(color_cycle)]
+                color = trace_colors[local_idx]
                 apd_mean = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
                 apd_err = np.asarray(group["apd_norm_err"], dtype=float).ravel()
                 n_members = int(np.asarray(group.get("members", []), dtype=int).size)
@@ -2187,9 +2820,11 @@ class FeedbackReplay(FeedbackReplayCore):
                 trace_indices,
                 name="trace_indices",
             )
-            for r in selected_repeat_indices:
+            trace_colors = _trace_color_list(len(selected_repeat_indices))
+
+            for local_idx, r in enumerate(selected_repeat_indices):
                 t = result.t_s_z_rr[r]
-                color = color_cycle[r % len(color_cycle)]
+                color = trace_colors[local_idx]
                 ax.scatter(t, apd_norm_rr[r], s=12, alpha=0.55, color=color)
                 ax.plot(t, result.s_z_rr[r], "-", lw=1.3, alpha=0.8, color=color)
 
@@ -2226,7 +2861,6 @@ class FeedbackReplay(FeedbackReplayCore):
         else:
             recomputed_lag_steps = 0
 
-        color_cycle = plt.rcParams["axes.prop_cycle"].by_key().get("color", ["C0"])
 
         f0 = float(getattr(self.p, "frequency_raman_transition", 0.0))
         f_rabi = 1.0 / (2.0 * float(self.p.t_raman_pi_pulse))
@@ -2257,6 +2891,7 @@ class FeedbackReplay(FeedbackReplayCore):
                 color_overrides = list(trace_colors)
             else:
                 color_overrides = []
+            default_colors = _trace_color_list(len(selected_group_indices))
 
             for local_idx, gidx in enumerate(selected_group_indices):
                 group = groups[int(gidx)]
@@ -2266,7 +2901,7 @@ class FeedbackReplay(FeedbackReplayCore):
                 if local_idx < len(color_overrides):
                     color = color_overrides[local_idx]
                 else:
-                    color = color_cycle[gidx % len(color_cycle)]
+                    color = default_colors[local_idx]
                 x_ctrl, ctrl_plot = _lag_xy(pulse_idx, np.asarray(ctrl, dtype=float), int(control_lag_steps))
                 x_rec, rec_plot = _lag_xy(pulse_idx, np.asarray(rec, dtype=float), int(recomputed_lag_steps))
                 ax.scatter(x_ctrl, ctrl_plot, s=18, alpha=0.85, color=color)
@@ -2283,6 +2918,7 @@ class FeedbackReplay(FeedbackReplayCore):
                 color_overrides = list(trace_colors)
             else:
                 color_overrides = []
+            default_colors = _trace_color_list(len(selected_repeat_indices))
 
             for local_idx, r in enumerate(selected_repeat_indices):
                 pulse_idx = np.arange(result.omega_control_rr.shape[1], dtype=float)
@@ -2291,7 +2927,7 @@ class FeedbackReplay(FeedbackReplayCore):
                 if local_idx < len(color_overrides):
                     color = color_overrides[local_idx]
                 else:
-                    color = color_cycle[r % len(color_cycle)]
+                    color = default_colors[local_idx]
                 x_ctrl, ctrl_plot = _lag_xy(pulse_idx, np.asarray(ctrl, dtype=float), int(control_lag_steps))
                 x_rec, rec_plot = _lag_xy(pulse_idx, np.asarray(rec, dtype=float), int(recomputed_lag_steps))
                 ax.scatter(x_ctrl, ctrl_plot, s=12, alpha=0.55, color=color)
@@ -2468,6 +3104,8 @@ class FeedbackReplayOptimizer:
     PARAMETER_ALIASES = {
         "frequency_z_lightshift": "frequency_lightshift",
         "fractional_initial_offset": "feedback_fractional_initial_offset",
+        "t_turn_on_delay": "t_raman_pulse_offset",
+        "t_raman_turn_on_delay": "t_raman_pulse_offset",
     }
 
     def __init__(
@@ -2700,6 +3338,22 @@ class FeedbackReplayOptimizer:
             raise ValueError("parameter_name must be a non-empty string.")
 
         resolved_name = self._resolve_parameter_name(name)
+
+        # A name that _extract_p_user_overrides does not scan is a silent no-op:
+        # _with_temporary_replay_params writes it onto self.p, then
+        # _apply_feedback_kwargs_to_params overwrites it from _base_kwargs (or
+        # nothing reads it at all). The sweep runs, costs a full replay per point,
+        # and returns a dead-flat loss surface with no error. Refuse instead.
+        # 'delta_t_mu' and lowercase 'n_photons_per_shot' both land here.
+        if resolved_name not in FeedbackReplayCore._P_ATTR_TO_KWARG:
+            known = sorted(FeedbackReplayCore._P_ATTR_TO_KWARG)
+            alias = sorted(self.PARAMETER_ALIASES)
+            raise ValueError(
+                f"{name!r} is not a scannable replay parameter: nothing on the replay "
+                "path reads it, so sweeping it would silently do nothing.\n"
+                f"  scannable: {known}\n"
+                f"  aliases:   {alias}"
+            )
 
         if values is None:
             span = float(fractional_span)
@@ -4175,11 +4829,11 @@ class FeedbackReplayOptimizer:
         plotted_sim_expt = False
         plotted_sim_best = False
 
-        cmap = plt.get_cmap("tab20", max(1, len(plotted_group_indices)))
+        group_colors = _trace_color_list(len(plotted_group_indices))
         plotted_group_colors = []
         for cidx, gidx in enumerate(plotted_group_indices):
             group = best_groups[int(gidx)]
-            group_color = cmap(cidx)
+            group_color = group_colors[cidx]
             plotted_group_colors.append(group_color)
             t = np.asarray(group["t_s_z"], dtype=float).ravel()
             apd_best_mean = np.asarray(group["apd_norm_mean"], dtype=float).ravel()
@@ -4745,7 +5399,7 @@ class FeedbackReplaySweep(FeedbackReplayOptimizer):
                 ax.scatter(t, y, s=14, alpha=0.5, color="0.45", zorder=1)
 
         non_best_count = sum(0 if bool(trace["from_best"]) else 1 for trace in sim_traces)
-        cmap = plt.get_cmap("tab20", max(1, non_best_count))
+        candidate_colors = _trace_color_list(non_best_count)
         color_idx = 0
 
         for trace in sim_traces:
@@ -4758,7 +5412,7 @@ class FeedbackReplaySweep(FeedbackReplayOptimizer):
                 alpha = 0.95
                 zorder = 3
             else:
-                color = cmap(color_idx)
+                color = candidate_colors[color_idx]
                 color_idx += 1
                 lw = 1.2
                 alpha = 0.65
@@ -5179,5 +5833,531 @@ class FeedbackConvergenceOptimizer(FeedbackReplayOptimizer):
             "best_result": best_result,
             "best_params": best_params,
             "best_score": float(best_score),
+            "run_id": run_id,
+        }
+
+
+class FeedbackPosteriorPeakOptimizer(FeedbackReplayOptimizer):
+    """Optimizer that scores candidates by how often the posterior peaks on resonance.
+
+    For every shot the replay ends with a posterior over frequency hypotheses,
+    ``result.P0_rr[:, step_index, :]``.  ``_initialize_frequency_grid`` shifts the
+    grid so one hypothesis sits exactly on resonance, so "this shot's posterior
+    peaked at the true resonance" is exactly ``argmax(P0) == true_idx``.  The
+    figure of merit is that fraction, averaged over shots.
+
+    The search does not minimise the fraction directly.  It is an integer count
+    over shots, so as a function of any parameter it is a staircase with wide
+    plateaus, which the inherited GP surrogate (``method='bayesian'``) handles
+    badly.  The driven quantity is ``gaussian_mass`` -- the posterior mass near
+    the resonance bin, smooth in the model parameters because ``P0`` is -- and
+    ``hit_rate`` is reported alongside with its binomial standard error.  Loss is
+    ``1 - gaussian_mass``, so the inherited minimisation machinery is unchanged.
+
+    Two replay modes are scored for every candidate:
+
+    ``'measured'``
+        The drive frequencies stay pinned to what the experiment actually drove.
+        Sweeping a parameter here re-reads a trajectory that was shaped by the
+        parameter values live at the time.
+    ``'recomputed'``
+        The candidate parameters re-drive the frequency choice at every pulse,
+        which is what a real change to that parameter would have done.
+
+    ``primary_mode`` drives the search. It defaults to ``'measured'``: for fitting
+    calibration constants, the drive frequencies are part of the recorded data and
+    must stay pinned to what was actually driven, otherwise the fit is free to
+    invent a trajectory that flatters the candidate. ``'recomputed'`` answers the
+    different, design-side question "what would this change have done to the closed
+    loop"; the gap between the two is reported and is itself the diagnostic for how
+    much of a score comes from re-driving rather than re-reading. On run 76272 the
+    two disagree in sign, so the choice is not academic.
+
+    Usage::
+
+        opt = FeedbackPosteriorPeakOptimizer(fr)
+        opt.add_parameter('feedback_guess_span_Omega', np.linspace(2.0, 8.0, 25))
+        report = opt.fit_report(method='bayesian', max_evals=60)
+        print(report['best_params'], report['best_score'])
+
+    A caution on which parameters to register.  Design knobs
+    (``feedback_grid_size``, ``feedback_guess_span_Omega``,
+    ``N_photons_per_shot``, ``feedback_fractional_initial_offset``) only change
+    how the recorded photon counts are re-interpreted, so replay answers for them
+    honestly.  Model nuisance constants (``back_action_coherence``,
+    ``frequency_lightshift``, ``std_n_photons_per_shot``, ``v_apd_all_up/down``,
+    ``feedback_measurement_midpoint_fraction``, ``t_raman_pulse_ideal``) are a
+    different exercise: "true resonance" here is ``p.frequency_raman_transition``,
+    a calibration, so tuning them against this objective fits the analysis model
+    to a calibration label rather than testing it.  Note also that
+    ``frequency_lightshift`` and ``t_img_pulse`` are exactly degenerate -- only
+    their product enters.  Keep the two runs in separate reports, and validate a
+    nuisance fit against synthetic data with a deliberately nonzero injected
+    offset before believing it.
+
+    ``N_pulses`` and the ``t_raman_pulse`` schedule are out of scope: changing
+    them would have changed what was physically measured, so they cannot be
+    replayed against a fixed ``apd_rr``.  That needs forward simulation via
+    ``simulate_counterfactual``.
+    """
+
+    #: Loss is built from one of these. ``log_score`` is a proper scoring rule
+    #: (mean log P0 at the true hypothesis) and is the default: it has no
+    #: flat-posterior floor, so no candidate profits from making P0 uninformative.
+    #: ``gaussian_mass`` is the original smooth metric, kept because it degrades
+    #: gracefully with distance; ``gaussian_mass_excess`` is that metric minus its
+    #: uniform-posterior floor, which removes the hedging incentive while keeping
+    #: the graceful degradation. ``hit_rate`` is the literal question but is an
+    #: integer count over shots, so it is a staircase -- fine for a grid scan, poor
+    #: for the GP surrogate.
+    OBJECTIVES = {
+        "log_score": (1.0, 0.0),           # (weight on metric, offset) -> loss = offset - w*metric
+        "gaussian_mass": (1.0, 1.0),
+        "gaussian_mass_excess": (1.0, 1.0),
+        "hit_rate": (1.0, 1.0),
+    }
+
+    #: Parameters that feed the measurement model rather than the loop design.
+    #: Registering these is legitimate but means something different -- see the
+    #: class docstring.
+    NUISANCE_PARAMETER_NAMES = frozenset({
+        "back_action_coherence",
+        "frequency_lightshift",
+        "std_n_photons_per_shot",
+        "v_apd_all_up",
+        "v_apd_all_down",
+        "feedback_measurement_midpoint_fraction",
+        "t_raman_pulse_ideal",
+        "t_raman_pulse_offset",
+        "feedback_apd_map_a",
+        "feedback_apd_map_b",
+    })
+
+    def __init__(
+        self,
+        replay_or_ad,
+        *,
+        replay_defaults: Optional[Dict[str, object]] = None,
+        sigma_bins: float = 1.5,
+        tolerance_bins: int = 0,
+        step_index: int = -1,
+        score_modes: Sequence[str] = ("measured", "recomputed"),
+        primary_mode: str = "measured",
+        strict_preconditions: bool = True,
+        objective: str = "log_score",
+        flat_penalty: float = 0.0,
+    ):
+        super().__init__(replay_or_ad, replay_defaults=replay_defaults)
+        if str(objective) not in self.OBJECTIVES:
+            raise ValueError(
+                f"objective must be one of {sorted(self.OBJECTIVES)}, got {objective!r}.")
+        self.objective = str(objective)
+        self.flat_penalty = float(flat_penalty)
+        self.sigma_bins = float(sigma_bins)
+        self.tolerance_bins = int(tolerance_bins)
+        self.step_index = int(step_index)
+        self.score_modes = tuple(str(mode) for mode in score_modes)
+        if not self.score_modes:
+            raise ValueError("score_modes must name at least one replay mode.")
+        self.primary_mode = str(primary_mode)
+        if self.primary_mode not in self.score_modes:
+            raise ValueError(
+                f"primary_mode {self.primary_mode!r} is not in score_modes {self.score_modes}."
+            )
+        self.strict_preconditions = bool(strict_preconditions)
+
+    # -- helpers ------------------------------------------------------------
+
+    def registered_nuisance_parameters(self) -> List[str]:
+        """Registered parameters that feed the measurement model, not the design."""
+        return [
+            name for name, _ in self._parameters
+            if self._resolve_parameter_name(str(name)) in self.NUISANCE_PARAMETER_NAMES
+        ]
+
+    def _score_one_mode(
+        self,
+        mode: str,
+        *,
+        n_jobs: int,
+        parallel_verbose: int,
+    ) -> Tuple[FeedbackReplayResult, Dict[str, float]]:
+        result = self.replay.replay_measured(
+            control_omega_source=str(mode),
+            n_jobs=int(n_jobs),
+            parallel_verbose=int(parallel_verbose),
+        )
+        metrics = self.replay.compute_posterior_peak_metrics(
+            result,
+            step_index=self.step_index,
+            sigma_bins=self.sigma_bins,
+            tolerance_bins=self.tolerance_bins,
+        )
+        return result, metrics
+
+    # -- candidate evaluation ------------------------------------------------
+
+    def _evaluate_candidate(
+        self,
+        index_tuple: Tuple[int, ...],
+        *,
+        replay_kwargs: Dict[str, object],
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        lightweight_candidates: bool = False,
+        # MSE-specific kwargs accepted but ignored -- the parent fit() calls this
+        # method by name with the full MSE keyword set.
+        **_ignored_mse_kwargs,
+    ) -> Dict[str, object]:
+        t_start = perf_counter()
+        params = self._index_to_params(index_tuple)
+
+        resolved_param_updates: Dict[str, object] = {}
+        if replay_kwargs:
+            for key, value in replay_kwargs.items():
+                resolved_param_updates[self._resolve_parameter_name(str(key))] = value
+        for key, value in params.items():
+            resolved_param_updates[self._resolve_parameter_name(str(key))] = float(value)
+
+        t_replay_start = perf_counter()
+        results: Dict[str, FeedbackReplayResult] = {}
+        metrics: Dict[str, Dict[str, float]] = {}
+        with self._with_temporary_replay_params(resolved_param_updates):
+            for mode in self.score_modes:
+                results[mode], metrics[mode] = self._score_one_mode(
+                    mode, n_jobs=n_jobs, parallel_verbose=parallel_verbose)
+        t_end = perf_counter()
+
+        primary = metrics[self.primary_mode]
+        weight, offset = self.OBJECTIVES[self.objective]
+        loss = float(offset) - float(weight) * float(primary[self.objective])
+        # Optional explicit guard against the hedging optimum: a candidate that
+        # drives shots into generate_posterior's "no peak" branch is not a better
+        # model, it is a less informative one. Zero by default -- log_score already
+        # removes the incentive, so this is for callers who keep gaussian_mass.
+        if self.flat_penalty:
+            loss += self.flat_penalty * float(primary["flat_posterior_fraction"])
+
+        fit_payload: Dict[str, object] = {
+            # Alias so the parent's loss bookkeeping and plotting work unchanged.
+            "overall_mse": float(loss),
+            "n_groups": 1,
+            "n_points": int(primary["n_repeat"]),
+            "primary_mode": self.primary_mode,
+        }
+        for mode, mode_metrics in metrics.items():
+            for key, value in mode_metrics.items():
+                fit_payload[f"{key}__{mode}"] = value
+        # Unsuffixed keys mirror the primary mode, so callers that do not care
+        # about the two-mode split can read fit["hit_rate"] directly.
+        fit_payload.update(primary)
+
+        candidate_result = None if bool(lightweight_candidates) else results[self.primary_mode]
+
+        return {
+            "indices": tuple(int(i) for i in index_tuple),
+            "params": params,
+            "result": candidate_result,
+            "groups": None,
+            "fit": fit_payload,
+            "loss": float(loss),
+            "timing_s": {
+                "replay": float(t_end - t_replay_start),
+                "group_summary": 0.0,
+                "fit_metrics": 0.0,
+                "total": float(t_end - t_start),
+            },
+        }
+
+    # -- fit -----------------------------------------------------------------
+
+    def fit(
+        self,
+        *,
+        method: str = "adaptive",
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        mse_smoothing_points: float = 0.0,
+        max_evals: Optional[int] = None,
+        n_initial: Optional[int] = None,
+        refine_top_k: int = 4,
+        random_state: int = 0,
+        surrogate_length_scale: float = 0.25,
+        surrogate_noise: float = 1.0e-6,
+        surrogate_beta: float = 2.0,
+        surrogate_candidate_pool_size: int = 1024,
+        surrogate_exploration_probability: float = 0.05,
+        outer_n_jobs: int = 1,
+        lightweight_candidates: Optional[bool] = None,
+    ) -> Dict[str, object]:
+        """Fit registered parameters by maximising posterior-peak score.
+
+        Preconditions are checked once here, in the parent process, before the
+        search fans out -- a worker process would otherwise repeat the warnings
+        once per candidate.
+
+        ``lightweight_candidates`` defaults to True whenever outer parallelism is
+        in play: the metric only needs ``P0_rr``, so shipping whole
+        ``FeedbackReplayResult`` objects back from workers is pure overhead.
+        """
+        baseline = self.replay.replay_measured(control_omega_source="measured")
+        self.replay.check_posterior_peak_preconditions(
+            baseline, strict=self.strict_preconditions)
+        self._baseline_result = baseline
+        self._baseline_metrics = self.replay.compute_posterior_peak_metrics(
+            baseline,
+            step_index=self.step_index,
+            sigma_bins=self.sigma_bins,
+            tolerance_bins=self.tolerance_bins,
+        )
+
+        nuisance = self.registered_nuisance_parameters()
+        if nuisance:
+            print(
+                "[posterior-peak] note: registered measurement-model parameters "
+                f"{nuisance}. This fits the analysis model against "
+                "p.frequency_raman_transition, which is itself a calibration -- keep "
+                "it in its own report and validate it against synthetic data with a "
+                "nonzero injected offset before quoting it."
+            )
+
+        if lightweight_candidates is None:
+            lightweight_candidates = bool(outer_n_jobs != 1)
+
+        return super().fit(
+            method=method,
+            replay_kwargs=replay_kwargs,
+            # MSE-specific kwargs -- the parent puts these in _eval_kwargs and our
+            # _evaluate_candidate swallows them via **_ignored_mse_kwargs.
+            group_shots=True,
+            tolerance_rad_s=None,
+            include_apd_noise=False,
+            apd_noise_override_fraction=None,
+            apd_noise_min_std=0.0,
+            aggregate_mode="auto",
+            n_jobs=n_jobs,
+            parallel_verbose=parallel_verbose,
+            eps=1.0e-12,
+            mse_smoothing_points=mse_smoothing_points,
+            pulse_weight_power=0.0,
+            max_evals=max_evals,
+            n_initial=n_initial,
+            refine_top_k=refine_top_k,
+            random_state=random_state,
+            surrogate_length_scale=surrogate_length_scale,
+            surrogate_noise=surrogate_noise,
+            surrogate_beta=surrogate_beta,
+            surrogate_candidate_pool_size=surrogate_candidate_pool_size,
+            surrogate_exploration_probability=surrogate_exploration_probability,
+            outer_n_jobs=outer_n_jobs,
+            lightweight_candidates=bool(lightweight_candidates),
+        )
+
+    # -- report --------------------------------------------------------------
+
+    def fit_report(
+        self,
+        *,
+        method: str = "adaptive",
+        replay_kwargs: Optional[Dict[str, object]] = None,
+        n_jobs: int = 1,
+        parallel_verbose: int = 0,
+        mse_smoothing_points: float = 0.0,
+        max_evals: Optional[int] = None,
+        n_initial: Optional[int] = None,
+        refine_top_k: int = 4,
+        random_state: int = 0,
+        surrogate_length_scale: float = 0.25,
+        surrogate_noise: float = 1.0e-6,
+        surrogate_beta: float = 2.0,
+        surrogate_candidate_pool_size: int = 1024,
+        surrogate_exploration_probability: float = 0.05,
+        outer_n_jobs: int = 1,
+        lightweight_candidates: Optional[bool] = None,
+        verbose: bool = True,
+    ) -> Dict[str, object]:
+        """Run the fit and draw diagnostics.
+
+        Three panels: score vs parameter with both replay modes overlaid, the
+        best-fit run-level joint posterior with the resonance bin marked, and the
+        per-shot signed peak-offset histogram.
+
+        This deliberately does not inherit the parent ``fit_report``, which
+        indexes ``best_groups[...]["t_s_z"]`` and would fail on the ``groups=None``
+        this optimizer returns.  ``validate_minimum`` is not offered either: the
+        parent's ``_validate_minimum_with_smoothing`` calls
+        ``compute_group_fit_metrics_with_noise`` directly rather than going
+        through ``_evaluate_candidate``, so it would silently score MSE instead of
+        this metric.
+
+        ``FeedbackReplay.plot_probability_comparison`` is a useful companion
+        diagnostic but draws its own figure, so call it separately.
+        """
+        fit_payload = self.fit(
+            method=method,
+            replay_kwargs=replay_kwargs,
+            n_jobs=n_jobs,
+            parallel_verbose=parallel_verbose,
+            mse_smoothing_points=mse_smoothing_points,
+            max_evals=max_evals,
+            n_initial=n_initial,
+            refine_top_k=refine_top_k,
+            random_state=random_state,
+            surrogate_length_scale=surrogate_length_scale,
+            surrogate_noise=surrogate_noise,
+            surrogate_beta=surrogate_beta,
+            surrogate_candidate_pool_size=surrogate_candidate_pool_size,
+            surrogate_exploration_probability=surrogate_exploration_probability,
+            outer_n_jobs=outer_n_jobs,
+            lightweight_candidates=lightweight_candidates,
+        )
+
+        records = fit_payload["records"]
+        losses = np.asarray(fit_payload["losses"], dtype=float)
+        best_idx = int(fit_payload["best_index"])
+        best_params = dict(fit_payload["best_params"])
+        best_result = fit_payload["best_result"]
+        best_fit = dict(fit_payload["best_fit"])
+        param_names = list(fit_payload["parameter_names"])
+        method_used = str(fit_payload.get("method", method))
+        run_id = int(getattr(self.replay, "_run_id", -1))
+
+        def _series(key: str) -> np.ndarray:
+            return np.asarray(
+                [float(r["fit"].get(key, np.nan)) for r in records], dtype=float)
+
+        fig, axs = plt.subplots(1, 3, figsize=(18, 4.5), layout="constrained")
+
+        # Panel 1: score vs parameter (or eval index), both replay modes.
+        if len(param_names) == 1:
+            pname = param_names[0]
+            xvals = np.asarray(
+                [float(r["params"][pname]) for r in records], dtype=float)
+            order = np.argsort(xvals)
+            xplot, xbest = xvals[order], float(best_params[pname])
+            axs[0].set_xlabel(pname)
+        else:
+            order = np.arange(len(records))
+            xplot, xbest = order.astype(float), float(best_idx)
+            axs[0].set_xlabel("evaluation index")
+
+        # Objective on the left axis (log_score is negative and unbounded below, so
+        # it cannot share the [0,1] axis the bounded scores live on), hit_rate on a
+        # twin axis so the literal question stays readable next to it.
+        ax_hit = axs[0].twinx()
+        for mode in self.score_modes:
+            style = "-" if mode == self.primary_mode else "--"
+            axs[0].plot(xplot, _series(f"{self.objective}__{mode}")[order],
+                        style, marker="o", lw=1.4, ms=4.0, alpha=0.85, color="C0",
+                        label=f"{self.objective} ({mode})")
+            ax_hit.plot(xplot, _series(f"hit_rate__{mode}")[order],
+                        style, marker="s", lw=1.0, ms=3.4, alpha=0.45, color="C3",
+                        label=f"hit rate ({mode})")
+        axs[0].axvline(xbest, color="red", ls="--", lw=1.2, alpha=0.8, label="best")
+        axs[0].set_ylabel(self.objective, color="C0")
+        ax_hit.set_ylabel("hit rate", color="C3")
+        ax_hit.set_ylim(-0.02, 1.05)
+        if self.objective in ("gaussian_mass", "gaussian_mass_excess", "hit_rate"):
+            axs[0].set_ylim(-0.02, 1.05)
+        handles = axs[0].get_legend_handles_labels()[0] + ax_hit.get_legend_handles_labels()[0]
+        labels = axs[0].get_legend_handles_labels()[1] + ax_hit.get_legend_handles_labels()[1]
+        axs[0].set_title(f"posterior-peak fit ({method_used}, primary={self.primary_mode})")
+        axs[0].legend(handles, labels, loc="best", fontsize="x-small")
+        axs[0].grid(alpha=0.25)
+
+        # Panels 2-3 need the best candidate's shot posteriors.
+        if best_result is None:
+            resolved = {
+                self._resolve_parameter_name(str(k)): float(v)
+                for k, v in best_params.items()
+            }
+            with self._with_temporary_replay_params(resolved):
+                best_result = self.replay.replay_measured(
+                    control_omega_source=self.primary_mode)
+
+        joint = self.replay.compute_joint_posterior(
+            best_result, step_index=self.step_index)
+
+        axs[1].plot(joint["detuning"], joint["posterior_joint"], lw=1.5, color="C0")
+        axs[1].fill_between(joint["detuning"], 0.0, joint["posterior_joint"],
+                            alpha=0.25, color="C0")
+        axs[1].axvline(0.0, color="red", ls="--", lw=1.2, alpha=0.8, label="resonance")
+        axs[1].axvline(joint["map_detuning"], color="k", ls=":", lw=1.2,
+                       alpha=0.8, label="joint MAP")
+        axs[1].set_xlabel(r"detuning ($\Omega$)")
+        axs[1].set_ylabel("joint posterior")
+        axs[1].set_title(
+            f"run posterior ({joint['n_repeat']} shots), "
+            f"MAP = {joint['map_detuning']:+.3f}$\\Omega$")
+        axs[1].legend(loc="best", fontsize="small")
+        axs[1].grid(alpha=0.25)
+
+        # Panel 3: where each shot's posterior actually peaked, relative to truth.
+        P0_final = np.asarray(
+            best_result.P0_rr[:, self.step_index, :], dtype=float)
+        true_idx = self.replay._true_resonance_indices(best_result)
+        peak_offset = np.argmax(P0_final, axis=1) - true_idx
+        lo, hi = int(peak_offset.min()), int(peak_offset.max())
+        edges = np.arange(lo - 0.5, hi + 1.5, 1.0)
+        axs[2].hist(peak_offset, bins=edges, color="C0", alpha=0.75)
+        axs[2].axvline(0.0, color="red", ls="--", lw=1.2, alpha=0.8, label="resonance bin")
+        axs[2].set_xlabel("peak offset from resonance (grid steps)")
+        axs[2].set_ylabel("shots")
+        axs[2].set_title(
+            f"hit rate = {best_fit.get('hit_rate', np.nan):.3f} "
+            f"$\\pm$ {best_fit.get('hit_rate_stderr', np.nan):.3f}")
+        axs[2].legend(loc="best", fontsize="small")
+        axs[2].grid(alpha=0.25)
+
+        fig.suptitle(f"run {run_id}: posterior-peak fit")
+
+        if verbose:
+            baseline = getattr(self, "_baseline_metrics", None)
+            print(f"method: {method_used}   primary mode: {self.primary_mode}")
+            print(f"parameters: {param_names}")
+            for pname in param_names:
+                print(f"  best {pname}: {float(best_params[pname]):.6g}")
+            if baseline is not None:
+                print(
+                    f"baseline (as-run, measured): hit_rate = {baseline['hit_rate']:.4f} "
+                    f"+/- {baseline['hit_rate_stderr']:.4f}, "
+                    f"gaussian_mass = {baseline['gaussian_mass']:.4f}")
+            for mode in self.score_modes:
+                print(
+                    f"best [{mode}]: hit_rate = "
+                    f"{best_fit.get(f'hit_rate__{mode}', np.nan):.4f} +/- "
+                    f"{best_fit.get(f'hit_rate_stderr__{mode}', np.nan):.4f}, "
+                    f"gaussian_mass = {best_fit.get(f'gaussian_mass__{mode}', np.nan):.4f}, "
+                    f"flat = {best_fit.get(f'flat_posterior_fraction__{mode}', np.nan):.3f}, "
+                    f"ties = {best_fit.get(f'tie_fraction__{mode}', np.nan):.3f}")
+            print(
+                f"joint posterior MAP: {joint['map_detuning']:+.4f} Omega  "
+                f"(peaks at resonance: {joint['peaks_at_resonance']})")
+
+            # A win smaller than the noise on the objective is not a win. The gap
+            # is measured in the objective's own units, so the error bar has to be
+            # the objective's too -- comparing a gaussian_mass gap against
+            # hit_rate's binomial stderr (as this once did) is a unit mismatch.
+            stderr = float(best_fit.get(f"{self.objective}_stderr", np.nan))
+            finite = losses[np.isfinite(losses)]
+            if finite.size > 1 and np.isfinite(stderr):
+                gap = float(np.sort(finite)[1] - np.min(finite))
+                if gap < stderr:
+                    print(
+                        f"[posterior-peak] warning: best-vs-runner-up loss gap "
+                        f"({gap:.4f}) is under one standard error on {self.objective} "
+                        f"({stderr:.4f}) -- this run cannot resolve the difference.")
+
+        return {
+            "fit": fit_payload,
+            "figure": fig,
+            "axes": axs,
+            "best_result": best_result,
+            "best_params": best_params,
+            "best_fit": best_fit,
+            "best_score": float(best_fit.get(self.objective, np.nan)),
+            "joint_posterior": joint,
+            "baseline_metrics": getattr(self, "_baseline_metrics", None),
             "run_id": run_id,
         }
