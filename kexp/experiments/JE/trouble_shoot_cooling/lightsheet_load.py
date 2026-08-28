@@ -17,7 +17,7 @@ class mag_trap(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         self.p.t_tof = 900.e-6
-        # self.xvar('t_tof',np.linspace(100,1200.,10)*1.e-6)
+        # self.xvar('t_tof',np.linspace(100,1000.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
         # self.xvar('dumy',[0]*20)
@@ -30,17 +30,17 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_xshim_current',np.linspace(0.,5.,8))
         # self.xvar('v_yshim_current',np.linspace(0.0,6.,8))
 
-        # self.xvar('i_magtrap_init',np.linspace(65.,130.,15))
-        # self.p.i_magtrap_init = 75.
+        self.xvar('i_magtrap_init',np.linspace(30.,100.,20))
+        self.p.i_magtrap_init = 90.
 
-        # self.xvar('i_magtrap_ramp_end', np.linspace(90.,145.,8))
+        # self.xvar('i_magtrap_ramp_end', np.linspace(60.,145.,20))
         # self.p.i_magtrap_ramp_end = 100.
-        # self.xvar('t_magtrap_ramp', np.linspace(.1,1.,8))
-        # self.p.t_magtrap_ramp = 0.4     
+        # self.xvar('t_magtrap_ramp', np.linspace(.1,1.5,8))
+        # self.p.t_magtrap_ramp = 0.6     
 
-        # self.xvar('t_magtrap',np.linspace(100.,2000.,10)*1.e-3)
+        # self.xvar('t_magtrap',np.linspace(100.,2000.,15)*1.e-3)
         # self.xvar('t_magtrap',[0.1,0.5,0.8,1.7]*5)
-        # self.p.t_magtrap = .5
+        self.p.t_magtrap = 1.
 
         # self.xvar('t_lightsheet_rampup',np.linspace(20.,1000.,10)*1.e-3)
 
@@ -54,9 +54,9 @@ class mag_trap(EnvExperiment, Base):
         # self.p.pfrac_c_gmramp_end = 0.05
         # self.p.pfrac_r_gmramp_end = 0.743
 
-        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,0.4,6))
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,5.,15))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,7.,15))
+        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,0.6,15))
+        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,3.,8))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,2.,8))
         # self.p.v_yshim_current_magtrap = 2.
         # self.p.v_xshim_current_magtrap = 1.78
 

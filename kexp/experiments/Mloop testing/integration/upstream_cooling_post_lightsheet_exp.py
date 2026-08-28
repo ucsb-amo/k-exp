@@ -21,7 +21,7 @@ from waxa import atomdata
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = atomdata(0,50926)
+        ad = atomdata(0,76351)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.average(ad.atom_number)
@@ -39,7 +39,7 @@ class ExptBuilder():
 
     def run_expt(self):
         expt_path = self.__temp_exp_path__
-        run_expt_command = r"%kpy% & artiq_run " + expt_path
+        run_expt_command = r"%kpy% & ar " + expt_path
         result = run(run_expt_command, stdout=PIPE, stderr=PIPE, universal_newlines=True, shell=True)
         print(result.returncode, result.stdout, result.stderr)
         os.remove(self.__temp_exp_path__)
@@ -105,7 +105,9 @@ class ExptBuilder():
                                  
                     {assignment_lines}
 
-                    self.p.t_magtrap_hold = .15
+                    # self.p.t_magtrap_hold = .15
+
+                    self.p.t_lightsheet_hold = .1
 
                     self.p.imaging_state = 2.
 
@@ -118,27 +120,37 @@ class ExptBuilder():
 
                 @kernel
                 def scan_kernel(self):
-                
-                    # self.dds.imaging.set_dds()
-                    self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
+                    
+                    self.set_high_field_imaging(i_outer=self.p.i_hf_lightsheet_evap1_current)
 
                     self.mot(self.p.t_mot_load)
                     self.dds.push.off()
                     self.cmot_d1(self.p.t_d1cmot * s)
                     
-                    self.ttl.pd_scope_trig.pulse(1.e-8)
+                    # self.ttl.pd_scope_trig.pulse(1.e-8)
                     self.gm(self.p.t_gm * s)
                     self.gm_ramp(self.p.t_gmramp)
 
-                    # self.ttl.pd_scope_trig.pulse(1.e-6)
-                    self.magtrap_and_load_lightsheet(do_lightsheet_ramp=False,
-                                                    do_magtrap_rampup=False,
-                                                    do_magtrap_hold=False,
-                                                    do_magtrap_rampdown=False)
-                    delay(self.p.t_magtrap_hold)
-                    # self.ttl.pd_scope_trig.pulse(1.e-6)
-                    self.inner_coil.snap_off()
-
+                    self.magtrap_and_load_lightsheet(do_magtrap_rampup=False,do_magtrap_rampdown=True)
+                    # self.inner_coil.snap_off()
+            
+                    # feshbach field on, ramp up to field 1
+                    self.outer_coil.on()
+                    self.outer_coil.set_voltage()
+                    self.ttl.pd_scope_trig.pulse(1.e-6)
+                    self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
+                                            i_start=0.,
+                                            i_end=self.p.i_hf_lightsheet_evap1_current)
+                    
+                    self.set_shims(0.,0.,0.)
+            
+                    # lightsheet evap 1
+                    self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
+                                            v_start=self.p.v_pd_lightsheet_rampup_end,
+                                            v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
+            
+                    delay(self.p.t_lightsheet_hold)
+                    self.lightsheet.off()
                     
                     delay(self.p.t_tof)
                     self.flash_repump()

@@ -15,6 +15,9 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
+
+        self.p.i_magtrap_init = 55.0
+
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0.2,1.8,8))
         self.p.v_hf_tweezer_paint_amp_max = 1.3
 

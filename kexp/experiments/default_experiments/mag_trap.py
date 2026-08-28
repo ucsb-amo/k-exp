@@ -14,7 +14,7 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,
         setup_camera=True,
         camera_select=cameras.xy_basler,
-        save_data=True)
+        save_data=False)
 
         self.p.t_tof = 10.e-3
         self.xvar('t_tof',np.linspace(5.,10.,7)*1.e-3)
@@ -22,10 +22,12 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_magtrap_hold = 0.15 
         # self.p.t_magtrap_hold = 1.
 
-        self.p.N_repeats = 4
+        self.p.N_repeats = 1000
         self.p.t_mot_load = 1.
 
         self.p.imaging_state = 2.
+
+        self.camera_params.amp_imaging = 0.2
 
         Adjust.__init__(self)
         self.finish_prepare(shuffle=True)

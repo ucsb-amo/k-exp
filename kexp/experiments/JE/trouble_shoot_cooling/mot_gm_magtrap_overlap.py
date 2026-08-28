@@ -11,17 +11,20 @@ T32 = 1<<32
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=True,camera_select='xy_basler',
-                      save_data=False)
+        Base.__init__(self,setup_camera=True,
+                      camera_select='xy_basler',
+                      save_data=True,)
 
         self.p.t_tof = 20.e-6
         # self.xvar('t_tof',np.linspace(7.5,15.,10)*1.e-3)
-        self.xvar('dumy',[0,1,2]*500)
+        self.xvar('dumy',[1,2]*150)
 
-        self.p.pfrac_c_gmramp_end = 0.375
-        self.p.pfrac_r_gmramp_end = 0.2
+        # self.p.pfrac_c_gmramp_end = 0.375
+        # self.p.pfrac_r_gmramp_end = 0.2
 
         #self.p.v_zshim_current = 1.32
+
+        # self.p.i_magtrap_init = 35.
 
         self.p.t_magtrap_hold = .15
         
@@ -30,13 +33,13 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_lightsheet_hold = .15
 
         self.p.N_repeats = 1
-        self.p.t_mot_load = .5
+        self.p.t_mot_load = 1.
 
         # self.camera_params.exposure_time = 100.e-6
         # self.params.t_imaging_pulse = self.camera_params.exposure_time
         # self.camera_params.gain = 1.
 
-        self.p.amp_imaging = .7
+        self.p.amp_imaging = .5
         self.p.imaging_state = 2.
 
         self.finish_prepare(shuffle=False)
@@ -44,7 +47,7 @@ class mag_trap(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
         self.dds.imaging.set_dds(amplitude=self.p.amp_imaging)
-        self.imaging.set_power(power_control_parameter=.7)
+        self.imaging.set_power(power_control_parameter=.5)
 
         if self.p.dumy == 0:
             self.mot(self.p.t_mot_load)

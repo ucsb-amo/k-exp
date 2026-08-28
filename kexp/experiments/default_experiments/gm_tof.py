@@ -22,8 +22,8 @@ class gm_tof(EnvExperiment, Base):
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
 
-        self.xvar('t_mot_load',[0.05,0.1,0.25])
-        # self.xvar('t_tof',np.linspace(1.,10.,4)*1.e-3)
+        # self.xvar('t_mot_load',[0.05,0.1,0.25])
+        self.xvar('t_tof',np.linspace(10.,20.,10)*1.e-3)
 
         # self.xvar('amp_imaging',np.linspace(0.25,1.,8))
         # self.xvar('v_xshim_current_gm',np.linspace(0.,1.,8))
@@ -59,7 +59,9 @@ class gm_tof(EnvExperiment, Base):
 
         # self.xvar('')
 
-        self.finish_prepare(shuffle=True, shuffle_mode='global')
+        # self.finish_prepare(shuffle=True, shuffle_mode='global')
+        self.finish_prepare(shuffle=True)
+        
 
     @kernel
     def scan_kernel(self):
