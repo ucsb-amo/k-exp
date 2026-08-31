@@ -252,7 +252,7 @@ class ExptParams(ExptParamsWaxx):
         self.n_gmramp_steps = 200
 
         # mag trap
-        self.i_magtrap_init = 40.
+        self.i_magtrap_init = 32.5
         self.i_magtrap_ramp_end = 100.
 
         self.v_xshim_current_magtrap = 1.78
@@ -397,7 +397,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 193.8
+        self.i_hf_lightsheet_evap1_current = 194.05
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 192.5 # 193.4

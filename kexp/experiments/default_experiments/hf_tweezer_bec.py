@@ -21,7 +21,7 @@ class hf_bec(EnvExperiment, Base):
 
         # self.p.phase_slm_mask = 1.6 * np.pi
         
-        self.p.N_repeats = 20
+        self.p.N_repeats = 5
 
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
         # self.p.v_hf_tweezer_paint_amp_max = -2.2

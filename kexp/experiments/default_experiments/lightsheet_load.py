@@ -24,14 +24,20 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('beans',[0,1])
 
         # self.p.v_xshim_current_magtrap = 0.85
-        # self.p.v_yshim_current_magtrap = 0.5
+        # self.p.v_yshim_current_magtrap = 2.1
 
-        # self.xvar('v_xshim_current_magtrap',np.linspace(0.,2.,7))
-        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,2.5,7))
-        # self.xvar('v_zshim_current_magtrap',np.linspace(5.,1.,7))
+        # self.xvar('v_xshim_current_magtrap',np.linspace(1.,2.,11))
+        # self.xvar('v_yshim_current_magtrap',np.linspace(0.,5.,21))
+        # self.xvar('v_zshim_current_magtrap',np.linspace(0.,0.5,9))
 
-        # self.xvar('i_magtrap_init',np.linspace(30.,80.,15))
-        self.p.i_magtrap_init = 55.0
+        # self.xvar('i_magtrap_init',np.linspace(25.,45.,9))
+        # self.p.i_magtrap_init = 55.0 # works, found with scanning, same performance as default value
+
+        self.p.i_magtrap_ramp_end = 40.
+        # self.xvar('i_magtrap_ramp_end',np.linspace(32.5,55.,7))
+        # self.xvar('t_magtrap_ramp', np.linspace(0.05,0.125,5))
+
+        # self.xvar('do_rampup',[0,1])
 
         self.camera_params.amp_imaging = 0.2
 
@@ -45,7 +51,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('v_pd_lightsheet_rampup_end', np.linspace(4.,8.,10))
 
-        self.p.N_repeats = 3
+        self.p.N_repeats = 7
         self.p.t_mot_load = 1.
         # self.p.amp_imaging = .25
         self.p.imaging_state = 2.
@@ -64,7 +70,11 @@ class mag_trap(EnvExperiment, Base):
         
         self.gm(self.p.t_gm * s)
         self.gm_ramp(self.p.t_gmramp)
-        
+
+        # if self.p.do_rampup:
+        #     t = True
+        # else:
+        #     t = False
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
         self.ttl.pd_scope_trig.pulse(1.e-6)
 
