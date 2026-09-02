@@ -2,7 +2,7 @@
 import numpy as np
 from artiq.experiment import *
 from artiq.language.core import delay, kernel
-from kexp import Base, img_types, cameras
+from kexp import Base, img_types, cameras, Adjust
 
 
 class hf_bec(EnvExperiment, Base):
@@ -13,25 +13,42 @@ class hf_bec(EnvExperiment, Base):
                       save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
+
+        
         
         self.p.t_tweezer_hold = 10.e-3
 
-        # self.xvar('t_tof',np.linspace(1000.,4000.,4)*1.e-6)
-        self.p.t_tof = 2.5e-3
+        self.xvar('t_tof',np.linspace(1000.,4000.,7)*1.e-6)
+        # self.p.t_tof = 2.5e-3
 
         # self.p.phase_slm_mask = 1.6 * np.pi
+
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(193.8,194.4,5))
+        # self.p.i_hf_lightsheet_evap1_current = 194.05
+        # self.p.i_hf_lightsheet_evap1_current = 18.
+
+        # self.p.v_pd_lightsheet_rampup_end = 7.6
+    
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.5,1.8,15))
+        # self.p.v_pd_hf_lightsheet_rampdown_end = 1.0
+
+        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(500.,2000.,8)*1.e-3)
+        # self.p.t_hf_lightsheet_rampdown = 1.
+
+        # self.xvar('v_pd_lightsheet_rampdown3_end',
+        #           np.linspace(0,self.p.v_pd_hf_lightsheet_rampdown_end,9))
         
-        self.p.N_repeats = 20
+        self.p.N_repeats = 1
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-4.,-1.,8))
-        # self.p.v_hf_tweezer_paint_amp_max = -2.2
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(1.3,2.4,7))
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(1.3,2.4,7))
+        # self.p.v_hf_tweezer_paint_amp_max = 1.28
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 5.
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.8,3.3,7))
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 2.8
 
         self.p.t_mot_load = 1.0
         self.p.t_imaging_pulse = 10.e-6
-
 
         # self.p.i_hf_lightsheet_evap1_current = 194.3
         # self.p.t_hf_lightsheet_rampdown = 1.3
@@ -42,6 +59,8 @@ class hf_bec(EnvExperiment, Base):
         self.data.apd = self.data.add_data_container(1)
 
         self.camera_params.gain = 300
+
+        Adjust.__init__(self)
 
         self.scanning()
         self.finish_prepare(shuffle=True)

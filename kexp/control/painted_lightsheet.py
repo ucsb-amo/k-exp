@@ -101,6 +101,120 @@ class lightsheet():
             delay(dt_ramp)
 
     @kernel(flags={"fast-math"})
+    def adiabatic_ramp(self,t,
+                v_start=dv,
+                v_end=dv,
+                n_steps=di,
+                paint=False,
+                v_awg_am_max=dv,
+                v_pd_max=dv,
+                keep_trap_frequency_constant=True):
+        
+        if v_start == dv:
+            v_start = self.pid_dac.v
+        if v_end == dv:
+            v_end = self.params.v_pd_lightsheet_rampup_end
+        if n_steps == di:
+            n_steps = self.params.n_lightsheet_ramp_steps
+        if v_awg_am_max == dv:
+            v_awg_am_max = self.params.v_lightsheet_paint_amp_max
+        if v_pd_max == dv:
+            v_pd_max = self.params.v_pd_lightsheet_rampup_end
+
+        v_offset = 0.02
+        w0 = v_start - v_offset
+        wf = v_end - v_offset
+        if (w0 <= 0.) or (wf <= 0.):
+            raise ValueError('ramp cannot go to zero')
+
+        u = 1. / np.sqrt(w0)
+        du = (1. / np.sqrt(wf) - u) / (n_steps - 1)
+        dt_mu = np.int64(t / n_steps * 1e9)
+
+        if not paint:
+            self.painting_off()
+
+        self.pid_dac.set(v=v_start,load_dac=True)
+        self.on(paint=paint)
+        delay_mu(dt_mu)
+
+        t_mu = now_mu()
+        for i in range(n_steps):
+            at_mu(t_mu)
+            v = 1. / (u * u) + v_offset
+
+            self.pid_dac.set(v)
+
+            if paint:
+                if keep_trap_frequency_constant:
+                    v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v)
+                else:
+                    v_awg_amp_mod = v_awg_am_max
+                self.paint_amp_dac.set(v_awg_amp_mod,load_dac=False)
+            
+            u += du
+            t_mu += dt_mu
+            self.pid_dac.load()
+        at_mu(t_mu)
+        self.pid_dac.v = v_end
+
+    @kernel(flags={"fast-math"})
+    def exponential_ramp(self,t,
+                v_start=dv,
+                v_end=dv,
+                tau=dv,
+                n_steps=di,
+                paint=False,
+                v_awg_am_max=dv,
+                v_pd_max=dv,
+                keep_trap_frequency_constant=True):
+            
+            if v_start == dv:
+                v_start = self.pid_dac.v
+            if v_end == dv:
+                v_end = self.params.v_pd_lightsheet_rampup_end
+            if n_steps == di:
+                n_steps = self.params.n_lightsheet_ramp_steps
+            if v_awg_am_max == dv:
+                v_awg_am_max = self.params.v_lightsheet_paint_amp_max
+            if v_pd_max == dv:
+                v_pd_max = self.params.v_pd_lightsheet_rampup_end
+
+            if tau == dv:
+                tau = - t / 3.
+
+            e_end = np.exp(-t / tau)
+            k = np.exp(-(t / (n_steps - 1)) / tau)   # per-step factor, k**(n-1) == e_end
+            a = (v_start - v_end) / (1. - e_end)
+    
+            e = 1.
+            dt_mu = np.int64(t / n_steps * 1.e9)
+
+            if not paint:
+                self.painting_off()
+    
+            self.pid_dac.set(v=v_start,load_dac=True)
+            self.on(paint=paint)
+            delay_mu(dt_mu)
+    
+            t_mu = now_mu()
+            for i in range(n_steps):
+                at_mu(t_mu)
+                v = v_end + a * (e - e_end)
+                self.pid_dac.set(v,load_dac=False)
+                if paint:
+                    if keep_trap_frequency_constant:
+                        v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v)
+                    else:
+                        v_awg_amp_mod = v_awg_am_max
+                    self.paint_amp_dac.set(v_awg_amp_mod,load_dac=False)
+                self.pid_dac.load()
+                e *= k
+                t_mu += dt_mu
+            at_mu(t_mu)
+            self.pid_dac.v = v_end
+
+    @kernel(flags={"fast-math"})
     def v_pd_to_painting_amp_voltage(self,v_pd=dv,
                                         v_pd_max=dv,
                                         v_awg_am_max=dv) -> TFloat:
