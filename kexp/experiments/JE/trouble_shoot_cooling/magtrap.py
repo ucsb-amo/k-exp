@@ -15,7 +15,7 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       save_data=True,)
 
-        self.p.N_repeats = 1
+        self.p.N_repeats = 5
         # self.p.N_repeats = 3000
 
         # self.p.t_tof = 8000.e-6
@@ -97,7 +97,7 @@ class mag_trap(EnvExperiment, Base):
         # self.p.pfrac_r_gmramp_end = 0.5
         
         # self.xvar('i_magtrap_init',np.linspace(20.,100.,8))
-        self.i_magtrap_init = 45.
+        # self.i_magtrap_init = 45.
 
         # self.xvar('i_magtrap_ramp_end',np.linspace())
 

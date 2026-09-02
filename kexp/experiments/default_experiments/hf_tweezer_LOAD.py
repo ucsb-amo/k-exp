@@ -3,7 +3,7 @@ from artiq.experiment import delay
 from kexp import Base
 import numpy as np
 from kexp.calibrations import high_field_imaging_detuning
-from kexp import Base, img_types, cameras
+from kexp import Base, img_types, cameras, Adjust
 from kexp.calibrations.tweezer import tweezer_vpd1_to_vpd2
 
 from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
@@ -16,11 +16,13 @@ class mag_trap(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
+
+        Adjust.__init__(self)
         
         # self.p.do_cubic_tweezer_ramp = 1
         # self.xvar('do_cubic_tweezer_ramp',[0,1])
 
-        self.p.t_tof = 20.e-6
+        self.p.t_tof = 6.e-6
         # self.xvar('t_tof',np.linspace(1000.,4500.,10)*1.e-6)
 
         # self.xvar('t_pulse',np.linspace(0.,1.,5)*1.e-3)
@@ -31,21 +33,33 @@ class mag_trap(EnvExperiment, Base):
 
         self.p.t_tweezer_hold = 0.e-3
 
+        self.p.i_hf_lightsheet_evap1_current = 194.05
+        self.p.t_hf_lightsheet_rampdown = 0.1
+        self.p.v_pd_hf_lightsheet_rampdown_end = 5.0
+        self.p.i_magtrap_init = 90.
+
         # self.p.amp_imaging = .2
 
         # self.p.hf_imaging_detuning = -617.e6 # 193.2
         self.p.imaging_state = 2.
 
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end', np.linspace(0.4,0.9,5))
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end', np.linspace(0.4,5.,5))
         # self.p.v_pd_hf_lightsheet_rampdown_end = 2.
-        # self.p.v_pd_hf_lightsheet_rampdown_end = 1.13
+        # self.p.v_pd_hf_lightsheet_rampdown_end = 1.
 
         # self.xvar('t_hf_lightsheet_rampdown', np.linspace(10.e-3, 125.e-3, 5))
         # self.xvar('t_hf_tweezer_1064_ramp', np.linspace(5.e-3, 50.e-3, 5))
 
-        # self.p.v_hf_tweezer_paint_amp_max = -1.6
+        # self.xvar('i_hf_tweezer_load_current',np.linspace(192.,194.5,5))
+
+        # self.xvar('v_hf_tweezer_paint_amp_max', np.linspace(-4., 5., 5))
+        self.p.v_hf_tweezer_paint_amp_max = -2.2
 
         # self.xvar('t_tof',np.linspace(80.,150,5) * 1.e-6)
+
+        
+        self.adjust('v_hf_tweezer_paint_amp_max',-5.,5.)
+        self.adjust('t_tweezer_hold',0.,20.e-3,5.e-3)
 
         self.p.N_repeats = 100
         self.p.t_mot_load = 1.
