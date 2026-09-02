@@ -80,12 +80,16 @@ class LiveODServer(QThread, NetServer):
         self._adjust_specs: list = []    # list of spec dicts from INIT_RUN
         self._adjust_values: dict = {}   # key -> live value (written by GUI or remote viewers)
         self._adjust_lock = threading.Lock()
-        # Basler-specific: track whether the previous grab loop has fully exited.
-        # Cleared on each new Basler INIT_RUN (if a baby was already active),
-        # set when that baby's done_signal fires via on_basler_baby_done().
+        # Basler-specific: track whether every grab loop older than the current
+        # run's has fully exited.  Cleared on a Basler INIT_RUN that starts while
+        # an earlier baby is still live, set again once only the current baby
+        # remains (see on_basler_baby_done).  A plain "a baby is active" flag is
+        # not enough: a stale baby's done_signal would clear it and open the gate
+        # for a run whose own baby had not started grabbing yet.
         self._basler_prev_grab_done_event = threading.Event()
         self._basler_prev_grab_done_event.set()  # no previous grab initially
-        self._basler_baby_active = False
+        self._basler_lock = threading.Lock()
+        self._basler_babies_live = 0
         self._init_run_time: float = 0.0  # time.time() recorded at INIT_RUN
         self._shot_durations: list = []  # rolling list of last 5 shot durations (excluding first shot)
 
@@ -107,12 +111,24 @@ class LiveODServer(QThread, NetServer):
 
         Connect to ``CameraBaby.done_signal`` with
         ``Qt.ConnectionType.DirectConnection`` for Basler cameras.
-        Sets ``_basler_prev_grab_done_event`` so that the next run's
-        ``WAIT_CAM_READY`` can proceed once the old grab loop has exited.
+        The gate is released only once the live-baby count is down to the
+        current run's own baby, so a stale baby from an aborted run cannot
+        report the camera free while it is still inside RetrieveResult().
         """
-        self._basler_prev_grab_done_event.set()
-        self._basler_baby_active = False
-        print("[LiveODServer] Basler grab loop exited.")
+        with self._basler_lock:
+            self._basler_babies_live = max(0, self._basler_babies_live - 1)
+            remaining = self._basler_babies_live
+            if remaining <= 1:
+                self._basler_prev_grab_done_event.set()
+        print(f"[LiveODServer] Basler grab loop exited ({remaining} still live).")
+
+    def _release_basler_slot(self):
+        """Give back a Basler live-baby slot claimed by INIT_RUN when no
+        CameraBaby ends up being spawned for that run."""
+        with self._basler_lock:
+            self._basler_babies_live = max(0, self._basler_babies_live - 1)
+            if self._basler_babies_live <= 1:
+                self._basler_prev_grab_done_event.set()
 
     def on_data_handler_done(self):
         """Set the data-handler-done event.
@@ -258,10 +274,13 @@ class LiveODServer(QThread, NetServer):
         # loop (e.g. after a reset), clear the event so WAIT_CAM_READY will
         # block until that grab loop fully exits and on_basler_baby_done() fires.
         if "basler" in camera_key and capture_images:
-            if self._basler_baby_active:
-                self._basler_prev_grab_done_event.clear()
-                print("[LiveODServer] INIT_RUN: Basler previous grab not yet done — WAIT_CAM_READY will block until it exits.")
-            self._basler_baby_active = True
+            with self._basler_lock:
+                self._basler_babies_live += 1
+                stale = self._basler_babies_live - 1
+                if stale > 0:
+                    self._basler_prev_grab_done_event.clear()
+            if stale > 0:
+                print(f"[LiveODServer] INIT_RUN: {stale} Basler grab loop(s) not yet done — WAIT_CAM_READY will block until they exit.")
 
         camera_params = msg.get('camera_params', {})
         self._cam_ready_event.clear()
@@ -298,6 +317,10 @@ class LiveODServer(QThread, NetServer):
                 # No DataHandler will be spawned, so release the gate we cleared
                 # above — otherwise the next END_RUN / reset blocks on it.
                 self._data_handler_done_event.set()
+                # No CameraBaby will be spawned either, so give back the Basler
+                # slot claimed above — otherwise the count never returns to zero
+                # and every later run blocks in WAIT_CAM_READY.
+                self._release_basler_slot()
                 self._current_filepath = ""
                 self._run_in_progress = False
                 return {"ok": False, "error": f"Data file creation failed: {exc}"}
