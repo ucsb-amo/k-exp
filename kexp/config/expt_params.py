@@ -270,12 +270,12 @@ class ExptParams(ExptParamsWaxx):
         self.amp_optical_pumping_r_op = 0.25
 
         # ODT
-        self.v_pd_lightsheet_pd_minimum = 0.0
+        self.v_pd_lightsheet_pd_minimum = 0.025
         self.v_lightsheet_paint_amp_max = 3.6
 
-        self.v_pd_lightsheet = 8.55
+        self.v_pd_lightsheet = 6.9
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 8.
+        self.v_pd_lightsheet_rampup_end = 6.9
         self.v_pd_lf_lightsheet_rampdown_end = 1.042 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = 1.2 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.114
