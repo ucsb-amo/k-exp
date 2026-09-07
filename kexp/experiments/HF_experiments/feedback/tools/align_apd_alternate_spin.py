@@ -40,6 +40,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 8.
         self._idx = 0
+        # self.p.v_pd_lightsheet_rampdown3_end = 0.2
 
         self.finish_prepare(shuffle=True)
 
@@ -52,6 +53,9 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
+
+        # self.lightsheet.ramp(210.e-3,v_end=4.)
+
         self.warmup_imaging()
         self.prep_raman()
 

@@ -40,24 +40,38 @@ class ExptParams(expt_params_kexp):
         self.t_raman_pulse_offset = 127.e-9
         self.t_raman_pulse_ideal = self.t_raman_pulse - self.t_raman_pulse_offset
 
-        # calibration run 76224
+        # calibration run 78267
         # img amp 0.2, pulse time 5.0e-06 s
-        self.frequency_lightshift = 3.46e+04  # Hz
+        # self.frequency_lightshift = 50.66e+04  # Hz -- had an extra zero (5.066e5,
+        #   i.e. 10x the 50.66 kHz run 78267 measured). Run 78313 was taken with it.
+        # run 78313 | FeedbackReplayOptimizer, APD-MSE vs data.apd, 2026-09-03
+        # Interior minimum of a 45-80 kHz scan; equals the 460 kHz branch of a
+        # full-alias-period scan. Only identified mod 1/t_img_pulse (200 kHz) and
+        # up to a reflection, so this is the branch nearest the 50.66 kHz
+        # calibration, not a uniquely determined value.
+        self.frequency_lightshift = 5.90e+04  # Hz
                 
-        # calibration run 76275 (S_z endpoints from 'fit', deg-2 S_z response fit)
+        # calibration run 78309 (S_z endpoints from 'fit', deg-2 S_z response fit)
         self.t_img_pulse = 5e-06  # s
         self.amp_imaging = 0.2
-        self.v_apd_all_up = -0.11643
-        self.v_apd_all_down = -0.20898
-        self.n_photons_per_shot = 856.56
-        # self.std_n_photons_up = 181.11
-        # self.std_n_photons_down = 96.312
-        # self.std_n_photons_per_shot = 138.71 # avg of up/down
-        self.std_n_photons_per_shot = 96.312 # using down std
-        self.feedback_measurement_midpoint_fraction = 0.46427
+        self.v_apd_all_up = -0.12361
+        self.v_apd_all_down = -0.19702
+        self.n_photons_per_shot = 1336.2
+        # self.std_n_photons_up = 440.27
+        # self.std_n_photons_down = 212.75
+        # self.std_n_photons_per_shot = 326.51 # avg of up/down
+        self.std_n_photons_per_shot = 212.75 # using down std
+        self.feedback_measurement_midpoint_fraction = 0.4719
 
         # run 76228 | multi-parameter grid fit result
-        self.back_action_coherence = 0.7563
+        # self.back_action_coherence = 0.7925
+        # run 78313 | FeedbackReplayOptimizer, APD-MSE, frequency_lightshift pinned
+        # at the 59 kHz above, 2026-09-03. Cuts the grouped APD MSE 0.0377 -> 0.0165.
+        # BOUNDED FROM ABOVE ONLY: the loss rises steeply past ~0.7 but is nearly
+        # flat below it (0.0165 here vs 0.025 at C = 0.05), so 0.62 is a shallow
+        # minimum, conditional on the light-shift pin. Residuals are still 83x the
+        # APD error bars, so the model does not yet describe run 78313.
+        self.back_action_coherence = 0.62
 
         self.feedback_measurement_midpoint_remap_enabled = True
 

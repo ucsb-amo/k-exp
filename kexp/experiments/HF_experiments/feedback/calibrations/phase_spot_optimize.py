@@ -49,13 +49,23 @@ class phase_spot(EnvExperiment, Base):
         """Whether this shot should measure the "up" spin state first.
 
         Alternates deterministically based on the repeat number of the
-        current phase_slm_mask value (recovered from the xvar's shuffle
-        permutation), not the shuffled shot order -- so every other repeat
-        of a given phase value starts up-first vs down-first, regardless of
-        how the scan order was randomized.
+        current phase_slm_mask value, not the shot order -- so every other
+        repeat of a given phase value starts up-first vs down-first,
+        regardless of how the scan order was randomized.
+
+        Repeats are laid out along the axis as [v0]*R + [v1]*R + ..., so the
+        repeat slot is (canonical index) % R.  With the default random scan
+        order (and shuffle=False) xvar.values stay canonical and
+        xvar.counter is that index directly; the legacy per-axis scheme
+        (shuffle='axis') permutes the values, so the canonical index must be
+        recovered through the recorded permutation.
         """
         xvar = self.scan_xvars[0]
-        repeat_idx = int(xvar.sort_idx[xvar.counter]) % self.p.N_repeats
+        if getattr(self, 'scan_order_scheme', 'axis') == 'axis' and len(xvar.sort_idx):
+            canonical_idx = int(xvar.sort_idx[xvar.counter])
+        else:
+            canonical_idx = int(xvar.counter)
+        repeat_idx = canonical_idx % self.p.N_repeats
         return repeat_idx % 2 == 0
 
     @kernel

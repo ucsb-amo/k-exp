@@ -54,7 +54,14 @@ class phase_spot(EnvExperiment, Base):
     #     how the scan order was randomized.
     #     """
     #     xvar = self.scan_xvars[0]
-    #     repeat_idx = int(xvar.sort_idx[xvar.counter]) % self.p.N_repeats
+    #     # repeats are laid out [v0]*R + [v1]*R + ...; with the default random
+    #     # order xvar.counter indexes that canonical layout directly, while
+    #     # the legacy shuffle='axis' scheme needs the recorded permutation
+    #     if getattr(self, 'scan_order_scheme', 'axis') == 'axis' and len(xvar.sort_idx):
+    #         canonical_idx = int(xvar.sort_idx[xvar.counter])
+    #     else:
+    #         canonical_idx = int(xvar.counter)
+    #     repeat_idx = canonical_idx % self.p.N_repeats
     #     return repeat_idx % 2 == 0
 
     @kernel

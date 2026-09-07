@@ -160,6 +160,7 @@ class Control():
                         phase_mode)
 
         self.raman.pulse(3.e-3) # warm up
+        delay(10.e-6)
         
         self.ttl.raman_shutter.on()
         delay(3.e-3)

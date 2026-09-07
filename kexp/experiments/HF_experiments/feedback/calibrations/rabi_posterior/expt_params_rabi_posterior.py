@@ -151,11 +151,11 @@ class ExptParams(ExptParamsFeedback):
         self.t_tweezer_hold = 2.e-3
         self.t_tof = 800.e-6
 
-        self.t_raman_pi_pulse = 8.5742e-06 #76292, 2026-08-25
+        # self.t_raman_pi_pulse = 8.5742e-06 #76292, 2026-08-25
          # run 76292 | RabiJointPosterior, 2026-08-25
         # f_rabi = 58.3144 +/- 0.7609 kHz
-        self.frequency_lightshift                   = 3.6e+04   # Hz  at t_img_pulse = 5e-06 s
+        # self.frequency_lightshift                   = 3.6e+04   # Hz  at t_img_pulse = 5e-06 s
         # feedback_measurement_midpoint_fraction: pinned in this fit, not measured
-        self.back_action_coherence                  = 0.8048      # +/- 0.0392 (5%)
-        self.v_apd_all_up                           = -0.12201    # V   +/- 3.58 mV
-        self.v_apd_all_down                         = -0.20180    # V   +/- 3.23 mV
+        # self.back_action_coherence                  = 0.8048      # +/- 0.0392 (5%)
+        # self.v_apd_all_up                           = -0.12201    # V   +/- 3.58 mV
+        # self.v_apd_all_down                         = -0.20180    # V   +/- 3.23 mV

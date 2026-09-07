@@ -48,7 +48,7 @@ class rabi_posterior_pulse_train(EnvExperiment, Base, RandomRamanPulseTimes):
         self.xvar('dummy', [0])
         self.p.dummy = 0
 
-        self.p.N_repeats = 6
+        self.p.N_repeats = 15
 
         # Draw once here so the list attribute has its compile-time shape and
         # dtype; scan_kernel redraws it per shot. With
