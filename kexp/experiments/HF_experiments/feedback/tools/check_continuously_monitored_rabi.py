@@ -38,7 +38,11 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # img amp 0.2, pulse time 1.0e-05 s
         # self.p.frequency_lightshift = 3.28e+04 # Hz
         # self.p.frequency_lightshift = 3.8e+04  # Hz
-        self.p.frequency_lightshift = 3.46e+04  # Hz
+        # self.p.frequency_lightshift = 3.46e+04  # Hz
+
+        # calibration run 78260
+        # img amp 0.2, pulse time 5.0e-06 s
+        self.p.frequency_lightshift = 2.94e+04  # Hz
 
         # self.xvar('phase_slm_mask',np.linspace(0.0*np.pi,.5*np.pi,10))
         # self.p.phase_slm_mask = 1.2 * np.pi
@@ -51,7 +55,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.p.t_tof = 20.e-6
         self.p.t_mot_load = 1.0
         
-        self.p.N_repeats = 200
+        self.p.N_repeats = 300
 
         self.p.n_dark_pi_pulse = 10.
         self.adjust('n_dark_pi_pulse',0.,20.,dtype=float)
@@ -80,9 +84,9 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         self.raman.on()
 
-        # delay( self.p.t_raman_pi_pulse * self.p.n_dark_pi_pulse )
+        delay( self.p.t_raman_pi_pulse * self.p.n_dark_pi_pulse )
 
-        # self.raman.io_update()
+        self.raman.io_update()
         self.imaging.on()
         # delay_mu(91)
         

@@ -41,7 +41,7 @@ class trap_frequency(EnvExperiment, Base):
     @kernel
     def scan_kernel(self):
 
-        self.tweezer.sine_move(t_mod=self.p.t_tweezer_mod,
+        self.tweezer.linear_amplitude_ramp(t_mod=self.p.t_tweezer_mod,
                             x_mod=self.p.x_tweezer_mod_amp,
                             f_mod=self.p.f_tweezer_mod,
                             tweezer_idx=0,
@@ -51,7 +51,10 @@ class trap_frequency(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(squeeze=False, ramp_down_painting=False)
+        # don't quite evap to BEC
+        self.prepare_hf_tweezers(do_tweezer_evap_2=False,
+                                squeeze=False,
+                                ramp_down_painting=False)
 
         self.tweezer.trigger()
         delay(self.p.t_tweezer_mod)

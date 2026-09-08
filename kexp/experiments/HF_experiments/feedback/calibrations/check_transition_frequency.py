@@ -15,11 +15,13 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.frequency_raman_transition = 147.2593e6
+        # self.p.frequency_raman_transition = 147.2593e6
         self.xvar('frequency_raman_transition',self.p.frequency_raman_transition + np.linspace(-2.e3,2.e3,9))
         self.xvar('t_ramsey', np.linspace(10.e-6, 500.e-6, 5))
         # self.p.frequency_raman_transition += 2.0e3
  
+        self.p.t_raman_pi_pulse = 1.1996e-05 #78254, 2026-09-02
+
         self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
 
         self.p.t_tweezer_hold = .01e-3

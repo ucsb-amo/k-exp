@@ -11,7 +11,7 @@ class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,save_data=True,
-                      camera_select='xy_basler',
+                      camera_select='basler_2dmot',
                       imaging_type=img_types.ABSORPTION)
 
         # self.xvar('frequency_detuned_imaging',np.arange(-150.,150.,8)*1.e6)
@@ -43,7 +43,7 @@ class gm_tof(EnvExperiment, Base):
         # self.p.amp_d2h_c_2dmot = 0.134
 
         
-        self.xvar('v_2d_mot_current',np.linspace(2.,4.,30))
+        # self.xvar('v_2d_mot_current',np.linspace(2.,4.,30))
         # self.p.v_2d_mot_current = 2.7
 
         # self.xvar('i_mot',np.linspace(25.,40.,10))

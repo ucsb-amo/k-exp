@@ -10,12 +10,6 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 
-try:
-    from joblib import Parallel, delayed
-    HAS_JOBLIB = True
-except ImportError:
-    HAS_JOBLIB = False
-
 from kexp.base.feedback import Feedback, _feedback_kwargs_from_atomdata
 
 
@@ -1163,6 +1157,7 @@ class FeedbackReplayCore(Feedback):
         seed: int = 0,
         noise_scale: float = 1.0,
         include_photon_noise: bool = True,
+        omega_control_rr: Optional[Sequence[float]] = None,
     ) -> Dict[str, object]:
         """Synthesise a closed-loop feedback run with a known injected resonance.
 
@@ -1195,6 +1190,16 @@ class FeedbackReplayCore(Feedback):
             Multiplies ``std_n_photons_per_shot`` when drawing photon counts.
         include_photon_noise
             Passed through to the posterior updates driving the loop.
+        omega_control_rr
+            OPEN-LOOP mode. When given, the drive frequency at every pulse is
+            taken from this ``(n_repeat, n_step)`` schedule instead of from the
+            posterior, and the posterior is stepped with
+            ``update_raman_frequency=0`` so it never steers. This is what an
+            experiment with ``update_raman_frequency_bool = 0`` and a
+            precomputed pulse list actually does (``deterministic_bayesian``,
+            ``simulation_check``); the closed-loop default cannot reproduce it,
+            and scoring such a run against closed-loop synthetic data compares
+            two different experiments.
 
         Returns
         -------
@@ -1230,6 +1235,12 @@ class FeedbackReplayCore(Feedback):
         v_down = float(self.v_apd_all_down)
         v_range = float(self.v_range)
 
+        omega_ctrl_fixed = None
+        if omega_control_rr is not None:
+            omega_ctrl_fixed = self._broadcast_override(
+                omega_control_rr, "omega_control_rr", n_repeat, n_step)
+        closed_loop = omega_ctrl_fixed is None
+
         rng = np.random.default_rng(int(seed))
         apd_rr = np.zeros((n_repeat, n_step), dtype=float)
         omega_control_rr = np.zeros((n_repeat, n_step), dtype=float)
@@ -1258,7 +1269,8 @@ class FeedbackReplayCore(Feedback):
                 + self.Omega * float(fractional_initial_offset_r[r]))
 
             for i in range(n_step):
-                omega_ctrl = float(self.omega_raman)
+                omega_ctrl = (float(self.omega_raman) if closed_loop
+                              else float(omega_ctrl_fixed[r, i]))
 
                 _gap_mu = tP_mu if i == 0 else int(dT_mu_s[i - 1])
                 _t_old = _gap_mu - T_pre_mu + 4 + dt_fudge_mu
@@ -1329,11 +1341,15 @@ class FeedbackReplayCore(Feedback):
                     k_val,
                     t_in,
                     phase_raman_pulse_start=phase_tracker,
-                    update_raman_frequency=1,
+                    update_raman_frequency=1 if closed_loop else 0,
                     update_rabi_frequency=0,
                     include_photon_noise=1 if include_photon_noise else 0,
                 )
-                self.omega_raman = float(omega_new)
+                # In open-loop mode the posterior still consumes every count, it
+                # just does not choose the next drive -- so its suggestion is
+                # deliberately discarded here.
+                if closed_loop:
+                    self.omega_raman = float(omega_new)
                 self.Omega = float(omega_std)
 
         return {
@@ -1551,52 +1567,14 @@ class FeedbackReplayCore(Feedback):
                 "Use the optimizer's outer_n_jobs (process-based) for parallelism."
             )
 
-        use_parallel = n_jobs != 1 and HAS_JOBLIB
-        if n_jobs != 1 and not HAS_JOBLIB:
-            import warnings
-            warnings.warn(
-                "joblib not installed; falling back to sequential processing. "
-                "Install joblib for parallel execution: pip install joblib",
-                UserWarning,
+        for r in range(n_repeat):
+            self._run_shot_into_buffers(
+                r, n_step, apd_rr, t_raman_pulse_rr, dT_rr_mu,
+                fractional_initial_offset_r, omega_measured_rr, control_omega_source, timing,
+                include_photon_noise, update_raman_frequency, update_rabi_frequency,
+                return_full_state, zidx,
+                s_z_rr, P0_rr, omega_control_rr, omega_recomputed_rr, t_input_rr, t_s_z_rr, k_rr, state_rr,
             )
-
-        if use_parallel:
-            Parallel(n_jobs=n_jobs, verbose=parallel_verbose, backend='threading')(
-                delayed(self._run_shot_into_buffers)(
-                    r,
-                    n_step,
-                    apd_rr,
-                    t_raman_pulse_rr,
-                    dT_rr_mu,
-                    fractional_initial_offset_r,
-                    omega_measured_rr,
-                    control_omega_source,
-                    timing,
-                    include_photon_noise,
-                    update_raman_frequency,
-                    update_rabi_frequency,
-                    return_full_state,
-                    zidx,
-                    s_z_rr,
-                    P0_rr,
-                    omega_control_rr,
-                    omega_recomputed_rr,
-                    t_input_rr,
-                    t_s_z_rr,
-                    k_rr,
-                    state_rr,
-                )
-                for r in range(n_repeat)
-            )
-        else:
-            for r in range(n_repeat):
-                self._run_shot_into_buffers(
-                    r, n_step, apd_rr, t_raman_pulse_rr, dT_rr_mu,
-                    fractional_initial_offset_r, omega_measured_rr, control_omega_source, timing,
-                    include_photon_noise, update_raman_frequency, update_rabi_frequency,
-                    return_full_state, zidx,
-                    s_z_rr, P0_rr, omega_control_rr, omega_recomputed_rr, t_input_rr, t_s_z_rr, k_rr, state_rr,
-                )
 
         apd_norm_rr = self._normalize_apd(
             apd_rr,
@@ -4594,7 +4572,7 @@ class FeedbackReplayOptimizer:
         feedback_measurement_midpoint_remap_enabled: Optional[bool] = None,
         feedback_apd_map_enabled: Optional[bool] = None,
         feedback_apd_map_verbose: Optional[bool] = False,
-        n_jobs: int = -1,
+        n_jobs: int = 1,
         parallel_verbose: int = 0,
         eps: float = 1.0e-12,
         mse_smoothing_points: float = 5.0,

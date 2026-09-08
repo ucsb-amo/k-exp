@@ -4,7 +4,9 @@ Live-adjust panel for the liveOD GUI.
 AdjustPanel hosts one AdjustParamRow per adjustable parameter registered with
 ``self.adjust()`` in an experiment's ``prepare()``.  Each row shows a checkbox,
 a spinbox, a reset button (↺) to revert to the default value, and a cog button
-to edit min/max/step bounds.  Only checked rows are included in "Copy params".
+to edit min/max/step bounds.  Only checked rows are included in "Copy params";
+the check-all/uncheck-all button toggles them in bulk, and clicking a param's
+name copies just its assignment prefix ("self.p.key = ").
 """
 
 import re
@@ -117,15 +119,38 @@ class AdjustSpecDialog(QDialog):
         )
 
 
+class ClickableLabel(QLabel):
+    """QLabel that emits ``clicked`` on a left-button press."""
+
+    clicked = pyqtSignal()
+
+    def __init__(self, text: str, parent=None):
+        super().__init__(text, parent)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
+
+
 class AdjustParamRow(QWidget):
     """One row: checkbox | key label | spinbox | reset | cog.
 
     The checkbox controls whether this row is included in "Copy params".
+    Clicking the key label copies an assignment line prefix for that param.
     The reset button (↺) reverts to the value present when adjust() was called.
+
+    While the spinbox is being typed into, remote value updates (which arrive at
+    the start of every shot) are ignored so an in-progress edit is not clobbered;
+    the edited value is only published once the edit is finished (Enter or focus
+    loss), so the experiment keeps using the last edited value until then.
     """
 
     value_changed = pyqtSignal(str, float)               # key, new_value
     spec_updated  = pyqtSignal(str, float, float, float)  # key, min, max, step
+    name_clicked  = pyqtSignal(str)                      # key
+    check_toggled = pyqtSignal()
 
     def __init__(self, spec: dict, parent=None):
         super().__init__(parent)
@@ -133,6 +158,7 @@ class AdjustParamRow(QWidget):
         self.key  = spec['key']
         self._is_int = spec.get('dtype') == 'int'
         self._default_val = float(spec['current_val'])
+        self._editing = False
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -141,10 +167,13 @@ class AdjustParamRow(QWidget):
         self._checkbox = QCheckBox()
         self._checkbox.setChecked(True)
         self._checkbox.setToolTip("Include in 'Copy params'")
+        self._checkbox.toggled.connect(lambda _: self.check_toggled.emit())
         layout.addWidget(self._checkbox)
 
-        lbl = QLabel(self.key)
+        lbl = ClickableLabel(self.key)
         lbl.setMinimumWidth(140)
+        lbl.setToolTip("Click to copy this param's assignment prefix to the clipboard")
+        lbl.clicked.connect(lambda: self.name_clicked.emit(self.key))
         layout.addWidget(lbl)
 
         # --- Spinbox ---
@@ -159,7 +188,13 @@ class AdjustParamRow(QWidget):
             self._spinbox.setRange(float(spec['min_val']), float(spec['max_val']))
             self._spinbox.setSingleStep(float(spec['step']))
             self._spinbox.setValue(float(spec['current_val']))
+        # only publish typed values once the edit is committed (Enter / focus out)
+        self._spinbox.setKeyboardTracking(False)
         self._spinbox.valueChanged.connect(self._on_spinbox_changed)
+        self._spinbox.editingFinished.connect(self._on_editing_finished)
+        line_edit = self._spinbox.lineEdit()
+        if line_edit is not None:
+            line_edit.textEdited.connect(self._on_text_edited)
         layout.addWidget(self._spinbox)
 
         # --- Reset button ---
@@ -181,10 +216,20 @@ class AdjustParamRow(QWidget):
     # ------------------------------------------------------------------
 
     def _on_spinbox_changed(self, v):
+        self._editing = False
         self.value_changed.emit(self.key, float(v))
+
+    def _on_text_edited(self, _text):
+        """User is typing into the spinbox -- hold off remote updates."""
+        self._editing = True
+
+    def _on_editing_finished(self):
+        """Enter pressed or focus lost -- the edit is committed."""
+        self._editing = False
 
     def _on_reset(self):
         """Revert spinbox to the default value."""
+        self._editing = False
         if self._is_int:
             self._spinbox.setValue(int(round(self._default_val)))
         else:
@@ -195,8 +240,27 @@ class AdjustParamRow(QWidget):
     # Public API
     # ------------------------------------------------------------------
 
+    def is_editing(self) -> bool:
+        """True while the user is typing a new value into the spinbox."""
+        return self._editing
+
+    def is_checked(self) -> bool:
+        return self._checkbox.isChecked()
+
+    def set_checked(self, checked: bool):
+        self._checkbox.setChecked(bool(checked))
+
+    def value(self):
+        return self._spinbox.value()
+
     def update_value(self, value: float):
-        """Update spinbox without triggering value_changed (remote sync)."""
+        """Update spinbox without triggering value_changed (remote sync).
+
+        Ignored while the user is mid-edit so a shot starting does not reset the
+        spinbox out from under them.
+        """
+        if self._editing:
+            return
         self._spinbox.blockSignals(True)
         if self._is_int:
             self._spinbox.setValue(int(round(value)))
@@ -258,6 +322,13 @@ class AdjustPanel(QWidget):
         self._copy_btn.clicked.connect(self._copy_params_to_clipboard)
         group_layout.addWidget(self._copy_btn)
 
+        self._check_all_btn = QPushButton("Uncheck all")
+        self._check_all_btn.setToolTip(
+            "Uncheck (or check) every param's 'Copy params' checkbox"
+        )
+        self._check_all_btn.clicked.connect(self._on_check_all_clicked)
+        group_layout.addWidget(self._check_all_btn)
+
         # Scroll area so many params don't overflow the window
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -279,6 +350,8 @@ class AdjustPanel(QWidget):
             try:
                 row.value_changed.disconnect()
                 row.spec_updated.disconnect()
+                row.name_clicked.disconnect()
+                row.check_toggled.disconnect()
             except Exception:
                 pass
             self._row_layout.removeWidget(row)
@@ -289,8 +362,11 @@ class AdjustPanel(QWidget):
             row = AdjustParamRow(spec, self)
             row.value_changed.connect(self.value_changed_signal)
             row.spec_updated.connect(self.spec_updated_signal)
+            row.name_clicked.connect(self._copy_key_prefix_to_clipboard)
+            row.check_toggled.connect(self._update_check_all_button)
             self._rows[spec['key']] = row
             self._row_layout.addWidget(row)
+        self._update_check_all_button()
 
     def update_values(self, values: dict):
         """Update displayed values from a broadcast without emitting signals."""
@@ -305,20 +381,36 @@ class AdjustPanel(QWidget):
         if row is not None:
             row.apply_spec(min_val, max_val, step)
 
+    def _assignment_prefix(self, key: str) -> str:
+        """'self.p.key = ' or 'self.key = ', per the .p toggle."""
+        if self._expt_params_btn.isChecked():
+            return f"self.p.{key} = "
+        return f"self.{key} = "
+
+    def _copy_key_prefix_to_clipboard(self, key: str):
+        """Copy just the assignment prefix for one param (clicked key label)."""
+        QApplication.clipboard().setText(self._assignment_prefix(key))
+
+    def _on_check_all_clicked(self):
+        """Uncheck every row, or check them all if none are checked."""
+        target = not any(row.is_checked() for row in self._rows.values())
+        for row in self._rows.values():
+            row.set_checked(target)
+        self._update_check_all_button()
+
+    def _update_check_all_button(self):
+        """Label the button by what it will do next."""
+        any_checked = any(row.is_checked() for row in self._rows.values())
+        self._check_all_btn.setText("Uncheck all" if any_checked else "Check all")
+
     def _copy_params_to_clipboard(self):
         """Copy checked adjust values as assignment lines to the clipboard."""
-        use_p = self._expt_params_btn.isChecked()
         indent = "        "  # two leading indents (8 spaces)
         lines = []
         for key, row in self._rows.items():
-            if not row._checkbox.isChecked():
+            if not row.is_checked():
                 continue
-            value = row._spinbox.value()
-            if use_p:
-                line = f"self.p.{key} = {value}"
-            else:
-                line = f"self.{key} = {value}"
-            lines.append(line)
+            lines.append(f"{self._assignment_prefix(key)}{row.value()}")
         if lines:
             text = lines[0] + ("\n" + "\n".join(indent + l for l in lines[1:]) if len(lines) > 1 else "")
         else:

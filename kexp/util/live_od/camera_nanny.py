@@ -76,9 +76,12 @@ class CameraNanny():
             if camera_type == "basler":
                 # Guard: stop grabbing if the camera was left in grabbing state
                 # (e.g. from an interrupted run whose StopGrabbing failed silently).
+                # Go through stop_grab() rather than StopGrabbing() directly: it
+                # is a no-op when another thread still owns the grab loop, so a
+                # new baby's setup cannot tear down a grab in progress.
                 if hasattr(camera, 'IsGrabbing') and camera.IsGrabbing():
                     try:
-                        camera.StopGrabbing()
+                        camera.stop_grab()
                     except Exception:
                         pass
                 camera.set_exposure(camera_params.exposure_time)

@@ -39,3 +39,6 @@ class Adjust(Scanner):
 
         self.adjust('t_mot_load',min_val=0.1,max_val=3.)
         self.adjust('t_d1cmot',min_val=1.e-3, max_val=50.e-3)
+
+        self.adjust('v_pd_hf_tweezer_1064_rampdown3_end',min_val=2.8,max_val=3.3)
+        self.adjust('v_hf_tweezer_paint_amp_max', min_val=-4.9, max_val=4.9)
