@@ -31,6 +31,7 @@ class Adjust(Scanner):
         self.adjust('v_zshim_current_magtrap',min_val=0.,max_val=9.9)
 
         self.adjust('t_lightsheet_rampup',min_val=25.e-3,max_val=500.e-3)
+        self.adjust('v_pd_lightsheet_rampup_end',min_val=1.,max_val=9.9)
         self.adjust('v_pd_hf_lightsheet_rampdown_end',min_val=0.5,max_val=6.)
         self.adjust('i_magtrap_init',min_val=30.,max_val=160.)
         self.adjust('t_magtrap',min_val=0.5,max_val=3.)
