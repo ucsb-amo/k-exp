@@ -27,7 +27,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  expt_params=None,
                  data_vault=None,
                  suppress_live_od=False,
-                 save_on_underflow=False):
+                 save_on_underflow=False,
+                 apd_stage=False):
 
         if suppress_live_od:
             setup_camera = False
@@ -61,6 +62,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.run_info.save_on_underflow = int(save_on_underflow)
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
+
+        # The APD pickoff stage blocks the camera when it is in.  Opt-in
+        # only: apd_stage=None leaves the stage wherever it is.
+        self.pdxc.set_apd_stage(apd_stage)
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
