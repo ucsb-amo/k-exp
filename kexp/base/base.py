@@ -28,7 +28,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  data_vault=None,
                  suppress_live_od=False,
                  save_on_underflow=False,
-                 apd_stage=False):
+                 apd_stage=False,
+                 warmup_shots=0):
 
         if suppress_live_od:
             setup_camera = False
@@ -66,6 +67,21 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # The APD pickoff stage blocks the camera when it is in.  Opt-in
         # only: apd_stage=None leaves the stage wherever it is.
         self.pdxc.set_apd_stage(apd_stage)
+
+        # Warm-up dry run. The first shot of a run is typically ~25% low in
+        # atom number (measured 2026-09-08, runs 78510-78570): a seconds-scale
+        # thermal transient in the evaporation hardware. warmup_shots = N runs
+        # N imaging-free preparations (Cooling.warmup_kernel) before the first
+        # real shot, invisible to the camera, DataSaver and liveOD.
+        self.params.N_warmup_shots = int(warmup_shots)
+        if self.params.N_warmup_shots <= 0:
+            print("[warmup] WARNING: no warm-up shots requested. The first shot "
+                  "of a run is typically ~25% low in atom number. Pass "
+                  "'warmup_shots = N' to Base.__init__ to run N imaging-free "
+                  "preparations before the first shot (2 is usually enough).")
+        else:
+            print(f"[warmup] {self.params.N_warmup_shots} warm-up shot(s) "
+                  "will run before the first real shot.")
 
     def finish_prepare(self,N_repeats=[],shuffle=True):
         """
@@ -191,6 +207,48 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.ry_405.reset_used_flag()
         self.ry_980.reset_used_flag()
+
+    @kernel
+    def pre_scan(self):
+        """Runs once, before the scan loop (see waxx Scanner.scan). Executes
+        the opt-in warm-up shots requested via Base.__init__(warmup_shots=N).
+
+        Each warm-up shot is: per-shot device reset, Cooling.warmup_kernel
+        (overridable per experiment), then cleanup_warmup_kernel. It uses
+        reset_devices()/reset_tweezers() directly rather than
+        init_scan_kernel(), because the latter arms the scopes and writes a
+        magnetometer reading into the DataVault, which would leave entries not
+        matched to a real shot. Nothing here triggers the camera, writes shot
+        data, or notifies liveOD.
+        """
+        for i in range(self.p.N_warmup_shots):
+            aprint("[warmup] warm-up shot", i + 1)
+            self.core.break_realtime()
+            self.reset_devices()
+            self.core.break_realtime()
+            self.reset_tweezers(False)
+            self.core.break_realtime()
+
+            self.warmup_kernel()
+            self.cleanup_warmup_kernel()
+            
+            delay(self.p.t_recover)
+            self.core.break_realtime()
+
+    @kernel
+    def cleanup_warmup_kernel(self):
+        """The safety-relevant part of cleanup_scan_kernel after a warm-up
+        shot: raman shutter closed, coils stopped and discharged, 1064 beams
+        off. Deliberately omits the PWOA/dark images, the DataVault write and
+        the liveOD shot notification.
+        """
+        self.core.break_realtime()
+        self.ttl.raman_shutter.off()
+        self.core.break_realtime()
+        self.reset_coils()
+        self.lightsheet.off()
+        self.tweezer.off()
+        self.core.break_realtime()
 
     @kernel
     def cleanup_scan_kernel(self):

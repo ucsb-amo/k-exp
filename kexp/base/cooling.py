@@ -35,12 +35,22 @@ class Cooling():
         self.p = self.params
 
     ## meta stages
-    # @kernel
-    # def warmup(self,N=5):
-    #     for _ in range(N):
-    #         self.core.break_realtime()
-    #         self.prepare_lf_tweezers()
-    #         self.tweezer.off()
+    @kernel
+    def warmup_kernel(self):
+        """One imaging-free preparation, run N times before the first real
+        shot when Base.__init__(warmup_shots=N) is given (see Base.pre_scan).
+
+        Default is the hf tweezer BEC sequence, which is where the first-shot
+        atom-number deficit was measured. Experiments whose sequence differs
+        should override this with their own preparation (no imaging, no
+        DataVault writes); Base.cleanup_warmup_kernel turns the beams and
+        coils off afterwards.
+        """
+        self.prepare_hf_tweezers()
+        delay(self.p.t_tweezer_hold)
+        self.tweezer.off()
+        self.lightsheet.off()
+        delay(self.p.t_tof)
 
     @kernel
     def prepare_hf_tweezers(self,
