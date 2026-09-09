@@ -15,74 +15,50 @@ class hf_bec(EnvExperiment, Base):
                       imaging_type=img_types.ABSORPTION)
 
         
-        
-        self.p.t_tweezer_hold = 500.e-3
-
-        self.xvar('t_tof',np.linspace(1000.,4000.,5)*1.e-6)
-        self.p.t_tof = 2.5e-3
-
-        # self.p.phase_slm_mask = 1.6 * np.pi
-
-        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(193.8,194.4,5))
-        # self.p.i_hf_lightsheet_evap1_current = 194.05
-        # self.p.i_hf_lightsheet_evap1_current = 18.
-
-        # self.p.v_pd_lightsheet_rampup_end = 7.6
-    
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.5,1.8,15))
-        # self.p.v_pd_hf_lightsheet_rampdown_end = 1.0
-
-        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(500.,2000.,8)*1.e-3)
-        # self.p.t_hf_lightsheet_rampdown = 1.
-
-        # self.xvar('v_pd_lightsheet_rampdown3_end',
-        #           np.linspace(0,self.p.v_pd_hf_lightsheet_rampdown_end,9))
-        
-        self.p.N_repeats = 3
-
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(1.3,2.4,7))
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(1.3,2.4,7))
-        # self.p.v_hf_tweezer_paint_amp_max = 1.28
-
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.8,3.3,7))
-        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 2.8
-
-        # self.xvar('frequency_detuned_hf_f1m1',np.arange(-580.e6,-554.e6,3.e6))
-
         self.p.t_mot_load = 1.0
         self.p.t_imaging_pulse = 10.e-6
+        
+        self.p.t_tweezer_hold = 100.e-3
 
-        # self.p.i_hf_lightsheet_evap1_current = 194.3
-        # self.p.t_hf_lightsheet_rampdown = 1.3
-
-        # self.xvar('amp_imaging',np.linspace(0.05,0.15,5))
-        self.p.amp_imaging = 0.2
+        # self.xvar('t_tof',np.linspace(1000.,4000.,5)*1.e-6)
+        self.p.t_tof = 3.e-3
 
         self.data.apd = self.data.add_data_container(1)
 
-        Adjust.__init__(self)
+        self.p.N_repeats = 11
+
+        # Adjust.__init__(self)
 
         self.scanning()
         self.finish_prepare(shuffle=True)
 
     def scanning(self):
 
-        self.p.t_lightsheet_compression_ramp = 210.e-3
+        self.p.v_hf_tweezer_paint_amp_max = 1.35
+        self.p.v_pd_hf_tweezer_1064_rampdown3_end = 2.75
+        # self.p.v_pd_lightsheet_rampdown3_end = 0.06
+        self.p.v_pd_hf_lightsheet_rampdown_end = 0.45
+
+        self.p.t_hf_tweezer_1064_rampdown = 600.e-3
+        # self.xvar('t_hf_tweezer_1064_rampdown', np.linspace(200.,700.,7)*1.e-3)
+
+        # self.p.t_lightsheet_compression_ramp = 210.e-3
         # self.xvar('t_lightsheet_compression_ramp',np.linspace(5.e-3,250.e-3,7))
-        self.p.v_pd_lightsheet_rampdown3_end = 0.2
+        # self.p.v_pd_lightsheet_rampdown3_end = 0.0
         # self.p.v_pd_lightsheet_axial_compression = 6.6
-        self.xvar('v_pd_lightsheet_axial_compression',np.linspace(4.5, 6.8, 11))
+        # self.xvar('v_pd_lightsheet_axial_compression',np.linspace(4.5, 6.8, 11))
 
         # self.xvar('t_tweezer_paint_rampdown',np.linspace(0.0,10.,5)*1.e-3)
         
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end', np.linspace(0.6,2.0,9))
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end', np.linspace(0.2,0.5,7))
         # self.xvar('t_tweezer_hold', np.linspace(0.,500.,5) * 1.e-3)
         # self.xvar('t_hf_tweezer_1064_ramp',np.linspace(160,220,3)*1.e-3)
         # self.xvar('v_pd_lightsheet_rampup_end',np.linspace(7.12,,5))
         # self.xvar('i_hf_tweezer_load_current',np.linspace(192.,195.,15))
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-5.,-1.,5))
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,6.,5))
-        # self.xvar('v_pd_lightsheet_rampdown3_end',np.linspace(0.,0.4,9))
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-0.6,1.8,7))
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0.2,2.5,8))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.,5.,8))
+        # self.xvar('v_pd_lightsheet_rampdown3_end',np.linspace(0.,0.3,5))
         # self.p.v_pd_lightsheet_rampup_end = 6.7
         # self.p.i_hf_tweezer_load_current = 193.3
         # self.p.t_hf_tweezer_1064_ramp = 0.19
@@ -104,8 +80,48 @@ class hf_bec(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(10.,1000.,4)*1.e-6)
         # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(0,-3,10))
 
+        # self.p.phase_slm_mask = 1.6 * np.pi
+
+        # self.xvar('i_hf_lightsheet_evap1_current',np.linspace(193.8,194.4,5))
+        # self.p.i_hf_lightsheet_evap1_current = 194.05
+        # self.p.i_hf_lightsheet_evap1_current = 18.
+
+        # self.p.v_pd_lightsheet_rampup_end = 7.6
+    
+        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.5,1.8,15))
+        # self.p.v_pd_hf_lightsheet_rampdown_end = 1.0
+
+        # self.xvar('t_hf_lightsheet_rampdown',np.linspace(500.,2000.,8)*1.e-3)
+        # self.p.t_hf_lightsheet_rampdown = 1.
+
+        # self.xvar('v_pd_lightsheet_rampdown3_end',
+        #           np.linspace(0,self.p.v_pd_hf_lightsheet_rampdown_end,9))
+
+        # self.xvar('v_zshim_current_magtrap', np.linspace(0.,0.15,5))
+
+        # self.p.v_zshim_current_magtrap
+
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(1.3,2.4,7))
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(1.3,2.4,7))
+        # self.p.v_hf_tweezer_paint_amp_max = 1.28
+
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(2.8,3.3,7))
+        # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 2.8
+
+        # self.xvar('frequency_detuned_hf_f1m1',np.arange(-580.e6,-554.e6,3.e6))
+
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(0.08,0.1,5))
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 0.09
+
+        
+
+        # self.p.i_hf_lightsheet_evap1_current = 194.3
+        # self.p.t_hf_lightsheet_rampdown = 1.3
+
+        # self.xvar('amp_imaging',np.linspace(0.05,0.15,5))
+
         # self.xvar('do_compression',[0,1])
-        self.p.do_compression = 1
+        # self.p.do_compression = 0
         pass
 
     @kernel
@@ -117,15 +133,15 @@ class hf_bec(EnvExperiment, Base):
         #                                  y_center=self.p.px_slm_phase_mask_position_y)
         # self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_midpoint)
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
-        self.imaging.set_power(self.p.amp_imaging)
+        # self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers()
 
-        if self.p.do_compression:
-            self.lightsheet.ramp(self.p.t_lightsheet_compression_ramp,
-                                        v_end=self.p.v_pd_lightsheet_axial_compression)
-        else:
-            delay(self.p.t_lightsheet_compression_ramp)
+        # if self.p.do_compression:
+        #     self.lightsheet.ramp(self.p.t_lightsheet_compression_ramp,
+        #                                 v_end=self.p.v_pd_lightsheet_axial_compression)
+        # else:
+        #     delay(self.p.t_lightsheet_compression_ramp)
          
         delay(self.p.t_tweezer_hold)
         
@@ -145,8 +161,6 @@ class hf_bec(EnvExperiment, Base):
         self.abs_image()
         # self.abs_image_and_apd(self.data.apd)
         # self.ttl.camera.pulse()
-
-        self.outer_coil.off()
 
     @kernel
     def run(self):

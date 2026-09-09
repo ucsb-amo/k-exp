@@ -17,8 +17,8 @@ class SLM_spot_scanner(EnvExperiment, Base):
 
         N = 10
         R = 10.
-        self.xvar('px_slm_phase_mask_position_x',992. + np.linspace(-R, R, N, dtype=int))
-        self.xvar('px_slm_phase_mask_position_y',820. + np.linspace(-R, R, N, dtype=int))
+        self.xvar('px_slm_phase_mask_position_x',1008. + np.linspace(-R, R, N, dtype=int))
+        self.xvar('px_slm_phase_mask_position_y',835. + np.linspace(-R, R, N, dtype=int))
         # self.xvar('dimension_slm_mask', np.arange(10.,200.,10,dtype=int)*1e-6)
         # self.xvar('dumdum',[0]*3)
         # self.p.slm_mask = 'spot'
@@ -27,7 +27,7 @@ class SLM_spot_scanner(EnvExperiment, Base):
         # self.p.px_slm_phase_mask_position_x = 1040
         # self.p.px_slm_phase_mask_position_y = 821
         # self.camera_params.exposure_time = 100.e-6s
-        self.p.amp_imaging = 1.7
+        self.p.amp_imaging = .2
         self.p.N_repeats = 1
         self.finish_prepare(shuffle=True)
 

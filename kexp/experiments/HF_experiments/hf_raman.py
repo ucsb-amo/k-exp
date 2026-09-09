@@ -24,7 +24,7 @@ class hf_raman(EnvExperiment, Base):
         # self.p.v_pd_lightsheet_rampup_end = 7.
 
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(.6,1.5,15))
-        # self.p.v_pd_hf_lightsheet_rampdown_end = .8
+        # self.p.v_pd_hf_lightsheet_rampdown_end = .52
 
         # self.xvar('i_hf_tweezer_load_current',np.linspace(191.,195.,15))
         # self.p.i_hf_tweezer_load_current = 193.7
@@ -34,11 +34,11 @@ class hf_raman(EnvExperiment, Base):
 
         # self.xvar('v_pd_hf_tweezer_1064_rampdown_end',np.linspace(.5,1.5,20))
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.9,0.5,15))
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-.5,5.,8))
         # self.xvar('v_hf_tweezer_paint_amp_max',[-2.7,-1.83])
         # self.p.v_hf_tweezer_paint_amp_max = -2.
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(3.,6.,8))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown3_end',np.linspace(.5,4.,8))
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 4.
 
         # self.p.v_pd_hf_tweezer_squeeze_power = 3.94
@@ -57,7 +57,7 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('t_ramsey', np.linspace(10.e-6, 750.e-6, 5))
  
         # self.xvar('t_raman_pulse', [0.,self.p.t_raman_pi_pulse])
-        self.xvar('t_raman_pulse', np.linspace(0., 50., 30)*1.e-6)
+        # self.xvar('t_raman_pulse', np.linspace(0., 50., 30)*1.e-6)
         # self.p.t_raman_pulse = self.p.t_raman_pi_pulse / 2 # -1 --> 0
         self.p.t_raman_pulse= 8.7e-6
         # self.xvar('fraction_power_raman',np.linspace(0., 0.5, 10))
@@ -73,12 +73,12 @@ class hf_raman(EnvExperiment, Base):
         # self.xvar('t_tweezer_hold',np.linspace(1.e-3,300.e-3,10))
         self.p.t_tweezer_hold = .1e-3
 
-        # self.xvar('t_tof',np.linspace(1500.,4500.,10)*1.e-6) 
+        self.xvar('t_tof',np.linspace(1500.,4000.,10)*1.e-6) 
         self.p.t_tof = 2500.e-6
 
         self.p.t_mot_load = 1.
         
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
 
         # self.camera_params.gain = 75.
 
@@ -94,10 +94,10 @@ class hf_raman(EnvExperiment, Base):
 
         self.prepare_hf_tweezers(ramp_down_painting=False,squeeze=False)
 
-        self.prep_raman(frequency_transition=self.p.frequency_raman_transition)
+        # self.prep_raman(frequency_transition=self.p.frequency_raman_transition)
 
-        self.raman.pulse(self.p.t_raman_pulse)
-        delay(self.p.t_raman_pulse)
+        # self.raman.pulse(self.p.t_raman_pulse)
+        # delay(self.p.t_raman_pulse)
 
         # delay(self.p.t_ramsey)
 

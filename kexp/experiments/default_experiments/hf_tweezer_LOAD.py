@@ -55,7 +55,10 @@ class mag_trap(EnvExperiment, Base):
 
         # self.xvar('t_tof',np.linspace(600.,1400.,6)*1.e-6)
 
-        # self.xvar('t_hf_lightsheet_rampdown', np.linspace(10.e-3, 125.e-3, 5))
+        self.xvar('do_exponential_ramp',[0,1])
+
+        # self.xvar('t_hf_lightsheet_rampdown', np.linspace(25.e-3, 1100.e-3, 4))
+        # self.p.t_hf_lightsheet_rampdown = 0.35
         # self.xvar('t_hf_tweezer_1064_ramp', np.linspace(5.e-3, 50.e-3, 5))
 
         # self.xvar('i_hf_tweezer_load_current',np.linspace(192.,195.,7))
@@ -101,9 +104,17 @@ class mag_trap(EnvExperiment, Base):
         self.set_shims(0.,0.,0.)
         
         # lightsheet evap 1
-        self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
-                             v_start=self.p.v_pd_lightsheet_rampup_end,
-                             v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
+        if self.p.do_exponential_ramp:
+            self.p.t_hf_lightsheet_rampdown = 0.35
+            self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown,
+                                v_start=self.p.v_pd_lightsheet_rampup_end,
+                                v_end=self.p.v_pd_hf_lightsheet_rampdown_end,
+                                tau=self.p.t_hf_lightsheet_rampdown/3)
+        else:
+            self.p.t_hf_lightsheet_rampdown = 1.1
+            self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
+                                            v_start=self.p.v_pd_lightsheet_rampup_end,
+                                            v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
         
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                              i_start=self.p.i_hf_lightsheet_evap1_current,

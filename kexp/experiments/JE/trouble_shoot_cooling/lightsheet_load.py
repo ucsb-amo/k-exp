@@ -16,7 +16,7 @@ class mag_trap(EnvExperiment, Base):
                       camera_select=cameras.xy_basler,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 900.e-6
+        self.p.t_tof = 300.e-6
         # self.xvar('t_tof',np.linspace(100,1000.,10)*1.e-6)
         # self.xvar('t_tof',np.linspace(5.,20.,10)*1.e-3)
         # self.xvar('dumy0',np.linspace(1.,50.,50))
@@ -30,8 +30,8 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('v_xshim_current',np.linspace(0.,5.,8))
         # self.xvar('v_yshim_current',np.linspace(0.0,6.,8))
 
-        self.xvar('i_magtrap_init',np.linspace(30.,100.,20))
-        self.p.i_magtrap_init = 90.
+        # self.xvar('i_magtrap_init',np.linspace(30.,100.,20))
+        # self.p.i_magtrap_init = 90.
 
         # self.xvar('i_magtrap_ramp_end', np.linspace(60.,145.,20))
         # self.p.i_magtrap_ramp_end = 100.
