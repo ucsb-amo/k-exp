@@ -542,8 +542,25 @@ class LiveODServer(QThread, NetServer):
         return {"ok": True}
 
     def _handle_poll(self, msg: dict) -> dict:
-        """Lightweight poll — lets the experiment check for a pending reset."""
-        return {"ok": True, "reset_requested": self._reset_requested}
+        """Lightweight poll — lets the experiment check for a pending reset, and
+        lets tooling read run state without side effects.
+
+        ``run_in_progress`` is the authoritative "is the machine busy" signal;
+        ``run_id`` is the current run when in progress, else the last one.
+        ``last_shot_age_s`` lets a caller tell a live run from a wedged one.
+        Extra keys are ignored by older clients.
+        """
+        now = time.time()
+        last_shot = self._shot_timestamps[-1] if self._shot_timestamps else None
+        return {
+            "ok": True,
+            "reset_requested": self._reset_requested,
+            "run_in_progress": self._run_in_progress,
+            "run_id": self._current_run_id,
+            "n_shots": len(self._shot_timestamps),
+            "last_shot_age_s": (now - last_shot) if last_shot else None,
+            "init_run_age_s": (now - self._init_run_time) if self._init_run_time else None,
+        }
 
     def _handle_subscribe_scalars(self, msg: dict) -> dict:
         """Remote viewer subscribes to scalar compute tier."""
