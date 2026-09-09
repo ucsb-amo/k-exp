@@ -21,7 +21,7 @@ from waxa import atomdata
 def getAtomNumber():
 
         #Load the data given a run id.
-        ad = atomdata(0,73969)
+        ad = atomdata(0,78598)
         # peakDensity = findPeakOD(ad.od[0])
         # print(peakDensity)
         return np.max(ad.atom_number)
@@ -95,17 +95,20 @@ class ExptBuilder():
             def prepare(self):
                 Base.__init__(self,setup_camera=True,
                             camera_select=cameras.andor,
-                            save_data=True)
+                            save_data=True, warmup_shots=0)
 
-                # self.xvar('frequency_detuned_imaging_m1',np.arange(250.,450.,8)*1.e6)
-                self.p.v_pd_lf_tweezer_1064_ramp_end=8.9
-                self.p.v_lf_tweezer_paint_amp_max=-3.5
                 {assignment_lines}
-                
-                # self.xvar('t_tof',np.linspace(100.,2000.,10)*1.e-6)
-                self.p.t_tof = 20.e-6
+
+                self.p.i_lf_tweezer_evap2_current = 14.0
+
+                self.camera_params.amp_imaging = 0.2
+
+                self.p.t_tof = 500.e-6
 
                 self.p.t_tweezer_hold = 1.e-3
+
+                self.p.imaging_freq=324.e6
+
 
                 self.p.t_mot_load = 1.
                 self.p.N_repeats = 1
@@ -115,7 +118,8 @@ class ExptBuilder():
             @kernel
             def scan_kernel(self):
 
-                self.set_high_field_imaging(i_outer=self.p.i_lf_tweezer_evap2_current)
+                self.set_imaging_detuning(frequency_detuned=self.p.imaging_freq)
+                self.imaging.set_power(self.camera_params.amp_imaging)
 
                 self.switch_d2_2d(1)
                 self.mot(self.p.t_mot_load)
@@ -144,10 +148,11 @@ class ExptBuilder():
                                     v_start=self.p.v_pd_lightsheet_rampup_end,
                                     v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
                 
-                # feshbach field ramp to field 2
+                #feshbach field ramp to field 2
                 self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
                                     i_start=self.p.i_lf_lightsheet_evap1_current,
                                     i_end=self.p.i_lf_tweezer_load_current)
+
                 
                 self.tweezer.on(paint=True)
                 self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_ramp,
@@ -155,8 +160,17 @@ class ExptBuilder():
                                 v_end=self.p.v_pd_lf_tweezer_1064_ramp_end,
                                 paint=True,keep_trap_frequency_constant=False,
                                 v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
-                
+
+                #lightsheet ramp, to off
+                self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
+                                                v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
+                                                v_end=self.p.v_pd_lightsheet_rampdown3_end)
+                        
                 self.lightsheet.off()
+
+                self.outer_coil.ramp_supply(t=5.e-3,
+                                            i_start=self.p.i_lf_tweezer_load_current,
+                                            i_end=self.p.i_lf_tweezer_evap1_current)
 
                 # # tweezer evap 1 with constant trap frequency
                 self.tweezer.ramp(t=self.p.t_lf_tweezer_1064_rampdown,
@@ -173,6 +187,7 @@ class ExptBuilder():
                 #                 v_start=self.p.v_pd_lf_tweezer_1064_rampdown_end,
                 #                 v_end=self.p.v_pd_lf_tweezer_1064_rampdown2_end,
                 #                 paint=True,keep_trap_frequency_constant=True,v_awg_am_max=self.p.v_lf_tweezer_paint_amp_max)
+
                 delay(self.p.t_tweezer_hold)
                 self.tweezer.off()
 
