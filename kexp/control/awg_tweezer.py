@@ -1,6 +1,7 @@
 from waxx.control.artiq.DAC_CH import DAC_CH
 from waxx.control.artiq.TTL import TTL_OUT
 from waxx.control.artiq.DDS import DDS
+from waxx.control.painted_beam import PaintedBeam, DAC_PRIMARY, DAC_SECONDARY
 import waxx.control.tweezer.spectrum_DDS_tweezer as wax_tweezer
 
 from artiq.language.core import now_mu
@@ -16,7 +17,10 @@ import numpy as np
 # di = 666420695318008 #causes failure #lmao
 di = 0
 dv = -1000.
-PAINTING_CONTROL_V_MIN = -4.985
+
+# painting-amplitude control voltage for zero painting. Set per beam because
+# the RF chain in front of each FM source has its own attenuation.
+V_TWEEZER_PAINT_MIN = -4.985
 
 AWG_IP = 'TCPIP::192.168.1.83::inst0::INSTR'
 from kexp.calibrations.tweezer import tweezer_xmesh as KEXP_TWEEZER_XMESH
@@ -41,12 +45,13 @@ class TweezerTrap(wax_tweezer.TweezerTrap):
                          expt_params=expt_params,
                          core=core)
     
-class tweezer(wax_tweezer.TweezerController):
+class tweezer(wax_tweezer.TweezerController, PaintedBeam):
     """
     Machine-specific implementation of the spectrum AWG-controlled tweezers.
     This class should be used for things which interface with an aritisinal
     implementation of the device. For move-related code that is general to the
-    AWG-controlled tweezer, edit the wax class.
+    AWG-controlled tweezer, edit the wax class. For the power/painting co-ramps,
+    which are shared with the painted lightsheet, edit PaintedBeam.
     """    
 
     def __init__(self,
@@ -57,6 +62,7 @@ class tweezer(wax_tweezer.TweezerController):
                   pid1_int_hold_zero_ttl=TTL_OUT,
                   pid2_enable_ttl=TTL_OUT,
                   painting_dac=DAC_CH,
+                  v_paint_min=V_TWEEZER_PAINT_MIN,
                   expt_params=ExptParams(),
                   core=Core):
         """Controls the tweezers.
@@ -77,11 +83,10 @@ class tweezer(wax_tweezer.TweezerController):
         self.sw_ttl = sw_ttl
         self.pid1_int_hold_zero = pid1_int_hold_zero_ttl
         self.pid2_enable_ttl = pid2_enable_ttl
-        self.paint_amp_dac = painting_dac
 
-    @kernel
-    def painting_off(self):
-        self.paint_amp_dac.set(v=PAINTING_CONTROL_V_MIN)
+        self._init_painting(paint_amp_dac=painting_dac,
+                            v_paint_min=v_paint_min,
+                            core=core)
 
     @kernel
     def on(self,paint=False,v_awg_am=dv):
@@ -106,7 +111,7 @@ class tweezer(wax_tweezer.TweezerController):
         if paint:
             self.paint_amp_dac.set(v=v_awg_am)
         else:
-            self.paint_amp_dac.set(v=PAINTING_CONTROL_V_MIN)
+            self.painting_off()
         with parallel:
             self.ao1_dds.on()
             self.sw_ttl.on()
@@ -130,6 +135,49 @@ class tweezer(wax_tweezer.TweezerController):
             v_pd = self.params.v_pd_tweezer_1064
         self.pid1_dac.set(v=v_pd,load_dac=load_dac)
 
+
+    # -------------------------------------------------------------------------
+    # PaintedBeam hooks
+    # -------------------------------------------------------------------------
+    #
+    # dac_select picks which power servo the ramp drives: DAC_PRIMARY is pid1,
+    # DAC_SECONDARY is the low-power pid2 (which also has to be enabled).
+
+    @kernel
+    def _ramp_begin(self,v_start,paint,dac_select,dt_mu):
+        if dac_select == DAC_SECONDARY:
+            self.pid2_dac.set(v=v_start)
+            self.pid2_enable_ttl.on()
+        else:
+            self.pid1_dac.set(v=v_start)
+            self.pid2_enable_ttl.off()
+
+    @kernel
+    def _set_pd(self,v,dac_select):
+        if dac_select == DAC_SECONDARY:
+            self.pid2_dac.set(v=v,load_dac=False)
+        else:
+            self.pid1_dac.set(v=v,load_dac=False)
+
+    @kernel
+    def _load_pd(self,dac_select):
+        if dac_select == DAC_SECONDARY:
+            self.pid2_dac.load()
+        else:
+            self.pid1_dac.load()
+
+    @kernel
+    def _ramp_end(self,v_end,dac_select):
+        if dac_select == DAC_SECONDARY:
+            self.pid2_dac.v = v_end
+        else:
+            self.pid1_dac.v = v_end
+
+    # -------------------------------------------------------------------------
+    # ramps -- these resolve the tweezer's ExptParams defaults and hand off to
+    # the shared co-ramp cores in PaintedBeam
+    # -------------------------------------------------------------------------
+
     @kernel(flags={"fast-math"})
     def ramp(self,t,
              v_start=dv,
@@ -141,8 +189,9 @@ class tweezer(wax_tweezer.TweezerController):
              keep_trap_frequency_constant=True,
              low_power=False,
              cubic_ramp=False):
-        """Ramps the voltage that controls the tweezer power according to v_ramp_list.
-        
+        """Ramps the voltage that controls the tweezer power, linearly by
+        default or on a smoothstep if cubic_ramp is True.
+
         If painting is enabled, paints the tweezer by controlling the amplitude
         of the FM source waveform, which in turn controls the FM modulation
         depth.
@@ -150,30 +199,43 @@ class tweezer(wax_tweezer.TweezerController):
         Args:
             t (float): The ramp time.
 
-            v_ramp_list (nd.nparray(float), optional): The list of voltages to
-            be ramped. This should be the voltage that controls the tweezer
-            power. Defaults to ExptParams.v_pd_tweezer_1064_ramp_list.
+            v_start (float, optional): PID setpoint to start from. Defaults to
+            wherever the pid1 DAC currently sits.
+
+            v_end (float, optional): PID setpoint to end on. Defaults to
+            ExptParams.v_pd_hf_tweezer_1064_ramp_end.
+
+            n_steps (int, optional): Number of ramp steps. Defaults to
+            ExptParams.n_tweezer_ramp_steps.
 
             v_awg_am_max (float, optional): The voltage that corresponds to the
             maximum desired painting amplitude. Defaults to
-            ExptParams.v_tweezer_paint_amp_max.
+            ExptParams.v_hf_tweezer_paint_amp_max.
 
             v_pd_max (float, optional): The voltage corresponding to the maximum
             tweezer power used during the ramp. The trap frequency at this power
             and at maximum painting amplitude is the one which is kept constant
             if keep_trap_frequency_constant == True. Defaults to
-            ExptParams.v_pd_tweezer_1064_ramp_end (the endpoint of the ramp up).
+            ExptParams.v_pd_hf_tweezer_1064_ramp_end (the endpoint of the ramp
+            up).
 
             paint (bool, optional): If True, enables painting. If False, sets
-            the paint amplitude control voltage to -7., which should disable
-            painting entirely. Defaults to False.
+            the paint amplitude control voltage to zero painting for the whole
+            ramp. Defaults to False.
 
             keep_trap_frequency_constant (bool, optional): If True, the painting
             amplitude will be adjusted along with the tweezer power in order to
             keep the trap frequency constant, and equal to the trap frequency at
             maximum power (v_pd_max) and maximum painting amplitude
             (v_awg_am_max). Defaults to True.
-        """        
+
+            low_power (bool, optional): If True, ramps the low-power pid2 servo
+            instead of pid1, and rescales v_pd_max into pid2 units. Defaults to
+            False.
+
+            cubic_ramp (bool, optional): If True, uses a smoothstep instead of a
+            linear ramp. Defaults to False.
+        """
 
         if v_start == dv:
             v_start = self.pid1_dac.v
@@ -187,44 +249,97 @@ class tweezer(wax_tweezer.TweezerController):
             v_pd_max = self.params.v_pd_hf_tweezer_1064_ramp_end
 
         if low_power:
-            pid_dac = self.pid2_dac
+            dac_select = DAC_SECONDARY
             v_pd_max = tweezer_vpd1_to_vpd2(v_pd_max)
         else:
-            pid_dac = self.pid1_dac
+            dac_select = DAC_PRIMARY
 
-        if not paint:
-            self.painting_off()
-
-        dt_ramp = t / n_steps
         if cubic_ramp:
-            Adt3 = -2*(v_end-v_start)/t**3 * dt_ramp**3
-            Bdt2 = 3*(v_end-v_start)/t**2 * dt_ramp**2
-            delta_v = 1.
+            self._ramp_cubic(t,v_start,v_end,n_steps,paint,
+                             v_awg_am_max,v_pd_max,
+                             keep_trap_frequency_constant,dac_select)
         else:
-            Adt3 = 1.
-            Bdt2 = 1.
-            delta_v = (v_end - v_start)/(n_steps - 1)
+            self._ramp_linear(t,v_start,v_end,n_steps,paint,
+                              v_awg_am_max,v_pd_max,
+                              keep_trap_frequency_constant,dac_select)
 
-        pid_dac.set(v=v_start)
+    @kernel(flags={"fast-math"})
+    def adiabatic_ramp(self,t,
+                v_start=dv,
+                v_end=dv,
+                n_steps=di,
+                paint=False,
+                v_awg_am_max=dv,
+                v_pd_max=dv,
+                keep_trap_frequency_constant=True,
+                low_power=False,
+                v_offset=0.02):
+        """Constant-adiabaticity power ramp. Arguments as for ramp(), plus:
+
+        Args:
+            v_offset (float, optional): PID setpoint at zero optical power;
+            power is taken proportional to (v - v_offset). Defaults to 0.02.
+        """
+        if v_start == dv:
+            v_start = self.pid1_dac.v
+        if v_end == dv:
+            v_end = self.params.v_pd_hf_tweezer_1064_ramp_end
+        if n_steps == di:
+            n_steps = self.params.n_tweezer_ramp_steps
+        if v_awg_am_max == dv:
+            v_awg_am_max = self.params.v_hf_tweezer_paint_amp_max
+        if v_pd_max == dv:
+            v_pd_max = self.params.v_pd_hf_tweezer_1064_ramp_end
+
         if low_power:
-            self.pid2_enable_ttl.on()
+            dac_select = DAC_SECONDARY
+            v_pd_max = tweezer_vpd1_to_vpd2(v_pd_max)
         else:
-            self.pid2_enable_ttl.off()
-        for i in range(n_steps):
-            if cubic_ramp:
-                v = Adt3 * i**3 + Bdt2 * i**2 + v_start
-            else:
-                v = v_start + i * delta_v
-            if paint:
-                if keep_trap_frequency_constant:
-                    v_awg_amp_mod = self.v_pd_to_painting_amp_voltage(v,
-                                                                      v_pd_max,
-                                                                      v_awg_am_max)
-                else:
-                    v_awg_amp_mod = v_awg_am_max
-                self.paint_amp_dac.set(v_awg_amp_mod,load_dac=True)
-            pid_dac.set(v=v,load_dac=True)
-            delay(dt_ramp)
+            dac_select = DAC_PRIMARY
+
+        self._ramp_adiabatic(t,v_start,v_end,n_steps,v_offset,paint,
+                             v_awg_am_max,v_pd_max,
+                             keep_trap_frequency_constant,dac_select)
+
+    @kernel(flags={"fast-math"})
+    def exponential_ramp(self,t,
+                v_start=dv,
+                v_end=dv,
+                tau=dv,
+                n_steps=di,
+                paint=False,
+                v_awg_am_max=dv,
+                v_pd_max=dv,
+                keep_trap_frequency_constant=True,
+                low_power=False):
+        """Exponential power ramp. Arguments as for ramp(), plus:
+
+        Args:
+            tau (float, optional): time constant (s). Defaults to t/3, which is
+            the slow-start / fast-finish curvature; negative tau flips it.
+        """
+        if v_start == dv:
+            v_start = self.pid1_dac.v
+        if v_end == dv:
+            v_end = self.params.v_pd_hf_tweezer_1064_ramp_end
+        if n_steps == di:
+            n_steps = self.params.n_tweezer_ramp_steps
+        if v_awg_am_max == dv:
+            v_awg_am_max = self.params.v_hf_tweezer_paint_amp_max
+        if v_pd_max == dv:
+            v_pd_max = self.params.v_pd_hf_tweezer_1064_ramp_end
+        if tau == dv:
+            tau = t / 3.
+
+        if low_power:
+            dac_select = DAC_SECONDARY
+            v_pd_max = tweezer_vpd1_to_vpd2(v_pd_max)
+        else:
+            dac_select = DAC_PRIMARY
+
+        self._ramp_exponential(t,v_start,v_end,n_steps,tau,paint,
+                               v_awg_am_max,v_pd_max,
+                               keep_trap_frequency_constant,dac_select)
 
     @portable
     def v_pd_to_painting_amp_voltage(self,v_pd=dv,
@@ -237,32 +352,21 @@ class tweezer(wax_tweezer.TweezerController):
         v_awg_am_max.
 
         Args:
-            v_pd (_type_, optional): _description_. Defaults to dv.
-            v_pd_max (_type_, optional): Tweezer power used to determine the
+            v_pd (float, optional): Tweezer power to compute the painting
+            amplitude for.
+            v_pd_max (float, optional): Tweezer power used to determine the
             intial trap frequency (to be held constant). Defaults to
-            ExptParams.v_pd_tweezer_1064_ramp_end.
-            v_awg_am_max (_type_, optional): Painting amplitude used to
+            ExptParams.v_pd_hf_tweezer_1064_ramp_end.
+            v_awg_am_max (float, optional): Painting amplitude used to
             determine the initial trap frequency (to be held constant). Defaults
-            to ExptParams.v_tweezer_paint_amp_max.
+            to ExptParams.v_hf_tweezer_paint_amp_max.
 
         Returns:
             TFloat: the paint amplitude voltage that gives the same trap
             frequency with v_pd as with (v_pd_max,v_awg_am_max).
-        """        
+        """
         if v_awg_am_max == dv:
             v_awg_am_max = self.params.v_hf_tweezer_paint_amp_max
-
         if v_pd_max == dv:
             v_pd_max = self.params.v_pd_hf_tweezer_1064_ramp_end
-
-        p_frac = v_pd / v_pd_max
-        # trap frequency propto sqrt( P / h^3 ), where P is power and h is painting
-        # amplitude. To keep constant frequency, h should decrease by a factor equal
-        # to the cube root of the fraction by which P changes
-        paint_amp_frac = p_frac**(1/3)
-        # rescale to between -5V (fraction painting = 0) and the maximum
-        # painting amplitude specified (fraction painting = 1) for the
-        # AWG input
-        v_awg_amp_mod = (paint_amp_frac - 0.5)*(v_awg_am_max - (PAINTING_CONTROL_V_MIN)) \
-                            + (v_awg_am_max + (PAINTING_CONTROL_V_MIN))/2
-        return v_awg_amp_mod
+        return self._paint_amp_v(v_pd,v_pd_max,v_awg_am_max)

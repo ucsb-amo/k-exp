@@ -34,8 +34,8 @@ from kexp.config.wavemeter_id import fzw_frame
 from kexp.config.data_vault import DataVault, DataContainer
 
 from kexp.control.big_coil import igbt_magnet, hbridge_magnet
-from kexp.control.painted_lightsheet import lightsheet
-from kexp.control.awg_tweezer import tweezer
+from kexp.control.painted_lightsheet import lightsheet, V_LIGHTSHEET_PAINT_MIN
+from kexp.control.awg_tweezer import tweezer, V_TWEEZER_PAINT_MIN
 from kexp.control.doubled_rf import doubled_rf
 from kexp.control.rydberg_lasers import RydbergDDSSwitchBeam, RydbergTTLSwitchBeam
 
@@ -144,7 +144,9 @@ class Devices():
                                      alignment_shim_dac=self.dac.zshim_current_control,
                                      sw_ttl=self.ttl.lightsheet_sw,
                                      pid_int_hold_zero_ttl = self.ttl.lightsheet_pid_int_hold_zero,
-                                     expt_params=self.params)
+                                     v_paint_min=V_LIGHTSHEET_PAINT_MIN,
+                                     expt_params=self.params,
+                                     core=self.core)
         
         self.tweezer = tweezer(ao1_dds=self.dds.tweezer_pid_1,
                                pid1_dac=self.dac.v_pd_tweezer_pid1,
@@ -155,6 +157,7 @@ class Devices():
                                pid1_int_hold_zero_ttl = self.ttl.tweezer_pid1_int_hold_zero,
                                pid2_enable_ttl=self.ttl.tweezer_pid2_enable,
                                painting_dac = self.dac.tweezer_paint_amp,
+                               v_paint_min = V_TWEEZER_PAINT_MIN,
                                expt_params = self.params,
                                core=self.core)
         
