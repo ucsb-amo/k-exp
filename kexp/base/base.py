@@ -198,6 +198,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.core.break_realtime()
         self.reset_coils()
+        self.lightsheet.off()
 
         self.core.break_realtime()
         self.ttl.line_trigger.clear_input_events()

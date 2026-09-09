@@ -101,7 +101,8 @@ class Cooling():
                                 v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
                                 v_end=self.p.v_pd_lightsheet_rampdown3_end)
         # self.lightsheet.pid_int_zero_ttl.on()
-        self.lightsheet.off()
+        if self.p.v_pd_lightsheet_rampdown3_end == 0.:
+            self.lightsheet.off()
 
         self.outer_coil.ramp_supply(t=5.e-3,
                             #  i_start=self.p.i_hf_tweezer_load_current,
