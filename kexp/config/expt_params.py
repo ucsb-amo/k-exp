@@ -10,6 +10,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_rtio = 8.e-9
 
         self.N_shots = 1
+        self.N_warmup_shots = 0
         self.N_repeats = 1
         self.N_img = 1
         self.N_shots_with_repeats = 1
