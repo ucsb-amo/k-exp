@@ -73,6 +73,13 @@ class ResilientInstrument:
             self._instr.close()
         except Exception:
             pass
+        finally:
+            # vxi11 only clears these on a successful destroy_link, so a failed
+            # close leaves Device.__del__ to retry the RPC (and block for the
+            # ~11s socket timeout) whenever the object is garbage collected.
+            self._instr.link = None
+            self._instr.client = None
+        self.connected = False
 
 class current_supply_widget(QWidget):
     def __init__(self,ip:str,max_current:int):
@@ -91,6 +98,8 @@ class current_supply_widget(QWidget):
 
     def _try_connect(self):
         try:
+            if self.supply is not None:
+                self.supply.close()
             self.supply = ResilientInstrument(self.ip)
             self.init_device()
             self.connected = True
