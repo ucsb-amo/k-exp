@@ -55,7 +55,6 @@ class Cooling():
     @kernel
     def prepare_hf_tweezers(self,
                             do_tweezer_evap_2=True,
-                            do_tweezer_evap_3=True,
                             ramp_down_painting = False,
                             squeeze=False,
                             cubic_ramp_squeeze=True,
@@ -88,7 +87,7 @@ class Cooling():
         self.set_shims(0.,0.,0.) 
 
         # lightsheet evap 1
-        self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown,
+        self.lightsheet.exponential_ramp(t=self.p.t_hf_lightsheet_rampdown,
                              v_start=self.p.v_pd_lightsheet_rampup_end,
                              v_end=self.p.v_pd_hf_lightsheet_rampdown_end)
         
@@ -97,50 +96,36 @@ class Cooling():
                              i_end=self.p.i_hf_tweezer_load_current)
         
         self.tweezer.on()
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_ramp,
+        self.tweezer.exponential_ramp(t=self.p.t_hf_tweezer_1064_ramp,
                           v_start=0.,
                           v_end=self.p.v_pd_hf_tweezer_1064_ramp_end,
-                          paint=True,keep_trap_frequency_constant=False)
-        
-        # self.lightsheet.ramp(t=self.p.t_hf_lightsheet_rampdown2,
-        #                      v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
-        #                      v_end=self.p.v_pd_hf_lightsheet_rampdown2_end)
+                          paint=True,keep_trap_frequency_constant=False,
+                          tau=-self.p.t_hf_tweezer_1064_ramp/3)
                           
         # lightsheet ramp down (to off)
-        self.lightsheet.ramp(t=self.p.t_lightsheet_rampdown3,
+        self.lightsheet.exponential_ramp(t=self.p.t_lightsheet_rampdown3,
                                 v_start=self.p.v_pd_hf_lightsheet_rampdown_end,
                                 v_end=self.p.v_pd_lightsheet_rampdown3_end)
-        # self.lightsheet.pid_int_zero_ttl.on()
+
         if self.p.v_pd_lightsheet_rampdown3_end == 0.:
             self.lightsheet.off()
 
-        self.outer_coil.ramp_supply(t=5.e-3,
-                            #  i_start=self.p.i_hf_tweezer_load_current,
+        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp2,
                              i_end=self.p.i_hf_tweezer_evap1_current)
 
         # tweezer evap 1 with constant trap frequency
-        self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown,
+        self.tweezer.exponential_ramp(t=self.p.t_hf_tweezer_1064_rampdown,
                           v_start=self.p.v_pd_hf_tweezer_1064_ramp_end,
                           v_end=self.p.v_pd_hf_tweezer_1064_rampdown_end,
                           paint=True,keep_trap_frequency_constant=True)
         
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                            #  i_start=self.p.i_hf_tweezer_evap1_current,
-                                i_end=self.p.i_hf_tweezer_evap2_current)
         
         if do_tweezer_evap_2:
-        
-            self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
-                            v_start=self.p.v_pd_hf_tweezer_1064_rampdown_end,
+            
+            self.tweezer.exponential_ramp(t=self.p.t_hf_tweezer_1064_rampdown2,
+                            v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown_end),
                             v_end=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
-                            paint=True,keep_trap_frequency_constant=True)
-            
-            if do_tweezer_evap_3:
-            
-                self.tweezer.ramp(t=self.p.t_hf_tweezer_1064_rampdown3,
-                                v_start=tweezer_vpd1_to_vpd2(self.p.v_pd_hf_tweezer_1064_rampdown2_end),
-                                v_end=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
-                                paint=True,keep_trap_frequency_constant=True,low_power=True)
+                            paint=True,keep_trap_frequency_constant=True,low_power=True)
 
         self.dac.supply_current_2dmot.set(v=0.)
 
@@ -159,14 +144,14 @@ class Cooling():
         if squeeze or ramp_down_painting:
             self.ramp_down_painting()
 
-        if squeeze and ramp_down_painting and do_tweezer_evap_2 and do_tweezer_evap_3:
+        if squeeze and ramp_down_painting and do_tweezer_evap_2:
             self.ttl.pd_scope_trig.pulse(1.e-6)
             self.tweezer_squeeze(cubic_ramp_squeeze)
 
     @kernel
     def ramp_down_painting(self):
         if self.p.t_tweezer_paint_rampdown1 == 0:
-            self.tweezer.paint_amp_dac.set(-4.985)
+            self.tweezer.painting_off()
         else:
             v0 = self.tweezer.paint_amp_dac.v
             self.tweezer.paint_amp_dac.linear_ramp(t=self.p.t_tweezer_paint_rampdown1,
@@ -181,7 +166,7 @@ class Cooling():
     @kernel
     def tweezer_squeeze(self, cubic_ramp=False):
         self.tweezer.ramp(t=self.p.t_tweezer_squeezer_ramp_1,
-                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown3_end,
+                          v_start=self.p.v_pd_hf_tweezer_1064_rampdown2_end,
                           v_end=self.p.v_pd_tweezer_squeeze_rampup_handoff_lp,
                           low_power=True, paint=True, v_awg_am_max=self.p.v_tweezer_paint_rampdown_end1,
                           keep_trap_frequency_constant=False,
