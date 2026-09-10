@@ -71,7 +71,9 @@ class feedback(EnvExperiment, Base, Feedback):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.DISPERSIVE,
+                      # images and reads the APD: the pickoff must stay in
+                      apd_stage=True)
         
         ### parameters
 

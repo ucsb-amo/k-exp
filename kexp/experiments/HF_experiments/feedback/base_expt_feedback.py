@@ -17,10 +17,10 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         self.data = DataVault(self)
         self.p = ExptParamsFeedback()
         Base.__init__(self,
-                    setup_camera=False,
                     save_data=save_data,
                     imaging_type=img_types.DISPERSIVE,
-                    camera_select=cameras.andor,
+                    # implies setup_camera=False and pickoff stage in
+                    camera_select=cameras.apd,
                     expt_params=self.p,
                     data_vault=self.data,
                     suppress_live_od=suppress_live_od,

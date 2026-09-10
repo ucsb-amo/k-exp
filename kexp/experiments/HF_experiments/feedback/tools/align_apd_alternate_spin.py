@@ -11,8 +11,9 @@ from kexp.util.artiq.async_print import aprint
 class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
-                      camera_select=cameras.andor,
+        # cameras.apd implies setup_camera=False and stage in. This experiment
+        # never inserted the stage before -- that was a bug.
+        Base.__init__(self,camera_select=cameras.apd,
                       save_data=False,
                       imaging_type=img_types.DISPERSIVE)
         

@@ -13,7 +13,9 @@ class spin_resolved_counting_tof(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=True,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.ABSORPTION,
+                      # images and reads the APD: the pickoff must stay in
+                      apd_stage=True)
 
         from kamo import Potassium39
         atom = Potassium39()

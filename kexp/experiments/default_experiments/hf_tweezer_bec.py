@@ -13,8 +13,7 @@ class hf_bec(EnvExperiment, Base):
                       save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=0,
-                      apd_stage=False)
+                      warmup_shots=0)
 
         
         self.p.t_mot_load = 1.0

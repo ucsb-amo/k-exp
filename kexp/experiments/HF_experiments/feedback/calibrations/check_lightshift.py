@@ -16,8 +16,7 @@ class hf_raman(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       save_data=True,
                       imaging_type=img_types.ABSORPTION,
-                      expt_params=p,
-                      apd_stage=False)
+                      expt_params=p)
 
         # self.xvar('with_imaging', [0,1])
         self.p.with_imaging = 1

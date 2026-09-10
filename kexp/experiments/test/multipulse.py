@@ -9,7 +9,9 @@ class sigma_z(EnvExperiment, Base):
         Base.__init__(self,setup_camera=True,
                       camera_select=cameras.andor,
                       save_data=False,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.DISPERSIVE,
+                      # images and reads the APD: the pickoff must stay in
+                      apd_stage=True)
         
         self.p.amp_imaging = 1.
         self.p.t_pci_pulse = 25.e-6
