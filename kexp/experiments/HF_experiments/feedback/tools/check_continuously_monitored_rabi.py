@@ -9,7 +9,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
         Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=False,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.DISPERSIVE,
+                      apd_stage=True)
 
         # self.p.frequency_raman_transition = 119.4641e6
         # self.p.frequency_raman_transition = 119918210.0
@@ -42,7 +43,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
 
         # calibration run 78260
         # img amp 0.2, pulse time 5.0e-06 s
-        self.p.frequency_lightshift = 2.94e+04  # Hz
+        self.p.frequency_lightshift = 3.32e+04  # Hz
 
         # self.xvar('phase_slm_mask',np.linspace(0.0*np.pi,.5*np.pi,10))
         # self.p.phase_slm_mask = 1.2 * np.pi

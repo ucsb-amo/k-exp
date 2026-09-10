@@ -72,7 +72,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # if not self.p.trigger_later:
         self.ttl.pd_scope_trig3.pulse(1.e-6)
 
-        for i in range(5):
+        for i in range(10):
             self.integrated_imaging_pulse(self.data.apd, self.p.t_imaging_pulse, 0)
 
             delay(10.e-6)

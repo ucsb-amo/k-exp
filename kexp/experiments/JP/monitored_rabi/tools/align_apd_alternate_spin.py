@@ -13,7 +13,8 @@ class hf_monitored_rabi(EnvExperiment, Base):
         Base.__init__(self,setup_camera=False,
                       camera_select=cameras.andor,
                       save_data=False,
-                      imaging_type=img_types.DISPERSIVE)
+                      imaging_type=img_types.DISPERSIVE,
+                      apd_stage=True)
         
         self.p.t_imaging_pulse = 15.e-6
         self.xvar('dummy',[0]*1000)
@@ -38,13 +39,14 @@ class hf_monitored_rabi(EnvExperiment, Base):
         # self.slm.write_phase_mask_kernel(phase=self.p.phase_slm_mask)
         
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_midpoint)
-        self.imaging.set_power(self.p.amp_imaging)
+        # self.imaging.set_power(self.p.amp_imaging)
 
         self.prepare_hf_tweezers(squeeze=False)
 
         self.ttl.imaging_shutter_x.off()
-        self.imaging.pulse(100.e-6)
-        self.ttl.imaging_shutter_x.on
+        delay(3.e-3)
+        self.imaging.pulse(100.e-6) 
+        self.ttl.imaging_shutter_x.on()
 
         self.prep_raman()
 
