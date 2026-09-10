@@ -10,10 +10,11 @@ class hf_bec(EnvExperiment, Base):
     def prepare(self):
         Base.__init__(self,
                       setup_camera=True,
-                      save_data=True,
+                      save_data=False,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=3)
+                      warmup_shots=0,
+                      apd_stage=False)
 
         
         self.p.t_mot_load = 1.0
@@ -22,11 +23,12 @@ class hf_bec(EnvExperiment, Base):
         self.p.t_tweezer_hold = 100.e-3
 
         # self.xvar('t_tof',np.linspace(1000.,4000.,5)*1.e-6)
-        self.p.t_tof = 4.e-3
+        self.p.t_tof = 20.e-6
+        self.adjust('t_tof',min_val=20.e-6,max_val=1000.e-6)
 
         self.data.apd = self.data.add_data_container(1)
 
-        self.p.N_repeats = 2
+        self.p.N_repeats = 1000
 
         # Adjust.__init__(self)sss
 
@@ -35,15 +37,15 @@ class hf_bec(EnvExperiment, Base):
 
     def scanning(self):
 
-        self.p.v_hf_tweezer_paint_amp_max = 1.35
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = 2.75
+        # self.p.v_hf_tweezer_paint_amp_max = 1.35
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 2.75
         # self.p.v_pd_lightsheet_rampdown3_end = 0.00
         # self.p.v_pd_hf_lightsheet_rampdown_end = 0.45
 
-        self.p.t_hf_tweezer_1064_rampdown = 550.e-3
-        self.xvar('t_hf_tweezer_1064_rampdown2', np.linspace(100.,300.,5)*1.e-3)
+        # self.p.t_hf_tweezer_1064_rampdown = 550.e-3
+        # self.xvar('t_hf_tweezer_1064_rampdown2', np.linspace(100.,300.,5)*1.e-3)
 
-        self.p.t_feshbach_field_ramp2 = 50.e-3
+        # self.p.t_feshbach_field_ramp2 = 50.e-3
         # self.xvar('t_feshbach_field_ramp2',np.linspace(10.,50.,3)*1.e-3)
 
         # self.p.t_lightsheet_compression_ramp = 210.e-3

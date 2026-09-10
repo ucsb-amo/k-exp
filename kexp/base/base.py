@@ -28,7 +28,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  data_vault=None,
                  suppress_live_od=False,
                  save_on_underflow=False,
-                 apd_stage=False,
+                 apd_stage=None,
                  warmup_shots=0):
 
         if suppress_live_od:
