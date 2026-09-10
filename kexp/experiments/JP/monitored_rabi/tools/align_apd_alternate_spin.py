@@ -10,11 +10,9 @@ from kexp.util.artiq.async_print import aprint
 
 class hf_monitored_rabi(EnvExperiment, Base):
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
-                      camera_select=cameras.andor,
+        Base.__init__(self,camera_select=cameras.apd,
                       save_data=False,
-                      imaging_type=img_types.DISPERSIVE,
-                      apd_stage=True)
+                      imaging_type=img_types.DISPERSIVE)
         
         self.p.t_imaging_pulse = 15.e-6
         self.xvar('dummy',[0]*1000)

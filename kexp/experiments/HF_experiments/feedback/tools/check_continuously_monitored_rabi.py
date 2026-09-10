@@ -6,11 +6,9 @@ from artiq.language import now_mu, at_mu, delay_mu, delay
 class hf_monitored_rabi(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
-                      camera_select=cameras.andor,
+        Base.__init__(self,camera_select=cameras.apd,
                       save_data=False,
-                      imaging_type=img_types.DISPERSIVE,
-                      apd_stage=True)
+                      imaging_type=img_types.DISPERSIVE)
 
         # self.p.frequency_raman_transition = 119.4641e6
         # self.p.frequency_raman_transition = 119918210.0

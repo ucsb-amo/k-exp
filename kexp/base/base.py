@@ -6,11 +6,11 @@ from artiq.language.core import kernel_from_string, now_mu, delay
 
 from waxa.data import DataSaver
 from waxa.config.img_types import img_types as img
-# from waxx import Expt, img_types as img
 from waxx.base.expt import Expt
 from waxx.config.timeouts import INIT_KERNEL_CAMERA_CONNECTION_TIMEOUT
 
 from kexp.base import Devices, Cooling, Image, Cameras, Control, Clients
+from kexp.base.cameras import resolve_run_config, UNSET
 from kexp.config.camera_id import cameras
 from kexp.config.ip import PATHS, server_talk
 from kexp.config.data_vault import DataVault
@@ -19,7 +19,7 @@ from kexp.util.artiq.async_print import aprint
 
 class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
     def __init__(self,
-                 setup_camera=True,
+                 setup_camera=UNSET,
                  save_data=True,
                  imaging_type=img.ABSORPTION,
                  absorption_image=None,
@@ -28,12 +28,16 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                  data_vault=None,
                  suppress_live_od=False,
                  save_on_underflow=False,
-                 apd_stage=None,
+                 apd_stage=UNSET,
                  warmup_shots=0):
 
-        if suppress_live_od:
-            setup_camera = False
-            save_data = False
+        # camera_select says whether it grabs frames and where the APD pickoff
+        # stage belongs; anything passed explicitly wins.  Rebound onto the
+        # argument names so nothing below can reach an unresolved value.
+        camera_select, setup_camera, save_data, apd_stage = resolve_run_config(
+            camera_select=camera_select, setup_camera=setup_camera,
+            apd_stage=apd_stage, suppress_live_od=suppress_live_od,
+            save_data=save_data)
 
         super().__init__(setup_camera=setup_camera,
                          absorption_image=absorption_image,
@@ -64,8 +68,9 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 
-        # The APD pickoff stage blocks the camera when it is in.  Opt-in
-        # only: apd_stage=None leaves the stage wherever it is.
+        # Resolved from camera_select above: cameras.apd asks for the pickoff
+        # in, a real camera asks for it out.  Only an explicit apd_stage=None
+        # declines to position it at all.
         self.pdxc.set_apd_stage(apd_stage)
 
         # Warm-up dry run. The first shot of a run is typically ~25% low in

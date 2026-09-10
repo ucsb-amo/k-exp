@@ -58,8 +58,12 @@ class Image():
         Note that for Andor, fluorescence imaging is currently set up to use the
         xy imaging beam. This should be switched to the z-imaging beam when it
         is installed.
-        """        
-        if self.camera_params.key == cameras.andor.key:
+
+        Keyed on optical_path_key, not key, so the APD -- which sits behind a
+        pickoff on the Andor port -- gets the Andor's routing. The else branch
+        turns imaging_shutter_x off, which would leave the APD dark.
+        """
+        if self.camera_params.optical_path_key == cameras.andor.key:
             if self.run_info.imaging_type == img.FLUORESCENCE:
                 self.ttl.imaging_shutter_x.off()
                 self.ttl.imaging_shutter_xy.on()
@@ -157,7 +161,7 @@ class Image():
             self.pulse_img_beam(t)
             
         elif self.run_info.imaging_type == img.FLUORESCENCE:
-            if self.camera_params.key == cameras.andor.key:
+            if self.camera_params.optical_path_key == cameras.andor.key:
                 if andor_fluor_with_d2_3d_beams:
                     self.pulse_resonant_mot_beams(t)
                 else:

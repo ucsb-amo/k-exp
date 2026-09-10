@@ -12,7 +12,9 @@ class hf_bec(EnvExperiment, Base):
                       setup_camera=True,
                       save_data=True,
                       camera_select=cameras.andor,
-                      imaging_type=img_types.ABSORPTION)
+                      imaging_type=img_types.ABSORPTION,
+                      # images and reads the APD: the pickoff must stay in
+                      apd_stage=True)
         
         self.p.t_tweezer_hold = 10.e-3
 
