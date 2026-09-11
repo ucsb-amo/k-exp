@@ -26,9 +26,15 @@ class APDStageClient():
     Reachability is decided once, at construction: an experiment that starts
     while the server is down stays in warn-and-skip mode for its lifetime
     rather than having the stage come alive partway through a run.
+
+    A call that fails *after* a successful connection (server gone, stage
+    fault) raises by default.  With ``raise_on_error=False`` it prints a
+    warning and returns None instead -- Clients passes that for
+    ``suppress_live_od=True`` runs.
     """
 
-    def __init__(self, discovery_timeout=3.0):
+    def __init__(self, discovery_timeout=3.0, raise_on_error=True):
+        self._raise_on_error = raise_on_error
         try:
             self._client = PDXC_Client(discovery_timeout=discovery_timeout)
         except Exception as e:
@@ -46,6 +52,23 @@ class APDStageClient():
         print(f"[PDXC] WARNING: not connected -- skipping {what}.")
         return None
 
+    def _call(self, what, method, *args, **kwargs):
+        """Run ``self._client.<method>``, or warn and skip when not connected.
+
+        Communication errors raise unless ``raise_on_error=False``, in which
+        case they print a warning and return None.
+        """
+        if not self.connected:
+            return self._warn(what)
+        try:
+            return getattr(self._client, method)(*args, **kwargs)
+        except Exception as e:
+            if self._raise_on_error:
+                raise
+            print(f"[PDXC] WARNING: {what} failed: {e}\n"
+                  "       Continuing without APD stage control.")
+            return None
+
     # ------------------------------------------------------------------
     # Position
     # ------------------------------------------------------------------
@@ -57,9 +80,11 @@ class APDStageClient():
         * ``apd_stage=False`` -> stage out: camera clear.
         * ``apd_stage=None``  -> do nothing; the stage stays where it is.
 
-        Positioning is opt-in: nothing is inferred from ``setup_camera``,
-        which gets turned off for plenty of reasons that say nothing about
-        whether the APD is wanted.
+        This method infers nothing.  Base.__init__ resolves the position from
+        ``camera_select`` and ``setup_camera``
+        (kexp.base.cameras.resolve_run_config): acquiring with cameras.apd
+        asks for in, grabbing frames with a real camera asks for out, and
+        acquiring nothing passes None.  ``override_apd_stage`` forces it.
 
         The server remembers the last commanded position, so a run that
         already has the stage where it needs it returns immediately without
@@ -71,10 +96,9 @@ class APDStageClient():
 
     def move_to(self, state, force=False):
         """Drive the stage to ``POSITION_IN`` or ``POSITION_OUT``."""
-        if not self.connected:
-            return self._warn(f"move to {state}")
-        result = self._client.move_to(state, force=force)
-        print(f"[PDXC] APD stage {result}.")
+        result = self._call(f"move to {state}", "move_to", state, force=force)
+        if result is not None:
+            print(f"[PDXC] APD stage {result}.")
         return result
 
     def apd_in(self, force=False):
@@ -89,16 +113,16 @@ class APDStageClient():
         """Last commanded position: 'in', 'out' or 'unknown'."""
         if not self.connected:
             return POSITION_UNKNOWN
-        return self._client.get_position_state()
+        result = self._call("position query", "get_position_state")
+        return POSITION_UNKNOWN if result is None else result
 
     def declare_position(self, state):
         """Tell the server where the stage is without moving it.
 
         For recovering the tracked position after the stage was moved by hand.
         """
-        if not self.connected:
-            return self._warn(f"declaring position {state}")
-        return self._client.set_position_state(state)
+        return self._call(f"declaring position {state}",
+                          "set_position_state", state)
 
     # ------------------------------------------------------------------
     # Jogs (relative moves; these leave the tracked position unknown)
@@ -106,15 +130,11 @@ class APDStageClient():
 
     def jog_in(self, steps=None):
         """Jog toward the APD by *steps* pulses (default: server step size)."""
-        if not self.connected:
-            return self._warn("jog in")
-        return self._client.move_in(steps=steps)
+        return self._call("jog in", "move_in", steps=steps)
 
     def jog_out(self, steps=None):
         """Jog toward the camera by *steps* pulses (default: server step size)."""
-        if not self.connected:
-            return self._warn("jog out")
-        return self._client.move_out(steps=steps)
+        return self._call("jog out", "move_out", steps=steps)
 
     # ------------------------------------------------------------------
     # Settings (persisted on the server)
@@ -122,36 +142,26 @@ class APDStageClient():
 
     def get_step_size(self):
         """Pulses used by jog_in / jog_out when no count is given."""
-        if not self.connected:
-            return self._warn("step size query")
-        return self._client.get_step_size()
+        return self._call("step size query", "get_step_size")
 
     def set_step_size(self, steps):
         """Set the default jog size, in pulses."""
-        if not self.connected:
-            return self._warn("step size set")
-        return self._client.set_step_size(steps)
+        return self._call("step size set", "set_step_size", steps)
 
     def get_throw_pulses(self):
         """Pulses per move issued by a full throw."""
-        if not self.connected:
-            return self._warn("throw pulses query")
-        return self._client.get_throw_pulses()
+        return self._call("throw pulses query", "get_throw_pulses")
 
     def set_throw_pulses(self, pulses):
         """Set the pulses per move used by a full throw."""
-        if not self.connected:
-            return self._warn("throw pulses set")
-        return self._client.set_throw_pulses(pulses)
+        return self._call("throw pulses set", "set_throw_pulses", pulses)
 
     def get_throw_moves(self, state):
         """Number of moves a full throw to *state* issues."""
-        if not self.connected:
-            return self._warn(f"throw moves query for {state}")
-        return self._client.get_throw_moves(state)
+        return self._call(f"throw moves query for {state}",
+                          "get_throw_moves", state)
 
     def set_throw_moves(self, state, moves):
         """Set the number of moves a full throw to *state* issues."""
-        if not self.connected:
-            return self._warn(f"throw moves set for {state}")
-        return self._client.set_throw_moves(state, moves)
+        return self._call(f"throw moves set for {state}",
+                          "set_throw_moves", state, moves)

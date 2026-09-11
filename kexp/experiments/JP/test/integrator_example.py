@@ -15,7 +15,7 @@ class integrator_test(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION,
                       # images and reads the APD: the pickoff must stay in
-                      apd_stage=True)
+                      override_apd_stage=True)
 
         self.p.t_img_pulse = 3.e-6
 

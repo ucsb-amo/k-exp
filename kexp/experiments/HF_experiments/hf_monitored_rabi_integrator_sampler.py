@@ -16,7 +16,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
                       # images and reads the APD: the pickoff must stay in
-                      apd_stage=True)
+                      override_apd_stage=True)
 
         # self.p.v_pd_hf_tweezer_1064_rampdown3_end = 3.8
         # self.t_hf_tweezer_1064_rampdown3 = 10.e-3

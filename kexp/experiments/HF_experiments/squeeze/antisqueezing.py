@@ -13,8 +13,7 @@ class hf_raman(EnvExperiment, Base):
 
     def prepare(self):
         self.p = ExptParams()
-        Base.__init__(self,setup_camera=False,
-                      camera_select=cameras.andor,
+        Base.__init__(self,camera_select=cameras.apd,
                       save_data=True,
                       expt_params=self.p,
                       imaging_type=img_types.ABSORPTION)

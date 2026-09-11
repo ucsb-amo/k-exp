@@ -15,7 +15,7 @@ class hf_raman(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
                       # images and reads the APD: the pickoff must stay in
-                      apd_stage=True)
+                      override_apd_stage=True)
 
         # self.xvar('beans',[0]*50)
 

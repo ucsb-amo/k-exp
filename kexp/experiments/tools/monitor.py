@@ -10,10 +10,9 @@ from waxx.util.artiq.async_print import aprint
 class testcrate_base(EnvExperiment, Base):
 
     def prepare(self):
-        # apd_stage=None: the monitor never images, so it must leave the APD
-        # pickoff stage wherever the last experiment left it.
-        Base.__init__(self, setup_camera=False, suppress_live_od=True,
-                      apd_stage=None)
+        # setup_camera=False: the monitor acquires nothing, so the APD pickoff
+        # stage stays wherever the last experiment left it.
+        Base.__init__(self, setup_camera=False, suppress_live_od=True)
         self.finish_prepare(shuffle=False)
 
     @kernel

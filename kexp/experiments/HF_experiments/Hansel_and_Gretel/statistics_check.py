@@ -19,8 +19,7 @@ class feedback(EnvExperiment, Base, Feedback):
     def prepare(self):
     
         self.p = ExptParamsFeedback()
-        Base.__init__(self,setup_camera=False,
-                      camera_select=cameras.andor,
+        Base.__init__(self,camera_select=cameras.apd,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
                       expt_params=self.p)

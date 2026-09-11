@@ -11,8 +11,7 @@ from kexp.calibrations.imaging import high_field_imaging_detuning
 class imaging_apd_pid_optimize_threshold(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
-                      camera_select=cameras.andor,
+        Base.__init__(self,camera_select=cameras.apd,
                       save_data=False,
                       imaging_type=img_types.ABSORPTION,
                       suppress_live_od=True)

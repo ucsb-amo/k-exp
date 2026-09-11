@@ -40,64 +40,49 @@ def resolve_camera(camera) -> CameraParams:
     return camera
 
 
-class _Unset():
-    """Sentinel for 'the experiment did not pass this argument'.
-
-    None cannot serve: apd_stage=None already means 'leave the stage where it
-    is' (kexp/experiments/tools/monitor.py relies on it), and setup_camera=True
-    is a legal value equal to the old default.  __bool__ raises so an
-    unresolved value fails loudly instead of reading as truthy.
-    """
-    def __repr__(self):
-        return "<unset>"
-
-    def __bool__(self):
-        raise TypeError(
-            "A Base.__init__ argument was used before it was resolved against "
-            "camera_select. This is a bug in resolve_run_config.")
+RunConfig = namedtuple("RunConfig", "camera capture_frames save_data apd_stage")
 
 
-UNSET = _Unset()
-
-RunConfig = namedtuple("RunConfig", "camera setup_camera save_data apd_stage")
-
-
-def resolve_run_config(camera_select, setup_camera=UNSET, apd_stage=UNSET,
+def resolve_run_config(camera_select, setup_camera=True, override_apd_stage=None,
                        suppress_live_od=False, save_data=True):
-    """Resolve the detector-dependent Base.__init__ defaults.
+    """Resolve what a run acquires with, and where the APD pickoff stage goes.
 
-    `camera_select` says whether it takes images and where the APD pickoff
-    stage belongs, so selecting the APD does not mean setting three coupled
-    flags by hand.  Anything the experiment passed explicitly always wins.
+    `camera_select` picks the detector; `setup_camera` says whether to acquire
+    with it at all:
 
-    imaging_type is not resolved here: absorption vs dispersive belongs to the
-    measurement, not the detector, so Base defaults it like any other argument.
+      a camera,    setup_camera=True  -> liveOD grabs frames; stage out
+      cameras.apd, setup_camera=True  -> no liveOD frames (the experiment's own
+                                         kernel reads the APD); stage in
+      either,      setup_camera=False -> acquire nothing; stage left alone
 
-    A pure function of its arguments: no hardware, no ARTIQ, no self.  Base
-    cannot be constructed off the machine (prepare_devices needs get_device),
-    so this is where the truth table is testable.
+    suppress_live_od turns off liveOD -- frames and saving -- but not the APD,
+    which never goes through liveOD.  override_apd_stage=True/False forces the
+    stage for the one case camera_select cannot express: a run that takes
+    camera frames *and* reads the APD.
+
+    Returns capture_frames rather than setup_camera: internally
+    self.setup_camera means only "liveOD grabs frames", False for the APD.
+
+    A pure function of its arguments -- no hardware, no ARTIQ, no self -- so
+    the truth table is testable off the machine.
     """
     camera = resolve_camera(camera_select)
-
-    if setup_camera is UNSET:
-        setup_camera = camera._default_setup_camera
-    elif setup_camera and not camera._default_setup_camera:
-        raise ValueError(
-            f"camera_select={camera.key!r} takes no images -- the pickoff "
-            "beamsplitter blocks the camera when it is in. Drop setup_camera, "
-            "or select a real camera.")
+    is_apd = camera.camera_type == "apd"
 
     if suppress_live_od:
-        setup_camera = False
         save_data = False
+    capture_frames = setup_camera and not is_apd and not suppress_live_od
 
-    # After suppress_live_od, so a suppressed run never moves the stage.
-    # apd_stage=None opts out of stage control; apd_stage=True is how an
-    # experiment that images *and* reads the APD says so.
-    if apd_stage is UNSET:
-        apd_stage = camera._default_apd_stage
+    if override_apd_stage is not None:
+        apd_stage = override_apd_stage
+    elif setup_camera and is_apd:
+        apd_stage = True
+    elif capture_frames:
+        apd_stage = False
+    else:
+        apd_stage = None
 
-    return RunConfig(camera, setup_camera, save_data, apd_stage)
+    return RunConfig(camera, capture_frames, save_data, apd_stage)
 
 
 class Cameras():

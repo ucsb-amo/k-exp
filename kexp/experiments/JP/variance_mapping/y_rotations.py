@@ -11,7 +11,7 @@ class sigma_z(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
                       # images and reads the APD: the pickoff must stay in
-                      apd_stage=True)
+                      override_apd_stage=True)
         
         self.p.frequency_raman_transition = 119.4636e6 # 182 A -1 0
         self.p.t_raman_pi_pulse = 9.5896e-06 # -1 --> 0

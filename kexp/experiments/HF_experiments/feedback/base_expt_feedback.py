@@ -19,7 +19,7 @@ class FeedbackExpt(Base, Feedback, RandomRamanPulseTimes):
         Base.__init__(self,
                     save_data=save_data,
                     imaging_type=img_types.DISPERSIVE,
-                    # implies setup_camera=False and pickoff stage in
+                    # acquire with the APD: pickoff stage in, no liveOD frames
                     camera_select=cameras.apd,
                     expt_params=self.p,
                     data_vault=self.data,

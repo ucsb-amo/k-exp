@@ -12,8 +12,7 @@ from kexp.util.artiq.async_print import aprint
 class rabi_surfing(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
-                      camera_select=cameras.andor,
+        Base.__init__(self,camera_select=cameras.apd,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
 

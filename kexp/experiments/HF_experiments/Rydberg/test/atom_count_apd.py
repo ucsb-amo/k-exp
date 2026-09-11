@@ -8,8 +8,8 @@ from kexp import Base, img_types, cameras
 class hf_bec(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,save_data=True,
-                      camera_select=cameras.andor,
+        Base.__init__(self,save_data=True,
+                      camera_select=cameras.apd,
                       imaging_type=img_types.ABSORPTION)
         
         # self.xvar('t_tof',np.linspace(20.,100.,7)*1.e-6)

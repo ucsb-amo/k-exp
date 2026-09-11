@@ -11,7 +11,7 @@ class rabi_oscillation(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE,
                       # images and reads the APD: the pickoff must stay in
-                      apd_stage=True)
+                      override_apd_stage=True)
         
         self.p.squeeze = 1
 
