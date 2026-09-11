@@ -21,7 +21,9 @@ class Clients():
         except Exception as e:
             print(f"Failed to connect to Monitor: {e}")
 
-        self.pdxc = APDStageClient()
+        # A suppress_live_od run is a quick tool/test run: a stage server
+        # error there warns instead of stopping it.
+        self.pdxc = APDStageClient(raise_on_error=not suppress_live_od)
 
         try:
             self.magnetometer = HMRClient()

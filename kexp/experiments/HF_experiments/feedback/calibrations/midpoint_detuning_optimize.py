@@ -10,8 +10,7 @@ from artiq.language import now_mu
 class phase_spot(EnvExperiment, Base):
 
     def prepare(self):
-        Base.__init__(self,setup_camera=False,
-                      camera_select=cameras.andor,
+        Base.__init__(self,camera_select=cameras.apd,
                       save_data=True,
                       imaging_type=img_types.DISPERSIVE)
         

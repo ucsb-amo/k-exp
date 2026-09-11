@@ -15,7 +15,7 @@ class spin_resolved_counting_tof(EnvExperiment, Base):
                       save_data=True,
                       imaging_type=img_types.ABSORPTION,
                       # images and reads the APD: the pickoff must stay in
-                      apd_stage=True)
+                      override_apd_stage=True)
 
         self.p.amp_imaging = 0.3
         # self.xvar('amp_imaging',np.linspace(0.05,0.5,5))
