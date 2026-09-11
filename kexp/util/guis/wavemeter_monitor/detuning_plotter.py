@@ -208,7 +208,7 @@ class DetuningPlotter(QtWidgets.QWidget):
                     extra_str = " (crossover to F'=2):\n"
                 else:
                     freq_thz = self.atom.getTransitionFrequency(n0, l0, j0, n1, l1, j1) / 1e12
-                    extra_str = "(ARC):\n"
+                    extra_str = " (NIST levels, via kamo):\n"
                 self.transition_freq_label.setText(f"Transition frequency{extra_str} {freq_thz:.6f} THz")
                 self.f0 = freq_thz  # Store f0 in THz
             except Exception as e:
