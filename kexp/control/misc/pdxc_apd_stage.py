@@ -76,15 +76,18 @@ class APDStageClient():
     def set_apd_stage(self, apd_stage=None):
         """Position the stage for this experiment.
 
-        * ``apd_stage=True``  -> stage in:  light to the APD, camera blocked.
-        * ``apd_stage=False`` -> stage out: camera clear.
+        * ``apd_stage=True``  -> stage in:  light to the APD, Andor blocked.
+        * ``apd_stage=False`` -> stage out: Andor clear.
         * ``apd_stage=None``  -> do nothing; the stage stays where it is.
 
         This method infers nothing.  Base.__init__ resolves the position from
         ``camera_select`` and ``setup_camera``
         (kexp.base.cameras.resolve_run_config): acquiring with cameras.apd
-        asks for in, grabbing frames with a real camera asks for out, and
-        acquiring nothing passes None.  ``override_apd_stage`` forces it.
+        asks for in, grabbing Andor frames asks for out, and acquiring nothing
+        passes None.  A run on a camera that is not on the Andor path -- any
+        Basler -- also passes None: the stage is not in that path, so its
+        position is none of that run's business.  ``override_apd_stage``
+        forces it.
 
         The server remembers the last commanded position, so a run that
         already has the stage where it needs it returns immediately without
