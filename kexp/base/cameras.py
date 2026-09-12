@@ -50,15 +50,21 @@ def resolve_run_config(camera_select, setup_camera=True, override_apd_stage=None
     `camera_select` picks the detector; `setup_camera` says whether to acquire
     with it at all:
 
-      a camera,    setup_camera=True  -> liveOD grabs frames; stage out
-      cameras.apd, setup_camera=True  -> no liveOD frames (the experiment's own
-                                         kernel reads the APD); stage in
-      either,      setup_camera=False -> acquire nothing; stage left alone
+      cameras.andor, setup_camera=True  -> liveOD grabs frames; stage out
+      cameras.apd,   setup_camera=True  -> no liveOD frames (the experiment's
+                                           own kernel reads the APD); stage in
+      either,        setup_camera=False -> acquire nothing; stage left alone
+
+    The stage only exists on the Andor path, so only cameras on that path
+    (optical_path_key == "andor": the Andor and the APD behind its pickoff)
+    ever command it.  A run on a Basler leaves the stage where it is -- moving
+    it would cost the throw and clobber the position the next Andor or APD run
+    inherits, all to swing a beamsplitter that camera never looks through.
 
     suppress_live_od turns off liveOD -- frames and saving -- but not the APD,
     which never goes through liveOD.  override_apd_stage=True/False forces the
     stage for the one case camera_select cannot express: a run that takes
-    camera frames *and* reads the APD.
+    Andor frames *and* reads the APD.
 
     Returns capture_frames rather than setup_camera: internally
     self.setup_camera means only "liveOD grabs frames", False for the APD.
@@ -68,6 +74,9 @@ def resolve_run_config(camera_select, setup_camera=True, override_apd_stage=None
     """
     camera = resolve_camera(camera_select)
     is_apd = camera.camera_type == "apd"
+    # optical_path_key, not camera_type: the APD sits behind the Andor's
+    # pickoff, and the stage is the only thing on that path that moves.
+    on_stage_path = camera.optical_path_key == cameras.andor.key
 
     if suppress_live_od:
         save_data = False
@@ -75,6 +84,8 @@ def resolve_run_config(camera_select, setup_camera=True, override_apd_stage=None
 
     if override_apd_stage is not None:
         apd_stage = override_apd_stage
+    elif not on_stage_path:
+        apd_stage = None
     elif setup_camera and is_apd:
         apd_stage = True
     elif capture_frames:
