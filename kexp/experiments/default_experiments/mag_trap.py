@@ -6,13 +6,12 @@ from kexp.calibrations import high_field_imaging_detuning
 
 from artiq.coredevice.shuttler import DCBias, DDS, Relay, Trigger, Config, shuttler_volt_to_mu
 
-T32 = 1<<32
+# T32 = 1<<32
 
 class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-        setup_camera=True,
         camera_select=cameras.xy_basler,
         save_data=True)
 
@@ -22,14 +21,14 @@ class mag_trap(EnvExperiment, Base):
         self.p.t_magtrap_hold = 0.15 
         # self.p.t_magtrap_hold = 1.
 
-        self.p.N_repeats = 1
-        self.p.t_mot_load = 1.
+        # self.p.N_repeats = 1000
+        self.p.t_mot_load = 0.5
 
         self.p.imaging_state = 2.
 
         self.camera_params.amp_imaging = 0.2
 
-        Adjust.__init__(self)
+        # Adjust.__init__(self)
         self.finish_prepare(shuffle=True)
 
     @kernel

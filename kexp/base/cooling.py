@@ -937,12 +937,19 @@ class Cooling():
 
         # ramp up lightsheet over magtrap
         if do_lightsheet_ramp:
+            # self.lightsheet.exponential_ramp(t_lightsheet_ramp,
+            #                     v_pd_lightsheet_ramp_start,
+            #                     v_pd_lightsheet_ramp_end,
+            #                     tau=-t_lightsheet_ramp/1.5,
+            #                     paint=paint_lightsheet,
+            #                     v_awg_am_max=v_awg_paint_amp_lightsheet,
+            #                     keep_trap_frequency_constant=False)
             self.lightsheet.ramp(t_lightsheet_ramp,
-                                v_pd_lightsheet_ramp_start,
-                                v_pd_lightsheet_ramp_end,
-                                paint=paint_lightsheet,
-                                v_awg_am_max=v_awg_paint_amp_lightsheet,
-                                keep_trap_frequency_constant=False)
+                            v_pd_lightsheet_ramp_start,
+                            v_pd_lightsheet_ramp_end,
+                            paint=paint_lightsheet,
+                            v_awg_am_max=v_awg_paint_amp_lightsheet,
+                            keep_trap_frequency_constant=False)
         # else:
             # delay(t_lightsheet_ramp)
 

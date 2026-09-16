@@ -7,7 +7,6 @@ class gm_tof(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                      setup_camera=True,
                       camera_select=cameras.xy_basler,
                       save_data=True)
 
