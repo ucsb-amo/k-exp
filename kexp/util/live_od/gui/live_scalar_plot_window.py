@@ -232,7 +232,7 @@ class LiveScalarPlotWindow(QWidget):
         finite = [v for v in values if math.isfinite(v)]
         if len(finite) >= 3:
             try:
-                from waxa.plotting.plotting_1d import detect_unit
+                from waxa.plotting.units import detect_unit
                 unit, mult, _ = detect_unit(
                     xvarnames=[xvarname],
                     xvar_idx=0,
