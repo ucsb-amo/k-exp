@@ -10,7 +10,7 @@ class tweezer_load(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,setup_camera=True,
-                    camera_select=cameras.xy_basler,
+                    camera_select=cameras.andor,
                     save_data=True)
 
 
@@ -22,15 +22,15 @@ class tweezer_load(EnvExperiment, Base):
         # self.xvar('i_lf_tweezer_load_current',np.linspace(12.,18,10))
         self.camera_params.amp_imaging = 0.2
 
-        self.xvar('t_tof',np.linspace(100.,1600.,7)*1.e-6)
-        self.p.t_tof = 1000.e-6
+        # self.xvar('t_tof',np.linspace(100.,1600.,7)*1.e-6)
+        self.p.t_tof = 700.e-6
 
         self.p.t_tweezer_hold = 1.e-3
 
-        self.p.imaging_freq=385.e6
-        # self.xvar('imaging_freq',np.linspace(340.,450.,10)*1.e6)
+        self.p.imaging_freq=324.e6
+        # self.xvar('imaging_freq',np.linspace(310.,340.,8)*1.e6)
 
-
+        self.p.v_pd_lf_lightsheet_rampdown2_end = 0.9
         self.p.t_mot_load = 1.
         self.p.N_repeats = 1
         # self.p.imaging_state = 2.
@@ -53,9 +53,7 @@ class tweezer_load(EnvExperiment, Base):
 
         self.magtrap_and_load_lightsheet(do_magtrap_rampup=False)
 
-        # self.dac.yshim_current_control.linear_ramp(self.p.t_yshim_rampdown,
-        #                                         self.p.v_yshim_current_magtrap,
-        #                                         0.,n=500)
+        delay(self.p.t_lightsheet_hold)
 
         # feshbach field on, ramp up to field 1  
         self.outer_coil.on()
@@ -64,19 +62,26 @@ class tweezer_load(EnvExperiment, Base):
         self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_rampup,
                             i_start=0.,
                             i_end=self.p.i_lf_lightsheet_evap1_current)
+        self.set_shims(0.,0.,0.) 
 
-        # lightsheet evap 1
+        # # lightsheet evap 1
         self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
                             v_start=self.p.v_pd_lightsheet_rampup_end,
                             v_end=self.p.v_pd_lf_lightsheet_rampdown_end)
         
         # feshbach field ramp to field 2
-        self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
-                            i_start=self.p.i_lf_lightsheet_evap1_current,
-                            i_end=self.p.i_lf_tweezer_load_current)
+        # self.outer_coil.ramp_supply(t=self.p.t_feshbach_field_ramp,
+        #                     i_start=self.p.i_lf_lightsheet_evap1_current,
+        #                     i_end=self.p.i_lf_tweezer_load_current)
         
+
+        # lightsheet evap 2
+        # self.lightsheet.ramp(t=self.p.t_lf_lightsheet_rampdown,
+        #                     v_start=self.p.v_pd_lightsheet_rampdown_end,
+        #                     v_end=self.p.v_pd_lf_lightsheet_rampdown2_end)
         
         self.lightsheet.off()
+        self.ttl.pd_scope_trig.pulse(1.e-6)
 
         delay(self.p.t_tof)
         # self.flash_repump()
