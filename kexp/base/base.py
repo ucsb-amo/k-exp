@@ -55,6 +55,10 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.data = DataVault(self)
         else:
             self.data = data_vault
+        # Per-shot latch for Image.record_imaging_conditions (the mixin
+        # __init__s are not chained, so it is set here). Reset each shot in
+        # init_scan_kernel.
+        self._imaging_conditions_recorded = False
         
         self.prepare_devices(expt_params=self.params)
 
@@ -172,6 +176,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         self.background_field()
         self.read_magnetometer()
+        # arm the once-per-shot capture of the outer-coil current at imaging
+        self._imaging_conditions_recorded = False
         
         self.core.reset()
         

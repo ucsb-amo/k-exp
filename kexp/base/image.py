@@ -18,6 +18,8 @@ from kexp.config.camera_id import CameraParams
 
 from kexp.control.painted_lightsheet import lightsheet
 from kexp.control.awg_tweezer import tweezer
+from kexp.control.big_coil import igbt_magnet
+from kexp.config.data_vault import DataVault
 
 import logging
 from kexp.calibrations import (high_field_imaging_detuning,
@@ -47,8 +49,35 @@ class Image():
         self.tweezer = tweezer()
         self.scan_xvars = []
         self._counter = counter()
+        # placeholders for syntax highlighting; the real objects come from
+        # Base / Devices.prepare_devices
+        self.outer_coil = igbt_magnet()
+        self.data = DataVault(None)
+        # Per-shot latch for record_imaging_conditions. Reset in
+        # Base.init_scan_kernel; also initialized in Base.__init__ because the
+        # mixin __init__s are not chained.
+        self._imaging_conditions_recorded = False
 
     ### Imaging sequences ###
+
+    @kernel
+    def record_imaging_conditions(self):
+        """Records, once per shot, the outer-coil current flowing at the
+        moment of the first camera trigger into data.i_outer_imaging (A).
+
+        Later frames in the same shot (PWOA, dark, dispersive repeats) do not
+        re-record: no experiment changes the field between the frames of one
+        shot (decision 2026-09-13, k-jam/jpagett/imaging_field_record/PLAN.md).
+        The value is outer_coil.i_pid while the PID holds the coil, otherwise
+        outer_coil.i_supply (igbt_magnet.current_now). A shot that never
+        triggers the camera leaves the container at its default of zero.
+
+        No RTIO output and no timeline movement, so it is safe inside the
+        pre-trigger arithmetic of trigger_camera.
+        """
+        if not self._imaging_conditions_recorded:
+            self.data.i_outer_imaging.put_data(self.outer_coil.current_now())
+            self._imaging_conditions_recorded = True
 
     @kernel
     def set_imaging_shutters(self):
@@ -387,7 +416,11 @@ class Image():
         Written to pretrigger camera such that the camera exposure begins at the
         timeline cursor position where this is called. Returns the timeline
         cursor to this position after pretrigger.
+
+        Every camera frame passes through here, so the first call of a shot
+        also records the imaging conditions (record_imaging_conditions).
         '''
+        self.record_imaging_conditions()
         delay(-self.camera_params.exposure_delay * s)
         self.ttl.camera.pulse(self.camera_params.t_camera_trigger * s)
         t_adv = self.camera_params.exposure_delay - self.camera_params.t_camera_trigger

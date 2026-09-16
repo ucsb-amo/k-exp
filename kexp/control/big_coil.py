@@ -49,6 +49,10 @@ class igbt_magnet():
         self.params = expt_params
         self.i_supply = 0.
         self.i_pid = 0.
+        # True while the PID loop holds the coil current (pid_ttl on). Set in
+        # start_pid, cleared wherever pid_ttl is turned off. current_now()
+        # reads this to report the current that is actually flowing.
+        self.pid_on = False
 
         self.slope_current_per_vdac_supply = slope_current_per_vdac_supply
         self.offset_current_per_vdac_supply = offset_current_per_vdac_supply
@@ -73,6 +77,8 @@ class igbt_magnet():
         self.igbt_ttl.off()
         self.set_supply(i_supply=0.,load_dac=False)
         self.set_voltage(v_supply=0.,load_dac=False)
+        # The supply is at zero, so no current flows whatever the PID does.
+        self.pid_on = False
         if load_dac:
             self.load_dac()
 
@@ -126,6 +132,18 @@ class igbt_magnet():
     def supply_voltage_to_dac_voltage(self,v_supply) -> TFloat:
         return (v_supply/self.max_voltage) * V_FULLSCALE_DAC
     
+    @portable
+    def current_now(self) -> TFloat:
+        """The coil current (A) that is flowing right now, as far as the
+        control software knows: the PID set point while the PID loop is
+        engaged, otherwise the raw supply set point. Used to record the field
+        at imaging time (data.i_outer_imaging).
+        """
+        if self.pid_on:
+            return self.i_pid
+        else:
+            return self.i_supply
+
     @kernel(flags={"fast-math"})
     def ramp_supply(self,t,i_start=dv,i_end=0.,n_steps=di,t_analog_delay=T_ANALOG_DELAY):
         """Ramps the supply current from i_start to i_end in n_steps over time t
@@ -217,6 +235,7 @@ class igbt_magnet():
 
         self.set_pid(i_pid)
         self.pid_ttl.on()
+        self.pid_on = True
 
         i_start = i_pid
         if overhead:
@@ -247,6 +266,7 @@ class igbt_magnet():
         self.set_supply(i_supply)
         delay(T_ANALOG_DELAY)
         self.pid_ttl.off()
+        self.pid_on = False
         # self.ttl_blanking.on()
 
     @kernel(flags={"fast-math"})
@@ -254,6 +274,7 @@ class igbt_magnet():
         """Ramps the coils to off from the current set point.
         """       
         self.pid_ttl.off()
+        self.pid_on = False
         self.ramp_supply(t=t_rampdown,
                   i_start=self.i_supply,
                   i_end=0.,
@@ -279,6 +300,7 @@ class igbt_magnet():
         self.rampdown()
         self.igbt_ttl.off()
         self.pid_ttl.off()
+        self.pid_on = False
         delay(5.e-3)
         self.discharge()
         
