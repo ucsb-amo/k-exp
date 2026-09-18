@@ -136,6 +136,7 @@ class RydbergDDSSwitchBeam(RydbergBeamBase):
     @kernel
     def pulse(self, t):
         self.dds_sw.on()
+        self._used = True
         delay(t)
         self.dds_sw.off()
 

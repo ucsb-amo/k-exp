@@ -106,14 +106,14 @@ class Control():
         that the coils are in a safe state for the next experiment.
         """
     
+        # igbt_magnet.off() already ends with discharge() -- do not add a
+        # second discharge() here, it costs ~130 ms per coil for nothing.
         self.outer_coil.stop_pid()
         delay(50.e-3)
         self.outer_coil.off()
-        self.outer_coil.discharge()
 
         self.inner_coil.stop_pid()
         self.inner_coil.off()
-        self.inner_coil.discharge()
 
     @kernel
     def arm_scopes(self):
