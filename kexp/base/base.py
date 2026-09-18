@@ -120,8 +120,16 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     setup_awg = True, 
                     setup_slm = True,
                     init_magnets = True,
-                    init_ry = True):
-        
+                    init_ry = True,
+                    force_dds_init = False):
+        """
+        force_dds_init: run the full AD9910 init on every channel. By default
+        (False) channels that still hold their PLL / SYNC setup from an earlier
+        run are skipped, which saves ~1.5 s per run -- see Devices.init_all_dds
+        for the checks. Pass True after touching the Urukul clocking or SYNC
+        wiring, or whenever DDS phase coherence is in doubt.
+        """
+
         self.core.reset()
 
         if self.setup_camera:
@@ -143,7 +151,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
             self.core.break_realtime()
         if init_dds:
             self.init_all_cpld() # initializes DDS CPLDs
-            self.init_all_dds() # initializes DDS channels
+            self.init_all_dds(force_dds_init) # initializes DDS channels (skips intact ones)
         if dds_set:
             delay(1*ms)
             self.dds.stash_defaults()
