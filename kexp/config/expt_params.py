@@ -109,7 +109,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = 62e-3
         self.t_lightsheet_load = 10.e-3
-        self.t_lightsheet_hold = 40.e-3
+        self.t_lightsheet_hold = 200.e-3
         
         self.t_tweezer_ramp = .56
         self.t_tweezer_hold = 10.e-3
@@ -276,9 +276,9 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lightsheet_pd_minimum = 0.025
         self.v_lightsheet_paint_amp_max = 3.6
 
-        self.v_pd_lightsheet = 6.9
+        self.v_pd_lightsheet = 8.1
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 6.9
+        self.v_pd_lightsheet_rampup_end = 8.1
         self.v_pd_lf_lightsheet_rampdown_end = 1.0 #4.16
         self.v_pd_hf_lightsheet_rampdown_end = 0.7 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.114
