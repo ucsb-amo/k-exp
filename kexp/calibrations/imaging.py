@@ -82,42 +82,19 @@ def integrator_calibration(amp_imaging, t_imaging):
 
 ######
 
-# run 22849
-# all shims set to zero during feshbach field
-# slope_imaging_frequency_per_i_transducer_hf = -4955357.14
-# yintercept_imaging_frequency_per_i_transducer_hf = 339875000.026
-
 # with PID, valid for 174-182 A from run 74714
-slope_imaging_frequency_per_i_transducer_hf = -4.093511e6
-yintercept_imaging_frequency_per_i_transducer_hf = 1.79155e8 - 7.2e6
+slope_imaging_frequency_per_i_transducer_hf_pid = -4.093511e6
+yintercept_imaging_frequency_per_i_transducer_hf_pid = 1.79155e8 - 7.2e6
+
+# no pid, taken over 184 - 220 (rough evap currents)
+slope_imaging_frequency_per_i_transducer_hf = -4.173950e+06
+yintercept_imaging_frequency_per_i_transducer_hf = 1.887097e+08
 
 @portable
 def high_field_imaging_detuning(i_transducer) -> TFloat:
     detuning = slope_imaging_frequency_per_i_transducer_hf * i_transducer \
       + yintercept_imaging_frequency_per_i_transducer_hf
     return detuning
-
-# @portable
-# def high_field_pid_imaging_detuning(i_transducer) -> TFloat:
-#     detuning = slope_imaging_frequency_per_i_transducer_hf * i_transducer \
-#       + yintercept_imaging_frequency_per_i_transducer_hf
-#     return detuning
-
-# run 23078
-# all shims set to zero during feshbach field
-# slope_imaging_frequency_per_i_transducer_lf = -8355555.540425534
-# yintercept_imaging_frequency_per_i_transducer_lf = 444888888.5787226
-
-# run 23512
-# all shims set to zero during feshbach field
-# slope_imaging_frequency_per_i_transducer_lf = -8509090.922196094
-# yintercept_imaging_frequency_per_i_transducer_lf = 449781818.3732016
-
-# @portable
-# def low_field_imaging_detuning(i_transducer) -> TFloat:
-#     detuning = slope_imaging_frequency_per_i_transducer_lf * i_transducer \
-#       + yintercept_imaging_frequency_per_i_transducer_lf
-#     return detuning
 
 # run 23527
 a2_imaging_frequency_per_i_transducer_lf = 53030.29454330852
@@ -147,8 +124,8 @@ def low_field_pid_imaging_detuning(i_pid) -> TFloat:
 
 @portable
 def high_field_pid_imaging_detuning(i_pid) -> TFloat:
-  detuning = slope_imaging_frequency_per_i_transducer_hf * i_pid \
-      + yintercept_imaging_frequency_per_i_transducer_hf
+  detuning = slope_imaging_frequency_per_i_transducer_hf_pid * i_pid \
+      + yintercept_imaging_frequency_per_i_transducer_hf_pid
   return detuning
 
 # 2026-01-19 imaging power measurement.
