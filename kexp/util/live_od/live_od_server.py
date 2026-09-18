@@ -373,6 +373,17 @@ class LiveODServer(QThread, NetServer):
         return {"ok": True, "run_id": run_id, "filepath": filepath}
 
     def _handle_wait_cam_ready(self, msg: dict) -> dict:
+        """Wait up to ``timeout`` s for the camera.
+
+        The client asks in short slices rather than one long wait: this loop is
+        single-threaded, so while it blocks here a RESET from the remote viewer
+        cannot even be received, and a reset camera never becomes ready. Every
+        reply carries ``reset_requested`` so the experiment can abort at once;
+        ``timed_out`` marks "not ready yet" apart from a real failure.
+        """
+        if self._reset_requested:
+            return {"ok": True, "ready": False, "reset_requested": True}
+
         timeout = float(msg.get("timeout", 60.0))
         deadline = time.time() + timeout
 
@@ -384,13 +395,17 @@ class LiveODServer(QThread, NetServer):
             remaining = deadline - time.time()
             grab_done = self._basler_prev_grab_done_event.wait(timeout=max(0.0, remaining))
             if not grab_done:
-                return {"ok": False, "ready": False, "error": "Basler previous grab-loop exit timeout"}
+                return {"ok": False, "ready": False, "timed_out": True,
+                        "reset_requested": self._reset_requested,
+                        "error": "Basler previous grab-loop exit timeout"}
 
         remaining = deadline - time.time()
         ready = self._cam_ready_event.wait(timeout=max(0.0, remaining))
         if not ready:
-            return {"ok": False, "ready": False, "error": "Camera ready timeout"}
-        return {"ok": True, "ready": True}
+            return {"ok": False, "ready": False, "timed_out": True,
+                    "reset_requested": self._reset_requested,
+                    "error": "Camera ready timeout"}
+        return {"ok": True, "ready": True, "reset_requested": self._reset_requested}
 
     def _handle_shot_complete(self, msg: dict) -> dict:
         now = time.time()

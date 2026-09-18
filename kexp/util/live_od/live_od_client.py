@@ -15,11 +15,16 @@ Typical per-run sequence:
 """
 
 import pickle
+import time
 
 import zmq
 
 from beacon.discovery.client import NetClient
 from waxx.util.comms_server.hardware_id import resolve_scoped_server_id
+
+
+# wait_cam_ready asks in slices this long, so a reset is noticed within one slice.
+CAM_READY_SLICE_S = 0.5
 
 
 class LiveODClient(NetClient):
@@ -36,6 +41,8 @@ class LiveODClient(NetClient):
         self._context = None
         self._socket = None
         self.last_adjust_values: dict = {}
+        # Reset flag from the latest server reply that carried one.
+        self.last_reset_requested: bool = False
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -104,6 +111,7 @@ class LiveODClient(NetClient):
         the raised receive timeout rather than the 5 s default.
         """
         payload["tag"] = "INIT_RUN"
+        self.last_reset_requested = False    # the server clears its flag on INIT_RUN
         reply = self._send_recv(payload, rcvtimeo_ms=60_000)
         if not reply.get("ok"):
             raise RuntimeError(
@@ -114,20 +122,40 @@ class LiveODClient(NetClient):
     def wait_cam_ready(self, timeout: float = 60.0) -> bool:
         """Block until liveOD confirms the camera is ready.
 
-        ``timeout`` (seconds) is forwarded to the server so it can give up
-        instead of blocking forever.  The socket receive timeout is
-        extended by 5 s on top to allow for network latency.
+        Returns True when the camera is ready and False when a reset was
+        requested while waiting (``last_reset_requested`` is then set) -- the
+        caller aborts the run. Raises ValueError on timeout or failure.
+
+        The wait is asked for in slices of ``CAM_READY_SLICE_S``. The server
+        handles one request at a time, so one long WAIT_CAM_READY would hold off
+        a RESET from the remote viewer for the whole wait, and a camera that was
+        reset never becomes ready: a reset used to cost the full ``timeout``.
+        An older server (no ``timed_out`` / ``reset_requested`` in its replies)
+        still works: its slice timeouts are recognised by their error text.
         """
-        reply = self._send_recv(
-            {"tag": "WAIT_CAM_READY", "timeout": timeout},
-            rcvtimeo_ms=int((timeout + 5.0) * 1000),
-        )
-        if not reply.get("ok") or not reply.get("ready"):
-            raise ValueError(
-                f"[LiveODClient] Camera ready timed out or failed: "
-                f"{reply.get('error')}"
+        deadline = time.monotonic() + timeout
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0.0:
+                raise ValueError(
+                    f"[LiveODClient] Camera ready timed out after {timeout:.0f} s."
+                )
+            slice_s = min(CAM_READY_SLICE_S, remaining)
+            reply = self._send_recv(
+                {"tag": "WAIT_CAM_READY", "timeout": slice_s},
+                rcvtimeo_ms=int((slice_s + 5.0) * 1000),
             )
-        return True
+            if reply.get("reset_requested"):
+                self.last_reset_requested = True
+                return False
+            if reply.get("ok") and reply.get("ready"):
+                return True
+            not_ready_yet = (reply.get("timed_out")
+                             or "timeout" in str(reply.get("error", "")).lower())
+            if not not_ready_yet:
+                raise ValueError(
+                    f"[LiveODClient] Camera ready failed: {reply.get('error')}"
+                )
 
     def shot_complete(
         self, shot_idx: int, N_shots_total: int, xvar_values: dict
@@ -151,7 +179,9 @@ class LiveODClient(NetClient):
         )
         self.last_adjust_values = reply.get('adjust_values', {})
         if "reset_requested" in reply:
-            return bool(reply["reset_requested"])
+            # cached for Scribe._check_for_abort_signal (top of the scan loop)
+            self.last_reset_requested = bool(reply["reset_requested"])
+            return self.last_reset_requested
         # Old server: reset_requested field not present — fall back to POLL.
         print("[LiveODClient] shot_complete: reply missing 'reset_requested' field — "
               "falling back to poll_reset() (liveOD GUI may need a restart).")
