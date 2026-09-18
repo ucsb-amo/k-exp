@@ -256,3 +256,14 @@ class lightsheet(PaintedBeam):
         self.ttl_sw.off()
         self.pid_dac.set(v=self.params.v_pd_lightsheet_pd_minimum)
         self.zero_pid()
+
+    @kernel
+    def off_and_hold_pid(self):
+        self.pid_int_zero_ttl.on()
+        self.ttl_sw.off()
+
+    @kernel
+    def on_and_end_hold(self):
+        self.ttl_sw.on()
+        delay(1.e-6)
+        self.pid_int_zero_ttl.off()
