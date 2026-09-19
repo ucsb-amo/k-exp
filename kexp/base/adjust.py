@@ -42,6 +42,9 @@ class Adjust(Scanner):
         self.adjust('t_hf_lightsheet_rampdown',min_val=0.01, max_val=1.)
         self.adjust('v_pd_hf_lightsheet_rampdown_end',min_val=0.5,max_val=6.)
         self.adjust('i_hf_lightsheet_evap1_current', min_val=184., max_val=250., step=0.5)
+        self.adjust('i_hf_tweezer_evap1_current',min_val=192.,max_val=197., step=0.5)
+
+        self.adjust('t_lightsheet_rampdown3',min_val=0.,max_val=200.e-3)
 
         self.adjust('v_pd_hf_tweezer_1064_rampdown2_end',min_val=2.8,max_val=3.3)
         self.adjust('v_hf_tweezer_paint_amp_max', min_val=-4.9, max_val=4.9)
