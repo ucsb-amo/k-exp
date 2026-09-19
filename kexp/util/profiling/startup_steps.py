@@ -15,8 +15,8 @@ HOST_STEPS = [
     ("kexp.base.clients", "Clients", "__init__", "Clients.__init__ (server discovery)"),
     ("kexp.control.misc.pdxc_apd_stage", "APDStageClient", "set_apd_stage", "set_apd_stage"),
     ("kexp.base.base", "Base", "finish_prepare", "finish_prepare"),
-    ("kexp.util.live_od.live_od_client", "LiveODClient", "init_run", "liveOD INIT_RUN"),
-    ("kexp.util.live_od.live_od_client", "LiveODClient", "wait_cam_ready",
+    ("waxx.util.live_od.live_od_client", "LiveODClient", "init_run", "liveOD INIT_RUN"),
+    ("waxx.util.live_od.live_od_client", "LiveODClient", "wait_cam_ready",
      "liveOD WAIT_CAM_READY"),
-    ("kexp.util.live_od.live_od_client", "LiveODClient", "end_run", "liveOD END_RUN"),
+    ("waxx.util.live_od.live_od_client", "LiveODClient", "end_run", "liveOD END_RUN"),
 ]
