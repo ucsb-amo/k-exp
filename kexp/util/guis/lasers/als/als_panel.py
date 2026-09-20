@@ -24,11 +24,13 @@ class AlsPanel(WidgetPanelBase):
     # smallest height every stage's widgets are hidden.
     _COLLAPSE_STAGES = (
         # Hide telemetry + activity log dropdowns first.
-        (480, ("telem_group", "log_box")),
-        # Then hide the Controls box (startup / shutdown buttons).
-        (320, ("control_panel",)),
-        # Last resort: also hide the System (status indicators) panel.
-        (220, ("status_panel",)),
+        (270, ("telem_group", "log_box")),
+        # Then the System panel — one ~20 px indicator row, and the same
+        # states are readable from the power/optical readouts.
+        (180, ("status_panel",)),
+        # Last resort: the Controls box (Startup / Shutdown).  It is a
+        # single button row now, so it survives much deeper collapse.
+        (110, ("control_panel",)),
     )
 
     def __init__(self, parent=None):
