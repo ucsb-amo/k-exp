@@ -12,7 +12,7 @@ class hf_bec(EnvExperiment, Base):
                       save_data=True,
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION,
-                      warmup_shots=2)
+                      warmup_shots=4)
 
         
         self.p.t_mot_load = 1.0
@@ -22,15 +22,15 @@ class hf_bec(EnvExperiment, Base):
 
         # self.p.v_hf_tweezer_paint_amp_max = 2.
 
-        # self.xvar('t_tof',np.linspace(300.,1000.,6)*1.e-6)
-        self.p.t_tof = 1000.e-6
+        self.xvar('t_tof',np.linspace(500.,4000.,6)*1.e-6)
+        self.p.t_tof = 2500.e-6
         # self.adjust('t_tof',min_val=20.e-6,max_val=1000.e-6)
 
         self.data.apd = self.data.add_data_container(1)
         # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(0.4,1.5,9))
-        # self.p.v_pd_hf_lightsheet_rampdown_end = 0.720 
+        # self.p.v_pd_hf_lightsheet_rampdown_end = 0.85
         self.p.v_pd_hf_lightsheet_rampdown2_end = 0.
-        self.p.N_repeats = 3
+        self.p.N_repeats = 5
         # self.xvar('beans',np.linspace(1,10.,10))
         # Adjust.__init__(self)sss
 
@@ -39,17 +39,17 @@ class hf_bec(EnvExperiment, Base):
 
         self.scanning()
         # Adjust.__init__(self)
-        self.finish_prepare(shuffle=False)
+        self.finish_prepare(shuffle=True)
 
     def scanning(self):
 
-        # self.p.v_hf_tweezer_paint_amp_max = 1.35
-        self.p.v_pd_hf_tweezer_1064_rampdown2_end = 3.0
+        # self.p.v_hf_tweezer_paint_amp_max = 2.
+        # self.p.v_pd_hf_tweezer_1064_rampdown2_end = 2.2
 
-        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(3.8,2.2,9))
+        # self.xvar('v_pd_hf_tweezer_1064_rampdown2_end',np.linspace(2.2,5.,9))
 
-        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(-3.,3.,8))
-        self.p.v_hf_tweezer_paint_amp_max = 1.3
+        # self.xvar('v_hf_tweezer_paint_amp_max',np.linspace(2.,3.0,4))
+        # self.p.v_hf_tweezer_paint_amp_max = 2.5
 
 
         # self.xvar('t_tof',np.linspace(100.e-6,3000.e-6,9))
