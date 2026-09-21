@@ -84,10 +84,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         # real shot, invisible to the camera, DataSaver and liveOD.
         self.params.N_warmup_shots = int(warmup_shots)
         if self.params.N_warmup_shots <= 0:
-            print("[warmup] WARNING: no warm-up shots requested. The first shot "
-                  "of a run is typically ~25% low in atom number. Pass "
-                  "'warmup_shots = N' to Base.__init__ to run N imaging-free "
-                  "preparations before the first shot (2 is usually enough).")
+            print("[warmup] No warm-up shots: first shot likely ~25% low. "
+                  "Set Base(warmup_shots=2) to fix.")
         else:
             print(f"[warmup] {self.params.N_warmup_shots} warm-up shot(s) "
                   "will run before the first real shot.")
