@@ -101,10 +101,10 @@ class ExptParams(ExptParamsWaxx):
         self.t_optical_pumping = 200.e-6
         self.t_optical_pumping_bias_rampup = 2.e-3
         
-        self.t_lightsheet_rampup = .15
+        self.t_lightsheet_rampup = 75.e-3
         self.t_lf_lightsheet_rampdown = 1.13
         # self.t_hf_lightsheet_rampdown = 1.1
-        self.t_hf_lightsheet_rampdown = 0.8
+        self.t_hf_lightsheet_rampdown = 0.15
         self.t_hf_lightsheet_rampdown2 = .74
         self.t_lf_lightsheet_rampdown2 = .02
         self.t_lightsheet_rampdown3 = 62e-3
@@ -145,7 +145,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_magtrap_rampdown = .05
         self.t_yshim_rampdown = 10.e-3
         
-        self.t_feshbach_field_rampup = 120.e-3
+        self.t_feshbach_field_rampup = 50.e-3
         self.t_lf_feshbach_field_rampup = 50.e-3
         self.t_feshbach_field_ramp = 12.e-3
         self.t_feshbach_field_ramp2 = 12.e-3
@@ -276,14 +276,16 @@ class ExptParams(ExptParamsWaxx):
         self.v_pd_lightsheet_pd_minimum = 0.025
         self.v_lightsheet_paint_amp_max = 3.6
 
+        # self.n_lightsheet_rampup_tau_fraction = 1.5
         self.v_pd_lightsheet = 8.1
         self.v_pd_lightsheet_rampup_start = self.v_pd_lightsheet_pd_minimum
-        self.v_pd_lightsheet_rampup_end = 8.1
+        self.v_pd_lightsheet_rampup_end = 8.75
         self.v_pd_lf_lightsheet_rampdown_end = 1.0 #4.16
-        self.v_pd_hf_lightsheet_rampdown_end = 0.7 #4.16
+        self.v_pd_hf_lightsheet_rampdown_end = 0.85 #4.16
         self.v_pd_hf_lightsheet_rampdown2_end = 0.114
         self.v_pd_lightsheet_rampdown3_end = .0
         self.n_lightsheet_ramp_steps = 1000
+        self.n_lightsheet_evap1_decay_coeff = 1.5
 
         #1064 tweezer
         self.amp_tweezer_pid1 = .45
@@ -400,7 +402,7 @@ class ExptParams(ExptParamsWaxx):
         self.i_spin_mixture = 19.48
 
         # high field evap
-        self.i_hf_lightsheet_evap1_current = 193.8
+        self.i_hf_lightsheet_evap1_current = 192.7
         self.i_hf_lightsheet_evap2_current = 193.3
 
         self.i_hf_tweezer_load_current = 192.7 # 193.4

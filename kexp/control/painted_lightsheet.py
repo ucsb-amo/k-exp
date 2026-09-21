@@ -217,7 +217,7 @@ class lightsheet(PaintedBeam):
         if v_pd_max == dv:
             v_pd_max = self.params.v_pd_lightsheet_rampup_end
         if tau == dv:
-            tau = t / 3.
+            tau = t / self.params.n_lightsheet_evap1_decay_coeff
 
         self._ramp_exponential(t,v_start,v_end,n_steps,tau,paint,
                                v_awg_am_max,v_pd_max,

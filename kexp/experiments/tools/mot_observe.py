@@ -17,7 +17,8 @@ class mot_observe(EnvExperiment, Base):
         
         self.init_kernel(setup_awg=False,
                          setup_slm=False,
-                         init_shuttler=False)
+                         init_shuttler=False,
+                         force_dds_init=True)
         delay(50*ms)
         self.mot_observe()
 
