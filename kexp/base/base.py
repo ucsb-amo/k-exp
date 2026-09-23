@@ -74,7 +74,6 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         # Resolved above: in when acquiring with the APD, out when a camera
         # grabs frames, None (stage left alone) when acquiring nothing.
-        print(apd_stage)
         self.pdxc.set_apd_stage(apd_stage)
 
         # Warm-up dry run. The first shot of a run is typically ~25% low in
@@ -119,7 +118,7 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
                     setup_slm = True,
                     init_magnets = True,
                     init_ry = True,
-                    force_dds_init = False):
+                    force_dds_init = True):
         """
         force_dds_init: run the full AD9910 init on every channel. By default
         (False) channels that still hold their PLL / SYNC setup from an earlier
@@ -291,7 +290,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
     @kernel
     def post_scan(self):
-        self.ry_980.sweep_to(reset=True)
+        if self.ry_980._used:
+            self.ry_980.sweep_to(reset=True)
         self.tweezer.reset_awg()
         self.core.break_realtime()
         self.background_field()
