@@ -161,7 +161,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 6.5333e-06 #78264, 2026-09-02
         # self.t_raman_pi_pulse = 6.70885e-06 #78301 rabi posterior 2026-09-02
         # self.t_raman_pi_pulse = 7.1284e-06 #80159, 2026-09-09
-        self.t_raman_pi_pulse = 6.9144e-06 #80599, 2026-09-21
+        # self.t_raman_pi_pulse = 6.9144e-06 #80599, 2026-09-21
+        self.t_raman_pi_pulse = 5.7048e-06 #80622, 2026-09-22
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
@@ -368,7 +369,7 @@ class ExptParams(ExptParamsWaxx):
 
         self.frequency_raman_transition_1m1_2m2 = 147.2593e6 #76037 2026-8-20
         # self.frequency_raman_transition = 147.2593e6 # 62500, 520 G 1-1 to 2-2
-        self.frequency_raman_transition = 119.4640e6 #76214
+        self.frequency_raman_transition = 119.4639e6 #80650
         # self.frequency_raman_transition = 119.3977e6 # 176.5 A
 
         self.frequency_raman_transition_nf_1m1_20 = 460.7e6 # 1.5 G 1,-1 to 2,0
