@@ -23,7 +23,7 @@ class ExptParams(ExptParamsWaxx):
         self.t_contactor_open_delay = 12.e-3
 
         #Imaging
-        self.t_imaging_pulse = 20.e-6
+        self.t_imaging_pulse = 10.e-6
         self.t_imaging_pulse_apd_abs = 5.e-6
         self.t_tof_apd_abs = 250.e-6 # affects APD absorption calibration
 
@@ -160,7 +160,8 @@ class ExptParams(ExptParamsWaxx):
         # self.t_raman_pi_pulse = 8.6438e-06 #76216, 2026-08-24
         # self.t_raman_pi_pulse = 6.5333e-06 #78264, 2026-09-02
         # self.t_raman_pi_pulse = 6.70885e-06 #78301 rabi posterior 2026-09-02
-        self.t_raman_pi_pulse = 7.1284e-06 #80159, 2026-09-09
+        # self.t_raman_pi_pulse = 7.1284e-06 #80159, 2026-09-09
+        self.t_raman_pi_pulse = 6.9144e-06 #80599, 2026-09-21
          
         # DAC controlled AO amplitudes
         self.amp_d1_3d_c = 0.3
