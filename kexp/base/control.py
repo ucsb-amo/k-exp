@@ -18,6 +18,7 @@ from kexp.control.painted_lightsheet import lightsheet
 from waxx.control.integrator import Integrator
 from waxx.util.guis.HMR_magnetometer.hmr_magnetometer_client import HMRClient
 from waxx.control.misc.oscilloscopes import ScopeData
+from waxx.control.beat_lock import BeatLockImagingPID
 
 dv = -0.1
 dvlist = np.linspace(1.,1.,5)
@@ -40,6 +41,7 @@ class Control():
         self.magnetometer = HMRClient()
         self.integrator = Integrator()
         self.scope_data = ScopeData()
+        self.imaging = BeatLockImagingPID()
         self.p = self.params
 
     @kernel
@@ -177,4 +179,8 @@ class Control():
         self.ttl.imaging_shutter_x.on()
         
 
-        
+    @kernel
+    def handoff_to_quantum_machines(self):
+        self.ttl.quantum_machines_trigger.pulse(1.e-6)
+        self.imaging.on()
+        self.raman.on()
