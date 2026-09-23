@@ -9,7 +9,7 @@ from waxx.control.artiq.DDS import DDS
 from waxx.control.misc.moglabs_wavemeter import WavemeterClient
 from kexp.config.data_vault import DataContainer
 
-from artiq.language import now_mu, kernel, delay, portable
+from artiq.language import now_mu, kernel, delay, portable, TList, TFloat
 
 
 class RydbergBeamBase():
@@ -83,13 +83,27 @@ class RydbergBeamBase():
         """
         if self._used:
             self._core.wait_until_mu(now_mu())
+            f = self._read_lock(robust)
+            self._lock_dc.put_data(f[0])
+            self._siglent_freq_dc.put_data(f[1])
+            self._core.break_realtime()
+
+    def _read_lock(self, robust) -> TList(TFloat):
+        """Host-side siglent + wavemeter read for ``lock_status``.
+
+        A failed read (e.g. the 405 EO driver dropping off the LAN) is printed,
+        not raised, and both values come back 0. (matching the wavemeter
+        client's own failure value) rather than the previous shot's reading.
+        """
+        try:
             f_siglent = self.siglent.get_frequency()
             frequency_shift = ( self._eo_shift_direction * f_siglent
                                 - self._cavity_ao_order * self._cavity_ao_frequency )
             f_fzw = self._wavemeter.lock_status(frequency_shift, robust)
-            self._lock_dc.put_data(f_fzw)
-            self._siglent_freq_dc.put_data(f_siglent)
-            self._core.break_realtime()
+        except Exception as e:
+            print(f"lock_status read failed for {getattr(self._wavemeter, 'key', '?')}: {e!r}")
+            f_siglent, f_fzw = 0., 0.
+        return [f_fzw, f_siglent]
 
 class RydbergDDSSwitchBeam(RydbergBeamBase):
     """405 nm beam: DDS-switched (double-pass AOM) with a mechanical shutter.
