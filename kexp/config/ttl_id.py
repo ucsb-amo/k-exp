@@ -60,6 +60,11 @@ class ttl_frame(ttl_frame_waxx):
         
         self.ry_phase_lock_ao_sw_ttl = self.assign_ttl_out(54)
 
+        # PLACEHOLDER INDICES
+        self.quantum_machines_receive_trigger = self.assign_ttl_in(41) # if we want this to hand back
+        self.quantum_machines_trigger = self.assign_ttl_out(55)
+        self.raman_dds_handoff_ttl = self.assign_ttl_out(55)
+
         self.imaging_pid_manual_override = self.assign_ttl_out(86) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class
         self.imaging_pid_int_clear_hold = self.assign_ttl_out(87) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class
 
