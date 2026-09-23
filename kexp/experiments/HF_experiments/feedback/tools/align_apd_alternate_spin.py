@@ -53,7 +53,7 @@ class hf_monitored_rabi(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned = self.p.frequency_detuned_hf_midpoint)
         self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers()
+        self.prepare_hf_tweezers(ramp_down_painting=True)
 
         # self.lightsheet.ramp(210.e-3,v_end=4.)
 

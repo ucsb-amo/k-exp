@@ -17,22 +17,23 @@ class trap_frequency_parametric_amp_mod(EnvExperiment, Base):
                       camera_select=cameras.andor,
                       imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 1500.e-6
+        self.p.t_tof = 800.e-6
 
-        self.p.t_tweezer_amp_mod = 100.e-3
+        self.p.t_tweezer_amp_mod = 0.8
         # linear ramp-in of the modulation depth (0. for an abrupt start)
-        self.p.t_tweezer_amp_mod_ramp = 0.
+        self.p.t_tweezer_amp_mod_ramp = 0.1
 
         # fractional DDS amplitude modulation depth; optical power depth ~ 2x
-        self.p.amp_tweezer_mod_depth = 0.05
+        self.p.amp_tweezer_mod_depth = 0.15
 
         # position-shake resonance was scanned 0.59-0.85 kHz; parametric
         # resonance from amplitude modulation is expected near 2*f_trap
-        # self.xvar('f_tweezer_amp_mod',np.linspace(1.0,2.0,11)*1.e3)
+        self.xvar('f_tweezer_amp_mod',np.linspace(250.,300.,7))
+        # self.xvar('f_tweezer_amp_mod',[177.,220.])
         # self.p.f_tweezer_amp_mod = 1.4e3
 
         self.p.amp_imaging = .2
-        self.p.N_repeats = 1
+        self.p.N_repeats = 3
         self.p.t_mot_load = 1.
 
         self.finish_prepare(shuffle=True)
@@ -41,30 +42,28 @@ class trap_frequency_parametric_amp_mod(EnvExperiment, Base):
     def scan_kernel(self):
 
         # arm the modulation on the AWG; it starts on the next AWG trigger
-        # self.tweezer.sine_amplitude_modulation(tweezer_idx=0,
-        #                     t_mod=self.p.t_tweezer_amp_mod,
-        #                     amp_mod_depth=self.p.amp_tweezer_mod_depth,
-        #                     f_mod=self.p.f_tweezer_amp_mod,
-        #                     t_amod_ramp=self.p.t_tweezer_amp_mod_ramp,
-        #                     trigger=False)
+        self.tweezer.sine_amplitude_modulation(tweezer_idx=0,
+                            t_mod=self.p.t_tweezer_amp_mod,
+                            amp_mod_depth=self.p.amp_tweezer_mod_depth,
+                            f_mod=self.p.f_tweezer_amp_mod,
+                            t_amod_ramp=self.p.t_tweezer_amp_mod_ramp,
+                            trigger=False)
         delay(100.e-3)
 
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         self.imaging.set_power(self.p.amp_imaging)
 
         # don't quite evap to BEC
-        self.prepare_hf_tweezers(do_tweezer_evap_2=False,
+        self.prepare_hf_tweezers(do_tweezer_evap_2=True,
                                 squeeze=False,
                                 ramp_down_painting=True)
 
-        # self.tweezer.trigger()
+        self.tweezer.trigger()
         delay(self.p.t_tweezer_amp_mod)
         self.tweezer.off()
 
         delay(self.p.t_tof)
         self.abs_image()
-
-        self.outer_coil.off()
 
     @kernel
     def run(self):

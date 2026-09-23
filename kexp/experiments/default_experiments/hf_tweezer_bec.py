@@ -16,30 +16,26 @@ class hf_bec(EnvExperiment, Base):
 
         
         self.p.t_mot_load = 1.0
-        self.p.t_imaging_pulse = 10.e-6
         
         self.p.t_tweezer_hold = 100.e-3
 
         # self.p.v_hf_tweezer_paint_amp_max = 2.
 
-        self.xvar('t_tof',np.linspace(500.,4000.,6)*1.e-6)
+        # self.xvar('t_tof',np.linspace(500.,4000.,6)*1.e-6)
         self.p.t_tof = 2500.e-6
         # self.adjust('t_tof',min_val=20.e-6,max_val=1000.e-6)
 
         self.data.apd = self.data.add_data_container(1)
-        # self.xvar('v_pd_hf_lightsheet_rampdown_end',np.linspace(0.4,1.5,9))
-        # self.p.v_pd_hf_lightsheet_rampdown_end = 0.85
-        self.p.v_pd_hf_lightsheet_rampdown2_end = 0.
-        self.p.N_repeats = 5
+
+        self.p.N_repeats = 30
         # self.xvar('beans',np.linspace(1,10.,10))
-        # Adjust.__init__(self)sss
 
         # self.p.frequency_detuned_hf_f1m1=-553.e6
         # self.xvar('frequency_detuned_hf_f1m1',np.linspace(-540.,-563.,15)*1.e6)
 
         self.scanning()
         # Adjust.__init__(self)
-        self.finish_prepare(shuffle=True)
+        self.finish_prepare(shuffle=False)
 
     def scanning(self):
 
@@ -77,7 +73,7 @@ class hf_bec(EnvExperiment, Base):
         self.set_imaging_detuning(frequency_detuned=self.p.frequency_detuned_hf_f1m1)
         # self.imaging.set_power(self.p.amp_imaging)
 
-        self.prepare_hf_tweezers(do_tweezer_evap_2=True)
+        self.prepare_hf_tweezers()
 
         # if self.p.do_compression:
         #     self.lightsheet.ramp(self.p.t_lightsheet_compression_ramp,
@@ -88,7 +84,7 @@ class hf_bec(EnvExperiment, Base):
         delay(self.p.t_tweezer_hold)
         
         self.tweezer.off()
-        self.lightsheet.off()
+        # self.lightsheet.off()
 
         delay(self.p.t_tof)
 

@@ -13,12 +13,12 @@ class mag_trap(EnvExperiment, Base):
 
     def prepare(self):
         Base.__init__(self,
-                    save_data=False,
-                    camera_select=cameras.z_basler,
+                    save_data=True,
+                    camera_select=cameras.xy_basler,
                     imaging_type=img_types.ABSORPTION)
 
-        self.p.t_tof = 400.e-6
-        # self.xvar('t_tof',np.linspace(200,700.,5)*1.e-6)
+        # self.p.t_tof = 400.e-6
+        self.xvar('t_tof',np.linspace(200,700.,9)*1.e-6)
         # self.xvar('t_tof',np.linspace(20.,300.,7)*1.e-6)
         # self.xvar('beans',np.linspace(1,10.,10))
 
@@ -38,7 +38,7 @@ class mag_trap(EnvExperiment, Base):
         # self.xvar('t_magtrap_ramp', np.linspace(0.05,0.125,5))
 
         # self.xvar('do_rampup',[0,1])
-        self.camera_params.amp_imaging = 0.2
+        # self.camera_params.amp_imaging = 0.2
 
         # self.xvar('t_magtrap',np.linspace(.1,3.,15))
         # self.p.t_magtrap = 1.
@@ -54,7 +54,7 @@ class mag_trap(EnvExperiment, Base):
 
         # self.p.t_lightsheet_rampup=0.15
 
-        self.p.N_repeats = 1000
+        self.p.N_repeats = 1
         self.p.t_mot_load = 1.
         # self.p.amp_imaging = .25
         self.p.imaging_state = 2.
