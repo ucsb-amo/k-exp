@@ -285,8 +285,8 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         self.reset_coils()
         self.lightsheet.off()
 
-        self.core.break_realtime()
-        self.ttl.line_trigger.clear_input_events()
+        # line_trigger (and every other TTLInOut) input FIFO is drained in
+        # cleanup_scan_kernel_wax via ttl_frame.clear_input_events().
 
         self.core.break_realtime()
         self.ry_405.lock_status()
