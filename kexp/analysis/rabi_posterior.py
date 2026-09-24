@@ -14,7 +14,7 @@ lines 205-285) exactly:
   1. Raman rotation      -- Rodrigues rotation by -H*t_ideal about the axis
                             (Omega/H*cos(phi), Omega/H*sin(phi), delta/H)
   2. z rotation          -- from the imaging-pulse light shift,
-                            alpha_z = delta*t_eff - omega_lightshift*t_img
+                            alpha_z = delta*t_eff - 2*pi*frequency_lightshift*t_img
   3. measurement         -- back-action attenuates s_x and s_y by
                             back_action_coherence; s_z is NEVER attenuated
   4. photon fraction     -- p1 = 0.5*(1+s_z) + (midpoint-0.5)*(1-s_z**2)
