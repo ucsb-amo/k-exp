@@ -109,7 +109,7 @@ class dds_frame(dds_frame_waxx):
                                     dac_ch_vpd=self._dac_frame.imaging_pid.ch)
         self.raman_80_plus = self.dds_assign(4,2, ao_order = 1,
                                     default_freq = 80.e6,
-                                    default_amp = 0.277)
+                                    default_amp = 0.337)
         self.optical_pumping = self.dds_assign(4,3, ao_order = -1, transition = 'D1',
                                     default_detuning = self.p.detune_optical_pumping_r_op,
                                     default_amp = self.p.amp_optical_pumping_r_op)
@@ -117,14 +117,14 @@ class dds_frame(dds_frame_waxx):
         self.raman_150_minus = self.dds_assign(5,0,
                                 ao_order=-1,
                                 default_freq=150.e6,
-                                default_amp=0.324)
+                                default_amp=0.529)
         self.raman_switch = self.dds_assign(5,1,
                                     default_freq=150.0e6,
-                                    default_amp=0.3)
+                                    default_amp=0.460)
         self.imaging_x_switch = self.dds_assign(5,2,
                                         ao_order=1,
                                         default_freq=100.e6,
-                                        default_amp=0.3)
+                                        default_amp=0.425) # updated from 0.3 since adding QM box
         self.d2_2dh_r = self.dds_assign(5,3, ao_order = 1, transition = 'D2',
                                     default_detuning = self.p.detune_d2h_r_2dmot,
                                     default_amp = self.p.amp_d2h_r_2dmot)
