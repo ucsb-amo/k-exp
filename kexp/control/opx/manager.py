@@ -7,7 +7,7 @@ Lifecycle against the experiment:
                                                      #   execute (job parks on
                                                      #   its first trigger)
     scan_kernel():       handoff_to_quantum_machines() /
-                         wait_for_quantum_machines_handoff()  (control.py)
+                         wait_for_quantum_machines_handback()  (control.py)
     analyze() -> end():  -> finish()                 # fetch streams into the
                                                      #   containers, halt
 
@@ -41,7 +41,8 @@ if TYPE_CHECKING:
     from qm.jobs.simulated_job import SimulatedJob
 
 from kexp.control.opx.sequence import get_sequence
-from kexp.control.opx.params_bridge import build_shot_tables, ShotTables
+from kexp.control.opx.params_bridge import (build_shot_tables, ShotTables,
+                                            derived_dependents)
 from kexp.control.opx.builder import OPXProgramBuilder
 from kexp.control.opx.units import demod2volts
 
@@ -61,6 +62,38 @@ def _qm_log_gate(record):
 
 
 _qm_log_gate_installed = False
+
+
+def check_live_adjust_conflicts(expt, tables):
+    """Refuse a run whose liveOD Adjust panel could change a parameter the
+    OPX program depends on.
+
+    The OPX program is baked from the per-shot tables at finish_prepare; the
+    Adjust panel changes host params between shots. A parameter the sequence
+    read through ctx.p -- directly, or through a derived quantity that
+    follows it -- must therefore not be adjustable, or ARTIQ and the OPX
+    would silently run different values. Scan it as an xvar instead.
+    """
+    specs = getattr(expt, '_adjust_specs', None) or []
+    accessed = sorted(tables.accessed)
+    if not specs or not accessed:
+        return
+    for spec in specs:
+        key = spec.key
+        if key in accessed:
+            raise RuntimeError(
+                f"[opx] {key!r} is registered with adjust() but the OPX "
+                f"sequence reads ctx.p.{key}: the OPX baked its per-shot "
+                f"values at finish_prepare and would not follow the Adjust "
+                f"panel. Drop the adjust() or scan it as an xvar.")
+        dependents = derived_dependents(expt, key, accessed)
+        if dependents:
+            raise RuntimeError(
+                f"[opx] {key!r} is registered with adjust() and the OPX "
+                f"sequence reads {dependents}, which derive from it: the OPX "
+                f"baked those per-shot values at finish_prepare and would "
+                f"not follow the Adjust panel. Drop the adjust() or scan it "
+                f"as an xvar.")
 
 
 def _install_qm_log_gate():
@@ -191,6 +224,7 @@ class OPXManager:
         builder = OPXProgramBuilder(seq, self._map, tables, self._n_shots)
         prog, ctx = builder.trace()
         self._stream_roles = dict(ctx._stream_roles)
+        check_live_adjust_conflicts(expt, tables)
 
         # Connect before generating the provenance script: qm capabilities
         # are initialized by the QMM connection, and generate_qua_script
@@ -297,8 +331,14 @@ class OPXManager:
                 print(f"[opx] WARNING: no result stream {key!r} on the job.")
                 fetched[key], counts[key] = None, 0
                 continue
+            # An aborted run has fewer shots than scheduled: wait only for
+            # the ones ARTIQ completed (an OPX shot ends before its ARTIQ
+            # shot does), then take whatever the job streamed.
+            n_done = int(getattr(self._expt, '_shot_complete_count',
+                                 self._n_shots))
+            n_wait = min(self._n_shots, n_done)
             n = h.count_so_far()
-            while n < self._n_shots and time.monotonic() < deadline:
+            while n < n_wait and time.monotonic() < deadline:
                 time.sleep(0.1)
                 n = h.count_so_far()
             arr = h.fetch_all() if n else None

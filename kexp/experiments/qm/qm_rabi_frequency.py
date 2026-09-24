@@ -45,7 +45,7 @@ class hf_raman(EnvExperiment, Base):
         # ###
         self.handoff_to_quantum_machines()
         # ###
-        self.wait_for_quantum_machines_handoff()
+        self.wait_for_quantum_machines_handback()
         
         delay(10.e-3)
 

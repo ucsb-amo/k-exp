@@ -79,6 +79,8 @@ def kexp_channel_map(expt) -> ChannelMap:
         # steady-state, so both switches are blocked in every OPX window
         # whatever the sequence claims
         guarded_channels=('raman', 'imaging'),
+        # the handshake windows, shared with Control.handoff_to_quantum_machines
+        t_handoff_settle_s=float(p.t_opx_handoff_settle),
         t_handback_overlap_s=float(p.t_opx_handback_overlap),
     )
 
@@ -155,10 +157,12 @@ def build_opx_config(expt) -> dict:
                 'operations': {'cw': 'raman_150_cw'},
             },
             # sticky digital switches: 'block'/'pass' set the level, the
-            # element holds it -- an ARTIQ crash mid-window leaves the light
-            # blocked. The QOP requires 'analog': True even on a digital-only
-            # element ("sticky digital but analog sticky wasn't set" job
-            # failure otherwise); it is a no-op with no analog waveforms.
+            # element holds it (see the crash-state note in builder.py: the
+            # job is halted when the ARTIQ process exits, and the lines then
+            # idle low = pass). The QOP requires 'analog': True even on a
+            # digital-only element ("sticky digital but analog sticky wasn't
+            # set" job failure otherwise); it is a no-op with no analog
+            # waveforms.
             'raman_switch': {
                 'digitalInputs': _digital_input(RAMAN_SWITCH_DIGITAL_PORT),
                 'sticky': {'analog': True, 'digital': True,

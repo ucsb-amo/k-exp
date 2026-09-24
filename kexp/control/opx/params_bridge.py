@@ -22,6 +22,7 @@ the whole run.
 Generic (future waxx.control.opx): no kexp imports, no qm imports.
 """
 
+import contextlib
 import copy
 import numbers
 import numpy as np
@@ -36,6 +37,9 @@ class ShotTables:
     def __init__(self, columns, n_shots):
         self.columns = columns
         self.n_shots = int(n_shots)
+        # parameter names the sequence read through ctx.p (filled at trace
+        # time by ParamsProxy): what the OPX program depends on
+        self.accessed = set()
 
     def has(self, key):
         return key in self.columns
@@ -262,6 +266,7 @@ class ParamsProxy:
                 f"and non-numeric attributes cannot be shipped per shot; "
                 f"read fixed arrays from the experiment's params directly "
                 f"when building the sequence).")
+        self._tables.accessed.add(key)
         return ParamRef(key, self._tables.column(key), self._tables)
 
     def __setattr__(self, key, value):
@@ -288,24 +293,36 @@ def _snapshot_scalars(params, keys=None):
     return out
 
 
+@contextlib.contextmanager
+def working_params(expt):
+    """Swap the experiment's live params (self.params / self.p) for a deep
+    copy for the duration of the block, restored afterwards untouched.
+    compute_new_derived operates on self.params, so anything that evaluates
+    derived parameters at other values goes through here."""
+    backup = expt.params
+    work = copy.deepcopy(backup)
+    expt.params = work
+    if hasattr(expt, 'p'):
+        expt.p = work
+    try:
+        yield work
+    finally:
+        expt.params = backup
+        if hasattr(expt, 'p'):
+            expt.p = backup
+
+
 def build_shot_tables(expt) -> ShotTables:
     """Sweep the scan and tabulate every scalar param per shot.
 
     expt needs: xvardims, scan_xvars, params, compute_new_derived() -- i.e.
-    any waxx Expt after finish_prepare. The experiment's live params object
-    is swapped out for a working copy during the sweep (compute_new_derived
-    operates on self.params/self.p) and restored afterwards, untouched.
+    any waxx Expt after finish_prepare. The sweep runs on a working copy of
+    the params (working_params); the live object is never touched.
     """
     xvardims = [int(d) for d in expt.xvardims]
     n_shots = int(np.prod(xvardims)) if xvardims else 1
 
-    params_backup = expt.params
-    work = copy.deepcopy(expt.params)
-    expt.params = work
-    if hasattr(expt, 'p'):
-        expt.p = work
-
-    try:
+    with working_params(expt) as work:
         columns = None
         keys = None
         flat = 0
@@ -323,9 +340,27 @@ def build_shot_tables(expt) -> ShotTables:
             for k in keys:
                 columns[k][flat] = snap.get(k, np.nan)
             flat += 1
-    finally:
-        expt.params = params_backup
-        if hasattr(expt, 'p'):
-            expt.p = params_backup
 
     return ShotTables(columns, n_shots)
+
+
+def derived_dependents(expt, key, candidates):
+    """Which of ``candidates`` (parameter names) change when
+    ExptParams.<key> is nudged by 1%: the derived quantities (compute_derived
+    and the experiment's compute_new_derived) that follow it, found by
+    perturbation because nothing declares the dependencies. A derived value
+    that only reacts to a larger change is missed -- a safety net, not a
+    proof. The live params are untouched.
+    """
+    def evaluate(nudge):
+        with working_params(expt) as work:
+            if nudge:
+                v = float(getattr(work, key))
+                setattr(work, key, v * 1.01 if v != 0. else 1.e-9)
+            work.compute_derived()
+            expt.compute_new_derived()
+            return {k: getattr(work, k, None) for k in candidates}
+
+    base, nudged = evaluate(False), evaluate(True)
+    return sorted(k for k in candidates
+                  if k != key and not np.array_equal(base[k], nudged[k]))

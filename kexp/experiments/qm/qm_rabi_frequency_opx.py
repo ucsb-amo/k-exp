@@ -50,7 +50,7 @@ class hf_raman_opx(EnvExperiment, Base):
         self.prep_raman()
 
         self.handoff_to_quantum_machines()
-        self.wait_for_quantum_machines_handoff()
+        self.wait_for_quantum_machines_handback()
 
         delay(10.e-3)
 
@@ -67,7 +67,10 @@ class hf_raman_opx(EnvExperiment, Base):
     def run(self):
         self.init_kernel()
         self.load_2D_mot(self.p.t_2D_mot_load_delay)
-        self.scan(raise_underflow=True)
+        # default scan(): an underflow or a missing hand-back (TriggerTimeout)
+        # abandons the shot, runs cleanup and ends the run with the shots
+        # taken. raise_underflow=True would skip cleanup -- coils left hot.
+        self.scan()
 
     def analyze(self):
         import os

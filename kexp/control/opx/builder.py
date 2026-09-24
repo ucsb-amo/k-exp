@@ -6,23 +6,33 @@ The generated program is one job per run:
         AO drive never to drop)
     for shot in range(N_shots):                # N = N_shots_with_repeats
         wait_for_trigger                       # ARTIQ handoff (control.py)
-        assert RF blocks on guarded channels   # before ARTIQ turns RF on
+        assert RF blocks on guarded channels   # within ~100 ns of the trigger
+        wait t_opx_handoff_settle              # ARTIQ RF on at settle/2, settled by settle
         <sequence body>                        # user code, params per shot
         hand-back trigger; hold blocks for t_opx_handback_overlap; release
     ramp analog drives to zero
     stream_processing: buffer per-shot saves
 
 Handoff framing is owned here, not by sequences, so it cannot be gotten
-wrong per experiment:
+wrong per experiment (the ARTIQ half is Control.handoff_to_quantum_machines
+/ wait_for_quantum_machines_handback in kexp/base/control.py, which carries
+the timing diagram):
 
-* The blocks are asserted within ~a hundred ns of the trigger; ARTIQ's
-  handoff kernel waits 5 us after the trigger before turning its RF
-  steady-state on.
-* The switch elements are sticky-digital, so an ARTIQ crash mid-window
-  (where no ARTIQ cleanup runs) leaves the blocks HIGH -- the parked job
-  keeps the light off the atoms until someone intervenes. The unprotected
-  window is only the few us between the hand-back trigger and ARTIQ's RF
-  off() events, bounded by t_opx_handback_overlap.
+* The blocks go up within ~a hundred ns of the trigger. ARTIQ turns its
+  steady-state RF on t_opx_handoff_settle/2 after the trigger, and the body
+  only starts t_opx_handoff_settle after it, so no exposure runs before the
+  RF is on and settled. The two timing numbers come from ExptParams through
+  the channel map -- the same source control.py reads.
+* The hand-back edge may come any time after the trigger (a body with
+  nothing to play hands back within a microsecond): ARTIQ arms its gate
+  before triggering, so no minimum shot length is imposed here.
+* The switch elements are sticky-digital: an ARTIQ crash mid-window (no
+  ARTIQ cleanup runs) leaves the blocks HIGH, and the light off the atoms,
+  until the ARTIQ process exits. The manager then halts the job and the OPX
+  lines idle low (pass), so whatever ARTIQ RF was on passes until the next
+  run's init_kernel or a Monitor restart -- the same end state as any crash
+  with a beam on. (A block left stuck high would instead silently darken
+  every following non-OPX run.)
 * Between shots every block is released (pass), so ARTIQ gates its own
   light for preparation and camera imaging exactly as in a non-OPX run.
 
@@ -81,6 +91,8 @@ class OPXProgramBuilder:
                 guard_roles.append(role)
         guarded_specs = [cmap.spec(r) for r in guard_roles]
         sync_el = cmap.spec(cmap.sync_channel).switch_element
+        settle_cc = s_to_cc(cmap.t_handoff_settle_s,
+                            key='t_opx_handoff_settle')
         overlap_cc = s_to_cc(cmap.t_handback_overlap_s,
                              key='t_opx_handback_overlap')
 
@@ -104,6 +116,10 @@ class OPXProgramBuilder:
                 # blocks up before ARTIQ turns its RF steady-state on
                 for spec in guarded_specs:
                     qua.play(spec.block_op, spec.switch_element)
+                qua.align()
+                # ARTIQ's RF comes on at settle/2 and is settled by settle:
+                # nothing exposes before then (control.py timing diagram)
+                qua.wait(settle_cc, sync_el)
                 qua.align()
 
                 seq.func(ctx)

@@ -299,11 +299,12 @@ class OPXShotContext(Generic[P]):
 
         Fires the hand-back trigger, holds every guarded RF block high for
         the shared overlap window (ExptParams.t_opx_handback_overlap --
-        ARTIQ's wait_for_quantum_machines_handoff must kill its steady-state
-        RF within it), then releases the blocks to pass so ARTIQ owns its
-        own light between shots. Auto-appended at the end of the body if the
-        sequence never calls it; calling it early lets the OPX tail (none
-        allowed in v1) overlap ARTIQ's next preparation.
+        ARTIQ's wait_for_quantum_machines_handback kills its steady-state
+        RF halfway through it), then releases the blocks to pass so ARTIQ
+        owns its own light between shots. Auto-appended at the end of the
+        body if the sequence never calls it. It may be called explicitly, but
+        it must be the body's last act on the beams: nothing may play or
+        measure after it (see _check_open).
         """
         from qm import qua
         if self._handback_done:

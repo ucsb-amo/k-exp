@@ -69,7 +69,7 @@ class hf_raman_opx(EnvExperiment, Base):
         self.prep_raman()
 
         self.handoff_to_quantum_machines()
-        self.wait_for_quantum_machines_handoff()
+        self.wait_for_quantum_machines_handback()
 
         self.ttl.raman_shutter.off()
 

@@ -59,10 +59,11 @@ class ttl_frame(ttl_frame_waxx):
         self.ry_phase_lock_ao_sw_ttl = self.assign_ttl_out(54)
         self.ry_intensity_pid_clear = self.assign_ttl_out(56)
         
-        # PLACEHOLDER INDICES
-        self.quantum_machines_receive_trigger = self.assign_ttl_in(41) # if we want this to hand back
-        self.quantum_machines_trigger = self.assign_ttl_out(32)
-        self.quantum_machines_raman_rf_handoff_ttl = self.assign_ttl_out(33)
+        # Quantum Machines OPX+ handshake (kexp.control.opx; timing diagram
+        # on Control.handoff_to_quantum_machines)
+        self.quantum_machines_receive_trigger = self.assign_ttl_in(41)  # OPX digital 3: hand-back edge
+        self.quantum_machines_trigger = self.assign_ttl_out(32)         # -> OPX trigger in: shot start
+        self.quantum_machines_raman_rf_handoff_ttl = self.assign_ttl_out(33)  # high = raman 80/150 AOs driven by the OPX
 
         self.imaging_pid_manual_override = self.assign_ttl_out(86) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class
         self.imaging_pid_int_clear_hold = self.assign_ttl_out(87) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class

@@ -34,6 +34,7 @@ class FakeParams:
         self.t_raman_pulse = 0.
         self.t_raman_pi_pulse = 8.8e-6
         self.t_fixed = 5.e-6
+        self.t_opx_handoff_settle = 10.e-6
         self.t_opx_handback_overlap = 10.e-6
         self.a_list = np.array([1., 2.])   # non-scalar: must not become a column
 
@@ -68,7 +69,16 @@ def make_map():
         sync_channel='raman',
         handback_element='artiq_handback',
         guarded_channels=('raman', 'imaging'),
+        t_handoff_settle_s=10.e-6,
         t_handback_overlap_s=10.e-6)
+
+
+def test_channel_map_requires_handshake_times():
+    with pytest.raises(ValueError, match='t_handoff_settle_s'):
+        ChannelMap(channels={}, t_handback_overlap_s=10.e-6)
+    with pytest.raises(ValueError, match='t_handback_overlap_s'):
+        ChannelMap(channels={}, t_handoff_settle_s=10.e-6,
+                   t_handback_overlap_s=0.)
 
 
 # ---------------------------------------------------------------------------
@@ -174,6 +184,16 @@ def test_paramref_arithmetic_matches_derived_params():
     assert (t * 2).label == '(t_raman_pulse * 2)'
     assert np.maximum(t, 1.e-6).label == 'maximum(t_raman_pulse, 1e-06)'
     assert 'per-shot' in repr(t) and '= 5e-06' in repr(p.t_fixed)
+
+
+def test_derived_dependents_found_by_perturbation():
+    from kexp.control.opx.params_bridge import derived_dependents
+    ex = FakeExpt([('t_raman_pulse', [0., 1.e-6])])
+    assert derived_dependents(
+        ex, 't_raman_pulse', ['t_double', 't_new', 't_fixed']) == ['t_double', 't_new']
+    assert derived_dependents(ex, 't_fixed', ['t_double', 't_new']) == []
+    assert ex.params.t_raman_pulse == 0.        # live params untouched
+    assert not hasattr(ex.params, 't_new')
 
 
 def test_paramref_is_never_one_number():
@@ -356,6 +376,59 @@ def test_trace_generates_qua_source():
     for token in ('wait_for_trigger', 'raman_switch', 'artiq_handback'):
         assert token in src
 
+def test_trace_settles_before_the_body():
+    # ARTIQ turns its RF on halfway through t_opx_handoff_settle: the body's
+    # first exposure must come after the settle wait, and the wait after the
+    # trigger and the block plays
+    from qm import generate_qua_script
+
+    @opx_sequence('_t_settle', claims=('raman',))
+    def s(ctx):
+        ctx.raman_pulse(ctx.p.t_fixed)
+
+    prog, _ctx = _trace(s)
+    src = generate_qua_script(prog)
+    i_trigger = src.index("wait_for_trigger('raman_switch')")
+    i_block = src.index("play('block', 'raman_switch')", i_trigger)
+    i_settle = src.index("wait(2500, 'raman_switch')", i_block)   # 10 us
+    i_expose = src.index("play('pass', 'raman_switch', duration=1250)",
+                         i_settle)
+    assert i_trigger < i_block < i_settle < i_expose
+
+def test_trace_records_accessed_params():
+    @opx_sequence('_t_acc', claims=('raman',))
+    def s(ctx):
+        ctx.raman_pulse(ctx.p.t_raman_pulse)
+        ctx.wait_s(ctx.p.t_fixed)
+
+    ex = FakeExpt([('t_raman_pulse', [0., 1.e-6])])
+    tables = build_shot_tables(ex)
+    OPXProgramBuilder(s, make_map(), tables, tables.n_shots).trace()
+    assert tables.accessed == {'t_raman_pulse', 't_fixed'}
+
+def test_live_adjust_of_a_baked_param_is_refused():
+    # the OPX bakes its per-shot values at finish_prepare; the Adjust panel
+    # must not be able to move a parameter the sequence read, directly or
+    # through a derived quantity
+    from kexp.control.opx.manager import check_live_adjust_conflicts
+
+    @opx_sequence('_t_adj', claims=('raman',))
+    def s(ctx):
+        ctx.raman_pulse(ctx.p.t_double)          # derived from t_raman_pulse
+
+    ex = FakeExpt([('t_fixed', [5.e-6, 6.e-6])])
+    tables = build_shot_tables(ex)
+    OPXProgramBuilder(s, make_map(), tables, tables.n_shots).trace()
+
+    ex._adjust_specs = [SimpleNamespace(key='t_raman_pi_pulse')]   # unrelated
+    check_live_adjust_conflicts(ex, tables)
+    ex._adjust_specs = [SimpleNamespace(key='t_double')]           # read directly
+    with pytest.raises(RuntimeError, match=r'reads ctx\.p\.t_double'):
+        check_live_adjust_conflicts(ex, tables)
+    ex._adjust_specs = [SimpleNamespace(key='t_raman_pulse')]      # feeds t_double
+    with pytest.raises(RuntimeError, match='derive from it'):
+        check_live_adjust_conflicts(ex, tables)
+
 def test_measure_count_mismatch_is_an_error():
     @opx_sequence('_t_count', claims=('imaging',), measurements={'sig': 3})
     def s(ctx):
@@ -446,6 +519,7 @@ def _config_stub(a_80=0.337):
         params=SimpleNamespace(t_imaging_pulse_apd_abs=5.e-6,
                                t_opx_integration_start=0.,
                                t_opx_integration_len=5.e-6,
+                               t_opx_handoff_settle=10.e-6,
                                t_opx_handback_overlap=10.e-6),
         dds=SimpleNamespace(raman_80_plus=dds_chan(80.e6, a_80),
                             raman_150_plus=dds_chan(150.e6, 0.324)))
@@ -464,6 +538,13 @@ def test_build_opx_config_shape():
     # integration window covers exactly the acquire length
     w = cfg['integration_weights']['integration_window']['cosine']
     assert sum(ns for _v, ns in w) == 5000
+
+def test_kexp_channel_map_reads_handshake_params():
+    from kexp.control.opx.opx_config import kexp_channel_map
+    cmap = kexp_channel_map(_config_stub())
+    assert cmap.t_handoff_settle_s == 10.e-6
+    assert cmap.t_handback_overlap_s == 10.e-6
+    assert cmap.guarded_channels == ('raman', 'imaging')
 
 def test_build_opx_config_amp_guard():
     from kexp.control.opx.opx_config import build_opx_config

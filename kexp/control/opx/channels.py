@@ -58,16 +58,30 @@ class ChannelMap:
         regardless of what the sequence claims, because light would leak
         otherwise (kexp handoff_to_quantum_machines turns on both raman and
         imaging RF unconditionally).
+    t_handoff_settle_s / t_handback_overlap_s: the two handshake windows
+        (SI seconds). The body waits t_handoff_settle_s after the trigger
+        before anything exposes (ARTIQ's RF comes on halfway through it);
+        the blocks stay high t_handback_overlap_s after the hand-back
+        trigger (ARTIQ's RF goes off halfway through it). The lab's map
+        builder fills both from ExptParams so both sides of the handshake
+        read the same numbers; there are no defaults on purpose.
     """
     channels: dict = field(default_factory=dict)
     sync_channel: str = ''
     handback_element: str = ''
     handback_op: str = 'trigger'
     guarded_channels: tuple = ()
-    # how long the blocks stay high after the hand-back trigger (SI seconds;
-    # the lab's map builder fills it from ExptParams.t_opx_handback_overlap
-    # so both sides of the handshake read the same number)
-    t_handback_overlap_s: float = 10.e-6
+    t_handoff_settle_s: float = None
+    t_handback_overlap_s: float = None
+
+    def __post_init__(self):
+        for name in ('t_handoff_settle_s', 't_handback_overlap_s'):
+            v = getattr(self, name)
+            if v is None or not v > 0.:
+                raise ValueError(
+                    f"[opx] ChannelMap.{name} must be a positive time in "
+                    f"seconds (got {v!r}); the map builder fills it from "
+                    f"ExptParams.")
 
     def spec(self, role) -> ChannelSpec:
         try:
