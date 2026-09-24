@@ -44,7 +44,7 @@ class ttl_frame(ttl_frame_waxx):
         self.raman_shutter = self.assign_ttl_out(22)
         self.pd_scope_trig3 = self.assign_ttl_out(24)
         
-        self.trigger = self.assign_ttl_out(32)
+        # self.trigger = self.assign_ttl_out(32)
         self.integrator_int_hold = self.assign_ttl_out(36)
         self.integrator_reset = self.assign_ttl_out(38)
 
@@ -61,8 +61,8 @@ class ttl_frame(ttl_frame_waxx):
         
         # PLACEHOLDER INDICES
         self.quantum_machines_receive_trigger = self.assign_ttl_in(41) # if we want this to hand back
-        self.quantum_machines_trigger = self.assign_ttl_out(57)
-        self.raman_dds_handoff_ttl = self.assign_ttl_out(58)
+        self.quantum_machines_trigger = self.assign_ttl_out(32)
+        self.quantum_machines_raman_rf_handoff_ttl = self.assign_ttl_out(33)
 
         self.imaging_pid_manual_override = self.assign_ttl_out(86) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class
         self.imaging_pid_int_clear_hold = self.assign_ttl_out(87) # no longer does anything with NewFocus PID, left in to avoid having to modify imaging class
