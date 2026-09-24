@@ -80,15 +80,18 @@ class RydbergBeamBase():
         AO. Both beams are frequency controlled at the wavemeter purely by these
         elements, so this method is identical for every beam. The fetched siglent
         frequency is stored alongside the lock reading in a second container.
+
+        Only runs when the beam was actually switched on this shot
+        (``self._used``, reset each shot in ``reset_devices``) — the host-side
+        read is slow when the LAN link to the drivers is down, and an unused
+        beam has nothing worth recording.
         """
-        pass 
-        #lock check time takes forever while lan connection is broken, so commented until LAN restored
-        # if self._used:
-        #     self._core.wait_until_mu(now_mu())
-        #     f = self._read_lock(robust)
-        #     self._lock_dc.put_data(f[0])
-        #     self._siglent_freq_dc.put_data(f[1])
-        #     self._core.break_realtime()
+        if self._used:
+            self._core.wait_until_mu(now_mu())
+            f = self._read_lock(robust)
+            self._lock_dc.put_data(f[0])
+            self._siglent_freq_dc.put_data(f[1])
+            self._core.break_realtime()
 
     def _read_lock(self, robust) -> TList(TFloat):
         """Host-side siglent + wavemeter read for ``lock_status``.
