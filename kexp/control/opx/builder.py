@@ -1,0 +1,141 @@
+"""OPXProgramBuilder -- wraps a per-shot sequence in the run's shot loop.
+
+The generated program is one job per run:
+
+    latch sticky Raman analog drives (once; the intensity servo needs the
+        AO drive never to drop)
+    for shot in range(N_shots):                # N = N_shots_with_repeats
+        wait_for_trigger                       # ARTIQ handoff (control.py)
+        assert RF blocks on guarded channels   # before ARTIQ turns RF on
+        <sequence body>                        # user code, params per shot
+        hand-back trigger; hold blocks for t_opx_handback_overlap; release
+    ramp analog drives to zero
+    stream_processing: buffer per-shot saves
+
+Handoff framing is owned here, not by sequences, so it cannot be gotten
+wrong per experiment:
+
+* The blocks are asserted within ~a hundred ns of the trigger; ARTIQ's
+  handoff kernel waits 5 us after the trigger before turning its RF
+  steady-state on.
+* The switch elements are sticky-digital, so an ARTIQ crash mid-window
+  (where no ARTIQ cleanup runs) leaves the blocks HIGH -- the parked job
+  keeps the light off the atoms until someone intervenes. The unprotected
+  window is only the few us between the hand-back trigger and ARTIQ's RF
+  off() events, bounded by t_opx_handback_overlap.
+* Between shots every block is released (pass), so ARTIQ gates its own
+  light for preparation and camera imaging exactly as in a non-OPX run.
+
+Future extensions plug in here (see on_finish_prepare in manager.py for the
+other half):
+* input-stream parameter delivery (qua.declare_input_stream +
+  advance_input_stream at the top of the loop, values pushed per shot from
+  an ARTIQ RPC) -- swap the ParamRef materialization in context._resolve;
+  the sequence API does not change.
+* a second mid-shot ARTIQ -> OPX sync would be another wait_for_trigger
+  exposed as a ctx macro, once the hardware line for it exists.
+
+Generic (future waxx.control.opx): no kexp imports; qm imported inside
+methods only.
+"""
+
+from typing import TYPE_CHECKING
+
+from kexp.control.opx.context import OPXShotContext
+from kexp.control.opx.units import s_to_cc
+
+if TYPE_CHECKING:
+    # static-analysis only -- qm must not import at runtime until trace()
+    from qm.program import Program
+
+
+class OPXProgramBuilder:
+
+    def __init__(self, sequence, channel_map, tables, n_shots):
+        self.sequence = sequence
+        self.map = channel_map
+        self.tables = tables
+        self.n_shots = int(n_shots)
+
+    def trace(self, skip_triggers=False
+              ) -> 'tuple[Program, OPXShotContext]':
+        """Build the QUA program. Returns (program, context) -- the context
+        carries the stream handles and per-key roles the manager needs.
+
+        skip_triggers=True omits the per-shot wait_for_trigger, for the QOP
+        simulator only: it has no external trigger source, so a simulated
+        program would park on the first wait forever (00d guards it out the
+        same way). Shots then run back-to-back on the simulated timeline.
+        The real (execute/provenance) program always keeps its triggers.
+        """
+        from qm import qua
+
+        seq = self.sequence
+        cmap = self.map
+
+        # every channel the ARTIQ handoff kernel turns RF on for is guarded,
+        # claimed or not; claimed channels beyond that are guarded too
+        guard_roles = list(cmap.guarded_channels)
+        for role in seq.claims:
+            if role not in guard_roles:
+                guard_roles.append(role)
+        guarded_specs = [cmap.spec(r) for r in guard_roles]
+        sync_el = cmap.spec(cmap.sync_channel).switch_element
+        overlap_cc = s_to_cc(cmap.t_handback_overlap_s,
+                             key='t_opx_handback_overlap')
+
+        with qua.program() as prog:
+            shot = qua.declare(int)
+            ctx = OPXShotContext(cmap, self.tables, seq, shot,
+                                 overlap_cc, guarded_specs)
+
+            # run prologue: latch the sticky analog drives once. Sticky
+            # plays accumulate on the held value, so this is the only place
+            # they are played (per-shot re-latching would add amplitudes).
+            for role in seq.claims:
+                spec = cmap.spec(role)
+                for el in spec.analog_elements:
+                    qua.play(spec.analog_latch_op, el)
+
+            with qua.for_(shot, 0, shot < self.n_shots, shot + 1):
+                if not skip_triggers:
+                    qua.wait_for_trigger(sync_el)
+                qua.align()
+                # blocks up before ARTIQ turns its RF steady-state on
+                for spec in guarded_specs:
+                    qua.play(spec.block_op, spec.switch_element)
+                qua.align()
+
+                seq.func(ctx)
+
+                if not ctx._handback_done:
+                    ctx.handback_to_artiq()
+                qua.align()
+
+            # run epilogue: analog drives down; blocks were already released
+            # to pass in the final shot's hand-back
+            for role in seq.claims:
+                spec = cmap.spec(role)
+                for el in spec.analog_elements:
+                    qua.ramp_to_zero(el)
+            qua.align()
+
+            if ctx._streams:
+                with qua.stream_processing():
+                    for key, (stream, _ivar) in ctx._streams.items():
+                        n_per_shot = seq.measurements[key]
+                        stream.buffer(n_per_shot).save_all(key)
+
+        self._validate(ctx)
+        return prog, ctx
+
+    def _validate(self, ctx):
+        seq = self.sequence
+        for key, n_declared in seq.measurements.items():
+            n_traced = ctx._save_counts.get(key, 0)
+            if n_traced != n_declared:
+                raise RuntimeError(
+                    f"[opx] sequence {seq.name!r} declares {n_declared} "
+                    f"saves per shot into {key!r} but the traced body "
+                    f"performs {n_traced}. The data container shape comes "
+                    f"from the declaration -- make them agree.")

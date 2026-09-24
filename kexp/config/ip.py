@@ -106,6 +106,10 @@ DEVICE_ID_KINESIS_REF_BEAM_WAVEPLATE_ROTATOR = 27500961
 PDXC_SERVER_IP = "192.168.1.76"   # kong
 PDXC_COM = "COM40"
 
+### Quantum Machines OPX+ (static IP, QOP cluster -- not UDP-discovery gear)
+QM_OPX_IP = "192.168.1.125"
+QM_OPX_CLUSTER = "Cluster_1"
+
 ### remote control
 WHITELIST_PATH = (
     os.path.join(DATA_DIR, "remote_whitelist.json")

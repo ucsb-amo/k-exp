@@ -428,6 +428,21 @@ class ExptParams(ExptParamsWaxx):
         #
         self.v_integrated_apd_adc_background = -2.1
 
+        ### OPX+ (quantum machines) handoff -- see kexp.control.opx
+        # After the OPX fires its hand-back trigger it holds the RF-block
+        # switches high for this long. ARTIQ must have its steady-state RF
+        # off before it expires: wait_for_quantum_machines_handoff resumes
+        # the timeline overlap/2 after the edge, so half the overlap is
+        # kernel-CPU slack for the off() events and half is timeline margin
+        # before the blocks release. Both sides read this param.
+        # self.t_opx_handback_overlap = 10.e-6 # 5 us CPU slack underflowed on the off() events, 2026-09-23
+        self.t_opx_handback_overlap = 200.e-6
+        # OPX APD integration window (within the acquire window, which is
+        # t_imaging_pulse_apd_abs long). Placeholder values, 2026-09-23 --
+        # to be calibrated against the ARTIQ sampler path in OPX milestone M3.
+        self.t_opx_integration_start = 0.
+        self.t_opx_integration_len = 5.e-6
+
         self.frequency_target_405_lock = 741.0928e12
         self.frequency_target_980_lock = 306.681900e12 + 60e6 # n = 45
 

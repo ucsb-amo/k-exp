@@ -72,6 +72,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
 
         Clients.__init__(self, suppress_live_od=suppress_live_od)
 
+        # OPX+ program manager (kexp.control.opx). Host-only and inert --
+        # nothing talks to (or imports) qm until self.opx.use(sequence) is
+        # called in prepare(). Never referenced in a kernel.
+        from kexp.control.opx.opx_config import make_opx_manager
+        self.opx = make_opx_manager(self)
+
         # Resolved above: in when acquiring with the APD, out when a camera
         # grabs frames, None (stage left alone) when acquiring nothing.
         self.pdxc.set_apd_stage(apd_stage)
@@ -102,6 +108,12 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         if self.tweezer.traps == []:
             self.tweezer.add_tweezer_list()
         self.tweezer.save_trap_list()
+
+        # After finish_prepare_wax so the xvars are repeated and shuffled:
+        # builds the per-shot value tables, compiles the QUA program and
+        # starts the job (it parks on its first wait_for_trigger). No-op
+        # unless self.opx.use(...) was called in prepare().
+        self.opx.on_finish_prepare()
 
     @kernel
     def init_kernel(self, run_id = True,
@@ -298,4 +310,14 @@ class Base(Expt, Devices, Cooling, Image, Cameras, Control, Clients):
         
 
     def end(self, expt_filepath, notify=True, restart_monitor=True):
+        # OPX stream data must land in its containers before end_wax
+        # serializes the DataVault. A fetch failure must not lose the rest
+        # of the run's data, but it must be loud: the OPX containers then
+        # save as their zero placeholders.
+        if getattr(self, 'opx', None) is not None and self.opx.active:
+            try:
+                self.opx.finish()
+            except Exception as e:
+                print(f"[opx] *** ERROR fetching OPX data: {e} -- the OPX "
+                      f"data containers for this run are NOT populated. ***")
         self.end_wax(expt_filepath=expt_filepath, notify=notify, restart_monitor=restart_monitor)
